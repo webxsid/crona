@@ -1,0 +1,277 @@
+import { describe, it, beforeAll, afterAll, expect } from "vitest";
+import { startTestKernel, stopTestKernel, type IKernelTestHandle } from "./helpers/kernel";
+import { api } from "./helpers/http";
+import type { Repo, Stream, Issue, IssueStatus } from "@crona/core";
+
+describe("@issue @e2e", () => {
+  let kernel: IKernelTestHandle;
+  let repo: Repo;
+  let stream: Stream;
+
+  beforeAll(async () => {
+    kernel = await startTestKernel();
+
+    // Create repo
+    repo = await api<Repo>(
+      kernel.baseUrl,
+      "/commands/repo",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: "Office" }),
+      }
+    );
+
+    // Create stream
+    stream = await api<Stream>(
+      kernel.baseUrl,
+      "/stream",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          repoId: repo.id,
+          name: "Backend",
+        }),
+      }
+    );
+  });
+
+  afterAll(async () => {
+    await stopTestKernel(kernel);
+  });
+
+  it("creates an issue", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Implement timer boundaries",
+          estimateMinutes: 90,
+        }),
+      }
+    );
+
+    expect(issue).toHaveProperty("id");
+    expect(issue.title).toBe("Implement timer boundaries");
+    expect(issue.streamId).toBe(stream.id);
+    expect(issue.estimateMinutes).toBe(90);
+  });
+
+  it("lists issues by stream", async () => {
+    const issues = await api<Issue[]>(
+      kernel.baseUrl,
+      `/issues?streamId=${stream.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(Array.isArray(issues)).toBe(true);
+    expect(issues.length).toBeGreaterThan(0);
+
+    const issue = issues[0];
+    expect(issue).toHaveProperty("id");
+    expect(issue).toHaveProperty("title");
+    expect(issue?.streamId).toBe(stream.id);
+  });
+
+  it("updates an issue", async () => {
+    // create
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Old title",
+        }),
+      }
+    );
+
+    // update
+    const updated = await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue.id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: "New title",
+          estimateMinutes: 45,
+          notes: "Refined scope",
+        }),
+      }
+    );
+
+    expect(updated.id).toBe(issue.id);
+    expect(updated.title).toBe("New title");
+    expect(updated.estimateMinutes).toBe(45);
+    expect(updated.notes).toBe("Refined scope");
+  });
+
+  it("changes issue status [should fail]", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Status change test",
+        }),
+      }
+    );
+    try {
+
+      await api<Issue>(
+        kernel.baseUrl,
+        `/issue/${issue.id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${kernel.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            status: "done" as IssueStatus,
+          }),
+        }
+      );
+    } catch (error) {
+      expect(error).toBeDefined();
+    }
+
+  });
+
+  it("fails to update a non-existent issue", async () => {
+    const nonExistentId = "non-existent-issue-id";
+
+    try {
+      await api<Issue>(
+        kernel.baseUrl,
+        `/issue/${nonExistentId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${kernel.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: "Should fail",
+          }),
+        }
+      );
+    } catch (error) {
+      expect(error).toBeDefined();
+    }
+  });
+
+  // valid state transitionn
+  it("changes issue status [valid transition]", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Status change valid test",
+        }),
+      }
+    );
+
+    const updated = await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue.id}/status`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "active" as IssueStatus,
+        }),
+      }
+    );
+
+    expect(updated.id).toBe(issue.id);
+    expect(updated.status).toBe("active");
+  });
+
+  it("deletes an issue", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "To be deleted",
+        }),
+      }
+    );
+
+    const res = await api<{ ok: boolean }>(
+      kernel.baseUrl,
+      `/issue/${issue.id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(res.ok).toBe(true);
+
+    // Verify deletion
+    const issues = await api<Issue[]>(
+      kernel.baseUrl,
+      `/issues?streamId=${stream.id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(issues.find(i => i.id === issue.id)).toBeUndefined();
+  });
+});

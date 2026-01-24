@@ -1,0 +1,30 @@
+{
+  "name": "@crona/kernel-e2e",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "test": "vitest run",
+    "test:session": "vitest run ./session.e2e.test.ts",
+    "test:repo": "vitest run ./repo.e2e.test.ts",
+    "test:stream": "vitest run ./stream.e2e.test.ts",
+    "test:boundary": "vitest run ./boundary.e2e.test.ts",
+    "test:issue": "vitest run ./issue.e2e.test.ts",
+    "test:stash": "vitest run ./stash.e2e.test.ts",
+    "test:full": "vitest run ./full-flow.e2e.test.ts",
+    "test:watch": "vitest"
+  },
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.23.0",
+  "dependencies": {
+    "@crona/core": "workspace:^",
+    "@crona/kernel": "workspace:^",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "eventsource": "^4.1.0",
+    "vitest": "^4.0.16"
+  }
+}

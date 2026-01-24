@@ -1,0 +1,27 @@
+{
+  "name": "crona-node",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "author": "Siddharth Mittal <me@webxsid.com>",
+  "packageManager": "pnpm@10.23.0",
+  "workspaces": [
+    "packages/*",
+    "tests/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@types/node": "^25.0.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8"
+  }
+}

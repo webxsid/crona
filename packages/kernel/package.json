@@ -1,0 +1,27 @@
+{
+  "name": "@crona/kernel",
+  "version": "0.1.0",
+  "description": "Crona Kernel Package",
+  "private": true,
+  "main": "dist/main.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "crona-kernel": "dist/main.js"
+  },
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.23.0",
+  "dependencies": {
+    "@crona/core": "workspace:*",
+    "fastify": "^5.6.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0"
+  }
+}

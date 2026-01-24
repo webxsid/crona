@@ -1,0 +1,3 @@
+node_modules/
+# all the node_modules in packages/*
+packages/**/node_modules/

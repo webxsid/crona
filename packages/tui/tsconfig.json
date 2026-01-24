@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "nodenext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react",
+    "jsxFactory": "React.createElement",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "types": [
+      "node",
+      "react"
+    ]
+  },
+  "include": [
+    "src"
+  ]
+}
