@@ -230,7 +230,7 @@ Design Principles
 
 ⸻
 
-Status
+## Status
 
 Crona is under active development.
 
@@ -243,13 +243,13 @@ Current focus:
 
 ⸻
 
-Philosophy
+## Philosophy
 
 Your work already has structure.
 Crona just makes it explicit.
 
 ⸻
 
-[Licence](LICENCE.md)
+[License](LICENSE.md)
 > Crona is an opinionated, experimental project. The MIT license allows reuse, but the architecture and APIs may change without notice.
 
