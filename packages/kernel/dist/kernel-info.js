@@ -11,11 +11,13 @@ const path_1 = __importDefault(require("path"));
 const os_1 = __importDefault(require("os"));
 const CRONA_DIR = path_1.default.join(os_1.default.homedir(), ".crona");
 const KERNEL_INFO_FILE = path_1.default.join(CRONA_DIR, "kernel.json");
+const CRONA_SCRATCH_DIR = path_1.default.join(CRONA_DIR, "scratch");
 /**
  * Ensure ~/.crona exists with safe permissions
  */
 async function ensureDir() {
     await promises_1.default.mkdir(CRONA_DIR, { recursive: true, mode: 0o700 });
+    await promises_1.default.mkdir(CRONA_SCRATCH_DIR, { recursive: true, mode: 0o700 });
 }
 /**
  * Write kernel connection info
@@ -24,7 +26,10 @@ async function ensureDir() {
 async function writeKernelInfo(info) {
     await ensureDir();
     const tempFile = `${KERNEL_INFO_FILE}.tmp`;
-    await promises_1.default.writeFile(tempFile, JSON.stringify(info, null, 2), { mode: 0o600 });
+    await promises_1.default.writeFile(tempFile, JSON.stringify({
+        ...info,
+        scratchDir: CRONA_SCRATCH_DIR,
+    }, null, 2), { mode: 0o600 });
     await promises_1.default.rename(tempFile, KERNEL_INFO_FILE);
 }
 /**
@@ -47,7 +52,6 @@ async function clearKernelInfo() {
         await promises_1.default.unlink(KERNEL_INFO_FILE);
     }
     catch (err) {
-        // ignore
         console.error("Failed to clear kernel info:", err);
     }
 }

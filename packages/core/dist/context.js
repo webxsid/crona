@@ -21,6 +21,7 @@ async function createCommandContext(input) {
         coreSettings: new repository_1.CoreSettingsRepository(),
         sessionSegments: new repository_1.SessionSegmentRepository(),
         activeContext: new repository_1.ActiveContextRepository(),
+        scratchPads: new repository_1.ScratchRepo(),
         events: input.events,
         authToken: crypto.randomUUID(),
     };

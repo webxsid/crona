@@ -25,3 +25,5 @@ __exportStar(require("./timer"), exports);
 __exportStar(require("./ops"), exports);
 __exportStar(require("./settings"), exports);
 __exportStar(require("./context"), exports);
+__exportStar(require("./scratch"), exports);
+__exportStar(require("./kernel"), exports);

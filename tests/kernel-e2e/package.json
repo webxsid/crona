@@ -12,6 +12,7 @@
     "test:boundary": "vitest run ./boundary.e2e.test.ts",
     "test:issue": "vitest run ./issue.e2e.test.ts",
     "test:stash": "vitest run ./stash.e2e.test.ts",
+    "test:scratch": "vitest run ./scratch.e2e.test.ts",
     "test:full": "vitest run ./full-flow.e2e.test.ts",
     "test:watch": "vitest"
   },

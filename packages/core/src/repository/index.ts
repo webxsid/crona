@@ -7,4 +7,4 @@ export * from "./stream"
 export * from "./core_settings"
 export * from "./session_segments"
 export * from "./active_context"
-
+export * from "./scratchpad_meta"

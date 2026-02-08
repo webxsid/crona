@@ -103,6 +103,15 @@ export interface ActiveContextTable {
     issue_id: string | null;
     updated_at: string;
 }
+export interface ScratchPadMetaTable {
+    id: string;
+    user_id: string;
+    device_id: string;
+    name: string;
+    path: string;
+    last_opened_at: string;
+    pinned: number;
+}
 export interface DB {
     repos: RepoTable;
     streams: StreamTable;
@@ -113,5 +122,6 @@ export interface DB {
     core_settings: CoreSettingsTable;
     session_segments: SessionSegmentsTable;
     active_context: ActiveContextTable;
+    scratch_pad_meta: ScratchPadMetaTable;
 }
 export declare function initSchema(): Promise<void>;

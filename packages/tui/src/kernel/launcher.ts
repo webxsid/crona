@@ -53,7 +53,7 @@ async function isKernelHealthy(info: {
   port: number;
 }): Promise<boolean> {
   try {
-    process.kill(info.pid, 0); // PID exists?
+    process.kill(info.pid, 0);
 
     const res = await fetch(
       `http://127.0.0.1:${info.port}/health`

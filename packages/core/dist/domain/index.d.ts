@@ -7,3 +7,4 @@ export * from "./op";
 export * from "./core_settings";
 export * from "./session_segment";
 export * from "./active_context";
+export * from "./scratch_pad";

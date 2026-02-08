@@ -1,6 +1,6 @@
 import type { EventBus } from "../events";
 import type { HealthService } from "../health";
-import type { IRepoRepository, IStreamRepository, IIssueRepository, ISessionRepository, IStashRepository, IOpRepository, ICoreSettingsRepository, ISessionSegmentRepository, IActiveContextRepository } from "../repository";
+import type { IRepoRepository, IStreamRepository, IIssueRepository, ISessionRepository, IStashRepository, IOpRepository, ICoreSettingsRepository, ISessionSegmentRepository, IActiveContextRepository, IScratchRepo } from "../repository";
 export interface ICommandContext {
     repos: IRepoRepository;
     streams: IStreamRepository;
@@ -12,6 +12,7 @@ export interface ICommandContext {
     coreSettings: ICoreSettingsRepository;
     sessionSegments: ISessionSegmentRepository;
     activeContext: IActiveContextRepository;
+    scratchPads: IScratchRepo;
     userId: string;
     deviceId: string;
     now(): string;

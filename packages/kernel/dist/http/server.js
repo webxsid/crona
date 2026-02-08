@@ -25,5 +25,7 @@ function createHttpServer(ctx) {
     new routes_1.OpsRoutes(app, ctx).register();
     new routes_1.ContextRoutes(app, ctx).register();
     new routes_1.SettingsRoutes(app, ctx).register();
+    new routes_1.ScratchRoutes(app, ctx).register();
+    new routes_1.KernelRoutes(app, ctx).register();
     return app;
 }

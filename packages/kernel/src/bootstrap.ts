@@ -3,7 +3,7 @@ import { clearKernelInfo, writeKernelInfo } from "./kernel-info";
 
 import type { ICommandContext } from "@crona/core";
 import { createCommandContext, EventBus, initDb, SqliteDb, stopSession, TimerService } from "@crona/core";
-import type { FastifyInstance } from "fastify";
+// import type { FastifyInstance } from "fastify";
 import os from "os";
 
 let shuttingDown = false;
@@ -33,10 +33,10 @@ export interface IBootstrapKernelOptions {
   dbPath?: string | undefined;
 }
 
-function _printAllAppRoutes(app: FastifyInstance) {
-  const routes = app.printRoutes?.();
-  console.debug("Registered HTTP routes:\n", routes);
-}
+// function _printAllAppRoutes(app: FastifyInstance) {
+//   const routes = app.printRoutes?.();
+//   console.debug("Registered HTTP routes:\n", routes);
+// }
 
 export async function bootstrapKernel({ dbPath }: IBootstrapKernelOptions) {
   const eventBus = new EventBus();

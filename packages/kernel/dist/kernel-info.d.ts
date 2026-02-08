@@ -3,12 +3,13 @@ export interface KernelInfo {
     token: string;
     pid: number;
     startedAt: string;
+    scratchDir: string;
 }
 /**
  * Write kernel connection info
  * Overwrites existing file atomically
  */
-export declare function writeKernelInfo(info: KernelInfo): Promise<void>;
+export declare function writeKernelInfo(info: Omit<KernelInfo, "scratchDir">): Promise<void>;
 /**
  * Read kernel info if present
  */

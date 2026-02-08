@@ -1,4 +1,3 @@
-// kernel/watchdog.ts
 export function watchKernel(
   kernel: { baseUrl: string },
   onDeath: (reason: string) => void

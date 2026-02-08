@@ -9,3 +9,5 @@ export * from "./timer";
 export * from "./ops";
 export * from "./settings";
 export * from "./context";
+export * from "./scratch"
+export * from "./kernel"

@@ -11,20 +11,38 @@ type KernelInfo = {
 
 let stopWatch: (() => void) | null = null;
 
-function Bootstrap({ onKernelReady }: { onKernelReady: (k: KernelInfo) => void }) {
+function Bootstrap() {
   const [kernel, setKernel] = useState<KernelInfo | null>(null);
 
   useEffect(() => {
     ensureKernelRunning()
-      .then((k) => {
-        setKernel(k);
-        onKernelReady(k);
-      })
+      .then(setKernel)
       .catch((err) => {
         console.error("Failed to start kernel:", err);
         process.exit(1);
       });
   }, []);
+
+  useEffect(() => {
+    if (!kernel) return;
+
+    stopWatch = watchKernel(kernel, (reason) => {
+      unmount();
+      process.stdout.write("\x1Bc");
+
+      console.error(
+        "\ncrona: kernel disconnected\n" +
+        `reason: ${reason}\n`
+      );
+
+      process.exit(1);
+    });
+
+    return () => {
+      stopWatch?.();
+      stopWatch = null;
+    };
+  }, [kernel]);
 
   if (!kernel) {
     return <Text>Starting Crona kernel…</Text>;
@@ -34,24 +52,7 @@ function Bootstrap({ onKernelReady }: { onKernelReady: (k: KernelInfo) => void }
 }
 
 const { unmount } = render(
-  <Bootstrap
-    onKernelReady={(kernel) => {
-      stopWatch = watchKernel(kernel, (reason) => {
-        // 🔴 kernel died → hard shutdown
-        unmount();
-
-        // Full terminal reset (like vim)
-        process.stdout.write("\x1Bc");
-
-        console.error(
-          "\ncrona: kernel disconnected\n" +
-          `reason: ${reason}\n`
-        );
-
-        process.exit(1);
-      });
-    }}
-  />,
+  <Bootstrap />,
   {
     stdin: process.stdin,
     stdout: process.stdout,

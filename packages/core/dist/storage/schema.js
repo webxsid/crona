@@ -126,6 +126,17 @@ async function initSchema() {
         .addColumn("issue_id", "text")
         .addColumn("updated_at", "text", (col) => col.notNull())
         .execute();
+    await db.schema
+        .createTable("scratch_pad_meta")
+        .ifNotExists()
+        .addColumn("id", "text", (col) => col.primaryKey())
+        .addColumn("user_id", "text", (col) => col.notNull())
+        .addColumn("device_id", "text", (col) => col.notNull())
+        .addColumn("name", "text", (col) => col.notNull())
+        .addColumn("path", "text", (col) => col.notNull().unique())
+        .addColumn("last_opened_at", "text", (col) => col.notNull())
+        .addColumn("pinned", "integer", (col) => col.notNull())
+        .execute();
     // indexes
     await db.schema
         .createIndex("idx_streams_repo_id")
@@ -227,6 +238,24 @@ async function initSchema() {
         .createIndex("idx_active_context_device_id")
         .on("active_context")
         .column("device_id")
+        .ifNotExists()
+        .execute();
+    await db.schema
+        .createIndex("idx_scratch_pad_meta_user_id")
+        .on("scratch_pad_meta")
+        .column("user_id")
+        .ifNotExists()
+        .execute();
+    await db.schema
+        .createIndex("idx_scratch_pad_meta_device_id")
+        .on("scratch_pad_meta")
+        .column("device_id")
+        .ifNotExists()
+        .execute();
+    await db.schema
+        .createIndex("idx_scratch_pad_meta_last_opened_at")
+        .on("scratch_pad_meta")
+        .column("last_opened_at")
         .ifNotExists()
         .execute();
 }

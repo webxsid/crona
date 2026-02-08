@@ -21,3 +21,4 @@ __exportStar(require("./stream.commands"), exports);
 __exportStar(require("./stash.commands"), exports);
 __exportStar(require("./session.commands"), exports);
 __exportStar(require("./active_context.commands"), exports);
+__exportStar(require("./scratchpad_meta.commands"), exports);

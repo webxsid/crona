@@ -10,6 +10,7 @@ import type {
   ICoreSettingsRepository,
   ISessionSegmentRepository,
   IActiveContextRepository,
+  IScratchRepo,
 } from "../repository";
 
 
@@ -24,6 +25,7 @@ export interface ICommandContext {
   coreSettings: ICoreSettingsRepository
   sessionSegments: ISessionSegmentRepository
   activeContext: IActiveContextRepository
+  scratchPads: IScratchRepo
 
   userId: string;
   deviceId: string;

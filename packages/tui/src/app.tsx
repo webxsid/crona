@@ -42,10 +42,17 @@ export function App({ kernel }: AppProps) {
     };
   }, [stdout]);
 
-  // Keep process alive + allow quitting
   useInput((input) => {
     if (input === "q") clearAndExit();
   });
+
+
+  useEffect(() => {
+    console.log("Crona TUI started. Press 'q' to quit.");
+    return () => {
+      console.log("Crona TUI exited.");
+    }
+  }, [])
 
   return (
     <Box

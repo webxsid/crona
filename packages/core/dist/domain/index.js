@@ -23,3 +23,4 @@ __exportStar(require("./op"), exports);
 __exportStar(require("./core_settings"), exports);
 __exportStar(require("./session_segment"), exports);
 __exportStar(require("./active_context"), exports);
+__exportStar(require("./scratch_pad"), exports);

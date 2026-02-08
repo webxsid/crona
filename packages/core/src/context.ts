@@ -10,7 +10,8 @@ import {
   SqliteOpRepository,
   SqliteRepoRepository,
   SqliteStreamRepository,
-  StashRepository
+  StashRepository,
+  ScratchRepo
 } from "./repository";
 import { dbPing } from "./storage";
 
@@ -38,6 +39,7 @@ export async function createCommandContext(input: {
     coreSettings: new CoreSettingsRepository(),
     sessionSegments: new SessionSegmentRepository(),
     activeContext: new ActiveContextRepository(),
+    scratchPads: new ScratchRepo(),
 
     events: input.events,
 

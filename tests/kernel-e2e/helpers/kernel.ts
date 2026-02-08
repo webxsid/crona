@@ -11,6 +11,7 @@ export interface IKernelTestHandle {
 export async function startTestKernel(): Promise<IKernelTestHandle> {
   const { dbPath, cleanup } = await createTestDbPath()
 
+  console.log(`Starting kernel with test db at ${dbPath}`, bootstrapKernel);
   await bootstrapKernel({ dbPath });
 
   const info = await readKernelInfo();
