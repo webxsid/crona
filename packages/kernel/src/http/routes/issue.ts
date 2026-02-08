@@ -1,10 +1,13 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import type { ICommandContext, IssueStatus } from "@crona/core";
 import {
   createIssue,
   updateIssue,
   deleteIssue,
   changeIssueStatus,
+  markIssueTodoForToday,
+  clearIssueTodoForDate,
+  computeDailyIssueSummaryForToday,
 } from "@crona/core";
 
 /**
@@ -26,7 +29,7 @@ export class IssueRoutes {
   // ---------- Queries ----------
 
   private registerQueries() {
-    this.app.get("/issues", async (req) => {
+    this.app.get("/issues", async (req: FastifyRequest) => {
       const { streamId } = req.query as { streamId: string };
 
       return this.ctx.issues.listByStream(streamId, this.ctx.userId);
@@ -36,7 +39,7 @@ export class IssueRoutes {
   // ---------- Commands ----------
 
   private registerCommands() {
-    this.app.post("/issue", async (req) => {
+    this.app.post("/issue", async (req: FastifyRequest) => {
       const { streamId, title, estimateMinutes } = req.body as {
         streamId: string;
         title: string;
@@ -50,7 +53,7 @@ export class IssueRoutes {
       });
     });
 
-    this.app.put("/issue/:id", async (req) => {
+    this.app.put("/issue/:id", async (req: FastifyRequest) => {
       const { id } = req.params as { id: string };
       const { title, estimateMinutes, notes } = req.body as {
         title?: string;
@@ -65,7 +68,7 @@ export class IssueRoutes {
       });
     });
 
-    this.app.delete("/issue/:id", async (req) => {
+    this.app.delete("/issue/:id", async (req: FastifyRequest) => {
       const { id } = req.params as { id: string };
 
       await deleteIssue(this.ctx, id);
@@ -73,13 +76,35 @@ export class IssueRoutes {
       return { ok: true };
     });
 
-    this.app.put("/issue/:id/status", async (req) => {
+    this.app.put("/issue/:id/status", async (req: FastifyRequest) => {
       const { id } = req.params as { id: string };
       const { status } = req.body as {
         status: IssueStatus
       };
 
       return changeIssueStatus(this.ctx, id, status);
+    })
+
+    this.app.put("/issue/:id/todo", async (req: FastifyRequest) => {
+      const { id } = req.params as { id: string };
+
+      const issue = await markIssueTodoForToday(this.ctx, id);
+
+      return issue;
+    });
+
+    this.app.put("/issue/:id/todo:clear", async (req: FastifyRequest) => {
+      const { id } = req.params as { id: string };
+
+      const issue = await clearIssueTodoForDate(this.ctx, id);
+
+      return issue;
+    });
+
+    this.app.get("/issues/summary:today", async () => {
+      const plan = await computeDailyIssueSummaryForToday(this.ctx);
+
+      return plan;
     })
   }
 }

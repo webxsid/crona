@@ -274,4 +274,153 @@ describe("@issue @e2e", () => {
 
     expect(issues.find(i => i.id === issue.id)).toBeUndefined();
   });
+
+  it("marks an issue as todo for today", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Todo for today test",
+        }),
+      }
+    );
+
+    const updated = await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue.id}/todo`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(updated.id).toBe(issue.id);
+    expect(updated.todoForDate).toBe(new Date().toISOString().split("T")[0]);
+  });
+
+  it("clears todo for date", async () => {
+    const issue = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Clear todo for date test",
+          todoForDate: new Date().toISOString().split("T")[0],
+        }),
+      }
+    );
+
+    const updated = await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue.id}/todo:clear`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(updated.id).toBe(issue.id);
+    expect(updated.todoForDate).toBeUndefined();
+  });
+
+  it("compute a daily issue summary", async () => {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Create issues with todoForDate set to today
+    const issue1 = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Daily summary issue 1",
+          estimateMinutes: 30,
+        }),
+      }
+    );
+
+    const issue2 = await api<Issue>(
+      kernel.baseUrl,
+      "/issue",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          streamId: stream.id,
+          title: "Daily summary issue 2",
+          estimateMinutes: 45,
+        }),
+      }
+    );
+
+    // mark issues for today
+    await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue1.id}/todo`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    await api<Issue>(
+      kernel.baseUrl,
+      `/issue/${issue2.id}/todo`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    const summary = await api<{
+      date: string;
+      totalIssues: number;
+      issues: Issue[];
+      totalEstimatedMinutes: number;
+    }>(
+      kernel.baseUrl,
+      `/issues/summary:today`,
+      {
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(summary.date).toBe(today);
+    expect(summary.totalIssues).toBeGreaterThanOrEqual(2);
+    expect(summary.issues.length).toBeGreaterThanOrEqual(2);
+    expect(summary.totalEstimatedMinutes).toBeGreaterThanOrEqual(75);
+
+  });
+
 });

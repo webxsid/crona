@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Issue } from "../domain/issue";
+import type { DailyIssueSummary, Issue } from "../domain/issue";
 import type { IssueStatus } from "../domain/issue";
 import type { ICommandContext } from "./context";
 
@@ -126,9 +126,10 @@ export async function changeIssueStatus(
 
   // Simple, explicit state machine
   const allowed: Record<IssueStatus, IssueStatus[]> = {
-    todo: ["active"],
-    active: ["done", "todo"],
+    todo: ["active", "abandoned"],
+    active: ["done", "todo", "abandoned"],
     done: ["todo"],
+    abandoned: ["todo"],
   };
 
   if (!allowed[issue.status].includes(nextStatus)) {
@@ -197,4 +198,107 @@ export async function listIssuesByStream(
   streamId: string
 ): Promise<Issue[]> {
   return ctx.issues.listByStream(streamId, ctx.userId);
+}
+
+export async function markIssueTodoForToday(
+  ctx: ICommandContext,
+  issueId: string
+): Promise<Issue> {
+  const today = ctx.now().split("T")[0]; // YYYY-MM-DD
+
+  const now = ctx.now();
+
+  const updated = await ctx.issues.update(
+    issueId,
+    {
+      todoForDate: today,
+    },
+    {
+      userId: ctx.userId,
+      now,
+    }
+  );
+
+  await ctx.ops.append({
+    id: randomUUID(),
+    entity: "issue",
+    entityId: issueId,
+    action: "update",
+    payload: { todoForDate: today },
+    timestamp: now,
+    userId: ctx.userId,
+    deviceId: ctx.deviceId,
+  });
+
+  return updated;
+}
+
+export async function clearIssueTodoForDate(
+  ctx: ICommandContext,
+  issueId: string
+): Promise<Issue> {
+  const now = ctx.now();
+
+  const updated = await ctx.issues.update(
+    issueId,
+    {
+      todoForDate: undefined,
+    },
+    {
+      userId: ctx.userId,
+      now,
+    }
+  );
+
+  await ctx.ops.append({
+    id: randomUUID(),
+    entity: "issue",
+    entityId: issueId,
+    action: "update",
+    payload: { todoForDate: null },
+    timestamp: now,
+    userId: ctx.userId,
+    deviceId: ctx.deviceId,
+  });
+
+  return updated;
+}
+
+export async function clearTodayTodos(
+  ctx: ICommandContext,
+): Promise<void> {
+  const today = ctx.now().split("T")[0]; // YYYY-MM-DD
+
+  if (!today) {
+    throw new Error("Invalid date");
+  }
+
+  const issues = await ctx.issues.listByTodoForDate(today, ctx.userId);
+
+  for (const issue of issues) {
+    await clearIssueTodoForDate(ctx, issue.id);
+  }
+}
+
+export async function computeDailyIssueSummaryForToday(
+  ctx: ICommandContext,
+): Promise<DailyIssueSummary> {
+  const today = ctx.now().split("T")[0]; // YYYY-MM-DD
+
+  if (!today) {
+    throw new Error("Invalid date");
+  }
+
+  const issues = await ctx.issues.listByTodoForDate(today, ctx.userId);
+
+  const totalEstimatedMinutes = issues.reduce((sum, issue) => {
+    return sum + (issue.estimateMinutes ?? 0);
+  }, 0);
+
+  return {
+    date: today,
+    totalIssues: issues.length,
+    issues,
+    totalEstimatedMinutes,
+  };
 }

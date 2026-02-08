@@ -1,10 +1,10 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 
 export function registerAuth(
   app: FastifyInstance,
   token: string
 ) {
-  app.addHook("preHandler", async (req) => {
+  app.addHook("preHandler", async (req: FastifyRequest) => {
     // Health is public (used for discovery)
     if (req.originalUrl === "/health") return;
 

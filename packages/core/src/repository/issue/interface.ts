@@ -19,6 +19,11 @@ export interface IIssueRepository {
     userId: string
   ): Promise<Issue[]>;
 
+  listByTodoForDate(
+    todoForDate: string,
+    userId: string
+  ): Promise<Issue[]>;
+
   update(
     issueId: string,
     updates: {
@@ -26,6 +31,7 @@ export interface IIssueRepository {
       status?: IssueStatus | undefined;
       estimateMinutes?: number | null | undefined;
       notes?: string | null | undefined;
+      todoForDate?: string | undefined
     },
     meta: {
       userId: string;

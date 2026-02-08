@@ -26,9 +26,10 @@ export interface IssueTable {
   id: string;
   stream_id: string;
   title: string;
-  status: "todo" | "active" | "done";
+  status: "todo" | "active" | "done" | "abandoned";
   estimate_minutes: number | null;
   notes: string | null;
+  todo_for_date: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -173,6 +174,7 @@ export async function initSchema(): Promise<void> {
     .addColumn("status", "text", (col) => col.notNull())
     .addColumn("estimate_minutes", "integer")
     .addColumn("notes", "text")
+    .addColumn("todo_for_date", "text")
     .addColumn("user_id", "text", (col) => col.notNull())
     .addColumn("created_at", "text", (col) => col.notNull())
     .addColumn("updated_at", "text", (col) => col.notNull())

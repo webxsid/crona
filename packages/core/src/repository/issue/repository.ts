@@ -15,6 +15,7 @@ export class SqliteIssueRepository implements IIssueRepository {
         title: issue.title,
         status: issue.status,
         estimate_minutes: issue.estimateMinutes ?? null,
+        todo_for_date: issue.todoForDate ?? null,
         notes: issue.notes ?? null,
         user_id: meta.userId,
         created_at: meta.now,
@@ -39,6 +40,7 @@ export class SqliteIssueRepository implements IIssueRepository {
         "status",
         "estimate_minutes",
         "notes",
+        "todo_for_date",
       ])
       .where("id", "=", issueId)
       .where("user_id", "=", userId)
@@ -54,6 +56,7 @@ export class SqliteIssueRepository implements IIssueRepository {
       status: row.status as IssueStatus,
       estimateMinutes: row.estimate_minutes ?? undefined,
       notes: row.notes ?? undefined,
+      todoForDate: row.todo_for_date ?? undefined,
     };
   }
 
@@ -70,6 +73,7 @@ export class SqliteIssueRepository implements IIssueRepository {
         "status",
         "estimate_minutes",
         "notes",
+        "todo_for_date",
       ])
       .where("stream_id", "=", streamId)
       .where("user_id", "=", userId)
@@ -84,6 +88,7 @@ export class SqliteIssueRepository implements IIssueRepository {
       status: r.status as IssueStatus,
       estimateMinutes: r.estimate_minutes ?? undefined,
       notes: r.notes ?? undefined,
+      todoForDate: r.todo_for_date ?? undefined,
     }));
   }
 
@@ -94,6 +99,7 @@ export class SqliteIssueRepository implements IIssueRepository {
       status?: IssueStatus;
       estimateMinutes?: number | null;
       notes?: string | null;
+      todoForDate?: string | undefined;
     },
     meta: { userId: string; now: string }
   ): Promise<Issue> {
@@ -108,6 +114,7 @@ export class SqliteIssueRepository implements IIssueRepository {
             : updates.estimateMinutes,
         notes:
           updates.notes === undefined ? undefined : updates.notes,
+        todo_for_date: updates.todoForDate === undefined ? undefined : updates.todoForDate,
         updated_at: meta.now,
       })
       .where("id", "=", issueId)
@@ -145,5 +152,35 @@ export class SqliteIssueRepository implements IIssueRepository {
     if (result.numUpdatedRows === BigInt(0)) {
       throw new Error("Issue not found or already deleted");
     }
+  }
+
+  async listByTodoForDate(
+    todoForDate: string,
+    userId: string
+  ): Promise<Issue[]> {
+    const rows = await SqliteDb.getDB()
+      .selectFrom("issues")
+      .select([
+        "id",
+        "stream_id",
+        "title",
+        "status",
+        "estimate_minutes",
+        "notes",
+      ])
+      .where("todo_for_date", "=", todoForDate)
+      .where("user_id", "=", userId)
+      .where("deleted_at", "is", null)
+      .orderBy("created_at", "asc")
+      .execute();
+
+    return rows.map((r) => ({
+      id: r.id,
+      streamId: r.stream_id,
+      title: r.title,
+      status: r.status as IssueStatus,
+      estimateMinutes: r.estimate_minutes ?? undefined,
+      notes: r.notes ?? undefined,
+    }));
   }
 }
