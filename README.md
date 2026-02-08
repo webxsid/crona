@@ -250,6 +250,6 @@ Crona just makes it explicit.
 
 ⸻
 
-License
+[Licence](LICENCE.md)
+> Crona is an opinionated, experimental project. The MIT license allows reuse, but the architecture and APIs may change without notice.
 
-MIT
