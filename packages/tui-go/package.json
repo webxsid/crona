@@ -1,0 +1,10 @@
+{
+  "name": "@crona/tui-go",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "go run .",
+    "build": "go build -o dist/crona-tui .",
+    "typecheck": "go vet ./..."
+  }
+}

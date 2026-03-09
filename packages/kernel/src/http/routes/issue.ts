@@ -5,8 +5,10 @@ import {
   updateIssue,
   deleteIssue,
   changeIssueStatus,
+  markIssueTodoForDate,
   markIssueTodoForToday,
   clearIssueTodoForDate,
+  computeDailyIssueSummaryForDate,
   computeDailyIssueSummaryForToday,
 } from "@crona/core";
 
@@ -35,27 +37,39 @@ export class IssueRoutes {
       return this.ctx.issues.listByStream(streamId, this.ctx.userId);
     });
 
+    this.app.get("/issues/all", async () => {
+      return this.ctx.issues.listAll(this.ctx.userId);
+    });
+
     this.app.get("/issues/summary/today", async () => {
       const plan = await computeDailyIssueSummaryForToday(this.ctx);
 
       return plan;
-    })
+    });
+
+    this.app.get("/issues/summary/daily", async (req: FastifyRequest) => {
+      const { date } = req.query as { date?: string };
+      const requestedDate = date || this.ctx.now().split("T")[0] || "";
+      return computeDailyIssueSummaryForDate(this.ctx, requestedDate);
+    });
   }
 
   // ---------- Commands ----------
 
   private registerCommands() {
     this.app.post("/issue", async (req: FastifyRequest) => {
-      const { streamId, title, estimateMinutes } = req.body as {
+      const { streamId, title, estimateMinutes, todoForDate } = req.body as {
         streamId: string;
         title: string;
         estimateMinutes?: number;
+        todoForDate?: string;
       };
 
       return createIssue(this.ctx, {
         streamId,
         title,
-        estimateMinutes: Number.isNaN(estimateMinutes) ? undefined : estimateMinutes
+        estimateMinutes: Number.isNaN(estimateMinutes) ? undefined : estimateMinutes,
+        todoForDate,
       });
     });
 
@@ -93,8 +107,11 @@ export class IssueRoutes {
 
     this.app.put("/issue/:id/todo", async (req: FastifyRequest) => {
       const { id } = req.params as { id: string };
+      const { date } = (req.body as { date?: string }) ?? {};
 
-      const issue = await markIssueTodoForToday(this.ctx, id);
+      const issue = date
+        ? await markIssueTodoForDate(this.ctx, id, date)
+        : await markIssueTodoForToday(this.ctx, id);
 
       return issue;
     });

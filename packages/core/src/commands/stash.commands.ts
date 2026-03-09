@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import type { Stash } from "../domain/stash";
 import type { ICommandContext } from "./context";
 import { elapsedSeconds } from "../timer/time";
-import { emitContextChanged } from "./active_context.commands";
+import { emitContextCleared, emitRepoChanged } from "./active_context.commands";
 import { TimerService } from "../timer";
 
 
@@ -78,7 +78,7 @@ export async function stashPush(
   await ctx.activeContext.clear(ctx.userId, ctx.deviceId)
 
   ctx.events.emit({ type: "stash.created", payload: stash })
-  await emitContextChanged(ctx)
+  await emitContextCleared(ctx)
 
   return stash
 }
@@ -109,7 +109,7 @@ export async function stashPop(
   await ctx.stash.delete(stashId, ctx.userId)
 
   ctx.events.emit({ type: "stash.applied", payload: stash })
-  await emitContextChanged(ctx)
+  await emitRepoChanged(ctx)
 }
 
 

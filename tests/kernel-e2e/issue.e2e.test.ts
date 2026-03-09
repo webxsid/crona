@@ -1,7 +1,7 @@
 import { describe, it, beforeAll, afterAll, expect } from "vitest";
 import { startTestKernel, stopTestKernel, type IKernelTestHandle } from "./helpers/kernel";
 import { api } from "./helpers/http";
-import type { Repo, Stream, Issue, IssueStatus } from "@crona/core";
+import type { Repo, Stream, Issue, IssueStatus, IssueWithMeta } from "@crona/core";
 
 describe("@issue @e2e", () => {
   let kernel: IKernelTestHandle;
@@ -89,6 +89,31 @@ describe("@issue @e2e", () => {
     expect(issue).toHaveProperty("id");
     expect(issue).toHaveProperty("title");
     expect(issue?.streamId).toBe(stream.id);
+  });
+
+  it("lists all issues with repo and stream meta", async () => {
+    const issues = await api<IssueWithMeta[]>(
+      kernel.baseUrl,
+      "/issues/all",
+      {
+        headers: {
+          Authorization: `Bearer ${kernel.token}`,
+        },
+      }
+    );
+
+    expect(Array.isArray(issues)).toBe(true);
+    expect(issues.length).toBeGreaterThan(0);
+
+    const issue = issues[0];
+    expect(issue).toHaveProperty("id");
+    expect(issue).toHaveProperty("repoId");
+    expect(issue).toHaveProperty("repoName");
+    expect(issue).toHaveProperty("streamName");
+    expect(issue.repoId).toBe(repo.id);
+    expect(issue.repoName).toBe(repo.name);
+    expect(issue.streamName).toBe(stream.name);
+    expect(issue.streamId).toBe(stream.id);
   });
 
   it("updates an issue", async () => {

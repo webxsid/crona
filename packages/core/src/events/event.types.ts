@@ -14,7 +14,10 @@ export type KernelEvent =
   | { type: "session.started"; payload: Session }
   | { type: "session.stopped"; payload: Session }
   | { type: "timer.state"; payload: TimerStatePayload }
-  | { type: "context.changed"; payload: Pick<ActiveContext, "deviceId" | "repoId" | "streamId" | "issueId"> }
+  | { type: "context.repo.changed";   payload: { deviceId: string; repoId?: string | undefined; streamId?: string | undefined; issueId?: string | undefined } }
+  | { type: "context.stream.changed"; payload: { deviceId: string; repoId?: string | undefined; streamId?: string | undefined; issueId?: string | undefined } }
+  | { type: "context.issue.changed";  payload: { deviceId: string; repoId?: string | undefined; streamId?: string | undefined; issueId?: string | undefined } }
+  | { type: "context.cleared";        payload: { deviceId: string } }
   | { type: "stash.created" | "stash.applied"; payload: Pick<Stash, "id" | "deviceId" | "repoId" | "streamId" | "issueId"> }
   | { type: "stash.dropped"; payload: { id: string; deviceId: string } }
   | { type: "timer.boundary"; payload: { from: SessionSegmentType; to: SessionSegmentType } }

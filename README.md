@@ -15,7 +15,7 @@ crona-node/
 ├─ packages/
 │  ├─ core/        # Domain logic, commands, persistence, events
 │  ├─ kernel/      # Local kernel process + HTTP/SSE APIs
-│  └─ tui/         # Terminal UI (Ink-based)
+│  └─ tui-go/      # Terminal UI (Bubble Tea / Go)
 │
 ├─ pnpm-workspace.yaml
 ├─ package.json
@@ -149,9 +149,9 @@ The kernel is **single-user, local-first**, and meant to be trusted.
 
 ---
 
-### `@crona/tui`
+### `@crona/tui-go`
 
-An Ink-based terminal UI inspired by tools like:
+A Bubble Tea-based terminal UI inspired by tools like:
 - lazygit
 - vim
 - tmux
@@ -193,7 +193,7 @@ pnpm --filter @crona/kernel dev
 ### Run TUI (Dev)
 
 ```bash
-pnpm --filter @crona/tui dev
+cd packages/tui-go && go run .
 ```
 
 The TUI will automatically start the kernel if it is not running.
@@ -237,7 +237,6 @@ Crona is under active development.
 Current focus:
 - TUI layout & navigation
 - command palette
-- scratchpad editor integration
 - exportable work logs
 - daily planning workflows
 
@@ -252,4 +251,3 @@ Crona just makes it explicit.
 
 [License](LICENSE.md)
 > Crona is an opinionated, experimental project. The MIT license allows reuse, but the architecture and APIs may change without notice.
-

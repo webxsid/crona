@@ -13,6 +13,7 @@ export async function createIssue(
     title: string;
     estimateMinutes?: number | undefined;
     notes?: string | undefined;
+    todoForDate?: string | undefined;
   }
 ): Promise<Issue> {
   if (!input.title.trim()) {
@@ -33,6 +34,7 @@ export async function createIssue(
     status: "todo",
     estimateMinutes: input.estimateMinutes,
     notes: input.notes,
+    todoForDate: input.todoForDate,
   };
 
   const now = ctx.now();
@@ -52,6 +54,8 @@ export async function createIssue(
     userId: ctx.userId,
     deviceId: ctx.deviceId,
   });
+
+  ctx.events.emit({ type: "issue.created", payload: issue });
 
   return issue;
 }
@@ -107,6 +111,8 @@ export async function updateIssue(
     deviceId: ctx.deviceId,
   });
 
+  ctx.events.emit({ type: "issue.updated", payload: updated });
+
   return updated;
 }
 
@@ -139,10 +145,31 @@ export async function changeIssueStatus(
   }
 
   const now = ctx.now();
+  let completedAt: string | null | undefined;
+  let abandonedAt: string | null | undefined;
+
+  switch (nextStatus) {
+    case "done":
+      completedAt = now;
+      abandonedAt = null;
+      break;
+    case "abandoned":
+      completedAt = null;
+      abandonedAt = now;
+      break;
+    default:
+      completedAt = null;
+      abandonedAt = null;
+      break;
+  }
 
   const updated = await ctx.issues.update(
     issueId,
-    { status: nextStatus },
+    {
+      status: nextStatus,
+      completedAt,
+      abandonedAt,
+    },
     {
       userId: ctx.userId,
       now,
@@ -159,6 +186,8 @@ export async function changeIssueStatus(
     userId: ctx.userId,
     deviceId: ctx.deviceId,
   });
+
+  ctx.events.emit({ type: "issue.updated", payload: updated });
 
   return updated;
 }
@@ -187,6 +216,8 @@ export async function deleteIssue(
     userId: ctx.userId,
     deviceId: ctx.deviceId,
   });
+
+  ctx.events.emit({ type: "issue.deleted", payload: { id: issueId } });
 }
 
 export async function restoreIssue(
@@ -276,18 +307,17 @@ export async function listIssuesByStream(
   return ctx.issues.listByStream(streamId, ctx.userId);
 }
 
-export async function markIssueTodoForToday(
+export async function markIssueTodoForDate(
   ctx: ICommandContext,
-  issueId: string
+  issueId: string,
+  todoForDate: string
 ): Promise<Issue> {
-  const today = ctx.now().split("T")[0]; // YYYY-MM-DD
-
   const now = ctx.now();
 
   const updated = await ctx.issues.update(
     issueId,
     {
-      todoForDate: today,
+      todoForDate,
     },
     {
       userId: ctx.userId,
@@ -300,13 +330,26 @@ export async function markIssueTodoForToday(
     entity: "issue",
     entityId: issueId,
     action: "update",
-    payload: { todoForDate: today },
+    payload: { todoForDate },
     timestamp: now,
     userId: ctx.userId,
     deviceId: ctx.deviceId,
   });
 
+  ctx.events.emit({ type: "issue.updated", payload: updated });
+
   return updated;
+}
+
+export async function markIssueTodoForToday(
+  ctx: ICommandContext,
+  issueId: string
+): Promise<Issue> {
+  const today = ctx.now().split("T")[0];
+  if (!today) {
+    throw new Error("Invalid date");
+  }
+  return markIssueTodoForDate(ctx, issueId, today);
 }
 
 export async function clearIssueTodoForDate(
@@ -318,7 +361,7 @@ export async function clearIssueTodoForDate(
   const updated = await ctx.issues.update(
     issueId,
     {
-      todoForDate: undefined,
+      todoForDate: null,
     },
     {
       userId: ctx.userId,
@@ -336,6 +379,8 @@ export async function clearIssueTodoForDate(
     userId: ctx.userId,
     deviceId: ctx.deviceId,
   });
+
+  ctx.events.emit({ type: "issue.updated", payload: updated });
 
   return updated;
 }
@@ -356,25 +401,60 @@ export async function clearTodayTodos(
   }
 }
 
-export async function computeDailyIssueSummaryForToday(
+export async function computeDailyIssueSummaryForDate(
   ctx: ICommandContext,
+  date: string,
 ): Promise<DailyIssueSummary> {
-  const today = ctx.now().split("T")[0]; // YYYY-MM-DD
-
-  if (!today) {
+  if (!date) {
     throw new Error("Invalid date");
   }
 
-  const issues = await ctx.issues.listByTodoForDate(today, ctx.userId);
+  const issues = await ctx.issues.listByTodoForDate(date, ctx.userId);
 
   const totalEstimatedMinutes = issues.reduce((sum, issue) => {
     return sum + (issue.estimateMinutes ?? 0);
   }, 0);
 
+  const completedIssues = issues.filter((issue) =>
+    issue.completedAt?.startsWith(date)
+  ).length;
+
+  const abandonedIssues = issues.filter((issue) =>
+    issue.abandonedAt?.startsWith(date)
+  ).length;
+
+  const dayStart = `${date}T00:00:00.000Z`;
+  const dayEnd = `${date}T23:59:59.999Z`;
+  const endedSessions = await ctx.sessions.listEnded({
+    userId: ctx.userId,
+    since: dayStart,
+    until: dayEnd,
+  });
+  const issueIDs = new Set(issues.map((issue) => issue.id));
+  const workedSeconds = endedSessions.reduce((sum, session) => {
+    if (!issueIDs.has(session.issueId)) {
+      return sum;
+    }
+    return sum + (session.durationSeconds ?? 0);
+  }, 0);
+
   return {
-    date: today,
+    date,
     totalIssues: issues.length,
     issues,
     totalEstimatedMinutes,
+    completedIssues,
+    abandonedIssues,
+    workedSeconds,
   };
+}
+
+export async function computeDailyIssueSummaryForToday(
+  ctx: ICommandContext,
+): Promise<DailyIssueSummary> {
+  const today = ctx.now().split("T")[0];
+  if (!today) {
+    throw new Error("Invalid date");
+  }
+  return computeDailyIssueSummaryForDate(ctx, today);
 }

@@ -8,6 +8,7 @@ import {
   clearIssue,
   clearContext,
 } from "@crona/core";
+import { logInfo, logError } from "../../logger";
 
 /**
  * Active context HTTP APIs
@@ -29,11 +30,25 @@ export class ContextRoutes {
 
   private registerQueries() {
     /**
-     * Get current active context
+     * Get current active context with resolved titles
      * GET /context
      */
     this.app.get("/context", async () => {
-      return getActiveContext(this.ctx);
+      const context = await getActiveContext(this.ctx);
+      if (!context) return null;
+
+      const [repo, stream, issue] = await Promise.all([
+        context.repoId ? this.ctx.repos.getById(context.repoId, this.ctx.userId) : Promise.resolve(null),
+        context.streamId ? this.ctx.streams.getById(context.streamId, this.ctx.userId) : Promise.resolve(null),
+        context.issueId ? this.ctx.issues.getById(context.issueId, this.ctx.userId) : Promise.resolve(null),
+      ]);
+
+      return {
+        ...context,
+        repoName: repo?.name,
+        streamName: stream?.name,
+        issueTitle: issue?.title,
+      };
     });
   }
 
@@ -48,11 +63,9 @@ export class ContextRoutes {
      * If streamId changes, issueId is cleared
      */
     this.app.put("/context", async (req) => {
-      const { repoId, streamId, issueId } = req.body as {
-        repoId?: string;
-        streamId?: string;
-        issueId?: string;
-      };
+      const body = req.body as { repoId?: string; streamId?: string; issueId?: string };
+      logInfo(`[context] PUT /context body=${JSON.stringify(body)}`);
+      const { repoId, streamId, issueId } = body;
 
       if (repoId) {
         await switchRepo(this.ctx, repoId);
@@ -71,12 +84,16 @@ export class ContextRoutes {
 
     /**
      * Switch repo
-     * PUT /context/repo?repoId=...
+     * PUT /context/repo
+     * Body: { repoId }
      * Clears stream + issue
      */
     this.app.put("/context/repo", async (req) => {
-      const { repoId } = req.query as { repoId?: string };
+      const body = req.body as { repoId?: string };
+      logInfo(`[context] PUT /context/repo body=${JSON.stringify(body)} headers=${JSON.stringify(req.headers)}`);
+      const { repoId } = body;
       if (!repoId) {
+        logError(`[context] PUT /context/repo missing repoId, body was: ${JSON.stringify(body)}`);
         throw new Error("repoId is required");
       }
 
@@ -85,12 +102,16 @@ export class ContextRoutes {
 
     /**
      * Switch stream (within current repo)
-     * PUT /context/stream?streamId=...
+     * PUT /context/stream
+     * Body: {streamId}.
      * Clears issue
      */
     this.app.put("/context/stream", async (req) => {
-      const { streamId } = req.query as { streamId?: string };
+      const body = req.body as { streamId?: string };
+      logInfo(`[context] PUT /context/stream body=${JSON.stringify(body)} headers=${JSON.stringify(req.headers)}`);
+      const { streamId } = body;
       if (!streamId) {
+        logError(`[context] PUT /context/stream missing streamId, body was: ${JSON.stringify(body)}`);
         throw new Error("streamId is required");
       }
 
@@ -99,11 +120,15 @@ export class ContextRoutes {
 
     /**
      * Switch issue (within current stream)
-     * PUT /context/issue?issueId=...
+     * PUT /context/issue
+     * Body: {issueId}
      */
     this.app.put("/context/issue", async (req) => {
-      const { issueId } = req.query as { issueId?: string };
+      const body = req.body as { issueId?: string };
+      logInfo(`[context] PUT /context/issue body=${JSON.stringify(body)} headers=${JSON.stringify(req.headers)}`);
+      const { issueId } = body;
       if (!issueId) {
+        logError(`[context] PUT /context/issue missing issueId, body was: ${JSON.stringify(body)}`);
         throw new Error("issueId is required");
       }
 

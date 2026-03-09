@@ -13,6 +13,7 @@ export interface KernelInfo {
 const CRONA_DIR = path.join(os.homedir(), ".crona");
 const KERNEL_INFO_FILE = path.join(CRONA_DIR, "kernel.json");
 export const CRONA_SCRATCH_DIR = path.join(CRONA_DIR, "scratch");
+export const CRONA_LOGS_DIR = path.join(CRONA_DIR, "logs");
 
 /**
  * Ensure ~/.crona exists with safe permissions
@@ -20,6 +21,7 @@ export const CRONA_SCRATCH_DIR = path.join(CRONA_DIR, "scratch");
 async function ensureDir() {
   await fs.mkdir(CRONA_DIR, { recursive: true, mode: 0o700 });
   await fs.mkdir(CRONA_SCRATCH_DIR, { recursive: true, mode: 0o700 });
+  await fs.mkdir(CRONA_LOGS_DIR, { recursive: true, mode: 0o700 });
 }
 
 /**

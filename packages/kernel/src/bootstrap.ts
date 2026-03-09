@@ -1,5 +1,6 @@
 import { createHttpServer } from "./http/server";
 import { clearKernelInfo, writeKernelInfo } from "./kernel-info";
+import { logError, logInfo } from "./logger";
 
 import type { ICommandContext } from "@crona/core";
 import { createCommandContext, EventBus, initDb, SqliteDb, stopSession, TimerService } from "@crona/core";
@@ -17,14 +18,17 @@ async function gracefulShutdown(ctx: ICommandContext) {
     await stopSession(ctx);
   } catch (err) {
     console.error("Failed to stop session during shutdown", err);
+    logError("Failed to stop session during shutdown", err);
   }
 
   try {
     await clearKernelInfo();
   } catch (err) {
     console.error("Failed to clear kernel info", err);
+    logError("Failed to clear kernel info", err);
   }
 
+  logInfo("Kernel shutting down");
   console.log("Kernel shutting down");
   process.exit(0);
 }
@@ -64,6 +68,7 @@ export async function bootstrapKernel({ dbPath }: IBootstrapKernelOptions) {
     );
   } catch (err) {
     console.error("Failed to initialize core settings defaults", err);
+    logError("Failed to initialize core settings defaults", err);
     process.exit(1);
   }
 
@@ -72,6 +77,7 @@ export async function bootstrapKernel({ dbPath }: IBootstrapKernelOptions) {
     await ctx.activeContext.initializeDefaults(userId, deviceId);
   } catch (err) {
     console.error("Failed to initialize active context defaults", err);
+    logError("Failed to initialize active context defaults", err);
     process.exit(1);
   }
 
@@ -81,6 +87,7 @@ export async function bootstrapKernel({ dbPath }: IBootstrapKernelOptions) {
     await timerService.scheduleNextBoundary()
   } catch (err) {
     console.error("Failed to schedule timer boundaries", err);
+    logError("Failed to schedule timer boundaries", err);
     process.exit(1);
   }
 
@@ -120,6 +127,7 @@ export async function bootstrapKernel({ dbPath }: IBootstrapKernelOptions) {
     await gracefulShutdown(ctx);
   });
 
+  logInfo(`Kernel listening on port ${String(port)}`);
   console.log("Kernel running", addr);
 }
 

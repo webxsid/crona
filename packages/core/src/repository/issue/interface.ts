@@ -1,4 +1,4 @@
-import type { Issue, IssueStatus } from "../../domain";
+import type { Issue, IssueStatus, IssueWithMeta } from "../../domain";
 
 export interface IIssueRepository {
   create(
@@ -13,6 +13,8 @@ export interface IIssueRepository {
     issueId: string,
     userId: string
   ): Promise<Issue | null>;
+
+  listAll(userId: string): Promise<IssueWithMeta[]>;
 
   listByStream(
     streamId: string,
@@ -36,7 +38,9 @@ export interface IIssueRepository {
       status?: IssueStatus | undefined;
       estimateMinutes?: number | null | undefined;
       notes?: string | null | undefined;
-      todoForDate?: string | undefined
+      todoForDate?: string | null | undefined;
+      completedAt?: string | null | undefined;
+      abandonedAt?: string | null | undefined;
     },
     meta: {
       userId: string;

@@ -1,4 +1,5 @@
 import type { OpEntity, SessionSegmentType } from "../domain";
+import { sql } from "kysely";
 import { SqliteDb } from "./db";
 
 export interface RepoTable {
@@ -30,6 +31,8 @@ export interface IssueTable {
   estimate_minutes: number | null;
   notes: string | null;
   todo_for_date: string | null;
+  completed_at: string | null;
+  abandoned_at: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
@@ -175,11 +178,16 @@ export async function initSchema(): Promise<void> {
     .addColumn("estimate_minutes", "integer")
     .addColumn("notes", "text")
     .addColumn("todo_for_date", "text")
+    .addColumn("completed_at", "text")
+    .addColumn("abandoned_at", "text")
     .addColumn("user_id", "text", (col) => col.notNull())
     .addColumn("created_at", "text", (col) => col.notNull())
     .addColumn("updated_at", "text", (col) => col.notNull())
     .addColumn("deleted_at", "text")
     .execute();
+
+  await ensureIssueColumn("completed_at");
+  await ensureIssueColumn("abandoned_at");
 
   await db.schema
     .createTable("sessions")
@@ -424,5 +432,18 @@ export async function initSchema(): Promise<void> {
     .on("scratch_pad_meta")
     .column("last_opened_at")
     .ifNotExists()
+    .execute();
+}
+
+async function ensureIssueColumn(columnName: "completed_at" | "abandoned_at"): Promise<void> {
+  const rows = await sql<{ name: string }>`PRAGMA table_info('issues')`.execute(SqliteDb.getDB());
+  const exists = rows.rows.some((row) => row.name === columnName);
+  if (exists) {
+    return;
+  }
+
+  await SqliteDb.getDB().schema
+    .alterTable("issues")
+    .addColumn(columnName, "text")
     .execute();
 }

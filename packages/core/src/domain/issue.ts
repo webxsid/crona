@@ -8,6 +8,14 @@ export interface Issue {
   estimateMinutes?: number | undefined;
   notes?: string | undefined;
   todoForDate?: string | undefined; // ISO date string (YYYY-MM-DD)
+  completedAt?: string | undefined; // ISO datetime
+  abandonedAt?: string | undefined; // ISO datetime
+}
+
+export interface IssueWithMeta extends Issue {
+  repoId: string;
+  repoName: string;
+  streamName: string;
 }
 
 export interface DailyIssueSummary {
@@ -15,4 +23,7 @@ export interface DailyIssueSummary {
   totalIssues: number;
   issues: Issue[];
   totalEstimatedMinutes: number;
+  completedIssues: number;
+  abandonedIssues: number;
+  workedSeconds: number;
 }

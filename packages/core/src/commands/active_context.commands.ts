@@ -38,7 +38,7 @@ export async function switchRepo(
     deviceId: ctx.deviceId,
   });
 
-  await emitContextChanged(ctx);
+  await emitRepoChanged(ctx);
 
   return context;
 }
@@ -76,7 +76,7 @@ export async function switchStream(
     deviceId: ctx.deviceId,
   });
 
-  await emitContextChanged(ctx);
+  await emitStreamChanged(ctx);
 
   return context;
 }
@@ -113,7 +113,7 @@ export async function switchIssue(
     deviceId: ctx.deviceId,
   });
 
-  await emitContextChanged(ctx);
+  await emitIssueChanged(ctx);
 
   return context;
 }
@@ -149,7 +149,7 @@ export async function clearIssue(
     deviceId: ctx.deviceId,
   });
 
-  await emitContextChanged(ctx);
+  await emitIssueChanged(ctx);
 
   return context;
 }
@@ -176,19 +176,38 @@ export async function clearContext(
     deviceId: ctx.deviceId,
   });
 
-  await emitContextChanged(ctx);
+  await emitContextCleared(ctx);
 }
 
-export async function emitContextChanged(ctx: ICommandContext) {
-  const context = await ctx.activeContext.get(ctx.userId, ctx.deviceId);
+type ContextSnapshot = {
+  deviceId: string;
+  repoId?: string | undefined;
+  streamId?: string | undefined;
+  issueId?: string | undefined;
+};
 
-  ctx.events.emit({
-    type: "context.changed",
-    payload: {
-      deviceId: ctx.deviceId,
-      repoId: context?.repoId,
-      streamId: context?.streamId,
-      issueId: context?.issueId,
-    },
-  });
+async function snapshot(ctx: ICommandContext): Promise<ContextSnapshot> {
+  const context = await ctx.activeContext.get(ctx.userId, ctx.deviceId);
+  return {
+    deviceId: ctx.deviceId,
+    repoId: context?.repoId,
+    streamId: context?.streamId,
+    issueId: context?.issueId,
+  };
+}
+
+export async function emitRepoChanged(ctx: ICommandContext) {
+  ctx.events.emit({ type: "context.repo.changed", payload: await snapshot(ctx) });
+}
+
+export async function emitStreamChanged(ctx: ICommandContext) {
+  ctx.events.emit({ type: "context.stream.changed", payload: await snapshot(ctx) });
+}
+
+export async function emitIssueChanged(ctx: ICommandContext) {
+  ctx.events.emit({ type: "context.issue.changed", payload: await snapshot(ctx) });
+}
+
+export async function emitContextCleared(ctx: ICommandContext) {
+  ctx.events.emit({ type: "context.cleared", payload: { deviceId: ctx.deviceId } });
 }

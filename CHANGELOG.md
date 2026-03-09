@@ -1,112 +1,49 @@
 # Changelog
 
-All notable changes to **Crona** will be documented in this file.
+All notable changes to **Crona** are documented here.
 
-This project follows **semantic-ish versioning**, but during early development versions may change rapidly as core concepts solidify.
-
----
-
-## [Unreleased]
+## [Unreleased] - 2026-03-09
 
 ### Added
-- Local-first **kernel architecture** with HTTP + SSE APIs
-- Event-driven **TimerService** with authoritative session segments
-- Pomodoro-style **boundary engine** (work → break → work)
-- `active_context` model (repo → stream → issue)
-- Git-inspired **stash** system for suspending context
-- Filesystem-backed **scratchpads**
-  - Variable path support:
-    - `[[date]]`
-    - `[[time]]`
-    - `[[datetime]]`
-    - `[[timestamp]]`
-    - `[[random]]`
-- Commit-style **session end messages**
-- Session notes parser with structured sections:
-  - `::commit`
-  - `::context`
-  - `::work`
-  - `::notes`
-- Kernel auto-discovery and auto-launch
-- SSE event stream (`/events`) for real-time UI updates
-- End-to-end test harness with isolated SQLite databases
-- Ink-based **Terminal UI (TUI)** scaffold
-- Graceful kernel shutdown handling
-- Context change propagation events
-- Scratchpad pinning support
+- Go TUI workspace with Default, Meta, Scratchpads, Ops, Session, and Daily Dashboard views.
+- Session-focused workflow from issue panes with auto-context checkout, session lock, stash/end prompts, and scratchpad access during active sessions.
+- Daily Dashboard with date navigation, planned-task list, worked-vs-estimate stats, and resolved-task progress.
+- UI-local filtering across repos, streams, issues, scratchpads, and ops.
+- Searchable repo and stream selectors in the Default issue-create dialog.
+- Optional due date on issue creation, with a calendar picker in the Go TUI dialogs.
+- Issue due-date picker action from issue tables/lists, backed by a date-aware todo API.
+- Kernel shutdown hotkey from the Go TUI.
 
----
+### Changed
+- Scratchpad reading now stays confined to its pane instead of taking over the full screen.
+- Scratchpad editing now opens the real file under the kernel scratch directory, with `.md` fallback when metadata paths omit the extension.
+- Scratchpad previews render markdown again after fixing the reload path.
+- Default issues are rendered as a table with status, estimate, repo, and stream metadata.
+- Meta issues now show lifecycle status inline.
+- Ops moved from a plain list to a table and now load newest-first.
+- Ops fetch size is user-adjustable instead of fixed.
+- View navigation moved from a top bar to a grouped left sidebar.
+- Header was simplified back to a stable context row plus an active-session row.
+- Issue lifecycle actions now follow the core transition rules, with one cycle key and explicit abandon behavior.
+- Session progress uses cumulative worked time for the active issue based on kernel session history.
+- Status colors are applied consistently across issue lists and dashboard indicators.
 
-## [0.1.0] — Initial Architecture Cut
+### Fixed
+- Session timer acceleration caused by overlapping local tick loops.
+- Meta issue switching now updates issue context correctly.
+- Scratchpad editor saves now reload properly in the Go TUI.
+- Go client repo creation now uses the correct kernel route.
+- Go client ops loading now uses the kernel's latest-ops endpoint.
+- Todo-for-date clearing now actually removes the stored date.
+- Issue completion and abandonment timestamps are persisted for dashboard reporting.
 
-### Core
-- Repository, Stream, Issue domain models
-- SQLite persistence using Kysely
-- Command-based mutation layer
-- Central event bus
-- Operation log for replay/debugging
+### API / Core
+- `POST /issue` accepts `todoForDate` during issue creation.
+- `PUT /issue/:id/todo` accepts an explicit date payload instead of only computing today.
+- Added daily summary by arbitrary date in the kernel/core issue summary flow.
+- Added kernel shutdown HTTP route for TUI-triggered shutdown.
 
-### Kernel
-- Local kernel bootstrap
-- Token-based local auth
-- HTTP APIs for:
-  - repos
-  - streams
-  - issues
-  - sessions
-  - timer
-  - stash
-  - scratchpads
-- Kernel info endpoint (port, token, scratch dir)
-- In-memory timer boundary scheduler
-
-### Timer
-- Sessions composed of segments
-- Pause treated as `rest` segment
-- Boundary-driven transitions
-- Idempotent start / pause / resume / end
-- Derived timer state (no duplicated storage)
-
-### Stash
-- Context snapshotting
-- Optional session suspension
-- Apply / drop semantics
-- Event emission on create/apply/drop
-
-### Scratchpads
-- Metadata registry (path, name, pinned)
-- Filesystem as source of truth
-- Kernel-exposed scratch directory
-
-### Testing
-- Full kernel E2E coverage
-- Session lifecycle tests
-- Boundary transition tests
-- Stash behavior tests
-- Scratchpad API tests
-
----
-
-## Design Decisions
-
-- Timer state is **never stored**, only derived
-- Sessions end with commit-style messages
-- Scratchpads are **not scoped** (no issue/session binding)
-- Kernel owns persistence; UIs are stateless clients
-- No background daemons beyond the kernel
-
----
-
-## Upcoming
-
-### Planned
-- TUI command palette (vim/lazygit-style)
-- Session amend commands (git-like)
-- Session history browser
-- Daily planning workflow
-- Exportable work logs (Markdown / JSON)
-- Embedded editor support for scratchpads
-- Ops/debug panel in TUI
-- Multi-client kernel attachment (future)
-
----
+### Verification
+- `go build ./...` passes for `packages/tui-go`.
+- `pnpm --filter @crona/core build` passes.
+- `pnpm exec tsc -p packages/kernel/tsconfig.json --noEmit` passes.

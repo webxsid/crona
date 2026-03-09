@@ -100,7 +100,7 @@ export class TimerService {
         issueId: resolvedIssueId,
       });
       this.ctx.events.emit({
-        type: "context.changed",
+        type: "context.issue.changed",
         payload: {
           deviceId: this.ctx.deviceId,
           issueId: resolvedIssueId,

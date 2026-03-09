@@ -29,8 +29,7 @@ export class EventsRoutes {
       // Subscribe to internal event bus
       const unsubscribe = this.ctx.events.subscribe((event) => {
         reply.raw.write(
-          `event: ${event.type}\n` +
-          `data: ${JSON.stringify(event.payload)}\n\n`
+          `data: ${JSON.stringify({ type: event.type, payload: event.payload })}\n\n`
         );
       });
 
