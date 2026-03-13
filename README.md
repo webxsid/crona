@@ -4,6 +4,20 @@
 
 This repository is a Go monorepo containing the Crona kernel, shared contracts, terminal UI, and future CLI.
 
+## Public Beta Install
+
+The current beta ships as two binaries:
+- `crona-tui`
+- `crona-kernel`
+
+End users do not need Go installed. The installer downloads the correct TUI and kernel pair for the current machine.
+
+```bash
+curl -fsSL https://github.com/webxsid/crona-node/releases/download/v0.1.0-beta.1/install-crona-tui.sh | sh
+```
+
+By default this installs into `~/.local/bin`.
+
 ## Repository Structure
 
 ```text
@@ -184,7 +198,7 @@ make test
 
 ## Status
 
-Crona is under active development.
+Crona is in public beta and under active development. The project is open source, but the workflow, storage layout, and IPC/API details are still moving and may change between releases.
 
 Current focus:
 - TUI layout and navigation
@@ -196,5 +210,5 @@ Current focus:
 
 Your work already has structure. Crona just makes it explicit.
 
-[License](LICENSE.md)
-> Crona is an opinionated, experimental project. The MIT license allows reuse, but the architecture and APIs may change without notice.
+[License](LICENSE)
+> Crona is an opinionated, experimental project. The code is MIT licensed, but the architecture and APIs may change without notice while the product is still settling.
