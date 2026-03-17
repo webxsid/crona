@@ -17,11 +17,13 @@ func renderMetaView(theme Theme, state ContentState) string {
 		issuesEmpty = "No stream checked out — [2] then [c]"
 	}
 	leftW, rightW := splitHorizontal(state.Width, 18, 18, state.Width/2)
-	repoPane := renderSimplePane(theme, "Repos [1]", state.Filters["repos"], state.Cursors["repos"], repoItems(state.Repos), state.Pane == "repos", leftW, topH, "No repos — [a] create new")
-	streamPane := renderSimplePane(theme, "Streams [2]", state.Filters["streams"], state.Cursors["streams"], streamItems(state.Streams), state.Pane == "streams", rightW, topH, streamsEmpty)
+	repoPane := renderSimplePaneWithActions(theme, "Repos [1]", state.Filters["repos"], state.Cursors["repos"], repoItems(state.Repos), state.Pane == "repos", leftW, topH, "No repos — [a] create new", ContextualActions(theme, ActionsState{View: state.View, Pane: "repos"}))
+	streamPane := renderSimplePaneWithActions(theme, "Streams [2]", state.Filters["streams"], state.Cursors["streams"], streamItems(state.Streams), state.Pane == "streams", rightW, topH, streamsEmpty, ContextualActions(theme, ActionsState{View: state.View, Pane: "streams"}))
 	topRow := lipgloss.JoinHorizontal(lipgloss.Top, repoPane, streamPane)
-	issuePane := renderMetaIssues(theme, state, state.Width, botH, issuesEmpty)
-	return lipgloss.JoinVertical(lipgloss.Left, topRow, issuePane)
+	leftBottom, rightBottom := splitHorizontal(state.Width, 24, 24, state.Width*3/5)
+	issuePane := renderMetaIssues(theme, state, leftBottom, botH, issuesEmpty)
+	habitPane := renderMetaHabits(theme, state, rightBottom, botH)
+	return lipgloss.JoinVertical(lipgloss.Left, topRow, lipgloss.JoinHorizontal(lipgloss.Top, issuePane, habitPane))
 }
 
 func renderMetaIssues(theme Theme, state ContentState, width, height int, emptyText string) string {
@@ -37,7 +39,8 @@ func renderMetaIssues(theme Theme, state ContentState, width, height int, emptyT
 	if inner < 1 {
 		inner = 1
 	}
-	lines := []string{theme.StylePaneTitle.Render("Issues [3]"), renderFilterLine(theme, state.Filters["issues"], width-6)}
+	actions := paneActionsForState(theme, state, active)
+	lines := []string{theme.StylePaneTitle.Render("Issues [3]"), renderPaneActionLine(theme, state.Filters["issues"], width-6, actions)}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render(emptyText))
 	} else {
@@ -53,6 +56,34 @@ func renderMetaIssues(theme Theme, state ContentState, width, height int, emptyT
 		if remaining := total - end; remaining > 0 {
 			lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 		}
+	}
+	return renderPaneBox(theme, active, width, height, stringsJoin(lines))
+}
+
+func renderMetaHabits(theme Theme, state ContentState, width, height int) string {
+	active := state.Pane == "habits"
+	cur := state.Cursors["habits"]
+	items := habitItems(state.Habits)
+	indices := filteredStrings(items, state.Filters["habits"])
+	total := len(indices)
+	inner := height - 5
+	if inner < 1 {
+		inner = 1
+	}
+	lines := []string{theme.StylePaneTitle.Render("Habits [4]"), renderPaneActionLine(theme, state.Filters["habits"], width-6, paneActionsForState(theme, state, active))}
+	if total == 0 {
+		lines = append(lines, theme.StyleDim.Render("No habits — [a] create new"))
+		return renderPaneBox(theme, active, width, height, stringsJoin(lines))
+	}
+	start, end := listWindow(cur, total, inner)
+	if start > 0 {
+		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
+	}
+	for i := start; i < end; i++ {
+		lines = append(lines, renderPaneRowStyled(theme, i, cur, active, items[indices[i]], nil, width))
+	}
+	if remaining := total - end; remaining > 0 {
+		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return renderPaneBox(theme, active, width, height, stringsJoin(lines))
 }

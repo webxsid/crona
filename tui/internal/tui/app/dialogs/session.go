@@ -40,7 +40,7 @@ func renderSessionDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Commit message"),
 			state.Inputs[0].View(),
 			"",
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
+			theme.StyleDim.Render("[ctrl+s] save   [esc] cancel"),
 		}
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "issue_session_transition":

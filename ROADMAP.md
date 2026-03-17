@@ -32,27 +32,37 @@ Foundation for all future phases. TUI must be stable and usable before anything 
 - [x] Stash management view is implemented
 - [x] Core TUI flow is stable enough to move on to metrics and dashboards
 
-## Phase 2 — Metrics & Check-ins
-Capture the non-work signals that give work data context, and build the summary primitives needed for richer dashboards.
+## Phase 2 — Metrics, Check-ins & Habits
+Capture the non-work signals that give work data context, add lightweight personal habit tracking, and build the summary primitives needed for richer dashboards.
 
-- [ ] Daily check-in (mood, energy level — lightweight prompt in TUI)
-- [ ] Optional inputs: sleep hours, sleep score, screen time
-- [ ] Burnout indicator model (derived from session density, break compliance, mood trend, work/rest ratio over rolling window)
-- [ ] Daily check-in storage schema (new table, not polluting issue/session data)
-- [ ] Kernel API endpoints for check-in CRUD
-- [ ] Retrospective entry (backfill past days)
-- [ ] Reusable kernel summary primitives for streaks, rollups, and date-range analytics
+- [x] Daily check-in (mood, energy level — lightweight prompt in TUI)
+- [x] Optional inputs: sleep hours, sleep score, screen time
+- [x] Burnout indicator model (derived from session density, break compliance, mood trend, work/rest ratio over rolling window)
+- [x] Daily check-in storage schema (new table, not polluting issue/session data)
+- [x] Kernel API endpoints for check-in CRUD
+- [x] Retrospective entry (backfill past days)
+- [x] Reusable kernel summary primitives for streaks, rollups, and date-range analytics
+- [x] Habit definitions with daily / weekdays / weekly schedules
+- [x] Habit completion tracking, history, and due-for-date queries
+- [x] Daily dashboard habit lane with completion/failure and time logging
+
+**Phase 2 exit criteria**
+- [x] Daily check-ins are editable from the TUI for any date
+- [x] Rolling wellbeing summaries are available from kernel metrics APIs
+- [x] Habits are part of the daily workflow in both kernel and TUI
 
 ## Phase 3 — TUI Dashboard System
 Make dashboards a first-class terminal feature. Focus on strong summaries, multiple dashboard views, and practical customization that fits a terminal UI.
 
 ### Built-in Dashboards
+- [x] Wellbeing dashboard view with check-in summary, streaks, rollups, and burnout status
 - [ ] Daily Dashboard expansion (weekly rollups, carry-over, missed-vs-done summary)
 - [ ] Activity heatmap (terminal-friendly, date-range configurable)
-- [ ] Session streaks (current streak, longest streak, configurable scope)
+- [x] Session streak summary (current streak and longest streak)
+- [ ] Configurable streak scope
 - [ ] Time distribution by repo, stream, issue, or segment type
 - [ ] Daily/weekly focus score (work vs break ratio vs target)
-- [ ] Burnout indicator view (rolling composite score from session data + wellbeing inputs)
+- [x] Burnout indicator view (rolling composite score from session data + wellbeing inputs)
 - [ ] Goal progress (estimated vs actual time per issue/stream/repo)
 
 ### TUI Customisation

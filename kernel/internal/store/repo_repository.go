@@ -21,13 +21,14 @@ func NewRepoRepository(db *bun.DB) *RepoRepository {
 
 func (r *RepoRepository) Create(ctx context.Context, repo sharedtypes.Repo, userID string, now string) (sharedtypes.Repo, error) {
 	model := RepoModel{
-		InternalID: repoInternalID(repo.ID),
-		PublicID:   repo.ID,
-		Name:       repo.Name,
-		Color:      repo.Color,
-		UserID:     userID,
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		InternalID:  repoInternalID(repo.ID),
+		PublicID:    repo.ID,
+		Name:        repo.Name,
+		Description: repo.Description,
+		Color:       repo.Color,
+		UserID:      userID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if _, err := r.db.NewInsert().Model(&model).Exec(ctx); err != nil {
 		return sharedtypes.Repo{}, err
@@ -43,7 +44,7 @@ func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID strin
 	var model RepoModel
 	err := r.db.NewSelect().
 		Model(&model).
-		Column("public_id", "name", "color").
+		Column("public_id", "name", "description", "color").
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -55,14 +56,14 @@ func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID strin
 		}
 		return nil, err
 	}
-	return &sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Color: model.Color}, nil
+	return &sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color}, nil
 }
 
 func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes.Repo, error) {
 	var models []RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
-		Column("public_id", "name", "color").
+		Column("public_id", "name", "description", "color").
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
 		Order("created_at ASC").
@@ -72,7 +73,7 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 
 	out := make([]sharedtypes.Repo, 0, len(models))
 	for _, model := range models {
-		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Color: model.Color})
+		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color})
 	}
 	return out, nil
 }
@@ -81,7 +82,7 @@ func (r *RepoRepository) ListDeleted(ctx context.Context, userID string) ([]shar
 	var models []RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
-		Column("public_id", "name", "color").
+		Column("public_id", "name", "description", "color").
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
 		Order("created_at ASC").
@@ -91,14 +92,15 @@ func (r *RepoRepository) ListDeleted(ctx context.Context, userID string) ([]shar
 
 	out := make([]sharedtypes.Repo, 0, len(models))
 	for _, model := range models {
-		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Color: model.Color})
+		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color})
 	}
 	return out, nil
 }
 
 func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string, now string, updates struct {
-	Name  Patch[string]
-	Color Patch[string]
+	Name        Patch[string]
+	Description Patch[string]
+	Color       Patch[string]
 }) (*sharedtypes.Repo, error) {
 	q := r.db.NewUpdate().
 		Model((*RepoModel)(nil)).
@@ -109,6 +111,13 @@ func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string
 
 	if updates.Name.Set && updates.Name.Value != nil {
 		q = q.Set("name = ?", *updates.Name.Value)
+	}
+	if updates.Description.Set {
+		if updates.Description.Value == nil {
+			q = q.Set("description = NULL")
+		} else {
+			q = q.Set("description = ?", *updates.Description.Value)
+		}
 	}
 	if updates.Color.Set {
 		if updates.Color.Value == nil {

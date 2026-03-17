@@ -29,6 +29,10 @@ func DefaultRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOp
 	return options
 }
 
+func CheckoutRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOption {
+	return DefaultRepoOptions(inputs, repos)
+}
+
 func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []SelectorOption {
 	query := strings.TrimSpace(strings.ToLower(inputs[1].Value()))
 	repoOptions := DefaultRepoOptions(inputs, repos)
@@ -69,6 +73,104 @@ func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.R
 		options = append(options, SelectorOption{ID: "__new__", Label: "Create New Stream: " + raw})
 	}
 	return options
+}
+
+func CheckoutStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []SelectorOption {
+	return DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+}
+
+func CheckoutDialogLabels(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (string, string) {
+	repoOptions := CheckoutRepoOptions(inputs, repos)
+	streamOptions := CheckoutStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+	if len(repoOptions) == 0 {
+		return "Type to search", "Select a repo first"
+	}
+	if len(streamOptions) == 0 {
+		return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
+	}
+	return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, streamOptions[minInt(streamIndex, len(streamOptions)-1)].Label
+}
+
+func CheckoutDialogSelection(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string, *int64, string) {
+	repoRaw := strings.TrimSpace(inputs[0].Value())
+	streamRaw := strings.TrimSpace(inputs[1].Value())
+	if repoRaw == "" && streamRaw == "" {
+		return 0, "", nil, ""
+	}
+
+	repoID, repoName := matchRepoSelection(repoRaw, repoIndex, repos)
+	if repoName == "" {
+		return 0, "", nil, ""
+	}
+	if streamRaw == "" {
+		return repoID, repoName, nil, ""
+	}
+
+	streamID, streamName := matchStreamSelection(streamRaw, repoID, repoName, streamIndex, repos, allIssues, streams, context)
+	if streamName == "" {
+		return repoID, repoName, nil, ""
+	}
+	if streamID == 0 {
+		return repoID, repoName, nil, streamName
+	}
+	return repoID, repoName, &streamID, streamName
+}
+
+func matchRepoSelection(raw string, repoIndex int, repos []api.Repo) (int64, string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0, ""
+	}
+	for _, repo := range repos {
+		if strings.EqualFold(strings.TrimSpace(repo.Name), raw) {
+			return repo.ID, repo.Name
+		}
+	}
+	options := DefaultRepoOptions([]textinput.Model{valueInput(raw)}, repos)
+	if len(options) == 0 {
+		return 0, raw
+	}
+	selected := options[minInt(repoIndex, len(options)-1)]
+	if selected.ID == "__new__" {
+		return 0, raw
+	}
+	id, err := strconv.ParseInt(selected.ID, 10, 64)
+	if err != nil {
+		return 0, raw
+	}
+	return id, selected.Label
+}
+
+func matchStreamSelection(raw string, repoID int64, repoName string, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0, ""
+	}
+	for _, stream := range streams {
+		if stream.RepoID == repoID && strings.EqualFold(strings.TrimSpace(stream.Name), raw) {
+			return stream.ID, stream.Name
+		}
+	}
+	inputs := []textinput.Model{valueInput(repoName), valueInput(raw)}
+	options := DefaultStreamOptions(inputs, 0, repos, allIssues, streams, context)
+	if len(options) == 0 {
+		return 0, raw
+	}
+	selected := options[minInt(streamIndex, len(options)-1)]
+	if selected.ID == "__new__" {
+		return 0, raw
+	}
+	id, err := strconv.ParseInt(selected.ID, 10, 64)
+	if err != nil {
+		return 0, raw
+	}
+	return id, selected.Label
+}
+
+func valueInput(value string) textinput.Model {
+	input := textinput.New()
+	input.SetValue(value)
+	return input
 }
 
 func SyncFocus(inputs []textinput.Model, focusIdx int) []textinput.Model {

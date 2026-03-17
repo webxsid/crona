@@ -1,9 +1,12 @@
 package app
 
 import (
+	shareddto "crona/shared/dto"
+	sharedtypes "crona/shared/types"
 	dialogpkg "crona/tui/internal/tui/app/dialogs"
 	"os"
 	"os/exec"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -15,22 +18,87 @@ func (m Model) openCreateRepoDialog() Model {
 	return m.withDialogState(dialogpkg.OpenCreateRepo(m.dialogState()))
 }
 func (m Model) openEditRepoDialog(repoID int64, name string) Model {
-	return m.withDialogState(dialogpkg.OpenEditRepo(m.dialogState(), repoID, name))
+	return m.withDialogState(dialogpkg.OpenEditRepo(m.dialogState(), repoID, name, m.repoDescriptionByID(repoID)))
 }
 func (m Model) openCreateStreamDialog(repoID int64, repoName string) Model {
 	return m.withDialogState(dialogpkg.OpenCreateStream(m.dialogState(), repoID, repoName))
 }
 func (m Model) openEditStreamDialog(streamID, repoID int64, streamName, repoName string) Model {
-	return m.withDialogState(dialogpkg.OpenEditStream(m.dialogState(), streamID, repoID, streamName, repoName))
+	return m.withDialogState(dialogpkg.OpenEditStream(m.dialogState(), streamID, repoID, streamName, repoName, m.streamDescriptionByID(streamID)))
 }
 func (m Model) openCreateIssueMetaDialog(streamID int64, streamName, repoName string) Model {
 	return m.withDialogState(dialogpkg.OpenCreateIssueMeta(m.dialogState(), streamID, streamName, repoName))
 }
-func (m Model) openEditIssueDialog(issueID, streamID int64, title string, estimateMinutes *int, todoForDate *string) Model {
-	return m.withDialogState(dialogpkg.OpenEditIssue(m.dialogState(), issueID, streamID, title, estimateMinutes, todoForDate))
+func (m Model) openCreateHabitDialog(streamID int64, streamName, repoName string) Model {
+	next := m.withDialogState(dialogpkg.OpenCreateHabit(m.dialogState()))
+	if strings.TrimSpace(repoName) != "" && repoName != "-" {
+		next.dialogInputs[0].SetValue(repoName)
+		next.dialogRepoIndex = 0
+		next.dialogStreamIndex = 0
+	}
+	if strings.TrimSpace(streamName) != "" && streamName != "-" {
+		next.dialogInputs[1].SetValue(streamName)
+		next.dialogStreamIndex = 0
+	}
+	next.dialogFocusIdx = 2
+	next = next.withDialogState(dialogpkg.SyncDialogFocus(next.dialogState()))
+	_ = streamID
+	return next
+}
+func (m Model) openEditIssueDialog(issueID, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) Model {
+	return m.withDialogState(dialogpkg.OpenEditIssue(m.dialogState(), issueID, streamID, title, description, estimateMinutes, todoForDate))
+}
+func (m Model) openEditHabitDialog(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, targetMinutes *int, active bool) Model {
+	scheduleValue := schedule
+	if schedule == "weekly" {
+		scheduleValue = strings.Join(dialogpkg.WeekdayTokens(weekdays), ",")
+	}
+	return m.withDialogState(dialogpkg.OpenEditHabit(m.dialogState(), habitID, streamID, name, description, scheduleValue, targetMinutes, active))
+}
+func (m Model) openHabitCompletionDialog(habitID int64, date string, durationMinutes *int, notes *string) Model {
+	return m.withDialogState(dialogpkg.OpenHabitCompletion(m.dialogState(), habitID, date, durationMinutes, notes))
 }
 func (m Model) openCreateIssueDefaultDialog() Model {
-	return m.withDialogState(dialogpkg.OpenCreateIssueDefault(m.dialogState()))
+	next := m.withDialogState(dialogpkg.OpenCreateIssueDefault(m.dialogState()))
+	if next.context == nil {
+		return next
+	}
+	if next.context.RepoName != nil {
+		next.dialogInputs[0].SetValue(*next.context.RepoName)
+		next.dialogRepoIndex = 0
+		next.dialogStreamIndex = 0
+	}
+	if next.context.StreamName != nil {
+		next.dialogInputs[1].SetValue(*next.context.StreamName)
+		next.dialogStreamIndex = 0
+	}
+	next.dialogFocusIdx = 2
+	next = next.withDialogState(dialogpkg.SyncDialogFocus(next.dialogState()))
+	return next
+}
+func (m Model) openCheckoutContextDialog() Model {
+	next := m.withDialogState(dialogpkg.OpenCheckoutContext(m.dialogState()))
+	if next.context == nil {
+		return next
+	}
+	if next.context.RepoName != nil {
+		next.dialogInputs[0].SetValue(*next.context.RepoName)
+		next.dialogRepoIndex = 0
+		next.dialogStreamIndex = 0
+		next.dialogFocusIdx = 1
+		next = next.withDialogState(dialogpkg.SyncDialogFocus(next.dialogState()))
+	}
+	if next.context.StreamName != nil {
+		next.dialogInputs[1].SetValue(*next.context.StreamName)
+		next.dialogStreamIndex = 0
+	}
+	return next
+}
+func (m Model) openCreateCheckInDialog() Model {
+	return m.withDialogState(dialogpkg.OpenCreateCheckIn(m.dialogState(), m.currentWellbeingDate()))
+}
+func (m Model) openEditCheckInDialog() Model {
+	return m.withDialogState(dialogpkg.OpenEditCheckIn(m.dialogState(), m.dailyCheckIn, m.currentWellbeingDate()))
 }
 func (m Model) openConfirmDelete(id string) Model {
 	return m.withDialogState(dialogpkg.OpenConfirmDelete(m.dialogState(), "scratchpad", id, "this scratchpad", 0, 0))
@@ -58,6 +126,9 @@ func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
 }
 func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputIndex int, initial *string) Model {
 	return m.withDialogState(dialogpkg.OpenDatePicker(m.dialogState(), parentDialog, issueID, inputIndex, initial, m.currentDashboardDate()))
+}
+func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {
+	return m.withDialogState(dialogpkg.OpenViewEntity(m.dialogState(), title, name, meta, body))
 }
 
 func (m Model) updateDialog(msg tea.KeyMsg) (Model, tea.Cmd) {
@@ -94,43 +165,57 @@ func (m Model) dialogContext() dialogpkg.UpdateContext {
 
 func (m Model) dialogState() dialogpkg.State {
 	return dialogpkg.State{
-		Kind:            m.dialog,
-		Width:           m.width,
-		Inputs:          m.dialogInputs,
-		FocusIdx:        m.dialogFocusIdx,
-		DeleteID:        m.dialogDeleteID,
-		DeleteKind:      m.dialogDeleteKind,
-		DeleteLabel:     m.dialogDeleteLabel,
-		SessionID:       m.dialogSessionID,
-		IssueID:         m.dialogIssueID,
-		IssueStatus:     m.dialogIssueStatus,
-		RepoID:          m.dialogRepoID,
-		RepoName:        m.dialogRepoName,
-		StreamID:        m.dialogStreamID,
-		StreamName:      m.dialogStreamName,
-		RepoIndex:       m.dialogRepoIndex,
-		StreamIndex:     m.dialogStreamIndex,
-		Parent:          m.dialogParent,
-		DateMonthValue:  m.dialogDateMonth,
-		DateCursorValue: m.dialogDateCursor,
-		StashCursor:     m.dialogStashCursor,
-		StatusItems:     m.dialogStatusItems,
-		StatusCursor:    m.dialogStatusCursor,
-		StatusLabel:     m.dialogStatusLabel,
-		StatusRequired:  m.dialogStatusRequired,
+		Kind:               m.dialog,
+		Width:              m.width,
+		Inputs:             m.dialogInputs,
+		Description:        m.dialogDescription,
+		DescriptionEnabled: m.dialogDescriptionOn,
+		DescriptionIndex:   m.dialogDescriptionIdx,
+		FocusIdx:           m.dialogFocusIdx,
+		DeleteID:           m.dialogDeleteID,
+		DeleteKind:         m.dialogDeleteKind,
+		DeleteLabel:        m.dialogDeleteLabel,
+		SessionID:          m.dialogSessionID,
+		IssueID:            m.dialogIssueID,
+		HabitID:            m.dialogHabitID,
+		IssueStatus:        m.dialogIssueStatus,
+		CheckInDate:        m.dialogCheckInDate,
+		RepoID:             m.dialogRepoID,
+		RepoName:           m.dialogRepoName,
+		StreamID:           m.dialogStreamID,
+		StreamName:         m.dialogStreamName,
+		RepoIndex:          m.dialogRepoIndex,
+		StreamIndex:        m.dialogStreamIndex,
+		Parent:             m.dialogParent,
+		DateMonthValue:     m.dialogDateMonth,
+		DateCursorValue:    m.dialogDateCursor,
+		StashCursor:        m.dialogStashCursor,
+		StatusItems:        m.dialogStatusItems,
+		StatusCursor:       m.dialogStatusCursor,
+		StatusLabel:        m.dialogStatusLabel,
+		StatusRequired:     m.dialogStatusRequired,
+		ViewTitle:          m.dialogViewTitle,
+		ViewName:           m.dialogViewName,
+		ViewMeta:           m.dialogViewMeta,
+		ViewBody:           m.dialogViewBody,
 	}
 }
 
 func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialog = state.Kind
 	m.dialogInputs = state.Inputs
+	m.dialogDescription = state.Description
+	m.dialogDescriptionOn = state.DescriptionEnabled
+	m.dialogDescriptionIdx = state.DescriptionIndex
 	m.dialogFocusIdx = state.FocusIdx
 	m.dialogDeleteID = state.DeleteID
 	m.dialogDeleteKind = state.DeleteKind
 	m.dialogDeleteLabel = state.DeleteLabel
 	m.dialogSessionID = state.SessionID
 	m.dialogIssueID = state.IssueID
+	m.dialogHabitID = state.HabitID
 	m.dialogIssueStatus = state.IssueStatus
+	m.dialogCheckInDate = state.CheckInDate
 	m.dialogRepoID = state.RepoID
 	m.dialogRepoName = state.RepoName
 	m.dialogStreamID = state.StreamID
@@ -145,6 +230,10 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogStatusCursor = state.StatusCursor
 	m.dialogStatusLabel = state.StatusLabel
 	m.dialogStatusRequired = state.StatusRequired
+	m.dialogViewTitle = state.ViewTitle
+	m.dialogViewName = state.ViewName
+	m.dialogViewMeta = state.ViewMeta
+	m.dialogViewBody = state.ViewBody
 	return m
 }
 
@@ -153,19 +242,37 @@ func (m Model) dialogActionCmd(action dialogpkg.Action) tea.Cmd {
 	case "create_scratchpad":
 		return cmdCreateScratchpad(m.client, action.Name, action.Path)
 	case "create_repo":
-		return cmdCreateRepoOnly(m.client, action.Name)
+		return cmdCreateRepoOnly(m.client, action.Name, action.Description)
 	case "edit_repo":
-		return cmdUpdateRepo(m.client, action.RepoID, action.Name)
+		return cmdUpdateRepo(m.client, action.RepoID, action.Name, action.Description)
 	case "create_stream":
-		return cmdCreateStreamOnly(m.client, action.RepoID, action.Name)
+		return cmdCreateStreamOnly(m.client, action.RepoID, action.Name, action.Description)
 	case "edit_stream":
-		return cmdUpdateStream(m.client, action.RepoID, action.StreamID, action.Name)
+		return cmdUpdateStream(m.client, action.RepoID, action.StreamID, action.Name, action.Description)
 	case "create_issue_meta":
-		return cmdCreateIssueOnly(m.client, action.StreamID, action.Title, action.Estimate, action.DueDate)
+		return cmdCreateIssueOnly(m.client, action.StreamID, action.Title, action.Description, action.Estimate, action.DueDate)
+	case "create_habit":
+		return cmdCreateHabitWithPath(m.client, action.RepoName, "", action.StreamName, "", action.Name, action.Description, action.Status, action.Weekdays, action.Estimate)
+	case "edit_habit":
+		return cmdUpdateHabit(m.client, action.HabitID, action.StreamID, action.Name, action.Description, action.Status, action.Weekdays, action.Estimate, action.Active, m.currentDashboardDate())
 	case "create_issue_default":
-		return cmdCreateIssueWithPath(m.client, action.RepoName, action.StreamName, action.Title, action.Estimate, action.DueDate)
+		return cmdCreateIssueWithPath(m.client, action.RepoName, "", action.StreamName, "", action.Title, action.Description, action.Estimate, action.DueDate)
+	case "checkout_context":
+		return cmdCheckoutContext(m.client, action.RepoID, action.RepoName, action.StreamID, action.StreamName)
+	case "create_checkin", "edit_checkin":
+		return cmdUpsertDailyCheckIn(m.client, shareddto.DailyCheckInUpsertRequest{
+			Date:              action.CheckInDate,
+			Mood:              action.Mood,
+			Energy:            action.Energy,
+			SleepHours:        action.SleepHours,
+			SleepScore:        action.SleepScore,
+			ScreenTimeMinutes: action.ScreenTimeMinutes,
+			Notes:             action.Note,
+		}, action.CheckInDate)
 	case "edit_issue":
-		return cmdUpdateIssue(m.client, action.IssueID, action.StreamID, action.Title, action.Estimate, action.DueDate, m.currentDashboardDate())
+		return cmdUpdateIssue(m.client, action.IssueID, action.StreamID, action.Title, action.Description, action.Estimate, action.DueDate, m.currentDashboardDate())
+	case "complete_habit":
+		return cmdSetHabitStatus(m.client, action.HabitID, action.CheckInDate, sharedtypes.HabitCompletionStatusCompleted, action.Estimate, action.Note)
 	case "delete":
 		switch action.Name {
 		case "repo":
@@ -174,6 +281,10 @@ func (m Model) dialogActionCmd(action dialogpkg.Action) tea.Cmd {
 			return cmdDeleteStream(m.client, action.RepoID, dialogpkg.ParseNumericID(action.ID))
 		case "issue":
 			return cmdDeleteIssue(m.client, dialogpkg.ParseNumericID(action.ID), action.StreamID, m.currentDashboardDate())
+		case "habit":
+			return cmdDeleteHabit(m.client, dialogpkg.ParseNumericID(action.ID), action.StreamID, m.currentDashboardDate())
+		case "checkin":
+			return cmdDeleteDailyCheckIn(m.client, action.ID)
 		default:
 			return cmdDeleteScratchpad(m.client, action.ID)
 		}

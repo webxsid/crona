@@ -14,7 +14,7 @@ func renderOpsView(theme Theme, state ContentState) string {
 	if inner < 1 {
 		inner = 1
 	}
-	lines := []string{theme.StylePaneTitle.Render("Ops Log"), theme.StyleDim.Render(fmt.Sprintf("limit: %d  [+/-] adjust", currentOpsLimit(state))), renderFilterLine(theme, state.Filters["ops"], state.Width-6)}
+	lines := []string{theme.StylePaneTitle.Render("Ops Log"), theme.StyleDim.Render(fmt.Sprintf("limit: %d", currentOpsLimit(state))), renderPaneActionLine(theme, state.Filters["ops"], state.Width-6, paneActionsForState(theme, state, active))}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No operations recorded"))
 	} else {

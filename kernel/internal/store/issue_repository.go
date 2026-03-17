@@ -37,6 +37,7 @@ func (r *IssueRepository) Create(ctx context.Context, issue sharedtypes.Issue, u
 		PublicID:        issue.ID,
 		StreamID:        streamInternalID,
 		Title:           issue.Title,
+		Description:     issue.Description,
 		Status:          string(sharedtypes.NormalizeIssueStatus(issue.Status)),
 		EstimateMinutes: issue.EstimateMinutes,
 		Notes:           issue.Notes,
@@ -58,6 +59,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
@@ -73,6 +75,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
@@ -94,6 +97,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 			ID:              row.PublicID,
 			StreamID:        row.StreamPublicID,
 			Title:           row.Title,
+			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
@@ -110,6 +114,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
@@ -125,6 +130,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
@@ -147,6 +153,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		ID:              item.PublicID,
 		StreamID:        item.StreamPublicID,
 		Title:           item.Title,
+		Description:     item.Description,
 		Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(item.Status)),
 		EstimateMinutes: item.EstimateMinutes,
 		Notes:           item.Notes,
@@ -178,6 +185,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
@@ -196,6 +204,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
@@ -220,6 +229,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 				ID:              row.PublicID,
 				StreamID:        row.StreamPublicID,
 				Title:           row.Title,
+				Description:     row.Description,
 				Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 				EstimateMinutes: row.EstimateMinutes,
 				Notes:           row.Notes,
@@ -240,6 +250,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
@@ -254,6 +265,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
@@ -273,6 +285,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 			ID:              row.PublicID,
 			StreamID:        row.StreamPublicID,
 			Title:           row.Title,
+			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
@@ -289,6 +302,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
@@ -303,6 +317,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
@@ -322,6 +337,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 			ID:              row.PublicID,
 			StreamID:        row.StreamPublicID,
 			Title:           row.Title,
+			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
@@ -335,6 +351,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 
 func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID string, now string, updates struct {
 	Title           Patch[string]
+	Description     Patch[string]
 	Status          Patch[sharedtypes.IssueStatus]
 	EstimateMinutes Patch[int]
 	Notes           Patch[string]
@@ -350,6 +367,13 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 		Set("updated_at = ?", now)
 	if updates.Title.Set && updates.Title.Value != nil {
 		q = q.Set("title = ?", *updates.Title.Value)
+	}
+	if updates.Description.Set {
+		if updates.Description.Value == nil {
+			q = q.Set("description = NULL")
+		} else {
+			q = q.Set("description = ?", *updates.Description.Value)
+		}
 	}
 	if updates.Status.Set && updates.Status.Value != nil {
 		q = q.Set("status = ?", string(sharedtypes.NormalizeIssueStatus(*updates.Status.Value)))

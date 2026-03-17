@@ -4,6 +4,30 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+### Added
+- Wellbeing tracking flow with daily check-ins for mood, energy, sleep hours, sleep score, screen time, and notes.
+- Bubble Tea `Wellbeing` view with per-day check-in details, rolling metrics, streak summaries, and burnout status.
+- Habit management across kernel and TUI, including create/edit/delete flows, due-by-date queries, and completion history.
+- Daily dashboard habit lane with completion, failure, and optional duration logging.
+- Kernel metrics APIs for date-range rollups, burnout indicators, and focus/check-in streak summaries.
+- Kernel e2e coverage for daily check-ins, metrics, and persisted sort settings.
+
+### Changed
+- Daily dashboard now combines planned issues with due habits for the selected date.
+- Repo, stream, and issue ordering is now user-configurable through persisted sort settings in core settings.
+- Default issue scoping and create/checkout dialogs now prefill from the active repo/stream context when available.
+- Roadmap documentation now reflects the implemented Phase 2 check-ins, metrics, and habit work present in the current branch.
+
+### API / Core
+- Added kernel RPC methods for habit CRUD, habit completion/uncompletion/history, daily check-in CRUD/range, and metrics range/rollup/streak queries.
+- Added daily check-in persistence plus habit and habit-completion repositories to the SQLite kernel store.
+- Added shared domain types and DTOs for habits, check-ins, metrics rollups, streaks, and burnout indicators.
+- Added persisted `repoSort`, `streamSort`, and `issueSort` core settings that drive kernel list ordering.
+
+### Verification
+- `make build` passes for the current workspace.
+- `make test` passes for `kernel`.
+
 ## [0.1.0-beta.2] - 2026-03-14
 
 ### Added

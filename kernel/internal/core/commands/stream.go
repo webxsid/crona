@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"crona/kernel/internal/core"
+	"crona/kernel/internal/store"
 
 	"github.com/google/uuid"
 
@@ -14,9 +15,10 @@ import (
 )
 
 func CreateStream(ctx context.Context, c *core.Context, input struct {
-	RepoID     int64
-	Name       string
-	Visibility *sharedtypes.StreamVisibility
+	RepoID      int64
+	Name        string
+	Description *string
+	Visibility  *sharedtypes.StreamVisibility
 }) (sharedtypes.Stream, error) {
 	if strings.TrimSpace(input.Name) == "" {
 		return sharedtypes.Stream{}, errors.New("stream name cannot be empty")
@@ -30,10 +32,11 @@ func CreateStream(ctx context.Context, c *core.Context, input struct {
 		return sharedtypes.Stream{}, err
 	}
 	stream := sharedtypes.Stream{
-		ID:         nextID,
-		RepoID:     input.RepoID,
-		Name:       strings.TrimSpace(input.Name),
-		Visibility: visibility,
+		ID:          nextID,
+		RepoID:      input.RepoID,
+		Name:        strings.TrimSpace(input.Name),
+		Description: normalizeOptionalString(input.Description),
+		Visibility:  visibility,
 	}
 	now := c.Now()
 	created, err := c.Streams.Create(ctx, stream, c.UserID, now)
@@ -57,8 +60,9 @@ func CreateStream(ctx context.Context, c *core.Context, input struct {
 }
 
 func UpdateStream(ctx context.Context, c *core.Context, streamID int64, updates struct {
-	Name       *string
-	Visibility *sharedtypes.StreamVisibility
+	Name        *string
+	Description store.Patch[string]
+	Visibility  *sharedtypes.StreamVisibility
 }) (*sharedtypes.Stream, error) {
 	if updates.Name != nil && strings.TrimSpace(*updates.Name) == "" {
 		return nil, errors.New("stream name cannot be empty")
@@ -66,6 +70,9 @@ func UpdateStream(ctx context.Context, c *core.Context, streamID int64, updates 
 	if updates.Name != nil {
 		trimmed := strings.TrimSpace(*updates.Name)
 		updates.Name = &trimmed
+	}
+	if updates.Description.Set {
+		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
 	}
 	now := c.Now()
 	updated, err := c.Streams.Update(ctx, streamID, c.UserID, now, updates)
@@ -115,5 +122,10 @@ func DeleteStream(ctx context.Context, c *core.Context, streamID int64) error {
 }
 
 func ListStreamsByRepo(ctx context.Context, c *core.Context, repoID int64) ([]sharedtypes.Stream, error) {
-	return c.Streams.ListByRepo(ctx, repoID, c.UserID)
+	streams, err := c.Streams.ListByRepo(ctx, repoID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortStreams(streams, loadListSortSettings(ctx, c).streamSort)
+	return streams, nil
 }

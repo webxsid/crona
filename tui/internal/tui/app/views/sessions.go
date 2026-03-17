@@ -57,7 +57,7 @@ func renderSessionHistory(theme Theme, state ContentState) string {
 	if inner < 1 {
 		inner = 1
 	}
-	lines := []string{theme.StylePaneTitle.Render("Session History"), theme.StyleDim.Render("Recent sessions across the workspace"), renderFilterLine(theme, state.Filters["sessions"], state.Width-6)}
+	lines := []string{theme.StylePaneTitle.Render("Session History"), theme.StyleDim.Render("Recent sessions across the workspace"), renderPaneActionLine(theme, state.Filters["sessions"], state.Width-6, paneActionsForState(theme, state, active))}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No sessions recorded"))
 		return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))

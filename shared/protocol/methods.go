@@ -35,6 +35,24 @@ const (
 	MethodIssueDailySummary = "issue.daily_summary"
 	MethodIssueTodaySummary = "issue.today_summary"
 
+	MethodHabitList       = "habit.list"
+	MethodHabitListDue    = "habit.list_due"
+	MethodHabitCreate     = "habit.create"
+	MethodHabitUpdate     = "habit.update"
+	MethodHabitDelete     = "habit.delete"
+	MethodHabitComplete   = "habit.complete"
+	MethodHabitUncomplete = "habit.uncomplete"
+	MethodHabitHistory    = "habit.history"
+
+	MethodCheckInGet    = "checkin.get"
+	MethodCheckInUpsert = "checkin.upsert"
+	MethodCheckInDelete = "checkin.delete"
+	MethodCheckInRange  = "checkin.range"
+
+	MethodMetricsRange   = "metrics.range"
+	MethodMetricsRollup  = "metrics.rollup"
+	MethodMetricsStreaks = "metrics.streaks"
+
 	MethodSessionListByIssue = "session.list_by_issue"
 	MethodSessionGet         = "session.get"
 	MethodSessionDetail      = "session.detail"

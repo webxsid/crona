@@ -26,10 +26,11 @@ func (m *Model) paneItems(pane Pane) []string {
 		return items
 	case PaneIssues:
 		if m.view == ViewDefault {
-			ordered := views.PrioritizedDefaultIssueIndices(m.allIssues, m.filters[PaneIssues])
+			scoped := m.defaultScopedIssues()
+			ordered := views.PrioritizedDefaultIssueIndices(scoped, m.filters[PaneIssues], m.settings)
 			items := make([]string, 0, len(ordered))
 			for _, idx := range ordered {
-				issue := m.allIssues[idx]
+				issue := scoped[idx]
 				estimate := ""
 				if issue.EstimateMinutes != nil {
 					estimate = fmt.Sprintf(" %dm", *issue.EstimateMinutes)
@@ -44,10 +45,7 @@ func (m *Model) paneItems(pane Pane) []string {
 		}
 		if m.view == ViewDaily {
 			items := make([]string, 0)
-			if m.dailySummary == nil {
-				return items
-			}
-			for _, issue := range m.dailySummary.Issues {
+			for _, issue := range m.dailyScopedIssues() {
 				meta := m.issueMetaByID(issue.ID)
 				repoName := "-"
 				streamName := "-"
@@ -74,6 +72,19 @@ func (m *Model) paneItems(pane Pane) []string {
 				due = " " + due
 			}
 			items = append(items, fmt.Sprintf("%s %s%s", issue.Status, issue.Title, due))
+		}
+		return items
+	case PaneHabits:
+		if m.view == ViewDaily {
+			items := make([]string, 0, len(m.filteredDueHabits()))
+			for _, habit := range m.filteredDueHabits() {
+				items = append(items, fmt.Sprintf("[%s/%s] %s", habit.RepoName, habit.StreamName, habit.Name))
+			}
+			return items
+		}
+		items := make([]string, 0, len(m.habits))
+		for _, habit := range m.habits {
+			items = append(items, habit.Name)
 		}
 		return items
 	case PaneScratchpads:
@@ -106,7 +117,7 @@ func (m *Model) paneItems(pane Pane) []string {
 
 func (m *Model) filteredIndices(pane Pane) []int {
 	if pane == PaneIssues && m.view == ViewDefault {
-		return views.PrioritizedDefaultIssueIndices(m.allIssues, m.filters[pane])
+		return views.PrioritizedDefaultIssueIndices(m.defaultScopedIssues(), m.filters[pane], m.settings)
 	}
 	items := m.paneItems(pane)
 	query := strings.TrimSpace(strings.ToLower(m.filters[pane]))

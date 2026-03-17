@@ -5,11 +5,13 @@ import (
 	"strings"
 	"time"
 
+	"crona/tui/internal/api"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
 func renderDefaultView(theme Theme, state ContentState) string {
-	openIndices, completedIndices := SplitDefaultIssueIndices(state.AllIssues, state.Filters["issues"])
+	openIndices, completedIndices := SplitDefaultIssueIndices(state.DefaultIssues, state.Filters["issues"], state.Settings)
 	summaryH := 5
 	if state.Height < 20 {
 		summaryH = 4
@@ -27,7 +29,7 @@ func renderDefaultView(theme Theme, state ContentState) string {
 func renderDefaultSummary(theme Theme, state ContentState, height int) string {
 	today := time.Now().Format("2006-01-02")
 	dueNow, openCount, closedCount := 0, 0, 0
-	for _, issue := range state.AllIssues {
+	for _, issue := range state.DefaultIssues {
 		if isClosedIssueStatus(issue.Status) {
 			closedCount++
 			continue
@@ -37,7 +39,6 @@ func renderDefaultSummary(theme Theme, state ContentState, height int) string {
 			dueNow++
 		}
 	}
-
 	leftW, midW := splitHorizontal(state.Width, 20, 20, state.Width/3)
 	midW, rightW := splitHorizontal(state.Width-leftW, 20, 20, (state.Width-leftW)/2)
 
@@ -82,9 +83,12 @@ func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle str
 
 	lines := []string{
 		theme.StylePaneTitle.Render(title),
+		theme.StyleHeader.Render(defaultScopeLabel(state.Context)),
 		theme.StyleDim.Render(subtitle),
 	}
-	if showFilter {
+	if paneActive {
+		lines = append(lines, renderPaneActionLine(theme, state.Filters["issues"], width-6, paneActionsForState(theme, state, true)))
+	} else if showFilter {
 		lines = append(lines, renderFilterLine(theme, state.Filters["issues"], width-6))
 	} else {
 		lines = append(lines, theme.StyleDim.Render(""))
@@ -110,7 +114,7 @@ func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle str
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("   ↑ %d more", start)))
 	}
 	for pos := start; pos < end; pos++ {
-		issue := state.AllIssues[indices[pos]]
+		issue := state.DefaultIssues[indices[pos]]
 		estimate := "-"
 		if issue.EstimateMinutes != nil {
 			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
@@ -125,6 +129,29 @@ func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle str
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("   ↓ %d more", remaining)))
 	}
 	return renderPaneBox(theme, paneActive, width, height, strings.Join(lines, "\n"))
+}
+
+func defaultScopeLabel(ctx *api.ActiveContext) string {
+	if ctx == nil {
+		return "Scope: All"
+	}
+	repoName := ""
+	if ctx.RepoName != nil {
+		repoName = strings.TrimSpace(*ctx.RepoName)
+	}
+	streamName := ""
+	if ctx.StreamName != nil {
+		streamName = strings.TrimSpace(*ctx.StreamName)
+	}
+	switch {
+	case repoName != "" && streamName != "":
+		return "Scope: " + repoName + " > " + streamName
+	case repoName != "":
+		return "Scope: " + repoName
+	case streamName != "":
+		return "Scope: " + streamName
+	}
+	return "Scope: All"
 }
 
 func renderDefaultIssueRow(theme Theme, row string, width int, selected, active bool, status string) string {

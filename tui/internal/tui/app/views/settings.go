@@ -1,13 +1,17 @@
 package views
 
-import "fmt"
+import (
+	"fmt"
+
+	sharedtypes "crona/shared/types"
+)
 
 func renderSettingsView(theme Theme, state ContentState) string {
 	active := state.Pane == "settings"
 	cur := state.Cursors["settings"]
 	indices := filteredSettingIndices(state.Filters["settings"], state.Settings)
 	total := len(indices)
-	lines := []string{theme.StylePaneTitle.Render("Settings"), theme.StyleDim.Render("Use [j/k] to move and [h/l] or [enter] to change values."), ""}
+	lines := []string{theme.StylePaneTitle.Render("Settings"), renderActionLine(theme, state.Width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane})), ""}
 	if state.Settings == nil {
 		lines = append(lines, theme.StyleDim.Render("Loading settings..."))
 		return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
@@ -22,6 +26,9 @@ func renderSettingsView(theme Theme, state ContentState) string {
 		{"Cycles Before Long Break", fmt.Sprintf("%d", state.Settings.CyclesBeforeLongBreak)},
 		{"Auto Start Breaks", onOff(state.Settings.AutoStartBreaks)},
 		{"Auto Start Work", onOff(state.Settings.AutoStartWork)},
+		{"Repo Sort", repoSortLabel(state.Settings.RepoSort)},
+		{"Stream Sort", streamSortLabel(state.Settings.StreamSort)},
+		{"Issue Sort", issueSortLabel(state.Settings.IssueSort)},
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No settings match the current filter"))
@@ -50,4 +57,49 @@ func renderSettingsView(theme Theme, state ContentState) string {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
+}
+
+func repoSortLabel(value sharedtypes.RepoSort) string {
+	switch value {
+	case sharedtypes.RepoSortAlphabeticalAsc:
+		return "A -> Z"
+	case sharedtypes.RepoSortAlphabeticalDesc:
+		return "Z -> A"
+	case sharedtypes.RepoSortChronologicalDesc:
+		return "Newest first"
+	default:
+		return "Oldest first"
+	}
+}
+
+func streamSortLabel(value sharedtypes.StreamSort) string {
+	switch value {
+	case sharedtypes.StreamSortAlphabeticalAsc:
+		return "A -> Z"
+	case sharedtypes.StreamSortAlphabeticalDesc:
+		return "Z -> A"
+	case sharedtypes.StreamSortChronologicalDesc:
+		return "Newest first"
+	default:
+		return "Oldest first"
+	}
+}
+
+func issueSortLabel(value sharedtypes.IssueSort) string {
+	switch value {
+	case sharedtypes.IssueSortDueDateAsc:
+		return "Due date earliest"
+	case sharedtypes.IssueSortDueDateDesc:
+		return "Due date latest"
+	case sharedtypes.IssueSortAlphabeticalAsc:
+		return "A -> Z"
+	case sharedtypes.IssueSortAlphabeticalDesc:
+		return "Z -> A"
+	case sharedtypes.IssueSortChronologicalAsc:
+		return "Oldest first"
+	case sharedtypes.IssueSortChronologicalDesc:
+		return "Newest first"
+	default:
+		return "Priority"
+	}
 }

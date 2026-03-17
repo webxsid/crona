@@ -86,15 +86,16 @@ func (c *Client) ListRepos() ([]Repo, error) {
 	return out, c.call(protocol.MethodRepoList, nil, &out)
 }
 
-func (c *Client) CreateRepo(name string) (*Repo, error) {
+func (c *Client) CreateRepo(name string, description *string) (*Repo, error) {
 	var out Repo
-	return &out, c.call(protocol.MethodRepoCreate, shareddto.CreateRepoRequest{Name: name}, &out)
+	return &out, c.call(protocol.MethodRepoCreate, shareddto.CreateRepoRequest{Name: name, Description: description}, &out)
 }
 
-func (c *Client) UpdateRepo(id int64, name string) error {
+func (c *Client) UpdateRepo(id int64, name string, description *string) error {
 	return c.call(protocol.MethodRepoUpdate, map[string]any{
-		"id":   id,
-		"name": name,
+		"id":          id,
+		"name":        name,
+		"description": description,
 	}, nil)
 }
 
@@ -107,15 +108,16 @@ func (c *Client) ListStreams(repoID int64) ([]Stream, error) {
 	return out, c.call(protocol.MethodStreamList, shareddto.ListStreamsQuery{RepoID: repoID}, &out)
 }
 
-func (c *Client) CreateStream(repoID int64, name string) (*Stream, error) {
+func (c *Client) CreateStream(repoID int64, name string, description *string) (*Stream, error) {
 	var out Stream
-	return &out, c.call(protocol.MethodStreamCreate, shareddto.CreateStreamRequest{RepoID: repoID, Name: name}, &out)
+	return &out, c.call(protocol.MethodStreamCreate, shareddto.CreateStreamRequest{RepoID: repoID, Name: name, Description: description}, &out)
 }
 
-func (c *Client) UpdateStream(id int64, name string) error {
-	return c.call(protocol.MethodStreamUpdate, shareddto.UpdateStreamRequest{
-		ID:   id,
-		Name: &name,
+func (c *Client) UpdateStream(id int64, name string, description *string) error {
+	return c.call(protocol.MethodStreamUpdate, map[string]any{
+		"id":          id,
+		"name":        name,
+		"description": description,
 	}, nil)
 }
 
@@ -128,15 +130,77 @@ func (c *Client) ListIssues(streamID int64) ([]Issue, error) {
 	return out, c.call(protocol.MethodIssueList, shareddto.ListIssuesQuery{StreamID: streamID}, &out)
 }
 
+func (c *Client) ListHabits(streamID int64) ([]Habit, error) {
+	var out []Habit
+	return out, c.call(protocol.MethodHabitList, shareddto.ListHabitsQuery{StreamID: streamID}, &out)
+}
+
+func (c *Client) ListDueHabits(date string) ([]HabitDailyItem, error) {
+	var out []HabitDailyItem
+	return out, c.call(protocol.MethodHabitListDue, shareddto.ListHabitsDueQuery{Date: strings.TrimSpace(date)}, &out)
+}
+
+func (c *Client) CreateHabit(streamID int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int) (*Habit, error) {
+	var out Habit
+	return &out, c.call(protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
+		StreamID:      streamID,
+		Name:          name,
+		Description:   description,
+		ScheduleType:  scheduleType,
+		Weekdays:      weekdays,
+		TargetMinutes: targetMinutes,
+	}, &out)
+}
+
+func (c *Client) UpdateHabit(id int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int, active bool) error {
+	return c.call(protocol.MethodHabitUpdate, shareddto.UpdateHabitRequest{
+		ID:            id,
+		Name:          &name,
+		Description:   description,
+		ScheduleType:  &scheduleType,
+		Weekdays:      weekdays,
+		TargetMinutes: targetMinutes,
+		Active:        &active,
+	}, nil)
+}
+
+func (c *Client) DeleteHabit(id int64) error {
+	return c.mustOK(protocol.MethodHabitDelete, shareddto.NumericIDRequest{ID: id})
+}
+
+func (c *Client) CompleteHabit(habitID int64, date string, status sharedtypes.HabitCompletionStatus, durationMinutes *int, notes *string) (*HabitCompletion, error) {
+	var out HabitCompletion
+	return &out, c.call(protocol.MethodHabitComplete, shareddto.HabitCompletionUpsertRequest{
+		HabitID:         habitID,
+		Date:            strings.TrimSpace(date),
+		Status:          &status,
+		DurationMinutes: durationMinutes,
+		Notes:           notes,
+	}, &out)
+}
+
+func (c *Client) UncompleteHabit(habitID int64, date string) error {
+	return c.mustOK(protocol.MethodHabitUncomplete, shareddto.HabitCompletionUpsertRequest{
+		HabitID: habitID,
+		Date:    strings.TrimSpace(date),
+	})
+}
+
+func (c *Client) ListHabitHistory(habitID int64) ([]HabitCompletion, error) {
+	var out []HabitCompletion
+	return out, c.call(protocol.MethodHabitHistory, shareddto.HabitHistoryQuery{HabitID: habitID}, &out)
+}
+
 func (c *Client) ListAllIssues() ([]IssueWithMeta, error) {
 	var out []IssueWithMeta
 	return out, c.call(protocol.MethodIssueListAll, nil, &out)
 }
 
-func (c *Client) CreateIssue(streamID int64, title string, estimateMinutes *int, todoForDate *string) (*Issue, error) {
+func (c *Client) CreateIssue(streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) (*Issue, error) {
 	body := shareddto.CreateIssueRequest{
-		StreamID: streamID,
-		Title:    title,
+		StreamID:    streamID,
+		Title:       title,
+		Description: description,
 	}
 	if estimateMinutes != nil {
 		body.EstimateMinutes = estimateMinutes
@@ -149,10 +213,11 @@ func (c *Client) CreateIssue(streamID int64, title string, estimateMinutes *int,
 	return &out, c.call(protocol.MethodIssueCreate, body, &out)
 }
 
-func (c *Client) UpdateIssue(id int64, title string, estimateMinutes *int) error {
+func (c *Client) UpdateIssue(id int64, title string, description *string, estimateMinutes *int) error {
 	body := shareddto.UpdateIssueRequest{
-		ID:    id,
-		Title: &title,
+		ID:          id,
+		Title:       &title,
+		Description: description,
 	}
 	body.EstimateMinutes = estimateMinutes
 	return c.call(protocol.MethodIssueUpdate, body, nil)
@@ -197,6 +262,67 @@ func (c *Client) GetDailySummary(date string) (*DailyIssueSummary, error) {
 		query.Date = &trimmed
 	}
 	return &out, c.call(protocol.MethodIssueDailySummary, query, &out)
+}
+
+func (c *Client) GetDailyCheckIn(date string) (*DailyCheckIn, error) {
+	var out DailyCheckIn
+	if err := c.call(protocol.MethodCheckInGet, shareddto.DailyCheckInQuery{Date: strings.TrimSpace(date)}, &out); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(out.Date) == "" {
+		return nil, nil
+	}
+	return &out, nil
+}
+
+func (c *Client) ListDailyCheckIns(start, end string) ([]DailyCheckIn, error) {
+	var out []DailyCheckIn
+	return out, c.call(protocol.MethodCheckInRange, shareddto.DateRangeQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out)
+}
+
+func (c *Client) UpsertDailyCheckIn(input shareddto.DailyCheckInUpsertRequest) (*DailyCheckIn, error) {
+	var out DailyCheckIn
+	if err := c.call(protocol.MethodCheckInUpsert, input, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) DeleteDailyCheckIn(date string) error {
+	return c.mustOK(protocol.MethodCheckInDelete, shareddto.DeleteByDateRequest{Date: strings.TrimSpace(date)})
+}
+
+func (c *Client) GetMetricsRange(start, end string) ([]DailyMetricsDay, error) {
+	var out []DailyMetricsDay
+	return out, c.call(protocol.MethodMetricsRange, shareddto.DateRangeQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out)
+}
+
+func (c *Client) GetMetricsRollup(start, end string) (*MetricsRollup, error) {
+	var out MetricsRollup
+	if err := c.call(protocol.MethodMetricsRollup, shareddto.DateRangeQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) GetMetricsStreaks(start, end string) (*StreakSummary, error) {
+	var out StreakSummary
+	if err := c.call(protocol.MethodMetricsStreaks, shareddto.DateRangeQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *Client) ChangeIssueStatus(issueID int64, status string, note *string) error {
@@ -253,6 +379,10 @@ func (c *Client) SetFullContext(repoID, streamID, issueID int64) error {
 		req["issueId"] = issueID
 	}
 	return c.call(protocol.MethodContextSet, req, nil)
+}
+
+func (c *Client) ClearContext() error {
+	return c.mustOK(protocol.MethodContextClear, nil)
 }
 
 func (c *Client) GetTimerState() (*TimerState, error) {

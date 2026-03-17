@@ -1,10 +1,11 @@
 package app
 
 import (
-	"crona/tui/internal/tui/app/dialogs"
-	"crona/tui/internal/tui/app/views"
 	"fmt"
 	"strings"
+
+	"crona/tui/internal/tui/app/dialogs"
+	"crona/tui/internal/tui/app/views"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -97,19 +98,21 @@ func (m Model) renderBody() string {
 func (m Model) renderSidebar(width, height int) string {
 	lines := []string{
 		stylePaneTitle.Render("Views"),
+		styleDim.Render("[ / ] switch"),
 		"",
 		styleDim.Render("SESSION"),
 		m.renderSidebarItem(ViewSessionHistory, "History"),
 		"",
+		styleDim.Render("DASHBOARD"),
+		m.renderSidebarItem(ViewDaily, "Daily"),
+		m.renderSidebarItem(ViewWellbeing, "Wellbeing"),
+		"",
 		styleDim.Render("WORKSPACE"),
-		m.renderSidebarItem(ViewDefault, "Default"),
+		m.renderSidebarItem(ViewDefault, "Issues"),
 		m.renderSidebarItem(ViewMeta, "Meta"),
 		m.renderSidebarItem(ViewScratch, "Scratchpads"),
 		m.renderSidebarItem(ViewOps, "Ops"),
 		m.renderSidebarItem(ViewSettings, "Settings"),
-		"",
-		styleDim.Render("DASHBOARD"),
-		m.renderSidebarItem(ViewDaily, "Daily Dashboard"),
 	}
 
 	if m.timer != nil && m.timer.State != "idle" {
@@ -155,7 +158,21 @@ func (m Model) renderPane(title string, pane Pane, width, height int, emptyText 
 
 	var lines []string
 	lines = append(lines, stylePaneTitle.Render(title))
-	lines = append(lines, m.renderFilterLine(pane, width-6))
+	actions := []string(nil)
+	if active {
+		timerState := ""
+		if m.timer != nil {
+			timerState = m.timer.State
+		}
+		actions = views.ContextualActions(viewTheme(), views.ActionsState{
+			View:           string(m.view),
+			Pane:           string(pane),
+			ScratchpadOpen: m.scratchpadOpen,
+			TimerState:     timerState,
+			IsDevMode:      m.isDevMode(),
+		})
+	}
+	lines = append(lines, views.RenderPaneActionLine(viewTheme(), m.filters[pane], width-6, actions))
 
 	if total == 0 {
 		lines = append(lines, styleDim.Render(emptyText))
@@ -185,20 +202,26 @@ func (m Model) renderHelpBar() string {
 	if m.timer != nil {
 		timerState = m.timer.State
 	}
-	actions := views.PaneActions(viewTheme(), views.ActionsState{
+	actions := views.GlobalActions(viewTheme(), views.ActionsState{
 		View:           string(m.view),
 		Pane:           string(m.pane),
 		ScratchpadOpen: m.scratchpadOpen,
 		TimerState:     timerState,
 		IsDevMode:      m.isDevMode(),
 	})
+	devRightAction := ""
+	if m.isDevMode() {
+		devRightAction = "[f6] seed dev data   [f7] clear dev data   "
+	}
 	leftActions := actions
-	rightText := "[[] []] switch view   [K] stop kernel   [q] quit"
+	rightText := "[K] stop kernel   [q] quit"
 	if m.timer != nil && m.timer.State != "idle" {
 		rightText = "session/scratchpads only   [K] stop kernel   [q] quit"
 	}
-	if m.isDevMode() {
-		rightText = "[f6] seed dev data   [f7] clear dev data   [K] stop kernel   [q] quit"
+	rightText = devRightAction + "[K] stop kernel   [q] quit"
+	if m.width < 200 && len(leftActions) > 5 {
+		leftActions = leftActions[:5]
+		rightText = "[?] more   [q] quit"
 	}
 	if m.width < 120 && len(leftActions) > 4 {
 		leftActions = leftActions[:4]
@@ -206,7 +229,7 @@ func (m Model) renderHelpBar() string {
 	}
 	if m.width < 96 && len(leftActions) > 3 {
 		leftActions = leftActions[:3]
-		rightText = "[?] keys   [q] quit"
+		rightText = "[?] more   [q] quit"
 	}
 	if m.width < 76 && len(leftActions) > 2 {
 		leftActions = leftActions[:2]
@@ -532,19 +555,22 @@ func dialogTheme() dialogs.Theme {
 
 func (m Model) viewContentState(width, height int) views.ContentState {
 	return views.ContentState{
-		View: string(m.view), Pane: string(m.pane), Width: width, Height: height, Elapsed: m.elapsed, DashboardDate: m.dashboardDate, DefaultIssueSection: string(m.defaultIssueSection),
-		Cursors:        map[string]int{"repos": m.cursor[PaneRepos], "streams": m.cursor[PaneStreams], "issues": m.cursor[PaneIssues], "sessions": m.cursor[PaneSessions], "scratchpads": m.cursor[PaneScratchpads], "ops": m.cursor[PaneOps], "settings": m.cursor[PaneSettings]},
-		Filters:        map[string]string{"repos": m.filters[PaneRepos], "streams": m.filters[PaneStreams], "issues": m.filters[PaneIssues], "sessions": m.filters[PaneSessions], "scratchpads": m.filters[PaneScratchpads], "ops": m.filters[PaneOps], "settings": m.filters[PaneSettings]},
+		View: string(m.view), Pane: string(m.pane), Width: width, Height: height, Elapsed: m.elapsed, DashboardDate: m.dashboardDate, WellbeingDate: m.currentWellbeingDate(), DefaultIssueSection: string(m.defaultIssueSection),
+		Cursors:        map[string]int{"repos": m.cursor[PaneRepos], "streams": m.cursor[PaneStreams], "issues": m.cursor[PaneIssues], "habits": m.cursor[PaneHabits], "sessions": m.cursor[PaneSessions], "scratchpads": m.cursor[PaneScratchpads], "ops": m.cursor[PaneOps], "settings": m.cursor[PaneSettings]},
+		Filters:        map[string]string{"repos": m.filters[PaneRepos], "streams": m.filters[PaneStreams], "issues": m.filters[PaneIssues], "habits": m.filters[PaneHabits], "sessions": m.filters[PaneSessions], "scratchpads": m.filters[PaneScratchpads], "ops": m.filters[PaneOps], "settings": m.filters[PaneSettings]},
 		ScratchpadOpen: m.scratchpadOpen,
-		Repos:          m.repos, Streams: m.streams, Issues: m.issues, AllIssues: m.allIssues, DailySummary: m.dailySummary, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, Settings: m.settings,
+		Repos:          m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: m.dailyScopedIssues(), Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: m.defaultScopedIssues(), DueHabits: m.filteredDueHabits(), DailySummary: m.dailySummary, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, Settings: m.settings,
 	}
 }
 
 func (m Model) dialogRenderState() dialogs.State {
 	state := m.dialogState()
 	state.Width = m.width
-	if m.dialog == "create_issue_default" {
+	if m.dialog == "create_issue_default" || m.dialog == "create_habit" {
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogs.DefaultIssueDialogLabels(m.dialogInputs, m.dialogRepoIndex, m.dialogStreamIndex, m.repos, m.allIssues, m.streams, m.context)
+	}
+	if m.dialog == "checkout_context" {
+		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogs.CheckoutDialogLabels(m.dialogInputs, m.dialogRepoIndex, m.dialogStreamIndex, m.repos, m.allIssues, m.streams, m.context)
 	}
 	if m.dialog == "pick_date" {
 		state = dialogs.PopulateDatePresentation(dialogTheme(), state, m.currentDashboardDate())

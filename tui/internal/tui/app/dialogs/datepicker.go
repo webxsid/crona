@@ -11,7 +11,7 @@ func PopulateDatePresentation(theme Theme, state State, currentDate string) Stat
 	monthStart := DialogMonth(state, currentDate)
 	title := "Pick Due Date"
 	if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" {
-		title = "Pick Due Date For New Issue"
+		title = "Pick Due Date For New Issue (Optional)"
 	}
 	state.DateTitle = title
 	state.DateHeader = selected.Format("Mon, 02 Jan 2006")

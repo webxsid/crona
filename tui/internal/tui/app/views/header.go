@@ -63,7 +63,7 @@ func headerSecondary(theme Theme, state HeaderState) string {
 		if issue := activeIssueWithMeta(state); issue != nil {
 			parts = append(parts, "status:"+issueStatusStyle(theme, string(issue.Status)).Render(strings.ToUpper(plainIssueStatus(string(issue.Status)))))
 		}
-	} else if state.View == "daily" {
+	} else if state.View == "daily" || state.View == "wellbeing" {
 		parts = append(parts, healthChip(state.Health))
 	}
 	return strings.Join(compactNonEmpty(parts), "  ·  ")

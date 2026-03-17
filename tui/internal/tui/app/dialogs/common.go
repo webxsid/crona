@@ -24,6 +24,18 @@ func renderSelector(theme Theme, label string, active bool) string {
 	return style.Render("[ " + label + " ]")
 }
 
+func renderInputColumns(width, maxWidth int, left string, right string) string {
+	contentWidth := min(width-8, maxWidth) - 8
+	contentWidth = max(28, contentWidth)
+	colWidth := (contentWidth - 2) / 2
+	if colWidth < 12 {
+		colWidth = 12
+	}
+	leftCol := lipgloss.NewStyle().Width(colWidth).Render(left)
+	rightCol := lipgloss.NewStyle().Width(colWidth).Render(right)
+	return lipgloss.JoinHorizontal(lipgloss.Top, leftCol, "  ", rightCol)
+}
+
 func plainIssueStatus(status string) string {
 	switch status {
 	case "in_progress":
@@ -44,6 +56,13 @@ func fallback(v, def string) string {
 
 func min(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b

@@ -9,9 +9,18 @@ type issuesLoadedMsg struct {
 	streamID int64
 	issues   []api.Issue
 }
+type habitsLoadedMsg struct {
+	streamID int64
+	habits   []api.Habit
+}
 
 type allIssuesLoadedMsg struct{ issues []api.IssueWithMeta }
+type dueHabitsLoadedMsg struct{ habits []api.HabitDailyItem }
 type dailySummaryLoadedMsg struct{ summary *api.DailyIssueSummary }
+type dailyCheckInLoadedMsg struct{ checkIn *api.DailyCheckIn }
+type metricsRangeLoadedMsg struct{ days []api.DailyMetricsDay }
+type metricsRollupLoadedMsg struct{ rollup *api.MetricsRollup }
+type streaksLoadedMsg struct{ streaks *api.StreakSummary }
 
 type issueSessionsLoadedMsg struct {
 	issueID  int64

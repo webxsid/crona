@@ -29,22 +29,31 @@ type Theme struct {
 }
 
 type ContentState struct {
-	View           string
-	Pane           string
-	Width          int
-	Height         int
-	Cursors        map[string]int
-	Filters        map[string]string
-	ScratchpadOpen bool
-	Elapsed        int
-	DashboardDate  string
+	View                string
+	Pane                string
+	Width               int
+	Height              int
+	Cursors             map[string]int
+	Filters             map[string]string
+	ScratchpadOpen      bool
+	Elapsed             int
+	DashboardDate       string
+	WellbeingDate       string
 	DefaultIssueSection string
 
 	Repos          []api.Repo
 	Streams        []api.Stream
 	Issues         []api.Issue
+	DailyIssues    []api.Issue
+	Habits         []api.Habit
 	AllIssues      []api.IssueWithMeta
+	DefaultIssues  []api.IssueWithMeta
+	DueHabits      []api.HabitDailyItem
 	DailySummary   *api.DailyIssueSummary
+	DailyCheckIn   *api.DailyCheckIn
+	MetricsRange   []api.DailyMetricsDay
+	MetricsRollup  *api.MetricsRollup
+	Streaks        *api.StreakSummary
 	IssueSessions  []api.Session
 	SessionHistory []api.SessionHistoryEntry
 	Scratchpads    []api.ScratchPad
@@ -69,6 +78,8 @@ func RenderContent(theme Theme, state ContentState) string {
 		return renderScratchpadPlaceholder(theme, state)
 	case "ops":
 		return renderOpsView(theme, state)
+	case "wellbeing":
+		return renderWellbeingView(theme, state)
 	case "settings":
 		return renderSettingsView(theme, state)
 	default:

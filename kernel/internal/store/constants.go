@@ -10,4 +10,7 @@ var DefaultCoreSettings = map[string]any{
 	"cyclesBeforeLongBreak": 4,
 	"autoStartBreaks":       true,
 	"autoStartWork":         false,
+	"repoSort":              string("chronological_asc"),
+	"streamSort":            string("chronological_asc"),
+	"issueSort":             string("priority"),
 }

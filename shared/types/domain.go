@@ -38,16 +38,76 @@ const (
 	TimerModeStructured TimerMode = "structured"
 )
 
+type RepoSort string
+
+const (
+	RepoSortChronologicalAsc  RepoSort = "chronological_asc"
+	RepoSortChronologicalDesc RepoSort = "chronological_desc"
+	RepoSortAlphabeticalAsc   RepoSort = "alphabetical_asc"
+	RepoSortAlphabeticalDesc  RepoSort = "alphabetical_desc"
+)
+
+func NormalizeRepoSort(value RepoSort) RepoSort {
+	switch value {
+	case RepoSortChronologicalDesc, RepoSortAlphabeticalAsc, RepoSortAlphabeticalDesc:
+		return value
+	default:
+		return RepoSortChronologicalAsc
+	}
+}
+
+type StreamSort string
+
+const (
+	StreamSortChronologicalAsc  StreamSort = "chronological_asc"
+	StreamSortChronologicalDesc StreamSort = "chronological_desc"
+	StreamSortAlphabeticalAsc   StreamSort = "alphabetical_asc"
+	StreamSortAlphabeticalDesc  StreamSort = "alphabetical_desc"
+)
+
+func NormalizeStreamSort(value StreamSort) StreamSort {
+	switch value {
+	case StreamSortChronologicalDesc, StreamSortAlphabeticalAsc, StreamSortAlphabeticalDesc:
+		return value
+	default:
+		return StreamSortChronologicalAsc
+	}
+}
+
+type IssueSort string
+
+const (
+	IssueSortPriority          IssueSort = "priority"
+	IssueSortDueDateAsc        IssueSort = "due_date_asc"
+	IssueSortDueDateDesc       IssueSort = "due_date_desc"
+	IssueSortChronologicalAsc  IssueSort = "chronological_asc"
+	IssueSortChronologicalDesc IssueSort = "chronological_desc"
+	IssueSortAlphabeticalAsc   IssueSort = "alphabetical_asc"
+	IssueSortAlphabeticalDesc  IssueSort = "alphabetical_desc"
+)
+
+func NormalizeIssueSort(value IssueSort) IssueSort {
+	switch value {
+	case IssueSortDueDateAsc, IssueSortDueDateDesc, IssueSortChronologicalAsc, IssueSortChronologicalDesc, IssueSortAlphabeticalAsc, IssueSortAlphabeticalDesc:
+		return value
+	default:
+		return IssueSortPriority
+	}
+}
+
 type OpEntity string
 
 const (
-	OpEntityRepo           OpEntity = "repo"
-	OpEntityStream         OpEntity = "stream"
-	OpEntityIssue          OpEntity = "issue"
-	OpEntitySession        OpEntity = "session"
-	OpEntitySessionSegment OpEntity = "session_segment"
-	OpEntityActiveContext  OpEntity = "active_context"
-	OpEntityStash          OpEntity = "stash"
+	OpEntityRepo            OpEntity = "repo"
+	OpEntityStream          OpEntity = "stream"
+	OpEntityIssue           OpEntity = "issue"
+	OpEntityHabit           OpEntity = "habit"
+	OpEntityHabitCompletion OpEntity = "habit_completion"
+	OpEntityCheckIn         OpEntity = "checkin"
+	OpEntitySession         OpEntity = "session"
+	OpEntitySessionSegment  OpEntity = "session_segment"
+	OpEntityActiveContext   OpEntity = "active_context"
+	OpEntityStash           OpEntity = "stash"
 )
 
 type OpAction string
@@ -71,6 +131,9 @@ const (
 	CoreSettingsKeyCyclesBeforeLongBreak CoreSettingsKey = "cyclesBeforeLongBreak"
 	CoreSettingsKeyAutoStartBreaks       CoreSettingsKey = "autoStartBreaks"
 	CoreSettingsKeyAutoStartWork         CoreSettingsKey = "autoStartWork"
+	CoreSettingsKeyRepoSort              CoreSettingsKey = "repoSort"
+	CoreSettingsKeyStreamSort            CoreSettingsKey = "streamSort"
+	CoreSettingsKeyIssueSort             CoreSettingsKey = "issueSort"
 )
 
 type SessionNoteSection string
@@ -83,22 +146,97 @@ const (
 )
 
 type Repo struct {
-	ID    int64   `json:"id"`
-	Name  string  `json:"name"`
-	Color *string `json:"color,omitempty"`
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	Color       *string `json:"color,omitempty"`
 }
 
 type Stream struct {
-	ID         int64            `json:"id"`
-	RepoID     int64            `json:"repoId"`
-	Name       string           `json:"name"`
-	Visibility StreamVisibility `json:"visibility"`
+	ID          int64            `json:"id"`
+	RepoID      int64            `json:"repoId"`
+	Name        string           `json:"name"`
+	Description *string          `json:"description,omitempty"`
+	Visibility  StreamVisibility `json:"visibility"`
+}
+
+type HabitScheduleType string
+
+const (
+	HabitScheduleDaily    HabitScheduleType = "daily"
+	HabitScheduleWeekdays HabitScheduleType = "weekdays"
+	HabitScheduleWeekly   HabitScheduleType = "weekly"
+)
+
+func NormalizeHabitScheduleType(value HabitScheduleType) HabitScheduleType {
+	switch value {
+	case HabitScheduleWeekdays, HabitScheduleWeekly:
+		return value
+	default:
+		return HabitScheduleDaily
+	}
+}
+
+type Habit struct {
+	ID            int64             `json:"id"`
+	StreamID      int64             `json:"streamId"`
+	Name          string            `json:"name"`
+	Description   *string           `json:"description,omitempty"`
+	ScheduleType  HabitScheduleType `json:"scheduleType"`
+	Weekdays      []int             `json:"weekdays,omitempty"`
+	TargetMinutes *int              `json:"targetMinutes,omitempty"`
+	Active        bool              `json:"active"`
+}
+
+type HabitCompletionStatus string
+
+const (
+	HabitCompletionStatusCompleted HabitCompletionStatus = "completed"
+	HabitCompletionStatusFailed    HabitCompletionStatus = "failed"
+)
+
+func NormalizeHabitCompletionStatus(value HabitCompletionStatus) HabitCompletionStatus {
+	switch value {
+	case HabitCompletionStatusFailed:
+		return value
+	default:
+		return HabitCompletionStatusCompleted
+	}
+}
+
+type HabitCompletion struct {
+	ID              int64                 `json:"id"`
+	HabitID         int64                 `json:"habitId"`
+	Date            string                `json:"date"`
+	Status          HabitCompletionStatus `json:"status"`
+	DurationMinutes *int                  `json:"durationMinutes,omitempty"`
+	Notes           *string               `json:"notes,omitempty"`
+	CreatedAt       string                `json:"createdAt"`
+	UpdatedAt       string                `json:"updatedAt"`
+}
+
+type HabitWithMeta struct {
+	Habit
+	RepoID     int64  `json:"repoId"`
+	RepoName   string `json:"repoName"`
+	StreamName string `json:"streamName"`
+}
+
+type HabitDailyItem struct {
+	HabitWithMeta
+	Status          HabitCompletionStatus `json:"status"`
+	Completed       bool                  `json:"completed"`
+	CompletionID    *int64                `json:"completionId,omitempty"`
+	CompletionDate  *string               `json:"completionDate,omitempty"`
+	DurationMinutes *int                  `json:"durationMinutes,omitempty"`
+	Notes           *string               `json:"notes,omitempty"`
 }
 
 type Issue struct {
 	ID              int64       `json:"id"`
 	StreamID        int64       `json:"streamId"`
 	Title           string      `json:"title"`
+	Description     *string     `json:"description,omitempty"`
 	Status          IssueStatus `json:"status"`
 	EstimateMinutes *int        `json:"estimateMinutes,omitempty"`
 	Notes           *string     `json:"notes,omitempty"`
@@ -122,6 +260,72 @@ type DailyIssueSummary struct {
 	CompletedIssues       int     `json:"completedIssues"`
 	AbandonedIssues       int     `json:"abandonedIssues"`
 	WorkedSeconds         int     `json:"workedSeconds"`
+}
+
+type BurnoutLevel string
+
+const (
+	BurnoutLevelLow     BurnoutLevel = "low"
+	BurnoutLevelGuarded BurnoutLevel = "guarded"
+	BurnoutLevelHigh    BurnoutLevel = "high"
+)
+
+type DailyCheckIn struct {
+	Date              string   `json:"date"`
+	Mood              int      `json:"mood"`
+	Energy            int      `json:"energy"`
+	SleepHours        *float64 `json:"sleepHours,omitempty"`
+	SleepScore        *int     `json:"sleepScore,omitempty"`
+	ScreenTimeMinutes *int     `json:"screenTimeMinutes,omitempty"`
+	Notes             *string  `json:"notes,omitempty"`
+	CreatedAt         string   `json:"createdAt"`
+	UpdatedAt         string   `json:"updatedAt"`
+}
+
+type BurnoutIndicator struct {
+	Score   int                `json:"score"`
+	Level   BurnoutLevel       `json:"level"`
+	Factors map[string]float64 `json:"factors,omitempty"`
+}
+
+type DailyMetricsDay struct {
+	Date                  string            `json:"date"`
+	WorkedSeconds         int               `json:"workedSeconds"`
+	RestSeconds           int               `json:"restSeconds"`
+	SessionCount          int               `json:"sessionCount"`
+	TotalIssues           int               `json:"totalIssues"`
+	CompletedIssues       int               `json:"completedIssues"`
+	AbandonedIssues       int               `json:"abandonedIssues"`
+	TotalEstimatedMinutes int               `json:"totalEstimatedMinutes"`
+	CheckIn               *DailyCheckIn     `json:"checkIn,omitempty"`
+	Burnout               *BurnoutIndicator `json:"burnout,omitempty"`
+}
+
+type MetricsRollup struct {
+	StartDate             string            `json:"startDate"`
+	EndDate               string            `json:"endDate"`
+	Days                  int               `json:"days"`
+	CheckInDays           int               `json:"checkInDays"`
+	FocusDays             int               `json:"focusDays"`
+	WorkedSeconds         int               `json:"workedSeconds"`
+	RestSeconds           int               `json:"restSeconds"`
+	SessionCount          int               `json:"sessionCount"`
+	CompletedIssues       int               `json:"completedIssues"`
+	AbandonedIssues       int               `json:"abandonedIssues"`
+	TotalEstimatedMinutes int               `json:"totalEstimatedMinutes"`
+	AverageMood           *float64          `json:"averageMood,omitempty"`
+	AverageEnergy         *float64          `json:"averageEnergy,omitempty"`
+	AverageSleepHours     *float64          `json:"averageSleepHours,omitempty"`
+	AverageSleepScore     *float64          `json:"averageSleepScore,omitempty"`
+	AverageScreenTimeMins *float64          `json:"averageScreenTimeMinutes,omitempty"`
+	LatestBurnout         *BurnoutIndicator `json:"latestBurnout,omitempty"`
+}
+
+type StreakSummary struct {
+	CurrentFocusDays   int `json:"currentFocusDays"`
+	LongestFocusDays   int `json:"longestFocusDays"`
+	CurrentCheckInDays int `json:"currentCheckInDays"`
+	LongestCheckInDays int `json:"longestCheckInDays"`
 }
 
 type Session struct {
@@ -183,19 +387,22 @@ type ActiveContext struct {
 }
 
 type CoreSettings struct {
-	UserID                string    `json:"userId"`
-	DeviceID              string    `json:"deviceId"`
-	TimerMode             TimerMode `json:"timerMode"`
-	BreaksEnabled         bool      `json:"breaksEnabled"`
-	WorkDurationMinutes   int       `json:"workDurationMinutes"`
-	ShortBreakMinutes     int       `json:"shortBreakMinutes"`
-	LongBreakMinutes      int       `json:"longBreakMinutes"`
-	LongBreakEnabled      bool      `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int       `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool      `json:"autoStartBreaks"`
-	AutoStartWork         bool      `json:"autoStartWork"`
-	CreatedAt             string    `json:"createdAt"`
-	UpdatedAt             string    `json:"updatedAt"`
+	UserID                string     `json:"userId"`
+	DeviceID              string     `json:"deviceId"`
+	TimerMode             TimerMode  `json:"timerMode"`
+	BreaksEnabled         bool       `json:"breaksEnabled"`
+	WorkDurationMinutes   int        `json:"workDurationMinutes"`
+	ShortBreakMinutes     int        `json:"shortBreakMinutes"`
+	LongBreakMinutes      int        `json:"longBreakMinutes"`
+	LongBreakEnabled      bool       `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int        `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool       `json:"autoStartBreaks"`
+	AutoStartWork         bool       `json:"autoStartWork"`
+	RepoSort              RepoSort   `json:"repoSort"`
+	StreamSort            StreamSort `json:"streamSort"`
+	IssueSort             IssueSort  `json:"issueSort"`
+	CreatedAt             string     `json:"createdAt"`
+	UpdatedAt             string     `json:"updatedAt"`
 }
 
 type TimerState struct {

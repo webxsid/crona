@@ -2,8 +2,10 @@ package app
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/app/views"
@@ -41,7 +43,7 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 	if m.view != ViewDefault || m.pane != PaneIssues {
 		return
 	}
-	openIndices, completedIndices := views.SplitDefaultIssueIndices(m.allIssues, m.filters[PaneIssues])
+	openIndices, completedIndices := views.SplitDefaultIssueIndices(m.allIssues, m.filters[PaneIssues], m.settings)
 	switch section {
 	case DefaultIssueSectionOpen:
 		if len(openIndices) > 0 {
@@ -82,18 +84,20 @@ func (m Model) selectedIssue() (int64, int64, string, *string, bool) {
 	}
 	switch m.view {
 	case ViewDefault:
+		scoped := m.defaultScopedIssues()
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(m.allIssues) {
+		if rawIdx < 0 || rawIdx >= len(scoped) {
 			return 0, 0, "", nil, false
 		}
-		issue := m.allIssues[rawIdx]
+		issue := scoped[rawIdx]
 		return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
 	case ViewDaily:
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if m.dailySummary == nil || rawIdx < 0 || rawIdx >= len(m.dailySummary.Issues) {
+		issues := m.dailyScopedIssues()
+		if rawIdx < 0 || rawIdx >= len(issues) {
 			return 0, 0, "", nil, false
 		}
-		issue := m.dailySummary.Issues[rawIdx]
+		issue := issues[rawIdx]
 		return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
 	case ViewMeta:
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
@@ -152,18 +156,20 @@ func (m Model) selectedIssueRecord() (*api.Issue, bool) {
 	}
 	switch m.view {
 	case ViewDefault:
+		scoped := m.defaultScopedIssues()
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(m.allIssues) {
+		if rawIdx < 0 || rawIdx >= len(scoped) {
 			return nil, false
 		}
-		copy := m.allIssues[rawIdx].Issue
+		copy := scoped[rawIdx].Issue
 		return &copy, true
 	case ViewDaily:
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if m.dailySummary == nil || rawIdx < 0 || rawIdx >= len(m.dailySummary.Issues) {
+		issues := m.dailyScopedIssues()
+		if rawIdx < 0 || rawIdx >= len(issues) {
 			return nil, false
 		}
-		copy := m.dailySummary.Issues[rawIdx]
+		copy := issues[rawIdx]
 		return &copy, true
 	case ViewMeta:
 		rawIdx := m.filteredIndexAtCursor(PaneIssues)
@@ -175,6 +181,36 @@ func (m Model) selectedIssueRecord() (*api.Issue, bool) {
 	default:
 		return nil, false
 	}
+}
+
+func (m Model) selectedHabitRecord() (*api.Habit, bool) {
+	if m.pane != PaneHabits {
+		return nil, false
+	}
+	switch m.view {
+	case ViewMeta:
+		rawIdx := m.filteredIndexAtCursor(PaneHabits)
+		if rawIdx < 0 || rawIdx >= len(m.habits) {
+			return nil, false
+		}
+		copy := m.habits[rawIdx]
+		return &copy, true
+	default:
+		return nil, false
+	}
+}
+
+func (m Model) selectedDailyHabitRecord() (*api.HabitDailyItem, bool) {
+	if m.view != ViewDaily || m.pane != PaneHabits {
+		return nil, false
+	}
+	rawIdx := m.filteredIndexAtCursor(PaneHabits)
+	habits := m.filteredDueHabits()
+	if rawIdx < 0 || rawIdx >= len(habits) {
+		return nil, false
+	}
+	copy := habits[rawIdx]
+	return &copy, true
 }
 
 func (m Model) selectedSessionHistoryEntry() (*api.SessionHistoryEntry, bool) {
@@ -202,7 +238,117 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 		}
 	case PaneIssues:
 		if issue, ok := m.selectedIssueRecord(); ok {
-			return m.openEditIssueDialog(issue.ID, issue.StreamID, issue.Title, issue.EstimateMinutes, issue.TodoForDate), true
+			return m.openEditIssueDialog(issue.ID, issue.StreamID, issue.Title, issue.Description, issue.EstimateMinutes, issue.TodoForDate), true
+		}
+	case PaneHabits:
+		if habit, ok := m.selectedHabitRecord(); ok {
+			return m.openEditHabitDialog(habit.ID, habit.StreamID, habit.Name, habit.Description, string(habit.ScheduleType), habit.Weekdays, habit.TargetMinutes, habit.Active), true
+		}
+	}
+	return m, false
+}
+
+func (m Model) openSelectedViewDialog() (Model, bool) {
+	switch m.pane {
+	case PaneRepos:
+		if m.view != ViewMeta {
+			return m, false
+		}
+		rawIdx := m.filteredIndexAtCursor(PaneRepos)
+		if rawIdx >= 0 && rawIdx < len(m.repos) {
+			repo := m.repos[rawIdx]
+			body := strings.Join([]string{
+				"Description",
+				optionalText(repo.Description),
+			}, "\n")
+			return m.openViewEntityDialog("Repo", repo.Name, fmt.Sprintf("ID %d", repo.ID), body), true
+		}
+	case PaneStreams:
+		if m.view != ViewMeta {
+			return m, false
+		}
+		rawIdx := m.filteredIndexAtCursor(PaneStreams)
+		if rawIdx >= 0 && rawIdx < len(m.streams) {
+			stream := m.streams[rawIdx]
+			meta := strings.Join([]string{
+				fmt.Sprintf("Repo %s", m.repoNameByID(stream.RepoID)),
+				fmt.Sprintf("Visibility %s", stream.Visibility),
+				fmt.Sprintf("ID %d", stream.ID),
+			}, "   ")
+			body := strings.Join([]string{
+				"Description",
+				optionalText(stream.Description),
+			}, "\n")
+			return m.openViewEntityDialog("Stream", stream.Name, meta, body), true
+		}
+	case PaneIssues:
+		issue, ok := m.selectedIssueRecord()
+		if !ok {
+			return m, false
+		}
+		meta := m.issueMetaByID(issue.ID)
+		repoName := "-"
+		streamName := "-"
+		if meta != nil {
+			repoName = meta.RepoName
+			streamName = meta.StreamName
+		}
+		estimate := "-"
+		if issue.EstimateMinutes != nil {
+			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
+		}
+		due := "-"
+		if issue.TodoForDate != nil && strings.TrimSpace(*issue.TodoForDate) != "" {
+			due = strings.TrimSpace(*issue.TodoForDate)
+		}
+		metaBits := []string{
+			fmt.Sprintf("Repo %s", repoName),
+			fmt.Sprintf("Stream %s", streamName),
+			fmt.Sprintf("Status %s", issue.Status),
+			fmt.Sprintf("Estimate %s", estimate),
+			fmt.Sprintf("Due %s", due),
+			fmt.Sprintf("ID %d", issue.ID),
+		}
+		body := []string{
+			"Description",
+			optionalText(issue.Description),
+		}
+		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
+			body = append(body, "", "Notes", strings.TrimSpace(*issue.Notes))
+		}
+		return m.openViewEntityDialog("Issue", issue.Title, strings.Join(metaBits, "   "), strings.Join(body, "\n")), true
+	case PaneHabits:
+		if m.view == ViewMeta {
+			if habit, ok := m.selectedHabitRecord(); ok {
+				meta := []string{
+					fmt.Sprintf("Schedule %s", formatHabitSchedule(habit.ScheduleType, habit.Weekdays)),
+					fmt.Sprintf("Target %s", formatHabitTarget(habit.TargetMinutes)),
+					fmt.Sprintf("Active %t", habit.Active),
+					fmt.Sprintf("ID %d", habit.ID),
+				}
+				body := strings.Join([]string{"Description", optionalText(habit.Description)}, "\n")
+				return m.openViewEntityDialog("Habit", habit.Name, strings.Join(meta, "   "), body), true
+			}
+		}
+		if m.view == ViewDaily {
+			if habit, ok := m.selectedDailyHabitRecord(); ok {
+				habitStatus := string(habit.Status)
+				if strings.TrimSpace(habitStatus) == "" {
+					habitStatus = "pending"
+				}
+				meta := []string{
+					fmt.Sprintf("Repo %s", habit.RepoName),
+					fmt.Sprintf("Stream %s", habit.StreamName),
+					fmt.Sprintf("Schedule %s", formatHabitSchedule(habit.ScheduleType, habit.Weekdays)),
+					fmt.Sprintf("Status %s", habitStatus),
+					fmt.Sprintf("Duration %s", formatHabitTarget(habit.DurationMinutes)),
+				}
+				body := []string{"Description", optionalText(habit.Description)}
+				if habit.Notes != nil && strings.TrimSpace(*habit.Notes) != "" {
+					body = append(body, "", "Notes", strings.TrimSpace(*habit.Notes))
+				}
+				return m.openViewEntityDialog("Habit", habit.Name, strings.Join(meta, "   "), strings.Join(body, "\n")), true
+			}
 		}
 	}
 	return m, false
@@ -231,6 +377,12 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 			next.dialogStreamID = issue.StreamID
 			return next, true
 		}
+	case PaneHabits:
+		if habit, ok := m.selectedHabitRecord(); ok {
+			next := m.openConfirmDeleteEntity("habit", fmt.Sprintf("%d", habit.ID), habit.Name)
+			next.dialogStreamID = habit.StreamID
+			return next, true
+		}
 	}
 	return m, false
 }
@@ -242,6 +394,63 @@ func (m Model) repoNameByID(repoID int64) string {
 		}
 	}
 	return ""
+}
+
+func (m Model) repoDescriptionByID(repoID int64) *string {
+	for _, repo := range m.repos {
+		if repo.ID == repoID {
+			return repo.Description
+		}
+	}
+	return nil
+}
+
+func (m Model) streamDescriptionByID(streamID int64) *string {
+	for _, stream := range m.streams {
+		if stream.ID == streamID {
+			return stream.Description
+		}
+	}
+	return nil
+}
+
+func optionalText(value *string) string {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return "-"
+	}
+	return strings.TrimSpace(*value)
+}
+
+func formatHabitSchedule(scheduleType sharedtypes.HabitScheduleType, weekdays []int) string {
+	switch scheduleType {
+	case sharedtypes.HabitScheduleWeekdays:
+		return "weekdays"
+	case sharedtypes.HabitScheduleWeekly:
+		return formatHabitWeekdays(weekdays)
+	default:
+		return "daily"
+	}
+}
+
+func formatHabitWeekdays(weekdays []int) string {
+	if len(weekdays) == 0 {
+		return "-"
+	}
+	names := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+	out := make([]string, 0, len(weekdays))
+	for _, day := range weekdays {
+		if day >= 0 && day < len(names) {
+			out = append(out, names[day])
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+func formatHabitTarget(target *int) string {
+	if target == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%dm", *target)
 }
 
 func (m Model) abandonSelectedIssue() (tea.Model, tea.Cmd) {
@@ -283,6 +492,13 @@ func (m Model) openSelectedIssueTodoDateDialog() Model {
 func (m Model) currentDashboardDate() string {
 	if m.dashboardDate != "" {
 		return m.dashboardDate
+	}
+	return time.Now().Format("2006-01-02")
+}
+
+func (m Model) currentWellbeingDate() string {
+	if m.wellbeingDate != "" {
+		return m.wellbeingDate
 	}
 	return time.Now().Format("2006-01-02")
 }

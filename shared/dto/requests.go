@@ -16,14 +16,16 @@ type ErrorResponse struct {
 }
 
 type CreateRepoRequest struct {
-	Name  string  `json:"name"`
-	Color *string `json:"color,omitempty"`
+	Name        string  `json:"name"`
+	Description *string `json:"description,omitempty"`
+	Color       *string `json:"color,omitempty"`
 }
 
 type UpdateRepoRequest struct {
-	ID    string  `json:"id"`
-	Name  *string `json:"name,omitempty"`
-	Color *string `json:"color,omitempty"`
+	ID          string  `json:"id"`
+	Name        *string `json:"name,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Color       *string `json:"color,omitempty"`
 }
 
 type ListStreamsQuery struct {
@@ -31,28 +33,93 @@ type ListStreamsQuery struct {
 }
 
 type CreateStreamRequest struct {
-	RepoID     int64                   `json:"repoId"`
-	Name       string                  `json:"name"`
-	Visibility *types.StreamVisibility `json:"visibility,omitempty"`
+	RepoID      int64                   `json:"repoId"`
+	Name        string                  `json:"name"`
+	Description *string                 `json:"description,omitempty"`
+	Visibility  *types.StreamVisibility `json:"visibility,omitempty"`
 }
 
 type UpdateStreamRequest struct {
-	ID         int64                   `json:"id"`
-	Name       *string                 `json:"name,omitempty"`
-	Visibility *types.StreamVisibility `json:"visibility,omitempty"`
+	ID          int64                   `json:"id"`
+	Name        *string                 `json:"name,omitempty"`
+	Description *string                 `json:"description,omitempty"`
+	Visibility  *types.StreamVisibility `json:"visibility,omitempty"`
 }
 
 type ListIssuesQuery struct {
 	StreamID int64 `json:"streamId"`
 }
 
+type ListHabitsQuery struct {
+	StreamID int64 `json:"streamId"`
+}
+
+type ListHabitsDueQuery struct {
+	Date string `json:"date"`
+}
+
+type CreateHabitRequest struct {
+	StreamID      int64   `json:"streamId"`
+	Name          string  `json:"name"`
+	Description   *string `json:"description,omitempty"`
+	ScheduleType  string  `json:"scheduleType"`
+	Weekdays      []int   `json:"weekdays,omitempty"`
+	TargetMinutes *int    `json:"targetMinutes,omitempty"`
+}
+
+type UpdateHabitRequest struct {
+	ID            int64   `json:"id"`
+	Name          *string `json:"name,omitempty"`
+	Description   *string `json:"description,omitempty"`
+	ScheduleType  *string `json:"scheduleType,omitempty"`
+	Weekdays      []int   `json:"weekdays,omitempty"`
+	TargetMinutes *int    `json:"targetMinutes,omitempty"`
+	Active        *bool   `json:"active,omitempty"`
+}
+
+type HabitCompletionUpsertRequest struct {
+	HabitID         int64                        `json:"habitId"`
+	Date            string                       `json:"date"`
+	Status          *types.HabitCompletionStatus `json:"status,omitempty"`
+	DurationMinutes *int                         `json:"durationMinutes,omitempty"`
+	Notes           *string                      `json:"notes,omitempty"`
+}
+
+type HabitHistoryQuery struct {
+	HabitID int64 `json:"habitId"`
+}
+
 type DailyIssueSummaryQuery struct {
 	Date *string `json:"date,omitempty"`
+}
+
+type DailyCheckInQuery struct {
+	Date string `json:"date"`
+}
+
+type DailyCheckInUpsertRequest struct {
+	Date              string   `json:"date"`
+	Mood              int      `json:"mood"`
+	Energy            int      `json:"energy"`
+	SleepHours        *float64 `json:"sleepHours,omitempty"`
+	SleepScore        *int     `json:"sleepScore,omitempty"`
+	ScreenTimeMinutes *int     `json:"screenTimeMinutes,omitempty"`
+	Notes             *string  `json:"notes,omitempty"`
+}
+
+type DeleteByDateRequest struct {
+	Date string `json:"date"`
+}
+
+type DateRangeQuery struct {
+	Start string `json:"start"`
+	End   string `json:"end"`
 }
 
 type CreateIssueRequest struct {
 	StreamID        int64   `json:"streamId"`
 	Title           string  `json:"title"`
+	Description     *string `json:"description,omitempty"`
 	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
 	Notes           *string `json:"notes,omitempty"`
 	TodoForDate     *string `json:"todoForDate,omitempty"`
@@ -61,6 +128,7 @@ type CreateIssueRequest struct {
 type UpdateIssueRequest struct {
 	ID              int64   `json:"id"`
 	Title           *string `json:"title,omitempty"`
+	Description     *string `json:"description,omitempty"`
 	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
 	Notes           *string `json:"notes,omitempty"`
 }

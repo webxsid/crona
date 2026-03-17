@@ -1,16 +1,77 @@
 package dialogs
 
+import (
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+)
+
 func renderIssueDialog(theme Theme, state State) string {
+	const issueDialogWidth = 92
 	switch state.Kind {
 	case "create_issue_meta":
-		rows := []string{theme.StylePaneTitle.Render("New Issue"), "", theme.StyleDim.Render("Repo / Stream"), theme.StyleHeader.Render(state.RepoName + " / " + state.StreamName), "", theme.StyleDim.Render("Title"), state.Inputs[0].View(), "", theme.StyleDim.Render("Estimate"), state.Inputs[1].View(), "", theme.StyleDim.Render("Due"), state.Inputs[2].View(), "", theme.StyleDim.Render("[f2] calendar   [tab] next   [enter] create   [esc] cancel")}
-		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
+		contextRow := renderIssueContextColumns(theme, state.Width, issueDialogWidth, state.RepoName, state.StreamName)
+		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
+			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
+			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[2].View(),
+		)
+		rows := []string{
+			theme.StylePaneTitle.Render("New Issue"),
+			"",
+			theme.StyleDim.Render("Title"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+			"",
+			schedulingRow,
+			"",
+			contextRow,
+			"",
+			theme.StyleDim.Render(issueDialogHint(state, "create")),
+		}
+		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "create_issue_default":
-		rows := []string{theme.StylePaneTitle.Render("New Issue"), "", theme.StyleDim.Render("Repo"), state.Inputs[0].View(), "", renderSelector(theme, state.RepoSelectorLabel, true), "", theme.StyleDim.Render("Stream"), state.Inputs[1].View(), "", renderSelector(theme, state.StreamSelectorLabel, false), "", theme.StyleDim.Render("Title"), state.Inputs[2].View(), "", theme.StyleDim.Render("Estimate"), state.Inputs[3].View(), "", theme.StyleDim.Render("Due"), state.Inputs[4].View(), "", theme.StyleDim.Render("[type] filter   [up/down] choose   [f2] calendar   [tab] next   [enter] create")}
-		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, issueDialogWidth)
+		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
+			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[3].View(),
+			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[4].View(),
+		)
+		rows := []string{
+			theme.StylePaneTitle.Render("New Issue"),
+			"",
+			theme.StyleDim.Render("Title"),
+			state.Inputs[2].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+			"",
+			schedulingRow,
+			"",
+			contextRow,
+			"",
+			theme.StyleDim.Render(issueDialogHint(state, "create")),
+		}
+		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "edit_issue":
-		rows := []string{theme.StylePaneTitle.Render("Edit Issue"), "", theme.StyleDim.Render("Title"), state.Inputs[0].View(), "", theme.StyleDim.Render("Estimate"), state.Inputs[1].View(), "", theme.StyleDim.Render("Due"), state.Inputs[2].View(), "", theme.StyleDim.Render("[f2] calendar   [tab] next   [enter] save   [esc] cancel")}
-		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
+		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
+			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
+			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[2].View(),
+		)
+		rows := []string{
+			theme.StylePaneTitle.Render("Edit Issue"),
+			"",
+			theme.StyleDim.Render("Title"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+			"",
+			schedulingRow,
+			"",
+			theme.StyleDim.Render(issueDialogHint(state, "save")),
+		}
+		return modal(theme, state.Width, issueDialogWidth, theme.ColorYellow, rows)
 	case "issue_status":
 		rows := []string{theme.StylePaneTitle.Render("Set Issue Status"), ""}
 		if len(state.StatusItems) == 0 {
@@ -37,4 +98,73 @@ func renderIssueDialog(theme Theme, state State) string {
 	default:
 		return ""
 	}
+}
+
+func issueDialogHint(state State, submitLabel string) string {
+	switch state.Kind {
+	case "create_issue_default":
+		switch state.FocusIdx {
+		case 0, 1:
+			return "[type] filter   [left/right] choose   [up/down/tab] move   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		case 3:
+			return "[enter] newline   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		case 5:
+			return "[f2] calendar   [g] today   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		default:
+			return "[tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		}
+	case "create_issue_meta", "edit_issue":
+		switch state.FocusIdx {
+		case 1:
+			return "[enter] newline   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		case 3:
+			return "[f2] calendar   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		default:
+			return "[tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+		}
+	default:
+		return "[ctrl+s] " + submitLabel + "   [esc] cancel"
+	}
+}
+
+func renderIssueContextColumns(theme Theme, width, maxWidth int, repoName, streamName string) string {
+	contentWidth := min(width-8, maxWidth) - 8
+	if contentWidth < 28 {
+		contentWidth = 28
+	}
+	colWidth := (contentWidth - 2) / 2
+	if colWidth < 12 {
+		colWidth = 12
+	}
+	repoCol := lipgloss.NewStyle().Width(colWidth).Render(
+		theme.StyleDim.Render("Repo") + "\n" + theme.StyleHeader.Render(fallback(repoName, "-")),
+	)
+	streamCol := lipgloss.NewStyle().Width(colWidth).Render(
+		theme.StyleDim.Render("Stream") + "\n" + theme.StyleHeader.Render(fallback(streamName, "-")),
+	)
+	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
+}
+
+func renderDefaultIssueContextColumns(theme Theme, state State, width, maxWidth int) string {
+	contentWidth := min(width-8, maxWidth) - 8
+	if contentWidth < 28 {
+		contentWidth = 28
+	}
+	colWidth := (contentWidth - 2) / 2
+	if colWidth < 12 {
+		colWidth = 12
+	}
+	repoCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
+		theme.StyleDim.Render("Repo"),
+		state.Inputs[0].View(),
+		"",
+		renderSelector(theme, state.RepoSelectorLabel, state.FocusIdx == 0),
+	}, "\n"))
+	streamCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
+		theme.StyleDim.Render("Stream"),
+		state.Inputs[1].View(),
+		"",
+		renderSelector(theme, state.StreamSelectorLabel, state.FocusIdx == 1),
+	}, "\n"))
+	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
 }

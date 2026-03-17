@@ -107,6 +107,86 @@ func (m Model) issueMetaByID(issueID int64) *api.IssueWithMeta {
 	return nil
 }
 
+func (m Model) defaultScopedIssues() []api.IssueWithMeta {
+	if m.context == nil {
+		return m.allIssues
+	}
+	if m.context.StreamID != nil {
+		out := make([]api.IssueWithMeta, 0, len(m.allIssues))
+		for _, issue := range m.allIssues {
+			if issue.StreamID == *m.context.StreamID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	if m.context.RepoID != nil {
+		out := make([]api.IssueWithMeta, 0, len(m.allIssues))
+		for _, issue := range m.allIssues {
+			if issue.RepoID == *m.context.RepoID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	return m.allIssues
+}
+
+func (m Model) filteredDueHabits() []api.HabitDailyItem {
+	if m.context == nil {
+		return m.dueHabits
+	}
+	if m.context.StreamID != nil {
+		out := make([]api.HabitDailyItem, 0, len(m.dueHabits))
+		for _, habit := range m.dueHabits {
+			if habit.StreamID == *m.context.StreamID {
+				out = append(out, habit)
+			}
+		}
+		return out
+	}
+	if m.context.RepoID != nil {
+		out := make([]api.HabitDailyItem, 0, len(m.dueHabits))
+		for _, habit := range m.dueHabits {
+			if habit.RepoID == *m.context.RepoID {
+				out = append(out, habit)
+			}
+		}
+		return out
+	}
+	return m.dueHabits
+}
+
+func (m Model) dailyScopedIssues() []api.Issue {
+	if m.dailySummary == nil {
+		return nil
+	}
+	issues := m.dailySummary.Issues
+	if m.context == nil {
+		return issues
+	}
+	if m.context.StreamID != nil {
+		out := make([]api.Issue, 0, len(issues))
+		for _, issue := range issues {
+			if issue.StreamID == *m.context.StreamID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	if m.context.RepoID != nil {
+		out := make([]api.Issue, 0, len(issues))
+		for _, issue := range issues {
+			meta := m.issueMetaByID(issue.ID)
+			if meta != nil && meta.RepoID == *m.context.RepoID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	return issues
+}
+
 func (m *Model) withStatus(message string, isError bool) Model {
 	m.statusSeq++
 	m.statusMsg = message

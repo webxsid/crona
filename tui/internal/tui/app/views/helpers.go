@@ -20,6 +20,37 @@ type apiIssue struct {
 	TodoForDate     *string
 }
 
+func habitItems(habits []api.Habit) []string {
+	items := make([]string, 0, len(habits))
+	for _, habit := range habits {
+		schedule := string(habit.ScheduleType)
+		if habit.ScheduleType == sharedtypes.HabitScheduleWeekly {
+			schedule = formatHabitScheduleText(habit.Weekdays)
+		}
+		items = append(items, fmt.Sprintf("%s [%s]", habit.Name, schedule))
+	}
+	return items
+}
+
+func habitDailyItems(habits []api.HabitDailyItem) []string {
+	items := make([]string, 0, len(habits))
+	for _, habit := range habits {
+		items = append(items, habit.Name)
+	}
+	return items
+}
+
+func formatHabitScheduleText(weekdays []int) string {
+	names := []string{"sun", "mon", "tue", "wed", "thu", "fri", "sat"}
+	out := make([]string, 0, len(weekdays))
+	for _, day := range weekdays {
+		if day >= 0 && day < len(names) {
+			out = append(out, names[day])
+		}
+	}
+	return strings.Join(out, ",")
+}
+
 func newAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, todoForDate *string) apiIssue {
 	return apiIssue{
 		ID:              id,
@@ -145,8 +176,20 @@ func issueDueSuffix(todoForDate *string) string {
 		return ""
 	}
 	date := strings.TrimSpace(*todoForDate)
-	if date == time.Now().Format("2006-01-02") {
+	today := time.Now().Format("2006-01-02")
+	if date == today {
 		return "  [today]"
+	}
+	dueTime, err := time.Parse("2006-01-02", date)
+	if err == nil {
+		todayTime, todayErr := time.Parse("2006-01-02", today)
+		if todayErr == nil && dueTime.Before(todayTime) {
+			overdueDays := int(todayTime.Sub(dueTime).Hours() / 24)
+			if overdueDays < 1 {
+				overdueDays = 1
+			}
+			return fmt.Sprintf("  [overdue %dd]", overdueDays)
+		}
 	}
 	return "  [due " + date + "]"
 }
@@ -309,8 +352,20 @@ func filteredIssueMetaIndices(issues []api.IssueWithMeta, filter string) []int {
 	return out
 }
 
-func PrioritizedDefaultIssueIndices(issues []api.IssueWithMeta, filter string) []int {
+func PrioritizedDefaultIssueIndices(issues []api.IssueWithMeta, filter string, settings *api.CoreSettings) []int {
 	indices := filteredIssueMetaIndices(issues, filter)
+	if settings != nil && settings.IssueSort != "" && settings.IssueSort != sharedtypes.IssueSortPriority {
+		open := make([]int, 0, len(indices))
+		completed := make([]int, 0, len(indices))
+		for _, idx := range indices {
+			if isClosedIssueStatus(issues[idx].Status) {
+				completed = append(completed, idx)
+			} else {
+				open = append(open, idx)
+			}
+		}
+		return append(open, completed...)
+	}
 	today := time.Now().Format("2006-01-02")
 	sort.SliceStable(indices, func(i, j int) bool {
 		left := issues[indices[i]]
@@ -345,8 +400,8 @@ func PrioritizedDefaultIssueIndices(issues []api.IssueWithMeta, filter string) [
 	return indices
 }
 
-func SplitDefaultIssueIndices(issues []api.IssueWithMeta, filter string) ([]int, []int) {
-	ordered := PrioritizedDefaultIssueIndices(issues, filter)
+func SplitDefaultIssueIndices(issues []api.IssueWithMeta, filter string, settings *api.CoreSettings) ([]int, []int) {
+	ordered := PrioritizedDefaultIssueIndices(issues, filter, settings)
 	open := make([]int, 0, len(ordered))
 	completed := make([]int, 0, len(ordered))
 	for _, idx := range ordered {
@@ -438,7 +493,7 @@ func filteredSettingIndices(filter string, settings *api.CoreSettings) []int {
 	if settings == nil {
 		return nil
 	}
-	labels := []string{"Timer Mode", "Breaks Enabled", "Work Duration", "Short Break", "Long Break", "Long Break Enabled", "Cycles Before Long Break", "Auto Start Breaks", "Auto Start Work"}
+	labels := []string{"Timer Mode", "Breaks Enabled", "Work Duration", "Short Break", "Long Break", "Long Break Enabled", "Cycles Before Long Break", "Auto Start Breaks", "Auto Start Work", "Repo Sort", "Stream Sort", "Issue Sort"}
 	return filteredStrings(labels, filter)
 }
 

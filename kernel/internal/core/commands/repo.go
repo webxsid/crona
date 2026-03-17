@@ -16,8 +16,9 @@ import (
 )
 
 func CreateRepo(ctx context.Context, c *core.Context, input struct {
-	Name  string
-	Color *string
+	Name        string
+	Description *string
+	Color       *string
 }) (sharedtypes.Repo, error) {
 	if strings.TrimSpace(input.Name) == "" {
 		return sharedtypes.Repo{}, errors.New("repo name cannot be empty")
@@ -28,9 +29,10 @@ func CreateRepo(ctx context.Context, c *core.Context, input struct {
 		return sharedtypes.Repo{}, err
 	}
 	repo := sharedtypes.Repo{
-		ID:    nextID,
-		Name:  strings.TrimSpace(input.Name),
-		Color: input.Color,
+		ID:          nextID,
+		Name:        strings.TrimSpace(input.Name),
+		Description: normalizeOptionalString(input.Description),
+		Color:       input.Color,
 	}
 	now := c.Now()
 
@@ -57,8 +59,9 @@ func CreateRepo(ctx context.Context, c *core.Context, input struct {
 }
 
 func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates struct {
-	Name  store.Patch[string]
-	Color store.Patch[string]
+	Name        store.Patch[string]
+	Description store.Patch[string]
+	Color       store.Patch[string]
 }) (*sharedtypes.Repo, error) {
 	if updates.Name.Set && updates.Name.Value != nil && strings.TrimSpace(*updates.Name.Value) == "" {
 		return nil, errors.New("repo name cannot be empty")
@@ -66,6 +69,9 @@ func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates stru
 	if updates.Name.Set && updates.Name.Value != nil {
 		trimmed := strings.TrimSpace(*updates.Name.Value)
 		updates.Name.Value = &trimmed
+	}
+	if updates.Description.Set {
+		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
 	}
 
 	now := c.Now()
@@ -123,7 +129,12 @@ func DeleteRepo(ctx context.Context, c *core.Context, repoID int64) error {
 }
 
 func ListRepos(ctx context.Context, c *core.Context) ([]sharedtypes.Repo, error) {
-	return c.Repos.List(ctx, c.UserID)
+	repos, err := c.Repos.List(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortRepos(repos, loadListSortSettings(ctx, c).repoSort)
+	return repos, nil
 }
 
 func emit(c *core.Context, eventType string, payload any) {

@@ -117,9 +117,10 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 	case protocol.MethodRepoCreate:
 		return handle(req, func(input shareddto.CreateRepoRequest) (any, error) {
 			return corecommands.CreateRepo(ctx, h.core, struct {
-				Name  string
-				Color *string
-			}{Name: input.Name, Color: input.Color})
+				Name        string
+				Description *string
+				Color       *string
+			}{Name: input.Name, Description: input.Description, Color: input.Color})
 		})
 	case protocol.MethodRepoUpdate:
 		return h.handleNoParams(req, func() (any, error) {
@@ -139,12 +140,18 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 			if err != nil {
 				return nil, err
 			}
+			description, descriptionSet, err := decodeOptionalStringFromMap(raw, "description")
+			if err != nil {
+				return nil, err
+			}
 			return corecommands.UpdateRepo(ctx, h.core, id, struct {
-				Name  store.Patch[string]
-				Color store.Patch[string]
+				Name        store.Patch[string]
+				Description store.Patch[string]
+				Color       store.Patch[string]
 			}{
-				Name:  store.Patch[string]{Set: nameSet, Value: name},
-				Color: store.Patch[string]{Set: colorSet, Value: color},
+				Name:        store.Patch[string]{Set: nameSet, Value: name},
+				Description: store.Patch[string]{Set: descriptionSet, Value: description},
+				Color:       store.Patch[string]{Set: colorSet, Value: color},
 			})
 		})
 	case protocol.MethodRepoDelete:
@@ -159,21 +166,48 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 	case protocol.MethodStreamCreate:
 		return handle(req, func(input shareddto.CreateStreamRequest) (any, error) {
 			return corecommands.CreateStream(ctx, h.core, struct {
-				RepoID     int64
-				Name       string
-				Visibility *sharedtypes.StreamVisibility
+				RepoID      int64
+				Name        string
+				Description *string
+				Visibility  *sharedtypes.StreamVisibility
 			}{
-				RepoID:     input.RepoID,
-				Name:       input.Name,
-				Visibility: input.Visibility,
+				RepoID:      input.RepoID,
+				Name:        input.Name,
+				Description: input.Description,
+				Visibility:  input.Visibility,
 			})
 		})
 	case protocol.MethodStreamUpdate:
-		return handle(req, func(input shareddto.UpdateStreamRequest) (any, error) {
-			return corecommands.UpdateStream(ctx, h.core, input.ID, struct {
-				Name       *string
-				Visibility *sharedtypes.StreamVisibility
-			}{Name: input.Name, Visibility: input.Visibility})
+		return h.handleNoParams(req, func() (any, error) {
+			raw, err := decodeObject(req.Params)
+			if err != nil {
+				return nil, err
+			}
+			id, err := decodeRequiredInt64(raw, "id")
+			if err != nil {
+				return nil, err
+			}
+			name, _, err := decodeOptionalStringFromMap(raw, "name")
+			if err != nil {
+				return nil, err
+			}
+			description, descriptionSet, err := decodeOptionalStringFromMap(raw, "description")
+			if err != nil {
+				return nil, err
+			}
+			var visibility *sharedtypes.StreamVisibility
+			if rawValue, ok := raw["visibility"]; ok && string(rawValue) != "null" {
+				var out sharedtypes.StreamVisibility
+				if err := json.Unmarshal(rawValue, &out); err != nil {
+					return nil, err
+				}
+				visibility = &out
+			}
+			return corecommands.UpdateStream(ctx, h.core, id, struct {
+				Name        *string
+				Description store.Patch[string]
+				Visibility  *sharedtypes.StreamVisibility
+			}{Name: name, Description: store.Patch[string]{Set: descriptionSet, Value: description}, Visibility: visibility})
 		})
 	case protocol.MethodStreamDelete:
 		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
@@ -193,12 +227,14 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 			return corecommands.CreateIssue(ctx, h.core, struct {
 				StreamID        int64
 				Title           string
+				Description     *string
 				EstimateMinutes *int
 				Notes           *string
 				TodoForDate     *string
 			}{
 				StreamID:        input.StreamID,
 				Title:           input.Title,
+				Description:     input.Description,
 				EstimateMinutes: input.EstimateMinutes,
 				Notes:           input.Notes,
 				TodoForDate:     input.TodoForDate,
@@ -226,12 +262,18 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 			if err != nil {
 				return nil, err
 			}
+			description, descriptionSet, err := decodeOptionalStringFromMap(raw, "description")
+			if err != nil {
+				return nil, err
+			}
 			return corecommands.UpdateIssue(ctx, h.core, id, struct {
 				Title           store.Patch[string]
+				Description     store.Patch[string]
 				EstimateMinutes store.Patch[int]
 				Notes           store.Patch[string]
 			}{
 				Title:           store.Patch[string]{Set: titleSet, Value: title},
+				Description:     store.Patch[string]{Set: descriptionSet, Value: description},
 				EstimateMinutes: store.Patch[int]{Set: estimateSet, Value: estimate},
 				Notes:           store.Patch[string]{Set: notesSet, Value: notes},
 			})
@@ -280,6 +322,104 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 	case protocol.MethodIssueTodaySummary:
 		return h.handleNoParams(req, func() (any, error) {
 			return corecommands.ComputeDailyIssueSummaryForToday(ctx, h.core)
+		})
+	case protocol.MethodHabitList:
+		return handle(req, func(input shareddto.ListHabitsQuery) (any, error) {
+			return corecommands.ListHabitsByStream(ctx, h.core, input.StreamID)
+		})
+	case protocol.MethodHabitListDue:
+		return handle(req, func(input shareddto.ListHabitsDueQuery) (any, error) {
+			return corecommands.ListHabitsDueForDate(ctx, h.core, input.Date)
+		})
+	case protocol.MethodHabitCreate:
+		return handle(req, func(input shareddto.CreateHabitRequest) (any, error) {
+			return corecommands.CreateHabit(ctx, h.core, struct {
+				StreamID      int64
+				Name          string
+				Description   *string
+				ScheduleType  string
+				Weekdays      []int
+				TargetMinutes *int
+			}{
+				StreamID:      input.StreamID,
+				Name:          input.Name,
+				Description:   input.Description,
+				ScheduleType:  input.ScheduleType,
+				Weekdays:      input.Weekdays,
+				TargetMinutes: input.TargetMinutes,
+			})
+		})
+	case protocol.MethodHabitUpdate:
+		return handle(req, func(input shareddto.UpdateHabitRequest) (any, error) {
+			var active *bool
+			if input.Active != nil {
+				active = input.Active
+			}
+			return corecommands.UpdateHabit(ctx, h.core, input.ID, struct {
+				Name          store.Patch[string]
+				Description   store.Patch[string]
+				ScheduleType  *string
+				Weekdays      []int
+				WeekdaysSet   bool
+				TargetMinutes store.Patch[int]
+				Active        *bool
+			}{
+				Name:          store.Patch[string]{Set: input.Name != nil, Value: input.Name},
+				Description:   store.Patch[string]{Set: true, Value: input.Description},
+				ScheduleType:  input.ScheduleType,
+				Weekdays:      input.Weekdays,
+				WeekdaysSet:   input.Weekdays != nil,
+				TargetMinutes: store.Patch[int]{Set: true, Value: input.TargetMinutes},
+				Active:        active,
+			})
+		})
+	case protocol.MethodHabitDelete:
+		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.DeleteHabit(ctx, h.core, input.ID)
+		})
+	case protocol.MethodHabitComplete:
+		return handle(req, func(input shareddto.HabitCompletionUpsertRequest) (any, error) {
+			status := sharedtypes.HabitCompletionStatusCompleted
+			if input.Status != nil {
+				status = *input.Status
+			}
+			return corecommands.CompleteHabit(ctx, h.core, input.HabitID, input.Date, status, input.DurationMinutes, input.Notes)
+		})
+	case protocol.MethodHabitUncomplete:
+		return handle(req, func(input shareddto.HabitCompletionUpsertRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.UncompleteHabit(ctx, h.core, input.HabitID, input.Date)
+		})
+	case protocol.MethodHabitHistory:
+		return handle(req, func(input shareddto.HabitHistoryQuery) (any, error) {
+			return corecommands.ListHabitHistory(ctx, h.core, input.HabitID)
+		})
+	case protocol.MethodCheckInGet:
+		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {
+			return corecommands.GetDailyCheckIn(ctx, h.core, input.Date)
+		})
+	case protocol.MethodCheckInUpsert:
+		return handle(req, func(input shareddto.DailyCheckInUpsertRequest) (any, error) {
+			return corecommands.UpsertDailyCheckIn(ctx, h.core, input)
+		})
+	case protocol.MethodCheckInDelete:
+		return handle(req, func(input shareddto.DeleteByDateRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.DeleteDailyCheckIn(ctx, h.core, input.Date)
+		})
+	case protocol.MethodCheckInRange:
+		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
+			return corecommands.ListDailyCheckInsInRange(ctx, h.core, input.Start, input.End)
+		})
+	case protocol.MethodMetricsRange:
+		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
+			return corecommands.ComputeMetricsRange(ctx, h.core, input.Start, input.End)
+		})
+	case protocol.MethodMetricsRollup:
+		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
+			return corecommands.ComputeMetricsRollup(ctx, h.core, input.Start, input.End)
+		})
+	case protocol.MethodMetricsStreaks:
+		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
+			return corecommands.ComputeMetricsStreaks(ctx, h.core, input.Start, input.End)
 		})
 
 	case protocol.MethodContextGet:

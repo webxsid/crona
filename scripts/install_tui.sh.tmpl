@@ -4,6 +4,45 @@ set -eu
 VERSION="__VERSION__"
 REPO="webxsid/crona-node"
 INSTALL_DIR="${CRONA_INSTALL_DIR:-$HOME/.local/bin}"
+VERSION_FILE="${INSTALL_DIR}/.crona-version"
+
+prompt_replace() {
+  installed_version="$1"
+
+  if [ "${CRONA_INSTALL_FORCE:-0}" = "1" ]; then
+    return 0
+  fi
+
+  if [ -n "${installed_version}" ]; then
+    if [ "${installed_version}" = "${VERSION}" ]; then
+      printf 'Crona %s is already installed in %s.\n' "${installed_version}" "${INSTALL_DIR}"
+      printf 'Reinstall %s? [y/N] ' "${VERSION}"
+    else
+      printf 'Crona %s is already installed in %s.\n' "${installed_version}" "${INSTALL_DIR}"
+      printf 'Install %s over it? [y/N] ' "${VERSION}"
+    fi
+  else
+    printf 'Existing Crona binaries were found in %s.\n' "${INSTALL_DIR}"
+    printf 'Install %s over them? [y/N] ' "${VERSION}"
+  fi
+
+  if [ ! -t 0 ]; then
+    echo
+    echo "Install cancelled. Re-run with CRONA_INSTALL_FORCE=1 to replace the existing install non-interactively." >&2
+    exit 1
+  fi
+
+  read -r reply
+  case "${reply}" in
+    y|Y|yes|YES)
+      return 0
+      ;;
+    *)
+      echo "Install cancelled."
+      exit 0
+      ;;
+  esac
+}
 
 detect_os() {
   case "$(uname -s)" in
@@ -35,10 +74,22 @@ TUI_URL="${BASE_URL}/crona-tui-${VERSION}-${OS}-${ARCH}"
 
 mkdir -p "${INSTALL_DIR}"
 
+INSTALLED_VERSION=""
+if [ -f "${VERSION_FILE}" ]; then
+  INSTALLED_VERSION="$(tr -d '\n' < "${VERSION_FILE}")"
+fi
+
+if [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; then
+  prompt_replace "${INSTALLED_VERSION}"
+fi
+
 echo "Installing Crona ${VERSION} to ${INSTALL_DIR}"
-curl -fsSL "${KERNEL_URL}" -o "${INSTALL_DIR}/crona-kernel"
-curl -fsSL "${TUI_URL}" -o "${INSTALL_DIR}/crona-tui"
-chmod +x "${INSTALL_DIR}/crona-kernel" "${INSTALL_DIR}/crona-tui"
+curl -fsSL "${KERNEL_URL}" -o "${INSTALL_DIR}/crona-kernel.tmp"
+curl -fsSL "${TUI_URL}" -o "${INSTALL_DIR}/crona-tui.tmp"
+chmod +x "${INSTALL_DIR}/crona-kernel.tmp" "${INSTALL_DIR}/crona-tui.tmp"
+mv "${INSTALL_DIR}/crona-kernel.tmp" "${INSTALL_DIR}/crona-kernel"
+mv "${INSTALL_DIR}/crona-tui.tmp" "${INSTALL_DIR}/crona-tui"
+printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
 
 echo
 echo "Installed:"

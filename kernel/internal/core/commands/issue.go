@@ -17,6 +17,7 @@ import (
 func CreateIssue(ctx context.Context, c *core.Context, input struct {
 	StreamID        int64
 	Title           string
+	Description     *string
 	EstimateMinutes *int
 	Notes           *string
 	TodoForDate     *string
@@ -35,6 +36,7 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 		ID:              nextID,
 		StreamID:        input.StreamID,
 		Title:           strings.TrimSpace(input.Title),
+		Description:     normalizeOptionalString(input.Description),
 		Status:          sharedtypes.IssueStatusBacklog,
 		EstimateMinutes: input.EstimateMinutes,
 		Notes:           input.Notes,
@@ -66,6 +68,7 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 
 func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates struct {
 	Title           store.Patch[string]
+	Description     store.Patch[string]
 	EstimateMinutes store.Patch[int]
 	Notes           store.Patch[string]
 }) (*sharedtypes.Issue, error) {
@@ -79,9 +82,13 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	if updates.EstimateMinutes.Set && updates.EstimateMinutes.Value != nil && *updates.EstimateMinutes.Value < 0 {
 		return nil, errors.New("estimate must be >= 0")
 	}
+	if updates.Description.Set {
+		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
+	}
 	now := c.Now()
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           store.Patch[string]
+		Description     store.Patch[string]
 		Status          store.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes store.Patch[int]
 		Notes           store.Patch[string]
@@ -90,6 +97,7 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 		AbandonedAt     store.Patch[string]
 	}{
 		Title:           updates.Title,
+		Description:     updates.Description,
 		EstimateMinutes: updates.EstimateMinutes,
 		Notes:           updates.Notes,
 	})
@@ -164,6 +172,7 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           store.Patch[string]
+		Description     store.Patch[string]
 		Status          store.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes store.Patch[int]
 		Notes           store.Patch[string]
@@ -257,11 +266,21 @@ func RestoreIssue(ctx context.Context, c *core.Context, issueID int64) error {
 }
 
 func ListIssuesByStream(ctx context.Context, c *core.Context, streamID int64) ([]sharedtypes.Issue, error) {
-	return c.Issues.ListByStream(ctx, streamID, c.UserID)
+	issues, err := c.Issues.ListByStream(ctx, streamID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortIssues(issues, loadListSortSettings(ctx, c).issueSort)
+	return issues, nil
 }
 
 func ListAllIssues(ctx context.Context, c *core.Context) ([]sharedtypes.IssueWithMeta, error) {
-	return c.Issues.ListAll(ctx, c.UserID)
+	issues, err := c.Issues.ListAll(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortIssuesWithMeta(issues, loadListSortSettings(ctx, c).issueSort)
+	return issues, nil
 }
 
 func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, todoForDate string) (*sharedtypes.Issue, error) {
@@ -276,6 +295,7 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 	nextStatus := sharedtypes.AutoStatusOnTodoAssigned(issue.Status)
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           store.Patch[string]
+		Description     store.Patch[string]
 		Status          store.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes store.Patch[int]
 		Notes           store.Patch[string]
@@ -319,6 +339,7 @@ func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) 
 	now := c.Now()
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           store.Patch[string]
+		Description     store.Patch[string]
 		Status          store.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes store.Patch[int]
 		Notes           store.Patch[string]
@@ -375,6 +396,7 @@ func ComputeDailyIssueSummaryForDate(ctx context.Context, c *core.Context, date 
 	if err != nil {
 		return sharedtypes.DailyIssueSummary{}, err
 	}
+	sortIssues(issues, loadListSortSettings(ctx, c).issueSort)
 	totalEstimatedMinutes := 0
 	completedIssues := 0
 	abandonedIssues := 0

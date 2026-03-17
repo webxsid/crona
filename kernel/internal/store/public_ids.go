@@ -15,9 +15,6 @@ func ensurePublicIDColumn(ctx context.Context, db *bun.DB, table string) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		_ = rows.Close()
-	}()
 
 	var (
 		cid       int
@@ -27,16 +24,25 @@ func ensurePublicIDColumn(ctx context.Context, db *bun.DB, table string) error {
 		dfltValue sql.NullString
 		pk        int
 	)
+	found := false
 	for rows.Next() {
 		if err := rows.Scan(&cid, &name, &typ, &notnull, &dfltValue, &pk); err != nil {
+			_ = rows.Close()
 			return err
 		}
 		if strings.EqualFold(name, "public_id") {
-			return nil
+			found = true
 		}
 	}
 	if err := rows.Err(); err != nil {
+		_ = rows.Close()
 		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if found {
+		return nil
 	}
 
 	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN public_id integer", table))
@@ -140,6 +146,25 @@ func resolveIssueInternalID(ctx context.Context, db *bun.DB, issueID int64, user
 		TableExpr("issues").
 		ColumnExpr("id").
 		Where("public_id = ?", issueID).
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NULL").
+		Limit(1).
+		Scan(ctx, &internalID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+	return internalID, nil
+}
+
+func resolveHabitInternalID(ctx context.Context, db *bun.DB, habitID int64, userID string) (string, error) {
+	var internalID string
+	err := db.NewSelect().
+		TableExpr("habits").
+		ColumnExpr("id").
+		Where("public_id = ?", habitID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
 		Limit(1).

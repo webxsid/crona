@@ -26,6 +26,14 @@ func handleKernelEvent(m Model, event api.KernelEvent) (Model, tea.Cmd) {
 			cmds = append(cmds, loadIssues(m.client, *m.context.StreamID))
 		}
 		return m, tea.Batch(cmds...)
+	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
+		cmds := []tea.Cmd{loadDueHabits(m.client, m.currentDashboardDate())}
+		if m.context != nil && m.context.StreamID != nil {
+			cmds = append(cmds, loadHabits(m.client, *m.context.StreamID))
+		}
+		return m, tea.Batch(cmds...)
+	case "checkin.updated", "checkin.deleted":
+		return m, loadWellbeing(m.client, m.currentWellbeingDate())
 	case "scratchpad.created", "scratchpad.updated", "scratchpad.deleted":
 		return m, loadScratchpads(m.client)
 	case "session.started", "session.stopped":
@@ -46,10 +54,12 @@ func handleKernelEvent(m Model, event api.KernelEvent) (Model, tea.Cmd) {
 			m.cursor[PaneIssues] = 0
 		}
 		if payload.StreamID != nil {
-			cmds = append(cmds, loadIssues(m.client, *payload.StreamID))
+			cmds = append(cmds, loadIssues(m.client, *payload.StreamID), loadHabits(m.client, *payload.StreamID))
 		} else if payload.RepoID != nil {
 			m.issues = nil
+			m.habits = nil
 			m.cursor[PaneIssues] = 0
+			m.cursor[PaneHabits] = 0
 		}
 		return m, tea.Batch(cmds...)
 	case "timer.state":
@@ -65,7 +75,7 @@ func handleKernelEvent(m Model, event api.KernelEvent) (Model, tea.Cmd) {
 				m.pane = viewDefaultPane[m.view]
 				return m, tickAfter(m.timerTickSeq)
 			} else if m.view == ViewSessionActive {
-				m.view = ViewDefault
+				m.view = ViewDaily
 				m.pane = viewDefaultPane[m.view]
 			}
 		}

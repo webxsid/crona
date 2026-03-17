@@ -33,14 +33,15 @@ func (r *StreamRepository) Create(ctx context.Context, stream sharedtypes.Stream
 	}
 
 	model := StreamModel{
-		InternalID: streamInternalID(stream.ID),
-		PublicID:   stream.ID,
-		RepoID:     repoInternalID,
-		Name:       stream.Name,
-		Visibility: string(stream.Visibility),
-		UserID:     userID,
-		CreatedAt:  now,
-		UpdatedAt:  now,
+		InternalID:  streamInternalID(stream.ID),
+		PublicID:    stream.ID,
+		RepoID:      repoInternalID,
+		Name:        stream.Name,
+		Description: stream.Description,
+		Visibility:  string(stream.Visibility),
+		UserID:      userID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	if _, err := r.db.NewInsert().Model(&model).Exec(ctx); err != nil {
 		return sharedtypes.Stream{}, err
@@ -50,10 +51,11 @@ func (r *StreamRepository) Create(ctx context.Context, stream sharedtypes.Stream
 
 func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID string) ([]sharedtypes.Stream, error) {
 	type row struct {
-		PublicID   int64  `bun:"public_id"`
-		RepoPublic int64  `bun:"repo_public_id"`
-		Name       string `bun:"name"`
-		Visibility string `bun:"visibility"`
+		PublicID    int64   `bun:"public_id"`
+		RepoPublic  int64   `bun:"repo_public_id"`
+		Name        string  `bun:"name"`
+		Description *string `bun:"description"`
+		Visibility  string  `bun:"visibility"`
 	}
 
 	var rows []row
@@ -63,6 +65,7 @@ func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID 
 		ColumnExpr("streams.public_id").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("streams.name").
+		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
@@ -76,10 +79,11 @@ func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID 
 	out := make([]sharedtypes.Stream, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, sharedtypes.Stream{
-			ID:         row.PublicID,
-			RepoID:     row.RepoPublic,
-			Name:       row.Name,
-			Visibility: sharedtypes.StreamVisibility(row.Visibility),
+			ID:          row.PublicID,
+			RepoID:      row.RepoPublic,
+			Name:        row.Name,
+			Description: row.Description,
+			Visibility:  sharedtypes.StreamVisibility(row.Visibility),
 		})
 	}
 	return out, nil
@@ -87,10 +91,11 @@ func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID 
 
 func (r *StreamRepository) GetByID(ctx context.Context, streamID int64, userID string) (*sharedtypes.Stream, error) {
 	type row struct {
-		PublicID   int64  `bun:"public_id"`
-		RepoPublic int64  `bun:"repo_public_id"`
-		Name       string `bun:"name"`
-		Visibility string `bun:"visibility"`
+		PublicID    int64   `bun:"public_id"`
+		RepoPublic  int64   `bun:"repo_public_id"`
+		Name        string  `bun:"name"`
+		Description *string `bun:"description"`
+		Visibility  string  `bun:"visibility"`
 	}
 
 	var item row
@@ -100,6 +105,7 @@ func (r *StreamRepository) GetByID(ctx context.Context, streamID int64, userID s
 		ColumnExpr("streams.public_id").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("streams.name").
+		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
 		Where("streams.public_id = ?", streamID).
 		Where("streams.user_id = ?", userID).
@@ -115,19 +121,21 @@ func (r *StreamRepository) GetByID(ctx context.Context, streamID int64, userID s
 	}
 
 	return &sharedtypes.Stream{
-		ID:         item.PublicID,
-		RepoID:     item.RepoPublic,
-		Name:       item.Name,
-		Visibility: sharedtypes.StreamVisibility(item.Visibility),
+		ID:          item.PublicID,
+		RepoID:      item.RepoPublic,
+		Name:        item.Name,
+		Description: item.Description,
+		Visibility:  sharedtypes.StreamVisibility(item.Visibility),
 	}, nil
 }
 
 func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, userID string) ([]sharedtypes.Stream, error) {
 	type row struct {
-		PublicID   int64  `bun:"public_id"`
-		RepoPublic int64  `bun:"repo_public_id"`
-		Name       string `bun:"name"`
-		Visibility string `bun:"visibility"`
+		PublicID    int64   `bun:"public_id"`
+		RepoPublic  int64   `bun:"repo_public_id"`
+		Name        string  `bun:"name"`
+		Description *string `bun:"description"`
+		Visibility  string  `bun:"visibility"`
 	}
 
 	var rows []row
@@ -137,6 +145,7 @@ func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, 
 		ColumnExpr("streams.public_id").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("streams.name").
+		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
@@ -150,18 +159,20 @@ func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, 
 	out := make([]sharedtypes.Stream, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, sharedtypes.Stream{
-			ID:         row.PublicID,
-			RepoID:     row.RepoPublic,
-			Name:       row.Name,
-			Visibility: sharedtypes.StreamVisibility(row.Visibility),
+			ID:          row.PublicID,
+			RepoID:      row.RepoPublic,
+			Name:        row.Name,
+			Description: row.Description,
+			Visibility:  sharedtypes.StreamVisibility(row.Visibility),
 		})
 	}
 	return out, nil
 }
 
 func (r *StreamRepository) Update(ctx context.Context, streamID int64, userID string, now string, updates struct {
-	Name       *string
-	Visibility *sharedtypes.StreamVisibility
+	Name        *string
+	Description Patch[string]
+	Visibility  *sharedtypes.StreamVisibility
 }) (*sharedtypes.Stream, error) {
 	q := r.db.NewUpdate().
 		Model((*StreamModel)(nil)).
@@ -171,6 +182,13 @@ func (r *StreamRepository) Update(ctx context.Context, streamID int64, userID st
 		Set("updated_at = ?", now)
 	if updates.Name != nil {
 		q = q.Set("name = ?", *updates.Name)
+	}
+	if updates.Description.Set {
+		if updates.Description.Value == nil {
+			q = q.Set("description = NULL")
+		} else {
+			q = q.Set("description = ?", *updates.Description.Value)
+		}
 	}
 	if updates.Visibility != nil {
 		q = q.Set("visibility = ?", string(*updates.Visibility))

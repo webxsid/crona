@@ -42,6 +42,17 @@ func loadIssues(c *api.Client, streamID int64) tea.Cmd {
 	}
 }
 
+func loadHabits(c *api.Client, streamID int64) tea.Cmd {
+	return func() tea.Msg {
+		habits, err := c.ListHabits(streamID)
+		if err != nil {
+			logger.Errorf("loadHabits(%d): %v", streamID, err)
+			return errMsg{err}
+		}
+		return habitsLoadedMsg{streamID: streamID, habits: habits}
+	}
+}
+
 func loadAllIssues(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := c.ListAllIssues()
@@ -53,6 +64,17 @@ func loadAllIssues(c *api.Client) tea.Cmd {
 	}
 }
 
+func loadDueHabits(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		habits, err := c.ListDueHabits(date)
+		if err != nil {
+			logger.Errorf("loadDueHabits: %v", err)
+			return errMsg{err}
+		}
+		return dueHabitsLoadedMsg{habits: habits}
+	}
+}
+
 func loadDailySummary(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {
 		summary, err := c.GetDailySummary(date)
@@ -61,6 +83,50 @@ func loadDailySummary(c *api.Client, date string) tea.Cmd {
 			return errMsg{err}
 		}
 		return dailySummaryLoadedMsg{summary}
+	}
+}
+
+func loadDailyCheckIn(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		checkIn, err := c.GetDailyCheckIn(date)
+		if err != nil {
+			logger.Errorf("loadDailyCheckIn: %v", err)
+			return errMsg{err}
+		}
+		return dailyCheckInLoadedMsg{checkIn}
+	}
+}
+
+func loadMetricsRange(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		days, err := c.GetMetricsRange(start, end)
+		if err != nil {
+			logger.Errorf("loadMetricsRange: %v", err)
+			return errMsg{err}
+		}
+		return metricsRangeLoadedMsg{days}
+	}
+}
+
+func loadMetricsRollup(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		rollup, err := c.GetMetricsRollup(start, end)
+		if err != nil {
+			logger.Errorf("loadMetricsRollup: %v", err)
+			return errMsg{err}
+		}
+		return metricsRollupLoadedMsg{rollup}
+	}
+}
+
+func loadMetricsStreaks(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		streaks, err := c.GetMetricsStreaks(start, end)
+		if err != nil {
+			logger.Errorf("loadMetricsStreaks: %v", err)
+			return errMsg{err}
+		}
+		return streaksLoadedMsg{streaks}
 	}
 }
 
@@ -211,4 +277,14 @@ func waitForEvent(ch <-chan api.KernelEvent) tea.Cmd {
 		}
 		return kernelEventMsg{event}
 	}
+}
+
+func loadWellbeing(c *api.Client, date string) tea.Cmd {
+	start := shiftISODate(date, -6)
+	return tea.Batch(
+		loadDailyCheckIn(c, date),
+		loadMetricsRange(c, start, date),
+		loadMetricsRollup(c, start, date),
+		loadMetricsStreaks(c, start, date),
+	)
 }

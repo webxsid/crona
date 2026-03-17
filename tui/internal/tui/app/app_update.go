@@ -39,10 +39,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.issues = msg.issues
 		m.clampFiltered(PaneIssues)
 		return m, nil
+	case habitsLoadedMsg:
+		m.habits = msg.habits
+		m.clampFiltered(PaneHabits)
+		return m, nil
 	case allIssuesLoadedMsg:
 		m.allIssues = msg.issues
 		if m.view == ViewDefault || m.view == ViewDaily {
 			m.clampFiltered(PaneIssues)
+		}
+		return m, nil
+	case dueHabitsLoadedMsg:
+		m.dueHabits = msg.habits
+		if m.view == ViewDaily {
+			m.clampFiltered(PaneHabits)
 		}
 		return m, nil
 	case dailySummaryLoadedMsg:
@@ -53,6 +63,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.view == ViewDaily {
 			m.clampFiltered(PaneIssues)
 		}
+		return m, nil
+	case dailyCheckInLoadedMsg:
+		m.dailyCheckIn = msg.checkIn
+		if m.dailyCheckIn != nil && m.wellbeingDate == "" {
+			m.wellbeingDate = m.dailyCheckIn.Date
+		}
+		return m, nil
+	case metricsRangeLoadedMsg:
+		m.metricsRange = msg.days
+		return m, nil
+	case metricsRollupLoadedMsg:
+		m.metricsRollup = msg.rollup
+		return m, nil
+	case streaksLoadedMsg:
+		m.streaks = msg.streaks
 		return m, nil
 	case issueSessionsLoadedMsg:
 		var activeIssueID int64
@@ -116,6 +141,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case contextLoadedMsg:
 		m.context = msg.ctx
+		if m.view == ViewDefault || m.view == ViewDaily {
+			m.clampFiltered(PaneIssues)
+			m.clampFiltered(PaneHabits)
+		}
 		if m.context != nil && m.context.IssueID != nil {
 			return m, loadIssueSessions(m.client, *m.context.IssueID)
 		}
@@ -131,7 +160,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.pane = viewDefaultPane[m.view]
 		} else if m.view == ViewSessionActive {
-			m.view = ViewDefault
+			m.view = ViewDaily
 			m.pane = viewDefaultPane[m.view]
 		}
 		if m.timer != nil && m.timer.IssueID != nil {
@@ -167,14 +196,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case devSeededMsg:
 		cmd := m.setStatus("Dev seed loaded", false)
-		m.view = ViewDefault
+		m.view = ViewDaily
 		m.pane = viewDefaultPane[m.view]
-		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDailySummary(m.client, m.dashboardDate), loadSessionHistory(m.client, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadSettings(m.client))
+		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDueHabits(m.client, m.currentDashboardDate()), loadDailySummary(m.client, m.dashboardDate), loadWellbeing(m.client, m.currentWellbeingDate()), loadSessionHistory(m.client, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadSettings(m.client))
 	case devClearedMsg:
 		cmd := m.setStatus("Dev data cleared", false)
-		m.view = ViewDefault
+		m.view = ViewDaily
 		m.pane = viewDefaultPane[m.view]
-		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDailySummary(m.client, m.dashboardDate), loadSessionHistory(m.client, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadSettings(m.client))
+		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDueHabits(m.client, m.currentDashboardDate()), loadDailySummary(m.client, m.dashboardDate), loadWellbeing(m.client, m.currentWellbeingDate()), loadSessionHistory(m.client, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadSettings(m.client))
 	case sessionAmendedMsg:
 		cmd := m.setStatus("Session amended", false)
 		return m, tea.Batch(cmd, loadSessionHistory(m.client, 200), loadSessionDetail(m.client, msg.id))
