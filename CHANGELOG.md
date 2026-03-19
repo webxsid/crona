@@ -4,6 +4,8 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+## [0.2.0-beta.1] - 2026-03-19
+
 ### Added
 - Wellbeing tracking flow with daily check-ins for mood, energy, sleep hours, sleep score, screen time, and notes.
 - Bubble Tea `Wellbeing` view with per-day check-in details, rolling metrics, streak summaries, and burnout status.

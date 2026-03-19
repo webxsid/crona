@@ -13,7 +13,7 @@ The current beta ships as two binaries:
 End users do not need Go installed. The installer downloads the correct TUI and kernel pair for the current machine.
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona-node/releases/download/v0.1.0-beta.2/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona-node/releases/download/v0.2.0-beta.1/install-crona-tui.sh | sh
 ```
 
 By default this installs into `~/.local/bin`.

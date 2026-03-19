@@ -1,5 +1,5 @@
 PROJECT_NAME := crona
-PROJECT_VERSION := 0.1.0
+PROJECT_VERSION := 0.2.0
 PROJECT_DESCRIPTION := Local-first work kernel, TUI, and shared contracts
 GO ?= go
 GOCACHE ?= /tmp/crona-go-cache
@@ -72,5 +72,5 @@ clear-dev:
 	sh ./scripts/dev_clear.sh
 
 release:
-	@if [ -z "$(VERSION)" ]; then echo "VERSION is required, e.g. make release VERSION=v0.1.0-beta.2"; exit 1; fi
+	@if [ -z "$(VERSION)" ]; then echo "VERSION is required, e.g. make release VERSION=v0.2.0-beta.1"; exit 1; fi
 	sh ./scripts/build_release.sh "$(VERSION)"
