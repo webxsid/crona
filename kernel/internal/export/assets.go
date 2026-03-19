@@ -28,6 +28,8 @@ type exportConfig struct {
 type templateStatus struct {
 	userPath        string
 	bundledPath     string
+	resettable      bool
+	engine          string
 	exists          bool
 	customized      bool
 	updateAvailable bool
@@ -44,6 +46,18 @@ type pdfRenderer struct {
 	engine    string
 }
 
+type assetDescriptor struct {
+	reportKind  sharedtypes.ExportReportKind
+	assetKind   sharedtypes.ExportAssetKind
+	label       string
+	name        string
+	engine      string
+	userName    string
+	bundledName string
+	fallback    string
+	resettable  bool
+}
+
 func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 	exportDir := filepath.Join(paths.UserAssetsDir, "export")
 	if err := os.MkdirAll(exportDir, 0o700); err != nil {
@@ -58,68 +72,96 @@ func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 		return sharedtypes.ExportAssetStatus{}, err
 	}
 
-	markdownStatus, err := ensureTemplateAsset(paths, sharedtypes.ExportFormatMarkdown)
-	if err != nil {
-		return sharedtypes.ExportAssetStatus{}, err
-	}
-	pdfStatus, err := ensureTemplateAsset(paths, sharedtypes.ExportFormatPDF)
-	if err != nil {
-		return sharedtypes.ExportAssetStatus{}, err
-	}
-
-	defaultDocs, _, err := defaultDocsSource(paths)
-	if err != nil {
-		return sharedtypes.ExportAssetStatus{}, err
-	}
-	if err := ensureDocsFile(docsTemplatePath(paths), defaultDocs); err != nil {
-		return sharedtypes.ExportAssetStatus{}, err
+	templateAssets := make([]sharedtypes.ExportTemplateAsset, 0, len(assetDescriptors()))
+	var dailyMarkdownStatus templateStatus
+	var dailyPDFStatus templateStatus
+	var dailyDocsPath string
+	for _, descriptor := range assetDescriptors() {
+		status, err := ensureTemplateAsset(paths, descriptor)
+		if err != nil {
+			return sharedtypes.ExportAssetStatus{}, err
+		}
+		templateAssets = append(templateAssets, sharedtypes.ExportTemplateAsset{
+			ReportKind:      descriptor.reportKind,
+			AssetKind:       descriptor.assetKind,
+			Label:           descriptor.label,
+			Name:            descriptor.name,
+			Engine:          descriptor.engine,
+			UserPath:        status.userPath,
+			BundledPath:     status.bundledPath,
+			Resettable:      descriptor.resettable,
+			Exists:          status.exists,
+			Customized:      status.customized,
+			UpdateAvailable: status.updateAvailable,
+			BaseHash:        status.baseHash,
+			DefaultHash:     status.defaultHash,
+			ActiveSource:    status.activeSource,
+			LastSyncedAt:    status.lastSyncedAt,
+		})
+		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			dailyMarkdownStatus = status
+		}
+		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindTemplatePDF {
+			dailyPDFStatus = status
+		}
+		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindVariableDocs {
+			dailyDocsPath = status.userPath
+		}
 	}
 
 	renderer := detectPDFRenderer()
 
 	return sharedtypes.ExportAssetStatus{
-		TemplatePath:           markdownStatus.userPath,
-		TemplateDocsPath:       docsTemplatePath(paths),
-		BundledTemplatePath:    markdownStatus.bundledPath,
-		PDFTemplatePath:        pdfStatus.userPath,
-		PDFBundledTemplatePath: pdfStatus.bundledPath,
+		TemplatePath:           dailyMarkdownStatus.userPath,
+		TemplateDocsPath:       dailyDocsPath,
+		BundledTemplatePath:    dailyMarkdownStatus.bundledPath,
+		PDFTemplatePath:        dailyPDFStatus.userPath,
+		PDFBundledTemplatePath: dailyPDFStatus.bundledPath,
 		ReportsDir:             reportsDir,
 		DefaultReportsDir:      defaultReportsDir(paths),
 		ReportsDirCustomized:   reportsCustomized,
-		UserTemplateExists:     markdownStatus.exists,
-		UserTemplateCustomized: markdownStatus.customized,
-		DefaultUpdateAvailable: markdownStatus.updateAvailable,
-		PDFUserTemplateExists:  pdfStatus.exists,
-		PDFTemplateCustomized:  pdfStatus.customized,
-		PDFUpdateAvailable:     pdfStatus.updateAvailable,
-		TemplateBaseHash:       markdownStatus.baseHash,
-		CurrentDefaultHash:     markdownStatus.defaultHash,
-		PDFTemplateBaseHash:    pdfStatus.baseHash,
-		PDFCurrentDefaultHash:  pdfStatus.defaultHash,
+		UserTemplateExists:     dailyMarkdownStatus.exists,
+		UserTemplateCustomized: dailyMarkdownStatus.customized,
+		DefaultUpdateAvailable: dailyMarkdownStatus.updateAvailable,
+		PDFUserTemplateExists:  dailyPDFStatus.exists,
+		PDFTemplateCustomized:  dailyPDFStatus.customized,
+		PDFUpdateAvailable:     dailyPDFStatus.updateAvailable,
+		TemplateBaseHash:       dailyMarkdownStatus.baseHash,
+		CurrentDefaultHash:     dailyMarkdownStatus.defaultHash,
+		PDFTemplateBaseHash:    dailyPDFStatus.baseHash,
+		PDFCurrentDefaultHash:  dailyPDFStatus.defaultHash,
 		TemplateName:           "daily-report.hbs",
-		TemplateEngine:         "hbs",
-		ActiveTemplateSource:   markdownStatus.activeSource,
+		TemplateEngine:         dailyMarkdownStatus.engine,
+		ActiveTemplateSource:   dailyMarkdownStatus.activeSource,
 		PDFTemplateName:        "daily-report.pdf.hbs",
-		PDFTemplateEngine:      "hbs",
-		PDFTemplateSource:      pdfStatus.activeSource,
+		PDFTemplateEngine:      dailyPDFStatus.engine,
+		PDFTemplateSource:      dailyPDFStatus.activeSource,
 		PDFRendererAvailable:   renderer.available,
 		PDFRendererName:        renderer.name,
 		PDFRendererPath:        renderer.path,
-		LastSyncedAt:           markdownStatus.lastSyncedAt,
-		PDFLastSyncedAt:        pdfStatus.lastSyncedAt,
+		LastSyncedAt:           dailyMarkdownStatus.lastSyncedAt,
+		PDFLastSyncedAt:        dailyPDFStatus.lastSyncedAt,
+		TemplateAssets:         templateAssets,
 	}, nil
 }
 
-func ResetTemplate(paths runtime.Paths, format sharedtypes.ExportFormat) (sharedtypes.ExportAssetStatus, error) {
-	body, _, err := defaultTemplateSource(paths, normalizeExportFormat(format))
+func ResetTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) (sharedtypes.ExportAssetStatus, error) {
+	descriptor, ok := findAssetDescriptor(reportKind, assetKind)
+	if !ok {
+		return sharedtypes.ExportAssetStatus{}, errors.New("export asset not found")
+	}
+	if !descriptor.resettable {
+		return sharedtypes.ExportAssetStatus{}, errors.New("export asset is not resettable")
+	}
+	body, _, err := defaultAssetSource(paths, descriptor)
 	if err != nil {
 		return sharedtypes.ExportAssetStatus{}, err
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
-	if err := os.WriteFile(userTemplatePath(paths, format), body, runtime.FilePerm()); err != nil {
+	if err := os.WriteFile(userTemplatePath(paths, descriptor), body, runtime.FilePerm()); err != nil {
 		return sharedtypes.ExportAssetStatus{}, err
 	}
-	if err := writeTemplateMeta(templateMetaPath(paths, format), templateMeta{
+	if err := writeTemplateMeta(templateMetaPath(paths, descriptor), templateMeta{
 		BaseHash:   hashBytes(body),
 		LastSynced: &now,
 	}); err != nil {
@@ -129,11 +171,15 @@ func ResetTemplate(paths runtime.Paths, format sharedtypes.ExportFormat) (shared
 }
 
 func LoadActiveTemplate(paths runtime.Paths, format sharedtypes.ExportFormat) ([]byte, sharedtypes.ExportAssetStatus, error) {
+	return LoadActiveReportTemplate(paths, sharedtypes.ExportReportKindDaily, format)
+}
+
+func LoadActiveReportTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat) ([]byte, sharedtypes.ExportAssetStatus, error) {
 	status, err := EnsureAssets(paths)
 	if err != nil {
 		return nil, sharedtypes.ExportAssetStatus{}, err
 	}
-	body, err := os.ReadFile(activeTemplatePathForStatus(status, normalizeExportFormat(format)))
+	body, err := os.ReadFile(activeTemplatePathForStatus(status, reportKind, normalizeExportFormat(format)))
 	if err != nil {
 		return nil, sharedtypes.ExportAssetStatus{}, err
 	}
@@ -141,15 +187,36 @@ func LoadActiveTemplate(paths runtime.Paths, format sharedtypes.ExportFormat) ([
 }
 
 func WriteDailyReport(paths runtime.Paths, date string, format sharedtypes.ExportFormat, body []byte) (string, error) {
+	return WriteReport(paths, reportWriteSpec{
+		Kind:     sharedtypes.ExportReportKindDaily,
+		Label:    "Daily Report",
+		Date:     date,
+		Format:   format,
+		BaseName: "daily-" + date,
+	}, body)
+}
+
+func WriteReport(paths runtime.Paths, spec reportWriteSpec, body []byte) (string, error) {
 	reportsDir, _, err := resolveReportsDir(paths)
 	if err != nil {
 		return "", err
 	}
-	target := filepath.Join(reportsDir, date+reportExt(format))
+	target := filepath.Join(reportsDir, spec.BaseName+reportExt(spec.Format))
 	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
 		return "", err
 	}
 	if err := os.WriteFile(target, body, runtime.FilePerm()); err != nil {
+		return "", err
+	}
+	if err := writeReportMetadata(metadataPathForReport(target), reportFileMetadata{
+		Kind:       spec.Kind,
+		Label:      spec.Label,
+		ScopeLabel: spec.ScopeLabel,
+		Date:       spec.Date,
+		StartDate:  spec.StartDate,
+		EndDate:    spec.EndDate,
+		Format:     spec.Format,
+	}); err != nil {
 		return "", err
 	}
 	return target, nil
@@ -190,37 +257,77 @@ func ListReports(paths runtime.Paths) ([]sharedtypes.ExportReportFile, error) {
 		if entry.IsDir() {
 			continue
 		}
-		ext := strings.ToLower(filepath.Ext(entry.Name()))
-		if ext != ".md" && ext != ".pdf" {
+		name := entry.Name()
+		if strings.HasSuffix(strings.ToLower(name), ".meta.json") {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(name))
+		if ext != ".md" && ext != ".pdf" && ext != ".csv" {
 			continue
 		}
 		info, err := entry.Info()
 		if err != nil {
 			continue
 		}
-		name := entry.Name()
+		path := filepath.Join(reportsDir, name)
+		metadata, _ := readReportMetadata(metadataPathForReport(path))
+		date := strings.TrimSuffix(name, ext)
+		kind := sharedtypes.ExportReportKindDaily
+		scopeLabel := ""
+		startDate := ""
+		endDate := ""
+		dateLabel := date
+		format := exportFormatFromExt(ext)
+		if metadata != nil {
+			kind = metadata.Kind
+			scopeLabel = metadata.ScopeLabel
+			if metadata.Date != "" {
+				date = metadata.Date
+			}
+			startDate = metadata.StartDate
+			endDate = metadata.EndDate
+			dateLabel = reportDisplayDateLabel(date, startDate, endDate)
+			format = string(metadata.Format)
+		}
 		out = append(out, sharedtypes.ExportReportFile{
 			Name:       name,
-			Path:       filepath.Join(reportsDir, name),
-			Date:       strings.TrimSuffix(name, ext),
-			Format:     exportFormatFromExt(ext),
+			Path:       path,
+			Kind:       kind,
+			ScopeLabel: scopeLabel,
+			Date:       date,
+			StartDate:  startDate,
+			EndDate:    endDate,
+			DateLabel:  dateLabel,
+			Format:     format,
 			SizeBytes:  info.Size(),
 			ModifiedAt: info.ModTime().UTC().Format(time.RFC3339),
 		})
 	}
 	sort.Slice(out, func(i, j int) bool {
-		if out[i].Date == out[j].Date {
+		left := reportDisplayDateLabel(out[i].Date, out[i].StartDate, out[i].EndDate)
+		right := reportDisplayDateLabel(out[j].Date, out[j].StartDate, out[j].EndDate)
+		if left == right {
 			if out[i].Format == out[j].Format {
 				return out[i].Name > out[j].Name
 			}
 			return out[i].Format < out[j].Format
 		}
-		return out[i].Date > out[j].Date
+		return left > right
 	})
 	return out, nil
 }
 
 func RenderPDF(paths runtime.Paths, date string, markdown string) (string, string, error) {
+	return RenderPDFReport(paths, reportWriteSpec{
+		Kind:     sharedtypes.ExportReportKindDaily,
+		Label:    "Daily Report",
+		Date:     date,
+		Format:   sharedtypes.ExportFormatPDF,
+		BaseName: "daily-" + date,
+	}, markdown)
+}
+
+func RenderPDFReport(paths runtime.Paths, spec reportWriteSpec, markdown string) (string, string, error) {
 	renderer := detectPDFRenderer()
 	if !renderer.available {
 		return "", "", errors.New("no supported PDF renderer found; install pandoc with a PDF engine such as tectonic, weasyprint, wkhtmltopdf, xelatex, or pdflatex")
@@ -231,11 +338,15 @@ func RenderPDF(paths runtime.Paths, date string, markdown string) (string, strin
 	}
 	defer os.RemoveAll(tmpDir)
 
-	inputPath := filepath.Join(tmpDir, date+".md")
+	baseName := spec.BaseName
+	if strings.TrimSpace(baseName) == "" {
+		baseName = "report"
+	}
+	inputPath := filepath.Join(tmpDir, baseName+".md")
 	if err := os.WriteFile(inputPath, []byte(markdown), 0o600); err != nil {
 		return "", "", err
 	}
-	outputPath := filepath.Join(tmpDir, date+".pdf")
+	outputPath := filepath.Join(tmpDir, baseName+".pdf")
 
 	cmd := exec.Command(renderer.path, inputPath, "-o", outputPath, "--pdf-engine="+renderer.engine)
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -250,33 +361,28 @@ func RenderPDF(paths runtime.Paths, date string, markdown string) (string, strin
 	if err != nil {
 		return "", renderer.name, err
 	}
-	finalPath, err := WriteDailyReport(paths, date, sharedtypes.ExportFormatPDF, body)
+	finalPath, err := WriteReport(paths, reportWriteSpec{
+		Kind:       spec.Kind,
+		Label:      spec.Label,
+		ScopeLabel: spec.ScopeLabel,
+		Date:       spec.Date,
+		StartDate:  spec.StartDate,
+		EndDate:    spec.EndDate,
+		Format:     sharedtypes.ExportFormatPDF,
+		BaseName:   spec.BaseName,
+	}, body)
 	if err != nil {
 		return "", renderer.name, err
 	}
 	return finalPath, renderer.name, nil
 }
 
-func userTemplatePath(paths runtime.Paths, format sharedtypes.ExportFormat) string {
-	switch normalizeExportFormat(format) {
-	case sharedtypes.ExportFormatPDF:
-		return filepath.Join(paths.UserAssetsDir, "export", "daily-report.pdf.user.hbs")
-	default:
-		return filepath.Join(paths.UserAssetsDir, "export", "daily-report.user.hbs")
-	}
+func userTemplatePath(paths runtime.Paths, descriptor assetDescriptor) string {
+	return filepath.Join(paths.UserAssetsDir, "export", descriptor.userName)
 }
 
-func templateMetaPath(paths runtime.Paths, format sharedtypes.ExportFormat) string {
-	switch normalizeExportFormat(format) {
-	case sharedtypes.ExportFormatPDF:
-		return filepath.Join(paths.UserAssetsDir, "export", "daily-report.pdf.user.meta.json")
-	default:
-		return filepath.Join(paths.UserAssetsDir, "export", "daily-report.user.meta.json")
-	}
-}
-
-func docsTemplatePath(paths runtime.Paths) string {
-	return filepath.Join(paths.UserAssetsDir, "export", "daily-report.variables.md")
+func templateMetaPath(paths runtime.Paths, descriptor assetDescriptor) string {
+	return filepath.Join(paths.UserAssetsDir, "export", descriptor.userName+".meta.json")
 }
 
 func exportConfigPath(paths runtime.Paths) string {
@@ -290,17 +396,8 @@ func activeTemplateSource(customized bool) string {
 	return "default"
 }
 
-func defaultTemplateSource(paths runtime.Paths, format sharedtypes.ExportFormat) ([]byte, string, error) {
-	switch normalizeExportFormat(format) {
-	case sharedtypes.ExportFormatPDF:
-		return resolveAssetSource(paths, "daily-report.pdf.default.hbs", fallbackDailyReportPDFTemplate)
-	default:
-		return resolveAssetSource(paths, "daily-report.default.hbs", fallbackDailyReportTemplate)
-	}
-}
-
-func defaultDocsSource(paths runtime.Paths) ([]byte, string, error) {
-	return resolveAssetSource(paths, "daily-report.variables.md", fallbackDailyReportVariables)
+func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte, string, error) {
+	return resolveAssetSource(paths, descriptor.bundledName, descriptor.fallback)
 }
 
 func resolveAssetSource(paths runtime.Paths, name string, fallback string) ([]byte, string, error) {
@@ -319,35 +416,26 @@ func resolveAssetSource(paths runtime.Paths, name string, fallback string) ([]by
 	return []byte(fallback), filepath.Join(paths.BundledAssetsDir, "export", name), nil
 }
 
-func ensureDocsFile(path string, content []byte) error {
-	existing, err := os.ReadFile(path)
-	if err == nil && strings.TrimSpace(string(existing)) == strings.TrimSpace(string(content)) {
-		return nil
-	}
-	if errors.Is(err, os.ErrNotExist) || err == nil {
-		return os.WriteFile(path, content, runtime.FilePerm())
-	}
-	return err
-}
-
-func ensureTemplateAsset(paths runtime.Paths, format sharedtypes.ExportFormat) (templateStatus, error) {
-	body, bundledPath, err := defaultTemplateSource(paths, format)
+func ensureTemplateAsset(paths runtime.Paths, descriptor assetDescriptor) (templateStatus, error) {
+	body, bundledPath, err := defaultAssetSource(paths, descriptor)
 	if err != nil {
 		return templateStatus{}, err
 	}
 	defaultHash := hashBytes(body)
-	meta, _ := readTemplateMeta(templateMetaPath(paths, format))
-	userPath := userTemplatePath(paths, format)
+	meta, _ := readTemplateMeta(templateMetaPath(paths, descriptor))
+	userPath := userTemplatePath(paths, descriptor)
 	userContent, err := os.ReadFile(userPath)
 	switch {
 	case errors.Is(err, os.ErrNotExist):
-		now := time.Now().UTC().Format(time.RFC3339)
 		if err := os.WriteFile(userPath, body, runtime.FilePerm()); err != nil {
 			return templateStatus{}, err
 		}
-		meta = templateMeta{BaseHash: defaultHash, LastSynced: &now}
-		if err := writeTemplateMeta(templateMetaPath(paths, format), meta); err != nil {
-			return templateStatus{}, err
+		if descriptor.resettable {
+			now := time.Now().UTC().Format(time.RFC3339)
+			meta = templateMeta{BaseHash: defaultHash, LastSynced: &now}
+			if err := writeTemplateMeta(templateMetaPath(paths, descriptor), meta); err != nil {
+				return templateStatus{}, err
+			}
 		}
 		userContent = body
 	case err != nil:
@@ -356,31 +444,33 @@ func ensureTemplateAsset(paths runtime.Paths, format sharedtypes.ExportFormat) (
 
 	userHash := hashBytes(userContent)
 	customized := userHash != defaultHash
-	if meta.BaseHash != "" {
+	if descriptor.resettable && meta.BaseHash != "" {
 		customized = userHash != meta.BaseHash
 	}
-	updateAvailable := meta.BaseHash != "" && meta.BaseHash != defaultHash
+	updateAvailable := descriptor.resettable && meta.BaseHash != "" && meta.BaseHash != defaultHash
 	if !customized && updateAvailable {
 		now := time.Now().UTC().Format(time.RFC3339)
 		if err := os.WriteFile(userPath, body, runtime.FilePerm()); err != nil {
 			return templateStatus{}, err
 		}
 		meta = templateMeta{BaseHash: defaultHash, LastSynced: &now}
-		if err := writeTemplateMeta(templateMetaPath(paths, format), meta); err != nil {
+		if err := writeTemplateMeta(templateMetaPath(paths, descriptor), meta); err != nil {
 			return templateStatus{}, err
 		}
 		customized = false
 		updateAvailable = false
 	}
-	if meta.BaseHash == "" {
+	if descriptor.resettable && meta.BaseHash == "" {
 		now := time.Now().UTC().Format(time.RFC3339)
 		meta = templateMeta{BaseHash: defaultHash, LastSynced: &now}
-		_ = writeTemplateMeta(templateMetaPath(paths, format), meta)
+		_ = writeTemplateMeta(templateMetaPath(paths, descriptor), meta)
 	}
 
 	return templateStatus{
 		userPath:        userPath,
 		bundledPath:     bundledPath,
+		resettable:      descriptor.resettable,
+		engine:          descriptor.engine,
 		exists:          true,
 		customized:      customized,
 		updateAvailable: updateAvailable,
@@ -392,6 +482,10 @@ func ensureTemplateAsset(paths runtime.Paths, format sharedtypes.ExportFormat) (
 }
 
 func defaultReportsDir(paths runtime.Paths) string {
+	return paths.ReportsDir
+}
+
+func legacyDailyReportsDir(paths runtime.Paths) string {
 	return filepath.Join(paths.ReportsDir, "daily")
 }
 
@@ -406,6 +500,9 @@ func resolveReportsDir(paths runtime.Paths) (string, bool, error) {
 	resolved, err := normalizeReportsDir(paths, config.ReportsDir)
 	if err != nil {
 		return "", false, err
+	}
+	if resolved == legacyDailyReportsDir(paths) {
+		return defaultReportsDir(paths), false, nil
 	}
 	return resolved, true, nil
 }
@@ -429,7 +526,11 @@ func normalizeReportsDir(paths runtime.Paths, raw string) (string, error) {
 	if !filepath.IsAbs(trimmed) {
 		trimmed = filepath.Join(paths.BaseDir, trimmed)
 	}
-	return filepath.Clean(trimmed), nil
+	cleaned := filepath.Clean(trimmed)
+	if cleaned == legacyDailyReportsDir(paths) {
+		return defaultReportsDir(paths), nil
+	}
+	return cleaned, nil
 }
 
 func readExportConfig(path string) (exportConfig, error) {
@@ -497,31 +598,77 @@ func detectPDFRenderer() pdfRenderer {
 	return pdfRenderer{}
 }
 
+func assetDescriptors() []assetDescriptor {
+	return []assetDescriptor{
+		{reportKind: sharedtypes.ExportReportKindDaily, assetKind: sharedtypes.ExportAssetKindTemplateMarkdown, label: "Daily report template", name: "daily-report.hbs", engine: "hbs", userName: "daily-report.user.hbs", bundledName: "daily-report.default.hbs", fallback: fallbackDailyReportTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindDaily, assetKind: sharedtypes.ExportAssetKindTemplatePDF, label: "Daily PDF template", name: "daily-report.pdf.hbs", engine: "hbs", userName: "daily-report.pdf.user.hbs", bundledName: "daily-report.pdf.default.hbs", fallback: fallbackDailyReportPDFTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindDaily, assetKind: sharedtypes.ExportAssetKindVariableDocs, label: "Daily variable docs", name: "daily-report.variables.md", engine: "md", userName: "daily-report.variables.md", bundledName: "daily-report.variables.md", fallback: fallbackDailyReportVariables},
+		{reportKind: sharedtypes.ExportReportKindWeekly, assetKind: sharedtypes.ExportAssetKindTemplateMarkdown, label: "Weekly report template", name: "weekly-report.hbs", engine: "hbs", userName: "weekly-report.user.hbs", bundledName: "weekly-report.default.hbs", fallback: fallbackWeeklyReportTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindWeekly, assetKind: sharedtypes.ExportAssetKindTemplatePDF, label: "Weekly PDF template", name: "weekly-report.pdf.hbs", engine: "hbs", userName: "weekly-report.pdf.user.hbs", bundledName: "weekly-report.pdf.default.hbs", fallback: fallbackWeeklyReportPDFTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindWeekly, assetKind: sharedtypes.ExportAssetKindVariableDocs, label: "Weekly variable docs", name: "weekly-report.variables.md", engine: "md", userName: "weekly-report.variables.md", bundledName: "weekly-report.variables.md", fallback: fallbackWeeklyReportVariables},
+		{reportKind: sharedtypes.ExportReportKindRepo, assetKind: sharedtypes.ExportAssetKindTemplateMarkdown, label: "Repo report template", name: "repo-report.hbs", engine: "hbs", userName: "repo-report.user.hbs", bundledName: "repo-report.default.hbs", fallback: fallbackRepoReportTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindRepo, assetKind: sharedtypes.ExportAssetKindTemplatePDF, label: "Repo PDF template", name: "repo-report.pdf.hbs", engine: "hbs", userName: "repo-report.pdf.user.hbs", bundledName: "repo-report.pdf.default.hbs", fallback: fallbackRepoReportPDFTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindRepo, assetKind: sharedtypes.ExportAssetKindVariableDocs, label: "Repo variable docs", name: "repo-report.variables.md", engine: "md", userName: "repo-report.variables.md", bundledName: "repo-report.variables.md", fallback: fallbackRepoReportVariables},
+		{reportKind: sharedtypes.ExportReportKindStream, assetKind: sharedtypes.ExportAssetKindTemplateMarkdown, label: "Stream report template", name: "stream-report.hbs", engine: "hbs", userName: "stream-report.user.hbs", bundledName: "stream-report.default.hbs", fallback: fallbackStreamReportTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindStream, assetKind: sharedtypes.ExportAssetKindTemplatePDF, label: "Stream PDF template", name: "stream-report.pdf.hbs", engine: "hbs", userName: "stream-report.pdf.user.hbs", bundledName: "stream-report.pdf.default.hbs", fallback: fallbackStreamReportPDFTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindStream, assetKind: sharedtypes.ExportAssetKindVariableDocs, label: "Stream variable docs", name: "stream-report.variables.md", engine: "md", userName: "stream-report.variables.md", bundledName: "stream-report.variables.md", fallback: fallbackStreamReportVariables},
+		{reportKind: sharedtypes.ExportReportKindIssueRollup, assetKind: sharedtypes.ExportAssetKindTemplateMarkdown, label: "Issue rollup template", name: "issue-rollup-report.hbs", engine: "hbs", userName: "issue-rollup-report.user.hbs", bundledName: "issue-rollup-report.default.hbs", fallback: fallbackIssueRollupReportTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindIssueRollup, assetKind: sharedtypes.ExportAssetKindTemplatePDF, label: "Issue rollup PDF template", name: "issue-rollup-report.pdf.hbs", engine: "hbs", userName: "issue-rollup-report.pdf.user.hbs", bundledName: "issue-rollup-report.pdf.default.hbs", fallback: fallbackIssueRollupReportPDFTemplate, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindIssueRollup, assetKind: sharedtypes.ExportAssetKindVariableDocs, label: "Issue rollup variable docs", name: "issue-rollup-report.variables.md", engine: "md", userName: "issue-rollup-report.variables.md", bundledName: "issue-rollup-report.variables.md", fallback: fallbackIssueRollupReportVariables},
+		{reportKind: sharedtypes.ExportReportKindCSV, assetKind: sharedtypes.ExportAssetKindCSVSpec, label: "CSV export spec", name: "csv-export.spec.json", engine: "json", userName: "csv-export.spec.json", bundledName: "csv-export.spec.json", fallback: fallbackCSVExportSpec, resettable: true},
+		{reportKind: sharedtypes.ExportReportKindCSV, assetKind: sharedtypes.ExportAssetKindCSVDocs, label: "CSV export docs", name: "csv-export.variables.md", engine: "md", userName: "csv-export.variables.md", bundledName: "csv-export.variables.md", fallback: fallbackCSVExportVariables},
+	}
+}
+
+func findAssetDescriptor(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) (assetDescriptor, bool) {
+	for _, descriptor := range assetDescriptors() {
+		if descriptor.reportKind == reportKind && descriptor.assetKind == assetKind {
+			return descriptor, true
+		}
+	}
+	return assetDescriptor{}, false
+}
+
 func normalizeExportFormat(format sharedtypes.ExportFormat) sharedtypes.ExportFormat {
-	if format == sharedtypes.ExportFormatPDF {
+	if format == sharedtypes.ExportFormatPDF || format == sharedtypes.ExportFormatCSV {
 		return format
 	}
 	return sharedtypes.ExportFormatMarkdown
 }
 
-func activeTemplatePathForStatus(status sharedtypes.ExportAssetStatus, format sharedtypes.ExportFormat) string {
+func activeTemplatePathForStatus(status sharedtypes.ExportAssetStatus, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat) string {
+	assetKind := sharedtypes.ExportAssetKindTemplateMarkdown
 	if normalizeExportFormat(format) == sharedtypes.ExportFormatPDF {
+		assetKind = sharedtypes.ExportAssetKindTemplatePDF
+	}
+	for _, asset := range status.TemplateAssets {
+		if asset.ReportKind == reportKind && asset.AssetKind == assetKind {
+			return asset.UserPath
+		}
+	}
+	if reportKind == sharedtypes.ExportReportKindDaily && assetKind == sharedtypes.ExportAssetKindTemplatePDF {
 		return status.PDFTemplatePath
 	}
 	return status.TemplatePath
 }
 
 func reportExt(format sharedtypes.ExportFormat) string {
-	if normalizeExportFormat(format) == sharedtypes.ExportFormatPDF {
+	switch normalizeExportFormat(format) {
+	case sharedtypes.ExportFormatPDF:
 		return ".pdf"
+	case sharedtypes.ExportFormatCSV:
+		return ".csv"
+	default:
+		return ".md"
 	}
-	return ".md"
 }
 
 func exportFormatFromExt(ext string) string {
 	switch strings.ToLower(ext) {
 	case ".pdf":
 		return string(sharedtypes.ExportFormatPDF)
+	case ".csv":
+		return string(sharedtypes.ExportFormatCSV)
 	default:
 		return string(sharedtypes.ExportFormatMarkdown)
 	}

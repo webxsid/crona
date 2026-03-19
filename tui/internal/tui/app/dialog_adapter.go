@@ -4,6 +4,7 @@ import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	dialogpkg "crona/tui/internal/tui/app/dialogs"
+	"errors"
 	"os"
 	"os/exec"
 	"runtime"
@@ -289,12 +290,38 @@ func (m Model) dialogActionCmd(action dialogpkg.Action) tea.Cmd {
 		return cmdUpdateIssue(m.client, action.IssueID, action.StreamID, action.Title, action.Description, action.Estimate, action.DueDate, m.currentDashboardDate())
 	case "complete_habit":
 		return cmdSetHabitStatus(m.client, action.HabitID, action.CheckInDate, sharedtypes.HabitCompletionStatusCompleted, action.Estimate, action.Note)
-	case "export_daily_file":
-		return cmdGenerateDailyReport(m.client, action.CheckInDate, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile)
-	case "export_daily_clipboard":
-		return cmdCopyDailyReport(m.client, action.CheckInDate)
-	case "export_daily_pdf_file":
-		return cmdGenerateDailyReport(m.client, action.CheckInDate, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile)
+	case "export_report":
+		if action.OutputMode == sharedtypes.ExportOutputModeClipboard && action.ReportKind == sharedtypes.ExportReportKindDaily {
+			return cmdCopyDailyReport(m.client, action.CheckInDate)
+		}
+		req := shareddto.ExportReportRequest{
+			Kind:       action.ReportKind,
+			Date:       action.CheckInDate,
+			Format:     action.ReportFormat,
+			OutputMode: action.OutputMode,
+		}
+		if action.ReportKind == sharedtypes.ExportReportKindRepo {
+			if m.context == nil || m.context.RepoID == nil {
+				return func() tea.Msg { return errMsg{errors.New("repo report requires an active repo context")} }
+			}
+			req.RepoID = m.context.RepoID
+		}
+		if action.ReportKind == sharedtypes.ExportReportKindStream {
+			if m.context == nil || m.context.StreamID == nil {
+				return func() tea.Msg { return errMsg{errors.New("stream report requires an active stream context")} }
+			}
+			req.StreamID = m.context.StreamID
+			if m.context.RepoID != nil {
+				req.RepoID = m.context.RepoID
+			}
+		}
+		if action.ReportKind == sharedtypes.ExportReportKindIssueRollup || action.ReportKind == sharedtypes.ExportReportKindCSV {
+			if m.context != nil {
+				req.RepoID = m.context.RepoID
+				req.StreamID = m.context.StreamID
+			}
+		}
+		return cmdGenerateReport(m.client, req)
 	case "set_export_reports_dir":
 		return cmdSetExportReportsDir(m.client, action.Path)
 	case "delete":

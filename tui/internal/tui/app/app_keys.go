@@ -338,8 +338,16 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		if m.view == ViewExportDaily && m.pane == PaneExportReports {
 			if report, ok := m.selectedExportReport(); ok {
-				meta := fmt.Sprintf("Format %s   Modified %s", report.Format, report.ModifiedAt)
-				body := "Path\n" + report.Path + "\n\nSize\n" + fmt.Sprintf("%d bytes", report.SizeBytes)
+				meta := fmt.Sprintf("Kind %s   Format %s   Modified %s", report.Kind, report.Format, report.ModifiedAt)
+				scope := strings.TrimSpace(report.ScopeLabel)
+				if scope == "" {
+					scope = "-"
+				}
+				dateLabel := strings.TrimSpace(report.DateLabel)
+				if dateLabel == "" {
+					dateLabel = report.Date
+				}
+				body := "Scope\n" + scope + "\n\nDate\n" + dateLabel + "\n\nPath\n" + report.Path + "\n\nSize\n" + fmt.Sprintf("%d bytes", report.SizeBytes)
 				return m.openViewEntityDialog("Export Report", report.Name, meta, body), nil
 			}
 			return m, nil
@@ -384,11 +392,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				if item.label == "Reports directory" && m.exportAssets.ReportsDirCustomized {
 					return m, cmdSetExportReportsDir(m.client, "")
 				}
-				if (item.label == "Daily report template" || item.label == "Template update status") && (m.exportAssets.DefaultUpdateAvailable || m.exportAssets.UserTemplateCustomized) {
-					return m, cmdResetExportTemplate(m.client, sharedtypes.ExportFormatMarkdown)
-				}
-				if item.label == "PDF report template" && (m.exportAssets.PDFUpdateAvailable || m.exportAssets.PDFTemplateCustomized) {
-					return m, cmdResetExportTemplate(m.client, sharedtypes.ExportFormatPDF)
+				if item.resettable {
+					return m, cmdResetExportTemplate(m.client, item.reportKind, item.assetKind)
 				}
 			}
 		}

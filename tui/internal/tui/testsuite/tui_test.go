@@ -5,10 +5,13 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/app"
+	dialogs "crona/tui/internal/tui/app/dialogs"
 	"crona/tui/internal/tui/app/views"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -201,6 +204,60 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "█") {
 		t.Fatalf("expected inline bars below height 55")
+	}
+}
+
+func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", true)
+	if state.Kind != "export_report" {
+		t.Fatalf("expected export_report dialog kind, got %q", state.Kind)
+	}
+	joined := strings.Join(state.ChoiceItems, "\n")
+	for _, want := range []string{
+		"Daily report: write Markdown file",
+		"Weekly summary: write Markdown file",
+		"Repo report: write Markdown file",
+		"Stream report: write Markdown file",
+		"Issue rollup: write Markdown file",
+		"CSV session export: write file",
+	} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected export choice %q in dialog", want)
+		}
+	}
+}
+
+func TestExportReportsViewShowsReportKindsAndScopeLabels(t *testing.T) {
+	state := views.ContentState{
+		View:   "export_daily",
+		Pane:   "export_reports",
+		Width:  90,
+		Height: 16,
+		Cursors: map[string]int{
+			"export_reports": 0,
+		},
+		Filters: map[string]string{
+			"export_reports": "",
+		},
+		ExportAssets: &api.ExportAssetStatus{ReportsDir: "/tmp/reports"},
+		ExportReports: []api.ExportReportFile{
+			{
+				Name:       "weekly-2026-03-17-to-2026-03-23.md",
+				Path:       "/tmp/reports/weekly-2026-03-17-to-2026-03-23.md",
+				Kind:       sharedtypes.ExportReportKindWeekly,
+				ScopeLabel: "Work / app",
+				DateLabel:  "2026-03-17 to 2026-03-23",
+				Format:     string(sharedtypes.ExportFormatMarkdown),
+				SizeBytes:  2048,
+			},
+		},
+	}
+
+	rendered := views.RenderExportForTesting(views.TestingTheme(), state)
+	for _, want := range []string{"Reports", "[weekly]", "Work / app", "2026-03-17 to 2026-03-23"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected export reports view to contain %q, got %q", want, rendered)
+		}
 	}
 }
 
@@ -523,10 +580,10 @@ func compactDefaultState(height int) views.ContentState {
 func compactWellbeingState(height int) views.ContentState {
 	avgMood, avgEnergy := 4.0, 3.7
 	return views.ContentState{
-		View:   "wellbeing",
-		Pane:   "issues",
-		Width:  92,
-		Height: height,
+		View:          "wellbeing",
+		Pane:          "issues",
+		Width:         92,
+		Height:        height,
 		WellbeingDate: "2026-03-19",
 		MetricsRollup: &api.MetricsRollup{
 			Days:          7,
@@ -537,8 +594,8 @@ func compactWellbeingState(height int) views.ContentState {
 			AverageMood:   &avgMood,
 			AverageEnergy: &avgEnergy,
 			LatestBurnout: &api.BurnoutIndicator{
-				Level:  "low",
-				Score:  31,
+				Level:   "low",
+				Score:   31,
 				Factors: map[string]float64{"breakCompliance": 0.99},
 			},
 		},
@@ -591,5 +648,59 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	}
 	if got := lipgloss.Height(rendered); got > height {
 		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)
+	}
+}
+
+func TestDailyHabitDeleteDialogUsesDailySelection(t *testing.T) {
+	model := app.NewDailyHabitDeleteTestModel([]api.HabitDailyItem{
+		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 42, StreamID: 7, Name: "Inbox Zero"}}},
+	})
+
+	next, ok := app.OpenSelectedDeleteDialogForTesting(model)
+	if !ok {
+		t.Fatalf("expected delete dialog to open for daily habit")
+	}
+	if next.DialogDeleteKindForTesting() != "habit" || next.DialogDeleteIDForTesting() != "42" {
+		t.Fatalf("expected habit delete dialog, got kind=%q id=%q", next.DialogDeleteKindForTesting(), next.DialogDeleteIDForTesting())
+	}
+	if next.DialogStreamIDForTesting() != 7 {
+		t.Fatalf("expected dialog stream id 7, got %d", next.DialogStreamIDForTesting())
+	}
+}
+
+func TestDefaultStreamOptionsIncludeExistingStreamsWithoutContext(t *testing.T) {
+	repoInput := textinput.New()
+	repoInput.SetValue("Work")
+	streamInput := textinput.New()
+	streamInput.SetValue(" app ")
+
+	options := dialogs.DefaultStreamOptionsForTesting(
+		[]textinput.Model{repoInput, streamInput},
+		0,
+		[]api.Repo{{ID: 1, Name: "Work"}},
+		nil,
+		[]api.Stream{{ID: 9, RepoID: 1, Name: "app"}},
+		nil,
+	)
+
+	if len(options) == 0 || options[0].ID != "9" || options[0].Label != "app" {
+		t.Fatalf("expected existing stream option first, got %+v", options)
+	}
+}
+
+func TestMatchStreamSelectionNormalizesWhitespaceAndCase(t *testing.T) {
+	streamID, streamName := dialogs.MatchStreamSelectionForTesting(
+		"  APP  ",
+		1,
+		"Work",
+		0,
+		[]api.Repo{{ID: 1, Name: "Work"}},
+		nil,
+		[]api.Stream{{ID: 9, RepoID: 1, Name: "app"}},
+		nil,
+	)
+
+	if streamID != 9 || streamName != "app" {
+		t.Fatalf("expected normalized existing stream match, got %d %q", streamID, streamName)
 	}
 }

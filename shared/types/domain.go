@@ -483,7 +483,54 @@ type ExportFormat string
 const (
 	ExportFormatMarkdown ExportFormat = "markdown"
 	ExportFormatPDF      ExportFormat = "pdf"
+	ExportFormatCSV      ExportFormat = "csv"
 )
+
+type ExportReportKind string
+
+const (
+	ExportReportKindDaily       ExportReportKind = "daily"
+	ExportReportKindWeekly      ExportReportKind = "weekly"
+	ExportReportKindRepo        ExportReportKind = "repo"
+	ExportReportKindStream      ExportReportKind = "stream"
+	ExportReportKindIssueRollup ExportReportKind = "issue_rollup"
+	ExportReportKindCSV         ExportReportKind = "csv"
+)
+
+type ExportAssetKind string
+
+const (
+	ExportAssetKindTemplateMarkdown ExportAssetKind = "template_markdown"
+	ExportAssetKindTemplatePDF      ExportAssetKind = "template_pdf"
+	ExportAssetKindVariableDocs     ExportAssetKind = "variable_docs"
+	ExportAssetKindCSVSpec          ExportAssetKind = "csv_spec"
+	ExportAssetKindCSVDocs          ExportAssetKind = "csv_docs"
+)
+
+type ExportReportScope struct {
+	RepoID     *int64  `json:"repoId,omitempty"`
+	RepoName   *string `json:"repoName,omitempty"`
+	StreamID   *int64  `json:"streamId,omitempty"`
+	StreamName *string `json:"streamName,omitempty"`
+}
+
+type ExportTemplateAsset struct {
+	ReportKind      ExportReportKind `json:"reportKind"`
+	AssetKind       ExportAssetKind  `json:"assetKind"`
+	Label           string           `json:"label"`
+	Name            string           `json:"name"`
+	Engine          string           `json:"engine"`
+	UserPath        string           `json:"userPath"`
+	BundledPath     string           `json:"bundledPath"`
+	Resettable      bool             `json:"resettable"`
+	Exists          bool             `json:"exists"`
+	Customized      bool             `json:"customized"`
+	UpdateAvailable bool             `json:"updateAvailable"`
+	BaseHash        string           `json:"baseHash"`
+	DefaultHash     string           `json:"defaultHash"`
+	ActiveSource    string           `json:"activeSource"`
+	LastSyncedAt    *string          `json:"lastSyncedAt,omitempty"`
+}
 
 type DailyReportIssue struct {
 	IssueWithMeta
@@ -513,52 +560,65 @@ type DailyReportData struct {
 }
 
 type ExportAssetStatus struct {
-	TemplatePath           string  `json:"templatePath"`
-	TemplateDocsPath       string  `json:"templateDocsPath"`
-	BundledTemplatePath    string  `json:"bundledTemplatePath"`
-	PDFTemplatePath        string  `json:"pdfTemplatePath"`
-	PDFBundledTemplatePath string  `json:"pdfBundledTemplatePath"`
-	ReportsDir             string  `json:"reportsDir"`
-	DefaultReportsDir      string  `json:"defaultReportsDir"`
-	ReportsDirCustomized   bool    `json:"reportsDirCustomized"`
-	UserTemplateExists     bool    `json:"userTemplateExists"`
-	UserTemplateCustomized bool    `json:"userTemplateCustomized"`
-	DefaultUpdateAvailable bool    `json:"defaultUpdateAvailable"`
-	PDFUserTemplateExists  bool    `json:"pdfUserTemplateExists"`
-	PDFTemplateCustomized  bool    `json:"pdfTemplateCustomized"`
-	PDFUpdateAvailable     bool    `json:"pdfUpdateAvailable"`
-	TemplateBaseHash       string  `json:"templateBaseHash"`
-	CurrentDefaultHash     string  `json:"currentDefaultHash"`
-	PDFTemplateBaseHash    string  `json:"pdfTemplateBaseHash"`
-	PDFCurrentDefaultHash  string  `json:"pdfCurrentDefaultHash"`
-	TemplateName           string  `json:"templateName"`
-	TemplateEngine         string  `json:"templateEngine"`
-	ActiveTemplateSource   string  `json:"activeTemplateSource"`
-	PDFTemplateName        string  `json:"pdfTemplateName"`
-	PDFTemplateEngine      string  `json:"pdfTemplateEngine"`
-	PDFTemplateSource      string  `json:"pdfTemplateSource"`
-	PDFRendererAvailable   bool    `json:"pdfRendererAvailable"`
-	PDFRendererName        string  `json:"pdfRendererName"`
-	PDFRendererPath        string  `json:"pdfRendererPath"`
-	LastSyncedAt           *string `json:"lastSyncedAt,omitempty"`
-	PDFLastSyncedAt        *string `json:"pdfLastSyncedAt,omitempty"`
+	TemplatePath           string                `json:"templatePath"`
+	TemplateDocsPath       string                `json:"templateDocsPath"`
+	BundledTemplatePath    string                `json:"bundledTemplatePath"`
+	PDFTemplatePath        string                `json:"pdfTemplatePath"`
+	PDFBundledTemplatePath string                `json:"pdfBundledTemplatePath"`
+	ReportsDir             string                `json:"reportsDir"`
+	DefaultReportsDir      string                `json:"defaultReportsDir"`
+	ReportsDirCustomized   bool                  `json:"reportsDirCustomized"`
+	UserTemplateExists     bool                  `json:"userTemplateExists"`
+	UserTemplateCustomized bool                  `json:"userTemplateCustomized"`
+	DefaultUpdateAvailable bool                  `json:"defaultUpdateAvailable"`
+	PDFUserTemplateExists  bool                  `json:"pdfUserTemplateExists"`
+	PDFTemplateCustomized  bool                  `json:"pdfTemplateCustomized"`
+	PDFUpdateAvailable     bool                  `json:"pdfUpdateAvailable"`
+	TemplateBaseHash       string                `json:"templateBaseHash"`
+	CurrentDefaultHash     string                `json:"currentDefaultHash"`
+	PDFTemplateBaseHash    string                `json:"pdfTemplateBaseHash"`
+	PDFCurrentDefaultHash  string                `json:"pdfCurrentDefaultHash"`
+	TemplateName           string                `json:"templateName"`
+	TemplateEngine         string                `json:"templateEngine"`
+	ActiveTemplateSource   string                `json:"activeTemplateSource"`
+	PDFTemplateName        string                `json:"pdfTemplateName"`
+	PDFTemplateEngine      string                `json:"pdfTemplateEngine"`
+	PDFTemplateSource      string                `json:"pdfTemplateSource"`
+	PDFRendererAvailable   bool                  `json:"pdfRendererAvailable"`
+	PDFRendererName        string                `json:"pdfRendererName"`
+	PDFRendererPath        string                `json:"pdfRendererPath"`
+	LastSyncedAt           *string               `json:"lastSyncedAt,omitempty"`
+	PDFLastSyncedAt        *string               `json:"pdfLastSyncedAt,omitempty"`
+	TemplateAssets         []ExportTemplateAsset `json:"templateAssets,omitempty"`
 }
 
 type ExportReportFile struct {
-	Name       string `json:"name"`
-	Path       string `json:"path"`
-	Date       string `json:"date"`
-	Format     string `json:"format"`
-	SizeBytes  int64  `json:"sizeBytes"`
-	ModifiedAt string `json:"modifiedAt"`
+	Name       string           `json:"name"`
+	Path       string           `json:"path"`
+	Kind       ExportReportKind `json:"kind"`
+	ScopeLabel string           `json:"scopeLabel,omitempty"`
+	Date       string           `json:"date,omitempty"`
+	StartDate  string           `json:"startDate,omitempty"`
+	EndDate    string           `json:"endDate,omitempty"`
+	DateLabel  string           `json:"dateLabel,omitempty"`
+	Format     string           `json:"format"`
+	SizeBytes  int64            `json:"sizeBytes"`
+	ModifiedAt string           `json:"modifiedAt"`
 }
 
-type DailyReportResult struct {
-	Date       string            `json:"date"`
-	Format     ExportFormat      `json:"format"`
-	OutputMode ExportOutputMode  `json:"outputMode"`
-	Markdown   string            `json:"markdown"`
-	FilePath   *string           `json:"filePath,omitempty"`
-	Renderer   *string           `json:"renderer,omitempty"`
-	Assets     ExportAssetStatus `json:"assets"`
+type ExportReportResult struct {
+	Kind       ExportReportKind   `json:"kind"`
+	Label      string             `json:"label"`
+	Scope      *ExportReportScope `json:"scope,omitempty"`
+	Date       string             `json:"date,omitempty"`
+	StartDate  string             `json:"startDate,omitempty"`
+	EndDate    string             `json:"endDate,omitempty"`
+	Format     ExportFormat       `json:"format"`
+	OutputMode ExportOutputMode   `json:"outputMode"`
+	Content    string             `json:"content,omitempty"`
+	FilePath   *string            `json:"filePath,omitempty"`
+	Renderer   *string            `json:"renderer,omitempty"`
+	Assets     ExportAssetStatus  `json:"assets"`
 }
+
+type DailyReportResult = ExportReportResult

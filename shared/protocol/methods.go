@@ -54,6 +54,11 @@ const (
 	MethodMetricsStreaks = "metrics.streaks"
 
 	MethodExportDaily         = "export.daily"
+	MethodExportWeekly        = "export.weekly"
+	MethodExportRepo          = "export.repo"
+	MethodExportStream        = "export.stream"
+	MethodExportIssueRollup   = "export.issue_rollup"
+	MethodExportCSV           = "export.csv"
 	MethodExportAssetsGet     = "export.assets.get"
 	MethodExportReportsDirSet = "export.reports_dir.set"
 	MethodExportReportsList   = "export.reports.list"

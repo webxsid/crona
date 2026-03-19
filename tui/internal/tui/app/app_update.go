@@ -2,6 +2,7 @@ package app
 
 import (
 	"crona/tui/internal/logger"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -241,7 +242,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updated, cmd := handleKernelEvent(m, msg.event)
 		return updated, tea.Batch(cmd, waitForEvent(eventChannel))
 	case errMsg:
-		if m.dialog == "export_daily" && m.dialogProcessing {
+		if m.dialog == "export_report" && m.dialogProcessing {
 			m.dialog = ""
 			m.dialogChoiceItems = nil
 			m.dialogChoiceCursor = 0
@@ -265,7 +266,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(cmds...)
 	case dailyReportGeneratedMsg:
 		m.exportAssets = &msg.result.Assets
-		if m.dialog == "export_daily" && m.dialogProcessing {
+		if m.dialog == "export_report" && m.dialogProcessing {
 			m.dialog = ""
 			m.dialogChoiceItems = nil
 			m.dialogChoiceCursor = 0
@@ -273,17 +274,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.dialogProcessingLabel = ""
 		}
 		if msg.result.OutputMode == "file" && msg.result.FilePath != nil {
-			label := "Report"
-			if msg.result.Format == "pdf" {
-				label = "PDF report"
-			} else if msg.result.Format == "markdown" {
-				label = "Markdown report"
+			label := msg.result.Label
+			if strings.TrimSpace(label) == "" {
+				label = "Report"
 			}
 			return m, tea.Batch(m.setStatus(label+" written to "+*msg.result.FilePath, false), loadExportReports(m.client))
 		}
 		return m, nil
 	case clipboardCopiedMsg:
-		if m.dialog == "export_daily" && m.dialogProcessing {
+		if m.dialog == "export_report" && m.dialogProcessing {
 			m.dialog = ""
 			m.dialogChoiceItems = nil
 			m.dialogChoiceCursor = 0

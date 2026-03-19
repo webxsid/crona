@@ -406,72 +406,53 @@ type configItem struct {
 	editable    bool
 	mutable     bool
 	actionHint  string
+	reportKind  sharedtypes.ExportReportKind
+	assetKind   sharedtypes.ExportAssetKind
+	resettable  bool
 }
 
 func (m Model) configItems() []configItem {
 	if m.exportAssets == nil {
 		return nil
 	}
-	updateState := "up to date"
-	if m.exportAssets.DefaultUpdateAvailable {
-		updateState = "new default available"
-	}
-	customized := "default"
-	if m.exportAssets.UserTemplateCustomized {
-		customized = "customized"
-	}
-	return []configItem{
-		{
-			label:       "Daily report template",
-			value:       customized,
-			path:        m.exportAssets.TemplatePath,
-			detailTitle: "Daily Report Template",
-			detailMeta:  "Engine hbs   Source " + m.exportAssets.ActiveTemplateSource + "   State " + customized,
-			detailBody:  "Path\n" + m.exportAssets.TemplatePath + "\n\nPress e to open in $EDITOR.\nPress r to replace it with the bundled default.",
+	items := make([]configItem, 0, len(m.exportAssets.TemplateAssets)+2)
+	for _, asset := range m.exportAssets.TemplateAssets {
+		state := exportAssetStateLabel(asset)
+		detailBody := "Path\n" + asset.UserPath + "\n\nBundled\n" + asset.BundledPath
+		detailBody += "\n\nPress e to open in $EDITOR."
+		if asset.Resettable {
+			detailBody += "\nPress r to replace it with the bundled default."
+		}
+		items = append(items, configItem{
+			label:       asset.Label,
+			value:       state,
+			path:        asset.UserPath,
+			detailTitle: asset.Label,
+			detailMeta:  "Engine " + asset.Engine + "   Source " + asset.ActiveSource + "   State " + state,
+			detailBody:  detailBody,
 			editable:    true,
-		},
-		{
-			label:       "PDF report template",
-			value:       pdfTemplateStateLabel(m.exportAssets),
-			path:        m.exportAssets.PDFTemplatePath,
-			detailTitle: "PDF Report Template",
-			detailMeta:  "Engine hbs   Source " + m.exportAssets.PDFTemplateSource + "   State " + pdfTemplateStateLabel(m.exportAssets),
-			detailBody:  "Path\n" + m.exportAssets.PDFTemplatePath + "\n\nPress e to open in $EDITOR.\nPress r to replace it with the bundled default.",
-			editable:    true,
-		},
-		{
-			label:       "Template variables docs",
-			value:       m.exportAssets.TemplateDocsPath,
-			path:        m.exportAssets.TemplateDocsPath,
-			detailTitle: "Template Variable Docs",
-			detailMeta:  "Source runtime docs",
-			detailBody:  "Path\n" + m.exportAssets.TemplateDocsPath + "\n\nPress e to open in $EDITOR.",
-			editable:    true,
-		},
-		{
-			label:       "Reports directory",
-			value:       m.exportAssets.ReportsDir,
-			detailTitle: "Daily Report Output",
-			detailMeta:  reportsDirMeta(m.exportAssets),
-			detailBody:  "Generated Markdown reports are written under\n" + m.exportAssets.ReportsDir + "\n\nDefault\n" + m.exportAssets.DefaultReportsDir + "\n\nPress c to change the directory.\nPress r to restore the default directory.",
-			mutable:     true,
-			actionHint:  "change dir",
-		},
-		{
-			label:       "Template update status",
-			value:       updateState,
-			detailTitle: "Template Update Status",
-			detailMeta:  "Bundled " + truncate(m.exportAssets.BundledTemplatePath, 48),
-			detailBody:  "Current default hash\n" + m.exportAssets.CurrentDefaultHash + "\n\nBase hash\n" + m.exportAssets.TemplateBaseHash + "\n\nPress r to replace the user template with the current bundled default.",
-		},
-		{
-			label:       "PDF renderer",
-			value:       pdfRendererStateLabel(m.exportAssets),
-			detailTitle: "PDF Renderer",
-			detailMeta:  "External renderer discovery",
-			detailBody:  pdfRendererDetailBody(m.exportAssets),
-		},
+			reportKind:  asset.ReportKind,
+			assetKind:   asset.AssetKind,
+			resettable:  asset.Resettable && (asset.Customized || asset.UpdateAvailable),
+		})
 	}
+	items = append(items, configItem{
+		label:       "Reports directory",
+		value:       m.exportAssets.ReportsDir,
+		detailTitle: "Report Output Directory",
+		detailMeta:  reportsDirMeta(m.exportAssets),
+		detailBody:  "Generated reports are written under\n" + m.exportAssets.ReportsDir + "\n\nDefault\n" + m.exportAssets.DefaultReportsDir + "\n\nPress c to change the directory.\nPress r to restore the default directory.",
+		mutable:     true,
+		actionHint:  "change dir",
+	})
+	items = append(items, configItem{
+		label:       "PDF renderer",
+		value:       pdfRendererStateLabel(m.exportAssets),
+		detailTitle: "PDF Renderer",
+		detailMeta:  "External renderer discovery",
+		detailBody:  pdfRendererDetailBody(m.exportAssets),
+	})
+	return items
 }
 
 func reportsDirMeta(status *api.ExportAssetStatus) string {
@@ -482,6 +463,20 @@ func reportsDirMeta(status *api.ExportAssetStatus) string {
 		return "Mode file export   Source custom"
 	}
 	return "Mode file export   Source default"
+}
+
+func exportAssetStateLabel(asset sharedtypes.ExportTemplateAsset) string {
+	if asset.Resettable {
+		switch {
+		case asset.Customized:
+			return "customized"
+		case asset.UpdateAvailable:
+			return "new default available"
+		default:
+			return "default"
+		}
+	}
+	return truncate(asset.UserPath, 28)
 }
 
 func pdfTemplateStateLabel(status *api.ExportAssetStatus) string {

@@ -378,6 +378,14 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 			return next, true
 		}
 	case PaneHabits:
+		if m.view == ViewDaily {
+			if habit, ok := m.selectedDailyHabitRecord(); ok {
+				next := m.openConfirmDeleteEntity("habit", fmt.Sprintf("%d", habit.ID), habit.Name)
+				next.dialogStreamID = habit.StreamID
+				return next, true
+			}
+			break
+		}
 		if habit, ok := m.selectedHabitRecord(); ok {
 			next := m.openConfirmDeleteEntity("habit", fmt.Sprintf("%d", habit.ID), habit.Name)
 			next.dialogStreamID = habit.StreamID

@@ -464,14 +464,7 @@ func (r *IssueRepository) CascadeSoftDeleteByRepo(ctx context.Context, repoID in
 	}
 	_, err = r.db.NewUpdate().
 		Model((*IssueModel)(nil)).
-		Where("stream_id IN (?)", bun.In(
-			r.db.NewSelect().
-				Model((*StreamModel)(nil)).
-				Column("id").
-				Where("repo_id = ?", repoInternalID).
-				Where("user_id = ?", userID).
-				Where("deleted_at IS NULL"),
-		)).
+		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
@@ -521,14 +514,7 @@ func (r *IssueRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64
 	}
 	_, err = r.db.NewUpdate().
 		Model((*IssueModel)(nil)).
-		Where("stream_id IN (?)", bun.In(
-			r.db.NewSelect().
-				Model((*StreamModel)(nil)).
-				Column("id").
-				Where("repo_id = ?", repoInternalID).
-				Where("user_id = ?", userID).
-				Where("deleted_at IS NULL"),
-		)).
+		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
 		Set("deleted_at = NULL").

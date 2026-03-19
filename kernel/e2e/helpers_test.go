@@ -227,6 +227,17 @@ func createIssue(t *testing.T, k *testKernel, streamID int64, title string, esti
 	return issue
 }
 
+func createHabit(t *testing.T, k *testKernel, streamID int64, name string) sharedtypes.Habit {
+	t.Helper()
+	var habit sharedtypes.Habit
+	k.call(t, protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
+		StreamID:     streamID,
+		Name:         name,
+		ScheduleType: "daily",
+	}, &habit)
+	return habit
+}
+
 func changeIssueStatus(t *testing.T, k *testKernel, issueID int64, status sharedtypes.IssueStatus) sharedtypes.Issue {
 	t.Helper()
 	var issue sharedtypes.Issue

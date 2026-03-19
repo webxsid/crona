@@ -295,3 +295,425 @@ Metrics:
 - {{metrics.burnout.level}}
 - {{metrics.burnout.score}}
 `
+
+const fallbackWeeklyReportTemplate = `# Weekly Summary
+
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+
+## Rollup
+
+- Days: {{summary.days}}
+- Check-ins: {{summary.checkInDays}}
+- Focus days: {{summary.focusDays}}
+- Worked: {{summary.workedTime}}
+- Rest: {{summary.restTime}}
+- Completed issues: {{summary.completedIssues}}
+- Abandoned issues: {{summary.abandonedIssues}}
+- Estimated time: {{summary.estimatedTime}}
+{{#if summary.averageMood}}- Avg mood: {{summary.averageMood}}{{/if}}
+{{#if summary.averageEnergy}}- Avg energy: {{summary.averageEnergy}}{{/if}}
+
+## Streaks
+
+- Focus: {{streaks.currentFocusDays}} current / {{streaks.longestFocusDays}} longest
+- Check-ins: {{streaks.currentCheckInDays}} current / {{streaks.longestCheckInDays}} longest
+
+## Days
+
+{{#each days}}
+### {{date}}
+
+- Worked: {{workedTime}}
+- Sessions: {{sessionCount}}
+- Issues: {{totalIssues}} total / {{completedIssues}} completed / {{abandonedIssues}} abandoned
+{{#if checkIn}}- Check-in: mood {{checkIn.mood}} / energy {{checkIn.energy}}{{/if}}
+{{/each}}
+`
+
+const fallbackWeeklyReportPDFTemplate = `# Weekly Summary
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+## Rollup
+- Days: {{summary.days}}
+- Check-ins: {{summary.checkInDays}}
+- Focus days: {{summary.focusDays}}
+- Worked: {{summary.workedTime}}
+- Rest: {{summary.restTime}}
+- Completed issues: {{summary.completedIssues}}
+- Abandoned issues: {{summary.abandonedIssues}}
+## Days
+{{#each days}}
+- {{date}} | {{workedTime}} | {{sessionCount}} sessions
+{{/each}}
+`
+
+const fallbackWeeklyReportVariables = `# Weekly Report Template Variables
+
+Top-level:
+- {{startDate}}
+- {{endDate}}
+- {{generatedAt}}
+
+Summary:
+- {{summary.days}}
+- {{summary.checkInDays}}
+- {{summary.focusDays}}
+- {{summary.workedTime}}
+- {{summary.restTime}}
+- {{summary.completedIssues}}
+- {{summary.abandonedIssues}}
+- {{summary.estimatedTime}}
+- {{summary.averageMood}}
+- {{summary.averageEnergy}}
+
+Streaks:
+- {{streaks.currentFocusDays}}
+- {{streaks.longestFocusDays}}
+- {{streaks.currentCheckInDays}}
+- {{streaks.longestCheckInDays}}
+
+Days:
+- {{#each days}}
+  - {{date}}
+  - {{workedTime}}
+  - {{sessionCount}}
+  - {{totalIssues}}
+  - {{completedIssues}}
+  - {{abandonedIssues}}
+  - {{checkIn.mood}}
+  - {{checkIn.energy}}
+`
+
+const fallbackRepoReportTemplate = `# Repo Report - {{repo.name}}
+
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+
+{{#if repo.description}}
+## Description
+
+{{repo.description}}
+{{/if}}
+
+## Snapshot
+
+- Streams: {{summary.streamCount}}
+- Issues: {{summary.issueCount}}
+- Habits: {{summary.habitCount}}
+- Sessions: {{summary.sessionCount}}
+
+## Streams
+
+{{#each streams}}
+- {{name}}{{#if description}}: {{description}}{{/if}}
+{{/each}}
+
+## Issues
+
+{{#each issues}}
+### #{{id}} {{title}}
+
+- Status: {{status}}
+- Scope: {{scope}}
+- Estimate: {{estimateTime}}
+{{#if description}}
+Description
+{{description}}
+{{/if}}
+{{#if notes}}
+Issue Notes
+{{notes}}
+{{/if}}
+
+Sessions
+{{#each sessions}}
+- {{summary}}
+  Commit: {{commit}}
+  Context: {{context}}
+  Work: {{work}}
+  Notes: {{notes}}
+{{/each}}
+{{/each}}
+
+## Habits
+
+{{#each habits}}
+- {{name}} | {{scheduleType}}
+{{/each}}
+`
+
+const fallbackRepoReportPDFTemplate = `# Repo Report - {{repo.name}}
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+## Snapshot
+- Streams: {{summary.streamCount}}
+- Issues: {{summary.issueCount}}
+- Habits: {{summary.habitCount}}
+- Sessions: {{summary.sessionCount}}
+## Issues
+{{#each issues}}
+- #{{id}} {{title}} | {{status}} | {{estimateTime}}
+{{/each}}
+`
+
+const fallbackRepoReportVariables = `# Repo Report Template Variables
+
+Top-level:
+- {{startDate}}
+- {{endDate}}
+- {{generatedAt}}
+- {{repo.name}}
+- {{repo.description}}
+
+Summary:
+- {{summary.streamCount}}
+- {{summary.issueCount}}
+- {{summary.habitCount}}
+- {{summary.sessionCount}}
+
+Streams:
+- {{#each streams}}
+  - {{name}}
+  - {{description}}
+
+Issues:
+- {{#each issues}}
+  - {{id}}
+  - {{title}}
+  - {{status}}
+  - {{scope}}
+  - {{estimateTime}}
+  - {{description}}
+  - {{notes}}
+  - {{#each sessions}}
+    - {{summary}}
+    - {{commit}}
+    - {{context}}
+    - {{work}}
+    - {{notes}}
+
+Habits:
+- {{#each habits}}
+  - {{name}}
+  - {{scheduleType}}
+`
+
+const fallbackStreamReportTemplate = `# Stream Report - {{stream.name}}
+
+Repo: {{repo.name}}
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+
+{{#if stream.description}}
+## Description
+
+{{stream.description}}
+{{/if}}
+
+## Snapshot
+
+- Issues: {{summary.issueCount}}
+- Habits: {{summary.habitCount}}
+- Sessions: {{summary.sessionCount}}
+
+## Issues
+
+{{#each issues}}
+### #{{id}} {{title}}
+
+- Status: {{status}}
+- Estimate: {{estimateTime}}
+{{#if description}}
+Description
+{{description}}
+{{/if}}
+{{#if notes}}
+Issue Notes
+{{notes}}
+{{/if}}
+
+Sessions
+{{#each sessions}}
+- {{summary}}
+  Commit: {{commit}}
+  Context: {{context}}
+  Work: {{work}}
+  Notes: {{notes}}
+{{/each}}
+{{/each}}
+
+## Habits
+
+{{#each habits}}
+- {{name}} | {{scheduleType}}
+{{/each}}
+`
+
+const fallbackStreamReportPDFTemplate = `# Stream Report - {{stream.name}}
+Repo: {{repo.name}}
+Range: {{startDate}} to {{endDate}}
+## Snapshot
+- Issues: {{summary.issueCount}}
+- Habits: {{summary.habitCount}}
+- Sessions: {{summary.sessionCount}}
+## Issues
+{{#each issues}}
+- #{{id}} {{title}} | {{status}} | {{estimateTime}}
+{{/each}}
+`
+
+const fallbackStreamReportVariables = `# Stream Report Template Variables
+
+Top-level:
+- {{startDate}}
+- {{endDate}}
+- {{generatedAt}}
+- {{repo.name}}
+- {{stream.name}}
+- {{stream.description}}
+
+Summary:
+- {{summary.issueCount}}
+- {{summary.habitCount}}
+- {{summary.sessionCount}}
+
+Issues:
+- {{#each issues}}
+  - {{id}}
+  - {{title}}
+  - {{status}}
+  - {{estimateTime}}
+  - {{description}}
+  - {{notes}}
+  - {{#each sessions}}
+    - {{summary}}
+    - {{commit}}
+    - {{context}}
+    - {{work}}
+    - {{notes}}
+
+Habits:
+- {{#each habits}}
+  - {{name}}
+  - {{scheduleType}}
+`
+
+const fallbackIssueRollupReportTemplate = `# Session to Issue Rollup
+
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+
+## Rollup Table
+
+{{#each issues}}
+- #{{id}} {{title}} | {{status}} | {{sessionCount}} sessions | {{workedTime}} | {{estimateTime}} | {{scope}}
+{{/each}}
+
+## Detailed Issues
+
+{{#each issues}}
+### #{{id}} {{title}}
+
+- Status: {{status}}
+- Scope: {{scope}}
+- Sessions: {{sessionCount}}
+- Worked: {{workedTime}}
+- Estimate: {{estimateTime}}
+{{#if description}}
+Description
+{{description}}
+{{/if}}
+{{#if notes}}
+Issue Notes
+{{notes}}
+{{/if}}
+
+Sessions
+{{#each sessions}}
+- {{summary}}
+  Commit: {{commit}}
+  Context: {{context}}
+  Work: {{work}}
+  Notes: {{notes}}
+{{/each}}
+{{/each}}
+`
+
+const fallbackIssueRollupReportPDFTemplate = `# Session to Issue Rollup
+Range: {{startDate}} to {{endDate}}
+Generated at {{generatedAt}}
+{{#each issues}}
+- #{{id}} {{title}} | {{status}} | {{sessionCount}} sessions | {{workedTime}}
+{{/each}}
+`
+
+const fallbackIssueRollupReportVariables = `# Issue Rollup Template Variables
+
+Top-level:
+- {{startDate}}
+- {{endDate}}
+- {{generatedAt}}
+
+Issues:
+- {{#each issues}}
+  - {{id}}
+  - {{title}}
+  - {{status}}
+  - {{scope}}
+  - {{sessionCount}}
+  - {{workedTime}}
+  - {{estimateTime}}
+  - {{description}}
+  - {{notes}}
+  - {{#each sessions}}
+    - {{summary}}
+    - {{commit}}
+    - {{context}}
+    - {{work}}
+    - {{notes}}
+`
+
+const fallbackCSVExportSpec = `{
+  "columns": [
+    {"header": "Session ID", "field": "sessionId"},
+    {"header": "Issue ID", "field": "issueId"},
+    {"header": "Issue Title", "field": "issueTitle"},
+    {"header": "Status", "field": "status"},
+    {"header": "Repo", "field": "repo"},
+    {"header": "Stream", "field": "stream"},
+    {"header": "Start Time", "field": "startTime"},
+    {"header": "End Time", "field": "endTime"},
+    {"header": "Duration Seconds", "field": "durationSeconds"},
+    {"header": "Commit", "field": "commit"},
+    {"header": "Context", "field": "context"},
+    {"header": "Work", "field": "work"},
+    {"header": "Notes", "field": "notes"}
+  ]
+}
+`
+
+const fallbackCSVExportVariables = `# CSV Export Spec
+
+The CSV export is configured by a JSON spec file with a single top-level key:
+- columns
+
+Each column entry supports:
+- header: CSV header text
+- field: field name from the session row dataset
+
+Available row fields:
+- sessionId
+- issueId
+- issueTitle
+- status
+- repo
+- stream
+- startTime
+- endTime
+- durationSeconds
+- commit
+- context
+- work
+- notes
+`

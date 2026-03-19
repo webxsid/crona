@@ -32,6 +32,9 @@ type UpdateContext struct {
 
 type Action struct {
 	Kind              string
+	ReportKind        sharedtypes.ExportReportKind
+	ReportFormat      sharedtypes.ExportFormat
+	OutputMode        sharedtypes.ExportOutputMode
 	ID                string
 	RepoID            int64
 	StreamID          int64
@@ -76,11 +79,22 @@ func OpenCreateScratchpad(state State) State {
 
 func OpenExportDaily(state State, date string, includePDF bool) State {
 	state = Close(state)
-	state.Kind = "export_daily"
+	state.Kind = "export_report"
 	state.CheckInDate = date
-	state.ChoiceItems = []string{"Write Markdown file", "Copy to clipboard"}
+	state.ChoiceItems = []string{
+		"Daily report: write Markdown file",
+		"Daily report: copy to clipboard",
+		"Weekly summary: write Markdown file",
+		"Repo report: write Markdown file",
+		"Stream report: write Markdown file",
+		"Issue rollup: write Markdown file",
+		"CSV session export: write file",
+	}
 	if includePDF {
-		state.ChoiceItems = append(state.ChoiceItems, "Write PDF file")
+		state.ChoiceItems = append([]string{
+			"Daily report: write PDF file",
+			"Weekly summary: write PDF file",
+		}, state.ChoiceItems...)
 	}
 	state.ChoiceCursor = 0
 	return state
@@ -718,7 +732,7 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateEditIssue(state, currentDate, msg)
 	case "create_checkin", "edit_checkin":
 		return updateCheckIn(state, msg)
-	case "export_daily":
+	case "export_report":
 		return updateExportDaily(state, msg)
 	case "edit_export_reports_dir":
 		return updateSingleInput(state, msg, "Reports directory is required", func(value string) *Action {
@@ -1317,24 +1331,60 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 		if state.Processing {
 			return state, nil, ""
 		}
-		if state.ChoiceCursor == 0 {
-			state.Processing = true
-			state.ProcessingLabel = "Generating markdown report..."
-			return state, &Action{Kind: "export_daily_file", CheckInDate: state.CheckInDate}, ""
+		selected := ""
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceItems) {
+			selected = state.ChoiceItems[state.ChoiceCursor]
 		}
-		if state.ChoiceCursor == 1 {
-			state.Processing = true
-			state.ProcessingLabel = "Copying markdown report..."
-			return state, &Action{Kind: "export_daily_clipboard", CheckInDate: state.CheckInDate}, ""
-		}
-		if state.ChoiceCursor == 2 {
-			state.Processing = true
+		action := Action{Kind: "export_report", CheckInDate: state.CheckInDate}
+		switch selected {
+		case "Daily report: write PDF file":
+			action.ReportKind = sharedtypes.ExportReportKindDaily
+			action.ReportFormat = sharedtypes.ExportFormatPDF
+			action.OutputMode = sharedtypes.ExportOutputModeFile
 			state.ProcessingLabel = "Generating PDF report..."
-			return state, &Action{Kind: "export_daily_pdf_file", CheckInDate: state.CheckInDate}, ""
+		case "Weekly summary: write PDF file":
+			action.ReportKind = sharedtypes.ExportReportKindWeekly
+			action.ReportFormat = sharedtypes.ExportFormatPDF
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating weekly PDF report..."
+		case "Daily report: write Markdown file":
+			action.ReportKind = sharedtypes.ExportReportKindDaily
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating markdown report..."
+		case "Daily report: copy to clipboard":
+			action.ReportKind = sharedtypes.ExportReportKindDaily
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeClipboard
+			state.ProcessingLabel = "Copying markdown report..."
+		case "Weekly summary: write Markdown file":
+			action.ReportKind = sharedtypes.ExportReportKindWeekly
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating weekly report..."
+		case "Repo report: write Markdown file":
+			action.ReportKind = sharedtypes.ExportReportKindRepo
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating repo report..."
+		case "Stream report: write Markdown file":
+			action.ReportKind = sharedtypes.ExportReportKindStream
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating stream report..."
+		case "Issue rollup: write Markdown file":
+			action.ReportKind = sharedtypes.ExportReportKindIssueRollup
+			action.ReportFormat = sharedtypes.ExportFormatMarkdown
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating issue rollup..."
+		default:
+			action.ReportKind = sharedtypes.ExportReportKindCSV
+			action.ReportFormat = sharedtypes.ExportFormatCSV
+			action.OutputMode = sharedtypes.ExportOutputModeFile
+			state.ProcessingLabel = "Generating CSV export..."
 		}
 		state.Processing = true
-		state.ProcessingLabel = "Processing export..."
-		return state, &Action{Kind: "export_daily_clipboard", CheckInDate: state.CheckInDate}, ""
+		return state, &action, ""
 	}
 	return state, nil, ""
 }

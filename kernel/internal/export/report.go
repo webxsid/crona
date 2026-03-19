@@ -2,6 +2,7 @@ package export
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -19,6 +20,10 @@ func GenerateDailyReport(ctx context.Context, c *core.Context, paths runtime.Pat
 }
 
 func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
+	return generateDailyReportWithKind(ctx, c, paths, normalizeReportDate(date), normalizeNarrativeFormat(format), mode)
+}
+
+func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
 	if strings.TrimSpace(date) == "" {
 		date = time.Now().Format("2006-01-02")
 	}
@@ -27,7 +32,7 @@ func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths r
 	if err != nil {
 		return nil, err
 	}
-	templateBody, status, err := LoadActiveTemplate(paths, format)
+	templateBody, status, err := LoadActiveReportTemplate(paths, sharedtypes.ExportReportKindDaily, format)
 	if err != nil {
 		return nil, err
 	}
@@ -36,18 +41,26 @@ func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths r
 		return nil, err
 	}
 	result := &sharedtypes.DailyReportResult{
+		Kind:       sharedtypes.ExportReportKindDaily,
+		Label:      "Daily Report",
 		Date:       date,
 		Format:     format,
 		OutputMode: mode,
-		Markdown:   rendered,
+		Content:    rendered,
 		Assets:     status,
 	}
 	switch format {
 	case sharedtypes.ExportFormatPDF:
 		if mode != sharedtypes.ExportOutputModeFile {
-			return nil, fmt.Errorf("pdf export only supports file output")
+			return nil, errors.New("pdf export only supports file output")
 		}
-		filePath, renderer, err := RenderPDF(paths, date, rendered)
+		filePath, renderer, err := RenderPDFReport(paths, reportWriteSpec{
+			Kind:     sharedtypes.ExportReportKindDaily,
+			Label:    "Daily Report",
+			Date:     date,
+			Format:   format,
+			BaseName: "daily-" + date,
+		}, rendered)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +68,13 @@ func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths r
 		result.Renderer = &renderer
 	default:
 		if mode == sharedtypes.ExportOutputModeFile {
-			filePath, err := WriteDailyReport(paths, date, format, []byte(rendered))
+			filePath, err := WriteReport(paths, reportWriteSpec{
+				Kind:     sharedtypes.ExportReportKindDaily,
+				Label:    "Daily Report",
+				Date:     date,
+				Format:   format,
+				BaseName: "daily-" + date,
+			}, []byte(rendered))
 			if err != nil {
 				return nil, err
 			}

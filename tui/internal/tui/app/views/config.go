@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"strings"
 
 	"crona/tui/internal/api"
 )
@@ -40,28 +41,33 @@ func configItems(status *api.ExportAssetStatus) []string {
 	if status == nil {
 		return nil
 	}
-	updateState := "up to date"
-	if status.DefaultUpdateAvailable {
-		updateState = "new default available"
-	}
-	customized := "default"
-	if status.UserTemplateCustomized {
-		customized = "customized"
-	}
-	pdfCustomized := "default"
-	if status.PDFTemplateCustomized {
-		pdfCustomized = "customized"
+	items := make([]string, 0, len(status.TemplateAssets)+2)
+	for _, asset := range status.TemplateAssets {
+		items = append(items, fmt.Sprintf("%-24s %s", asset.Label, configAssetValue(asset)))
 	}
 	pdfRenderer := "unavailable"
 	if status.PDFRendererAvailable {
 		pdfRenderer = status.PDFRendererName
 	}
-	return []string{
-		fmt.Sprintf("Daily report template    %s   [%s]", status.TemplateName, customized),
-		fmt.Sprintf("PDF report template      %s   [%s]", status.PDFTemplateName, pdfCustomized),
-		fmt.Sprintf("Template variables docs  %s", status.TemplateDocsPath),
-		fmt.Sprintf("Reports directory        %s", status.ReportsDir),
-		fmt.Sprintf("Template update status   %s", updateState),
-		fmt.Sprintf("PDF renderer             %s", pdfRenderer),
+	items = append(items, fmt.Sprintf("%-24s %s", "Reports directory", status.ReportsDir))
+	items = append(items, fmt.Sprintf("%-24s %s", "PDF renderer", pdfRenderer))
+	return items
+}
+
+func configAssetValue(asset api.ExportTemplateAsset) string {
+	if asset.Resettable {
+		switch {
+		case asset.Customized:
+			return "[customized]"
+		case asset.UpdateAvailable:
+			return "[new default available]"
+		default:
+			return "[default]"
+		}
 	}
+	path := strings.TrimSpace(asset.UserPath)
+	if path == "" {
+		return "-"
+	}
+	return path
 }

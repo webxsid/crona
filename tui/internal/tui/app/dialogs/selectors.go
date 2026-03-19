@@ -15,10 +15,10 @@ type SelectorOption struct {
 }
 
 func DefaultRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOption {
-	query := strings.TrimSpace(strings.ToLower(inputs[0].Value()))
+	query := normalizeSelectorName(inputs[0].Value())
 	options := make([]SelectorOption, 0, len(repos)+1)
 	for _, repo := range repos {
-		if query != "" && !strings.Contains(strings.ToLower(repo.Name), query) {
+		if query != "" && !strings.Contains(normalizeSelectorName(repo.Name), query) {
 			continue
 		}
 		options = append(options, SelectorOption{ID: strconv.FormatInt(repo.ID, 10), Label: repo.Name})
@@ -34,7 +34,8 @@ func CheckoutRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorO
 }
 
 func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []SelectorOption {
-	query := strings.TrimSpace(strings.ToLower(inputs[1].Value()))
+	_ = context
+	query := normalizeSelectorName(inputs[1].Value())
 	repoOptions := DefaultRepoOptions(inputs, repos)
 	if len(repoOptions) == 0 {
 		return optionsForNewStream(inputs[1].Value())
@@ -50,24 +51,25 @@ func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.R
 		if strconv.FormatInt(issue.RepoID, 10) != repoOpt.ID || seen[strconv.FormatInt(issue.StreamID, 10)] {
 			continue
 		}
-		if query != "" && !strings.Contains(strings.ToLower(issue.StreamName), query) {
+		if query != "" && !strings.Contains(normalizeSelectorName(issue.StreamName), query) {
 			continue
 		}
 		seen[strconv.FormatInt(issue.StreamID, 10)] = true
 		options = append(options, SelectorOption{ID: strconv.FormatInt(issue.StreamID, 10), Label: issue.StreamName})
 	}
-	if context != nil && context.RepoID != nil && strconv.FormatInt(*context.RepoID, 10) == repoOpt.ID {
-		for _, stream := range streams {
-			streamKey := strconv.FormatInt(stream.ID, 10)
-			if seen[streamKey] {
-				continue
-			}
-			if query != "" && !strings.Contains(strings.ToLower(stream.Name), query) {
-				continue
-			}
-			seen[streamKey] = true
-			options = append(options, SelectorOption{ID: streamKey, Label: stream.Name})
+	for _, stream := range streams {
+		if strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
+			continue
 		}
+		streamKey := strconv.FormatInt(stream.ID, 10)
+		if seen[streamKey] {
+			continue
+		}
+		if query != "" && !strings.Contains(normalizeSelectorName(stream.Name), query) {
+			continue
+		}
+		seen[streamKey] = true
+		options = append(options, SelectorOption{ID: streamKey, Label: stream.Name})
 	}
 	if raw := strings.TrimSpace(inputs[1].Value()); raw != "" {
 		options = append(options, SelectorOption{ID: "__new__", Label: "Create New Stream: " + raw})
@@ -122,7 +124,7 @@ func matchRepoSelection(raw string, repoIndex int, repos []api.Repo) (int64, str
 		return 0, ""
 	}
 	for _, repo := range repos {
-		if strings.EqualFold(strings.TrimSpace(repo.Name), raw) {
+		if normalizeSelectorName(repo.Name) == normalizeSelectorName(raw) {
 			return repo.ID, repo.Name
 		}
 	}
@@ -147,7 +149,7 @@ func matchStreamSelection(raw string, repoID int64, repoName string, streamIndex
 		return 0, ""
 	}
 	for _, stream := range streams {
-		if stream.RepoID == repoID && strings.EqualFold(strings.TrimSpace(stream.Name), raw) {
+		if stream.RepoID == repoID && normalizeSelectorName(stream.Name) == normalizeSelectorName(raw) {
 			return stream.ID, stream.Name
 		}
 	}
@@ -227,6 +229,10 @@ func optionsForNewStream(raw string) []SelectorOption {
 		return []SelectorOption{}
 	}
 	return []SelectorOption{{ID: "__new__", Label: "Create New Stream: " + raw}}
+}
+
+func normalizeSelectorName(value string) string {
+	return strings.ToLower(strings.Join(strings.Fields(value), " "))
 }
 
 func minInt(a, b int) int {

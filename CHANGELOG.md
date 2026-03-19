@@ -4,6 +4,26 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+### Added
+- Weekly summary, repo, stream, issue-rollup, and CSV exports in the Go kernel and TUI.
+- Editable runtime templates for weekly, repo, stream, and issue-rollup narrative reports, with bundled defaults and per-report variable docs.
+- Editable JSON CSV export spec plus runtime docs for external-analysis exports.
+- Expanded `Config` view asset management for all report templates, docs, and CSV spec files.
+- Report browser metadata for report kind, scope, and date-range-aware listing.
+- Dedicated kernel and TUI regressions for report asset metadata, Config exposure, and generalized export rendering.
+
+### Changed
+- Export assets now use a generalized report-asset model instead of the old daily-only markdown/PDF pair.
+- Repo, stream, and issue-rollup reports now include descriptions, issue notes, and per-issue session-note sections.
+- Export default output now normalizes legacy `reports/daily` usage back to the shared `reports` root.
+- The `Daily Exports` view has been generalized into a broader `Reports` browser in the TUI.
+
+### Fixed
+- Daily habit deletion is now exposed from the Daily view action line and dialog flow.
+- Repo and stream cascade delete/restore now include habits in addition to issues.
+- Habit creation now reuses existing repo/stream selections more reliably by normalizing names and selector inputs.
+- TUI Config now visibly lists the generalized report templates/specs instead of showing only the legacy daily export rows.
+
 ## [0.2.0-beta.1] - 2026-03-19
 
 ### Added

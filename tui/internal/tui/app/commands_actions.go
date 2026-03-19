@@ -276,7 +276,7 @@ func cmdCreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName
 
 		var repoID int64
 		for _, repo := range repos {
-			if strings.EqualFold(strings.TrimSpace(repo.Name), strings.TrimSpace(repoName)) {
+			if sameLookupName(repo.Name, repoName) {
 				repoID = repo.ID
 				break
 			}
@@ -298,7 +298,7 @@ func cmdCreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName
 
 		var streamID int64
 		for _, stream := range streams {
-			if strings.EqualFold(strings.TrimSpace(stream.Name), strings.TrimSpace(streamName)) {
+			if sameLookupName(stream.Name, streamName) {
 				streamID = stream.ID
 				break
 			}
@@ -331,7 +331,7 @@ func cmdCreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName
 
 		var repoID int64
 		for _, repo := range repos {
-			if strings.EqualFold(strings.TrimSpace(repo.Name), strings.TrimSpace(repoName)) {
+			if sameLookupName(repo.Name, repoName) {
 				repoID = repo.ID
 				break
 			}
@@ -353,7 +353,7 @@ func cmdCreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName
 
 		var streamID int64
 		for _, stream := range streams {
-			if strings.EqualFold(strings.TrimSpace(stream.Name), strings.TrimSpace(streamName)) {
+			if sameLookupName(stream.Name, streamName) {
 				streamID = stream.ID
 				break
 			}
@@ -382,6 +382,15 @@ func normalizeOptionalValue(value string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+func normalizeLookupName(value string) string {
+	return strings.ToLower(strings.Join(strings.Fields(value), " "))
+}
+
+func sameLookupName(a, b string) bool {
+	normalizedA := normalizeLookupName(a)
+	return normalizedA != "" && normalizedA == normalizeLookupName(b)
 }
 
 func cmdDeleteScratchpad(c *api.Client, id string) tea.Cmd {
@@ -654,15 +663,24 @@ type focusSessionChangedMsg struct {
 	reloadTimer   bool
 }
 
-func cmdGenerateDailyReport(c *api.Client, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) tea.Cmd {
+func cmdGenerateReport(c *api.Client, input shareddto.ExportReportRequest) tea.Cmd {
 	return func() tea.Msg {
-		result, err := c.GenerateDailyReport(date, format, mode)
+		result, err := c.GenerateReport(input)
 		if err != nil {
-			logger.Errorf("GenerateDailyReport: %v", err)
+			logger.Errorf("GenerateReport: %v", err)
 			return errMsg{err}
 		}
 		return dailyReportGeneratedMsg{result: result}
 	}
+}
+
+func cmdGenerateDailyReport(c *api.Client, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) tea.Cmd {
+	return cmdGenerateReport(c, shareddto.ExportReportRequest{
+		Kind:       sharedtypes.ExportReportKindDaily,
+		Date:       date,
+		Format:     format,
+		OutputMode: mode,
+	})
 }
 
 func cmdCopyDailyReport(c *api.Client, date string) tea.Cmd {
@@ -672,16 +690,16 @@ func cmdCopyDailyReport(c *api.Client, date string) tea.Cmd {
 			logger.Errorf("GenerateDailyReport clipboard: %v", err)
 			return errMsg{err}
 		}
-		if err := copyToClipboard(result.Markdown); err != nil {
+		if err := copyToClipboard(result.Content); err != nil {
 			return errMsg{err}
 		}
 		return clipboardCopiedMsg{message: "Daily report copied to clipboard"}
 	}
 }
 
-func cmdResetExportTemplate(c *api.Client, format sharedtypes.ExportFormat) tea.Cmd {
+func cmdResetExportTemplate(c *api.Client, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) tea.Cmd {
 	return func() tea.Msg {
-		assets, err := c.ResetExportTemplate(format)
+		assets, err := c.ResetExportTemplate(reportKind, assetKind)
 		if err != nil {
 			logger.Errorf("ResetExportTemplate: %v", err)
 			return errMsg{err}

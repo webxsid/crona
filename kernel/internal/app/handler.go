@@ -439,11 +439,37 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 		})
 	case protocol.MethodExportTemplateReset:
 		return handle(req, func(input shareddto.ExportTemplateResetRequest) (any, error) {
-			return export.ResetTemplate(h.paths, input.Format)
+			return export.ResetTemplate(h.paths, input.ReportKind, input.AssetKind)
 		})
 	case protocol.MethodExportDaily:
 		return handle(req, func(input shareddto.DailyReportRequest) (any, error) {
-			return export.GenerateDailyReportWithFormat(ctx, h.core, h.paths, input.Date, input.Format, input.OutputMode)
+			input.Kind = sharedtypes.ExportReportKindDaily
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		})
+	case protocol.MethodExportWeekly:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			input.Kind = sharedtypes.ExportReportKindWeekly
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		})
+	case protocol.MethodExportRepo:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			input.Kind = sharedtypes.ExportReportKindRepo
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		})
+	case protocol.MethodExportStream:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			input.Kind = sharedtypes.ExportReportKindStream
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		})
+	case protocol.MethodExportIssueRollup:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			input.Kind = sharedtypes.ExportReportKindIssueRollup
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		})
+	case protocol.MethodExportCSV:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			input.Kind = sharedtypes.ExportReportKindCSV
+			return export.GenerateReport(ctx, h.core, h.paths, input)
 		})
 
 	case protocol.MethodContextGet:

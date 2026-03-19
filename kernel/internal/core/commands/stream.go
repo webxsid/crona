@@ -99,10 +99,13 @@ func UpdateStream(ctx context.Context, c *core.Context, streamID int64, updates 
 
 func DeleteStream(ctx context.Context, c *core.Context, streamID int64) error {
 	now := c.Now()
-	if err := c.Streams.SoftDelete(ctx, streamID, c.UserID, now); err != nil {
+	if err := c.Issues.CascadeSoftDeleteByStream(ctx, streamID, c.UserID, now); err != nil {
 		return err
 	}
-	if err := c.Issues.CascadeSoftDeleteByStream(ctx, streamID, c.UserID, now); err != nil {
+	if err := c.Habits.SoftDeleteByStream(ctx, streamID, c.UserID, now); err != nil {
+		return err
+	}
+	if err := c.Streams.SoftDelete(ctx, streamID, c.UserID, now); err != nil {
 		return err
 	}
 	if err := c.Ops.Append(ctx, sharedtypes.Op{

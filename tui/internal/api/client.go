@@ -348,24 +348,47 @@ func (c *Client) ListExportReports() ([]ExportReportFile, error) {
 	return out, c.call(protocol.MethodExportReportsList, nil, &out)
 }
 
-func (c *Client) ResetExportTemplate(format sharedtypes.ExportFormat) (*ExportAssetStatus, error) {
+func (c *Client) ResetExportTemplate(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) (*ExportAssetStatus, error) {
 	var out ExportAssetStatus
-	if err := c.call(protocol.MethodExportTemplateReset, shareddto.ExportTemplateResetRequest{Format: format}, &out); err != nil {
+	if err := c.call(protocol.MethodExportTemplateReset, shareddto.ExportTemplateResetRequest{ReportKind: reportKind, AssetKind: assetKind}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) GenerateReport(input shareddto.ExportReportRequest) (*ExportReportResult, error) {
+	var out ExportReportResult
+	method := protocol.MethodExportDaily
+	switch input.Kind {
+	case sharedtypes.ExportReportKindWeekly:
+		method = protocol.MethodExportWeekly
+	case sharedtypes.ExportReportKindRepo:
+		method = protocol.MethodExportRepo
+	case sharedtypes.ExportReportKindStream:
+		method = protocol.MethodExportStream
+	case sharedtypes.ExportReportKindIssueRollup:
+		method = protocol.MethodExportIssueRollup
+	case sharedtypes.ExportReportKindCSV:
+		method = protocol.MethodExportCSV
+	default:
+		input.Kind = sharedtypes.ExportReportKindDaily
+	}
+	input.Date = strings.TrimSpace(input.Date)
+	input.Start = strings.TrimSpace(input.Start)
+	input.End = strings.TrimSpace(input.End)
+	if err := c.call(method, input, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
 }
 
 func (c *Client) GenerateDailyReport(date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*DailyReportResult, error) {
-	var out DailyReportResult
-	if err := c.call(protocol.MethodExportDaily, shareddto.DailyReportRequest{
-		Date:       strings.TrimSpace(date),
+	return c.GenerateReport(shareddto.ExportReportRequest{
+		Kind:       sharedtypes.ExportReportKindDaily,
+		Date:       date,
 		Format:     format,
 		OutputMode: mode,
-	}, &out); err != nil {
-		return nil, err
-	}
-	return &out, nil
+	})
 }
 
 func (c *Client) ChangeIssueStatus(issueID int64, status string, note *string) error {

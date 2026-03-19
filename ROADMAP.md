@@ -68,10 +68,19 @@ Capture the non-work signals that give work data context, add lightweight person
 ## Phase 3 — Exports & Reports
 Make work history reviewable and portable.
 
-- [ ] Weekly summary export
-- [ ] Session → Issue rollups
-- [ ] Repo-level time reports
-- [ ] CSV export for external analysis
+- [x] Weekly summary export
+- [x] Session → Issue rollups
+- [x] Repo-level reports
+- [x] Stream-level reports
+- [x] CSV export for external analysis
+- [x] Editable report templates and variable docs for weekly, repo, stream, and issue-rollup exports
+- [x] Editable CSV export spec plus docs
+- [x] Config view exposure for report templates, docs, and CSV spec assets
+
+**Phase 3 exit criteria**
+- [x] Narrative reports are generated from editable runtime templates
+- [x] CSV export is configurable through an editable runtime spec
+- [x] Report templates/specs are editable from the TUI Config view
 
 ## Phase 4 — TUI Dashboard System
 Make dashboards a first-class terminal feature. Focus on strong summaries, multiple dashboard views, and practical customization that fits a terminal UI.

@@ -53,11 +53,11 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StyleDim.Render(hint),
 		}
 		return modal(theme, state.Width, 68, border, rows)
-	case "export_daily":
+	case "export_report":
 		rows := []string{
-			theme.StylePaneTitle.Render("Export Daily Report"),
+			theme.StylePaneTitle.Render("Export Report"),
 			"",
-			theme.StyleDim.Render("Date"),
+			theme.StyleDim.Render("Anchor Date"),
 			theme.StyleHeader.Render(state.CheckInDate),
 			"",
 		}

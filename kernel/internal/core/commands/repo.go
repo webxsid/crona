@@ -102,13 +102,16 @@ func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates stru
 func DeleteRepo(ctx context.Context, c *core.Context, repoID int64) error {
 	now := c.Now()
 
-	if err := c.Repos.SoftDelete(ctx, repoID, c.UserID, now); err != nil {
+	if err := c.Issues.CascadeSoftDeleteByRepo(ctx, repoID, c.UserID, now); err != nil {
+		return err
+	}
+	if err := c.Habits.SoftDeleteByRepo(ctx, repoID, c.UserID, now); err != nil {
 		return err
 	}
 	if err := c.Streams.SoftDeleteByRepo(ctx, repoID, c.UserID, now); err != nil {
 		return err
 	}
-	if err := c.Issues.CascadeSoftDeleteByRepo(ctx, repoID, c.UserID, now); err != nil {
+	if err := c.Repos.SoftDelete(ctx, repoID, c.UserID, now); err != nil {
 		return err
 	}
 	if err := c.Ops.Append(ctx, sharedtypes.Op{

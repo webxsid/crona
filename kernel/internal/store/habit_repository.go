@@ -290,6 +290,70 @@ func (r *HabitRepository) SoftDelete(ctx context.Context, habitID int64, userID 
 	return nil
 }
 
+func (r *HabitRepository) SoftDeleteByStream(ctx context.Context, streamID int64, userID string, now string) error {
+	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
+	if err != nil || streamInternalID == "" {
+		return err
+	}
+	_, err = r.db.NewUpdate().
+		Model((*HabitModel)(nil)).
+		Where("stream_id = ?", streamInternalID).
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NULL").
+		Set("deleted_at = ?", now).
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
+func (r *HabitRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
+	if err != nil || repoInternalID == "" {
+		return err
+	}
+	_, err = r.db.NewUpdate().
+		Model((*HabitModel)(nil)).
+		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NULL").
+		Set("deleted_at = ?", now).
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
+func (r *HabitRepository) RestoreDeletedByStream(ctx context.Context, streamID int64, userID string, now string) error {
+	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
+	if err != nil || streamInternalID == "" {
+		return err
+	}
+	_, err = r.db.NewUpdate().
+		Model((*HabitModel)(nil)).
+		Where("stream_id = ?", streamInternalID).
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NOT NULL").
+		Set("deleted_at = NULL").
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
+func (r *HabitRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
+	if err != nil || repoInternalID == "" {
+		return err
+	}
+	_, err = r.db.NewUpdate().
+		Model((*HabitModel)(nil)).
+		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NOT NULL").
+		Set("deleted_at = NULL").
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
 func habitInternalID(publicID int64) string {
 	return fmt.Sprintf("habit-%d", publicID)
 }

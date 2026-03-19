@@ -68,3 +68,30 @@ func (m Model) ContentHeightForTesting() int {
 func MinimumSizeForTesting() (int, int) {
 	return minTUIWidth, minTUIHeight
 }
+
+func NewDailyHabitDeleteTestModel(habits []api.HabitDailyItem) Model {
+	return Model{
+		view:      ViewDaily,
+		pane:      PaneHabits,
+		cursor:    map[Pane]int{PaneHabits: 0},
+		filters:   map[Pane]string{PaneHabits: ""},
+		dueHabits: habits,
+		timer:     &api.TimerState{State: "idle"},
+	}
+}
+
+func OpenSelectedDeleteDialogForTesting(m Model) (Model, bool) {
+	return m.openSelectedDeleteDialog()
+}
+
+func (m Model) DialogDeleteKindForTesting() string {
+	return m.dialogDeleteKind
+}
+
+func (m Model) DialogDeleteIDForTesting() string {
+	return m.dialogDeleteID
+}
+
+func (m Model) DialogStreamIDForTesting() int64 {
+	return m.dialogStreamID
+}

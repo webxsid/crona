@@ -112,6 +112,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle"),
 				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" fail"),
 				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" log"),
+				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
 		}
 		return []string{

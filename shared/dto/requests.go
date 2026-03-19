@@ -116,18 +116,26 @@ type DateRangeQuery struct {
 	End   string `json:"end"`
 }
 
-type DailyReportRequest struct {
-	Date       string                 `json:"date"`
+type ExportReportRequest struct {
+	Kind       types.ExportReportKind `json:"kind,omitempty"`
+	Date       string                 `json:"date,omitempty"`
+	Start      string                 `json:"start,omitempty"`
+	End        string                 `json:"end,omitempty"`
+	RepoID     *int64                 `json:"repoId,omitempty"`
+	StreamID   *int64                 `json:"streamId,omitempty"`
 	Format     types.ExportFormat     `json:"format,omitempty"`
 	OutputMode types.ExportOutputMode `json:"outputMode"`
 }
+
+type DailyReportRequest = ExportReportRequest
 
 type ExportReportsDirUpdateRequest struct {
 	ReportsDir string `json:"reportsDir"`
 }
 
 type ExportTemplateResetRequest struct {
-	Format types.ExportFormat `json:"format,omitempty"`
+	ReportKind types.ExportReportKind `json:"reportKind,omitempty"`
+	AssetKind  types.ExportAssetKind  `json:"assetKind,omitempty"`
 }
 
 type CreateIssueRequest struct {
