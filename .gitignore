@@ -1,4 +1,6 @@
 bin/
+crona
+cli/crona
 dist/
 release/
 .tmp*/
