@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -37,7 +38,7 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 	}
 	if existing != nil {
 		res, err := r.db.NewUpdate().
-			Model((*HabitCompletionModel)(nil)).
+			Model((*storemodels.HabitCompletionModel)(nil)).
 			Where("public_id = ?", existing.ID).
 			Where("user_id = ?", userID).
 			Set("status = ?", completion.Status).
@@ -58,7 +59,7 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 		existing.UpdatedAt = now
 		return *existing, nil
 	}
-	model := HabitCompletionModel{
+	model := storemodels.HabitCompletionModel{
 		InternalID:      habitCompletionInternalID(completion.ID),
 		PublicID:        completion.ID,
 		HabitID:         habitInternalID,
@@ -225,7 +226,7 @@ func (r *HabitCompletionRepository) DeleteByHabitAndDate(ctx context.Context, ha
 		return errors.New("habit not found")
 	}
 	res, err := r.db.NewUpdate().
-		Model((*HabitCompletionModel)(nil)).
+		Model((*storemodels.HabitCompletionModel)(nil)).
 		Where("habit_id = ?", habitInternalID).
 		Where("date = ?", date).
 		Where("user_id = ?", userID).

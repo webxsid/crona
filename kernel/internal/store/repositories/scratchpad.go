@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -20,7 +21,7 @@ func NewScratchPadRepository(db *bun.DB) *ScratchPadRepository {
 
 func (r *ScratchPadRepository) Upsert(ctx context.Context, meta sharedtypes.ScratchPadMeta, userID string, deviceID string) error {
 	_, err := r.db.NewInsert().
-		Model(&ScratchPadMetaModel{
+		Model(&storemodels.ScratchPadMetaModel{
 			ID:           meta.ID,
 			UserID:       userID,
 			DeviceID:     deviceID,
@@ -39,7 +40,7 @@ func (r *ScratchPadRepository) Upsert(ctx context.Context, meta sharedtypes.Scra
 }
 
 func (r *ScratchPadRepository) List(ctx context.Context, userID string, deviceID string, pinnedOnly bool) ([]sharedtypes.ScratchPadMeta, error) {
-	var models []ScratchPadMetaModel
+	var models []storemodels.ScratchPadMetaModel
 	q := r.db.NewSelect().Model(&models).Where("user_id = ?", userID).Where("device_id = ?", deviceID)
 	if pinnedOnly {
 		q = q.Where("pinned = ?", true)
@@ -61,7 +62,7 @@ func (r *ScratchPadRepository) List(ctx context.Context, userID string, deviceID
 }
 
 func (r *ScratchPadRepository) Get(ctx context.Context, path string, userID string, deviceID string) (*sharedtypes.ScratchPadMeta, error) {
-	var model ScratchPadMetaModel
+	var model storemodels.ScratchPadMetaModel
 	err := r.db.NewSelect().Model(&model).
 		Where("path = ?", path).
 		Where("user_id = ?", userID).
@@ -84,7 +85,7 @@ func (r *ScratchPadRepository) Get(ctx context.Context, path string, userID stri
 }
 
 func (r *ScratchPadRepository) GetByID(ctx context.Context, id string, userID string, deviceID string) (*sharedtypes.ScratchPadMeta, error) {
-	var model ScratchPadMetaModel
+	var model storemodels.ScratchPadMetaModel
 	err := r.db.NewSelect().Model(&model).
 		Where("id = ?", id).
 		Where("user_id = ?", userID).
@@ -107,7 +108,7 @@ func (r *ScratchPadRepository) GetByID(ctx context.Context, id string, userID st
 }
 
 func (r *ScratchPadRepository) Remove(ctx context.Context, path string, userID string, deviceID string) error {
-	_, err := r.db.NewDelete().Model((*ScratchPadMetaModel)(nil)).
+	_, err := r.db.NewDelete().Model((*storemodels.ScratchPadMetaModel)(nil)).
 		Where("path = ?", path).
 		Where("user_id = ?", userID).
 		Where("device_id = ?", deviceID).
@@ -116,7 +117,7 @@ func (r *ScratchPadRepository) Remove(ctx context.Context, path string, userID s
 }
 
 func (r *ScratchPadRepository) RemoveByID(ctx context.Context, id string, userID string, deviceID string) error {
-	_, err := r.db.NewDelete().Model((*ScratchPadMetaModel)(nil)).
+	_, err := r.db.NewDelete().Model((*storemodels.ScratchPadMetaModel)(nil)).
 		Where("id = ?", id).
 		Where("user_id = ?", userID).
 		Where("device_id = ?", deviceID).

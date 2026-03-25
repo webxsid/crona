@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,7 +6,9 @@ import (
 	"errors"
 	"time"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
+	utils "crona/shared/utils"
 
 	"github.com/uptrace/bun"
 )
@@ -74,7 +76,8 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 	RepoID   *int64
 	StreamID *int64
 	IssueID  *int64
-}) (*sharedtypes.ActiveContext, error) {
+},
+) (*sharedtypes.ActiveContext, error) {
 	var (
 		repoInternalID   *string
 		streamInternalID *string
@@ -82,7 +85,7 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 	)
 
 	if value.RepoID != nil {
-		resolved, err := resolveRepoInternalID(ctx, r.db, *value.RepoID, userID)
+		resolved, err := utils.ResolveRepoInternalID(ctx, r.db, *value.RepoID, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +95,7 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 		repoInternalID = &resolved
 	}
 	if value.StreamID != nil {
-		resolved, err := resolveStreamInternalID(ctx, r.db, *value.StreamID, userID)
+		resolved, err := utils.ResolveStreamInternalID(ctx, r.db, *value.StreamID, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +105,7 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 		streamInternalID = &resolved
 	}
 	if value.IssueID != nil {
-		resolved, err := resolveIssueInternalID(ctx, r.db, *value.IssueID, userID)
+		resolved, err := utils.ResolveIssueInternalID(ctx, r.db, *value.IssueID, userID)
 		if err != nil {
 			return nil, err
 		}
@@ -113,7 +116,7 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
-	model := ActiveContextModel{
+	model := storemodels.ActiveContextModel{
 		UserID:    userID,
 		DeviceID:  deviceID,
 		RepoID:    repoInternalID,
@@ -138,7 +141,7 @@ func (r *ActiveContextRepository) Set(ctx context.Context, userID string, device
 
 func (r *ActiveContextRepository) Clear(ctx context.Context, userID string, deviceID string) error {
 	_, err := r.db.NewUpdate().
-		Model((*ActiveContextModel)(nil)).
+		Model((*storemodels.ActiveContextModel)(nil)).
 		Where("user_id = ?", userID).
 		Where("device_id = ?", deviceID).
 		Set("repo_id = NULL").
@@ -156,7 +159,7 @@ func (r *ActiveContextRepository) InitializeDefaults(ctx context.Context, userID
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	_, err = r.db.NewInsert().
-		Model(&ActiveContextModel{
+		Model(&storemodels.ActiveContextModel{
 			UserID:    userID,
 			DeviceID:  deviceID,
 			UpdatedAt: now,

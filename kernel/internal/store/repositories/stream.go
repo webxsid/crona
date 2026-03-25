@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
 
 	"github.com/uptrace/bun"
@@ -32,7 +33,7 @@ func (r *StreamRepository) Create(ctx context.Context, stream sharedtypes.Stream
 		return sharedtypes.Stream{}, errors.New("repo not found")
 	}
 
-	model := StreamModel{
+	model := storemodels.StreamModel{
 		InternalID:  streamInternalID(stream.ID),
 		PublicID:    stream.ID,
 		RepoID:      repoInternalID,
@@ -171,11 +172,12 @@ func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, 
 
 func (r *StreamRepository) Update(ctx context.Context, streamID int64, userID string, now string, updates struct {
 	Name        *string
-	Description Patch[string]
+	Description sharedtypes.Patch[string]
 	Visibility  *sharedtypes.StreamVisibility
-}) (*sharedtypes.Stream, error) {
+},
+) (*sharedtypes.Stream, error) {
 	q := r.db.NewUpdate().
-		Model((*StreamModel)(nil)).
+		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -209,7 +211,7 @@ func (r *StreamRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, u
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*StreamModel)(nil)).
+		Model((*storemodels.StreamModel)(nil)).
 		Where("repo_id = ?", repoInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -221,7 +223,7 @@ func (r *StreamRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, u
 
 func (r *StreamRepository) SoftDelete(ctx context.Context, streamID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*StreamModel)(nil)).
+		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -239,7 +241,7 @@ func (r *StreamRepository) SoftDelete(ctx context.Context, streamID int64, userI
 
 func (r *StreamRepository) Restore(ctx context.Context, streamID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*StreamModel)(nil)).
+		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
@@ -261,7 +263,7 @@ func (r *StreamRepository) RestoreByRepo(ctx context.Context, repoID int64, user
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*StreamModel)(nil)).
+		Model((*storemodels.StreamModel)(nil)).
 		Where("repo_id = ?", repoInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").

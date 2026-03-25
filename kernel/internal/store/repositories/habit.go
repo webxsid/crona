@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
 
 	sharedtypes "crona/shared/types"
+	utils "crona/shared/utils"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -37,7 +38,7 @@ func (r *HabitRepository) Create(ctx context.Context, habit sharedtypes.Habit, u
 	if err != nil {
 		return sharedtypes.Habit{}, err
 	}
-	model := HabitModel{
+	model := storemodels.HabitModel{
 		InternalID:    habitInternalID(habit.ID),
 		PublicID:      habit.ID,
 		StreamID:      streamInternalID,
@@ -206,7 +207,7 @@ func (r *HabitRepository) ListDueWithMeta(ctx context.Context, date string, user
 			RepoName:   row.RepoName,
 			StreamName: row.StreamName,
 		}
-		if habit.Active && HabitMatchesDate(habit.Habit, date) {
+		if habit.Active && utils.HabitMatchesDate(habit.Habit, date) {
 			out = append(out, habit)
 		}
 	}
@@ -221,9 +222,10 @@ func (r *HabitRepository) Update(ctx context.Context, habitID int64, userID stri
 	WeekdaysSet   bool
 	TargetMinutes Patch[int]
 	Active        *bool
-}) (*sharedtypes.Habit, error) {
+},
+) (*sharedtypes.Habit, error) {
 	q := r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("public_id = ?", habitID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -274,7 +276,7 @@ func (r *HabitRepository) Update(ctx context.Context, habitID int64, userID stri
 
 func (r *HabitRepository) SoftDelete(ctx context.Context, habitID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("public_id = ?", habitID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -296,7 +298,7 @@ func (r *HabitRepository) SoftDeleteByStream(ctx context.Context, streamID int64
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("stream_id = ?", streamInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -312,7 +314,7 @@ func (r *HabitRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, us
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -328,7 +330,7 @@ func (r *HabitRepository) RestoreDeletedByStream(ctx context.Context, streamID i
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("stream_id = ?", streamInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
@@ -344,7 +346,7 @@ func (r *HabitRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*HabitModel)(nil)).
+		Model((*storemodels.HabitModel)(nil)).
 		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
@@ -379,32 +381,4 @@ func parseWeekdays(raw *string) []int {
 		return nil
 	}
 	return out
-}
-
-func HabitMatchesDate(habit sharedtypes.Habit, date string) bool {
-	if !habit.Active {
-		return false
-	}
-	parsed, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return false
-	}
-	switch sharedtypes.NormalizeHabitScheduleType(habit.ScheduleType) {
-	case sharedtypes.HabitScheduleWeekdays:
-		wd := int(parsed.Weekday())
-		return wd >= 1 && wd <= 5
-	case sharedtypes.HabitScheduleWeekly:
-		if len(habit.Weekdays) == 0 {
-			return false
-		}
-		wd := int(parsed.Weekday())
-		for _, day := range habit.Weekdays {
-			if day == wd {
-				return true
-			}
-		}
-		return false
-	default:
-		return true
-	}
 }

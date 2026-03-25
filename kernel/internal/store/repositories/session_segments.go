@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
 
 	"github.com/google/uuid"
@@ -21,7 +22,7 @@ func NewSessionSegmentRepository(db *bun.DB) *SessionSegmentRepository {
 }
 
 func (r *SessionSegmentRepository) GetActive(ctx context.Context, userID string, deviceID string, sessionID string) (*sharedtypes.SessionSegment, error) {
-	var model SessionSegmentModel
+	var model storemodels.SessionSegmentModel
 	err := r.db.NewSelect().
 		Model(&model).
 		Where("user_id = ?", userID).
@@ -44,7 +45,7 @@ func (r *SessionSegmentRepository) StartSegment(ctx context.Context, userID stri
 		return nil, err
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
-	model := SessionSegmentModel{
+	model := storemodels.SessionSegmentModel{
 		ID:          uuid.NewString(),
 		UserID:      userID,
 		DeviceID:    deviceID,
@@ -61,7 +62,7 @@ func (r *SessionSegmentRepository) StartSegment(ctx context.Context, userID stri
 
 func (r *SessionSegmentRepository) EndActiveSegment(ctx context.Context, userID string, deviceID string, sessionID string) error {
 	_, err := r.db.NewUpdate().
-		Model((*SessionSegmentModel)(nil)).
+		Model((*storemodels.SessionSegmentModel)(nil)).
 		Where("user_id = ?", userID).
 		Where("device_id = ?", deviceID).
 		Where("session_id = ?", sessionID).
@@ -72,7 +73,7 @@ func (r *SessionSegmentRepository) EndActiveSegment(ctx context.Context, userID 
 }
 
 func (r *SessionSegmentRepository) ListBySession(ctx context.Context, sessionID string) ([]sharedtypes.SessionSegment, error) {
-	var models []SessionSegmentModel
+	var models []storemodels.SessionSegmentModel
 	if err := r.db.NewSelect().Model(&models).Where("session_id = ?", sessionID).Order("start_time ASC").Scan(ctx); err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (r *SessionSegmentRepository) ListBySession(ctx context.Context, sessionID 
 }
 
 func (r *SessionSegmentRepository) ListEndedInRange(ctx context.Context, userID string, since string, until string) ([]sharedtypes.SessionSegment, error) {
-	var models []SessionSegmentModel
+	var models []storemodels.SessionSegmentModel
 	if err := r.db.NewSelect().
 		Model(&models).
 		Where("user_id = ?", userID).
@@ -107,7 +108,7 @@ func (r *SessionSegmentRepository) ApplyElapsedOffset(ctx context.Context, sessi
 		return nil
 	}
 	_, err := r.db.NewUpdate().
-		Model((*SessionSegmentModel)(nil)).
+		Model((*storemodels.SessionSegmentModel)(nil)).
 		Where("session_id = ?", sessionID).
 		Where("end_time IS NULL").
 		Set("elapsed_offset_seconds = ?", offsetSeconds).
@@ -117,7 +118,7 @@ func (r *SessionSegmentRepository) ApplyElapsedOffset(ctx context.Context, sessi
 
 func (r *SessionSegmentRepository) CountWorkSegments(ctx context.Context, sessionID string) (int, error) {
 	count, err := r.db.NewSelect().
-		Model((*SessionSegmentModel)(nil)).
+		Model((*storemodels.SessionSegmentModel)(nil)).
 		Where("session_id = ?", sessionID).
 		Where("segment_type = ?", string(sharedtypes.SessionSegmentWork)).
 		Where("end_time IS NOT NULL").
@@ -125,7 +126,7 @@ func (r *SessionSegmentRepository) CountWorkSegments(ctx context.Context, sessio
 	return count, err
 }
 
-func segmentFromModel(model SessionSegmentModel) *sharedtypes.SessionSegment {
+func segmentFromModel(model storemodels.SessionSegmentModel) *sharedtypes.SessionSegment {
 	return &sharedtypes.SessionSegment{
 		ID:                   model.ID,
 		UserID:               model.UserID,

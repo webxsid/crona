@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	sharedtypes "crona/shared/types"
+	"crona/shared/utils"
 )
 
 func ListHabitsByStream(ctx context.Context, c *core.Context, streamID int64) ([]sharedtypes.Habit, error) {
@@ -65,7 +66,8 @@ func CreateHabit(ctx context.Context, c *core.Context, input struct {
 	ScheduleType  string
 	Weekdays      []int
 	TargetMinutes *int
-}) (sharedtypes.Habit, error) {
+},
+) (sharedtypes.Habit, error) {
 	name := strings.TrimSpace(input.Name)
 	if name == "" {
 		return sharedtypes.Habit{}, errors.New("habit name cannot be empty")
@@ -120,7 +122,8 @@ func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates st
 	WeekdaysSet   bool
 	TargetMinutes store.Patch[int]
 	Active        *bool
-}) (*sharedtypes.Habit, error) {
+},
+) (*sharedtypes.Habit, error) {
 	if updates.Name.Set && updates.Name.Value != nil {
 		trimmed := strings.TrimSpace(*updates.Name.Value)
 		if trimmed == "" {
@@ -234,7 +237,7 @@ func CompleteHabit(ctx context.Context, c *core.Context, habitID int64, date str
 	if habit == nil {
 		return nil, errors.New("habit not found")
 	}
-	if !store.HabitMatchesDate(*habit, date) {
+	if !utils.HabitMatchesDate(*habit, date) {
 		return nil, errors.New("habit is not due for this date")
 	}
 	nextID, err := c.HabitCompletions.NextID(ctx)

@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"crona/kernel/internal/sessionnotes"
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -28,7 +29,7 @@ func (r *SessionRepository) Start(ctx context.Context, session sharedtypes.Sessi
 		return sharedtypes.Session{}, errors.New("issue not found")
 	}
 
-	model := SessionModel{
+	model := storemodels.SessionModel{
 		ID:        session.ID,
 		IssueID:   issueInternalID,
 		StartTime: session.StartTime,
@@ -48,9 +49,10 @@ func (r *SessionRepository) Stop(ctx context.Context, sessionID string, updates 
 	EndTime         string
 	DurationSeconds int
 	Notes           *string
-}, userID string, deviceID string, now string) (*sharedtypes.Session, error) {
+}, userID string, deviceID string, now string,
+) (*sharedtypes.Session, error) {
 	q := r.db.NewUpdate().
-		Model((*SessionModel)(nil)).
+		Model((*storemodels.SessionModel)(nil)).
 		Where("id = ?", sessionID).
 		Where("user_id = ?", userID).
 		Where("end_time IS NULL").
@@ -245,7 +247,7 @@ func (r *SessionRepository) GetLastSessionForUser(ctx context.Context, userID st
 
 func (r *SessionRepository) AmendSessionNotes(ctx context.Context, sessionID string, notes string, userID string, deviceID string, now string) (*sharedtypes.Session, error) {
 	res, err := r.db.NewUpdate().
-		Model((*SessionModel)(nil)).
+		Model((*storemodels.SessionModel)(nil)).
 		Where("id = ?", sessionID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -271,7 +273,8 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 	Until    *string
 	Limit    *int
 	Offset   *int
-}) ([]sharedtypes.SessionHistoryEntry, error) {
+},
+) ([]sharedtypes.SessionHistoryEntry, error) {
 	q := r.db.NewSelect().
 		TableExpr("sessions").
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").

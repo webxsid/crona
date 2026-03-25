@@ -1,10 +1,11 @@
-package store
+package migrations
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
 
 	"github.com/uptrace/bun"
@@ -12,19 +13,19 @@ import (
 
 func InitSchema(ctx context.Context, db *bun.DB) error {
 	models := []any{
-		(*RepoModel)(nil),
-		(*StreamModel)(nil),
-		(*IssueModel)(nil),
-		(*HabitModel)(nil),
-		(*HabitCompletionModel)(nil),
-		(*SessionModel)(nil),
-		(*StashModel)(nil),
-		(*OpModel)(nil),
-		(*CoreSettingsModel)(nil),
-		(*SessionSegmentModel)(nil),
-		(*ActiveContextModel)(nil),
-		(*ScratchPadMetaModel)(nil),
-		(*DailyCheckInModel)(nil),
+		(*storemodels.RepoModel)(nil),
+		(*storemodels.StreamModel)(nil),
+		(*storemodels.IssueModel)(nil),
+		(*storemodels.HabitModel)(nil),
+		(*storemodels.HabitCompletionModel)(nil),
+		(*storemodels.SessionModel)(nil),
+		(*storemodels.StashModel)(nil),
+		(*storemodels.OpModel)(nil),
+		(*storemodels.CoreSettingsModel)(nil),
+		(*storemodels.SessionSegmentModel)(nil),
+		(*storemodels.ActiveContextModel)(nil),
+		(*storemodels.ScratchPadMetaModel)(nil),
+		(*storemodels.DailyCheckInModel)(nil),
 	}
 
 	for _, model := range models {

@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
-
 	"github.com/uptrace/bun"
 )
 
@@ -32,7 +32,7 @@ func (r *IssueRepository) Create(ctx context.Context, issue sharedtypes.Issue, u
 		return sharedtypes.Issue{}, errors.New("stream not found")
 	}
 
-	model := IssueModel{
+	model := storemodels.IssueModel{
 		InternalID:      issueInternalID(issue.ID),
 		PublicID:        issue.ID,
 		StreamID:        streamInternalID,
@@ -358,9 +358,10 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 	TodoForDate     Patch[string]
 	CompletedAt     Patch[string]
 	AbandonedAt     Patch[string]
-}) (*sharedtypes.Issue, error) {
+},
+) (*sharedtypes.Issue, error) {
 	q := r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -425,7 +426,7 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 
 func (r *IssueRepository) SoftDelete(ctx context.Context, issueID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -447,7 +448,7 @@ func (r *IssueRepository) CascadeSoftDeleteByStream(ctx context.Context, streamI
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id = ?", streamInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -463,7 +464,7 @@ func (r *IssueRepository) CascadeSoftDeleteByRepo(ctx context.Context, repoID in
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -475,7 +476,7 @@ func (r *IssueRepository) CascadeSoftDeleteByRepo(ctx context.Context, repoID in
 
 func (r *IssueRepository) RestoreDeletedByID(ctx context.Context, issueID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
@@ -497,7 +498,7 @@ func (r *IssueRepository) RestoreDeletedByStream(ctx context.Context, streamID i
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id = ?", streamInternalID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
@@ -513,7 +514,7 @@ func (r *IssueRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64
 		return err
 	}
 	_, err = r.db.NewUpdate().
-		Model((*IssueModel)(nil)).
+		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").

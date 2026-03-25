@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -8,7 +8,10 @@ import (
 	"time"
 
 	"crona/shared/config"
+	sharedconstants "crona/shared/constants"
 	sharedtypes "crona/shared/types"
+
+	storemodels "crona/kernel/internal/store/models"
 
 	"github.com/uptrace/bun"
 )
@@ -22,7 +25,7 @@ func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
 }
 
 func (r *CoreSettingsRepository) Get(ctx context.Context, userID string) (*sharedtypes.CoreSettings, error) {
-	var model CoreSettingsModel
+	var model storemodels.CoreSettingsModel
 	err := r.db.NewSelect().
 		Model(&model).
 		Where("user_id = ?", userID).
@@ -39,7 +42,7 @@ func (r *CoreSettingsRepository) Get(ctx context.Context, userID string) (*share
 }
 
 func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey) (any, error) {
-	var model CoreSettingsModel
+	var model storemodels.CoreSettingsModel
 	err := r.db.NewSelect().
 		Model(&model).
 		Where("user_id = ?", userID).
@@ -55,7 +58,7 @@ func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, 
 }
 
 func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey, value any) error {
-	q := r.db.NewUpdate().Model((*CoreSettingsModel)(nil)).Where("user_id = ?", userID).Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10))
+	q := r.db.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).Where("user_id = ?", userID).Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10))
 	switch key {
 	case sharedtypes.CoreSettingsKeyTimerMode:
 		q = q.Set("timer_mode = ?", value)
@@ -97,7 +100,7 @@ func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, 
 }
 
 func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string]any, error) {
-	var rows []CoreSettingsModel
+	var rows []storemodels.CoreSettingsModel
 	if err := r.db.NewSelect().Model(&rows).Scan(ctx); err != nil {
 		return nil, err
 	}
@@ -110,7 +113,7 @@ func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string
 
 func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID string, deviceID string) error {
 	var exists int
-	err := r.db.NewSelect().Model((*CoreSettingsModel)(nil)).ColumnExpr("1").Where("user_id = ?", userID).Limit(1).Scan(ctx, &exists)
+	err := r.db.NewSelect().Model((*storemodels.CoreSettingsModel)(nil)).ColumnExpr("1").Where("user_id = ?", userID).Limit(1).Scan(ctx, &exists)
 	if err == nil {
 		return nil
 	}
@@ -118,39 +121,39 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		return err
 	}
 	now := strconv.FormatInt(time.Now().UnixMilli(), 10)
-	updateChecksEnabled := DefaultCoreSettings["updateChecksEnabled"].(bool)
-	updatePromptEnabled := DefaultCoreSettings["updatePromptEnabled"].(bool)
+	updateChecksEnabled := sharedconstants.DefaultCoreSettings["updateChecksEnabled"].(bool)
+	updatePromptEnabled := sharedconstants.DefaultCoreSettings["updatePromptEnabled"].(bool)
 	if config.Current().IsDev() {
 		updateChecksEnabled = false
 		updatePromptEnabled = false
 	}
-	_, err = r.db.NewInsert().Model(&CoreSettingsModel{
+	_, err = r.db.NewInsert().Model(&storemodels.CoreSettingsModel{
 		UserID:                userID,
 		DeviceID:              deviceID,
-		TimerMode:             DefaultCoreSettings["timerMode"].(string),
-		BreaksEnabled:         DefaultCoreSettings["breaksEnabled"].(bool),
-		WorkDurationMinutes:   DefaultCoreSettings["workDurationMinutes"].(int),
-		ShortBreakMinutes:     DefaultCoreSettings["shortBreakMinutes"].(int),
-		LongBreakMinutes:      DefaultCoreSettings["longBreakMinutes"].(int),
-		LongBreakEnabled:      DefaultCoreSettings["longBreakEnabled"].(bool),
-		CyclesBeforeLongBreak: DefaultCoreSettings["cyclesBeforeLongBreak"].(int),
-		AutoStartBreaks:       DefaultCoreSettings["autoStartBreaks"].(bool),
-		AutoStartWork:         DefaultCoreSettings["autoStartWork"].(bool),
-		BoundaryNotifications: DefaultCoreSettings["boundaryNotificationsEnabled"].(bool),
-		BoundarySound:         DefaultCoreSettings["boundarySoundEnabled"].(bool),
+		TimerMode:             sharedconstants.DefaultCoreSettings["timerMode"].(string),
+		BreaksEnabled:         sharedconstants.DefaultCoreSettings["breaksEnabled"].(bool),
+		WorkDurationMinutes:   sharedconstants.DefaultCoreSettings["workDurationMinutes"].(int),
+		ShortBreakMinutes:     sharedconstants.DefaultCoreSettings["shortBreakMinutes"].(int),
+		LongBreakMinutes:      sharedconstants.DefaultCoreSettings["longBreakMinutes"].(int),
+		LongBreakEnabled:      sharedconstants.DefaultCoreSettings["longBreakEnabled"].(bool),
+		CyclesBeforeLongBreak: sharedconstants.DefaultCoreSettings["cyclesBeforeLongBreak"].(int),
+		AutoStartBreaks:       sharedconstants.DefaultCoreSettings["autoStartBreaks"].(bool),
+		AutoStartWork:         sharedconstants.DefaultCoreSettings["autoStartWork"].(bool),
+		BoundaryNotifications: sharedconstants.DefaultCoreSettings["boundaryNotificationsEnabled"].(bool),
+		BoundarySound:         sharedconstants.DefaultCoreSettings["boundarySoundEnabled"].(bool),
 		UpdateChecksEnabled:   updateChecksEnabled,
 		UpdatePromptEnabled:   updatePromptEnabled,
-		RepoSort:              DefaultCoreSettings["repoSort"].(string),
-		StreamSort:            DefaultCoreSettings["streamSort"].(string),
-		IssueSort:             DefaultCoreSettings["issueSort"].(string),
-		HabitSort:             DefaultCoreSettings["habitSort"].(string),
+		RepoSort:              sharedconstants.DefaultCoreSettings["repoSort"].(string),
+		StreamSort:            sharedconstants.DefaultCoreSettings["streamSort"].(string),
+		IssueSort:             sharedconstants.DefaultCoreSettings["issueSort"].(string),
+		HabitSort:             sharedconstants.DefaultCoreSettings["habitSort"].(string),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
 	return err
 }
 
-func coreSettingsValue(row CoreSettingsModel, key sharedtypes.CoreSettingsKey) any {
+func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSettingsKey) any {
 	switch key {
 	case sharedtypes.CoreSettingsKeyTimerMode:
 		return row.TimerMode
@@ -191,7 +194,7 @@ func coreSettingsValue(row CoreSettingsModel, key sharedtypes.CoreSettingsKey) a
 	}
 }
 
-func coreSettingsFromModel(row CoreSettingsModel) sharedtypes.CoreSettings {
+func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSettings {
 	return sharedtypes.CoreSettings{
 		UserID:                row.UserID,
 		DeviceID:              row.DeviceID,

@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -140,7 +141,7 @@ func (r *StashRepository) Save(ctx context.Context, stash sharedtypes.Stash) err
 		value := string(*stash.PausedSegmentType)
 		segmentType = &value
 	}
-	_, err := r.db.NewInsert().Model(&StashModel{
+	_, err := r.db.NewInsert().Model(&storemodels.StashModel{
 		ID:             stash.ID,
 		UserID:         stash.UserID,
 		DeviceID:       stash.DeviceID,
@@ -158,7 +159,7 @@ func (r *StashRepository) Save(ctx context.Context, stash sharedtypes.Stash) err
 }
 
 func (r *StashRepository) Delete(ctx context.Context, id string, userID string) error {
-	_, err := r.db.NewDelete().Model((*StashModel)(nil)).Where("id = ?", id).Where("user_id = ?", userID).Exec(ctx)
+	_, err := r.db.NewDelete().Model((*storemodels.StashModel)(nil)).Where("id = ?", id).Where("user_id = ?", userID).Exec(ctx)
 	return err
 }
 

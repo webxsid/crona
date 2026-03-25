@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"crona/kernel/internal/core"
-	"crona/kernel/internal/store"
 
 	sharedtypes "crona/shared/types"
 )
@@ -197,7 +196,8 @@ func (t *TimerService) RestoreFromStash(ctx context.Context, input struct {
 	IssueID        int64
 	SegmentType    sharedtypes.SessionSegmentType
 	ElapsedSeconds int
-}) error {
+},
+) error {
 	session, err := StartSession(ctx, t.ctx, input.IssueID)
 	if err != nil {
 		return err
@@ -231,19 +231,16 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	if activeSegment.SegmentType == sharedtypes.SessionSegmentRest {
 		return nil
 	}
-	allSettings, err := t.ctx.CoreSettings.GetAllSettings(ctx)
+	settings, err := t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
 	if err != nil {
 		return err
 	}
-	rawSettings, ok := allSettings[t.ctx.UserID].(store.CoreSettingsModel)
-	if !ok {
-		return nil
-	}
+
 	completedCycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, activeSession.ID)
 	if err != nil {
 		return err
 	}
-	boundary := computeNextBoundary(activeSegment.SegmentType, rawSettings, completedCycles)
+	boundary := computeNextBoundary(activeSegment.SegmentType, settings, completedCycles)
 	if boundary == nil {
 		return nil
 	}
@@ -343,7 +340,7 @@ type boundaryResult struct {
 	AfterMinutes int
 }
 
-func computeNextBoundary(current sharedtypes.SessionSegmentType, settings store.CoreSettingsModel, completedWorkCycles int) *boundaryResult {
+func computeNextBoundary(current sharedtypes.SessionSegmentType, settings *sharedtypes.CoreSettings, completedWorkCycles int) *boundaryResult {
 	if settings.TimerMode != "structured" || !settings.BreaksEnabled {
 		return nil
 	}

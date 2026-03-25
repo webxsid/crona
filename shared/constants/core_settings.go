@@ -1,4 +1,4 @@
-package store
+package constants
 
 var DefaultCoreSettings = map[string]any{
 	"timerMode":                    "stopwatch",

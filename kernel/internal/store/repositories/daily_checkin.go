@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -19,7 +20,7 @@ func NewDailyCheckInRepository(db *bun.DB) *DailyCheckInRepository {
 }
 
 func (r *DailyCheckInRepository) GetByDate(ctx context.Context, userID string, date string) (*sharedtypes.DailyCheckIn, error) {
-	var model DailyCheckInModel
+	var model storemodels.DailyCheckInModel
 	err := r.db.NewSelect().
 		Model(&model).
 		Where("user_id = ?", userID).
@@ -36,7 +37,7 @@ func (r *DailyCheckInRepository) GetByDate(ctx context.Context, userID string, d
 }
 
 func (r *DailyCheckInRepository) Upsert(ctx context.Context, checkIn sharedtypes.DailyCheckIn, userID string, deviceID string, now string) (*sharedtypes.DailyCheckIn, error) {
-	model := DailyCheckInModel{
+	model := storemodels.DailyCheckInModel{
 		UserID:            userID,
 		DeviceID:          deviceID,
 		Date:              checkIn.Date,
@@ -69,7 +70,7 @@ func (r *DailyCheckInRepository) Upsert(ctx context.Context, checkIn sharedtypes
 
 func (r *DailyCheckInRepository) DeleteByDate(ctx context.Context, userID string, date string) error {
 	res, err := r.db.NewDelete().
-		Model((*DailyCheckInModel)(nil)).
+		Model((*storemodels.DailyCheckInModel)(nil)).
 		Where("user_id = ?", userID).
 		Where("date = ?", date).
 		Exec(ctx)
@@ -84,7 +85,7 @@ func (r *DailyCheckInRepository) DeleteByDate(ctx context.Context, userID string
 }
 
 func (r *DailyCheckInRepository) ListRange(ctx context.Context, userID string, start string, end string) ([]sharedtypes.DailyCheckIn, error) {
-	var models []DailyCheckInModel
+	var models []storemodels.DailyCheckInModel
 	if err := r.db.NewSelect().
 		Model(&models).
 		Where("user_id = ?", userID).
@@ -102,7 +103,7 @@ func (r *DailyCheckInRepository) ListRange(ctx context.Context, userID string, s
 	return out, nil
 }
 
-func dailyCheckInFromModel(model DailyCheckInModel) *sharedtypes.DailyCheckIn {
+func dailyCheckInFromModel(model storemodels.DailyCheckInModel) *sharedtypes.DailyCheckIn {
 	return &sharedtypes.DailyCheckIn{
 		Date:              model.Date,
 		Mood:              model.Mood,

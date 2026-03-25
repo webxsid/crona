@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	storemodels "crona/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 
@@ -22,7 +23,7 @@ func (r *OpRepository) Append(ctx context.Context, op sharedtypes.Op) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.db.NewInsert().Model(&OpModel{
+	_, err = r.db.NewInsert().Model(&storemodels.OpModel{
 		ID:        op.ID,
 		Entity:    string(op.Entity),
 		EntityID:  op.EntityID,
@@ -36,7 +37,7 @@ func (r *OpRepository) Append(ctx context.Context, op sharedtypes.Op) error {
 }
 
 func (r *OpRepository) Latest(ctx context.Context, limit int) ([]sharedtypes.Op, error) {
-	var rows []OpModel
+	var rows []storemodels.OpModel
 	if err := r.db.NewSelect().Model(&rows).Order("timestamp DESC").Limit(limit).Scan(ctx); err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (r *OpRepository) Latest(ctx context.Context, limit int) ([]sharedtypes.Op,
 }
 
 func (r *OpRepository) ListSince(ctx context.Context, userID string, sinceTimestamp string) ([]sharedtypes.Op, error) {
-	var rows []OpModel
+	var rows []storemodels.OpModel
 	if err := r.db.NewSelect().Model(&rows).Where("user_id = ?", userID).Where("timestamp > ?", sinceTimestamp).Order("timestamp ASC").Scan(ctx); err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func (r *OpRepository) ListByEntity(ctx context.Context, entity sharedtypes.OpEn
 	if limit <= 0 {
 		limit = 100
 	}
-	var rows []OpModel
+	var rows []storemodels.OpModel
 	if err := r.db.NewSelect().Model(&rows).
 		Where("entity = ?", string(entity)).
 		Where("entity_id = ?", entityID).
@@ -80,7 +81,7 @@ func (r *OpRepository) ListByEntity(ctx context.Context, entity sharedtypes.OpEn
 	return out, nil
 }
 
-func mapOp(row OpModel) sharedtypes.Op {
+func mapOp(row storemodels.OpModel) sharedtypes.Op {
 	var payload any
 	_ = json.Unmarshal([]byte(row.Payload), &payload)
 	return sharedtypes.Op{

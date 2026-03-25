@@ -1,4 +1,4 @@
-package store
+package repositories
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	storemodels "crona/kernel/internal/store/models"
 	sharedtypes "crona/shared/types"
 
 	"github.com/uptrace/bun"
@@ -20,7 +21,7 @@ func NewRepoRepository(db *bun.DB) *RepoRepository {
 }
 
 func (r *RepoRepository) Create(ctx context.Context, repo sharedtypes.Repo, userID string, now string) (sharedtypes.Repo, error) {
-	model := RepoModel{
+	model := storemodels.RepoModel{
 		InternalID:  repoInternalID(repo.ID),
 		PublicID:    repo.ID,
 		Name:        repo.Name,
@@ -41,7 +42,7 @@ func (r *RepoRepository) NextID(ctx context.Context) (int64, error) {
 }
 
 func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID string) (*sharedtypes.Repo, error) {
-	var model RepoModel
+	var model storemodels.RepoModel
 	err := r.db.NewSelect().
 		Model(&model).
 		Column("public_id", "name", "description", "color").
@@ -60,7 +61,7 @@ func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID strin
 }
 
 func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes.Repo, error) {
-	var models []RepoModel
+	var models []storemodels.RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
 		Column("public_id", "name", "description", "color").
@@ -79,7 +80,7 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 }
 
 func (r *RepoRepository) ListDeleted(ctx context.Context, userID string) ([]sharedtypes.Repo, error) {
-	var models []RepoModel
+	var models []storemodels.RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
 		Column("public_id", "name", "description", "color").
@@ -101,9 +102,10 @@ func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string
 	Name        Patch[string]
 	Description Patch[string]
 	Color       Patch[string]
-}) (*sharedtypes.Repo, error) {
+},
+) (*sharedtypes.Repo, error) {
 	q := r.db.NewUpdate().
-		Model((*RepoModel)(nil)).
+		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -139,7 +141,7 @@ func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string
 
 func (r *RepoRepository) SoftDelete(ctx context.Context, repoID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*RepoModel)(nil)).
+		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NULL").
@@ -157,7 +159,7 @@ func (r *RepoRepository) SoftDelete(ctx context.Context, repoID int64, userID st
 
 func (r *RepoRepository) Restore(ctx context.Context, repoID int64, userID string, now string) error {
 	res, err := r.db.NewUpdate().
-		Model((*RepoModel)(nil)).
+		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
 		Where("deleted_at IS NOT NULL").
