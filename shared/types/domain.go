@@ -95,6 +95,27 @@ func NormalizeIssueSort(value IssueSort) IssueSort {
 	}
 }
 
+type HabitSort string
+
+const (
+	HabitSortSchedule          HabitSort = "schedule"
+	HabitSortTargetMinutesAsc  HabitSort = "target_minutes_asc"
+	HabitSortTargetMinutesDesc HabitSort = "target_minutes_desc"
+	HabitSortChronologicalAsc  HabitSort = "chronological_asc"
+	HabitSortChronologicalDesc HabitSort = "chronological_desc"
+	HabitSortAlphabeticalAsc   HabitSort = "alphabetical_asc"
+	HabitSortAlphabeticalDesc  HabitSort = "alphabetical_desc"
+)
+
+func NormalizeHabitSort(value HabitSort) HabitSort {
+	switch value {
+	case HabitSortTargetMinutesAsc, HabitSortTargetMinutesDesc, HabitSortChronologicalAsc, HabitSortChronologicalDesc, HabitSortAlphabeticalAsc, HabitSortAlphabeticalDesc:
+		return value
+	default:
+		return HabitSortSchedule
+	}
+}
+
 type OpEntity string
 
 const (
@@ -138,6 +159,7 @@ const (
 	CoreSettingsKeyRepoSort              CoreSettingsKey = "repoSort"
 	CoreSettingsKeyStreamSort            CoreSettingsKey = "streamSort"
 	CoreSettingsKeyIssueSort             CoreSettingsKey = "issueSort"
+	CoreSettingsKeyHabitSort             CoreSettingsKey = "habitSort"
 )
 
 type SessionNoteSection string
@@ -409,6 +431,7 @@ type CoreSettings struct {
 	RepoSort              RepoSort   `json:"repoSort"`
 	StreamSort            StreamSort `json:"streamSort"`
 	IssueSort             IssueSort  `json:"issueSort"`
+	HabitSort             HabitSort  `json:"habitSort"`
 	CreatedAt             string     `json:"createdAt"`
 	UpdatedAt             string     `json:"updatedAt"`
 }
@@ -470,28 +493,34 @@ type Health struct {
 }
 
 type KernelInfo struct {
-	PID        int    `json:"pid"`
-	Port       int    `json:"port,omitempty"`
-	SocketPath string `json:"socketPath,omitempty"`
-	Token      string `json:"token"`
-	StartedAt  string `json:"startedAt"`
-	ScratchDir string `json:"scratchDir"`
-	Env        string `json:"env"`
+	PID            int    `json:"pid"`
+	Port           int    `json:"port,omitempty"`
+	SocketPath     string `json:"socketPath,omitempty"`
+	Token          string `json:"token"`
+	StartedAt      string `json:"startedAt"`
+	ScratchDir     string `json:"scratchDir"`
+	Env            string `json:"env"`
+	ExecutablePath string `json:"executablePath,omitempty"`
 }
 
 type UpdateStatus struct {
-	CurrentVersion   string `json:"currentVersion"`
-	LatestVersion    string `json:"latestVersion,omitempty"`
-	ReleaseName      string `json:"releaseName,omitempty"`
-	ReleaseNotes     string `json:"releaseNotes,omitempty"`
-	ReleaseURL       string `json:"releaseUrl,omitempty"`
-	PublishedAt      string `json:"publishedAt,omitempty"`
-	CheckedAt        string `json:"checkedAt,omitempty"`
-	UpdateAvailable  bool   `json:"updateAvailable"`
-	Enabled          bool   `json:"enabled"`
-	PromptEnabled    bool   `json:"promptEnabled"`
-	DismissedVersion string `json:"dismissedVersion,omitempty"`
-	Error            string `json:"error,omitempty"`
+	CurrentVersion           string `json:"currentVersion"`
+	LatestVersion            string `json:"latestVersion,omitempty"`
+	ReleaseTag               string `json:"releaseTag,omitempty"`
+	ReleaseName              string `json:"releaseName,omitempty"`
+	ReleaseNotes             string `json:"releaseNotes,omitempty"`
+	ReleaseURL               string `json:"releaseUrl,omitempty"`
+	InstallScriptURL         string `json:"installScriptUrl,omitempty"`
+	ChecksumsURL             string `json:"checksumsUrl,omitempty"`
+	PublishedAt              string `json:"publishedAt,omitempty"`
+	CheckedAt                string `json:"checkedAt,omitempty"`
+	UpdateAvailable          bool   `json:"updateAvailable"`
+	InstallAvailable         bool   `json:"installAvailable"`
+	InstallUnavailableReason string `json:"installUnavailableReason,omitempty"`
+	Enabled                  bool   `json:"enabled"`
+	PromptEnabled            bool   `json:"promptEnabled"`
+	DismissedVersion         string `json:"dismissedVersion,omitempty"`
+	Error                    string `json:"error,omitempty"`
 }
 
 type ExportOutputMode string

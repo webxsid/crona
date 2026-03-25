@@ -39,12 +39,15 @@ func isNewerVersion(current, latest string) bool {
 	if currentVersion.prerelease != "" && latestVersion.prerelease == "" {
 		return true
 	}
-	return latestVersion.prerelease > currentVersion.prerelease
+	return comparePrerelease(latestVersion.prerelease, currentVersion.prerelease) > 0
 }
 
 func normalizeVersion(value string) string {
 	value = strings.TrimSpace(value)
 	value = strings.TrimPrefix(value, "v")
+	if idx := strings.IndexByte(value, '+'); idx >= 0 {
+		value = value[:idx]
+	}
 	return value
 }
 
@@ -75,4 +78,52 @@ func parseSemver(value string) (semver, bool) {
 		return semver{}, false
 	}
 	return semver{major: major, minor: minor, patch: patch, prerelease: prerelease}, true
+}
+
+func comparePrerelease(left, right string) int {
+	leftParts := strings.Split(left, ".")
+	rightParts := strings.Split(right, ".")
+	limit := len(leftParts)
+	if len(rightParts) < limit {
+		limit = len(rightParts)
+	}
+	for i := 0; i < limit; i++ {
+		if cmp := comparePrereleasePart(leftParts[i], rightParts[i]); cmp != 0 {
+			return cmp
+		}
+	}
+	switch {
+	case len(leftParts) > len(rightParts):
+		return 1
+	case len(leftParts) < len(rightParts):
+		return -1
+	default:
+		return 0
+	}
+}
+
+func comparePrereleasePart(left, right string) int {
+	leftNum, leftErr := strconv.Atoi(left)
+	rightNum, rightErr := strconv.Atoi(right)
+	switch {
+	case leftErr == nil && rightErr == nil:
+		switch {
+		case leftNum > rightNum:
+			return 1
+		case leftNum < rightNum:
+			return -1
+		default:
+			return 0
+		}
+	case leftErr == nil:
+		return -1
+	case rightErr == nil:
+		return 1
+	case left > right:
+		return 1
+	case left < right:
+		return -1
+	default:
+		return 0
+	}
 }

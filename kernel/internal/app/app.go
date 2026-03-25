@@ -72,12 +72,13 @@ func Run(ctx context.Context) error {
 	}
 
 	info := sharedtypes.KernelInfo{
-		PID:        os.Getpid(),
-		SocketPath: paths.SocketPath,
-		Token:      "",
-		StartedAt:  startedAt,
-		ScratchDir: paths.ScratchDir,
-		Env:        appEnv.Mode,
+		PID:            os.Getpid(),
+		SocketPath:     paths.SocketPath,
+		Token:          "",
+		StartedAt:      startedAt,
+		ScratchDir:     paths.ScratchDir,
+		Env:            appEnv.Mode,
+		ExecutablePath: executablePath(),
 	}
 
 	server := ipc.NewServer(paths.SocketPath, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater), logger)
@@ -116,4 +117,12 @@ func hostnameOr(fallback string) string {
 		return fallback
 	}
 	return name
+}
+
+func executablePath() string {
+	path, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return path
 }

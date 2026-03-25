@@ -5,12 +5,13 @@ import (
 )
 
 type ActionsState struct {
-	View           string
-	Pane           string
-	ScratchpadOpen bool
-	TimerState     string
-	IsDevMode      bool
-	UpdateVisible  bool
+	View                   string
+	Pane                   string
+	ScratchpadOpen         bool
+	TimerState             string
+	IsDevMode              bool
+	UpdateVisible          bool
+	UpdateInstallAvailable bool
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
@@ -27,10 +28,7 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"))
 	}
 	if state.UpdateVisible {
-		actions = append(actions,
-			theme.StyleHeader.Render("[u]")+theme.StyleDim.Render(" update notes"),
-			theme.StyleHeader.Render("[U]")+theme.StyleDim.Render(" dismiss update"),
-		)
+		actions = append(actions, theme.StyleHeader.Render("[u]")+theme.StyleDim.Render(" updates"))
 	}
 	return actions
 }
@@ -84,6 +82,19 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
 		}
+	}
+	if state.View == "updates" {
+		actions := []string{
+			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check now"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release"),
+			theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
+		}
+		if state.UpdateInstallAvailable {
+			actions = append(actions, theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" install"))
+		} else {
+			actions = append(actions, theme.StyleDim.Render("[i] install unavailable"))
+		}
+		return actions
 	}
 
 	switch state.Pane {
@@ -192,5 +203,6 @@ func SettingsItemLabels(settings *sharedtypes.CoreSettings) []string {
 		"Repo Sort",
 		"Stream Sort",
 		"Issue Sort",
+		"Habit Sort",
 	}
 }

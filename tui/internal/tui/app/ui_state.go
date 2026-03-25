@@ -21,11 +21,13 @@ func (m Model) paneActions() []string {
 		timerState = m.timer.State
 	}
 	return views.PaneActions(viewTheme(), views.ActionsState{
-		View:           string(m.view),
-		Pane:           string(m.pane),
-		ScratchpadOpen: m.scratchpadOpen,
-		TimerState:     timerState,
-		IsDevMode:      m.isDevMode(),
+		View:                   string(m.view),
+		Pane:                   string(m.pane),
+		ScratchpadOpen:         m.scratchpadOpen,
+		TimerState:             timerState,
+		IsDevMode:              m.isDevMode(),
+		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
 }
 

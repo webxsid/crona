@@ -32,7 +32,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.pane = viewDefaultPane[m.view]
 			return m, nil
 		}
-		m.view = nextView(m.view, 1)
+		m.view = m.nextWorkspaceView(1)
 		m.pane = viewDefaultPane[m.view]
 		return m, nil
 	case "[":
@@ -41,7 +41,7 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.pane = viewDefaultPane[m.view]
 			return m, nil
 		}
-		m.view = nextView(m.view, -1)
+		m.view = m.nextWorkspaceView(-1)
 		m.pane = viewDefaultPane[m.view]
 		return m, nil
 	case "tab":
@@ -71,11 +71,11 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		logger.Info("Kernel restart requested")
 		return m, nil
 	case "u":
-		if viewsShouldShowUpdate(m.updateStatus) {
-			return m.openUpdateNotesDialog(), nil
-		}
+		m.view = ViewUpdates
+		m.pane = viewDefaultPane[m.view]
+		return m, nil
 	case "U":
-		if viewsShouldShowUpdate(m.updateStatus) {
+		if m.view == ViewUpdates && viewsShouldShowUpdate(m.updateStatus) {
 			return m, cmdDismissUpdate(m.client)
 		}
 	}
@@ -223,8 +223,30 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, cmdPauseFocusSession(m.client)
 		}
 	case "r":
+		if m.view == ViewUpdates {
+			m.updateChecking = true
+			m.updateInstallError = ""
+			return m, cmdCheckUpdateNow(m.client)
+		}
 		if m.view == ViewSessionActive && m.timer != nil && m.timer.State == "paused" {
 			return m, cmdResumeFocusSession(m.client)
+		}
+	case "i":
+		if m.view == ViewUpdates && viewsShouldShowUpdate(m.updateStatus) && !m.updateInstalling {
+			if !m.selfUpdateInstallAvailable() {
+				reason := strings.TrimSpace(m.selfUpdateUnsupportedReason())
+				if reason == "" && m.updateStatus != nil {
+					reason = strings.TrimSpace(m.updateStatus.InstallUnavailableReason)
+				}
+				if reason == "" {
+					reason = "Please update manually."
+				}
+				return m, m.setStatus(reason, true)
+			}
+			m.updateInstalling = true
+			m.updateInstallError = ""
+			m.updateInstallOutput = ""
+			return m, cmdInstallUpdate(m.updateStatus, m.currentExecutablePath, m.selfUpdateInstallAvailable(), m.selfUpdateUnsupportedReason())
 		}
 	case "x":
 		if m.view == ViewSessionActive && m.timer != nil && m.timer.State != "idle" {
@@ -346,6 +368,9 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case "o":
+		if m.view == ViewUpdates && m.updateStatus != nil {
+			return m, cmdOpenExternalURL(m.updateStatus.ReleaseURL)
+		}
 		if m.view == ViewReports && m.pane == PaneExportReports {
 			if report, ok := m.selectedExportReport(); ok && strings.TrimSpace(report.Path) != "" {
 				return m, openDefaultViewer(report.Path)
@@ -487,6 +512,8 @@ func (m Model) adjustSelectedSetting(dir int) (tea.Model, tea.Cmd) {
 		return m, cmdPatchSetting(m.client, sharedtypes.CoreSettingsKeyStreamSort, nextStreamSort(m.settings.StreamSort, dir), repoID, streamID, m.dashboardDate)
 	case 15:
 		return m, cmdPatchSetting(m.client, sharedtypes.CoreSettingsKeyIssueSort, nextIssueSort(m.settings.IssueSort, dir), repoID, streamID, m.dashboardDate)
+	case 16:
+		return m, cmdPatchSetting(m.client, sharedtypes.CoreSettingsKeyHabitSort, nextHabitSort(m.settings.HabitSort, dir), repoID, streamID, m.dashboardDate)
 	default:
 		return m, nil
 	}
@@ -528,6 +555,19 @@ func nextIssueSort(current sharedtypes.IssueSort, dir int) sharedtypes.IssueSort
 		sharedtypes.IssueSortAlphabeticalDesc,
 		sharedtypes.IssueSortChronologicalAsc,
 		sharedtypes.IssueSortChronologicalDesc,
+	}
+	return options[nextIndex(current, options, dir)]
+}
+
+func nextHabitSort(current sharedtypes.HabitSort, dir int) sharedtypes.HabitSort {
+	options := []sharedtypes.HabitSort{
+		sharedtypes.HabitSortSchedule,
+		sharedtypes.HabitSortTargetMinutesAsc,
+		sharedtypes.HabitSortTargetMinutesDesc,
+		sharedtypes.HabitSortAlphabeticalAsc,
+		sharedtypes.HabitSortAlphabeticalDesc,
+		sharedtypes.HabitSortChronologicalAsc,
+		sharedtypes.HabitSortChronologicalDesc,
 	}
 	return options[nextIndex(current, options, dir)]
 }

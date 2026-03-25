@@ -46,30 +46,38 @@ type ContentState struct {
 	SessionHistoryTitle string
 	SessionHistoryMeta  string
 
-	Repos          []api.Repo
-	Streams        []api.Stream
-	Issues         []api.Issue
-	DailyIssues    []api.Issue
-	Habits         []api.Habit
-	AllIssues      []api.IssueWithMeta
-	DefaultIssues  []api.IssueWithMeta
-	DueHabits      []api.HabitDailyItem
-	DailySummary   *api.DailyIssueSummary
-	DailyCheckIn   *api.DailyCheckIn
-	MetricsRange   []api.DailyMetricsDay
-	MetricsRollup  *api.MetricsRollup
-	Streaks        *api.StreakSummary
-	ExportAssets   *api.ExportAssetStatus
-	ExportReports  []api.ExportReportFile
-	IssueSessions  []api.Session
-	SessionHistory []api.SessionHistoryEntry
-	Scratchpads    []api.ScratchPad
-	Ops            []api.Op
-	Context        *api.ActiveContext
-	Timer          *api.TimerState
-	Health         *api.Health
-	UpdateStatus   *api.UpdateStatus
-	Settings       *api.CoreSettings
+	Repos                  []api.Repo
+	Streams                []api.Stream
+	Issues                 []api.Issue
+	DailyIssues            []api.Issue
+	Habits                 []api.Habit
+	AllIssues              []api.IssueWithMeta
+	DefaultIssues          []api.IssueWithMeta
+	DueHabits              []api.HabitDailyItem
+	DailySummary           *api.DailyIssueSummary
+	DailyCheckIn           *api.DailyCheckIn
+	MetricsRange           []api.DailyMetricsDay
+	MetricsRollup          *api.MetricsRollup
+	Streaks                *api.StreakSummary
+	ExportAssets           *api.ExportAssetStatus
+	ExportReports          []api.ExportReportFile
+	IssueSessions          []api.Session
+	SessionHistory         []api.SessionHistoryEntry
+	Scratchpads            []api.ScratchPad
+	Ops                    []api.Op
+	Context                *api.ActiveContext
+	Timer                  *api.TimerState
+	Health                 *api.Health
+	UpdateStatus           *api.UpdateStatus
+	UpdateChecking         bool
+	UpdateInstalling       bool
+	UpdateInstallOutput    string
+	UpdateInstallError     string
+	UpdateInstallAvailable bool
+	UpdateManualReason     string
+	TUIExecutablePath      string
+	KernelExecutablePath   string
+	Settings               *api.CoreSettings
 }
 
 func RenderContent(theme Theme, state ContentState) string {
@@ -94,6 +102,8 @@ func RenderContent(theme Theme, state ContentState) string {
 		return renderReportsView(theme, state)
 	case "settings":
 		return renderSettingsView(theme, state)
+	case "updates":
+		return renderUpdatesView(theme, state)
 	default:
 		return ""
 	}

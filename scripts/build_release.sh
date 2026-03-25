@@ -23,6 +23,33 @@ linux arm64
 rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 
+expected_files() {
+  echo "install-crona-tui.sh"
+  echo "crona-assets-${VERSION}.tar.gz"
+  printf '%s\n' "${TARGETS}" | while read -r GOOS GOARCH; do
+    [ -n "${GOOS}" ] || continue
+    echo "crona-kernel-${VERSION}-${GOOS}-${GOARCH}"
+    echo "crona-tui-${VERSION}-${GOOS}-${GOARCH}"
+  done
+}
+
+verify_release_artifacts() {
+  if [ ! -f "${RELEASE_DIR}/checksums.txt" ]; then
+    echo "Missing required release artifact: checksums.txt" >&2
+    exit 1
+  fi
+  for file in $(expected_files); do
+    if [ ! -f "${RELEASE_DIR}/${file}" ]; then
+      echo "Missing required release artifact: ${file}" >&2
+      exit 1
+    fi
+    if ! grep "  ${file}\$" "${RELEASE_DIR}/checksums.txt" >/dev/null 2>&1; then
+      echo "checksums.txt is missing ${file}" >&2
+      exit 1
+    fi
+  done
+}
+
 for target in ${TARGETS}; do
   :
 done
@@ -55,5 +82,7 @@ rm -rf "${RELEASE_DIR}/assets"
   cd "${RELEASE_DIR}"
   shasum -a 256 ./* > checksums.txt
 )
+
+verify_release_artifacts
 
 echo "Release artifacts written to ${RELEASE_DIR}"

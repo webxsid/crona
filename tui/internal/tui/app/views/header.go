@@ -67,40 +67,7 @@ func headerSecondary(theme Theme, state HeaderState) string {
 	} else if state.View == "daily" || state.View == "wellbeing" {
 		parts = append(parts, healthChip(state.Health))
 	}
-	if shouldShowUpdate(state.UpdateStatus) {
-		label := "v" + state.UpdateStatus.LatestVersion
-		if title := strings.TrimSpace(firstUpdateSummary(state.UpdateStatus)); title != "" {
-			label += " " + title
-		}
-		parts = append(parts, "update:"+newStyle(theme.ColorYellow).Render(label))
-	}
 	return strings.Join(compactNonEmpty(parts), "  ·  ")
-}
-
-func shouldShowUpdate(status *api.UpdateStatus) bool {
-	if status == nil {
-		return false
-	}
-	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
-		return false
-	}
-	return strings.TrimSpace(status.LatestVersion) != "" && strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
-}
-
-func firstUpdateSummary(status *api.UpdateStatus) string {
-	if status == nil {
-		return ""
-	}
-	if title := strings.TrimSpace(status.ReleaseName); title != "" {
-		return title
-	}
-	for _, line := range strings.Split(status.ReleaseNotes, "\n") {
-		line = strings.TrimSpace(strings.TrimPrefix(line, "#"))
-		if line != "" {
-			return line
-		}
-	}
-	return ""
 }
 
 func healthChip(health *api.Health) string {

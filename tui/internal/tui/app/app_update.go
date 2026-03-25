@@ -190,26 +190,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.health = msg.Health
 		return m, nil
 	case updateStatusLoadedMsg:
-		prevVisible := viewsShouldShowUpdate(m.updateStatus)
-		prevVersion := ""
-		if m.updateStatus != nil {
-			prevVersion = m.updateStatus.LatestVersion
-		}
+		m.updateChecking = false
 		m.updateStatus = msg.Status
-		if viewsShouldShowUpdate(m.updateStatus) && (!prevVisible || prevVersion != m.updateStatus.LatestVersion) {
-			message := "Update available: v" + m.updateStatus.LatestVersion
-			if title := strings.TrimSpace(viewsFirstUpdateSummary(m.updateStatus)); title != "" {
-				message += " - " + title
-			}
-			return m, m.setStatus(message, false)
-		}
 		return m, nil
 	case updateDismissedMsg:
 		m.updateStatus = msg.Status
+		m.updateChecking = false
 		if strings.TrimSpace(msg.Status.DismissedVersion) == "" {
 			return m, m.setStatus("No update prompt dismissed", false)
 		}
 		return m, m.setStatus("Update prompt dismissed for v"+msg.Status.DismissedVersion, false)
+	case updateInstallFinishedMsg:
+		m.updateInstalling = false
+		m.updateInstallOutput = strings.TrimSpace(msg.Output)
+		if msg.Err != nil {
+			m.updateInstallError = msg.Err.Error()
+			return m, nil
+		}
+		close(m.eventStop)
+		return m, tea.Quit
 	case settingsLoadedMsg:
 		m.settings = msg.Settings
 		m.clampFiltered(PaneSettings)

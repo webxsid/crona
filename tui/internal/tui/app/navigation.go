@@ -23,6 +23,27 @@ func nextView(current View, dir int) View {
 	return current
 }
 
+func (m Model) availableViews() []View {
+	views := make([]View, 0, len(viewOrder))
+	for _, view := range viewOrder {
+		views = append(views, view)
+	}
+	if len(views) == 0 {
+		return []View{ViewDaily}
+	}
+	return views
+}
+
+func (m Model) nextWorkspaceView(dir int) View {
+	views := m.availableViews()
+	for i, candidate := range views {
+		if candidate == m.view {
+			return views[(i+dir+len(views))%len(views)]
+		}
+	}
+	return ViewDaily
+}
+
 func nextPane(view View, current Pane, dir int) Pane {
 	panes := viewPanes[view]
 	if len(panes) == 0 {

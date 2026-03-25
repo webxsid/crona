@@ -20,12 +20,13 @@ import (
 )
 
 type Info struct {
-	PID        int    `json:"pid"`
-	Port       int    `json:"port"`
-	SocketPath string `json:"socketPath"`
-	Token      string `json:"token"`
-	ScratchDir string `json:"scratchDir"`
-	Env        string `json:"env"`
+	PID            int    `json:"pid"`
+	Port           int    `json:"port"`
+	SocketPath     string `json:"socketPath"`
+	Token          string `json:"token"`
+	ScratchDir     string `json:"scratchDir"`
+	Env            string `json:"env"`
+	ExecutablePath string `json:"executablePath"`
 }
 
 func Ensure() (*Info, error) {
@@ -66,23 +67,25 @@ func readInfo(path string) (*Info, error) {
 		return nil, err
 	}
 	var raw struct {
-		PID        int    `json:"pid"`
-		Port       int    `json:"port"`
-		SocketPath string `json:"socketPath"`
-		Token      string `json:"token"`
-		ScratchDir string `json:"scratchDir"`
-		Env        string `json:"env"`
+		PID            int    `json:"pid"`
+		Port           int    `json:"port"`
+		SocketPath     string `json:"socketPath"`
+		Token          string `json:"token"`
+		ScratchDir     string `json:"scratchDir"`
+		Env            string `json:"env"`
+		ExecutablePath string `json:"executablePath"`
 	}
 	if err := json.Unmarshal(b, &raw); err != nil {
 		return nil, err
 	}
 	return &Info{
-		PID:        raw.PID,
-		Port:       raw.Port,
-		SocketPath: raw.SocketPath,
-		Token:      raw.Token,
-		ScratchDir: raw.ScratchDir,
-		Env:        raw.Env,
+		PID:            raw.PID,
+		Port:           raw.Port,
+		SocketPath:     raw.SocketPath,
+		Token:          raw.Token,
+		ScratchDir:     raw.ScratchDir,
+		Env:            raw.Env,
+		ExecutablePath: raw.ExecutablePath,
 	}, nil
 }
 

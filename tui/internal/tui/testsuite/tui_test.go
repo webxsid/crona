@@ -208,6 +208,46 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 	}
 }
 
+func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
+	estimate1, estimate2, estimate3 := 60, 35, 25
+	due := "2026-03-19"
+	completedAt := "2026-03-20T09:30:00Z"
+	abandonedAt := "2026-03-21T18:45:00Z"
+	state := views.ContentState{
+		View:   "default",
+		Pane:   "issues",
+		Width:  100,
+		Height: 24,
+		Cursors: map[string]int{
+			"issues": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+		},
+		DefaultIssueSection: "completed",
+		DefaultIssues: []api.IssueWithMeta{
+			{Issue: api.Issue{ID: 1, Title: "Open planned issue", Status: "planned", EstimateMinutes: &estimate1, TodoForDate: &due}, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 2, Title: "Completed shipped fix", Status: "done", EstimateMinutes: &estimate2, TodoForDate: &due, CompletedAt: &completedAt}, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 3, Title: "Abandoned old task", Status: "abandoned", EstimateMinutes: &estimate3, TodoForDate: &due, AbandonedAt: &abandonedAt}, RepoName: "Personal", StreamName: "home"},
+		},
+		Context: &api.ActiveContext{},
+	}
+
+	rendered := ansi.Strip(support.RenderDefault(state))
+	if !strings.Contains(rendered, "Completed shipped fix  [on 2026-03-20]") {
+		t.Fatalf("expected completed issue to show resolution date, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "Abandoned old task  [on 2026-03-21]") {
+		t.Fatalf("expected abandoned issue to show resolution date, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Completed shipped fix  [due ") || strings.Contains(rendered, "Completed shipped fix  [overdue ") {
+		t.Fatalf("completed issue should not show due or overdue label, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Abandoned old task  [due ") || strings.Contains(rendered, "Abandoned old task  [overdue ") {
+		t.Fatalf("abandoned issue should not show due or overdue label, got %q", rendered)
+	}
+}
+
 func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 	repos := []api.Repo{{ID: 1, Name: "Work"}, {ID: 2, Name: "OSS"}}
 	checkedRepoID := int64(2)
@@ -271,7 +311,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 		View:   "settings",
 		Pane:   "settings",
 		Width:  70,
-		Height: 18,
+		Height: 24,
 		Cursors: map[string]int{
 			"settings": 0,
 		},
@@ -293,11 +333,12 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 			RepoSort:              sharedtypes.RepoSortChronologicalAsc,
 			StreamSort:            sharedtypes.StreamSortChronologicalAsc,
 			IssueSort:             sharedtypes.IssueSortPriority,
+			HabitSort:             sharedtypes.HabitSortTargetMinutesDesc,
 		},
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"Boundary Notifications", "Boundary Sound"} {
+	for _, want := range []string{"Boundary Notifications", "Boundary Sound", "Habit Sort", "Target longest"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -317,16 +358,51 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 	}
 }
 
-func TestGlobalActionsExposeUpdateNotesAndDismissWhenVisible(t *testing.T) {
+func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
 	actions := views.GlobalActions(support.Theme(), views.ActionsState{
 		View:          "daily",
 		Pane:          "issues",
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[u]", "update notes", "[U]", "dismiss update"} {
+	for _, want := range []string{"[u]", "updates"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected update actions to contain %q, got %q", want, joined)
+		}
+	}
+}
+
+func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
+	actions := views.ContextualActions(support.Theme(), views.ActionsState{
+		View:                   "updates",
+		UpdateInstallAvailable: true,
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[r]", "check now", "[o]", "open release", "[i]", "install", "[U]", "dismiss"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected updates actions to contain %q, got %q", want, joined)
+		}
+	}
+}
+
+func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
+	rendered := support.RenderUpdates(views.ContentState{
+		View:   "updates",
+		Pane:   "issues",
+		Width:  100,
+		Height: 24,
+		UpdateStatus: &api.UpdateStatus{
+			Enabled:                  true,
+			PromptEnabled:            true,
+			UpdateAvailable:          true,
+			LatestVersion:            "0.3.0",
+			InstallAvailable:         false,
+			InstallUnavailableReason: "Release is missing the checksums.txt asset.",
+		},
+	})
+	for _, want := range []string{"[i] install unavailable", "Release is missing the checksums.txt asset."} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
 	}
 }

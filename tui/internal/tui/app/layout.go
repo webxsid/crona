@@ -182,10 +182,13 @@ func (m Model) renderSidebar(width, height int) string {
 		m.renderSidebarItem(ViewOps, "Ops"),
 		m.renderSidebarItem(ViewConfig, "Config"),
 		m.renderSidebarItem(ViewSettings, "Settings"),
+	}
+	lines = append(lines, m.renderSidebarItem(ViewUpdates, "Updates"))
+	lines = append(lines,
 		"",
 		styleDim.Render("SESSION"),
 		m.renderSidebarItem(ViewSessionHistory, "History"),
-	}
+	)
 
 	return styleInactive.
 		Width(width-4).
@@ -226,12 +229,13 @@ func (m Model) renderPane(title string, pane Pane, width, height int, emptyText 
 			timerState = m.timer.State
 		}
 		actions = views.ContextualActions(viewTheme(), views.ActionsState{
-			View:           string(m.view),
-			Pane:           string(pane),
-			ScratchpadOpen: m.scratchpadOpen,
-			TimerState:     timerState,
-			IsDevMode:      m.isDevMode(),
-			UpdateVisible:  viewsShouldShowUpdate(m.updateStatus),
+			View:                   string(m.view),
+			Pane:                   string(pane),
+			ScratchpadOpen:         m.scratchpadOpen,
+			TimerState:             timerState,
+			IsDevMode:              m.isDevMode(),
+			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+			UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 		})
 	}
 	lines = append(lines, views.RenderPaneActionLine(viewTheme(), m.filters[pane], width-6, actions))
@@ -265,11 +269,13 @@ func (m Model) renderHelpBar() string {
 		timerState = m.timer.State
 	}
 	actions := views.GlobalActions(viewTheme(), views.ActionsState{
-		View:           string(m.view),
-		Pane:           string(m.pane),
-		ScratchpadOpen: m.scratchpadOpen,
-		TimerState:     timerState,
-		IsDevMode:      m.isDevMode(),
+		View:                   string(m.view),
+		Pane:                   string(m.pane),
+		ScratchpadOpen:         m.scratchpadOpen,
+		TimerState:             timerState,
+		IsDevMode:              m.isDevMode(),
+		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
 	devRightAction := ""
 	if m.isDevMode() {
@@ -657,7 +663,7 @@ func (m Model) viewContentState(width, height int) views.ContentState {
 		Filters:            map[string]string{"repos": m.filters[PaneRepos], "streams": m.filters[PaneStreams], "issues": m.filters[PaneIssues], "habits": m.filters[PaneHabits], "sessions": m.filters[PaneSessions], "scratchpads": m.filters[PaneScratchpads], "ops": m.filters[PaneOps], "export_reports": m.filters[PaneExportReports], "config": m.filters[PaneConfig], "settings": m.filters[PaneSettings]},
 		ScratchpadOpen:     m.scratchpadOpen,
 		ScratchpadRendered: m.scratchpadViewport.View(),
-		Repos:              m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: m.dailyScopedIssues(), Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: m.defaultScopedIssues(), DueHabits: m.filteredDueHabits(), DailySummary: m.dailySummary, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, ExportAssets: m.exportAssets, ExportReports: m.exportReports, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, UpdateStatus: m.updateStatus, Settings: m.settings,
+		Repos:              m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: m.dailyScopedIssues(), Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: m.defaultScopedIssues(), DueHabits: m.filteredDueHabits(), DailySummary: m.dailySummary, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, ExportAssets: m.exportAssets, ExportReports: m.exportReports, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, UpdateStatus: m.updateStatus, UpdateChecking: m.updateChecking, UpdateInstalling: m.updateInstalling, UpdateInstallOutput: m.updateInstallOutput, UpdateInstallError: m.updateInstallError, UpdateInstallAvailable: m.selfUpdateInstallAvailable(), UpdateManualReason: m.selfUpdateUnsupportedReason(), TUIExecutablePath: m.currentExecutablePath, KernelExecutablePath: kernelExecutablePath(m.kernelInfo), Settings: m.settings,
 	}
 	if m.scratchpadMeta != nil {
 		state.ScratchpadName = m.scratchpadMeta.Name

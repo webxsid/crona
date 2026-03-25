@@ -131,10 +131,12 @@ func paneActionsForState(theme Theme, state ContentState, active bool) []string 
 		return nil
 	}
 	return ContextualActions(theme, ActionsState{
-		View:           state.View,
-		Pane:           state.Pane,
-		ScratchpadOpen: state.ScratchpadOpen,
-		TimerState:     timerStateFromContent(state),
+		View:                   state.View,
+		Pane:                   state.Pane,
+		ScratchpadOpen:         state.ScratchpadOpen,
+		TimerState:             timerStateFromContent(state),
+		UpdateVisible:          shouldShowUpdatesView(state.UpdateStatus),
+		UpdateInstallAvailable: state.UpdateInstallAvailable,
 	})
 }
 

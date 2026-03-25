@@ -7,6 +7,15 @@ INSTALL_DIR="${CRONA_INSTALL_DIR:-$HOME/.local/bin}"
 VERSION_FILE="${INSTALL_DIR}/.crona-version"
 CRONA_HOME="${CRONA_HOME:-$HOME/.crona}"
 ASSETS_DIR="${CRONA_HOME}/assets/bundled"
+TMP_DIR=""
+
+cleanup() {
+  if [ -n "${TMP_DIR}" ] && [ -d "${TMP_DIR}" ]; then
+    rm -rf "${TMP_DIR}"
+  fi
+}
+
+trap cleanup EXIT INT TERM
 
 stop_running_kernel() {
   info_file="${CRONA_HOME}/kernel.json"
@@ -113,15 +122,54 @@ detect_arch() {
   esac
 }
 
+verify_nonempty() {
+  file_path="$1"
+  if [ ! -s "${file_path}" ]; then
+    echo "Downloaded file is empty: ${file_path}" >&2
+    exit 1
+  fi
+}
+
+verify_checksums() {
+  subset_file="${TMP_DIR}/checksums.selected.txt"
+  : > "${subset_file}"
+
+  for file_name in "$@"; do
+    line="$(grep "  ${file_name}\$" "${CHECKSUMS_FILE}" || true)"
+    if [ -z "${line}" ]; then
+      echo "checksums.txt is missing ${file_name}" >&2
+      exit 1
+    fi
+    printf '%s\n' "${line}" >> "${subset_file}"
+  done
+
+  (
+    cd "${TMP_DIR}"
+    if command -v sha256sum >/dev/null 2>&1; then
+      sha256sum -c "${subset_file}"
+    elif command -v shasum >/dev/null 2>&1; then
+      shasum -a 256 -c "${subset_file}"
+    else
+      echo "Neither sha256sum nor shasum is available to verify Crona downloads." >&2
+      exit 1
+    fi
+  )
+}
+
 OS="$(detect_os)"
 ARCH="$(detect_arch)"
 BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
-KERNEL_URL="${BASE_URL}/crona-kernel-${VERSION}-${OS}-${ARCH}"
-TUI_URL="${BASE_URL}/crona-tui-${VERSION}-${OS}-${ARCH}"
-ASSETS_URL="${BASE_URL}/crona-assets-${VERSION}.tar.gz"
+KERNEL_NAME="crona-kernel-${VERSION}-${OS}-${ARCH}"
+TUI_NAME="crona-tui-${VERSION}-${OS}-${ARCH}"
+ASSETS_NAME="crona-assets-${VERSION}.tar.gz"
+KERNEL_URL="${BASE_URL}/${KERNEL_NAME}"
+TUI_URL="${BASE_URL}/${TUI_NAME}"
+ASSETS_URL="${BASE_URL}/${ASSETS_NAME}"
+CHECKSUMS_URL="${BASE_URL}/checksums.txt"
 
 mkdir -p "${INSTALL_DIR}"
 mkdir -p "${ASSETS_DIR}"
+TMP_DIR="$(mktemp -d "${CRONA_HOME}/install.XXXXXX" 2>/dev/null || mktemp -d "/tmp/crona-install.XXXXXX")"
 
 INSTALLED_VERSION=""
 if [ -f "${VERSION_FILE}" ]; then
@@ -134,16 +182,28 @@ fi
 
 stop_running_kernel
 
+CHECKSUMS_FILE="${TMP_DIR}/checksums.txt"
+KERNEL_FILE="${TMP_DIR}/${KERNEL_NAME}"
+TUI_FILE="${TMP_DIR}/${TUI_NAME}"
+ASSETS_FILE="${TMP_DIR}/${ASSETS_NAME}"
+
 echo "Installing Crona ${VERSION} to ${INSTALL_DIR}"
-curl -fsSL "${KERNEL_URL}" -o "${INSTALL_DIR}/crona-kernel.tmp"
-curl -fsSL "${TUI_URL}" -o "${INSTALL_DIR}/crona-tui.tmp"
-curl -fsSL "${ASSETS_URL}" -o "${ASSETS_DIR}/crona-assets.tmp.tar.gz"
-chmod +x "${INSTALL_DIR}/crona-kernel.tmp" "${INSTALL_DIR}/crona-tui.tmp"
-mv "${INSTALL_DIR}/crona-kernel.tmp" "${INSTALL_DIR}/crona-kernel"
-mv "${INSTALL_DIR}/crona-tui.tmp" "${INSTALL_DIR}/crona-tui"
+curl -fsSL "${CHECKSUMS_URL}" -o "${CHECKSUMS_FILE}"
+curl -fsSL "${KERNEL_URL}" -o "${KERNEL_FILE}"
+curl -fsSL "${TUI_URL}" -o "${TUI_FILE}"
+curl -fsSL "${ASSETS_URL}" -o "${ASSETS_FILE}"
+
+verify_nonempty "${CHECKSUMS_FILE}"
+verify_nonempty "${KERNEL_FILE}"
+verify_nonempty "${TUI_FILE}"
+verify_nonempty "${ASSETS_FILE}"
+verify_checksums "${KERNEL_NAME}" "${TUI_NAME}" "${ASSETS_NAME}"
+
+chmod +x "${KERNEL_FILE}" "${TUI_FILE}"
+mv "${KERNEL_FILE}" "${INSTALL_DIR}/crona-kernel"
+mv "${TUI_FILE}" "${INSTALL_DIR}/crona-tui"
 rm -rf "${ASSETS_DIR}/export"
-tar -xzf "${ASSETS_DIR}/crona-assets.tmp.tar.gz" -C "${ASSETS_DIR}"
-rm -f "${ASSETS_DIR}/crona-assets.tmp.tar.gz"
+tar -xzf "${ASSETS_FILE}" -C "${ASSETS_DIR}"
 printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
 
 echo

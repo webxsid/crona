@@ -31,7 +31,12 @@ func main() {
 	eventStream := api.Subscribe(info.SocketPath, done)
 	tui.SetEventChannel(eventStream)
 
-	model := tui.New(info.SocketPath, info.ScratchDir, info.Env, done)
+	executablePath, _ := os.Executable()
+	if err := kernel.WriteTUIRuntimeState(executablePath); err != nil {
+		logger.Errorf("WriteTUIRuntimeState failed: %v", err)
+	}
+
+	model := tui.New(info.SocketPath, info.ScratchDir, info.Env, executablePath, done)
 	prog := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := prog.Run(); err != nil {

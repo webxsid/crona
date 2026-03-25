@@ -36,6 +36,7 @@ type timerLoadedMsg = appcmd.TimerLoadedMsg
 type healthLoadedMsg = appcmd.HealthLoadedMsg
 type updateStatusLoadedMsg = appcmd.UpdateStatusLoadedMsg
 type updateDismissedMsg = appcmd.UpdateDismissedMsg
+type updateInstallFinishedMsg = appcmd.UpdateInstallFinishedMsg
 type settingsLoadedMsg = appcmd.SettingsLoadedMsg
 type kernelInfoLoadedMsg = appcmd.KernelInfoLoadedMsg
 type kernelEventMsg = appcmd.KernelEventMsg
@@ -86,6 +87,9 @@ var (
 	cmdDeleteDailyCheckIn             = appcmd.DeleteDailyCheckIn
 	cmdShutdownKernel                 = appcmd.ShutdownKernel
 	cmdDismissUpdate                  = appcmd.DismissUpdate
+	cmdCheckUpdateNow                 = appcmd.CheckUpdateNow
+	cmdOpenExternalURL                = appcmd.OpenExternalURL
+	cmdInstallUpdate                  = appcmd.InstallUpdate
 	cmdSeedDevData                    = appcmd.SeedDevData
 	cmdClearDevData                   = appcmd.ClearDevData
 	cmdCreateScratchpad               = appcmd.CreateScratchpad

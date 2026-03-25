@@ -17,6 +17,7 @@ func RenderWellbeing(state views.ContentState) string { return views.RenderWellb
 func RenderReports(state views.ContentState) string   { return views.RenderReports(Theme(), state) }
 func RenderSettings(state views.ContentState) string  { return views.RenderSettings(Theme(), state) }
 func RenderConfig(state views.ContentState) string    { return views.RenderConfig(Theme(), state) }
+func RenderUpdates(state views.ContentState) string   { return views.RenderContent(Theme(), state) }
 func RenderPaneBox(theme views.Theme, active bool, width, height int, content string) string {
 	return views.RenderPaneBox(theme, active, width, height, content)
 }

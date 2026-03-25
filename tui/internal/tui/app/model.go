@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"crona/shared/config"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 
@@ -28,10 +29,11 @@ const (
 	ViewReports        View = "reports"
 	ViewConfig         View = "config"
 	ViewSettings       View = "settings"
+	ViewUpdates        View = "updates"
 )
 
 // viewOrder only includes the tab-switchable views.
-var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewWellbeing, ViewReports, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewConfig, ViewSettings}
+var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewWellbeing, ViewReports, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewConfig, ViewSettings, ViewUpdates}
 
 type Pane string
 
@@ -68,6 +70,7 @@ var viewPanes = map[View][]Pane{
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
+	ViewUpdates:        {},
 }
 
 // viewDefaultPane is the initial focused pane when entering a view.
@@ -83,6 +86,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewReports:        PaneExportReports,
 	ViewConfig:         PaneConfig,
 	ViewSettings:       PaneSettings,
+	ViewUpdates:        PaneIssues,
 }
 
 // ---------- Model ----------
@@ -109,35 +113,40 @@ type Model struct {
 	opsLimitPinned bool
 
 	// data
-	repos          []api.Repo
-	streams        []api.Stream
-	issues         []api.Issue // context-filtered (by active streamId)
-	habits         []api.Habit
-	allIssues      []api.IssueWithMeta
-	dueHabits      []api.HabitDailyItem
-	dailySummary   *api.DailyIssueSummary
-	dashboardDate  string
-	wellbeingDate  string
-	dailyCheckIn   *api.DailyCheckIn
-	metricsRange   []api.DailyMetricsDay
-	metricsRollup  *api.MetricsRollup
-	streaks        *api.StreakSummary
-	exportAssets   *api.ExportAssetStatus
-	exportReports  []api.ExportReportFile
-	issueSessions  []api.Session
-	sessionHistory []api.SessionHistoryEntry
-	sessionDetail  *api.SessionDetail
-	scratchpads    []api.ScratchPad
-	stashes        []api.Stash
-	ops            []api.Op
-	context        *api.ActiveContext
-	timer          *api.TimerState
-	health         *api.Health
-	updateStatus   *api.UpdateStatus
-	settings       *api.CoreSettings
-	kernelInfo     *api.KernelInfo
-	elapsed        int // local seconds since last timer.state event
-	timerTickSeq   int
+	repos                 []api.Repo
+	streams               []api.Stream
+	issues                []api.Issue // context-filtered (by active streamId)
+	habits                []api.Habit
+	allIssues             []api.IssueWithMeta
+	dueHabits             []api.HabitDailyItem
+	dailySummary          *api.DailyIssueSummary
+	dashboardDate         string
+	wellbeingDate         string
+	dailyCheckIn          *api.DailyCheckIn
+	metricsRange          []api.DailyMetricsDay
+	metricsRollup         *api.MetricsRollup
+	streaks               *api.StreakSummary
+	exportAssets          *api.ExportAssetStatus
+	exportReports         []api.ExportReportFile
+	issueSessions         []api.Session
+	sessionHistory        []api.SessionHistoryEntry
+	sessionDetail         *api.SessionDetail
+	scratchpads           []api.ScratchPad
+	stashes               []api.Stash
+	ops                   []api.Op
+	context               *api.ActiveContext
+	timer                 *api.TimerState
+	health                *api.Health
+	updateStatus          *api.UpdateStatus
+	updateChecking        bool
+	updateInstalling      bool
+	updateInstallOutput   string
+	updateInstallError    string
+	currentExecutablePath string
+	settings              *api.CoreSettings
+	kernelInfo            *api.KernelInfo
+	elapsed               int // local seconds since last timer.state event
+	timerTickSeq          int
 
 	// terminal dimensions
 	width  int
@@ -201,12 +210,43 @@ type Model struct {
 	sessionDetailY    int
 }
 
+func (m Model) selfUpdateInstallAvailable() bool {
+	return m.updateStatus != nil && m.updateStatus.InstallAvailable && m.selfUpdateUnsupportedReason() == ""
+}
+
+func (m Model) selfUpdateUnsupportedReason() string {
+	if reason := nonStandardRuntimeReason(m.currentExecutablePath, config.TUIBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {
+		return reason
+	}
+	if m.kernelInfo == nil {
+		return "Kernel info is unavailable. Please update manually."
+	}
+	if reason := nonStandardRuntimeReason(m.kernelInfo.ExecutablePath, config.KernelBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {
+		return reason
+	}
+	return ""
+}
+
+func kernelEnvMode(info *api.KernelInfo) string {
+	if info == nil {
+		return ""
+	}
+	return info.Env
+}
+
+func kernelExecutablePath(info *api.KernelInfo) string {
+	if info == nil {
+		return ""
+	}
+	return info.ExecutablePath
+}
+
 // SetEventChannel provides the kernel event channel from main before the program starts.
 func SetEventChannel(ch <-chan api.KernelEvent) {
 	eventChannel = ch
 }
 
-func New(socketPath, scratchDir string, env string, done chan struct{}) Model {
+func New(socketPath, scratchDir string, env string, executablePath string, done chan struct{}) Model {
 	return Model{
 		client:              api.NewClient(socketPath, scratchDir),
 		eventStop:           done,
@@ -237,7 +277,8 @@ func New(socketPath, scratchDir string, env string, done chan struct{}) Model {
 			PaneConfig:        "",
 			PaneSettings:      "",
 		},
-		kernelInfo: &api.KernelInfo{Env: env},
+		currentExecutablePath: executablePath,
+		kernelInfo:            &api.KernelInfo{Env: env},
 	}
 }
 

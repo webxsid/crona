@@ -112,7 +112,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
 
 	if !s.status.Enabled {
-		s.status.UpdateAvailable = false
+		s.clearReleaseLocked()
 		s.status.Error = ""
 		err := s.persistLocked()
 		s.emitLocked()
@@ -140,6 +140,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CheckedAt = time.Now().UTC().Format(time.RFC3339)
 
 	if err != nil {
+		s.clearReleaseLocked()
 		s.status.Error = err.Error()
 		if persistErr := s.persistLocked(); persistErr != nil {
 			return s.status, persistErr
@@ -150,11 +151,16 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 
 	s.status.Error = ""
 	s.status.LatestVersion = release.Version
+	s.status.ReleaseTag = release.Tag
 	s.status.ReleaseName = release.Name
 	s.status.ReleaseNotes = release.Notes
 	s.status.ReleaseURL = release.URL
+	s.status.InstallScriptURL = release.InstallURL
+	s.status.ChecksumsURL = release.ChecksumsURL
 	s.status.PublishedAt = release.PublishedAt
 	s.status.UpdateAvailable = isNewerVersion(s.status.CurrentVersion, release.Version)
+	s.status.InstallAvailable = release.InstallURL != "" && release.ChecksumsURL != ""
+	s.status.InstallUnavailableReason = release.installUnavailableReason()
 	if s.status.DismissedVersion != "" && s.status.DismissedVersion != s.status.LatestVersion {
 		s.status.DismissedVersion = ""
 	}
@@ -188,6 +194,20 @@ func (s *Service) persistLocked() error {
 	return os.WriteFile(s.cachePath, body, runtimepkg.FilePerm())
 }
 
+func (s *Service) clearReleaseLocked() {
+	s.status.LatestVersion = ""
+	s.status.ReleaseTag = ""
+	s.status.ReleaseName = ""
+	s.status.ReleaseNotes = ""
+	s.status.ReleaseURL = ""
+	s.status.InstallScriptURL = ""
+	s.status.ChecksumsURL = ""
+	s.status.PublishedAt = ""
+	s.status.UpdateAvailable = false
+	s.status.InstallAvailable = false
+	s.status.InstallUnavailableReason = ""
+}
+
 func (s *Service) emitLocked() {
 	body, err := json.Marshal(s.status)
 	if err != nil {
@@ -212,11 +232,14 @@ func isFresh(checkedAt string, maxAge time.Duration) bool {
 }
 
 type latestRelease struct {
-	Version     string
-	Name        string
-	Notes       string
-	URL         string
-	PublishedAt string
+	Version      string
+	Tag          string
+	Name         string
+	Notes        string
+	URL          string
+	InstallURL   string
+	ChecksumsURL string
+	PublishedAt  string
 }
 
 func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error) {
@@ -242,20 +265,51 @@ func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error)
 		Body        string `json:"body"`
 		HTMLURL     string `json:"html_url"`
 		PublishedAt string `json:"published_at"`
+		Assets      []struct {
+			Name               string `json:"name"`
+			BrowserDownloadURL string `json:"browser_download_url"`
+		} `json:"assets"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return latestRelease{}, err
 	}
 
+	tag := strings.TrimSpace(payload.TagName)
 	version := normalizeVersion(payload.TagName)
 	if version == "" {
 		return latestRelease{}, fmt.Errorf("latest release tag is empty")
 	}
+	installURL := ""
+	checksumsURL := ""
+	for _, asset := range payload.Assets {
+		switch strings.TrimSpace(asset.Name) {
+		case "install-crona-tui.sh":
+			installURL = strings.TrimSpace(asset.BrowserDownloadURL)
+		case "checksums.txt":
+			checksumsURL = strings.TrimSpace(asset.BrowserDownloadURL)
+		}
+	}
 	return latestRelease{
-		Version:     version,
-		Name:        strings.TrimSpace(payload.Name),
-		Notes:       strings.TrimSpace(payload.Body),
-		URL:         strings.TrimSpace(payload.HTMLURL),
-		PublishedAt: strings.TrimSpace(payload.PublishedAt),
+		Version:      version,
+		Tag:          tag,
+		Name:         strings.TrimSpace(payload.Name),
+		Notes:        strings.TrimSpace(payload.Body),
+		URL:          strings.TrimSpace(payload.HTMLURL),
+		InstallURL:   installURL,
+		ChecksumsURL: checksumsURL,
+		PublishedAt:  strings.TrimSpace(payload.PublishedAt),
 	}, nil
+}
+
+func (r latestRelease) installUnavailableReason() string {
+	switch {
+	case strings.TrimSpace(r.InstallURL) == "" && strings.TrimSpace(r.ChecksumsURL) == "":
+		return "Release is missing installer and checksums assets."
+	case strings.TrimSpace(r.InstallURL) == "":
+		return "Release is missing the install-crona-tui.sh asset."
+	case strings.TrimSpace(r.ChecksumsURL) == "":
+		return "Release is missing the checksums.txt asset."
+	default:
+		return ""
+	}
 }
