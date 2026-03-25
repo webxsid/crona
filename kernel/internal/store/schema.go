@@ -55,6 +55,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"repo_sort":   "chronological_asc",
 		"stream_sort": "chronological_asc",
 		"issue_sort":  "priority",
+		"habit_sort":  "schedule",
 	} {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err

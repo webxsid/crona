@@ -17,4 +17,5 @@ var DefaultCoreSettings = map[string]any{
 	"repoSort":                     string("chronological_asc"),
 	"streamSort":                   string("chronological_asc"),
 	"issueSort":                    string("priority"),
+	"habitSort":                    string("schedule"),
 }

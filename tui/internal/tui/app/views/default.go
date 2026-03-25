@@ -169,7 +169,7 @@ func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle str
 		if issue.EstimateMinutes != nil {
 			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
 		}
-		title := issue.Title + issueDueSuffix(issue.TodoForDate)
+		title := issue.Title + issueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, truncate(title, titleW), statusW, truncate(plainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, truncate(issue.RepoName, repoW), streamW, truncate(issue.StreamName, streamW))
 
 		selected := paneActive && pos == localCur
@@ -212,7 +212,7 @@ func renderDefaultCompactIssuePane(theme Theme, state ContentState, title, subti
 }
 
 func renderDefaultCompactIssueRow(theme Theme, width int, selected, active bool, issue api.IssueWithMeta) string {
-	parts := []string{truncate(issue.Title+issueDueSuffix(issue.TodoForDate), max(18, width/2))}
+	parts := []string{truncate(issue.Title+issueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt), max(18, width/2))}
 	parts = append(parts, truncate(plainIssueStatus(string(issue.Status)), 11))
 	if issue.EstimateMinutes != nil {
 		parts = append(parts, fmt.Sprintf("%dm", *issue.EstimateMinutes))

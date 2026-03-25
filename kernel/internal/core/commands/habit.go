@@ -17,7 +17,12 @@ import (
 )
 
 func ListHabitsByStream(ctx context.Context, c *core.Context, streamID int64) ([]sharedtypes.Habit, error) {
-	return c.Habits.ListByStream(ctx, streamID, c.UserID)
+	habits, err := c.Habits.ListByStream(ctx, streamID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortHabits(habits, loadListSortSettings(ctx, c).habitSort)
+	return habits, nil
 }
 
 func ListHabitsDueForDate(ctx context.Context, c *core.Context, date string) ([]sharedtypes.HabitDailyItem, error) {
@@ -49,6 +54,7 @@ func ListHabitsDueForDate(ctx context.Context, c *core.Context, date string) ([]
 		}
 		out = append(out, item)
 	}
+	sortHabitDailyItems(out, loadListSortSettings(ctx, c).habitSort)
 	return out, nil
 }
 

@@ -154,6 +154,7 @@ type CoreSettingsModel struct {
 	RepoSort              string `bun:"repo_sort,notnull,type:text"`
 	StreamSort            string `bun:"stream_sort,notnull,type:text"`
 	IssueSort             string `bun:"issue_sort,notnull,type:text"`
+	HabitSort             string `bun:"habit_sort,notnull,type:text"`
 	CreatedAt             string `bun:"created_at,notnull,type:text"`
 	UpdatedAt             string `bun:"updated_at,notnull,type:text"`
 }

@@ -36,7 +36,7 @@ func (m *Model) paneItems(pane Pane) []string {
 				if issue.EstimateMinutes != nil {
 					estimate = fmt.Sprintf(" %dm", *issue.EstimateMinutes)
 				}
-				due := helperpkg.IssueDueLabel(issue.TodoForDate)
+				due := helperpkg.IssueScheduleLabel(issue.Issue)
 				if due != "" {
 					due = " " + due
 				}
@@ -58,7 +58,7 @@ func (m *Model) paneItems(pane Pane) []string {
 				if issue.EstimateMinutes != nil {
 					estimate = fmt.Sprintf(" %dm", *issue.EstimateMinutes)
 				}
-				due := helperpkg.IssueDueLabel(issue.TodoForDate)
+				due := helperpkg.IssueScheduleLabel(issue)
 				if due != "" {
 					due = " " + due
 				}
@@ -68,7 +68,7 @@ func (m *Model) paneItems(pane Pane) []string {
 		}
 		items := make([]string, 0, len(m.issues))
 		for _, issue := range m.issues {
-			due := helperpkg.IssueDueLabel(issue.TodoForDate)
+			due := helperpkg.IssueScheduleLabel(issue)
 			if due != "" {
 				due = " " + due
 			}

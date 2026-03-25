@@ -9,11 +9,14 @@ import (
 	"crona/tui/internal/api"
 )
 
-func IssueDueLabel(todoForDate *string) string {
-	if todoForDate == nil {
+func IssueScheduleLabel(issue api.Issue) string {
+	if date := resolvedOnDate(issue.Status, issue.CompletedAt, issue.AbandonedAt); date != "" {
+		return "on " + date
+	}
+	if issue.TodoForDate == nil {
 		return ""
 	}
-	date := strings.TrimSpace(*todoForDate)
+	date := strings.TrimSpace(*issue.TodoForDate)
 	if date == "" {
 		return ""
 	}
@@ -21,6 +24,30 @@ func IssueDueLabel(todoForDate *string) string {
 		return "today"
 	}
 	return "due " + date
+}
+
+func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string) string {
+	var raw string
+	switch status {
+	case sharedtypes.IssueStatusDone:
+		if completedAt != nil {
+			raw = strings.TrimSpace(*completedAt)
+		}
+	case sharedtypes.IssueStatusAbandoned:
+		if abandonedAt != nil {
+			raw = strings.TrimSpace(*abandonedAt)
+		}
+	}
+	if raw == "" {
+		return ""
+	}
+	if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+		return parsed.Format("2006-01-02")
+	}
+	if len(raw) >= len("2006-01-02") {
+		return raw[:10]
+	}
+	return raw
 }
 
 func Deref(s *string) string {

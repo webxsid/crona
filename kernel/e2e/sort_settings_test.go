@@ -21,6 +21,26 @@ func TestSortSettingsAffectKernelLists(t *testing.T) {
 	issueLater := createIssue(t, kernel, streamA.ID, "Later", nil)
 	issueSoon := createIssue(t, kernel, streamA.ID, "Soon", nil)
 	issueNone := createIssue(t, kernel, streamA.ID, "None", nil)
+	target15 := 15
+	target45 := 45
+	var habitLong, habitShort, habitNone sharedtypes.Habit
+	kernel.call(t, protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
+		StreamID:      streamA.ID,
+		Name:          "Deep Work",
+		ScheduleType:  "daily",
+		TargetMinutes: &target45,
+	}, &habitLong)
+	kernel.call(t, protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
+		StreamID:      streamA.ID,
+		Name:          "Inbox Zero",
+		ScheduleType:  "daily",
+		TargetMinutes: &target15,
+	}, &habitShort)
+	kernel.call(t, protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
+		StreamID:     streamA.ID,
+		Name:         "Journal",
+		ScheduleType: "daily",
+	}, &habitNone)
 
 	setIssueTodoDate(t, kernel, issueLater.ID, "2026-03-20")
 	setIssueTodoDate(t, kernel, issueSoon.ID, "2026-03-18")
@@ -47,6 +67,13 @@ func TestSortSettingsAffectKernelLists(t *testing.T) {
 	if !ok.OK {
 		t.Fatalf("expected issue sort patch ok")
 	}
+	kernel.call(t, protocol.MethodSettingsPatch, shareddto.PatchCoreSettingRequest{
+		Key:   sharedtypes.CoreSettingsKeyHabitSort,
+		Value: sharedtypes.HabitSortTargetMinutesDesc,
+	}, &ok)
+	if !ok.OK {
+		t.Fatalf("expected habit sort patch ok")
+	}
 
 	var repoSort sharedtypes.RepoSort
 	kernel.call(t, protocol.MethodSettingsGet, shareddto.GetCoreSettingRequest{
@@ -54,6 +81,13 @@ func TestSortSettingsAffectKernelLists(t *testing.T) {
 	}, &repoSort)
 	if repoSort != sharedtypes.RepoSortAlphabeticalAsc {
 		t.Fatalf("expected repoSort=%q, got %q", sharedtypes.RepoSortAlphabeticalAsc, repoSort)
+	}
+	var habitSort sharedtypes.HabitSort
+	kernel.call(t, protocol.MethodSettingsGet, shareddto.GetCoreSettingRequest{
+		Key: sharedtypes.CoreSettingsKeyHabitSort,
+	}, &habitSort)
+	if habitSort != sharedtypes.HabitSortTargetMinutesDesc {
+		t.Fatalf("expected habitSort=%q, got %q", sharedtypes.HabitSortTargetMinutesDesc, habitSort)
 	}
 
 	var repos []sharedtypes.Repo
@@ -78,6 +112,18 @@ func TestSortSettingsAffectKernelLists(t *testing.T) {
 	kernel.call(t, protocol.MethodIssueListAll, nil, &allIssues)
 	if len(allIssues) != 3 || allIssues[0].ID != issueSoon.ID || allIssues[1].ID != issueLater.ID || allIssues[2].ID != issueNone.ID {
 		t.Fatalf("unexpected all issue order: %+v", allIssues)
+	}
+
+	var habits []sharedtypes.Habit
+	kernel.call(t, protocol.MethodHabitList, shareddto.ListHabitsQuery{StreamID: streamA.ID}, &habits)
+	if len(habits) != 3 || habits[0].ID != habitLong.ID || habits[1].ID != habitShort.ID || habits[2].ID != habitNone.ID {
+		t.Fatalf("unexpected habit order: %+v", habits)
+	}
+
+	var dueHabits []sharedtypes.HabitDailyItem
+	kernel.call(t, protocol.MethodHabitListDue, shareddto.ListHabitsDueQuery{Date: "2026-03-19"}, &dueHabits)
+	if len(dueHabits) != 3 || dueHabits[0].ID != habitLong.ID || dueHabits[1].ID != habitShort.ID || dueHabits[2].ID != habitNone.ID {
+		t.Fatalf("unexpected due habit order: %+v", dueHabits)
 	}
 }
 

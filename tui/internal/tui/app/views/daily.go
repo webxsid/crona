@@ -312,7 +312,7 @@ func renderDailyIssues(theme Theme, state ContentState, width, height int) strin
 	cur := state.Cursors["issues"]
 	issues := make([]apiIssue, 0, len(state.DailyIssues))
 	for _, issue := range state.DailyIssues {
-		issues = append(issues, newAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate))
+		issues = append(issues, newAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 	}
 	indices := filteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
@@ -350,7 +350,7 @@ func renderDailyIssues(theme Theme, state ContentState, width, height int) strin
 		if issue.EstimateMinutes != nil {
 			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
 		}
-		title := issue.Title + issueDueSuffix(issue.TodoForDate)
+		title := issue.Title + issueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, truncate(title, titleW), statusW, truncate(plainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, truncate(repoName, repoW), streamW, truncate(streamName, streamW))
 		lines = append(lines, renderPaneRowStyled(theme, i, cur, active, row, issueStatusStyle(theme, string(issue.Status)), width))
 	}

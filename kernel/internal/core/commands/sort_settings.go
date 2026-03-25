@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ type listSortSettings struct {
 	repoSort   sharedtypes.RepoSort
 	streamSort sharedtypes.StreamSort
 	issueSort  sharedtypes.IssueSort
+	habitSort  sharedtypes.HabitSort
 }
 
 func loadListSortSettings(ctx context.Context, c *core.Context) listSortSettings {
@@ -21,6 +23,7 @@ func loadListSortSettings(ctx context.Context, c *core.Context) listSortSettings
 		repoSort:   sharedtypes.RepoSortChronologicalAsc,
 		streamSort: sharedtypes.StreamSortChronologicalAsc,
 		issueSort:  sharedtypes.IssueSortPriority,
+		habitSort:  sharedtypes.HabitSortSchedule,
 	}
 	current, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil || current == nil {
@@ -29,6 +32,7 @@ func loadListSortSettings(ctx context.Context, c *core.Context) listSortSettings
 	settings.repoSort = sharedtypes.NormalizeRepoSort(current.RepoSort)
 	settings.streamSort = sharedtypes.NormalizeStreamSort(current.StreamSort)
 	settings.issueSort = sharedtypes.NormalizeIssueSort(current.IssueSort)
+	settings.habitSort = sharedtypes.NormalizeHabitSort(current.HabitSort)
 	return settings
 }
 
@@ -134,6 +138,68 @@ func sortIssuesWithMeta(items []sharedtypes.IssueWithMeta, order sharedtypes.Iss
 	}
 }
 
+func sortHabits(items []sharedtypes.Habit, order sharedtypes.HabitSort) {
+	switch sharedtypes.NormalizeHabitSort(order) {
+	case sharedtypes.HabitSortChronologicalAsc:
+		return
+	case sharedtypes.HabitSortChronologicalDesc:
+		for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
+			items[left], items[right] = items[right], items[left]
+		}
+	case sharedtypes.HabitSortAlphabeticalAsc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareStringsAsc(items[i].Name, items[j].Name, items[i].ID, items[j].ID)
+		})
+	case sharedtypes.HabitSortAlphabeticalDesc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareStringsDesc(items[i].Name, items[j].Name, items[i].ID, items[j].ID)
+		})
+	case sharedtypes.HabitSortTargetMinutesAsc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitTargets(items[i], items[j], true)
+		})
+	case sharedtypes.HabitSortTargetMinutesDesc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitTargets(items[i], items[j], false)
+		})
+	default:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitsBySchedule(items[i], items[j])
+		})
+	}
+}
+
+func sortHabitDailyItems(items []sharedtypes.HabitDailyItem, order sharedtypes.HabitSort) {
+	switch sharedtypes.NormalizeHabitSort(order) {
+	case sharedtypes.HabitSortChronologicalAsc:
+		return
+	case sharedtypes.HabitSortChronologicalDesc:
+		for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
+			items[left], items[right] = items[right], items[left]
+		}
+	case sharedtypes.HabitSortAlphabeticalAsc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareStringsAsc(items[i].Name, items[j].Name, items[i].ID, items[j].ID)
+		})
+	case sharedtypes.HabitSortAlphabeticalDesc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareStringsDesc(items[i].Name, items[j].Name, items[i].ID, items[j].ID)
+		})
+	case sharedtypes.HabitSortTargetMinutesAsc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitTargets(items[i].Habit, items[j].Habit, true)
+		})
+	case sharedtypes.HabitSortTargetMinutesDesc:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitTargets(items[i].Habit, items[j].Habit, false)
+		})
+	default:
+		sort.SliceStable(items, func(i, j int) bool {
+			return compareHabitsBySchedule(items[i].Habit, items[j].Habit)
+		})
+	}
+}
+
 func compareStringsAsc(left string, right string, leftID int64, rightID int64) bool {
 	lowerLeft := strings.ToLower(strings.TrimSpace(left))
 	lowerRight := strings.ToLower(strings.TrimSpace(right))
@@ -168,6 +234,30 @@ func compareDueDates(left sharedtypes.Issue, right sharedtypes.Issue, asc bool) 
 		return leftDue > rightDue
 	}
 	return compareStringsAsc(left.Title, right.Title, left.ID, right.ID)
+}
+
+func compareHabitTargets(left sharedtypes.Habit, right sharedtypes.Habit, asc bool) bool {
+	leftTarget, leftHasTarget := normalizedHabitTarget(left.TargetMinutes)
+	rightTarget, rightHasTarget := normalizedHabitTarget(right.TargetMinutes)
+	if leftHasTarget != rightHasTarget {
+		return leftHasTarget
+	}
+	if leftTarget != rightTarget {
+		if asc {
+			return leftTarget < rightTarget
+		}
+		return leftTarget > rightTarget
+	}
+	return compareStringsAsc(left.Name, right.Name, left.ID, right.ID)
+}
+
+func compareHabitsBySchedule(left sharedtypes.Habit, right sharedtypes.Habit) bool {
+	leftKey := habitScheduleSortKey(left)
+	rightKey := habitScheduleSortKey(right)
+	if leftKey != rightKey {
+		return leftKey < rightKey
+	}
+	return compareStringsAsc(left.Name, right.Name, left.ID, right.ID)
 }
 
 func compareIssuePriority(left sharedtypes.Issue, right sharedtypes.Issue) bool {
@@ -260,6 +350,36 @@ func normalizedDueDateValue(todoForDate *string) string {
 		return ""
 	}
 	return strings.TrimSpace(*todoForDate)
+}
+
+func normalizedHabitTarget(target *int) (int, bool) {
+	if target == nil {
+		return 0, false
+	}
+	return *target, true
+}
+
+func habitScheduleSortKey(habit sharedtypes.Habit) string {
+	typeRank := 0
+	switch sharedtypes.NormalizeHabitScheduleType(habit.ScheduleType) {
+	case sharedtypes.HabitScheduleDaily:
+		typeRank = 0
+	case sharedtypes.HabitScheduleWeekdays:
+		typeRank = 1
+	case sharedtypes.HabitScheduleWeekly:
+		typeRank = 2
+	}
+	dayKey := "99"
+	if len(habit.Weekdays) > 0 {
+		minDay := 99
+		for _, day := range habit.Weekdays {
+			if day < minDay {
+				minDay = day
+			}
+		}
+		dayKey = fmt.Sprintf("%02d", minDay)
+	}
+	return fmt.Sprintf("%d:%s:%s", typeRank, dayKey, strings.ToLower(strings.TrimSpace(habit.Name)))
 }
 
 func reverseRepos(items []sharedtypes.Repo) {

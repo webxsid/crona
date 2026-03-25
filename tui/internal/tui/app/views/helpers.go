@@ -18,6 +18,8 @@ type apiIssue struct {
 	Status          sharedtypes.IssueStatus
 	EstimateMinutes *int
 	TodoForDate     *string
+	CompletedAt     *string
+	AbandonedAt     *string
 }
 
 func habitItems(habits []api.Habit) []string {
@@ -51,13 +53,15 @@ func formatHabitScheduleText(weekdays []int) string {
 	return strings.Join(out, ",")
 }
 
-func newAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, todoForDate *string) apiIssue {
+func newAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, todoForDate, completedAt, abandonedAt *string) apiIssue {
 	return apiIssue{
 		ID:              id,
 		Title:           title,
 		Status:          status,
 		EstimateMinutes: estimateMinutes,
 		TodoForDate:     todoForDate,
+		CompletedAt:     completedAt,
+		AbandonedAt:     abandonedAt,
 	}
 }
 
@@ -171,7 +175,34 @@ func splitHorizontal(total, leftMin, rightMin, leftPreferred int) (int, int) {
 	return left, total - left
 }
 
-func issueDueSuffix(todoForDate *string) string {
+func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string) string {
+	var raw string
+	switch status {
+	case sharedtypes.IssueStatusDone:
+		if completedAt != nil {
+			raw = strings.TrimSpace(*completedAt)
+		}
+	case sharedtypes.IssueStatusAbandoned:
+		if abandonedAt != nil {
+			raw = strings.TrimSpace(*abandonedAt)
+		}
+	}
+	if raw == "" {
+		return ""
+	}
+	if len(raw) >= len("2006-01-02") {
+		if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
+			return parsed.Format("2006-01-02")
+		}
+		return raw[:10]
+	}
+	return raw
+}
+
+func issueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, abandonedAt *string) string {
+	if resolvedOn := resolvedOnDate(status, completedAt, abandonedAt); resolvedOn != "" {
+		return "  [on " + resolvedOn + "]"
+	}
 	if todoForDate == nil || strings.TrimSpace(*todoForDate) == "" {
 		return ""
 	}
@@ -493,7 +524,7 @@ func filteredSettingIndices(filter string, settings *api.CoreSettings) []int {
 	if settings == nil {
 		return nil
 	}
-	labels := []string{"Timer Mode", "Breaks Enabled", "Work Duration", "Short Break", "Long Break", "Long Break Enabled", "Cycles Before Long Break", "Auto Start Breaks", "Auto Start Work", "Boundary Notifications", "Boundary Sound", "Update Checks", "Update Prompt", "Repo Sort", "Stream Sort", "Issue Sort"}
+	labels := []string{"Timer Mode", "Breaks Enabled", "Work Duration", "Short Break", "Long Break", "Long Break Enabled", "Cycles Before Long Break", "Auto Start Breaks", "Auto Start Work", "Boundary Notifications", "Boundary Sound", "Update Checks", "Update Prompt", "Repo Sort", "Stream Sort", "Issue Sort", "Habit Sort"}
 	return filteredStrings(labels, filter)
 }
 

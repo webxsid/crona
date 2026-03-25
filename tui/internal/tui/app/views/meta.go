@@ -31,7 +31,7 @@ func renderMetaIssues(theme Theme, state ContentState, width, height int, emptyT
 	cur := state.Cursors["issues"]
 	var issues []apiIssue
 	for _, issue := range state.Issues {
-		issues = append(issues, newAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate))
+		issues = append(issues, newAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 	}
 	indices := filteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
@@ -48,7 +48,7 @@ func renderMetaIssues(theme Theme, state ContentState, width, height int, emptyT
 		}
 		for i := start; i < end; i++ {
 			issue := issues[indices[i]]
-			text := fmt.Sprintf("[%s] %s%s", plainIssueStatus(string(issue.Status)), issue.Title, issueDueSuffix(issue.TodoForDate))
+			text := fmt.Sprintf("[%s] %s%s", plainIssueStatus(string(issue.Status)), issue.Title, issueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 			lines = append(lines, renderPaneRowStyled(theme, i, cur, active, text, issueStatusStyle(theme, string(issue.Status)), width))
 		}
 		if remaining := total - end; remaining > 0 {

@@ -89,6 +89,8 @@ func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, 
 		q = q.Set("stream_sort = ?", string(sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(toString(value)))))
 	case sharedtypes.CoreSettingsKeyIssueSort:
 		q = q.Set("issue_sort = ?", string(sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))))
+	case sharedtypes.CoreSettingsKeyHabitSort:
+		q = q.Set("habit_sort = ?", string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))))
 	}
 	_, err := q.Exec(ctx)
 	return err
@@ -141,6 +143,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		RepoSort:              DefaultCoreSettings["repoSort"].(string),
 		StreamSort:            DefaultCoreSettings["streamSort"].(string),
 		IssueSort:             DefaultCoreSettings["issueSort"].(string),
+		HabitSort:             DefaultCoreSettings["habitSort"].(string),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
@@ -181,6 +184,8 @@ func coreSettingsValue(row CoreSettingsModel, key sharedtypes.CoreSettingsKey) a
 		return sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(row.StreamSort))
 	case sharedtypes.CoreSettingsKeyIssueSort:
 		return sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(row.IssueSort))
+	case sharedtypes.CoreSettingsKeyHabitSort:
+		return sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(row.HabitSort))
 	default:
 		return nil
 	}
@@ -206,6 +211,7 @@ func coreSettingsFromModel(row CoreSettingsModel) sharedtypes.CoreSettings {
 		RepoSort:              sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(row.RepoSort)),
 		StreamSort:            sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(row.StreamSort)),
 		IssueSort:             sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(row.IssueSort)),
+		HabitSort:             sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(row.HabitSort)),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}

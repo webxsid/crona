@@ -33,6 +33,7 @@ func renderSettingsView(theme Theme, state ContentState) string {
 		{"Repo Sort", repoSortLabel(state.Settings.RepoSort)},
 		{"Stream Sort", streamSortLabel(state.Settings.StreamSort)},
 		{"Issue Sort", issueSortLabel(state.Settings.IssueSort)},
+		{"Habit Sort", habitSortLabel(state.Settings.HabitSort)},
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No settings match the current filter"))
@@ -105,5 +106,24 @@ func issueSortLabel(value sharedtypes.IssueSort) string {
 		return "Newest first"
 	default:
 		return "Priority"
+	}
+}
+
+func habitSortLabel(value sharedtypes.HabitSort) string {
+	switch value {
+	case sharedtypes.HabitSortTargetMinutesAsc:
+		return "Target shortest"
+	case sharedtypes.HabitSortTargetMinutesDesc:
+		return "Target longest"
+	case sharedtypes.HabitSortAlphabeticalAsc:
+		return "A -> Z"
+	case sharedtypes.HabitSortAlphabeticalDesc:
+		return "Z -> A"
+	case sharedtypes.HabitSortChronologicalAsc:
+		return "Oldest first"
+	case sharedtypes.HabitSortChronologicalDesc:
+		return "Newest first"
+	default:
+		return "Schedule"
 	}
 }
