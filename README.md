@@ -13,7 +13,7 @@ The current beta ships as two binaries:
 End users do not need Go installed. The installer downloads the correct TUI and kernel pair for the current machine.
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | sh
 ```
 
 By default this installs into `~/.local/bin`.
@@ -21,13 +21,13 @@ By default this installs into `~/.local/bin`.
 If you want to replace an existing install non-interactively, set `CRONA_INSTALL_FORCE=1` on the `sh` side of the pipe:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
 ```
 
 If you want the installer to prompt and wait for your `y/N` response, do not run it through `curl | sh`. Save it first and then execute it so the script can read from your terminal:
 
 ```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh
+curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh
 sh /tmp/install-crona-tui.sh
 ```
 
@@ -36,7 +36,7 @@ sh /tmp/install-crona-tui.sh
 Use PowerShell to download and run the Windows installer:
 
 ```powershell
-$version = "v0.2.1"
+$version = "v0.3.0"
 Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```

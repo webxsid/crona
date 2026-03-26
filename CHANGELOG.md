@@ -4,6 +4,8 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-26
+
 ### Added
 - Scriptable `crona` CLI with kernel, context, timer, issue, calendar-export, and dev helper subcommands.
 - Shell completion output for `zsh`, `bash`, and `fish`.
