@@ -100,7 +100,11 @@ rm -rf "${RELEASE_DIR}/assets"
 
 (
   cd "${RELEASE_DIR}"
-  shasum -a 256 ./* > checksums.txt
+  : > checksums.txt
+  for file in *; do
+    [ "${file}" = "checksums.txt" ] && continue
+    shasum -a 256 "${file}" >> checksums.txt
+  done
 )
 
 verify_release_artifacts

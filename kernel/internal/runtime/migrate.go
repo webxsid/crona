@@ -89,11 +89,10 @@ func legacyKernelRunning(base string) (bool, error) {
 	if info.PID <= 0 {
 		return false, nil
 	}
-	if err := syscall.Kill(info.PID, 0); err != nil {
-		if errors.Is(err, syscall.ESRCH) {
-			return false, nil
-		}
+	if running, err := processExists(info.PID); err != nil {
 		return false, err
+	} else if !running {
+		return false, nil
 	}
 
 	cmd, err := exec.Command("ps", "-p", fmt.Sprintf("%d", info.PID), "-o", "command=").Output()
