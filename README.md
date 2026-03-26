@@ -205,6 +205,17 @@ CRONA_ENV=Prod
 
 Set it to `Dev` to enable developer-only seed and clear helpers in the kernel and TUI.
 
+Runtime storage defaults to:
+- macOS prod: `~/Library/Application Support/Crona`
+- macOS dev: `~/Library/Application Support/Crona Dev`
+- Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
+- Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
+- Windows prod: `%LocalAppData%\Crona`
+- Windows dev: `%LocalAppData%\Crona Dev`
+
+On macOS and Linux, existing `~/.crona` and `~/.crona-dev` runtime directories are migrated automatically on install or first kernel start.
+Set `CRONA_HOME` to override the runtime directory and skip the default-path migration logic.
+
 ### Project Tasks
 
 The root `Makefile` is the shared task runner for project metadata, builds, tests, and release helpers.
@@ -247,6 +258,50 @@ The TUI will auto-start the kernel if `crona-kernel` is on your `PATH`.
 When `CRONA_ENV=Dev`, the TUI exposes global hotkeys for developer data management:
 - `f6` seeds sample data
 - `f7` clears all local data
+
+### Windows Dev Run
+
+Use PowerShell from the repo root.
+
+Set dev mode:
+
+```powershell
+$env:CRONA_ENV = "Dev"
+```
+
+Build the dev kernel and TUI into `bin\`:
+
+```powershell
+go build -o .\bin\crona-kernel-dev.exe .\kernel\cmd\crona-kernel
+go build -o .\bin\crona-tui-dev.exe .\tui
+```
+
+Add the repo `bin\` directory to `PATH` for the current shell:
+
+```powershell
+$env:PATH = "$PWD\bin;$env:PATH"
+```
+
+Run the TUI:
+
+```powershell
+.\bin\crona-tui-dev.exe
+```
+
+This is the Windows equivalent of `CRONA_ENV=Dev make install-kernel install-tui` followed by `CRONA_ENV=Dev make run-tui`.
+
+If you want to run without building the TUI binary first, this also works once the dev kernel binary exists in `bin\`:
+
+```powershell
+go run .\tui
+```
+
+If kernel auto-start is not available, run it in a separate terminal:
+
+```powershell
+$env:CRONA_ENV = "Dev"
+go run .\kernel\cmd\crona-kernel
+```
 
 ### CLI
 

@@ -23,6 +23,10 @@ import (
 func Run(ctx context.Context) error {
 	appEnv := config.Load()
 
+	if err := runtime.MigrateLegacyBaseDir(appEnv.Mode); err != nil {
+		return fmt.Errorf("migrate runtime dir: %w", err)
+	}
+
 	paths, err := runtime.ResolvePaths()
 	if err != nil {
 		return fmt.Errorf("resolve runtime paths: %w", err)

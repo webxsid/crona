@@ -39,6 +39,7 @@ func startTestKernel(t *testing.T) *testKernel {
 		_ = os.RemoveAll(home)
 	})
 	t.Setenv("HOME", home)
+	t.Setenv("CRONA_HOME", filepath.Join(home, "crona-runtime"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)

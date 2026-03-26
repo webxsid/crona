@@ -16,8 +16,6 @@ import (
 func main() {
 	_ = config.Load()
 
-	logger.Info("Crona TUI starting")
-
 	info, err := kernel.Ensure()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to start kernel: %v\n", err)
@@ -25,6 +23,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	logger.Info("Crona TUI starting")
 	logger.Infof("Connected to kernel at %s", kernel.EndpointLabel(info))
 
 	done := make(chan struct{})
