@@ -25,10 +25,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Infof("Connected to kernel at %s", info.SocketPath)
+	logger.Infof("Connected to kernel at %s", kernel.EndpointLabel(info))
 
 	done := make(chan struct{})
-	eventStream := api.Subscribe(info.SocketPath, done)
+	eventStream := api.Subscribe(info.Transport, kernel.Endpoint(info), done)
 	tui.SetEventChannel(eventStream)
 
 	executablePath, _ := os.Executable()
@@ -36,7 +36,7 @@ func main() {
 		logger.Errorf("WriteTUIRuntimeState failed: %v", err)
 	}
 
-	model := tui.New(info.SocketPath, info.ScratchDir, info.Env, executablePath, done)
+	model := tui.New(info.Transport, kernel.Endpoint(info), info.ScratchDir, info.Env, executablePath, done)
 	prog := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := prog.Run(); err != nil {

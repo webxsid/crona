@@ -34,6 +34,6 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 	app.SetEventChannel(ch)
 }
 
-func New(socketPath, scratchDir, env, executablePath string, done chan struct{}) Model {
-	return app.New(socketPath, scratchDir, env, executablePath, done)
+func New(transport, endpoint, scratchDir, env, executablePath string, done chan struct{}) Model {
+	return app.New(transport, endpoint, scratchDir, env, executablePath, done)
 }

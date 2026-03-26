@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
-	"os"
 	"sync"
 
 	"crona/kernel/internal/runtime"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 )
 
@@ -22,35 +22,28 @@ type EventStreamHandler interface {
 }
 
 type Server struct {
-	socketPath string
-	handler    Handler
-	logger     *runtime.Logger
-	listener   net.Listener
-	wg         sync.WaitGroup
+	transport string
+	endpoint  string
+	handler   Handler
+	logger    *runtime.Logger
+	listener  net.Listener
+	wg        sync.WaitGroup
 }
 
-func NewServer(socketPath string, handler Handler, logger *runtime.Logger) *Server {
+func NewServer(transport, endpoint string, handler Handler, logger *runtime.Logger) *Server {
 	return &Server{
-		socketPath: socketPath,
-		handler:    handler,
-		logger:     logger,
+		transport: transport,
+		endpoint:  endpoint,
+		handler:   handler,
+		logger:    logger,
 	}
 }
 
 func (s *Server) Start() error {
-	if err := os.Remove(s.socketPath); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	ln, err := net.Listen("unix", s.socketPath)
+	ln, err := localipc.Listen(s.endpoint)
 	if err != nil {
 		return err
 	}
-	if err := os.Chmod(s.socketPath, 0o600); err != nil {
-		_ = ln.Close()
-		return err
-	}
-
 	s.listener = ln
 	s.wg.Add(1)
 	go s.acceptLoop()
@@ -63,7 +56,7 @@ func (s *Server) Close() error {
 	}
 	err := s.listener.Close()
 	s.wg.Wait()
-	if removeErr := os.Remove(s.socketPath); removeErr != nil && !os.IsNotExist(removeErr) && err == nil {
+	if removeErr := localipc.CleanupEndpoint(s.endpoint); removeErr != nil && err == nil {
 		err = removeErr
 	}
 	return err

@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -42,15 +43,15 @@ func BinarySuffixForMode(mode string) string {
 }
 
 func CLIBinaryNameForMode(mode string) string {
-	return "crona" + BinarySuffixForMode(mode)
+	return binaryName("crona" + BinarySuffixForMode(mode))
 }
 
 func KernelBinaryNameForMode(mode string) string {
-	return "crona-kernel" + BinarySuffixForMode(mode)
+	return binaryName("crona-kernel" + BinarySuffixForMode(mode))
 }
 
 func TUIBinaryNameForMode(mode string) string {
-	return "crona-tui" + BinarySuffixForMode(mode)
+	return binaryName("crona-tui" + BinarySuffixForMode(mode))
 }
 
 func CLIBinaryName() string {
@@ -63,4 +64,11 @@ func KernelBinaryName() string {
 
 func TUIBinaryName() string {
 	return TUIBinaryNameForMode(Load().Mode)
+}
+
+func binaryName(base string) string {
+	if runtime.GOOS == "windows" {
+		return base + ".exe"
+	}
+	return base
 }

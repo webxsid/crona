@@ -23,6 +23,7 @@ All notable changes to **Crona** are documented here.
 - The standalone `crona-dev` helper entrypoint was folded into `crona dev ...`.
 - Scratchpad rendering now lives under the `views` package with controller logic kept in the app package.
 - Phase 5 roadmap planning now includes full CLI CRUD, interactive add/edit flows, and an interactive CLI context picker.
+- The roadmap now splits Windows work into Phase 4.1 runtime support and Phase 4.2 installer/self-update support.
 - Update prompts now live in the dedicated `Updates` view instead of a temporary header/banner surface, and that view remains accessible even when no update is available.
 - Shared update status now carries release-tag and installer/checksum asset metadata for self-update flows.
 

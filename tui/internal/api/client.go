@@ -3,11 +3,11 @@ package api
 import (
 	"bufio"
 	shareddto "crona/shared/dto"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	"encoding/json"
 	"fmt"
-	"net"
 	"path/filepath"
 	"strings"
 	"sync/atomic"
@@ -15,20 +15,22 @@ import (
 )
 
 type Client struct {
-	socketPath string
+	transport  string
+	endpoint   string
 	scratchDir string
 	nextID     atomic.Uint64
 }
 
-func NewClient(socketPath, scratchDir string) *Client {
+func NewClient(transport, endpoint, scratchDir string) *Client {
 	return &Client{
-		socketPath: socketPath,
+		transport:  transport,
+		endpoint:   endpoint,
 		scratchDir: scratchDir,
 	}
 }
 
 func (c *Client) call(method string, params, out any) error {
-	conn, err := net.DialTimeout("unix", c.socketPath, 10*time.Second)
+	conn, err := localipc.Dial(c.endpoint, 10*time.Second)
 	if err != nil {
 		return err
 	}

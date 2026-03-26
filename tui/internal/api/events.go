@@ -2,16 +2,16 @@ package api
 
 import (
 	"bufio"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	"encoding/json"
-	"net"
 	"strings"
 	"time"
 )
 
-// Subscribe connects to the kernel event stream over the Unix socket.
+// Subscribe connects to the kernel event stream over the local IPC transport.
 // The goroutine reconnects on disconnect. Close the done channel to stop.
-func Subscribe(socketPath string, done <-chan struct{}) <-chan KernelEvent {
+func Subscribe(transport, endpoint string, done <-chan struct{}) <-chan KernelEvent {
 	ch := make(chan KernelEvent, 32)
 
 	go func() {
@@ -23,7 +23,7 @@ func Subscribe(socketPath string, done <-chan struct{}) <-chan KernelEvent {
 			default:
 			}
 
-			err := readStream(socketPath, ch, done)
+			err := readStream(transport, endpoint, ch, done)
 			if err != nil {
 				select {
 				case <-done:
@@ -37,8 +37,8 @@ func Subscribe(socketPath string, done <-chan struct{}) <-chan KernelEvent {
 	return ch
 }
 
-func readStream(socketPath string, ch chan<- KernelEvent, done <-chan struct{}) error {
-	conn, err := net.Dial("unix", socketPath)
+func readStream(transport, endpoint string, ch chan<- KernelEvent, done <-chan struct{}) error {
+	conn, err := localipc.Dial(endpoint, 0)
 	if err != nil {
 		return err
 	}

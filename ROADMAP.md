@@ -58,7 +58,6 @@ Capture the non-work signals that give work data context, add lightweight person
 - [x] Daily PDF export with dedicated template and runtime renderer detection
 - [x] Timeline-like export report list in TUI
 - [x] Dev helper entrypoint for seed / clear workflows
-- [ ] Windows support
 
 **Phase 2 exit criteria**
 - [x] Daily check-ins are editable from the TUI for any date
@@ -100,11 +99,29 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Notification settings docs and platform-specific fallback guidance
 - [x] Repo-scoped ICS bundle export (`issues.ics` + `sessions.ics`)
 
+### Phase 4.1 — Windows Support V1
+- [ ] Windows named-pipe IPC for kernel RPC and event streaming
+- [ ] Windows-aware kernel runtime metadata (`transport` + `endpoint`)
+- [ ] Windows PowerShell support for `crona`, `crona-tui`, and `crona-kernel`
+- [ ] Windows-aware binary discovery and launch (`.exe` binaries)
+- [ ] Windows runtime path support
+- [ ] Windows coverage for kernel attach/info/status flows
+- [ ] Self-update explicitly unavailable on Windows with clear manual guidance
+
+### Phase 4.2 — Windows Support V2
+- [ ] Windows release artifacts and checksums
+- [ ] Native Windows installer flow
+- [ ] Windows in-app self-update from the `Updates` view
+- [ ] Windows relaunch flow for TUI + kernel after install
+- [ ] Windows install/update docs
+
 **Phase 4 exit criteria**
 - [x] Structured timer boundaries can notify outside the TUI
 - [x] Calendar exports are generated as local `.ics` files
 - [x] ICS exports can be written to a dedicated configurable directory suitable for local automations
 - [x] Core focus/context/export flows are scriptable through `crona`
+- [ ] Phase 4.1 Windows runtime support works from PowerShell without requiring in-app install
+- [ ] Phase 4.2 native Windows packaging and self-update are available
 
 ## Phase 5 — TUI Dashboard System
 Make dashboards a first-class terminal feature after the automation surface is stable.

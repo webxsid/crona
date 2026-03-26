@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 
 	"crona/shared/config"
 	shareddto "crona/shared/dto"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
@@ -98,7 +98,7 @@ func runKernel(args []string) error {
 		if jsonOut {
 			return printJSON(info)
 		}
-		fmt.Printf("kernel attached\npid: %d\nsocket: %s\n", info.PID, info.SocketPath)
+		fmt.Printf("kernel attached\npid: %d\nendpoint: %s\n", info.PID, kernelEndpoint(info))
 		return nil
 	case "detach":
 		if err := callKernel(protocol.MethodKernelShutdown, nil, nil); err != nil {
@@ -117,7 +117,7 @@ func runKernel(args []string) error {
 		if jsonOut {
 			return printJSON(out)
 		}
-		fmt.Printf("pid: %d\nsocket: %s\nenv: %s\nstarted: %s\nscratch: %s\n", out.PID, out.SocketPath, out.Env, out.StartedAt, out.ScratchDir)
+		fmt.Printf("pid: %d\ntransport: %s\nendpoint: %s\nenv: %s\nstarted: %s\nscratch: %s\n", out.PID, kernelTransport(&out), kernelEndpoint(&out), out.Env, out.StartedAt, out.ScratchDir)
 		return nil
 	default:
 		return fmt.Errorf("unknown kernel command: %s", args[0])
@@ -547,7 +547,7 @@ func callKernel(method string, params, out any) error {
 	if err != nil {
 		return err
 	}
-	conn, err := net.DialTimeout("unix", info.SocketPath, 5*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(info), 5*time.Second)
 	if err != nil {
 		return err
 	}
@@ -617,17 +617,15 @@ func readKernelInfo() (*sharedtypes.KernelInfo, error) {
 	if err := json.Unmarshal(body, &info); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(info.SocketPath) == "" {
-		return nil, fmt.Errorf("kernel socket path not found")
-	}
+	normalizeKernelInfo(&info)
 	return &info, nil
 }
 
 func isHealthy(info *sharedtypes.KernelInfo) bool {
-	if info == nil || strings.TrimSpace(info.SocketPath) == "" {
+	if info == nil || strings.TrimSpace(kernelEndpoint(info)) == "" {
 		return false
 	}
-	conn, err := net.DialTimeout("unix", info.SocketPath, 2*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(info), 2*time.Second)
 	if err != nil {
 		return false
 	}
@@ -645,6 +643,38 @@ func isHealthy(info *sharedtypes.KernelInfo) bool {
 		return false
 	}
 	return resp.Error == nil
+}
+
+func normalizeKernelInfo(info *sharedtypes.KernelInfo) {
+	if info == nil {
+		return
+	}
+	if strings.TrimSpace(info.Transport) == "" {
+		info.Transport = localipc.DefaultTransport()
+	}
+	if strings.TrimSpace(info.Endpoint) == "" {
+		info.Endpoint = strings.TrimSpace(info.SocketPath)
+	}
+	if strings.TrimSpace(info.SocketPath) == "" && info.Transport == localipc.TransportUnixSocket {
+		info.SocketPath = info.Endpoint
+	}
+}
+
+func kernelEndpoint(info *sharedtypes.KernelInfo) string {
+	if info == nil {
+		return ""
+	}
+	if strings.TrimSpace(info.Endpoint) != "" {
+		return info.Endpoint
+	}
+	return strings.TrimSpace(info.SocketPath)
+}
+
+func kernelTransport(info *sharedtypes.KernelInfo) string {
+	if info == nil || strings.TrimSpace(info.Transport) == "" {
+		return localipc.DefaultTransport()
+	}
+	return info.Transport
 }
 
 type launchCandidate struct {
