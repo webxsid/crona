@@ -1,0 +1,178 @@
+$ErrorActionPreference = "Stop"
+
+$Version = "__VERSION__"
+$Repo = "__REPO__"
+
+function Get-InstallDir {
+    if ($env:CRONA_INSTALL_DIR -and $env:CRONA_INSTALL_DIR.Trim() -ne "") {
+        return $env:CRONA_INSTALL_DIR.Trim()
+    }
+
+    $localAppData = $env:LOCALAPPDATA
+    if (-not $localAppData -or $localAppData.Trim() -eq "") {
+        $localAppData = Join-Path $HOME "AppData\Local"
+    }
+    return Join-Path $localAppData "Programs\Crona\bin"
+}
+
+function Get-RuntimeDir {
+    if ($env:CRONA_HOME -and $env:CRONA_HOME.Trim() -ne "") {
+        return $env:CRONA_HOME.Trim()
+    }
+
+    $localAppData = $env:LOCALAPPDATA
+    if (-not $localAppData -or $localAppData.Trim() -eq "") {
+        $localAppData = Join-Path $HOME "AppData\Local"
+    }
+    return Join-Path $localAppData "Crona"
+}
+
+function Get-ArchSuffix {
+    $arch = $env:PROCESSOR_ARCHITECTURE
+    if ($env:PROCESSOR_ARCHITEW6432 -and $env:PROCESSOR_ARCHITEW6432.Trim() -ne "") {
+        $arch = $env:PROCESSOR_ARCHITEW6432
+    }
+
+    switch ($arch.ToUpperInvariant()) {
+        "ARM64" { return "arm64" }
+        "AMD64" { return "amd64" }
+        default { throw "Unsupported architecture: $arch" }
+    }
+}
+
+function Add-InstallDirToUserPath([string]$InstallDir) {
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $parts = @()
+    if ($userPath) {
+        $parts = $userPath.Split(';') | Where-Object { $_ -and $_.Trim() -ne "" }
+    }
+
+    foreach ($part in $parts) {
+        if ([string]::Equals($part.TrimEnd('\'), $InstallDir.TrimEnd('\'), [System.StringComparison]::OrdinalIgnoreCase)) {
+            if ($env:Path -notmatch [regex]::Escape($InstallDir)) {
+                $env:Path = "$InstallDir;$env:Path"
+            }
+            return
+        }
+    }
+
+    $newPath = if ($userPath -and $userPath.Trim() -ne "") { "$userPath;$InstallDir" } else { $InstallDir }
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+    $env:Path = "$InstallDir;$env:Path"
+}
+
+function Stop-RunningKernel([string]$RuntimeDir) {
+    $infoFile = Join-Path $RuntimeDir "kernel.json"
+    if (-not (Test-Path $infoFile)) {
+        return
+    }
+
+    try {
+        $info = Get-Content $infoFile -Raw | ConvertFrom-Json
+    } catch {
+        return
+    }
+
+    if (-not $info.pid) {
+        return
+    }
+
+    $process = Get-Process -Id $info.pid -ErrorAction SilentlyContinue
+    if (-not $process) {
+        Remove-Item $infoFile -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $RuntimeDir "kernel.sock") -ErrorAction SilentlyContinue
+        return
+    }
+
+    if ($process.ProcessName -notlike "*crona-kernel*") {
+        throw "Refusing to stop pid $($info.pid); kernel.json does not point at a Crona kernel process."
+    }
+
+    Write-Host "Stopping running Crona kernel (pid $($info.pid)) before install"
+    Stop-Process -Id $info.pid -Force
+    Remove-Item $infoFile -ErrorAction SilentlyContinue
+}
+
+function Verify-Checksum([string]$FilePath, [string]$ExpectedHash) {
+    $actualHash = (Get-FileHash -Algorithm SHA256 -Path $FilePath).Hash.ToLowerInvariant()
+    if ($actualHash -ne $ExpectedHash.ToLowerInvariant()) {
+        throw "Checksum mismatch for $(Split-Path $FilePath -Leaf)"
+    }
+}
+
+function Get-ExpectedChecksum([string]$ChecksumsPath, [string]$AssetName) {
+    foreach ($line in Get-Content $ChecksumsPath) {
+        if (-not $line) {
+            continue
+        }
+        $parts = $line -split "\s+"
+        if ($parts.Length -lt 2) {
+            continue
+        }
+        if ($parts[-1] -eq $AssetName) {
+            return $parts[0]
+        }
+    }
+    throw "checksums.txt is missing $AssetName"
+}
+
+$installDir = Get-InstallDir
+$runtimeDir = Get-RuntimeDir
+$assetsDir = Join-Path $runtimeDir "assets\bundled"
+$archSuffix = Get-ArchSuffix
+$baseUrl = "https://github.com/$Repo/releases/download/$Version"
+$kernelName = "crona-kernel-$Version-windows-$archSuffix.exe"
+$tuiName = "crona-tui-$Version-windows-$archSuffix.exe"
+$assetsName = "crona-assets-$Version.tar.gz"
+$checksumsName = "checksums.txt"
+
+New-Item -ItemType Directory -Force -Path $installDir | Out-Null
+New-Item -ItemType Directory -Force -Path $assetsDir | Out-Null
+Stop-RunningKernel $runtimeDir
+
+$tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ("crona-install-" + [System.Guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
+
+try {
+    $checksumsPath = Join-Path $tmpDir $checksumsName
+    $kernelPath = Join-Path $tmpDir $kernelName
+    $tuiPath = Join-Path $tmpDir $tuiName
+    $assetsPath = Join-Path $tmpDir $assetsName
+
+    Write-Host "Installing Crona $Version to $installDir"
+    Invoke-WebRequest -Uri "$baseUrl/$checksumsName" -OutFile $checksumsPath
+    Invoke-WebRequest -Uri "$baseUrl/$kernelName" -OutFile $kernelPath
+    Invoke-WebRequest -Uri "$baseUrl/$tuiName" -OutFile $tuiPath
+    Invoke-WebRequest -Uri "$baseUrl/$assetsName" -OutFile $assetsPath
+
+    Verify-Checksum $kernelPath (Get-ExpectedChecksum $checksumsPath $kernelName)
+    Verify-Checksum $tuiPath (Get-ExpectedChecksum $checksumsPath $tuiName)
+    Verify-Checksum $assetsPath (Get-ExpectedChecksum $checksumsPath $assetsName)
+
+    Move-Item -Force $kernelPath (Join-Path $installDir "crona-kernel.exe")
+    Move-Item -Force $tuiPath (Join-Path $installDir "crona-tui.exe")
+
+    $exportDir = Join-Path $assetsDir "export"
+    if (Test-Path $exportDir) {
+        Remove-Item -Recurse -Force $exportDir
+    }
+
+    tar -xzf $assetsPath -C $assetsDir
+    Add-InstallDirToUserPath $installDir
+
+    Write-Host ""
+    Write-Host "Installed:"
+    Write-Host "  $(Join-Path $installDir 'crona-kernel.exe')"
+    Write-Host "  $(Join-Path $installDir 'crona-tui.exe')"
+    Write-Host "  runtime data: $runtimeDir"
+    Write-Host "  $exportDir"
+    Write-Host ""
+    Write-Host "Open a new PowerShell session if PATH changes are not visible yet."
+    Write-Host "Then run:"
+    Write-Host "  crona-tui"
+}
+finally {
+    if (Test-Path $tmpDir) {
+        Remove-Item -Recurse -Force $tmpDir
+    }
+}

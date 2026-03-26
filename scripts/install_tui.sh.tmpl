@@ -5,8 +5,6 @@ VERSION="__VERSION__"
 REPO="__REPO__"
 INSTALL_DIR="${CRONA_INSTALL_DIR:-$HOME/.local/bin}"
 VERSION_FILE="${INSTALL_DIR}/.crona-version"
-CRONA_HOME="${CRONA_HOME:-$HOME/.crona}"
-ASSETS_DIR="${CRONA_HOME}/assets/bundled"
 TMP_DIR=""
 
 cleanup() {
@@ -17,9 +15,29 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-stop_running_kernel() {
-  info_file="${CRONA_HOME}/kernel.json"
-  socket_file="${CRONA_HOME}/kernel.sock"
+default_crona_home() {
+  case "${OS}" in
+    darwin)
+      printf '%s\n' "${HOME}/Library/Application Support/Crona"
+      ;;
+    linux)
+      if [ -n "${XDG_DATA_HOME:-}" ]; then
+        printf '%s\n' "${XDG_DATA_HOME}/crona"
+      else
+        printf '%s\n' "${HOME}/.local/share/crona"
+      fi
+      ;;
+  esac
+}
+
+legacy_crona_home() {
+  printf '%s\n' "${HOME}/.crona"
+}
+
+stop_running_kernel_at() {
+  runtime_home="$1"
+  info_file="${runtime_home}/kernel.json"
+  socket_file="${runtime_home}/kernel.sock"
 
   if [ ! -f "${info_file}" ]; then
     return 0
@@ -60,6 +78,26 @@ stop_running_kernel() {
   done
 
   rm -f "${info_file}" "${socket_file}"
+}
+
+migrate_legacy_runtime_dir() {
+  if [ "${CRONA_HOME_IS_OVERRIDE}" = "1" ]; then
+    return 0
+  fi
+  if [ "${CRONA_HOME}" = "${LEGACY_CRONA_HOME}" ]; then
+    return 0
+  fi
+  if [ -d "${CRONA_HOME}" ]; then
+    return 0
+  fi
+  if [ ! -d "${LEGACY_CRONA_HOME}" ]; then
+    return 0
+  fi
+
+  stop_running_kernel_at "${LEGACY_CRONA_HOME}"
+  mkdir -p "$(dirname "${CRONA_HOME}")"
+  echo "Migrating Crona runtime data from ${LEGACY_CRONA_HOME} to ${CRONA_HOME}"
+  mv "${LEGACY_CRONA_HOME}" "${CRONA_HOME}"
 }
 
 prompt_replace() {
@@ -158,6 +196,14 @@ verify_checksums() {
 
 OS="$(detect_os)"
 ARCH="$(detect_arch)"
+CRONA_HOME_IS_OVERRIDE=0
+if [ -n "${CRONA_HOME:-}" ]; then
+  CRONA_HOME_IS_OVERRIDE=1
+else
+  CRONA_HOME="$(default_crona_home)"
+fi
+LEGACY_CRONA_HOME="$(legacy_crona_home)"
+ASSETS_DIR="${CRONA_HOME}/assets/bundled"
 BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
 KERNEL_NAME="crona-kernel-${VERSION}-${OS}-${ARCH}"
 TUI_NAME="crona-tui-${VERSION}-${OS}-${ARCH}"
@@ -168,6 +214,7 @@ ASSETS_URL="${BASE_URL}/${ASSETS_NAME}"
 CHECKSUMS_URL="${BASE_URL}/checksums.txt"
 
 mkdir -p "${INSTALL_DIR}"
+migrate_legacy_runtime_dir
 mkdir -p "${ASSETS_DIR}"
 TMP_DIR="$(mktemp -d "${CRONA_HOME}/install.XXXXXX" 2>/dev/null || mktemp -d "/tmp/crona-install.XXXXXX")"
 
@@ -180,7 +227,7 @@ if [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; th
   prompt_replace "${INSTALLED_VERSION}"
 fi
 
-stop_running_kernel
+stop_running_kernel_at "${CRONA_HOME}"
 
 CHECKSUMS_FILE="${TMP_DIR}/checksums.txt"
 KERNEL_FILE="${TMP_DIR}/${KERNEL_NAME}"
@@ -210,6 +257,7 @@ echo
 echo "Installed:"
 echo "  ${INSTALL_DIR}/crona-kernel"
 echo "  ${INSTALL_DIR}/crona-tui"
+echo "  runtime data: ${CRONA_HOME}"
 echo "  ${ASSETS_DIR}/export"
 echo
 echo "Make sure ${INSTALL_DIR} is on your PATH."

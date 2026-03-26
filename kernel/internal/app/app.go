@@ -16,11 +16,16 @@ import (
 	"crona/kernel/internal/store"
 	"crona/kernel/internal/updatecheck"
 	"crona/shared/config"
+	"crona/shared/localipc"
 	sharedtypes "crona/shared/types"
 )
 
 func Run(ctx context.Context) error {
 	appEnv := config.Load()
+
+	if err := runtime.MigrateLegacyBaseDir(appEnv.Mode); err != nil {
+		return fmt.Errorf("migrate runtime dir: %w", err)
+	}
 
 	paths, err := runtime.ResolvePaths()
 	if err != nil {
@@ -75,6 +80,8 @@ func Run(ctx context.Context) error {
 
 	info := sharedtypes.KernelInfo{
 		PID:            os.Getpid(),
+		Transport:      paths.Transport,
+		Endpoint:       paths.Endpoint,
 		SocketPath:     paths.SocketPath,
 		Token:          "",
 		StartedAt:      startedAt,
@@ -83,7 +90,7 @@ func Run(ctx context.Context) error {
 		ExecutablePath: executablePath(),
 	}
 
-	server := ipc.NewServer(paths.SocketPath, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater), logger)
+	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater), logger)
 	timer := corecommands.GetTimerService(commandCtx)
 	if err := timer.RecoverBoundary(runCtx); err != nil {
 		return fmt.Errorf("recover timer boundary: %w", err)
@@ -106,7 +113,7 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	logger.Info("kernel listening on unix socket " + paths.SocketPath)
+	logger.Info("kernel listening on " + localipc.Label(paths.Transport, paths.Endpoint))
 
 	<-runCtx.Done()
 	logger.Info("kernel shutting down")

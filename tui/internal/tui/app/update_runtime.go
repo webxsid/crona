@@ -1,9 +1,11 @@
 package app
 
 import (
-	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"crona/shared/config"
 )
 
 func nonStandardRuntimeReason(path, expectedBinaryName string) string {
@@ -14,19 +16,25 @@ func nonStandardRuntimeReason(path, expectedBinaryName string) string {
 	if filepath.Base(path) != expectedBinaryName {
 		return "You seem to be running the app from a non-standard location. Please update manually."
 	}
-	if filepath.Dir(path) != installDir() {
+	if !sameInstallDir(filepath.Dir(path), installDir()) {
 		return "You seem to be running the app from a non-standard location. Please update manually."
 	}
 	return ""
 }
 
 func installDir() string {
-	if dir := strings.TrimSpace(os.Getenv("CRONA_INSTALL_DIR")); dir != "" {
-		return dir
-	}
-	home, err := os.UserHomeDir()
-	if err != nil || strings.TrimSpace(home) == "" {
+	dir, err := config.InstallDir()
+	if err != nil {
 		return "."
 	}
-	return filepath.Join(home, ".local", "bin")
+	return dir
+}
+
+func sameInstallDir(left, right string) bool {
+	left = filepath.Clean(strings.TrimSpace(left))
+	right = filepath.Clean(strings.TrimSpace(right))
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(left, right)
+	}
+	return left == right
 }

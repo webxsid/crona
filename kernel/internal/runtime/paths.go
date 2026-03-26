@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"crona/shared/config"
+	"crona/shared/localipc"
 )
 
 const (
@@ -24,6 +25,8 @@ type Paths struct {
 	LogsDir          string
 	InfoFile         string
 	UpdateFile       string
+	Transport        string
+	Endpoint         string
 	SocketPath       string
 	CurrentLogDir    string
 }
@@ -35,6 +38,12 @@ func ResolvePaths() (Paths, error) {
 	}
 	logs := filepath.Join(base, "logs")
 	assets := filepath.Join(base, "assets")
+	transport := localipc.DefaultTransport()
+	endpoint := localipc.DefaultEndpoint(base, config.Load().Mode)
+	socketPath := ""
+	if transport == localipc.TransportUnixSocket {
+		socketPath = endpoint
+	}
 
 	return Paths{
 		BaseDir:          base,
@@ -48,7 +57,9 @@ func ResolvePaths() (Paths, error) {
 		LogsDir:          logs,
 		InfoFile:         filepath.Join(base, "kernel.json"),
 		UpdateFile:       filepath.Join(base, "update.json"),
-		SocketPath:       filepath.Join(base, "kernel.sock"),
+		Transport:        transport,
+		Endpoint:         endpoint,
+		SocketPath:       socketPath,
 		CurrentLogDir:    filepath.Join(logs, dateStamp()),
 	}, nil
 }

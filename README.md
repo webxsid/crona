@@ -13,7 +13,7 @@ The current beta ships as two binaries:
 End users do not need Go installed. The installer downloads the correct TUI and kernel pair for the current machine.
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | sh
 ```
 
 By default this installs into `~/.local/bin`.
@@ -21,14 +21,41 @@ By default this installs into `~/.local/bin`.
 If you want to replace an existing install non-interactively, set `CRONA_INSTALL_FORCE=1` on the `sh` side of the pipe:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
 ```
 
 If you want the installer to prompt and wait for your `y/N` response, do not run it through `curl | sh`. Save it first and then execute it so the script can read from your terminal:
 
 ```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.2.1/install-crona-tui.sh
+curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh
 sh /tmp/install-crona-tui.sh
+```
+
+### Windows Install
+
+Use PowerShell to download and run the Windows installer:
+
+```powershell
+$version = "v0.3.0"
+Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
+```
+
+By default this installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to your user `PATH`, and keeps runtime data under `%LocalAppData%\Crona`.
+
+Once installed, you can verify the local kernel flow from PowerShell without opening the TUI:
+
+```powershell
+crona kernel attach --json
+crona kernel status --json
+crona kernel info --json
+```
+
+Set `CRONA_INSTALL_DIR` before running the installer if you want to override the binary install directory:
+
+```powershell
+$env:CRONA_INSTALL_DIR = "D:\tools\crona\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
 
 ## Manual Build And Install
@@ -205,6 +232,23 @@ CRONA_ENV=Prod
 
 Set it to `Dev` to enable developer-only seed and clear helpers in the kernel and TUI.
 
+Runtime storage defaults to:
+- macOS prod: `~/Library/Application Support/Crona`
+- macOS dev: `~/Library/Application Support/Crona Dev`
+- Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
+- Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
+- Windows prod: `%LocalAppData%\Crona`
+- Windows dev: `%LocalAppData%\Crona Dev`
+
+On macOS and Linux, existing `~/.crona` and `~/.crona-dev` runtime directories are migrated automatically on install or first kernel start.
+Set `CRONA_HOME` to override the runtime directory and skip the default-path migration logic.
+
+Binary install defaults to:
+- macOS/Linux: `~/.local/bin`
+- Windows: `%LocalAppData%\Programs\Crona\bin`
+
+Set `CRONA_INSTALL_DIR` to override the binary install directory on any platform.
+
 ### Project Tasks
 
 The root `Makefile` is the shared task runner for project metadata, builds, tests, and release helpers.
@@ -247,6 +291,50 @@ The TUI will auto-start the kernel if `crona-kernel` is on your `PATH`.
 When `CRONA_ENV=Dev`, the TUI exposes global hotkeys for developer data management:
 - `f6` seeds sample data
 - `f7` clears all local data
+
+### Windows Dev Run
+
+Use PowerShell from the repo root.
+
+Set dev mode:
+
+```powershell
+$env:CRONA_ENV = "Dev"
+```
+
+Build the dev kernel and TUI into `bin\`:
+
+```powershell
+go build -o .\bin\crona-kernel-dev.exe .\kernel\cmd\crona-kernel
+go build -o .\bin\crona-tui-dev.exe .\tui
+```
+
+Add the repo `bin\` directory to `PATH` for the current shell:
+
+```powershell
+$env:PATH = "$PWD\bin;$env:PATH"
+```
+
+Run the TUI:
+
+```powershell
+.\bin\crona-tui-dev.exe
+```
+
+This is the Windows equivalent of `CRONA_ENV=Dev make install-kernel install-tui` followed by `CRONA_ENV=Dev make run-tui`.
+
+If you want to run without building the TUI binary first, this also works once the dev kernel binary exists in `bin\`:
+
+```powershell
+go run .\tui
+```
+
+If kernel auto-start is not available, run it in a separate terminal:
+
+```powershell
+$env:CRONA_ENV = "Dev"
+go run .\kernel\cmd\crona-kernel
+```
 
 ### CLI
 

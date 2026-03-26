@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"crona/shared/config"
@@ -14,8 +15,12 @@ var logBase string
 func init() {
 	base, err := config.RuntimeBaseDir()
 	if err != nil {
-		home, _ := os.UserHomeDir()
-		base = filepath.Join(home, config.RuntimeBaseDirName())
+		base = "."
+		if home, homeErr := os.UserHomeDir(); homeErr == nil {
+			if resolved, resolvedErr := config.DefaultRuntimeBaseDirForModeOnOS(config.Load().Mode, runtime.GOOS, home, os.Getenv("XDG_DATA_HOME"), os.Getenv("LocalAppData")); resolvedErr == nil {
+				base = resolved
+			}
+		}
 	}
 	logBase = filepath.Join(base, "logs", "tui")
 }

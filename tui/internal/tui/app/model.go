@@ -246,9 +246,9 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 	eventChannel = ch
 }
 
-func New(socketPath, scratchDir string, env string, executablePath string, done chan struct{}) Model {
+func New(transport, endpoint, scratchDir string, env string, executablePath string, done chan struct{}) Model {
 	return Model{
-		client:              api.NewClient(socketPath, scratchDir),
+		client:              api.NewClient(transport, endpoint, scratchDir),
 		eventStop:           done,
 		view:                ViewDaily,
 		pane:                PaneIssues,

@@ -4,6 +4,8 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-26
+
 ### Added
 - Scriptable `crona` CLI with kernel, context, timer, issue, calendar-export, and dev helper subcommands.
 - Shell completion output for `zsh`, `bash`, and `fish`.
@@ -23,8 +25,11 @@ All notable changes to **Crona** are documented here.
 - The standalone `crona-dev` helper entrypoint was folded into `crona dev ...`.
 - Scratchpad rendering now lives under the `views` package with controller logic kept in the app package.
 - Phase 5 roadmap planning now includes full CLI CRUD, interactive add/edit flows, and an interactive CLI context picker.
+- The roadmap now splits Windows work into Phase 4.1 runtime support and Phase 4.2 installer/self-update support.
 - Update prompts now live in the dedicated `Updates` view instead of a temporary header/banner surface, and that view remains accessible even when no update is available.
 - Shared update status now carries release-tag and installer/checksum asset metadata for self-update flows.
+- Unix runtime data now defaults to native app-data directories instead of `~/.crona`, with `CRONA_HOME` as the explicit override.
+- Binary install-location detection is now OS-aware, using `%LocalAppData%\Programs\Crona\bin` as the Windows standard install directory.
 
 ### Fixed
 - Calendar export now fails clearly when the TUI is talking to a stale kernel that still serves the old response shape.
@@ -34,6 +39,8 @@ All notable changes to **Crona** are documented here.
 - Prerelease version ordering now follows SemVer rules instead of naive string comparison.
 - In-app install is now disabled when Crona is running from a non-standard location, with explicit manual-update guidance shown in the `Updates` view.
 - Self-update now validates release installer assets and checksums before replacing binaries and relaunching.
+- Unix installs and first kernel start now migrate legacy `~/.crona` runtime data into the new native app-data location automatically.
+- Windows releases now ship PowerShell installer assets, `.exe` binaries, and in-app self-update/relaunch support for standard installs.
 
 ## [0.2.1] - 2026-03-19
 

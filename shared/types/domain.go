@@ -495,6 +495,8 @@ type Health struct {
 type KernelInfo struct {
 	PID            int    `json:"pid"`
 	Port           int    `json:"port,omitempty"`
+	Transport      string `json:"transport,omitempty"`
+	Endpoint       string `json:"endpoint,omitempty"`
 	SocketPath     string `json:"socketPath,omitempty"`
 	Token          string `json:"token"`
 	StartedAt      string `json:"startedAt"`

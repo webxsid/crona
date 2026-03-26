@@ -18,18 +18,31 @@ darwin arm64
 darwin amd64
 linux amd64
 linux arm64
+windows amd64
+windows arm64
 "
+
+binary_name() {
+  base="$1"
+  goos="$2"
+  if [ "${goos}" = "windows" ]; then
+    printf '%s.exe\n' "${base}"
+  else
+    printf '%s\n' "${base}"
+  fi
+}
 
 rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 
 expected_files() {
   echo "install-crona-tui.sh"
+  echo "install-crona-tui.ps1"
   echo "crona-assets-${VERSION}.tar.gz"
   printf '%s\n' "${TARGETS}" | while read -r GOOS GOARCH; do
     [ -n "${GOOS}" ] || continue
-    echo "crona-kernel-${VERSION}-${GOOS}-${GOARCH}"
-    echo "crona-tui-${VERSION}-${GOOS}-${GOARCH}"
+    binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}"
+    binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}"
   done
 }
 
@@ -58,10 +71,12 @@ echo "${TARGETS}" | while read -r GOOS GOARCH; do
   [ -n "${GOOS}" ] || continue
 
   echo "Building ${GOOS}/${GOARCH}"
+  kernel_output="$(binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+  tui_output="$(binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
   env CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" GOCACHE="${GOCACHE_DIR}" \
-    go build -o "${RELEASE_DIR}/crona-kernel-${VERSION}-${GOOS}-${GOARCH}" ./kernel/cmd/crona-kernel
+    go build -o "${RELEASE_DIR}/${kernel_output}" ./kernel/cmd/crona-kernel
   env CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" GOCACHE="${GOCACHE_DIR}" \
-    go build -o "${RELEASE_DIR}/crona-tui-${VERSION}-${GOOS}-${GOARCH}" ./tui
+    go build -o "${RELEASE_DIR}/${tui_output}" ./tui
 done
 
 sed \
@@ -69,6 +84,11 @@ sed \
   -e "s#__REPO__#${PROJECT_REPO}#g" \
   "${ROOT_DIR}/scripts/install_tui.sh.tmpl" > "${RELEASE_DIR}/install-crona-tui.sh"
 chmod +x "${RELEASE_DIR}/install-crona-tui.sh"
+
+sed \
+  -e "s#__VERSION__#${VERSION}#g" \
+  -e "s#__REPO__#${PROJECT_REPO}#g" \
+  "${ROOT_DIR}/scripts/install_tui.ps1.tmpl" > "${RELEASE_DIR}/install-crona-tui.ps1"
 
 mkdir -p "${RELEASE_DIR}/assets"
 cp -R "${ROOT_DIR}/assets/export" "${RELEASE_DIR}/assets/"
@@ -80,7 +100,11 @@ rm -rf "${RELEASE_DIR}/assets"
 
 (
   cd "${RELEASE_DIR}"
-  shasum -a 256 ./* > checksums.txt
+  : > checksums.txt
+  for file in *; do
+    [ "${file}" = "checksums.txt" ] && continue
+    shasum -a 256 "${file}" >> checksums.txt
+  done
 )
 
 verify_release_artifacts

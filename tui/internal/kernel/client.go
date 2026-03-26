@@ -4,12 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"crona/shared/config"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,15 +19,7 @@ import (
 	"crona/tui/internal/logger"
 )
 
-type Info struct {
-	PID            int    `json:"pid"`
-	Port           int    `json:"port"`
-	SocketPath     string `json:"socketPath"`
-	Token          string `json:"token"`
-	ScratchDir     string `json:"scratchDir"`
-	Env            string `json:"env"`
-	ExecutablePath string `json:"executablePath"`
-}
+type Info = sharedtypes.KernelInfo
 
 func Ensure() (*Info, error) {
 	base, err := config.RuntimeBaseDir()
@@ -38,7 +30,7 @@ func Ensure() (*Info, error) {
 
 	if info, err := readInfo(infoPath); err == nil {
 		if isHealthy(info) {
-			logger.Infof("Kernel already running at %s (pid %d)", info.SocketPath, info.PID)
+			logger.Infof("Kernel already running at %s (pid %d)", EndpointLabel(info), info.PID)
 			return info, nil
 		}
 	}
@@ -52,7 +44,7 @@ func Ensure() (*Info, error) {
 		time.Sleep(250 * time.Millisecond)
 		if info, err := readInfo(infoPath); err == nil {
 			if isHealthy(info) {
-				logger.Infof("Kernel ready at %s", info.SocketPath)
+				logger.Infof("Kernel ready at %s", EndpointLabel(info))
 				return info, nil
 			}
 		}
@@ -66,27 +58,12 @@ func readInfo(path string) (*Info, error) {
 	if err != nil {
 		return nil, err
 	}
-	var raw struct {
-		PID            int    `json:"pid"`
-		Port           int    `json:"port"`
-		SocketPath     string `json:"socketPath"`
-		Token          string `json:"token"`
-		ScratchDir     string `json:"scratchDir"`
-		Env            string `json:"env"`
-		ExecutablePath string `json:"executablePath"`
-	}
-	if err := json.Unmarshal(b, &raw); err != nil {
+	var info sharedtypes.KernelInfo
+	if err := json.Unmarshal(b, &info); err != nil {
 		return nil, err
 	}
-	return &Info{
-		PID:            raw.PID,
-		Port:           raw.Port,
-		SocketPath:     raw.SocketPath,
-		Token:          raw.Token,
-		ScratchDir:     raw.ScratchDir,
-		Env:            raw.Env,
-		ExecutablePath: raw.ExecutablePath,
-	}, nil
+	normalizeKernelInfo(&info)
+	return &info, nil
 }
 
 func isHealthy(info *Info) bool {
@@ -95,7 +72,7 @@ func isHealthy(info *Info) bool {
 			return false
 		}
 	}
-	conn, err := net.DialTimeout("unix", info.SocketPath, 2*time.Second)
+	conn, err := localipc.Dial(Endpoint(info), 2*time.Second)
 	if err != nil {
 		return false
 	}
@@ -125,6 +102,35 @@ func isHealthy(info *Info) bool {
 		return false
 	}
 	return health.DB && health.Status == "ok"
+}
+
+func normalizeKernelInfo(info *sharedtypes.KernelInfo) {
+	if info == nil {
+		return
+	}
+	if strings.TrimSpace(info.Transport) == "" {
+		info.Transport = localipc.DefaultTransport()
+	}
+	if strings.TrimSpace(info.Endpoint) == "" {
+		info.Endpoint = strings.TrimSpace(info.SocketPath)
+	}
+	if strings.TrimSpace(info.SocketPath) == "" && info.Transport == localipc.TransportUnixSocket {
+		info.SocketPath = info.Endpoint
+	}
+}
+
+func Endpoint(info *Info) string {
+	if info == nil {
+		return ""
+	}
+	if strings.TrimSpace(info.Endpoint) != "" {
+		return info.Endpoint
+	}
+	return strings.TrimSpace(info.SocketPath)
+}
+
+func EndpointLabel(info *Info) string {
+	return localipc.Label(info.Transport, Endpoint(info))
 }
 
 type launchCandidate struct {

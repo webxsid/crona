@@ -7,7 +7,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,8 +15,23 @@ import (
 
 	"crona/shared/config"
 	shareddto "crona/shared/dto"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
+)
+
+var (
+	callKernelFn   = callKernel
+	ensureKernelFn = ensureKernel
+	runtimeBaseDir = config.RuntimeBaseDir
+	readFileFn     = os.ReadFile
+	kernelBinaryFn = config.KernelBinaryName
+	osExecutableFn = os.Executable
+	execLookPathFn = exec.LookPath
+	osStatFn       = os.Stat
+	osGetwdFn      = os.Getwd
+	startKernelFn  = startKernel
+	timeSleepFn    = time.Sleep
 )
 
 func main() {
@@ -73,7 +87,7 @@ func runDev(args []string) error {
 	default:
 		return fmt.Errorf("unknown dev command: %s", args[0])
 	}
-	if err := callKernel(method, nil, nil); err != nil {
+	if err := callKernelFn(method, nil, nil); err != nil {
 		return err
 	}
 	if jsonOut {
@@ -91,17 +105,17 @@ func runKernel(args []string) error {
 	jsonOut := hasJSONFlag(args[1:])
 	switch args[0] {
 	case "attach":
-		info, err := ensureKernel()
+		info, err := ensureKernelFn()
 		if err != nil {
 			return err
 		}
 		if jsonOut {
 			return printJSON(info)
 		}
-		fmt.Printf("kernel attached\npid: %d\nsocket: %s\n", info.PID, info.SocketPath)
+		fmt.Printf("kernel attached\npid: %d\nendpoint: %s\n", info.PID, kernelEndpoint(info))
 		return nil
 	case "detach":
-		if err := callKernel(protocol.MethodKernelShutdown, nil, nil); err != nil {
+		if err := callKernelFn(protocol.MethodKernelShutdown, nil, nil); err != nil {
 			return err
 		}
 		if jsonOut {
@@ -111,13 +125,13 @@ func runKernel(args []string) error {
 		return nil
 	case "info", "status":
 		var out sharedtypes.KernelInfo
-		if err := callKernel(protocol.MethodKernelInfoGet, nil, &out); err != nil {
+		if err := callKernelFn(protocol.MethodKernelInfoGet, nil, &out); err != nil {
 			return err
 		}
 		if jsonOut {
 			return printJSON(out)
 		}
-		fmt.Printf("pid: %d\nsocket: %s\nenv: %s\nstarted: %s\nscratch: %s\n", out.PID, out.SocketPath, out.Env, out.StartedAt, out.ScratchDir)
+		fmt.Printf("pid: %d\ntransport: %s\nendpoint: %s\nenv: %s\nstarted: %s\nscratch: %s\n", out.PID, kernelTransport(&out), kernelEndpoint(&out), out.Env, out.StartedAt, out.ScratchDir)
 		return nil
 	default:
 		return fmt.Errorf("unknown kernel command: %s", args[0])
@@ -547,7 +561,7 @@ func callKernel(method string, params, out any) error {
 	if err != nil {
 		return err
 	}
-	conn, err := net.DialTimeout("unix", info.SocketPath, 5*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(info), 5*time.Second)
 	if err != nil {
 		return err
 	}
@@ -596,7 +610,7 @@ func ensureKernel() (*sharedtypes.KernelInfo, error) {
 		return nil, fmt.Errorf("launch kernel: %w", err)
 	}
 	for i := 0; i < 20; i++ {
-		time.Sleep(250 * time.Millisecond)
+		timeSleepFn(250 * time.Millisecond)
 		if info, err := readKernelInfo(); err == nil && isHealthy(info) {
 			return info, nil
 		}
@@ -605,11 +619,11 @@ func ensureKernel() (*sharedtypes.KernelInfo, error) {
 }
 
 func readKernelInfo() (*sharedtypes.KernelInfo, error) {
-	base, err := config.RuntimeBaseDir()
+	base, err := runtimeBaseDir()
 	if err != nil {
 		return nil, err
 	}
-	body, err := os.ReadFile(filepath.Join(base, "kernel.json"))
+	body, err := readFileFn(filepath.Join(base, "kernel.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -617,17 +631,15 @@ func readKernelInfo() (*sharedtypes.KernelInfo, error) {
 	if err := json.Unmarshal(body, &info); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(info.SocketPath) == "" {
-		return nil, fmt.Errorf("kernel socket path not found")
-	}
+	normalizeKernelInfo(&info)
 	return &info, nil
 }
 
 func isHealthy(info *sharedtypes.KernelInfo) bool {
-	if info == nil || strings.TrimSpace(info.SocketPath) == "" {
+	if info == nil || strings.TrimSpace(kernelEndpoint(info)) == "" {
 		return false
 	}
-	conn, err := net.DialTimeout("unix", info.SocketPath, 2*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(info), 2*time.Second)
 	if err != nil {
 		return false
 	}
@@ -647,6 +659,38 @@ func isHealthy(info *sharedtypes.KernelInfo) bool {
 	return resp.Error == nil
 }
 
+func normalizeKernelInfo(info *sharedtypes.KernelInfo) {
+	if info == nil {
+		return
+	}
+	if strings.TrimSpace(info.Transport) == "" {
+		info.Transport = localipc.DefaultTransport()
+	}
+	if strings.TrimSpace(info.Endpoint) == "" {
+		info.Endpoint = strings.TrimSpace(info.SocketPath)
+	}
+	if strings.TrimSpace(info.SocketPath) == "" && info.Transport == localipc.TransportUnixSocket {
+		info.SocketPath = info.Endpoint
+	}
+}
+
+func kernelEndpoint(info *sharedtypes.KernelInfo) string {
+	if info == nil {
+		return ""
+	}
+	if strings.TrimSpace(info.Endpoint) != "" {
+		return info.Endpoint
+	}
+	return strings.TrimSpace(info.SocketPath)
+}
+
+func kernelTransport(info *sharedtypes.KernelInfo) string {
+	if info == nil || strings.TrimSpace(info.Transport) == "" {
+		return localipc.DefaultTransport()
+	}
+	return info.Transport
+}
+
 type launchCandidate struct {
 	name string
 	cmd  string
@@ -661,7 +705,7 @@ func launchKernel() error {
 	}
 	failures := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {
-		if err := startKernel(candidate); err == nil {
+		if err := startKernelFn(candidate); err == nil {
 			return nil
 		} else {
 			failures = append(failures, fmt.Sprintf("%s: %v", candidate.name, err))
@@ -681,23 +725,23 @@ func kernelLaunchCandidates() []launchCandidate {
 		seen[key] = struct{}{}
 		candidates = append(candidates, candidate)
 	}
-	if exe, err := os.Executable(); err == nil {
-		kernelName := config.KernelBinaryName()
+	if exe, err := osExecutableFn(); err == nil {
+		kernelName := kernelBinaryFn()
 		sibling := filepath.Join(filepath.Dir(exe), kernelName)
-		if info, err := os.Stat(sibling); err == nil && !info.IsDir() {
+		if info, err := osStatFn(sibling); err == nil && !info.IsDir() {
 			add(launchCandidate{name: "sibling " + kernelName, cmd: sibling})
 		}
 	}
-	if pathCmd, err := exec.LookPath(config.KernelBinaryName()); err == nil {
-		add(launchCandidate{name: "PATH " + config.KernelBinaryName(), cmd: pathCmd})
+	if pathCmd, err := execLookPathFn(kernelBinaryFn()); err == nil {
+		add(launchCandidate{name: "PATH " + kernelBinaryFn(), cmd: pathCmd})
 	}
 	if repoRoot, err := findRepoRoot(); err == nil {
-		repoBin := filepath.Join(repoRoot, "bin", config.KernelBinaryName())
-		if info, err := os.Stat(repoBin); err == nil && !info.IsDir() {
-			add(launchCandidate{name: "repo bin " + config.KernelBinaryName(), cmd: repoBin})
+		repoBin := filepath.Join(repoRoot, "bin", kernelBinaryFn())
+		if info, err := osStatFn(repoBin); err == nil && !info.IsDir() {
+			add(launchCandidate{name: "repo bin " + kernelBinaryFn(), cmd: repoBin})
 		}
-		if _, err := os.Stat(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel")); err == nil {
-			if goCmd, lookErr := exec.LookPath("go"); lookErr == nil {
+		if _, err := osStatFn(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel")); err == nil {
+			if goCmd, lookErr := execLookPathFn("go"); lookErr == nil {
 				add(launchCandidate{name: "repo-local go run", cmd: goCmd, args: []string{"run", "./kernel/cmd/crona-kernel"}, dir: repoRoot})
 			}
 		}
@@ -707,10 +751,10 @@ func kernelLaunchCandidates() []launchCandidate {
 
 func findRepoRoot() (string, error) {
 	starts := make([]string, 0, 2)
-	if wd, err := os.Getwd(); err == nil {
+	if wd, err := osGetwdFn(); err == nil {
 		starts = append(starts, wd)
 	}
-	if exe, err := os.Executable(); err == nil {
+	if exe, err := osExecutableFn(); err == nil {
 		starts = append(starts, filepath.Dir(exe))
 	}
 	seen := make(map[string]struct{})
@@ -735,7 +779,7 @@ func findRepoRoot() (string, error) {
 }
 
 func fileExists(path string) bool {
-	info, err := os.Stat(path)
+	info, err := osStatFn(path)
 	return err == nil && !info.IsDir()
 }
 

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,13 +15,14 @@ import (
 	"crona/kernel/internal/app"
 	"crona/kernel/internal/runtime"
 	shareddto "crona/shared/dto"
+	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
 
 type testKernel struct {
 	home      string
-	socket    string
+	info      *sharedtypes.KernelInfo
 	cancel    context.CancelFunc
 	errCh     chan error
 	requestID atomic.Uint64
@@ -39,6 +39,7 @@ func startTestKernel(t *testing.T) *testKernel {
 		_ = os.RemoveAll(home)
 	})
 	t.Setenv("HOME", home)
+	t.Setenv("CRONA_HOME", filepath.Join(home, "crona-runtime"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	errCh := make(chan error, 1)
@@ -61,20 +62,27 @@ func startTestKernel(t *testing.T) *testKernel {
 		cancel()
 		t.Fatalf("wait for kernel info: %v", err)
 	}
-	if err := waitForFile(paths.SocketPath, 5*time.Second); err != nil {
+
+	info, err := runtime.ReadKernelInfo(paths)
+	if err != nil {
+		cancel()
+		t.Fatalf("read kernel info: %v", err)
+	}
+	normalizeKernelInfo(info)
+	if err := waitForHealthyKernel(info, 5*time.Second); err != nil {
 		select {
 		case runErr := <-errCh:
 			cancel()
-			t.Fatalf("kernel exited before socket file: %v", runErr)
+			t.Fatalf("kernel exited before endpoint became healthy: %v", runErr)
 		default:
 		}
 		cancel()
-		t.Fatalf("wait for kernel socket: %v", err)
+		t.Fatalf("wait for kernel endpoint: %v", err)
 	}
 
 	return &testKernel{
 		home:   home,
-		socket: paths.SocketPath,
+		info:   info,
 		cancel: cancel,
 		errCh:  errCh,
 	}
@@ -96,9 +104,9 @@ func (k *testKernel) close(t *testing.T) {
 func (k *testKernel) call(t *testing.T, method string, params any, out any) {
 	t.Helper()
 
-	conn, err := net.DialTimeout("unix", k.socket, 3*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(k.info), 3*time.Second)
 	if err != nil {
-		t.Fatalf("dial kernel socket: %v", err)
+		t.Fatalf("dial kernel endpoint: %v", err)
 	}
 	defer func() {
 		_ = conn.Close()
@@ -145,9 +153,9 @@ func (k *testKernel) call(t *testing.T, method string, params any, out any) {
 func (k *testKernel) callError(t *testing.T, method string, params any) string {
 	t.Helper()
 
-	conn, err := net.DialTimeout("unix", k.socket, 3*time.Second)
+	conn, err := localipc.Dial(kernelEndpoint(k.info), 3*time.Second)
 	if err != nil {
-		t.Fatalf("dial kernel socket: %v", err)
+		t.Fatalf("dial kernel endpoint: %v", err)
 	}
 	defer func() {
 		_ = conn.Close()
@@ -197,6 +205,44 @@ func waitForFile(path string, timeout time.Duration) error {
 		time.Sleep(25 * time.Millisecond)
 	}
 	return errors.New("timeout waiting for " + filepath.Base(path))
+}
+
+func waitForHealthyKernel(info *sharedtypes.KernelInfo, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		conn, err := localipc.Dial(kernelEndpoint(info), 250*time.Millisecond)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	return errors.New("timeout waiting for kernel endpoint")
+}
+
+func normalizeKernelInfo(info *sharedtypes.KernelInfo) {
+	if info == nil {
+		return
+	}
+	if info.Transport == "" {
+		info.Transport = localipc.DefaultTransport()
+	}
+	if info.Endpoint == "" {
+		info.Endpoint = info.SocketPath
+	}
+	if info.SocketPath == "" && info.Transport == localipc.TransportUnixSocket {
+		info.SocketPath = info.Endpoint
+	}
+}
+
+func kernelEndpoint(info *sharedtypes.KernelInfo) string {
+	if info == nil {
+		return ""
+	}
+	if info.Endpoint != "" {
+		return info.Endpoint
+	}
+	return info.SocketPath
 }
 
 func createRepo(t *testing.T, k *testKernel, name string) sharedtypes.Repo {
