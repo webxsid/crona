@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"crona/kernel/internal/core"
-	"crona/kernel/internal/store"
 
 	"github.com/google/uuid"
 
@@ -59,9 +58,9 @@ func CreateRepo(ctx context.Context, c *core.Context, input struct {
 }
 
 func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates struct {
-	Name        store.Patch[string]
-	Description store.Patch[string]
-	Color       store.Patch[string]
+	Name        sharedtypes.Patch[string]
+	Description sharedtypes.Patch[string]
+	Color       sharedtypes.Patch[string]
 }) (*sharedtypes.Repo, error) {
 	if updates.Name.Set && updates.Name.Value != nil && strings.TrimSpace(*updates.Name.Value) == "" {
 		return nil, errors.New("repo name cannot be empty")

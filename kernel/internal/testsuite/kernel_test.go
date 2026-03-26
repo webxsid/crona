@@ -16,6 +16,7 @@ import (
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/sessionnotes"
 	"crona/kernel/internal/store"
+	"crona/kernel/internal/store/repositories"
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
@@ -26,9 +27,10 @@ func TestHabitCascadeDeleteAndRestoreByStreamAndRepo(t *testing.T) {
 	now := time.Now().UTC().Format(time.RFC3339)
 	userID := "local"
 
-	repos := store.NewRepoRepository(db.DB())
-	streams := store.NewStreamRepository(db.DB())
-	habits := store.NewHabitRepository(db.DB())
+	registry := store.NewRegistry(db.DB())
+	repos := registry.Repos
+	streams := registry.Streams
+	habits := registry.Habits
 
 	repo := mustCreateRepo(t, ctx, repos, userID, now, 1, "Work")
 	stream := mustCreateStream(t, ctx, streams, userID, now, 1, repo.ID, "app")
@@ -122,14 +124,14 @@ func newTestCoreContext(t *testing.T, now func() string) (*core.Context, runtime
 	if err := store.InitSchema(context.Background(), db.DB()); err != nil {
 		t.Fatalf("init schema: %v", err)
 	}
-	coreCtx := core.NewContext(db, "local", "test-device", paths.ScratchDir, now, events.NewBus())
+	coreCtx := core.NewContext(db, store.NewRegistry(db.DB()), "local", "test-device", paths.ScratchDir, now, events.NewBus())
 	if err := coreCtx.InitDefaults(context.Background()); err != nil {
 		t.Fatalf("init defaults: %v", err)
 	}
 	return coreCtx, paths
 }
 
-func mustCreateRepo(t *testing.T, ctx context.Context, repos *store.RepoRepository, userID, now string, id int64, name string) sharedtypes.Repo {
+func mustCreateRepo(t *testing.T, ctx context.Context, repos *repositories.RepoRepository, userID, now string, id int64, name string) sharedtypes.Repo {
 	t.Helper()
 	repo, err := repos.Create(ctx, sharedtypes.Repo{ID: id, Name: name}, userID, now)
 	if err != nil {
@@ -138,7 +140,7 @@ func mustCreateRepo(t *testing.T, ctx context.Context, repos *store.RepoReposito
 	return repo
 }
 
-func mustCreateStream(t *testing.T, ctx context.Context, streams *store.StreamRepository, userID, now string, id, repoID int64, name string) sharedtypes.Stream {
+func mustCreateStream(t *testing.T, ctx context.Context, streams *repositories.StreamRepository, userID, now string, id, repoID int64, name string) sharedtypes.Stream {
 	t.Helper()
 	stream, err := streams.Create(ctx, sharedtypes.Stream{ID: id, RepoID: repoID, Name: name, Visibility: sharedtypes.StreamVisibilityPersonal}, userID, now)
 	if err != nil {
@@ -147,7 +149,7 @@ func mustCreateStream(t *testing.T, ctx context.Context, streams *store.StreamRe
 	return stream
 }
 
-func mustCreateHabit(t *testing.T, ctx context.Context, habits *store.HabitRepository, userID, now string, id, streamID int64, name string) sharedtypes.Habit {
+func mustCreateHabit(t *testing.T, ctx context.Context, habits *repositories.HabitRepository, userID, now string, id, streamID int64, name string) sharedtypes.Habit {
 	t.Helper()
 	habit, err := habits.Create(ctx, sharedtypes.Habit{ID: id, StreamID: streamID, Name: name, ScheduleType: sharedtypes.HabitScheduleDaily, Active: true}, userID, now)
 	if err != nil {

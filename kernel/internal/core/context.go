@@ -6,24 +6,25 @@ import (
 	"crona/kernel/internal/events"
 	"crona/kernel/internal/health"
 	"crona/kernel/internal/store"
+	"crona/kernel/internal/store/repositories"
 )
 
 type Context struct {
 	Store            *store.Store
-	Repos            *store.RepoRepository
-	Streams          *store.StreamRepository
-	Issues           *store.IssueRepository
-	Habits           *store.HabitRepository
-	HabitCompletions *store.HabitCompletionRepository
-	Sessions         *store.SessionRepository
-	Stash            *store.StashRepository
-	Ops              *store.OpRepository
+	Repos            *repositories.RepoRepository
+	Streams          *repositories.StreamRepository
+	Issues           *repositories.IssueRepository
+	Habits           *repositories.HabitRepository
+	HabitCompletions *repositories.HabitCompletionRepository
+	Sessions         *repositories.SessionRepository
+	Stash            *repositories.StashRepository
+	Ops              *repositories.OpRepository
 	Health           *health.Service
-	CoreSettings     *store.CoreSettingsRepository
-	SessionSegments  *store.SessionSegmentRepository
-	ActiveContext    *store.ActiveContextRepository
-	ScratchPads      *store.ScratchPadRepository
-	DailyCheckIns    *store.DailyCheckInRepository
+	CoreSettings     *repositories.CoreSettingsRepository
+	SessionSegments  *repositories.SessionSegmentRepository
+	ActiveContext    *repositories.ActiveContextRepository
+	ScratchPads      *repositories.ScratchPadRepository
+	DailyCheckIns    *repositories.DailyCheckInRepository
 
 	UserID     string
 	DeviceID   string
@@ -32,23 +33,23 @@ type Context struct {
 	Events     *events.Bus
 }
 
-func NewContext(db *store.Store, userID string, deviceID string, scratchDir string, now func() string, bus *events.Bus) *Context {
+func NewContext(db *store.Store, registry *store.Registry, userID string, deviceID string, scratchDir string, now func() string, bus *events.Bus) *Context {
 	return &Context{
 		Store:            db,
-		Repos:            store.NewRepoRepository(db.DB()),
-		Streams:          store.NewStreamRepository(db.DB()),
-		Issues:           store.NewIssueRepository(db.DB()),
-		Habits:           store.NewHabitRepository(db.DB()),
-		HabitCompletions: store.NewHabitCompletionRepository(db.DB()),
-		Sessions:         store.NewSessionRepository(db.DB()),
-		Stash:            store.NewStashRepository(db.DB()),
-		Ops:              store.NewOpRepository(db.DB()),
+		Repos:            registry.Repos,
+		Streams:          registry.Streams,
+		Issues:           registry.Issues,
+		Habits:           registry.Habits,
+		HabitCompletions: registry.HabitCompletions,
+		Sessions:         registry.Sessions,
+		Stash:            registry.Stash,
+		Ops:              registry.Ops,
 		Health:           health.NewService(db.Ping),
-		CoreSettings:     store.NewCoreSettingsRepository(db.DB()),
-		SessionSegments:  store.NewSessionSegmentRepository(db.DB()),
-		ActiveContext:    store.NewActiveContextRepository(db.DB()),
-		ScratchPads:      store.NewScratchPadRepository(db.DB()),
-		DailyCheckIns:    store.NewDailyCheckInRepository(db.DB()),
+		CoreSettings:     registry.CoreSettings,
+		SessionSegments:  registry.SessionSegments,
+		ActiveContext:    registry.ActiveContext,
+		ScratchPads:      registry.ScratchPads,
+		DailyCheckIns:    registry.DailyCheckIns,
 		UserID:           userID,
 		DeviceID:         deviceID,
 		ScratchDir:       scratchDir,

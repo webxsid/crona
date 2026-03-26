@@ -53,9 +53,11 @@ func Run(ctx context.Context) error {
 	bus := events.NewBus()
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	registry := store.NewRegistry(dbStore.DB())
 
 	commandCtx := core.NewContext(
 		dbStore,
+		registry,
 		"local",
 		hostnameOr("device-1"),
 		paths.ScratchDir,

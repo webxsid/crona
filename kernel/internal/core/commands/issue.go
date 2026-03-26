@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"crona/kernel/internal/core"
-	"crona/kernel/internal/store"
 
 	"github.com/google/uuid"
 
@@ -67,10 +66,10 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 }
 
 func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates struct {
-	Title           store.Patch[string]
-	Description     store.Patch[string]
-	EstimateMinutes store.Patch[int]
-	Notes           store.Patch[string]
+	Title           sharedtypes.Patch[string]
+	Description     sharedtypes.Patch[string]
+	EstimateMinutes sharedtypes.Patch[int]
+	Notes           sharedtypes.Patch[string]
 }) (*sharedtypes.Issue, error) {
 	if updates.Title.Set && updates.Title.Value != nil && strings.TrimSpace(*updates.Title.Value) == "" {
 		return nil, errors.New("issue title cannot be empty")
@@ -87,14 +86,14 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	}
 	now := c.Now()
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
-		Title           store.Patch[string]
-		Description     store.Patch[string]
-		Status          store.Patch[sharedtypes.IssueStatus]
-		EstimateMinutes store.Patch[int]
-		Notes           store.Patch[string]
-		TodoForDate     store.Patch[string]
-		CompletedAt     store.Patch[string]
-		AbandonedAt     store.Patch[string]
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		TodoForDate     sharedtypes.Patch[string]
+		CompletedAt     sharedtypes.Patch[string]
+		AbandonedAt     sharedtypes.Patch[string]
 	}{
 		Title:           updates.Title,
 		Description:     updates.Description,
@@ -171,19 +170,19 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 	}
 
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
-		Title           store.Patch[string]
-		Description     store.Patch[string]
-		Status          store.Patch[sharedtypes.IssueStatus]
-		EstimateMinutes store.Patch[int]
-		Notes           store.Patch[string]
-		TodoForDate     store.Patch[string]
-		CompletedAt     store.Patch[string]
-		AbandonedAt     store.Patch[string]
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		TodoForDate     sharedtypes.Patch[string]
+		CompletedAt     sharedtypes.Patch[string]
+		AbandonedAt     sharedtypes.Patch[string]
 	}{
-		Status:      store.Patch[sharedtypes.IssueStatus]{Set: true, Value: &nextStatus},
-		Notes:       store.Patch[string]{Set: notes != issue.Notes, Value: notes},
-		CompletedAt: store.Patch[string]{Set: true, Value: completedAt},
-		AbandonedAt: store.Patch[string]{Set: true, Value: abandonedAt},
+		Status:      sharedtypes.Patch[sharedtypes.IssueStatus]{Set: true, Value: &nextStatus},
+		Notes:       sharedtypes.Patch[string]{Set: notes != issue.Notes, Value: notes},
+		CompletedAt: sharedtypes.Patch[string]{Set: true, Value: completedAt},
+		AbandonedAt: sharedtypes.Patch[string]{Set: true, Value: abandonedAt},
 	})
 	if err != nil {
 		return nil, err
@@ -294,17 +293,17 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 	now := c.Now()
 	nextStatus := sharedtypes.AutoStatusOnTodoAssigned(issue.Status)
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
-		Title           store.Patch[string]
-		Description     store.Patch[string]
-		Status          store.Patch[sharedtypes.IssueStatus]
-		EstimateMinutes store.Patch[int]
-		Notes           store.Patch[string]
-		TodoForDate     store.Patch[string]
-		CompletedAt     store.Patch[string]
-		AbandonedAt     store.Patch[string]
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		TodoForDate     sharedtypes.Patch[string]
+		CompletedAt     sharedtypes.Patch[string]
+		AbandonedAt     sharedtypes.Patch[string]
 	}{
-		Status:      store.Patch[sharedtypes.IssueStatus]{Set: nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status), Value: &nextStatus},
-		TodoForDate: store.Patch[string]{Set: true, Value: &todoForDate},
+		Status:      sharedtypes.Patch[sharedtypes.IssueStatus]{Set: nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status), Value: &nextStatus},
+		TodoForDate: sharedtypes.Patch[string]{Set: true, Value: &todoForDate},
 	})
 	if err != nil {
 		return nil, err
@@ -338,16 +337,16 @@ func MarkIssueTodoForToday(ctx context.Context, c *core.Context, issueID int64) 
 func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) (*sharedtypes.Issue, error) {
 	now := c.Now()
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
-		Title           store.Patch[string]
-		Description     store.Patch[string]
-		Status          store.Patch[sharedtypes.IssueStatus]
-		EstimateMinutes store.Patch[int]
-		Notes           store.Patch[string]
-		TodoForDate     store.Patch[string]
-		CompletedAt     store.Patch[string]
-		AbandonedAt     store.Patch[string]
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		TodoForDate     sharedtypes.Patch[string]
+		CompletedAt     sharedtypes.Patch[string]
+		AbandonedAt     sharedtypes.Patch[string]
 	}{
-		TodoForDate: store.Patch[string]{Set: true, Value: nil},
+		TodoForDate: sharedtypes.Patch[string]{Set: true, Value: nil},
 	})
 	if err != nil {
 		return nil, err

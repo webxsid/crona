@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"crona/kernel/internal/core"
-	"crona/kernel/internal/store"
 
 	"github.com/google/uuid"
 
@@ -115,12 +114,12 @@ func CreateHabit(ctx context.Context, c *core.Context, input struct {
 }
 
 func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates struct {
-	Name          store.Patch[string]
-	Description   store.Patch[string]
+	Name          sharedtypes.Patch[string]
+	Description   sharedtypes.Patch[string]
 	ScheduleType  *string
 	Weekdays      []int
 	WeekdaysSet   bool
-	TargetMinutes store.Patch[int]
+	TargetMinutes sharedtypes.Patch[int]
 	Active        *bool
 },
 ) (*sharedtypes.Habit, error) {
@@ -164,17 +163,17 @@ func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates st
 	}
 	now := c.Now()
 	updated, err := c.Habits.Update(ctx, habitID, c.UserID, now, struct {
-		Name          store.Patch[string]
-		Description   store.Patch[string]
-		ScheduleType  store.Patch[string]
+		Name          sharedtypes.Patch[string]
+		Description   sharedtypes.Patch[string]
+		ScheduleType  sharedtypes.Patch[string]
 		Weekdays      []int
 		WeekdaysSet   bool
-		TargetMinutes store.Patch[int]
+		TargetMinutes sharedtypes.Patch[int]
 		Active        *bool
 	}{
 		Name:          updates.Name,
 		Description:   updates.Description,
-		ScheduleType:  store.Patch[string]{Set: updates.ScheduleType != nil, Value: updates.ScheduleType},
+		ScheduleType:  sharedtypes.Patch[string]{Set: updates.ScheduleType != nil, Value: updates.ScheduleType},
 		Weekdays:      updates.Weekdays,
 		WeekdaysSet:   updates.WeekdaysSet,
 		TargetMinutes: updates.TargetMinutes,

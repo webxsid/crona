@@ -13,7 +13,6 @@ import (
 	"crona/kernel/internal/export"
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/scratchfile"
-	"crona/kernel/internal/store"
 	"crona/kernel/internal/updatecheck"
 	"crona/shared/config"
 	shareddto "crona/shared/dto"
@@ -173,13 +172,13 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 				return nil, err
 			}
 			return corecommands.UpdateRepo(ctx, h.core, id, struct {
-				Name        store.Patch[string]
-				Description store.Patch[string]
-				Color       store.Patch[string]
+				Name        sharedtypes.Patch[string]
+				Description sharedtypes.Patch[string]
+				Color       sharedtypes.Patch[string]
 			}{
-				Name:        store.Patch[string]{Set: nameSet, Value: name},
-				Description: store.Patch[string]{Set: descriptionSet, Value: description},
-				Color:       store.Patch[string]{Set: colorSet, Value: color},
+				Name:        sharedtypes.Patch[string]{Set: nameSet, Value: name},
+				Description: sharedtypes.Patch[string]{Set: descriptionSet, Value: description},
+				Color:       sharedtypes.Patch[string]{Set: colorSet, Value: color},
 			})
 		})
 	case protocol.MethodRepoDelete:
@@ -233,9 +232,9 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 			}
 			return corecommands.UpdateStream(ctx, h.core, id, struct {
 				Name        *string
-				Description store.Patch[string]
+				Description sharedtypes.Patch[string]
 				Visibility  *sharedtypes.StreamVisibility
-			}{Name: name, Description: store.Patch[string]{Set: descriptionSet, Value: description}, Visibility: visibility})
+			}{Name: name, Description: sharedtypes.Patch[string]{Set: descriptionSet, Value: description}, Visibility: visibility})
 		})
 	case protocol.MethodStreamDelete:
 		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
@@ -295,15 +294,15 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 				return nil, err
 			}
 			return corecommands.UpdateIssue(ctx, h.core, id, struct {
-				Title           store.Patch[string]
-				Description     store.Patch[string]
-				EstimateMinutes store.Patch[int]
-				Notes           store.Patch[string]
+				Title           sharedtypes.Patch[string]
+				Description     sharedtypes.Patch[string]
+				EstimateMinutes sharedtypes.Patch[int]
+				Notes           sharedtypes.Patch[string]
 			}{
-				Title:           store.Patch[string]{Set: titleSet, Value: title},
-				Description:     store.Patch[string]{Set: descriptionSet, Value: description},
-				EstimateMinutes: store.Patch[int]{Set: estimateSet, Value: estimate},
-				Notes:           store.Patch[string]{Set: notesSet, Value: notes},
+				Title:           sharedtypes.Patch[string]{Set: titleSet, Value: title},
+				Description:     sharedtypes.Patch[string]{Set: descriptionSet, Value: description},
+				EstimateMinutes: sharedtypes.Patch[int]{Set: estimateSet, Value: estimate},
+				Notes:           sharedtypes.Patch[string]{Set: notesSet, Value: notes},
 			})
 		})
 	case protocol.MethodIssueDelete:
@@ -384,20 +383,20 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 				active = input.Active
 			}
 			return corecommands.UpdateHabit(ctx, h.core, input.ID, struct {
-				Name          store.Patch[string]
-				Description   store.Patch[string]
+				Name          sharedtypes.Patch[string]
+				Description   sharedtypes.Patch[string]
 				ScheduleType  *string
 				Weekdays      []int
 				WeekdaysSet   bool
-				TargetMinutes store.Patch[int]
+				TargetMinutes sharedtypes.Patch[int]
 				Active        *bool
 			}{
-				Name:          store.Patch[string]{Set: input.Name != nil, Value: input.Name},
-				Description:   store.Patch[string]{Set: true, Value: input.Description},
+				Name:          sharedtypes.Patch[string]{Set: input.Name != nil, Value: input.Name},
+				Description:   sharedtypes.Patch[string]{Set: true, Value: input.Description},
 				ScheduleType:  input.ScheduleType,
 				Weekdays:      input.Weekdays,
 				WeekdaysSet:   input.Weekdays != nil,
-				TargetMinutes: store.Patch[int]{Set: true, Value: input.TargetMinutes},
+				TargetMinutes: sharedtypes.Patch[int]{Set: true, Value: input.TargetMinutes},
 				Active:        active,
 			})
 		})

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"crona/kernel/internal/core"
-	"crona/kernel/internal/store"
 
 	"github.com/google/uuid"
 
@@ -61,7 +60,7 @@ func CreateStream(ctx context.Context, c *core.Context, input struct {
 
 func UpdateStream(ctx context.Context, c *core.Context, streamID int64, updates struct {
 	Name        *string
-	Description store.Patch[string]
+	Description sharedtypes.Patch[string]
 	Visibility  *sharedtypes.StreamVisibility
 }) (*sharedtypes.Stream, error) {
 	if updates.Name != nil && strings.TrimSpace(*updates.Name) == "" {
