@@ -100,28 +100,28 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Repo-scoped ICS bundle export (`issues.ics` + `sessions.ics`)
 
 ### Phase 4.1 — Windows Support V1
-- [ ] Windows named-pipe IPC for kernel RPC and event streaming
-- [ ] Windows-aware kernel runtime metadata (`transport` + `endpoint`)
-- [ ] Windows PowerShell support for `crona`, `crona-tui`, and `crona-kernel`
-- [ ] Windows-aware binary discovery and launch (`.exe` binaries)
-- [ ] Windows runtime path support
-- [ ] Windows coverage for kernel attach/info/status flows
-- [ ] Self-update explicitly unavailable on Windows with clear manual guidance
+- [x] Windows named-pipe IPC for kernel RPC and event streaming
+- [x] Windows-aware kernel runtime metadata (`transport` + `endpoint`)
+- [x] Windows PowerShell support for `crona`, `crona-tui`, and `crona-kernel`
+- [x] Windows-aware binary discovery and launch (`.exe` binaries)
+- [x] Windows runtime path support
+- [x] Windows coverage for kernel attach/info/status flows
+- [x] Self-update explicitly unavailable on Windows with clear manual guidance
 
 ### Phase 4.2 — Windows Support V2
-- [ ] Windows release artifacts and checksums
-- [ ] Native Windows installer flow
-- [ ] Windows in-app self-update from the `Updates` view
-- [ ] Windows relaunch flow for TUI + kernel after install
-- [ ] Windows install/update docs
+- [x] Windows release artifacts and checksums
+- [x] Native Windows installer flow
+- [x] Windows in-app self-update from the `Updates` view
+- [x] Windows relaunch flow for TUI + kernel after install
+- [x] Windows install/update docs
 
 **Phase 4 exit criteria**
 - [x] Structured timer boundaries can notify outside the TUI
 - [x] Calendar exports are generated as local `.ics` files
 - [x] ICS exports can be written to a dedicated configurable directory suitable for local automations
 - [x] Core focus/context/export flows are scriptable through `crona`
-- [ ] Phase 4.1 Windows runtime support works from PowerShell without requiring in-app install
-- [ ] Phase 4.2 native Windows packaging and self-update are available
+- [x] Phase 4.1 Windows runtime support works from PowerShell without requiring in-app install
+- [x] Phase 4.2 native Windows packaging and self-update are available
 
 ## Phase 5 — TUI Dashboard System
 Make dashboards a first-class terminal feature after the automation surface is stable.

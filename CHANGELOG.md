@@ -27,6 +27,7 @@ All notable changes to **Crona** are documented here.
 - Update prompts now live in the dedicated `Updates` view instead of a temporary header/banner surface, and that view remains accessible even when no update is available.
 - Shared update status now carries release-tag and installer/checksum asset metadata for self-update flows.
 - Unix runtime data now defaults to native app-data directories instead of `~/.crona`, with `CRONA_HOME` as the explicit override.
+- Binary install-location detection is now OS-aware, using `%LocalAppData%\Programs\Crona\bin` as the Windows standard install directory.
 
 ### Fixed
 - Calendar export now fails clearly when the TUI is talking to a stale kernel that still serves the old response shape.
@@ -37,6 +38,7 @@ All notable changes to **Crona** are documented here.
 - In-app install is now disabled when Crona is running from a non-standard location, with explicit manual-update guidance shown in the `Updates` view.
 - Self-update now validates release installer assets and checksums before replacing binaries and relaunching.
 - Unix installs and first kernel start now migrate legacy `~/.crona` runtime data into the new native app-data location automatically.
+- Windows releases now ship PowerShell installer assets, `.exe` binaries, and in-app self-update/relaunch support for standard installs.
 
 ## [0.2.1] - 2026-03-19
 

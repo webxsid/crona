@@ -31,6 +31,33 @@ curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/release
 sh /tmp/install-crona-tui.sh
 ```
 
+### Windows Install
+
+Use PowerShell to download and run the Windows installer:
+
+```powershell
+$version = "v0.2.1"
+Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
+```
+
+By default this installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to your user `PATH`, and keeps runtime data under `%LocalAppData%\Crona`.
+
+Once installed, you can verify the local kernel flow from PowerShell without opening the TUI:
+
+```powershell
+crona kernel attach --json
+crona kernel status --json
+crona kernel info --json
+```
+
+Set `CRONA_INSTALL_DIR` before running the installer if you want to override the binary install directory:
+
+```powershell
+$env:CRONA_INSTALL_DIR = "D:\tools\crona\bin"
+powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
+```
+
 ## Manual Build And Install
 
 If you want to build from source instead of using the release installer, clone the repo and build the workspace locally.
@@ -215,6 +242,12 @@ Runtime storage defaults to:
 
 On macOS and Linux, existing `~/.crona` and `~/.crona-dev` runtime directories are migrated automatically on install or first kernel start.
 Set `CRONA_HOME` to override the runtime directory and skip the default-path migration logic.
+
+Binary install defaults to:
+- macOS/Linux: `~/.local/bin`
+- Windows: `%LocalAppData%\Programs\Crona\bin`
+
+Set `CRONA_INSTALL_DIR` to override the binary install directory on any platform.
 
 ### Project Tasks
 

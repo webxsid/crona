@@ -63,9 +63,6 @@ func InstallUpdate(status *api.UpdateStatus, currentExecutablePath string, suppo
 			}
 			return UpdateInstallFinishedMsg{Err: fmt.Errorf("%s", reason)}
 		}
-		if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-			return UpdateInstallFinishedMsg{Err: fmt.Errorf("self-update is unsupported on %s", runtime.GOOS)}
-		}
 		if !status.InstallAvailable {
 			reason := strings.TrimSpace(status.InstallUnavailableReason)
 			if reason == "" {
@@ -96,21 +93,23 @@ func InstallUpdate(status *api.UpdateStatus, currentExecutablePath string, suppo
 			return UpdateInstallFinishedMsg{Output: output, Err: err}
 		}
 
-		scriptPath := filepath.Join(tmpDir, "install-crona-tui.sh")
-		scriptOutput, err := downloadAndVerifyAsset(installURL, scriptPath, "install-crona-tui.sh", checksumsBody)
+		installerAssetName := config.InstallerAssetName()
+		scriptPath := filepath.Join(tmpDir, installerAssetName)
+		scriptOutput, err := downloadAndVerifyAsset(installURL, scriptPath, installerAssetName, checksumsBody)
 		output += scriptOutput
 		if err != nil {
 			return UpdateInstallFinishedMsg{Output: output, Err: err}
 		}
-		if err := os.Chmod(scriptPath, 0o755); err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: err}
+		if runtime.GOOS != "windows" {
+			if err := os.Chmod(scriptPath, 0o755); err != nil {
+				return UpdateInstallFinishedMsg{Output: output, Err: err}
+			}
 		}
 
-		shellPath, err := exec.LookPath("sh")
+		installCmd, err := updateInstallCommand(scriptPath)
 		if err != nil {
 			return UpdateInstallFinishedMsg{Output: output, Err: err}
 		}
-		installCmd := exec.Command(shellPath, scriptPath)
 		installCmd.Env = append(os.Environ(), "CRONA_INSTALL_FORCE=1")
 		installOutput, err := installCmd.CombinedOutput()
 		output += string(installOutput)
@@ -244,7 +243,7 @@ func normalizedInstalledExecutable(path, binaryName string) string {
 	if filepath.Base(path) != binaryName {
 		return ""
 	}
-	if filepath.Dir(path) != installDir() {
+	if !sameInstallDir(filepath.Dir(path), installDir()) {
 		return ""
 	}
 	return path
@@ -255,7 +254,27 @@ func isExecutableFile(path string) bool {
 	if err != nil || info.IsDir() {
 		return false
 	}
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(filepath.Ext(path), ".exe")
+	}
 	return info.Mode().Perm()&0o111 != 0
+}
+
+func updateInstallCommand(installerPath string) (*exec.Cmd, error) {
+	switch runtime.GOOS {
+	case "windows":
+		powershellPath, err := exec.LookPath("powershell.exe")
+		if err != nil {
+			return nil, err
+		}
+		return exec.Command(powershellPath, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installerPath), nil
+	default:
+		shellPath, err := exec.LookPath("sh")
+		if err != nil {
+			return nil, err
+		}
+		return exec.Command(shellPath, installerPath), nil
+	}
 }
 
 func externalOpenCommand(target string) (*exec.Cmd, error) {
@@ -272,12 +291,18 @@ func externalOpenCommand(target string) (*exec.Cmd, error) {
 }
 
 func installDir() string {
-	if dir := strings.TrimSpace(os.Getenv("CRONA_INSTALL_DIR")); dir != "" {
-		return dir
-	}
-	home, err := os.UserHomeDir()
-	if err != nil || strings.TrimSpace(home) == "" {
+	dir, err := config.InstallDir()
+	if err != nil {
 		return "."
 	}
-	return filepath.Join(home, ".local", "bin")
+	return dir
+}
+
+func sameInstallDir(left, right string) bool {
+	left = filepath.Clean(strings.TrimSpace(left))
+	right = filepath.Clean(strings.TrimSpace(right))
+	if runtime.GOOS == "windows" {
+		return strings.EqualFold(left, right)
+	}
+	return left == right
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -26,6 +27,7 @@ type Service struct {
 	logger    *runtimepkg.Logger
 	cachePath string
 	envMode   string
+	goos      string
 	client    *http.Client
 
 	mu     sync.RWMutex
@@ -39,6 +41,7 @@ func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *
 		logger:    logger,
 		cachePath: paths.UpdateFile,
 		envMode:   envMode,
+		goos:      runtime.GOOS,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -238,6 +241,7 @@ type latestRelease struct {
 	Notes        string
 	URL          string
 	InstallURL   string
+	InstallAsset string
 	ChecksumsURL string
 	PublishedAt  string
 }
@@ -280,10 +284,11 @@ func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error)
 		return latestRelease{}, fmt.Errorf("latest release tag is empty")
 	}
 	installURL := ""
+	installAsset := config.InstallerAssetNameForGOOS(s.targetGOOS())
 	checksumsURL := ""
 	for _, asset := range payload.Assets {
 		switch strings.TrimSpace(asset.Name) {
-		case "install-crona-tui.sh":
+		case installAsset:
 			installURL = strings.TrimSpace(asset.BrowserDownloadURL)
 		case "checksums.txt":
 			checksumsURL = strings.TrimSpace(asset.BrowserDownloadURL)
@@ -296,20 +301,32 @@ func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error)
 		Notes:        strings.TrimSpace(payload.Body),
 		URL:          strings.TrimSpace(payload.HTMLURL),
 		InstallURL:   installURL,
+		InstallAsset: installAsset,
 		ChecksumsURL: checksumsURL,
 		PublishedAt:  strings.TrimSpace(payload.PublishedAt),
 	}, nil
 }
 
 func (r latestRelease) installUnavailableReason() string {
+	installerAsset := strings.TrimSpace(r.InstallAsset)
+	if installerAsset == "" {
+		installerAsset = config.InstallerAssetName()
+	}
 	switch {
 	case strings.TrimSpace(r.InstallURL) == "" && strings.TrimSpace(r.ChecksumsURL) == "":
 		return "Release is missing installer and checksums assets."
 	case strings.TrimSpace(r.InstallURL) == "":
-		return "Release is missing the install-crona-tui.sh asset."
+		return fmt.Sprintf("Release is missing the %s asset.", installerAsset)
 	case strings.TrimSpace(r.ChecksumsURL) == "":
 		return "Release is missing the checksums.txt asset."
 	default:
 		return ""
 	}
+}
+
+func (s *Service) targetGOOS() string {
+	if strings.TrimSpace(s.goos) != "" {
+		return s.goos
+	}
+	return runtime.GOOS
 }
