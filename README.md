@@ -31,19 +31,19 @@ Installed binaries:
 Install the current beta:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh | sh
 ```
 
 Force a non-interactive reinstall:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
 ```
 
 Run the installer from a downloaded file:
 
 ```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.3.0/install-crona-tui.sh
+curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh
 sh /tmp/install-crona-tui.sh
 ```
 
@@ -52,7 +52,7 @@ sh /tmp/install-crona-tui.sh
 Install from PowerShell:
 
 ```powershell
-$version = "v0.3.0"
+$version = "v0.3.1"
 Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```

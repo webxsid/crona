@@ -2,7 +2,7 @@ package version
 
 import "strings"
 
-var Version = "0.3.0"
+var Version = "0.3.1"
 
 const (
 	RepoOwner = "webxsid"

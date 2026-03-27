@@ -508,8 +508,19 @@ func (c *Client) DismissUpdate() (*UpdateStatus, error) {
 }
 
 func (c *Client) GetSettings() (*CoreSettings, error) {
+	var raw json.RawMessage
+	if err := c.call(protocol.MethodSettingsGetAll, nil, &raw); err != nil {
+		return nil, err
+	}
+	return decodeSettings(raw)
+}
+
+func decodeSettings(raw json.RawMessage) (*CoreSettings, error) {
 	var out map[string]CoreSettings
-	if err := c.call(protocol.MethodSettingsGetAll, nil, &out); err != nil {
+	if len(raw) == 0 {
+		return nil, nil
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
 		return nil, err
 	}
 	if settings, ok := out["local"]; ok {

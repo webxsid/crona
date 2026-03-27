@@ -106,7 +106,7 @@ func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string
 	}
 	result := map[string]any{}
 	for _, row := range rows {
-		result[row.UserID] = row
+		result[row.UserID] = coreSettingsFromModel(row)
 	}
 	return result, nil
 }

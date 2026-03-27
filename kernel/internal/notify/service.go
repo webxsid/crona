@@ -21,6 +21,11 @@ type Service struct {
 	queue  chan sharedtypes.TimerBoundaryPayload
 }
 
+var (
+	sendNotificationFn = sendNotification
+	playSoundFn        = playSound
+)
+
 func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *runtimepkg.Logger) *Service {
 	service := &Service{
 		core:   coreCtx,
@@ -63,7 +68,7 @@ func (s *Service) dispatch(ctx context.Context, payload sharedtypes.TimerBoundar
 		s.logger.Error("load notification settings", err)
 		return
 	}
-	if settings == nil || !settings.BoundaryNotifications {
+	if settings == nil || (!settings.BoundaryNotifications && !settings.BoundarySound) {
 		return
 	}
 	title := strings.TrimSpace(payload.Title)
@@ -74,11 +79,13 @@ func (s *Service) dispatch(ctx context.Context, payload sharedtypes.TimerBoundar
 	if message == "" {
 		message = "Structured timer boundary reached"
 	}
-	if err := sendNotification(title, message); err != nil {
-		s.logger.Error("send boundary notification", err)
+	if settings.BoundaryNotifications {
+		if err := sendNotificationFn(title, message); err != nil {
+			s.logger.Error("send boundary notification", err)
+		}
 	}
 	if settings.BoundarySound {
-		if err := playSound(); err != nil {
+		if err := playSoundFn(); err != nil {
 			s.logger.Error("play boundary sound", err)
 		}
 	}

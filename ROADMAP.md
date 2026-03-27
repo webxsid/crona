@@ -153,20 +153,27 @@ Expand the product surface after the kernel, TUI shell, and packaging work have 
 - [ ] Interactive CLI context picker
 - [ ] Proper per-command help docs and examples for all CRUD surfaces
 
-## Phase 6 — macOS Integration
+## Phase 6 — OS Integrations
+- [ ] Native OS bridge for notifications, audible timer alerts, and permission-aware delivery
+- [ ] Stronger bundled timer-alert sounds with OS-native playback instead of shell bell fallbacks
+- [ ] Test notification and test sound actions exposed from settings
 - [ ] Native macOS menu bar companion
+- [ ] Native Windows tray companion
+- [ ] Native Linux tray/status notifier companion where desktop support allows
 - [ ] Live timer and checked-out context status from local kernel IPC
 - [ ] Global hotkeys for core timer actions
 - [ ] Launch-at-login support
 - [ ] Local Calendar.app integration via EventKit
 - [ ] Calendar sync into a dedicated local Crona calendar
 - [ ] Optional Shortcuts/Automation entrypoints for Crona sync and timer actions
-- [ ] Native notification bridge and timer-boundary UX polish
+- [ ] Best-effort high-visibility timer notifications per OS without promising Focus/DND bypass
 
 **Phase 6 exit criteria**
+- [ ] Native notification and sound delivery is handled through OS-aware bridges instead of shell-only fallbacks
+- [ ] Users can verify notification and sound behavior from Crona settings without waiting for a real timer boundary
 - [ ] macOS users can monitor and control active context and timer state without opening the TUI
 - [ ] Local Calendar.app sync works without direct cloud API dependencies
-- [ ] The macOS companion remains a thin client over the Crona kernel
+- [ ] OS companions remain thin clients over the Crona kernel
 
 ## Phase 7 — Public Beta Release
 - [ ] Cross-platform packaging and install docs are ready for external users

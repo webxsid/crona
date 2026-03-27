@@ -4,6 +4,13 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-27
+
+### Fixed
+- Settings view notification toggles now round-trip through the public core-settings API shape correctly after patch and reload.
+- Boundary sound and boundary notifications now work independently, so sound-only timer alerts are respected.
+- Added regressions covering settings payload decoding and timer-boundary notification dispatch behavior.
+
 ## [0.3.0] - 2026-03-26
 
 ### Added
