@@ -350,6 +350,10 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 		return h.handleNoParams(req, func() (any, error) {
 			return corecommands.ComputeDailyIssueSummaryForToday(ctx, h.core)
 		})
+	case protocol.MethodDailyPlanGet:
+		return handle(req, func(input shareddto.DailyPlanQuery) (any, error) {
+			return corecommands.GetDailyPlan(ctx, h.core, input.Date)
+		})
 	case protocol.MethodHabitList:
 		return handle(req, func(input shareddto.ListHabitsQuery) (any, error) {
 			return corecommands.ListHabitsByStream(ctx, h.core, input.StreamID)

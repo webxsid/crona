@@ -37,6 +37,7 @@ const (
 	MethodIssueClearTodo    = "issue.clear_todo"
 	MethodIssueDailySummary = "issue.daily_summary"
 	MethodIssueTodaySummary = "issue.today_summary"
+	MethodDailyPlanGet      = "daily_plan.get"
 
 	MethodHabitList       = "habit.list"
 	MethodHabitListDue    = "habit.list_due"

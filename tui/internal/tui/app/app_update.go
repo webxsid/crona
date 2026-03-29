@@ -2,365 +2,99 @@ package app
 
 import (
 	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
-	"fmt"
+	commands "crona/tui/internal/tui/commands"
+	dialogruntime "crona/tui/internal/tui/dialog_runtime"
+	dialogstate "crona/tui/internal/tui/dialogstate"
+	dispatchpkg "crona/tui/internal/tui/dispatch"
+	filteringpkg "crona/tui/internal/tui/filtering"
+	helperpkg "crona/tui/internal/tui/helpers"
+	inputpkg "crona/tui/internal/tui/input"
+	overlaypkg "crona/tui/internal/tui/overlays"
+	selectionpkg "crona/tui/internal/tui/selection"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		if !m.opsLimitPinned {
-			nextLimit := m.defaultOpsLimit()
-			if nextLimit != m.opsLimit {
-				m.opsLimit = nextLimit
-				if m.client != nil {
-					if m.scratchpadOpen {
-						m.syncScratchpadViewport()
-					}
-					return m, loadOps(m.client, m.currentOpsLimit())
-				}
-			}
-		}
-		if m.scratchpadOpen {
-			m.syncScratchpadViewport()
-		}
-		return m, nil
-	case reposLoadedMsg:
-		m.repos = msg.Repos
-		m.clampFiltered(PaneRepos)
-		return m, nil
-	case streamsLoadedMsg:
-		m.streams = msg.Streams
-		m.clampFiltered(PaneStreams)
-		return m, nil
-	case issuesLoadedMsg:
-		m.issues = msg.Issues
-		m.clampFiltered(PaneIssues)
-		return m, nil
-	case habitsLoadedMsg:
-		m.habits = msg.Habits
-		m.clampFiltered(PaneHabits)
-		return m, nil
-	case allIssuesLoadedMsg:
-		m.allIssues = msg.Issues
-		if m.view == ViewDefault || m.view == ViewDaily {
-			m.clampFiltered(PaneIssues)
-		}
-		return m, nil
-	case dueHabitsLoadedMsg:
-		m.dueHabits = msg.Habits
-		if m.view == ViewDaily {
-			m.clampFiltered(PaneHabits)
-		}
-		return m, nil
-	case dailySummaryLoadedMsg:
-		m.dailySummary = msg.Summary
-		if m.dashboardDate == "" && msg.Summary != nil {
-			m.dashboardDate = msg.Summary.Date
-		}
-		if m.view == ViewDaily {
-			m.clampFiltered(PaneIssues)
-		}
-		return m, nil
-	case dailyCheckInLoadedMsg:
-		m.dailyCheckIn = msg.CheckIn
-		if m.dailyCheckIn != nil && m.wellbeingDate == "" {
-			m.wellbeingDate = m.dailyCheckIn.Date
-		}
-		return m, nil
-	case metricsRangeLoadedMsg:
-		m.metricsRange = msg.Days
-		return m, nil
-	case metricsRollupLoadedMsg:
-		m.metricsRollup = msg.Rollup
-		return m, nil
-	case streaksLoadedMsg:
-		m.streaks = msg.Streaks
-		return m, nil
-	case exportAssetsLoadedMsg:
-		m.exportAssets = msg.Assets
-		m.clampFiltered(PaneConfig)
-		return m, loadExportReports(m.client)
-	case exportReportsLoadedMsg:
-		m.exportReports = msg.Reports
-		m.clampFiltered(PaneExportReports)
-		return m, nil
-	case exportReportDeletedMsg:
-		return m, tea.Batch(m.setStatus("Deleted report "+msg.Name, false), loadExportReports(m.client))
-	case issueSessionsLoadedMsg:
-		var activeIssueID int64
-		if m.context != nil && m.context.IssueID != nil {
-			activeIssueID = *m.context.IssueID
-		} else if m.timer != nil && m.timer.IssueID != nil {
-			activeIssueID = *m.timer.IssueID
-		}
-		if msg.IssueID == activeIssueID {
-			m.issueSessions = msg.Sessions
-		}
-		return m, nil
-	case sessionHistoryLoadedMsg:
-		m.sessionHistory = msg.Sessions
-		m.clampFiltered(PaneSessions)
-		return m, nil
-	case sessionDetailLoadedMsg:
-		m.sessionDetail = msg.Detail
-		m.sessionDetailY = 0
-		if msg.Detail == nil {
-			m.sessionDetailOpen = false
-			return m, m.setStatus("Session detail is unavailable", true)
-		}
-		return m, nil
-	case sessionDetailFailedMsg:
-		m.sessionDetailOpen = false
-		m.sessionDetail = nil
-		m.sessionDetailY = 0
-		logger.Errorf("session detail failed: %v", msg.Err)
-		return m, m.setStatus("Error: "+msg.Err.Error(), true)
-	case scratchpadsLoadedMsg:
-		m.scratchpads = msg.Pads
-		m.clampFiltered(PaneScratchpads)
-		if m.scratchpadMeta != nil {
-			if idx := m.scratchpadTabIndexByID(m.scratchpadMeta.ID); idx >= 0 {
-				if filteredCur := m.filteredCursorForRawIndex(PaneScratchpads, idx); filteredCur >= 0 {
-					m.cursor[PaneScratchpads] = filteredCur
-				}
-				m.setActiveScratchpadByIndex(idx)
-			} else {
-				m.scratchpadOpen = false
-				m.scratchpadMeta = nil
-				m.scratchpadFilePath = ""
-				m.scratchpadRendered = ""
-			}
-		}
-		return m, nil
-	case stashesLoadedMsg:
-		m.stashes = msg.Stashes
-		if m.dialogStashCursor >= len(m.stashes) {
-			if len(m.stashes) == 0 {
-				m.dialogStashCursor = 0
-			} else {
-				m.dialogStashCursor = len(m.stashes) - 1
-			}
-		}
-		return m, nil
-	case opsLoadedMsg:
-		m.ops = msg.Ops
-		m.clampFiltered(PaneOps)
-		return m, nil
-	case contextLoadedMsg:
-		m.context = msg.Ctx
-		if m.view == ViewDefault || m.view == ViewDaily {
-			m.clampFiltered(PaneIssues)
-			m.clampFiltered(PaneHabits)
-		}
-		if m.context != nil && m.context.IssueID != nil {
-			return m, loadIssueSessions(m.client, *m.context.IssueID)
-		}
-		m.issueSessions = nil
-		return m, nil
-	case timerLoadedMsg:
-		m.timer = msg.Timer
-		m.elapsed = 0
-		m.timerTickSeq++
-		if m.timer != nil && m.timer.State != "idle" {
-			if m.view != ViewScratch && m.view != ViewSessionHistory {
-				m.view = ViewSessionActive
-			}
-			m.pane = viewDefaultPane[m.view]
-		} else if m.view == ViewSessionActive {
-			m.view = ViewDaily
-			m.pane = viewDefaultPane[m.view]
-		}
-		historyCmd := loadSessionHistoryForModel(m, 200)
-		if m.timer != nil && m.timer.IssueID != nil {
-			if m.context == nil || m.context.IssueID == nil || *m.context.IssueID != *m.timer.IssueID {
-				return m, tea.Batch(loadIssueSessions(m.client, *m.timer.IssueID), historyCmd, tickAfter(m.timerTickSeq))
-			}
-		}
-		if m.timer != nil && m.timer.State != "idle" {
-			return m, tea.Batch(historyCmd, tickAfter(m.timerTickSeq))
-		}
-		return m, historyCmd
-	case healthLoadedMsg:
-		m.health = msg.Health
-		return m, nil
-	case updateStatusLoadedMsg:
-		m.updateChecking = false
-		m.updateStatus = msg.Status
-		return m, nil
-	case updateDismissedMsg:
-		m.updateStatus = msg.Status
-		m.updateChecking = false
-		if strings.TrimSpace(msg.Status.DismissedVersion) == "" {
-			return m, m.setStatus("No update prompt dismissed", false)
-		}
-		return m, m.setStatus("Update prompt dismissed for v"+msg.Status.DismissedVersion, false)
-	case updateInstallFinishedMsg:
-		m.updateInstalling = false
-		m.updateInstallOutput = strings.TrimSpace(msg.Output)
-		if msg.Err != nil {
-			m.updateInstallError = msg.Err.Error()
-			return m, nil
-		}
-		close(m.eventStop)
-		return m, tea.Quit
-	case settingsLoadedMsg:
-		m.settings = msg.Settings
-		m.clampFiltered(PaneSettings)
-		return m, nil
-	case kernelInfoLoadedMsg:
-		m.kernelInfo = msg.Info
-		return m, nil
-	case healthTickMsg:
-		return m, tea.Batch(loadHealth(m.client), healthTickAfter())
-	case clearStatusMsg:
-		if msg.Seq != m.statusSeq {
-			return m, nil
-		}
-		m.statusMsg = ""
-		m.statusErr = false
-		return m, nil
-	case kernelShutdownMsg:
-		close(m.eventStop)
-		return m, tea.Quit
-	case devSeededMsg:
-		cmd := m.setStatus("Dev seed loaded", false)
-		m.view = ViewDaily
-		m.pane = viewDefaultPane[m.view]
-		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDueHabits(m.client, m.currentDashboardDate()), loadDailySummary(m.client, m.dashboardDate), loadWellbeing(m.client, m.currentWellbeingDate()), loadSessionHistoryForModel(m, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadUpdateStatus(m.client), loadSettings(m.client))
-	case devClearedMsg:
-		cmd := m.setStatus("Dev data cleared", false)
-		m.view = ViewDaily
-		m.pane = viewDefaultPane[m.view]
-		return m, tea.Batch(cmd, loadKernelInfo(m.client), loadRepos(m.client), loadAllIssues(m.client), loadDueHabits(m.client, m.currentDashboardDate()), loadDailySummary(m.client, m.dashboardDate), loadWellbeing(m.client, m.currentWellbeingDate()), loadSessionHistoryForModel(m, 200), loadScratchpads(m.client), loadStashes(m.client), loadOps(m.client, m.currentOpsLimit()), loadContext(m.client), loadTimer(m.client), loadUpdateStatus(m.client), loadSettings(m.client))
-	case sessionAmendedMsg:
-		cmd := m.setStatus("Session amended", false)
-		return m, tea.Batch(cmd, loadSessionHistoryForModel(m, 200), loadSessionDetail(m.client, msg.ID))
-	case focusSessionChangedMsg:
-		cmds := []tea.Cmd{}
-		if msg.ReloadContext {
-			cmds = append(cmds, loadContext(m.client))
-		}
-		if msg.ReloadTimer {
-			cmds = append(cmds, loadTimer(m.client))
-		}
-		if len(cmds) == 0 {
-			return m, nil
-		}
-		return m, tea.Batch(cmds...)
-	case timerTickMsg:
-		if msg.Seq != m.timerTickSeq {
-			return m, nil
-		}
-		if m.timer != nil && m.timer.State != "idle" {
-			m.elapsed++
-			return m, tickAfter(m.timerTickSeq)
-		}
-		return m, nil
-	case kernelEventMsg:
-		updated, cmd := handleKernelEvent(m, msg.Event)
-		return updated, tea.Batch(cmd, waitForEvent(eventChannel))
-	case errMsg:
-		if (m.dialog == "export_report" || m.dialog == "export_calendar_repo") && m.dialogProcessing {
-			m.dialog = ""
-			m.dialogChoiceItems = nil
-			m.dialogChoiceCursor = 0
-			m.dialogProcessing = false
-			m.dialogProcessingLabel = ""
-		}
-		logger.Errorf("update error: %v", msg.Err)
-		return m, m.setStatus("Error: "+msg.Err.Error(), true)
-	case openScratchpadMsg:
-		return m.enterScratchpadPane(msg), nil
-	case scratchpadReloadedMsg:
-		m.scratchpadFilePath = msg.FilePath
-		m.scratchpadRendered = msg.Rendered
-		m.scratchpadViewport.SetContent(msg.Rendered)
-		return m, nil
-	case editorDoneMsg:
-		cmds := []tea.Cmd{loadScratchpads(m.client), loadExportAssets(m.client)}
-		if m.scratchpadOpen && m.scratchpadMeta != nil {
-			cmds = append(cmds, cmdReloadScratchpad(m.client, m.scratchpadMeta, m.scratchpadRenderWidth()))
-		}
-		return m, tea.Batch(cmds...)
-	case dailyReportGeneratedMsg:
-		m.exportAssets = &msg.Result.Assets
-		if (m.dialog == "export_report" || m.dialog == "export_calendar_repo") && m.dialogProcessing {
-			m.dialog = ""
-			m.dialogChoiceItems = nil
-			m.dialogChoiceCursor = 0
-			m.dialogProcessing = false
-			m.dialogProcessingLabel = ""
-		}
-		if msg.Result.OutputMode == "file" && msg.Result.FilePath != nil {
-			label := msg.Result.Label
-			if strings.TrimSpace(label) == "" {
-				label = "Report"
-			}
-			return m, tea.Batch(m.setStatus(label+" written to "+*msg.Result.FilePath, false), loadExportReports(m.client))
-		}
-		return m, nil
-	case calendarExportGeneratedMsg:
-		m.exportAssets = &msg.Result.Assets
-		if (m.dialog == "export_report" || m.dialog == "export_calendar_repo") && m.dialogProcessing {
-			m.dialog = ""
-			m.dialogChoiceItems = nil
-			m.dialogChoiceCursor = 0
-			m.dialogProcessing = false
-			m.dialogProcessingLabel = ""
-		}
-		title := "Calendar Export"
-		name := strings.TrimSpace(msg.Result.RepoName)
-		if name == "" {
-			name = "Repo"
-		}
-		meta := fmt.Sprintf("Issues %s   Sessions %s", msg.Result.IssuesFilePath, msg.Result.SessionsFilePath)
-		body := strings.Join([]string{
-			"Issues ICS",
-			msg.Result.IssuesFilePath,
-			"",
-			"Sessions ICS",
-			msg.Result.SessionsFilePath,
-		}, "\n")
-		m = m.openViewEntityDialog(title, name, meta, body)
-		return m, m.setStatus("Calendar export written", false)
-	case clipboardCopiedMsg:
-		if (m.dialog == "export_report" || m.dialog == "export_calendar_repo") && m.dialogProcessing {
-			m.dialog = ""
-			m.dialogChoiceItems = nil
-			m.dialogChoiceCursor = 0
-			m.dialogProcessing = false
-			m.dialogProcessingLabel = ""
-		}
-		return m, m.setStatus(msg.Message, false)
-	case tea.KeyMsg:
+	if key, ok := msg.(tea.KeyMsg); ok {
 		if m.dialog != "" {
-			return m.updateDialog(msg)
+			return m.updateDialog(key)
 		}
 		if m.sessionDetailOpen {
-			return m.updateSessionDetailOverlay(msg)
+			return m.updateSessionDetailOverlay(key)
 		}
 		if m.helpOpen {
-			switch msg.String() {
-			case "?", "esc", "q":
-				m.helpOpen = false
-			}
-			return m, nil
+			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
+			return m.applyOverlayState(state), cmd
 		}
 		if m.pane == PaneScratchpads && m.scratchpadOpen {
-			return m.updateScratchpadPane(msg)
+			return m.updateScratchpadPane(key)
 		}
 		if m.filterEditing {
-			return m.updateFilter(msg)
+			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())
+			if cmd != nil || state.FilterEditing != m.filterEditing {
+				return m.applyOverlayState(state), cmd
+			}
+			next, cmd := filteringpkg.Update(m.filterState(), key, m.filterDeps())
+			return m.applyFilterState(next), cmd
 		}
-		return m.handleKey(msg)
-	default:
-		return m, nil
+		state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
+		return m.applyInputState(state), cmd
+	}
+	state, cmd, handled := dispatchpkg.HandleMessage(m.dispatchMessageState(), msg, m.dispatchMessageDeps())
+	if handled {
+		return m.applyDispatchMessageState(state), cmd
+	}
+	return m, nil
+}
+
+func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	state, action, status := dialogstate.Update(m.dialogSnapshot(), msg)
+	next := m.withDialogState(state)
+	if status != "" {
+		return next.withStatus(status, true), nil
+	}
+	if action == nil {
+		return next, nil
+	}
+	return next, next.dialogActionCmd(*action)
+}
+
+func (m Model) filterState() filteringpkg.State {
+	return filteringpkg.State{
+		Filters:       m.filters,
+		Cursor:        m.cursor,
+		FilterEditing: m.filterEditing,
+		FilterPane:    m.filterPane,
+		FilterInput:   m.filterInput,
+	}
+}
+
+func (m Model) applyFilterState(state filteringpkg.State) Model {
+	m.filters = state.Filters
+	m.cursor = state.Cursor
+	m.filterEditing = state.FilterEditing
+	m.filterPane = state.FilterPane
+	m.filterInput = state.FilterInput
+	return m
+}
+
+func (m Model) filterDeps() filteringpkg.Deps {
+	return filteringpkg.Deps{
+		ItemCount: func(state filteringpkg.State, pane Pane) int {
+			next := m.applyFilterState(state)
+			return len(selectionpkg.FilteredIndices(next.selectionSnapshot(), pane))
+		},
+		Clamp: func(cursor map[Pane]int, pane Pane, max int) {
+			if max == 0 {
+				cursor[pane] = 0
+				return
+			}
+			if cursor[pane] >= max {
+				cursor[pane] = max - 1
+			}
+		},
 	}
 }
 
@@ -388,4 +122,433 @@ func viewsFirstUpdateSummary(status *api.UpdateStatus) string {
 		}
 	}
 	return ""
+}
+
+func (m Model) overlayState() overlaypkg.State {
+	cursor := map[string]int{"scratchpads": m.cursor[PaneScratchpads]}
+	return overlaypkg.State{
+		HelpOpen:           m.helpOpen,
+		FilterEditing:      m.filterEditing,
+		SessionDetailOpen:  m.sessionDetailOpen,
+		SessionDetailY:     m.sessionDetailY,
+		SessionDetail:      m.sessionDetail,
+		ScratchpadOpen:     m.scratchpadOpen,
+		ScratchpadMeta:     m.scratchpadMeta,
+		ScratchpadFilePath: m.scratchpadFilePath,
+		ScratchpadRendered: m.scratchpadRendered,
+		ScratchpadViewport: m.scratchpadViewport,
+		Scratchpads:        m.scratchpads,
+		Cursor:             cursor,
+		Timer:              m.timer,
+	}
+}
+
+func (m Model) applyOverlayState(state overlaypkg.State) Model {
+	m.helpOpen = state.HelpOpen
+	m.filterEditing = state.FilterEditing
+	m.sessionDetailOpen = state.SessionDetailOpen
+	m.sessionDetailY = state.SessionDetailY
+	m.sessionDetail = state.SessionDetail
+	m.scratchpadOpen = state.ScratchpadOpen
+	m.scratchpadMeta = state.ScratchpadMeta
+	m.scratchpadFilePath = state.ScratchpadFilePath
+	m.scratchpadRendered = state.ScratchpadRendered
+	m.scratchpadViewport = state.ScratchpadViewport
+	m.scratchpads = state.Scratchpads
+	if state.Cursor != nil {
+		m.cursor[PaneScratchpads] = state.Cursor["scratchpads"]
+	}
+	m.timer = state.Timer
+	return m
+}
+
+func (m Model) overlayDeps() overlaypkg.Deps {
+	return overlaypkg.Deps{
+		StopFilterEdit: func(state *overlaypkg.State) {
+			next := m.applyOverlayState(*state)
+			next = next.applyFilterState(filteringpkg.Stop(next.filterState()))
+			*state = next.overlayState()
+		},
+		SessionDetailMaxOffset: func(state overlaypkg.State) int {
+			next := m.applyOverlayState(state)
+			return helperpkg.SessionDetailMaxOffset(next.width, next.height, helperpkg.SessionDetailContentLines(next.sessionDetail))
+		},
+		OpenAmendSessionDialog: func(state *overlaypkg.State, sessionID string, commit string) {
+			next := m.applyOverlayState(*state)
+			next = next.openAmendSessionDialog(sessionID, commit)
+			*state = next.overlayState()
+		},
+		SessionCommit: helperpkg.SessionCommit,
+		OpenEditor: func(filePath string) tea.Cmd {
+			return dialogruntime.OpenEditor(filePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
+		},
+		SetStatus: func(state *overlaypkg.State, message string, isErr bool) tea.Cmd {
+			next := m.applyOverlayState(*state)
+			cmd := next.setStatus(message, isErr)
+			*state = next.overlayState()
+			return cmd
+		},
+		AbandonSelectedIssue: func(state *overlaypkg.State) tea.Cmd {
+			next := m.applyOverlayState(*state)
+			issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot())
+			if !ok {
+				*state = next.overlayState()
+				return nil
+			}
+			if issue.Status == "done" {
+				cmd := next.setStatus("Done issues cannot be abandoned", true)
+				*state = next.overlayState()
+				return cmd
+			}
+			if issue.Status == "abandoned" {
+				*state = next.overlayState()
+				return nil
+			}
+			if next.timer != nil && next.timer.State != "idle" {
+				next = next.withDialogState(dialogstate.OpenIssueSessionTransition(next.dialogSnapshot(), issue.ID, "abandoned"))
+				*state = next.overlayState()
+				return nil
+			}
+			next = next.withDialogState(dialogstate.OpenIssueStatusNote(next.dialogSnapshot(), "abandoned", "Abandon reason", true))
+			next.dialogIssueID = issue.ID
+			next.dialogStreamID = issue.StreamID
+			*state = next.overlayState()
+			return nil
+		},
+		FilteredIndexAtCursor: func(state overlaypkg.State, pane string) int {
+			next := m.applyOverlayState(state)
+			if pane == "scratchpads" {
+				return selectionpkg.FilteredIndexAtCursor(next.selectionSnapshot(), PaneScratchpads)
+			}
+			return -1
+		},
+		SetActiveScratchpadByIndex: func(state *overlaypkg.State, idx int) {
+			next := m.applyOverlayState(*state)
+			next.scratchpadMeta = helperpkg.ScratchpadMetaAt(next.scratchpads, idx)
+			*state = next.overlayState()
+		},
+		ListLen: func(state overlaypkg.State, pane string) int {
+			next := m.applyOverlayState(state)
+			if pane == "scratchpads" {
+				return (&next).listLen(PaneScratchpads)
+			}
+			return 0
+		},
+		OpenScratchpad: func(idx int) tea.Cmd {
+			return commands.OpenScratchpad(m.client, m.scratchpads, idx)
+		},
+	}
+}
+
+func (m Model) updateSessionDetailOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	state, cmd := overlaypkg.HandleSessionDetail(m.overlayState(), msg, m.overlayDeps())
+	return m.applyOverlayState(state), cmd
+}
+
+func (m Model) updateScratchpadPane(msg tea.KeyMsg) (Model, tea.Cmd) {
+	state, cmd := overlaypkg.HandleScratchpad(m.overlayState(), msg, m.overlayDeps())
+	m = m.applyOverlayState(state)
+	if cmd != nil {
+		return m, cmd
+	}
+	var nextCmd tea.Cmd
+	m.scratchpadViewport, nextCmd = m.scratchpadViewport.Update(msg)
+	return m, nextCmd
+}
+
+func (m Model) dispatchEventState() dispatchpkg.EventState {
+	return dispatchpkg.EventState{
+		View:          m.view,
+		Pane:          m.pane,
+		Cursor:        m.cursor,
+		Streams:       m.streams,
+		Issues:        m.issues,
+		Habits:        m.habits,
+		Context:       m.context,
+		Timer:         m.timer,
+		Elapsed:       m.elapsed,
+		TimerTickSeq:  m.timerTickSeq,
+		CurrentDash:   m.currentDashboardDate(),
+		CurrentWell:   m.currentWellbeingDate(),
+		CurrentOpsLim: m.currentOpsLimit(),
+	}
+}
+
+func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
+	m.view = state.View
+	m.pane = state.Pane
+	m.cursor = state.Cursor
+	m.streams = state.Streams
+	m.issues = state.Issues
+	m.habits = state.Habits
+	m.context = state.Context
+	m.timer = state.Timer
+	m.elapsed = state.Elapsed
+	m.timerTickSeq = state.TimerTickSeq
+	return m
+}
+
+func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
+	state, cmd := dispatchpkg.HandleEvent(m.dispatchEventState(), dispatchpkg.EventDeps{
+		LoadRepos:        func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadStreams:      func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
+		LoadIssues:       func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
+		LoadHabits:       func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
+		LoadAllIssues:    func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadWellbeing:    func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadScratchpads:  func() tea.Cmd { return commands.LoadScratchpads(m.client) },
+		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {
+			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(m.timer), 200)
+		},
+		LoadStashes:      func() tea.Cmd { return commands.LoadStashes(m.client) },
+		LoadContext:      func() tea.Cmd { return commands.LoadContext(m.client) },
+		LoadTimer:        func() tea.Cmd { return commands.LoadTimer(m.client) },
+		LoadUpdateStatus: func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
+		LoadOps:          func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
+		TickAfter:        commands.TickAfter,
+	}, event)
+	return m.applyDispatchEventState(state), cmd
+}
+
+func (m Model) dispatchMessageState() dispatchpkg.MessageState {
+	return dispatchpkg.MessageState{
+		Width:                 m.width,
+		Height:                m.height,
+		View:                  m.view,
+		Pane:                  m.pane,
+		Cursor:                m.cursor,
+		Repos:                 m.repos,
+		Streams:               m.streams,
+		Issues:                m.issues,
+		Habits:                m.habits,
+		AllIssues:             m.allIssues,
+		DueHabits:             m.dueHabits,
+		DailySummary:          m.dailySummary,
+		DailyPlan:             m.dailyPlan,
+		DashboardDate:         m.dashboardDate,
+		WellbeingDate:         m.wellbeingDate,
+		DailyCheckIn:          m.dailyCheckIn,
+		MetricsRange:          m.metricsRange,
+		MetricsRollup:         m.metricsRollup,
+		Streaks:               m.streaks,
+		ExportAssets:          m.exportAssets,
+		ExportReports:         m.exportReports,
+		IssueSessions:         m.issueSessions,
+		SessionHistory:        m.sessionHistory,
+		SessionDetail:         m.sessionDetail,
+		SessionDetailOpen:     m.sessionDetailOpen,
+		SessionDetailY:        m.sessionDetailY,
+		Scratchpads:           m.scratchpads,
+		Stashes:               m.stashes,
+		DialogStashCursor:     m.dialogStashCursor,
+		Ops:                   m.ops,
+		Context:               m.context,
+		Timer:                 m.timer,
+		Health:                m.health,
+		UpdateStatus:          m.updateStatus,
+		UpdateChecking:        m.updateChecking,
+		UpdateInstalling:      m.updateInstalling,
+		UpdateInstallOutput:   m.updateInstallOutput,
+		UpdateInstallError:    m.updateInstallError,
+		Settings:              m.settings,
+		KernelInfo:            m.kernelInfo,
+		Elapsed:               m.elapsed,
+		TimerTickSeq:          m.timerTickSeq,
+		ScratchpadOpen:        m.scratchpadOpen,
+		ScratchpadMeta:        m.scratchpadMeta,
+		ScratchpadFilePath:    m.scratchpadFilePath,
+		ScratchpadRendered:    m.scratchpadRendered,
+		StatusMsg:             m.statusMsg,
+		StatusSeq:             m.statusSeq,
+		StatusErr:             m.statusErr,
+		Dialog:                m.dialog,
+		DialogChoiceItems:     m.dialogChoiceItems,
+		DialogChoiceCursor:    m.dialogChoiceCursor,
+		DialogProcessing:      m.dialogProcessing,
+		DialogProcessingLabel: m.dialogProcessingLabel,
+		OpsLimit:              m.opsLimit,
+		OpsLimitPinned:        m.opsLimitPinned,
+	}
+}
+
+func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
+	m.width = state.Width
+	m.height = state.Height
+	m.view = state.View
+	m.pane = state.Pane
+	m.cursor = state.Cursor
+	m.repos = state.Repos
+	m.streams = state.Streams
+	m.issues = state.Issues
+	m.habits = state.Habits
+	m.allIssues = state.AllIssues
+	m.dueHabits = state.DueHabits
+	m.dailySummary = state.DailySummary
+	m.dailyPlan = state.DailyPlan
+	m.dashboardDate = state.DashboardDate
+	m.wellbeingDate = state.WellbeingDate
+	m.dailyCheckIn = state.DailyCheckIn
+	m.metricsRange = state.MetricsRange
+	m.metricsRollup = state.MetricsRollup
+	m.streaks = state.Streaks
+	m.exportAssets = state.ExportAssets
+	m.exportReports = state.ExportReports
+	m.issueSessions = state.IssueSessions
+	m.sessionHistory = state.SessionHistory
+	m.sessionDetail = state.SessionDetail
+	m.sessionDetailOpen = state.SessionDetailOpen
+	m.sessionDetailY = state.SessionDetailY
+	m.scratchpads = state.Scratchpads
+	m.stashes = state.Stashes
+	m.dialogStashCursor = state.DialogStashCursor
+	m.ops = state.Ops
+	m.context = state.Context
+	m.timer = state.Timer
+	m.health = state.Health
+	m.updateStatus = state.UpdateStatus
+	m.updateChecking = state.UpdateChecking
+	m.updateInstalling = state.UpdateInstalling
+	m.updateInstallOutput = state.UpdateInstallOutput
+	m.updateInstallError = state.UpdateInstallError
+	m.settings = state.Settings
+	m.kernelInfo = state.KernelInfo
+	m.elapsed = state.Elapsed
+	m.timerTickSeq = state.TimerTickSeq
+	m.scratchpadOpen = state.ScratchpadOpen
+	m.scratchpadMeta = state.ScratchpadMeta
+	m.scratchpadFilePath = state.ScratchpadFilePath
+	m.scratchpadRendered = state.ScratchpadRendered
+	m.statusMsg = state.StatusMsg
+	m.statusSeq = state.StatusSeq
+	m.statusErr = state.StatusErr
+	m.dialog = state.Dialog
+	m.dialogChoiceItems = state.DialogChoiceItems
+	m.dialogChoiceCursor = state.DialogChoiceCursor
+	m.dialogProcessing = state.DialogProcessing
+	m.dialogProcessingLabel = state.DialogProcessingLabel
+	m.opsLimit = state.OpsLimit
+	m.opsLimitPinned = state.OpsLimitPinned
+	return m
+}
+
+func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
+	return dispatchpkg.MessageDeps{
+		DefaultOpsLimit: func(state dispatchpkg.MessageState) int {
+			next := m.applyDispatchMessageState(state)
+			return next.defaultOpsLimit()
+		},
+		CurrentOpsLimit: func(state dispatchpkg.MessageState) int {
+			next := m.applyDispatchMessageState(state)
+			return next.currentOpsLimit()
+		},
+		ClampFiltered: func(state *dispatchpkg.MessageState, pane Pane) {
+			next := m.applyDispatchMessageState(*state)
+			filterState := next.filterState()
+			deps := next.filterDeps()
+			if deps.Clamp != nil && deps.ItemCount != nil {
+				deps.Clamp(filterState.Cursor, pane, deps.ItemCount(filterState, pane))
+			}
+			next = next.applyFilterState(filterState)
+			*state = next.dispatchMessageState()
+		},
+		SyncScratchpadViewport: func(state *dispatchpkg.MessageState) {
+			next := m.applyDispatchMessageState(*state)
+			next.scratchpadViewport = helperpkg.SyncScratchpadViewport(next.scratchpadViewport, next.mainContentWidth(), next.contentHeight(), next.scratchpadRendered)
+			*state = next.dispatchMessageState()
+		},
+		ScratchpadTabIndexByID: func(state *dispatchpkg.MessageState, id string) int {
+			next := m.applyDispatchMessageState(*state)
+			return helperpkg.ScratchpadTabIndexByID(next.scratchpads, id)
+		},
+		FilteredCursorForRawIndex: func(state *dispatchpkg.MessageState, pane Pane, rawIdx int) int {
+			next := m.applyDispatchMessageState(*state)
+			return selectionpkg.FilteredCursorForRawIndex(next.selectionSnapshot(), pane, rawIdx)
+		},
+		SetActiveScratchpadByIndex: func(state *dispatchpkg.MessageState, idx int) {
+			next := m.applyDispatchMessageState(*state)
+			next.scratchpadMeta = helperpkg.ScratchpadMetaAt(next.scratchpads, idx)
+			*state = next.dispatchMessageState()
+		},
+		SetStatus: func(state *dispatchpkg.MessageState, message string, isErr bool) tea.Cmd {
+			next := m.applyDispatchMessageState(*state)
+			cmd := next.setStatus(message, isErr)
+			*state = next.dispatchMessageState()
+			return cmd
+		},
+		OpenViewEntityDialog: func(state *dispatchpkg.MessageState, title, name, meta, body string) {
+			next := m.applyDispatchMessageState(*state)
+			next = next.openViewEntityDialog(title, name, meta, body)
+			*state = next.dispatchMessageState()
+		},
+		EnterScratchpadPane: func(state *dispatchpkg.MessageState, msg commands.OpenScratchpadMsg) {
+			next := m.applyDispatchMessageState(*state)
+			next.scratchpadOpen = true
+			next.scratchpadMeta = helperpkg.ScratchpadMetaAt([]api.ScratchPad{{
+				ID:           msg.Meta.ID,
+				Name:         msg.Meta.Name,
+				Path:         msg.Meta.Path,
+				Pinned:       msg.Meta.Pinned,
+				LastOpenedAt: msg.Meta.LastOpenedAt,
+			}}, 0)
+			next.scratchpadFilePath = msg.FilePath
+			rendered, err := helperpkg.RenderScratchpadMarkdown(msg.Content, helperpkg.ScratchpadRenderWidth(next.mainContentWidth(), next.contentHeight()))
+			if err != nil {
+				rendered = msg.Content
+			}
+			next.scratchpadRendered = rendered
+			next.scratchpadViewport = helperpkg.SyncScratchpadViewport(next.scratchpadViewport, next.mainContentWidth(), next.contentHeight(), next.scratchpadRendered)
+			next.scratchpadViewport.GotoTop()
+			*state = next.dispatchMessageState()
+		},
+		SetScratchpadContent: func(state *dispatchpkg.MessageState, rendered, filePath string) {
+			next := m.applyDispatchMessageState(*state)
+			next.scratchpadFilePath = filePath
+			next.scratchpadRendered = rendered
+			next.scratchpadViewport.SetContent(rendered)
+			*state = next.dispatchMessageState()
+		},
+		CurrentDashboardDate: func(state dispatchpkg.MessageState) string {
+			return m.applyDispatchMessageState(state).currentDashboardDate()
+		},
+		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
+			return m.applyDispatchMessageState(state).currentWellbeingDate()
+		},
+		LoadRepos:         func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadAllIssues:     func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadStreams:       func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
+		LoadIssues:        func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
+		LoadHabits:        func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
+		LoadDueHabits:     func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailySummary:  func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadWellbeing:     func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadDailyPlan:     func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
+		LoadExportAssets:  func() tea.Cmd { return commands.LoadExportAssets(m.client) },
+		LoadExportReports: func() tea.Cmd { return commands.LoadExportReports(m.client) },
+		LoadIssueSessions: func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
+		LoadSessionHistoryFor200: func(state dispatchpkg.MessageState) tea.Cmd {
+			next := m.applyDispatchMessageState(state)
+			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(next.timer), 200)
+		},
+		LoadSessionDetail: func(id string) tea.Cmd { return commands.LoadSessionDetail(m.client, id) },
+		LoadScratchpads:   func() tea.Cmd { return commands.LoadScratchpads(m.client) },
+		LoadStashes:       func() tea.Cmd { return commands.LoadStashes(m.client) },
+		LoadOps:           func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
+		LoadContext:       func() tea.Cmd { return commands.LoadContext(m.client) },
+		LoadTimer:         func() tea.Cmd { return commands.LoadTimer(m.client) },
+		LoadHealth:        func() tea.Cmd { return commands.LoadHealth(m.client) },
+		LoadUpdateStatus:  func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
+		LoadSettings:      func() tea.Cmd { return commands.LoadSettings(m.client) },
+		LoadKernelInfo:    func() tea.Cmd { return commands.LoadKernelInfo(m.client) },
+		HealthTickAfter:   commands.HealthTickAfter,
+		TickAfter:         commands.TickAfter,
+		WaitForEvent:      func() tea.Cmd { return commands.WaitForEvent(eventChannel) },
+		HandleKernelEvent: func(state dispatchpkg.MessageState, event api.KernelEvent) (dispatchpkg.MessageState, tea.Cmd) {
+			next := m.applyDispatchMessageState(state)
+			nextModel, cmd := next.handleKernelEvent(event)
+			return nextModel.dispatchMessageState(), cmd
+		},
+		CloseEventStop: func() { close(m.eventStop) },
+	}
 }

@@ -160,7 +160,35 @@ const (
 	CoreSettingsKeyStreamSort            CoreSettingsKey = "streamSort"
 	CoreSettingsKeyIssueSort             CoreSettingsKey = "issueSort"
 	CoreSettingsKeyHabitSort             CoreSettingsKey = "habitSort"
+	CoreSettingsKeyAwayModeEnabled       CoreSettingsKey = "awayModeEnabled"
+	CoreSettingsKeyFrozenStreakKinds     CoreSettingsKey = "frozenStreakKinds"
+	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
+	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
+	CoreSettingsKeyRestRecurringDates    CoreSettingsKey = "restRecurringDates"
 )
+
+type StreakKind string
+
+const (
+	StreakKindFocusDays   StreakKind = "focus_days"
+	StreakKindCheckInDays StreakKind = "checkin_days"
+)
+
+func NormalizeStreakKind(value StreakKind) StreakKind {
+	switch value {
+	case StreakKindCheckInDays:
+		return value
+	default:
+		return StreakKindFocusDays
+	}
+}
+
+func AvailableStreakKinds() []StreakKind {
+	return []StreakKind{
+		StreakKindFocusDays,
+		StreakKindCheckInDays,
+	}
+}
 
 type SessionNoteSection string
 
@@ -288,6 +316,89 @@ type DailyIssueSummary struct {
 	WorkedSeconds         int     `json:"workedSeconds"`
 }
 
+type DailyPlanEntryStatus string
+
+const (
+	DailyPlanEntryStatusPlanned   DailyPlanEntryStatus = "planned"
+	DailyPlanEntryStatusCompleted DailyPlanEntryStatus = "completed"
+	DailyPlanEntryStatusFailed    DailyPlanEntryStatus = "failed"
+	DailyPlanEntryStatusAbandoned DailyPlanEntryStatus = "abandoned"
+	DailyPlanEntryStatusCanceled  DailyPlanEntryStatus = "canceled"
+)
+
+type DailyPlanFailureReason string
+
+const (
+	DailyPlanFailureReasonMoved     DailyPlanFailureReason = "moved"
+	DailyPlanFailureReasonCleared   DailyPlanFailureReason = "cleared"
+	DailyPlanFailureReasonAbandoned DailyPlanFailureReason = "abandoned"
+	DailyPlanFailureReasonMissed    DailyPlanFailureReason = "missed"
+)
+
+type DailyPlanEventType string
+
+const (
+	DailyPlanEventCommitted       DailyPlanEventType = "committed"
+	DailyPlanEventRescheduled     DailyPlanEventType = "rescheduled"
+	DailyPlanEventCleared         DailyPlanEventType = "cleared"
+	DailyPlanEventRestored        DailyPlanEventType = "restored"
+	DailyPlanEventCompleted       DailyPlanEventType = "completed"
+	DailyPlanEventAbandoned       DailyPlanEventType = "abandoned"
+	DailyPlanEventFailed          DailyPlanEventType = "failed"
+	DailyPlanEventFailureReverted DailyPlanEventType = "failure_reverted"
+)
+
+type DailyPlanEvent struct {
+	ID            string                  `json:"id"`
+	EntryID       string                  `json:"entryId"`
+	Type          DailyPlanEventType      `json:"type"`
+	FailureReason *DailyPlanFailureReason `json:"failureReason,omitempty"`
+	Timestamp     string                  `json:"timestamp"`
+}
+
+type DailyPlanAccountabilitySummary struct {
+	PlannedCount         int     `json:"plannedCount"`
+	CompletedCount       int     `json:"completedCount"`
+	FailedCount          int     `json:"failedCount"`
+	AbandonedCount       int     `json:"abandonedCount"`
+	PendingRollbackCount int     `json:"pendingRollbackCount"`
+	AccountabilityScore  float64 `json:"accountabilityScore"`
+	BacklogPressure      float64 `json:"backlogPressure"`
+	DelayedIssueCount    int     `json:"delayedIssueCount"`
+	HighRiskIssueCount   int     `json:"highRiskIssueCount"`
+	AvgDelayDays         float64 `json:"avgDelayDays"`
+	MaxDelayDays         int     `json:"maxDelayDays"`
+}
+
+type DailyPlanEntry struct {
+	ID                   string                  `json:"id"`
+	Date                 string                  `json:"date"`
+	IssueID              int64                   `json:"issueId"`
+	Source               string                  `json:"source"`
+	Status               DailyPlanEntryStatus    `json:"status"`
+	FailureReason        *DailyPlanFailureReason `json:"failureReason,omitempty"`
+	PendingFailureReason *DailyPlanFailureReason `json:"pendingFailureReason,omitempty"`
+	CommittedAt          string                  `json:"committedAt"`
+	PendingFailureAt     *string                 `json:"pendingFailureAt,omitempty"`
+	ResolvedAt           *string                 `json:"resolvedAt,omitempty"`
+	BaselineDate         string                  `json:"baselineDate,omitempty"`
+	CurrentPlannedDate   string                  `json:"currentPlannedDate,omitempty"`
+	PostponeCount        int                     `json:"postponeCount"`
+	CurrentDelayedDays   int                     `json:"currentDelayedDays"`
+	MaxDelayedDays       int                     `json:"maxDelayedDays"`
+	FailScore            float64                 `json:"failScore"`
+	Events               []DailyPlanEvent        `json:"events,omitempty"`
+}
+
+type DailyPlan struct {
+	ID        string                         `json:"id"`
+	Date      string                         `json:"date"`
+	CreatedAt string                         `json:"createdAt"`
+	UpdatedAt string                         `json:"updatedAt"`
+	Summary   DailyPlanAccountabilitySummary `json:"summary"`
+	Entries   []DailyPlanEntry               `json:"entries,omitempty"`
+}
+
 type BurnoutLevel string
 
 const (
@@ -413,27 +524,32 @@ type ActiveContext struct {
 }
 
 type CoreSettings struct {
-	UserID                string     `json:"userId"`
-	DeviceID              string     `json:"deviceId"`
-	TimerMode             TimerMode  `json:"timerMode"`
-	BreaksEnabled         bool       `json:"breaksEnabled"`
-	WorkDurationMinutes   int        `json:"workDurationMinutes"`
-	ShortBreakMinutes     int        `json:"shortBreakMinutes"`
-	LongBreakMinutes      int        `json:"longBreakMinutes"`
-	LongBreakEnabled      bool       `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int        `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool       `json:"autoStartBreaks"`
-	AutoStartWork         bool       `json:"autoStartWork"`
-	BoundaryNotifications bool       `json:"boundaryNotificationsEnabled"`
-	BoundarySound         bool       `json:"boundarySoundEnabled"`
-	UpdateChecksEnabled   bool       `json:"updateChecksEnabled"`
-	UpdatePromptEnabled   bool       `json:"updatePromptEnabled"`
-	RepoSort              RepoSort   `json:"repoSort"`
-	StreamSort            StreamSort `json:"streamSort"`
-	IssueSort             IssueSort  `json:"issueSort"`
-	HabitSort             HabitSort  `json:"habitSort"`
-	CreatedAt             string     `json:"createdAt"`
-	UpdatedAt             string     `json:"updatedAt"`
+	UserID                string       `json:"userId"`
+	DeviceID              string       `json:"deviceId"`
+	TimerMode             TimerMode    `json:"timerMode"`
+	BreaksEnabled         bool         `json:"breaksEnabled"`
+	WorkDurationMinutes   int          `json:"workDurationMinutes"`
+	ShortBreakMinutes     int          `json:"shortBreakMinutes"`
+	LongBreakMinutes      int          `json:"longBreakMinutes"`
+	LongBreakEnabled      bool         `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int          `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool         `json:"autoStartBreaks"`
+	AutoStartWork         bool         `json:"autoStartWork"`
+	BoundaryNotifications bool         `json:"boundaryNotificationsEnabled"`
+	BoundarySound         bool         `json:"boundarySoundEnabled"`
+	UpdateChecksEnabled   bool         `json:"updateChecksEnabled"`
+	UpdatePromptEnabled   bool         `json:"updatePromptEnabled"`
+	RepoSort              RepoSort     `json:"repoSort"`
+	StreamSort            StreamSort   `json:"streamSort"`
+	IssueSort             IssueSort    `json:"issueSort"`
+	HabitSort             HabitSort    `json:"habitSort"`
+	AwayModeEnabled       bool         `json:"awayModeEnabled"`
+	FrozenStreakKinds     []StreakKind `json:"frozenStreakKinds,omitempty"`
+	RestWeekdays          []int        `json:"restWeekdays,omitempty"`
+	RestSpecificDates     []string     `json:"restSpecificDates,omitempty"`
+	RestRecurringDates    []string     `json:"restRecurringDates,omitempty"`
+	CreatedAt             string       `json:"createdAt"`
+	UpdatedAt             string       `json:"updatedAt"`
 }
 
 type TimerState struct {
@@ -590,7 +706,19 @@ type ExportTemplateAsset struct {
 
 type DailyReportIssue struct {
 	IssueWithMeta
-	WorkedSeconds int `json:"workedSeconds"`
+	WorkedSeconds            int                     `json:"workedSeconds"`
+	PlanStatus               DailyPlanEntryStatus    `json:"planStatus"`
+	PlanCommittedAt          string                  `json:"planCommittedAt"`
+	PlanResolvedAt           *string                 `json:"planResolvedAt,omitempty"`
+	PlanFailureReason        *DailyPlanFailureReason `json:"planFailureReason,omitempty"`
+	PlanPendingFailureAt     *string                 `json:"planPendingFailureAt,omitempty"`
+	PlanPendingFailureReason *DailyPlanFailureReason `json:"planPendingFailureReason,omitempty"`
+	PlanBaselineDate         string                  `json:"planBaselineDate,omitempty"`
+	PlanCurrentPlannedDate   string                  `json:"planCurrentPlannedDate,omitempty"`
+	PlanPostponeCount        int                     `json:"planPostponeCount"`
+	PlanCurrentDelayedDays   int                     `json:"planCurrentDelayedDays"`
+	PlanMaxDelayedDays       int                     `json:"planMaxDelayedDays"`
+	PlanFailScore            float64                 `json:"planFailScore"`
 }
 
 type DailyReportSession struct {
@@ -606,6 +734,7 @@ type DailyReportData struct {
 	Date          string               `json:"date"`
 	GeneratedAt   string               `json:"generatedAt"`
 	Summary       DailyIssueSummary    `json:"summary"`
+	Plan          *DailyPlan           `json:"plan,omitempty"`
 	Issues        []DailyReportIssue   `json:"issues"`
 	Sessions      []DailyReportSession `json:"sessions"`
 	Habits        []HabitDailyItem     `json:"habits"`

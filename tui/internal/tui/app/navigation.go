@@ -7,25 +7,25 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
-	helperpkg "crona/tui/internal/tui/app/helpers"
-	"crona/tui/internal/tui/app/views"
+	commands "crona/tui/internal/tui/commands"
+	dialogruntime "crona/tui/internal/tui/dialog_runtime"
+	helperpkg "crona/tui/internal/tui/helpers"
+	navigationutil "crona/tui/internal/tui/navigationutil"
+	selectionpkg "crona/tui/internal/tui/selection"
+	uistate "crona/tui/internal/tui/state"
+	"crona/tui/internal/tui/views"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func nextView(current View, dir int) View {
-	for i, v := range viewOrder {
-		if v == current {
-			return viewOrder[(i+dir+len(viewOrder))%len(viewOrder)]
-		}
-	}
-	return current
+	return navigationutil.NextView(uistate.ViewOrder(), current, dir)
 }
 
 func (m Model) availableViews() []View {
-	views := make([]View, 0, len(viewOrder))
-	for _, view := range viewOrder {
+	ordered := uistate.ViewOrder()
+	views := make([]View, 0, len(ordered))
+	for _, view := range ordered {
 		views = append(views, view)
 	}
 	if len(views) == 0 {
@@ -36,25 +36,33 @@ func (m Model) availableViews() []View {
 
 func (m Model) nextWorkspaceView(dir int) View {
 	views := m.availableViews()
-	for i, candidate := range views {
+	for _, candidate := range views {
 		if candidate == m.view {
-			return views[(i+dir+len(views))%len(views)]
+			return navigationutil.NextView(views, candidate, dir)
 		}
 	}
 	return ViewDaily
 }
 
-func nextPane(view View, current Pane, dir int) Pane {
-	panes := viewPanes[view]
-	if len(panes) == 0 {
-		return current
-	}
-	for i, p := range panes {
-		if p == current {
-			return panes[(i+dir+len(panes))%len(panes)]
+func (m Model) nextActiveSessionView(dir int) View {
+	views := []View{ViewSessionActive, ViewSessionHistory, ViewScratch}
+	current := ViewSessionActive
+	for _, candidate := range views {
+		if m.view == candidate {
+			current = candidate
+			break
 		}
 	}
-	return panes[0]
+	for i, candidate := range views {
+		if candidate == current {
+			return views[(i+dir+len(views))%len(views)]
+		}
+	}
+	return ViewSessionActive
+}
+
+func nextPane(view View, current Pane, dir int) Pane {
+	return uistate.NextPane(view, current, dir)
 }
 
 func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
@@ -76,7 +84,8 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 			m.cursor[PaneIssues] = len(openIndices)
 		}
 	}
-	m.clampFiltered(PaneIssues)
+	indices := selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)
+	m.clamp(PaneIssues, len(indices))
 }
 
 func (m *Model) cycleDefaultIssueSection(dir int) {
@@ -95,80 +104,17 @@ func (m *Model) cycleDefaultIssueSection(dir int) {
 	m.setDefaultIssueSection(DefaultIssueSectionCompleted)
 }
 
-func (m Model) selectedIssue() (int64, int64, string, *string, bool) {
-	if m.timer != nil && m.timer.State != "idle" && (m.view == ViewSessionActive || m.view == ViewScratch) {
-		if issue := m.activeIssueWithMeta(); issue != nil {
-			return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
-		}
-	}
-	if m.pane != PaneIssues {
-		return 0, 0, "", nil, false
-	}
-	switch m.view {
-	case ViewDefault:
-		scoped := m.defaultScopedIssues()
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(scoped) {
-			return 0, 0, "", nil, false
-		}
-		issue := scoped[rawIdx]
-		return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
-	case ViewDaily:
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		issues := m.dailyScopedIssues()
-		if rawIdx < 0 || rawIdx >= len(issues) {
-			return 0, 0, "", nil, false
-		}
-		issue := issues[rawIdx]
-		return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
-	case ViewMeta:
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(m.issues) {
-			return 0, 0, "", nil, false
-		}
-		issue := m.issues[rawIdx]
-		return issue.ID, issue.StreamID, string(issue.Status), issue.TodoForDate, true
-	default:
-		return 0, 0, "", nil, false
-	}
-}
-
 func (m Model) selectedMetaRepo() (int64, string, bool) {
-	if m.view != ViewMeta {
-		return 0, "", false
-	}
-	rawIdx := m.filteredIndexAtCursor(PaneRepos)
-	if rawIdx >= 0 && rawIdx < len(m.repos) {
-		return m.repos[rawIdx].ID, m.repos[rawIdx].Name, true
-	}
-	if m.context != nil && m.context.RepoID != nil {
-		return *m.context.RepoID, helperpkg.FirstNonEmpty(m.context.RepoName, nil), true
-	}
-	return 0, "", false
+	return selectionpkg.SelectedMetaRepo(m.selectionSnapshot())
 }
 
 func (m Model) selectedMetaStream() (int64, string, string, bool) {
-	if m.view != ViewMeta {
-		return 0, "", "", false
-	}
-	rawIdx := m.filteredIndexAtCursor(PaneStreams)
-	if rawIdx >= 0 && rawIdx < len(m.streams) {
-		stream := m.streams[rawIdx]
-		return stream.ID, stream.Name, m.repoNameByID(stream.RepoID), true
-	}
-	if m.context != nil && m.context.StreamID != nil {
-		repoName := "-"
-		if m.context.RepoName != nil {
-			repoName = *m.context.RepoName
-		}
-		return *m.context.StreamID, helperpkg.FirstNonEmpty(m.context.StreamName, nil), repoName, true
-	}
-	return 0, "", "", false
+	return selectionpkg.SelectedMetaStream(m.selectionSnapshot())
 }
 
 func (m Model) selectedIssueRecord() (*api.Issue, bool) {
 	if m.timer != nil && m.timer.State != "idle" && (m.view == ViewSessionActive || m.view == ViewScratch) {
-		if issue := m.activeIssueWithMeta(); issue != nil {
+		if issue := selectionpkg.ActiveIssue(m.selectionSnapshot()); issue != nil {
 			copy := issue.Issue
 			return &copy, true
 		}
@@ -176,74 +122,19 @@ func (m Model) selectedIssueRecord() (*api.Issue, bool) {
 	if m.pane != PaneIssues {
 		return nil, false
 	}
-	switch m.view {
-	case ViewDefault:
-		scoped := m.defaultScopedIssues()
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(scoped) {
-			return nil, false
-		}
-		copy := scoped[rawIdx].Issue
-		return &copy, true
-	case ViewDaily:
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		issues := m.dailyScopedIssues()
-		if rawIdx < 0 || rawIdx >= len(issues) {
-			return nil, false
-		}
-		copy := issues[rawIdx]
-		return &copy, true
-	case ViewMeta:
-		rawIdx := m.filteredIndexAtCursor(PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(m.issues) {
-			return nil, false
-		}
-		copy := m.issues[rawIdx]
-		return &copy, true
-	default:
-		return nil, false
-	}
+	return selectionpkg.SelectedIssue(m.selectionSnapshot())
 }
 
 func (m Model) selectedHabitRecord() (*api.Habit, bool) {
-	if m.pane != PaneHabits {
-		return nil, false
-	}
-	switch m.view {
-	case ViewMeta:
-		rawIdx := m.filteredIndexAtCursor(PaneHabits)
-		if rawIdx < 0 || rawIdx >= len(m.habits) {
-			return nil, false
-		}
-		copy := m.habits[rawIdx]
-		return &copy, true
-	default:
-		return nil, false
-	}
+	return selectionpkg.SelectedHabit(m.selectionSnapshot())
 }
 
 func (m Model) selectedDailyHabitRecord() (*api.HabitDailyItem, bool) {
-	if m.view != ViewDaily || m.pane != PaneHabits {
-		return nil, false
-	}
-	rawIdx := m.filteredIndexAtCursor(PaneHabits)
-	habits := m.filteredDueHabits()
-	if rawIdx < 0 || rawIdx >= len(habits) {
-		return nil, false
-	}
-	copy := habits[rawIdx]
-	return &copy, true
+	return selectionpkg.SelectedDailyHabit(m.selectionSnapshot())
 }
 
 func (m Model) selectedSessionHistoryEntry() (*api.SessionHistoryEntry, bool) {
-	if m.view != ViewSessionHistory || m.pane != PaneSessions {
-		return nil, false
-	}
-	rawIdx := m.filteredIndexAtCursor(PaneSessions)
-	if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
-		return nil, false
-	}
-	return &m.sessionHistory[rawIdx], true
+	return selectionpkg.SelectedSessionHistoryEntry(m.selectionSnapshot())
 }
 
 func (m Model) openSelectedEditDialog() (Model, bool) {
@@ -253,7 +144,7 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 			return m.openEditRepoDialog(repoID, repoName), true
 		}
 	case PaneStreams:
-		rawIdx := m.filteredIndexAtCursor(PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			return m.openEditStreamDialog(stream.ID, stream.RepoID, stream.Name, m.repoNameByID(stream.RepoID)), true
@@ -276,7 +167,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if m.view != ViewMeta {
 			return m, false
 		}
-		rawIdx := m.filteredIndexAtCursor(PaneRepos)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneRepos)
 		if rawIdx >= 0 && rawIdx < len(m.repos) {
 			repo := m.repos[rawIdx]
 			body := strings.Join([]string{
@@ -289,7 +180,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if m.view != ViewMeta {
 			return m, false
 		}
-		rawIdx := m.filteredIndexAtCursor(PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			meta := strings.Join([]string{
@@ -308,10 +199,8 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if !ok {
 			return m, false
 		}
-		meta := m.issueMetaByID(issue.ID)
-		repoName := "-"
-		streamName := "-"
-		if meta != nil {
+		repoName, streamName := "-", "-"
+		if meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issue.ID); meta != nil {
 			repoName = meta.RepoName
 			streamName = meta.StreamName
 		}
@@ -376,6 +265,45 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 	return m, false
 }
 
+func optionalText(text *string) string {
+	if text == nil || strings.TrimSpace(*text) == "" {
+		return "-"
+	}
+	return strings.TrimSpace(*text)
+}
+
+func formatHabitSchedule(scheduleType sharedtypes.HabitScheduleType, weekdays []int) string {
+	switch scheduleType {
+	case sharedtypes.HabitScheduleWeekdays:
+		return "weekdays"
+	case sharedtypes.HabitScheduleWeekly:
+		return formatHabitWeekdays(weekdays)
+	default:
+		return "daily"
+	}
+}
+
+func formatHabitWeekdays(weekdays []int) string {
+	if len(weekdays) == 0 {
+		return "-"
+	}
+	names := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+	out := make([]string, 0, len(weekdays))
+	for _, day := range weekdays {
+		if day >= 0 && day < len(names) {
+			out = append(out, names[day])
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+func formatHabitTarget(target *int) string {
+	if target == nil {
+		return "-"
+	}
+	return fmt.Sprintf("%dm", *target)
+}
+
 func (m Model) openSelectedDeleteDialog() (Model, bool) {
 	if m.timer != nil && m.timer.State != "idle" {
 		return m.withStatus("Stop the active session before deleting work items", true), true
@@ -386,7 +314,7 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", repoID), repoName), true
 		}
 	case PaneStreams:
-		rawIdx := m.filteredIndexAtCursor(PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", stream.ID), stream.Name)
@@ -406,7 +334,6 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 				next.dialogStreamID = habit.StreamID
 				return next, true
 			}
-			break
 		}
 		if habit, ok := m.selectedHabitRecord(); ok {
 			next := m.openConfirmDeleteEntity("habit", fmt.Sprintf("%d", habit.ID), habit.Name)
@@ -444,81 +371,6 @@ func (m Model) streamDescriptionByID(streamID int64) *string {
 	return nil
 }
 
-func optionalText(value *string) string {
-	if value == nil || strings.TrimSpace(*value) == "" {
-		return "-"
-	}
-	return strings.TrimSpace(*value)
-}
-
-func formatHabitSchedule(scheduleType sharedtypes.HabitScheduleType, weekdays []int) string {
-	switch scheduleType {
-	case sharedtypes.HabitScheduleWeekdays:
-		return "weekdays"
-	case sharedtypes.HabitScheduleWeekly:
-		return formatHabitWeekdays(weekdays)
-	default:
-		return "daily"
-	}
-}
-
-func formatHabitWeekdays(weekdays []int) string {
-	if len(weekdays) == 0 {
-		return "-"
-	}
-	names := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
-	out := make([]string, 0, len(weekdays))
-	for _, day := range weekdays {
-		if day >= 0 && day < len(names) {
-			out = append(out, names[day])
-		}
-	}
-	return strings.Join(out, ", ")
-}
-
-func formatHabitTarget(target *int) string {
-	if target == nil {
-		return "-"
-	}
-	return fmt.Sprintf("%dm", *target)
-}
-
-func (m Model) abandonSelectedIssue() (tea.Model, tea.Cmd) {
-	issueID, streamID, status, _, ok := m.selectedIssue()
-	if !ok {
-		return m, nil
-	}
-	if status == "done" {
-		return m, m.setStatus("Done issues cannot be abandoned", true)
-	}
-	if status == "abandoned" {
-		return m, nil
-	}
-	if m.timer != nil && m.timer.State != "idle" {
-		return m.openIssueSessionTransitionDialog(issueID, "abandoned"), nil
-	}
-	next := m.openIssueStatusNoteDialog("abandoned", "Abandon reason", true)
-	next.dialogIssueID = issueID
-	next.dialogStreamID = streamID
-	return next, nil
-}
-
-func (m Model) toggleSelectedIssueToday() (tea.Model, tea.Cmd) {
-	issueID, streamID, _, todoForDate, ok := m.selectedIssue()
-	if !ok {
-		return m, nil
-	}
-	return m, cmdToggleIssueToday(m.client, issueID, todoForDate != nil && *todoForDate != "", streamID, m.currentDashboardDate())
-}
-
-func (m Model) openSelectedIssueTodoDateDialog() Model {
-	issueID, _, _, todoForDate, ok := m.selectedIssue()
-	if !ok {
-		return m
-	}
-	return m.openDatePickerDialog("", issueID, 0, todoForDate)
-}
-
 func (m Model) currentDashboardDate() string {
 	if m.dashboardDate != "" {
 		return m.dashboardDate
@@ -533,33 +385,325 @@ func (m Model) currentWellbeingDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
-func shiftISODate(date string, days int) string {
-	parsed, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return time.Now().AddDate(0, 0, days).Format("2006-01-02")
-	}
-	return parsed.AddDate(0, 0, days).Format("2006-01-02")
-}
-
-func (m Model) checkout() (tea.Model, tea.Cmd) {
+func (m Model) checkout() (Model, tea.Cmd) {
 	switch m.pane {
 	case PaneRepos:
-		rawIdx := m.filteredIndexAtCursor(PaneRepos)
-		if rawIdx < 0 || rawIdx >= len(m.repos) {
-			return m, nil
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneRepos)
+		if rawIdx >= 0 && rawIdx < len(m.repos) {
+			repo := m.repos[rawIdx]
+			return m, commands.CheckoutRepo(m.client, repo.ID)
 		}
-		repo := m.repos[rawIdx]
-		logger.Infof("checkout repo: %s (%d)", repo.Name, repo.ID)
-		return m, cmdCheckoutRepo(m.client, repo.ID)
 	case PaneStreams:
-		rawIdx := m.filteredIndexAtCursor(PaneStreams)
-		if rawIdx < 0 || rawIdx >= len(m.streams) {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
+		if rawIdx >= 0 && rawIdx < len(m.streams) {
+			stream := m.streams[rawIdx]
+			return m, commands.CheckoutStream(m.client, stream.ID)
+		}
+	}
+	return m, nil
+}
+
+func (m Model) handleInputCreateAction() Model {
+	if m.view == ViewDefault && m.pane == PaneIssues {
+		return m.openCreateIssueDefaultDialog()
+	}
+	if m.view == ViewDaily {
+		switch m.pane {
+		case PaneIssues:
+			return m.openCreateIssueDefaultDialog()
+		case PaneHabits:
+			repoName := "-"
+			if m.context != nil && m.context.RepoName != nil && *m.context.RepoName != "" {
+				repoName = *m.context.RepoName
+			}
+			streamName := "-"
+			if m.context != nil && m.context.StreamName != nil && *m.context.StreamName != "" {
+				streamName = *m.context.StreamName
+			}
+			return m.openCreateHabitDialog(0, streamName, repoName)
+		}
+	}
+	if m.view == ViewMeta {
+		switch m.pane {
+		case PaneRepos:
+			return m.openCreateRepoDialog()
+		case PaneStreams:
+			repoID, repoName, ok := m.selectedMetaRepo()
+			if !ok {
+				m.setStatus("Select or checkout a repo first", true)
+				return m
+			}
+			return m.openCreateStreamDialog(repoID, repoName)
+		case PaneIssues:
+			streamID, streamName, repoName, ok := m.selectedMetaStream()
+			if !ok {
+				m.setStatus("Select or checkout a stream first", true)
+				return m
+			}
+			return m.openCreateIssueMetaDialog(streamID, streamName, repoName)
+		case PaneHabits:
+			streamID, streamName, repoName, ok := m.selectedMetaStream()
+			if ok {
+				return m.openCreateHabitDialog(streamID, streamName, repoName)
+			}
+			repoName = "-"
+			if m.context != nil && m.context.RepoName != nil && *m.context.RepoName != "" {
+				repoName = *m.context.RepoName
+			}
+			streamName = "-"
+			if m.context != nil && m.context.StreamName != nil && *m.context.StreamName != "" {
+				streamName = *m.context.StreamName
+			}
+			return m.openCreateHabitDialog(0, streamName, repoName)
+		}
+	}
+	if m.view == ViewWellbeing {
+		return m.openCreateCheckInDialog()
+	}
+	if m.pane == PaneScratchpads {
+		return m.openCreateScratchpad()
+	}
+	return m
+}
+
+func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
+	if m.view == ViewConfig && m.pane == PaneConfig {
+		if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok && item.Editable && strings.TrimSpace(item.Path) != "" {
+			return m, dialogruntime.OpenEditor(item.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		}
+		return m, nil, true
+	}
+	if m.view == ViewReports && m.pane == PaneExportReports {
+		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok && strings.TrimSpace(report.Path) != "" {
+			return m, dialogruntime.OpenEditor(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		}
+		return m, nil, true
+	}
+	if m.view == ViewDaily && m.pane == PaneHabits {
+		if habit, ok := m.selectedDailyHabitRecord(); ok {
+			m = m.openHabitCompletionDialog(habit.ID, m.currentDashboardDate(), habit.DurationMinutes, habit.Notes)
+			return m, nil, true
+		}
+		return m, nil, true
+	}
+	if m.view == ViewWellbeing {
+		if m.dailyCheckIn == nil {
+			m = m.openCreateCheckInDialog()
+		} else {
+			m = m.openEditCheckInDialog()
+		}
+		return m, nil, true
+	}
+	if m.view == ViewSessionHistory && m.pane == PaneSessions {
+		if entry, ok := m.selectedSessionHistoryEntry(); ok {
+			m.sessionDetailOpen = true
+			m.sessionDetailY = 0
+			return m, commands.LoadSessionDetail(m.client, entry.ID), true
+		}
+		return m, nil, true
+	}
+	if m.dialog == "" {
+		if next, ok := m.openSelectedEditDialog(); ok {
+			return next, nil, true
+		}
+	}
+	return m, nil, false
+}
+
+func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
+	if m.view != ViewDaily || m.pane != PaneHabits {
+		return nil, false
+	}
+	if habit, ok := m.selectedDailyHabitRecord(); ok {
+		if habit.Status == sharedtypes.HabitCompletionStatusFailed {
+			return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
+		}
+		return commands.SetHabitStatus(m.client, habit.ID, m.currentDashboardDate(), sharedtypes.HabitCompletionStatusFailed, habit.DurationMinutes, habit.Notes), true
+	}
+	return nil, true
+}
+
+func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
+	if m.view == ViewWellbeing {
+		if m.dailyCheckIn == nil {
+			return m, m.setStatus("No check-in to delete for this date", true), true
+		}
+		m = m.openConfirmDeleteEntity("checkin", m.currentWellbeingDate(), "this check-in")
+		return m, nil, true
+	}
+	if m.view == ViewReports && m.pane == PaneExportReports {
+		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok {
+			m = m.openConfirmDeleteEntity("report", report.Path, report.Name)
+			return m, nil, true
+		}
+		return m, nil, true
+	}
+	if m.pane == PaneScratchpads {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneScratchpads)
+		if rawIdx >= 0 && rawIdx < len(m.scratchpads) {
+			m = m.openConfirmDelete(m.scratchpads[rawIdx].ID)
+			return m, nil, true
+		}
+	}
+	if m.dialog == "" {
+		if next, ok := m.openSelectedDeleteDialog(); ok {
+			return next, nil, true
+		}
+	}
+	return m, nil, false
+}
+
+func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
+	if m.view == ViewUpdates && m.updateStatus != nil {
+		return commands.OpenExternalURL(m.updateStatus.ReleaseURL), true
+	}
+	if m.view == ViewReports && m.pane == PaneExportReports {
+		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok && strings.TrimSpace(report.Path) != "" {
+			return dialogruntime.OpenDefaultViewer(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		}
+		return nil, true
+	}
+	return nil, false
+}
+
+func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
+	if m.view == ViewConfig && m.pane == PaneConfig {
+		if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok {
+			m = m.openViewEntityDialog(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody)
+			return m, nil, true
+		}
+		return m, nil, true
+	}
+	if m.view == ViewReports && m.pane == PaneExportReports {
+		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok {
+			meta := fmt.Sprintf("Kind %s   Format %s   Modified %s", report.Kind, report.Format, report.ModifiedAt)
+			scope := strings.TrimSpace(report.ScopeLabel)
+			if scope == "" {
+				scope = "-"
+			}
+			dateLabel := strings.TrimSpace(report.DateLabel)
+			if dateLabel == "" {
+				dateLabel = report.Date
+			}
+			body := "Scope\n" + scope + "\n\nDate\n" + dateLabel + "\n\nPath\n" + report.Path + "\n\nSize\n" + fmt.Sprintf("%d bytes", report.SizeBytes)
+			m = m.openViewEntityDialog("Export Report", report.Name, meta, body)
+			return m, nil, true
+		}
+		return m, nil, true
+	}
+	if m.view == ViewSessionHistory && m.pane == PaneSessions {
+		if entry, ok := m.selectedSessionHistoryEntry(); ok {
+			m.sessionDetailOpen = true
+			m.sessionDetailY = 0
+			return m, commands.LoadSessionDetail(m.client, entry.ID), true
+		}
+		return m, nil, true
+	}
+	if m.dialog == "" {
+		if next, ok := m.openSelectedViewDialog(); ok {
+			return next, nil, true
+		}
+	}
+	if m.pane == PaneScratchpads {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneScratchpads)
+		if rawIdx < 0 || rawIdx >= len(m.scratchpads) {
+			return m, nil, true
+		}
+		m.scratchpadOpen = true
+		m.scratchpadMeta = helperpkg.ScratchpadMetaAt(m.scratchpads, rawIdx)
+		return m, commands.OpenScratchpad(m.client, m.scratchpads, rawIdx), true
+	}
+	return m, nil, false
+}
+
+func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
+	if m.view == ViewDaily && m.pane == PaneHabits {
+		if habit, ok := m.selectedDailyHabitRecord(); ok {
+			if habit.Status == sharedtypes.HabitCompletionStatusCompleted {
+				return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
+			}
+			return commands.SetHabitStatus(m.client, habit.ID, m.currentDashboardDate(), sharedtypes.HabitCompletionStatusCompleted, nil, nil), true
+		}
+	}
+	return nil, false
+}
+
+func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
+	if m.view != ViewConfig || m.exportAssets == nil {
+		return nil, false
+	}
+	if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok {
+		if item.Label == "Reports directory" && m.exportAssets.ReportsDirCustomized {
+			return commands.SetExportReportsDir(m.client, ""), true
+		}
+		if item.Label == "ICS export directory" && m.exportAssets.ICSDirCustomized {
+			return commands.SetExportICSDir(m.client, ""), true
+		}
+		if item.Resettable {
+			return commands.ResetExportTemplate(m.client, item.ReportKind, item.AssetKind), true
+		}
+	}
+	return nil, false
+}
+
+func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
+	if m.view == ViewSessionHistory && (m.timer == nil || m.timer.State == "idle") {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneSessions)
+		if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
 			return m, nil
 		}
-		stream := m.streams[rawIdx]
-		logger.Infof("checkout stream: %s (%d)", stream.Name, stream.ID)
-		return m, cmdCheckoutStream(m.client, stream.ID)
-	default:
+		issueID := m.sessionHistory[rawIdx].IssueID
+		meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issueID)
+		if meta == nil {
+			return m, m.setStatus("Issue metadata unavailable", true)
+		}
+		return m, commands.StartFocusSession(m.client, meta.RepoID, meta.StreamID, issueID)
+	}
+	if m.view == ViewSessionActive {
+		if m.timer == nil || m.timer.State == "idle" {
+			if m.context == nil || m.context.RepoID == nil || m.context.StreamID == nil || m.context.IssueID == nil {
+				return m, m.setStatus("No active issue in context", true)
+			}
+			meta := selectionpkg.ActiveIssue(m.selectionSnapshot())
+			if meta == nil {
+				return m, m.setStatus("Active issue metadata unavailable", true)
+			}
+			return m, commands.StartFocusSession(m.client, *m.context.RepoID, *m.context.StreamID, *m.context.IssueID)
+		}
 		return m, nil
 	}
+	if m.pane != PaneIssues {
+		return m, nil
+	}
+	if m.view == ViewDefault {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
+		issues := selectionpkg.DefaultScopedIssues(m.selectionSnapshot())
+		if rawIdx < 0 || rawIdx >= len(issues) {
+			return m, nil
+		}
+		issue := issues[rawIdx]
+		return m, commands.StartFocusSession(m.client, issue.RepoID, issue.StreamID, issue.ID)
+	}
+	if m.view == ViewDaily {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
+		issues := selectionpkg.DailyScopedIssues(m.selectionSnapshot())
+		if rawIdx < 0 || rawIdx >= len(issues) {
+			return m, nil
+		}
+		issue := issues[rawIdx]
+		meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issue.ID)
+		if meta == nil {
+			return m, m.setStatus("Issue metadata unavailable", true)
+		}
+		return m, commands.StartFocusSession(m.client, meta.RepoID, issue.StreamID, issue.ID)
+	}
+	rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
+	if rawIdx < 0 || rawIdx >= len(m.issues) {
+		return m, nil
+	}
+	if m.context == nil || m.context.RepoID == nil {
+		return m, m.setStatus("No repo in context for selected issue", true)
+	}
+	issue := m.issues[rawIdx]
+	return m, commands.StartFocusSession(m.client, *m.context.RepoID, issue.StreamID, issue.ID)
 }

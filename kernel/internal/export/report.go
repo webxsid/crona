@@ -89,6 +89,10 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	if err != nil {
 		return nil, err
 	}
+	plan, err := corecommands.GetDailyPlan(ctx, c, date)
+	if err != nil {
+		return nil, err
+	}
 	allIssues, err := corecommands.ListAllIssues(ctx, c)
 	if err != nil {
 		return nil, err
@@ -136,18 +140,52 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 		})
 	}
 
-	issues := make([]sharedtypes.DailyReportIssue, 0, len(summary.Issues))
-	for _, issue := range summary.Issues {
-		meta := issueMeta[issue.ID]
-		issues = append(issues, sharedtypes.DailyReportIssue{
-			IssueWithMeta: sharedtypes.IssueWithMeta{
-				Issue:      issue,
-				RepoID:     meta.RepoID,
-				RepoName:   meta.RepoName,
-				StreamName: meta.StreamName,
-			},
-			WorkedSeconds: workedByIssue[issue.ID],
-		})
+	issues := make([]sharedtypes.DailyReportIssue, 0)
+	if plan != nil && len(plan.Entries) > 0 {
+		for _, entry := range plan.Entries {
+			meta, ok := issueMeta[entry.IssueID]
+			if !ok {
+				continue
+			}
+			issues = append(issues, sharedtypes.DailyReportIssue{
+				IssueWithMeta: sharedtypes.IssueWithMeta{
+					Issue:      meta.Issue,
+					RepoID:     meta.RepoID,
+					RepoName:   meta.RepoName,
+					StreamName: meta.StreamName,
+				},
+				WorkedSeconds:            workedByIssue[entry.IssueID],
+				PlanStatus:               entry.Status,
+				PlanCommittedAt:          entry.CommittedAt,
+				PlanResolvedAt:           entry.ResolvedAt,
+				PlanFailureReason:        entry.FailureReason,
+				PlanPendingFailureAt:     entry.PendingFailureAt,
+				PlanPendingFailureReason: entry.PendingFailureReason,
+				PlanBaselineDate:         entry.BaselineDate,
+				PlanCurrentPlannedDate:   entry.CurrentPlannedDate,
+				PlanPostponeCount:        entry.PostponeCount,
+				PlanCurrentDelayedDays:   entry.CurrentDelayedDays,
+				PlanMaxDelayedDays:       entry.MaxDelayedDays,
+				PlanFailScore:            entry.FailScore,
+			})
+		}
+	} else {
+		for _, issue := range summary.Issues {
+			meta := issueMeta[issue.ID]
+			issues = append(issues, sharedtypes.DailyReportIssue{
+				IssueWithMeta: sharedtypes.IssueWithMeta{
+					Issue:      issue,
+					RepoID:     meta.RepoID,
+					RepoName:   meta.RepoName,
+					StreamName: meta.StreamName,
+				},
+				WorkedSeconds:          workedByIssue[issue.ID],
+				PlanStatus:             sharedtypes.DailyPlanEntryStatusPlanned,
+				PlanCommittedAt:        date + "T00:00:00Z",
+				PlanBaselineDate:       date,
+				PlanCurrentPlannedDate: date,
+			})
+		}
 	}
 
 	habits, err := corecommands.ListHabitsDueForDate(ctx, c, date)
@@ -180,6 +218,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 		Date:          date,
 		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
 		Summary:       summary,
+		Plan:          plan,
 		Issues:        issues,
 		Sessions:      sessions,
 		Habits:        habits,
@@ -199,6 +238,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 		"date":          data.Date,
 		"generatedAt":   data.GeneratedAt,
 		"summary":       summary,
+		"plan":          nil,
 		"issues":        make([]map[string]any, 0, len(data.Issues)),
 		"repos":         groupIssuesByRepo(data.Issues),
 		"habitRepos":    groupHabitsByRepo(data.Habits),
@@ -227,6 +267,47 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 			"longestFocusDays":   data.Streaks.LongestFocusDays,
 			"currentCheckInDays": data.Streaks.CurrentCheckInDays,
 			"longestCheckInDays": data.Streaks.LongestCheckInDays,
+		}
+	}
+	if data.Plan != nil {
+		entries := make([]map[string]any, 0, len(data.Plan.Entries))
+		for _, entry := range data.Plan.Entries {
+			item := map[string]any{
+				"id":                   entry.ID,
+				"date":                 entry.Date,
+				"issueId":              entry.IssueID,
+				"status":               entry.Status,
+				"committedAt":          entry.CommittedAt,
+				"pendingFailureAt":     entry.PendingFailureAt,
+				"pendingFailureReason": entry.PendingFailureReason,
+				"resolvedAt":           entry.ResolvedAt,
+				"failureReason":        entry.FailureReason,
+				"baselineDate":         entry.BaselineDate,
+				"currentPlannedDate":   entry.CurrentPlannedDate,
+				"postponeCount":        entry.PostponeCount,
+				"currentDelayedDays":   entry.CurrentDelayedDays,
+				"maxDelayedDays":       entry.MaxDelayedDays,
+				"failScore":            entry.FailScore,
+			}
+			entries = append(entries, item)
+		}
+		items["plan"] = map[string]any{
+			"id":   data.Plan.ID,
+			"date": data.Plan.Date,
+			"summary": map[string]any{
+				"plannedCount":         data.Plan.Summary.PlannedCount,
+				"completedCount":       data.Plan.Summary.CompletedCount,
+				"failedCount":          data.Plan.Summary.FailedCount,
+				"abandonedCount":       data.Plan.Summary.AbandonedCount,
+				"pendingRollbackCount": data.Plan.Summary.PendingRollbackCount,
+				"accountabilityScore":  data.Plan.Summary.AccountabilityScore,
+				"backlogPressure":      data.Plan.Summary.BacklogPressure,
+				"delayedIssueCount":    data.Plan.Summary.DelayedIssueCount,
+				"highRiskIssueCount":   data.Plan.Summary.HighRiskIssueCount,
+				"avgDelayDays":         data.Plan.Summary.AvgDelayDays,
+				"maxDelayDays":         data.Plan.Summary.MaxDelayDays,
+			},
+			"entries": entries,
 		}
 	}
 
@@ -309,6 +390,19 @@ func buildSummaryMap(data *sharedtypes.DailyReportData) map[string]any {
 	summary["habitsCompletedCount"] = habitsCompletedCount
 	summary["habitsPendingCount"] = habitsPendingCount
 	summary["habitCompletion"] = formatRatio(habitsCompletedCount, len(data.Habits))
+	if data.Plan != nil {
+		summary["plannedCount"] = data.Plan.Summary.PlannedCount
+		summary["planCompletedCount"] = data.Plan.Summary.CompletedCount
+		summary["planFailedCount"] = data.Plan.Summary.FailedCount
+		summary["planAbandonedCount"] = data.Plan.Summary.AbandonedCount
+		summary["planPendingRollbackCount"] = data.Plan.Summary.PendingRollbackCount
+		summary["accountabilityScore"] = data.Plan.Summary.AccountabilityScore
+		summary["backlogPressure"] = data.Plan.Summary.BacklogPressure
+		summary["delayedIssueCount"] = data.Plan.Summary.DelayedIssueCount
+		summary["highRiskIssueCount"] = data.Plan.Summary.HighRiskIssueCount
+		summary["avgDelayDays"] = data.Plan.Summary.AvgDelayDays
+		summary["maxDelayDays"] = data.Plan.Summary.MaxDelayDays
+	}
 	return summary
 }
 
@@ -585,18 +679,30 @@ func formatStatusLabel(value string, fallback string) string {
 
 func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
 	return map[string]any{
-		"id":              issue.ID,
-		"title":           issue.Title,
-		"repoId":          issue.RepoID,
-		"repoName":        issue.RepoName,
-		"streamId":        issue.StreamID,
-		"streamName":      issue.StreamName,
-		"status":          formatStatusLabel(string(issue.Status), ""),
-		"estimateMinutes": issue.EstimateMinutes,
-		"estimateTime":    formatDurationMinutesHMS(issue.EstimateMinutes),
-		"workedSeconds":   issue.WorkedSeconds,
-		"workedTime":      formatDurationHMS(issue.WorkedSeconds),
-		"workedEstimate":  formatWorkedEstimate(issue.WorkedSeconds, issue.EstimateMinutes),
+		"id":                       issue.ID,
+		"title":                    issue.Title,
+		"repoId":                   issue.RepoID,
+		"repoName":                 issue.RepoName,
+		"streamId":                 issue.StreamID,
+		"streamName":               issue.StreamName,
+		"status":                   formatStatusLabel(string(issue.Status), ""),
+		"estimateMinutes":          issue.EstimateMinutes,
+		"estimateTime":             formatDurationMinutesHMS(issue.EstimateMinutes),
+		"workedSeconds":            issue.WorkedSeconds,
+		"workedTime":               formatDurationHMS(issue.WorkedSeconds),
+		"workedEstimate":           formatWorkedEstimate(issue.WorkedSeconds, issue.EstimateMinutes),
+		"planStatus":               issue.PlanStatus,
+		"planCommittedAt":          issue.PlanCommittedAt,
+		"planResolvedAt":           issue.PlanResolvedAt,
+		"planFailureReason":        issue.PlanFailureReason,
+		"planPendingFailureAt":     issue.PlanPendingFailureAt,
+		"planPendingFailureReason": issue.PlanPendingFailureReason,
+		"planBaselineDate":         issue.PlanBaselineDate,
+		"planCurrentPlannedDate":   issue.PlanCurrentPlannedDate,
+		"planPostponeCount":        issue.PlanPostponeCount,
+		"planCurrentDelayedDays":   issue.PlanCurrentDelayedDays,
+		"planMaxDelayedDays":       issue.PlanMaxDelayedDays,
+		"planFailScore":            issue.PlanFailScore,
 	}
 }
 

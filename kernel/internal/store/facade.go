@@ -27,6 +27,7 @@ type Registry struct {
 	ActiveContext    *repositories.ActiveContextRepository
 	ScratchPads      *repositories.ScratchPadRepository
 	DailyCheckIns    *repositories.DailyCheckInRepository
+	DailyPlans       *repositories.DailyPlanRepository
 }
 
 func Open(dbPath string) (*Store, error) {
@@ -56,5 +57,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		ActiveContext:    repositories.NewActiveContextRepository(db),
 		ScratchPads:      repositories.NewScratchPadRepository(db),
 		DailyCheckIns:    repositories.NewDailyCheckInRepository(db),
+		DailyPlans:       repositories.NewDailyPlanRepository(db),
 	}
 }

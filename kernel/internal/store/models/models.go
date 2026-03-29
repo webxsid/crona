@@ -155,6 +155,11 @@ type CoreSettingsModel struct {
 	StreamSort            string `bun:"stream_sort,notnull,type:text"`
 	IssueSort             string `bun:"issue_sort,notnull,type:text"`
 	HabitSort             string `bun:"habit_sort,notnull,type:text"`
+	AwayModeEnabled       bool   `bun:"away_mode_enabled,notnull,type:integer"`
+	FrozenStreakKinds     string `bun:"frozen_streak_kinds,notnull,type:text"`
+	RestWeekdays          string `bun:"rest_weekdays,notnull,type:text"`
+	RestSpecificDates     string `bun:"rest_specific_dates,notnull,type:text"`
+	RestRecurringDates    string `bun:"rest_recurring_dates,notnull,type:text"`
 	CreatedAt             string `bun:"created_at,notnull,type:text"`
 	UpdatedAt             string `bun:"updated_at,notnull,type:text"`
 }
@@ -210,4 +215,48 @@ type DailyCheckInModel struct {
 	Notes             *string  `bun:"notes,type:text,nullzero"`
 	CreatedAt         string   `bun:"created_at,notnull,type:text"`
 	UpdatedAt         string   `bun:"updated_at,notnull,type:text"`
+}
+
+type DailyPlanModel struct {
+	bun.BaseModel `bun:"table:daily_plans"`
+
+	ID        string `bun:"id,pk,type:text"`
+	UserID    string `bun:"user_id,notnull,type:text"`
+	Date      string `bun:"date,notnull,type:text"`
+	CreatedAt string `bun:"created_at,notnull,type:text"`
+	UpdatedAt string `bun:"updated_at,notnull,type:text"`
+}
+
+type DailyPlanEntryModel struct {
+	bun.BaseModel `bun:"table:daily_plan_entries"`
+
+	ID                   string  `bun:"id,pk,type:text"`
+	PlanID               string  `bun:"plan_id,notnull,type:text"`
+	IssueID              string  `bun:"issue_id,notnull,type:text"`
+	Source               string  `bun:"source,notnull,type:text"`
+	Status               string  `bun:"status,notnull,type:text"`
+	FailureReason        *string `bun:"failure_reason,type:text,nullzero"`
+	PendingFailureReason *string `bun:"pending_failure_reason,type:text,nullzero"`
+	CommittedAt          string  `bun:"committed_at,notnull,type:text"`
+	PendingFailureAt     *string `bun:"pending_failure_at,type:text,nullzero"`
+	ResolvedAt           *string `bun:"resolved_at,type:text,nullzero"`
+	BaselineDate         string  `bun:"baseline_date,notnull,type:text"`
+	CurrentPlannedDate   string  `bun:"current_planned_date,notnull,type:text"`
+	PostponeCount        int     `bun:"postpone_count,notnull,type:integer"`
+	MaxDelayedDays       int     `bun:"max_delayed_days,notnull,type:integer"`
+	CreatedAt            string  `bun:"created_at,notnull,type:text"`
+	UpdatedAt            string  `bun:"updated_at,notnull,type:text"`
+}
+
+type DailyPlanEventModel struct {
+	bun.BaseModel `bun:"table:daily_plan_events"`
+
+	ID            string  `bun:"id,pk,type:text"`
+	PlanEntryID   string  `bun:"plan_entry_id,notnull,type:text"`
+	UserID        string  `bun:"user_id,notnull,type:text"`
+	DeviceID      string  `bun:"device_id,notnull,type:text"`
+	EventType     string  `bun:"event_type,notnull,type:text"`
+	FailureReason *string `bun:"failure_reason,type:text,nullzero"`
+	Payload       string  `bun:"payload,notnull,type:text"`
+	Timestamp     string  `bun:"timestamp,notnull,type:text"`
 }

@@ -250,6 +250,10 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	if err != nil {
 		return nil, err
 	}
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
 	var streaks sharedtypes.StreakSummary
 	currentFocus := 0
 	currentCheckIn := 0
@@ -259,6 +263,7 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 			if currentFocus > streaks.LongestFocusDays {
 				streaks.LongestFocusDays = currentFocus
 			}
+		} else if isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindFocusDays) {
 		} else {
 			currentFocus = 0
 		}
@@ -267,12 +272,17 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 			if currentCheckIn > streaks.LongestCheckInDays {
 				streaks.LongestCheckInDays = currentCheckIn
 			}
+		} else if isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays) {
 		} else {
 			currentCheckIn = 0
 		}
 	}
-	streaks.CurrentFocusDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return day.WorkedSeconds > 0 })
-	streaks.CurrentCheckInDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) })
+	streaks.CurrentFocusDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return day.WorkedSeconds > 0 }, func(day sharedtypes.DailyMetricsDay) bool {
+		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindFocusDays)
+	})
+	streaks.CurrentCheckInDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) }, func(day sharedtypes.DailyMetricsDay) bool {
+		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays)
+	})
 	return &streaks, nil
 }
 
@@ -363,15 +373,77 @@ func averageOrNil(sum float64, count int) *float64 {
 	return &value
 }
 
-func trailingStreak(days []sharedtypes.DailyMetricsDay, predicate func(sharedtypes.DailyMetricsDay) bool) int {
+func trailingStreak(days []sharedtypes.DailyMetricsDay, predicate func(sharedtypes.DailyMetricsDay) bool, skip func(sharedtypes.DailyMetricsDay) bool) int {
 	total := 0
 	for i := len(days) - 1; i >= 0; i-- {
-		if !predicate(days[i]) {
-			break
+		if predicate(days[i]) {
+			total++
+			continue
 		}
-		total++
+		if skip != nil && skip(days[i]) {
+			continue
+		}
+		break
 	}
 	return total
+}
+
+func isProtectedStreakDay(date string, settings *sharedtypes.CoreSettings, kind sharedtypes.StreakKind) bool {
+	if settings == nil || !freezesStreakKind(settings, kind) {
+		return false
+	}
+	if settings.AwayModeEnabled {
+		return true
+	}
+	if isRestWeekday(date, settings.RestWeekdays) {
+		return true
+	}
+	if containsString(settings.RestSpecificDates, date) {
+		return true
+	}
+	if len(date) >= 10 && containsString(settings.RestRecurringDates, date[5:10]) {
+		return true
+	}
+	return false
+}
+
+func freezesStreakKind(settings *sharedtypes.CoreSettings, kind sharedtypes.StreakKind) bool {
+	selected := settings.FrozenStreakKinds
+	if len(selected) == 0 {
+		selected = sharedtypes.AvailableStreakKinds()
+	}
+	for _, current := range selected {
+		if current == kind {
+			return true
+		}
+	}
+	return false
+}
+
+func isRestWeekday(date string, weekdays []int) bool {
+	if len(weekdays) == 0 {
+		return false
+	}
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return false
+	}
+	current := int(parsed.Weekday())
+	for _, weekday := range weekdays {
+		if weekday == current {
+			return true
+		}
+	}
+	return false
+}
+
+func containsString(items []string, target string) bool {
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
 
 func countsForCheckInStreak(checkIn *sharedtypes.DailyCheckIn) bool {

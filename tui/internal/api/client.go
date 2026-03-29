@@ -269,6 +269,17 @@ func (c *Client) GetDailySummary(date string) (*DailyIssueSummary, error) {
 	return &out, c.call(protocol.MethodIssueDailySummary, query, &out)
 }
 
+func (c *Client) GetDailyPlan(date string) (*DailyPlan, error) {
+	var out DailyPlan
+	if err := c.call(protocol.MethodDailyPlanGet, shareddto.DailyPlanQuery{Date: strings.TrimSpace(date)}, &out); err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(out.Date) == "" {
+		return nil, nil
+	}
+	return &out, nil
+}
+
 func (c *Client) GetDailyCheckIn(date string) (*DailyCheckIn, error) {
 	var out DailyCheckIn
 	if err := c.call(protocol.MethodCheckInGet, shareddto.DailyCheckInQuery{Date: strings.TrimSpace(date)}, &out); err != nil {

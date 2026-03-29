@@ -45,9 +45,17 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 		issue.Status = sharedtypes.IssueStatusPlanned
 	}
 	now := c.Now()
+	if err := finalizeExpiredDailyPlanFailures(ctx, c, now); err != nil {
+		return sharedtypes.Issue{}, err
+	}
 	created, err := c.Issues.Create(ctx, issue, c.UserID, now)
 	if err != nil {
 		return sharedtypes.Issue{}, err
+	}
+	if created.TodoForDate != nil && strings.TrimSpace(*created.TodoForDate) != "" {
+		if err := commitIssueToDailyPlan(ctx, c, created.ID, strings.TrimSpace(*created.TodoForDate), now); err != nil {
+			return sharedtypes.Issue{}, err
+		}
 	}
 	if err := c.Ops.Append(ctx, sharedtypes.Op{
 		ID:        uuid.NewString(),
@@ -200,6 +208,20 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 		return nil, err
 	}
 	if updated != nil {
+		resolveDate := entryResolveDate(updated, now)
+		if resolveDate != "" {
+			switch nextStatus {
+			case sharedtypes.IssueStatusDone:
+				if err := resolveDailyPlanEntry(ctx, c, issueID, resolveDate, now, sharedtypes.DailyPlanEntryStatusCompleted, sharedtypes.DailyPlanEventCompleted, nil); err != nil {
+					return nil, err
+				}
+			case sharedtypes.IssueStatusAbandoned:
+				reason := sharedtypes.DailyPlanFailureReasonAbandoned
+				if err := resolveDailyPlanEntry(ctx, c, issueID, resolveDate, now, sharedtypes.DailyPlanEntryStatusAbandoned, sharedtypes.DailyPlanEventAbandoned, &reason); err != nil {
+					return nil, err
+				}
+			}
+		}
 		emit(c, sharedtypes.EventTypeIssueUpdated, updated)
 	}
 	return updated, nil
@@ -283,6 +305,9 @@ func ListAllIssues(ctx context.Context, c *core.Context) ([]sharedtypes.IssueWit
 }
 
 func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, todoForDate string) (*sharedtypes.Issue, error) {
+	if err := ensureDailyPlanDate(todoForDate); err != nil {
+		return nil, err
+	}
 	issue, err := c.Issues.GetByID(ctx, issueID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -291,6 +316,14 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 		return nil, errors.New("issue not found")
 	}
 	now := c.Now()
+	if err := finalizeExpiredDailyPlanFailures(ctx, c, now); err != nil {
+		return nil, err
+	}
+	previousDate := issueCommittedDate(issue)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
 	nextStatus := sharedtypes.AutoStatusOnTodoAssigned(issue.Status)
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]
@@ -306,6 +339,30 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 		TodoForDate: sharedtypes.Patch[string]{Set: true, Value: &todoForDate},
 	})
 	if err != nil {
+		return nil, err
+	}
+	var (
+		baselineDate       = todoForDate
+		currentPlannedDate = todoForDate
+		postponeCount      = 0
+		maxDelayedDays     = 0
+	)
+	if previousDate != "" && previousDate != todoForDate {
+		previousEntry, err := c.DailyPlans.GetEntry(ctx, c.UserID, previousDate, issueID)
+		if err != nil {
+			return nil, err
+		}
+		baselineDate, currentPlannedDate, postponeCount, maxDelayedDays = nextDailyPlanChainState(previousEntry, previousDate, todoForDate, settings)
+		if previousEntry != nil {
+			if err := c.DailyPlans.UpdateChainState(ctx, previousEntry.ID, now, baselineDate, currentPlannedDate, postponeCount, maxDelayedDays); err != nil {
+				return nil, err
+			}
+		}
+		if err := markDailyPlanPendingFailure(ctx, c, issueID, previousDate, now, sharedtypes.DailyPlanFailureReasonMoved, sharedtypes.DailyPlanEventRescheduled); err != nil {
+			return nil, err
+		}
+	}
+	if err := commitIssueToDailyPlanWithChain(ctx, c, issueID, todoForDate, now, baselineDate, currentPlannedDate, postponeCount, maxDelayedDays); err != nil {
 		return nil, err
 	}
 	if err := c.Ops.Append(ctx, sharedtypes.Op{
@@ -335,7 +392,17 @@ func MarkIssueTodoForToday(ctx context.Context, c *core.Context, issueID int64) 
 }
 
 func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) (*sharedtypes.Issue, error) {
+	issue, err := c.Issues.GetByID(ctx, issueID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if issue == nil {
+		return nil, errors.New("issue not found")
+	}
 	now := c.Now()
+	if err := finalizeExpiredDailyPlanFailures(ctx, c, now); err != nil {
+		return nil, err
+	}
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]
 		Description     sharedtypes.Patch[string]
@@ -350,6 +417,11 @@ func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) 
 	})
 	if err != nil {
 		return nil, err
+	}
+	if previousDate := issueCommittedDate(issue); previousDate != "" {
+		if err := markDailyPlanPendingFailure(ctx, c, issueID, previousDate, now, sharedtypes.DailyPlanFailureReasonCleared, sharedtypes.DailyPlanEventCleared); err != nil {
+			return nil, err
+		}
 	}
 	if err := c.Ops.Append(ctx, sharedtypes.Op{
 		ID:        uuid.NewString(),

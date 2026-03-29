@@ -25,6 +25,7 @@ type Context struct {
 	ActiveContext    *repositories.ActiveContextRepository
 	ScratchPads      *repositories.ScratchPadRepository
 	DailyCheckIns    *repositories.DailyCheckInRepository
+	DailyPlans       *repositories.DailyPlanRepository
 
 	UserID     string
 	DeviceID   string
@@ -50,6 +51,7 @@ func NewContext(db *store.Store, registry *store.Registry, userID string, device
 		ActiveContext:    registry.ActiveContext,
 		ScratchPads:      registry.ScratchPads,
 		DailyCheckIns:    registry.DailyCheckIns,
+		DailyPlans:       registry.DailyPlans,
 		UserID:           userID,
 		DeviceID:         deviceID,
 		ScratchDir:       scratchDir,

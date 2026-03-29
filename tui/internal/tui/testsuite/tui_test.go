@@ -7,9 +7,9 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	dialogs "crona/tui/internal/tui/app/dialogs"
-	"crona/tui/internal/tui/app/views"
+	dialogs "crona/tui/internal/tui/dialogs"
 	"crona/tui/internal/tui/testsuite/support"
+	"crona/tui/internal/tui/views"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -217,7 +217,7 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 		View:   "default",
 		Pane:   "issues",
 		Width:  100,
-		Height: 24,
+		Height: 32,
 		Cursors: map[string]int{
 			"issues": 0,
 		},
@@ -338,7 +338,15 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"Boundary Notifications", "Boundary Sound", "Habit Sort", "Target longest"} {
+	for _, want := range []string{"Boundary Notifications", "Boundary Sound", "Habit Sort", "Target longest", "Away Mode"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
+		}
+	}
+
+	state.Cursors["settings"] = 21
+	rendered = support.RenderSettings(state)
+	for _, want := range []string{"Frozen Streaks", "Rest Weekdays"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -790,6 +798,22 @@ func compactWellbeingState(height int) views.ContentState {
 		Width:         92,
 		Height:        height,
 		WellbeingDate: "2026-03-19",
+		DailyPlan: &api.DailyPlan{
+			Date: "2026-03-19",
+			Summary: api.DailyPlanAccountabilitySummary{
+				PlannedCount:         3,
+				CompletedCount:       1,
+				FailedCount:          1,
+				PendingRollbackCount: 1,
+				AccountabilityScore:  2.6,
+				DelayedIssueCount:    1,
+			},
+			Entries: []api.DailyPlanEntry{
+				{ID: "1", Date: "2026-03-19", IssueID: 1, Status: "completed", CommittedAt: "2026-03-19T08:00:00Z"},
+				{ID: "2", Date: "2026-03-19", IssueID: 2, Status: "failed", CommittedAt: "2026-03-19T08:00:00Z", FailureReason: dailyPlanFailureReasonPtr("moved")},
+				{ID: "3", Date: "2026-03-19", IssueID: 3, Status: "planned", CommittedAt: "2026-03-19T08:00:00Z", PendingFailureAt: strPtr("2026-03-19T10:00:00Z")},
+			},
+		},
 		MetricsRollup: &api.MetricsRollup{
 			Days:          7,
 			CheckInDays:   6,
@@ -851,9 +875,17 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "Metrics Window") || !strings.Contains(plain, "Days  7") {
 		t.Fatalf("expected compact metrics block in wellbeing view")
 	}
+	if !strings.Contains(plain, "Accountability") || !strings.Contains(plain, "p3 c1 f1 r1 s2.6 d1") {
+		t.Fatalf("expected compact accountability summary in wellbeing view")
+	}
 	if got := lipgloss.Height(rendered); got > height {
 		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)
 	}
+}
+
+func dailyPlanFailureReasonPtr(value string) *api.DailyPlanFailureReason {
+	reason := api.DailyPlanFailureReason(value)
+	return &reason
 }
 
 func TestDailyHabitDeleteDialogUsesDailySelection(t *testing.T) {

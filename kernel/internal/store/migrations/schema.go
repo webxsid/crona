@@ -26,6 +26,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.ActiveContextModel)(nil),
 		(*storemodels.ScratchPadMetaModel)(nil),
 		(*storemodels.DailyCheckInModel)(nil),
+		(*storemodels.DailyPlanModel)(nil),
+		(*storemodels.DailyPlanEntryModel)(nil),
+		(*storemodels.DailyPlanEventModel)(nil),
 	}
 
 	for _, model := range models {
@@ -47,16 +50,34 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "repos", column: "description"},
 		{table: "streams", column: "description"},
 		{table: "issues", column: "description"},
+		{table: "daily_plan_entries", column: "baseline_date"},
+		{table: "daily_plan_entries", column: "current_planned_date"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
 		}
 	}
+	for _, spec := range []struct {
+		table        string
+		column       string
+		defaultValue int
+	}{
+		{table: "daily_plan_entries", column: "postpone_count", defaultValue: 0},
+		{table: "daily_plan_entries", column: "max_delayed_days", defaultValue: 0},
+	} {
+		if err := ensureIntegerColumn(ctx, db, spec.table, spec.column, spec.defaultValue); err != nil {
+			return err
+		}
+	}
 	for columnName, defaultValue := range map[string]string{
-		"repo_sort":   "chronological_asc",
-		"stream_sort": "chronological_asc",
-		"issue_sort":  "priority",
-		"habit_sort":  "schedule",
+		"repo_sort":            "chronological_asc",
+		"stream_sort":          "chronological_asc",
+		"issue_sort":           "priority",
+		"habit_sort":           "schedule",
+		"frozen_streak_kinds":  "[]",
+		"rest_weekdays":        "[]",
+		"rest_specific_dates":  "[]",
+		"rest_recurring_dates": "[]",
 	} {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err
@@ -67,6 +88,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"boundary_sound_enabled":         1,
 		"update_checks_enabled":          1,
 		"update_prompt_enabled":          1,
+		"away_mode_enabled":              0,
 	} {
 		if err := ensureCoreSettingsBoolColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err
@@ -120,6 +142,12 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_scratch_pad_meta_last_opened_at ON scratch_pad_meta (last_opened_at)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_checkins_device_id ON daily_checkins (device_id)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_checkins_updated_at ON daily_checkins (updated_at)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_plans_user_date ON daily_plans (user_id, date)",
+		"CREATE INDEX IF NOT EXISTS idx_daily_plan_entries_plan_id ON daily_plan_entries (plan_id)",
+		"CREATE INDEX IF NOT EXISTS idx_daily_plan_entries_issue_id ON daily_plan_entries (issue_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_plan_entries_plan_issue ON daily_plan_entries (plan_id, issue_id)",
+		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_entry_id ON daily_plan_events (plan_entry_id)",
+		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_user_id ON daily_plan_events (user_id)",
 	}
 
 	for _, stmt := range indexes {
@@ -178,6 +206,39 @@ func ensureTextColumn(ctx context.Context, db *bun.DB, tableName string, columnN
 	}
 
 	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s text", tableName, columnName))
+	return err
+}
+
+func ensureIntegerColumn(ctx context.Context, db *bun.DB, tableName string, columnName string, defaultValue int) error {
+	rows, err := db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info('%s')", tableName))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	var (
+		cid       int
+		name      string
+		typ       string
+		notnull   int
+		dfltValue sql.NullString
+		pk        int
+	)
+	for rows.Next() {
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dfltValue, &pk); err != nil {
+			return err
+		}
+		if name == columnName {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer NOT NULL DEFAULT %d", tableName, columnName, defaultValue))
 	return err
 }
 

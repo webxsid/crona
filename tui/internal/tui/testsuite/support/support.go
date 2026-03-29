@@ -3,8 +3,8 @@ package support
 import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/app"
-	"crona/tui/internal/tui/app/dialogs"
-	"crona/tui/internal/tui/app/views"
+	"crona/tui/internal/tui/dialogs"
+	"crona/tui/internal/tui/views"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

@@ -93,6 +93,10 @@ type DailyIssueSummaryQuery struct {
 	Date *string `json:"date,omitempty"`
 }
 
+type DailyPlanQuery struct {
+	Date string `json:"date"`
+}
+
 type DailyCheckInQuery struct {
 	Date string `json:"date"`
 }
