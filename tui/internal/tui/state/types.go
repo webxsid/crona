@@ -5,6 +5,7 @@ import navigationutil "crona/tui/internal/tui/navigationutil"
 type View string
 
 const (
+	ViewAway           View = "away"
 	ViewDefault        View = "default"
 	ViewDaily          View = "daily"
 	ViewMeta           View = "meta"
@@ -44,6 +45,7 @@ const (
 var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewWellbeing, ViewReports, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewConfig, ViewSettings, ViewUpdates}
 
 var viewPanes = map[View][]Pane{
+	ViewAway:           {},
 	ViewDefault:        {PaneIssues},
 	ViewDaily:          {PaneIssues, PaneHabits},
 	ViewMeta:           {PaneRepos, PaneStreams, PaneIssues, PaneHabits},
@@ -59,6 +61,7 @@ var viewPanes = map[View][]Pane{
 }
 
 var viewDefaultPane = map[View]Pane{
+	ViewAway:           PaneIssues,
 	ViewDefault:        PaneIssues,
 	ViewDaily:          PaneIssues,
 	ViewMeta:           PaneRepos,

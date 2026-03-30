@@ -38,7 +38,7 @@ func renderWellbeingSummary(theme Theme, state ContentState, width, height int) 
 	lines := []string{
 		theme.StylePaneTitle.Render("Wellbeing"),
 		theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", dateText)),
-		renderActionLine(theme, width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane})),
+		renderActionLine(theme, width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane, RestModeActive: state.RestModeActive, AwayModeActive: state.AwayModeActive})),
 		"",
 	}
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
@@ -80,7 +80,7 @@ func renderWellbeingCompactSummary(theme Theme, state ContentState, width, heigh
 	dateText := state.WellbeingDate
 	lines := []string{
 		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Wellbeing"), theme.StyleHeader.Render(dateText)),
-		renderActionLine(theme, width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane})),
+		renderActionLine(theme, width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane, RestModeActive: state.RestModeActive, AwayModeActive: state.AwayModeActive})),
 	}
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		lines = append(lines, theme.StyleDim.Render("No check-in recorded for this date"))

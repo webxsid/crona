@@ -18,6 +18,7 @@ import (
 	appruntime "crona/tui/internal/tui/runtime"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	"crona/tui/internal/tui/views"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -30,6 +31,7 @@ import (
 type View = uistate.View
 
 const (
+	ViewAway           = uistate.ViewAway
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
 	ViewMeta           = uistate.ViewMeta
@@ -366,9 +368,20 @@ func (m Model) dailyIssuesForSelection() []api.Issue {
 }
 
 func (m Model) inputState() inputpkg.State {
+	protected := false
+	activeView := m.view
+	activePane := m.pane
+	if nextProtected, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
+		protected = true
+		if activeView != ViewReports && activeView != ViewSessionHistory {
+			activeView = ViewAway
+			activePane = uistate.DefaultPane(activeView)
+		}
+	}
 	return inputpkg.State{
-		ActiveView:          m.view,
-		ActivePane:          m.pane,
+		ActiveView:          activeView,
+		ActivePane:          activePane,
+		ProtectedModeActive: protected,
 		Cursor:              m.cursor,
 		DefaultIssueSection: m.defaultIssueSection,
 		DashboardDate:       m.dashboardDate,

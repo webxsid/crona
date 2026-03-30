@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"crona/tui/internal/tui/dialogs"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -21,6 +22,13 @@ func (m Model) viewContentState(width, height int) views.ContentState {
 		ScratchpadOpen:     m.scratchpadOpen,
 		ScratchpadRendered: m.scratchpadViewport.View(),
 		Repos:              m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: selectionpkg.DailyScopedIssues(m.selectionSnapshot()), Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: selectionpkg.DefaultScopedIssues(m.selectionSnapshot()), DueHabits: selectionpkg.FilteredDueHabits(m.selectionSnapshot()), DailySummary: m.dailySummary, DailyPlan: m.dailyPlan, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, ExportAssets: m.exportAssets, ExportReports: m.exportReports, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, UpdateStatus: m.updateStatus, UpdateChecking: m.updateChecking, UpdateInstalling: m.updateInstalling, UpdateInstallOutput: m.updateInstallOutput, UpdateInstallError: m.updateInstallError, UpdateInstallAvailable: m.selfUpdateInstallAvailable(), UpdateManualReason: m.selfUpdateUnsupportedReason(), TUIExecutablePath: m.currentExecutablePath, KernelExecutablePath: kernelExecutablePath(m.kernelInfo), Settings: m.settings,
+	}
+	restDate := time.Now().Format("2006-01-02")
+	if active, away, detail := views.ProtectedRestMode(state.Settings, restDate); active {
+		state.RestModeActive = true
+		state.AwayModeActive = away
+		state.RestModeDetail = detail
+		state.RestModeMessage = views.RestModeMessage(restDate)
 	}
 	if m.scratchpadMeta != nil {
 		state.ScratchpadName = m.scratchpadMeta.Name

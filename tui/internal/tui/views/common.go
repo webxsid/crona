@@ -135,6 +135,8 @@ func paneActionsForState(theme Theme, state ContentState, active bool) []string 
 		Pane:                   state.Pane,
 		ScratchpadOpen:         state.ScratchpadOpen,
 		TimerState:             timerStateFromContent(state),
+		RestModeActive:         state.RestModeActive,
+		AwayModeActive:         state.AwayModeActive,
 		UpdateVisible:          shouldShowUpdatesView(state.UpdateStatus),
 		UpdateInstallAvailable: state.UpdateInstallAvailable,
 	})

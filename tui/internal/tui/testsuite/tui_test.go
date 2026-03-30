@@ -143,6 +143,56 @@ func TestDailyViewReportedHeightRangeFitsAllocation(t *testing.T) {
 	}
 }
 
+func TestAwayViewShowsProtectedModeBlankState(t *testing.T) {
+	state := views.ContentState{
+		View:            "away",
+		Pane:            "",
+		Width:           80,
+		Height:          20,
+		RestModeActive:  true,
+		AwayModeActive:  true,
+		RestModeMessage: "Enjoy your break",
+		RestModeDetail:  "Away mode is active.",
+	}
+
+	rendered := views.RenderContent(support.Theme(), state)
+	for _, want := range []string{"Away", "Enjoy your break", "Away mode is active.", "[w]", "disable away"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected away view to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"Issues", "Habits", "Daily Dashboard", "Wellbeing"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected away view to hide %q, got %q", unwanted, rendered)
+		}
+	}
+}
+
+func TestAwayViewHidesDisableActionOnConfiguredRestDay(t *testing.T) {
+	state := views.ContentState{
+		View:            "away",
+		Pane:            "",
+		Width:           80,
+		Height:          20,
+		RestModeActive:  true,
+		AwayModeActive:  false,
+		RestModeMessage: "Take the day lightly",
+		RestModeDetail:  "This is one of your configured rest days.",
+	}
+
+	rendered := views.RenderContent(support.Theme(), state)
+	for _, want := range []string{"Take the day lightly", "configured rest days"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected away view to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"Metrics Window", "Mood", "Energy", "[w]"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected away view to hide %q, got %q", unwanted, rendered)
+		}
+	}
+}
+
 func TestDailyViewDoesNotExceedTerminalHeightInReportedRange(t *testing.T) {
 	for height := 46; height <= 54; height++ {
 		model := support.NewDailyModel(92, height)

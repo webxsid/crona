@@ -232,6 +232,92 @@ func currentDashboardDate(state ContentState) string {
 	return time.Now().Format("2006-01-02")
 }
 
+func ProtectedRestMode(settings *api.CoreSettings, date string) (bool, bool, string) {
+	if settings == nil {
+		return false, false, ""
+	}
+	if settings.AwayModeEnabled {
+		return true, true, "Away mode is active."
+	}
+	day := strings.TrimSpace(date)
+	if day == "" {
+		day = time.Now().Format("2006-01-02")
+	}
+	if containsDate(settings.RestSpecificDates, day) {
+		return true, false, "This is one of your configured rest days."
+	}
+	parsed, err := time.Parse("2006-01-02", day)
+	if err != nil {
+		return false, false, ""
+	}
+	if containsWeekday(settings.RestWeekdays, int(parsed.Weekday())) {
+		return true, false, "This is one of your configured rest days."
+	}
+	return false, false, ""
+}
+
+func renderAwayView(theme Theme, state ContentState) string {
+	actions := ContextualActions(theme, ActionsState{
+		View:           state.View,
+		Pane:           state.Pane,
+		RestModeActive: state.RestModeActive,
+		AwayModeActive: state.AwayModeActive,
+	})
+	lines := []string{theme.StylePaneTitle.Render("Away")}
+	if len(actions) > 0 {
+		lines = append(lines, renderActionLine(theme, state.Width-6, actions))
+	}
+	lines = append(lines, "")
+	body := []string{theme.StyleHeader.Render(state.RestModeMessage)}
+	if strings.TrimSpace(state.RestModeDetail) != "" {
+		body = append(body, theme.StyleDim.Render(state.RestModeDetail))
+	}
+	content := lipgloss.Place(
+		max(1, state.Width-6),
+		max(1, state.Height-6-renderedLineCount(lines)),
+		lipgloss.Center,
+		lipgloss.Center,
+		strings.Join(body, "\n\n"),
+	)
+	lines = append(lines, content)
+	return renderPaneBox(theme, false, state.Width, state.Height, stringsJoin(lines))
+}
+
+func containsDate(values []string, value string) bool {
+	for _, candidate := range values {
+		if strings.TrimSpace(candidate) == value {
+			return true
+		}
+	}
+	return false
+}
+
+func containsWeekday(values []int, weekday int) bool {
+	for _, value := range values {
+		if value == weekday {
+			return true
+		}
+	}
+	return false
+}
+
+func RestModeMessage(date string) string {
+	messages := []string{
+		"Enjoy your break",
+		"Rest is part of the work",
+		"Step away and reset",
+		"Take the day lightly",
+	}
+	if len(messages) == 0 {
+		return "Enjoy your break"
+	}
+	sum := 0
+	for _, r := range date {
+		sum += int(r)
+	}
+	return messages[sum%len(messages)]
+}
+
 func listWindow(cur, total, inner int) (int, int) {
 	half := inner / 2
 	start := cur - half

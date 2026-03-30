@@ -24,6 +24,7 @@ type State struct {
 	Height             int
 	View               uistate.View
 	Pane               uistate.Pane
+	ProtectedMode      bool
 	IsDevMode          bool
 	RepoName           string
 	StreamName         string
@@ -66,11 +67,15 @@ func Render(state State) string {
 		return renderMinimumSizeWarning(state.Width, state.Height)
 	}
 
-	base := strings.Join([]string{
-		renderHeader(state),
-		renderBody(state),
-		renderHelpBar(state),
-	}, "\n")
+	baseParts := []string{}
+	if !state.ProtectedMode {
+		baseParts = append(baseParts, renderHeader(state))
+	}
+	baseParts = append(baseParts, renderBody(state))
+	if !state.ProtectedMode {
+		baseParts = append(baseParts, renderHelpBar(state))
+	}
+	base := strings.Join(baseParts, "\n")
 
 	if state.DialogOpen {
 		dialogStr := dialogs.Render(DialogTheme(), state.DialogState)
@@ -149,6 +154,17 @@ func renderBody(state State) string {
 
 func renderSidebar(state State, width, height int) string {
 	var lines []string
+	if state.ProtectedMode {
+		lines = []string{
+			chrome.StylePaneTitle.Render("Away"),
+			"",
+			chrome.StyleDim.Render("AVAILABLE"),
+			renderSidebarItem(state, uistate.ViewAway, "Away"),
+			renderSidebarItem(state, uistate.ViewReports, "Reports"),
+			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
+		}
+		return chrome.StyleInactive.Width(width-4).Height(max(3, height-2)).Padding(1, 1).Render(strings.Join(lines, "\n"))
+	}
 	if state.TimerActive {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Active Session"),
@@ -346,6 +362,12 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 }
 
 func ContentHeight(state State) int {
+	if state.ProtectedMode {
+		if state.Height < 4 {
+			return 4
+		}
+		return state.Height
+	}
 	headerH := 4
 	if state.Width > 0 {
 		headerH = lipgloss.Height(renderHeader(state))

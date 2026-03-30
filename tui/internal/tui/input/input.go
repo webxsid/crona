@@ -16,6 +16,7 @@ import (
 type State struct {
 	ActiveView          uistate.View
 	ActivePane          uistate.Pane
+	ProtectedModeActive bool
 	Cursor              map[uistate.Pane]int
 	DefaultIssueSection uistate.DefaultIssueSection
 	DashboardDate       string
@@ -139,31 +140,66 @@ func newRouter(deps Deps) *router {
 		"k":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"up":        func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"f": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
 			return s, deps.StartFocusFromSelection(&s), true
 		},
 		"m": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
 			if deps.OpenManualSessionDialog(&s) {
 				return s, nil, true
 			}
 			return s, nil, false
 		},
-		"s": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleIssueStatus(s, deps) },
-		"A": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, deps.AbandonSelectedIssue(&s), true },
+		"s": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			return handleIssueStatus(s, deps)
+		},
+		"A": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			return s, deps.AbandonSelectedIssue(&s), true
+		},
 		"y": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
 			return s, deps.ToggleSelectedIssueToday(&s), true
 		},
 		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
 			deps.OpenSelectedIssueTodoDateDialog(&s)
 			return s, nil, true
 		},
-		"c": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleContextCheckout(s, deps) },
-		"Z": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenStashList(s, deps) },
+		"c": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			return handleContextCheckout(s, deps)
+		},
+		"Z": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			return handleOpenStashList(s, deps)
+		},
 		"+": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		"=": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		"-": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
 		"/": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleStartFilter(s, deps) },
 		"?": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { s.HelpOpen = true; return s, nil, true },
 		"a": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
 			deps.HandleCreateAction(&s)
 			return s, nil, true
 		},
@@ -232,6 +268,9 @@ func newRouter(deps Deps) *router {
 		},
 	)
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleToggleAwayMode(s, deps)
+	})
+	r.RegisterView(uistate.ViewAway, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleToggleAwayMode(s, deps)
 	})
 	keyregistry.RegisterMeta(r, uistate.ViewMeta, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneIssues, uistate.PaneHabits,
@@ -340,6 +379,9 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
 	)
+	r.RegisterView(uistate.ViewWellbeing, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleToggleAwayMode(s, deps)
+	})
 	keyregistry.RegisterOps(r, uistate.ViewOps, uistate.PaneOps,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
@@ -631,7 +673,7 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 }
 
 func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewDaily || s.Settings == nil {
+	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing && s.ActiveView != uistate.ViewAway) || s.Settings == nil {
 		return s, nil, false
 	}
 	repoID := int64(0)
@@ -647,8 +689,19 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if next {
 		status = "Away mode enabled"
 	}
+	settingsCopy := *s.Settings
+	settingsCopy.AwayModeEnabled = next
+	s.Settings = &settingsCopy
+	if s.ActiveView == uistate.ViewAway && !next {
+		s.ActiveView = uistate.ViewDaily
+		s.ActivePane = uistate.DefaultPane(s.ActiveView)
+	}
+	date := s.DashboardDate
+	if s.ActiveView == uistate.ViewWellbeing && strings.TrimSpace(s.WellbeingDate) != "" {
+		date = s.WellbeingDate
+	}
 	return s, tea.Batch(
-		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, s.DashboardDate),
+		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, date),
 		deps.SetStatus(&s, status, false),
 	), true
 }

@@ -9,6 +9,8 @@ type ActionsState struct {
 	Pane                   string
 	ScratchpadOpen         bool
 	TimerState             string
+	RestModeActive         bool
+	AwayModeActive         bool
 	IsDevMode              bool
 	UpdateVisible          bool
 	UpdateInstallAvailable bool
@@ -37,6 +39,14 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 }
 
 func ContextualActions(theme Theme, state ActionsState) []string {
+	if state.RestModeActive && state.View == "away" {
+		if state.AwayModeActive {
+			return []string{
+				theme.StyleHeader.Render("[w]") + theme.StyleDim.Render(" disable away"),
+			}
+		}
+		return nil
+	}
 	if state.View == "session_active" {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
@@ -52,6 +62,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	if state.View == "session_history" {
+		if state.RestModeActive {
+			return []string{
+				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
+			}
+		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
 			theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),

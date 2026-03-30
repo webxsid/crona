@@ -2,6 +2,7 @@ package app
 
 import (
 	"strings"
+	"time"
 
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
@@ -27,15 +28,17 @@ func (m Model) layoutState() layoutpkg.State {
 	if m.timer != nil {
 		timerState = m.timer.State
 	}
+	protectedMode, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
 	state := layoutpkg.State{
-		Width:       m.width,
-		Height:      m.height,
-		View:        m.view,
-		Pane:        m.pane,
-		IsDevMode:   m.isDevMode(),
-		RepoName:    repo,
-		StreamName:  stream,
-		TimerActive: m.timer != nil && m.timer.State != "idle",
+		Width:         m.width,
+		Height:        m.height,
+		View:          m.view,
+		Pane:          m.pane,
+		ProtectedMode: protectedMode,
+		IsDevMode:     m.isDevMode(),
+		RepoName:      repo,
+		StreamName:    stream,
+		TimerActive:   m.timer != nil && m.timer.State != "idle",
 		HeaderState: views.HeaderState{
 			Width:         m.width,
 			View:          string(m.view),
@@ -53,19 +56,28 @@ func (m Model) layoutState() layoutpkg.State {
 		SessionDetailLines: helperpkg.SessionDetailContentLines(m.sessionDetail),
 		StatusMsg:          m.statusMsg,
 		StatusErr:          m.statusErr,
-		PaneActions: views.PaneActions(layoutpkg.ViewTheme(), views.ActionsState{
-			View:                   string(m.view),
-			Pane:                   string(m.pane),
-			ScratchpadOpen:         m.scratchpadOpen,
-			TimerState:             timerState,
-			IsDevMode:              m.isDevMode(),
-			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
-			UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
-		}),
 		GlobalActions:      globalActions(m, timerState),
 	}
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
 	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state))
+	if state.ContentState.RestModeActive {
+		if m.view != ViewReports && m.view != ViewSessionHistory {
+			state.View = ViewAway
+			state.ContentState.View = "away"
+			state.ContentState.Pane = ""
+		}
+	}
+	state.PaneActions = views.PaneActions(layoutpkg.ViewTheme(), views.ActionsState{
+		View:                   string(m.view),
+		Pane:                   string(m.pane),
+		ScratchpadOpen:         m.scratchpadOpen,
+		TimerState:             timerState,
+		RestModeActive:         state.ContentState.RestModeActive,
+		AwayModeActive:         state.ContentState.AwayModeActive,
+		IsDevMode:              m.isDevMode(),
+		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+	})
 	if m.dialog != "" {
 		state.DialogState = m.dialogRenderState()
 	}

@@ -45,6 +45,10 @@ type ContentState struct {
 	DefaultIssueSection string
 	SessionHistoryTitle string
 	SessionHistoryMeta  string
+	RestModeActive      bool
+	AwayModeActive      bool
+	RestModeMessage     string
+	RestModeDetail      string
 
 	Repos                  []api.Repo
 	Streams                []api.Stream
@@ -83,6 +87,8 @@ type ContentState struct {
 
 func RenderContent(theme Theme, state ContentState) string {
 	switch state.View {
+	case "away":
+		return renderAwayView(theme, state)
 	case "default":
 		return renderDefaultView(theme, state)
 	case "daily":

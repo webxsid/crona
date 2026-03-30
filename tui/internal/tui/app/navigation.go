@@ -23,6 +23,9 @@ func nextView(current View, dir int) View {
 }
 
 func (m Model) availableViews() []View {
+	if protected, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
+		return []View{ViewAway, ViewReports, ViewSessionHistory}
+	}
 	ordered := uistate.ViewOrder()
 	views := make([]View, 0, len(ordered))
 	for _, view := range ordered {
@@ -40,6 +43,9 @@ func (m Model) nextWorkspaceView(dir int) View {
 		if candidate == m.view {
 			return navigationutil.NextView(views, candidate, dir)
 		}
+	}
+	if len(views) > 0 {
+		return views[0]
 	}
 	return ViewDaily
 }
