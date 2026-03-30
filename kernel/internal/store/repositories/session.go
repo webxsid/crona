@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"crona/kernel/internal/sessionnotes"
 	sharedtypes "crona/shared/types"
@@ -32,6 +33,7 @@ func (r *SessionRepository) Start(ctx context.Context, session sharedtypes.Sessi
 	model := storemodels.SessionModel{
 		ID:        session.ID,
 		IssueID:   issueInternalID,
+		Source:    string(sessionSourceOrDefault(session.Source)),
 		StartTime: session.StartTime,
 		Notes:     session.Notes,
 		UserID:    userID,
@@ -42,6 +44,35 @@ func (r *SessionRepository) Start(ctx context.Context, session sharedtypes.Sessi
 	if _, err := r.db.NewInsert().Model(&model).Exec(ctx); err != nil {
 		return sharedtypes.Session{}, err
 	}
+	session.Source = sessionSourceOrDefault(session.Source)
+	return session, nil
+}
+
+func (r *SessionRepository) CreateCompleted(ctx context.Context, session sharedtypes.Session, userID string, deviceID string, now string) (sharedtypes.Session, error) {
+	issueInternalID, err := resolveIssueInternalID(ctx, r.db, session.IssueID, userID)
+	if err != nil {
+		return sharedtypes.Session{}, err
+	}
+	if issueInternalID == "" {
+		return sharedtypes.Session{}, errors.New("issue not found")
+	}
+	model := storemodels.SessionModel{
+		ID:              session.ID,
+		IssueID:         issueInternalID,
+		Source:          string(sessionSourceOrDefault(session.Source)),
+		StartTime:       session.StartTime,
+		EndTime:         session.EndTime,
+		DurationSeconds: session.DurationSeconds,
+		Notes:           session.Notes,
+		UserID:          userID,
+		DeviceID:        deviceID,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	if _, err := r.db.NewInsert().Model(&model).Exec(ctx); err != nil {
+		return sharedtypes.Session{}, err
+	}
+	session.Source = sessionSourceOrDefault(session.Source)
 	return session, nil
 }
 
@@ -82,6 +113,7 @@ func (r *SessionRepository) GetActiveSession(ctx context.Context, userID string)
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.notes").
 		Where("sessions.user_id = ?", userID).
@@ -97,6 +129,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, sessionID string, userI
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").
@@ -111,6 +144,7 @@ func (r *SessionRepository) GetDetail(ctx context.Context, sessionID string, use
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
+		Source          *string `bun:"source"`
 		IssueTitle      string  `bun:"issue_title"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
 		StreamName      string  `bun:"stream_name"`
@@ -130,6 +164,7 @@ func (r *SessionRepository) GetDetail(ctx context.Context, sessionID string, use
 		Join("INNER JOIN repos ON repos.id = streams.repo_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("issues.title AS issue_title").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("streams.name AS stream_name").
@@ -156,6 +191,7 @@ func (r *SessionRepository) GetDetail(ctx context.Context, sessionID string, use
 			Session: sharedtypes.Session{
 				ID:              item.ID,
 				IssueID:         item.IssuePublicID,
+				Source:          sessionSourceFromStore(item.Source),
 				StartTime:       item.StartTime,
 				EndTime:         item.EndTime,
 				DurationSeconds: item.DurationSeconds,
@@ -174,6 +210,7 @@ func (r *SessionRepository) ListByIssue(ctx context.Context, issueID int64, user
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
+		Source          *string `bun:"source"`
 		StartTime       string  `bun:"start_time"`
 		EndTime         *string `bun:"end_time"`
 		DurationSeconds *int    `bun:"duration_seconds"`
@@ -186,6 +223,7 @@ func (r *SessionRepository) ListByIssue(ctx context.Context, issueID int64, user
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").
@@ -203,6 +241,7 @@ func (r *SessionRepository) ListByIssue(ctx context.Context, issueID int64, user
 		out = append(out, sharedtypes.Session{
 			ID:              row.ID,
 			IssueID:         row.IssuePublicID,
+			Source:          sessionSourceFromStore(row.Source),
 			StartTime:       row.StartTime,
 			EndTime:         row.EndTime,
 			DurationSeconds: row.DurationSeconds,
@@ -218,6 +257,7 @@ func (r *SessionRepository) GetLastSessionForIssue(ctx context.Context, issueID 
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").
@@ -235,6 +275,7 @@ func (r *SessionRepository) GetLastSessionForUser(ctx context.Context, userID st
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").
@@ -282,6 +323,7 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 		Join("INNER JOIN repos ON repos.id = streams.repo_id").
 		ColumnExpr("sessions.id").
 		ColumnExpr("issues.public_id AS issue_public_id").
+		ColumnExpr("sessions.source").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").
@@ -316,6 +358,7 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
+		Source          *string `bun:"source"`
 		StartTime       string  `bun:"start_time"`
 		EndTime         *string `bun:"end_time"`
 		DurationSeconds *int    `bun:"duration_seconds"`
@@ -331,6 +374,7 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 		session := sharedtypes.Session{
 			ID:              row.ID,
 			IssueID:         row.IssuePublicID,
+			Source:          sessionSourceFromStore(row.Source),
 			StartTime:       row.StartTime,
 			EndTime:         row.EndTime,
 			DurationSeconds: row.DurationSeconds,
@@ -348,6 +392,7 @@ func (r *SessionRepository) selectOne(ctx context.Context, q *bun.SelectQuery) (
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
+		Source          *string `bun:"source"`
 		StartTime       string  `bun:"start_time"`
 		EndTime         *string `bun:"end_time"`
 		DurationSeconds *int    `bun:"duration_seconds"`
@@ -363,10 +408,29 @@ func (r *SessionRepository) selectOne(ctx context.Context, q *bun.SelectQuery) (
 	session := sharedtypes.Session{
 		ID:              item.ID,
 		IssueID:         item.IssuePublicID,
+		Source:          sessionSourceFromStore(item.Source),
 		StartTime:       item.StartTime,
 		EndTime:         item.EndTime,
 		DurationSeconds: item.DurationSeconds,
 		Notes:           item.Notes,
 	}
 	return &session, nil
+}
+
+func sessionSourceFromStore(raw *string) sharedtypes.SessionSource {
+	if raw == nil {
+		return sharedtypes.SessionSourceTracked
+	}
+	source := sharedtypes.SessionSource(strings.TrimSpace(*raw))
+	if source == sharedtypes.SessionSourceManual {
+		return source
+	}
+	return sharedtypes.SessionSourceTracked
+}
+
+func sessionSourceOrDefault(source sharedtypes.SessionSource) sharedtypes.SessionSource {
+	if source == sharedtypes.SessionSourceManual {
+		return source
+	}
+	return sharedtypes.SessionSourceTracked
 }

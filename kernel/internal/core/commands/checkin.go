@@ -401,9 +401,6 @@ func isProtectedStreakDay(date string, settings *sharedtypes.CoreSettings, kind 
 	if containsString(settings.RestSpecificDates, date) {
 		return true
 	}
-	if len(date) >= 10 && containsString(settings.RestRecurringDates, date[5:10]) {
-		return true
-	}
 	return false
 }
 

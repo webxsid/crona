@@ -77,8 +77,8 @@ func Render(state State) string {
 		return clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
 	}
 	if state.SessionDetailOpen {
-		overlay := renderSessionDetailOverlay(state)
-		return clipViewportString(renderOverlay(base, overlay, max(0, (state.Width-overlayWidth(overlay))/2), max(0, (state.Height-overlayHeight(overlay))/2), state.Width, state.Height), state.Width, state.Height)
+		dialogStr := renderSessionDetailOverlay(state)
+		return clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
 	}
 	if state.HelpOpen {
 		overlay := renderHelpOverlay(state)

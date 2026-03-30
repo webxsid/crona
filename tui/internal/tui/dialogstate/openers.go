@@ -156,6 +156,10 @@ func OpenAmendSession(s Snapshot, sessionID string, commit string) dialogpkg.Sta
 	return dialogpkg.OpenAmendSession(s.Dialog, sessionID, commit)
 }
 
+func OpenManualSession(s Snapshot, issueID int64, issueLabel string, date string) dialogpkg.State {
+	return dialogpkg.OpenManualSession(s.Dialog, issueID, issueLabel, date)
+}
+
 func OpenDatePicker(s Snapshot, parentDialog string, issueID int64, inputIndex int, initial *string) dialogpkg.State {
 	return dialogpkg.OpenDatePicker(s.Dialog, parentDialog, issueID, inputIndex, initial, s.CurrentDashboardDate)
 }
@@ -203,18 +207,9 @@ func OpenExportICSDir(s Snapshot, current string) dialogpkg.State {
 	return dialogpkg.OpenExportICSDir(s.Dialog, current)
 }
 
-func OpenEditFrozenStreaks(s Snapshot) dialogpkg.State {
-	return dialogpkg.OpenEditFrozenStreaks(s.Dialog, s.Settings.FrozenStreakKinds)
-}
-
-func OpenEditRestWeekdays(s Snapshot) dialogpkg.State {
-	return dialogpkg.OpenEditRestWeekdays(s.Dialog, s.Settings.RestWeekdays)
-}
-
-func OpenEditRestDates(s Snapshot) dialogpkg.State {
-	return dialogpkg.OpenEditRestDates(s.Dialog, s.Settings.RestSpecificDates)
-}
-
-func OpenEditRecurringRestDates(s Snapshot) dialogpkg.State {
-	return dialogpkg.OpenEditRecurringRestDates(s.Dialog, s.Settings.RestRecurringDates)
+func OpenEditRestProtection(s Snapshot) dialogpkg.State {
+	if s.Settings == nil {
+		return dialogpkg.OpenEditRestProtection(s.Dialog, nil, nil, nil)
+	}
+	return dialogpkg.OpenEditRestProtection(s.Dialog, s.Settings.FrozenStreakKinds, s.Settings.RestWeekdays, s.Settings.RestSpecificDates)
 }

@@ -50,6 +50,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "repos", column: "description"},
 		{table: "streams", column: "description"},
 		{table: "issues", column: "description"},
+		{table: "sessions", column: "source"},
 		{table: "daily_plan_entries", column: "baseline_date"},
 		{table: "daily_plan_entries", column: "current_planned_date"},
 	} {
@@ -82,6 +83,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err
 		}
+	}
+	if err := backfillSessionSource(ctx, db); err != nil {
+		return err
 	}
 	for columnName, defaultValue := range map[string]int{
 		"boundary_notifications_enabled": 1,
@@ -207,6 +211,13 @@ func ensureTextColumn(ctx context.Context, db *bun.DB, tableName string, columnN
 
 	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s text", tableName, columnName))
 	return err
+}
+
+func backfillSessionSource(ctx context.Context, db *bun.DB) error {
+	if _, err := db.ExecContext(ctx, "UPDATE sessions SET source = ? WHERE source IS NULL OR TRIM(source) = ''", string(sharedtypes.SessionSourceTracked)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func ensureIntegerColumn(ctx context.Context, db *bun.DB, tableName string, columnName string, defaultValue int) error {

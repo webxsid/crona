@@ -90,6 +90,7 @@ type SessionModel struct {
 
 	ID              string  `bun:",pk,type:text"`
 	IssueID         string  `bun:"issue_id,notnull,type:text"`
+	Source          string  `bun:"source,notnull,type:text"`
 	StartTime       string  `bun:"start_time,notnull,type:text"`
 	EndTime         *string `bun:"end_time,type:text,nullzero"`
 	DurationSeconds *int    `bun:"duration_seconds,type:integer,nullzero"`

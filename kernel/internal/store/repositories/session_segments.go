@@ -72,6 +72,24 @@ func (r *SessionSegmentRepository) EndActiveSegment(ctx context.Context, userID 
 	return err
 }
 
+func (r *SessionSegmentRepository) CreateEnded(ctx context.Context, segment sharedtypes.SessionSegment) (*sharedtypes.SessionSegment, error) {
+	model := storemodels.SessionSegmentModel{
+		ID:                   segment.ID,
+		UserID:               segment.UserID,
+		DeviceID:             segment.DeviceID,
+		SessionID:            segment.SessionID,
+		SegmentType:          string(segment.SegmentType),
+		ElapsedOffsetSeconds: segment.ElapsedOffsetSeconds,
+		StartTime:            segment.StartTime,
+		EndTime:              segment.EndTime,
+		CreatedAt:            segment.CreatedAt,
+	}
+	if _, err := r.db.NewInsert().Model(&model).Exec(ctx); err != nil {
+		return nil, err
+	}
+	return segmentFromModel(model), nil
+}
+
 func (r *SessionSegmentRepository) ListBySession(ctx context.Context, sessionID string) ([]sharedtypes.SessionSegment, error) {
 	var models []storemodels.SessionSegmentModel
 	if err := r.db.NewSelect().Model(&models).Where("session_id = ?", sessionID).Order("start_time ASC").Scan(ctx); err != nil {

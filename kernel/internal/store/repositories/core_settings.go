@@ -116,12 +116,6 @@ func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, 
 			return err
 		}
 		q = q.Set("rest_specific_dates = ?", raw)
-	case sharedtypes.CoreSettingsKeyRestRecurringDates:
-		raw, err := stringSliceJSON(value)
-		if err != nil {
-			return err
-		}
-		q = q.Set("rest_recurring_dates = ?", raw)
 	}
 	_, err := q.Exec(ctx)
 	return err
@@ -179,7 +173,6 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		FrozenStreakKinds:     mustJSON(sharedconstants.DefaultCoreSettings["frozenStreakKinds"]),
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
-		RestRecurringDates:    mustJSON(sharedconstants.DefaultCoreSettings["restRecurringDates"]),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
@@ -230,8 +223,6 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 		return parseIntSlice(row.RestWeekdays)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(row.RestSpecificDates)
-	case sharedtypes.CoreSettingsKeyRestRecurringDates:
-		return parseStringSlice(row.RestRecurringDates)
 	default:
 		return nil
 	}
@@ -262,7 +253,6 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		FrozenStreakKinds:     parseStreakKinds(row.FrozenStreakKinds),
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
-		RestRecurringDates:    parseStringSlice(row.RestRecurringDates),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}

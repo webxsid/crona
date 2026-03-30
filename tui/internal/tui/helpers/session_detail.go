@@ -30,6 +30,9 @@ func SessionDetailContentLines(detail *api.SessionDetail) []string {
 		fmt.Sprintf("Rest: %s", FormatClockText(detail.WorkSummary.RestSeconds)),
 		fmt.Sprintf("Segments: %d work / %d rest", detail.WorkSummary.WorkSegments, detail.WorkSummary.RestSegments),
 	}
+	if detail.Source == sharedtypes.SessionSourceManual {
+		lines = append(lines[:3], append([]string{"Source: manual"}, lines[3:]...)...)
+	}
 
 	sectionOrder := []sharedtypes.SessionNoteSection{
 		sharedtypes.SessionNoteSectionCommit,

@@ -63,6 +63,7 @@ type MessageState struct {
 	StatusSeq             int
 	StatusErr             bool
 	Dialog                string
+	DialogErrorMessage    string
 	DialogChoiceItems     []string
 	DialogChoiceCursor    int
 	DialogProcessing      bool
@@ -348,6 +349,18 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.SessionAmendedMsg:
 		cmd := deps.SetStatus(&state, "Session amended", false)
 		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state), deps.LoadSessionDetail(msg.ID)), true
+	case commands.ManualSessionLoggedMsg:
+		cmds := []tea.Cmd{deps.SetStatus(&state, "Manual session logged", false), deps.LoadSessionHistoryFor200(state), deps.LoadAllIssues()}
+		if state.Context != nil && state.Context.IssueID != nil && *state.Context.IssueID == msg.IssueID {
+			cmds = append(cmds, deps.LoadIssueSessions(msg.IssueID))
+		}
+		if deps.CurrentDashboardDate(state) == strings.TrimSpace(msg.Date) {
+			cmds = append(cmds, deps.LoadDailySummary(msg.Date))
+		}
+		if deps.CurrentWellbeingDate(state) == strings.TrimSpace(msg.Date) {
+			cmds = append(cmds, deps.LoadWellbeing(msg.Date))
+		}
+		return state, tea.Batch(cmds...), true
 	case commands.FocusSessionChangedMsg:
 		cmds := []tea.Cmd{}
 		if msg.ReloadContext {
@@ -373,12 +386,14 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		updated, cmd := deps.HandleKernelEvent(state, msg.Event)
 		return updated, tea.Batch(cmd, deps.WaitForEvent()), true
 	case commands.ErrMsg:
-		if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
-			state.Dialog = ""
-			state.DialogChoiceItems = nil
-			state.DialogChoiceCursor = 0
-			state.DialogProcessing = false
-			state.DialogProcessingLabel = ""
+		if state.Dialog != "" {
+			if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
+				state.DialogProcessing = false
+				state.DialogProcessingLabel = ""
+			}
+			state.DialogErrorMessage = "Error: " + msg.Err.Error()
+			logger.Errorf("update error: %v", msg.Err)
+			return state, nil, true
 		}
 		logger.Errorf("update error: %v", msg.Err)
 		return state, deps.SetStatus(&state, "Error: "+msg.Err.Error(), true), true

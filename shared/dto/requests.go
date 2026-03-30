@@ -203,6 +203,17 @@ type EndSessionRequest struct {
 	Links         *string `json:"links,omitempty"`
 }
 
+type ManualSessionLogRequest struct {
+	IssueID              int64   `json:"issueId"`
+	Date                 string  `json:"date"`
+	WorkDurationSeconds  int     `json:"workDurationSeconds"`
+	BreakDurationSeconds int     `json:"breakDurationSeconds"`
+	StartTime            *string `json:"startTime,omitempty"`
+	EndTime              *string `json:"endTime,omitempty"`
+	CommitMessage        *string `json:"commitMessage,omitempty"`
+	Notes                *string `json:"notes,omitempty"`
+}
+
 type AmendSessionNoteRequest struct {
 	ID   *string `json:"id,omitempty"`
 	Note string  `json:"note"`

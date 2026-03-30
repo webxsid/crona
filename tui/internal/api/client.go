@@ -259,6 +259,14 @@ func (c *Client) AmendSessionNote(id string, note string) error {
 	return c.call(protocol.MethodSessionAmendNote, req, nil)
 }
 
+func (c *Client) LogManualSession(input shareddto.ManualSessionLogRequest) (*Session, error) {
+	var out Session
+	if err := c.call(protocol.MethodSessionLogManual, input, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) GetDailySummary(date string) (*DailyIssueSummary, error) {
 	var out DailyIssueSummary
 	query := shareddto.DailyIssueSummaryQuery{}

@@ -279,5 +279,5 @@ func isProtectedAccountabilityDay(date string, settings *sharedtypes.CoreSetting
 	if containsString(settings.RestSpecificDates, date) {
 		return true
 	}
-	return len(date) >= 10 && containsString(settings.RestRecurringDates, date[5:10])
+	return false
 }

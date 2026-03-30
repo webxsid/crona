@@ -38,6 +38,11 @@ type IssueSessionsLoadedMsg struct {
 type SessionHistoryLoadedMsg struct{ Sessions []api.SessionHistoryEntry }
 type SessionDetailLoadedMsg struct{ Detail *api.SessionDetail }
 type SessionDetailFailedMsg struct{ Err error }
+type ManualSessionLoggedMsg struct {
+	ID      string
+	IssueID int64
+	Date    string
+}
 type SessionAmendedMsg struct{ ID string }
 type ScratchpadsLoadedMsg struct{ Pads []api.ScratchPad }
 type StashesLoadedMsg struct{ Stashes []api.Stash }

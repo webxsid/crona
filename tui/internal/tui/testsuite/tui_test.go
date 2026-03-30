@@ -311,7 +311,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 		View:   "settings",
 		Pane:   "settings",
 		Width:  70,
-		Height: 24,
+		Height: 32,
 		Cursors: map[string]int{
 			"settings": 0,
 		},
@@ -344,9 +344,9 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 21
+	state.Cursors["settings"] = 18
 	rendered = support.RenderSettings(state)
-	for _, want := range []string{"Frozen Streaks", "Rest Weekdays"} {
+	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}

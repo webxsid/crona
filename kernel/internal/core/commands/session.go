@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"crona/kernel/internal/core"
 	"crona/kernel/internal/sessionnotes"
@@ -58,6 +59,17 @@ type SessionEndInput struct {
 	NextStep      *string
 	Blockers      *string
 	Links         *string
+}
+
+type ManualSessionInput struct {
+	IssueID              int64
+	Date                 string
+	WorkDurationSeconds  int
+	BreakDurationSeconds int
+	StartTime            *string
+	EndTime              *string
+	CommitMessage        *string
+	Notes                *string
 }
 
 func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*sharedtypes.Session, error) {
@@ -160,6 +172,136 @@ func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*
 	}
 	emit(c, sharedtypes.EventTypeSessionStopped, stopped)
 	return stopped, nil
+}
+
+func LogManualSession(ctx context.Context, c *core.Context, input ManualSessionInput) (*sharedtypes.Session, error) {
+	if input.IssueID == 0 {
+		return nil, errors.New("issueId is required")
+	}
+	if strings.TrimSpace(input.Date) == "" {
+		return nil, errors.New("date is required")
+	}
+	if _, err := time.Parse("2006-01-02", input.Date); err != nil {
+		return nil, errors.New("date must be YYYY-MM-DD")
+	}
+	if input.WorkDurationSeconds <= 0 {
+		return nil, errors.New("work duration must be positive")
+	}
+	if input.BreakDurationSeconds < 0 {
+		return nil, errors.New("break duration cannot be negative")
+	}
+
+	startTime, endTime, err := resolveManualSessionWindow(input)
+	if err != nil {
+		return nil, err
+	}
+	totalSeconds := input.WorkDurationSeconds + input.BreakDurationSeconds
+	durationSeconds := totalSeconds
+
+	issue, err := c.Issues.GetByID(ctx, input.IssueID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if issue == nil {
+		return nil, errors.New("issue not found")
+	}
+	if !sharedtypes.CanStartFocus(issue.Status) {
+		return nil, errors.New("focus sessions cannot be started for the current issue status")
+	}
+	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status) {
+		if _, err := changeIssueStatus(ctx, c, input.IssueID, nextStatus, nil, true); err != nil {
+			return nil, err
+		}
+		issue.Status = nextStatus
+	}
+
+	workSummary := sessionnotes.FormatWorkSummary(sharedtypes.SessionWorkSummary{
+		WorkSeconds:  input.WorkDurationSeconds,
+		RestSeconds:  input.BreakDurationSeconds,
+		WorkSegments: 1,
+		RestSegments: ternaryInt(input.BreakDurationSeconds > 0, 1, 0),
+		TotalSeconds: totalSeconds,
+	})
+	issueID := input.IssueID
+	commitMessage := input.CommitMessage
+	if strings.TrimSpace(valueOrEmpty(commitMessage)) == "" {
+		defaultCommit := "Manual Session"
+		commitMessage = &defaultCommit
+	}
+	notes := sessionnotes.GenerateDefaultSessionNotes(struct {
+		Commit      *string
+		RepoID      *int64
+		StreamID    *int64
+		IssueID     *int64
+		WorkSummary []string
+		Notes       *string
+	}{
+		Commit:      commitMessage,
+		RepoID:      nil,
+		StreamID:    nil,
+		IssueID:     &issueID,
+		WorkSummary: workSummary,
+		Notes:       input.Notes,
+	})
+	notesPtr := &notes
+
+	session := sharedtypes.Session{
+		ID:              uuid.NewString(),
+		IssueID:         input.IssueID,
+		Source:          sharedtypes.SessionSourceManual,
+		StartTime:       startTime,
+		EndTime:         &endTime,
+		DurationSeconds: &durationSeconds,
+		Notes:           notesPtr,
+	}
+	now := c.Now()
+	created, err := c.Sessions.CreateCompleted(ctx, session, c.UserID, c.DeviceID, now)
+	if err != nil {
+		return nil, err
+	}
+
+	workEnd := offsetRFC3339(startTime, input.WorkDurationSeconds)
+	if _, err := c.SessionSegments.CreateEnded(ctx, sharedtypes.SessionSegment{
+		ID:          uuid.NewString(),
+		UserID:      c.UserID,
+		DeviceID:    c.DeviceID,
+		SessionID:   created.ID,
+		SegmentType: sharedtypes.SessionSegmentWork,
+		StartTime:   startTime,
+		EndTime:     &workEnd,
+		CreatedAt:   now,
+	}); err != nil {
+		return nil, err
+	}
+	if input.BreakDurationSeconds > 0 {
+		breakEnd := offsetRFC3339(workEnd, input.BreakDurationSeconds)
+		if _, err := c.SessionSegments.CreateEnded(ctx, sharedtypes.SessionSegment{
+			ID:          uuid.NewString(),
+			UserID:      c.UserID,
+			DeviceID:    c.DeviceID,
+			SessionID:   created.ID,
+			SegmentType: sharedtypes.SessionSegmentRest,
+			StartTime:   workEnd,
+			EndTime:     &breakEnd,
+			CreatedAt:   now,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	if err := c.Ops.Append(ctx, sharedtypes.Op{
+		ID:        uuid.NewString(),
+		Entity:    sharedtypes.OpEntitySession,
+		EntityID:  created.ID,
+		Action:    sharedtypes.OpActionCreate,
+		Payload:   created,
+		Timestamp: now,
+		UserID:    c.UserID,
+		DeviceID:  c.DeviceID,
+	}); err != nil {
+		return nil, err
+	}
+	emit(c, sharedtypes.EventTypeSessionStopped, created)
+	return &created, nil
 }
 
 func mergeSessionNotes(existing string, next *string) *string {
@@ -345,6 +487,73 @@ func ListSessionHistory(ctx context.Context, c *core.Context, query struct {
 		Limit:    query.Limit,
 		Offset:   query.Offset,
 	})
+}
+
+func resolveManualSessionWindow(input ManualSessionInput) (string, string, error) {
+	totalSeconds := input.WorkDurationSeconds + input.BreakDurationSeconds
+	if totalSeconds <= 0 {
+		return "", "", errors.New("total duration must be positive")
+	}
+	startClock := strings.TrimSpace(valueOrEmpty(input.StartTime))
+	endClock := strings.TrimSpace(valueOrEmpty(input.EndTime))
+
+	switch {
+	case startClock == "" && endClock == "":
+		start := input.Date + "T12:00:00Z"
+		return start, offsetRFC3339(start, totalSeconds), nil
+	case startClock != "" && endClock == "":
+		start, err := combineManualDateAndClock(input.Date, startClock)
+		if err != nil {
+			return "", "", err
+		}
+		return start, offsetRFC3339(start, totalSeconds), nil
+	case startClock == "" && endClock != "":
+		end, err := combineManualDateAndClock(input.Date, endClock)
+		if err != nil {
+			return "", "", err
+		}
+		return offsetRFC3339(end, -totalSeconds), end, nil
+	default:
+		start, err := combineManualDateAndClock(input.Date, startClock)
+		if err != nil {
+			return "", "", err
+		}
+		end, err := combineManualDateAndClock(input.Date, endClock)
+		if err != nil {
+			return "", "", err
+		}
+		windowSeconds := elapsedSeconds(start, end)
+		if windowSeconds <= 0 {
+			return "", "", errors.New("end time must be after start time")
+		}
+		if windowSeconds != totalSeconds {
+			return "", "", fmt.Errorf("work and break durations must add up to the provided time window")
+		}
+		return start, end, nil
+	}
+}
+
+func combineManualDateAndClock(date string, clock string) (string, error) {
+	parsed, err := time.Parse("2006-01-02 15:04", date+" "+clock)
+	if err != nil {
+		return "", errors.New("time must be HH:MM")
+	}
+	return parsed.UTC().Format(time.RFC3339), nil
+}
+
+func offsetRFC3339(base string, offsetSeconds int) string {
+	parsed, err := time.Parse(time.RFC3339, base)
+	if err != nil {
+		return base
+	}
+	return parsed.Add(time.Duration(offsetSeconds) * time.Second).UTC().Format(time.RFC3339)
+}
+
+func ternaryInt(cond bool, yes int, no int) int {
+	if cond {
+		return yes
+	}
+	return no
 }
 
 func valueOrEmpty(value *string) string {

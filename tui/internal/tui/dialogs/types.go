@@ -31,6 +31,7 @@ type State struct {
 	DescriptionEnabled  bool
 	DescriptionIndex    int
 	FocusIdx            int
+	ErrorMessage        string
 	DeleteID            string
 	DeleteKind          string
 	DeleteLabel         string
@@ -70,6 +71,11 @@ type State struct {
 	DateHeader          string
 	DateMonth           string
 	DateGrid            string
+	ProtectionStep      int
+	ProtectionCursor    int
+	ProtectionStreaks   []sharedtypes.StreakKind
+	ProtectionWeekdays  []int
+	ProtectionDates     []string
 }
 
 type StashItem struct {
@@ -83,9 +89,9 @@ func Render(theme Theme, state State) string {
 		return renderRepoStreamDialog(theme, state)
 	case "create_issue_meta", "create_issue_default", "edit_issue", "issue_status", "issue_status_note":
 		return renderIssueDialog(theme, state)
-	case "end_session", "stash_session", "issue_session_transition", "stash_list", "amend_session":
+	case "end_session", "stash_session", "issue_session_transition", "stash_list", "amend_session", "manual_session":
 		return renderSessionDialog(theme, state)
-	case "confirm_delete", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_frozen_streaks", "edit_rest_weekdays", "edit_rest_dates", "edit_recurring_rest_dates", "view_entity", "complete_habit":
+	case "confirm_delete", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_rest_protection", "view_entity", "complete_habit":
 		return renderUtilityDialog(theme, state)
 	default:
 		return ""

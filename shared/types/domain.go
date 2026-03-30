@@ -164,7 +164,6 @@ const (
 	CoreSettingsKeyFrozenStreakKinds     CoreSettingsKey = "frozenStreakKinds"
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
-	CoreSettingsKeyRestRecurringDates    CoreSettingsKey = "restRecurringDates"
 )
 
 type StreakKind string
@@ -465,13 +464,21 @@ type StreakSummary struct {
 	LongestCheckInDays int `json:"longestCheckInDays"`
 }
 
+type SessionSource string
+
+const (
+	SessionSourceTracked SessionSource = "tracked"
+	SessionSourceManual  SessionSource = "manual"
+)
+
 type Session struct {
-	ID              string  `json:"id"`
-	IssueID         int64   `json:"issueId"`
-	StartTime       string  `json:"startTime"`
-	EndTime         *string `json:"endTime,omitempty"`
-	DurationSeconds *int    `json:"durationSeconds,omitempty"`
-	Notes           *string `json:"notes,omitempty"`
+	ID              string        `json:"id"`
+	IssueID         int64         `json:"issueId"`
+	Source          SessionSource `json:"source"`
+	StartTime       string        `json:"startTime"`
+	EndTime         *string       `json:"endTime,omitempty"`
+	DurationSeconds *int          `json:"durationSeconds,omitempty"`
+	Notes           *string       `json:"notes,omitempty"`
 }
 
 type ParsedSessionNotes map[SessionNoteSection]string
@@ -547,7 +554,6 @@ type CoreSettings struct {
 	FrozenStreakKinds     []StreakKind `json:"frozenStreakKinds,omitempty"`
 	RestWeekdays          []int        `json:"restWeekdays,omitempty"`
 	RestSpecificDates     []string     `json:"restSpecificDates,omitempty"`
-	RestRecurringDates    []string     `json:"restRecurringDates,omitempty"`
 	CreatedAt             string       `json:"createdAt"`
 	UpdatedAt             string       `json:"updatedAt"`
 }

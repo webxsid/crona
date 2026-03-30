@@ -25,7 +25,10 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		)
 	}
 	if state.View == "daily" {
-		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"))
+		actions = append(actions,
+			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"),
+			theme.StyleHeader.Render("[w]")+theme.StyleDim.Render(" away"),
+		)
 	}
 	if state.UpdateVisible {
 		actions = append(actions, theme.StyleHeader.Render("[u]")+theme.StyleDim.Render(" updates"))
@@ -113,6 +116,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 				theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
+				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
 			}
@@ -120,6 +124,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 			theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
+			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
 			theme.StyleHeader.Render("[e/d]") + theme.StyleDim.Render(" edit/delete"),
@@ -205,9 +210,6 @@ func SettingsItemLabels(settings *sharedtypes.CoreSettings) []string {
 		"Issue Sort",
 		"Habit Sort",
 		"Away Mode",
-		"Frozen Streaks",
-		"Rest Weekdays",
-		"Rest Dates",
-		"Recurring Rest Dates",
+		"Rest & Streak Protection",
 	}
 }

@@ -28,8 +28,8 @@ func renderIssueDialog(theme Theme, state State) string {
 			"",
 			contextRow,
 			"",
-			theme.StyleDim.Render(issueDialogHint(state, "create")),
 		}
+		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "create"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "create_issue_default":
 		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, issueDialogWidth)
@@ -50,8 +50,8 @@ func renderIssueDialog(theme Theme, state State) string {
 			"",
 			contextRow,
 			"",
-			theme.StyleDim.Render(issueDialogHint(state, "create")),
 		}
+		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "create"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "edit_issue":
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
@@ -69,13 +69,13 @@ func renderIssueDialog(theme Theme, state State) string {
 			"",
 			schedulingRow,
 			"",
-			theme.StyleDim.Render(issueDialogHint(state, "save")),
 		}
+		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorYellow, rows)
 	case "issue_status":
 		rows := []string{theme.StylePaneTitle.Render("Set Issue Status"), ""}
 		if len(state.StatusItems) == 0 {
-			rows = append(rows, theme.StyleDim.Render("No valid status transitions"), "", theme.StyleDim.Render("[esc] close"))
+			rows = appendDialogFooter(theme, state, append(rows, theme.StyleDim.Render("No valid status transitions")), "[esc] close")
 		} else {
 			for i, status := range state.StatusItems {
 				label := plainIssueStatus(string(status))
@@ -85,7 +85,7 @@ func renderIssueDialog(theme Theme, state State) string {
 					rows = append(rows, "  "+label)
 				}
 			}
-			rows = append(rows, "", theme.StyleDim.Render("[j/k] move   [enter] set   [esc] cancel"))
+			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] set   [esc] cancel")
 		}
 		return modal(theme, state.Width, 48, theme.ColorYellow, rows)
 	case "issue_status_note":
@@ -93,7 +93,8 @@ func renderIssueDialog(theme Theme, state State) string {
 		if title == "" {
 			title = "Status Note"
 		}
-		rows := []string{theme.StylePaneTitle.Render(title), "", theme.StyleDim.Render(state.StatusLabel), state.Inputs[0].View(), "", theme.StyleDim.Render("[enter] set   [esc] cancel")}
+		rows := []string{theme.StylePaneTitle.Render(title), "", theme.StyleDim.Render(state.StatusLabel), state.Inputs[0].View()}
+		rows = appendDialogFooter(theme, state, rows, "[tab] next   "+dialogSubmitHint(state, "set")+"   [esc] cancel")
 		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
 	default:
 		return ""
@@ -105,25 +106,25 @@ func issueDialogHint(state State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		case 3:
-			return "[enter] newline   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		case 5:
-			return "[f2] calendar   [g] today   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		default:
-			return "[tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
 	case "create_issue_meta", "edit_issue":
 		switch state.FocusIdx {
 		case 1:
-			return "[enter] newline   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[f2] calendar   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		default:
-			return "[tab] next   [ctrl+s] " + submitLabel + "   [esc] cancel"
+			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
 	default:
-		return "[ctrl+s] " + submitLabel + "   [esc] cancel"
+		return dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 	}
 }
 

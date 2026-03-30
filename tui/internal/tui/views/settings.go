@@ -36,10 +36,7 @@ func renderSettingsView(theme Theme, state ContentState) string {
 		{"Issue Sort", issueSortLabel(state.Settings.IssueSort)},
 		{"Habit Sort", habitSortLabel(state.Settings.HabitSort)},
 		{"Away Mode", onOff(state.Settings.AwayModeEnabled)},
-		{"Frozen Streaks", streakKindsLabel(state.Settings.FrozenStreakKinds)},
-		{"Rest Weekdays", weekdaysLabel(state.Settings.RestWeekdays)},
-		{"Rest Dates", dateListLabel(state.Settings.RestSpecificDates)},
-		{"Recurring Rest Dates", dateListLabel(state.Settings.RestRecurringDates)},
+		{"Rest & Streak Protection", restProtectionLabel(state.Settings)},
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No settings match the current filter"))
@@ -175,4 +172,38 @@ func dateListLabel(values []string) string {
 		return strings.Join(values, ",")
 	}
 	return fmt.Sprintf("%s +%d", values[0], len(values)-1)
+}
+
+func restProtectionLabel(settings *sharedtypes.CoreSettings) string {
+	if settings == nil {
+		return "-"
+	}
+	parts := []string{}
+	if settings.AwayModeEnabled {
+		parts = append(parts, "Away mode active")
+	}
+	if len(settings.FrozenStreakKinds) == 0 || len(settings.FrozenStreakKinds) == len(sharedtypes.AvailableStreakKinds()) {
+		parts = append(parts, "All streaks")
+	} else {
+		kinds := streakKindsLabel(settings.FrozenStreakKinds)
+		if kinds != "" && kinds != "-" {
+			parts = append(parts, kinds)
+		}
+	}
+	weekdays := weekdaysLabel(settings.RestWeekdays)
+	if weekdays != "-" {
+		parts = append(parts, weekdays)
+	}
+	dates := dateListLabel(settings.RestSpecificDates)
+	if dates != "-" {
+		label := dates
+		if len(settings.RestSpecificDates) > 1 {
+			label = fmt.Sprintf("%d dates", len(settings.RestSpecificDates))
+		}
+		parts = append(parts, label)
+	}
+	if len(parts) == 1 && parts[0] == "All streaks" {
+		return "All streaks • No rest days"
+	}
+	return strings.Join(parts, " • ")
 }

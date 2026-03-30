@@ -12,7 +12,8 @@ func modal(theme Theme, width, maxWidth int, border lipgloss.Color, rows []strin
 }
 
 func renderSingleInput(theme Theme, width int, title, label string, inputs []textinput.Model, border lipgloss.Color, hint string) string {
-	rows := []string{theme.StylePaneTitle.Render(title), "", theme.StyleDim.Render(label), inputs[0].View(), "", theme.StyleDim.Render(hint)}
+	rows := []string{theme.StylePaneTitle.Render(title), "", theme.StyleDim.Render(label), inputs[0].View()}
+	rows = appendDialogFooter(theme, State{}, rows, hint)
 	return modal(theme, width, 52, border, rows)
 }
 
@@ -66,4 +67,31 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func appendDialogFooter(theme Theme, state State, rows []string, hint string) []string {
+	if strings.TrimSpace(state.ErrorMessage) != "" {
+		rows = append(rows, "", theme.StyleError.Render(state.ErrorMessage))
+	}
+	if strings.TrimSpace(hint) != "" {
+		rows = append(rows, "", theme.StyleDim.Render(hint))
+	}
+	return rows
+}
+
+func dialogSubmitChord(state State) string {
+	return "ctrl+s"
+}
+
+func dialogSubmitHint(state State, label string) string {
+	return "[" + dialogSubmitChord(state) + "] " + label
+}
+
+func isDialogSubmitKey(state State, key string) bool {
+	switch key {
+	case "ctrl+s":
+		return true
+	default:
+		return false
+	}
 }

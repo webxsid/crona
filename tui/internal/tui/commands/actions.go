@@ -41,8 +41,7 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 		case sharedtypes.CoreSettingsKeyAwayModeEnabled,
 			sharedtypes.CoreSettingsKeyFrozenStreakKinds,
 			sharedtypes.CoreSettingsKeyRestWeekdays,
-			sharedtypes.CoreSettingsKeyRestSpecificDates,
-			sharedtypes.CoreSettingsKeyRestRecurringDates:
+			sharedtypes.CoreSettingsKeyRestSpecificDates:
 			cmds = append(cmds, LoadWellbeing(c, dashboardDate))
 		}
 		return tea.Batch(cmds...)()
@@ -562,6 +561,17 @@ func AmendSessionNote(c *api.Client, id string, note string) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return SessionAmendedMsg{ID: id}
+	}
+}
+
+func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) tea.Cmd {
+	return func() tea.Msg {
+		session, err := c.LogManualSession(input)
+		if err != nil {
+			logger.Errorf("LogManualSession(%d): %v", input.IssueID, err)
+			return ErrMsg{Err: err}
+		}
+		return ManualSessionLoggedMsg{ID: session.ID, IssueID: session.IssueID, Date: input.Date}
 	}
 }
 

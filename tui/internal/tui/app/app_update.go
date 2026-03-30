@@ -51,10 +51,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	state, action, status := dialogstate.Update(m.dialogSnapshot(), msg)
-	next := m.withDialogState(state)
 	if status != "" {
-		return next.withStatus(status, true), nil
+		state.ErrorMessage = status
+		return m.withDialogState(state), nil
 	}
+	state.ErrorMessage = ""
+	next := m.withDialogState(state)
 	if action == nil {
 		return next, nil
 	}
@@ -364,6 +366,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		StatusSeq:             m.statusSeq,
 		StatusErr:             m.statusErr,
 		Dialog:                m.dialog,
+		DialogErrorMessage:    m.dialogErrorMessage,
 		DialogChoiceItems:     m.dialogChoiceItems,
 		DialogChoiceCursor:    m.dialogChoiceCursor,
 		DialogProcessing:      m.dialogProcessing,
@@ -424,6 +427,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.statusSeq = state.StatusSeq
 	m.statusErr = state.StatusErr
 	m.dialog = state.Dialog
+	m.dialogErrorMessage = state.DialogErrorMessage
 	m.dialogChoiceItems = state.DialogChoiceItems
 	m.dialogChoiceCursor = state.DialogChoiceCursor
 	m.dialogProcessing = state.DialogProcessing

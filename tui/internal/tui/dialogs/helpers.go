@@ -77,3 +77,46 @@ func EndSessionRequest(inputs []textinput.Model) shareddto.EndSessionRequest {
 	}
 	return req
 }
+
+func ParseDurationInput(raw string, required bool, label string) (int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		if required {
+			return 0, fmt.Errorf("%s is required", label)
+		}
+		return 0, nil
+	}
+	if minutes, err := strconv.Atoi(raw); err == nil {
+		if minutes < 0 {
+			return 0, fmt.Errorf("%s must be non-negative", label)
+		}
+		return minutes * 60, nil
+	}
+	normalized := raw
+	if _, err := strconv.Atoi(strings.TrimSuffix(raw, "m")); err == nil && strings.HasSuffix(raw, "m") {
+		normalized = raw
+	}
+	d, err := time.ParseDuration(normalized)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be like 90, 90m, or 1h30m", label)
+	}
+	seconds := int(d.Seconds())
+	if seconds < 0 {
+		return 0, fmt.Errorf("%s must be non-negative", label)
+	}
+	if required && seconds == 0 {
+		return 0, fmt.Errorf("%s must be positive", label)
+	}
+	return seconds, nil
+}
+
+func ParseClockInput(raw string) (*string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	if _, err := time.Parse("15:04", raw); err != nil {
+		return nil, fmt.Errorf("time must be HH:MM")
+	}
+	return &raw, nil
+}

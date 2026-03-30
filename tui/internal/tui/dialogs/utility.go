@@ -4,24 +4,30 @@ import (
 	"fmt"
 	"strings"
 
+	sharedtypes "crona/shared/types"
+
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 )
 
 func renderUtilityDialog(theme Theme, state State) string {
 	switch state.Kind {
 	case "confirm_delete":
-		content := fmt.Sprintf("%s\n\nDelete %s?\n\n%s", theme.StylePaneTitle.Render("Confirm Delete"), theme.StyleError.Render(fallback(state.DeleteLabel, "this item")), theme.StyleDim.Render("[enter] delete   [esc] cancel"))
-		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 44)).Render(content)
+		rows := []string{theme.StylePaneTitle.Render("Confirm Delete"), "", theme.StyleError.Render(fallback(state.DeleteLabel, "this item"))}
+		rows = appendDialogFooter(theme, state, rows, "[enter] delete   [esc] cancel")
+		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 44)).Render(strings.Join(rows, "\n"))
 	case "pick_date":
-		rows := []string{theme.StylePaneTitle.Render(state.DateTitle), "", theme.StyleHeader.Render(state.DateHeader), theme.StyleDim.Render(state.DateMonth), "", state.DateGrid, "", theme.StyleDim.Render("[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back")}
+		rows := []string{theme.StylePaneTitle.Render(state.DateTitle), "", theme.StyleHeader.Render(state.DateHeader), theme.StyleDim.Render(state.DateMonth), "", state.DateGrid}
+		rows = appendDialogFooter(theme, state, rows, "[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back")
 		return modal(theme, state.Width, 46, theme.ColorCyan, rows)
 	case "create_scratchpad":
-		rows := []string{theme.StylePaneTitle.Render("New Scratchpad"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Path  (supports [[date]], [[timestamp]])"), state.Inputs[1].View(), "", theme.StyleDim.Render("[tab] next field   [ctrl+s] create   [esc] cancel")}
+		rows := []string{theme.StylePaneTitle.Render("New Scratchpad"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Path  (supports [[date]], [[timestamp]])"), state.Inputs[1].View()}
+		rows = appendDialogFooter(theme, state, rows, "[tab] next field   "+dialogSubmitHint(state, "create")+"   [esc] cancel")
 		return modal(theme, state.Width, 54, theme.ColorCyan, rows)
 	case "create_checkin", "edit_checkin":
 		title := "New Check-In"
 		border := theme.ColorCyan
-		hint := "[tab] next field   [ctrl+s] save   [esc] cancel"
+		hint := "[tab] next field   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
 		if state.Kind == "edit_checkin" {
 			title = "Edit Check-In"
 			border = theme.ColorYellow
@@ -50,8 +56,8 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Notes"),
 			state.Inputs[5].View(),
 			"",
-			theme.StyleDim.Render(hint),
 		}
+		rows = appendDialogFooter(theme, state, rows, hint)
 		return modal(theme, state.Width, 68, border, rows)
 	case "export_report":
 		rows := []string{
@@ -76,11 +82,9 @@ func renderUtilityDialog(theme Theme, state State) string {
 		}
 		rows = append(rows, "")
 		if state.Processing {
-			rows = append(rows, theme.StyleHeader.Render(state.ProcessingLabel))
-			rows = append(rows, "")
-			rows = append(rows, theme.StyleDim.Render("Please wait..."))
+			rows = appendDialogFooter(theme, state, append(rows, theme.StyleHeader.Render(state.ProcessingLabel), "", theme.StyleDim.Render("Please wait...")), "")
 		} else {
-			rows = append(rows, theme.StyleDim.Render("[j/k] move   [enter] choose   [esc] cancel"))
+			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] cancel")
 		}
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "export_calendar_repo":
@@ -105,7 +109,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
-		rows = append(rows, "", theme.StyleDim.Render("[j/k] move   [enter] export   [esc] back"))
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] export   [esc] back")
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "edit_export_reports_dir":
 		rows := []string{
@@ -115,8 +119,8 @@ func renderUtilityDialog(theme Theme, state State) string {
 			state.Inputs[0].View(),
 			"",
 			theme.StyleDim.Render("Use an absolute path or ~/..."),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_export_ics_dir":
 		rows := []string{
@@ -126,53 +130,55 @@ func renderUtilityDialog(theme Theme, state State) string {
 			state.Inputs[0].View(),
 			"",
 			theme.StyleDim.Render("Use an absolute path or ~/..."),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "edit_rest_protection":
+		return renderRestProtectionDialog(theme, state)
 	case "edit_frozen_streaks":
 		rows := []string{
 			theme.StylePaneTitle.Render("Frozen Streaks"),
 			"",
 			theme.StyleDim.Render("Comma-separated streak kinds"),
-			state.Inputs[0].View(),
+			dialogInputView(state, 0),
 			"",
 			theme.StyleDim.Render("Use: focus_days,checkin_days"),
 			theme.StyleDim.Render("Leave blank to freeze all available streaks"),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_weekdays":
 		rows := []string{
 			theme.StylePaneTitle.Render("Rest Weekdays"),
 			"",
 			theme.StyleDim.Render("Comma-separated weekdays"),
-			state.Inputs[0].View(),
+			dialogInputView(state, 0),
 			"",
 			theme.StyleDim.Render("Use: sun,mon,tue,wed,thu,fri,sat"),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_dates":
 		rows := []string{
 			theme.StylePaneTitle.Render("Rest Dates"),
 			"",
 			theme.StyleDim.Render("Comma-separated one-off dates"),
-			state.Inputs[0].View(),
+			dialogInputView(state, 0),
 			"",
 			theme.StyleDim.Render("Use YYYY-MM-DD"),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_recurring_rest_dates":
 		rows := []string{
 			theme.StylePaneTitle.Render("Recurring Rest Dates"),
 			"",
 			theme.StyleDim.Render("Comma-separated recurring dates"),
-			state.Inputs[0].View(),
+			dialogInputView(state, 0),
 			"",
 			theme.StyleDim.Render("Use MM-DD"),
-			theme.StyleDim.Render("[enter] save   [esc] cancel"),
 		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "view_entity":
 		rows := []string{
@@ -183,7 +189,8 @@ func renderUtilityDialog(theme Theme, state State) string {
 		if state.ViewMeta != "" {
 			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
 		}
-		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody), "", theme.StyleDim.Render("[enter/esc] close"))
+		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
+		rows = appendDialogFooter(theme, state, rows, "[enter/esc] close")
 		return modal(theme, state.Width, 76, theme.ColorCyan, rows)
 	case "complete_habit":
 		rows := []string{
@@ -198,12 +205,170 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Notes (Optional)"),
 			state.Description.View(),
 			"",
-			theme.StyleDim.Render("[enter] newline in notes   [ctrl+s] save   [tab] next   [esc] cancel"),
 		}
+		hint := "[tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+		if state.FocusIdx == state.DescriptionIndex {
+			hint = "[enter] newline in notes   [tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+		}
+		rows = appendDialogFooter(theme, state, rows, hint)
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	default:
 		return ""
 	}
+}
+
+func renderRestProtectionDialog(theme Theme, state State) string {
+	steps := []string{"Streaks", "Weekdays", "Dates", "Review"}
+	progress := make([]string, 0, len(steps))
+	for i, step := range steps {
+		label := fmt.Sprintf("%d.%s", i+1, step)
+		if i == state.ProtectionStep {
+			progress = append(progress, theme.StyleCursor.Render(label))
+			continue
+		}
+		progress = append(progress, theme.StyleDim.Render(label))
+	}
+	rows := []string{
+		theme.StylePaneTitle.Render("Rest & Streak Protection"),
+		"",
+		strings.Join(progress, "   "),
+		"",
+	}
+	switch state.ProtectionStep {
+	case 0:
+		rows = append(rows, theme.StyleDim.Render("Select which streaks are protected"))
+		for i, kind := range sharedtypes.AvailableStreakKinds() {
+			label := "Focus Days"
+			if kind == sharedtypes.StreakKindCheckInDays {
+				label = "Check-In Days"
+			}
+			prefix := "[ ] "
+			if hasStreakKind(state.ProtectionStreaks, kind) {
+				prefix = "[x] "
+			}
+			line := prefix + label
+			if i == state.ProtectionCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render("  "+line))
+			}
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [space] toggle   [a] all   [c] none   [tab] next")
+	case 1:
+		rows = append(rows, theme.StyleDim.Render("Select default rest weekdays"))
+		labels := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+		for i, label := range labels {
+			prefix := "[ ] "
+			if containsInt(state.ProtectionWeekdays, i) {
+				prefix = "[x] "
+			}
+			line := prefix + label
+			if i == state.ProtectionCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render("  "+line))
+			}
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [space] toggle   [c] clear   [tab] next")
+	case 2:
+		rows = append(rows, theme.StyleDim.Render("Manage one-off rest dates"))
+		if len(state.ProtectionDates) == 0 {
+			rows = append(rows, theme.StyleDim.Render("No rest dates added"))
+		} else {
+			for i, value := range state.ProtectionDates {
+				line := value
+				if i == state.ProtectionCursor {
+					rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+				} else {
+					rows = append(rows, theme.StyleNormal.Render("  "+line))
+				}
+			}
+		}
+		rows = appendDialogFooter(theme, state, rows, "[a] add date   [d] remove selected   [tab] next")
+	case 3:
+		rows = append(rows,
+			theme.StyleDim.Render("Protected Streaks"),
+			theme.StyleHeader.Render(fallback(streakKindsSummary(state.ProtectionStreaks), "None")),
+			"",
+			theme.StyleDim.Render("Rest Weekdays"),
+			theme.StyleHeader.Render(weekdaysSummary(state.ProtectionWeekdays)),
+			"",
+			theme.StyleDim.Render("Rest Dates"),
+			theme.StyleHeader.Render(restDatesSummary(state.ProtectionDates)),
+		)
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [shift+tab] back   [esc] cancel")
+	}
+	return modal(theme, state.Width, 76, theme.ColorCyan, rows)
+}
+
+func hasStreakKind(values []sharedtypes.StreakKind, target sharedtypes.StreakKind) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func containsInt(values []int, target int) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
+}
+
+func streakKindsSummary(values []sharedtypes.StreakKind) string {
+	if len(values) == 0 {
+		return "None"
+	}
+	labels := make([]string, 0, len(values))
+	for _, value := range values {
+		if value == sharedtypes.StreakKindCheckInDays {
+			labels = append(labels, "Check-ins")
+		} else {
+			labels = append(labels, "Focus")
+		}
+	}
+	return strings.Join(labels, " • ")
+}
+
+func weekdaysSummary(values []int) string {
+	if len(values) == 0 {
+		return "None"
+	}
+	labels := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		if value >= 0 && value < len(labels) {
+			out = append(out, labels[value])
+		}
+	}
+	if len(out) == 0 {
+		return "None"
+	}
+	return strings.Join(out, ", ")
+}
+
+func restDatesSummary(values []string) string {
+	if len(values) == 0 {
+		return "None"
+	}
+	if len(values) == 1 {
+		return values[0]
+	}
+	return fmt.Sprintf("%s +%d", values[0], len(values)-1)
+}
+
+func dialogInputView(state State, idx int) string {
+	if idx >= 0 && idx < len(state.Inputs) {
+		return state.Inputs[idx].View()
+	}
+	input := textinput.New()
+	input.Width = 56
+	input.Placeholder = "<missing input>"
+	return input.View()
 }
 
 func renderViewEntityBody(theme Theme, body string) string {

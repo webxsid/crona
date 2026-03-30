@@ -79,6 +79,7 @@ const (
 	MethodSessionPause       = "session.pause"
 	MethodSessionResume      = "session.resume"
 	MethodSessionEnd         = "session.end"
+	MethodSessionLogManual   = "session.log_manual"
 	MethodSessionAmendNote   = "session.amend_note"
 	MethodSessionHistory     = "session.history"
 

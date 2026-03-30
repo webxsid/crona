@@ -22,5 +22,4 @@ var DefaultCoreSettings = map[string]any{
 	"frozenStreakKinds":            []string{"focus_days", "checkin_days"},
 	"restWeekdays":                 []int{},
 	"restSpecificDates":            []string{},
-	"restRecurringDates":           []string{},
 }

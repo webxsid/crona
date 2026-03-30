@@ -608,6 +608,19 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 				Links:         input.Links,
 			})
 		})
+	case protocol.MethodSessionLogManual:
+		return handle(req, func(input shareddto.ManualSessionLogRequest) (any, error) {
+			return corecommands.LogManualSession(ctx, h.core, corecommands.ManualSessionInput{
+				IssueID:              input.IssueID,
+				Date:                 input.Date,
+				WorkDurationSeconds:  input.WorkDurationSeconds,
+				BreakDurationSeconds: input.BreakDurationSeconds,
+				StartTime:            input.StartTime,
+				EndTime:              input.EndTime,
+				CommitMessage:        input.CommitMessage,
+				Notes:                input.Notes,
+			})
+		})
 	case protocol.MethodSessionAmendNote:
 		return handle(req, func(input shareddto.AmendSessionNoteRequest) (any, error) {
 			return corecommands.AmendSessionNotes(ctx, h.core, input.Note, input.ID)

@@ -138,44 +138,50 @@ type Model struct {
 	scratchpadViewport viewport.Model
 
 	// dialog state
-	dialog                string // "" | "create_scratchpad" | "confirm_delete" | "stash_list"
-	dialogInputs          []textinput.Model
-	dialogDescription     textarea.Model
-	dialogDescriptionOn   bool
-	dialogDescriptionIdx  int
-	dialogFocusIdx        int
-	dialogDeleteID        string // scratchpad id pending deletion
-	dialogDeleteKind      string
-	dialogDeleteLabel     string
-	dialogSessionID       string
-	dialogIssueID         int64
-	dialogHabitID         int64
-	dialogIssueStatus     string
-	dialogCheckInDate     string
-	dialogRepoID          int64
-	dialogRepoName        string
-	dialogRepoItems       []string
-	dialogRepoItemIDs     []int64
-	dialogStreamID        int64
-	dialogStreamName      string
-	dialogRepoIndex       int
-	dialogStreamIndex     int
-	dialogParent          string
-	dialogDateMonth       string
-	dialogDateCursor      string
-	dialogStashCursor     int
-	dialogStatusItems     []sharedtypes.IssueStatus
-	dialogStatusCursor    int
-	dialogChoiceItems     []string
-	dialogChoiceCursor    int
-	dialogProcessing      bool
-	dialogProcessingLabel string
-	dialogStatusLabel     string
-	dialogStatusRequired  bool
-	dialogViewTitle       string
-	dialogViewName        string
-	dialogViewMeta        string
-	dialogViewBody        string
+	dialog                   string // "" | "create_scratchpad" | "confirm_delete" | "stash_list"
+	dialogInputs             []textinput.Model
+	dialogDescription        textarea.Model
+	dialogDescriptionOn      bool
+	dialogDescriptionIdx     int
+	dialogFocusIdx           int
+	dialogErrorMessage       string
+	dialogDeleteID           string // scratchpad id pending deletion
+	dialogDeleteKind         string
+	dialogDeleteLabel        string
+	dialogSessionID          string
+	dialogIssueID            int64
+	dialogHabitID            int64
+	dialogIssueStatus        string
+	dialogCheckInDate        string
+	dialogRepoID             int64
+	dialogRepoName           string
+	dialogRepoItems          []string
+	dialogRepoItemIDs        []int64
+	dialogStreamID           int64
+	dialogStreamName         string
+	dialogRepoIndex          int
+	dialogStreamIndex        int
+	dialogParent             string
+	dialogDateMonth          string
+	dialogDateCursor         string
+	dialogStashCursor        int
+	dialogStatusItems        []sharedtypes.IssueStatus
+	dialogStatusCursor       int
+	dialogChoiceItems        []string
+	dialogChoiceCursor       int
+	dialogProcessing         bool
+	dialogProcessingLabel    string
+	dialogStatusLabel        string
+	dialogStatusRequired     bool
+	dialogViewTitle          string
+	dialogViewName           string
+	dialogViewMeta           string
+	dialogViewBody           string
+	dialogProtectionStep     int
+	dialogProtectionCursor   int
+	dialogProtectionStreaks  []sharedtypes.StreakKind
+	dialogProtectionWeekdays []int
+	dialogProtectionDates    []string
 
 	// status / error flash
 	statusMsg string
@@ -368,7 +374,10 @@ func (m Model) inputState() inputpkg.State {
 		DashboardDate:       m.dashboardDate,
 		WellbeingDate:       m.wellbeingDate,
 		Dialog:              m.dialog,
+		DialogState:         m.dialogState(),
 		HelpOpen:            m.helpOpen,
+		SessionDetailOpen:   m.sessionDetailOpen,
+		SessionDetailY:      m.sessionDetailY,
 		ScratchpadOpen:      m.scratchpadOpen,
 		OpsLimit:            m.opsLimit,
 		OpsLimitPinned:      m.opsLimitPinned,
@@ -393,8 +402,13 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dashboardDate = state.DashboardDate
 	m.wellbeingDate = state.WellbeingDate
-	m.dialog = state.Dialog
+	m = m.withDialogState(state.DialogState)
+	if state.DialogState.Kind == "" {
+		m.dialog = state.Dialog
+	}
 	m.helpOpen = state.HelpOpen
+	m.sessionDetailOpen = state.SessionDetailOpen
+	m.sessionDetailY = state.SessionDetailY
 	m.scratchpadOpen = state.ScratchpadOpen
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned
@@ -637,6 +651,22 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = model.(Model).inputState()
 			return cmd
 		},
+		OpenManualSessionDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			if next.dialog != "" {
+				return false
+			}
+			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
+				issueLabel := ""
+				if meta := selectionpkg.IssueMetaByID(next.selectionSnapshot(), issue.ID); meta != nil {
+					issueLabel = meta.Title
+				}
+				next = next.openManualSessionDialog(issue.ID, issueLabel, next.currentDashboardDate())
+				*state = next.inputState()
+				return true
+			}
+			return false
+		},
 		ConfigReset: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			cmd, _ := next.handleInputConfigReset()
@@ -646,27 +676,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
-		OpenEditFrozenStreaksDialog: func(state *inputpkg.State) bool {
+		OpenEditRestProtectionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			next = next.openEditFrozenStreaksDialog()
-			*state = next.inputState()
-			return true
-		},
-		OpenEditRestWeekdaysDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openEditRestWeekdaysDialog()
-			*state = next.inputState()
-			return true
-		},
-		OpenEditRestDatesDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openEditRestDatesDialog()
-			*state = next.inputState()
-			return true
-		},
-		OpenEditRecurringRestDatesDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openEditRecurringRestDatesDialog()
+			next = next.openEditRestProtectionDialog()
 			*state = next.inputState()
 			return true
 		},
@@ -770,6 +782,9 @@ func (m Model) openIssueSessionTransitionDialog(issueID int64, status string) Mo
 func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
 	return m.withDialogState(dialogstate.OpenAmendSession(m.dialogSnapshot(), sessionID, commit))
 }
+func (m Model) openManualSessionDialog(issueID int64, issueLabel string, date string) Model {
+	return m.withDialogState(dialogstate.OpenManualSession(m.dialogSnapshot(), issueID, issueLabel, date))
+}
 func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputIndex int, initial *string) Model {
 	return m.withDialogState(dialogstate.OpenDatePicker(m.dialogSnapshot(), parentDialog, issueID, inputIndex, initial))
 }
@@ -788,17 +803,8 @@ func (m Model) openExportReportsDirDialog(current string) Model {
 func (m Model) openExportICSDirDialog(current string) Model {
 	return m.withDialogState(dialogstate.OpenExportICSDir(m.dialogSnapshot(), current))
 }
-func (m Model) openEditFrozenStreaksDialog() Model {
-	return m.withDialogState(dialogstate.OpenEditFrozenStreaks(m.dialogSnapshot()))
-}
-func (m Model) openEditRestWeekdaysDialog() Model {
-	return m.withDialogState(dialogstate.OpenEditRestWeekdays(m.dialogSnapshot()))
-}
-func (m Model) openEditRestDatesDialog() Model {
-	return m.withDialogState(dialogstate.OpenEditRestDates(m.dialogSnapshot()))
-}
-func (m Model) openEditRecurringRestDatesDialog() Model {
-	return m.withDialogState(dialogstate.OpenEditRecurringRestDates(m.dialogSnapshot()))
+func (m Model) openEditRestProtectionDialog() Model {
+	return m.withDialogState(dialogstate.OpenEditRestProtection(m.dialogSnapshot()))
 }
 
 func (m Model) dialogState() dialogpkg.State {
@@ -810,6 +816,7 @@ func (m Model) dialogState() dialogpkg.State {
 		DescriptionEnabled: m.dialogDescriptionOn,
 		DescriptionIndex:   m.dialogDescriptionIdx,
 		FocusIdx:           m.dialogFocusIdx,
+		ErrorMessage:       m.dialogErrorMessage,
 		DeleteID:           m.dialogDeleteID,
 		DeleteKind:         m.dialogDeleteKind,
 		DeleteLabel:        m.dialogDeleteLabel,
@@ -842,6 +849,11 @@ func (m Model) dialogState() dialogpkg.State {
 		ViewName:           m.dialogViewName,
 		ViewMeta:           m.dialogViewMeta,
 		ViewBody:           m.dialogViewBody,
+		ProtectionStep:     m.dialogProtectionStep,
+		ProtectionCursor:   m.dialogProtectionCursor,
+		ProtectionStreaks:  m.dialogProtectionStreaks,
+		ProtectionWeekdays: m.dialogProtectionWeekdays,
+		ProtectionDates:    m.dialogProtectionDates,
 	}
 }
 
@@ -852,6 +864,7 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogDescriptionOn = state.DescriptionEnabled
 	m.dialogDescriptionIdx = state.DescriptionIndex
 	m.dialogFocusIdx = state.FocusIdx
+	m.dialogErrorMessage = state.ErrorMessage
 	m.dialogDeleteID = state.DeleteID
 	m.dialogDeleteKind = state.DeleteKind
 	m.dialogDeleteLabel = state.DeleteLabel
@@ -884,6 +897,11 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogViewName = state.ViewName
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
+	m.dialogProtectionStep = state.ProtectionStep
+	m.dialogProtectionCursor = state.ProtectionCursor
+	m.dialogProtectionStreaks = state.ProtectionStreaks
+	m.dialogProtectionWeekdays = state.ProtectionWeekdays
+	m.dialogProtectionDates = state.ProtectionDates
 	return m
 }
 
@@ -961,6 +979,9 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.ChangeIssueStatus(m.client, issueID, status, note, streamID, dashboardDate)
 		},
 		AmendSessionNote: func(id string, note string) tea.Cmd { return commands.AmendSessionNote(m.client, id, note) },
+		LogManualSession: func(input shareddto.ManualSessionLogRequest) tea.Cmd {
+			return commands.LogManualSession(m.client, input)
+		},
 		EndFocusSession: func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd {
 			return commands.EndFocusSession(m.client, streamID, dashboardDate, payload)
 		},

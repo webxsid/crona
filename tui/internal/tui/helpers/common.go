@@ -83,18 +83,22 @@ func Min(a, b int) int {
 }
 
 func SessionHistorySummary(entry api.SessionHistoryEntry) string {
+	prefix := ""
+	if entry.Source == sharedtypes.SessionSourceManual {
+		prefix = "[Manual] "
+	}
 	if entry.ParsedNotes != nil {
 		if message := strings.TrimSpace(entry.ParsedNotes[sharedtypes.SessionNoteSectionCommit]); message != "" {
-			return message
+			return prefix + message
 		}
 		if note := strings.TrimSpace(entry.ParsedNotes[sharedtypes.SessionNoteSectionNotes]); note != "" {
-			return note
+			return prefix + note
 		}
 	}
 	if entry.Notes != nil && strings.TrimSpace(*entry.Notes) != "" {
-		return strings.TrimSpace(*entry.Notes)
+		return prefix + strings.TrimSpace(*entry.Notes)
 	}
-	return fmt.Sprintf("Issue #%d", entry.IssueID)
+	return prefix + fmt.Sprintf("Issue #%d", entry.IssueID)
 }
 
 func NormalizeOptionalValue(value string) *string {

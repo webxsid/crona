@@ -48,6 +48,7 @@ type Deps struct {
 	DropStash                      func(id string) tea.Cmd
 	ChangeIssueStatus              func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd
 	AmendSessionNote               func(id string, note string) tea.Cmd
+	LogManualSession               func(input shareddto.ManualSessionLogRequest) tea.Cmd
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	StashFocusSession              func(note string) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
@@ -96,6 +97,7 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 	r.Register("set_export_reports_dir", func(action dialogpkg.Action) tea.Cmd { return deps.SetExportReportsDir(action.Path) })
 	r.Register("set_export_ics_dir", func(action dialogpkg.Action) tea.Cmd { return deps.SetExportICSDir(action.Path) })
 	r.Register("patch_setting", func(action dialogpkg.Action) tea.Cmd { return patchSettingCmd(action, state, deps) })
+	r.Register("patch_rest_protection", func(action dialogpkg.Action) tea.Cmd { return patchRestProtectionCmd(action, state, deps) })
 	r.Register("delete", func(action dialogpkg.Action) tea.Cmd { return deleteCmd(action, state, deps) })
 	r.Register("apply_stash", func(action dialogpkg.Action) tea.Cmd { return deps.ApplyStash(action.ID) })
 	r.Register("drop_stash", func(action dialogpkg.Action) tea.Cmd { return deps.DropStash(action.ID) })
@@ -104,6 +106,12 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 	})
 	r.Register("amend_session", func(action dialogpkg.Action) tea.Cmd {
 		return deps.AmendSessionNote(action.ID, dialogpkg.ValueOrEmpty(action.Note))
+	})
+	r.Register("manual_session", func(action dialogpkg.Action) tea.Cmd {
+		if action.ManualSession == nil {
+			return deps.ErrorCmd(errors.New("manual session payload is missing"))
+		}
+		return deps.LogManualSession(*action.ManualSession)
 	})
 	r.Register("end_session", func(action dialogpkg.Action) tea.Cmd {
 		return deps.EndFocusSession(action.StreamID, state.DashboardDate, action.Payload)
@@ -223,4 +231,20 @@ func deleteCmd(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 		return cmd
 	}
 	return deps.DeleteScratchpad(action.ID)
+}
+
+func patchRestProtectionCmd(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
+	repoID := int64(0)
+	if state.Context != nil && state.Context.RepoID != nil {
+		repoID = *state.Context.RepoID
+	}
+	streamID := int64(0)
+	if state.Context != nil && state.Context.StreamID != nil {
+		streamID = *state.Context.StreamID
+	}
+	return tea.Batch(
+		deps.PatchSetting(sharedtypes.CoreSettingsKeyFrozenStreakKinds, action.StreakKinds, repoID, streamID, state.DashboardDate),
+		deps.PatchSetting(sharedtypes.CoreSettingsKeyRestWeekdays, action.IntList, repoID, streamID, state.DashboardDate),
+		deps.PatchSetting(sharedtypes.CoreSettingsKeyRestSpecificDates, action.RestDates, repoID, streamID, state.DashboardDate),
+	)
 }

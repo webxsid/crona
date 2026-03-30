@@ -5,6 +5,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	dialogpkg "crona/tui/internal/tui/dialogs"
 	keyregistry "crona/tui/internal/tui/key_registry"
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	uistate "crona/tui/internal/tui/state"
@@ -20,7 +21,10 @@ type State struct {
 	DashboardDate       string
 	WellbeingDate       string
 	Dialog              string
+	DialogState         dialogpkg.State
 	HelpOpen            bool
+	SessionDetailOpen   bool
+	SessionDetailY      int
 	ScratchpadOpen      bool
 	OpsLimit            int
 	OpsLimitPinned      bool
@@ -42,62 +46,60 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return s, nil }
 func (s State) View() string                            { return "" }
 
 type Deps struct {
-	CloseEventStop                   func()
-	ShutdownKernel                   func() tea.Cmd
-	SeedDevData                      func() tea.Cmd
-	ClearDevData                     func() tea.Cmd
-	IsDevMode                        func(State) bool
-	NextActiveSessionView            func(State, int) uistate.View
-	NextWorkspaceView                func(State, int) uistate.View
-	DefaultPane                      func(uistate.View) uistate.Pane
-	NextPane                         func(uistate.View, uistate.Pane, int) uistate.Pane
-	SetDefaultIssueSection           func(*State, uistate.DefaultIssueSection)
-	ListLen                          func(State, uistate.Pane) int
-	LoadExportAssets                 func() tea.Cmd
-	SetStatus                        func(*State, string, bool) tea.Cmd
-	LoadDailySummary                 func(string) tea.Cmd
-	LoadDueHabits                    func(string) tea.Cmd
-	CurrentDashboardDate             func(State) string
-	LoadWellbeing                    func(string) tea.Cmd
-	CurrentWellbeingDate             func(State) string
-	ConfigOpenSelectedDir            func(*State) bool
-	OpenCheckoutContextDialog        func(*State) bool
-	Checkout                         func(*State) tea.Cmd
-	CheckUpdateNow                   func() tea.Cmd
-	SelfUpdateInstallAvailable       func(State) bool
-	SelfUpdateUnsupportedReason      func(State) string
-	InstallUpdate                    func(State) tea.Cmd
-	DismissUpdate                    func() tea.Cmd
-	ResumeSession                    func() tea.Cmd
-	PauseSession                     func() tea.Cmd
-	OpenEndSessionDialog             func(*State) bool
-	OpenStashSessionDialog           func(*State) bool
-	CanOpenStashList                 func(State) bool
-	OpenStashListDialog              func(*State) bool
-	LoadStashes                      func() tea.Cmd
-	ClampFiltered                    func(*State, uistate.Pane)
-	CurrentOpsLimit                  func(State) int
-	LoadOps                          func(int) tea.Cmd
-	StartFilterEdit                  func(*State, uistate.Pane)
-	OpenIssueStatusFromSelection     func(*State) bool
-	AbandonSelectedIssue             func(*State) tea.Cmd
-	ToggleSelectedIssueToday         func(*State) tea.Cmd
-	OpenSelectedIssueTodoDateDialog  func(*State) bool
-	HandleCreateAction               func(*State) bool
-	OpenExportDailyDialog            func(*State) bool
-	OpenEditorAction                 func(*State) (tea.Cmd, bool)
-	DeleteSelectionAction            func(*State) (tea.Cmd, bool)
-	OpenSelectionAction              func(*State) (tea.Cmd, bool)
-	EnterAction                      func(*State) (tea.Cmd, bool)
-	ToggleHabitCompletedAction       func(*State) (tea.Cmd, bool)
-	SetHabitFailedAction             func(*State) (tea.Cmd, bool)
-	StartFocusFromSelection          func(*State) tea.Cmd
-	ConfigReset                      func(*State) tea.Cmd
-	PatchSetting                     func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
-	OpenEditFrozenStreaksDialog      func(*State) bool
-	OpenEditRestWeekdaysDialog       func(*State) bool
-	OpenEditRestDatesDialog          func(*State) bool
-	OpenEditRecurringRestDatesDialog func(*State) bool
+	CloseEventStop                  func()
+	ShutdownKernel                  func() tea.Cmd
+	SeedDevData                     func() tea.Cmd
+	ClearDevData                    func() tea.Cmd
+	IsDevMode                       func(State) bool
+	NextActiveSessionView           func(State, int) uistate.View
+	NextWorkspaceView               func(State, int) uistate.View
+	DefaultPane                     func(uistate.View) uistate.Pane
+	NextPane                        func(uistate.View, uistate.Pane, int) uistate.Pane
+	SetDefaultIssueSection          func(*State, uistate.DefaultIssueSection)
+	ListLen                         func(State, uistate.Pane) int
+	LoadExportAssets                func() tea.Cmd
+	SetStatus                       func(*State, string, bool) tea.Cmd
+	LoadDailySummary                func(string) tea.Cmd
+	LoadDueHabits                   func(string) tea.Cmd
+	CurrentDashboardDate            func(State) string
+	LoadWellbeing                   func(string) tea.Cmd
+	CurrentWellbeingDate            func(State) string
+	ConfigOpenSelectedDir           func(*State) bool
+	OpenCheckoutContextDialog       func(*State) bool
+	Checkout                        func(*State) tea.Cmd
+	CheckUpdateNow                  func() tea.Cmd
+	SelfUpdateInstallAvailable      func(State) bool
+	SelfUpdateUnsupportedReason     func(State) string
+	InstallUpdate                   func(State) tea.Cmd
+	DismissUpdate                   func() tea.Cmd
+	ResumeSession                   func() tea.Cmd
+	PauseSession                    func() tea.Cmd
+	OpenEndSessionDialog            func(*State) bool
+	OpenStashSessionDialog          func(*State) bool
+	CanOpenStashList                func(State) bool
+	OpenStashListDialog             func(*State) bool
+	LoadStashes                     func() tea.Cmd
+	ClampFiltered                   func(*State, uistate.Pane)
+	CurrentOpsLimit                 func(State) int
+	LoadOps                         func(int) tea.Cmd
+	StartFilterEdit                 func(*State, uistate.Pane)
+	OpenIssueStatusFromSelection    func(*State) bool
+	AbandonSelectedIssue            func(*State) tea.Cmd
+	ToggleSelectedIssueToday        func(*State) tea.Cmd
+	OpenSelectedIssueTodoDateDialog func(*State) bool
+	HandleCreateAction              func(*State) bool
+	OpenExportDailyDialog           func(*State) bool
+	OpenEditorAction                func(*State) (tea.Cmd, bool)
+	DeleteSelectionAction           func(*State) (tea.Cmd, bool)
+	OpenSelectionAction             func(*State) (tea.Cmd, bool)
+	EnterAction                     func(*State) (tea.Cmd, bool)
+	ToggleHabitCompletedAction      func(*State) (tea.Cmd, bool)
+	SetHabitFailedAction            func(*State) (tea.Cmd, bool)
+	StartFocusFromSelection         func(*State) tea.Cmd
+	OpenManualSessionDialog         func(*State) bool
+	ConfigReset                     func(*State) tea.Cmd
+	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
+	OpenEditRestProtectionDialog    func(*State) bool
 }
 
 type handler = keyregistry.Handler[State]
@@ -138,6 +140,12 @@ func newRouter(deps Deps) *router {
 		"up":        func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"f": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return s, deps.StartFocusFromSelection(&s), true
+		},
+		"m": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenManualSessionDialog(&s) {
+				return s, nil, true
+			}
+			return s, nil, false
 		},
 		"s": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleIssueStatus(s, deps) },
 		"A": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, deps.AbandonSelectedIssue(&s), true },
@@ -223,6 +231,9 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
+	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleToggleAwayMode(s, deps)
+	})
 	keyregistry.RegisterMeta(r, uistate.ViewMeta, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneIssues, uistate.PaneHabits,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneRepos
@@ -612,20 +623,34 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 	}
 	switch s.Cursor[uistate.PaneSettings] {
 	case 18:
-		deps.OpenEditFrozenStreaksDialog(&s)
-		return s, nil, true
-	case 19:
-		deps.OpenEditRestWeekdaysDialog(&s)
-		return s, nil, true
-	case 20:
-		deps.OpenEditRestDatesDialog(&s)
-		return s, nil, true
-	case 21:
-		deps.OpenEditRecurringRestDatesDialog(&s)
+		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
 	default:
 		return handleAdjustSelectedSetting(s, deps, 1)
 	}
+}
+
+func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ActiveView != uistate.ViewDaily || s.Settings == nil {
+		return s, nil, false
+	}
+	repoID := int64(0)
+	if s.Context != nil && s.Context.RepoID != nil {
+		repoID = *s.Context.RepoID
+	}
+	streamID := int64(0)
+	if s.Context != nil && s.Context.StreamID != nil {
+		streamID = *s.Context.StreamID
+	}
+	next := !s.Settings.AwayModeEnabled
+	status := "Away mode disabled"
+	if next {
+		status = "Away mode enabled"
+	}
+	return s, tea.Batch(
+		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, s.DashboardDate),
+		deps.SetStatus(&s, status, false),
+	), true
 }
 
 func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
