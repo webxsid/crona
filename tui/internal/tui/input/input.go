@@ -65,7 +65,7 @@ type Deps struct {
 	CurrentDashboardDate            func(State) string
 	LoadWellbeing                   func(string) tea.Cmd
 	CurrentWellbeingDate            func(State) string
-	ConfigOpenSelectedDir           func(*State) bool
+	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
 	Checkout                        func(*State) tea.Cmd
 	CheckUpdateNow                  func() tea.Cmd
@@ -310,8 +310,7 @@ func newRouter(deps Deps) *router {
 		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			deps.ConfigOpenSelectedDir(&s)
-			return s, nil, true
+			return s, deps.ConfigChangeSelected(&s), true
 		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenEditorAction(&s)

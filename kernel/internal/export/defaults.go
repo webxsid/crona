@@ -124,58 +124,96 @@ Generated at {{generatedAt}}
 {{/each}}
 `
 
-const fallbackDailyReportPDFTemplate = `# Daily Report - {{date}}
-Generated at {{generatedAt}}
-## Snapshot
-- Day health: {{dayHealth}}
-- Issues: {{summary.issueDoneCount}} done / {{summary.totalIssues}} total
-- Habits: {{summary.habitsCompletedCount}} completed / {{summary.habitsDueCount}} due
-- Worked / estimated: {{summary.workedEstimate}}
-- Variance: {{summary.varianceTime}}
-{{#if checkIn}}- Mood / energy: {{checkIn.mood}} / 5, {{checkIn.energy}} / 5{{/if}}
-{{#if checkIn.sleepHours}}- Sleep: {{checkIn.sleepHours}}h{{/if}}
-{{#if metrics.burnout}}- Burnout: {{metrics.burnout.level}} ({{metrics.burnout.score}}){{/if}}
-{{#if highlights}}
-## Highlights
-{{#each highlights}}
-- {{this}}
-{{/each}}
-{{/if}}
-{{#if risks}}
-## Needs Attention
-{{#each risks}}
-- {{this}}
-{{/each}}
-{{/if}}
-## Habits
-{{#each habitRepos}}
-### {{name}}
-{{#each streams}}
-#### {{name}}
-{{#each completedHabits}}
-- {{name}} | {{status}}{{#if durationTime}} | {{durationTime}}{{/if}}
-{{/each}}
-{{#each pendingHabits}}
-- {{name}} | {{status}}{{#if durationTime}} | {{durationTime}}{{/if}}
-{{/each}}
-{{/each}}
-{{/each}}
-## Issues
-{{#each repos}}
-### {{name}}
-{{#each streams}}
-#### {{name}}
-{{#each completedIssues}}
-- #{{id}} {{title}} | {{status}} | {{workedEstimate}}
-{{/each}}
-{{#each activeIssues}}
-- #{{id}} {{title}} | {{status}} | {{workedEstimate}}
-{{/each}}
-{{#each attentionIssues}}
-- #{{id}} {{title}} | {{status}} | {{workedEstimate}}
-{{/each}}
-{{/each}}
-{{/each}}
+const fallbackDailyReportPDFTemplate = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Daily Report - {{date}}</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body class="report report-daily theme-balanced">
+  <header class="hero">
+    <div class="eyebrow">Daily report</div>
+    <h1>{{date}}</h1>
+    <div class="subtle">Generated at {{generatedAt}}</div>
+  </header>
+
+  <section class="metric-grid">
+    <article class="metric-card">
+      <div class="metric-label">Day health</div>
+      <div class="metric-value">{{dayHealth}}</div>
+    </article>
+    <article class="metric-card">
+      <div class="metric-label">Issues</div>
+      <div class="metric-value">{{summary.issueDoneCount}} / {{summary.totalIssues}}</div>
+    </article>
+    <article class="metric-card">
+      <div class="metric-label">Habits</div>
+      <div class="metric-value">{{summary.habitsCompletedCount}} / {{summary.habitsDueCount}}</div>
+    </article>
+    <article class="metric-card">
+      <div class="metric-label">Worked / estimate</div>
+      <div class="metric-value">{{summary.workedEstimate}}</div>
+    </article>
+  </section>
+
+  {{#if highlights}}
+  <section class="section">
+    <h2>✨ Highlights</h2>
+    <ul class="bullet-list">
+      {{#each highlights}}<li>{{this}}</li>{{/each}}
+    </ul>
+  </section>
+  {{/if}}
+
+  {{#if risks}}
+  <section class="section">
+    <h2>🚧 Needs Attention</h2>
+    <ul class="bullet-list">
+      {{#each risks}}<li>{{this}}</li>{{/each}}
+    </ul>
+  </section>
+  {{/if}}
+
+  <section class="section">
+    <h2>Issues</h2>
+    {{#each repos}}
+    <article class="group">
+      <h3>{{name}}</h3>
+      {{#each streams}}
+      <div class="subgroup">
+        <h4>{{name}}</h4>
+        {{#each completedIssues}}<div class="row row-good"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}
+        {{#each activeIssues}}<div class="row"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}
+        {{#each attentionIssues}}<div class="row row-warn"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}
+      </div>
+      {{/each}}
+    </article>
+    {{/each}}
+  </section>
+</body>
+</html>
+`
+
+const fallbackDailyReportPDFStyles = `@page { margin: 18mm; }
+body { font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #102017; font-size: 11pt; line-height: 1.45; }
+.hero { margin-bottom: 18px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.14em; color: #1b8f6a; font-size: 9pt; margin-bottom: 6px; }
+h1 { margin: 0; font-size: 24pt; }
+.subtle { color: #5b6b63; margin-top: 4px; }
+.metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0; }
+.metric-card { border: 1px solid #cfe4d6; border-radius: 10px; padding: 10px 12px; background: #f8fcf9; }
+.metric-label { color: #5b6b63; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; }
+.metric-value { margin-top: 4px; font-size: 14pt; font-weight: 700; }
+.section { margin-top: 18px; }
+h2 { font-size: 14pt; border-bottom: 2px solid #dcebe1; padding-bottom: 4px; margin-bottom: 10px; }
+h3 { margin: 14px 0 8px; font-size: 12pt; }
+h4 { margin: 10px 0 6px; color: #2c5a48; font-size: 10.5pt; }
+.bullet-list { margin: 0; padding-left: 18px; }
+.group, .subgroup { break-inside: avoid; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #eef5f0; }
+.row-good { color: #1d6d47; }
+.row-warn { color: #8c4f00; }
 `
 
 const fallbackDailyReportVariables = `# Daily Report Template Variables
@@ -331,21 +369,71 @@ Generated at {{generatedAt}}
 {{/each}}
 `
 
-const fallbackWeeklyReportPDFTemplate = `# Weekly Summary
-Range: {{startDate}} to {{endDate}}
-Generated at {{generatedAt}}
-## Rollup
-- Days: {{summary.days}}
-- Check-ins: {{summary.checkInDays}}
-- Focus days: {{summary.focusDays}}
-- Worked: {{summary.workedTime}}
-- Rest: {{summary.restTime}}
-- Completed issues: {{summary.completedIssues}}
-- Abandoned issues: {{summary.abandonedIssues}}
-## Days
-{{#each days}}
-- {{date}} | {{workedTime}} | {{sessionCount}} sessions
-{{/each}}
+const fallbackWeeklyReportPDFTemplate = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Weekly Summary - {{startDate}} to {{endDate}}</title>
+  <link rel="stylesheet" href="report.css">
+</head>
+<body class="report report-weekly theme-balanced">
+  <header class="hero">
+    <div class="eyebrow">Weekly summary</div>
+    <h1>{{startDate}} → {{endDate}}</h1>
+    <div class="subtle">Generated at {{generatedAt}}</div>
+  </header>
+
+  <section class="metric-grid">
+    <article class="metric-card"><div class="metric-label">Focus days</div><div class="metric-value">{{summary.focusDays}}</div></article>
+    <article class="metric-card"><div class="metric-label">Check-ins</div><div class="metric-value">{{summary.checkInDays}}</div></article>
+    <article class="metric-card"><div class="metric-label">Worked</div><div class="metric-value">{{summary.workedTime}}</div></article>
+    <article class="metric-card"><div class="metric-label">Rest</div><div class="metric-value">{{summary.restTime}}</div></article>
+  </section>
+
+  <section class="section">
+    <h2>🔥 Streaks</h2>
+    <div class="row"><span>Focus</span><span>{{streaks.currentFocusDays}} current / {{streaks.longestFocusDays}} best</span></div>
+    <div class="row"><span>Check-ins</span><span>{{streaks.currentCheckInDays}} current / {{streaks.longestCheckInDays}} best</span></div>
+  </section>
+
+  <section class="section">
+    <h2>Days</h2>
+    {{#each days}}
+    <article class="day-card">
+      <div class="day-header">
+        <h3>{{date}}</h3>
+        <div class="pill">{{workedTime}}</div>
+      </div>
+      <div class="day-grid">
+        <div>Sessions: {{sessionCount}}</div>
+        <div>Issues: {{completedIssues}} completed / {{totalIssues}} total</div>
+        {{#if checkIn}}<div>Check-in: mood {{checkIn.mood}} / energy {{checkIn.energy}}</div>{{/if}}
+      </div>
+    </article>
+    {{/each}}
+  </section>
+</body>
+</html>
+`
+
+const fallbackWeeklyReportPDFStyles = `@page { margin: 18mm; }
+body { font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: #102017; font-size: 11pt; line-height: 1.45; }
+.hero { margin-bottom: 18px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.14em; color: #2266c6; font-size: 9pt; margin-bottom: 6px; }
+h1 { margin: 0; font-size: 22pt; }
+.subtle { color: #5b6b63; margin-top: 4px; }
+.metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0; }
+.metric-card { border: 1px solid #d8e5f7; border-radius: 10px; padding: 10px 12px; background: #f8fbff; }
+.metric-label { color: #5b6b63; font-size: 9pt; text-transform: uppercase; letter-spacing: 0.08em; }
+.metric-value { margin-top: 4px; font-size: 14pt; font-weight: 700; }
+.section { margin-top: 18px; }
+h2 { font-size: 14pt; border-bottom: 2px solid #dfe8f5; padding-bottom: 4px; margin-bottom: 10px; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid #eef2f7; }
+.day-card { border: 1px solid #e6edf8; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; break-inside: avoid; }
+.day-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+h3 { margin: 0; font-size: 12pt; }
+.pill { background: #ecf4ff; color: #1d4fa8; border-radius: 999px; padding: 3px 8px; font-size: 9pt; font-weight: 700; }
+.day-grid { display: grid; gap: 4px; }
 `
 
 const fallbackWeeklyReportVariables = `# Weekly Report Template Variables

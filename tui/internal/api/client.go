@@ -393,6 +393,18 @@ func (c *Client) ResetExportTemplate(reportKind sharedtypes.ExportReportKind, as
 	return &out, nil
 }
 
+func (c *Client) ApplyExportTemplatePreset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) (*ExportAssetStatus, error) {
+	var out ExportAssetStatus
+	if err := c.call(protocol.MethodExportTemplateApply, shareddto.ExportTemplatePresetApplyRequest{
+		ReportKind: reportKind,
+		AssetKind:  assetKind,
+		PresetID:   strings.TrimSpace(presetID),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) GenerateReport(input shareddto.ExportReportRequest) (*ExportReportResult, error) {
 	var out ExportReportResult
 	method := protocol.MethodExportDaily

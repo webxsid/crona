@@ -20,10 +20,10 @@ func GenerateDailyReport(ctx context.Context, c *core.Context, paths runtime.Pat
 }
 
 func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
-	return generateDailyReportWithKind(ctx, c, paths, normalizeReportDate(date), normalizeNarrativeFormat(format), mode)
+	return generateDailyReportWithKind(ctx, c, paths, normalizeReportDate(date), normalizeNarrativeFormat(format), mode, "")
 }
 
-func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
+func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode, presetID string) (*sharedtypes.DailyReportResult, error) {
 	if strings.TrimSpace(date) == "" {
 		date = time.Now().Format("2006-01-02")
 	}
@@ -32,11 +32,7 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 	if err != nil {
 		return nil, err
 	}
-	templateBody, status, err := LoadActiveReportTemplate(paths, sharedtypes.ExportReportKindDaily, format)
-	if err != nil {
-		return nil, err
-	}
-	rendered, err := RenderTemplate(string(templateBody), buildTemplateDataMap(data))
+	status, err := EnsureAssets(paths)
 	if err != nil {
 		return nil, err
 	}
@@ -46,27 +42,44 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 		Date:       date,
 		Format:     format,
 		OutputMode: mode,
-		Content:    rendered,
 		Assets:     status,
 	}
 	switch format {
 	case sharedtypes.ExportFormatPDF:
+		htmlTemplate, cssTemplate, _, err := LoadNarrativePDFAssets(paths, sharedtypes.ExportReportKindDaily, presetID)
+		if err != nil {
+			return nil, err
+		}
+		renderedHTML, err := RenderTemplate(string(htmlTemplate), buildTemplateDataMap(data))
+		if err != nil {
+			return nil, err
+		}
+		result.Content = renderedHTML
 		if mode != sharedtypes.ExportOutputModeFile {
 			return nil, errors.New("pdf export only supports file output")
 		}
-		filePath, renderer, err := RenderPDFReport(paths, reportWriteSpec{
+		filePath, renderer, err := RenderNarrativePDFReport(paths, reportWriteSpec{
 			Kind:     sharedtypes.ExportReportKindDaily,
 			Label:    "Daily Report",
 			Date:     date,
 			Format:   format,
 			BaseName: "daily-" + date,
-		}, rendered)
+		}, renderedHTML, string(cssTemplate))
 		if err != nil {
 			return nil, err
 		}
 		result.FilePath = &filePath
 		result.Renderer = &renderer
 	default:
+		templateBody, _, err := LoadReportTemplate(paths, sharedtypes.ExportReportKindDaily, format, presetID)
+		if err != nil {
+			return nil, err
+		}
+		rendered, err := RenderTemplate(string(templateBody), buildTemplateDataMap(data))
+		if err != nil {
+			return nil, err
+		}
+		result.Content = rendered
 		if mode == sharedtypes.ExportOutputModeFile {
 			filePath, err := WriteReport(paths, reportWriteSpec{
 				Kind:     sharedtypes.ExportReportKindDaily,
@@ -74,7 +87,7 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 				Date:     date,
 				Format:   format,
 				BaseName: "daily-" + date,
-			}, []byte(rendered))
+			}, []byte(result.Content))
 			if err != nil {
 				return nil, err
 			}

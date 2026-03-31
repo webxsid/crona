@@ -36,6 +36,7 @@ type Action struct {
 	ReportKind        sharedtypes.ExportReportKind
 	ReportFormat      sharedtypes.ExportFormat
 	OutputMode        sharedtypes.ExportOutputMode
+	PresetID          string
 	ID                string
 	RepoID            int64
 	StreamID          int64
@@ -84,26 +85,12 @@ func OpenCreateScratchpad(state State) State {
 	return state
 }
 
-func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo, checkedRepoID *int64) State {
+func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo, checkedRepoID *int64, assets *api.ExportAssetStatus) State {
 	state = Close(state)
 	state.Kind = "export_report"
 	state.CheckInDate = date
-	state.ChoiceItems = []string{
-		"Daily report: write Markdown file",
-		"Daily report: copy to clipboard",
-		"Weekly summary: write Markdown file",
-		"Repo report: write Markdown file",
-		"Stream report: write Markdown file",
-		"Issue rollup: write Markdown file",
-		"CSV session export: write file",
-		"Calendar export: write ICS file",
-	}
-	if includePDF {
-		state.ChoiceItems = append([]string{
-			"Daily report: write PDF file",
-			"Weekly summary: write PDF file",
-		}, state.ChoiceItems...)
-	}
+	state.ExportIncludePDF = includePDF
+	state.ChoiceItems = exportReportChoices(includePDF)
 	state.RepoItems = make([]string, 0, len(repos))
 	state.RepoItemIDs = make([]int64, 0, len(repos))
 	selectedRepoIdx := 0
@@ -120,6 +107,78 @@ func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo
 		state.RepoName = state.RepoItems[selectedRepoIdx]
 	}
 	state.ChoiceCursor = 0
+	if assets != nil {
+		state.TemplateAssets = append([]sharedtypes.ExportTemplateAsset(nil), assets.TemplateAssets...)
+	}
+	return state
+}
+
+func exportReportChoices(includePDF bool) []string {
+	items := []string{
+		"Daily report: write Markdown file",
+		"Daily report: copy to clipboard",
+		"Weekly summary: write Markdown file",
+		"Repo report: write Markdown file",
+		"Stream report: write Markdown file",
+		"Issue rollup: write Markdown file",
+		"CSV session export: write file",
+		"Calendar export: write ICS file",
+	}
+	if includePDF {
+		items = append([]string{
+			"Daily report: write PDF file",
+			"Weekly summary: write PDF file",
+		}, items...)
+	}
+	return items
+}
+
+func OpenExportPreset(state State, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat, outputMode sharedtypes.ExportOutputMode) State {
+	state.Parent = "export_report"
+	state.Kind = "export_preset"
+	state.ExportPresetKind = reportKind
+	state.ExportPresetFormat = format
+	state.ExportPresetOutput = outputMode
+	state.ChoiceItems = nil
+	state.ChoiceValues = nil
+	state.ChoiceDetails = nil
+	state.ChoiceCursor = 0
+	assetKinds := []sharedtypes.ExportAssetKind{sharedtypes.ExportAssetKindTemplateMarkdown}
+	if format == sharedtypes.ExportFormatPDF {
+		assetKinds = []sharedtypes.ExportAssetKind{
+			sharedtypes.ExportAssetKindTemplatePDFHTML,
+			sharedtypes.ExportAssetKindTemplatePDF,
+		}
+	}
+	for _, asset := range state.TemplateAssets {
+		if asset.ReportKind != reportKind || !slices.Contains(assetKinds, asset.AssetKind) {
+			continue
+		}
+		if asset.Customized {
+			currentLabel := "Current custom template"
+			currentDetail := "Uses your edited active template without replacing it."
+			if format == sharedtypes.ExportFormatPDF {
+				currentLabel = "Current custom HTML + CSS"
+				currentDetail = "Uses your edited active PDF HTML template and paired stylesheet without replacing them."
+			}
+			state.ChoiceItems = append(state.ChoiceItems, currentLabel)
+			state.ChoiceValues = append(state.ChoiceValues, "__current__")
+			state.ChoiceDetails = append(state.ChoiceDetails, currentDetail)
+		}
+		selectedIdx := 0
+		for _, preset := range asset.Presets {
+			label := preset.Label
+			if asset.SelectedPreset != nil && preset.ID == asset.SelectedPreset.ID {
+				label += "  [saved default]"
+				selectedIdx = len(state.ChoiceItems)
+			}
+			state.ChoiceItems = append(state.ChoiceItems, label)
+			state.ChoiceValues = append(state.ChoiceValues, preset.ID)
+			state.ChoiceDetails = append(state.ChoiceDetails, preset.PreviewBody)
+		}
+		state.ChoiceCursor = selectedIdx
+		break
+	}
 	return state
 }
 
@@ -697,6 +756,8 @@ func Close(state State) State {
 	state.StatusItems = nil
 	state.StatusCursor = 0
 	state.ChoiceItems = nil
+	state.ChoiceValues = nil
+	state.ChoiceDetails = nil
 	state.ChoiceCursor = 0
 	state.Processing = false
 	state.ProcessingLabel = ""
@@ -707,6 +768,10 @@ func Close(state State) State {
 	state.ViewName = ""
 	state.ViewMeta = ""
 	state.ViewBody = ""
+	state.ExportPresetKind = ""
+	state.ExportPresetFormat = ""
+	state.ExportPresetOutput = ""
+	state.ExportIncludePDF = false
 	return state
 }
 
@@ -834,6 +899,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateCheckIn(state, msg)
 	case "export_report":
 		return updateExportDaily(state, msg)
+	case "export_preset":
+		return updateExportPreset(state, msg)
 	case "export_calendar_repo":
 		return updateExportCalendarRepo(state, msg)
 	case "edit_export_reports_dir":
@@ -1546,30 +1613,15 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 		action := Action{Kind: "export_report", CheckInDate: state.CheckInDate}
 		switch selected {
 		case "Daily report: write PDF file":
-			action.ReportKind = sharedtypes.ExportReportKindDaily
-			action.ReportFormat = sharedtypes.ExportFormatPDF
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating PDF report..."
+			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
 		case "Weekly summary: write PDF file":
-			action.ReportKind = sharedtypes.ExportReportKindWeekly
-			action.ReportFormat = sharedtypes.ExportFormatPDF
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating weekly PDF report..."
+			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
 		case "Daily report: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindDaily
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating markdown report..."
+			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
 		case "Daily report: copy to clipboard":
-			action.ReportKind = sharedtypes.ExportReportKindDaily
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeClipboard
-			state.ProcessingLabel = "Copying markdown report..."
+			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeClipboard), nil, ""
 		case "Weekly summary: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindWeekly
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating weekly report..."
+			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
 		case "Repo report: write Markdown file":
 			action.ReportKind = sharedtypes.ExportReportKindRepo
 			action.ReportFormat = sharedtypes.ExportFormatMarkdown
@@ -1602,21 +1654,66 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return state, nil, ""
 }
 
+func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc", "q":
+		state.Kind = "export_report"
+		state.Parent = ""
+		state.ChoiceItems = exportReportChoices(state.ExportIncludePDF)
+		state.ChoiceValues = nil
+		state.ChoiceDetails = nil
+		state.ExportPresetKind = ""
+		state.ExportPresetFormat = ""
+		state.ExportPresetOutput = ""
+		state.ChoiceCursor = 0
+		return clearDialogError(state), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			return state, nil, "Select a report style"
+		}
+		presetID := state.ChoiceValues[state.ChoiceCursor]
+		if presetID == "__current__" {
+			presetID = ""
+		}
+		state.Processing = true
+		switch state.ExportPresetKind {
+		case sharedtypes.ExportReportKindDaily:
+			if state.ExportPresetOutput == sharedtypes.ExportOutputModeClipboard {
+				state.ProcessingLabel = "Copying report..."
+			} else {
+				state.ProcessingLabel = "Generating daily report..."
+			}
+		case sharedtypes.ExportReportKindWeekly:
+			state.ProcessingLabel = "Generating weekly report..."
+		default:
+			state.ProcessingLabel = "Generating report..."
+		}
+		return state, &Action{
+			Kind:         "export_report",
+			ReportKind:   state.ExportPresetKind,
+			ReportFormat: state.ExportPresetFormat,
+			OutputMode:   state.ExportPresetOutput,
+			CheckInDate:  state.CheckInDate,
+			PresetID:     presetID,
+		}, ""
+	}
+	return clearDialogError(state), nil, ""
+}
+
 func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "q":
 		state.Kind = "export_report"
 		state.Parent = ""
-		state.ChoiceItems = []string{
-			"Daily report: write Markdown file",
-			"Daily report: copy to clipboard",
-			"Weekly summary: write Markdown file",
-			"Repo report: write Markdown file",
-			"Stream report: write Markdown file",
-			"Issue rollup: write Markdown file",
-			"CSV session export: write file",
-			"Calendar export: write ICS file",
-		}
+		state.ChoiceItems = exportReportChoices(state.ExportIncludePDF)
 		return clearDialogError(state), nil, ""
 	case "j", "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {

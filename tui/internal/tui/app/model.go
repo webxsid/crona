@@ -170,6 +170,9 @@ type Model struct {
 	dialogStatusItems        []sharedtypes.IssueStatus
 	dialogStatusCursor       int
 	dialogChoiceItems        []string
+	dialogChoiceValues       []string
+	dialogChoiceDetails      []string
+	dialogTemplateAssets     []sharedtypes.ExportTemplateAsset
 	dialogChoiceCursor       int
 	dialogProcessing         bool
 	dialogProcessingLabel    string
@@ -184,6 +187,10 @@ type Model struct {
 	dialogProtectionStreaks  []sharedtypes.StreakKind
 	dialogProtectionWeekdays []int
 	dialogProtectionDates    []string
+	dialogExportPresetKind   sharedtypes.ExportReportKind
+	dialogExportPresetFormat sharedtypes.ExportFormat
+	dialogExportPresetOutput sharedtypes.ExportOutputMode
+	dialogExportIncludePDF   bool
 
 	// status / error flash
 	statusMsg string
@@ -475,21 +482,43 @@ func (m Model) inputDeps() inputpkg.Deps {
 		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
 		LoadWellbeing:        func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
-		ConfigOpenSelectedDir: func(state *inputpkg.State) bool {
+		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			if item, ok := selectionpkg.SelectedConfigItem(next.selectionSnapshot()); ok && next.exportAssets != nil {
-				switch item.Label {
-				case "Reports directory":
+				switch {
+				case item.PresetStyle:
+					for _, asset := range next.exportAssets.TemplateAssets {
+						if asset.ReportKind != item.ReportKind || asset.AssetKind != item.AssetKind || len(asset.Presets) == 0 {
+							continue
+						}
+						currentID := ""
+						if asset.SelectedPreset != nil {
+							currentID = asset.SelectedPreset.ID
+						}
+						nextID := currentID
+						for idx, preset := range asset.Presets {
+							if preset.ID == currentID {
+								nextID = asset.Presets[(idx+1)%len(asset.Presets)].ID
+								break
+							}
+						}
+						if nextID == "" && len(asset.Presets) > 0 {
+							nextID = asset.Presets[0].ID
+						}
+						*state = next.inputState()
+						return commands.ApplyExportTemplatePreset(m.client, item.ReportKind, item.AssetKind, nextID)
+					}
+				case item.Label == "Reports directory":
 					next = next.openExportReportsDirDialog(next.exportAssets.ReportsDir)
-				case "ICS export directory":
+				case item.Label == "ICS export directory":
 					next = next.openExportICSDirDialog(next.exportAssets.ICSDir)
 				default:
-					return false
+					return nil
 				}
 				*state = next.inputState()
-				return true
+				return nil
 			}
-			return false
+			return nil
 		},
 		OpenCheckoutContextDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
@@ -853,6 +882,9 @@ func (m Model) dialogState() dialogpkg.State {
 		StatusItems:        m.dialogStatusItems,
 		StatusCursor:       m.dialogStatusCursor,
 		ChoiceItems:        m.dialogChoiceItems,
+		ChoiceValues:       m.dialogChoiceValues,
+		ChoiceDetails:      m.dialogChoiceDetails,
+		TemplateAssets:     m.dialogTemplateAssets,
 		ChoiceCursor:       m.dialogChoiceCursor,
 		Processing:         m.dialogProcessing,
 		ProcessingLabel:    m.dialogProcessingLabel,
@@ -867,6 +899,10 @@ func (m Model) dialogState() dialogpkg.State {
 		ProtectionStreaks:  m.dialogProtectionStreaks,
 		ProtectionWeekdays: m.dialogProtectionWeekdays,
 		ProtectionDates:    m.dialogProtectionDates,
+		ExportPresetKind:   m.dialogExportPresetKind,
+		ExportPresetFormat: m.dialogExportPresetFormat,
+		ExportPresetOutput: m.dialogExportPresetOutput,
+		ExportIncludePDF:   m.dialogExportIncludePDF,
 	}
 }
 
@@ -901,6 +937,9 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogStatusItems = state.StatusItems
 	m.dialogStatusCursor = state.StatusCursor
 	m.dialogChoiceItems = state.ChoiceItems
+	m.dialogChoiceValues = state.ChoiceValues
+	m.dialogChoiceDetails = state.ChoiceDetails
+	m.dialogTemplateAssets = state.TemplateAssets
 	m.dialogChoiceCursor = state.ChoiceCursor
 	m.dialogProcessing = state.Processing
 	m.dialogProcessingLabel = state.ProcessingLabel
@@ -915,6 +954,10 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogProtectionStreaks = state.ProtectionStreaks
 	m.dialogProtectionWeekdays = state.ProtectionWeekdays
 	m.dialogProtectionDates = state.ProtectionDates
+	m.dialogExportPresetKind = state.ExportPresetKind
+	m.dialogExportPresetFormat = state.ExportPresetFormat
+	m.dialogExportPresetOutput = state.ExportPresetOutput
+	m.dialogExportIncludePDF = state.ExportIncludePDF
 	return m
 }
 

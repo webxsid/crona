@@ -87,6 +87,27 @@ func renderUtilityDialog(theme Theme, state State) string {
 			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] cancel")
 		}
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
+	case "export_preset":
+		rows := []string{
+			theme.StylePaneTitle.Render("Choose Report Style"),
+			"",
+			theme.StyleDim.Render("Anchor Date"),
+			theme.StyleHeader.Render(state.CheckInDate),
+			"",
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				continue
+			}
+			rows = append(rows, theme.StyleNormal.Render(line))
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render("Preview"), renderViewEntityBody(theme, state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] use style   [esc] back")
+		return modal(theme, state.Width, 74, theme.ColorGreen, rows)
 	case "export_calendar_repo":
 		rows := []string{
 			theme.StylePaneTitle.Render("Calendar Export Repo"),

@@ -22,8 +22,12 @@ type templateMeta struct {
 }
 
 type exportConfig struct {
-	ReportsDir string `json:"reportsDir,omitempty"`
-	ICSDir     string `json:"icsDir,omitempty"`
+	ReportsDir             string `json:"reportsDir,omitempty"`
+	ICSDir                 string `json:"icsDir,omitempty"`
+	DailyMarkdownPresetID  string `json:"dailyMarkdownPresetId,omitempty"`
+	DailyPDFPresetID       string `json:"dailyPdfPresetId,omitempty"`
+	WeeklyMarkdownPresetID string `json:"weeklyMarkdownPresetId,omitempty"`
+	WeeklyPDFPresetID      string `json:"weeklyPdfPresetId,omitempty"`
 }
 
 type templateStatus struct {
@@ -93,11 +97,13 @@ func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 			DefaultHash:     status.defaultHash,
 			ActiveSource:    status.activeSource,
 			LastSyncedAt:    status.lastSyncedAt,
+			SelectedPreset:  presetSelectionForAsset(descriptor.reportKind, descriptor.assetKind, selectedPresetIDForAsset(paths, descriptor.reportKind, descriptor.assetKind)),
+			Presets:         presetMetadataForAsset(descriptor.reportKind, descriptor.assetKind),
 		})
 		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
 			dailyMarkdownStatus = status
 		}
-		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindTemplatePDF {
+		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
 			dailyPDFStatus = status
 		}
 		if descriptor.reportKind == sharedtypes.ExportReportKindDaily && descriptor.assetKind == sharedtypes.ExportAssetKindVariableDocs {
@@ -105,7 +111,7 @@ func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 		}
 	}
 
-	renderer := detectPDFRenderer()
+	renderer := detectWeasyPrintRenderer()
 
 	return sharedtypes.ExportAssetStatus{
 		TemplatePath:           dailyMarkdownStatus.userPath,
@@ -132,7 +138,7 @@ func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 		TemplateName:           "daily/report.hbs",
 		TemplateEngine:         dailyMarkdownStatus.engine,
 		ActiveTemplateSource:   dailyMarkdownStatus.activeSource,
-		PDFTemplateName:        "daily/report.pdf.hbs",
+		PDFTemplateName:        "daily/report.pdf.html.hbs",
 		PDFTemplateEngine:      dailyPDFStatus.engine,
 		PDFTemplateSource:      dailyPDFStatus.activeSource,
 		PDFRendererAvailable:   renderer.available,
@@ -145,6 +151,9 @@ func EnsureAssets(paths runtime.Paths) (sharedtypes.ExportAssetStatus, error) {
 }
 
 func ResetTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) (sharedtypes.ExportAssetStatus, error) {
+	if isNarrativePDFAsset(reportKind, assetKind) {
+		return ApplyTemplatePreset(paths, reportKind, sharedtypes.ExportAssetKindTemplatePDFHTML, selectedPresetIDForAsset(paths, reportKind, assetKind))
+	}
 	descriptor, ok := findAssetDescriptor(reportKind, assetKind)
 	if !ok {
 		return sharedtypes.ExportAssetStatus{}, errors.New("export asset not found")
@@ -172,20 +181,118 @@ func ResetTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind,
 	return EnsureAssets(paths)
 }
 
+func ApplyTemplatePreset(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) (sharedtypes.ExportAssetStatus, error) {
+	if !isPresetDrivenAsset(reportKind, assetKind) {
+		return sharedtypes.ExportAssetStatus{}, errors.New("export preset is not supported for this asset")
+	}
+	presetID = normalizePresetID(reportKind, assetKind, presetID)
+	config, _ := readExportConfig(exportConfigPath(paths))
+	setSelectedPresetID(&config, reportKind, assetKind, presetID)
+	if err := writeExportConfig(exportConfigPath(paths), config); err != nil {
+		return sharedtypes.ExportAssetStatus{}, err
+	}
+	for _, candidate := range pairedPresetAssetKinds(reportKind, assetKind) {
+		descriptor, ok := findAssetDescriptor(reportKind, candidate)
+		if !ok {
+			continue
+		}
+		bodyText, ok := presetTemplateBody(reportKind, candidate, presetID)
+		if !ok {
+			return sharedtypes.ExportAssetStatus{}, errors.New("export preset asset not found")
+		}
+		body := []byte(bodyText)
+		now := time.Now().UTC().Format(time.RFC3339)
+		if err := os.MkdirAll(filepath.Dir(userTemplatePath(paths, descriptor)), 0o700); err != nil {
+			return sharedtypes.ExportAssetStatus{}, err
+		}
+		if err := os.WriteFile(userTemplatePath(paths, descriptor), body, runtime.FilePerm()); err != nil {
+			return sharedtypes.ExportAssetStatus{}, err
+		}
+		if err := writeTemplateMeta(templateMetaPath(paths, descriptor), templateMeta{
+			BaseHash:   hashBytes(body),
+			LastSynced: &now,
+		}); err != nil {
+			return sharedtypes.ExportAssetStatus{}, err
+		}
+	}
+	return EnsureAssets(paths)
+}
+
 func LoadActiveTemplate(paths runtime.Paths, format sharedtypes.ExportFormat) ([]byte, sharedtypes.ExportAssetStatus, error) {
 	return LoadActiveReportTemplate(paths, sharedtypes.ExportReportKindDaily, format)
 }
 
 func LoadActiveReportTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat) ([]byte, sharedtypes.ExportAssetStatus, error) {
+	return LoadReportTemplate(paths, reportKind, format, "")
+}
+
+func LoadReportTemplate(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat, presetID string) ([]byte, sharedtypes.ExportAssetStatus, error) {
 	status, err := EnsureAssets(paths)
 	if err != nil {
 		return nil, sharedtypes.ExportAssetStatus{}, err
+	}
+	assetKind := sharedtypes.ExportAssetKindTemplateMarkdown
+	if normalizeExportFormat(format) == sharedtypes.ExportFormatPDF {
+		if reportKind == sharedtypes.ExportReportKindDaily || reportKind == sharedtypes.ExportReportKindWeekly {
+			assetKind = sharedtypes.ExportAssetKindTemplatePDFHTML
+		} else {
+			assetKind = sharedtypes.ExportAssetKindTemplatePDF
+		}
+	}
+	if strings.TrimSpace(presetID) != "" {
+		if body, ok := presetTemplateBody(reportKind, assetKind, presetID); ok {
+			return []byte(body), status, nil
+		}
+		return nil, sharedtypes.ExportAssetStatus{}, errors.New("export preset not found")
 	}
 	body, err := os.ReadFile(activeTemplatePathForStatus(status, reportKind, normalizeExportFormat(format)))
 	if err != nil {
 		return nil, sharedtypes.ExportAssetStatus{}, err
 	}
 	return body, status, nil
+}
+
+func LoadNarrativePDFAssets(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, presetID string) ([]byte, []byte, sharedtypes.ExportAssetStatus, error) {
+	status, err := EnsureAssets(paths)
+	if err != nil {
+		return nil, nil, sharedtypes.ExportAssetStatus{}, err
+	}
+	if strings.TrimSpace(presetID) != "" {
+		htmlBody, ok := presetTemplateBody(reportKind, sharedtypes.ExportAssetKindTemplatePDFHTML, presetID)
+		if !ok {
+			return nil, nil, sharedtypes.ExportAssetStatus{}, errors.New("export preset not found")
+		}
+		cssBody, ok := presetTemplateBody(reportKind, sharedtypes.ExportAssetKindTemplatePDFCSS, presetID)
+		if !ok {
+			return nil, nil, sharedtypes.ExportAssetStatus{}, errors.New("export preset stylesheet not found")
+		}
+		return []byte(htmlBody), []byte(cssBody), status, nil
+	}
+	var htmlPath string
+	var cssPath string
+	for _, asset := range status.TemplateAssets {
+		if asset.ReportKind != reportKind {
+			continue
+		}
+		switch asset.AssetKind {
+		case sharedtypes.ExportAssetKindTemplatePDFHTML:
+			htmlPath = asset.UserPath
+		case sharedtypes.ExportAssetKindTemplatePDFCSS:
+			cssPath = asset.UserPath
+		}
+	}
+	if strings.TrimSpace(htmlPath) == "" || strings.TrimSpace(cssPath) == "" {
+		return nil, nil, sharedtypes.ExportAssetStatus{}, errors.New("narrative PDF assets are incomplete")
+	}
+	htmlBody, err := os.ReadFile(htmlPath)
+	if err != nil {
+		return nil, nil, sharedtypes.ExportAssetStatus{}, err
+	}
+	cssBody, err := os.ReadFile(cssPath)
+	if err != nil {
+		return nil, nil, sharedtypes.ExportAssetStatus{}, err
+	}
+	return htmlBody, cssBody, status, nil
 }
 
 func WriteDailyReport(paths runtime.Paths, date string, format sharedtypes.ExportFormat, body []byte) (string, error) {
@@ -386,7 +493,7 @@ func RenderPDF(paths runtime.Paths, date string, markdown string) (string, strin
 }
 
 func RenderPDFReport(paths runtime.Paths, spec reportWriteSpec, markdown string) (string, string, error) {
-	renderer := detectPDFRenderer()
+	renderer := detectPandocPDFRenderer()
 	if !renderer.available {
 		return "", "", errors.New("no supported PDF renderer found; install pandoc with a PDF engine such as tectonic, weasyprint, wkhtmltopdf, xelatex, or pdflatex")
 	}
@@ -415,6 +522,58 @@ func RenderPDFReport(paths runtime.Paths, spec reportWriteSpec, markdown string)
 		return "", renderer.name, errors.New("pdf export failed: " + msg)
 	}
 
+	body, err := os.ReadFile(outputPath)
+	if err != nil {
+		return "", renderer.name, err
+	}
+	finalPath, err := WriteReport(paths, reportWriteSpec{
+		Kind:       spec.Kind,
+		Label:      spec.Label,
+		ScopeLabel: spec.ScopeLabel,
+		Date:       spec.Date,
+		StartDate:  spec.StartDate,
+		EndDate:    spec.EndDate,
+		Format:     sharedtypes.ExportFormatPDF,
+		BaseName:   spec.BaseName,
+	}, body)
+	if err != nil {
+		return "", renderer.name, err
+	}
+	return finalPath, renderer.name, nil
+}
+
+func RenderNarrativePDFReport(paths runtime.Paths, spec reportWriteSpec, html string, css string) (string, string, error) {
+	renderer := detectWeasyPrintRenderer()
+	if !renderer.available {
+		return "", "", errors.New("no supported narrative PDF renderer found; install weasyprint")
+	}
+	tmpDir, err := os.MkdirTemp("", "crona-export-html-pdf-*")
+	if err != nil {
+		return "", "", err
+	}
+	defer os.RemoveAll(tmpDir)
+
+	baseName := spec.BaseName
+	if strings.TrimSpace(baseName) == "" {
+		baseName = "report"
+	}
+	inputPath := filepath.Join(tmpDir, baseName+".html")
+	cssPath := filepath.Join(tmpDir, "report.css")
+	outputPath := filepath.Join(tmpDir, baseName+".pdf")
+	if err := os.WriteFile(inputPath, []byte(html), 0o600); err != nil {
+		return "", "", err
+	}
+	if err := os.WriteFile(cssPath, []byte(css), 0o600); err != nil {
+		return "", "", err
+	}
+	cmd := exec.Command(renderer.path, inputPath, outputPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		msg := strings.TrimSpace(string(output))
+		if msg == "" {
+			msg = err.Error()
+		}
+		return "", renderer.name, errors.New("pdf export failed: " + msg)
+	}
 	body, err := os.ReadFile(outputPath)
 	if err != nil {
 		return "", renderer.name, err
@@ -579,6 +738,54 @@ func resolveICSDir(paths runtime.Paths) (string, bool, error) {
 	return resolved, true, nil
 }
 
+func selectedPresetIDForAsset(paths runtime.Paths, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) string {
+	config, err := readExportConfig(exportConfigPath(paths))
+	if err != nil {
+		return defaultPresetIDForAsset(reportKind, assetKind)
+	}
+	return normalizePresetID(reportKind, assetKind, selectedPresetIDFromConfig(config, reportKind, assetKind))
+}
+
+func selectedPresetIDFromConfig(config exportConfig, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) string {
+	switch reportKind {
+	case sharedtypes.ExportReportKindDaily:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return config.DailyPDFPresetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			return config.DailyMarkdownPresetID
+		}
+	case sharedtypes.ExportReportKindWeekly:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return config.WeeklyPDFPresetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			return config.WeeklyMarkdownPresetID
+		}
+	}
+	return ""
+}
+
+func setSelectedPresetID(config *exportConfig, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) {
+	presetID = normalizePresetID(reportKind, assetKind, presetID)
+	switch reportKind {
+	case sharedtypes.ExportReportKindDaily:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			config.DailyPDFPresetID = presetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			config.DailyMarkdownPresetID = presetID
+		}
+	case sharedtypes.ExportReportKindWeekly:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			config.WeeklyPDFPresetID = presetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			config.WeeklyMarkdownPresetID = presetID
+		}
+	}
+}
+
 func normalizeReportsDir(paths runtime.Paths, raw string) (string, error) {
 	trimmed := strings.TrimSpace(raw)
 	if trimmed == "" {
@@ -625,6 +832,24 @@ func normalizeICSDir(paths runtime.Paths, raw string) (string, error) {
 		trimmed = filepath.Join(paths.BaseDir, trimmed)
 	}
 	return filepath.Clean(trimmed), nil
+}
+
+func isNarrativePDFAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) bool {
+	if reportKind != sharedtypes.ExportReportKindDaily && reportKind != sharedtypes.ExportReportKindWeekly {
+		return false
+	}
+	return assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS
+}
+
+func isPresetDrivenAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) bool {
+	return len(presetsForAsset(reportKind, assetKind)) > 0 || isNarrativePDFAsset(reportKind, assetKind)
+}
+
+func pairedPresetAssetKinds(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) []sharedtypes.ExportAssetKind {
+	if isNarrativePDFAsset(reportKind, assetKind) {
+		return []sharedtypes.ExportAssetKind{sharedtypes.ExportAssetKindTemplatePDFHTML, sharedtypes.ExportAssetKindTemplatePDFCSS}
+	}
+	return []sharedtypes.ExportAssetKind{assetKind}
 }
 
 func resolveOutputDir(paths runtime.Paths, kind sharedtypes.ExportReportKind) (string, error) {
@@ -682,7 +907,7 @@ func writeTemplateMeta(path string, meta templateMeta) error {
 	return os.WriteFile(path, body, runtime.FilePerm())
 }
 
-func detectPDFRenderer() pdfRenderer {
+func detectPandocPDFRenderer() pdfRenderer {
 	pandocPath, err := exec.LookPath("pandoc")
 	if err != nil {
 		return pdfRenderer{}
@@ -701,6 +926,19 @@ func detectPDFRenderer() pdfRenderer {
 	return pdfRenderer{}
 }
 
+func detectWeasyPrintRenderer() pdfRenderer {
+	path, err := exec.LookPath("weasyprint")
+	if err != nil {
+		return pdfRenderer{}
+	}
+	return pdfRenderer{
+		available: true,
+		name:      "weasyprint",
+		path:      path,
+		engine:    "weasyprint",
+	}
+}
+
 func normalizeExportFormat(format sharedtypes.ExportFormat) sharedtypes.ExportFormat {
 	if format == sharedtypes.ExportFormatPDF || format == sharedtypes.ExportFormatCSV || format == sharedtypes.ExportFormatICS {
 		return format
@@ -711,14 +949,18 @@ func normalizeExportFormat(format sharedtypes.ExportFormat) sharedtypes.ExportFo
 func activeTemplatePathForStatus(status sharedtypes.ExportAssetStatus, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat) string {
 	assetKind := sharedtypes.ExportAssetKindTemplateMarkdown
 	if normalizeExportFormat(format) == sharedtypes.ExportFormatPDF {
-		assetKind = sharedtypes.ExportAssetKindTemplatePDF
+		if reportKind == sharedtypes.ExportReportKindDaily || reportKind == sharedtypes.ExportReportKindWeekly {
+			assetKind = sharedtypes.ExportAssetKindTemplatePDFHTML
+		} else {
+			assetKind = sharedtypes.ExportAssetKindTemplatePDF
+		}
 	}
 	for _, asset := range status.TemplateAssets {
 		if asset.ReportKind == reportKind && asset.AssetKind == assetKind {
 			return asset.UserPath
 		}
 	}
-	if reportKind == sharedtypes.ExportReportKindDaily && assetKind == sharedtypes.ExportAssetKindTemplatePDF {
+	if reportKind == sharedtypes.ExportReportKindDaily && assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
 		return status.PDFTemplatePath
 	}
 	return status.TemplatePath

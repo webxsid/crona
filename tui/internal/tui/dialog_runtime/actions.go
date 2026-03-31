@@ -170,6 +170,7 @@ func exportCmd(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 		Date:       action.CheckInDate,
 		Format:     action.ReportFormat,
 		OutputMode: action.OutputMode,
+		PresetID:   action.PresetID,
 	}
 	if action.ReportKind == sharedtypes.ExportReportKindRepo {
 		if state.Context == nil || state.Context.RepoID == nil {

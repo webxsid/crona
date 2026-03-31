@@ -180,7 +180,7 @@ func GenerateCalendarExport(ctx context.Context, c *core.Context, paths runtime.
 func generateDailyExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
 	date := normalizeReportDate(input.Date)
 	format := normalizeNarrativeFormat(input.Format)
-	return generateDailyReportWithKind(ctx, c, paths, date, format, input.OutputMode)
+	return generateDailyReportWithKind(ctx, c, paths, date, format, input.OutputMode, input.PresetID)
 }
 
 func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
@@ -258,7 +258,7 @@ func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Pa
 		EndDate:   end,
 		Format:    format,
 		BaseName:  fmt.Sprintf("weekly-%s-to-%s", start, end),
-	}, input.OutputMode)
+	}, input.OutputMode, input.PresetID)
 }
 
 func generateRepoExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
@@ -336,7 +336,7 @@ func generateRepoExport(ctx context.Context, c *core.Context, paths runtime.Path
 		EndDate:    end,
 		Format:     format,
 		BaseName:   fmt.Sprintf("repo-%d-%s-%s-to-%s", repo.ID, slugify(repo.Name), start, end),
-	}, input.OutputMode, &sharedtypes.ExportReportScope{RepoID: &repo.ID, RepoName: &repo.Name})
+	}, input.OutputMode, "", &sharedtypes.ExportReportScope{RepoID: &repo.ID, RepoName: &repo.Name})
 }
 
 func generateStreamExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
@@ -417,7 +417,7 @@ func generateStreamExport(ctx context.Context, c *core.Context, paths runtime.Pa
 		EndDate:    end,
 		Format:     format,
 		BaseName:   fmt.Sprintf("stream-%d-%s-%s-to-%s", stream.ID, slugify(stream.Name), start, end),
-	}, input.OutputMode, scope)
+	}, input.OutputMode, "", scope)
 }
 
 func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
@@ -509,7 +509,7 @@ func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runti
 		EndDate:   end,
 		Format:    format,
 		BaseName:  fmt.Sprintf("issue-rollup-%s-to-%s", start, end),
-	}, input.OutputMode)
+	}, input.OutputMode, "")
 }
 
 func generateCSVExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
@@ -626,8 +626,42 @@ func finalizeReport(paths runtime.Paths, spec reportWriteSpec, content string, m
 	return result, nil
 }
 
-func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKind, data map[string]any, spec reportWriteSpec, mode sharedtypes.ExportOutputMode, scope ...*sharedtypes.ExportReportScope) (*sharedtypes.ExportReportResult, error) {
-	templateBody, _, err := LoadActiveReportTemplate(paths, kind, spec.Format)
+func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKind, data map[string]any, spec reportWriteSpec, mode sharedtypes.ExportOutputMode, presetID string, scope ...*sharedtypes.ExportReportScope) (*sharedtypes.ExportReportResult, error) {
+	if spec.Format == sharedtypes.ExportFormatPDF && kind == sharedtypes.ExportReportKindWeekly {
+		htmlTemplate, cssTemplate, assets, err := LoadNarrativePDFAssets(paths, kind, presetID)
+		if err != nil {
+			return nil, err
+		}
+		rendered, err := RenderTemplate(string(htmlTemplate), data)
+		if err != nil {
+			return nil, err
+		}
+		result := &sharedtypes.ExportReportResult{
+			Kind:       spec.Kind,
+			Label:      spec.Label,
+			Date:       spec.Date,
+			StartDate:  spec.StartDate,
+			EndDate:    spec.EndDate,
+			Format:     sharedtypes.ExportFormatPDF,
+			OutputMode: mode,
+			Content:    strings.TrimSpace(rendered),
+			Assets:     assets,
+		}
+		if len(scope) > 0 {
+			result.Scope = scope[0]
+		}
+		if mode != sharedtypes.ExportOutputModeFile {
+			return nil, errors.New("pdf export only supports file output")
+		}
+		filePath, renderer, err := RenderNarrativePDFReport(paths, spec, result.Content, string(cssTemplate))
+		if err != nil {
+			return nil, err
+		}
+		result.FilePath = &filePath
+		result.Renderer = &renderer
+		return result, nil
+	}
+	templateBody, _, err := LoadReportTemplate(paths, kind, spec.Format, presetID)
 	if err != nil {
 		return nil, err
 	}

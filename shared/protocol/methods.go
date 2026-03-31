@@ -70,6 +70,7 @@ const (
 	MethodExportReportsList   = "export.reports.list"
 	MethodExportReportsDelete = "export.reports.delete"
 	MethodExportTemplateReset = "export.template.reset"
+	MethodExportTemplateApply = "export.template.apply"
 
 	MethodSessionListByIssue = "session.list_by_issue"
 	MethodSessionGet         = "session.get"

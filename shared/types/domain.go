@@ -680,6 +680,8 @@ type ExportAssetKind string
 const (
 	ExportAssetKindTemplateMarkdown ExportAssetKind = "template_markdown"
 	ExportAssetKindTemplatePDF      ExportAssetKind = "template_pdf"
+	ExportAssetKindTemplatePDFHTML  ExportAssetKind = "template_pdf_html"
+	ExportAssetKindTemplatePDFCSS   ExportAssetKind = "template_pdf_css"
 	ExportAssetKindVariableDocs     ExportAssetKind = "variable_docs"
 	ExportAssetKindCSVSpec          ExportAssetKind = "csv_spec"
 	ExportAssetKindCSVDocs          ExportAssetKind = "csv_docs"
@@ -693,21 +695,37 @@ type ExportReportScope struct {
 }
 
 type ExportTemplateAsset struct {
-	ReportKind      ExportReportKind `json:"reportKind"`
-	AssetKind       ExportAssetKind  `json:"assetKind"`
-	Label           string           `json:"label"`
-	Name            string           `json:"name"`
-	Engine          string           `json:"engine"`
-	UserPath        string           `json:"userPath"`
-	BundledPath     string           `json:"bundledPath"`
-	Resettable      bool             `json:"resettable"`
-	Exists          bool             `json:"exists"`
-	Customized      bool             `json:"customized"`
-	UpdateAvailable bool             `json:"updateAvailable"`
-	BaseHash        string           `json:"baseHash"`
-	DefaultHash     string           `json:"defaultHash"`
-	ActiveSource    string           `json:"activeSource"`
-	LastSyncedAt    *string          `json:"lastSyncedAt,omitempty"`
+	ReportKind      ExportReportKind               `json:"reportKind"`
+	AssetKind       ExportAssetKind                `json:"assetKind"`
+	Label           string                         `json:"label"`
+	Name            string                         `json:"name"`
+	Engine          string                         `json:"engine"`
+	UserPath        string                         `json:"userPath"`
+	BundledPath     string                         `json:"bundledPath"`
+	Resettable      bool                           `json:"resettable"`
+	Exists          bool                           `json:"exists"`
+	Customized      bool                           `json:"customized"`
+	UpdateAvailable bool                           `json:"updateAvailable"`
+	BaseHash        string                         `json:"baseHash"`
+	DefaultHash     string                         `json:"defaultHash"`
+	ActiveSource    string                         `json:"activeSource"`
+	LastSyncedAt    *string                        `json:"lastSyncedAt,omitempty"`
+	SelectedPreset  *ExportTemplatePresetSelection `json:"selectedPreset,omitempty"`
+	Presets         []ExportTemplatePreset         `json:"presets,omitempty"`
+}
+
+type ExportTemplatePreset struct {
+	ID           string `json:"id"`
+	Label        string `json:"label"`
+	Description  string `json:"description"`
+	PreviewTitle string `json:"previewTitle"`
+	PreviewBody  string `json:"previewBody"`
+}
+
+type ExportTemplatePresetSelection struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
 }
 
 type DailyReportIssue struct {

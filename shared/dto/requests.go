@@ -129,6 +129,7 @@ type ExportReportRequest struct {
 	StreamID   *int64                 `json:"streamId,omitempty"`
 	Format     types.ExportFormat     `json:"format,omitempty"`
 	OutputMode types.ExportOutputMode `json:"outputMode"`
+	PresetID   string                 `json:"presetId,omitempty"`
 }
 
 type DailyReportRequest = ExportReportRequest
@@ -152,6 +153,12 @@ type ExportReportDeleteRequest struct {
 type ExportTemplateResetRequest struct {
 	ReportKind types.ExportReportKind `json:"reportKind,omitempty"`
 	AssetKind  types.ExportAssetKind  `json:"assetKind,omitempty"`
+}
+
+type ExportTemplatePresetApplyRequest struct {
+	ReportKind types.ExportReportKind `json:"reportKind,omitempty"`
+	AssetKind  types.ExportAssetKind  `json:"assetKind,omitempty"`
+	PresetID   string                 `json:"presetId,omitempty"`
 }
 
 type CreateIssueRequest struct {

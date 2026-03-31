@@ -32,6 +32,11 @@ func legacyTemplateMetaPath(paths runtime.Paths, descriptor assetDescriptor) str
 }
 
 func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte, string, error) {
+	if presetID := selectedPresetIDForAsset(paths, descriptor.reportKind, descriptor.assetKind); presetID != "" {
+		if body, ok := presetTemplateBody(descriptor.reportKind, descriptor.assetKind, presetID); ok {
+			return []byte(body), "preset:" + presetID, nil
+		}
+	}
 	candidates := []string{
 		filepath.Join(paths.BundledAssetsDir, "export", descriptor.bundledPath),
 		filepath.Join("assets", "export", descriptor.bundledPath),

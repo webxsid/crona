@@ -716,6 +716,17 @@ func ResetExportTemplate(c *api.Client, reportKind sharedtypes.ExportReportKind,
 	}
 }
 
+func ApplyExportTemplatePreset(c *api.Client, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) tea.Cmd {
+	return func() tea.Msg {
+		assets, err := c.ApplyExportTemplatePreset(reportKind, assetKind, presetID)
+		if err != nil {
+			logger.Errorf("ApplyExportTemplatePreset: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return ExportAssetsLoadedMsg{Assets: assets}
+	}
+}
+
 func SetExportReportsDir(c *api.Client, path string) tea.Cmd {
 	return func() tea.Msg {
 		assets, err := c.SetExportReportsDir(path)

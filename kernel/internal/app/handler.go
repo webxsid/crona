@@ -479,6 +479,10 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 		return handle(req, func(input shareddto.ExportTemplateResetRequest) (any, error) {
 			return export.ResetTemplate(h.paths, input.ReportKind, input.AssetKind)
 		})
+	case protocol.MethodExportTemplateApply:
+		return handle(req, func(input shareddto.ExportTemplatePresetApplyRequest) (any, error) {
+			return export.ApplyTemplatePreset(h.paths, input.ReportKind, input.AssetKind, input.PresetID)
+		})
 	case protocol.MethodExportDaily:
 		return handle(req, func(input shareddto.DailyReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindDaily

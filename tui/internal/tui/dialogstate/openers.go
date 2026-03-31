@@ -196,7 +196,7 @@ func OpenExportDaily(s Snapshot) dialogpkg.State {
 	if s.Context != nil {
 		checkedRepoID = s.Context.RepoID
 	}
-	return dialogpkg.OpenExportDaily(s.Dialog, s.CurrentDashboardDate, includePDF, s.Repos, checkedRepoID)
+	return dialogpkg.OpenExportDaily(s.Dialog, s.CurrentDashboardDate, includePDF, s.Repos, checkedRepoID, s.ExportAssets)
 }
 
 func OpenExportReportsDir(s Snapshot, current string) dialogpkg.State {

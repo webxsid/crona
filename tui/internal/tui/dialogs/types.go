@@ -45,6 +45,9 @@ type State struct {
 	StatusItems         []sharedtypes.IssueStatus
 	StatusCursor        int
 	ChoiceItems         []string
+	ChoiceValues        []string
+	ChoiceDetails       []string
+	TemplateAssets      []sharedtypes.ExportTemplateAsset
 	ChoiceCursor        int
 	Processing          bool
 	ProcessingLabel     string
@@ -76,6 +79,10 @@ type State struct {
 	ProtectionStreaks   []sharedtypes.StreakKind
 	ProtectionWeekdays  []int
 	ProtectionDates     []string
+	ExportPresetKind    sharedtypes.ExportReportKind
+	ExportPresetFormat  sharedtypes.ExportFormat
+	ExportPresetOutput  sharedtypes.ExportOutputMode
+	ExportIncludePDF    bool
 }
 
 type StashItem struct {
@@ -91,7 +98,7 @@ func Render(theme Theme, state State) string {
 		return renderIssueDialog(theme, state)
 	case "end_session", "stash_session", "issue_session_transition", "stash_list", "amend_session", "manual_session":
 		return renderSessionDialog(theme, state)
-	case "confirm_delete", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_rest_protection", "view_entity", "complete_habit":
+	case "confirm_delete", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report", "export_preset", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_rest_protection", "view_entity", "complete_habit":
 		return renderUtilityDialog(theme, state)
 	default:
 		return ""

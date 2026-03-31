@@ -2,9 +2,9 @@ package views
 
 import (
 	"fmt"
-	"strings"
 
 	"crona/tui/internal/api"
+	configitems "crona/tui/internal/tui/configitems"
 )
 
 func renderConfigView(theme Theme, state ContentState) string {
@@ -41,34 +41,10 @@ func configItems(status *api.ExportAssetStatus) []string {
 	if status == nil {
 		return nil
 	}
-	items := make([]string, 0, len(status.TemplateAssets)+3)
-	for _, asset := range status.TemplateAssets {
-		items = append(items, fmt.Sprintf("%-24s %s", asset.Label, configAssetValue(asset)))
+	built := configitems.Build(status)
+	items := make([]string, 0, len(built))
+	for _, item := range built {
+		items = append(items, fmt.Sprintf("%-24s %s", item.Label, item.Value))
 	}
-	pdfRenderer := "unavailable"
-	if status.PDFRendererAvailable {
-		pdfRenderer = status.PDFRendererName
-	}
-	items = append(items, fmt.Sprintf("%-24s %s", "Reports directory", status.ReportsDir))
-	items = append(items, fmt.Sprintf("%-24s %s", "ICS export directory", status.ICSDir))
-	items = append(items, fmt.Sprintf("%-24s %s", "PDF renderer", pdfRenderer))
 	return items
-}
-
-func configAssetValue(asset api.ExportTemplateAsset) string {
-	if asset.Resettable {
-		switch {
-		case asset.Customized:
-			return "[customized]"
-		case asset.UpdateAvailable:
-			return "[new default available]"
-		default:
-			return "[default]"
-		}
-	}
-	path := strings.TrimSpace(asset.UserPath)
-	if path == "" {
-		return "-"
-	}
-	return path
 }

@@ -387,7 +387,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return updated, tea.Batch(cmd, deps.WaitForEvent()), true
 	case commands.ErrMsg:
 		if state.Dialog != "" {
-			if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
+			if isExportDialog(state.Dialog) && state.DialogProcessing {
 				state.DialogProcessing = false
 				state.DialogProcessingLabel = ""
 			}
@@ -408,7 +408,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, tea.Batch(cmds...), true
 	case commands.DailyReportGeneratedMsg:
 		state.ExportAssets = &msg.Result.Assets
-		if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
+		if isExportDialog(state.Dialog) && state.DialogProcessing {
 			state.Dialog = ""
 			state.DialogChoiceItems = nil
 			state.DialogChoiceCursor = 0
@@ -425,7 +425,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, nil, true
 	case commands.CalendarExportGeneratedMsg:
 		state.ExportAssets = &msg.Result.Assets
-		if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
+		if isExportDialog(state.Dialog) && state.DialogProcessing {
 			state.Dialog = ""
 			state.DialogChoiceItems = nil
 			state.DialogChoiceCursor = 0
@@ -442,7 +442,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		deps.OpenViewEntityDialog(&state, title, name, meta, body)
 		return state, deps.SetStatus(&state, "Calendar export written", false), true
 	case commands.ClipboardCopiedMsg:
-		if (state.Dialog == "export_report" || state.Dialog == "export_calendar_repo") && state.DialogProcessing {
+		if isExportDialog(state.Dialog) && state.DialogProcessing {
 			state.Dialog = ""
 			state.DialogChoiceItems = nil
 			state.DialogChoiceCursor = 0
@@ -452,5 +452,14 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, deps.SetStatus(&state, msg.Message, false), true
 	default:
 		return state, nil, false
+	}
+}
+
+func isExportDialog(kind string) bool {
+	switch kind {
+	case "export_report", "export_preset", "export_calendar_repo":
+		return true
+	default:
+		return false
 	}
 }

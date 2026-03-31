@@ -301,7 +301,7 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 	repos := []api.Repo{{ID: 1, Name: "Work"}, {ID: 2, Name: "OSS"}}
 	checkedRepoID := int64(2)
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", true, repos, &checkedRepoID)
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", true, repos, &checkedRepoID, nil)
 	if state.Kind != "export_report" {
 		t.Fatalf("expected export_report dialog kind, got %q", state.Kind)
 	}
@@ -326,7 +326,7 @@ func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 
 func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil)
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
 	if state.RepoID != 5 || state.RepoName != "Work" || state.RepoIndex != 0 {
 		t.Fatalf("expected first repo selected by default, got id=%d name=%q index=%d", state.RepoID, state.RepoName, state.RepoIndex)
 	}
@@ -334,7 +334,7 @@ func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing
 
 func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil)
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
 	for i, item := range state.ChoiceItems {
 		if item == "Calendar export: write ICS file" {
 			state.ChoiceCursor = i

@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"strings"
+
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 )
@@ -39,6 +41,18 @@ func ExportAssetStateLabel(asset sharedtypes.ExportTemplateAsset) string {
 	return Truncate(asset.UserPath, 28)
 }
 
+func ExportPresetLabel(asset sharedtypes.ExportTemplateAsset) string {
+	format := "Markdown"
+	if asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDF || asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+		format = "PDF"
+	}
+	kind := strings.ReplaceAll(string(asset.ReportKind), "_", " ")
+	if kind != "" {
+		kind = strings.ToUpper(kind[:1]) + kind[1:]
+	}
+	return kind + " " + format + " Style"
+}
+
 func PDFRendererStateLabel(status *api.ExportAssetStatus) string {
 	if status == nil {
 		return ""
@@ -54,7 +68,7 @@ func PDFRendererDetailBody(status *api.ExportAssetStatus) string {
 		return ""
 	}
 	if !status.PDFRendererAvailable {
-		return "No supported PDF renderer detected.\n\nInstall pandoc with a supported PDF engine and press R in Config to rescan."
+		return "WeasyPrint was not detected.\n\nInstall weasyprint and press R in Config to rescan PDF support."
 	}
 	return "Renderer\n" + status.PDFRendererName + "\n\nPath\n" + status.PDFRendererPath + "\n\nPress R in Config to rescan available PDF tools."
 }
