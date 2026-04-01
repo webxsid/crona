@@ -4,6 +4,7 @@ import "github.com/charmbracelet/lipgloss"
 
 func RenderDaily(theme Theme, state ContentState) string   { return renderDailyView(theme, state) }
 func RenderDefault(theme Theme, state ContentState) string { return renderDefaultView(theme, state) }
+func RenderRollup(theme Theme, state ContentState) string  { return renderRollupView(theme, state) }
 func RenderWellbeing(theme Theme, state ContentState) string {
 	return renderWellbeingView(theme, state)
 }

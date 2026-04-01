@@ -129,18 +129,26 @@ Keep the next phase focused on clearer dashboards and a lightweight configurable
 ### Phase 5.1 — Basic Dashboards
 - [x] Wellbeing dashboard visual refresh with compact cards and an activity heatmap
 - [x] Narrative report template refresh with preset styles and stronger PDF presentation
-- [ ] Daily dashboard expansion (weekly rollups, carry-over, missed-vs-done summary)
-- [ ] Basic time distribution by repo, stream, issue, or segment type
-- [ ] Daily/weekly focus score (work vs break ratio vs target)
-- [ ] Goal progress (estimated vs actual time per issue/stream/repo)
-- [ ] Keep dashboard/report copy short and glanceable by driving them from reusable summary APIs
+- [x] Dedicated rollup dashboard with a default weekly window and adjustable start/end dates
+- [x] Shared kernel summary APIs for dashboard rollups so TUI dashboards and reports read from the same data surface
+- [x] Rollup summaries for execution, focus, time distribution, and estimate-vs-actual progress
+- [x] Rollup day detail drill-down from the daily-status pane
+- [x] Estimate-bias summary metric for average over/under-estimation across worked issues
+- [x] Small-screen dashboard layouts keep daily and wellbeing views glanceable without hiding critical content
+- [x] Dashboard and report copy stays short, numeric, and visually scannable by default
+- [ ] Daily dashboard expansion with more execution-first summaries without reintroducing weekly clutter
+- [ ] Default dashboard broader summary coverage may still grow, but rollup analytics now live in the dedicated Rollup view
 
 ### Phase 5.2 — YAML Configurable Dashboards
 - [ ] YAML-based dashboard configuration
-- [ ] Basic configurable sections and ordering
-- [ ] Simple scope/date-range configuration per section
-- [ ] Pre-built starter YAML layouts
-- [ ] Keep customization terminal-native: stacked sections, simple splits, no freeform layout
+- [ ] Configurable section ordering and enable/disable per dashboard view
+- [ ] Configurable scope and date-window per section
+- [ ] Configurable streak sections
+- [ ] Configurable heatmap sections
+- [ ] Configurable line-graph sections
+- [ ] Configurable bar-graph sections
+- [ ] Pre-built starter YAML layouts for daily-focused, wellbeing-focused, and accountability-focused setups
+- [ ] Keep customization terminal-native: stacked sections, simple splits, and fixed section types instead of freeform layout
 
 ## Phase 6 — OS Integrations
 - [ ] Native OS bridge for notifications, audible timer alerts, and permission-aware delivery

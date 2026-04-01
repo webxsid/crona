@@ -15,9 +15,9 @@ func renderDefaultView(theme Theme, state ContentState) string {
 	if state.Height < 37 {
 		return renderDefaultCompactView(theme, state, openIndices, completedIndices)
 	}
-	summaryH := 5
-	if state.Height < 20 {
-		summaryH = 4
+	summaryH := 9
+	if state.Height < 44 {
+		summaryH = 7
 	}
 	remainingHeight := max(8, state.Height-summaryH)
 	priorityH, completedH := splitVertical(remainingHeight, 8, 6, remainingHeight*2/3)
@@ -30,7 +30,7 @@ func renderDefaultView(theme Theme, state ContentState) string {
 }
 
 func renderDefaultCompactView(theme Theme, state ContentState, openIndices, completedIndices []int) string {
-	summaryH := 4
+	summaryH := 6
 	footerH := 4
 	mainH := max(8, state.Height-summaryH-footerH)
 	mainTitle := "Active Issues [1]"
@@ -61,45 +61,27 @@ func renderDefaultCompactView(theme Theme, state ContentState, openIndices, comp
 }
 
 func renderDefaultSummary(theme Theme, state ContentState, height int) string {
-	today := time.Now().Format("2006-01-02")
-	dueNow, openCount, closedCount := 0, 0, 0
-	for _, issue := range state.DefaultIssues {
-		if isClosedIssueStatus(issue.Status) {
-			closedCount++
-			continue
-		}
-		openCount++
-		if due := normalizedDueDate(issue.TodoForDate); due != "" && due <= today {
-			dueNow++
-		}
-	}
-	leftW, midW := splitHorizontal(state.Width, 20, 20, state.Width/3)
-	midW, rightW := splitHorizontal(state.Width-leftW, 20, 20, (state.Width-leftW)/2)
-
-	cards := []string{
-		renderDefaultStatCard(theme, "Due Now", fmt.Sprintf("%d", dueNow), "today + overdue", theme.ColorYellow, leftW, height),
-		renderDefaultStatCard(theme, "Open", fmt.Sprintf("%d", openCount), "ready to work", theme.ColorCyan, midW, height),
-		renderDefaultStatCard(theme, "Closed", fmt.Sprintf("%d", closedCount), "done + abandoned", theme.ColorSubtle, rightW, height),
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Top, cards...)
+	topW, bottomW := splitVertical(height, 3, 3, height/2)
+	row1Left, row1Right := splitHorizontal(state.Width, 28, 28, state.Width/2)
+	row2Left, row2Right := splitHorizontal(state.Width, 28, 28, state.Width/2)
+	row1 := lipgloss.JoinHorizontal(lipgloss.Top,
+		renderDefaultStatCard(theme, "Open", defaultOpenSummary(state), "active workload", theme.ColorYellow, row1Left, topW),
+		renderDefaultStatCard(theme, "Closed", defaultClosedSummary(state), "done + abandoned", theme.ColorCyan, row1Right, topW),
+	)
+	row2 := lipgloss.JoinHorizontal(lipgloss.Top,
+		renderDefaultStatCard(theme, "Due", defaultDueSummary(state), "today vs overdue", theme.ColorGreen, row2Left, bottomW),
+		renderDefaultStatCard(theme, "Estimate", defaultEstimateSummary(state), "current issue load", theme.ColorMagenta, row2Right, bottomW),
+	)
+	return lipgloss.JoinVertical(lipgloss.Left, row1, row2)
 }
 
 func renderDefaultCompactSummary(theme Theme, state ContentState, height int) string {
-	today := time.Now().Format("2006-01-02")
-	dueNow, openCount, closedCount := 0, 0, 0
-	for _, issue := range state.DefaultIssues {
-		if isClosedIssueStatus(issue.Status) {
-			closedCount++
-			continue
-		}
-		openCount++
-		if due := normalizedDueDate(issue.TodoForDate); due != "" && due <= today {
-			dueNow++
-		}
-	}
 	lines := []string{
-		fmt.Sprintf("%s  %s  %s", lipStyle(theme, theme.ColorYellow).Render(fmt.Sprintf("Due %d", dueNow)), theme.StyleHeader.Render(fmt.Sprintf("Open %d", openCount)), theme.StyleDim.Render(fmt.Sprintf("Closed %d", closedCount))),
-		theme.StyleDim.Render("due now   open work   done + abandoned"),
+		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Default Dashboard"), theme.StyleHeader.Render(defaultScopeLabel(state.Context))),
+		truncate(defaultOpenSummary(state), state.Width-6),
+		truncate(defaultClosedSummary(state), state.Width-6),
+		truncate(defaultDueSummary(state), state.Width-6),
+		truncate(defaultEstimateSummary(state), state.Width-6),
 	}
 	return renderPaneBox(theme, false, state.Width, height, stringsJoin(lines))
 }
@@ -117,6 +99,65 @@ func renderDefaultStatCard(theme Theme, label, value, hint string, border lipglo
 		Width(width - 2).
 		Height(height - 2).
 		Render(strings.Join(body, "\n"))
+}
+
+func defaultOpenSummary(state ContentState) string {
+	open, inProgress, blocked := 0, 0, 0
+	for _, issue := range state.DefaultIssues {
+		switch issue.Status {
+		case "done", "abandoned":
+			continue
+		case "in_progress":
+			inProgress++
+		case "blocked":
+			blocked++
+		}
+		open++
+	}
+	return fmt.Sprintf("open %d  in progress %d  blocked %d", open, inProgress, blocked)
+}
+
+func defaultClosedSummary(state ContentState) string {
+	done, abandoned := 0, 0
+	for _, issue := range state.DefaultIssues {
+		switch issue.Status {
+		case "done":
+			done++
+		case "abandoned":
+			abandoned++
+		}
+	}
+	return fmt.Sprintf("done %d  abandoned %d", done, abandoned)
+}
+
+func defaultDueSummary(state ContentState) string {
+	today := 0
+	overdue := 0
+	now := time.Now().Format("2006-01-02")
+	for _, issue := range state.DefaultIssues {
+		if issue.TodoForDate == nil || issue.Status == "done" || issue.Status == "abandoned" {
+			continue
+		}
+		if *issue.TodoForDate == now {
+			today++
+		}
+		if *issue.TodoForDate < now {
+			overdue++
+		}
+	}
+	return fmt.Sprintf("today %d  overdue %d", today, overdue)
+}
+
+func defaultEstimateSummary(state ContentState) string {
+	estimated, scoped := 0, 0
+	for _, issue := range state.DefaultIssues {
+		if issue.Status == "done" || issue.Status == "abandoned" || issue.EstimateMinutes == nil {
+			continue
+		}
+		estimated += *issue.EstimateMinutes
+		scoped++
+	}
+	return fmt.Sprintf("estimated %dm  scoped %d", estimated, scoped)
 }
 
 func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle string, indices []int, offset int, showFilter bool, height int, emptyText string, sectionActive bool) string {

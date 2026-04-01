@@ -27,6 +27,20 @@ type DailyCheckInLoadedMsg struct{ CheckIn *api.DailyCheckIn }
 type MetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
 type MetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }
 type StreaksLoadedMsg struct{ Streaks *api.StreakSummary }
+type DashboardWindowLoadedMsg struct{ Summary *api.DashboardWindowSummary }
+type FocusScoreLoadedMsg struct {
+	WindowDays int
+	Summary    *api.FocusScoreSummary
+}
+type DistributionLoadedMsg struct {
+	GroupBy string
+	Summary *api.TimeDistributionSummary
+}
+type GoalProgressLoadedMsg struct{ Summary *api.GoalProgressSummary }
+type RollupRangeChangedMsg struct {
+	Start string
+	End   string
+}
 type ExportAssetsLoadedMsg struct{ Assets *api.ExportAssetStatus }
 type ExportReportsLoadedMsg struct{ Reports []api.ExportReportFile }
 type ExportReportDeletedMsg struct{ Name string }

@@ -265,6 +265,7 @@ func renderSidebar(state State, width, height int) string {
 			"",
 			chrome.StyleDim.Render("DASHBOARD"),
 			renderSidebarItem(state, uistate.ViewDaily, "Daily"),
+			renderSidebarItem(state, uistate.ViewRollup, "Rollup"),
 			renderSidebarItem(state, uistate.ViewWellbeing, "Wellbeing"),
 			"",
 			chrome.StyleDim.Render("EXPORT"),

@@ -34,6 +34,7 @@ const (
 	ViewAway           = uistate.ViewAway
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
+	ViewRollup         = uistate.ViewRollup
 	ViewMeta           = uistate.ViewMeta
 	ViewSessionHistory = uistate.ViewSessionHistory
 	ViewSessionActive  = uistate.ViewSessionActive
@@ -53,6 +54,7 @@ const (
 	PaneStreams       = uistate.PaneStreams
 	PaneIssues        = uistate.PaneIssues
 	PaneHabits        = uistate.PaneHabits
+	PaneRollupDays    = uistate.PaneRollupDays
 	PaneSessions      = uistate.PaneSessions
 	PaneScratchpads   = uistate.PaneScratchpads
 	PaneOps           = uistate.PaneOps
@@ -101,11 +103,21 @@ type Model struct {
 	dailySummary          *api.DailyIssueSummary
 	dailyPlan             *api.DailyPlan
 	dashboardDate         string
+	rollupStartDate       string
+	rollupEndDate         string
 	wellbeingDate         string
 	dailyCheckIn          *api.DailyCheckIn
 	metricsRange          []api.DailyMetricsDay
 	metricsRollup         *api.MetricsRollup
 	streaks               *api.StreakSummary
+	dashboardWindow       *api.DashboardWindowSummary
+	dailyFocusScore       *api.FocusScoreSummary
+	weeklyFocusScore      *api.FocusScoreSummary
+	repoDistribution      *api.TimeDistributionSummary
+	streamDistribution    *api.TimeDistributionSummary
+	issueDistribution     *api.TimeDistributionSummary
+	segmentDistribution   *api.TimeDistributionSummary
+	goalProgress          *api.GoalProgressSummary
 	exportAssets          *api.ExportAssetStatus
 	exportReports         []api.ExportReportFile
 	issueSessions         []api.Session
@@ -264,6 +276,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneStreams:       0,
 			PaneIssues:        0,
 			PaneHabits:        0,
+			PaneRollupDays:    0,
 			PaneSessions:      0,
 			PaneScratchpads:   0,
 			PaneOps:           0,
@@ -276,6 +289,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneStreams:       "",
 			PaneIssues:        "",
 			PaneHabits:        "",
+			PaneRollupDays:    "",
 			PaneSessions:      "",
 			PaneScratchpads:   "",
 			PaneOps:           "",
@@ -301,6 +315,7 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
 		commands.LoadWellbeing(m.client, time.Now().Format("2006-01-02")),
+		commands.LoadRollupSummaries(m.client, shiftISODate(time.Now().Format("2006-01-02"), -6), time.Now().Format("2006-01-02")),
 		loadSessionHistoryForModel(m, 200),
 		commands.LoadScratchpads(m.client),
 		commands.LoadOps(m.client, m.currentOpsLimit()),
@@ -330,6 +345,12 @@ func (m *Model) clamp(p Pane, max int) {
 }
 
 func (m *Model) listLen(p Pane) int {
+	if p == PaneRollupDays {
+		if m.dashboardWindow == nil {
+			return 0
+		}
+		return len(m.dashboardWindow.Days)
+	}
 	return len(selectionpkg.FilteredIndices(m.selectionSnapshot(), p))
 }
 
@@ -405,6 +426,8 @@ func (m Model) inputState() inputpkg.State {
 		Cursor:              m.cursor,
 		DefaultIssueSection: m.defaultIssueSection,
 		DashboardDate:       m.dashboardDate,
+		RollupStartDate:     m.rollupStartDate,
+		RollupEndDate:       m.rollupEndDate,
 		WellbeingDate:       m.wellbeingDate,
 		Dialog:              m.dialog,
 		DialogState:         m.dialogState(),
@@ -438,6 +461,8 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.cursor = state.Cursor
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dashboardDate = state.DashboardDate
+	m.rollupStartDate = state.RollupStartDate
+	m.rollupEndDate = state.RollupEndDate
 	m.wellbeingDate = state.WellbeingDate
 	m = m.withDialogState(state.DialogState)
 	if state.DialogState.Kind == "" {
@@ -501,6 +526,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 		LoadDailySummary:     func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadDueHabits:        func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
+		LoadRollupSummaries:  func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		CurrentRollupStartDate: func(state inputpkg.State) string {
+			return m.applyInputState(state).currentRollupStartDate()
+		},
+		CurrentRollupEndDate: func(state inputpkg.State) string {
+			return m.applyInputState(state).currentRollupEndDate()
+		},
 		LoadWellbeing:        func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
@@ -768,6 +800,18 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openDatePickerDialog("rollup_start", 0, 0, dialogpkg.ValueToPointer(next.currentRollupStartDate()))
+			*state = next.inputState()
+			return true
+		},
+		OpenRollupEndDateDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openDatePickerDialog("rollup_end", 0, 0, dialogpkg.ValueToPointer(next.currentRollupEndDate()))
+			*state = next.inputState()
+			return true
+		},
 	}
 }
 
@@ -1009,9 +1053,11 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 
 func (m Model) dialogRuntimeState() dialogruntime.State {
 	return dialogruntime.State{
-		Context:       m.context,
-		Repos:         m.repos,
-		DashboardDate: m.currentDashboardDate(),
+		Context:         m.context,
+		Repos:           m.repos,
+		DashboardDate:   m.currentDashboardDate(),
+		RollupStartDate: m.currentRollupStartDate(),
+		RollupEndDate:   m.currentRollupEndDate(),
 	}
 }
 
@@ -1093,6 +1139,18 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		SetIssueTodoDate: func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.SetIssueTodoDate(m.client, issueID, date, streamID, dashboardDate)
+		},
+		SetRollupStartDate: func(date, currentEnd string) tea.Cmd {
+			if date > currentEnd {
+				currentEnd = date
+			}
+			return commands.SetRollupRange(date, currentEnd)
+		},
+		SetRollupEndDate: func(currentStart, date string) tea.Cmd {
+			if currentStart > date {
+				currentStart = date
+			}
+			return commands.SetRollupRange(currentStart, date)
 		},
 		ErrorCmd: func(err error) tea.Cmd { return func() tea.Msg { return commands.ErrMsg{Err: err} } },
 		ResolvePatchSettingValue: func(action dialogpkg.Action) any {

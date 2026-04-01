@@ -13,6 +13,7 @@ func Theme() views.Theme { return views.TestTheme() }
 
 func RenderDaily(state views.ContentState) string     { return views.RenderDaily(Theme(), state) }
 func RenderDefault(state views.ContentState) string   { return views.RenderDefault(Theme(), state) }
+func RenderRollup(state views.ContentState) string    { return views.RenderRollup(Theme(), state) }
 func RenderWellbeing(state views.ContentState) string { return views.RenderWellbeing(Theme(), state) }
 func RenderReports(state views.ContentState) string   { return views.RenderReports(Theme(), state) }
 func RenderSettings(state views.ContentState) string  { return views.RenderSettings(Theme(), state) }

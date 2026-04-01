@@ -143,6 +143,17 @@ func (m Model) selectedSessionHistoryEntry() (*api.SessionHistoryEntry, bool) {
 	return selectionpkg.SelectedSessionHistoryEntry(m.selectionSnapshot())
 }
 
+func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
+	if m.view != ViewRollup || m.pane != PaneRollupDays || m.dashboardWindow == nil {
+		return nil, false
+	}
+	cur := m.cursor[PaneRollupDays]
+	if cur < 0 || cur >= len(m.dashboardWindow.Days) {
+		return nil, false
+	}
+	return &m.dashboardWindow.Days[cur], true
+}
+
 func (m Model) openSelectedEditDialog() (Model, bool) {
 	switch m.pane {
 	case PaneRepos:
@@ -174,6 +185,28 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 
 func (m Model) openSelectedViewDialog() (Model, bool) {
 	switch m.pane {
+	case PaneRollupDays:
+		if day, ok := m.selectedRollupDay(); ok {
+			meta := strings.Join([]string{
+				fmt.Sprintf("Status %s", strings.ReplaceAll(string(day.Status), "_", " ")),
+				fmt.Sprintf("Planned %d", day.PlannedCount),
+				fmt.Sprintf("Done %d", day.CompletedCount),
+				fmt.Sprintf("Failed %d", day.FailedCount),
+				fmt.Sprintf("Carry %d", day.CarryOverCount),
+			}, "   ")
+			body := strings.Join([]string{
+				"Rollup Day",
+				day.Date,
+				"",
+				"Accountability",
+				fmt.Sprintf("%.1f", day.AccountabilityScore),
+				"",
+				"Summary",
+				rollupDayNarrative(*day),
+			}, "\n")
+			return m.openViewEntityDialog("Rollup Day", day.Date, meta, body), true
+		}
+		return m, false
 	case PaneRepos:
 		if m.view != ViewMeta {
 			return m, false
@@ -274,6 +307,23 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		}
 	}
 	return m, false
+}
+
+func rollupDayNarrative(day api.DashboardWindowDay) string {
+	switch day.Status {
+	case "done":
+		return "Planned work was completed inside this day."
+	case "missed":
+		return "Planned work fell through and ended in failure or miss."
+	case "carry_over":
+		return "Some planned work rolled forward from an earlier day."
+	case "mixed":
+		return "This day had a mix of completed, missed, or carried work."
+	case "planned":
+		return "Planned work existed, but it was not completed in this window."
+	default:
+		return "No tracked plan activity for this day."
+	}
 }
 
 func optionalText(text *string) string {
@@ -389,11 +439,33 @@ func (m Model) currentDashboardDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
+func (m Model) currentRollupEndDate() string {
+	if m.rollupEndDate != "" {
+		return m.rollupEndDate
+	}
+	return time.Now().Format("2006-01-02")
+}
+
+func (m Model) currentRollupStartDate() string {
+	if m.rollupStartDate != "" {
+		return m.rollupStartDate
+	}
+	return shiftISODate(m.currentRollupEndDate(), -6)
+}
+
 func (m Model) currentWellbeingDate() string {
 	if m.wellbeingDate != "" {
 		return m.wellbeingDate
 	}
 	return time.Now().Format("2006-01-02")
+}
+
+func shiftISODate(date string, days int) string {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return date
+	}
+	return t.AddDate(0, 0, days).Format("2006-01-02")
 }
 
 func (m Model) checkout() (Model, tea.Cmd) {

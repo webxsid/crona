@@ -2187,6 +2187,9 @@ func WeekdayTokens(days []int) []string {
 func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
+		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
+			return Close(state), nil, ""
+		}
 		return closeDatePicker(state), nil, ""
 	case "enter", " ":
 		selected := state.DateCursorValue
@@ -2200,6 +2203,12 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 			state.ProtectionDates = normalizedDateList(append(state.ProtectionDates, selected))
 			return closeDatePicker(state), nil, ""
 		}
+		if state.Parent == "rollup_start" {
+			return Close(state), &Action{Kind: "set_rollup_start_date", DueDate: ValueToPointer(selected)}, ""
+		}
+		if state.Parent == "rollup_end" {
+			return Close(state), &Action{Kind: "set_rollup_end_date", DueDate: ValueToPointer(selected)}, ""
+		}
 		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer(selected)}, ""
 	case "backspace", "delete", "c":
 		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" || state.Parent == "edit_issue" {
@@ -2210,6 +2219,9 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 		}
 		if state.Parent == "edit_rest_protection" {
 			return closeDatePicker(state), nil, ""
+		}
+		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
+			return Close(state), nil, ""
 		}
 		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer("")}, ""
 	case "left", "h":

@@ -12,9 +12,11 @@ import (
 )
 
 type State struct {
-	Context       *api.ActiveContext
-	Repos         []api.Repo
-	DashboardDate string
+	Context         *api.ActiveContext
+	Repos           []api.Repo
+	DashboardDate   string
+	RollupStartDate string
+	RollupEndDate   string
 }
 
 type Deps struct {
@@ -53,6 +55,8 @@ type Deps struct {
 	StashFocusSession              func(note string) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
+	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
+	SetRollupEndDate               func(currentStart, date string) tea.Cmd
 	ErrorCmd                       func(error) tea.Cmd
 	ResolvePatchSettingValue       func(action dialogpkg.Action) any
 }
@@ -128,6 +132,20 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 			due = *action.DueDate
 		}
 		return deps.SetIssueTodoDate(action.IssueID, due, action.StreamID, state.DashboardDate)
+	})
+	r.Register("set_rollup_start_date", func(action dialogpkg.Action) tea.Cmd {
+		date := state.RollupStartDate
+		if action.DueDate != nil {
+			date = *action.DueDate
+		}
+		return deps.SetRollupStartDate(date, state.RollupEndDate)
+	})
+	r.Register("set_rollup_end_date", func(action dialogpkg.Action) tea.Cmd {
+		date := state.RollupEndDate
+		if action.DueDate != nil {
+			date = *action.DueDate
+		}
+		return deps.SetRollupEndDate(state.RollupStartDate, date)
 	})
 	if cmd, ok := r.Resolve(action.Kind, action); ok {
 		return cmd

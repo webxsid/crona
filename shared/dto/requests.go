@@ -120,6 +120,23 @@ type DateRangeQuery struct {
 	End   string `json:"end"`
 }
 
+type DashboardWindowQuery struct {
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	RepoID   *int64 `json:"repoId,omitempty"`
+	StreamID *int64 `json:"streamId,omitempty"`
+	IssueID  *int64 `json:"issueId,omitempty"`
+}
+
+type DashboardSummaryQuery struct {
+	Start    string `json:"start"`
+	End      string `json:"end"`
+	GroupBy  string `json:"groupBy,omitempty"`
+	RepoID   *int64 `json:"repoId,omitempty"`
+	StreamID *int64 `json:"streamId,omitempty"`
+	IssueID  *int64 `json:"issueId,omitempty"`
+}
+
 type ExportReportRequest struct {
 	Kind       types.ExportReportKind `json:"kind,omitempty"`
 	Date       string                 `json:"date,omitempty"`

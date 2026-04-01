@@ -27,11 +27,21 @@ type MessageState struct {
 	DailySummary          *api.DailyIssueSummary
 	DailyPlan             *api.DailyPlan
 	DashboardDate         string
+	RollupStartDate       string
+	RollupEndDate         string
 	WellbeingDate         string
 	DailyCheckIn          *api.DailyCheckIn
 	MetricsRange          []api.DailyMetricsDay
 	MetricsRollup         *api.MetricsRollup
 	Streaks               *api.StreakSummary
+	DashboardWindow       *api.DashboardWindowSummary
+	DailyFocusScore       *api.FocusScoreSummary
+	WeeklyFocusScore      *api.FocusScoreSummary
+	RepoDistribution      *api.TimeDistributionSummary
+	StreamDistribution    *api.TimeDistributionSummary
+	IssueDistribution     *api.TimeDistributionSummary
+	SegmentDistribution   *api.TimeDistributionSummary
+	GoalProgress          *api.GoalProgressSummary
 	ExportAssets          *api.ExportAssetStatus
 	ExportReports         []api.ExportReportFile
 	IssueSessions         []api.Session
@@ -99,6 +109,7 @@ type MessageDeps struct {
 	LoadDueHabits              func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
 	LoadWellbeing              func(string) tea.Cmd
+	LoadRollupSummaries        func(string, string) tea.Cmd
 	LoadDailyPlan              func(string) tea.Cmd
 	LoadExportAssets           func() tea.Cmd
 	LoadExportReports          func() tea.Cmd
@@ -195,6 +206,37 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.StreaksLoadedMsg:
 		state.Streaks = msg.Streaks
 		return state, nil, true
+	case commands.DashboardWindowLoadedMsg:
+		state.DashboardWindow = msg.Summary
+		return state, nil, true
+	case commands.FocusScoreLoadedMsg:
+		switch msg.WindowDays {
+		case 1:
+			state.DailyFocusScore = msg.Summary
+		default:
+			state.WeeklyFocusScore = msg.Summary
+		}
+		return state, nil, true
+	case commands.DistributionLoadedMsg:
+		switch msg.GroupBy {
+		case "repo":
+			state.RepoDistribution = msg.Summary
+		case "stream":
+			state.StreamDistribution = msg.Summary
+		case "issue":
+			state.IssueDistribution = msg.Summary
+		case "segment_type":
+			state.SegmentDistribution = msg.Summary
+		}
+		return state, nil, true
+	case commands.GoalProgressLoadedMsg:
+		state.GoalProgress = msg.Summary
+		return state, nil, true
+	case commands.RollupRangeChangedMsg:
+		state.RollupStartDate = msg.Start
+		state.RollupEndDate = msg.End
+		state.Cursor[uistate.PaneRollupDays] = 0
+		return state, deps.LoadRollupSummaries(msg.Start, msg.End), true
 	case commands.ExportAssetsLoadedMsg:
 		state.ExportAssets = msg.Assets
 		deps.ClampFiltered(&state, uistate.PaneConfig)
@@ -271,11 +313,13 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			deps.ClampFiltered(&state, uistate.PaneIssues)
 			deps.ClampFiltered(&state, uistate.PaneHabits)
 		}
+		cmds := []tea.Cmd{deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate)}
 		if state.Context != nil && state.Context.IssueID != nil {
-			return state, deps.LoadIssueSessions(*state.Context.IssueID), true
+			cmds = append(cmds, deps.LoadIssueSessions(*state.Context.IssueID))
+			return state, tea.Batch(cmds...), true
 		}
 		state.IssueSessions = nil
-		return state, nil, true
+		return state, tea.Batch(cmds...), true
 	case commands.TimerLoadedMsg:
 		state.Timer = msg.Timer
 		state.Elapsed = 0
@@ -385,12 +429,12 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		cmd := deps.SetStatus(&state, "Dev seed loaded", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
 	case commands.DevClearedMsg:
 		cmd := deps.SetStatus(&state, "Dev data cleared", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
 	case commands.SessionAmendedMsg:
 		cmd := deps.SetStatus(&state, "Session amended", false)
 		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state), deps.LoadSessionDetail(msg.ID)), true

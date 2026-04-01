@@ -303,19 +303,21 @@ func (m Model) updateScratchpadPane(msg tea.KeyMsg) (Model, tea.Cmd) {
 
 func (m Model) dispatchEventState() dispatchpkg.EventState {
 	return dispatchpkg.EventState{
-		View:          m.view,
-		Pane:          m.pane,
-		Cursor:        m.cursor,
-		Streams:       m.streams,
-		Issues:        m.issues,
-		Habits:        m.habits,
-		Context:       m.context,
-		Timer:         m.timer,
-		Elapsed:       m.elapsed,
-		TimerTickSeq:  m.timerTickSeq,
-		CurrentDash:   m.currentDashboardDate(),
-		CurrentWell:   m.currentWellbeingDate(),
-		CurrentOpsLim: m.currentOpsLimit(),
+		View:               m.view,
+		Pane:               m.pane,
+		Cursor:             m.cursor,
+		Streams:            m.streams,
+		Issues:             m.issues,
+		Habits:             m.habits,
+		Context:            m.context,
+		Timer:              m.timer,
+		Elapsed:            m.elapsed,
+		TimerTickSeq:       m.timerTickSeq,
+		CurrentDash:        m.currentDashboardDate(),
+		CurrentRollupStart: m.currentRollupStartDate(),
+		CurrentRollupEnd:   m.currentRollupEndDate(),
+		CurrentWell:        m.currentWellbeingDate(),
+		CurrentOpsLim:      m.currentOpsLimit(),
 	}
 }
 
@@ -335,15 +337,16 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 
 func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 	state, cmd := dispatchpkg.HandleEvent(m.dispatchEventState(), dispatchpkg.EventDeps{
-		LoadRepos:        func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadStreams:      func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
-		LoadIssues:       func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
-		LoadHabits:       func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
-		LoadAllIssues:    func() tea.Cmd { return commands.LoadAllIssues(m.client) },
-		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
-		LoadWellbeing:    func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
-		LoadScratchpads:  func() tea.Cmd { return commands.LoadScratchpads(m.client) },
+		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadStreams:         func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
+		LoadIssues:          func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
+		LoadHabits:          func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
+		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadScratchpads:     func() tea.Cmd { return commands.LoadScratchpads(m.client) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {
 			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(m.timer), 200)
 		},
@@ -373,11 +376,21 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DailySummary:          m.dailySummary,
 		DailyPlan:             m.dailyPlan,
 		DashboardDate:         m.dashboardDate,
+		RollupStartDate:       m.currentRollupStartDate(),
+		RollupEndDate:         m.currentRollupEndDate(),
 		WellbeingDate:         m.wellbeingDate,
 		DailyCheckIn:          m.dailyCheckIn,
 		MetricsRange:          m.metricsRange,
 		MetricsRollup:         m.metricsRollup,
 		Streaks:               m.streaks,
+		DashboardWindow:       m.dashboardWindow,
+		DailyFocusScore:       m.dailyFocusScore,
+		WeeklyFocusScore:      m.weeklyFocusScore,
+		RepoDistribution:      m.repoDistribution,
+		StreamDistribution:    m.streamDistribution,
+		IssueDistribution:     m.issueDistribution,
+		SegmentDistribution:   m.segmentDistribution,
+		GoalProgress:          m.goalProgress,
 		ExportAssets:          m.exportAssets,
 		ExportReports:         m.exportReports,
 		IssueSessions:         m.issueSessions,
@@ -439,11 +452,21 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dailySummary = state.DailySummary
 	m.dailyPlan = state.DailyPlan
 	m.dashboardDate = state.DashboardDate
+	m.rollupStartDate = state.RollupStartDate
+	m.rollupEndDate = state.RollupEndDate
 	m.wellbeingDate = state.WellbeingDate
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup
 	m.streaks = state.Streaks
+	m.dashboardWindow = state.DashboardWindow
+	m.dailyFocusScore = state.DailyFocusScore
+	m.weeklyFocusScore = state.WeeklyFocusScore
+	m.repoDistribution = state.RepoDistribution
+	m.streamDistribution = state.StreamDistribution
+	m.issueDistribution = state.IssueDistribution
+	m.segmentDistribution = state.SegmentDistribution
+	m.goalProgress = state.GoalProgress
 	m.exportAssets = state.ExportAssets
 	m.exportReports = state.ExportReports
 	m.issueSessions = state.IssueSessions
@@ -571,18 +594,19 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentWellbeingDate()
 		},
-		LoadRepos:         func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadAllIssues:     func() tea.Cmd { return commands.LoadAllIssues(m.client) },
-		LoadStreams:       func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
-		LoadIssues:        func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
-		LoadHabits:        func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
-		LoadDueHabits:     func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
-		LoadDailySummary:  func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadWellbeing:     func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
-		LoadDailyPlan:     func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
-		LoadExportAssets:  func() tea.Cmd { return commands.LoadExportAssets(m.client) },
-		LoadExportReports: func() tea.Cmd { return commands.LoadExportReports(m.client) },
-		LoadIssueSessions: func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
+		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadStreams:         func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
+		LoadIssues:          func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
+		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
+		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadDailyPlan:       func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
+		LoadExportAssets:    func() tea.Cmd { return commands.LoadExportAssets(m.client) },
+		LoadExportReports:   func() tea.Cmd { return commands.LoadExportReports(m.client) },
+		LoadIssueSessions:   func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.MessageState) tea.Cmd {
 			next := m.applyDispatchMessageState(state)
 			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(next.timer), 200)

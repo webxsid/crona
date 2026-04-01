@@ -82,6 +82,15 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	}
+	if state.View == "rollup" {
+		return []string{
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" day details"),
+			theme.StyleHeader.Render("[S/E]") + theme.StyleDim.Render(" calendar"),
+			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" start"),
+			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" end"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" weekly"),
+		}
+	}
 	if state.View == "config" {
 		actions := []string{
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit/open"),

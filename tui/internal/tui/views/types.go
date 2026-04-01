@@ -41,6 +41,8 @@ type ContentState struct {
 	ScratchpadRendered  string
 	Elapsed             int
 	DashboardDate       string
+	RollupStartDate     string
+	RollupEndDate       string
 	WellbeingDate       string
 	DefaultIssueSection string
 	SessionHistoryTitle string
@@ -64,6 +66,14 @@ type ContentState struct {
 	MetricsRange           []api.DailyMetricsDay
 	MetricsRollup          *api.MetricsRollup
 	Streaks                *api.StreakSummary
+	DashboardWindow        *api.DashboardWindowSummary
+	DailyFocusScore        *api.FocusScoreSummary
+	WeeklyFocusScore       *api.FocusScoreSummary
+	RepoDistribution       *api.TimeDistributionSummary
+	StreamDistribution     *api.TimeDistributionSummary
+	IssueDistribution      *api.TimeDistributionSummary
+	SegmentDistribution    *api.TimeDistributionSummary
+	GoalProgress           *api.GoalProgressSummary
 	ExportAssets           *api.ExportAssetStatus
 	ExportReports          []api.ExportReportFile
 	IssueSessions          []api.Session
@@ -95,6 +105,8 @@ func RenderContent(theme Theme, state ContentState) string {
 		return renderDefaultView(theme, state)
 	case "daily":
 		return renderDailyView(theme, state)
+	case "rollup":
+		return renderRollupView(theme, state)
 	case "meta":
 		return renderMetaView(theme, state)
 	case "session_history", "session_active":

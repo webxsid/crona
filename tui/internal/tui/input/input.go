@@ -2,6 +2,7 @@ package input
 
 import (
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -20,6 +21,8 @@ type State struct {
 	Cursor              map[uistate.Pane]int
 	DefaultIssueSection uistate.DefaultIssueSection
 	DashboardDate       string
+	RollupStartDate     string
+	RollupEndDate       string
 	WellbeingDate       string
 	Dialog              string
 	DialogState         dialogpkg.State
@@ -67,6 +70,9 @@ type Deps struct {
 	LoadDailySummary                func(string) tea.Cmd
 	LoadDueHabits                   func(string) tea.Cmd
 	CurrentDashboardDate            func(State) string
+	LoadRollupSummaries             func(string, string) tea.Cmd
+	CurrentRollupStartDate          func(State) string
+	CurrentRollupEndDate            func(State) string
 	LoadWellbeing                   func(string) tea.Cmd
 	CurrentWellbeingDate            func(State) string
 	ConfigChangeSelected            func(*State) tea.Cmd
@@ -106,6 +112,8 @@ type Deps struct {
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
 	OpenEditRestProtectionDialog    func(*State) bool
+	OpenRollupStartDateDialog       func(*State) bool
+	OpenRollupEndDateDialog         func(*State) bool
 }
 
 type handler = keyregistry.Handler[State]
@@ -398,6 +406,25 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
 	)
+	keyregistry.RegisterRollup(r, uistate.ViewRollup,
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupEndDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupEndDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetRollupRange(s, deps) },
+	)
+	r.RegisterView(uistate.ViewRollup, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenRollupStartDateDialog(&s) {
+			return s, nil, true
+		}
+		return s, nil, false
+	})
+	r.RegisterView(uistate.ViewRollup, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenRollupEndDateDialog(&s) {
+			return s, nil, true
+		}
+		return s, nil, false
+	})
 	r.RegisterView(uistate.ViewWellbeing, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleToggleAwayMode(s, deps)
 	})
@@ -450,6 +477,44 @@ func handleOpenUpdates(s State) (tea.Model, tea.Cmd, bool) {
 	s.ActiveView = uistate.ViewUpdates
 	s.ActivePane = uistate.DefaultPane(s.ActiveView)
 	return s, nil, true
+}
+
+func handleShiftRollupStartDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
+	start := shiftInputISODate(deps.CurrentRollupStartDate(s), delta)
+	end := deps.CurrentRollupEndDate(s)
+	if start > end {
+		end = start
+	}
+	s.RollupStartDate = start
+	s.RollupEndDate = end
+	return s, deps.LoadRollupSummaries(start, end), true
+}
+
+func handleShiftRollupEndDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
+	end := shiftInputISODate(deps.CurrentRollupEndDate(s), delta)
+	start := deps.CurrentRollupStartDate(s)
+	if start > end {
+		start = end
+	}
+	s.RollupStartDate = start
+	s.RollupEndDate = end
+	return s, deps.LoadRollupSummaries(start, end), true
+}
+
+func handleResetRollupRange(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	end := time.Now().Format("2006-01-02")
+	start := shiftInputISODate(end, -6)
+	s.RollupStartDate = start
+	s.RollupEndDate = end
+	return s, deps.LoadRollupSummaries(start, end), true
+}
+
+func shiftInputISODate(date string, days int) string {
+	t, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return date
+	}
+	return t.AddDate(0, 0, days).Format("2006-01-02")
 }
 
 func handleRescanExportAssets(s State, deps Deps) (tea.Model, tea.Cmd, bool) {

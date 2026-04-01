@@ -475,6 +475,125 @@ type StreakSummary struct {
 	LongestCheckInDays int `json:"longestCheckInDays"`
 }
 
+type DashboardWindowDayStatus string
+
+const (
+	DashboardWindowDayEmpty     DashboardWindowDayStatus = "empty"
+	DashboardWindowDayPlanned   DashboardWindowDayStatus = "planned"
+	DashboardWindowDayDone      DashboardWindowDayStatus = "done"
+	DashboardWindowDayMissed    DashboardWindowDayStatus = "missed"
+	DashboardWindowDayCarryOver DashboardWindowDayStatus = "carry_over"
+	DashboardWindowDayMixed     DashboardWindowDayStatus = "mixed"
+)
+
+type DashboardWindowDay struct {
+	Date                string                   `json:"date"`
+	Status              DashboardWindowDayStatus `json:"status"`
+	PlannedCount        int                      `json:"plannedCount"`
+	CompletedCount      int                      `json:"completedCount"`
+	FailedCount         int                      `json:"failedCount"`
+	CarryOverCount      int                      `json:"carryOverCount"`
+	AccountabilityScore float64                  `json:"accountabilityScore"`
+}
+
+type DashboardWindowSummary struct {
+	StartDate           string               `json:"startDate"`
+	EndDate             string               `json:"endDate"`
+	PlannedCount        int                  `json:"plannedCount"`
+	CompletedCount      int                  `json:"completedCount"`
+	FailedCount         int                  `json:"failedCount"`
+	AbandonedCount      int                  `json:"abandonedCount"`
+	MissedCount         int                  `json:"missedCount"`
+	CarryOverCount      int                  `json:"carryOverCount"`
+	AccountabilityScore float64              `json:"accountabilityScore"`
+	Days                []DashboardWindowDay `json:"days,omitempty"`
+}
+
+type FocusScoreLevel string
+
+const (
+	FocusScoreLevelLow          FocusScoreLevel = "low"
+	FocusScoreLevelSteady       FocusScoreLevel = "steady"
+	FocusScoreLevelStrong       FocusScoreLevel = "strong"
+	FocusScoreLevelOverextended FocusScoreLevel = "overextended"
+)
+
+type FocusScoreSummary struct {
+	StartDate           string          `json:"startDate"`
+	EndDate             string          `json:"endDate"`
+	Score               int             `json:"score"`
+	Level               FocusScoreLevel `json:"level"`
+	WorkedSeconds       int             `json:"workedSeconds"`
+	RestSeconds         int             `json:"restSeconds"`
+	SessionCount        int             `json:"sessionCount"`
+	FocusDays           int             `json:"focusDays"`
+	Days                int             `json:"days"`
+	TargetWorkedSeconds int             `json:"targetWorkedSeconds"`
+}
+
+type DistributionGroup string
+
+const (
+	DistributionGroupRepo        DistributionGroup = "repo"
+	DistributionGroupStream      DistributionGroup = "stream"
+	DistributionGroupIssue       DistributionGroup = "issue"
+	DistributionGroupSegmentType DistributionGroup = "segment_type"
+)
+
+type TimeDistributionRow struct {
+	Key           string  `json:"key"`
+	Label         string  `json:"label"`
+	WorkedSeconds int     `json:"workedSeconds"`
+	Percent       float64 `json:"percent"`
+}
+
+type TimeDistributionSummary struct {
+	StartDate    string                `json:"startDate"`
+	EndDate      string                `json:"endDate"`
+	GroupBy      DistributionGroup     `json:"groupBy"`
+	TotalSeconds int                   `json:"totalSeconds"`
+	Rows         []TimeDistributionRow `json:"rows,omitempty"`
+}
+
+type GoalProgressGroup string
+
+const (
+	GoalProgressGroupRepo   GoalProgressGroup = "repo"
+	GoalProgressGroupStream GoalProgressGroup = "stream"
+	GoalProgressGroupIssue  GoalProgressGroup = "issue"
+)
+
+type GoalProgressStatus string
+
+const (
+	GoalProgressStatusUnestimated GoalProgressStatus = "unestimated"
+	GoalProgressStatusOnTrack     GoalProgressStatus = "on_track"
+	GoalProgressStatusAtRisk      GoalProgressStatus = "at_risk"
+	GoalProgressStatusOver        GoalProgressStatus = "over"
+)
+
+type GoalProgressRow struct {
+	Key             string             `json:"key"`
+	Label           string             `json:"label"`
+	EstimateMinutes int                `json:"estimateMinutes"`
+	ActualSeconds   int                `json:"actualSeconds"`
+	ProgressPercent float64            `json:"progressPercent"`
+	Status          GoalProgressStatus `json:"status"`
+}
+
+type GoalProgressSummary struct {
+	StartDate            string            `json:"startDate"`
+	EndDate              string            `json:"endDate"`
+	GroupBy              GoalProgressGroup `json:"groupBy"`
+	TotalEstimateMinutes int               `json:"totalEstimateMinutes"`
+	TotalActualSeconds   int               `json:"totalActualSeconds"`
+	EstimatedItems       int               `json:"estimatedItems"`
+	AverageDeltaMinutes  float64           `json:"averageDeltaMinutes"`
+	AverageDeltaPercent  float64           `json:"averageDeltaPercent"`
+	EstimateBias         string            `json:"estimateBias"`
+	Rows                 []GoalProgressRow `json:"rows,omitempty"`
+}
+
 type SessionSource string
 
 const (

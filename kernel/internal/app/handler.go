@@ -452,6 +452,22 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
 			return corecommands.ComputeMetricsStreaks(ctx, h.core, input.Start, input.End)
 		})
+	case protocol.MethodDashboardWindow:
+		return handle(req, func(input shareddto.DashboardWindowQuery) (any, error) {
+			return corecommands.ComputeDashboardWindowSummary(ctx, h.core, input)
+		})
+	case protocol.MethodDashboardFocusScore:
+		return handle(req, func(input shareddto.DashboardSummaryQuery) (any, error) {
+			return corecommands.ComputeFocusScoreSummary(ctx, h.core, input)
+		})
+	case protocol.MethodDashboardDistribution:
+		return handle(req, func(input shareddto.DashboardSummaryQuery) (any, error) {
+			return corecommands.ComputeTimeDistributionSummary(ctx, h.core, input)
+		})
+	case protocol.MethodDashboardGoalProgress:
+		return handle(req, func(input shareddto.DashboardSummaryQuery) (any, error) {
+			return corecommands.ComputeGoalProgressSummary(ctx, h.core, input)
+		})
 	case protocol.MethodExportAssetsGet:
 		return h.handleNoParams(req, func() (any, error) {
 			return export.EnsureAssets(h.paths)

@@ -12,19 +12,21 @@ import (
 )
 
 type EventState struct {
-	View          uistate.View
-	Pane          uistate.Pane
-	Cursor        map[uistate.Pane]int
-	Streams       []api.Stream
-	Issues        []api.Issue
-	Habits        []api.Habit
-	Context       *api.ActiveContext
-	Timer         *api.TimerState
-	Elapsed       int
-	TimerTickSeq  int
-	CurrentDash   string
-	CurrentWell   string
-	CurrentOpsLim int
+	View               uistate.View
+	Pane               uistate.Pane
+	Cursor             map[uistate.Pane]int
+	Streams            []api.Stream
+	Issues             []api.Issue
+	Habits             []api.Habit
+	Context            *api.ActiveContext
+	Timer              *api.TimerState
+	Elapsed            int
+	TimerTickSeq       int
+	CurrentDash        string
+	CurrentRollupStart string
+	CurrentRollupEnd   string
+	CurrentWell        string
+	CurrentOpsLim      int
 }
 
 type EventDeps struct {
@@ -36,6 +38,7 @@ type EventDeps struct {
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
 	LoadWellbeing            func(date string) tea.Cmd
+	LoadRollupSummaries      func(start, end string) tea.Cmd
 	LoadScratchpads          func() tea.Cmd
 	LoadSessionHistoryFor200 func(EventState) tea.Cmd
 	LoadStashes              func() tea.Cmd
@@ -57,7 +60,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, nil
 	case "issue.created", "issue.updated", "issue.deleted":
-		cmds := []tea.Cmd{deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDash)}
+		cmds := []tea.Cmd{deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDash), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID))
 		}
@@ -69,17 +72,17 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":
-		return state, deps.LoadWellbeing(state.CurrentWell)
+		return state, tea.Batch(deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd))
 	case "scratchpad.created", "scratchpad.updated", "scratchpad.deleted":
 		return state, deps.LoadScratchpads()
 	case "session.started", "session.stopped":
-		return state, tea.Batch(deps.LoadTimer(), deps.LoadContext(), deps.LoadSessionHistoryFor200(state))
+		return state, tea.Batch(deps.LoadTimer(), deps.LoadContext(), deps.LoadSessionHistoryFor200(state), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd))
 	case "stash.created", "stash.applied", "stash.dropped":
 		return state, tea.Batch(deps.LoadStashes(), deps.LoadContext(), deps.LoadTimer())
 	case "context.repo.changed", "context.stream.changed", "context.issue.changed", "context.cleared":
 		var payload sharedtypes.ContextChangedPayload
 		_ = json.Unmarshal(event.Payload, &payload)
-		cmds := []tea.Cmd{deps.LoadContext()}
+		cmds := []tea.Cmd{deps.LoadContext(), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
 		if payload.RepoID != nil {
 			cmds = append(cmds, deps.LoadStreams(*payload.RepoID))
 		} else {
@@ -119,7 +122,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, nil
 	case "timer.boundary":
 		state.Elapsed = 0
-		return state, deps.LoadTimer()
+		return state, tea.Batch(deps.LoadTimer(), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd))
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
 	case "ops.created":

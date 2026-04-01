@@ -349,6 +349,61 @@ func (c *Client) GetMetricsStreaks(start, end string) (*StreakSummary, error) {
 	return &out, nil
 }
 
+func (c *Client) GetDashboardWindowSummary(start, end string, repoID, streamID, issueID *int64) (*DashboardWindowSummary, error) {
+	var out DashboardWindowSummary
+	if err := c.call(protocol.MethodDashboardWindow, shareddto.DashboardWindowQuery{
+		Start:    strings.TrimSpace(start),
+		End:      strings.TrimSpace(end),
+		RepoID:   repoID,
+		StreamID: streamID,
+		IssueID:  issueID,
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) GetFocusScoreSummary(start, end string) (*FocusScoreSummary, error) {
+	var out FocusScoreSummary
+	if err := c.call(protocol.MethodDashboardFocusScore, shareddto.DashboardSummaryQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) GetTimeDistributionSummary(start, end, groupBy string, repoID, streamID, issueID *int64) (*TimeDistributionSummary, error) {
+	var out TimeDistributionSummary
+	if err := c.call(protocol.MethodDashboardDistribution, shareddto.DashboardSummaryQuery{
+		Start:    strings.TrimSpace(start),
+		End:      strings.TrimSpace(end),
+		GroupBy:  strings.TrimSpace(groupBy),
+		RepoID:   repoID,
+		StreamID: streamID,
+		IssueID:  issueID,
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *Client) GetGoalProgressSummary(start, end, groupBy string, repoID, streamID, issueID *int64) (*GoalProgressSummary, error) {
+	var out GoalProgressSummary
+	if err := c.call(protocol.MethodDashboardGoalProgress, shareddto.DashboardSummaryQuery{
+		Start:    strings.TrimSpace(start),
+		End:      strings.TrimSpace(end),
+		GroupBy:  strings.TrimSpace(groupBy),
+		RepoID:   repoID,
+		StreamID: streamID,
+		IssueID:  issueID,
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) GetExportAssets() (*ExportAssetStatus, error) {
 	var out ExportAssetStatus
 	return &out, c.call(protocol.MethodExportAssetsGet, nil, &out)

@@ -53,9 +53,13 @@ const (
 	MethodCheckInDelete = "checkin.delete"
 	MethodCheckInRange  = "checkin.range"
 
-	MethodMetricsRange   = "metrics.range"
-	MethodMetricsRollup  = "metrics.rollup"
-	MethodMetricsStreaks = "metrics.streaks"
+	MethodMetricsRange          = "metrics.range"
+	MethodMetricsRollup         = "metrics.rollup"
+	MethodMetricsStreaks        = "metrics.streaks"
+	MethodDashboardWindow       = "dashboard.window"
+	MethodDashboardFocusScore   = "dashboard.focus_score"
+	MethodDashboardDistribution = "dashboard.distribution"
+	MethodDashboardGoalProgress = "dashboard.goal_progress"
 
 	MethodExportDaily         = "export.daily"
 	MethodExportWeekly        = "export.weekly"

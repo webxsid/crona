@@ -8,6 +8,10 @@ All notable changes to **Crona** are documented here.
 - Manual session logging from issue-level workflows, including automatic `in_progress` transition when the target issue is focusable but not yet started.
 - Dedicated protected-day shell for away mode and configured rest days, with non-work views hidden until the break ends.
 - Built-in daily/weekly narrative report presets plus separate HTML/CSS-based PDF rendering for narrative exports.
+- Dedicated `Rollup` dashboard with a default weekly range, adjustable start/end dates, calendar-based range picking, and drill-down day details.
+- Shared dashboard summary APIs for execution, focus, distribution, goal progress, and estimate-bias rollups.
+- Estimate-bias metrics in rollup summaries so over- and under-estimation can be inspected across worked issues.
+- Dev-mode seed data now generates a deliberate 7-day scenario window with carry-over, missed days, blocked work, over/under estimates, and varied wellbeing signals.
 
 ### Changed
 - Settings and Config are now grouped into clearer categories instead of one long flat list.
@@ -16,6 +20,8 @@ All notable changes to **Crona** are documented here.
 - Dialogs now render their own validation/runtime errors, use consistent `Ctrl+S` submit behavior for forms, and keep field-aware footer hints.
 - Self-update now uses a dedicated install takeover screen with phase-based progress and a quiet relaunch handoff.
 - Daily and weekly PDF narrative exports now use dedicated HTML/CSS templates instead of reusing the Markdown pipeline.
+- Daily dashboard no longer carries opaque weekly glyph summaries; range analytics now live in the dedicated Rollup view.
+- Rollup status lines and focus/progress summaries now use stronger color coding for faster at-a-glance reading.
 
 ### Fixed
 - Session history detail opens correctly again after the session-source additions.

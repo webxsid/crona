@@ -41,8 +41,10 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 
 	baseNow := time.Now().UTC()
 	today := baseNow.Format("2006-01-02")
-	tomorrow := baseNow.Add(24 * time.Hour).Format("2006-01-02")
 	yesterday := baseNow.Add(-24 * time.Hour).Format("2006-01-02")
+	dateAt := func(offset int) string {
+		return baseNow.AddDate(0, 0, offset).Format("2006-01-02")
+	}
 
 	withSeedNow := func(ts time.Time, fn func() error) error {
 		prev := h.core.Now
@@ -233,43 +235,65 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
-	focusIssue, err := createIssue(-2, appStream.ID, "Port dev tooling to Go", "Validate the IPC-first workflow and replace the remaining shell scripts.", 90, &today, []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress}, "Drive the migration end-to-end and keep dev experience tight.")
+	focusIssue, err := createIssue(-6, appStream.ID, "Port dev tooling to Go", "Validate the IPC-first workflow and replace the remaining shell scripts.", 90, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress}, "Drive the migration end-to-end and keep dev experience tight.")
 	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-1, appStream.ID, "Add keyboard-first command palette", "Speed up common view and dialog actions from one launcher.", 60, &tomorrow, nil); err != nil {
-		return err
-	}
-	if _, err := createIssue(-4, appStream.ID, "Review lifecycle UX copy", "Tighten action labels and empty-state wording across the dashboard.", 40, &today, []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Ready for wording and interaction review."); err != nil {
-		return err
-	}
-	readyIssue, err := createIssue(-3, infraStream.ID, "Prepare rollout checklist", "Capture deploy sequencing, smoke tests, and rollback checkpoints.", 45, &today, []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Waiting only on final go/no-go review.")
+	underEstimateIssue, err := createIssue(-5, appStream.ID, "Add keyboard-first command palette", "Speed up common view and dialog actions from one launcher.", 35, devDatePtr(dateAt(-3)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress}, "Intentionally underestimated for seed accuracy drift.")
 	if err != nil {
 		return err
 	}
-	inProgressIssue, err := createIssue(-5, infraStream.ID, "Wire release packaging checks", "Verify built artifacts, checksums, and update install docs.", 75, &yesterday, []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress}, "Partially implemented; needs artifact verification.")
+	overEstimateIssue, err := createIssue(-4, appStream.ID, "Review lifecycle UX copy", "Tighten action labels and empty-state wording across the dashboard.", 95, devDatePtr(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Intentionally overestimated for rollup estimate-bias testing.")
 	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-5, infraStream.ID, "Provision CI signing secrets", "Unblock package signing in CI and production release automation.", 30, &yesterday, []sharedtypes.IssueStatus{sharedtypes.IssueStatusBlocked}, "Awaiting access to the signing account."); err != nil {
+	readyIssue, err := createIssue(-6, infraStream.ID, "Prepare rollout checklist", "Capture deploy sequencing, smoke tests, and rollback checkpoints.", 45, devDatePtr(dateAt(-4)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Waiting only on final go/no-go review.")
+	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, platformStream.ID, "Backfill metrics range tests", "Cover streaks, burnout rollups, and historical summaries.", 55, devDatePtr(baseNow.AddDate(0, 0, -2).Format("2006-01-02")), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusDone}); err != nil {
+	inProgressIssue, err := createIssue(-6, infraStream.ID, "Wire release packaging checks", "Verify built artifacts, checksums, and update install docs.", 75, devDatePtr(dateAt(-5)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress}, "Partially implemented; needs artifact verification.")
+	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, platformStream.ID, "Reduce websocket reconnect churn", "Stabilize event fanout under network flaps.", 50, devDatePtr(baseNow.AddDate(0, 0, -1).Format("2006-01-02")), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Superseded by the unix socket migration."); err != nil {
+	blockedIssue, err := createIssue(-6, infraStream.ID, "Provision CI signing secrets", "Unblock package signing in CI and production release automation.", 30, devDatePtr(dateAt(-4)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusBlocked}, "Awaiting access to the signing account.")
+	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-1, cliStream.ID, "Improve install docs for Linux", "Add shell completion, troubleshooting, and verification notes.", 35, &tomorrow, nil); err != nil {
+	if _, err := createIssue(-6, platformStream.ID, "Backfill metrics range tests", "Cover streaks, burnout rollups, and historical summaries.", 55, devDatePtr(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusDone}); err != nil {
 		return err
 	}
-	if _, err := createIssue(-3, cliStream.ID, "Publish example config bundle", "Ship realistic examples for repo, stream, and timer setup.", 25, &today, nil); err != nil {
+	if _, err := createIssue(-6, platformStream.ID, "Reduce websocket reconnect churn", "Stabilize event fanout under network flaps.", 50, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Superseded by the unix socket migration."); err != nil {
 		return err
 	}
-	if _, err := createIssue(-2, homeStream.ID, "Plan weekend errands", "Group shopping, laundry, and pickup tasks into one route.", 30, &today, nil); err != nil {
+	docsIssue, err := createIssue(-3, cliStream.ID, "Improve install docs for Linux", "Add shell completion, troubleshooting, and verification notes.", 35, devDatePtr(dateAt(1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Future planned work to keep the window from being all closed.")
+	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, homeStream.ID, "Research standing desk options", "Compare dimensions and price points for the office nook.", 25, devDatePtr(baseNow.AddDate(0, 0, 2).Format("2006-01-02")), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Deferred until the room reorganization is done."); err != nil {
+	if _, err := createIssue(-3, cliStream.ID, "Publish example config bundle", "Ship realistic examples for repo, stream, and timer setup.", 25, devDatePtr(dateAt(0)), nil); err != nil {
+		return err
+	}
+	if _, err := createIssue(-2, homeStream.ID, "Plan weekend errands", "Group shopping, laundry, and pickup tasks into one route.", 30, devDatePtr(dateAt(0)), nil); err != nil {
+		return err
+	}
+	if _, err := createIssue(-6, homeStream.ID, "Research standing desk options", "Compare dimensions and price points for the office nook.", 25, devDatePtr(dateAt(2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Deferred until the room reorganization is done."); err != nil {
+		return err
+	}
+	if _, err := createIssue(-6, platformStream.ID, "Audit event replay gaps", "Investigate dropped events and stale refresh paths.", 50, devDatePtr(dateAt(-6)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left incomplete on purpose so the oldest day shows planned-only work."); err != nil {
+		return err
+	}
+	if _, err := createIssue(-5, platformStream.ID, "Reconcile update relaunch UX", "Smooth out install handoff and watchdog reporting.", 40, devDatePtr(dateAt(-5)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left untouched so one day can register as missed."); err != nil {
+		return err
+	}
+	if err := seedAt(-3, 17, 0, func() error {
+		_, err := corecommands.MarkIssueTodoForDate(ctx, h.core, readyIssue.ID, dateAt(-2))
+		return err
+	}); err != nil {
+		return err
+	}
+	if err := seedAt(-4, 17, 30, func() error {
+		_, err := corecommands.MarkIssueTodoForDate(ctx, h.core, blockedIssue.ID, dateAt(-3))
+		return err
+	}); err != nil {
 		return err
 	}
 
@@ -311,19 +335,19 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	}
 
 	checkInNotes := []string{
-		"Settled back into the routine after the weekend.",
-		"Energy improved once the morning block was protected.",
-		"Solid focus day with fewer interruptions.",
-		"Longer work block, but recovery still felt okay.",
-		"Good pace and decent sleep coming into the day.",
-		"Sharper than yesterday and less context switching.",
-		"Ended the week feeling steady and in control.",
+		"Low-energy restart day with too much catch-up.",
+		"Better morning structure but still some drag.",
+		"Strong focus and decent recovery.",
+		"Heavy day with visible fatigue.",
+		"Recovered well after a lighter evening.",
+		"Productive, but sleep debt still showed up.",
+		"Stable finish with good control over context switching.",
 	}
-	moods := []int{3, 4, 4, 3, 4, 5, 4}
-	energies := []int{3, 3, 4, 3, 4, 4, 4}
-	sleepHours := []float64{6.8, 7.1, 7.4, 6.9, 7.6, 7.2, 7.0}
-	sleepScores := []int{72, 76, 81, 74, 84, 79, 77}
-	screenMinutes := []int{210, 195, 188, 225, 176, 182, 190}
+	moods := []int{2, 3, 4, 2, 4, 3, 4}
+	energies := []int{2, 3, 4, 2, 4, 3, 4}
+	sleepHours := []float64{5.9, 6.5, 7.6, 5.8, 8.0, 6.7, 7.3}
+	sleepScores := []int{58, 68, 84, 55, 88, 71, 79}
+	screenMinutes := []int{255, 225, 178, 290, 165, 214, 186}
 	for i := 6; i >= 0; i-- {
 		date := baseNow.AddDate(0, 0, -i).Format("2006-01-02")
 		idx := 6 - i
@@ -332,34 +356,39 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		}
 	}
 
-	sessionInputs := []corecommands.SessionEndInput{
-		{CommitMessage: devStringPtr("refactor: move repo bootstrap into kernel"), WorkedOn: devStringPtr("dev seed and repo bootstrap"), Outcome: devStringPtr("multi-repo data shape in place")},
-		{CommitMessage: devStringPtr("feat: add dashboard streak summaries"), WorkedOn: devStringPtr("metrics rollup and streak calculations"), Outcome: devStringPtr("7-day trend cards rendering cleanly")},
-		{CommitMessage: devStringPtr("fix: stabilize session detail overlay"), WorkedOn: devStringPtr("overlay sizing and note parsing"), Outcome: devStringPtr("session detail works at smaller widths")},
-		{CommitMessage: devStringPtr("feat: support habit failure status"), WorkedOn: devStringPtr("habit domain, TUI actions, and summary bars"), Outcome: devStringPtr("failed habits are visible and actionable")},
-		{CommitMessage: devStringPtr("chore: tighten release packaging checks"), WorkedOn: devStringPtr("artifact verification and install script updates"), Outcome: devStringPtr("release checklist issue moved forward")},
-		{CommitMessage: devStringPtr("docs: refresh install examples"), WorkedOn: devStringPtr("CLI docs and contributor examples"), Outcome: devStringPtr("examples reflect current transport and settings")},
-		{CommitMessage: devStringPtr("feat: expand dev seed workspace"), WorkedOn: devStringPtr("repos, streams, sessions, and check-ins"), Outcome: devStringPtr("dev mode feels realistic for demos")},
+	sessionPlan := []struct {
+		dayOffset       int
+		issueID         int64
+		startHour       int
+		startMinute     int
+		durationMinutes int
+		input           corecommands.SessionEndInput
+	}{
+		{-6, focusIssue.ID, 9, 15, 42, corecommands.SessionEndInput{CommitMessage: devStringPtr("refactor: bootstrap kernel repos"), WorkedOn: devStringPtr("repo and stream initialization"), Outcome: devStringPtr("baseline workspace created")}},
+		{-5, inProgressIssue.ID, 9, 40, 72, corecommands.SessionEndInput{CommitMessage: devStringPtr("chore: verify packaging outputs"), WorkedOn: devStringPtr("artifact checks and hashes"), Outcome: devStringPtr("release checks mostly wired")}},
+		{-4, readyIssue.ID, 10, 0, 38, corecommands.SessionEndInput{CommitMessage: devStringPtr("docs: shape rollout checklist"), WorkedOn: devStringPtr("deploy sequencing and rollback notes"), Outcome: devStringPtr("carry-over item clarified")}},
+		{-3, underEstimateIssue.ID, 9, 30, 84, corecommands.SessionEndInput{CommitMessage: devStringPtr("feat: add command palette navigation"), WorkedOn: devStringPtr("palette actions and filtering"), Outcome: devStringPtr("underestimate case seeded")}},
+		{-3, underEstimateIssue.ID, 14, 10, 27, corecommands.SessionEndInput{CommitMessage: devStringPtr("fix: polish command palette hints"), WorkedOn: devStringPtr("labels and keyboard copy"), Outcome: devStringPtr("issue should exceed estimate cleanly")}},
+		{-2, readyIssue.ID, 13, 30, 31, corecommands.SessionEndInput{CommitMessage: devStringPtr("chore: finish rollout checklist"), WorkedOn: devStringPtr("go/no-go notes"), Outcome: devStringPtr("carried item completed")}},
+		{-2, overEstimateIssue.ID, 16, 15, 24, corecommands.SessionEndInput{CommitMessage: devStringPtr("copy: revise lifecycle prompts"), WorkedOn: devStringPtr("short UX copy pass"), Outcome: devStringPtr("overestimate case remains under target")}},
+		{-1, focusIssue.ID, 9, 45, 58, corecommands.SessionEndInput{CommitMessage: devStringPtr("feat: refresh rollup dashboard"), WorkedOn: devStringPtr("range summaries and details"), Outcome: devStringPtr("focus issue moved forward")}},
+		{-1, focusIssue.ID, 15, 55, 22, corecommands.SessionEndInput{CommitMessage: devStringPtr("fix: small-screen rollup layout"), WorkedOn: devStringPtr("compact dashboard polish"), Outcome: devStringPtr("session mix for a strong recent day")}},
+		{0, docsIssue.ID, 11, 0, 19, corecommands.SessionEndInput{CommitMessage: devStringPtr("docs: note linux install caveat"), WorkedOn: devStringPtr("shell completion docs"), Outcome: devStringPtr("future work has early progress")}},
 	}
-	sessionIssues := []int64{focusIssue.ID, readyIssue.ID, inProgressIssue.ID, focusIssue.ID, inProgressIssue.ID, readyIssue.ID, focusIssue.ID}
-	sessionDurations := []int{52, 46, 64, 58, 49, 41, 55}
-	for i := 6; i >= 0; i-- {
-		idx := 6 - i
-		if err := seedSession(-i, sessionIssues[idx], 9, 30, sessionDurations[idx], sessionInputs[idx]); err != nil {
+	for _, item := range sessionPlan {
+		if err := seedSession(item.dayOffset, item.issueID, item.startHour, item.startMinute, item.durationMinutes, item.input); err != nil {
 			return err
 		}
 	}
-	if err := seedSession(-2, readyIssue.ID, 14, 0, 33, corecommands.SessionEndInput{
-		CommitMessage: devStringPtr("chore: polish rollout notes"),
-		WorkedOn:      devStringPtr("release checklist edits"),
-		Outcome:       devStringPtr("go/no-go doc tightened"),
+	if err := seedAt(-3, 18, 0, func() error {
+		_, err := corecommands.ChangeIssueStatus(ctx, h.core, underEstimateIssue.ID, sharedtypes.IssueStatusDone, devStringPtr("Completed after running long relative to the estimate."))
+		return err
 	}); err != nil {
 		return err
 	}
-	if err := seedSession(-1, focusIssue.ID, 16, 0, 27, corecommands.SessionEndInput{
-		CommitMessage: devStringPtr("refactor: simplify daily summary wiring"),
-		WorkedOn:      devStringPtr("daily dashboard rendering"),
-		Outcome:       devStringPtr("summary view less noisy"),
+	if err := seedAt(-2, 18, 15, func() error {
+		_, err := corecommands.ChangeIssueStatus(ctx, h.core, overEstimateIssue.ID, sharedtypes.IssueStatusDone, devStringPtr("Wrapped quickly; estimate was padded."))
+		return err
 	}); err != nil {
 		return err
 	}

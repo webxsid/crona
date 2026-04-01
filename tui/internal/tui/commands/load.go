@@ -3,6 +3,7 @@ package commands
 import (
 	"time"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 
@@ -341,7 +342,90 @@ func LoadWellbeing(c *api.Client, date string) tea.Cmd {
 		LoadMetricsRange(c, start, date),
 		LoadMetricsRollup(c, start, date),
 		LoadMetricsStreaks(c, start, date),
+		LoadDashboardSummaries(c, date),
 	)
+}
+
+func LoadDashboardSummaries(c *api.Client, date string) tea.Cmd {
+	return LoadRollupSummaries(c, shiftISODate(date, -6), date)
+}
+
+func LoadRollupSummaries(c *api.Client, start, end string) tea.Cmd {
+	return tea.Batch(
+		LoadDashboardWindow(c, start, end),
+		LoadFocusScore(c, start, end, 7),
+		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupRepo)),
+		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupStream)),
+		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupIssue)),
+		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupSegmentType)),
+		LoadGoalProgress(c, start, end),
+	)
+}
+
+func LoadDashboardWindow(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		repoID, streamID, issueID, err := currentContextScope(c)
+		if err != nil {
+			logger.Errorf("loadDashboardWindow: %v", err)
+			return ErrMsg{Err: err}
+		}
+		summary, err := c.GetDashboardWindowSummary(start, end, repoID, streamID, issueID)
+		if err != nil {
+			logger.Errorf("loadDashboardWindow: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return DashboardWindowLoadedMsg{Summary: summary}
+	}
+}
+
+func LoadFocusScore(c *api.Client, start, end string, windowDays int) tea.Cmd {
+	return func() tea.Msg {
+		summary, err := c.GetFocusScoreSummary(start, end)
+		if err != nil {
+			logger.Errorf("loadFocusScore: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return FocusScoreLoadedMsg{WindowDays: windowDays, Summary: summary}
+	}
+}
+
+func LoadDistribution(c *api.Client, start, end, groupBy string) tea.Cmd {
+	return func() tea.Msg {
+		repoID, streamID, issueID, err := currentContextScope(c)
+		if err != nil {
+			logger.Errorf("loadDistribution(%s): %v", groupBy, err)
+			return ErrMsg{Err: err}
+		}
+		summary, err := c.GetTimeDistributionSummary(start, end, groupBy, repoID, streamID, issueID)
+		if err != nil {
+			logger.Errorf("loadDistribution(%s): %v", groupBy, err)
+			return ErrMsg{Err: err}
+		}
+		return DistributionLoadedMsg{GroupBy: groupBy, Summary: summary}
+	}
+}
+
+func LoadGoalProgress(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		repoID, streamID, issueID, err := currentContextScope(c)
+		if err != nil {
+			logger.Errorf("loadGoalProgress: %v", err)
+			return ErrMsg{Err: err}
+		}
+		groupBy := goalProgressGroupForScope(repoID, streamID, issueID)
+		summary, err := c.GetGoalProgressSummary(start, end, groupBy, repoID, streamID, issueID)
+		if err != nil {
+			logger.Errorf("loadGoalProgress: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return GoalProgressLoadedMsg{Summary: summary}
+	}
+}
+
+func SetRollupRange(start, end string) tea.Cmd {
+	return func() tea.Msg {
+		return RollupRangeChangedMsg{Start: start, End: end}
+	}
 }
 
 func shiftISODate(date string, days int) string {
@@ -350,4 +434,26 @@ func shiftISODate(date string, days int) string {
 		return date
 	}
 	return t.AddDate(0, 0, days).Format("2006-01-02")
+}
+
+func currentContextScope(c *api.Client) (*int64, *int64, *int64, error) {
+	ctx, err := c.GetContext()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if ctx == nil {
+		return nil, nil, nil, nil
+	}
+	return ctx.RepoID, ctx.StreamID, ctx.IssueID, nil
+}
+
+func goalProgressGroupForScope(repoID, streamID, issueID *int64) string {
+	switch {
+	case issueID != nil:
+		return string(sharedtypes.GoalProgressGroupIssue)
+	case streamID != nil:
+		return string(sharedtypes.GoalProgressGroupStream)
+	default:
+		return string(sharedtypes.GoalProgressGroupRepo)
+	}
 }

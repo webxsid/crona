@@ -258,6 +258,70 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 	}
 }
 
+func TestDailyViewDoesNotRenderRollupTelemetry(t *testing.T) {
+	state := views.ContentState{
+		View:   "daily",
+		Pane:   "issues",
+		Width:  88,
+		Height: 42,
+		Cursors: map[string]int{
+			"issues": 0,
+			"habits": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+			"habits": "",
+		},
+		DashboardDate: "2026-04-01",
+	}
+
+	rendered := support.RenderDaily(state)
+	for _, unwanted := range []string{"Last 7d", "Focus Score", "Time Progress", "Plan  planned"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected daily dashboard summary to omit %q, got %q", unwanted, rendered)
+		}
+	}
+}
+
+func TestRollupViewRendersExplicitRangeAndDailyStatuses(t *testing.T) {
+	state := views.ContentState{
+		View:   "rollup",
+		Pane:   "rollup_days",
+		Width:  96,
+		Height: 40,
+		Cursors: map[string]int{
+			"rollup_days": 1,
+		},
+		Filters: map[string]string{
+			"rollup_days": "",
+		},
+		RollupStartDate: "2026-03-26",
+		RollupEndDate:   "2026-04-01",
+		DashboardWindow: &api.DashboardWindowSummary{
+			PlannedCount:   6,
+			CompletedCount: 3,
+			MissedCount:    1,
+			CarryOverCount: 1,
+			Days: []api.DashboardWindowDay{
+				{Date: "2026-03-30", Status: "planned"},
+				{Date: "2026-03-31", Status: "done"},
+				{Date: "2026-04-01", Status: "carry_over"},
+			},
+		},
+		WeeklyFocusScore:    &api.FocusScoreSummary{Score: 79, Level: "strong", WorkedSeconds: 4200},
+		GoalProgress:        &api.GoalProgressSummary{TotalEstimateMinutes: 240, TotalActualSeconds: 7200, EstimatedItems: 2, AverageDeltaMinutes: 12, AverageDeltaPercent: 18, EstimateBias: "under", Rows: []api.GoalProgressRow{{Status: "on_track"}}},
+		RepoDistribution:    &api.TimeDistributionSummary{Rows: []api.TimeDistributionRow{{Label: "Work", Percent: 58, WorkedSeconds: 4200}}},
+		SegmentDistribution: &api.TimeDistributionSummary{Rows: []api.TimeDistributionRow{{Label: "Focus", Percent: 81, WorkedSeconds: 5400}}},
+	}
+
+	rendered := support.RenderRollup(state)
+	for _, want := range []string{"Rollup Dashboard", "Range  2026-03-26 -> 2026-04-01", "Estimate Bias", "2026-03-31", "carry over", "Repos", "Work  58%  70:00"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected rollup dashboard to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
 func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 	estimate1, estimate2, estimate3 := 60, 35, 25
 	due := "2026-03-19"
@@ -936,7 +1000,7 @@ func compactWellbeingState(height int) views.ContentState {
 func assertCompactDefault(t *testing.T, rendered string, height int) {
 	t.Helper()
 	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Due 2") || !strings.Contains(plain, "Open 2") || !strings.Contains(plain, "Closed 1") {
+	if !strings.Contains(plain, "Default Dashboard") {
 		t.Fatalf("expected compact stats header in default view")
 	}
 	if !strings.Contains(plain, "Active Issues [1]") {
