@@ -41,7 +41,8 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 		case sharedtypes.CoreSettingsKeyAwayModeEnabled,
 			sharedtypes.CoreSettingsKeyFrozenStreakKinds,
 			sharedtypes.CoreSettingsKeyRestWeekdays,
-			sharedtypes.CoreSettingsKeyRestSpecificDates:
+			sharedtypes.CoreSettingsKeyRestSpecificDates,
+			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 			cmds = append(cmds, LoadWellbeing(c, dashboardDate))
 		}
 		return tea.Batch(cmds...)()
@@ -267,7 +268,7 @@ func UpdateIssue(c *api.Client, issueID, streamID int64, title string, descripti
 			logger.Errorf("SetIssueTodoDate after UpdateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadContext(c)}
+		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadContext(c)}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}
@@ -488,7 +489,7 @@ func ChangeIssueStatus(c *api.Client, issueID int64, status string, note *string
 			logger.Errorf("ChangeIssueStatus: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate)}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}
@@ -508,7 +509,7 @@ func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamI
 			logger.Errorf("ToggleIssueToday: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate)}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}
@@ -528,7 +529,7 @@ func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64,
 			logger.Errorf("SetIssueTodoDate: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate)}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}

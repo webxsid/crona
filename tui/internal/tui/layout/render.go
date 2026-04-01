@@ -20,28 +20,31 @@ const (
 )
 
 type State struct {
-	Width              int
-	Height             int
-	View               uistate.View
-	Pane               uistate.Pane
-	ProtectedMode      bool
-	UpdateInstallOpen  bool
-	IsDevMode          bool
-	RepoName           string
-	StreamName         string
-	TimerActive        bool
-	HeaderState        views.HeaderState
-	ContentState       views.ContentState
-	DialogOpen         bool
-	DialogState        dialogs.State
-	HelpOpen           bool
-	SessionDetailOpen  bool
-	SessionDetailY     int
-	SessionDetailLines []string
-	StatusMsg          string
-	StatusErr          bool
-	PaneActions        []string
-	GlobalActions      []string
+	Width               int
+	Height              int
+	View                uistate.View
+	Pane                uistate.Pane
+	ProtectedMode       bool
+	UpdateInstallOpen   bool
+	IsDevMode           bool
+	RepoName            string
+	StreamName          string
+	TimerActive         bool
+	HeaderState         views.HeaderState
+	ContentState        views.ContentState
+	DialogOpen          bool
+	DialogState         dialogs.State
+	HelpOpen            bool
+	SessionDetailOpen   bool
+	SessionDetailY      int
+	SessionDetailLines  []string
+	SessionContextOpen  bool
+	SessionContextY     int
+	SessionContextLines []string
+	StatusMsg           string
+	StatusErr           bool
+	PaneActions         []string
+	GlobalActions       []string
 }
 
 func ViewTheme() views.Theme {
@@ -87,6 +90,10 @@ func Render(state State) string {
 	}
 	if state.SessionDetailOpen {
 		dialogStr := renderSessionDetailOverlay(state)
+		return clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
+	}
+	if state.SessionContextOpen {
+		dialogStr := renderSessionContextOverlay(state)
 		return clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
 	}
 	if state.HelpOpen {
@@ -262,13 +269,13 @@ func renderSidebar(state State, width, height int) string {
 			"",
 			chrome.StyleDim.Render("EXPORT"),
 			renderSidebarItem(state, uistate.ViewReports, "Reports"),
+			renderSidebarItem(state, uistate.ViewConfig, "Config"),
 			"",
 			chrome.StyleDim.Render("WORKSPACE"),
 			renderSidebarItem(state, uistate.ViewDefault, "Issues"),
 			renderSidebarItem(state, uistate.ViewMeta, "Meta"),
 			renderSidebarItem(state, uistate.ViewScratch, "Scratchpads"),
 			renderSidebarItem(state, uistate.ViewOps, "Ops"),
-			renderSidebarItem(state, uistate.ViewConfig, "Config"),
 			renderSidebarItem(state, uistate.ViewSettings, "Settings"),
 			renderSidebarItem(state, uistate.ViewUpdates, "Updates"),
 			"",
@@ -398,6 +405,42 @@ func renderSessionDetailOverlay(state State) string {
 		visible = append(visible, "[more below]")
 	}
 	return overlayBox("Session Detail", visible, []string{"[j/k] scroll   [e] amend   [esc] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)
+}
+
+func renderSessionContextOverlay(state State) string {
+	boxWidth := min(max(50, state.Width-10), 92)
+	innerWidth := boxWidth - 4
+	visibleHeight := max(6, state.Height-10)
+	wrapped := make([]string, 0, len(state.SessionContextLines))
+	for _, line := range state.SessionContextLines {
+		if line == "" {
+			wrapped = append(wrapped, "")
+			continue
+		}
+		wrapped = append(wrapped, WrapText(line, innerWidth)...)
+	}
+	if len(wrapped) == 0 {
+		wrapped = []string{"No issue context available"}
+	}
+	maxOffset := max(0, len(wrapped)-visibleHeight)
+	offset := state.SessionContextY
+	if offset > maxOffset {
+		offset = maxOffset
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	visible := wrapped[offset:]
+	if len(visible) > visibleHeight {
+		visible = visible[:visibleHeight]
+	}
+	if offset > 0 {
+		visible = append([]string{"[more above]"}, visible...)
+	}
+	if offset+visibleHeight < len(wrapped) {
+		visible = append(visible, "[more below]")
+	}
+	return overlayBox("Issue Context", visible, []string{"[j/k] scroll   [esc] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)
 }
 
 func overlayBox(title string, body, footer []string, width int, border lipgloss.Color, bodyStyle lipgloss.Style) string {

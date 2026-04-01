@@ -7,9 +7,22 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
+type settingsRow struct {
+	Section string
+	Label   string
+	Value   string
+}
+
+type settingsVisibleRow struct {
+	Header       bool
+	Text         string
+	SelectableAt int
+}
+
 func renderSettingsView(theme Theme, state ContentState) string {
 	active := state.Pane == "settings"
 	cur := state.Cursors["settings"]
+	rows := SettingsRows(state.Settings)
 	indices := filteredSettingIndices(state.Filters["settings"], state.Settings)
 	total := len(indices)
 	lines := []string{theme.StylePaneTitle.Render("Settings"), renderActionLine(theme, state.Width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane})), ""}
@@ -17,54 +30,93 @@ func renderSettingsView(theme Theme, state ContentState) string {
 		lines = append(lines, theme.StyleDim.Render("Loading settings..."))
 		return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
 	}
-	rows := []struct{ label, value string }{
-		{"Timer Mode", string(state.Settings.TimerMode)},
-		{"Breaks Enabled", onOff(state.Settings.BreaksEnabled)},
-		{"Work Duration", fmt.Sprintf("%d min", state.Settings.WorkDurationMinutes)},
-		{"Short Break", fmt.Sprintf("%d min", state.Settings.ShortBreakMinutes)},
-		{"Long Break", fmt.Sprintf("%d min", state.Settings.LongBreakMinutes)},
-		{"Long Break Enabled", onOff(state.Settings.LongBreakEnabled)},
-		{"Cycles Before Long Break", fmt.Sprintf("%d", state.Settings.CyclesBeforeLongBreak)},
-		{"Auto Start Breaks", onOff(state.Settings.AutoStartBreaks)},
-		{"Auto Start Work", onOff(state.Settings.AutoStartWork)},
-		{"Boundary Notifications", onOff(state.Settings.BoundaryNotifications)},
-		{"Boundary Sound", onOff(state.Settings.BoundarySound)},
-		{"Update Checks", onOff(state.Settings.UpdateChecksEnabled)},
-		{"Update Prompt", onOff(state.Settings.UpdatePromptEnabled)},
-		{"Repo Sort", repoSortLabel(state.Settings.RepoSort)},
-		{"Stream Sort", streamSortLabel(state.Settings.StreamSort)},
-		{"Issue Sort", issueSortLabel(state.Settings.IssueSort)},
-		{"Habit Sort", habitSortLabel(state.Settings.HabitSort)},
-		{"Away Mode", onOff(state.Settings.AwayModeEnabled)},
-		{"Rest & Streak Protection", restProtectionLabel(state.Settings)},
-	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No settings match the current filter"))
 		return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
 	}
+	visibleRows, selectedVisibleIdx := groupedVisibleRows(indices, cur, func(idx int) string { return rows[idx].Section }, func(idx int) string {
+		return fmt.Sprintf("%-24s %s", rows[idx].Label, rows[idx].Value)
+	})
 	inner := state.Height - 5
 	if inner < 1 {
 		inner = 1
 	}
-	start, end := listWindow(cur, total, inner)
+	start, end := listWindow(selectedVisibleIdx, len(visibleRows), inner)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
 	for i := start; i < end; i++ {
-		idx := indices[i]
-		row := fmt.Sprintf("%-24s %s", rows[idx].label, rows[idx].value)
-		if i == cur && active {
-			lines = append(lines, theme.StyleCursor.Render("▶ "+row))
-		} else if i == cur {
-			lines = append(lines, theme.StyleSelected.Render("  "+row))
-		} else {
-			lines = append(lines, theme.StyleNormal.Render("  "+row))
+		row := visibleRows[i]
+		if row.Header {
+			lines = append(lines, theme.StyleHeader.Render(strings.ToUpper(row.Text)))
+			continue
+		}
+		switch {
+		case row.SelectableAt == cur && active:
+			lines = append(lines, theme.StyleCursor.Render("▶ "+row.Text))
+		case row.SelectableAt == cur:
+			lines = append(lines, theme.StyleSelected.Render("  "+row.Text))
+		default:
+			lines = append(lines, theme.StyleNormal.Render("  "+row.Text))
 		}
 	}
-	if remaining := total - end; remaining > 0 {
+	if remaining := len(visibleRows) - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
+}
+
+func SettingsRows(settings *sharedtypes.CoreSettings) []settingsRow {
+	if settings == nil {
+		return nil
+	}
+	return []settingsRow{
+		{Section: "Focus Timer", Label: "Timer Mode", Value: string(settings.TimerMode)},
+		{Section: "Focus Timer", Label: "Work Duration", Value: fmt.Sprintf("%d min", settings.WorkDurationMinutes)},
+		{Section: "Breaks", Label: "Breaks Enabled", Value: onOff(settings.BreaksEnabled)},
+		{Section: "Breaks", Label: "Short Break", Value: fmt.Sprintf("%d min", settings.ShortBreakMinutes)},
+		{Section: "Breaks", Label: "Long Break", Value: fmt.Sprintf("%d min", settings.LongBreakMinutes)},
+		{Section: "Breaks", Label: "Long Break Enabled", Value: onOff(settings.LongBreakEnabled)},
+		{Section: "Breaks", Label: "Cycles Before Long Break", Value: fmt.Sprintf("%d", settings.CyclesBeforeLongBreak)},
+		{Section: "Breaks", Label: "Auto Start Breaks", Value: onOff(settings.AutoStartBreaks)},
+		{Section: "Breaks", Label: "Auto Start Work", Value: onOff(settings.AutoStartWork)},
+		{Section: "Notifications", Label: "Boundary Notifications", Value: onOff(settings.BoundaryNotifications)},
+		{Section: "Notifications", Label: "Boundary Sound", Value: onOff(settings.BoundarySound)},
+		{Section: "Updates", Label: "Update Checks", Value: onOff(settings.UpdateChecksEnabled)},
+		{Section: "Updates", Label: "Update Prompt", Value: onOff(settings.UpdatePromptEnabled)},
+		{Section: "Sorting", Label: "Repo Sort", Value: repoSortLabel(settings.RepoSort)},
+		{Section: "Sorting", Label: "Stream Sort", Value: streamSortLabel(settings.StreamSort)},
+		{Section: "Sorting", Label: "Issue Sort", Value: issueSortLabel(settings.IssueSort)},
+		{Section: "Sorting", Label: "Habit Sort", Value: habitSortLabel(settings.HabitSort)},
+		{Section: "Recovery", Label: "Away Mode", Value: onOff(settings.AwayModeEnabled)},
+		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
+		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
+	}
+}
+
+func effectiveRollbackMinutes(value int) int {
+	if value <= 0 {
+		return 5
+	}
+	return value
+}
+
+func groupedVisibleRows(indices []int, selected int, sectionOf func(int) string, textOf func(int) string) ([]settingsVisibleRow, int) {
+	rows := make([]settingsVisibleRow, 0, len(indices)+4)
+	lastSection := ""
+	selectedVisible := 0
+	for i, idx := range indices {
+		section := sectionOf(idx)
+		if section != "" && section != lastSection {
+			rows = append(rows, settingsVisibleRow{Header: true, Text: section, SelectableAt: -1})
+			lastSection = section
+		}
+		rows = append(rows, settingsVisibleRow{Text: textOf(idx), SelectableAt: i})
+		if i == selected {
+			selectedVisible = len(rows) - 1
+		}
+	}
+	return rows, selectedVisible
 }
 
 func repoSortLabel(value sharedtypes.RepoSort) string {

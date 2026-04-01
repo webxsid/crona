@@ -116,6 +116,8 @@ func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, 
 			return err
 		}
 		q = q.Set("rest_specific_dates = ?", raw)
+	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
+		q = q.Set("daily_plan_rollback_minutes = ?", clampRollbackMinutes(value))
 	}
 	_, err := q.Exec(ctx)
 	return err
@@ -173,6 +175,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		FrozenStreakKinds:     mustJSON(sharedconstants.DefaultCoreSettings["frozenStreakKinds"]),
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
+		DailyPlanRollbackMins: sharedconstants.DefaultCoreSettings["dailyPlanRollbackMinutes"].(int),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
@@ -223,6 +226,8 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 		return parseIntSlice(row.RestWeekdays)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(row.RestSpecificDates)
+	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
+		return row.DailyPlanRollbackMins
 	default:
 		return nil
 	}
@@ -253,9 +258,27 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		FrozenStreakKinds:     parseStreakKinds(row.FrozenStreakKinds),
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
+		DailyPlanRollbackMins: row.DailyPlanRollbackMins,
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}
+}
+
+func clampRollbackMinutes(value any) int {
+	minutes := 5
+	switch typed := value.(type) {
+	case int:
+		minutes = typed
+	case float64:
+		minutes = int(typed)
+	}
+	if minutes < 1 {
+		return 1
+	}
+	if minutes > 120 {
+		return 120
+	}
+	return minutes
 }
 
 func toString(value any) string {

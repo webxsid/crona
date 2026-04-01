@@ -10,7 +10,7 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-const dailyPlanRollbackWindow = 5 * time.Minute
+const defaultDailyPlanRollbackMinutes = 5
 const dailyPlanHighRiskThreshold = 2.5
 
 func GetDailyPlan(ctx context.Context, c *core.Context, date string) (*sharedtypes.DailyPlan, error) {
@@ -28,11 +28,15 @@ func GetDailyPlan(ctx context.Context, c *core.Context, date string) (*sharedtyp
 }
 
 func finalizeExpiredDailyPlanFailures(ctx context.Context, c *core.Context, now string) error {
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return err
+	}
 	cutoff, err := time.Parse(time.RFC3339, now)
 	if err != nil {
 		return nil
 	}
-	cutoff = cutoff.Add(-dailyPlanRollbackWindow)
+	cutoff = cutoff.Add(-dailyPlanRollbackWindow(settings))
 	entries, err := c.DailyPlans.ListPendingFailuresBefore(ctx, c.UserID, cutoff.Format(time.RFC3339))
 	if err != nil {
 		return err
@@ -54,6 +58,14 @@ func finalizeExpiredDailyPlanFailures(ctx context.Context, c *core.Context, now 
 		}
 	}
 	return nil
+}
+
+func dailyPlanRollbackWindow(settings *sharedtypes.CoreSettings) time.Duration {
+	minutes := defaultDailyPlanRollbackMinutes
+	if settings != nil && settings.DailyPlanRollbackMins > 0 {
+		minutes = settings.DailyPlanRollbackMins
+	}
+	return time.Duration(minutes) * time.Minute
 }
 
 func commitIssueToDailyPlan(ctx context.Context, c *core.Context, issueID int64, date, now string) error {

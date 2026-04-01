@@ -302,21 +302,17 @@ func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 	repos := []api.Repo{{ID: 1, Name: "Work"}, {ID: 2, Name: "OSS"}}
 	checkedRepoID := int64(2)
 	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", true, repos, &checkedRepoID, nil)
-	if state.Kind != "export_report" {
-		t.Fatalf("expected export_report dialog kind, got %q", state.Kind)
+	if state.Kind != "export_report_category" {
+		t.Fatalf("expected export_report_category dialog kind, got %q", state.Kind)
 	}
 	if state.RepoID != checkedRepoID || state.RepoName != "OSS" {
 		t.Fatalf("expected checked-out repo to be selected, got id=%d name=%q", state.RepoID, state.RepoName)
 	}
 	joined := strings.Join(state.ChoiceItems, "\n")
 	for _, want := range []string{
-		"Daily report: write Markdown file",
-		"Weekly summary: write Markdown file",
-		"Repo report: write Markdown file",
-		"Stream report: write Markdown file",
-		"Issue rollup: write Markdown file",
-		"CSV session export: write file",
-		"Calendar export: write ICS file",
+		"Narrative Reports",
+		"Project Reports",
+		"Data Exports",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected export choice %q in dialog", want)
@@ -335,6 +331,19 @@ func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing
 func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
 	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
+	for i, item := range state.ChoiceItems {
+		if item == "Data Exports" {
+			state.ChoiceCursor = i
+			break
+		}
+	}
+	state, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter})
+	if status != "" {
+		t.Fatalf("unexpected category status: %s", status)
+	}
+	if action != nil {
+		t.Fatalf("expected export choice step before export action")
+	}
 	for i, item := range state.ChoiceItems {
 		if item == "Calendar export: write ICS file" {
 			state.ChoiceCursor = i
@@ -388,13 +397,13 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"Boundary Notifications", "Boundary Sound", "Habit Sort", "Target longest", "Away Mode"} {
+	for _, want := range []string{"FOCUS TIMER", "BREAKS", "Boundary Notifications", "Habit Sort", "RECOVERY", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
 	}
 
-	state.Cursors["settings"] = 18
+	state.Cursors["settings"] = 19
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
 		if !strings.Contains(rendered, want) {
@@ -483,9 +492,46 @@ func TestConfigViewShowsSeparateICSExportDirectory(t *testing.T) {
 		},
 	}
 	rendered := support.RenderConfig(state)
-	for _, want := range []string{"Reports directory", "ICS export directory", "/tmp/calendar"} {
+	for _, want := range []string{"DIRECTORIES", "Reports directory", "ICS export directory", "/tmp/calendar", "RUNTIME", "PDF renderer"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected config view to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestWellbeingViewShowsRecentActivityHeatmap(t *testing.T) {
+	mood, energy := 4.0, 3.5
+	state := views.ContentState{
+		View:          "wellbeing",
+		Pane:          "issues",
+		Width:         92,
+		Height:        48,
+		WellbeingDate: "2026-03-19",
+		MetricsRollup: &api.MetricsRollup{
+			Days:          7,
+			CheckInDays:   5,
+			FocusDays:     4,
+			WorkedSeconds: 7200,
+			RestSeconds:   1800,
+			SessionCount:  6,
+			AverageMood:   &mood,
+			AverageEnergy: &energy,
+		},
+		MetricsRange: []api.DailyMetricsDay{
+			{Date: "2026-03-13", CheckIn: &api.DailyCheckIn{Date: "2026-03-13"}, SessionCount: 1, WorkedSeconds: 1200},
+			{Date: "2026-03-14", SessionCount: 2, WorkedSeconds: 3600},
+			{Date: "2026-03-15", CheckIn: &api.DailyCheckIn{Date: "2026-03-15"}, SessionCount: 3, WorkedSeconds: 5400},
+			{Date: "2026-03-16"},
+			{Date: "2026-03-17", CheckIn: &api.DailyCheckIn{Date: "2026-03-17"}},
+			{Date: "2026-03-18", SessionCount: 1, WorkedSeconds: 2400},
+			{Date: "2026-03-19", CheckIn: &api.DailyCheckIn{Date: "2026-03-19"}, SessionCount: 4, WorkedSeconds: 7200},
+		},
+	}
+
+	rendered := support.RenderWellbeing(state)
+	for _, want := range []string{"Recent Activity", "Scale", "Mood", "Worked"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wellbeing view to contain %q, got %q", want, rendered)
 		}
 	}
 }
@@ -875,7 +921,7 @@ func compactWellbeingState(height int) views.ContentState {
 			LatestBurnout: &api.BurnoutIndicator{
 				Level:   "low",
 				Score:   31,
-				Factors: map[string]float64{"breakCompliance": 0.99},
+				Factors: map[string]float64{"workloadPressure": 0.22, "recoveryBreaks": -0.14},
 			},
 		},
 		Streaks: &api.StreakSummary{
@@ -925,7 +971,7 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "Metrics Window") || !strings.Contains(plain, "Days  7") {
 		t.Fatalf("expected compact metrics block in wellbeing view")
 	}
-	if !strings.Contains(plain, "Accountability") || !strings.Contains(plain, "p3 c1 f1 r1 s2.6 d1") {
+	if !strings.Contains(plain, "Accountability") || !strings.Contains(plain, "Planned 3  Completed 1  Failed 1  Pending 1") {
 		t.Fatalf("expected compact accountability summary in wellbeing view")
 	}
 	if got := lipgloss.Height(rendered); got > height {

@@ -24,17 +24,47 @@ type Item struct {
 	PresetStyle bool
 }
 
+type Section struct {
+	Title string
+	Items []Item
+}
+
 func Build(exportAssets *api.ExportAssetStatus) []Item {
+	sections := BuildSections(exportAssets)
+	items := make([]Item, 0)
+	for _, section := range sections {
+		items = append(items, section.Items...)
+	}
+	return items
+}
+
+func BuildSections(exportAssets *api.ExportAssetStatus) []Section {
 	if exportAssets == nil {
 		return nil
 	}
-	items := make([]Item, 0, len(exportAssets.TemplateAssets)+3)
+	directories := make([]Item, 0, 2)
+	daily := []Item{}
+	weekly := []Item{}
+	project := []Item{}
+	data := []Item{}
+	advanced := []Item{}
 	for _, asset := range exportAssets.TemplateAssets {
 		if isHiddenNarrativePDFCSSAsset(asset) {
 			continue
 		}
+		target := &advanced
+		switch asset.ReportKind {
+		case sharedtypes.ExportReportKindDaily:
+			target = &daily
+		case sharedtypes.ExportReportKindWeekly:
+			target = &weekly
+		case sharedtypes.ExportReportKindRepo, sharedtypes.ExportReportKindStream, sharedtypes.ExportReportKindIssueRollup:
+			target = &project
+		case sharedtypes.ExportReportKindCSV, sharedtypes.ExportReportKindCalendar:
+			target = &data
+		}
 		if len(asset.Presets) > 0 && asset.SelectedPreset != nil {
-			items = append(items, buildPresetItem(asset, exportAssets.TemplateAssets))
+			*target = append(*target, buildPresetItem(asset, exportAssets.TemplateAssets))
 			continue
 		}
 		state := helperpkg.ExportAssetStateLabel(asset)
@@ -43,7 +73,7 @@ func Build(exportAssets *api.ExportAssetStatus) []Item {
 		if asset.Resettable {
 			detailBody += "\nPress r to replace it with the bundled default."
 		}
-		items = append(items, Item{
+		*target = append(*target, Item{
 			Label:       asset.Label,
 			Value:       state,
 			Path:        asset.UserPath,
@@ -56,7 +86,7 @@ func Build(exportAssets *api.ExportAssetStatus) []Item {
 			Resettable:  asset.Resettable && (asset.Customized || asset.UpdateAvailable),
 		})
 	}
-	items = append(items, Item{
+	directories = append(directories, Item{
 		Label:       "Reports directory",
 		Value:       exportAssets.ReportsDir,
 		DetailTitle: "Report Output Directory",
@@ -66,7 +96,7 @@ func Build(exportAssets *api.ExportAssetStatus) []Item {
 		ActionHint:  "change dir",
 		DialogKind:  "edit_export_reports_dir",
 	})
-	items = append(items, Item{
+	directories = append(directories, Item{
 		Label:       "ICS export directory",
 		Value:       exportAssets.ICSDir,
 		DetailTitle: "ICS Export Directory",
@@ -76,14 +106,33 @@ func Build(exportAssets *api.ExportAssetStatus) []Item {
 		ActionHint:  "change dir",
 		DialogKind:  "edit_export_ics_dir",
 	})
-	items = append(items, Item{
+	advanced = append(advanced, Item{
 		Label:       "PDF renderer",
 		Value:       helperpkg.PDFRendererStateLabel(exportAssets),
 		DetailTitle: "PDF Renderer",
 		DetailMeta:  "External renderer discovery",
 		DetailBody:  helperpkg.PDFRendererDetailBody(exportAssets),
 	})
-	return items
+	sections := make([]Section, 0, 5)
+	if len(directories) > 0 {
+		sections = append(sections, Section{Title: "Directories", Items: directories})
+	}
+	if len(daily) > 0 {
+		sections = append(sections, Section{Title: "Daily Reports", Items: daily})
+	}
+	if len(weekly) > 0 {
+		sections = append(sections, Section{Title: "Weekly Reports", Items: weekly})
+	}
+	if len(project) > 0 {
+		sections = append(sections, Section{Title: "Project Reports", Items: project})
+	}
+	if len(data) > 0 {
+		sections = append(sections, Section{Title: "Data Exports", Items: data})
+	}
+	if len(advanced) > 0 {
+		sections = append(sections, Section{Title: "Runtime", Items: advanced})
+	}
+	return sections
 }
 
 func buildPresetItem(asset api.ExportTemplateAsset, allAssets []api.ExportTemplateAsset) Item {

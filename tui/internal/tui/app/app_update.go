@@ -27,6 +27,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.sessionDetailOpen {
 			return m.updateSessionDetailOverlay(key)
 		}
+		if m.sessionContextOpen {
+			return m.updateSessionContextOverlay(key)
+		}
 		if m.helpOpen {
 			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
 			return m.applyOverlayState(state), cmd
@@ -265,6 +268,28 @@ func (m Model) updateSessionDetailOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m.applyOverlayState(state), cmd
 }
 
+func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "enter", "q":
+		m.sessionContextOpen = false
+		m.sessionContextY = 0
+		return m, nil
+	case "j", "down":
+		maxOffset := helperpkg.SessionContextMaxOffset(m.width, m.height, helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(m.selectionSnapshot())))
+		if m.sessionContextY < maxOffset {
+			m.sessionContextY++
+		}
+		return m, nil
+	case "k", "up":
+		if m.sessionContextY > 0 {
+			m.sessionContextY--
+		}
+		return m, nil
+	default:
+		return m, nil
+	}
+}
+
 func (m Model) updateScratchpadPane(msg tea.KeyMsg) (Model, tea.Cmd) {
 	state, cmd := overlaypkg.HandleScratchpad(m.overlayState(), msg, m.overlayDeps())
 	m = m.applyOverlayState(state)
@@ -360,6 +385,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		SessionDetail:         m.sessionDetail,
 		SessionDetailOpen:     m.sessionDetailOpen,
 		SessionDetailY:        m.sessionDetailY,
+		SessionContextOpen:    m.sessionContextOpen,
+		SessionContextY:       m.sessionContextY,
 		Scratchpads:           m.scratchpads,
 		Stashes:               m.stashes,
 		DialogStashCursor:     m.dialogStashCursor,
@@ -424,6 +451,8 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.sessionDetail = state.SessionDetail
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
+	m.sessionContextOpen = state.SessionContextOpen
+	m.sessionContextY = state.SessionContextY
 	m.scratchpads = state.Scratchpads
 	m.stashes = state.Stashes
 	m.dialogStashCursor = state.DialogStashCursor

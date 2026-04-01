@@ -87,10 +87,14 @@ func OpenCreateScratchpad(state State) State {
 
 func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo, checkedRepoID *int64, assets *api.ExportAssetStatus) State {
 	state = Close(state)
-	state.Kind = "export_report"
+	state.Kind = "export_report_category"
 	state.CheckInDate = date
 	state.ExportIncludePDF = includePDF
-	state.ChoiceItems = exportReportChoices(includePDF)
+	state.ExportCategory = ""
+	items, values, details := exportReportCategories()
+	state.ChoiceItems = items
+	state.ChoiceValues = values
+	state.ChoiceDetails = details
 	state.RepoItems = make([]string, 0, len(repos))
 	state.RepoItemIDs = make([]int64, 0, len(repos))
 	selectedRepoIdx := 0
@@ -113,24 +117,65 @@ func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo
 	return state
 }
 
-func exportReportChoices(includePDF bool) []string {
-	items := []string{
-		"Daily report: write Markdown file",
-		"Daily report: copy to clipboard",
-		"Weekly summary: write Markdown file",
-		"Repo report: write Markdown file",
-		"Stream report: write Markdown file",
-		"Issue rollup: write Markdown file",
-		"CSV session export: write file",
-		"Calendar export: write ICS file",
+func exportReportCategories() ([]string, []string, []string) {
+	return []string{
+			"Narrative Reports",
+			"Project Reports",
+			"Data Exports",
+		}, []string{
+			"narrative",
+			"project",
+			"data",
+		}, []string{
+			"Daily and weekly summaries, including Markdown, PDF, and clipboard output.",
+			"Repo, stream, and issue rollup reports for focused project review.",
+			"CSV session dumps and calendar exports for external tools and automations.",
+		}
+}
+
+func exportReportChoices(category string, includePDF bool) ([]string, []string) {
+	switch category {
+	case "project":
+		return []string{
+				"Repo report: write Markdown file",
+				"Stream report: write Markdown file",
+				"Issue rollup: write Markdown file",
+			}, []string{
+				"Project-level summaries and issue rollups.",
+				"Focused stream review with grouped issue output.",
+				"Per-issue work summary and notes rollup.",
+			}
+	case "data":
+		return []string{
+				"CSV session export: write file",
+				"Calendar export: write ICS file",
+			}, []string{
+				"Raw session data for spreadsheets or external analysis.",
+				"Write repo-scoped ICS files for local calendar automation.",
+			}
+	default:
+		items := []string{
+			"Daily report: write Markdown file",
+			"Daily report: copy to clipboard",
+			"Weekly summary: write Markdown file",
+		}
+		details := []string{
+			"Generate a readable daily report as Markdown.",
+			"Copy the daily report directly to the clipboard.",
+			"Generate a weekly narrative summary as Markdown.",
+		}
+		if includePDF {
+			items = append([]string{
+				"Daily report: write PDF file",
+				"Weekly summary: write PDF file",
+			}, items...)
+			details = append([]string{
+				"Generate a styled daily PDF report.",
+				"Generate a styled weekly PDF report.",
+			}, details...)
+		}
+		return items, details
 	}
-	if includePDF {
-		items = append([]string{
-			"Daily report: write PDF file",
-			"Weekly summary: write PDF file",
-		}, items...)
-	}
-	return items
 }
 
 func OpenExportPreset(state State, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat, outputMode sharedtypes.ExportOutputMode) State {
@@ -179,6 +224,16 @@ func OpenExportPreset(state State, reportKind sharedtypes.ExportReportKind, form
 		state.ChoiceCursor = selectedIdx
 		break
 	}
+	return state
+}
+
+func OpenExportReportChoices(state State, category string) State {
+	state.Kind = "export_report"
+	state.Parent = "export_report_category"
+	state.ExportCategory = category
+	state.ChoiceCursor = 0
+	state.ChoiceItems, state.ChoiceDetails = exportReportChoices(category, state.ExportIncludePDF)
+	state.ChoiceValues = nil
 	return state
 }
 
@@ -693,7 +748,7 @@ func OpenAmendSession(state State, sessionID string, commit string) State {
 	return state
 }
 
-func OpenManualSession(state State, issueID int64, issueLabel string, date string) State {
+func OpenManualSession(state State, issueID int64, issueLabel string, estimateMinutes *int, date string) State {
 	inputs := []textinput.Model{
 		newSessionDetailInput("Summary (optional)"),
 		newSessionDetailInput("YYYY-MM-DD"),
@@ -709,6 +764,7 @@ func OpenManualSession(state State, issueID int64, issueLabel string, date strin
 	state.Kind = "manual_session"
 	state.IssueID = issueID
 	state.ViewName = strings.TrimSpace(issueLabel)
+	state.IssueEstimateMins = estimateMinutes
 	state.Inputs = inputs
 	state.FocusIdx = 2
 	return SyncDialogFocus(state)
@@ -766,6 +822,7 @@ func Close(state State) State {
 	state.CheckInDate = ""
 	state.ViewTitle = ""
 	state.ViewName = ""
+	state.IssueEstimateMins = nil
 	state.ViewMeta = ""
 	state.ViewBody = ""
 	state.ExportPresetKind = ""
@@ -899,6 +956,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateCheckIn(state, msg)
 	case "export_report":
 		return updateExportDaily(state, msg)
+	case "export_report_category":
+		return updateExportCategory(state, msg)
 	case "export_preset":
 		return updateExportPreset(state, msg)
 	case "export_calendar_repo":
@@ -1581,13 +1640,45 @@ func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	}
 }
 
-func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
+func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "q":
 		if state.Processing {
 			return state, nil, ""
 		}
 		return Close(state), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			return state, nil, "Select an export category"
+		}
+		return OpenExportReportChoices(state, state.ChoiceValues[state.ChoiceCursor]), nil, ""
+	}
+	return clearDialogError(state), nil, ""
+}
+
+func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc", "q":
+		if state.Processing {
+			return state, nil, ""
+		}
+		items, values, details := exportReportCategories()
+		state.Kind = "export_report_category"
+		state.Parent = ""
+		state.ExportCategory = ""
+		state.ChoiceItems = items
+		state.ChoiceValues = values
+		state.ChoiceDetails = details
+		state.ChoiceCursor = 0
+		return clearDialogError(state), nil, ""
 	case "j", "down":
 		if state.Processing {
 			return state, nil, ""
@@ -1659,9 +1750,8 @@ func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 	case "esc", "q":
 		state.Kind = "export_report"
 		state.Parent = ""
-		state.ChoiceItems = exportReportChoices(state.ExportIncludePDF)
+		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
 		state.ChoiceValues = nil
-		state.ChoiceDetails = nil
 		state.ExportPresetKind = ""
 		state.ExportPresetFormat = ""
 		state.ExportPresetOutput = ""
@@ -1713,7 +1803,7 @@ func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, stri
 	case "esc", "q":
 		state.Kind = "export_report"
 		state.Parent = ""
-		state.ChoiceItems = exportReportChoices(state.ExportIncludePDF)
+		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
 		return clearDialogError(state), nil, ""
 	case "j", "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {

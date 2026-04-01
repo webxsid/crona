@@ -58,6 +58,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[p/r]") + theme.StyleDim.Render(" pause/resume"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
 			theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
+			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
 			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
 		}
 	}
@@ -151,7 +152,8 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle"),
 				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" fail"),
-				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" log"),
+				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
+				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
 		}
@@ -203,28 +205,10 @@ func PaneActions(theme Theme, state ActionsState) []string {
 }
 
 func SettingsItemLabels(settings *sharedtypes.CoreSettings) []string {
-	if settings == nil {
-		return nil
+	rows := SettingsRows(settings)
+	labels := make([]string, 0, len(rows))
+	for _, row := range rows {
+		labels = append(labels, row.Label)
 	}
-	return []string{
-		"Timer Mode",
-		"Breaks Enabled",
-		"Work Duration",
-		"Short Break",
-		"Long Break",
-		"Long Break Enabled",
-		"Cycles Before Long Break",
-		"Auto Start Breaks",
-		"Auto Start Work",
-		"Boundary Notifications",
-		"Boundary Sound",
-		"Update Checks",
-		"Update Prompt",
-		"Repo Sort",
-		"Stream Sort",
-		"Issue Sort",
-		"Habit Sort",
-		"Away Mode",
-		"Rest & Streak Protection",
-	}
+	return labels
 }

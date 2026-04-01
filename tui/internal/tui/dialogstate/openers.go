@@ -156,8 +156,8 @@ func OpenAmendSession(s Snapshot, sessionID string, commit string) dialogpkg.Sta
 	return dialogpkg.OpenAmendSession(s.Dialog, sessionID, commit)
 }
 
-func OpenManualSession(s Snapshot, issueID int64, issueLabel string, date string) dialogpkg.State {
-	return dialogpkg.OpenManualSession(s.Dialog, issueID, issueLabel, date)
+func OpenManualSession(s Snapshot, issueID int64, issueLabel string, estimateMinutes *int, date string) dialogpkg.State {
+	return dialogpkg.OpenManualSession(s.Dialog, issueID, issueLabel, estimateMinutes, date)
 }
 
 func OpenDatePicker(s Snapshot, parentDialog string, issueID int64, inputIndex int, initial *string) dialogpkg.State {

@@ -456,78 +456,78 @@ func computeBurnout(days []sharedtypes.DailyMetricsDay, idx int) sharedtypes.Bur
 		start = 0
 	}
 	window := days[start : idx+1]
-	factors := map[string]float64{}
-	weights := map[string]float64{
-		"sessionDensity":  0.30,
-		"breakCompliance": 0.20,
-		"moodTrend":       0.20,
-		"energyTrend":     0.20,
-		"sleepRisk":       0.10,
+	stressWeights := map[string]float64{
+		"workloadPressure": 0.35,
+		"breakDebt":        0.20,
+		"moodEnergyDrag":   0.25,
+		"sleepDebt":        0.20,
+	}
+	recoveryWeights := map[string]float64{
+		"recoveryConsistency": 0.40,
+		"recoveryBreaks":      0.30,
+		"loadStability":       0.30,
+	}
+	const (
+		recoveryWeight = 0.75
+		baselineOffset = 0.10
+		emaAlpha       = 0.45
+	)
+
+	avgWorked := averageWorkedSeconds(window)
+	workloadPressure := clamp01(avgWorked / 25200.0)
+	breakDebt, breakRecovery := breakDebtAndRecovery(window)
+	moodEnergyDrag, recoveryConsistency, moodCount, energyCount := moodEnergySignals(window)
+	sleepDebt, sleepRecovery, sleepCount := sleepDebtAndRecovery(window)
+	loadStability := workloadStability(window)
+	if moodCount == 0 && energyCount == 0 {
+		delete(stressWeights, "moodEnergyDrag")
+		delete(recoveryWeights, "recoveryConsistency")
+	}
+	if sleepCount == 0 {
+		delete(stressWeights, "sleepDebt")
+		delete(recoveryWeights, "recoveryConsistency")
 	}
 
-	var worked int
-	for _, day := range window {
-		worked += day.WorkedSeconds
+	stressSignals := map[string]float64{
+		"workloadPressure": workloadPressure,
+		"breakDebt":        breakDebt,
+		"moodEnergyDrag":   moodEnergyDrag,
+		"sleepDebt":        sleepDebt,
 	}
-	avgWorked := float64(worked) / float64(maxInt(1, len(window)))
-	factors["sessionDensity"] = clamp01(avgWorked / 21600.0)
-
-	var rest int
-	for _, day := range window {
-		rest += day.RestSeconds
-	}
-	if worked > 0 {
-		expectedRestRatio := 0.20
-		actualRatio := float64(rest) / float64(worked)
-		factors["breakCompliance"] = clamp01((expectedRestRatio - actualRatio) / expectedRestRatio)
-	} else {
-		factors["breakCompliance"] = 0.0
+	recoverySignals := map[string]float64{
+		"recoveryConsistency": clamp01((recoveryConsistency + sleepRecovery) / 2.0),
+		"recoveryBreaks":      breakRecovery,
+		"loadStability":       loadStability,
 	}
 
-	moodAvg, moodTrend, moodCount := averageAndTrend(window, func(day sharedtypes.DailyMetricsDay) *int {
-		if day.CheckIn == nil {
-			return nil
+	stressScore := weightedAverage(stressSignals, stressWeights)
+	recoveryScore := weightedAverage(recoverySignals, recoveryWeights)
+	raw := clamp01(stressScore - (recoveryScore * recoveryWeight) + baselineOffset)
+	if idx > 0 && days[idx-1].Burnout != nil {
+		prev := clamp01(float64(days[idx-1].Burnout.Score) / 100.0)
+		raw = (emaAlpha * raw) + ((1.0 - emaAlpha) * prev)
+	}
+
+	factors := map[string]float64{
+		"workloadPressure":    stressWeights["workloadPressure"] * workloadPressure,
+		"breakDebt":           stressWeights["breakDebt"] * breakDebt,
+		"moodEnergyDrag":      stressWeights["moodEnergyDrag"] * moodEnergyDrag,
+		"sleepDebt":           stressWeights["sleepDebt"] * sleepDebt,
+		"recoveryConsistency": -recoveryWeight * recoveryWeights["recoveryConsistency"] * recoverySignals["recoveryConsistency"],
+		"recoveryBreaks":      -recoveryWeight * recoveryWeights["recoveryBreaks"] * breakRecovery,
+		"loadStability":       -recoveryWeight * recoveryWeights["loadStability"] * loadStability,
+	}
+	for key, value := range factors {
+		if value == 0 {
+			delete(factors, key)
 		}
-		return &day.CheckIn.Mood
-	})
-	if moodCount > 0 {
-		factors["moodTrend"] = clamp01(((5.0 - moodAvg) / 4.0 * 0.7) + moodTrend*0.3)
-	} else {
-		delete(weights, "moodTrend")
 	}
 
-	energyAvg, energyTrend, energyCount := averageAndTrend(window, func(day sharedtypes.DailyMetricsDay) *int {
-		if day.CheckIn == nil {
-			return nil
-		}
-		return &day.CheckIn.Energy
-	})
-	if energyCount > 0 {
-		factors["energyTrend"] = clamp01(((5.0 - energyAvg) / 4.0 * 0.7) + energyTrend*0.3)
-	} else {
-		delete(weights, "energyTrend")
-	}
-
-	sleepRisk, ok := sleepRisk(window)
-	if ok {
-		factors["sleepRisk"] = sleepRisk
-	} else {
-		delete(weights, "sleepRisk")
-	}
-
-	totalWeight := 0.0
-	for _, weight := range weights {
-		totalWeight += weight
-	}
-	score := 0.0
-	for key, weight := range weights {
-		score += factors[key] * (weight / totalWeight)
-	}
-	finalScore := int(math.Round(score * 100))
+	finalScore := int(math.Round(raw * 100))
 	level := sharedtypes.BurnoutLevelLow
-	if finalScore >= 65 {
+	if finalScore >= 70 {
 		level = sharedtypes.BurnoutLevelHigh
-	} else if finalScore >= 35 {
+	} else if finalScore >= 40 {
 		level = sharedtypes.BurnoutLevelGuarded
 	}
 	return sharedtypes.BurnoutIndicator{
@@ -559,27 +559,151 @@ func averageAndTrend(days []sharedtypes.DailyMetricsDay, pick func(sharedtypes.D
 	return avg, trend, count
 }
 
-func sleepRisk(days []sharedtypes.DailyMetricsDay) (float64, bool) {
+func sleepDebtAndRecovery(days []sharedtypes.DailyMetricsDay) (debt float64, recovery float64, count int) {
 	var total float64
-	count := 0
+	var recoveryTotal float64
 	for _, day := range days {
 		if day.CheckIn == nil {
 			continue
 		}
 		if day.CheckIn.SleepHours != nil {
-			total += clamp01((8.0 - *day.CheckIn.SleepHours) / 4.0)
+			hours := *day.CheckIn.SleepHours
+			total += clamp01((7.5 - hours) / 3.5)
+			recoveryTotal += clamp01((hours - 6.0) / 2.5)
 			count++
 			continue
 		}
 		if day.CheckIn.SleepScore != nil {
-			total += clamp01(float64(100-*day.CheckIn.SleepScore) / 100.0)
+			score := float64(*day.CheckIn.SleepScore)
+			total += clamp01((75.0 - score) / 75.0)
+			recoveryTotal += clamp01((score - 55.0) / 45.0)
 			count++
 		}
 	}
 	if count == 0 {
-		return 0, false
+		return 0, 0, 0
 	}
-	return total / float64(count), true
+	return total / float64(count), recoveryTotal / float64(count), count
+}
+
+func averageWorkedSeconds(days []sharedtypes.DailyMetricsDay) float64 {
+	if len(days) == 0 {
+		return 0
+	}
+	total := 0
+	for _, day := range days {
+		total += day.WorkedSeconds
+	}
+	return float64(total) / float64(len(days))
+}
+
+func breakDebtAndRecovery(days []sharedtypes.DailyMetricsDay) (debt float64, recovery float64) {
+	var worked, rest int
+	for _, day := range days {
+		worked += day.WorkedSeconds
+		rest += day.RestSeconds
+	}
+	if worked <= 0 {
+		return 0, 0
+	}
+	expectedRestRatio := 0.20
+	actualRatio := float64(rest) / float64(worked)
+	debt = clamp01((expectedRestRatio - actualRatio) / expectedRestRatio)
+	recovery = clamp01(actualRatio / expectedRestRatio)
+	return debt, recovery
+}
+
+func moodEnergySignals(days []sharedtypes.DailyMetricsDay) (drag float64, recovery float64, moodCount int, energyCount int) {
+	moodAvg, moodTrend, moodValues := averageAndTrend(days, func(day sharedtypes.DailyMetricsDay) *int {
+		if day.CheckIn == nil {
+			return nil
+		}
+		return &day.CheckIn.Mood
+	})
+	energyAvg, energyTrend, energyValues := averageAndTrend(days, func(day sharedtypes.DailyMetricsDay) *int {
+		if day.CheckIn == nil {
+			return nil
+		}
+		return &day.CheckIn.Energy
+	})
+	moodCount = moodValues
+	energyCount = energyValues
+	if moodCount == 0 && energyCount == 0 {
+		return 0, 0, 0, 0
+	}
+	baseDrag := 0.0
+	trendDrag := 0.0
+	baseRecovery := 0.0
+	if moodCount > 0 {
+		baseDrag += clamp01((5.0 - moodAvg) / 4.0)
+		trendDrag += moodTrend
+		baseRecovery += clamp01((moodAvg - 2.5) / 2.5)
+	}
+	if energyCount > 0 {
+		baseDrag += clamp01((5.0 - energyAvg) / 4.0)
+		trendDrag += energyTrend
+		baseRecovery += clamp01((energyAvg - 2.5) / 2.5)
+	}
+	scale := float64(maxInt(1, moodCountOnly(moodCount, energyCount)))
+	baseDrag /= scale
+	trendDrag /= scale
+	baseRecovery /= scale
+	drag = clamp01(baseDrag*0.75 + trendDrag*0.25)
+	recovery = clamp01(baseRecovery)
+	return drag, recovery, moodCount, energyCount
+}
+
+func moodCountOnly(moodCount, energyCount int) int {
+	count := 0
+	if moodCount > 0 {
+		count++
+	}
+	if energyCount > 0 {
+		count++
+	}
+	return count
+}
+
+func workloadStability(days []sharedtypes.DailyMetricsDay) float64 {
+	if len(days) < 2 {
+		return 0.5
+	}
+	values := make([]float64, 0, len(days))
+	total := 0.0
+	for _, day := range days {
+		value := float64(day.WorkedSeconds)
+		values = append(values, value)
+		total += value
+	}
+	mean := total / float64(len(values))
+	if mean == 0 {
+		return 0.6
+	}
+	variance := 0.0
+	for _, value := range values {
+		diff := value - mean
+		variance += diff * diff
+	}
+	stddev := math.Sqrt(variance / float64(len(values)))
+	normalized := clamp01(stddev / 18000.0)
+	return 1.0 - normalized
+}
+
+func weightedAverage(values map[string]float64, weights map[string]float64) float64 {
+	totalWeight := 0.0
+	total := 0.0
+	for key, weight := range weights {
+		value, ok := values[key]
+		if !ok {
+			continue
+		}
+		totalWeight += weight
+		total += value * weight
+	}
+	if totalWeight == 0 {
+		return 0
+	}
+	return clamp01(total / totalWeight)
 }
 
 func clamp01(value float64) float64 {

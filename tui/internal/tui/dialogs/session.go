@@ -51,6 +51,9 @@ func renderSessionDialog(theme Theme, state State) string {
 			if state.ViewName != "" {
 				label += "  " + state.ViewName
 			}
+			if state.IssueEstimateMins != nil && *state.IssueEstimateMins > 0 {
+				label += fmt.Sprintf("  · estimate %dm", *state.IssueEstimateMins)
+			}
 			rows = append(rows, "", theme.StyleDim.Render(label))
 		}
 		labels := []string{"Summary", "Date", "Work duration", "Break duration", "Start time", "End time", "Notes"}

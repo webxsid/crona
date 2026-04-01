@@ -63,6 +63,9 @@ func renderUtilityDialog(theme Theme, state State) string {
 		rows := []string{
 			theme.StylePaneTitle.Render("Export Report"),
 			"",
+			theme.StyleDim.Render("Category"),
+			theme.StyleHeader.Render(exportCategoryTitle(state.ExportCategory)),
+			"",
 			theme.StyleDim.Render("Anchor Date"),
 			theme.StyleHeader.Render(state.CheckInDate),
 			"",
@@ -74,18 +77,40 @@ func renderUtilityDialog(theme Theme, state State) string {
 				continue
 			}
 			if i == state.ChoiceCursor {
-				line = "▶ " + item
-				rows = append(rows, theme.StyleCursor.Render(line))
+				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
 		rows = append(rows, "")
 		if state.Processing {
 			rows = appendDialogFooter(theme, state, append(rows, theme.StyleHeader.Render(state.ProcessingLabel), "", theme.StyleDim.Render("Please wait...")), "")
 		} else {
-			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] cancel")
+			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] back")
 		}
+		return modal(theme, state.Width, 64, theme.ColorGreen, rows)
+	case "export_report_category":
+		rows := []string{
+			theme.StylePaneTitle.Render("Export Report"),
+			"",
+			theme.StyleDim.Render("Anchor Date"),
+			theme.StyleHeader.Render(state.CheckInDate),
+			"",
+		}
+		for i, item := range state.ChoiceItems {
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				continue
+			}
+			rows = append(rows, theme.StyleNormal.Render("  "+item))
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose category   [esc] cancel")
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "export_preset":
 		rows := []string{
@@ -235,6 +260,17 @@ func renderUtilityDialog(theme Theme, state State) string {
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	default:
 		return ""
+	}
+}
+
+func exportCategoryTitle(category string) string {
+	switch category {
+	case "project":
+		return "Project Reports"
+	case "data":
+		return "Data Exports"
+	default:
+		return "Narrative Reports"
 	}
 }
 

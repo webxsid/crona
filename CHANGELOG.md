@@ -4,6 +4,24 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+### Added
+- Manual session logging from issue-level workflows, including automatic `in_progress` transition when the target issue is focusable but not yet started.
+- Dedicated protected-day shell for away mode and configured rest days, with non-work views hidden until the break ends.
+- Built-in daily/weekly narrative report presets plus separate HTML/CSS-based PDF rendering for narrative exports.
+
+### Changed
+- Settings and Config are now grouped into clearer categories instead of one long flat list.
+- Wellbeing now surfaces compact visual cards and a terminal-friendly recent-activity heatmap instead of relying on long text blocks alone.
+- Report generation now uses a guided two-step export flow so users choose a category before the concrete report/export type.
+- Dialogs now render their own validation/runtime errors, use consistent `Ctrl+S` submit behavior for forms, and keep field-aware footer hints.
+- Self-update now uses a dedicated install takeover screen with phase-based progress and a quiet relaunch handoff.
+- Daily and weekly PDF narrative exports now use dedicated HTML/CSS templates instead of reusing the Markdown pipeline.
+
+### Fixed
+- Session history detail opens correctly again after the session-source additions.
+- Away mode toggling now reacts immediately in the TUI and the protected shell updates without waiting for a settings reload.
+- Report preset selection and narrative export completion now return from the dialog flow correctly instead of opening empty/stuck states.
+
 ## [0.3.1] - 2026-03-27
 
 ### Fixed

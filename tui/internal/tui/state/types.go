@@ -42,7 +42,7 @@ const (
 	DefaultIssueSectionCompleted DefaultIssueSection = "completed"
 )
 
-var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewWellbeing, ViewReports, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewConfig, ViewSettings, ViewUpdates}
+var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewUpdates}
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},

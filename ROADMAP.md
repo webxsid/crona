@@ -123,35 +123,24 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Phase 4.1 Windows runtime support works from PowerShell without requiring in-app install
 - [x] Phase 4.2 native Windows packaging and self-update are available
 
-## Phase 5 — Dashboards, Customisation, and CLI
-Expand the product surface after the kernel, TUI shell, and packaging work have settled.
+## Phase 5 — Dashboards And YAML Customisation
+Keep the next phase focused on clearer dashboards and a lightweight configurable surface instead of expanding into a larger widget/CLI program.
 
-### Phase 5.1 — Dashboards And Export Template Rewrite
-- [ ] Daily Dashboard expansion (weekly rollups, carry-over, missed-vs-done summary)
-- [ ] Activity heatmap (terminal-friendly, date-range configurable)
-- [ ] Configurable streak scope
-- [ ] Time distribution by repo, stream, issue, or segment type
+### Phase 5.1 — Basic Dashboards
+- [x] Wellbeing dashboard visual refresh with compact cards and an activity heatmap
+- [x] Narrative report template refresh with preset styles and stronger PDF presentation
+- [ ] Daily dashboard expansion (weekly rollups, carry-over, missed-vs-done summary)
+- [ ] Basic time distribution by repo, stream, issue, or segment type
 - [ ] Daily/weekly focus score (work vs break ratio vs target)
 - [ ] Goal progress (estimated vs actual time per issue/stream/repo)
-- [ ] Rewrite bundled export templates to match the new dashboard and reporting model
-- [ ] Remove one-off summary formatting from the TUI and drive dashboard/export views from reusable summary APIs
+- [ ] Keep dashboard/report copy short and glanceable by driving them from reusable summary APIs
 
-### Phase 5.2 — TUI Customisations
-- [ ] Multiple dashboard views under the `DASHBOARD` group
-- [ ] Widget-style dashboard sections instead of a fixed page
-- [ ] Add/remove/reorder widgets in TUI
-- [ ] Widget configuration for scope, metric, and date range
-- [ ] Saved dashboard presets in the kernel
-- [ ] Pre-built layout presets (default, focus-heavy, wellbeing-focused)
-- [ ] Keep customization terminal-native: stacked widgets, simple grids, no freeform layout
-
-### Phase 5.3 — CLI
-- [ ] Ship the `crona` CLI in public release artifacts and installers
-- [ ] Full CRUD command trees for `repo`, `stream`, `issue`, and `habit`
-- [ ] Non-interactive flag-driven create and update flows for all core entities
-- [ ] Interactive add/edit flows in the CLI for repos, streams, issues, and habits
-- [ ] Interactive CLI context picker
-- [ ] Proper per-command help docs and examples for all CRUD surfaces
+### Phase 5.2 — YAML Configurable Dashboards
+- [ ] YAML-based dashboard configuration
+- [ ] Basic configurable sections and ordering
+- [ ] Simple scope/date-range configuration per section
+- [ ] Pre-built starter YAML layouts
+- [ ] Keep customization terminal-native: stacked sections, simple splits, no freeform layout
 
 ## Phase 6 — OS Integrations
 - [ ] Native OS bridge for notifications, audible timer alerts, and permission-aware delivery
@@ -191,6 +180,12 @@ See `FEATURE.md` for design proposal.
 - [ ] Per-device context isolation
 
 ## Deferred
+- [ ] Full public CLI expansion beyond the current scriptable shell surface
+- [ ] Full CRUD command trees for `repo`, `stream`, `issue`, and `habit`
+- [ ] Non-interactive flag-driven create and update flows for all core entities
+- [ ] Interactive add/edit flows in the CLI for repos, streams, issues, and habits
+- [ ] Interactive CLI context picker
+- [ ] Proper per-command help docs and examples for all CRUD surfaces
 - [ ] Command palette / `:` command mode
 - [ ] Fuzzy command search
 - [ ] Context-aware command suggestions

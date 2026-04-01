@@ -79,6 +79,11 @@ type HabitCompletionModel struct {
 	Status          string  `bun:"status,notnull,type:text"`
 	DurationMinutes *int    `bun:"duration_minutes,type:integer,nullzero"`
 	Notes           *string `bun:"notes,type:text,nullzero"`
+	SnapshotName    *string `bun:"snapshot_name,type:text,nullzero"`
+	SnapshotDesc    *string `bun:"snapshot_description,type:text,nullzero"`
+	SnapshotType    *string `bun:"snapshot_schedule_type,type:text,nullzero"`
+	SnapshotDays    *string `bun:"snapshot_weekdays,type:text,nullzero"`
+	SnapshotTarget  *int    `bun:"snapshot_target_minutes,type:integer,nullzero"`
 	UserID          string  `bun:"user_id,notnull,type:text"`
 	CreatedAt       string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt       string  `bun:"updated_at,notnull,type:text"`
@@ -160,6 +165,7 @@ type CoreSettingsModel struct {
 	FrozenStreakKinds     string `bun:"frozen_streak_kinds,notnull,type:text"`
 	RestWeekdays          string `bun:"rest_weekdays,notnull,type:text"`
 	RestSpecificDates     string `bun:"rest_specific_dates,notnull,type:text"`
+	DailyPlanRollbackMins int    `bun:"daily_plan_rollback_minutes,notnull,type:integer"`
 	RestRecurringDates    string `bun:"rest_recurring_dates,notnull,type:text"`
 	CreatedAt             string `bun:"created_at,notnull,type:text"`
 	UpdatedAt             string `bun:"updated_at,notnull,type:text"`

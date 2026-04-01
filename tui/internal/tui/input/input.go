@@ -26,6 +26,8 @@ type State struct {
 	HelpOpen            bool
 	SessionDetailOpen   bool
 	SessionDetailY      int
+	SessionContextOpen  bool
+	SessionContextY     int
 	ScratchpadOpen      bool
 	OpsLimit            int
 	OpsLimitPinned      bool
@@ -100,6 +102,7 @@ type Deps struct {
 	SetHabitFailedAction            func(*State) (tea.Cmd, bool)
 	StartFocusFromSelection         func(*State) tea.Cmd
 	OpenManualSessionDialog         func(*State) bool
+	OpenSessionContextOverlay       func(*State) bool
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
 	OpenEditRestProtectionDialog    func(*State) bool
@@ -261,6 +264,15 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			if deps.OpenManualSessionDialog(&s) {
+				return s, nil, true
+			}
+			return s, nil, false
+		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.SetHabitFailedAction(&s)
 			return s, cmd, handled
 		},
@@ -347,6 +359,12 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResumeSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleEndSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleStashSession(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenSessionContextOverlay(&s) {
+				return s, nil, true
+			}
+			return s, nil, false
+		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled
@@ -622,9 +640,9 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 		}
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyTimerMode, next, repoID, streamID, s.DashboardDate), true
 	case 1:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyBreaksEnabled, !s.Settings.BreaksEnabled, repoID, streamID, s.DashboardDate), true
-	case 2:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyWorkDurationMinutes, clampMin(s.Settings.WorkDurationMinutes+dir*5, 5), repoID, streamID, s.DashboardDate), true
+	case 2:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyBreaksEnabled, !s.Settings.BreaksEnabled, repoID, streamID, s.DashboardDate), true
 	case 3:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyShortBreakMinutes, clampMin(s.Settings.ShortBreakMinutes+dir, 1), repoID, streamID, s.DashboardDate), true
 	case 4:
@@ -655,6 +673,8 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyHabitSort, nextHabitSort(s.Settings.HabitSort, dir), repoID, streamID, s.DashboardDate), true
 	case 17:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+	case 18:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1), repoID, streamID, s.DashboardDate), true
 	default:
 		return s, nil, true
 	}
@@ -665,7 +685,7 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 		return s, nil, true
 	}
 	switch s.Cursor[uistate.PaneSettings] {
-	case 18:
+	case 19:
 		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
 	default:
@@ -720,6 +740,13 @@ func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
 func clampMin(value, min int) int {
 	if value < min {
 		return min
+	}
+	return value
+}
+
+func currentRollbackMinutes(value int) int {
+	if value <= 0 {
+		return 5
 	}
 	return value
 }

@@ -152,6 +152,64 @@ func (r *HabitRepository) GetByID(ctx context.Context, habitID int64, userID str
 	}, nil
 }
 
+func (r *HabitRepository) GetWithMetaByID(ctx context.Context, habitID int64, userID string) (*sharedtypes.HabitWithMeta, error) {
+	type row struct {
+		PublicID       int64   `bun:"public_id"`
+		StreamPublicID int64   `bun:"stream_public_id"`
+		Name           string  `bun:"name"`
+		Description    *string `bun:"description"`
+		ScheduleType   string  `bun:"schedule_type"`
+		Weekdays       *string `bun:"weekdays"`
+		TargetMinutes  *int    `bun:"target_minutes"`
+		Active         bool    `bun:"active"`
+		StreamName     string  `bun:"stream_name"`
+		RepoPublicID   int64   `bun:"repo_public_id"`
+		RepoName       string  `bun:"repo_name"`
+	}
+	var item row
+	err := r.db.NewSelect().
+		TableExpr("habits").
+		Join("INNER JOIN streams ON streams.id = habits.stream_id").
+		Join("INNER JOIN repos ON repos.id = streams.repo_id").
+		ColumnExpr("habits.public_id").
+		ColumnExpr("streams.public_id AS stream_public_id").
+		ColumnExpr("habits.name").
+		ColumnExpr("habits.description").
+		ColumnExpr("habits.schedule_type").
+		ColumnExpr("habits.weekdays").
+		ColumnExpr("habits.target_minutes").
+		ColumnExpr("habits.active").
+		ColumnExpr("streams.name AS stream_name").
+		ColumnExpr("repos.public_id AS repo_public_id").
+		ColumnExpr("repos.name AS repo_name").
+		Where("habits.public_id = ?", habitID).
+		Where("habits.user_id = ?", userID).
+		Limit(1).
+		Scan(ctx, &item)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	out := &sharedtypes.HabitWithMeta{
+		Habit: sharedtypes.Habit{
+			ID:            item.PublicID,
+			StreamID:      item.StreamPublicID,
+			Name:          item.Name,
+			Description:   item.Description,
+			ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(item.ScheduleType)),
+			Weekdays:      parseWeekdays(item.Weekdays),
+			TargetMinutes: item.TargetMinutes,
+			Active:        item.Active,
+		},
+		RepoID:     item.RepoPublicID,
+		RepoName:   item.RepoName,
+		StreamName: item.StreamName,
+	}
+	return out, nil
+}
+
 func (r *HabitRepository) ListDueWithMeta(ctx context.Context, date string, userID string) ([]sharedtypes.HabitWithMeta, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`

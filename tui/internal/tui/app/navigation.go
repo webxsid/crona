@@ -160,6 +160,11 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 			return m.openEditIssueDialog(issue.ID, issue.StreamID, issue.Title, issue.Description, issue.EstimateMinutes, issue.TodoForDate), true
 		}
 	case PaneHabits:
+		if m.view == ViewDaily {
+			if habit, ok := m.selectedDailyHabitRecord(); ok {
+				return m.openEditHabitDialog(habit.ID, habit.StreamID, habit.Name, habit.Description, string(habit.ScheduleType), habit.Weekdays, habit.TargetMinutes, habit.Active), true
+			}
+		}
 		if habit, ok := m.selectedHabitRecord(); ok {
 			return m.openEditHabitDialog(habit.ID, habit.StreamID, habit.Name, habit.Description, string(habit.ScheduleType), habit.Weekdays, habit.TargetMinutes, habit.Active), true
 		}
@@ -486,9 +491,8 @@ func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 		return m, nil, true
 	}
 	if m.view == ViewDaily && m.pane == PaneHabits {
-		if habit, ok := m.selectedDailyHabitRecord(); ok {
-			m = m.openHabitCompletionDialog(habit.ID, m.currentDashboardDate(), habit.DurationMinutes, habit.Notes)
-			return m, nil, true
+		if next, ok := m.openSelectedEditDialog(); ok {
+			return next, nil, true
 		}
 		return m, nil, true
 	}

@@ -164,6 +164,7 @@ const (
 	CoreSettingsKeyFrozenStreakKinds     CoreSettingsKey = "frozenStreakKinds"
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
+	CoreSettingsKeyDailyPlanRollbackMins CoreSettingsKey = "dailyPlanRollbackMinutes"
 )
 
 type StreakKind string
@@ -264,6 +265,11 @@ type HabitCompletion struct {
 	Status          HabitCompletionStatus `json:"status"`
 	DurationMinutes *int                  `json:"durationMinutes,omitempty"`
 	Notes           *string               `json:"notes,omitempty"`
+	SnapshotName    *string               `json:"snapshotName,omitempty"`
+	SnapshotDesc    *string               `json:"snapshotDescription,omitempty"`
+	SnapshotType    *HabitScheduleType    `json:"snapshotScheduleType,omitempty"`
+	SnapshotDays    []int                 `json:"snapshotWeekdays,omitempty"`
+	SnapshotTarget  *int                  `json:"snapshotTargetMinutes,omitempty"`
 	CreatedAt       string                `json:"createdAt"`
 	UpdatedAt       string                `json:"updatedAt"`
 }
@@ -283,6 +289,11 @@ type HabitDailyItem struct {
 	CompletionDate  *string               `json:"completionDate,omitempty"`
 	DurationMinutes *int                  `json:"durationMinutes,omitempty"`
 	Notes           *string               `json:"notes,omitempty"`
+	SnapshotName    *string               `json:"snapshotName,omitempty"`
+	SnapshotDesc    *string               `json:"snapshotDescription,omitempty"`
+	SnapshotType    *HabitScheduleType    `json:"snapshotScheduleType,omitempty"`
+	SnapshotDays    []int                 `json:"snapshotWeekdays,omitempty"`
+	SnapshotTarget  *int                  `json:"snapshotTargetMinutes,omitempty"`
 }
 
 type Issue struct {
@@ -554,6 +565,7 @@ type CoreSettings struct {
 	FrozenStreakKinds     []StreakKind `json:"frozenStreakKinds,omitempty"`
 	RestWeekdays          []int        `json:"restWeekdays,omitempty"`
 	RestSpecificDates     []string     `json:"restSpecificDates,omitempty"`
+	DailyPlanRollbackMins int          `json:"dailyPlanRollbackMinutes"`
 	CreatedAt             string       `json:"createdAt"`
 	UpdatedAt             string       `json:"updatedAt"`
 }

@@ -53,6 +53,10 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "sessions", column: "source"},
 		{table: "daily_plan_entries", column: "baseline_date"},
 		{table: "daily_plan_entries", column: "current_planned_date"},
+		{table: "habit_completions", column: "snapshot_name"},
+		{table: "habit_completions", column: "snapshot_description"},
+		{table: "habit_completions", column: "snapshot_schedule_type"},
+		{table: "habit_completions", column: "snapshot_weekdays"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
@@ -65,10 +69,14 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	}{
 		{table: "daily_plan_entries", column: "postpone_count", defaultValue: 0},
 		{table: "daily_plan_entries", column: "max_delayed_days", defaultValue: 0},
+		{table: "core_settings", column: "daily_plan_rollback_minutes", defaultValue: 5},
 	} {
 		if err := ensureIntegerColumn(ctx, db, spec.table, spec.column, spec.defaultValue); err != nil {
 			return err
 		}
+	}
+	if err := ensureNullableIntegerColumn(ctx, db, "habit_completions", "snapshot_target_minutes"); err != nil {
+		return err
 	}
 	for columnName, defaultValue := range map[string]string{
 		"repo_sort":            "chronological_asc",
@@ -250,6 +258,39 @@ func ensureIntegerColumn(ctx context.Context, db *bun.DB, tableName string, colu
 	}
 
 	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer NOT NULL DEFAULT %d", tableName, columnName, defaultValue))
+	return err
+}
+
+func ensureNullableIntegerColumn(ctx context.Context, db *bun.DB, tableName string, columnName string) error {
+	rows, err := db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info('%s')", tableName))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	var (
+		cid       int
+		name      string
+		typ       string
+		notnull   int
+		dfltValue sql.NullString
+		pk        int
+	)
+	for rows.Next() {
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dfltValue, &pk); err != nil {
+			return err
+		}
+		if name == columnName {
+			return nil
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer", tableName, columnName))
 	return err
 }
 

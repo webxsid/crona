@@ -6,6 +6,7 @@ import (
 
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
+	selectionpkg "crona/tui/internal/tui/selection"
 	"crona/tui/internal/tui/views"
 )
 
@@ -49,15 +50,18 @@ func (m Model) layoutState() layoutpkg.State {
 			Health:        m.health,
 			UpdateStatus:  m.updateStatus,
 		},
-		DialogOpen:         m.dialog != "",
-		UpdateInstallOpen:  m.updateInstallPhase != "",
-		HelpOpen:           m.helpOpen,
-		SessionDetailOpen:  m.sessionDetailOpen,
-		SessionDetailY:     m.sessionDetailY,
-		SessionDetailLines: helperpkg.SessionDetailContentLines(m.sessionDetail),
-		StatusMsg:          m.statusMsg,
-		StatusErr:          m.statusErr,
-		GlobalActions:      globalActions(m, timerState),
+		DialogOpen:          m.dialog != "",
+		UpdateInstallOpen:   m.updateInstallPhase != "",
+		HelpOpen:            m.helpOpen,
+		SessionDetailOpen:   m.sessionDetailOpen,
+		SessionDetailY:      m.sessionDetailY,
+		SessionDetailLines:  helperpkg.SessionDetailContentLines(m.sessionDetail),
+		SessionContextOpen:  m.sessionContextOpen,
+		SessionContextY:     m.sessionContextY,
+		SessionContextLines: helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(m.selectionSnapshot())),
+		StatusMsg:           m.statusMsg,
+		StatusErr:           m.statusErr,
+		GlobalActions:       globalActions(m, timerState),
 	}
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
 	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state))

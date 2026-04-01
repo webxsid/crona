@@ -182,6 +182,7 @@ type Model struct {
 	dialogStatusRequired     bool
 	dialogViewTitle          string
 	dialogViewName           string
+	dialogIssueEstimateMins  *int
 	dialogViewMeta           string
 	dialogViewBody           string
 	dialogProtectionStep     int
@@ -200,9 +201,11 @@ type Model struct {
 	statusErr bool
 
 	// overlay help
-	helpOpen          bool
-	sessionDetailOpen bool
-	sessionDetailY    int
+	helpOpen           bool
+	sessionDetailOpen  bool
+	sessionDetailY     int
+	sessionContextOpen bool
+	sessionContextY    int
 }
 
 func (m Model) selfUpdateInstallAvailable() bool {
@@ -408,6 +411,8 @@ func (m Model) inputState() inputpkg.State {
 		HelpOpen:            m.helpOpen,
 		SessionDetailOpen:   m.sessionDetailOpen,
 		SessionDetailY:      m.sessionDetailY,
+		SessionContextOpen:  m.sessionContextOpen,
+		SessionContextY:     m.sessionContextY,
 		ScratchpadOpen:      m.scratchpadOpen,
 		OpsLimit:            m.opsLimit,
 		OpsLimitPinned:      m.opsLimitPinned,
@@ -441,6 +446,8 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.helpOpen = state.HelpOpen
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
+	m.sessionContextOpen = state.SessionContextOpen
+	m.sessionContextY = state.SessionContextY
 	m.scratchpadOpen = state.ScratchpadOpen
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned
@@ -712,16 +719,39 @@ func (m Model) inputDeps() inputpkg.Deps {
 			if next.dialog != "" {
 				return false
 			}
+			if next.view == ViewDaily && next.pane == PaneHabits {
+				if habit, ok := next.selectedDailyHabitRecord(); ok {
+					next = next.openHabitCompletionDialog(habit.ID, next.currentDashboardDate(), habit.DurationMinutes, habit.Notes)
+					*state = next.inputState()
+					return true
+				}
+				return false
+			}
 			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
 				issueLabel := ""
+				var estimateMinutes *int
 				if meta := selectionpkg.IssueMetaByID(next.selectionSnapshot(), issue.ID); meta != nil {
 					issueLabel = meta.Title
+					estimateMinutes = meta.EstimateMinutes
 				}
-				next = next.openManualSessionDialog(issue.ID, issueLabel, next.currentDashboardDate())
+				next = next.openManualSessionDialog(issue.ID, issueLabel, estimateMinutes, next.currentDashboardDate())
 				*state = next.inputState()
 				return true
 			}
 			return false
+		},
+		OpenSessionContextOverlay: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			if next.view != ViewSessionActive || next.timer == nil || next.timer.State == "idle" {
+				return false
+			}
+			if selectionpkg.ActiveIssue(next.selectionSnapshot()) == nil {
+				return false
+			}
+			next.sessionContextOpen = true
+			next.sessionContextY = 0
+			*state = next.inputState()
+			return true
 		},
 		ConfigReset: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
@@ -838,8 +868,8 @@ func (m Model) openIssueSessionTransitionDialog(issueID int64, status string) Mo
 func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
 	return m.withDialogState(dialogstate.OpenAmendSession(m.dialogSnapshot(), sessionID, commit))
 }
-func (m Model) openManualSessionDialog(issueID int64, issueLabel string, date string) Model {
-	return m.withDialogState(dialogstate.OpenManualSession(m.dialogSnapshot(), issueID, issueLabel, date))
+func (m Model) openManualSessionDialog(issueID int64, issueLabel string, estimateMinutes *int, date string) Model {
+	return m.withDialogState(dialogstate.OpenManualSession(m.dialogSnapshot(), issueID, issueLabel, estimateMinutes, date))
 }
 func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputIndex int, initial *string) Model {
 	return m.withDialogState(dialogstate.OpenDatePicker(m.dialogSnapshot(), parentDialog, issueID, inputIndex, initial))
@@ -906,6 +936,7 @@ func (m Model) dialogState() dialogpkg.State {
 		StatusRequired:     m.dialogStatusRequired,
 		ViewTitle:          m.dialogViewTitle,
 		ViewName:           m.dialogViewName,
+		IssueEstimateMins:  m.dialogIssueEstimateMins,
 		ViewMeta:           m.dialogViewMeta,
 		ViewBody:           m.dialogViewBody,
 		ProtectionStep:     m.dialogProtectionStep,
@@ -961,6 +992,7 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogStatusRequired = state.StatusRequired
 	m.dialogViewTitle = state.ViewTitle
 	m.dialogViewName = state.ViewName
+	m.dialogIssueEstimateMins = state.IssueEstimateMins
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
 	m.dialogProtectionStep = state.ProtectionStep

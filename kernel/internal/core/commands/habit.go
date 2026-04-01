@@ -41,17 +41,43 @@ func ListHabitsDueForDate(ctx context.Context, c *core.Context, date string) ([]
 	for _, completion := range completions {
 		completionByHabit[completion.HabitID] = completion
 	}
+	addCompletion := func(item *sharedtypes.HabitDailyItem, completion sharedtypes.HabitCompletion) {
+		item.Status = sharedtypes.NormalizeHabitCompletionStatus(completion.Status)
+		item.Completed = item.Status == sharedtypes.HabitCompletionStatusCompleted
+		item.CompletionID = &completion.ID
+		item.CompletionDate = &completion.Date
+		item.DurationMinutes = completion.DurationMinutes
+		item.Notes = completion.Notes
+		item.SnapshotName = completion.SnapshotName
+		item.SnapshotDesc = completion.SnapshotDesc
+		item.SnapshotType = completion.SnapshotType
+		item.SnapshotDays = append([]int(nil), completion.SnapshotDays...)
+		item.SnapshotTarget = completion.SnapshotTarget
+		applyHabitCompletionSnapshot(item)
+	}
 	out := make([]sharedtypes.HabitDailyItem, 0, len(habits))
+	seen := make(map[int64]struct{}, len(habits))
 	for _, habit := range habits {
 		item := sharedtypes.HabitDailyItem{HabitWithMeta: habit}
 		if completion, ok := completionByHabit[habit.ID]; ok {
-			item.Status = sharedtypes.NormalizeHabitCompletionStatus(completion.Status)
-			item.Completed = item.Status == sharedtypes.HabitCompletionStatusCompleted
-			item.CompletionID = &completion.ID
-			item.CompletionDate = &completion.Date
-			item.DurationMinutes = completion.DurationMinutes
-			item.Notes = completion.Notes
+			addCompletion(&item, completion)
 		}
+		seen[habit.ID] = struct{}{}
+		out = append(out, item)
+	}
+	for _, completion := range completions {
+		if _, ok := seen[completion.HabitID]; ok {
+			continue
+		}
+		habit, err := c.Habits.GetWithMetaByID(ctx, completion.HabitID, c.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if habit == nil {
+			continue
+		}
+		item := sharedtypes.HabitDailyItem{HabitWithMeta: *habit}
+		addCompletion(&item, completion)
 		out = append(out, item)
 	}
 	sortHabitDailyItems(out, loadListSortSettings(ctx, c).habitSort)
@@ -251,6 +277,11 @@ func CompleteHabit(ctx context.Context, c *core.Context, habitID int64, date str
 		Status:          status,
 		DurationMinutes: durationMinutes,
 		Notes:           normalizeOptionalString(notes),
+		SnapshotName:    stringPtr(habit.Name),
+		SnapshotDesc:    habit.Description,
+		SnapshotType:    habitScheduleTypePtr(habit.ScheduleType),
+		SnapshotDays:    append([]int(nil), habit.Weekdays...),
+		SnapshotTarget:  habit.TargetMinutes,
 	}, c.UserID, now)
 	if err != nil {
 		return nil, err
@@ -330,4 +361,36 @@ func normalizeHabitSchedule(raw string, weekdays []int) (sharedtypes.HabitSchedu
 func isISODate(value string) bool {
 	_, err := time.Parse("2006-01-02", strings.TrimSpace(value))
 	return err == nil
+}
+
+func applyHabitCompletionSnapshot(item *sharedtypes.HabitDailyItem) {
+	if item == nil {
+		return
+	}
+	if item.SnapshotName != nil && strings.TrimSpace(*item.SnapshotName) != "" {
+		item.Name = strings.TrimSpace(*item.SnapshotName)
+	}
+	if item.SnapshotDesc != nil {
+		item.Description = item.SnapshotDesc
+	}
+	if item.SnapshotType != nil {
+		item.ScheduleType = sharedtypes.NormalizeHabitScheduleType(*item.SnapshotType)
+		item.Weekdays = append([]int(nil), item.SnapshotDays...)
+	}
+	if item.SnapshotTarget != nil {
+		item.TargetMinutes = item.SnapshotTarget
+	}
+}
+
+func stringPtr(value string) *string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+func habitScheduleTypePtr(value sharedtypes.HabitScheduleType) *sharedtypes.HabitScheduleType {
+	normalized := sharedtypes.NormalizeHabitScheduleType(value)
+	return &normalized
 }

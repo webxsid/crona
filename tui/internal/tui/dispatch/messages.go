@@ -39,6 +39,8 @@ type MessageState struct {
 	SessionDetail         *api.SessionDetail
 	SessionDetailOpen     bool
 	SessionDetailY        int
+	SessionContextOpen    bool
+	SessionContextY       int
 	Scratchpads           []api.ScratchPad
 	Stashes               []api.Stash
 	DialogStashCursor     int

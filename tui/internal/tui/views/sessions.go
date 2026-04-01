@@ -28,27 +28,37 @@ func renderSessionView(theme Theme, state ContentState) string {
 	}
 	stateColor := theme.ColorGreen
 	timerTitle := "Focus Session"
-	timerHint := "p=pause  x=end  z=stash  [ ]=session/history/scratch"
+	timerHint := "p=pause  x=end  z=stash  i=context  [ ]=session/history/scratch"
 	if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
-		timerHint = "r=resume  x=end  z=stash  [ ]=session/history/scratch"
+		timerHint = "r=resume  x=end  z=stash  i=context  [ ]=session/history/scratch"
 		seg = "paused"
 	}
-	issueBox := "No issue selected"
-	if activeIssue != nil {
-		issueBox = fmt.Sprintf("[%s/%s]\n%s", activeIssue.RepoName, activeIssue.StreamName, activeIssue.Title)
-	}
 	leftW := state.Width - 4
+	totalH := max(12, state.Height)
+	timerH, issueH := splitVertical(totalH, 10, 7, max(10, totalH*3/5))
 	timerText := renderBigClock(elapsed)
 	priorWorkedSeconds, completedSessions := summarizeCompletedSessions(state.IssueSessions)
 	progress := theme.StyleDim.Render(fmt.Sprintf("Completed sessions: %d", completedSessions))
 	if activeIssue != nil && activeIssue.EstimateMinutes != nil {
 		progress += "\n" + theme.StyleDim.Render(formatEstimateProgress(priorWorkedSeconds+total, *activeIssue.EstimateMinutes))
 	}
-	timerSection := lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(stateColor).Padding(1, 2).Width(leftW).Render(fmt.Sprintf("%s\n\n%s\n\n%s%s", timerTitle, lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText), theme.StyleDim.Render(strings.ToUpper(seg)), "\n\n"+progress))
-	issueSection := lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorCyan).Padding(1, 2).Width(leftW).Render("Active Issue\n\n" + issueBox + "\n\n" + theme.StyleDim.Render(timerHint))
-	return lipgloss.JoinVertical(lipgloss.Left, issueSection, timerSection)
+	timerSection := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(stateColor).
+		Padding(1, 2).
+		Width(leftW).
+		Height(max(1, timerH-2)).
+		Render(fmt.Sprintf("%s\n\n%s\n\n%s%s", timerTitle, lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText), theme.StyleDim.Render(strings.ToUpper(seg)), "\n\n"+progress))
+	issueSection := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorCyan).
+		Padding(1, 2).
+		Width(leftW).
+		Height(max(1, issueH-2)).
+		Render(strings.Join(sessionIssueCompactLines(theme, activeIssue, leftW, state.Height, timerHint), "\n"))
+	return lipgloss.JoinVertical(lipgloss.Left, timerSection, issueSection)
 }
 
 func renderSessionHistory(theme Theme, state ContentState) string {
@@ -104,4 +114,35 @@ func renderSessionHistory(theme Theme, state ContentState) string {
 		lines = append(lines, theme.StyleDim.Render("..."))
 	}
 	return renderPaneBox(theme, active, state.Width, state.Height, stringsJoin(lines))
+}
+
+func sessionIssueCompactLines(theme Theme, activeIssue *api.IssueWithMeta, width, height int, timerHint string) []string {
+	lines := []string{"Active Issue", ""}
+	if activeIssue == nil {
+		lines = append(lines, "No issue selected", "", theme.StyleDim.Render(timerHint))
+		return lines
+	}
+	maxLine := max(20, width-12)
+	lines = append(lines,
+		fmt.Sprintf("[%s/%s]", activeIssue.RepoName, activeIssue.StreamName),
+		truncate(activeIssue.Title, maxLine),
+	)
+	if activeIssue.EstimateMinutes != nil && *activeIssue.EstimateMinutes > 0 {
+		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("Estimate %dm", *activeIssue.EstimateMinutes)))
+	}
+	if activeIssue.Description != nil && strings.TrimSpace(*activeIssue.Description) != "" {
+		lines = append(lines, theme.StyleDim.Render("Desc  "+truncate(collapseSpace(*activeIssue.Description), maxLine)))
+	}
+	if activeIssue.Notes != nil && strings.TrimSpace(*activeIssue.Notes) != "" {
+		lines = append(lines, theme.StyleDim.Render("Notes "+truncate(collapseSpace(*activeIssue.Notes), maxLine)))
+	}
+	if height >= 34 {
+		lines = append(lines, "", theme.StyleDim.Render("[i] open full context"))
+	}
+	lines = append(lines, theme.StyleDim.Render(timerHint))
+	return lines
+}
+
+func collapseSpace(value string) string {
+	return strings.Join(strings.Fields(strings.TrimSpace(value)), " ")
 }

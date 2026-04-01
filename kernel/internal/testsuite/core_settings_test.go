@@ -64,6 +64,9 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2026-03-29"}); err != nil {
 		t.Fatalf("set rest specific dates: %v", err)
 	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, 12); err != nil {
+		t.Fatalf("set rollback minutes: %v", err)
+	}
 
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {
@@ -80,5 +83,8 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 	if len(settings.RestSpecificDates) != 1 || settings.RestSpecificDates[0] != "2026-03-29" {
 		t.Fatalf("unexpected rest specific dates: %+v", settings.RestSpecificDates)
+	}
+	if settings.DailyPlanRollbackMins != 12 {
+		t.Fatalf("unexpected rollback minutes: %d", settings.DailyPlanRollbackMins)
 	}
 }
