@@ -205,9 +205,11 @@ fi
 LEGACY_CRONA_HOME="$(legacy_crona_home)"
 ASSETS_DIR="${CRONA_HOME}/assets/bundled"
 BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
+CLI_NAME="crona-${VERSION}-${OS}-${ARCH}"
 KERNEL_NAME="crona-kernel-${VERSION}-${OS}-${ARCH}"
 TUI_NAME="crona-tui-${VERSION}-${OS}-${ARCH}"
 ASSETS_NAME="crona-assets-${VERSION}.tar.gz"
+CLI_URL="${BASE_URL}/${CLI_NAME}"
 KERNEL_URL="${BASE_URL}/${KERNEL_NAME}"
 TUI_URL="${BASE_URL}/${TUI_NAME}"
 ASSETS_URL="${BASE_URL}/${ASSETS_NAME}"
@@ -223,30 +225,34 @@ if [ -f "${VERSION_FILE}" ]; then
   INSTALLED_VERSION="$(tr -d '\n' < "${VERSION_FILE}")"
 fi
 
-if [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; then
+if [ -x "${INSTALL_DIR}/crona" ] || [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; then
   prompt_replace "${INSTALLED_VERSION}"
 fi
 
 stop_running_kernel_at "${CRONA_HOME}"
 
 CHECKSUMS_FILE="${TMP_DIR}/checksums.txt"
+CLI_FILE="${TMP_DIR}/${CLI_NAME}"
 KERNEL_FILE="${TMP_DIR}/${KERNEL_NAME}"
 TUI_FILE="${TMP_DIR}/${TUI_NAME}"
 ASSETS_FILE="${TMP_DIR}/${ASSETS_NAME}"
 
 echo "Installing Crona ${VERSION} to ${INSTALL_DIR}"
 curl -fsSL "${CHECKSUMS_URL}" -o "${CHECKSUMS_FILE}"
+curl -fsSL "${CLI_URL}" -o "${CLI_FILE}"
 curl -fsSL "${KERNEL_URL}" -o "${KERNEL_FILE}"
 curl -fsSL "${TUI_URL}" -o "${TUI_FILE}"
 curl -fsSL "${ASSETS_URL}" -o "${ASSETS_FILE}"
 
 verify_nonempty "${CHECKSUMS_FILE}"
+verify_nonempty "${CLI_FILE}"
 verify_nonempty "${KERNEL_FILE}"
 verify_nonempty "${TUI_FILE}"
 verify_nonempty "${ASSETS_FILE}"
-verify_checksums "${KERNEL_NAME}" "${TUI_NAME}" "${ASSETS_NAME}"
+verify_checksums "${CLI_NAME}" "${KERNEL_NAME}" "${TUI_NAME}" "${ASSETS_NAME}"
 
-chmod +x "${KERNEL_FILE}" "${TUI_FILE}"
+chmod +x "${CLI_FILE}" "${KERNEL_FILE}" "${TUI_FILE}"
+mv "${CLI_FILE}" "${INSTALL_DIR}/crona"
 mv "${KERNEL_FILE}" "${INSTALL_DIR}/crona-kernel"
 mv "${TUI_FILE}" "${INSTALL_DIR}/crona-tui"
 rm -rf "${ASSETS_DIR}/export"
@@ -255,6 +261,7 @@ printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
 
 echo
 echo "Installed:"
+echo "  ${INSTALL_DIR}/crona"
 echo "  ${INSTALL_DIR}/crona-kernel"
 echo "  ${INSTALL_DIR}/crona-tui"
 echo "  runtime data: ${CRONA_HOME}"
@@ -262,4 +269,4 @@ echo "  ${ASSETS_DIR}/export"
 echo
 echo "Make sure ${INSTALL_DIR} is on your PATH."
 echo "Then run:"
-echo "  crona-tui"
+echo "  crona"

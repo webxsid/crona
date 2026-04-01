@@ -23,7 +23,9 @@ Crona is built around a few simple ideas:
 The beta ships as prebuilt binaries. End users do not need Go installed.
 
 Installed binaries:
+- `crona`
 - `crona-tui`
+- `crona-kernel`
 - `crona-kernel`
 
 ### macOS And Linux
@@ -31,19 +33,19 @@ Installed binaries:
 Install the current beta:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh | sh
 ```
 
 Force a non-interactive reinstall:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
 ```
 
 Run the installer from a downloaded file:
 
 ```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.3.1/install-crona-tui.sh
+curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh
 sh /tmp/install-crona-tui.sh
 ```
 
@@ -52,7 +54,7 @@ sh /tmp/install-crona-tui.sh
 Install from PowerShell:
 
 ```powershell
-$version = "v0.3.1"
+$version = "v0.4.0-beta.1"
 Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
@@ -71,10 +73,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui
 Launch the TUI:
 
 ```bash
-crona-tui
+crona
 ```
 
 The TUI starts the local kernel automatically when needed.
+`crona-tui` remains available as a compatibility entrypoint.
 
 You can inspect the kernel directly from the CLI:
 
@@ -213,7 +216,7 @@ $env:CRONA_ENV = "Dev"
 go build -o .\bin\crona-kernel-dev.exe .\kernel\cmd\crona-kernel
 go build -o .\bin\crona-tui-dev.exe .\tui
 $env:PATH = "$PWD\bin;$env:PATH"
-.\bin\crona-tui-dev.exe
+.\bin\crona-dev.exe
 ```
 
 If you want to start the kernel explicitly in a separate terminal:

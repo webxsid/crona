@@ -26,11 +26,13 @@ var (
 	runtimeBaseDir = config.RuntimeBaseDir
 	readFileFn     = os.ReadFile
 	kernelBinaryFn = config.KernelBinaryName
+	tuiBinaryFn    = config.TUIBinaryName
 	osExecutableFn = os.Executable
 	execLookPathFn = exec.LookPath
 	osStatFn       = os.Stat
 	osGetwdFn      = os.Getwd
 	startKernelFn  = startKernel
+	launchTUIFn    = launchTUI
 	timeSleepFn    = time.Sleep
 )
 
@@ -42,7 +44,10 @@ func main() {
 }
 
 func run(args []string) error {
-	if len(args) == 0 || isHelpArg(args[0]) {
+	if len(args) == 0 {
+		return launchTUIFn()
+	}
+	if isHelpArg(args[0]) {
 		fmt.Print(rootUsage())
 		return nil
 	}
@@ -454,7 +459,9 @@ func isHelpArg(value string) bool {
 }
 
 func rootUsage() string {
-	return fmt.Sprintf(`Usage: %s <command> [args]
+	return fmt.Sprintf(`Usage: %s [command] [args]
+
+Run without a command to open the TUI.
 
 Commands:
   help
@@ -749,6 +756,57 @@ func kernelLaunchCandidates() []launchCandidate {
 	return candidates
 }
 
+func launchTUI() error {
+	candidates := tuiLaunchCandidates()
+	if len(candidates) == 0 {
+		return errors.New("no TUI launcher candidates found")
+	}
+	failures := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		if err := runForeground(candidate); err == nil {
+			return nil
+		} else {
+			failures = append(failures, fmt.Sprintf("%s: %v", candidate.name, err))
+		}
+	}
+	return errors.New(strings.Join(failures, "; "))
+}
+
+func tuiLaunchCandidates() []launchCandidate {
+	candidates := make([]launchCandidate, 0, 3)
+	seen := make(map[string]struct{})
+	add := func(candidate launchCandidate) {
+		key := candidate.cmd + "\x00" + strings.Join(candidate.args, "\x00") + "\x00" + candidate.dir
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		candidates = append(candidates, candidate)
+	}
+	if exe, err := osExecutableFn(); err == nil {
+		tuiName := tuiBinaryFn()
+		sibling := filepath.Join(filepath.Dir(exe), tuiName)
+		if info, err := osStatFn(sibling); err == nil && !info.IsDir() {
+			add(launchCandidate{name: "sibling " + tuiName, cmd: sibling})
+		}
+	}
+	if pathCmd, err := execLookPathFn(tuiBinaryFn()); err == nil {
+		add(launchCandidate{name: "PATH " + tuiBinaryFn(), cmd: pathCmd})
+	}
+	if repoRoot, err := findRepoRoot(); err == nil {
+		repoBin := filepath.Join(repoRoot, "bin", tuiBinaryFn())
+		if info, err := osStatFn(repoBin); err == nil && !info.IsDir() {
+			add(launchCandidate{name: "repo bin " + tuiBinaryFn(), cmd: repoBin})
+		}
+		if _, err := osStatFn(filepath.Join(repoRoot, "tui")); err == nil {
+			if goCmd, lookErr := execLookPathFn("go"); lookErr == nil {
+				add(launchCandidate{name: "repo-local go run", cmd: goCmd, args: []string{"run", "./tui"}, dir: repoRoot})
+			}
+		}
+	}
+	return candidates
+}
+
 func findRepoRoot() (string, error) {
 	starts := make([]string, 0, 2)
 	if wd, err := osGetwdFn(); err == nil {
@@ -808,6 +866,15 @@ func startKernel(candidate launchCandidate) error {
 	case <-time.After(300 * time.Millisecond):
 		return nil
 	}
+}
+
+func runForeground(candidate launchCandidate) error {
+	cmd := exec.Command(candidate.cmd, candidate.args...)
+	cmd.Dir = candidate.dir
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func zshCompletion() string {

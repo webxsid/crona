@@ -216,17 +216,61 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 	}
 }
 
+func TestRunNoArgsLaunchesTUI(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	called := false
+	launchTUIFn = func() error {
+		called = true
+		return nil
+	}
+
+	if err := run(nil); err != nil {
+		t.Fatalf("run no args: %v", err)
+	}
+	if !called {
+		t.Fatalf("expected no-arg run to launch TUI")
+	}
+}
+
+func TestRunHelpFlagStillPrintsUsage(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	called := false
+	launchTUIFn = func() error {
+		called = true
+		return nil
+	}
+
+	output := captureStdout(t, func() {
+		if err := run([]string{"--help"}); err != nil {
+			t.Fatalf("run help: %v", err)
+		}
+	})
+
+	if called {
+		t.Fatalf("expected help flag to avoid launching TUI")
+	}
+	if !strings.Contains(output, "Run without a command to open the TUI.") {
+		t.Fatalf("expected updated usage output, got:\n%s", output)
+	}
+}
+
 func stubCLIEnv() func() {
 	origCallKernel := callKernelFn
 	origEnsureKernel := ensureKernelFn
 	origRuntimeBaseDir := runtimeBaseDir
 	origReadFile := readFileFn
 	origKernelBinary := kernelBinaryFn
+	origTUIBinary := tuiBinaryFn
 	origExecutable := osExecutableFn
 	origLookPath := execLookPathFn
 	origStat := osStatFn
 	origGetwd := osGetwdFn
 	origStartKernel := startKernelFn
+	origLaunchTUI := launchTUIFn
 	origSleep := timeSleepFn
 
 	return func() {
@@ -235,11 +279,13 @@ func stubCLIEnv() func() {
 		runtimeBaseDir = origRuntimeBaseDir
 		readFileFn = origReadFile
 		kernelBinaryFn = origKernelBinary
+		tuiBinaryFn = origTUIBinary
 		osExecutableFn = origExecutable
 		execLookPathFn = origLookPath
 		osStatFn = origStat
 		osGetwdFn = origGetwd
 		startKernelFn = origStartKernel
+		launchTUIFn = origLaunchTUI
 		timeSleepFn = origSleep
 	}
 }

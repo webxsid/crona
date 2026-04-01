@@ -123,10 +123,8 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Phase 4.1 Windows runtime support works from PowerShell without requiring in-app install
 - [x] Phase 4.2 native Windows packaging and self-update are available
 
-## Phase 5 — Dashboards And YAML Customisation
-Keep the next phase focused on clearer dashboards and a lightweight configurable surface instead of expanding into a larger widget/CLI program.
+## Phase 5 — Dashboards
 
-### Phase 5.1 — Basic Dashboards
 - [x] Wellbeing dashboard visual refresh with compact cards and an activity heatmap
 - [x] Narrative report template refresh with preset styles and stronger PDF presentation
 - [x] Dedicated rollup dashboard with a default weekly window and adjustable start/end dates
@@ -136,19 +134,6 @@ Keep the next phase focused on clearer dashboards and a lightweight configurable
 - [x] Estimate-bias summary metric for average over/under-estimation across worked issues
 - [x] Small-screen dashboard layouts keep daily and wellbeing views glanceable without hiding critical content
 - [x] Dashboard and report copy stays short, numeric, and visually scannable by default
-- [ ] Daily dashboard expansion with more execution-first summaries without reintroducing weekly clutter
-- [ ] Default dashboard broader summary coverage may still grow, but rollup analytics now live in the dedicated Rollup view
-
-### Phase 5.2 — YAML Configurable Dashboards
-- [ ] YAML-based dashboard configuration
-- [ ] Configurable section ordering and enable/disable per dashboard view
-- [ ] Configurable scope and date-window per section
-- [ ] Configurable streak sections
-- [ ] Configurable heatmap sections
-- [ ] Configurable line-graph sections
-- [ ] Configurable bar-graph sections
-- [ ] Pre-built starter YAML layouts for daily-focused, wellbeing-focused, and accountability-focused setups
-- [ ] Keep customization terminal-native: stacked sections, simple splits, and fixed section types instead of freeform layout
 
 ## Phase 6 — OS Integrations
 - [ ] Native OS bridge for notifications, audible timer alerts, and permission-aware delivery
@@ -178,7 +163,29 @@ Keep the next phase focused on clearer dashboards and a lightweight configurable
 - [ ] Feedback / issue intake path is defined for beta users
 - [ ] Core TUI and kernel flows are stable enough for public beta usage
 
-## Phase 8 — Multi-Device Sync
+## Phase 8 — Bulk Issue Import
+Introduce a watched inbox for bulk issue creation so users can drop structured files into Crona without going through the TUI one item at a time.
+
+- [ ] Watched import inbox path for bulk issue intake
+- [ ] Predefined YAML-based issue import format
+- [ ] Create-only import flow in v1
+- [ ] Processed / archived / failed file handling for imports
+- [ ] Import status visibility and last-run feedback in Crona
+
+## Phase 9 — Configurable Dashboards
+Introduce a constrained YAML-driven dashboard composition layer on top of the stable summary APIs and terminal-native section renderers. This is post-stable product work, not a blocker for the stable release.
+
+- [ ] YAML-based dashboard configuration
+- [ ] Configurable section ordering and enable/disable per dashboard view
+- [ ] Configurable scope and date-window per section
+- [ ] Configurable streak sections
+- [ ] Configurable heatmap sections
+- [ ] Configurable line-graph sections
+- [ ] Configurable bar-graph sections
+- [ ] Pre-built starter YAML layouts for daily-focused, wellbeing-focused, and accountability-focused setups
+- [ ] Keep customization terminal-native: stacked sections, simple splits, and fixed section types instead of freeform layout
+
+## Phase 10 — Multi-Device Sync
 See `FEATURE.md` for design proposal.
 
 - [ ] Op log export/import
@@ -186,6 +193,15 @@ See `FEATURE.md` for design proposal.
 - [ ] Self-hosted sync relay (Docker, optional)
 - [ ] Conflict resolution strategy
 - [ ] Per-device context isolation
+
+## Phase 11 — Local Companion
+Introduce an explicit local desktop companion for users running Crona remotely so notifications and open actions can still happen on their local machine.
+
+- [ ] Opt-in local companion process for desktop-local actions
+- [ ] Bridge local notifications for remote/server-hosted Crona
+- [ ] Bridge local open actions for URL, file, and editor targets
+- [ ] Clear unavailable-state UX when the companion is disabled or unreachable
+- [ ] Keep the companion constrained to typed desktop actions instead of arbitrary command execution
 
 ## Deferred
 - [ ] Full public CLI expansion beyond the current scriptable shell surface

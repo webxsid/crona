@@ -121,6 +121,7 @@ $runtimeDir = Get-RuntimeDir
 $assetsDir = Join-Path $runtimeDir "assets\bundled"
 $archSuffix = Get-ArchSuffix
 $baseUrl = "https://github.com/$Repo/releases/download/$Version"
+$cliName = "crona-$Version-windows-$archSuffix.exe"
 $kernelName = "crona-kernel-$Version-windows-$archSuffix.exe"
 $tuiName = "crona-tui-$Version-windows-$archSuffix.exe"
 $assetsName = "crona-assets-$Version.tar.gz"
@@ -135,20 +136,24 @@ New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 
 try {
     $checksumsPath = Join-Path $tmpDir $checksumsName
+    $cliPath = Join-Path $tmpDir $cliName
     $kernelPath = Join-Path $tmpDir $kernelName
     $tuiPath = Join-Path $tmpDir $tuiName
     $assetsPath = Join-Path $tmpDir $assetsName
 
     Write-Host "Installing Crona $Version to $installDir"
     Invoke-WebRequest -Uri "$baseUrl/$checksumsName" -OutFile $checksumsPath
+    Invoke-WebRequest -Uri "$baseUrl/$cliName" -OutFile $cliPath
     Invoke-WebRequest -Uri "$baseUrl/$kernelName" -OutFile $kernelPath
     Invoke-WebRequest -Uri "$baseUrl/$tuiName" -OutFile $tuiPath
     Invoke-WebRequest -Uri "$baseUrl/$assetsName" -OutFile $assetsPath
 
+    Verify-Checksum $cliPath (Get-ExpectedChecksum $checksumsPath $cliName)
     Verify-Checksum $kernelPath (Get-ExpectedChecksum $checksumsPath $kernelName)
     Verify-Checksum $tuiPath (Get-ExpectedChecksum $checksumsPath $tuiName)
     Verify-Checksum $assetsPath (Get-ExpectedChecksum $checksumsPath $assetsName)
 
+    Move-Item -Force $cliPath (Join-Path $installDir "crona.exe")
     Move-Item -Force $kernelPath (Join-Path $installDir "crona-kernel.exe")
     Move-Item -Force $tuiPath (Join-Path $installDir "crona-tui.exe")
 
@@ -162,6 +167,7 @@ try {
 
     Write-Host ""
     Write-Host "Installed:"
+    Write-Host "  $(Join-Path $installDir 'crona.exe')"
     Write-Host "  $(Join-Path $installDir 'crona-kernel.exe')"
     Write-Host "  $(Join-Path $installDir 'crona-tui.exe')"
     Write-Host "  runtime data: $runtimeDir"
@@ -169,7 +175,7 @@ try {
     Write-Host ""
     Write-Host "Open a new PowerShell session if PATH changes are not visible yet."
     Write-Host "Then run:"
-    Write-Host "  crona-tui"
+    Write-Host "  crona"
 }
 finally {
     if (Test-Path $tmpDir) {

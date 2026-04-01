@@ -41,6 +41,7 @@ expected_files() {
   echo "crona-assets-${VERSION}.tar.gz"
   printf '%s\n' "${TARGETS}" | while read -r GOOS GOARCH; do
     [ -n "${GOOS}" ] || continue
+    binary_name "crona-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}"
     binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}"
     binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}"
   done
@@ -71,8 +72,11 @@ echo "${TARGETS}" | while read -r GOOS GOARCH; do
   [ -n "${GOOS}" ] || continue
 
   echo "Building ${GOOS}/${GOARCH}"
+  cli_output="$(binary_name "crona-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
   kernel_output="$(binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
   tui_output="$(binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+  env CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" GOCACHE="${GOCACHE_DIR}" \
+    go build -o "${RELEASE_DIR}/${cli_output}" ./cli/cmd/crona
   env CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" GOCACHE="${GOCACHE_DIR}" \
     go build -o "${RELEASE_DIR}/${kernel_output}" ./kernel/cmd/crona-kernel
   env CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" GOCACHE="${GOCACHE_DIR}" \

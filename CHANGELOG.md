@@ -2,7 +2,7 @@
 
 All notable changes to **Crona** are documented here.
 
-## [Unreleased]
+## [0.4.0-beta.1] - 2026-04-01
 
 ### Added
 - Manual session logging from issue-level workflows, including automatic `in_progress` transition when the target issue is focusable but not yet started.
@@ -17,6 +17,7 @@ All notable changes to **Crona** are documented here.
 - Settings and Config are now grouped into clearer categories instead of one long flat list.
 - Wellbeing now surfaces compact visual cards and a terminal-friendly recent-activity heatmap instead of relying on long text blocks alone.
 - Report generation now uses a guided two-step export flow so users choose a category before the concrete report/export type.
+- Public release bundles now include the `crona` CLI, and running `crona` with no args now opens the TUI while `crona-tui` remains available for compatibility.
 - Dialogs now render their own validation/runtime errors, use consistent `Ctrl+S` submit behavior for forms, and keep field-aware footer hints.
 - Self-update now uses a dedicated install takeover screen with phase-based progress and a quiet relaunch handoff.
 - Daily and weekly PDF narrative exports now use dedicated HTML/CSS templates instead of reusing the Markdown pipeline.
