@@ -49,8 +49,11 @@ type MessageState struct {
 	UpdateStatus          *api.UpdateStatus
 	UpdateChecking        bool
 	UpdateInstalling      bool
+	UpdateInstallPhase    string
+	UpdateInstallDetail   string
 	UpdateInstallOutput   string
 	UpdateInstallError    string
+	UpdateInstallProgress <-chan tea.Msg
 	Settings              *api.CoreSettings
 	KernelInfo            *api.KernelInfo
 	Elapsed               int
@@ -308,13 +311,50 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			return state, deps.SetStatus(&state, "No update prompt dismissed", false), true
 		}
 		return state, deps.SetStatus(&state, "Update prompt dismissed for v"+msg.Status.DismissedVersion, false), true
+	case commands.UpdateInstallStartedMsg:
+		state.View = uistate.ViewUpdates
+		state.Pane = uistate.DefaultPane(state.View)
+		state.UpdateInstalling = true
+		state.UpdateInstallPhase = "starting"
+		state.UpdateInstallDetail = "Preparing update..."
+		state.UpdateInstallOutput = ""
+		state.UpdateInstallError = ""
+		state.UpdateInstallProgress = msg.Progress
+		deps.CloseEventStop()
+		return state, commands.WaitForUpdateInstall(msg.Progress), true
+	case commands.UpdateInstallPhaseMsg:
+		state.View = uistate.ViewUpdates
+		state.Pane = uistate.DefaultPane(state.View)
+		state.UpdateInstalling = true
+		if strings.TrimSpace(msg.Phase) != "" {
+			state.UpdateInstallPhase = strings.TrimSpace(msg.Phase)
+		}
+		state.UpdateInstallDetail = strings.TrimSpace(msg.Detail)
+		if chunk := strings.TrimSpace(msg.Output); chunk != "" {
+			if strings.TrimSpace(state.UpdateInstallOutput) == "" {
+				state.UpdateInstallOutput = chunk
+			} else {
+				state.UpdateInstallOutput = strings.TrimSpace(state.UpdateInstallOutput) + "\n" + chunk
+			}
+		}
+		if state.UpdateInstallProgress != nil {
+			return state, commands.WaitForUpdateInstall(state.UpdateInstallProgress), true
+		}
+		return state, nil, true
 	case commands.UpdateInstallFinishedMsg:
 		state.UpdateInstalling = false
 		state.UpdateInstallOutput = strings.TrimSpace(msg.Output)
+		state.UpdateInstallProgress = nil
 		if msg.Err != nil {
+			state.View = uistate.ViewUpdates
+			state.Pane = uistate.DefaultPane(state.View)
+			state.UpdateInstallPhase = "failed"
+			state.UpdateInstallDetail = "Update failed"
 			state.UpdateInstallError = msg.Err.Error()
 			return state, nil, true
 		}
+		state.UpdateInstallPhase = "relaunching"
+		state.UpdateInstallDetail = "Relaunching Crona..."
 		deps.CloseEventStop()
 		return state, tea.Quit, true
 	case commands.SettingsLoadedMsg:
@@ -325,6 +365,9 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.KernelInfo = msg.Info
 		return state, nil, true
 	case commands.HealthTickMsg:
+		if state.UpdateInstalling {
+			return state, nil, true
+		}
 		return state, tea.Batch(deps.LoadHealth(), deps.HealthTickAfter()), true
 	case commands.ClearStatusMsg:
 		if msg.Seq != state.StatusSeq {
@@ -383,9 +426,16 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		}
 		return state, nil, true
 	case commands.KernelEventMsg:
+		if state.UpdateInstalling {
+			return state, nil, true
+		}
 		updated, cmd := deps.HandleKernelEvent(state, msg.Event)
 		return updated, tea.Batch(cmd, deps.WaitForEvent()), true
 	case commands.ErrMsg:
+		if shouldSuppressUpdateInstallError(state, msg.Err) {
+			logger.Infof("suppressing expected update handoff error: %v", msg.Err)
+			return state, nil, true
+		}
 		if state.Dialog != "" {
 			if isExportDialog(state.Dialog) && state.DialogProcessing {
 				state.DialogProcessing = false
@@ -453,6 +503,34 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	default:
 		return state, nil, false
 	}
+}
+
+func shouldSuppressUpdateInstallError(state MessageState, err error) bool {
+	if !state.UpdateInstalling || err == nil {
+		return false
+	}
+	return isExpectedUpdateTransportError(err.Error())
+}
+
+func isExpectedUpdateTransportError(raw string) bool {
+	value := strings.ToLower(strings.TrimSpace(raw))
+	if value == "" {
+		return false
+	}
+	for _, fragment := range []string{
+		"dial unix",
+		"connect: connection refused",
+		"no such file or directory",
+		"broken pipe",
+		"socket",
+		"deadline exceeded",
+		"eof",
+	} {
+		if strings.Contains(value, fragment) {
+			return true
+		}
+	}
+	return false
 }
 
 func isExportDialog(kind string) bool {

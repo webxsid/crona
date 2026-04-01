@@ -323,6 +323,16 @@ func WaitForEvent(ch <-chan api.KernelEvent) tea.Cmd {
 	}
 }
 
+func WaitForUpdateInstall(ch <-chan tea.Msg) tea.Cmd {
+	return func() tea.Msg {
+		msg, ok := <-ch
+		if !ok {
+			return nil
+		}
+		return msg
+	}
+}
+
 func LoadWellbeing(c *api.Client, date string) tea.Cmd {
 	start := shiftISODate(date, -6)
 	return tea.Batch(

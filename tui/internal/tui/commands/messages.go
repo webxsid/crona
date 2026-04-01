@@ -1,6 +1,10 @@
 package commands
 
-import "crona/tui/internal/api"
+import (
+	"crona/tui/internal/api"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type ReposLoadedMsg struct{ Repos []api.Repo }
 type StreamsLoadedMsg struct{ Streams []api.Stream }
@@ -52,9 +56,19 @@ type TimerLoadedMsg struct{ Timer *api.TimerState }
 type HealthLoadedMsg struct{ Health *api.Health }
 type UpdateStatusLoadedMsg struct{ Status *api.UpdateStatus }
 type UpdateDismissedMsg struct{ Status *api.UpdateStatus }
+type UpdateInstallStartedMsg struct {
+	Progress <-chan tea.Msg
+}
+type UpdateInstallPhaseMsg struct {
+	Phase    string
+	Detail   string
+	Output   string
+	Progress <-chan tea.Msg
+}
 type UpdateInstallFinishedMsg struct {
-	Output string
-	Err    error
+	Output          string
+	Err             error
+	RelaunchStarted bool
 }
 type SettingsLoadedMsg struct{ Settings *api.CoreSettings }
 type KernelInfoLoadedMsg struct{ Info *api.KernelInfo }

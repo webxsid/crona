@@ -120,6 +120,8 @@ type Model struct {
 	updateStatus          *api.UpdateStatus
 	updateChecking        bool
 	updateInstalling      bool
+	updateInstallPhase    string
+	updateInstallDetail   string
 	updateInstallOutput   string
 	updateInstallError    string
 	currentExecutablePath string
@@ -218,6 +220,14 @@ func (m Model) selfUpdateUnsupportedReason() string {
 		return reason
 	}
 	return ""
+}
+
+func (m *Model) stopEventStream() {
+	if m.eventStop == nil {
+		return
+	}
+	close(m.eventStop)
+	m.eventStop = nil
 }
 
 func kernelEnvMode(info *api.KernelInfo) string {
@@ -406,6 +416,8 @@ func (m Model) inputState() inputpkg.State {
 		UpdateStatus:        m.updateStatus,
 		UpdateChecking:      m.updateChecking,
 		UpdateInstalling:    m.updateInstalling,
+		UpdateInstallPhase:  m.updateInstallPhase,
+		UpdateInstallDetail: m.updateInstallDetail,
 		UpdateInstallOutput: m.updateInstallOutput,
 		UpdateInstallError:  m.updateInstallError,
 		CurrentExecutable:   m.currentExecutablePath,
@@ -437,6 +449,8 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
 	m.updateInstalling = state.UpdateInstalling
+	m.updateInstallPhase = state.UpdateInstallPhase
+	m.updateInstallDetail = state.UpdateInstallDetail
 	m.updateInstallOutput = state.UpdateInstallOutput
 	m.updateInstallError = state.UpdateInstallError
 	m.currentExecutablePath = state.CurrentExecutable
@@ -448,7 +462,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 
 func (m Model) inputDeps() inputpkg.Deps {
 	return inputpkg.Deps{
-		CloseEventStop: func() { close(m.eventStop) },
+		CloseEventStop: func() { m.stopEventStream() },
 		ShutdownKernel: func() tea.Cmd { return commands.ShutdownKernel(m.client) },
 		SeedDevData:    func() tea.Cmd { return commands.SeedDevData(m.client) },
 		ClearDevData:   func() tea.Cmd { return commands.ClearDevData(m.client) },

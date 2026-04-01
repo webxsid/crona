@@ -54,85 +54,123 @@ func OpenExternalURL(rawURL string) tea.Cmd {
 
 func InstallUpdate(status *api.UpdateStatus, currentExecutablePath string, supported bool, unsupportedReason string) tea.Cmd {
 	return func() tea.Msg {
-		if status == nil {
-			return UpdateInstallFinishedMsg{Err: fmt.Errorf("update status is unavailable")}
-		}
-		if !supported {
-			reason := strings.TrimSpace(unsupportedReason)
-			if reason == "" {
-				reason = "You seem to be running the app from a non-standard location. Please update manually."
-			}
-			return UpdateInstallFinishedMsg{Err: fmt.Errorf("%s", reason)}
-		}
-		if !status.InstallAvailable {
-			reason := strings.TrimSpace(status.InstallUnavailableReason)
-			if reason == "" {
-				reason = "release is missing required installer assets"
-			}
-			return UpdateInstallFinishedMsg{Err: fmt.Errorf("install unavailable: %s", reason)}
-		}
+		progress := make(chan tea.Msg, 16)
+		go runInstallUpdate(progress, status, currentExecutablePath, supported, unsupportedReason)
+		return UpdateInstallStartedMsg{Progress: progress}
+	}
+}
 
-		installURL := strings.TrimSpace(status.InstallScriptURL)
-		checksumsURL := strings.TrimSpace(status.ChecksumsURL)
-		if installURL == "" || checksumsURL == "" {
-			return UpdateInstallFinishedMsg{Err: fmt.Errorf("install metadata is incomplete")}
-		}
+func runInstallUpdate(progress chan<- tea.Msg, status *api.UpdateStatus, currentExecutablePath string, supported bool, unsupportedReason string) {
+	defer close(progress)
+	sendInstallPhase(progress, "starting", "Preparing update...", "")
 
-		tmpDir, err := os.MkdirTemp("", "crona-update-*")
-		if err != nil {
-			return UpdateInstallFinishedMsg{Err: err}
+	if status == nil {
+		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("update status is unavailable")}
+		return
+	}
+	if !supported {
+		reason := strings.TrimSpace(unsupportedReason)
+		if reason == "" {
+			reason = "You seem to be running the app from a non-standard location. Please update manually."
 		}
-		defer os.RemoveAll(tmpDir)
+		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("%s", reason)}
+		return
+	}
+	if !status.InstallAvailable {
+		reason := strings.TrimSpace(status.InstallUnavailableReason)
+		if reason == "" {
+			reason = "release is missing required installer assets"
+		}
+		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("install unavailable: %s", reason)}
+		return
+	}
 
-		checksumsPath := filepath.Join(tmpDir, "checksums.txt")
-		output, err := downloadFile(checksumsURL, checksumsPath)
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: err}
-		}
-		checksumsBody, err := os.ReadFile(checksumsPath)
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: err}
-		}
+	installURL := strings.TrimSpace(status.InstallScriptURL)
+	checksumsURL := strings.TrimSpace(status.ChecksumsURL)
+	if installURL == "" || checksumsURL == "" {
+		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("install metadata is incomplete")}
+		return
+	}
 
-		installerAssetName := config.InstallerAssetName()
-		scriptPath := filepath.Join(tmpDir, installerAssetName)
-		scriptOutput, err := downloadAndVerifyAsset(installURL, scriptPath, installerAssetName, checksumsBody)
-		output += scriptOutput
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: err}
-		}
-		if runtime.GOOS != "windows" {
-			if err := os.Chmod(scriptPath, 0o755); err != nil {
-				return UpdateInstallFinishedMsg{Output: output, Err: err}
-			}
-		}
+	tmpDir, err := os.MkdirTemp("", "crona-update-*")
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Err: err}
+		return
+	}
+	defer os.RemoveAll(tmpDir)
 
-		installCmd, err := updateInstallCommand(scriptPath)
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: err}
-		}
-		installCmd.Env = append(os.Environ(), "CRONA_INSTALL_FORCE=1")
-		installOutput, err := installCmd.CombinedOutput()
-		output += string(installOutput)
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install failed: %w", err)}
-		}
+	sendInstallPhase(progress, "downloading", "Downloading checksums...", "")
+	checksumsPath := filepath.Join(tmpDir, "checksums.txt")
+	output, err := downloadFile(checksumsURL, checksumsPath)
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
+		return
+	}
+	sendInstallPhase(progress, "downloading", "Downloading installer...", output)
+	checksumsBody, err := os.ReadFile(checksumsPath)
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
+		return
+	}
 
-		relaunchPath, err := resolveRelaunchPath(currentExecutablePath)
-		if err != nil {
-			return UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install succeeded but %w", err)}
+	installerAssetName := config.InstallerAssetName()
+	scriptPath := filepath.Join(tmpDir, installerAssetName)
+	scriptOutput, err := downloadAndVerifyAsset(installURL, scriptPath, installerAssetName, checksumsBody)
+	output += scriptOutput
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
+		return
+	}
+	sendInstallPhase(progress, "verifying", "Verifying installer...", scriptOutput)
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(scriptPath, 0o755); err != nil {
+			progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
+			return
 		}
-		relaunchCmd := exec.Command(relaunchPath)
-		relaunchCmd.Stdin = nil
-		relaunchCmd.Stdout = nil
-		relaunchCmd.Stderr = nil
-		if err := relaunchCmd.Start(); err != nil {
-			return UpdateInstallFinishedMsg{
-				Output: output,
-				Err:    fmt.Errorf("install succeeded but relaunch failed: %w. Run %s manually", err, relaunchPath),
-			}
+	}
+
+	installCmd, err := updateInstallCommand(scriptPath)
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
+		return
+	}
+	sendInstallPhase(progress, "installing", "Installing update...", "")
+	installCmd.Env = append(os.Environ(), "CRONA_INSTALL_FORCE=1")
+	installOutput, err := installCmd.CombinedOutput()
+	output += string(installOutput)
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install failed: %w", err)}
+		return
+	}
+
+	relaunchPath, err := resolveRelaunchPath(currentExecutablePath)
+	if err != nil {
+		progress <- UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install succeeded but %w", err)}
+		return
+	}
+	sendInstallPhase(progress, "relaunching", "Relaunching Crona...", "")
+	relaunchCmd := exec.Command(relaunchPath)
+	relaunchCmd.Stdin = nil
+	relaunchCmd.Stdout = nil
+	relaunchCmd.Stderr = nil
+	if err := relaunchCmd.Start(); err != nil {
+		progress <- UpdateInstallFinishedMsg{
+			Output: output,
+			Err:    fmt.Errorf("install succeeded but relaunch failed: %w. Run %s manually", err, relaunchPath),
 		}
-		return UpdateInstallFinishedMsg{Output: output + fmt.Sprintf("Relaunched %s\n", relaunchPath)}
+		return
+	}
+	progress <- UpdateInstallFinishedMsg{
+		Output:          output + fmt.Sprintf("Relaunched %s\n", relaunchPath),
+		RelaunchStarted: true,
+	}
+}
+
+func sendInstallPhase(progress chan<- tea.Msg, phase string, detail string, output string) {
+	progress <- UpdateInstallPhaseMsg{
+		Phase:  phase,
+		Detail: detail,
+		Output: output,
 	}
 }
 

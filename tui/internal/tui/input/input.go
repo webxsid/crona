@@ -34,6 +34,8 @@ type State struct {
 	UpdateStatus        *api.UpdateStatus
 	UpdateChecking      bool
 	UpdateInstalling    bool
+	UpdateInstallPhase  string
+	UpdateInstallDetail string
 	UpdateInstallOutput string
 	UpdateInstallError  string
 	CurrentExecutable   string

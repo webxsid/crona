@@ -25,6 +25,7 @@ type State struct {
 	View               uistate.View
 	Pane               uistate.Pane
 	ProtectedMode      bool
+	UpdateInstallOpen  bool
 	IsDevMode          bool
 	RepoName           string
 	StreamName         string
@@ -66,6 +67,9 @@ func Render(state State) string {
 	if state.Width < MinWidth || state.Height < MinHeight {
 		return renderMinimumSizeWarning(state.Width, state.Height)
 	}
+	if state.UpdateInstallOpen {
+		return renderUpdateInstallScreen(state)
+	}
 
 	baseParts := []string{}
 	if !state.ProtectedMode {
@@ -94,6 +98,78 @@ func Render(state State) string {
 		return clipViewportString(renderOverlay(base, overlay, 1, max(0, state.Height-overlayHeight(overlay)-1), state.Width, state.Height), state.Width, state.Height)
 	}
 	return clipViewportString(base, state.Width, state.Height)
+}
+
+func renderUpdateInstallScreen(state State) string {
+	theme := ViewTheme()
+	title := "Updating Crona"
+	detail := strings.TrimSpace(state.ContentState.UpdateInstallDetail)
+	if detail == "" {
+		detail = "Installing update..."
+	}
+	phase := updateInstallPhaseLabel(state.ContentState.UpdateInstallPhase)
+	rows := []string{
+		theme.StylePaneTitle.Render(title),
+		"",
+		theme.StyleHeader.Render(phase),
+		theme.StyleNormal.Render(detail),
+	}
+	if strings.TrimSpace(state.ContentState.UpdateInstallError) != "" {
+		rows = append(rows,
+			"",
+			theme.StyleError.Render("Update failed"),
+			theme.StyleNormal.Render(strings.TrimSpace(state.ContentState.UpdateInstallError)),
+		)
+	}
+	if output := strings.TrimSpace(state.ContentState.UpdateInstallOutput); output != "" {
+		rows = append(rows,
+			"",
+			theme.StyleDim.Render("Recent output"),
+			theme.StyleNormal.Render(tailLines(output, 8)),
+		)
+	}
+	if state.ContentState.UpdateInstalling {
+		rows = append(rows, "", theme.StyleDim.Render("Please wait while Crona installs the update and restarts."))
+	} else {
+		rows = append(rows, "", theme.StyleDim.Render("[enter/esc] back to Updates"))
+	}
+	box := lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorYellow).
+		Padding(1, 3).
+		Width(min(state.Width-10, 84)).
+		Render(strings.Join(rows, "\n"))
+	return clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, box), state.Width, state.Height)
+}
+
+func updateInstallPhaseLabel(phase string) string {
+	switch strings.TrimSpace(phase) {
+	case "starting":
+		return "Preparing update"
+	case "downloading":
+		return "Downloading files"
+	case "verifying":
+		return "Verifying files"
+	case "installing":
+		return "Installing update"
+	case "relaunching":
+		return "Relaunching Crona"
+	case "failed":
+		return "Update failed"
+	default:
+		return "Updating"
+	}
+}
+
+func tailLines(value string, limit int) string {
+	if limit <= 0 {
+		return ""
+	}
+	lines := strings.Split(strings.TrimSpace(value), "\n")
+	if len(lines) <= limit {
+		return strings.Join(lines, "\n")
+	}
+	return strings.Join(lines[len(lines)-limit:], "\n")
 }
 
 func renderMinimumSizeWarning(width, height int) string {
