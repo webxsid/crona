@@ -642,6 +642,20 @@ func OpenConfirmDelete(state State, kind, id, label string, repoID, streamID int
 	return state
 }
 
+func OpenConfirmWipeData(state State) State {
+	state = Close(state)
+	state.Kind = "confirm_wipe"
+	state.DeleteLabel = "all Crona runtime data"
+	return state
+}
+
+func OpenConfirmUninstall(state State) State {
+	state = Close(state)
+	state.Kind = "confirm_uninstall"
+	state.DeleteLabel = "the installed Crona binaries and runtime data"
+	return state
+}
+
 func OpenViewEntity(state State, title string, name string, meta string, body string) State {
 	state = Close(state)
 	state.Kind = "view_entity"
@@ -922,6 +936,10 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateCreateScratchpad(state, msg)
 	case "confirm_delete":
 		return updateConfirmDelete(state, msg)
+	case "confirm_wipe":
+		return updateConfirmWipe(state, msg)
+	case "confirm_uninstall":
+		return updateConfirmUninstall(state, msg)
 	case "stash_list":
 		return updateStashList(state, ctx, msg)
 	case "issue_status":
@@ -1180,6 +1198,26 @@ func updateConfirmDelete(state State, msg tea.KeyMsg) (State, *Action, string) {
 		action.Name = state.DeleteKind
 		action.Title = state.DeleteLabel
 		return Close(state), action, ""
+	}
+	return state, nil, ""
+}
+
+func updateConfirmWipe(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "enter":
+		return Close(state), &Action{Kind: "wipe_runtime_data"}, ""
+	}
+	return state, nil, ""
+}
+
+func updateConfirmUninstall(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "enter":
+		return Close(state), &Action{Kind: "uninstall_crona"}, ""
 	}
 	return state, nil, ""
 }

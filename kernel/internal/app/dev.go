@@ -7,6 +7,8 @@ import (
 	"time"
 
 	corecommands "crona/kernel/internal/core/commands"
+	"crona/kernel/internal/export"
+	runtimepkg "crona/kernel/internal/runtime"
 	"crona/kernel/internal/scratchfile"
 	"crona/kernel/internal/store"
 	shareddto "crona/shared/dto"
@@ -19,11 +21,8 @@ func (h *Handler) clearDevData(ctx context.Context) error {
 	if err := store.ClearAllData(ctx, h.core.Store.DB()); err != nil {
 		return fmt.Errorf("clear sqlite data: %w", err)
 	}
-	if err := scratchfile.ClearAll(h.core.ScratchDir); err != nil {
-		return fmt.Errorf("clear scratch files: %w", err)
-	}
-	if err := h.core.InitDefaults(ctx); err != nil {
-		return fmt.Errorf("reinitialize defaults: %w", err)
+	if err := h.resetRuntimeFiles(ctx); err != nil {
+		return err
 	}
 
 	payload, _ := json.Marshal(sharedtypes.TimerState{State: "idle"})
@@ -31,6 +30,33 @@ func (h *Handler) clearDevData(ctx context.Context) error {
 		Type:    sharedtypes.EventTypeTimerState,
 		Payload: payload,
 	})
+	return nil
+}
+
+func (h *Handler) wipeRuntimeData(ctx context.Context) error {
+	h.timer.ClearBoundary()
+	if err := store.ClearAllData(ctx, h.core.Store.DB()); err != nil {
+		return fmt.Errorf("clear sqlite data: %w", err)
+	}
+	return h.resetRuntimeFiles(ctx)
+}
+
+func (h *Handler) resetRuntimeFiles(ctx context.Context) error {
+	if err := runtimepkg.ResetManagedData(h.paths); err != nil {
+		return fmt.Errorf("reset runtime files: %w", err)
+	}
+	if err := runtimepkg.EnsurePaths(h.paths); err != nil {
+		return fmt.Errorf("ensure runtime paths: %w", err)
+	}
+	if err := h.core.InitDefaults(ctx); err != nil {
+		return fmt.Errorf("reinitialize defaults: %w", err)
+	}
+	if _, err := export.EnsureAssets(h.paths); err != nil {
+		return fmt.Errorf("ensure export assets: %w", err)
+	}
+	if err := scratchfile.ClearAll(h.core.ScratchDir); err != nil {
+		return fmt.Errorf("clear scratch files: %w", err)
+	}
 	return nil
 }
 

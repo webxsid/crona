@@ -17,6 +17,7 @@ type settingsVisibleRow struct {
 	Header       bool
 	Text         string
 	SelectableAt int
+	Danger       bool
 }
 
 func renderSettingsView(theme Theme, state ContentState) string {
@@ -48,16 +49,32 @@ func renderSettingsView(theme Theme, state ContentState) string {
 	for i := start; i < end; i++ {
 		row := visibleRows[i]
 		if row.Header {
-			lines = append(lines, theme.StyleHeader.Render(strings.ToUpper(row.Text)))
+			if row.Danger {
+				lines = append(lines, theme.StyleError.Render(strings.ToUpper(row.Text)))
+			} else {
+				lines = append(lines, theme.StyleHeader.Render(strings.ToUpper(row.Text)))
+			}
 			continue
 		}
 		switch {
 		case row.SelectableAt == cur && active:
-			lines = append(lines, theme.StyleCursor.Render("▶ "+row.Text))
+			if row.Danger {
+				lines = append(lines, theme.StyleError.Render("▶ "+row.Text))
+			} else {
+				lines = append(lines, theme.StyleCursor.Render("▶ "+row.Text))
+			}
 		case row.SelectableAt == cur:
-			lines = append(lines, theme.StyleSelected.Render("  "+row.Text))
+			if row.Danger {
+				lines = append(lines, theme.StyleError.Render("  "+row.Text))
+			} else {
+				lines = append(lines, theme.StyleSelected.Render("  "+row.Text))
+			}
 		default:
-			lines = append(lines, theme.StyleNormal.Render("  "+row.Text))
+			if row.Danger {
+				lines = append(lines, theme.StyleError.Render("  "+row.Text))
+			} else {
+				lines = append(lines, theme.StyleNormal.Render("  "+row.Text))
+			}
 		}
 	}
 	if remaining := len(visibleRows) - end; remaining > 0 {
@@ -84,6 +101,7 @@ func SettingsRows(settings *sharedtypes.CoreSettings) []settingsRow {
 		{Section: "Notifications", Label: "Boundary Sound", Value: onOff(settings.BoundarySound)},
 		{Section: "Updates", Label: "Update Checks", Value: onOff(settings.UpdateChecksEnabled)},
 		{Section: "Updates", Label: "Update Prompt", Value: onOff(settings.UpdatePromptEnabled)},
+		{Section: "Updates", Label: "Update Channel", Value: updateChannelLabel(settings.UpdateChannel)},
 		{Section: "Sorting", Label: "Repo Sort", Value: repoSortLabel(settings.RepoSort)},
 		{Section: "Sorting", Label: "Stream Sort", Value: streamSortLabel(settings.StreamSort)},
 		{Section: "Sorting", Label: "Issue Sort", Value: issueSortLabel(settings.IssueSort)},
@@ -91,6 +109,17 @@ func SettingsRows(settings *sharedtypes.CoreSettings) []settingsRow {
 		{Section: "Recovery", Label: "Away Mode", Value: onOff(settings.AwayModeEnabled)},
 		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
 		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
+		{Section: "Danger", Label: "Wipe All Data", Value: "Destructive"},
+		{Section: "Danger", Label: "Uninstall Crona", Value: "Remove binaries too"},
+	}
+}
+
+func updateChannelLabel(value sharedtypes.UpdateChannel) string {
+	switch sharedtypes.NormalizeUpdateChannel(value) {
+	case sharedtypes.UpdateChannelBeta:
+		return "Beta"
+	default:
+		return "Stable"
 	}
 }
 
@@ -108,10 +137,10 @@ func groupedVisibleRows(indices []int, selected int, sectionOf func(int) string,
 	for i, idx := range indices {
 		section := sectionOf(idx)
 		if section != "" && section != lastSection {
-			rows = append(rows, settingsVisibleRow{Header: true, Text: section, SelectableAt: -1})
+			rows = append(rows, settingsVisibleRow{Header: true, Text: section, SelectableAt: -1, Danger: section == "Danger"})
 			lastSection = section
 		}
-		rows = append(rows, settingsVisibleRow{Text: textOf(idx), SelectableAt: i})
+		rows = append(rows, settingsVisibleRow{Text: textOf(idx), SelectableAt: i, Danger: section == "Danger"})
 		if i == selected {
 			selectedVisible = len(rows) - 1
 		}

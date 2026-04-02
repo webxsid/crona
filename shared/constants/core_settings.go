@@ -14,6 +14,7 @@ var DefaultCoreSettings = map[string]any{
 	"boundarySoundEnabled":         true,
 	"updateChecksEnabled":          true,
 	"updatePromptEnabled":          true,
+	"updateChannel":                string("stable"),
 	"repoSort":                     string("chronological_asc"),
 	"streamSort":                   string("chronological_asc"),
 	"issueSort":                    string("priority"),

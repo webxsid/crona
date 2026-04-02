@@ -16,6 +16,26 @@ func renderUtilityDialog(theme Theme, state State) string {
 		rows := []string{theme.StylePaneTitle.Render("Confirm Delete"), "", theme.StyleError.Render(fallback(state.DeleteLabel, "this item"))}
 		rows = appendDialogFooter(theme, state, rows, "[enter] delete   [esc] cancel")
 		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 44)).Render(strings.Join(rows, "\n"))
+	case "confirm_wipe":
+		rows := []string{
+			theme.StylePaneTitle.Render("Wipe All Data"),
+			"",
+			theme.StyleError.Render("This deletes all Crona runtime data."),
+			theme.StyleDim.Render("Issues, sessions, habits, reports, scratchpads, and settings will be reset."),
+			theme.StyleDim.Render("Installed binaries will remain untouched."),
+		}
+		rows = appendDialogFooter(theme, state, rows, "[enter] wipe data   [esc] cancel")
+		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 68)).Render(strings.Join(rows, "\n"))
+	case "confirm_uninstall":
+		rows := []string{
+			theme.StylePaneTitle.Render("Uninstall Crona"),
+			"",
+			theme.StyleError.Render("This removes all Crona runtime data and installed binaries."),
+			theme.StyleDim.Render("The CLI, TUI, and kernel binaries in the install directory will be deleted."),
+			theme.StyleDim.Render("This action closes the app immediately after uninstall starts."),
+		}
+		rows = appendDialogFooter(theme, state, rows, "[enter] uninstall   [esc] cancel")
+		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 74)).Render(strings.Join(rows, "\n"))
 	case "pick_date":
 		rows := []string{theme.StylePaneTitle.Render(state.DateTitle), "", theme.StyleHeader.Render(state.DateHeader), theme.StyleDim.Render(state.DateMonth), "", state.DateGrid}
 		rows = appendDialogFooter(theme, state, rows, "[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back")

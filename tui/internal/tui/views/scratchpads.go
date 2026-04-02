@@ -22,7 +22,7 @@ func renderScratchpadView(theme Theme, state ContentState) string {
 		viewLines = viewLines[:contentH]
 	}
 	lines = append(lines, viewLines...)
-	lines = append(lines, theme.StyleDim.Render("[h/l] switch  [j/k] scroll  [e] edit  [esc] close"))
+	lines = append(lines, theme.StyleDim.Render("[h/l] switch  [j/k] scroll  [e] edit  [o] open  [esc] close"))
 
 	box := theme.StyleInactive
 	if state.Pane == "scratchpads" {

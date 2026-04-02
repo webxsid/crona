@@ -115,6 +115,13 @@ func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Res
 			}
 			return shareddto.OKResponse{OK: true}, h.clearDevData(ctx)
 		})
+	case protocol.MethodKernelWipeData:
+		return handle(req, func(input shareddto.ConfirmDangerousActionRequest) (any, error) {
+			if !input.Confirm {
+				return nil, errors.New("kernel.data.wipe requires explicit confirmation")
+			}
+			return shareddto.OKResponse{OK: true}, h.wipeRuntimeData(ctx)
+		})
 	case protocol.MethodUpdateStatusGet:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {

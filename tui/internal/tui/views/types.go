@@ -94,6 +94,7 @@ type ContentState struct {
 	UpdateManualReason     string
 	TUIExecutablePath      string
 	KernelExecutablePath   string
+	KernelInfo             *api.KernelInfo
 	Settings               *api.CoreSettings
 }
 
@@ -125,6 +126,8 @@ func RenderContent(theme Theme, state ContentState) string {
 		return renderSettingsView(theme, state)
 	case "updates":
 		return renderUpdatesView(theme, state)
+	case "support":
+		return renderSupportView(theme, state)
 	default:
 		return ""
 	}

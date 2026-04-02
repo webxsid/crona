@@ -12,11 +12,14 @@ import (
 )
 
 type State struct {
-	Context         *api.ActiveContext
-	Repos           []api.Repo
-	DashboardDate   string
-	RollupStartDate string
-	RollupEndDate   string
+	Context               *api.ActiveContext
+	Repos                 []api.Repo
+	DashboardDate         string
+	RollupStartDate       string
+	RollupEndDate         string
+	CurrentExecutablePath string
+	KernelExecutablePath  string
+	KernelInfo            *api.KernelInfo
 }
 
 type Deps struct {
@@ -57,6 +60,8 @@ type Deps struct {
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
 	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
 	SetRollupEndDate               func(currentStart, date string) tea.Cmd
+	WipeRuntimeData                func() tea.Cmd
+	UninstallCrona                 func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd
 	ErrorCmd                       func(error) tea.Cmd
 	ResolvePatchSettingValue       func(action dialogpkg.Action) any
 }
@@ -146,6 +151,10 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 			date = *action.DueDate
 		}
 		return deps.SetRollupEndDate(state.RollupStartDate, date)
+	})
+	r.Register("wipe_runtime_data", func(action dialogpkg.Action) tea.Cmd { return deps.WipeRuntimeData() })
+	r.Register("uninstall_crona", func(action dialogpkg.Action) tea.Cmd {
+		return deps.UninstallCrona(state.CurrentExecutablePath, state.KernelExecutablePath, state.KernelInfo)
 	})
 	if cmd, ok := r.Resolve(action.Kind, action); ok {
 		return cmd

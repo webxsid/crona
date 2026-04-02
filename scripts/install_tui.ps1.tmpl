@@ -116,14 +116,76 @@ function Get-ExpectedChecksum([string]$ChecksumsPath, [string]$AssetName) {
     throw "checksums.txt is missing $AssetName"
 }
 
+function Format-ByteSize([long]$Bytes) {
+    if ($Bytes -lt 0) {
+        return "0 B"
+    }
+    if ($Bytes -lt 1KB) {
+        return "$Bytes B"
+    }
+    if ($Bytes -lt 1MB) {
+        return ("{0:N1} KB" -f ($Bytes / 1KB))
+    }
+    if ($Bytes -lt 1GB) {
+        return ("{0:N1} MB" -f ($Bytes / 1MB))
+    }
+    return ("{0:N1} GB" -f ($Bytes / 1GB))
+}
+
+function Download-Asset([string]$Label, [string]$Url, [string]$OutFile) {
+    Write-Host "Downloading $Label..."
+    $activity = "Downloading $Label"
+    $handler = [System.Net.Http.HttpClientHandler]::new()
+    $client = [System.Net.Http.HttpClient]::new($handler)
+    try {
+        $response = $client.GetAsync($Url, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        $response.EnsureSuccessStatusCode()
+        $contentLength = $response.Content.Headers.ContentLength
+        $input = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+        $output = [System.IO.File]::Open($OutFile, [System.IO.FileMode]::Create, [System.IO.FileAccess]::Write, [System.IO.FileShare]::None)
+        try {
+            $buffer = New-Object byte[] 65536
+            $downloaded = [long]0
+            while (($read = $input.Read($buffer, 0, $buffer.Length)) -gt 0) {
+                $output.Write($buffer, 0, $read)
+                $downloaded += $read
+                if ($contentLength -and $contentLength -gt 0) {
+                    $percent = [int][Math]::Floor(($downloaded * 100.0) / $contentLength)
+                    if ($percent -gt 100) {
+                        $percent = 100
+                    }
+                    $status = "{0} / {1}" -f (Format-ByteSize $downloaded), (Format-ByteSize $contentLength)
+                    Write-Progress -Activity $activity -Status $status -PercentComplete $percent
+                } else {
+                    $status = "{0} downloaded" -f (Format-ByteSize $downloaded)
+                    Write-Progress -Activity $activity -Status $status -PercentComplete -1
+                }
+            }
+            $output.Flush()
+            Write-Progress -Activity $activity -Completed
+        }
+        finally {
+            if ($output) {
+                $output.Dispose()
+            }
+            if ($input) {
+                $input.Dispose()
+            }
+            $response.Dispose()
+        }
+    }
+    finally {
+        $client.Dispose()
+        $handler.Dispose()
+    }
+}
+
 $installDir = Get-InstallDir
 $runtimeDir = Get-RuntimeDir
 $assetsDir = Join-Path $runtimeDir "assets\bundled"
 $archSuffix = Get-ArchSuffix
 $baseUrl = "https://github.com/$Repo/releases/download/$Version"
-$cliName = "crona-$Version-windows-$archSuffix.exe"
-$kernelName = "crona-kernel-$Version-windows-$archSuffix.exe"
-$tuiName = "crona-tui-$Version-windows-$archSuffix.exe"
+$bundleName = "crona-bundle-$Version-windows-$archSuffix.zip"
 $assetsName = "crona-assets-$Version.tar.gz"
 $checksumsName = "checksums.txt"
 
@@ -136,23 +198,25 @@ New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 
 try {
     $checksumsPath = Join-Path $tmpDir $checksumsName
-    $cliPath = Join-Path $tmpDir $cliName
-    $kernelPath = Join-Path $tmpDir $kernelName
-    $tuiPath = Join-Path $tmpDir $tuiName
+    $bundlePath = Join-Path $tmpDir $bundleName
     $assetsPath = Join-Path $tmpDir $assetsName
+    $bundleDir = Join-Path $tmpDir "bundle"
 
     Write-Host "Installing Crona $Version to $installDir"
-    Invoke-WebRequest -Uri "$baseUrl/$checksumsName" -OutFile $checksumsPath
-    Invoke-WebRequest -Uri "$baseUrl/$cliName" -OutFile $cliPath
-    Invoke-WebRequest -Uri "$baseUrl/$kernelName" -OutFile $kernelPath
-    Invoke-WebRequest -Uri "$baseUrl/$tuiName" -OutFile $tuiPath
-    Invoke-WebRequest -Uri "$baseUrl/$assetsName" -OutFile $assetsPath
+    Download-Asset "checksums" "$baseUrl/$checksumsName" $checksumsPath
+    Download-Asset "bundle" "$baseUrl/$bundleName" $bundlePath
+    Download-Asset "assets" "$baseUrl/$assetsName" $assetsPath
 
-    Verify-Checksum $cliPath (Get-ExpectedChecksum $checksumsPath $cliName)
-    Verify-Checksum $kernelPath (Get-ExpectedChecksum $checksumsPath $kernelName)
-    Verify-Checksum $tuiPath (Get-ExpectedChecksum $checksumsPath $tuiName)
+    Write-Host "Verifying checksums..."
+    Verify-Checksum $bundlePath (Get-ExpectedChecksum $checksumsPath $bundleName)
     Verify-Checksum $assetsPath (Get-ExpectedChecksum $checksumsPath $assetsName)
 
+    Expand-Archive -Path $bundlePath -DestinationPath $bundleDir -Force
+    $cliPath = Join-Path $bundleDir "crona-$Version-windows-$archSuffix.exe"
+    $kernelPath = Join-Path $bundleDir "crona-kernel-$Version-windows-$archSuffix.exe"
+    $tuiPath = Join-Path $bundleDir "crona-tui-$Version-windows-$archSuffix.exe"
+
+    Write-Host "Installing binaries..."
     Move-Item -Force $cliPath (Join-Path $installDir "crona.exe")
     Move-Item -Force $kernelPath (Join-Path $installDir "crona-kernel.exe")
     Move-Item -Force $tuiPath (Join-Path $installDir "crona-tui.exe")
@@ -162,6 +226,7 @@ try {
         Remove-Item -Recurse -Force $exportDir
     }
 
+    Write-Host "Extracting bundled assets..."
     tar -xzf $assetsPath -C $assetsDir
     Add-InstallDirToUserPath $installDir
 

@@ -124,6 +124,13 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		return actions
 	}
+	if state.View == "support" {
+		return []string{
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" report issue"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open project"),
+			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
+		}
+	}
 
 	switch state.Pane {
 	case "repos", "streams":
@@ -177,6 +184,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			actions := []string{
 				theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" switch"),
 				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
+				theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open"),
 				theme.StyleHeader.Render("[esc]") + theme.StyleDim.Render(" close"),
 			}
 			if state.TimerState != "" && state.TimerState != "idle" {
@@ -201,7 +209,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "settings":
 		return []string{
 			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/toggle"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/toggle/confirm"),
 		}
 	}
 	return nil

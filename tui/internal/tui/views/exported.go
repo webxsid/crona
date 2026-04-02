@@ -11,6 +11,7 @@ func RenderWellbeing(theme Theme, state ContentState) string {
 func RenderReports(theme Theme, state ContentState) string  { return renderReportsView(theme, state) }
 func RenderSettings(theme Theme, state ContentState) string { return renderSettingsView(theme, state) }
 func RenderConfig(theme Theme, state ContentState) string   { return renderConfigView(theme, state) }
+func RenderSupport(theme Theme, state ContentState) string  { return renderSupportView(theme, state) }
 func RenderPaneBox(theme Theme, active bool, width, height int, content string) string {
 	return renderPaneBox(theme, active, width, height, content)
 }

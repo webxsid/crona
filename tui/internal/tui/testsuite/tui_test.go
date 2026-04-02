@@ -434,7 +434,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 		View:   "settings",
 		Pane:   "settings",
 		Width:  70,
-		Height: 32,
+		Height: 40,
 		Cursors: map[string]int{
 			"settings": 0,
 		},
@@ -461,15 +461,23 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"FOCUS TIMER", "BREAKS", "Boundary Notifications", "Habit Sort", "RECOVERY", "Away Mode"} {
+	for _, want := range []string{"FOCUS TIMER", "BREAKS", "Boundary Notifications", "UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
 	}
 
-	state.Cursors["settings"] = 19
+	state.Cursors["settings"] = 20
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
+		}
+	}
+
+	state.Cursors["settings"] = 21
+	rendered = support.RenderSettings(state)
+	for _, want := range []string{"DANGER", "Wipe All Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -525,15 +533,60 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 		UpdateStatus: &api.UpdateStatus{
 			Enabled:                  true,
 			PromptEnabled:            true,
+			Channel:                  sharedtypes.UpdateChannelBeta,
+			ReleaseIsPrerelease:      true,
 			UpdateAvailable:          true,
 			LatestVersion:            "0.3.0",
 			InstallAvailable:         false,
 			InstallUnavailableReason: "Release is missing the checksums.txt asset.",
 		},
 	})
-	for _, want := range []string{"[i] install unavailable", "Release is missing the checksums.txt asset."} {
+	for _, want := range []string{"[i] install unavailable", "Channel: Beta", "Release type: beta prerelease", "Release is missing the checksums.txt asset."} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
+	rendered := support.RenderSupport(views.ContentState{
+		View:                 "support",
+		Pane:                 "issues",
+		Width:                100,
+		Height:               24,
+		TUIExecutablePath:    "/tmp/crona",
+		KernelExecutablePath: "/tmp/crona-kernel",
+		KernelInfo: &api.KernelInfo{
+			Env:        "prod",
+			Transport:  "unix",
+			Endpoint:   "/tmp/crona.sock",
+			ScratchDir: "/tmp/crona/scratch",
+		},
+		UpdateStatus: &api.UpdateStatus{
+			CurrentVersion: "0.4.0-beta.1",
+			Channel:        sharedtypes.UpdateChannelBeta,
+		},
+		ExportAssets: &api.ExportAssetStatus{
+			ReportsDir: "/tmp/reports",
+			ICSDir:     "/tmp/calendar",
+		},
+		Health: &api.Health{Status: "ok", DB: true},
+	})
+	for _, want := range []string{"Support", "issues/new/choose", "github.com/webxsid/crona", "Version: v0.4.0-beta.1", "Update channel: beta", "Reports dir: /tmp/reports"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
+	actions := views.ContextualActions(support.Theme(), views.ActionsState{
+		View: "support",
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[o]", "report issue", "[g]", "open project", "[c]", "copy diagnostics"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}
 	}
 }

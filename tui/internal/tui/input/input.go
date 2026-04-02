@@ -112,8 +112,14 @@ type Deps struct {
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
 	OpenEditRestProtectionDialog    func(*State) bool
+	OpenConfirmWipeDataDialog       func(*State) bool
+	OpenConfirmUninstallDialog      func(*State) bool
+	WipeRuntimeData                 func() tea.Cmd
 	OpenRollupStartDateDialog       func(*State) bool
 	OpenRollupEndDateDialog         func(*State) bool
+	OpenSupportIssueURL             func() tea.Cmd
+	OpenSupportProjectURL           func() tea.Cmd
+	CopySupportDiagnostics          func(State) tea.Cmd
 }
 
 type handler = keyregistry.Handler[State]
@@ -401,6 +407,15 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
+	r.RegisterView(uistate.ViewSupport, "o", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.OpenSupportIssueURL(), true
+	})
+	r.RegisterView(uistate.ViewSupport, "g", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.OpenSupportProjectURL(), true
+	})
+	r.RegisterView(uistate.ViewSupport, "c", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.CopySupportDiagnostics(s), true
+	})
 	keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
@@ -729,16 +744,18 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 12:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyUpdatePromptEnabled, !s.Settings.UpdatePromptEnabled, repoID, streamID, s.DashboardDate), true
 	case 13:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyRepoSort, nextRepoSort(s.Settings.RepoSort, dir), repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyUpdateChannel, nextUpdateChannel(s.Settings.UpdateChannel, dir), repoID, streamID, s.DashboardDate), true
 	case 14:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyStreamSort, nextStreamSort(s.Settings.StreamSort, dir), repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyRepoSort, nextRepoSort(s.Settings.RepoSort, dir), repoID, streamID, s.DashboardDate), true
 	case 15:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyIssueSort, nextIssueSort(s.Settings.IssueSort, dir), repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyStreamSort, nextStreamSort(s.Settings.StreamSort, dir), repoID, streamID, s.DashboardDate), true
 	case 16:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyHabitSort, nextHabitSort(s.Settings.HabitSort, dir), repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyIssueSort, nextIssueSort(s.Settings.IssueSort, dir), repoID, streamID, s.DashboardDate), true
 	case 17:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyHabitSort, nextHabitSort(s.Settings.HabitSort, dir), repoID, streamID, s.DashboardDate), true
 	case 18:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+	case 19:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1), repoID, streamID, s.DashboardDate), true
 	default:
 		return s, nil, true
@@ -750,8 +767,14 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 		return s, nil, true
 	}
 	switch s.Cursor[uistate.PaneSettings] {
-	case 19:
+	case 20:
 		deps.OpenEditRestProtectionDialog(&s)
+		return s, nil, true
+	case 21:
+		deps.OpenConfirmWipeDataDialog(&s)
+		return s, nil, true
+	case 22:
+		deps.OpenConfirmUninstallDialog(&s)
 		return s, nil, true
 	default:
 		return handleAdjustSelectedSetting(s, deps, 1)
@@ -860,6 +883,14 @@ func nextHabitSort(current sharedtypes.HabitSort, dir int) sharedtypes.HabitSort
 		sharedtypes.HabitSortChronologicalDesc,
 	}
 	return options[nextIndex(current, options, dir)]
+}
+
+func nextUpdateChannel(current sharedtypes.UpdateChannel, dir int) sharedtypes.UpdateChannel {
+	options := []sharedtypes.UpdateChannel{
+		sharedtypes.UpdateChannelStable,
+		sharedtypes.UpdateChannelBeta,
+	}
+	return options[nextIndex(sharedtypes.NormalizeUpdateChannel(current), options, dir)]
 }
 
 func nextIndex[T comparable](current T, options []T, dir int) int {

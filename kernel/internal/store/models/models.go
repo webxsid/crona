@@ -157,6 +157,7 @@ type CoreSettingsModel struct {
 	BoundarySound         bool   `bun:"boundary_sound_enabled,notnull,type:integer"`
 	UpdateChecksEnabled   bool   `bun:"update_checks_enabled,notnull,type:integer"`
 	UpdatePromptEnabled   bool   `bun:"update_prompt_enabled,notnull,type:integer"`
+	UpdateChannel         string `bun:"update_channel,notnull,type:text"`
 	RepoSort              string `bun:"repo_sort,notnull,type:text"`
 	StreamSort            string `bun:"stream_sort,notnull,type:text"`
 	IssueSort             string `bun:"issue_sort,notnull,type:text"`

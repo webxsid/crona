@@ -205,6 +205,9 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 		OpenEditor: func(filePath string) tea.Cmd {
 			return dialogruntime.OpenEditor(filePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
 		},
+		OpenDefaultViewer: func(filePath string) tea.Cmd {
+			return dialogruntime.OpenDefaultViewer(filePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
+		},
 		SetStatus: func(state *overlaypkg.State, message string, isErr bool) tea.Cmd {
 			next := m.applyOverlayState(*state)
 			cmd := next.setStatus(message, isErr)
@@ -572,11 +575,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 				LastOpenedAt: msg.Meta.LastOpenedAt,
 			}}, 0)
 			next.scratchpadFilePath = msg.FilePath
-			rendered, err := helperpkg.RenderScratchpadMarkdown(msg.Content, helperpkg.ScratchpadRenderWidth(next.mainContentWidth(), next.contentHeight()))
-			if err != nil {
-				rendered = msg.Content
-			}
-			next.scratchpadRendered = rendered
+			next.scratchpadRendered = msg.Content
 			next.scratchpadViewport = helperpkg.SyncScratchpadViewport(next.scratchpadViewport, next.mainContentWidth(), next.contentHeight(), next.scratchpadRendered)
 			next.scratchpadViewport.GotoTop()
 			*state = next.dispatchMessageState()

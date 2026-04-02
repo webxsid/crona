@@ -168,6 +168,29 @@ verify_nonempty() {
   fi
 }
 
+is_interactive() {
+  [ -t 1 ] || [ -t 2 ]
+}
+
+download_file() {
+  label="$1"
+  url="$2"
+  output="$3"
+  echo "Downloading ${label}..."
+  if is_interactive; then
+    curl -fL --show-error --progress-bar "${url}" -o "${output}"
+  else
+    curl -fsSL "${url}" -o "${output}"
+  fi
+}
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Required command not found: $1" >&2
+    exit 1
+  fi
+}
+
 verify_checksums() {
   subset_file="${TMP_DIR}/checksums.selected.txt"
   : > "${subset_file}"
@@ -205,13 +228,9 @@ fi
 LEGACY_CRONA_HOME="$(legacy_crona_home)"
 ASSETS_DIR="${CRONA_HOME}/assets/bundled"
 BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
-CLI_NAME="crona-${VERSION}-${OS}-${ARCH}"
-KERNEL_NAME="crona-kernel-${VERSION}-${OS}-${ARCH}"
-TUI_NAME="crona-tui-${VERSION}-${OS}-${ARCH}"
+BUNDLE_NAME="crona-bundle-${VERSION}-${OS}-${ARCH}.zip"
 ASSETS_NAME="crona-assets-${VERSION}.tar.gz"
-CLI_URL="${BASE_URL}/${CLI_NAME}"
-KERNEL_URL="${BASE_URL}/${KERNEL_NAME}"
-TUI_URL="${BASE_URL}/${TUI_NAME}"
+BUNDLE_URL="${BASE_URL}/${BUNDLE_NAME}"
 ASSETS_URL="${BASE_URL}/${ASSETS_NAME}"
 CHECKSUMS_URL="${BASE_URL}/checksums.txt"
 
@@ -230,32 +249,41 @@ if [ -x "${INSTALL_DIR}/crona" ] || [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x
 fi
 
 stop_running_kernel_at "${CRONA_HOME}"
+require_command curl
+require_command unzip
+require_command tar
 
 CHECKSUMS_FILE="${TMP_DIR}/checksums.txt"
-CLI_FILE="${TMP_DIR}/${CLI_NAME}"
-KERNEL_FILE="${TMP_DIR}/${KERNEL_NAME}"
-TUI_FILE="${TMP_DIR}/${TUI_NAME}"
+BUNDLE_FILE="${TMP_DIR}/${BUNDLE_NAME}"
 ASSETS_FILE="${TMP_DIR}/${ASSETS_NAME}"
+BUNDLE_DIR="${TMP_DIR}/bundle"
 
 echo "Installing Crona ${VERSION} to ${INSTALL_DIR}"
-curl -fsSL "${CHECKSUMS_URL}" -o "${CHECKSUMS_FILE}"
-curl -fsSL "${CLI_URL}" -o "${CLI_FILE}"
-curl -fsSL "${KERNEL_URL}" -o "${KERNEL_FILE}"
-curl -fsSL "${TUI_URL}" -o "${TUI_FILE}"
-curl -fsSL "${ASSETS_URL}" -o "${ASSETS_FILE}"
+download_file "checksums" "${CHECKSUMS_URL}" "${CHECKSUMS_FILE}"
+download_file "bundle" "${BUNDLE_URL}" "${BUNDLE_FILE}"
+download_file "assets" "${ASSETS_URL}" "${ASSETS_FILE}"
 
 verify_nonempty "${CHECKSUMS_FILE}"
+verify_nonempty "${BUNDLE_FILE}"
+verify_nonempty "${ASSETS_FILE}"
+echo "Verifying checksums..."
+verify_checksums "${BUNDLE_NAME}" "${ASSETS_NAME}"
+
+mkdir -p "${BUNDLE_DIR}"
+unzip -q "${BUNDLE_FILE}" -d "${BUNDLE_DIR}"
+CLI_FILE="${BUNDLE_DIR}/crona-${VERSION}-${OS}-${ARCH}"
+KERNEL_FILE="${BUNDLE_DIR}/crona-kernel-${VERSION}-${OS}-${ARCH}"
+TUI_FILE="${BUNDLE_DIR}/crona-tui-${VERSION}-${OS}-${ARCH}"
 verify_nonempty "${CLI_FILE}"
 verify_nonempty "${KERNEL_FILE}"
 verify_nonempty "${TUI_FILE}"
-verify_nonempty "${ASSETS_FILE}"
-verify_checksums "${CLI_NAME}" "${KERNEL_NAME}" "${TUI_NAME}" "${ASSETS_NAME}"
-
 chmod +x "${CLI_FILE}" "${KERNEL_FILE}" "${TUI_FILE}"
+echo "Installing binaries..."
 mv "${CLI_FILE}" "${INSTALL_DIR}/crona"
 mv "${KERNEL_FILE}" "${INSTALL_DIR}/crona-kernel"
 mv "${TUI_FILE}" "${INSTALL_DIR}/crona-tui"
 rm -rf "${ASSETS_DIR}/export"
+echo "Extracting bundled assets..."
 tar -xzf "${ASSETS_FILE}" -C "${ASSETS_DIR}"
 printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
 

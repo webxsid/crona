@@ -19,6 +19,7 @@ const (
 	ViewConfig         View = "config"
 	ViewSettings       View = "settings"
 	ViewUpdates        View = "updates"
+	ViewSupport        View = "support"
 )
 
 type Pane string
@@ -44,7 +45,7 @@ const (
 	DefaultIssueSectionCompleted DefaultIssueSection = "completed"
 )
 
-var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewUpdates}
+var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewUpdates, ViewSupport}
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},
@@ -61,6 +62,7 @@ var viewPanes = map[View][]Pane{
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
 	ViewUpdates:        {},
+	ViewSupport:        {},
 }
 
 var viewDefaultPane = map[View]Pane{
@@ -78,6 +80,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewConfig:         PaneConfig,
 	ViewSettings:       PaneSettings,
 	ViewUpdates:        PaneIssues,
+	ViewSupport:        PaneIssues,
 }
 
 func ViewOrder() []View {

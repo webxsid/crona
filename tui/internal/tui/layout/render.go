@@ -279,6 +279,7 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewOps, "Ops"),
 			renderSidebarItem(state, uistate.ViewSettings, "Settings"),
 			renderSidebarItem(state, uistate.ViewUpdates, "Updates"),
+			renderSidebarItem(state, uistate.ViewSupport, "Support"),
 			"",
 			chrome.StyleDim.Render("SESSION"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),

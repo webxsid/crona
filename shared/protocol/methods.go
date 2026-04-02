@@ -13,6 +13,7 @@ const (
 	MethodKernelRestart   = "kernel.restart"
 	MethodKernelSeedDev   = "kernel.dev.seed"
 	MethodKernelClearDev  = "kernel.dev.clear"
+	MethodKernelWipeData  = "kernel.data.wipe"
 	MethodUpdateStatusGet = "update.status.get"
 	MethodUpdateCheck     = "update.check"
 	MethodUpdateDismiss   = "update.dismiss"

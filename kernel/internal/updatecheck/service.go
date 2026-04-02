@@ -47,6 +47,7 @@ func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *
 		},
 		status: sharedtypes.UpdateStatus{
 			CurrentVersion: versionpkg.Current(),
+			Channel:        sharedtypes.UpdateChannelStable,
 		},
 	}
 	service.loadCache()
@@ -113,6 +114,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
 	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
+	s.status.Channel = effectiveUpdateChannel(settings)
 
 	if !s.status.Enabled {
 		s.clearReleaseLocked()
@@ -133,13 +135,15 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	}
 	s.mu.Unlock()
 
-	release, err := s.fetchLatestRelease(ctx)
+	channel := effectiveUpdateChannel(settings)
+	release, err := s.fetchLatestRelease(ctx, channel)
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
 	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
+	s.status.Channel = channel
 	s.status.CheckedAt = time.Now().UTC().Format(time.RFC3339)
 
 	if err != nil {
@@ -161,6 +165,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.InstallScriptURL = release.InstallURL
 	s.status.ChecksumsURL = release.ChecksumsURL
 	s.status.PublishedAt = release.PublishedAt
+	s.status.ReleaseIsPrerelease = release.IsPrerelease
 	s.status.UpdateAvailable = isNewerVersion(s.status.CurrentVersion, release.Version)
 	s.status.InstallAvailable = release.InstallURL != "" && release.ChecksumsURL != ""
 	s.status.InstallUnavailableReason = release.installUnavailableReason()
@@ -186,6 +191,7 @@ func (s *Service) loadCache() {
 		return
 	}
 	cached.CurrentVersion = versionpkg.Current()
+	cached.Channel = sharedtypes.NormalizeUpdateChannel(cached.Channel)
 	s.status = cached
 }
 
@@ -206,6 +212,7 @@ func (s *Service) clearReleaseLocked() {
 	s.status.InstallScriptURL = ""
 	s.status.ChecksumsURL = ""
 	s.status.PublishedAt = ""
+	s.status.ReleaseIsPrerelease = false
 	s.status.UpdateAvailable = false
 	s.status.InstallAvailable = false
 	s.status.InstallUnavailableReason = ""
@@ -244,9 +251,17 @@ type latestRelease struct {
 	InstallAsset string
 	ChecksumsURL string
 	PublishedAt  string
+	IsPrerelease bool
 }
 
-func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error) {
+func (s *Service) fetchLatestRelease(ctx context.Context, channel sharedtypes.UpdateChannel) (latestRelease, error) {
+	if sharedtypes.NormalizeUpdateChannel(channel) == sharedtypes.UpdateChannelBeta {
+		return s.fetchLatestReleaseFromList(ctx)
+	}
+	return s.fetchLatestStableRelease(ctx)
+}
+
+func (s *Service) fetchLatestStableRelease(ctx context.Context) (latestRelease, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", versionpkg.RepoOwner, versionpkg.RepoName), nil)
 	if err != nil {
 		return latestRelease{}, err
@@ -263,21 +278,77 @@ func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error)
 		return latestRelease{}, fmt.Errorf("github releases returned %s", resp.Status)
 	}
 
-	var payload struct {
-		Name        string `json:"name"`
-		TagName     string `json:"tag_name"`
-		Body        string `json:"body"`
-		HTMLURL     string `json:"html_url"`
-		PublishedAt string `json:"published_at"`
-		Assets      []struct {
-			Name               string `json:"name"`
-			BrowserDownloadURL string `json:"browser_download_url"`
-		} `json:"assets"`
-	}
+	var payload githubReleasePayload
 	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
 		return latestRelease{}, err
 	}
+	return s.releaseFromPayload(payload)
+}
 
+func (s *Service) fetchLatestReleaseFromList(ctx context.Context) (latestRelease, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", versionpkg.RepoOwner, versionpkg.RepoName), nil)
+	if err != nil {
+		return latestRelease{}, err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "crona/"+versionpkg.Current())
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return latestRelease{}, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return latestRelease{}, fmt.Errorf("github releases returned %s", resp.Status)
+	}
+
+	var payloads []githubReleasePayload
+	if err := json.NewDecoder(resp.Body).Decode(&payloads); err != nil {
+		return latestRelease{}, err
+	}
+
+	best := latestRelease{}
+	bestVersion := semver{}
+	found := false
+	for _, payload := range payloads {
+		if payload.Draft {
+			continue
+		}
+		release, err := s.releaseFromPayload(payload)
+		if err != nil {
+			continue
+		}
+		version, ok := parseSemver(release.Version)
+		if !ok {
+			continue
+		}
+		if !found || compareSemver(version, bestVersion) > 0 {
+			best = release
+			bestVersion = version
+			found = true
+		}
+	}
+	if !found {
+		return latestRelease{}, fmt.Errorf("no eligible releases found")
+	}
+	return best, nil
+}
+
+type githubReleasePayload struct {
+	Name        string `json:"name"`
+	TagName     string `json:"tag_name"`
+	Body        string `json:"body"`
+	HTMLURL     string `json:"html_url"`
+	PublishedAt string `json:"published_at"`
+	Prerelease  bool   `json:"prerelease"`
+	Draft       bool   `json:"draft"`
+	Assets      []struct {
+		Name               string `json:"name"`
+		BrowserDownloadURL string `json:"browser_download_url"`
+	} `json:"assets"`
+}
+
+func (s *Service) releaseFromPayload(payload githubReleasePayload) (latestRelease, error) {
 	tag := strings.TrimSpace(payload.TagName)
 	version := normalizeVersion(payload.TagName)
 	if version == "" {
@@ -304,6 +375,7 @@ func (s *Service) fetchLatestRelease(ctx context.Context) (latestRelease, error)
 		InstallAsset: installAsset,
 		ChecksumsURL: checksumsURL,
 		PublishedAt:  strings.TrimSpace(payload.PublishedAt),
+		IsPrerelease: payload.Prerelease,
 	}, nil
 }
 
@@ -322,6 +394,13 @@ func (r latestRelease) installUnavailableReason() string {
 	default:
 		return ""
 	}
+}
+
+func effectiveUpdateChannel(settings *sharedtypes.CoreSettings) sharedtypes.UpdateChannel {
+	if settings == nil {
+		return sharedtypes.UpdateChannelStable
+	}
+	return sharedtypes.NormalizeUpdateChannel(settings.UpdateChannel)
 }
 
 func (s *Service) targetGOOS() string {

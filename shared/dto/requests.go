@@ -279,6 +279,10 @@ type GetCoreSettingRequest struct {
 
 type PutCoreSettingsRequest map[types.CoreSettingsKey]any
 
+type ConfirmDangerousActionRequest struct {
+	Confirm bool `json:"confirm"`
+}
+
 type UpdateContextRequest struct {
 	RepoID   *int64 `json:"repoId,omitempty"`
 	StreamID *int64 `json:"streamId,omitempty"`

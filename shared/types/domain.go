@@ -38,6 +38,22 @@ const (
 	TimerModeStructured TimerMode = "structured"
 )
 
+type UpdateChannel string
+
+const (
+	UpdateChannelStable UpdateChannel = "stable"
+	UpdateChannelBeta   UpdateChannel = "beta"
+)
+
+func NormalizeUpdateChannel(value UpdateChannel) UpdateChannel {
+	switch value {
+	case UpdateChannelBeta:
+		return value
+	default:
+		return UpdateChannelStable
+	}
+}
+
 type RepoSort string
 
 const (
@@ -156,6 +172,7 @@ const (
 	CoreSettingsKeyBoundarySound         CoreSettingsKey = "boundarySoundEnabled"
 	CoreSettingsKeyUpdateChecksEnabled   CoreSettingsKey = "updateChecksEnabled"
 	CoreSettingsKeyUpdatePromptEnabled   CoreSettingsKey = "updatePromptEnabled"
+	CoreSettingsKeyUpdateChannel         CoreSettingsKey = "updateChannel"
 	CoreSettingsKeyRepoSort              CoreSettingsKey = "repoSort"
 	CoreSettingsKeyStreamSort            CoreSettingsKey = "streamSort"
 	CoreSettingsKeyIssueSort             CoreSettingsKey = "issueSort"
@@ -676,6 +693,7 @@ type CoreSettings struct {
 	BoundarySound         bool         `json:"boundarySoundEnabled"`
 	UpdateChecksEnabled   bool         `json:"updateChecksEnabled"`
 	UpdatePromptEnabled   bool         `json:"updatePromptEnabled"`
+	UpdateChannel         UpdateChannel `json:"updateChannel"`
 	RepoSort              RepoSort     `json:"repoSort"`
 	StreamSort            StreamSort   `json:"streamSort"`
 	IssueSort             IssueSort    `json:"issueSort"`
@@ -774,6 +792,8 @@ type UpdateStatus struct {
 	InstallUnavailableReason string `json:"installUnavailableReason,omitempty"`
 	Enabled                  bool   `json:"enabled"`
 	PromptEnabled            bool   `json:"promptEnabled"`
+	Channel                  UpdateChannel `json:"channel"`
+	ReleaseIsPrerelease      bool          `json:"releaseIsPrerelease"`
 	DismissedVersion         string `json:"dismissedVersion,omitempty"`
 	Error                    string `json:"error,omitempty"`
 }

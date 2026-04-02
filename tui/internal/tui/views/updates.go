@@ -37,6 +37,10 @@ func renderUpdatesView(theme Theme, state ContentState) string {
 		}
 	}
 	lines = append(lines, theme.StyleHeader.Render(title))
+	lines = append(lines, theme.StyleDim.Render("Channel: "+updateChannelLabel(status.Channel)))
+	if status.ReleaseIsPrerelease {
+		lines = append(lines, theme.StyleDim.Render("Release type: beta prerelease"))
+	}
 
 	if strings.TrimSpace(status.ReleaseTag) != "" {
 		lines = append(lines, theme.StyleDim.Render("Release tag: "+strings.TrimSpace(status.ReleaseTag)))

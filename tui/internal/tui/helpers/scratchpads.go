@@ -4,7 +4,6 @@ import (
 	"crona/tui/internal/api"
 
 	"github.com/charmbracelet/bubbles/viewport"
-	"github.com/charmbracelet/glamour"
 )
 
 func ScratchpadPaneSize(mainContentWidth, contentHeight int) (int, int) {
@@ -47,21 +46,6 @@ func ScratchpadMetaAt(scratchpads []api.ScratchPad, idx int) *api.ScratchPad {
 		Pinned:       pad.Pinned,
 		LastOpenedAt: pad.LastOpenedAt,
 	}
-}
-
-func RenderScratchpadMarkdown(content string, width int) (string, error) {
-	w := width - 2
-	if w < 24 {
-		w = 24
-	}
-	r, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(w),
-	)
-	if err != nil {
-		return "", err
-	}
-	return r.Render(content)
 }
 
 func ScratchpadTabIndexByID(scratchpads []api.ScratchPad, id string) int {

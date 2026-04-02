@@ -83,6 +83,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"stream_sort":          "chronological_asc",
 		"issue_sort":           "priority",
 		"habit_sort":           "schedule",
+		"update_channel":       "stable",
 		"frozen_streak_kinds":  "[]",
 		"rest_weekdays":        "[]",
 		"rest_specific_dates":  "[]",

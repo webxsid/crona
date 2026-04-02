@@ -18,6 +18,7 @@ const (
 	ViewScratch        = app.ViewScratch
 	ViewOps            = app.ViewOps
 	ViewSettings       = app.ViewSettings
+	ViewSupport        = app.ViewSupport
 )
 
 const (

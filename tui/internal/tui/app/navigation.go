@@ -645,6 +645,9 @@ func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
 		}
 		return nil, true
 	}
+	if m.pane == PaneScratchpads && m.scratchpadOpen && strings.TrimSpace(m.scratchpadFilePath) != "" {
+		return dialogruntime.OpenDefaultViewer(m.scratchpadFilePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+	}
 	return nil, false
 }
 

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+
+	sharedtypes "crona/shared/types"
 )
 
 func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {
@@ -33,7 +35,7 @@ func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {
 		},
 	}
 
-	release, err := service.fetchLatestRelease(context.Background())
+	release, err := service.fetchLatestRelease(context.Background(), sharedtypes.UpdateChannelStable)
 	if err != nil {
 		t.Fatalf("fetchLatestRelease returned error: %v", err)
 	}
@@ -92,7 +94,7 @@ func TestFetchLatestReleaseSelectsWindowsInstallerAsset(t *testing.T) {
 		},
 	}
 
-	release, err := service.fetchLatestRelease(context.Background())
+	release, err := service.fetchLatestRelease(context.Background(), sharedtypes.UpdateChannelStable)
 	if err != nil {
 		t.Fatalf("fetchLatestRelease returned error: %v", err)
 	}
@@ -101,6 +103,62 @@ func TestFetchLatestReleaseSelectsWindowsInstallerAsset(t *testing.T) {
 	}
 	if release.InstallURL != "https://example.com/install-ps1" {
 		t.Fatalf("expected windows install URL, got %q", release.InstallURL)
+	}
+}
+
+func TestFetchLatestReleaseBetaChannelSelectsNewestPrerelease(t *testing.T) {
+	service := &Service{
+		goos: "darwin",
+		client: &http.Client{
+			Transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				if strings.HasSuffix(req.URL.Path, "/releases") {
+					body := `[
+						{
+							"name":"Crona 0.4.0",
+							"tag_name":"v0.4.0",
+							"body":"Stable",
+							"html_url":"https://example.com/stable",
+							"published_at":"2026-03-25T00:00:00Z",
+							"prerelease":false,
+							"assets":[
+								{"name":"install-crona-tui.sh","browser_download_url":"https://example.com/install-stable"},
+								{"name":"checksums.txt","browser_download_url":"https://example.com/checksums-stable"}
+							]
+						},
+						{
+							"name":"Crona 0.5.0 beta",
+							"tag_name":"v0.5.0-beta.2",
+							"body":"Beta",
+							"html_url":"https://example.com/beta",
+							"published_at":"2026-03-30T00:00:00Z",
+							"prerelease":true,
+							"assets":[
+								{"name":"install-crona-tui.sh","browser_download_url":"https://example.com/install-beta"},
+								{"name":"checksums.txt","browser_download_url":"https://example.com/checksums-beta"}
+							]
+						}
+					]`
+					return &http.Response{
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(strings.NewReader(body)),
+						Header:     make(http.Header),
+					}, nil
+				}
+				t.Fatalf("unexpected path %s", req.URL.Path)
+				return nil, nil
+			}),
+		},
+	}
+
+	release, err := service.fetchLatestRelease(context.Background(), sharedtypes.UpdateChannelBeta)
+	if err != nil {
+		t.Fatalf("fetchLatestRelease returned error: %v", err)
+	}
+	if release.Version != "0.5.0-beta.2" {
+		t.Fatalf("expected newest beta release, got %q", release.Version)
+	}
+	if !release.IsPrerelease {
+		t.Fatalf("expected beta release to be marked prerelease")
 	}
 }
 

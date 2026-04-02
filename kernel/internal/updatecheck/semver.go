@@ -42,6 +42,37 @@ func isNewerVersion(current, latest string) bool {
 	return comparePrerelease(latestVersion.prerelease, currentVersion.prerelease) > 0
 }
 
+func compareSemver(left, right semver) int {
+	if left.major != right.major {
+		if left.major > right.major {
+			return 1
+		}
+		return -1
+	}
+	if left.minor != right.minor {
+		if left.minor > right.minor {
+			return 1
+		}
+		return -1
+	}
+	if left.patch != right.patch {
+		if left.patch > right.patch {
+			return 1
+		}
+		return -1
+	}
+	if left.prerelease == right.prerelease {
+		return 0
+	}
+	if left.prerelease == "" {
+		return 1
+	}
+	if right.prerelease == "" {
+		return -1
+	}
+	return comparePrerelease(left.prerelease, right.prerelease)
+}
+
 func normalizeVersion(value string) string {
 	value = strings.TrimSpace(value)
 	value = strings.TrimPrefix(value, "v")

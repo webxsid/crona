@@ -31,6 +31,7 @@ type Deps struct {
 	OpenAmendSessionDialog     func(*State, string, string)
 	SessionCommit              func(*api.SessionDetail) string
 	OpenEditor                 func(string) tea.Cmd
+	OpenDefaultViewer          func(string) tea.Cmd
 	SetStatus                  func(*State, string, bool) tea.Cmd
 	AbandonSelectedIssue       func(*State) tea.Cmd
 	FilteredIndexAtCursor      func(State, string) int
@@ -100,6 +101,11 @@ func HandleScratchpad(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 			return state, nil
 		}
 		return state, deps.OpenEditor(state.ScratchpadFilePath)
+	case "o":
+		if state.ScratchpadFilePath == "" {
+			return state, nil
+		}
+		return state, deps.OpenDefaultViewer(state.ScratchpadFilePath)
 	case "s":
 		if state.Timer != nil && state.Timer.State != "idle" {
 			return state, deps.SetStatus(&state, "End or stash the active session before changing issue status", true)

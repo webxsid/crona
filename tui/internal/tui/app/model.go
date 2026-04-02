@@ -45,6 +45,7 @@ const (
 	ViewConfig         = uistate.ViewConfig
 	ViewSettings       = uistate.ViewSettings
 	ViewUpdates        = uistate.ViewUpdates
+	ViewSupport        = uistate.ViewSupport
 )
 
 type Pane = uistate.Pane
@@ -150,7 +151,7 @@ type Model struct {
 	scratchpadOpen     bool
 	scratchpadMeta     *api.ScratchPad
 	scratchpadFilePath string // resolved absolute path for $EDITOR
-	scratchpadRendered string // glamour-rendered content
+	scratchpadRendered string // plain text scratchpad content
 	scratchpadViewport viewport.Model
 
 	// dialog state
@@ -800,6 +801,25 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenConfirmWipeDataDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openConfirmWipeDataDialog()
+			*state = next.inputState()
+			return true
+		},
+		OpenConfirmUninstallDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openConfirmUninstallDialog()
+			*state = next.inputState()
+			return true
+		},
+		WipeRuntimeData:       func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
+		OpenSupportIssueURL:   func() tea.Cmd { return commands.OpenExternalURL(views.SupportIssueURL) },
+		OpenSupportProjectURL: func() tea.Cmd { return commands.OpenExternalURL(views.SupportProjectURL) },
+		CopySupportDiagnostics: func(state inputpkg.State) tea.Cmd {
+			next := m.applyInputState(state)
+			return commands.CopyTextToClipboard(helperpkg.SupportDiagnosticsSummary(next.kernelInfo, next.exportAssets, next.updateStatus, next.health, next.currentExecutablePath, kernelExecutablePath(next.kernelInfo)), "Diagnostics copied")
+		},
 		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openDatePickerDialog("rollup_start", 0, 0, dialogpkg.ValueToPointer(next.currentRollupStartDate()))
@@ -936,6 +956,12 @@ func (m Model) openExportICSDirDialog(current string) Model {
 func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(dialogstate.OpenEditRestProtection(m.dialogSnapshot()))
 }
+func (m Model) openConfirmWipeDataDialog() Model {
+	return m.withDialogState(dialogstate.OpenConfirmWipeData(m.dialogSnapshot()))
+}
+func (m Model) openConfirmUninstallDialog() Model {
+	return m.withDialogState(dialogstate.OpenConfirmUninstall(m.dialogSnapshot()))
+}
 
 func (m Model) dialogState() dialogpkg.State {
 	return dialogpkg.State{
@@ -1053,11 +1079,14 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 
 func (m Model) dialogRuntimeState() dialogruntime.State {
 	return dialogruntime.State{
-		Context:         m.context,
-		Repos:           m.repos,
-		DashboardDate:   m.currentDashboardDate(),
-		RollupStartDate: m.currentRollupStartDate(),
-		RollupEndDate:   m.currentRollupEndDate(),
+		Context:               m.context,
+		Repos:                 m.repos,
+		DashboardDate:         m.currentDashboardDate(),
+		RollupStartDate:       m.currentRollupStartDate(),
+		RollupEndDate:         m.currentRollupEndDate(),
+		CurrentExecutablePath: m.currentExecutablePath,
+		KernelExecutablePath:  kernelExecutablePath(m.kernelInfo),
+		KernelInfo:            m.kernelInfo,
 	}
 }
 
@@ -1151,6 +1180,10 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				currentStart = date
 			}
 			return commands.SetRollupRange(currentStart, date)
+		},
+		WipeRuntimeData: func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
+		UninstallCrona: func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd {
+			return commands.UninstallCrona(m.client, currentExecutablePath, kernelExecutablePath, kernelInfo)
 		},
 		ErrorCmd: func(err error) tea.Cmd { return func() tea.Msg { return commands.ErrMsg{Err: err} } },
 		ResolvePatchSettingValue: func(action dialogpkg.Action) any {

@@ -429,12 +429,20 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		cmd := deps.SetStatus(&state, "Dev seed loaded", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
 	case commands.DevClearedMsg:
 		cmd := deps.SetStatus(&state, "Dev data cleared", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+	case commands.RuntimeDataWipedMsg:
+		cmd := deps.SetStatus(&state, "All runtime data wiped", false)
+		state.View = uistate.ViewDaily
+		state.Pane = uistate.DefaultPane(state.View)
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+	case commands.UninstallStartedMsg:
+		deps.CloseEventStop()
+		return state, tea.Quit, true
 	case commands.SessionAmendedMsg:
 		cmd := deps.SetStatus(&state, "Session amended", false)
 		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state), deps.LoadSessionDetail(msg.ID)), true

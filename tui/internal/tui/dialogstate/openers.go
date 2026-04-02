@@ -134,6 +134,14 @@ func OpenConfirmDeleteEntity(s Snapshot, kind, id, label string) dialogpkg.State
 	return dialogpkg.OpenConfirmDelete(s.Dialog, kind, id, label, s.Dialog.RepoID, s.Dialog.StreamID)
 }
 
+func OpenConfirmWipeData(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenConfirmWipeData(s.Dialog)
+}
+
+func OpenConfirmUninstall(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenConfirmUninstall(s.Dialog)
+}
+
 func OpenStashList(s Snapshot) dialogpkg.State { return dialogpkg.OpenStashList(s.Dialog) }
 
 func OpenIssueStatus(s Snapshot, status string) dialogpkg.State {

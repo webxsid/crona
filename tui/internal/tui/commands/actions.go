@@ -25,7 +25,7 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 		}
 		cmds := []tea.Cmd{LoadSettings(c)}
 		switch key {
-		case sharedtypes.CoreSettingsKeyUpdateChecksEnabled, sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
+		case sharedtypes.CoreSettingsKeyUpdateChecksEnabled, sharedtypes.CoreSettingsKeyUpdatePromptEnabled, sharedtypes.CoreSettingsKeyUpdateChannel:
 			cmds = append(cmds, LoadUpdateStatus(c))
 		case sharedtypes.CoreSettingsKeyRepoSort:
 			cmds = append(cmds, LoadRepos(c))
@@ -107,6 +107,16 @@ func ClearDevData(c *api.Client) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return DevClearedMsg{}
+	}
+}
+
+func WipeRuntimeData(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.WipeRuntimeData(); err != nil {
+			logger.Errorf("WipeRuntimeData: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return RuntimeDataWipedMsg{}
 	}
 }
 
@@ -397,6 +407,16 @@ func DeleteScratchpad(c *api.Client, id string) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return LoadScratchpads(c)()
+	}
+}
+
+func CopyTextToClipboard(text, message string) tea.Cmd {
+	return func() tea.Msg {
+		if err := copyToClipboard(text); err != nil {
+			logger.Errorf("CopyTextToClipboard: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return ClipboardCopiedMsg{Message: message}
 	}
 }
 

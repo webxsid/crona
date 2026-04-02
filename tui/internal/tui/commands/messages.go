@@ -90,6 +90,8 @@ type KernelEventMsg struct{ Event api.KernelEvent }
 type KernelShutdownMsg struct{}
 type DevSeededMsg struct{}
 type DevClearedMsg struct{}
+type RuntimeDataWipedMsg struct{}
+type UninstallStartedMsg struct{}
 type TimerTickMsg struct{ Seq int }
 type HealthTickMsg struct{}
 type ErrMsg struct{ Err error }

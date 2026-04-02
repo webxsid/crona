@@ -642,6 +642,10 @@ func (c *Client) ClearDevData() error {
 	return c.mustOK(protocol.MethodKernelClearDev, nil)
 }
 
+func (c *Client) WipeRuntimeData() error {
+	return c.mustOK(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true})
+}
+
 func (c *Client) StartTimer(issueID int64) error {
 	req := shareddto.TimerStartRequest{}
 	if issueID != 0 {

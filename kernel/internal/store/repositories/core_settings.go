@@ -88,6 +88,8 @@ func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, 
 		q = q.Set("update_checks_enabled = ?", value)
 	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
 		q = q.Set("update_prompt_enabled = ?", value)
+	case sharedtypes.CoreSettingsKeyUpdateChannel:
+		q = q.Set("update_channel = ?", string(sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))))
 	case sharedtypes.CoreSettingsKeyRepoSort:
 		q = q.Set("repo_sort = ?", string(sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))))
 	case sharedtypes.CoreSettingsKeyStreamSort:
@@ -167,6 +169,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		BoundarySound:         sharedconstants.DefaultCoreSettings["boundarySoundEnabled"].(bool),
 		UpdateChecksEnabled:   updateChecksEnabled,
 		UpdatePromptEnabled:   updatePromptEnabled,
+		UpdateChannel:         sharedconstants.DefaultCoreSettings["updateChannel"].(string),
 		RepoSort:              sharedconstants.DefaultCoreSettings["repoSort"].(string),
 		StreamSort:            sharedconstants.DefaultCoreSettings["streamSort"].(string),
 		IssueSort:             sharedconstants.DefaultCoreSettings["issueSort"].(string),
@@ -210,6 +213,8 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 		return row.UpdateChecksEnabled
 	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
 		return row.UpdatePromptEnabled
+	case sharedtypes.CoreSettingsKeyUpdateChannel:
+		return sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(row.UpdateChannel))
 	case sharedtypes.CoreSettingsKeyRepoSort:
 		return sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(row.RepoSort))
 	case sharedtypes.CoreSettingsKeyStreamSort:
@@ -250,6 +255,7 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		BoundarySound:         row.BoundarySound,
 		UpdateChecksEnabled:   row.UpdateChecksEnabled,
 		UpdatePromptEnabled:   row.UpdatePromptEnabled,
+		UpdateChannel:         sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(row.UpdateChannel)),
 		RepoSort:              sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(row.RepoSort)),
 		StreamSort:            sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(row.StreamSort)),
 		IssueSort:             sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(row.IssueSort)),
