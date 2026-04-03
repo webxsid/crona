@@ -22,6 +22,45 @@ type CoreSettingsRepository struct {
 	db *bun.DB
 }
 
+type coreSettingQueryKind int
+
+const (
+	coreSettingQueryString coreSettingQueryKind = iota
+	coreSettingQueryBool
+	coreSettingQueryInt
+)
+
+type coreSettingMeta struct {
+	column    string
+	queryKind coreSettingQueryKind
+}
+
+var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
+	sharedtypes.CoreSettingsKeyTimerMode:             {column: "timer_mode", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyBreaksEnabled:         {column: "breaks_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyWorkDurationMinutes:   {column: "work_duration_minutes", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyShortBreakMinutes:     {column: "short_break_minutes", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyLongBreakMinutes:      {column: "long_break_minutes", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyLongBreakEnabled:      {column: "long_break_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak: {column: "cycles_before_long_break", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyAutoStartBreaks:       {column: "auto_start_breaks", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyAutoStartWork:         {column: "auto_start_work", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyBoundaryNotifications: {column: "boundary_notifications_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyBoundarySound:         {column: "boundary_sound_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyUpdateChecksEnabled:   {column: "update_checks_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyUpdatePromptEnabled:   {column: "update_prompt_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyUpdateChannel:         {column: "update_channel", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyRepoSort:              {column: "repo_sort", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyStreamSort:            {column: "stream_sort", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyIssueSort:             {column: "issue_sort", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyHabitSort:             {column: "habit_sort", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyAwayModeEnabled:       {column: "away_mode_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyFrozenStreakKinds:     {column: "frozen_streak_kinds", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyRestWeekdays:          {column: "rest_weekdays", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyRestSpecificDates:     {column: "rest_specific_dates", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyDailyPlanRollbackMins: {column: "daily_plan_rollback_minutes", queryKind: coreSettingQueryInt},
+}
+
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
 	return &CoreSettingsRepository{db: db}
 }
@@ -44,16 +83,16 @@ func (r *CoreSettingsRepository) Get(ctx context.Context, userID string) (*share
 }
 
 func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey) (any, error) {
-	column := coreSettingsColumnName(key)
-	if column == "" {
+	meta, ok := coreSettingMetas[key]
+	if !ok {
 		return nil, nil
 	}
-	switch key {
-	case sharedtypes.CoreSettingsKeyTimerMode, sharedtypes.CoreSettingsKeyUpdateChannel, sharedtypes.CoreSettingsKeyRepoSort, sharedtypes.CoreSettingsKeyStreamSort, sharedtypes.CoreSettingsKeyIssueSort, sharedtypes.CoreSettingsKeyHabitSort, sharedtypes.CoreSettingsKeyFrozenStreakKinds, sharedtypes.CoreSettingsKeyRestWeekdays, sharedtypes.CoreSettingsKeyRestSpecificDates:
+	switch meta.queryKind {
+	case coreSettingQueryString:
 		var value string
 		err := r.db.NewSelect().
 			Model((*storemodels.CoreSettingsModel)(nil)).
-			Column(column).
+			Column(meta.column).
 			Where("user_id = ?", userID).
 			Limit(1).
 			Scan(ctx, &value)
@@ -64,11 +103,11 @@ func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, 
 			return nil, err
 		}
 		return coreSettingsValueFromColumn(key, value), nil
-	case sharedtypes.CoreSettingsKeyBreaksEnabled, sharedtypes.CoreSettingsKeyLongBreakEnabled, sharedtypes.CoreSettingsKeyAutoStartBreaks, sharedtypes.CoreSettingsKeyAutoStartWork, sharedtypes.CoreSettingsKeyBoundaryNotifications, sharedtypes.CoreSettingsKeyBoundarySound, sharedtypes.CoreSettingsKeyUpdateChecksEnabled, sharedtypes.CoreSettingsKeyUpdatePromptEnabled, sharedtypes.CoreSettingsKeyAwayModeEnabled:
+	case coreSettingQueryBool:
 		var value bool
 		err := r.db.NewSelect().
 			Model((*storemodels.CoreSettingsModel)(nil)).
-			Column(column).
+			Column(meta.column).
 			Where("user_id = ?", userID).
 			Limit(1).
 			Scan(ctx, &value)
@@ -83,7 +122,7 @@ func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, 
 		var value int
 		err := r.db.NewSelect().
 			Model((*storemodels.CoreSettingsModel)(nil)).
-			Column(column).
+			Column(meta.column).
 			Where("user_id = ?", userID).
 			Limit(1).
 			Scan(ctx, &value)
@@ -99,65 +138,12 @@ func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, 
 
 func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey, value any) error {
 	q := r.db.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).Where("user_id = ?", userID).Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10))
-	switch key {
-	case sharedtypes.CoreSettingsKeyTimerMode:
-		q = q.Set("timer_mode = ?", value)
-	case sharedtypes.CoreSettingsKeyBreaksEnabled:
-		q = q.Set("breaks_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyWorkDurationMinutes:
-		q = q.Set("work_duration_minutes = ?", value)
-	case sharedtypes.CoreSettingsKeyShortBreakMinutes:
-		q = q.Set("short_break_minutes = ?", value)
-	case sharedtypes.CoreSettingsKeyLongBreakMinutes:
-		q = q.Set("long_break_minutes = ?", value)
-	case sharedtypes.CoreSettingsKeyLongBreakEnabled:
-		q = q.Set("long_break_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak:
-		q = q.Set("cycles_before_long_break = ?", value)
-	case sharedtypes.CoreSettingsKeyAutoStartBreaks:
-		q = q.Set("auto_start_breaks = ?", value)
-	case sharedtypes.CoreSettingsKeyAutoStartWork:
-		q = q.Set("auto_start_work = ?", value)
-	case sharedtypes.CoreSettingsKeyBoundaryNotifications:
-		q = q.Set("boundary_notifications_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyBoundarySound:
-		q = q.Set("boundary_sound_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyUpdateChecksEnabled:
-		q = q.Set("update_checks_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
-		q = q.Set("update_prompt_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyUpdateChannel:
-		q = q.Set("update_channel = ?", string(sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))))
-	case sharedtypes.CoreSettingsKeyRepoSort:
-		q = q.Set("repo_sort = ?", string(sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))))
-	case sharedtypes.CoreSettingsKeyStreamSort:
-		q = q.Set("stream_sort = ?", string(sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(toString(value)))))
-	case sharedtypes.CoreSettingsKeyIssueSort:
-		q = q.Set("issue_sort = ?", string(sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))))
-	case sharedtypes.CoreSettingsKeyHabitSort:
-		q = q.Set("habit_sort = ?", string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))))
-	case sharedtypes.CoreSettingsKeyAwayModeEnabled:
-		q = q.Set("away_mode_enabled = ?", value)
-	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
-		raw, err := streakKindsJSON(value)
+	if meta, ok := coreSettingMetas[key]; ok {
+		dbValue, err := coreSettingsDBValue(key, value)
 		if err != nil {
 			return err
 		}
-		q = q.Set("frozen_streak_kinds = ?", raw)
-	case sharedtypes.CoreSettingsKeyRestWeekdays:
-		raw, err := intSliceJSON(value)
-		if err != nil {
-			return err
-		}
-		q = q.Set("rest_weekdays = ?", raw)
-	case sharedtypes.CoreSettingsKeyRestSpecificDates:
-		raw, err := stringSliceJSON(value)
-		if err != nil {
-			return err
-		}
-		q = q.Set("rest_specific_dates = ?", raw)
-	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
-		q = q.Set("daily_plan_rollback_minutes = ?", clampRollbackMinutes(value))
+		q = q.Set(meta.column+" = ?", dbValue)
 	}
 	_, err := q.Exec(ctx)
 	return err
@@ -277,56 +263,10 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 }
 
 func coreSettingsColumnName(key sharedtypes.CoreSettingsKey) string {
-	switch key {
-	case sharedtypes.CoreSettingsKeyTimerMode:
-		return "timer_mode"
-	case sharedtypes.CoreSettingsKeyBreaksEnabled:
-		return "breaks_enabled"
-	case sharedtypes.CoreSettingsKeyWorkDurationMinutes:
-		return "work_duration_minutes"
-	case sharedtypes.CoreSettingsKeyShortBreakMinutes:
-		return "short_break_minutes"
-	case sharedtypes.CoreSettingsKeyLongBreakMinutes:
-		return "long_break_minutes"
-	case sharedtypes.CoreSettingsKeyLongBreakEnabled:
-		return "long_break_enabled"
-	case sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak:
-		return "cycles_before_long_break"
-	case sharedtypes.CoreSettingsKeyAutoStartBreaks:
-		return "auto_start_breaks"
-	case sharedtypes.CoreSettingsKeyAutoStartWork:
-		return "auto_start_work"
-	case sharedtypes.CoreSettingsKeyBoundaryNotifications:
-		return "boundary_notifications_enabled"
-	case sharedtypes.CoreSettingsKeyBoundarySound:
-		return "boundary_sound_enabled"
-	case sharedtypes.CoreSettingsKeyUpdateChecksEnabled:
-		return "update_checks_enabled"
-	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
-		return "update_prompt_enabled"
-	case sharedtypes.CoreSettingsKeyUpdateChannel:
-		return "update_channel"
-	case sharedtypes.CoreSettingsKeyRepoSort:
-		return "repo_sort"
-	case sharedtypes.CoreSettingsKeyStreamSort:
-		return "stream_sort"
-	case sharedtypes.CoreSettingsKeyIssueSort:
-		return "issue_sort"
-	case sharedtypes.CoreSettingsKeyHabitSort:
-		return "habit_sort"
-	case sharedtypes.CoreSettingsKeyAwayModeEnabled:
-		return "away_mode_enabled"
-	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
-		return "frozen_streak_kinds"
-	case sharedtypes.CoreSettingsKeyRestWeekdays:
-		return "rest_weekdays"
-	case sharedtypes.CoreSettingsKeyRestSpecificDates:
-		return "rest_specific_dates"
-	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
-		return "daily_plan_rollback_minutes"
-	default:
-		return ""
+	if meta, ok := coreSettingMetas[key]; ok {
+		return meta.column
 	}
+	return ""
 }
 
 func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any {
@@ -353,6 +293,31 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return clampRollbackMinutes(value)
 	default:
 		return value
+	}
+}
+
+func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error) {
+	switch key {
+	case sharedtypes.CoreSettingsKeyUpdateChannel:
+		return string(sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyRepoSort:
+		return string(sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyStreamSort:
+		return string(sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyIssueSort:
+		return string(sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyHabitSort:
+		return string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
+		return streakKindsJSON(value)
+	case sharedtypes.CoreSettingsKeyRestWeekdays:
+		return intSliceJSON(value)
+	case sharedtypes.CoreSettingsKeyRestSpecificDates:
+		return stringSliceJSON(value)
+	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
+		return clampRollbackMinutes(value), nil
+	default:
+		return value, nil
 	}
 }
 

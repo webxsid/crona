@@ -118,12 +118,12 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 	for _, checkIn := range checkIns {
 		checkInByDate[checkIn.Date] = checkIn
 	}
-	segments, err := c.SessionSegments.ListEndedInRange(ctx, c.UserID, start+"T00:00:00.000Z", end+"T23:59:59.999Z")
+	rangeStart := start + "T00:00:00.000Z"
+	rangeEnd := end + "T23:59:59.999Z"
+	segments, err := c.SessionSegments.ListEndedInRange(ctx, c.UserID, rangeStart, rangeEnd)
 	if err != nil {
 		return nil, err
 	}
-	rangeStart := start + "T00:00:00.000Z"
-	rangeEnd := end + "T23:59:59.999Z"
 	rangeSessions, err := c.Sessions.ListEnded(ctx, struct {
 		UserID   string
 		RepoID   *int64
@@ -138,6 +138,10 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		Since:  &rangeStart,
 		Until:  &rangeEnd,
 	})
+	if err != nil {
+		return nil, err
+	}
+	summariesByDate, err := loadDailyIssueSummariesByDate(ctx, c, start, end, rangeSessions)
 	if err != nil {
 		return nil, err
 	}
@@ -172,10 +176,7 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 
 	out := make([]sharedtypes.DailyMetricsDay, 0)
 	for day := range eachDate(start, end) {
-		summary, err := ComputeDailyIssueSummaryForDate(ctx, c, day)
-		if err != nil {
-			return nil, err
-		}
+		summary := summariesByDate[day]
 		item := sharedtypes.DailyMetricsDay{
 			Date:                  day,
 			WorkedSeconds:         summary.WorkedSeconds,
@@ -204,10 +205,10 @@ func ComputeMetricsRollup(ctx context.Context, c *core.Context, start string, en
 	if err != nil {
 		return nil, err
 	}
-	return computeMetricsRollupFromDays(start, end, days), nil
+	return ComputeMetricsRollupFromDays(start, end, days), nil
 }
 
-func computeMetricsRollupFromDays(start string, end string, days []sharedtypes.DailyMetricsDay) *sharedtypes.MetricsRollup {
+func ComputeMetricsRollupFromDays(start string, end string, days []sharedtypes.DailyMetricsDay) *sharedtypes.MetricsRollup {
 	rollup := &sharedtypes.MetricsRollup{
 		StartDate: start,
 		EndDate:   end,
@@ -266,6 +267,10 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	if err != nil {
 		return nil, err
 	}
+	return ComputeMetricsStreaksFromDays(days, settings), nil
+}
+
+func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) *sharedtypes.StreakSummary {
 	var streaks sharedtypes.StreakSummary
 	currentFocus := 0
 	currentCheckIn := 0
@@ -295,7 +300,7 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	streaks.CurrentCheckInDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) }, func(day sharedtypes.DailyMetricsDay) bool {
 		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays)
 	})
-	return &streaks, nil
+	return &streaks
 }
 
 func validateCheckInDate(date string, now string, rejectFuture bool) error {
@@ -340,6 +345,71 @@ func extractISODate(value string) string {
 		return value[:10]
 	}
 	return ""
+}
+
+func loadDailyIssueSummariesByDate(ctx context.Context, c *core.Context, start string, end string, rangeSessions []sharedtypes.SessionHistoryEntry) (map[string]sharedtypes.DailyIssueSummary, error) {
+	issues, err := c.Issues.ListByTodoDateRange(ctx, start, end, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	order := loadListSortSettings(ctx, c).issueSort
+	issuesByDate := make(map[string][]sharedtypes.Issue)
+	issueIDsByDate := make(map[string]map[int64]struct{})
+	totalEstimateByDate := make(map[string]int)
+	completedByDate := make(map[string]int)
+	abandonedByDate := make(map[string]int)
+	for _, issue := range issues {
+		if issue.TodoForDate == nil {
+			continue
+		}
+		day := strings.TrimSpace(*issue.TodoForDate)
+		if day == "" {
+			continue
+		}
+		issuesByDate[day] = append(issuesByDate[day], issue)
+		if issueIDsByDate[day] == nil {
+			issueIDsByDate[day] = map[int64]struct{}{}
+		}
+		issueIDsByDate[day][issue.ID] = struct{}{}
+		totalEstimateByDate[day] += derefIssueEstimate(issue.EstimateMinutes)
+		if issue.CompletedAt != nil && strings.HasPrefix(*issue.CompletedAt, day) {
+			completedByDate[day]++
+		}
+		if issue.AbandonedAt != nil && strings.HasPrefix(*issue.AbandonedAt, day) {
+			abandonedByDate[day]++
+		}
+	}
+	for day := range issuesByDate {
+		sortIssues(issuesByDate[day], order)
+	}
+	workedByDate := make(map[string]int)
+	for _, session := range rangeSessions {
+		day := extractISODate(session.StartTime)
+		if day == "" {
+			continue
+		}
+		issueIDs := issueIDsByDate[day]
+		if len(issueIDs) == 0 {
+			continue
+		}
+		if _, ok := issueIDs[session.IssueID]; !ok {
+			continue
+		}
+		workedByDate[day] += derefIssueEstimate(session.DurationSeconds)
+	}
+	out := make(map[string]sharedtypes.DailyIssueSummary, len(issuesByDate))
+	for day, dayIssues := range issuesByDate {
+		out[day] = sharedtypes.DailyIssueSummary{
+			Date:                  day,
+			TotalIssues:           len(dayIssues),
+			Issues:                dayIssues,
+			TotalEstimatedMinutes: totalEstimateByDate[day],
+			CompletedIssues:       completedByDate[day],
+			AbandonedIssues:       abandonedByDate[day],
+			WorkedSeconds:         workedByDate[day],
+		}
+	}
+	return out, nil
 }
 
 func eachDate(start string, end string) func(func(string) bool) {

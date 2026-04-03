@@ -213,14 +213,12 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	if err != nil {
 		return nil, err
 	}
-	rollup, err := corecommands.ComputeMetricsRollup(ctx, c, date, date)
+	rollup := corecommands.ComputeMetricsRollupFromDays(date, date, days)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
 	}
-	streaks, err := corecommands.ComputeMetricsStreaks(ctx, c, date, date)
-	if err != nil {
-		return nil, err
-	}
+	streaks := corecommands.ComputeMetricsStreaksFromDays(days, settings)
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
 		copy := days[0]

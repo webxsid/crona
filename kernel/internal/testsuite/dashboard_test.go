@@ -39,7 +39,7 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		EstimateMinutes *int
 		Notes           *string
 		TodoForDate     *string
-	}{StreamID: stream.ID, Title: "Ship dashboard cards", EstimateMinutes: &estimate60, TodoForDate: stringPtr("2026-04-01")})
+	}{StreamID: stream.ID, Title: "Ship dashboard cards", EstimateMinutes: &estimate60, TodoForDate: ptrTo("2026-04-01")})
 	if err != nil {
 		t.Fatalf("create issueDone: %v", err)
 	}
@@ -50,7 +50,7 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		EstimateMinutes *int
 		Notes           *string
 		TodoForDate     *string
-	}{StreamID: stream.ID, Title: "Refine streak strip", EstimateMinutes: &estimate30, TodoForDate: stringPtr("2026-03-31")})
+	}{StreamID: stream.ID, Title: "Refine streak strip", EstimateMinutes: &estimate30, TodoForDate: ptrTo("2026-03-31")})
 	if err != nil {
 		t.Fatalf("create issueCarry: %v", err)
 	}

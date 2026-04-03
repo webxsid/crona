@@ -349,6 +349,59 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 	return out, nil
 }
 
+func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate string, endDate string, userID string) ([]sharedtypes.Issue, error) {
+	type row struct {
+		PublicID        int64   `bun:"public_id"`
+		StreamPublicID  int64   `bun:"stream_public_id"`
+		Title           string  `bun:"title"`
+		Description     *string `bun:"description"`
+		Status          string  `bun:"status"`
+		EstimateMinutes *int    `bun:"estimate_minutes"`
+		Notes           *string `bun:"notes"`
+		TodoForDate     *string `bun:"todo_for_date"`
+		CompletedAt     *string `bun:"completed_at"`
+		AbandonedAt     *string `bun:"abandoned_at"`
+	}
+	var rows []row
+	if err := r.db.NewSelect().
+		TableExpr("issues").
+		Join("INNER JOIN streams ON streams.id = issues.stream_id").
+		ColumnExpr("issues.public_id").
+		ColumnExpr("streams.public_id AS stream_public_id").
+		ColumnExpr("issues.title").
+		ColumnExpr("issues.description").
+		ColumnExpr("issues.status").
+		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("issues.notes").
+		ColumnExpr("issues.todo_for_date").
+		ColumnExpr("issues.completed_at").
+		ColumnExpr("issues.abandoned_at").
+		Where("issues.todo_for_date >= ?", startDate).
+		Where("issues.todo_for_date <= ?", endDate).
+		Where("issues.user_id = ?", userID).
+		Where("issues.deleted_at IS NULL").
+		OrderExpr("issues.todo_for_date ASC, issues.created_at ASC").
+		Scan(ctx, &rows); err != nil {
+		return nil, err
+	}
+	out := make([]sharedtypes.Issue, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, sharedtypes.Issue{
+			ID:              row.PublicID,
+			StreamID:        row.StreamPublicID,
+			Title:           row.Title,
+			Description:     row.Description,
+			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
+			EstimateMinutes: row.EstimateMinutes,
+			Notes:           row.Notes,
+			TodoForDate:     row.TodoForDate,
+			CompletedAt:     row.CompletedAt,
+			AbandonedAt:     row.AbandonedAt,
+		})
+	}
+	return out, nil
+}
+
 func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID string, now string, updates struct {
 	Title           Patch[string]
 	Description     Patch[string]

@@ -463,28 +463,9 @@ func ComputeDailyIssueSummaryForDate(ctx context.Context, c *core.Context, date 
 	if date == "" {
 		return sharedtypes.DailyIssueSummary{}, errors.New("invalid date")
 	}
-	issues, err := c.Issues.ListByTodoForDate(ctx, date, c.UserID)
-	if err != nil {
-		return sharedtypes.DailyIssueSummary{}, err
-	}
-	sortIssues(issues, loadListSortSettings(ctx, c).issueSort)
-	totalEstimatedMinutes := 0
-	completedIssues := 0
-	abandonedIssues := 0
-	issueIDs := map[int64]bool{}
-	for _, issue := range issues {
-		totalEstimatedMinutes += derefIssueEstimate(issue.EstimateMinutes)
-		if issue.CompletedAt != nil && strings.HasPrefix(*issue.CompletedAt, date) {
-			completedIssues++
-		}
-		if issue.AbandonedAt != nil && strings.HasPrefix(*issue.AbandonedAt, date) {
-			abandonedIssues++
-		}
-		issueIDs[issue.ID] = true
-	}
 	dayStart := date + "T00:00:00.000Z"
 	dayEnd := date + "T23:59:59.999Z"
-	endedSessions, err := c.Sessions.ListEnded(ctx, struct {
+	rangeSessions, err := c.Sessions.ListEnded(ctx, struct {
 		UserID   string
 		RepoID   *int64
 		StreamID *int64
@@ -501,21 +482,14 @@ func ComputeDailyIssueSummaryForDate(ctx context.Context, c *core.Context, date 
 	if err != nil {
 		return sharedtypes.DailyIssueSummary{}, err
 	}
-	workedSeconds := 0
-	for _, session := range endedSessions {
-		if issueIDs[session.IssueID] {
-			workedSeconds += derefIssueEstimate(session.DurationSeconds)
-		}
+	summariesByDate, err := loadDailyIssueSummariesByDate(ctx, c, date, date, rangeSessions)
+	if err != nil {
+		return sharedtypes.DailyIssueSummary{}, err
 	}
-	return sharedtypes.DailyIssueSummary{
-		Date:                  date,
-		TotalIssues:           len(issues),
-		Issues:                issues,
-		TotalEstimatedMinutes: totalEstimatedMinutes,
-		CompletedIssues:       completedIssues,
-		AbandonedIssues:       abandonedIssues,
-		WorkedSeconds:         workedSeconds,
-	}, nil
+	if summary, ok := summariesByDate[date]; ok {
+		return summary, nil
+	}
+	return sharedtypes.DailyIssueSummary{Date: date}, nil
 }
 
 func ComputeDailyIssueSummaryForToday(ctx context.Context, c *core.Context) (sharedtypes.DailyIssueSummary, error) {

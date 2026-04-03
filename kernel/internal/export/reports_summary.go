@@ -191,14 +191,12 @@ func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Pa
 	if err != nil {
 		return nil, err
 	}
-	rollup, err := corecommands.ComputeMetricsRollup(ctx, c, start, end)
+	rollup := corecommands.ComputeMetricsRollupFromDays(start, end, days)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
 	}
-	streaks, err := corecommands.ComputeMetricsStreaks(ctx, c, start, end)
-	if err != nil {
-		return nil, err
-	}
+	streaks := corecommands.ComputeMetricsStreaksFromDays(days, settings)
 	checkIns, err := corecommands.ListDailyCheckInsInRange(ctx, c, start, end)
 	if err != nil {
 		return nil, err

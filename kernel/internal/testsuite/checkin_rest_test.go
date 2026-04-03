@@ -79,7 +79,7 @@ func seedFocusDay(t *testing.T, ctx context.Context, coreCtx *core.Context, stre
 		StreamID:    streamID,
 		Title:       fmt.Sprintf("Issue %d", issueID),
 		Status:      sharedtypes.IssueStatusPlanned,
-		TodoForDate: stringPtr(date),
+		TodoForDate: ptrTo(date),
 	}, coreCtx.UserID, date+"T08:00:00Z")
 	if err != nil {
 		t.Fatalf("create issue: %v", err)
@@ -119,6 +119,8 @@ func seedCheckInDay(t *testing.T, ctx context.Context, coreCtx *core.Context, da
 	}
 }
 
-func stringPtr(value string) *string {
-	return &value
+func ptrTo[T any](value T) *T {
+	ptr := new(T)
+	*ptr = value
+	return ptr
 }

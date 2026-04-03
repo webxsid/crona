@@ -75,8 +75,8 @@ func TestManualSessionLoggingAppliesFocusStatusRules(t *testing.T) {
 		IssueID:             issue.ID,
 		Date:                "2026-03-30",
 		WorkDurationSeconds: 1800,
-		StartTime:           stringPtr("09:00"),
-		EndTime:             stringPtr("09:30"),
+		StartTime:           ptrTo("09:00"),
+		EndTime:             ptrTo("09:30"),
 	})
 	if err != nil {
 		t.Fatalf("log manual session: %v", err)

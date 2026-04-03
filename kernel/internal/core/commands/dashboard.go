@@ -95,7 +95,7 @@ func ComputeFocusScoreSummary(ctx context.Context, c *core.Context, input shared
 	if err != nil {
 		return nil, err
 	}
-	rollup := computeMetricsRollupFromDays(input.Start, input.End, days)
+	rollup := ComputeMetricsRollupFromDays(input.Start, input.End, days)
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
