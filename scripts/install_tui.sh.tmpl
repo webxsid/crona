@@ -227,7 +227,7 @@ else
 fi
 LEGACY_CRONA_HOME="$(legacy_crona_home)"
 ASSETS_DIR="${CRONA_HOME}/assets/bundled"
-BASE_URL="https://github.com/${REPO}/releases/download/${VERSION}"
+BASE_URL="${CRONA_RELEASE_BASE_URL:-https://github.com/${REPO}/releases/download/${VERSION}}"
 BUNDLE_NAME="crona-bundle-${VERSION}-${OS}-${ARCH}.zip"
 ASSETS_NAME="crona-assets-${VERSION}.tar.gz"
 BUNDLE_URL="${BASE_URL}/${BUNDLE_NAME}"

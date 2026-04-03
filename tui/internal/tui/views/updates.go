@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"strings"
 
 	"crona/tui/internal/api"
@@ -88,9 +87,6 @@ func renderUpdatesView(theme Theme, state ContentState) string {
 	if strings.TrimSpace(status.Error) != "" {
 		lines = append(lines, "", theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)))
 	}
-	if output := strings.TrimSpace(state.UpdateInstallOutput); output != "" {
-		lines = append(lines, "", theme.StyleDim.Render("Installer output:"), truncateMultiline(output, state.Width-6, 8))
-	}
 
 	lines = append(lines, "", theme.StyleDim.Render("Release notes:"))
 	notes := strings.TrimSpace(status.ReleaseNotes)
@@ -145,13 +141,4 @@ func wrapMultiline(value string, width int) []string {
 		rows = append(rows, line)
 	}
 	return rows
-}
-
-func truncateMultiline(value string, width, maxLines int) string {
-	rows := wrapMultiline(value, width)
-	if len(rows) <= maxLines {
-		return stringsJoin(rows)
-	}
-	rows = append(rows[:maxLines-1], fmt.Sprintf("... %d more lines", len(rows)-maxLines+1))
-	return stringsJoin(rows)
 }

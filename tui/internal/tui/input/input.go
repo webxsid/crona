@@ -39,9 +39,6 @@ type State struct {
 	UpdateStatus        *api.UpdateStatus
 	UpdateChecking      bool
 	UpdateInstalling    bool
-	UpdateInstallPhase  string
-	UpdateInstallDetail string
-	UpdateInstallOutput string
 	UpdateInstallError  string
 	CurrentExecutable   string
 	Settings            *api.CoreSettings
@@ -58,6 +55,7 @@ type Deps struct {
 	ShutdownKernel                  func() tea.Cmd
 	SeedDevData                     func() tea.Cmd
 	ClearDevData                    func() tea.Cmd
+	PrepareLocalUpdate              func() tea.Cmd
 	IsDevMode                       func(State) bool
 	NextActiveSessionView           func(State, int) uistate.View
 	NextWorkspaceView               func(State, int) uistate.View
@@ -150,6 +148,16 @@ func newRouter(deps Deps) *router {
 		},
 		"f7": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return handleDevCmd(s, deps.IsDevMode, deps.ClearDevData)
+		},
+		"f8": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if !deps.IsDevMode(s) {
+				return s, nil, false
+			}
+			s.ActiveView = uistate.ViewUpdates
+			s.ActivePane = uistate.DefaultPane(s.ActiveView)
+			s.UpdateChecking = true
+			s.UpdateInstallError = ""
+			return s, deps.PrepareLocalUpdate(), true
 		},
 		"]":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, 1) },
 		"[":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, -1) },
@@ -671,7 +679,6 @@ func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	}
 	s.UpdateInstalling = true
 	s.UpdateInstallError = ""
-	s.UpdateInstallOutput = ""
 	return s, deps.InstallUpdate(s), true
 }
 

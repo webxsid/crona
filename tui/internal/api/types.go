@@ -1,5 +1,6 @@
 package api
 
+import shareddto "crona/shared/dto"
 import sharedtypes "crona/shared/types"
 
 type Repo = sharedtypes.Repo
@@ -50,3 +51,4 @@ type Stash = sharedtypes.Stash
 type Op = sharedtypes.Op
 type KernelEvent = sharedtypes.KernelEvent
 type KernelInfo = sharedtypes.KernelInfo
+type LocalUpdatePrepared = shareddto.LocalUpdatePreparedResponse

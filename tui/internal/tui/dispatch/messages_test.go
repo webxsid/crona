@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"fmt"
+	"os/exec"
 	"testing"
 
 	"crona/tui/internal/tui/commands"
@@ -10,15 +11,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func TestUpdateInstallStartedEntersDedicatedInstallState(t *testing.T) {
-	progress := make(chan tea.Msg)
+func TestUpdateInstallPreparedRunsTerminalProcess(t *testing.T) {
 	stopped := false
-
-	state, cmd, handled := HandleMessage(MessageState{}, commands.UpdateInstallStartedMsg{Progress: progress}, MessageDeps{
+	state, cmd, handled := HandleMessage(MessageState{}, commands.UpdateInstallPreparedMsg{Cmd: exec.Command("sh", "-c", "exit 0")}, MessageDeps{
 		CloseEventStop: func() { stopped = true },
 	})
 	if !handled {
-		t.Fatalf("expected update install start to be handled")
+		t.Fatalf("expected prepared install to be handled")
 	}
 	if !stopped {
 		t.Fatalf("expected event stream to stop when install starts")
@@ -26,22 +25,18 @@ func TestUpdateInstallStartedEntersDedicatedInstallState(t *testing.T) {
 	if !state.UpdateInstalling {
 		t.Fatalf("expected install mode to be active")
 	}
-	if state.UpdateInstallPhase != "starting" {
-		t.Fatalf("expected starting phase, got %q", state.UpdateInstallPhase)
-	}
 	if state.View != uistate.ViewUpdates {
 		t.Fatalf("expected updates view, got %q", state.View)
 	}
 	if cmd == nil {
-		t.Fatalf("expected follow-up wait command for install progress")
+		t.Fatalf("expected terminal install command")
 	}
 }
 
 func TestTransportErrorsAreSuppressedDuringUpdateInstall(t *testing.T) {
 	called := false
 	state, cmd, handled := HandleMessage(MessageState{
-		UpdateInstalling:   true,
-		UpdateInstallPhase: "installing",
+		UpdateInstalling: true,
 	}, commands.ErrMsg{Err: fmt.Errorf("dial unix /tmp/kernel.sock: connect: no such file or directory")}, MessageDeps{
 		SetStatus: func(*MessageState, string, bool) tea.Cmd {
 			called = true

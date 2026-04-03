@@ -283,6 +283,13 @@ type ConfirmDangerousActionRequest struct {
 	Confirm bool `json:"confirm"`
 }
 
+type LocalUpdatePreparedResponse struct {
+	Version    string `json:"version"`
+	Tag        string `json:"tag"`
+	ReleaseDir string `json:"releaseDir"`
+	BaseURL    string `json:"baseUrl"`
+}
+
 type UpdateContextRequest struct {
 	RepoID   *int64 `json:"repoId,omitempty"`
 	StreamID *int64 `json:"streamId,omitempty"`

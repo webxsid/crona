@@ -2,8 +2,7 @@ package commands
 
 import (
 	"crona/tui/internal/api"
-
-	tea "github.com/charmbracelet/bubbletea"
+	"os/exec"
 )
 
 type ReposLoadedMsg struct{ Repos []api.Repo }
@@ -76,19 +75,11 @@ type TimerLoadedMsg struct{ Timer *api.TimerState }
 type HealthLoadedMsg struct{ Health *api.Health }
 type UpdateStatusLoadedMsg struct{ Status *api.UpdateStatus }
 type UpdateDismissedMsg struct{ Status *api.UpdateStatus }
-type UpdateInstallStartedMsg struct {
-	Progress <-chan tea.Msg
-}
-type UpdateInstallPhaseMsg struct {
-	Phase    string
-	Detail   string
-	Output   string
-	Progress <-chan tea.Msg
+type UpdateInstallPreparedMsg struct {
+	Cmd *exec.Cmd
 }
 type UpdateInstallFinishedMsg struct {
-	Output          string
-	Err             error
-	RelaunchStarted bool
+	Err error
 }
 type SettingsLoadedMsg struct{ Settings *api.CoreSettings }
 type KernelInfoLoadedMsg struct{ Info *api.KernelInfo }
@@ -96,6 +87,10 @@ type KernelEventMsg struct{ Event api.KernelEvent }
 type KernelShutdownMsg struct{}
 type DevSeededMsg struct{}
 type DevClearedMsg struct{}
+type LocalUpdatePreparedMsg struct {
+	Prepared *api.LocalUpdatePrepared
+	Status   *api.UpdateStatus
+}
 type RuntimeDataWipedMsg struct{}
 type UninstallStartedMsg struct{}
 type TimerTickMsg struct{ Seq int }

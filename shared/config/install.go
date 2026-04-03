@@ -7,7 +7,10 @@ import (
 	"strings"
 )
 
-const EnvVarInstallDir = "CRONA_INSTALL_DIR"
+const (
+	EnvVarInstallDir     = "CRONA_INSTALL_DIR"
+	EnvVarReleaseBaseURL = "CRONA_RELEASE_BASE_URL"
+)
 
 func InstallDir() (string, error) {
 	if dir := InstallDirOverride(); dir != "" {

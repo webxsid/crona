@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +16,15 @@ import (
 
 	"crona/shared/config"
 	"crona/tui/internal/api"
-	"crona/tui/internal/kernel"
 	"crona/tui/internal/logger"
-	appruntime "crona/tui/internal/tui/runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+var (
+	downloadFileFn         = downloadFile
+	downloadAndVerifyFn    = downloadAndVerifyAsset
+	updateInstallCommandFn = updateInstallCommand
 )
 
 func CheckUpdateNow(c *api.Client) tea.Cmd {
@@ -52,126 +57,86 @@ func OpenExternalURL(rawURL string) tea.Cmd {
 	}
 }
 
-func InstallUpdate(status *api.UpdateStatus, currentExecutablePath string, supported bool, unsupportedReason string) tea.Cmd {
+func InstallUpdate(status *api.UpdateStatus, supported bool, unsupportedReason string) tea.Cmd {
 	return func() tea.Msg {
-		progress := make(chan tea.Msg, 16)
-		go runInstallUpdate(progress, status, currentExecutablePath, supported, unsupportedReason)
-		return UpdateInstallStartedMsg{Progress: progress}
+		cmd, err := prepareInstallCommand(status, supported, unsupportedReason)
+		if err != nil {
+			return ErrMsg{Err: err}
+		}
+		return UpdateInstallPreparedMsg{Cmd: cmd}
 	}
 }
 
-func runInstallUpdate(progress chan<- tea.Msg, status *api.UpdateStatus, currentExecutablePath string, supported bool, unsupportedReason string) {
-	defer close(progress)
-	sendInstallPhase(progress, "starting", "Preparing update...", "")
-
+func prepareInstallCommand(status *api.UpdateStatus, supported bool, unsupportedReason string) (*exec.Cmd, error) {
 	if status == nil {
-		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("update status is unavailable")}
-		return
+		return nil, fmt.Errorf("update status is unavailable")
 	}
 	if !supported {
 		reason := strings.TrimSpace(unsupportedReason)
 		if reason == "" {
 			reason = "You seem to be running the app from a non-standard location. Please update manually."
 		}
-		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("%s", reason)}
-		return
+		return nil, fmt.Errorf("%s", reason)
 	}
 	if !status.InstallAvailable {
 		reason := strings.TrimSpace(status.InstallUnavailableReason)
 		if reason == "" {
 			reason = "release is missing required installer assets"
 		}
-		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("install unavailable: %s", reason)}
-		return
+		return nil, fmt.Errorf("install unavailable: %s", reason)
 	}
 
 	installURL := strings.TrimSpace(status.InstallScriptURL)
 	checksumsURL := strings.TrimSpace(status.ChecksumsURL)
 	if installURL == "" || checksumsURL == "" {
-		progress <- UpdateInstallFinishedMsg{Err: fmt.Errorf("install metadata is incomplete")}
-		return
+		return nil, fmt.Errorf("install metadata is incomplete")
 	}
 
 	tmpDir, err := os.MkdirTemp("", "crona-update-*")
 	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Err: err}
-		return
+		return nil, err
 	}
-	defer os.RemoveAll(tmpDir)
 
-	sendInstallPhase(progress, "downloading", "Downloading checksums...", "")
 	checksumsPath := filepath.Join(tmpDir, "checksums.txt")
-	output, err := downloadFile(checksumsURL, checksumsPath)
-	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
-		return
+	if _, err := downloadFileFn(checksumsURL, checksumsPath); err != nil {
+		return nil, err
 	}
-	sendInstallPhase(progress, "downloading", "Downloading installer...", output)
 	checksumsBody, err := os.ReadFile(checksumsPath)
 	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
-		return
+		return nil, err
 	}
 
 	installerAssetName := config.InstallerAssetName()
 	scriptPath := filepath.Join(tmpDir, installerAssetName)
-	scriptOutput, err := downloadAndVerifyAsset(installURL, scriptPath, installerAssetName, checksumsBody)
-	output += scriptOutput
-	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
-		return
+	if _, err := downloadAndVerifyFn(installURL, scriptPath, installerAssetName, checksumsBody); err != nil {
+		return nil, err
 	}
-	sendInstallPhase(progress, "verifying", "Verifying installer...", scriptOutput)
 	if runtime.GOOS != "windows" {
 		if err := os.Chmod(scriptPath, 0o755); err != nil {
-			progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
-			return
+			return nil, err
 		}
 	}
 
-	installCmd, err := updateInstallCommand(scriptPath)
+	installCmd, err := updateInstallCommandFn(scriptPath)
 	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: err}
-		return
+		return nil, err
 	}
-	sendInstallPhase(progress, "installing", "Installing update...", "")
-	installCmd.Env = append(os.Environ(), "CRONA_INSTALL_FORCE=1")
-	installOutput, err := installCmd.CombinedOutput()
-	output += string(installOutput)
-	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install failed: %w", err)}
-		return
+	installCmd.Stdin = os.Stdin
+	installCmd.Stdout = os.Stdout
+	installCmd.Stderr = os.Stderr
+	installEnv := append(os.Environ(), "CRONA_INSTALL_FORCE=1")
+	if releaseBaseURL := releaseBaseURLForInstaller(installURL); releaseBaseURL != "" {
+		installEnv = append(installEnv, config.EnvVarReleaseBaseURL+"="+releaseBaseURL)
 	}
-
-	relaunchPath, err := resolveRelaunchPath(currentExecutablePath)
-	if err != nil {
-		progress <- UpdateInstallFinishedMsg{Output: output, Err: fmt.Errorf("install succeeded but %w", err)}
-		return
+	localInstallDir, localRuntimeDir := localUpdateInstallRoots(status)
+	if localInstallDir != "" && localRuntimeDir != "" {
+		installEnv = append(installEnv,
+			config.EnvVarInstallDir+"="+localInstallDir,
+			config.EnvVarRuntimeDir+"="+localRuntimeDir,
+		)
 	}
-	sendInstallPhase(progress, "relaunching", "Relaunching Crona...", "")
-	relaunchCmd := exec.Command(relaunchPath)
-	relaunchCmd.Stdin = nil
-	relaunchCmd.Stdout = nil
-	relaunchCmd.Stderr = nil
-	if err := relaunchCmd.Start(); err != nil {
-		progress <- UpdateInstallFinishedMsg{
-			Output: output,
-			Err:    fmt.Errorf("install succeeded but relaunch failed: %w. Run %s manually", err, relaunchPath),
-		}
-		return
-	}
-	progress <- UpdateInstallFinishedMsg{
-		Output:          output + fmt.Sprintf("Relaunched %s\n", relaunchPath),
-		RelaunchStarted: true,
-	}
-}
-
-func sendInstallPhase(progress chan<- tea.Msg, phase string, detail string, output string) {
-	progress <- UpdateInstallPhaseMsg{
-		Phase:  phase,
-		Detail: detail,
-		Output: output,
-	}
+	installCmd.Env = installEnv
+	return installCmd, nil
 }
 
 func downloadAndVerifyAsset(rawURL, path, assetName string, checksums []byte) (string, error) {
@@ -242,61 +207,55 @@ func expectedChecksum(assetName string, checksums []byte) string {
 	return ""
 }
 
-func resolveRelaunchPath(currentExecutablePath string) (string, error) {
-	binaryName := config.TUIBinaryName()
-	candidates := []string{}
-	if candidate := normalizedInstalledExecutable(currentExecutablePath, binaryName); candidate != "" {
-		candidates = append(candidates, candidate)
+func releaseBaseURLForInstaller(installURL string) string {
+	parsed, err := url.Parse(strings.TrimSpace(installURL))
+	if err != nil || strings.TrimSpace(parsed.Scheme) == "" || strings.TrimSpace(parsed.Host) == "" {
+		return ""
 	}
-	if state, err := kernel.ReadTUIRuntimeState(); err == nil && state != nil {
-		if candidate := normalizedInstalledExecutable(state.ExecutablePath, binaryName); candidate != "" {
-			candidates = append(candidates, candidate)
-		}
-	}
-	if candidate := filepath.Join(appruntime.InstallDir(), binaryName); strings.TrimSpace(candidate) != "" {
-		candidates = append(candidates, candidate)
-	}
-
-	seen := make(map[string]struct{}, len(candidates))
-	for _, candidate := range candidates {
-		candidate = strings.TrimSpace(candidate)
-		if candidate == "" {
-			continue
-		}
-		if _, ok := seen[candidate]; ok {
-			continue
-		}
-		seen[candidate] = struct{}{}
-		if isExecutableFile(candidate) {
-			return candidate, nil
-		}
-	}
-	return "", fmt.Errorf("could not find a runnable %s binary to relaunch; run %s manually after restart", binaryName, binaryName)
+	parsed.RawQuery = ""
+	parsed.Fragment = ""
+	parsed.Path = strings.TrimSuffix(parsed.Path, "/"+config.InstallerAssetNameForGOOS(runtime.GOOS))
+	return strings.TrimSuffix(parsed.String(), "/")
 }
 
-func normalizedInstalledExecutable(path, binaryName string) string {
-	path = strings.TrimSpace(path)
-	if path == "" {
-		return ""
+func localUpdateInstallRoots(status *api.UpdateStatus) (string, string) {
+	if status == nil || !IsLocalLoopbackUpdateURL(status.InstallScriptURL) {
+		return "", ""
 	}
-	if filepath.Base(path) != binaryName {
-		return ""
-	}
-	if !appruntime.SameInstallDir(filepath.Dir(path), appruntime.InstallDir()) {
-		return ""
-	}
-	return path
+	version := normalizeInstallVersion(status)
+	base := filepath.Join(os.TempDir(), "crona-local-update", version)
+	return filepath.Join(base, "bin"), filepath.Join(base, "home")
 }
 
-func isExecutableFile(path string) bool {
-	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
+func IsLocalLoopbackUpdateURL(rawURL string) bool {
+	parsed, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil {
 		return false
 	}
-	if runtime.GOOS == "windows" {
-		return strings.EqualFold(filepath.Ext(path), ".exe")
+	host := strings.TrimSpace(parsed.Hostname())
+	switch host {
+	case "127.0.0.1", "localhost":
+		return true
+	default:
+		return false
 	}
-	return info.Mode().Perm()&0o111 != 0
+}
+
+func normalizeInstallVersion(status *api.UpdateStatus) string {
+	if status == nil {
+		return "dev"
+	}
+	value := strings.TrimSpace(status.ReleaseTag)
+	if value == "" {
+		value = strings.TrimSpace(status.LatestVersion)
+	}
+	value = strings.TrimPrefix(value, "v")
+	value = strings.ReplaceAll(value, "/", "-")
+	value = strings.ReplaceAll(value, string(filepath.Separator), "-")
+	if value == "" {
+		return "dev"
+	}
+	return value
 }
 
 func updateInstallCommand(installerPath string) (*exec.Cmd, error) {

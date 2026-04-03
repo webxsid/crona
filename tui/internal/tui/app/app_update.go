@@ -18,9 +18,6 @@ import (
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyMsg); ok {
-		if m.updateInstallPhase != "" {
-			return m.updateInstallScreen(key)
-		}
 		if m.dialog != "" {
 			return m.updateDialog(key)
 		}
@@ -53,21 +50,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.applyDispatchMessageState(state), cmd
 	}
 	return m, nil
-}
-
-func (m Model) updateInstallScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if m.updateInstalling {
-		return m, nil
-	}
-	switch msg.String() {
-	case "esc", "enter", "q":
-		m.updateInstallPhase = ""
-		m.updateInstallDetail = ""
-		m.updateInstallError = ""
-		return m, nil
-	default:
-		return m, nil
-	}
 }
 
 func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -417,11 +399,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		UpdateStatus:            m.updateStatus,
 		UpdateChecking:          m.updateChecking,
 		UpdateInstalling:        m.updateInstalling,
-		UpdateInstallPhase:      m.updateInstallPhase,
-		UpdateInstallDetail:     m.updateInstallDetail,
-		UpdateInstallOutput:     m.updateInstallOutput,
 		UpdateInstallError:      m.updateInstallError,
-		UpdateInstallProgress:   nil,
 		Settings:                m.settings,
 		KernelInfo:              m.kernelInfo,
 		Elapsed:                 m.elapsed,
@@ -498,9 +476,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
 	m.updateInstalling = state.UpdateInstalling
-	m.updateInstallPhase = state.UpdateInstallPhase
-	m.updateInstallDetail = state.UpdateInstallDetail
-	m.updateInstallOutput = state.UpdateInstallOutput
 	m.updateInstallError = state.UpdateInstallError
 	m.settings = state.Settings
 	m.kernelInfo = state.KernelInfo

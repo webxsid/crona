@@ -53,7 +53,6 @@ func (m Model) layoutState() layoutpkg.State {
 			UpdateStatus:  m.updateStatus,
 		},
 		DialogOpen:          m.dialog != "",
-		UpdateInstallOpen:   m.updateInstallPhase != "",
 		HelpOpen:            m.helpOpen,
 		SessionDetailOpen:   m.sessionDetailOpen,
 		SessionDetailY:      m.sessionDetailY,

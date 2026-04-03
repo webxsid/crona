@@ -4,9 +4,13 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
+	"crona/shared/config"
 	sharedtypes "crona/shared/types"
 )
 
@@ -159,6 +163,91 @@ func TestFetchLatestReleaseBetaChannelSelectsNewestPrerelease(t *testing.T) {
 	}
 	if !release.IsPrerelease {
 		t.Fatalf("expected beta release to be marked prerelease")
+	}
+}
+
+func TestPrepareLocalReleaseUsesLocalReleaseDir(t *testing.T) {
+	releaseDir := filepath.Join(t.TempDir(), "v0.4.0-beta.3")
+	if err := os.MkdirAll(releaseDir, 0o755); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(releaseDir, config.InstallerAssetNameForGOOS("darwin")), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatalf("WriteFile installer: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(releaseDir, "checksums.txt"), []byte("abc  checksums.txt\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile checksums: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(releaseDir, "crona-bundle-v0.4.0-beta.3-darwin-"+runtime.GOARCH+".zip"), []byte("zip"), 0o644); err != nil {
+		t.Fatalf("WriteFile bundle: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(releaseDir, "crona-assets-v0.4.0-beta.3.tar.gz"), []byte("assets"), 0o644); err != nil {
+		t.Fatalf("WriteFile assets: %v", err)
+	}
+	t.Setenv(config.EnvVarDevUpdateReleaseDir, releaseDir)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	service := &Service{
+		goos:    "darwin",
+		envMode: config.ModeDev,
+	}
+
+	release, gotDir, baseURL, err := service.prepareLocalReleaseSource(ctx)
+	if err != nil {
+		if strings.Contains(err.Error(), "operation not permitted") {
+			t.Skipf("loopback bind unavailable in this environment: %v", err)
+		}
+		t.Fatalf("prepareLocalReleaseSource returned error: %v", err)
+	}
+	if gotDir != releaseDir {
+		t.Fatalf("expected release dir %q, got %q", releaseDir, gotDir)
+	}
+	if release.Version != "0.4.0-beta.3" {
+		t.Fatalf("expected local release version, got %q", release.Version)
+	}
+	if !strings.HasPrefix(release.InstallURL, baseURL+"/") {
+		t.Fatalf("expected install URL under %q, got %q", baseURL, release.InstallURL)
+	}
+	if !strings.HasPrefix(release.ChecksumsURL, baseURL+"/") {
+		t.Fatalf("expected checksums URL under %q, got %q", baseURL, release.ChecksumsURL)
+	}
+}
+
+func TestLatestReleaseDirSkipsMalformedOrIncompleteReleases(t *testing.T) {
+	root := t.TempDir()
+	bad := filepath.Join(root, "v0.4.0-")
+	good := filepath.Join(root, "v0.4.0-beta.2")
+	for _, dir := range []string{bad, good} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("MkdirAll %s: %v", dir, err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(bad, config.InstallerAssetNameForGOOS("darwin")), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatalf("WriteFile bad installer: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(bad, "checksums.txt"), []byte("sum  checksums.txt\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile bad checksums: %v", err)
+	}
+
+	if err := os.WriteFile(filepath.Join(good, config.InstallerAssetNameForGOOS("darwin")), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatalf("WriteFile good installer: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(good, "checksums.txt"), []byte("sum  checksums.txt\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile good checksums: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(good, "crona-bundle-v0.4.0-beta.2-darwin-"+runtime.GOARCH+".zip"), []byte("zip"), 0o644); err != nil {
+		t.Fatalf("WriteFile good bundle: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(good, "crona-assets-v0.4.0-beta.2.tar.gz"), []byte("assets"), 0o644); err != nil {
+		t.Fatalf("WriteFile good assets: %v", err)
+	}
+
+	got, err := latestReleaseDir(root, "darwin")
+	if err != nil {
+		t.Fatalf("latestReleaseDir returned error: %v", err)
+	}
+	if got != good {
+		t.Fatalf("expected %q, got %q", good, got)
 	}
 }
 

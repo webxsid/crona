@@ -2,6 +2,7 @@ package app
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"crona/shared/config"
@@ -79,7 +80,7 @@ type Model struct {
 	client *api.Client
 
 	// kernel event stream
-	eventStop chan struct{}
+	eventStop *eventStreamStop
 
 	// view / navigation
 	view                View
@@ -134,9 +135,6 @@ type Model struct {
 	updateStatus          *api.UpdateStatus
 	updateChecking        bool
 	updateInstalling      bool
-	updateInstallPhase    string
-	updateInstallDetail   string
-	updateInstallOutput   string
 	updateInstallError    string
 	currentExecutablePath string
 	settings              *api.CoreSettings
@@ -228,6 +226,9 @@ func (m Model) selfUpdateInstallAvailable() bool {
 }
 
 func (m Model) selfUpdateUnsupportedReason() string {
+	if m.updateStatus != nil && commands.IsLocalLoopbackUpdateURL(m.updateStatus.InstallScriptURL) && m.isDevMode() {
+		return ""
+	}
 	if reason := appruntime.NonStandardRuntimeReason(m.currentExecutablePath, config.TUIBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {
 		return reason
 	}
@@ -244,8 +245,28 @@ func (m *Model) stopEventStream() {
 	if m.eventStop == nil {
 		return
 	}
-	close(m.eventStop)
-	m.eventStop = nil
+	m.eventStop.Stop()
+}
+
+type eventStreamStop struct {
+	ch   chan struct{}
+	once sync.Once
+}
+
+func newEventStreamStop(ch chan struct{}) *eventStreamStop {
+	if ch == nil {
+		return nil
+	}
+	return &eventStreamStop{ch: ch}
+}
+
+func (s *eventStreamStop) Stop() {
+	if s == nil || s.ch == nil {
+		return
+	}
+	s.once.Do(func() {
+		close(s.ch)
+	})
 }
 
 func kernelEnvMode(info *api.KernelInfo) string {
@@ -270,7 +291,7 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 func New(transport, endpoint, scratchDir string, env string, executablePath string, done chan struct{}) Model {
 	model := Model{
 		client:              api.NewClient(transport, endpoint, scratchDir),
-		eventStop:           done,
+		eventStop:           newEventStreamStop(done),
 		view:                ViewDaily,
 		pane:                PaneIssues,
 		defaultIssueSection: DefaultIssueSectionOpen,
@@ -448,9 +469,6 @@ func (m Model) inputState() inputpkg.State {
 		UpdateStatus:        m.updateStatus,
 		UpdateChecking:      m.updateChecking,
 		UpdateInstalling:    m.updateInstalling,
-		UpdateInstallPhase:  m.updateInstallPhase,
-		UpdateInstallDetail: m.updateInstallDetail,
-		UpdateInstallOutput: m.updateInstallOutput,
 		UpdateInstallError:  m.updateInstallError,
 		CurrentExecutable:   m.currentExecutablePath,
 		Settings:            m.settings,
@@ -485,9 +503,6 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
 	m.updateInstalling = state.UpdateInstalling
-	m.updateInstallPhase = state.UpdateInstallPhase
-	m.updateInstallDetail = state.UpdateInstallDetail
-	m.updateInstallOutput = state.UpdateInstallOutput
 	m.updateInstallError = state.UpdateInstallError
 	m.currentExecutablePath = state.CurrentExecutable
 	m.settings = state.Settings
@@ -498,11 +513,12 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 
 func (m Model) inputDeps() inputpkg.Deps {
 	return inputpkg.Deps{
-		CloseEventStop: func() { m.stopEventStream() },
-		ShutdownKernel: func() tea.Cmd { return commands.ShutdownKernel(m.client) },
-		SeedDevData:    func() tea.Cmd { return commands.SeedDevData(m.client) },
-		ClearDevData:   func() tea.Cmd { return commands.ClearDevData(m.client) },
-		IsDevMode:      func(state inputpkg.State) bool { return m.applyInputState(state).isDevMode() },
+		CloseEventStop:     func() { m.stopEventStream() },
+		ShutdownKernel:     func() tea.Cmd { return commands.ShutdownKernel(m.client) },
+		SeedDevData:        func() tea.Cmd { return commands.SeedDevData(m.client) },
+		ClearDevData:       func() tea.Cmd { return commands.ClearDevData(m.client) },
+		PrepareLocalUpdate: func() tea.Cmd { return commands.PrepareLocalUpdate(m.client) },
+		IsDevMode:          func(state inputpkg.State) bool { return m.applyInputState(state).isDevMode() },
 		NextActiveSessionView: func(state inputpkg.State, dir int) uistate.View {
 			return m.applyInputState(state).nextActiveSessionView(dir)
 		},
@@ -597,7 +613,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		InstallUpdate: func(state inputpkg.State) tea.Cmd {
 			next := m.applyInputState(state)
-			return commands.InstallUpdate(next.updateStatus, next.currentExecutablePath, next.selfUpdateInstallAvailable(), next.selfUpdateUnsupportedReason())
+			return commands.InstallUpdate(next.updateStatus, next.selfUpdateInstallAvailable(), next.selfUpdateUnsupportedReason())
 		},
 		DismissUpdate: func() tea.Cmd { return commands.DismissUpdate(m.client) },
 		ResumeSession: func() tea.Cmd { return commands.ResumeFocusSession(m.client) },

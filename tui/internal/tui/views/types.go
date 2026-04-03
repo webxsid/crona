@@ -86,9 +86,6 @@ type ContentState struct {
 	UpdateStatus           *api.UpdateStatus
 	UpdateChecking         bool
 	UpdateInstalling       bool
-	UpdateInstallPhase     string
-	UpdateInstallDetail    string
-	UpdateInstallOutput    string
 	UpdateInstallError     string
 	UpdateInstallAvailable bool
 	UpdateManualReason     string

@@ -642,6 +642,11 @@ func (c *Client) ClearDevData() error {
 	return c.mustOK(protocol.MethodKernelClearDev, nil)
 }
 
+func (c *Client) PrepareLocalUpdate() (*LocalUpdatePrepared, error) {
+	var out LocalUpdatePrepared
+	return &out, c.call(protocol.MethodKernelPrepareLocalUpdate, nil, &out)
+}
+
 func (c *Client) WipeRuntimeData() error {
 	return c.mustOK(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true})
 }

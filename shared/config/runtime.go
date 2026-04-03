@@ -8,15 +8,16 @@ import (
 )
 
 const (
-	EnvVarRuntimeDir   = "CRONA_HOME"
-	baseDirProdDarwin  = "Crona"
-	baseDirDevDarwin   = "Crona Dev"
-	baseDirProdLinux   = "crona"
-	baseDirDevLinux    = "crona-dev"
-	baseDirProdWindows = "Crona"
-	baseDirDevWindows  = "Crona Dev"
-	legacyBaseDirProd  = ".crona"
-	legacyBaseDirDev   = ".crona-dev"
+	EnvVarRuntimeDir          = "CRONA_HOME"
+	EnvVarDevUpdateReleaseDir = "CRONA_DEV_UPDATE_RELEASE_DIR"
+	baseDirProdDarwin         = "Crona"
+	baseDirDevDarwin          = "Crona Dev"
+	baseDirProdLinux          = "crona"
+	baseDirDevLinux           = "crona-dev"
+	baseDirProdWindows        = "Crona"
+	baseDirDevWindows         = "Crona Dev"
+	legacyBaseDirProd         = ".crona"
+	legacyBaseDirDev          = ".crona-dev"
 )
 
 func IsDevMode(mode string) bool {

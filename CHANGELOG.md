@@ -2,6 +2,22 @@
 
 All notable changes to **Crona** are documented here.
 
+## [0.4.0-beta.3] - 2026-04-03
+
+### Added
+- Dev-only local updater simulation flow, including `F8` local-release preparation and a loopback-served release source for end-to-end self-update testing.
+- Dev-only local updater preparation API and local release scanning that can target a specific release directory through `CRONA_DEV_UPDATE_RELEASE_DIR`.
+
+### Changed
+- Self-update install now exits the TUI and hands control to the real installer in the terminal instead of rendering a dedicated in-app install takeover screen.
+- Installer scripts now support a release-base override so local/dev update simulations can reuse the production installer flow against loopback-hosted release assets.
+- Local updater simulations now install into isolated temp runtime/install roots so dev testing does not touch the user’s real Crona install.
+
+### Fixed
+- Local update preparation now skips malformed or incomplete release directories instead of selecting unusable entries like `v0.4.0-`.
+- TUI event-stream shutdown now uses a shared guarded stop handle, fixing repeated `close of closed channel` panics during update handoff and quit paths.
+- Updater/dispatch state was simplified to match the terminal-handoff install model, removing stale install-screen state and dead renderer paths.
+
 ## [0.4.0-beta.2] - 2026-04-03
 
 ### Added

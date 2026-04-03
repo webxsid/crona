@@ -110,6 +110,25 @@ func ClearDevData(c *api.Client) tea.Cmd {
 	}
 }
 
+func PrepareLocalUpdate(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		prepared, err := c.PrepareLocalUpdate()
+		if err != nil {
+			logger.Errorf("PrepareLocalUpdate: %v", err)
+			return ErrMsg{Err: err}
+		}
+		status, err := c.CheckUpdateNow()
+		if err != nil {
+			logger.Errorf("PrepareLocalUpdate CheckUpdateNow: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return LocalUpdatePreparedMsg{
+			Prepared: prepared,
+			Status:   status,
+		}
+	}
+}
+
 func WipeRuntimeData(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.WipeRuntimeData(); err != nil {

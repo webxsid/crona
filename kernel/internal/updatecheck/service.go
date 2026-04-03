@@ -15,6 +15,7 @@ import (
 	"crona/kernel/internal/events"
 	runtimepkg "crona/kernel/internal/runtime"
 	"crona/shared/config"
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 )
@@ -30,8 +31,11 @@ type Service struct {
 	goos      string
 	client    *http.Client
 
-	mu     sync.RWMutex
-	status sharedtypes.UpdateStatus
+	mu               sync.RWMutex
+	status           sharedtypes.UpdateStatus
+	localRelease     *latestRelease
+	localReleaseBase string
+	stopLocalRelease func() error
 }
 
 func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *runtimepkg.Logger, paths runtimepkg.Paths, envMode string) *Service {
@@ -51,6 +55,10 @@ func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *
 		},
 	}
 	service.loadCache()
+	go func() {
+		<-ctx.Done()
+		service.stopLocalReleaseServer()
+	}()
 	go service.run(ctx)
 	return service
 }
@@ -63,6 +71,29 @@ func (s *Service) Status() sharedtypes.UpdateStatus {
 
 func (s *Service) CheckNow(ctx context.Context) (sharedtypes.UpdateStatus, error) {
 	return s.refresh(ctx, true)
+}
+
+func (s *Service) PrepareLocalRelease(ctx context.Context) (shareddto.LocalUpdatePreparedResponse, error) {
+	if !strings.EqualFold(strings.TrimSpace(s.envMode), config.ModeDev) {
+		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf("local update simulation is only available in Dev mode")
+	}
+	release, releaseDir, baseURL, err := s.prepareLocalReleaseSource(ctx)
+	if err != nil {
+		return shareddto.LocalUpdatePreparedResponse{}, err
+	}
+	status, err := s.refresh(ctx, true)
+	if err != nil {
+		return shareddto.LocalUpdatePreparedResponse{}, err
+	}
+	if !status.InstallAvailable {
+		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf("local release %s is missing required installer assets", release.Version)
+	}
+	return shareddto.LocalUpdatePreparedResponse{
+		Version:    release.Version,
+		Tag:        release.Tag,
+		ReleaseDir: releaseDir,
+		BaseURL:    baseURL,
+	}, nil
 }
 
 func (s *Service) DismissLatest() (sharedtypes.UpdateStatus, error) {
@@ -109,12 +140,19 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	if err != nil {
 		return s.Status(), err
 	}
+	localOverrideActive := s.hasLocalRelease()
+	enabled := settings != nil && settings.UpdateChecksEnabled
+	promptEnabled := settings != nil && settings.UpdatePromptEnabled
+	if localOverrideActive {
+		enabled = true
+		promptEnabled = true
+	}
 
 	s.mu.Lock()
 	prev := s.status
 	s.status.CurrentVersion = versionpkg.Current()
-	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
-	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
+	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
+	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = effectiveUpdateChannel(settings)
 
 	if !s.status.Enabled {
@@ -141,8 +179,8 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	defer s.mu.Unlock()
 	prev = s.status
 	s.status.CurrentVersion = versionpkg.Current()
-	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
-	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
+	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
+	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = channel
 	s.status.CheckedAt = time.Now().UTC().Format(time.RFC3339)
 
@@ -264,6 +302,9 @@ type latestRelease struct {
 }
 
 func (s *Service) fetchLatestRelease(ctx context.Context, channel sharedtypes.UpdateChannel) (latestRelease, error) {
+	if release, ok := s.currentLocalRelease(); ok {
+		return release, nil
+	}
 	if sharedtypes.NormalizeUpdateChannel(channel) == sharedtypes.UpdateChannelBeta {
 		return s.fetchLatestReleaseFromList(ctx)
 	}
@@ -417,4 +458,31 @@ func (s *Service) targetGOOS() string {
 		return s.goos
 	}
 	return runtime.GOOS
+}
+
+func (s *Service) hasLocalRelease() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.localRelease != nil
+}
+
+func (s *Service) currentLocalRelease() (latestRelease, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.localRelease == nil {
+		return latestRelease{}, false
+	}
+	return *s.localRelease, true
+}
+
+func (s *Service) stopLocalReleaseServer() {
+	s.mu.Lock()
+	stop := s.stopLocalRelease
+	s.stopLocalRelease = nil
+	s.localRelease = nil
+	s.localReleaseBase = ""
+	s.mu.Unlock()
+	if stop != nil {
+		_ = stop()
+	}
 }

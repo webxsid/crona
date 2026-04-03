@@ -61,11 +61,7 @@ type MessageState struct {
 	UpdateStatus            *api.UpdateStatus
 	UpdateChecking          bool
 	UpdateInstalling        bool
-	UpdateInstallPhase      string
-	UpdateInstallDetail     string
-	UpdateInstallOutput     string
 	UpdateInstallError      string
-	UpdateInstallProgress   <-chan tea.Msg
 	Settings                *api.CoreSettings
 	KernelInfo              *api.KernelInfo
 	Elapsed                 int
@@ -363,50 +359,23 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			return state, deps.SetStatus(&state, "No update prompt dismissed", false), true
 		}
 		return state, deps.SetStatus(&state, "Update prompt dismissed for v"+msg.Status.DismissedVersion, false), true
-	case commands.UpdateInstallStartedMsg:
+	case commands.UpdateInstallPreparedMsg:
 		state.View = uistate.ViewUpdates
 		state.Pane = uistate.DefaultPane(state.View)
 		state.UpdateInstalling = true
-		state.UpdateInstallPhase = "starting"
-		state.UpdateInstallDetail = "Preparing update..."
-		state.UpdateInstallOutput = ""
 		state.UpdateInstallError = ""
-		state.UpdateInstallProgress = msg.Progress
 		deps.CloseEventStop()
-		return state, commands.WaitForUpdateInstall(msg.Progress), true
-	case commands.UpdateInstallPhaseMsg:
-		state.View = uistate.ViewUpdates
-		state.Pane = uistate.DefaultPane(state.View)
-		state.UpdateInstalling = true
-		if strings.TrimSpace(msg.Phase) != "" {
-			state.UpdateInstallPhase = strings.TrimSpace(msg.Phase)
-		}
-		state.UpdateInstallDetail = strings.TrimSpace(msg.Detail)
-		if chunk := strings.TrimSpace(msg.Output); chunk != "" {
-			if strings.TrimSpace(state.UpdateInstallOutput) == "" {
-				state.UpdateInstallOutput = chunk
-			} else {
-				state.UpdateInstallOutput = strings.TrimSpace(state.UpdateInstallOutput) + "\n" + chunk
-			}
-		}
-		if state.UpdateInstallProgress != nil {
-			return state, commands.WaitForUpdateInstall(state.UpdateInstallProgress), true
-		}
-		return state, nil, true
+		return state, tea.ExecProcess(msg.Cmd, func(err error) tea.Msg {
+			return commands.UpdateInstallFinishedMsg{Err: err}
+		}), true
 	case commands.UpdateInstallFinishedMsg:
 		state.UpdateInstalling = false
-		state.UpdateInstallOutput = strings.TrimSpace(msg.Output)
-		state.UpdateInstallProgress = nil
 		if msg.Err != nil {
 			state.View = uistate.ViewUpdates
 			state.Pane = uistate.DefaultPane(state.View)
-			state.UpdateInstallPhase = "failed"
-			state.UpdateInstallDetail = "Update failed"
 			state.UpdateInstallError = msg.Err.Error()
-			return state, nil, true
+			return state, deps.SetStatus(&state, "Update failed: "+msg.Err.Error(), true), true
 		}
-		state.UpdateInstallPhase = "relaunching"
-		state.UpdateInstallDetail = "Relaunching Crona..."
 		deps.CloseEventStop()
 		return state, tea.Quit, true
 	case commands.SettingsLoadedMsg:
@@ -441,6 +410,17 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
 		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+	case commands.LocalUpdatePreparedMsg:
+		state.View = uistate.ViewUpdates
+		state.Pane = uistate.DefaultPane(state.View)
+		state.UpdateChecking = false
+		state.UpdateInstallError = ""
+		state.UpdateStatus = msg.Status
+		label := "Local update ready"
+		if msg.Prepared != nil && strings.TrimSpace(msg.Prepared.Tag) != "" {
+			label = "Local update ready: " + strings.TrimSpace(msg.Prepared.Tag)
+		}
+		return state, deps.SetStatus(&state, label, false), true
 	case commands.RuntimeDataWipedMsg:
 		cmd := deps.SetStatus(&state, "All runtime data wiped", false)
 		state.View = uistate.ViewDaily
