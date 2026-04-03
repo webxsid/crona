@@ -19,8 +19,28 @@ func renderDefaultView(theme Theme, state ContentState) string {
 	if state.Height < 44 {
 		summaryH = 7
 	}
-	remainingHeight := max(8, state.Height-summaryH)
-	priorityH, completedH := splitVertical(remainingHeight, 8, 6, remainingHeight*2/3)
+	remainingHeight := max(8, state.Height-summaryH-1)
+	primaryPreferred := remainingHeight / 2
+	if state.DefaultIssueSection == "completed" {
+		completedH, priorityH := splitVertical(remainingHeight, 6, 8, remainingHeight*2/3)
+		if completedH > 6 {
+			completedH--
+			priorityH++
+		}
+		summary := renderDefaultSummary(theme, state, summaryH)
+		priorityPane := renderDefaultIssuePane(theme, state, "Active Issues [1]", "Due work and open issues", openIndices, 0, true, priorityH, "No open issues match the current filter", false)
+		completedPane := renderDefaultIssuePane(theme, state, "Completed Issues [2]", "Done and abandoned, ready to revisit", completedIndices, len(openIndices), false, completedH, "No done or abandoned issues", true)
+		return lipgloss.JoinVertical(lipgloss.Left, summary, priorityPane, completedPane)
+	}
+	priorityPreferred := remainingHeight * 2 / 3
+	if priorityPreferred < primaryPreferred {
+		priorityPreferred = primaryPreferred
+	}
+	priorityH, completedH := splitVertical(remainingHeight, 8, 6, priorityPreferred)
+	if completedH > 6 {
+		completedH--
+		priorityH++
+	}
 
 	summary := renderDefaultSummary(theme, state, summaryH)
 	priorityPane := renderDefaultIssuePane(theme, state, "Active Issues [1]", "Due work and open issues", openIndices, 0, true, priorityH, "No open issues match the current filter", state.DefaultIssueSection != "completed")
@@ -32,7 +52,7 @@ func renderDefaultView(theme Theme, state ContentState) string {
 func renderDefaultCompactView(theme Theme, state ContentState, openIndices, completedIndices []int) string {
 	summaryH := 6
 	footerH := 4
-	mainH := max(8, state.Height-summaryH-footerH)
+	mainH := max(8, state.Height-summaryH-footerH-1)
 	mainTitle := "Active Issues [1]"
 	mainSubtitle := "Due work and open issues"
 	mainIndices := openIndices

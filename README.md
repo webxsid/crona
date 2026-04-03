@@ -26,26 +26,30 @@ Installed binaries:
 - `crona`
 - `crona-tui`
 - `crona-kernel`
-- `crona-kernel`
+
+Release assets now ship as:
+- one platform bundle zip containing all three binaries
+- one shared `crona-assets-<version>.tar.gz` archive for report/export assets
+- installer scripts for Unix-like systems and Windows
 
 ### macOS And Linux
 
 Install the current beta:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh | sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.2/install-crona-tui.sh | sh
 ```
 
 Force a non-interactive reinstall:
 
 ```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
+curl -fsSL https://github.com/webxsid/crona/releases/download/v0.4.0-beta.2/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
 ```
 
 Run the installer from a downloaded file:
 
 ```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.4.0-beta.1/install-crona-tui.sh
+curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/v0.4.0-beta.2/install-crona-tui.sh
 sh /tmp/install-crona-tui.sh
 ```
 
@@ -54,7 +58,7 @@ sh /tmp/install-crona-tui.sh
 Install from PowerShell:
 
 ```powershell
-$version = "v0.4.0-beta.1"
+$version = "v0.4.0-beta.2"
 Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
@@ -79,6 +83,8 @@ crona
 The TUI starts the local kernel automatically when needed.
 `crona-tui` remains available as a compatibility entrypoint.
 
+For manual installation, download your platform bundle zip from the GitHub release, extract `crona`, `crona-tui`, and `crona-kernel`, then keep the shared assets archive from the same release if you want the bundled report templates and export assets.
+
 You can inspect the kernel directly from the CLI:
 
 ```bash
@@ -100,6 +106,17 @@ crona timer status --json
 crona update status --json
 crona export calendar --repo-id 1 --json
 ```
+
+## Support And Updates
+
+Public support surfaces live on GitHub:
+
+- Bugs: `Issues`
+- Help and ideas: `Discussions`
+- Release updates: `Releases`
+- Roadmap reading: `ROADMAP.md`
+
+Generate a support bundle from the TUI Support view before filing a bug when possible.
 
 Generate shell completions:
 

@@ -93,7 +93,8 @@ func NewDefaultScopeModel(allIssues []api.IssueWithMeta, context *api.ActiveCont
 }
 
 func DefaultScopedIssuesForTest(m Model) []api.IssueWithMeta {
-	return selectionpkg.DefaultScopedIssues(m.selectionSnapshot())
+	snapshot := m.selectionSnapshot()
+	return selectionpkg.DefaultScopedIssues(snapshot)
 }
 
 func (m Model) AllIssuesForTest() []api.IssueWithMeta {

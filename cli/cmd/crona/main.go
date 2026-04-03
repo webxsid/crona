@@ -128,6 +128,34 @@ func runKernel(args []string) error {
 		}
 		fmt.Println("kernel detached")
 		return nil
+	case "restart":
+		if err := callKernelFn(protocol.MethodKernelRestart, nil, nil); err != nil {
+			return err
+		}
+		if jsonOut {
+			return printJSON(map[string]any{"ok": true})
+		}
+		fmt.Println("kernel restart requested")
+		return nil
+	case "wipe-data":
+		fs := flag.NewFlagSet("kernel wipe-data", flag.ContinueOnError)
+		fs.SetOutput(ioDiscard{})
+		force := fs.Bool("force", false, "")
+		jsonOut := fs.Bool("json", false, "")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		if !*force {
+			return errors.New("kernel wipe-data requires --force")
+		}
+		if err := callKernelFn(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true}, nil); err != nil {
+			return err
+		}
+		if *jsonOut {
+			return printJSON(map[string]any{"ok": true})
+		}
+		fmt.Println("runtime data wiped")
+		return nil
 	case "info", "status":
 		var out sharedtypes.KernelInfo
 		if err := callKernelFn(protocol.MethodKernelInfoGet, nil, &out); err != nil {
@@ -175,7 +203,7 @@ func runContext(args []string) error {
 	case "get":
 		jsonOut := hasJSONFlag(args[1:])
 		var out sharedtypes.ActiveContext
-		if err := callKernel(protocol.MethodContextGet, nil, &out); err != nil {
+		if err := callKernelFn(protocol.MethodContextGet, nil, &out); err != nil {
 			return err
 		}
 		if jsonOut {
@@ -185,7 +213,7 @@ func runContext(args []string) error {
 		return nil
 	case "clear":
 		jsonOut := hasJSONFlag(args[1:])
-		if err := callKernel(protocol.MethodContextClear, nil, nil); err != nil {
+		if err := callKernelFn(protocol.MethodContextClear, nil, nil); err != nil {
 			return err
 		}
 		if jsonOut {
@@ -214,7 +242,7 @@ func runContext(args []string) error {
 			req.IssueID = issueID
 		}
 		var out sharedtypes.ActiveContext
-		if err := callKernel(protocol.MethodContextSet, req, &out); err != nil {
+		if err := callKernelFn(protocol.MethodContextSet, req, &out); err != nil {
 			return err
 		}
 		if *jsonOut {
@@ -222,9 +250,91 @@ func runContext(args []string) error {
 		}
 		fmt.Printf("context set: repo=%s stream=%s issue=%s\n", optionalText(out.RepoName, "-"), optionalText(out.StreamName, "-"), optionalText(out.IssueTitle, "-"))
 		return nil
+	case "clear-issue":
+		jsonOut := hasJSONFlag(args[1:])
+		if err := callKernelFn(protocol.MethodContextClearIssue, nil, nil); err != nil {
+			return err
+		}
+		if jsonOut {
+			return printJSON(map[string]any{"ok": true})
+		}
+		fmt.Println("context issue cleared")
+		return nil
+	case "switch-repo":
+		return runContextSwitchRepo(args[1:])
+	case "switch-stream":
+		return runContextSwitchStream(args[1:])
+	case "switch-issue":
+		return runContextSwitchIssue(args[1:])
 	default:
 		return fmt.Errorf("unknown context command: %s", args[0])
 	}
+}
+
+func runContextSwitchRepo(args []string) error {
+	fs := flag.NewFlagSet("context switch-repo", flag.ContinueOnError)
+	fs.SetOutput(ioDiscard{})
+	id := fs.Int64("id", 0, "")
+	jsonOut := fs.Bool("json", false, "")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *id <= 0 {
+		return errors.New("repo id is required")
+	}
+	var out sharedtypes.ActiveContext
+	if err := callKernelFn(protocol.MethodContextSwitchRepo, shareddto.SwitchRepoRequest{RepoID: *id}, &out); err != nil {
+		return err
+	}
+	if *jsonOut {
+		return printJSON(out)
+	}
+	fmt.Printf("context switched: repo=%s stream=%s issue=%s\n", optionalText(out.RepoName, "-"), optionalText(out.StreamName, "-"), optionalText(out.IssueTitle, "-"))
+	return nil
+}
+
+func runContextSwitchStream(args []string) error {
+	fs := flag.NewFlagSet("context switch-stream", flag.ContinueOnError)
+	fs.SetOutput(ioDiscard{})
+	id := fs.Int64("id", 0, "")
+	jsonOut := fs.Bool("json", false, "")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *id <= 0 {
+		return errors.New("stream id is required")
+	}
+	var out sharedtypes.ActiveContext
+	if err := callKernelFn(protocol.MethodContextSwitchStream, shareddto.SwitchStreamRequest{StreamID: *id}, &out); err != nil {
+		return err
+	}
+	if *jsonOut {
+		return printJSON(out)
+	}
+	fmt.Printf("context switched: repo=%s stream=%s issue=%s\n", optionalText(out.RepoName, "-"), optionalText(out.StreamName, "-"), optionalText(out.IssueTitle, "-"))
+	return nil
+}
+
+func runContextSwitchIssue(args []string) error {
+	fs := flag.NewFlagSet("context switch-issue", flag.ContinueOnError)
+	fs.SetOutput(ioDiscard{})
+	id := fs.Int64("id", 0, "")
+	jsonOut := fs.Bool("json", false, "")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *id <= 0 {
+		return errors.New("issue id is required")
+	}
+	var out sharedtypes.ActiveContext
+	if err := callKernelFn(protocol.MethodContextSwitchIssue, shareddto.SwitchIssueRequest{IssueID: *id}, &out); err != nil {
+		return err
+	}
+	if *jsonOut {
+		return printJSON(out)
+	}
+	fmt.Printf("context switched: repo=%s stream=%s issue=%s\n", optionalText(out.RepoName, "-"), optionalText(out.StreamName, "-"), optionalText(out.IssueTitle, "-"))
+	return nil
 }
 
 func runTimer(args []string) error {
@@ -236,7 +346,7 @@ func runTimer(args []string) error {
 	case "status":
 		jsonOut := hasJSONFlag(args[1:])
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerGetState, nil, &out); err != nil {
+		if err := callKernelFn(protocol.MethodTimerGetState, nil, &out); err != nil {
 			return err
 		}
 		if jsonOut {
@@ -246,15 +356,31 @@ func runTimer(args []string) error {
 		if out.SegmentType != nil {
 			segment = string(*out.SegmentType)
 		}
-		fmt.Printf("state: %s\nsegment: %s\nelapsed: %ds\n", out.State, segment, out.ElapsedSeconds)
+		issue := "-"
+		if out.IssueID != nil {
+			issue = fmt.Sprintf("%d", *out.IssueID)
+		}
+		session := "-"
+		if out.SessionID != nil {
+			session = *out.SessionID
+		}
+		fmt.Printf("state: %s\nsegment: %s\nissue: %s\nsession: %s\nelapsed: %ds\n", out.State, segment, issue, session, out.ElapsedSeconds)
 		return nil
 	case "start":
 		fs := flag.NewFlagSet("timer start", flag.ContinueOnError)
 		fs.SetOutput(ioDiscard{})
 		issueID := fs.Int64("issue-id", 0, "")
+		fromContext := fs.Bool("from-context", false, "")
 		jsonOut := fs.Bool("json", false, "")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
+		}
+		if *fromContext {
+			resolvedIssueID, err := resolveContextIssueID()
+			if err != nil {
+				return err
+			}
+			*issueID = resolvedIssueID
 		}
 		req := struct {
 			IssueID *int64 `json:"issueId,omitempty"`
@@ -263,21 +389,21 @@ func runTimer(args []string) error {
 			req.IssueID = issueID
 		}
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerStart, req, &out); err != nil {
+		if err := callKernelFn(protocol.MethodTimerStart, req, &out); err != nil {
 			return err
 		}
 		return printTimerResult(out, *jsonOut, "timer started")
 	case "pause":
 		jsonOut := hasJSONFlag(args[1:])
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerPause, nil, &out); err != nil {
+		if err := callKernelFn(protocol.MethodTimerPause, nil, &out); err != nil {
 			return err
 		}
 		return printTimerResult(out, jsonOut, "timer paused")
 	case "resume":
 		jsonOut := hasJSONFlag(args[1:])
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerResume, nil, &out); err != nil {
+		if err := callKernelFn(protocol.MethodTimerResume, nil, &out); err != nil {
 			return err
 		}
 		return printTimerResult(out, jsonOut, "timer resumed")
@@ -303,7 +429,7 @@ func runTimer(args []string) error {
 			Links:         optionalFlag(*links),
 		}
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerEnd, req, &out); err != nil {
+		if err := callKernelFn(protocol.MethodTimerEnd, req, &out); err != nil {
 			return err
 		}
 		return printTimerResult(out, *jsonOut, "timer ended")
@@ -322,15 +448,23 @@ func runIssue(args []string) error {
 		fs := flag.NewFlagSet("issue start", flag.ContinueOnError)
 		fs.SetOutput(ioDiscard{})
 		id := fs.Int64("id", 0, "")
+		fromContext := fs.Bool("from-context", false, "")
 		jsonOut := fs.Bool("json", false, "")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
+		}
+		if *fromContext {
+			resolvedIssueID, err := resolveContextIssueID()
+			if err != nil {
+				return err
+			}
+			*id = resolvedIssueID
 		}
 		if *id <= 0 {
 			return fmt.Errorf("issue id is required")
 		}
 		var out sharedtypes.TimerState
-		if err := callKernel(protocol.MethodTimerStart, struct {
+		if err := callKernelFn(protocol.MethodTimerStart, struct {
 			IssueID *int64 `json:"issueId,omitempty"`
 		}{IssueID: id}, &out); err != nil {
 			return err
@@ -347,6 +481,18 @@ func runExport(args []string) error {
 		return nil
 	}
 	switch args[0] {
+	case "daily":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindDaily)
+	case "weekly":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindWeekly)
+	case "repo":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindRepo)
+	case "stream":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindStream)
+	case "issue-rollup":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindIssueRollup)
+	case "csv":
+		return runExportReport(args[1:], sharedtypes.ExportReportKindCSV)
 	case "calendar":
 		fs := flag.NewFlagSet("export calendar", flag.ContinueOnError)
 		fs.SetOutput(ioDiscard{})
@@ -373,9 +519,101 @@ func runExport(args []string) error {
 		fmt.Printf("calendar issues export written: %s\n", out.IssuesFilePath)
 		fmt.Printf("calendar sessions export written: %s\n", out.SessionsFilePath)
 		return nil
+	case "reports":
+		return runExportReports(args[1:])
 	default:
 		return fmt.Errorf("unknown export command: %s", args[0])
 	}
+}
+
+func runExportReports(args []string) error {
+	if len(args) == 0 || isHelpArg(args[0]) {
+		return fmt.Errorf("usage: crona export reports <list|delete> ...")
+	}
+	switch args[0] {
+	case "list":
+		jsonOut := hasJSONFlag(args[1:])
+		var out []sharedtypes.ExportReportFile
+		if err := callKernelFn(protocol.MethodExportReportsList, nil, &out); err != nil {
+			return err
+		}
+		if jsonOut {
+			return printJSON(out)
+		}
+		if len(out) == 0 {
+			fmt.Println("no exported reports")
+			return nil
+		}
+		for _, report := range out {
+			fmt.Printf("%s  [%s] %s\n", exportReportLabel(report), report.Format, report.Path)
+		}
+		return nil
+	case "delete":
+		fs := flag.NewFlagSet("export reports delete", flag.ContinueOnError)
+		fs.SetOutput(ioDiscard{})
+		path := fs.String("path", "", "")
+		jsonOut := fs.Bool("json", false, "")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		if strings.TrimSpace(*path) == "" {
+			return errors.New("report path is required")
+		}
+		trimmedPath := strings.TrimSpace(*path)
+		if err := callKernelFn(protocol.MethodExportReportsDelete, shareddto.ExportReportDeleteRequest{Path: trimmedPath}, nil); err != nil {
+			return err
+		}
+		if *jsonOut {
+			return printJSON(map[string]any{"ok": true, "path": trimmedPath})
+		}
+		fmt.Printf("report deleted: %s\n", trimmedPath)
+		return nil
+	default:
+		return fmt.Errorf("unknown export reports command: %s", args[0])
+	}
+}
+
+func runExportReport(args []string, kind sharedtypes.ExportReportKind) error {
+	fs := flag.NewFlagSet("export "+string(kind), flag.ContinueOnError)
+	fs.SetOutput(ioDiscard{})
+	date := fs.String("date", "", "")
+	start := fs.String("start", "", "")
+	end := fs.String("end", "", "")
+	repoID := fs.Int64("repo-id", 0, "")
+	streamID := fs.Int64("stream-id", 0, "")
+	formatValue := fs.String("format", "", "")
+	outputValue := fs.String("output", "", "")
+	jsonOut := fs.Bool("json", false, "")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	input := shareddto.ExportReportRequest{
+		Kind:       kind,
+		Date:       strings.TrimSpace(*date),
+		Start:      strings.TrimSpace(*start),
+		End:        strings.TrimSpace(*end),
+		Format:     parseExportFormat(*formatValue, kind),
+		OutputMode: parseExportOutput(*outputValue, kind),
+	}
+	if *repoID > 0 {
+		input.RepoID = repoID
+	}
+	if *streamID > 0 {
+		input.StreamID = streamID
+	}
+	if err := applyExportScopeDefaults(&input); err != nil {
+		return err
+	}
+
+	var out sharedtypes.ExportReportResult
+	if err := callKernelFn(exportMethodForKind(kind), input, &out); err != nil {
+		return err
+	}
+	if *jsonOut {
+		return printJSON(out)
+	}
+	return printExportResult(out)
 }
 
 func runUpdate(args []string) error {
@@ -436,11 +674,11 @@ func resolveCalendarRepoID(explicit int64) (int64, error) {
 		return explicit, nil
 	}
 	var ctxOut sharedtypes.ActiveContext
-	if err := callKernel(protocol.MethodContextGet, nil, &ctxOut); err == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
+	if err := callKernelFn(protocol.MethodContextGet, nil, &ctxOut); err == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
 		return *ctxOut.RepoID, nil
 	}
 	var repos []sharedtypes.Repo
-	if err := callKernel(protocol.MethodRepoList, nil, &repos); err != nil {
+	if err := callKernelFn(protocol.MethodRepoList, nil, &repos); err != nil {
 		return 0, err
 	}
 	if len(repos) == 0 {
@@ -477,7 +715,7 @@ Commands:
 }
 
 func kernelUsage() string {
-	return "Usage: crona kernel <attach|detach|info|status> [--json]\n"
+	return "Usage: crona kernel <attach|detach|restart|wipe-data|info|status> [--json]\n"
 }
 
 func completionUsage() string {
@@ -485,7 +723,7 @@ func completionUsage() string {
 }
 
 func contextUsage() string {
-	return "Usage: crona context <get|set|clear> ...\n"
+	return "Usage: crona context <get|set|clear|clear-issue|switch-repo|switch-stream|switch-issue> ...\n"
 }
 
 func timerUsage() string {
@@ -493,7 +731,7 @@ func timerUsage() string {
 }
 
 func issueUsage() string {
-	return "Usage: crona issue start --id <issue-id> [--json]\n"
+	return "Usage: crona issue start (--id <issue-id> | --from-context) [--json]\n"
 }
 
 func updateUsage() string {
@@ -501,7 +739,141 @@ func updateUsage() string {
 }
 
 func exportUsage() string {
-	return "Usage: crona export calendar [--repo-id <id>] [--json]\n"
+	return "Usage: crona export <daily|weekly|repo|stream|issue-rollup|csv|calendar|reports> ...\n"
+}
+
+func resolveContext() (*sharedtypes.ActiveContext, error) {
+	var out sharedtypes.ActiveContext
+	if err := callKernelFn(protocol.MethodContextGet, nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func resolveContextIssueID() (int64, error) {
+	ctxOut, err := resolveContext()
+	if err != nil {
+		return 0, err
+	}
+	if ctxOut.IssueID == nil || *ctxOut.IssueID <= 0 {
+		return 0, errors.New("current context has no checked-out issue")
+	}
+	return *ctxOut.IssueID, nil
+}
+
+func applyExportScopeDefaults(input *shareddto.ExportReportRequest) error {
+	if input == nil {
+		return nil
+	}
+	switch input.Kind {
+	case sharedtypes.ExportReportKindRepo:
+		{
+			ctxOut, err := resolveContext()
+			if err != nil {
+				return err
+			}
+			if input.RepoID == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
+				input.RepoID = ctxOut.RepoID
+			}
+		}
+	case sharedtypes.ExportReportKindStream:
+		{
+			ctxOut, err := resolveContext()
+			if err != nil {
+				return err
+			}
+			if input.StreamID == nil && ctxOut.StreamID != nil && *ctxOut.StreamID > 0 {
+				input.StreamID = ctxOut.StreamID
+			}
+		}
+	case sharedtypes.ExportReportKindIssueRollup, sharedtypes.ExportReportKindCSV:
+		{
+			ctxOut, err := resolveContext()
+			if err != nil {
+				return err
+			}
+			if input.StreamID == nil && ctxOut.StreamID != nil && *ctxOut.StreamID > 0 {
+				input.StreamID = ctxOut.StreamID
+			} else if input.RepoID == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
+				input.RepoID = ctxOut.RepoID
+			}
+		}
+	}
+	return nil
+}
+
+func exportMethodForKind(kind sharedtypes.ExportReportKind) string {
+	switch kind {
+	case sharedtypes.ExportReportKindWeekly:
+		return protocol.MethodExportWeekly
+	case sharedtypes.ExportReportKindRepo:
+		return protocol.MethodExportRepo
+	case sharedtypes.ExportReportKindStream:
+		return protocol.MethodExportStream
+	case sharedtypes.ExportReportKindIssueRollup:
+		return protocol.MethodExportIssueRollup
+	case sharedtypes.ExportReportKindCSV:
+		return protocol.MethodExportCSV
+	default:
+		return protocol.MethodExportDaily
+	}
+}
+
+func parseExportFormat(value string, kind sharedtypes.ExportReportKind) sharedtypes.ExportFormat {
+	switch kind {
+	case sharedtypes.ExportReportKindCSV:
+		return sharedtypes.ExportFormatCSV
+	default:
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "pdf":
+			return sharedtypes.ExportFormatPDF
+		default:
+			return sharedtypes.ExportFormatMarkdown
+		}
+	}
+}
+
+func parseExportOutput(value string, kind sharedtypes.ExportReportKind) sharedtypes.ExportOutputMode {
+	switch kind {
+	case sharedtypes.ExportReportKindCSV:
+		return sharedtypes.ExportOutputModeFile
+	default:
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "clipboard":
+			return sharedtypes.ExportOutputModeClipboard
+		default:
+			return sharedtypes.ExportOutputModeFile
+		}
+	}
+}
+
+func printExportResult(out sharedtypes.ExportReportResult) error {
+	fmt.Printf("kind: %s\nformat: %s\noutput: %s\n", out.Kind, out.Format, out.OutputMode)
+	if out.FilePath != nil && strings.TrimSpace(*out.FilePath) != "" {
+		fmt.Printf("file: %s\n", strings.TrimSpace(*out.FilePath))
+		return nil
+	}
+	content := strings.TrimSpace(out.Content)
+	if content == "" {
+		fmt.Println("content: (empty)")
+		return nil
+	}
+	fmt.Println("content:")
+	fmt.Println(content)
+	return nil
+}
+
+func exportReportLabel(report sharedtypes.ExportReportFile) string {
+	if label := strings.TrimSpace(report.DateLabel); label != "" {
+		return label
+	}
+	if label := strings.TrimSpace(report.Date); label != "" {
+		return label
+	}
+	if label := strings.TrimSpace(report.EndDate); label != "" {
+		return label
+	}
+	return report.Name
 }
 
 func printUpdateStatus(status sharedtypes.UpdateStatus) error {
@@ -888,13 +1260,13 @@ _%s() {
     return
   fi
   case "${words[2]}" in
-    kernel) _values 'kernel command' attach detach info status ;;
+    kernel) _values 'kernel command' attach detach restart wipe-data info status ;;
     completion) _values 'shell' zsh bash fish ;;
-    context) _values 'context command' get set clear ;;
+    context) _values 'context command' get set clear clear-issue switch-repo switch-stream switch-issue ;;
     timer) _values 'timer command' status start pause resume end ;;
     issue) _values 'issue command' start ;;
     update) _values 'update command' status check dismiss notes ;;
-    export) _values 'export command' calendar ;;
+    export) _values 'export command' daily weekly repo stream issue-rollup csv calendar reports ;;
     dev) _values 'dev command' seed clear ;;
   esac
 }
@@ -913,13 +1285,13 @@ func bashCompletion() string {
     return
   fi
   case "${words[1]}" in
-    kernel) COMPREPLY=( $(compgen -W "attach detach info status" -- "$cur") ) ;;
+    kernel) COMPREPLY=( $(compgen -W "attach detach restart wipe-data info status" -- "$cur") ) ;;
     completion) COMPREPLY=( $(compgen -W "zsh bash fish" -- "$cur") ) ;;
-    context) COMPREPLY=( $(compgen -W "get set clear" -- "$cur") ) ;;
+    context) COMPREPLY=( $(compgen -W "get set clear clear-issue switch-repo switch-stream switch-issue" -- "$cur") ) ;;
     timer) COMPREPLY=( $(compgen -W "status start pause resume end" -- "$cur") ) ;;
     issue) COMPREPLY=( $(compgen -W "start" -- "$cur") ) ;;
     update) COMPREPLY=( $(compgen -W "status check dismiss notes" -- "$cur") ) ;;
-    export) COMPREPLY=( $(compgen -W "calendar" -- "$cur") ) ;;
+    export) COMPREPLY=( $(compgen -W "daily weekly repo stream issue-rollup csv calendar reports" -- "$cur") ) ;;
     dev) COMPREPLY=( $(compgen -W "seed clear" -- "$cur") ) ;;
   esac
 }
@@ -930,13 +1302,13 @@ complete -F _%s %s
 func fishCompletion() string {
 	name := cliCommandName()
 	return fmt.Sprintf(`complete -c %s -f -n "__fish_use_subcommand" -a "kernel completion context timer issue update export dev"
-complete -c %s -f -n "__fish_seen_subcommand_from kernel" -a "attach detach info status"
+complete -c %s -f -n "__fish_seen_subcommand_from kernel" -a "attach detach restart wipe-data info status"
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
-complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear"
+complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
 complete -c %s -f -n "__fish_seen_subcommand_from timer" -a "status start pause resume end"
 complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start"
 complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismiss notes"
-complete -c %s -f -n "__fish_seen_subcommand_from export" -a "calendar"
+complete -c %s -f -n "__fish_seen_subcommand_from export" -a "daily weekly repo stream issue-rollup csv calendar reports"
 complete -c %s -f -n "__fish_seen_subcommand_from dev" -a "seed clear"
 `, name, name, name, name, name, name, name, name, name)
 }

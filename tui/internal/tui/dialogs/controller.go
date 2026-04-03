@@ -656,16 +656,6 @@ func OpenConfirmUninstall(state State) State {
 	return state
 }
 
-func OpenViewEntity(state State, title string, name string, meta string, body string) State {
-	state = Close(state)
-	state.Kind = "view_entity"
-	state.ViewTitle = title
-	state.ViewName = name
-	state.ViewMeta = meta
-	state.ViewBody = body
-	return state
-}
-
 func newDescriptionInput(width, height int) textarea.Model {
 	input := textarea.New()
 	input.Placeholder = "Description (optional)"
@@ -992,6 +982,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateRestProtection(state, currentDate, msg)
 	case "view_entity":
 		return updateViewEntity(state, msg)
+	case "support_bundle_result":
+		return updateSupportBundleResult(state, msg)
 	default:
 		return state, nil, ""
 	}
@@ -1667,15 +1659,6 @@ func updateMultiInputIssue(state State, msg tea.KeyMsg, inputCount int, submit f
 	state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
-}
-
-func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc", "enter", "q":
-		return Close(state), nil, ""
-	default:
-		return clearDialogError(state), nil, ""
-	}
 }
 
 func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) {

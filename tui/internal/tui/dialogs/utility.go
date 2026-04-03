@@ -258,6 +258,18 @@ func renderUtilityDialog(theme Theme, state State) string {
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		rows = appendDialogFooter(theme, state, rows, "[enter/esc] close")
 		return modal(theme, state.Width, 76, theme.ColorCyan, rows)
+	case "support_bundle_result":
+		rows := []string{
+			theme.StylePaneTitle.Render(state.ViewTitle),
+			"",
+			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
+		}
+		if state.ViewMeta != "" {
+			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
+		}
+		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
+		rows = appendDialogFooter(theme, state, rows, "[o] open folder   [c] copy path   [g] report issue   [enter/esc] close")
+		return modal(theme, state.Width, 76, theme.ColorGreen, rows)
 	case "complete_habit":
 		rows := []string{
 			theme.StylePaneTitle.Render("Habit Log"),

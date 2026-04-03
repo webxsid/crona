@@ -118,8 +118,11 @@ type Deps struct {
 	OpenRollupStartDateDialog       func(*State) bool
 	OpenRollupEndDateDialog         func(*State) bool
 	OpenSupportIssueURL             func() tea.Cmd
-	OpenSupportProjectURL           func() tea.Cmd
+	OpenSupportDiscussionsURL       func() tea.Cmd
+	OpenSupportReleasesURL          func() tea.Cmd
+	OpenSupportRoadmapURL           func() tea.Cmd
 	CopySupportDiagnostics          func(State) tea.Cmd
+	GenerateSupportBundle           func(State) tea.Cmd
 }
 
 type handler = keyregistry.Handler[State]
@@ -410,11 +413,20 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(uistate.ViewSupport, "o", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return s, deps.OpenSupportIssueURL(), true
 	})
+	r.RegisterView(uistate.ViewSupport, "d", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.OpenSupportDiscussionsURL(), true
+	})
+	r.RegisterView(uistate.ViewSupport, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.OpenSupportReleasesURL(), true
+	})
 	r.RegisterView(uistate.ViewSupport, "g", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.OpenSupportProjectURL(), true
+		return s, deps.OpenSupportRoadmapURL(), true
 	})
 	r.RegisterView(uistate.ViewSupport, "c", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return s, deps.CopySupportDiagnostics(s), true
+	})
+	r.RegisterView(uistate.ViewSupport, "b", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, deps.GenerateSupportBundle(s), true
 	})
 	keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },

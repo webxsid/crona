@@ -176,6 +176,10 @@ func OpenViewEntity(s Snapshot, title, name, meta, body string) dialogpkg.State 
 	return dialogpkg.OpenViewEntity(s.Dialog, title, name, meta, body)
 }
 
+func OpenSupportBundleResult(s Snapshot, name, meta, body, path string) dialogpkg.State {
+	return dialogpkg.OpenSupportBundleResult(s.Dialog, name, meta, body, path)
+}
+
 func OpenUpdateNotes(s Snapshot) dialogpkg.State {
 	if s.UpdateStatus == nil {
 		return s.Dialog

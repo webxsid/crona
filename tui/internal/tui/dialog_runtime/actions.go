@@ -62,6 +62,11 @@ type Deps struct {
 	SetRollupEndDate               func(currentStart, date string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
 	UninstallCrona                 func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd
+	OpenSupportIssueURL            func() tea.Cmd
+	OpenSupportDiscussionsURL      func() tea.Cmd
+	OpenSupportRoadmapURL          func() tea.Cmd
+	OpenExternalPath               func(path string) tea.Cmd
+	CopyText                       func(text, message string) tea.Cmd
 	ErrorCmd                       func(error) tea.Cmd
 	ResolvePatchSettingValue       func(action dialogpkg.Action) any
 }
@@ -155,6 +160,11 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 	r.Register("wipe_runtime_data", func(action dialogpkg.Action) tea.Cmd { return deps.WipeRuntimeData() })
 	r.Register("uninstall_crona", func(action dialogpkg.Action) tea.Cmd {
 		return deps.UninstallCrona(state.CurrentExecutablePath, state.KernelExecutablePath, state.KernelInfo)
+	})
+	r.Register("open_support_issue", func(action dialogpkg.Action) tea.Cmd { return deps.OpenSupportIssueURL() })
+	r.Register("open_support_bundle_folder", func(action dialogpkg.Action) tea.Cmd { return deps.OpenExternalPath(action.Path) })
+	r.Register("copy_support_bundle_path", func(action dialogpkg.Action) tea.Cmd {
+		return deps.CopyText(action.Path, "Bundle path copied")
 	})
 	if cmd, ok := r.Resolve(action.Kind, action); ok {
 		return cmd

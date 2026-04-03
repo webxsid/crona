@@ -13,78 +13,83 @@ import (
 )
 
 type MessageState struct {
-	Width                 int
-	Height                int
-	View                  uistate.View
-	Pane                  uistate.Pane
-	Cursor                map[uistate.Pane]int
-	Repos                 []api.Repo
-	Streams               []api.Stream
-	Issues                []api.Issue
-	Habits                []api.Habit
-	AllIssues             []api.IssueWithMeta
-	DueHabits             []api.HabitDailyItem
-	DailySummary          *api.DailyIssueSummary
-	DailyPlan             *api.DailyPlan
-	DashboardDate         string
-	RollupStartDate       string
-	RollupEndDate         string
-	WellbeingDate         string
-	DailyCheckIn          *api.DailyCheckIn
-	MetricsRange          []api.DailyMetricsDay
-	MetricsRollup         *api.MetricsRollup
-	Streaks               *api.StreakSummary
-	DashboardWindow       *api.DashboardWindowSummary
-	DailyFocusScore       *api.FocusScoreSummary
-	WeeklyFocusScore      *api.FocusScoreSummary
-	RepoDistribution      *api.TimeDistributionSummary
-	StreamDistribution    *api.TimeDistributionSummary
-	IssueDistribution     *api.TimeDistributionSummary
-	SegmentDistribution   *api.TimeDistributionSummary
-	GoalProgress          *api.GoalProgressSummary
-	ExportAssets          *api.ExportAssetStatus
-	ExportReports         []api.ExportReportFile
-	IssueSessions         []api.Session
-	SessionHistory        []api.SessionHistoryEntry
-	SessionDetail         *api.SessionDetail
-	SessionDetailOpen     bool
-	SessionDetailY        int
-	SessionContextOpen    bool
-	SessionContextY       int
-	Scratchpads           []api.ScratchPad
-	Stashes               []api.Stash
-	DialogStashCursor     int
-	Ops                   []api.Op
-	Context               *api.ActiveContext
-	Timer                 *api.TimerState
-	Health                *api.Health
-	UpdateStatus          *api.UpdateStatus
-	UpdateChecking        bool
-	UpdateInstalling      bool
-	UpdateInstallPhase    string
-	UpdateInstallDetail   string
-	UpdateInstallOutput   string
-	UpdateInstallError    string
-	UpdateInstallProgress <-chan tea.Msg
-	Settings              *api.CoreSettings
-	KernelInfo            *api.KernelInfo
-	Elapsed               int
-	TimerTickSeq          int
-	ScratchpadOpen        bool
-	ScratchpadMeta        *api.ScratchPad
-	ScratchpadFilePath    string
-	ScratchpadRendered    string
-	StatusMsg             string
-	StatusSeq             int
-	StatusErr             bool
-	Dialog                string
-	DialogErrorMessage    string
-	DialogChoiceItems     []string
-	DialogChoiceCursor    int
-	DialogProcessing      bool
-	DialogProcessingLabel string
-	OpsLimit              int
-	OpsLimitPinned        bool
+	Width                   int
+	Height                  int
+	View                    uistate.View
+	Pane                    uistate.Pane
+	Cursor                  map[uistate.Pane]int
+	Repos                   []api.Repo
+	Streams                 []api.Stream
+	Issues                  []api.Issue
+	Habits                  []api.Habit
+	AllIssues               []api.IssueWithMeta
+	DueHabits               []api.HabitDailyItem
+	DailySummary            *api.DailyIssueSummary
+	DailyPlan               *api.DailyPlan
+	DashboardDate           string
+	RollupStartDate         string
+	RollupEndDate           string
+	WellbeingDate           string
+	DailyCheckIn            *api.DailyCheckIn
+	MetricsRange            []api.DailyMetricsDay
+	MetricsRollup           *api.MetricsRollup
+	Streaks                 *api.StreakSummary
+	DashboardWindow         *api.DashboardWindowSummary
+	DailyFocusScore         *api.FocusScoreSummary
+	WeeklyFocusScore        *api.FocusScoreSummary
+	RepoDistribution        *api.TimeDistributionSummary
+	StreamDistribution      *api.TimeDistributionSummary
+	IssueDistribution       *api.TimeDistributionSummary
+	SegmentDistribution     *api.TimeDistributionSummary
+	GoalProgress            *api.GoalProgressSummary
+	ExportAssets            *api.ExportAssetStatus
+	ExportReports           []api.ExportReportFile
+	IssueSessions           []api.Session
+	SessionHistory          []api.SessionHistoryEntry
+	SessionDetail           *api.SessionDetail
+	SessionDetailOpen       bool
+	SessionDetailY          int
+	SessionContextOpen      bool
+	SessionContextY         int
+	Scratchpads             []api.ScratchPad
+	Stashes                 []api.Stash
+	DialogStashCursor       int
+	Ops                     []api.Op
+	Context                 *api.ActiveContext
+	Timer                   *api.TimerState
+	Health                  *api.Health
+	UpdateStatus            *api.UpdateStatus
+	UpdateChecking          bool
+	UpdateInstalling        bool
+	UpdateInstallPhase      string
+	UpdateInstallDetail     string
+	UpdateInstallOutput     string
+	UpdateInstallError      string
+	UpdateInstallProgress   <-chan tea.Msg
+	Settings                *api.CoreSettings
+	KernelInfo              *api.KernelInfo
+	Elapsed                 int
+	TimerTickSeq            int
+	ScratchpadOpen          bool
+	ScratchpadMeta          *api.ScratchPad
+	ScratchpadFilePath      string
+	ScratchpadRendered      string
+	StatusMsg               string
+	StatusSeq               int
+	StatusErr               bool
+	Dialog                  string
+	DialogErrorMessage      string
+	DialogChoiceItems       []string
+	DialogChoiceCursor      int
+	DialogProcessing        bool
+	DialogProcessingLabel   string
+	DialogViewTitle         string
+	DialogViewName          string
+	DialogViewMeta          string
+	DialogViewBody          string
+	DialogSupportBundlePath string
+	OpsLimit                int
+	OpsLimitPinned          bool
 }
 
 type MessageDeps struct {
@@ -97,6 +102,7 @@ type MessageDeps struct {
 	SetActiveScratchpadByIndex func(*MessageState, int)
 	SetStatus                  func(*MessageState, string, bool) tea.Cmd
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
+	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
 	EnterScratchpadPane        func(*MessageState, commands.OpenScratchpadMsg)
 	SetScratchpadContent       func(*MessageState, string, string)
 	CurrentDashboardDate       func(MessageState) string
@@ -554,6 +560,11 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			state.DialogProcessingLabel = ""
 		}
 		return state, deps.SetStatus(&state, msg.Message, false), true
+	case commands.SupportBundleGeneratedMsg:
+		deps.OpenSupportBundleDialog(&state, msg.Path, msg.SizeBytes, msg.WindowLabel)
+		return state, nil, true
+	case commands.SupportDiagnosticsWrittenMsg:
+		return state, deps.SetStatus(&state, "Recent diagnostics written to "+msg.Path, false), true
 	default:
 		return state, nil, false
 	}

@@ -69,13 +69,13 @@ func (s *Service) DismissLatest() (sharedtypes.UpdateStatus, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	prev := s.status
 	if strings.TrimSpace(s.status.LatestVersion) != "" {
 		s.status.DismissedVersion = s.status.LatestVersion
 	}
-	if err := s.persistLocked(); err != nil {
+	if err := s.persistAndEmitIfChangedLocked(prev); err != nil {
 		return s.status, err
 	}
-	s.emitLocked()
 	return s.status, nil
 }
 
@@ -111,6 +111,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	}
 
 	s.mu.Lock()
+	prev := s.status
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
 	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
@@ -119,16 +120,14 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	if !s.status.Enabled {
 		s.clearReleaseLocked()
 		s.status.Error = ""
-		err := s.persistLocked()
-		s.emitLocked()
+		err := s.persistAndEmitIfChangedLocked(prev)
 		status := s.status
 		s.mu.Unlock()
 		return status, err
 	}
 
 	if !force && isFresh(s.status.CheckedAt, checkInterval) {
-		err := s.persistLocked()
-		s.emitLocked()
+		err := s.persistAndEmitIfChangedLocked(prev)
 		status := s.status
 		s.mu.Unlock()
 		return status, err
@@ -140,6 +139,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	prev = s.status
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.Enabled = settings != nil && settings.UpdateChecksEnabled && !strings.EqualFold(s.envMode, config.ModeDev) && !versionpkg.IsDevBuild()
 	s.status.PromptEnabled = settings != nil && settings.UpdatePromptEnabled && s.status.Enabled
@@ -149,10 +149,9 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	if err != nil {
 		s.clearReleaseLocked()
 		s.status.Error = err.Error()
-		if persistErr := s.persistLocked(); persistErr != nil {
+		if persistErr := s.persistAndEmitIfChangedLocked(prev); persistErr != nil {
 			return s.status, persistErr
 		}
-		s.emitLocked()
 		return s.status, err
 	}
 
@@ -173,10 +172,9 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 		s.status.DismissedVersion = ""
 	}
 
-	if err := s.persistLocked(); err != nil {
+	if err := s.persistAndEmitIfChangedLocked(prev); err != nil {
 		return s.status, err
 	}
-	s.emitLocked()
 	return s.status, nil
 }
 
@@ -201,6 +199,17 @@ func (s *Service) persistLocked() error {
 		return err
 	}
 	return os.WriteFile(s.cachePath, body, runtimepkg.FilePerm())
+}
+
+func (s *Service) persistAndEmitIfChangedLocked(prev sharedtypes.UpdateStatus) error {
+	if s.status == prev {
+		return nil
+	}
+	if err := s.persistLocked(); err != nil {
+		return err
+	}
+	s.emitLocked()
+	return nil
 }
 
 func (s *Service) clearReleaseLocked() {

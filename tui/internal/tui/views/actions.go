@@ -2,6 +2,7 @@ package views
 
 import (
 	sharedtypes "crona/shared/types"
+	uistate "crona/tui/internal/tui/state"
 )
 
 type ActionsState struct {
@@ -17,8 +18,9 @@ type ActionsState struct {
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
-	actions := []string{
-		theme.StyleHeader.Render("[tab]") + theme.StyleDim.Render(" next pane"),
+	actions := []string{}
+	if tabLabel := tabActionLabel(state); tabLabel != "" {
+		actions = append(actions, theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel))
 	}
 	if state.View == "default" || state.View == "daily" {
 		actions = append(actions,
@@ -126,9 +128,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "support" {
 		return []string{
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" report issue"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open project"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" report bug"),
+			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" discussions"),
+			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" releases"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" roadmap"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
+			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" bundle"),
 		}
 	}
 
@@ -219,6 +224,16 @@ func PaneActions(theme Theme, state ActionsState) []string {
 	actions := append([]string{}, GlobalActions(theme, state)...)
 	actions = append(actions, ContextualActions(theme, state)...)
 	return actions
+}
+
+func tabActionLabel(state ActionsState) string {
+	if state.View == string(uistate.ViewDefault) && state.Pane == string(uistate.PaneIssues) {
+		return "open/resolved"
+	}
+	if len(uistate.ViewPanes(uistate.View(state.View))) > 1 {
+		return "next pane"
+	}
+	return ""
 }
 
 func SettingsItemLabels(settings *sharedtypes.CoreSettings) []string {

@@ -2,6 +2,28 @@
 
 All notable changes to **Crona** are documented here.
 
+## [0.4.0-beta.2] - 2026-04-03
+
+### Added
+- Stable/beta update channels, with beta opt-in from settings and update surfaces.
+- Destructive runtime management actions in Settings for wiping runtime data and uninstalling Crona.
+- Dedicated Support workspace view with GitHub Issues, Discussions, Releases, roadmap links, copied diagnostics, and full redacted support-bundle generation.
+- Support bundles now include recent ops plus recent TUI and kernel errors for easier bug reporting.
+- Expanded CLI automation for current command families, including context switching helpers, context-based starts, kernel restart/wipe, and broader export/report commands.
+
+### Changed
+- Release packaging now publishes compressed platform bundles plus the shared assets archive instead of treating raw binaries as first-class release artifacts.
+- Installers now show visible per-download progress and use the platform bundle archives during install.
+- Scratchpads no longer use Markdown rendering; they now rely on `$EDITOR` editing and OS-level open behavior.
+- GitHub is now the explicit public support surface in-app, with support copy steering users toward Issues, Discussions, Releases, and `ROADMAP.md`.
+- Release docs now match the bundled installer/release layout and the `crona` default launcher flow.
+
+### Fixed
+- TUI and kernel dashboard/loading paths now avoid a number of repeated selection, plan, and session aggregation recomputations.
+- Core settings reads and update-status persistence now do less redundant work while preserving the same public behavior.
+- Support bundle dialogs now carry their rendered state correctly and expose usable follow-up actions.
+- Support-focused regression coverage now lives under the TUI testsuite alongside the rest of the behavior-level tests.
+
 ## [0.4.0-beta.1] - 2026-04-01
 
 ### Added

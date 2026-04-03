@@ -740,3 +740,8 @@ func (c *Client) ListOps(limit int) ([]Op, error) {
 	}
 	return out, c.call(protocol.MethodOpsLatest, shareddto.ListLatestOpsQuery{Limit: &limit}, &out)
 }
+
+func (c *Client) ListOpsSince(since string) ([]Op, error) {
+	var out []Op
+	return out, c.call(protocol.MethodOpsSince, shareddto.ListOpsSinceQuery{Since: since}, &out)
+}

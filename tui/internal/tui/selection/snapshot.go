@@ -33,6 +33,17 @@ type Snapshot struct {
 	Ops                 []api.Op
 	Settings            *api.CoreSettings
 	ConfigItems         []configitems.Item
+
+	issueMetaIndex         map[int64]int
+	repoNameIndex          map[int64]string
+	defaultScopedIssues    []api.IssueWithMeta
+	defaultScopedReady     bool
+	dailyScopedIssues      []api.Issue
+	dailyScopedReady       bool
+	filteredDueHabits      []api.HabitDailyItem
+	filteredDueHabitsReady bool
+	paneItemsCache         map[uistate.Pane][]string
+	filteredIndicesCache   map[uistate.Pane][]int
 }
 
 type IssueSelection struct {
@@ -42,7 +53,41 @@ type IssueSelection struct {
 	TodoForDate *string
 }
 
+func PrepareSnapshot(s Snapshot) Snapshot {
+	s.issueMetaIndex = make(map[int64]int, len(s.AllIssues))
+	for i := range s.AllIssues {
+		s.issueMetaIndex[s.AllIssues[i].ID] = i
+	}
+	s.repoNameIndex = make(map[int64]string, len(s.Repos))
+	for _, repo := range s.Repos {
+		s.repoNameIndex[repo.ID] = repo.Name
+	}
+	s.paneItemsCache = make(map[uistate.Pane][]string)
+	s.filteredIndicesCache = make(map[uistate.Pane][]int)
+	s.defaultScopedIssues = buildDefaultScopedIssues(s)
+	s.defaultScopedReady = true
+	s.dailyScopedIssues = buildDailyScopedIssues(s)
+	s.dailyScopedReady = true
+	s.filteredDueHabits = buildFilteredDueHabits(s)
+	s.filteredDueHabitsReady = true
+	if s.ActiveIssue == nil {
+		var issueID int64
+		if s.Timer != nil && s.Timer.IssueID != nil {
+			issueID = *s.Timer.IssueID
+		} else if s.Context != nil && s.Context.IssueID != nil {
+			issueID = *s.Context.IssueID
+		}
+		if idx, ok := s.issueMetaIndex[issueID]; ok {
+			s.ActiveIssue = &s.AllIssues[idx]
+		}
+	}
+	return s
+}
+
 func IssueMetaByID(s Snapshot, issueID int64) *api.IssueWithMeta {
+	if idx, ok := s.issueMetaIndex[issueID]; ok {
+		return &s.AllIssues[idx]
+	}
 	for i := range s.AllIssues {
 		if s.AllIssues[i].ID == issueID {
 			return &s.AllIssues[i]
@@ -68,101 +113,47 @@ func ActiveIssue(s Snapshot) *api.IssueWithMeta {
 }
 
 func DefaultScopedIssues(s Snapshot) []api.IssueWithMeta {
-	if s.Context == nil {
-		return s.AllIssues
+	if s.defaultScopedReady {
+		return s.defaultScopedIssues
 	}
-	if s.Context.StreamID != nil {
-		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
-		for _, issue := range s.AllIssues {
-			if issue.StreamID == *s.Context.StreamID {
-				out = append(out, issue)
-			}
-		}
-		return out
-	}
-	if s.Context.RepoID != nil {
-		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
-		for _, issue := range s.AllIssues {
-			if issue.RepoID == *s.Context.RepoID {
-				out = append(out, issue)
-			}
-		}
-		return out
-	}
-	return s.AllIssues
+	return buildDefaultScopedIssues(s)
 }
 
 func FilteredDueHabits(s Snapshot) []api.HabitDailyItem {
-	if s.Context == nil {
-		return s.DueHabits
+	if s.filteredDueHabitsReady {
+		return s.filteredDueHabits
 	}
-	if s.Context.StreamID != nil {
-		out := make([]api.HabitDailyItem, 0, len(s.DueHabits))
-		for _, habit := range s.DueHabits {
-			if habit.StreamID == *s.Context.StreamID {
-				out = append(out, habit)
-			}
-		}
-		return out
-	}
-	if s.Context.RepoID != nil {
-		out := make([]api.HabitDailyItem, 0, len(s.DueHabits))
-		for _, habit := range s.DueHabits {
-			if habit.RepoID == *s.Context.RepoID {
-				out = append(out, habit)
-			}
-		}
-		return out
-	}
-	return s.DueHabits
+	return buildFilteredDueHabits(s)
 }
 
 func DailyScopedIssues(s Snapshot) []api.Issue {
-	issues := s.Issues
-	if s.Context == nil {
-		return issues
+	if s.dailyScopedReady {
+		return s.dailyScopedIssues
 	}
-	if s.Context.StreamID != nil {
-		out := make([]api.Issue, 0, len(issues))
-		for _, issue := range issues {
-			if issue.StreamID == *s.Context.StreamID {
-				out = append(out, issue)
-			}
-		}
-		return out
-	}
-	if s.Context.RepoID != nil {
-		out := make([]api.Issue, 0, len(issues))
-		for _, issue := range issues {
-			meta := IssueMetaByID(s, issue.ID)
-			if meta != nil && meta.RepoID == *s.Context.RepoID {
-				out = append(out, issue)
-			}
-		}
-		return out
-	}
-	return issues
+	return buildDailyScopedIssues(s)
 }
 
 func PaneItems(s Snapshot, pane uistate.Pane) []string {
+	if items, ok := s.paneItemsCache[pane]; ok {
+		return items
+	}
+	var items []string
 	switch pane {
 	case uistate.PaneRepos:
-		items := make([]string, 0, len(s.Repos))
+		items = make([]string, 0, len(s.Repos))
 		for _, repo := range s.Repos {
 			items = append(items, repo.Name)
 		}
-		return items
 	case uistate.PaneStreams:
-		items := make([]string, 0, len(s.Streams))
+		items = make([]string, 0, len(s.Streams))
 		for _, stream := range s.Streams {
 			items = append(items, stream.Name)
 		}
-		return items
 	case uistate.PaneIssues:
 		if s.View == uistate.ViewDefault {
 			scoped := DefaultScopedIssues(s)
 			ordered := views.PrioritizedDefaultIssueIndices(scoped, s.Filters[pane], s.Settings)
-			items := make([]string, 0, len(ordered))
+			items = make([]string, 0, len(ordered))
 			for _, idx := range ordered {
 				issue := scoped[idx]
 				estimate := ""
@@ -175,11 +166,12 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				}
 				items = append(items, fmt.Sprintf("[%s/%s] %s %s%s%s", issue.RepoName, issue.StreamName, issue.Status, issue.Title, estimate, due))
 			}
-			return items
+			break
 		}
 		if s.View == uistate.ViewDaily {
-			items := make([]string, 0, len(DailyScopedIssues(s)))
-			for _, issue := range DailyScopedIssues(s) {
+			scoped := DailyScopedIssues(s)
+			items = make([]string, 0, len(scoped))
+			for _, issue := range scoped {
 				meta := IssueMetaByID(s, issue.ID)
 				repoName, streamName := "-", "-"
 				if meta != nil {
@@ -196,9 +188,9 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				}
 				items = append(items, fmt.Sprintf("[%s/%s] %s %s%s%s", repoName, streamName, issue.Status, issue.Title, estimate, due))
 			}
-			return items
+			break
 		}
-		items := make([]string, 0, len(s.Issues))
+		items = make([]string, 0, len(s.Issues))
 		for _, issue := range s.Issues {
 			due := helperpkg.IssueScheduleLabel(issue)
 			if due != "" {
@@ -206,46 +198,41 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			}
 			items = append(items, fmt.Sprintf("%s %s%s", issue.Status, issue.Title, due))
 		}
-		return items
 	case uistate.PaneHabits:
 		if s.View == uistate.ViewDaily {
-			items := make([]string, 0, len(FilteredDueHabits(s)))
-			for _, habit := range FilteredDueHabits(s) {
+			habits := FilteredDueHabits(s)
+			items = make([]string, 0, len(habits))
+			for _, habit := range habits {
 				items = append(items, fmt.Sprintf("[%s/%s] %s", habit.RepoName, habit.StreamName, habit.Name))
 			}
-			return items
+			break
 		}
-		items := make([]string, 0, len(s.Habits))
+		items = make([]string, 0, len(s.Habits))
 		for _, habit := range s.Habits {
 			items = append(items, habit.Name)
 		}
-		return items
 	case uistate.PaneScratchpads:
-		items := make([]string, 0, len(s.Scratchpads))
+		items = make([]string, 0, len(s.Scratchpads))
 		for _, scratchpad := range s.Scratchpads {
 			items = append(items, scratchpad.Name)
 		}
-		return items
 	case uistate.PaneConfig:
-		items := make([]string, 0, len(s.ConfigItems))
+		items = make([]string, 0, len(s.ConfigItems))
 		for _, item := range s.ConfigItems {
 			items = append(items, item.Label+" "+item.Value)
 		}
-		return items
 	case uistate.PaneExportReports:
-		items := make([]string, 0, len(s.ExportReports))
+		items = make([]string, 0, len(s.ExportReports))
 		for _, report := range s.ExportReports {
 			items = append(items, fmt.Sprintf("%s  [%s] %s", report.Date, report.Format, report.Name))
 		}
-		return items
 	case uistate.PaneSessions:
-		items := make([]string, 0, len(s.SessionHistory))
+		items = make([]string, 0, len(s.SessionHistory))
 		for _, session := range s.SessionHistory {
 			items = append(items, helperpkg.SessionHistorySummary(session))
 		}
-		return items
 	case uistate.PaneOps:
-		items := make([]string, 0, len(s.Ops))
+		items = make([]string, 0, len(s.Ops))
 		for _, op := range s.Ops {
 			ts := op.Timestamp
 			if len(ts) >= 19 {
@@ -253,33 +240,40 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			}
 			items = append(items, fmt.Sprintf("%s %s.%s %s", ts, op.Entity, op.Action, op.EntityID))
 		}
-		return items
 	case uistate.PaneSettings:
-		return views.SettingsItemLabels(s.Settings)
+		items = views.SettingsItemLabels(s.Settings)
 	default:
-		return nil
+		items = nil
 	}
+	s.paneItemsCache[pane] = items
+	return items
 }
 
 func FilteredIndices(s Snapshot, pane uistate.Pane) []int {
-	if pane == uistate.PaneIssues && s.View == uistate.ViewDefault {
-		return views.PrioritizedDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
-	}
-	items := PaneItems(s, pane)
-	query := strings.TrimSpace(strings.ToLower(s.Filters[pane]))
-	if query == "" {
-		indices := make([]int, len(items))
-		for i := range items {
-			indices[i] = i
-		}
+	if indices, ok := s.filteredIndicesCache[pane]; ok {
 		return indices
 	}
-	indices := make([]int, 0, len(items))
-	for i, item := range items {
-		if strings.Contains(strings.ToLower(item), query) {
-			indices = append(indices, i)
+	var indices []int
+	if pane == uistate.PaneIssues && s.View == uistate.ViewDefault {
+		indices = views.PrioritizedDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
+	} else {
+		items := PaneItems(s, pane)
+		query := strings.TrimSpace(strings.ToLower(s.Filters[pane]))
+		if query == "" {
+			indices = make([]int, len(items))
+			for i := range items {
+				indices[i] = i
+			}
+		} else {
+			indices = make([]int, 0, len(items))
+			for i, item := range items {
+				if strings.Contains(strings.ToLower(item), query) {
+					indices = append(indices, i)
+				}
+			}
 		}
 	}
+	s.filteredIndicesCache[pane] = indices
 	return indices
 }
 
@@ -444,10 +438,90 @@ func SelectedExportReport(s Snapshot) (api.ExportReportFile, bool) {
 }
 
 func RepoNameByID(s Snapshot, repoID int64) string {
+	if name, ok := s.repoNameIndex[repoID]; ok {
+		return name
+	}
 	for _, repo := range s.Repos {
 		if repo.ID == repoID {
 			return repo.Name
 		}
 	}
 	return ""
+}
+
+func buildDefaultScopedIssues(s Snapshot) []api.IssueWithMeta {
+	if s.Context == nil {
+		return s.AllIssues
+	}
+	if s.Context.StreamID != nil {
+		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
+		for _, issue := range s.AllIssues {
+			if issue.StreamID == *s.Context.StreamID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	if s.Context.RepoID != nil {
+		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
+		for _, issue := range s.AllIssues {
+			if issue.RepoID == *s.Context.RepoID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	return s.AllIssues
+}
+
+func buildFilteredDueHabits(s Snapshot) []api.HabitDailyItem {
+	if s.Context == nil {
+		return s.DueHabits
+	}
+	if s.Context.StreamID != nil {
+		out := make([]api.HabitDailyItem, 0, len(s.DueHabits))
+		for _, habit := range s.DueHabits {
+			if habit.StreamID == *s.Context.StreamID {
+				out = append(out, habit)
+			}
+		}
+		return out
+	}
+	if s.Context.RepoID != nil {
+		out := make([]api.HabitDailyItem, 0, len(s.DueHabits))
+		for _, habit := range s.DueHabits {
+			if habit.RepoID == *s.Context.RepoID {
+				out = append(out, habit)
+			}
+		}
+		return out
+	}
+	return s.DueHabits
+}
+
+func buildDailyScopedIssues(s Snapshot) []api.Issue {
+	issues := s.Issues
+	if s.Context == nil {
+		return issues
+	}
+	if s.Context.StreamID != nil {
+		out := make([]api.Issue, 0, len(issues))
+		for _, issue := range issues {
+			if issue.StreamID == *s.Context.StreamID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	if s.Context.RepoID != nil {
+		out := make([]api.Issue, 0, len(issues))
+		for _, issue := range issues {
+			meta := IssueMetaByID(s, issue.ID)
+			if meta != nil && meta.RepoID == *s.Context.RepoID {
+				out = append(out, issue)
+			}
+		}
+		return out
+	}
+	return issues
 }

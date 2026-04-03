@@ -16,6 +16,9 @@ func ComputeDashboardWindowSummary(ctx context.Context, c *core.Context, input s
 	if err := validateRange(input.Start, input.End); err != nil {
 		return nil, err
 	}
+	if err := finalizeExpiredDailyPlanFailures(ctx, c, c.Now()); err != nil {
+		return nil, err
+	}
 	issues, err := scopedIssues(ctx, c, input.RepoID, input.StreamID, input.IssueID)
 	if err != nil {
 		return nil, err
@@ -28,13 +31,14 @@ func ComputeDashboardWindowSummary(ctx context.Context, c *core.Context, input s
 		StartDate: input.Start,
 		EndDate:   input.End,
 	}
+	plansByDate, err := loadScoredDailyPlansByDate(ctx, c, input.Start, input.End)
+	if err != nil {
+		return nil, err
+	}
 	var accountabilityTotal float64
 	var accountabilityDays int
 	for day := range eachDate(input.Start, input.End) {
-		plan, err := GetDailyPlan(ctx, c, day)
-		if err != nil {
-			return nil, err
-		}
+		plan := plansByDate[day]
 		item := sharedtypes.DashboardWindowDay{
 			Date:   day,
 			Status: sharedtypes.DashboardWindowDayEmpty,
@@ -91,10 +95,7 @@ func ComputeFocusScoreSummary(ctx context.Context, c *core.Context, input shared
 	if err != nil {
 		return nil, err
 	}
-	rollup, err := ComputeMetricsRollup(ctx, c, input.Start, input.End)
-	if err != nil {
-		return nil, err
-	}
+	rollup := computeMetricsRollupFromDays(input.Start, input.End, days)
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -164,19 +165,7 @@ func ComputeTimeDistributionSummary(ctx context.Context, c *core.Context, input 
 		return nil, err
 	}
 	groupBy := parseDistributionGroup(input.GroupBy)
-	issues, err := scopedIssues(ctx, c, input.RepoID, input.StreamID, input.IssueID)
-	if err != nil {
-		return nil, err
-	}
-	issueByID := make(map[int64]sharedtypes.IssueWithMeta, len(issues))
-	for _, issue := range issues {
-		issueByID[issue.ID] = issue
-	}
-	sessions, err := listScopedSessions(ctx, c, input.Start, input.End, input.RepoID, input.StreamID, input.IssueID)
-	if err != nil {
-		return nil, err
-	}
-	workBySession, segmentTotals, err := sessionWorkTotals(ctx, c, input.Start, input.End, sessions)
+	data, err := loadDashboardData(ctx, c, input)
 	if err != nil {
 		return nil, err
 	}
@@ -184,17 +173,17 @@ func ComputeTimeDistributionSummary(ctx context.Context, c *core.Context, input 
 	labels := map[string]string{}
 	switch groupBy {
 	case sharedtypes.DistributionGroupSegmentType:
-		for key, total := range segmentTotals {
+		for key, total := range data.segmentTotals {
 			accum[key] = total
 			labels[key] = prettifySegmentGroup(key)
 		}
 	default:
-		for _, session := range sessions {
-			seconds := workBySession[session.ID]
+		for _, session := range data.sessions {
+			seconds := data.workBySession[session.ID]
 			if seconds <= 0 {
 				continue
 			}
-			meta, ok := issueByID[session.IssueID]
+			meta, ok := data.issueByID[session.IssueID]
 			if !ok {
 				continue
 			}
@@ -218,21 +207,13 @@ func ComputeGoalProgressSummary(ctx context.Context, c *core.Context, input shar
 		return nil, err
 	}
 	groupBy := parseGoalProgressGroup(input.GroupBy)
-	issues, err := scopedIssues(ctx, c, input.RepoID, input.StreamID, input.IssueID)
-	if err != nil {
-		return nil, err
-	}
-	sessions, err := listScopedSessions(ctx, c, input.Start, input.End, input.RepoID, input.StreamID, input.IssueID)
-	if err != nil {
-		return nil, err
-	}
-	workBySession, _, err := sessionWorkTotals(ctx, c, input.Start, input.End, sessions)
+	data, err := loadDashboardData(ctx, c, input)
 	if err != nil {
 		return nil, err
 	}
 	workByIssue := map[int64]int{}
-	for _, session := range sessions {
-		workByIssue[session.IssueID] += workBySession[session.ID]
+	for _, session := range data.sessions {
+		workByIssue[session.IssueID] += data.workBySession[session.ID]
 	}
 	type aggregate struct {
 		label    string
@@ -240,7 +221,7 @@ func ComputeGoalProgressSummary(ctx context.Context, c *core.Context, input shar
 		actual   int
 	}
 	grouped := map[string]*aggregate{}
-	for _, issue := range issues {
+	for _, issue := range data.issues {
 		key, label := goalProgressKeyAndLabel(groupBy, issue)
 		current := grouped[key]
 		if current == nil {
@@ -315,6 +296,40 @@ func ComputeGoalProgressSummary(ctx context.Context, c *core.Context, input shar
 	}, nil
 }
 
+type dashboardData struct {
+	issues        []sharedtypes.IssueWithMeta
+	issueByID     map[int64]sharedtypes.IssueWithMeta
+	sessions      []sharedtypes.SessionHistoryEntry
+	workBySession map[string]int
+	segmentTotals map[string]int
+}
+
+func loadDashboardData(ctx context.Context, c *core.Context, input shareddto.DashboardSummaryQuery) (*dashboardData, error) {
+	issues, err := scopedIssues(ctx, c, input.RepoID, input.StreamID, input.IssueID)
+	if err != nil {
+		return nil, err
+	}
+	issueByID := make(map[int64]sharedtypes.IssueWithMeta, len(issues))
+	for _, issue := range issues {
+		issueByID[issue.ID] = issue
+	}
+	sessions, err := listScopedSessions(ctx, c, input.Start, input.End, input.RepoID, input.StreamID, input.IssueID)
+	if err != nil {
+		return nil, err
+	}
+	workBySession, segmentTotals, err := sessionWorkTotals(ctx, c, sessions)
+	if err != nil {
+		return nil, err
+	}
+	return &dashboardData{
+		issues:        issues,
+		issueByID:     issueByID,
+		sessions:      sessions,
+		workBySession: workBySession,
+		segmentTotals: segmentTotals,
+	}, nil
+}
+
 func scopedIssues(ctx context.Context, c *core.Context, repoID, streamID, issueID *int64) ([]sharedtypes.IssueWithMeta, error) {
 	allIssues, err := c.Issues.ListAll(ctx, c.UserID)
 	if err != nil {
@@ -358,7 +373,7 @@ func listScopedSessions(ctx context.Context, c *core.Context, start, end string,
 	})
 }
 
-func sessionWorkTotals(ctx context.Context, c *core.Context, start, end string, sessions []sharedtypes.SessionHistoryEntry) (map[string]int, map[string]int, error) {
+func sessionWorkTotals(ctx context.Context, c *core.Context, sessions []sharedtypes.SessionHistoryEntry) (map[string]int, map[string]int, error) {
 	workBySession := map[string]int{}
 	segmentTotals := map[string]int{
 		string(sharedtypes.SessionSegmentWork):       0,
@@ -373,9 +388,11 @@ func sessionWorkTotals(ctx context.Context, c *core.Context, start, end string, 
 	for _, session := range sessions {
 		allowed[session.ID] = struct{}{}
 	}
-	startTime := start + "T00:00:00.000Z"
-	endTime := end + "T23:59:59.999Z"
-	segments, err := c.SessionSegments.ListEndedInRange(ctx, c.UserID, startTime, endTime)
+	sessionIDs := make([]string, 0, len(sessions))
+	for _, session := range sessions {
+		sessionIDs = append(sessionIDs, session.ID)
+	}
+	segments, err := c.SessionSegments.ListEndedForSessions(ctx, c.UserID, sessionIDs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -401,6 +418,33 @@ func sessionWorkTotals(ctx context.Context, c *core.Context, start, end string, 
 		}
 	}
 	return workBySession, segmentTotals, nil
+}
+
+func loadScoredDailyPlansByDate(ctx context.Context, c *core.Context, start, end string) (map[string]*sharedtypes.DailyPlan, error) {
+	plans, err := c.DailyPlans.ListByDateRange(ctx, c.UserID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	active, err := c.DailyPlans.ListActiveEntries(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range active {
+		applyDailyPlanScore(&active[i], settings)
+	}
+	out := make(map[string]*sharedtypes.DailyPlan, len(plans))
+	for i := range plans {
+		for j := range plans[i].Entries {
+			applyDailyPlanScore(&plans[i].Entries[j], settings)
+		}
+		plans[i].Summary = buildDailyPlanSummary(plans[i].Entries, active)
+		out[plans[i].Date] = &plans[i]
+	}
+	return out, nil
 }
 
 func distributionRows(accum map[string]int, labels map[string]string) ([]sharedtypes.TimeDistributionRow, int) {

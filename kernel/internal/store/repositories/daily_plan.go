@@ -80,7 +80,7 @@ func (r *DailyPlanRepository) GetByDate(ctx context.Context, userID, date string
 		}
 		return nil, err
 	}
-	entries, err := r.listEntriesByPlanID(ctx, plan.ID)
+	entries, err := r.listEntriesByPlanIDs(ctx, []string{plan.ID})
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +91,48 @@ func (r *DailyPlanRepository) GetByDate(ctx context.Context, userID, date string
 		UpdatedAt: plan.UpdatedAt,
 		Entries:   entries,
 	}, nil
+}
+
+func (r *DailyPlanRepository) ListByDateRange(ctx context.Context, userID, startDate, endDate string) ([]sharedtypes.DailyPlan, error) {
+	type planRow struct {
+		ID        string `bun:"id"`
+		Date      string `bun:"date"`
+		CreatedAt string `bun:"created_at"`
+		UpdatedAt string `bun:"updated_at"`
+	}
+	var plans []planRow
+	if err := r.db.NewSelect().
+		TableExpr("daily_plans").
+		Column("id", "date", "created_at", "updated_at").
+		Where("user_id = ?", userID).
+		Where("date >= ?", startDate).
+		Where("date <= ?", endDate).
+		OrderExpr("date ASC").
+		Scan(ctx, &plans); err != nil {
+		return nil, err
+	}
+	if len(plans) == 0 {
+		return nil, nil
+	}
+	planIDs := make([]string, 0, len(plans))
+	for _, plan := range plans {
+		planIDs = append(planIDs, plan.ID)
+	}
+	entriesByPlanID, err := r.listEntriesGroupedByPlanIDs(ctx, planIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]sharedtypes.DailyPlan, 0, len(plans))
+	for _, plan := range plans {
+		out = append(out, sharedtypes.DailyPlan{
+			ID:        plan.ID,
+			Date:      plan.Date,
+			CreatedAt: plan.CreatedAt,
+			UpdatedAt: plan.UpdatedAt,
+			Entries:   entriesByPlanID[plan.ID],
+		})
+	}
+	return out, nil
 }
 
 func (r *DailyPlanRepository) GetEntry(ctx context.Context, userID, date string, issueID int64) (*sharedtypes.DailyPlanEntry, error) {
@@ -294,8 +336,23 @@ func (r *DailyPlanRepository) AppendEvent(ctx context.Context, entryID, userID, 
 	return err
 }
 
-func (r *DailyPlanRepository) listEntriesByPlanID(ctx context.Context, planID string) ([]sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) listEntriesByPlanIDs(ctx context.Context, planIDs []string) ([]sharedtypes.DailyPlanEntry, error) {
+	grouped, err := r.listEntriesGroupedByPlanIDs(ctx, planIDs)
+	if err != nil {
+		return nil, err
+	}
+	if len(planIDs) == 0 {
+		return nil, nil
+	}
+	return grouped[planIDs[0]], nil
+}
+
+func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(ctx context.Context, planIDs []string) (map[string][]sharedtypes.DailyPlanEntry, error) {
+	if len(planIDs) == 0 {
+		return map[string][]sharedtypes.DailyPlanEntry{}, nil
+	}
 	type row struct {
+		PlanID               string  `bun:"plan_id"`
 		ID                   string  `bun:"id"`
 		Date                 string  `bun:"date"`
 		IssuePublicID        int64   `bun:"issue_public_id"`
@@ -316,6 +373,7 @@ func (r *DailyPlanRepository) listEntriesByPlanID(ctx context.Context, planID st
 		TableExpr("daily_plan_entries AS e").
 		Join("INNER JOIN daily_plans AS p ON p.id = e.plan_id").
 		Join("INNER JOIN issues ON issues.id = e.issue_id").
+		ColumnExpr("e.plan_id").
 		ColumnExpr("e.id").
 		ColumnExpr("p.date").
 		ColumnExpr("issues.public_id AS issue_public_id").
@@ -330,25 +388,28 @@ func (r *DailyPlanRepository) listEntriesByPlanID(ctx context.Context, planID st
 		ColumnExpr("COALESCE(NULLIF(e.current_planned_date, ''), p.date) AS current_planned_date").
 		ColumnExpr("COALESCE(e.postpone_count, 0) AS postpone_count").
 		ColumnExpr("COALESCE(e.max_delayed_days, 0) AS max_delayed_days").
-		Where("e.plan_id = ?", planID).
-		OrderExpr("e.committed_at ASC").
+		Where("e.plan_id IN (?)", bun.In(planIDs)).
+		OrderExpr("p.date ASC, e.committed_at ASC").
 		Scan(ctx, &rows); err != nil {
 		return nil, err
 	}
-	events, err := r.listEventsByPlanID(ctx, planID)
+	events, err := r.listEventsByPlanIDs(ctx, planIDs)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]sharedtypes.DailyPlanEntry, 0, len(rows))
+	grouped := make(map[string][]sharedtypes.DailyPlanEntry, len(planIDs))
 	for _, row := range rows {
 		entry := mapDailyPlanEntryRow(row.ID, row.Date, row.IssuePublicID, row.Source, row.Status, row.FailureReason, row.PendingFailureReason, row.CommittedAt, row.PendingFailureAt, row.ResolvedAt, row.BaselineDate, row.CurrentPlannedDate, row.PostponeCount, row.MaxDelayedDays)
 		entry.Events = events[row.ID]
-		out = append(out, entry)
+		grouped[row.PlanID] = append(grouped[row.PlanID], entry)
 	}
-	return out, nil
+	return grouped, nil
 }
 
-func (r *DailyPlanRepository) listEventsByPlanID(ctx context.Context, planID string) (map[string][]sharedtypes.DailyPlanEvent, error) {
+func (r *DailyPlanRepository) listEventsByPlanIDs(ctx context.Context, planIDs []string) (map[string][]sharedtypes.DailyPlanEvent, error) {
+	if len(planIDs) == 0 {
+		return map[string][]sharedtypes.DailyPlanEvent{}, nil
+	}
 	type row struct {
 		ID            string  `bun:"id"`
 		PlanEntryID   string  `bun:"plan_entry_id"`
@@ -365,7 +426,7 @@ func (r *DailyPlanRepository) listEventsByPlanID(ctx context.Context, planID str
 		ColumnExpr("e.event_type").
 		ColumnExpr("e.failure_reason").
 		ColumnExpr("e.timestamp").
-		Where("dpe.plan_id = ?", planID).
+		Where("dpe.plan_id IN (?)", bun.In(planIDs)).
 		OrderExpr("e.timestamp ASC").
 		Scan(ctx, &rows); err != nil {
 		return nil, err

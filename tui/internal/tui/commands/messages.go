@@ -47,6 +47,12 @@ type ExportReportDeletedMsg struct{ Name string }
 type DailyReportGeneratedMsg struct{ Result *api.DailyReportResult }
 type CalendarExportGeneratedMsg struct{ Result *api.CalendarExportResult }
 type ClipboardCopiedMsg struct{ Message string }
+type SupportDiagnosticsWrittenMsg struct{ Path string }
+type SupportBundleGeneratedMsg struct {
+	Path        string
+	SizeBytes   int64
+	WindowLabel string
+}
 
 type IssueSessionsLoadedMsg struct {
 	IssueID  int64

@@ -15,6 +15,8 @@ func (m Model) View() string {
 }
 
 func (m Model) layoutState() layoutpkg.State {
+	snapshot := m.selectionSnapshot()
+	activeIssue := selectionpkg.ActiveIssue(snapshot)
 	repo := "-"
 	stream := "-"
 	if m.context != nil {
@@ -58,13 +60,13 @@ func (m Model) layoutState() layoutpkg.State {
 		SessionDetailLines:  helperpkg.SessionDetailContentLines(m.sessionDetail),
 		SessionContextOpen:  m.sessionContextOpen,
 		SessionContextY:     m.sessionContextY,
-		SessionContextLines: helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(m.selectionSnapshot())),
+		SessionContextLines: helperpkg.SessionContextContentLines(activeIssue),
 		StatusMsg:           m.statusMsg,
 		StatusErr:           m.statusErr,
 		GlobalActions:       globalActions(m, timerState),
 	}
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
-	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state))
+	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state), snapshot, activeIssue)
 	if state.ContentState.RestModeActive {
 		if m.view != ViewReports && m.view != ViewSessionHistory {
 			state.View = ViewAway
@@ -134,5 +136,38 @@ func max(a, b int) int {
 }
 
 func (m Model) contentHeight() int {
-	return layoutpkg.ContentHeight(m.layoutState())
+	repo := "-"
+	stream := "-"
+	if m.context != nil {
+		if m.context.RepoName != nil && strings.TrimSpace(*m.context.RepoName) != "" {
+			repo = strings.TrimSpace(*m.context.RepoName)
+		}
+		if m.context.StreamName != nil && strings.TrimSpace(*m.context.StreamName) != "" {
+			stream = strings.TrimSpace(*m.context.StreamName)
+		}
+	}
+	timerState := ""
+	if m.timer != nil {
+		timerState = m.timer.State
+	}
+	protectedMode, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	return layoutpkg.ContentHeight(layoutpkg.State{
+		Width:         m.width,
+		Height:        m.height,
+		ProtectedMode: protectedMode,
+		IsDevMode:     m.isDevMode(),
+		RepoName:      repo,
+		StreamName:    stream,
+		GlobalActions: globalActions(m, timerState),
+		HeaderState: views.HeaderState{
+			Width:         m.width,
+			View:          string(m.view),
+			Elapsed:       m.elapsed,
+			Timer:         m.timer,
+			IssueSessions: m.issueSessions,
+			AllIssues:     m.allIssues,
+			Health:        m.health,
+			UpdateStatus:  m.updateStatus,
+		},
+	})
 }

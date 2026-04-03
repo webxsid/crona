@@ -107,7 +107,8 @@ func (m Model) filterDeps() filteringpkg.Deps {
 	return filteringpkg.Deps{
 		ItemCount: func(state filteringpkg.State, pane Pane) int {
 			next := m.applyFilterState(state)
-			return len(selectionpkg.FilteredIndices(next.selectionSnapshot(), pane))
+			snapshot := next.selectionSnapshot()
+			return len(selectionpkg.FilteredIndices(snapshot, pane))
 		},
 		Clamp: func(cursor map[Pane]int, pane Pane, max int) {
 			if max == 0 {
@@ -216,7 +217,8 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 		},
 		AbandonSelectedIssue: func(state *overlaypkg.State) tea.Cmd {
 			next := m.applyOverlayState(*state)
-			issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot())
+			snapshot := next.selectionSnapshot()
+			issue, ok := selectionpkg.SelectedIssueDetail(snapshot)
 			if !ok {
 				*state = next.overlayState()
 				return nil
@@ -244,7 +246,8 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 		FilteredIndexAtCursor: func(state overlaypkg.State, pane string) int {
 			next := m.applyOverlayState(state)
 			if pane == "scratchpads" {
-				return selectionpkg.FilteredIndexAtCursor(next.selectionSnapshot(), PaneScratchpads)
+				snapshot := next.selectionSnapshot()
+				return selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
 			}
 			return -1
 		},
@@ -278,7 +281,8 @@ func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		m.sessionContextY = 0
 		return m, nil
 	case "j", "down":
-		maxOffset := helperpkg.SessionContextMaxOffset(m.width, m.height, helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(m.selectionSnapshot())))
+		snapshot := m.selectionSnapshot()
+		maxOffset := helperpkg.SessionContextMaxOffset(m.width, m.height, helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(snapshot)))
 		if m.sessionContextY < maxOffset {
 			m.sessionContextY++
 		}
@@ -365,78 +369,83 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 
 func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 	return dispatchpkg.MessageState{
-		Width:                 m.width,
-		Height:                m.height,
-		View:                  m.view,
-		Pane:                  m.pane,
-		Cursor:                m.cursor,
-		Repos:                 m.repos,
-		Streams:               m.streams,
-		Issues:                m.issues,
-		Habits:                m.habits,
-		AllIssues:             m.allIssues,
-		DueHabits:             m.dueHabits,
-		DailySummary:          m.dailySummary,
-		DailyPlan:             m.dailyPlan,
-		DashboardDate:         m.dashboardDate,
-		RollupStartDate:       m.currentRollupStartDate(),
-		RollupEndDate:         m.currentRollupEndDate(),
-		WellbeingDate:         m.wellbeingDate,
-		DailyCheckIn:          m.dailyCheckIn,
-		MetricsRange:          m.metricsRange,
-		MetricsRollup:         m.metricsRollup,
-		Streaks:               m.streaks,
-		DashboardWindow:       m.dashboardWindow,
-		DailyFocusScore:       m.dailyFocusScore,
-		WeeklyFocusScore:      m.weeklyFocusScore,
-		RepoDistribution:      m.repoDistribution,
-		StreamDistribution:    m.streamDistribution,
-		IssueDistribution:     m.issueDistribution,
-		SegmentDistribution:   m.segmentDistribution,
-		GoalProgress:          m.goalProgress,
-		ExportAssets:          m.exportAssets,
-		ExportReports:         m.exportReports,
-		IssueSessions:         m.issueSessions,
-		SessionHistory:        m.sessionHistory,
-		SessionDetail:         m.sessionDetail,
-		SessionDetailOpen:     m.sessionDetailOpen,
-		SessionDetailY:        m.sessionDetailY,
-		SessionContextOpen:    m.sessionContextOpen,
-		SessionContextY:       m.sessionContextY,
-		Scratchpads:           m.scratchpads,
-		Stashes:               m.stashes,
-		DialogStashCursor:     m.dialogStashCursor,
-		Ops:                   m.ops,
-		Context:               m.context,
-		Timer:                 m.timer,
-		Health:                m.health,
-		UpdateStatus:          m.updateStatus,
-		UpdateChecking:        m.updateChecking,
-		UpdateInstalling:      m.updateInstalling,
-		UpdateInstallPhase:    m.updateInstallPhase,
-		UpdateInstallDetail:   m.updateInstallDetail,
-		UpdateInstallOutput:   m.updateInstallOutput,
-		UpdateInstallError:    m.updateInstallError,
-		UpdateInstallProgress: nil,
-		Settings:              m.settings,
-		KernelInfo:            m.kernelInfo,
-		Elapsed:               m.elapsed,
-		TimerTickSeq:          m.timerTickSeq,
-		ScratchpadOpen:        m.scratchpadOpen,
-		ScratchpadMeta:        m.scratchpadMeta,
-		ScratchpadFilePath:    m.scratchpadFilePath,
-		ScratchpadRendered:    m.scratchpadRendered,
-		StatusMsg:             m.statusMsg,
-		StatusSeq:             m.statusSeq,
-		StatusErr:             m.statusErr,
-		Dialog:                m.dialog,
-		DialogErrorMessage:    m.dialogErrorMessage,
-		DialogChoiceItems:     m.dialogChoiceItems,
-		DialogChoiceCursor:    m.dialogChoiceCursor,
-		DialogProcessing:      m.dialogProcessing,
-		DialogProcessingLabel: m.dialogProcessingLabel,
-		OpsLimit:              m.opsLimit,
-		OpsLimitPinned:        m.opsLimitPinned,
+		Width:                   m.width,
+		Height:                  m.height,
+		View:                    m.view,
+		Pane:                    m.pane,
+		Cursor:                  m.cursor,
+		Repos:                   m.repos,
+		Streams:                 m.streams,
+		Issues:                  m.issues,
+		Habits:                  m.habits,
+		AllIssues:               m.allIssues,
+		DueHabits:               m.dueHabits,
+		DailySummary:            m.dailySummary,
+		DailyPlan:               m.dailyPlan,
+		DashboardDate:           m.dashboardDate,
+		RollupStartDate:         m.currentRollupStartDate(),
+		RollupEndDate:           m.currentRollupEndDate(),
+		WellbeingDate:           m.wellbeingDate,
+		DailyCheckIn:            m.dailyCheckIn,
+		MetricsRange:            m.metricsRange,
+		MetricsRollup:           m.metricsRollup,
+		Streaks:                 m.streaks,
+		DashboardWindow:         m.dashboardWindow,
+		DailyFocusScore:         m.dailyFocusScore,
+		WeeklyFocusScore:        m.weeklyFocusScore,
+		RepoDistribution:        m.repoDistribution,
+		StreamDistribution:      m.streamDistribution,
+		IssueDistribution:       m.issueDistribution,
+		SegmentDistribution:     m.segmentDistribution,
+		GoalProgress:            m.goalProgress,
+		ExportAssets:            m.exportAssets,
+		ExportReports:           m.exportReports,
+		IssueSessions:           m.issueSessions,
+		SessionHistory:          m.sessionHistory,
+		SessionDetail:           m.sessionDetail,
+		SessionDetailOpen:       m.sessionDetailOpen,
+		SessionDetailY:          m.sessionDetailY,
+		SessionContextOpen:      m.sessionContextOpen,
+		SessionContextY:         m.sessionContextY,
+		Scratchpads:             m.scratchpads,
+		Stashes:                 m.stashes,
+		DialogStashCursor:       m.dialogStashCursor,
+		Ops:                     m.ops,
+		Context:                 m.context,
+		Timer:                   m.timer,
+		Health:                  m.health,
+		UpdateStatus:            m.updateStatus,
+		UpdateChecking:          m.updateChecking,
+		UpdateInstalling:        m.updateInstalling,
+		UpdateInstallPhase:      m.updateInstallPhase,
+		UpdateInstallDetail:     m.updateInstallDetail,
+		UpdateInstallOutput:     m.updateInstallOutput,
+		UpdateInstallError:      m.updateInstallError,
+		UpdateInstallProgress:   nil,
+		Settings:                m.settings,
+		KernelInfo:              m.kernelInfo,
+		Elapsed:                 m.elapsed,
+		TimerTickSeq:            m.timerTickSeq,
+		ScratchpadOpen:          m.scratchpadOpen,
+		ScratchpadMeta:          m.scratchpadMeta,
+		ScratchpadFilePath:      m.scratchpadFilePath,
+		ScratchpadRendered:      m.scratchpadRendered,
+		StatusMsg:               m.statusMsg,
+		StatusSeq:               m.statusSeq,
+		StatusErr:               m.statusErr,
+		Dialog:                  m.dialog,
+		DialogErrorMessage:      m.dialogErrorMessage,
+		DialogChoiceItems:       m.dialogChoiceItems,
+		DialogChoiceCursor:      m.dialogChoiceCursor,
+		DialogProcessing:        m.dialogProcessing,
+		DialogProcessingLabel:   m.dialogProcessingLabel,
+		DialogViewTitle:         m.dialogViewTitle,
+		DialogViewName:          m.dialogViewName,
+		DialogViewMeta:          m.dialogViewMeta,
+		DialogViewBody:          m.dialogViewBody,
+		DialogSupportBundlePath: m.dialogSupportBundlePath,
+		OpsLimit:                m.opsLimit,
+		OpsLimitPinned:          m.opsLimitPinned,
 	}
 }
 
@@ -510,6 +519,11 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dialogChoiceCursor = state.DialogChoiceCursor
 	m.dialogProcessing = state.DialogProcessing
 	m.dialogProcessingLabel = state.DialogProcessingLabel
+	m.dialogViewTitle = state.DialogViewTitle
+	m.dialogViewName = state.DialogViewName
+	m.dialogViewMeta = state.DialogViewMeta
+	m.dialogViewBody = state.DialogViewBody
+	m.dialogSupportBundlePath = state.DialogSupportBundlePath
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned
 	return m
@@ -546,7 +560,8 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		FilteredCursorForRawIndex: func(state *dispatchpkg.MessageState, pane Pane, rawIdx int) int {
 			next := m.applyDispatchMessageState(*state)
-			return selectionpkg.FilteredCursorForRawIndex(next.selectionSnapshot(), pane, rawIdx)
+			snapshot := next.selectionSnapshot()
+			return selectionpkg.FilteredCursorForRawIndex(snapshot, pane, rawIdx)
 		},
 		SetActiveScratchpadByIndex: func(state *dispatchpkg.MessageState, idx int) {
 			next := m.applyDispatchMessageState(*state)
@@ -562,6 +577,11 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		OpenViewEntityDialog: func(state *dispatchpkg.MessageState, title, name, meta, body string) {
 			next := m.applyDispatchMessageState(*state)
 			next = next.openViewEntityDialog(title, name, meta, body)
+			*state = next.dispatchMessageState()
+		},
+		OpenSupportBundleDialog: func(state *dispatchpkg.MessageState, path string, sizeBytes int64, windowLabel string) {
+			next := m.applyDispatchMessageState(*state)
+			next = next.openSupportBundleDialog(path, sizeBytes, windowLabel)
 			*state = next.dispatchMessageState()
 		},
 		EnterScratchpadPane: func(state *dispatchpkg.MessageState, msg commands.OpenScratchpadMsg) {

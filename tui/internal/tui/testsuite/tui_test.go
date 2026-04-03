@@ -553,7 +553,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		View:                 "support",
 		Pane:                 "issues",
 		Width:                100,
-		Height:               24,
+		Height:               32,
 		TUIExecutablePath:    "/tmp/crona",
 		KernelExecutablePath: "/tmp/crona-kernel",
 		KernelInfo: &api.KernelInfo{
@@ -563,7 +563,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 			ScratchDir: "/tmp/crona/scratch",
 		},
 		UpdateStatus: &api.UpdateStatus{
-			CurrentVersion: "0.4.0-beta.1",
+			CurrentVersion: "0.4.0-beta.2",
 			Channel:        sharedtypes.UpdateChannelBeta,
 		},
 		ExportAssets: &api.ExportAssetStatus{
@@ -572,7 +572,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "issues/new/choose", "github.com/webxsid/crona", "Version: v0.4.0-beta.1", "Update channel: beta", "Reports dir: /tmp/reports"} {
+	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/ROADMAP.md", "Version: v0.4.0-beta.2", "Update channel: beta", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -584,7 +584,7 @@ func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[o]", "report issue", "[g]", "open project", "[c]", "copy diagnostics"} {
+	for _, want := range []string{"[o]", "report bug", "[d]", "discussions", "[r]", "releases", "[g]", "roadmap", "[c]", "copy diagnostics", "[b]", "bundle"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}

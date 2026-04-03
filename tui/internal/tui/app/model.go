@@ -1,6 +1,7 @@
 package app
 
 import (
+	"strings"
 	"time"
 
 	"crona/shared/config"
@@ -198,6 +199,7 @@ type Model struct {
 	dialogIssueEstimateMins  *int
 	dialogViewMeta           string
 	dialogViewBody           string
+	dialogSupportBundlePath  string
 	dialogProtectionStep     int
 	dialogProtectionCursor   int
 	dialogProtectionStreaks  []sharedtypes.StreakKind
@@ -352,7 +354,8 @@ func (m *Model) listLen(p Pane) int {
 		}
 		return len(m.dashboardWindow.Days)
 	}
-	return len(selectionpkg.FilteredIndices(m.selectionSnapshot(), p))
+	snapshot := m.selectionSnapshot()
+	return len(selectionpkg.FilteredIndices(snapshot, p))
 }
 
 func (m *Model) defaultOpsLimit() int {
@@ -375,7 +378,7 @@ func (m *Model) currentOpsLimit() int {
 }
 
 func (m Model) selectionSnapshot() selectionpkg.Snapshot {
-	return selectionpkg.Snapshot{
+	return selectionpkg.PrepareSnapshot(selectionpkg.Snapshot{
 		View:                m.view,
 		Pane:                m.pane,
 		DefaultIssueSection: m.defaultIssueSection,
@@ -396,7 +399,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Ops:                 m.ops,
 		Settings:            m.settings,
 		ConfigItems:         configitems.Build(m.exportAssets),
-	}
+	})
 }
 
 func (m Model) dailyIssuesForSelection() []api.Issue {
@@ -538,7 +541,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
-			if item, ok := selectionpkg.SelectedConfigItem(next.selectionSnapshot()); ok && next.exportAssets != nil {
+			snapshot := next.selectionSnapshot()
+			if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok && next.exportAssets != nil {
 				switch {
 				case item.PresetStyle:
 					for _, asset := range next.exportAssets.TemplateAssets {
@@ -642,7 +646,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		OpenIssueStatusFromSelection: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
+			snapshot := next.selectionSnapshot()
+			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
 				next = next.withDialogState(dialogstate.OpenIssueStatus(next.dialogSnapshot(), issue.Status))
 				*state = next.inputState()
 				return true
@@ -651,7 +656,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		AbandonSelectedIssue: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
-			issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot())
+			snapshot := next.selectionSnapshot()
+			issue, ok := selectionpkg.SelectedIssueDetail(snapshot)
 			if !ok {
 				return nil
 			}
@@ -674,7 +680,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		ToggleSelectedIssueToday: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
-			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
+			snapshot := next.selectionSnapshot()
+			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
 				date := ""
 				if issue.TodoForDate != nil && *issue.TodoForDate == next.currentDashboardDate() {
 					date = ""
@@ -687,7 +694,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		OpenSelectedIssueTodoDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
+			snapshot := next.selectionSnapshot()
+			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
 				next = next.withDialogState(dialogstate.OpenDatePicker(next.dialogSnapshot(), "", issue.ID, 0, issue.TodoForDate))
 			}
 			*state = next.inputState()
@@ -760,10 +768,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 				}
 				return false
 			}
-			if issue, ok := selectionpkg.SelectedIssueDetail(next.selectionSnapshot()); ok {
+			snapshot := next.selectionSnapshot()
+			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
 				issueLabel := ""
 				var estimateMinutes *int
-				if meta := selectionpkg.IssueMetaByID(next.selectionSnapshot(), issue.ID); meta != nil {
+				if meta := selectionpkg.IssueMetaByID(snapshot, issue.ID); meta != nil {
 					issueLabel = meta.Title
 					estimateMinutes = meta.EstimateMinutes
 				}
@@ -778,7 +787,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 			if next.view != ViewSessionActive || next.timer == nil || next.timer.State == "idle" {
 				return false
 			}
-			if selectionpkg.ActiveIssue(next.selectionSnapshot()) == nil {
+			snapshot := next.selectionSnapshot()
+			if selectionpkg.ActiveIssue(snapshot) == nil {
 				return false
 			}
 			next.sessionContextOpen = true
@@ -813,13 +823,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
-		WipeRuntimeData:       func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
-		OpenSupportIssueURL:   func() tea.Cmd { return commands.OpenExternalURL(views.SupportIssueURL) },
-		OpenSupportProjectURL: func() tea.Cmd { return commands.OpenExternalURL(views.SupportProjectURL) },
-		CopySupportDiagnostics: func(state inputpkg.State) tea.Cmd {
-			next := m.applyInputState(state)
-			return commands.CopyTextToClipboard(helperpkg.SupportDiagnosticsSummary(next.kernelInfo, next.exportAssets, next.updateStatus, next.health, next.currentExecutablePath, kernelExecutablePath(next.kernelInfo)), "Diagnostics copied")
-		},
+		WipeRuntimeData:           func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
+		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
+		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
+		OpenSupportReleasesURL:    func() tea.Cmd { return m.openSupportReleasesURL() },
+		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
+		CopySupportDiagnostics:    func(state inputpkg.State) tea.Cmd { return m.copySupportDiagnosticsCmd(state) },
+		GenerateSupportBundle:     func(state inputpkg.State) tea.Cmd { return m.generateSupportBundleCmd(state) },
 		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openDatePickerDialog("rollup_start", 0, 0, dialogpkg.ValueToPointer(next.currentRollupStartDate()))
@@ -836,7 +846,8 @@ func (m Model) inputDeps() inputpkg.Deps {
 }
 
 func (m Model) dialogSnapshot() dialogstate.Snapshot {
-	snapshot := dialogstate.Snapshot{
+	selectionSnapshot := m.selectionSnapshot()
+	dialogSnapshot := dialogstate.Snapshot{
 		Dialog:               m.dialogState(),
 		Repos:                m.repos,
 		Streams:              m.streams,
@@ -850,16 +861,16 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		CurrentDashboardDate: m.currentDashboardDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
 	}
-	if issue, ok := selectionpkg.SelectedIssueDetail(m.selectionSnapshot()); ok {
-		snapshot.SelectedIssueID = issue.ID
-		snapshot.SelectedStreamID = issue.StreamID
-		snapshot.HasSelectedIssue = true
+	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
+		dialogSnapshot.SelectedIssueID = issue.ID
+		dialogSnapshot.SelectedStreamID = issue.StreamID
+		dialogSnapshot.HasSelectedIssue = true
 	}
-	if issue := selectionpkg.ActiveIssue(m.selectionSnapshot()); issue != nil {
-		snapshot.ActiveIssueStream = issue.StreamID
-		snapshot.HasActiveIssue = true
+	if issue := selectionpkg.ActiveIssue(selectionSnapshot); issue != nil {
+		dialogSnapshot.ActiveIssueStream = issue.StreamID
+		dialogSnapshot.HasActiveIssue = true
 	}
-	return snapshot
+	return dialogSnapshot
 }
 
 func (m Model) dialogActionCmd(action dialogpkg.Action) tea.Cmd {
@@ -941,6 +952,21 @@ func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputInd
 func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {
 	return m.withDialogState(dialogstate.OpenViewEntity(m.dialogSnapshot(), title, name, meta, body))
 }
+func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel string) Model {
+	meta := strings.Join([]string{
+		"Size " + helperpkg.HumanizeSupportBytes(sizeBytes),
+		"Window " + strings.TrimSpace(windowLabel),
+		"Redaction safe",
+	}, "   ")
+	body := strings.Join([]string{
+		"Bundle",
+		path,
+		"",
+		"Attach this zip to a bug report if you need deeper diagnostics.",
+		"Use o to open the folder, c to copy the path, or g to open the issue tracker.",
+	}, "\n")
+	return m.withDialogState(dialogstate.OpenSupportBundleResult(m.dialogSnapshot(), helperpkg.SupportBundleDisplayName(path), meta, body, path))
+}
 func (m Model) openUpdateNotesDialog() Model {
 	return m.withDialogState(dialogstate.OpenUpdateNotes(m.dialogSnapshot()))
 }
@@ -1009,6 +1035,7 @@ func (m Model) dialogState() dialogpkg.State {
 		IssueEstimateMins:  m.dialogIssueEstimateMins,
 		ViewMeta:           m.dialogViewMeta,
 		ViewBody:           m.dialogViewBody,
+		SupportBundlePath:  m.dialogSupportBundlePath,
 		ProtectionStep:     m.dialogProtectionStep,
 		ProtectionCursor:   m.dialogProtectionCursor,
 		ProtectionStreaks:  m.dialogProtectionStreaks,
@@ -1065,6 +1092,7 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogIssueEstimateMins = state.IssueEstimateMins
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
+	m.dialogSupportBundlePath = state.SupportBundlePath
 	m.dialogProtectionStep = state.ProtectionStep
 	m.dialogProtectionCursor = state.ProtectionCursor
 	m.dialogProtectionStreaks = state.ProtectionStreaks
@@ -1185,6 +1213,13 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		UninstallCrona: func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd {
 			return commands.UninstallCrona(m.client, currentExecutablePath, kernelExecutablePath, kernelInfo)
 		},
+		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
+		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
+		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
+		OpenExternalPath: func(path string) tea.Cmd {
+			return commands.OpenExternalPath(path)
+		},
+		CopyText: func(text, message string) tea.Cmd { return commands.CopyTextToClipboard(text, message) },
 		ErrorCmd: func(err error) tea.Cmd { return func() tea.Msg { return commands.ErrMsg{Err: err} } },
 		ResolvePatchSettingValue: func(action dialogpkg.Action) any {
 			switch action.SettingKey {

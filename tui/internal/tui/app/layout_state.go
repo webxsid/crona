@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"crona/tui/internal/api"
 	"crona/tui/internal/tui/dialogs"
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
@@ -12,16 +13,19 @@ import (
 	"crona/tui/internal/tui/views"
 )
 
-func (m Model) viewContentState(width, height int) views.ContentState {
+func (m Model) viewContentState(width, height int, snapshot selectionpkg.Snapshot, activeIssue *api.IssueWithMeta) views.ContentState {
 	sessionIssueID := helperpkg.SessionHistoryScopeIssueID(m.timer)
-	sessionIssue := selectionpkg.ActiveIssue(m.selectionSnapshot())
+	sessionIssue := activeIssue
+	dailyIssues := selectionpkg.DailyScopedIssues(snapshot)
+	defaultIssues := selectionpkg.DefaultScopedIssues(snapshot)
+	dueHabits := selectionpkg.FilteredDueHabits(snapshot)
 	state := views.ContentState{
 		View: string(m.view), Pane: string(m.pane), Width: width, Height: height, Elapsed: m.elapsed, DashboardDate: m.dashboardDate, RollupStartDate: m.currentRollupStartDate(), RollupEndDate: m.currentRollupEndDate(), WellbeingDate: m.currentWellbeingDate(), DefaultIssueSection: string(m.defaultIssueSection), SessionHistoryTitle: helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue), SessionHistoryMeta: helperpkg.SessionHistorySubtitle(sessionIssueID, sessionIssue),
 		Cursors:            map[string]int{"repos": m.cursor[PaneRepos], "streams": m.cursor[PaneStreams], "issues": m.cursor[PaneIssues], "habits": m.cursor[PaneHabits], "rollup_days": m.cursor[PaneRollupDays], "sessions": m.cursor[PaneSessions], "scratchpads": m.cursor[PaneScratchpads], "ops": m.cursor[PaneOps], "export_reports": m.cursor[PaneExportReports], "config": m.cursor[PaneConfig], "settings": m.cursor[PaneSettings]},
 		Filters:            map[string]string{"repos": m.filters[PaneRepos], "streams": m.filters[PaneStreams], "issues": m.filters[PaneIssues], "habits": m.filters[PaneHabits], "rollup_days": m.filters[PaneRollupDays], "sessions": m.filters[PaneSessions], "scratchpads": m.filters[PaneScratchpads], "ops": m.filters[PaneOps], "export_reports": m.filters[PaneExportReports], "config": m.filters[PaneConfig], "settings": m.filters[PaneSettings]},
 		ScratchpadOpen:     m.scratchpadOpen,
 		ScratchpadRendered: m.scratchpadViewport.View(),
-		Repos:              m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: selectionpkg.DailyScopedIssues(m.selectionSnapshot()), Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: selectionpkg.DefaultScopedIssues(m.selectionSnapshot()), DueHabits: selectionpkg.FilteredDueHabits(m.selectionSnapshot()), DailySummary: m.dailySummary, DailyPlan: m.dailyPlan, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, DashboardWindow: m.dashboardWindow, DailyFocusScore: m.dailyFocusScore, WeeklyFocusScore: m.weeklyFocusScore, RepoDistribution: m.repoDistribution, StreamDistribution: m.streamDistribution, IssueDistribution: m.issueDistribution, SegmentDistribution: m.segmentDistribution, GoalProgress: m.goalProgress, ExportAssets: m.exportAssets, ExportReports: m.exportReports, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, UpdateStatus: m.updateStatus, UpdateChecking: m.updateChecking, UpdateInstalling: m.updateInstalling, UpdateInstallPhase: m.updateInstallPhase, UpdateInstallDetail: m.updateInstallDetail, UpdateInstallOutput: m.updateInstallOutput, UpdateInstallError: m.updateInstallError, UpdateInstallAvailable: m.selfUpdateInstallAvailable(), UpdateManualReason: m.selfUpdateUnsupportedReason(), TUIExecutablePath: m.currentExecutablePath, KernelExecutablePath: kernelExecutablePath(m.kernelInfo), KernelInfo: m.kernelInfo, Settings: m.settings,
+		Repos:              m.repos, Streams: m.streams, Issues: m.issues, DailyIssues: dailyIssues, Habits: m.habits, AllIssues: m.allIssues, DefaultIssues: defaultIssues, DueHabits: dueHabits, DailySummary: m.dailySummary, DailyPlan: m.dailyPlan, DailyCheckIn: m.dailyCheckIn, MetricsRange: m.metricsRange, MetricsRollup: m.metricsRollup, Streaks: m.streaks, DashboardWindow: m.dashboardWindow, DailyFocusScore: m.dailyFocusScore, WeeklyFocusScore: m.weeklyFocusScore, RepoDistribution: m.repoDistribution, StreamDistribution: m.streamDistribution, IssueDistribution: m.issueDistribution, SegmentDistribution: m.segmentDistribution, GoalProgress: m.goalProgress, ExportAssets: m.exportAssets, ExportReports: m.exportReports, IssueSessions: m.issueSessions, SessionHistory: m.sessionHistory, Scratchpads: m.scratchpads, Ops: m.ops, Context: m.context, Timer: m.timer, Health: m.health, UpdateStatus: m.updateStatus, UpdateChecking: m.updateChecking, UpdateInstalling: m.updateInstalling, UpdateInstallPhase: m.updateInstallPhase, UpdateInstallDetail: m.updateInstallDetail, UpdateInstallOutput: m.updateInstallOutput, UpdateInstallError: m.updateInstallError, UpdateInstallAvailable: m.selfUpdateInstallAvailable(), UpdateManualReason: m.selfUpdateUnsupportedReason(), TUIExecutablePath: m.currentExecutablePath, KernelExecutablePath: kernelExecutablePath(m.kernelInfo), KernelInfo: m.kernelInfo, Settings: m.settings,
 	}
 	restDate := time.Now().Format("2006-01-02")
 	if active, away, detail := views.ProtectedRestMode(state.Settings, restDate); active {

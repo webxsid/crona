@@ -7,23 +7,26 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 )
 
-const (
-	SupportIssueURL   = "https://github.com/webxsid/crona/issues/new/choose"
-	SupportProjectURL = "https://github.com/webxsid/crona"
-)
-
 func renderSupportView(theme Theme, state ContentState) string {
 	lines := []string{
 		theme.StylePaneTitle.Render("Support"),
 		renderActionLine(theme, state.Width-6, ContextualActions(theme, ActionsState{View: state.View, Pane: state.Pane})),
 		"",
-		theme.StyleHeader.Render("Report bugs, open project links, or copy diagnostics."),
+		theme.StyleHeader.Render("File bugs, open discussions, follow releases, or generate a support bundle."),
+		theme.StyleDim.Render("Copy diagnostics is lightweight. Bundle is the full redacted artifact for bug reports."),
+		theme.StyleDim.Render("Watch GitHub releases or discussions for updates; roadmap details live in ROADMAP.md."),
 		"",
-		theme.StyleDim.Render("Issue tracker"),
-		theme.StyleNormal.Render(SupportIssueURL),
+		theme.StyleDim.Render("Bug reports"),
+		theme.StyleNormal.Render(helperpkg.SupportIssuesURL()),
 		"",
-		theme.StyleDim.Render("Project"),
-		theme.StyleNormal.Render(SupportProjectURL),
+		theme.StyleDim.Render("Discussions"),
+		theme.StyleNormal.Render(helperpkg.SupportDiscussionsURL()),
+		"",
+		theme.StyleDim.Render("Releases"),
+		theme.StyleNormal.Render(helperpkg.SupportReleasesURL()),
+		"",
+		theme.StyleDim.Render("Roadmap"),
+		theme.StyleNormal.Render(helperpkg.SupportRoadmapURL()),
 		"",
 		theme.StyleDim.Render("Diagnostics"),
 	}

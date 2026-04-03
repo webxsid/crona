@@ -122,11 +122,31 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 	if err != nil {
 		return nil, err
 	}
+	rangeStart := start + "T00:00:00.000Z"
+	rangeEnd := end + "T23:59:59.999Z"
+	rangeSessions, err := c.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{
+		UserID: c.UserID,
+		Since:  &rangeStart,
+		Until:  &rangeEnd,
+	})
+	if err != nil {
+		return nil, err
+	}
 	type segmentTotals struct {
 		work int
 		rest int
 	}
 	segmentByDate := map[string]segmentTotals{}
+	sessionCountByDate := map[string]int{}
 	for _, segment := range segments {
 		day := extractISODate(segment.StartTime)
 		if day == "" {
@@ -142,6 +162,13 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		}
 		segmentByDate[day] = totals
 	}
+	for _, session := range rangeSessions {
+		day := extractISODate(session.StartTime)
+		if day == "" {
+			continue
+		}
+		sessionCountByDate[day]++
+	}
 
 	out := make([]sharedtypes.DailyMetricsDay, 0)
 	for day := range eachDate(start, end) {
@@ -149,30 +176,11 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		if err != nil {
 			return nil, err
 		}
-		dayStart := day + "T00:00:00.000Z"
-		dayEnd := day + "T23:59:59.999Z"
-		sessions, err := c.Sessions.ListEnded(ctx, struct {
-			UserID   string
-			RepoID   *int64
-			StreamID *int64
-			IssueID  *int64
-			Since    *string
-			Until    *string
-			Limit    *int
-			Offset   *int
-		}{
-			UserID: c.UserID,
-			Since:  &dayStart,
-			Until:  &dayEnd,
-		})
-		if err != nil {
-			return nil, err
-		}
 		item := sharedtypes.DailyMetricsDay{
 			Date:                  day,
 			WorkedSeconds:         summary.WorkedSeconds,
 			RestSeconds:           segmentByDate[day].rest,
-			SessionCount:          len(sessions),
+			SessionCount:          sessionCountByDate[day],
 			TotalIssues:           summary.TotalIssues,
 			CompletedIssues:       summary.CompletedIssues,
 			AbandonedIssues:       summary.AbandonedIssues,
@@ -196,6 +204,10 @@ func ComputeMetricsRollup(ctx context.Context, c *core.Context, start string, en
 	if err != nil {
 		return nil, err
 	}
+	return computeMetricsRollupFromDays(start, end, days), nil
+}
+
+func computeMetricsRollupFromDays(start string, end string, days []sharedtypes.DailyMetricsDay) *sharedtypes.MetricsRollup {
 	rollup := &sharedtypes.MetricsRollup{
 		StartDate: start,
 		EndDate:   end,
@@ -242,7 +254,7 @@ func ComputeMetricsRollup(ctx context.Context, c *core.Context, start string, en
 	rollup.AverageSleepHours = averageOrNil(sleepHoursSum, sleepHoursCount)
 	rollup.AverageSleepScore = averageOrNil(sleepScoreSum, sleepScoreCount)
 	rollup.AverageScreenTimeMins = averageOrNil(screenTimeSum, screenTimeCount)
-	return rollup, nil
+	return rollup
 }
 
 func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, end string) (*sharedtypes.StreakSummary, error) {

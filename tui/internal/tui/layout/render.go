@@ -74,13 +74,20 @@ func Render(state State) string {
 		return renderUpdateInstallScreen(state)
 	}
 
-	baseParts := []string{}
+	header := ""
+	help := ""
 	if !state.ProtectedMode {
-		baseParts = append(baseParts, renderHeader(state))
+		header = renderHeader(state)
+		help = renderHelpBar(state)
 	}
-	baseParts = append(baseParts, renderBody(state))
-	if !state.ProtectedMode {
-		baseParts = append(baseParts, renderHelpBar(state))
+	contentHeight := contentHeightFromChrome(state.ProtectedMode, state.Height, header, help)
+	baseParts := []string{}
+	if header != "" {
+		baseParts = append(baseParts, header)
+	}
+	baseParts = append(baseParts, renderBody(state, contentHeight))
+	if help != "" {
+		baseParts = append(baseParts, help)
 	}
 	base := strings.Join(baseParts, "\n")
 
@@ -225,8 +232,7 @@ func renderHeader(state State) string {
 		Render(strings.Join(lines, "\n"))
 }
 
-func renderBody(state State) string {
-	height := ContentHeight(state)
+func renderBody(state State, height int) string {
 	sidebarWidth, _ := bodyWidths(state.Width)
 	sidebar := renderSidebar(state, sidebarWidth, height)
 	content := views.RenderContent(ViewTheme(), state.ContentState)
@@ -484,20 +490,27 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 
 func ContentHeight(state State) int {
 	if state.ProtectedMode {
-		if state.Height < 4 {
+		return contentHeightFromChrome(true, state.Height, "", "")
+	}
+	return contentHeightFromChrome(false, state.Height, renderHeader(state), renderHelpBar(state))
+}
+
+func contentHeightFromChrome(protected bool, height int, header, help string) int {
+	if protected {
+		if height < 4 {
 			return 4
 		}
-		return state.Height
+		return height
 	}
 	headerH := 4
-	if state.Width > 0 {
-		headerH = lipgloss.Height(renderHeader(state))
+	if header != "" {
+		headerH = lipgloss.Height(header)
 	}
 	helpH := 1
-	if state.Width > 0 {
-		helpH = lipgloss.Height(renderHelpBar(state))
+	if help != "" {
+		helpH = lipgloss.Height(help)
 	}
-	availableHeight := state.Height - headerH - helpH
+	availableHeight := height - headerH - helpH
 	if availableHeight < 4 {
 		return 4
 	}

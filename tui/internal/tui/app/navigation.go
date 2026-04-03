@@ -90,7 +90,8 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 			m.cursor[PaneIssues] = len(openIndices)
 		}
 	}
-	indices := selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)
+	snapshot := m.selectionSnapshot()
+	indices := selectionpkg.FilteredIndices(snapshot, PaneIssues)
 	m.clamp(PaneIssues, len(indices))
 }
 
@@ -119,8 +120,9 @@ func (m Model) selectedMetaStream() (int64, string, string, bool) {
 }
 
 func (m Model) selectedIssueRecord() (*api.Issue, bool) {
+	snapshot := m.selectionSnapshot()
 	if m.timer != nil && m.timer.State != "idle" && (m.view == ViewSessionActive || m.view == ViewScratch) {
-		if issue := selectionpkg.ActiveIssue(m.selectionSnapshot()); issue != nil {
+		if issue := selectionpkg.ActiveIssue(snapshot); issue != nil {
 			copy := issue.Issue
 			return &copy, true
 		}
@@ -128,7 +130,7 @@ func (m Model) selectedIssueRecord() (*api.Issue, bool) {
 	if m.pane != PaneIssues {
 		return nil, false
 	}
-	return selectionpkg.SelectedIssue(m.selectionSnapshot())
+	return selectionpkg.SelectedIssue(snapshot)
 }
 
 func (m Model) selectedHabitRecord() (*api.Habit, bool) {
@@ -155,13 +157,14 @@ func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
 }
 
 func (m Model) openSelectedEditDialog() (Model, bool) {
+	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneRepos:
 		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
 			return m.openEditRepoDialog(repoID, repoName), true
 		}
 	case PaneStreams:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			return m.openEditStreamDialog(stream.ID, stream.RepoID, stream.Name, m.repoNameByID(stream.RepoID)), true
@@ -184,6 +187,7 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 }
 
 func (m Model) openSelectedViewDialog() (Model, bool) {
+	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneRollupDays:
 		if day, ok := m.selectedRollupDay(); ok {
@@ -211,7 +215,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if m.view != ViewMeta {
 			return m, false
 		}
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneRepos)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneRepos)
 		if rawIdx >= 0 && rawIdx < len(m.repos) {
 			repo := m.repos[rawIdx]
 			body := strings.Join([]string{
@@ -224,7 +228,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if m.view != ViewMeta {
 			return m, false
 		}
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			meta := strings.Join([]string{
@@ -244,7 +248,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			return m, false
 		}
 		repoName, streamName := "-", "-"
-		if meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issue.ID); meta != nil {
+		if meta := selectionpkg.IssueMetaByID(snapshot, issue.ID); meta != nil {
 			repoName = meta.RepoName
 			streamName = meta.StreamName
 		}
@@ -369,13 +373,14 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 	if m.timer != nil && m.timer.State != "idle" {
 		return m.withStatus("Stop the active session before deleting work items", true), true
 	}
+	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneRepos:
 		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
 			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", repoID), repoName), true
 		}
 	case PaneStreams:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", stream.ID), stream.Name)
@@ -469,15 +474,16 @@ func shiftISODate(date string, days int) string {
 }
 
 func (m Model) checkout() (Model, tea.Cmd) {
+	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneRepos:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneRepos)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneRepos)
 		if rawIdx >= 0 && rawIdx < len(m.repos) {
 			repo := m.repos[rawIdx]
 			return m, commands.CheckoutRepo(m.client, repo.ID)
 		}
 	case PaneStreams:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneStreams)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
 		if rawIdx >= 0 && rawIdx < len(m.streams) {
 			stream := m.streams[rawIdx]
 			return m, commands.CheckoutStream(m.client, stream.ID)
@@ -550,14 +556,15 @@ func (m Model) handleInputCreateAction() Model {
 }
 
 func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
+	snapshot := m.selectionSnapshot()
 	if m.view == ViewConfig && m.pane == PaneConfig {
-		if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok && item.Editable && strings.TrimSpace(item.Path) != "" {
+		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok && item.Editable && strings.TrimSpace(item.Path) != "" {
 			return m, dialogruntime.OpenEditor(item.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
 		}
 		return m, nil, true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok && strings.TrimSpace(report.Path) != "" {
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok && strings.TrimSpace(report.Path) != "" {
 			return m, dialogruntime.OpenEditor(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
 		}
 		return m, nil, true
@@ -606,6 +613,7 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
+	snapshot := m.selectionSnapshot()
 	if m.view == ViewWellbeing {
 		if m.dailyCheckIn == nil {
 			return m, m.setStatus("No check-in to delete for this date", true), true
@@ -614,14 +622,14 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 		return m, nil, true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok {
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok {
 			m = m.openConfirmDeleteEntity("report", report.Path, report.Name)
 			return m, nil, true
 		}
 		return m, nil, true
 	}
 	if m.pane == PaneScratchpads {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneScratchpads)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
 		if rawIdx >= 0 && rawIdx < len(m.scratchpads) {
 			m = m.openConfirmDelete(m.scratchpads[rawIdx].ID)
 			return m, nil, true
@@ -636,11 +644,12 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 }
 
 func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
+	snapshot := m.selectionSnapshot()
 	if m.view == ViewUpdates && m.updateStatus != nil {
 		return commands.OpenExternalURL(m.updateStatus.ReleaseURL), true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok && strings.TrimSpace(report.Path) != "" {
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok && strings.TrimSpace(report.Path) != "" {
 			return dialogruntime.OpenDefaultViewer(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
 		}
 		return nil, true
@@ -652,15 +661,16 @@ func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
+	snapshot := m.selectionSnapshot()
 	if m.view == ViewConfig && m.pane == PaneConfig {
-		if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok {
+		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok {
 			m = m.openViewEntityDialog(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody)
 			return m, nil, true
 		}
 		return m, nil, true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(m.selectionSnapshot()); ok {
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok {
 			meta := fmt.Sprintf("Kind %s   Format %s   Modified %s", report.Kind, report.Format, report.ModifiedAt)
 			scope := strings.TrimSpace(report.ScopeLabel)
 			if scope == "" {
@@ -690,7 +700,7 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 		}
 	}
 	if m.pane == PaneScratchpads {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneScratchpads)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
 		if rawIdx < 0 || rawIdx >= len(m.scratchpads) {
 			return m, nil, true
 		}
@@ -717,7 +727,8 @@ func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
 	if m.view != ViewConfig || m.exportAssets == nil {
 		return nil, false
 	}
-	if item, ok := selectionpkg.SelectedConfigItem(m.selectionSnapshot()); ok {
+	snapshot := m.selectionSnapshot()
+	if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok {
 		if item.Label == "Reports directory" && m.exportAssets.ReportsDirCustomized {
 			return commands.SetExportReportsDir(m.client, ""), true
 		}
@@ -732,13 +743,14 @@ func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
+	snapshot := m.selectionSnapshot()
 	if m.view == ViewSessionHistory && (m.timer == nil || m.timer.State == "idle") {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneSessions)
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneSessions)
 		if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
 			return m, nil
 		}
 		issueID := m.sessionHistory[rawIdx].IssueID
-		meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issueID)
+		meta := selectionpkg.IssueMetaByID(snapshot, issueID)
 		if meta == nil {
 			return m, m.setStatus("Issue metadata unavailable", true)
 		}
@@ -749,7 +761,7 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 			if m.context == nil || m.context.RepoID == nil || m.context.StreamID == nil || m.context.IssueID == nil {
 				return m, m.setStatus("No active issue in context", true)
 			}
-			meta := selectionpkg.ActiveIssue(m.selectionSnapshot())
+			meta := selectionpkg.ActiveIssue(snapshot)
 			if meta == nil {
 				return m, m.setStatus("Active issue metadata unavailable", true)
 			}
@@ -761,8 +773,8 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if m.view == ViewDefault {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
-		issues := selectionpkg.DefaultScopedIssues(m.selectionSnapshot())
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		issues := selectionpkg.DefaultScopedIssues(snapshot)
 		if rawIdx < 0 || rawIdx >= len(issues) {
 			return m, nil
 		}
@@ -770,19 +782,19 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 		return m, commands.StartFocusSession(m.client, issue.RepoID, issue.StreamID, issue.ID)
 	}
 	if m.view == ViewDaily {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
-		issues := selectionpkg.DailyScopedIssues(m.selectionSnapshot())
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		issues := selectionpkg.DailyScopedIssues(snapshot)
 		if rawIdx < 0 || rawIdx >= len(issues) {
 			return m, nil
 		}
 		issue := issues[rawIdx]
-		meta := selectionpkg.IssueMetaByID(m.selectionSnapshot(), issue.ID)
+		meta := selectionpkg.IssueMetaByID(snapshot, issue.ID)
 		if meta == nil {
 			return m, m.setStatus("Issue metadata unavailable", true)
 		}
 		return m, commands.StartFocusSession(m.client, meta.RepoID, issue.StreamID, issue.ID)
 	}
-	rawIdx := selectionpkg.FilteredIndexAtCursor(m.selectionSnapshot(), PaneIssues)
+	rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
 	if rawIdx < 0 || rawIdx >= len(m.issues) {
 		return m, nil
 	}

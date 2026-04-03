@@ -258,6 +258,178 @@ func TestRunHelpFlagStillPrintsUsage(t *testing.T) {
 	}
 }
 
+func TestRunTimerStartFromContextUsesCheckedOutIssue(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	var gotMethods []string
+	callKernelFn = func(method string, params, out any) error {
+		gotMethods = append(gotMethods, method)
+		switch method {
+		case protocol.MethodContextGet:
+			ctx := out.(*sharedtypes.ActiveContext)
+			issueID := int64(77)
+			ctx.IssueID = &issueID
+			return nil
+		case protocol.MethodTimerStart:
+			req, ok := params.(struct {
+				IssueID *int64 `json:"issueId,omitempty"`
+			})
+			if !ok || req.IssueID == nil || *req.IssueID != 77 {
+				t.Fatalf("unexpected timer start params: %#v", params)
+			}
+			timer := out.(*sharedtypes.TimerState)
+			timer.State = "running"
+			timer.ElapsedSeconds = 12
+			return nil
+		default:
+			t.Fatalf("unexpected method: %s", method)
+			return nil
+		}
+	}
+
+	if err := runTimer([]string{"start", "--from-context", "--json"}); err != nil {
+		t.Fatalf("runTimer start --from-context: %v", err)
+	}
+	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet || gotMethods[1] != protocol.MethodTimerStart {
+		t.Fatalf("unexpected method order: %+v", gotMethods)
+	}
+}
+
+func TestRunIssueStartFromContextUsesCheckedOutIssue(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	callKernelFn = func(method string, params, out any) error {
+		switch method {
+		case protocol.MethodContextGet:
+			ctx := out.(*sharedtypes.ActiveContext)
+			issueID := int64(91)
+			ctx.IssueID = &issueID
+			return nil
+		case protocol.MethodTimerStart:
+			req, ok := params.(struct {
+				IssueID *int64 `json:"issueId,omitempty"`
+			})
+			if !ok || req.IssueID == nil || *req.IssueID != 91 {
+				t.Fatalf("unexpected timer start params: %#v", params)
+			}
+			timer := out.(*sharedtypes.TimerState)
+			timer.State = "running"
+			return nil
+		default:
+			t.Fatalf("unexpected method: %s", method)
+			return nil
+		}
+	}
+
+	if err := runIssue([]string{"start", "--from-context", "--json"}); err != nil {
+		t.Fatalf("runIssue start --from-context: %v", err)
+	}
+}
+
+func TestRunContextSwitchRepoJSONUsesSwitchMethod(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	var gotMethod string
+	callKernelFn = func(method string, params, out any) error {
+		gotMethod = method
+		if method != protocol.MethodContextSwitchRepo {
+			t.Fatalf("unexpected method: %s", method)
+		}
+		body, err := json.Marshal(params)
+		if err != nil {
+			t.Fatalf("marshal params: %v", err)
+		}
+		var decoded map[string]int64
+		if err := json.Unmarshal(body, &decoded); err != nil {
+			t.Fatalf("unmarshal params: %v", err)
+		}
+		if decoded["repoId"] != 12 {
+			t.Fatalf("unexpected repoId payload: %#v", decoded)
+		}
+		ctx := out.(*sharedtypes.ActiveContext)
+		repoName := "Work"
+		ctx.RepoName = &repoName
+		return nil
+	}
+
+	output := captureStdout(t, func() {
+		if err := runContext([]string{"switch-repo", "--id", "12", "--json"}); err != nil {
+			t.Fatalf("runContext switch-repo: %v", err)
+		}
+	})
+
+	if gotMethod != protocol.MethodContextSwitchRepo {
+		t.Fatalf("expected %s, got %s", protocol.MethodContextSwitchRepo, gotMethod)
+	}
+	if !strings.Contains(output, "\"repoName\": \"Work\"") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
+func TestRunKernelWipeDataRequiresForce(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	if err := runKernel([]string{"wipe-data"}); err == nil || !strings.Contains(err.Error(), "--force") {
+		t.Fatalf("expected --force error, got %v", err)
+	}
+}
+
+func TestRunExportRepoUsesContextRepoWhenMissing(t *testing.T) {
+	restore := stubCLIEnv()
+	defer restore()
+
+	var gotMethods []string
+	callKernelFn = func(method string, params, out any) error {
+		gotMethods = append(gotMethods, method)
+		switch method {
+		case protocol.MethodContextGet:
+			ctx := out.(*sharedtypes.ActiveContext)
+			repoID := int64(44)
+			ctx.RepoID = &repoID
+			return nil
+		case protocol.MethodExportRepo:
+			body, err := json.Marshal(params)
+			if err != nil {
+				t.Fatalf("marshal export params: %v", err)
+			}
+			var decoded map[string]any
+			if err := json.Unmarshal(body, &decoded); err != nil {
+				t.Fatalf("decode export params: %v", err)
+			}
+			if int(decoded["repoId"].(float64)) != 44 {
+				t.Fatalf("unexpected export payload: %#v", decoded)
+			}
+			result := out.(*sharedtypes.ExportReportResult)
+			result.Kind = sharedtypes.ExportReportKindRepo
+			result.Format = sharedtypes.ExportFormatMarkdown
+			result.OutputMode = sharedtypes.ExportOutputModeFile
+			path := "/tmp/repo-report.md"
+			result.FilePath = &path
+			return nil
+		default:
+			t.Fatalf("unexpected method: %s", method)
+			return nil
+		}
+	}
+
+	output := captureStdout(t, func() {
+		if err := runExport([]string{"repo", "--json"}); err != nil {
+			t.Fatalf("runExport repo: %v", err)
+		}
+	})
+
+	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet || gotMethods[1] != protocol.MethodExportRepo {
+		t.Fatalf("unexpected method order: %+v", gotMethods)
+	}
+	if !strings.Contains(output, "\"filePath\": \"/tmp/repo-report.md\"") {
+		t.Fatalf("unexpected output: %s", output)
+	}
+}
+
 func stubCLIEnv() func() {
 	origCallKernel := callKernelFn
 	origEnsureKernel := ensureKernelFn

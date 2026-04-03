@@ -121,6 +121,27 @@ func (r *SessionSegmentRepository) ListEndedInRange(ctx context.Context, userID 
 	return out, nil
 }
 
+func (r *SessionSegmentRepository) ListEndedForSessions(ctx context.Context, userID string, sessionIDs []string) ([]sharedtypes.SessionSegment, error) {
+	if len(sessionIDs) == 0 {
+		return nil, nil
+	}
+	var models []storemodels.SessionSegmentModel
+	if err := r.db.NewSelect().
+		Model(&models).
+		Where("user_id = ?", userID).
+		Where("end_time IS NOT NULL").
+		Where("session_id IN (?)", bun.In(sessionIDs)).
+		OrderExpr("start_time ASC").
+		Scan(ctx); err != nil {
+		return nil, err
+	}
+	out := make([]sharedtypes.SessionSegment, 0, len(models))
+	for _, model := range models {
+		out = append(out, *segmentFromModel(model))
+	}
+	return out, nil
+}
+
 func (r *SessionSegmentRepository) ApplyElapsedOffset(ctx context.Context, sessionID string, offsetSeconds int) error {
 	if offsetSeconds <= 0 {
 		return nil
