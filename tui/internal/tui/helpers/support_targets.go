@@ -11,7 +11,7 @@ import (
 
 const (
 	supportGitHubRepoBaseURL = "https://github.com/webxsid/crona"
-	supportGitHubRoadmapURL  = "https://github.com/webxsid/crona/blob/main/ROADMAP.md"
+	supportGitHubRoadmapURL  = "https://github.com/webxsid/crona/blob/main/docs/roadmap.md"
 )
 
 func SupportRepoURL() string {

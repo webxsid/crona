@@ -14,7 +14,7 @@ func renderSupportView(theme Theme, state ContentState) string {
 		"",
 		theme.StyleHeader.Render("File bugs, open discussions, follow releases, or generate a support bundle."),
 		theme.StyleDim.Render("Copy diagnostics is lightweight. Bundle is the full redacted artifact for bug reports."),
-		theme.StyleDim.Render("Watch GitHub releases or discussions for updates; roadmap details live in ROADMAP.md."),
+		theme.StyleDim.Render("Watch GitHub releases or discussions for updates; roadmap details live in docs/roadmap.md."),
 		"",
 		theme.StyleDim.Render("Bug reports"),
 		theme.StyleNormal.Render(helperpkg.SupportIssuesURL()),

@@ -572,7 +572,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/ROADMAP.md", "Version: v0.4.0-beta.2", "Update channel: beta", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
+	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Update channel: beta", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
