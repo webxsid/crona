@@ -50,6 +50,8 @@ func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *
 		status: sharedtypes.UpdateStatus{
 			CurrentVersion: versionpkg.Current(),
 			Channel:        sharedtypes.UpdateChannelStable,
+			RunningChannel: versionpkg.RunningChannel(),
+			RunningIsBeta:  versionpkg.IsBetaRelease(),
 		},
 	}
 	service.loadCache()
@@ -149,6 +151,8 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.mu.Lock()
 	prev := s.status
 	s.status.CurrentVersion = versionpkg.Current()
+	s.status.RunningChannel = versionpkg.RunningChannel()
+	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
 	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
 	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = effectiveUpdateChannel(settings)
@@ -177,6 +181,8 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	defer s.mu.Unlock()
 	prev = s.status
 	s.status.CurrentVersion = versionpkg.Current()
+	s.status.RunningChannel = versionpkg.RunningChannel()
+	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
 	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
 	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = channel
@@ -201,6 +207,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.ChecksumsURL = release.ChecksumsURL
 	s.status.PublishedAt = release.PublishedAt
 	s.status.ReleaseIsPrerelease = release.IsPrerelease
+	s.status.LatestIsBeta = release.IsBeta
 	s.status.UpdateAvailable = isNewerVersion(s.status.CurrentVersion, release.Version)
 	s.status.InstallAvailable = release.InstallURL != "" && release.ChecksumsURL != ""
 	s.status.InstallUnavailableReason = release.installUnavailableReason()

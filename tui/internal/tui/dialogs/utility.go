@@ -270,6 +270,32 @@ func renderUtilityDialog(theme Theme, state State) string {
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		rows = appendDialogFooter(theme, state, rows, "[o] open folder   [c] copy path   [g] report issue   [enter/esc] close")
 		return modal(theme, state.Width, 76, theme.ColorGreen, rows)
+	case "view_jump", "beta_support":
+		rows := []string{
+			theme.StylePaneTitle.Render(state.ViewTitle),
+			"",
+			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
+			"",
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				continue
+			}
+			rows = append(rows, theme.StyleNormal.Render(line))
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		footer := "[j/k] move   [enter] choose   [esc] cancel"
+		if state.Kind == "view_jump" {
+			footer = "[key] jump   [j/k] move   [enter] jump   [esc] cancel"
+		} else {
+			footer = "[key] run   [j/k] move   [enter] run   [esc] cancel"
+		}
+		rows = appendDialogFooter(theme, state, rows, footer)
+		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "complete_habit":
 		rows := []string{
 			theme.StylePaneTitle.Render("Habit Log"),

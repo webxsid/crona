@@ -37,6 +37,7 @@ type State struct {
 	UpdateInstalling    bool
 	UpdateInstallError  string
 	CurrentExecutable   string
+	RunningIsBeta       bool
 	Settings            *api.CoreSettings
 	ExportAssets        *api.ExportAssetStatus
 	DailyCheckIn        *api.DailyCheckIn
@@ -117,6 +118,8 @@ type Deps struct {
 	OpenSupportRoadmapURL           func() tea.Cmd
 	CopySupportDiagnostics          func(State) tea.Cmd
 	GenerateSupportBundle           func(State) tea.Cmd
+	OpenViewJumpDialog              func(*State) bool
+	OpenBetaSupportDialog           func(*State) bool
 }
 
 type handler = keyregistry.Handler[State]
@@ -155,10 +158,18 @@ func newRouter(deps Deps) *router {
 			s.UpdateInstallError = ""
 			return s, deps.PrepareLocalUpdate(), true
 		},
+		"f9": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if !s.RunningIsBeta {
+				return s, nil, false
+			}
+			deps.OpenBetaSupportDialog(&s)
+			return s, nil, true
+		},
 		"]":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, 1) },
 		"[":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, -1) },
 		"tab":       func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, 1) },
 		"shift+tab": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, -1) },
+		"v":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
 		"u":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenUpdates(s) },
 		"R":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
 		"j":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },

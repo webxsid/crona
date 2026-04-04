@@ -18,6 +18,8 @@ func TestSupportBugReportURLIncludesPrefillAndBundleGuidance(t *testing.T) {
 		},
 		UpdateStatus: &api.UpdateStatus{
 			CurrentVersion: "0.4.0-beta.2",
+			RunningChannel: sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:  true,
 			Channel:        sharedtypes.UpdateChannelBeta,
 		},
 	}
@@ -35,6 +37,7 @@ func TestSupportBugReportURLIncludesPrefillAndBundleGuidance(t *testing.T) {
 	for _, want := range []string{
 		"## Summary",
 		"Version: v0.4.0-beta.2",
+		"Running channel: beta",
 		"Update channel: beta",
 		"Attach a support bundle zip",
 		"support-bundle-123.zip",

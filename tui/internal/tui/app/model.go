@@ -478,6 +478,7 @@ func (m Model) inputState() inputpkg.State {
 		UpdateInstalling:    m.updateInstalling,
 		UpdateInstallError:  m.updateInstallError,
 		CurrentExecutable:   m.currentExecutablePath,
+		RunningIsBeta:       m.isBetaBuild(),
 		Settings:            m.settings,
 		ExportAssets:        m.exportAssets,
 		DailyCheckIn:        m.dailyCheckIn,
@@ -853,6 +854,18 @@ func (m Model) inputDeps() inputpkg.Deps {
 		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
 		CopySupportDiagnostics:    func(state inputpkg.State) tea.Cmd { return m.copySupportDiagnosticsCmd(state) },
 		GenerateSupportBundle:     func(state inputpkg.State) tea.Cmd { return m.generateSupportBundleCmd(state) },
+		OpenViewJumpDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openViewJumpDialog()
+			*state = next.inputState()
+			return true
+		},
+		OpenBetaSupportDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openBetaSupportDialog()
+			*state = next.inputState()
+			return true
+		},
 		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openDatePickerDialog("rollup_start", 0, 0, dialogpkg.ValueToPointer(next.currentRollupStartDate()))
@@ -883,7 +896,9 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		Settings:             m.settings,
 		CurrentDashboardDate: m.currentDashboardDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
+		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
 	}
+	dialogSnapshot.ProtectedModeActive, _, _ = views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
 	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
 		dialogSnapshot.SelectedIssueID = issue.ID
 		dialogSnapshot.SelectedStreamID = issue.StreamID
@@ -900,8 +915,42 @@ func (m Model) dialogActionCmd(action dialogpkg.Action) tea.Cmd {
 	return dialogruntime.Resolve(action, m.dialogRuntimeState(), m.dialogRuntimeDeps())
 }
 
+func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, tea.Cmd) {
+	switch action.Kind {
+	case "jump_view":
+		target := View(strings.TrimSpace(action.TargetView))
+		if target == "" {
+			return next, nil
+		}
+		if target == ViewSessionActive && (next.timer == nil || next.timer.State == "idle") {
+			return next, next.setStatus("Active session view is only available while a timer is running", true)
+		}
+		if target == ViewAway {
+			protected, _, _ := views.ProtectedRestMode(next.settings, time.Now().Format("2006-01-02"))
+			if !protected {
+				return next, next.setStatus("Away view is only available when away mode or rest protection is active", true)
+			}
+		}
+		next.view = target
+		next.pane = uistate.DefaultPane(target)
+		return next, nil
+	case "copy_support_diagnostics":
+		return next, next.copySupportDiagnosticsCmd(next.inputState())
+	case "generate_support_bundle":
+		return next, next.generateSupportBundleCmd(next.inputState())
+	default:
+		return next, next.dialogActionCmd(action)
+	}
+}
+
 func (m Model) openCreateScratchpad() Model {
 	return m.withDialogState(dialogstate.OpenCreateScratchpad(m.dialogSnapshot()))
+}
+func (m Model) openViewJumpDialog() Model {
+	return m.withDialogState(dialogstate.OpenViewJump(m.dialogSnapshot()))
+}
+func (m Model) openBetaSupportDialog() Model {
+	return m.withDialogState(dialogstate.OpenBetaSupport(m.dialogSnapshot()))
 }
 func (m Model) openCreateRepoDialog() Model {
 	return m.withDialogState(dialogstate.OpenCreateRepo(m.dialogSnapshot()))
@@ -1238,6 +1287,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
 		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
+		OpenSupportReleasesURL:    func() tea.Cmd { return m.openSupportReleasesURL() },
 		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
 		OpenExternalPath: func(path string) tea.Cmd {
 			return commands.OpenExternalPath(path)

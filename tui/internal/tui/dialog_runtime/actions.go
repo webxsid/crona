@@ -64,6 +64,7 @@ type Deps struct {
 	UninstallCrona                 func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd
 	OpenSupportIssueURL            func() tea.Cmd
 	OpenSupportDiscussionsURL      func() tea.Cmd
+	OpenSupportReleasesURL         func() tea.Cmd
 	OpenSupportRoadmapURL          func() tea.Cmd
 	OpenExternalPath               func(path string) tea.Cmd
 	CopyText                       func(text, message string) tea.Cmd
@@ -162,6 +163,9 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 		return deps.UninstallCrona(state.CurrentExecutablePath, state.KernelExecutablePath, state.KernelInfo)
 	})
 	r.Register("open_support_issue", func(action dialogpkg.Action) tea.Cmd { return deps.OpenSupportIssueURL() })
+	r.Register("open_support_discussions", func(action dialogpkg.Action) tea.Cmd { return deps.OpenSupportDiscussionsURL() })
+	r.Register("open_support_releases", func(action dialogpkg.Action) tea.Cmd { return deps.OpenSupportReleasesURL() })
+	r.Register("open_support_roadmap", func(action dialogpkg.Action) tea.Cmd { return deps.OpenSupportRoadmapURL() })
 	r.Register("open_support_bundle_folder", func(action dialogpkg.Action) tea.Cmd { return deps.OpenExternalPath(action.Path) })
 	r.Register("copy_support_bundle_path", func(action dialogpkg.Action) tea.Cmd {
 		return deps.CopyText(action.Path, "Bundle path copied")

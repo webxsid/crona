@@ -38,6 +38,7 @@ type State struct {
 	SessionID           string
 	IssueID             int64
 	HabitID             int64
+	TargetView          string
 	StashCursor         int
 	Stashes             []StashItem
 	RepoID              int64
@@ -101,7 +102,7 @@ func Render(theme Theme, state State) string {
 		return renderIssueDialog(theme, state)
 	case "end_session", "stash_session", "issue_session_transition", "stash_list", "amend_session", "manual_session":
 		return renderSessionDialog(theme, state)
-	case "confirm_delete", "confirm_wipe", "confirm_uninstall", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report_category", "export_report", "export_preset", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_rest_protection", "view_entity", "support_bundle_result", "complete_habit":
+	case "confirm_delete", "confirm_wipe", "confirm_uninstall", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report_category", "export_report", "export_preset", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_rest_protection", "view_entity", "support_bundle_result", "complete_habit", "view_jump", "beta_support":
 		return renderUtilityDialog(theme, state)
 	default:
 		return ""

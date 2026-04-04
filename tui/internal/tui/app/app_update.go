@@ -63,7 +63,7 @@ func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if action == nil {
 		return next, nil
 	}
-	return next, next.dialogActionCmd(*action)
+	return next.handleDialogAction(next, *action)
 }
 
 func (m Model) filterState() filteringpkg.State {

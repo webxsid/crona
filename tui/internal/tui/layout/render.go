@@ -182,6 +182,7 @@ func renderSidebar(state State, width, height int) string {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Active Session"),
 			chrome.StyleDim.Render("[ / ] switch"),
+			chrome.StyleDim.Render("[v] jump"),
 			"",
 			chrome.StyleDim.Render("SESSION"),
 			renderSidebarItem(state, uistate.ViewSessionActive, "Session"),
@@ -192,6 +193,7 @@ func renderSidebar(state State, width, height int) string {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Views"),
 			chrome.StyleDim.Render("[ / ] switch"),
+			chrome.StyleDim.Render("[v] jump"),
 			"",
 			chrome.StyleDim.Render("DASHBOARD"),
 			renderSidebarItem(state, uistate.ViewDaily, "Daily"),

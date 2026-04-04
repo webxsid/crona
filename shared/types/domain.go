@@ -774,6 +774,8 @@ type KernelInfo struct {
 	ScratchDir     string `json:"scratchDir"`
 	Env            string `json:"env"`
 	ExecutablePath string `json:"executablePath,omitempty"`
+	RunningChannel UpdateChannel `json:"runningChannel"`
+	RunningIsBeta  bool          `json:"runningIsBeta"`
 }
 
 type UpdateStatus struct {
@@ -794,6 +796,9 @@ type UpdateStatus struct {
 	PromptEnabled            bool   `json:"promptEnabled"`
 	Channel                  UpdateChannel `json:"channel"`
 	ReleaseIsPrerelease      bool          `json:"releaseIsPrerelease"`
+	RunningChannel           UpdateChannel `json:"runningChannel"`
+	RunningIsBeta            bool          `json:"runningIsBeta"`
+	LatestIsBeta             bool          `json:"latestIsBeta"`
 	DismissedVersion         string `json:"dismissedVersion,omitempty"`
 	Error                    string `json:"error,omitempty"`
 }

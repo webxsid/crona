@@ -33,6 +33,7 @@ type UpdateContext struct {
 
 type Action struct {
 	Kind              string
+	TargetView        string
 	ReportKind        sharedtypes.ExportReportKind
 	ReportFormat      sharedtypes.ExportFormat
 	OutputMode        sharedtypes.ExportOutputMode
@@ -800,6 +801,7 @@ func Close(state State) State {
 	state.SessionID = ""
 	state.IssueID = 0
 	state.HabitID = 0
+	state.TargetView = ""
 	state.IssueStatus = ""
 	state.RepoID = 0
 	state.RepoName = ""
@@ -984,6 +986,10 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateViewEntity(state, msg)
 	case "support_bundle_result":
 		return updateSupportBundleResult(state, msg)
+	case "view_jump":
+		return updateViewJump(state, msg)
+	case "beta_support":
+		return updateBetaSupport(state, msg)
 	default:
 		return state, nil, ""
 	}

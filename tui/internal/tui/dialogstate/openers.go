@@ -20,6 +20,8 @@ type Snapshot struct {
 	Settings             *api.CoreSettings
 	CurrentDashboardDate string
 	CurrentWellbeingDate string
+	ProtectedModeActive  bool
+	HasActiveTimer       bool
 	HasSelectedIssue     bool
 	SelectedIssueID      int64
 	SelectedStreamID     int64
@@ -174,6 +176,14 @@ func OpenDatePicker(s Snapshot, parentDialog string, issueID int64, inputIndex i
 
 func OpenViewEntity(s Snapshot, title, name, meta, body string) dialogpkg.State {
 	return dialogpkg.OpenViewEntity(s.Dialog, title, name, meta, body)
+}
+
+func OpenViewJump(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenViewJump(s.Dialog, s.ProtectedModeActive, s.HasActiveTimer)
+}
+
+func OpenBetaSupport(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenBetaSupport(s.Dialog)
 }
 
 func OpenSupportBundleResult(s Snapshot, name, meta, body, path string) dialogpkg.State {

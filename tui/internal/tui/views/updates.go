@@ -36,9 +36,17 @@ func renderUpdatesView(theme Theme, state ContentState) string {
 		}
 	}
 	lines = append(lines, theme.StyleHeader.Render(title))
-	lines = append(lines, theme.StyleDim.Render("Channel: "+updateChannelLabel(status.Channel)))
+	lines = append(lines, theme.StyleDim.Render("Running channel: "+updateChannelLabel(status.RunningChannel)))
+	lines = append(lines, theme.StyleDim.Render("Configured update channel: "+updateChannelLabel(status.Channel)))
 	if status.ReleaseIsPrerelease {
 		lines = append(lines, theme.StyleDim.Render("Release type: beta prerelease"))
+	}
+	if status.LatestVersion != "" {
+		latestKind := "stable release"
+		if status.LatestIsBeta {
+			latestKind = "beta release"
+		}
+		lines = append(lines, theme.StyleDim.Render("Latest release kind: "+latestKind))
 	}
 
 	if strings.TrimSpace(status.ReleaseTag) != "" {

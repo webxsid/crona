@@ -53,6 +53,13 @@ func handleOpenUpdates(s State) (tea.Model, tea.Cmd, bool) {
 	return s, nil, true
 }
 
+func handleOpenViewJump(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if deps.OpenViewJumpDialog(&s) {
+		return s, nil, true
+	}
+	return s, nil, false
+}
+
 func handleRescanExportAssets(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView != uistate.ViewConfig {
 		return s, nil, true

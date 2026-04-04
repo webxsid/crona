@@ -10,6 +10,7 @@ import (
 	shareddto "crona/shared/dto"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 )
 
 func (h *Handler) handleKernelMethods(ctx context.Context, req protocol.Request) (protocol.Response, bool) {
@@ -70,21 +71,36 @@ func (h *Handler) handleKernelMethods(ctx context.Context, req protocol.Request)
 	case protocol.MethodUpdateStatusGet:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
-				return sharedtypes.UpdateStatus{CurrentVersion: "unknown", Enabled: false}, nil
+				return sharedtypes.UpdateStatus{
+					CurrentVersion: "unknown",
+					Enabled:        false,
+					RunningChannel: versionpkg.RunningChannel(),
+					RunningIsBeta:  versionpkg.IsBetaRelease(),
+				}, nil
 			}
 			return h.updater.Status(), nil
 		}), true
 	case protocol.MethodUpdateCheck:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
-				return sharedtypes.UpdateStatus{CurrentVersion: "unknown", Enabled: false}, nil
+				return sharedtypes.UpdateStatus{
+					CurrentVersion: "unknown",
+					Enabled:        false,
+					RunningChannel: versionpkg.RunningChannel(),
+					RunningIsBeta:  versionpkg.IsBetaRelease(),
+				}, nil
 			}
 			return h.updater.CheckNow(ctx)
 		}), true
 	case protocol.MethodUpdateDismiss:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
-				return sharedtypes.UpdateStatus{CurrentVersion: "unknown", Enabled: false}, nil
+				return sharedtypes.UpdateStatus{
+					CurrentVersion: "unknown",
+					Enabled:        false,
+					RunningChannel: versionpkg.RunningChannel(),
+					RunningIsBeta:  versionpkg.IsBetaRelease(),
+				}, nil
 			}
 			return h.updater.DismissLatest()
 		}), true

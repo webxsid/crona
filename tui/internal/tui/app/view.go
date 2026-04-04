@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	versionpkg "crona/shared/version"
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
@@ -58,6 +59,7 @@ func (m Model) layoutState() layoutpkg.State {
 		RestModeActive:         state.ContentState.RestModeActive,
 		AwayModeActive:         state.ContentState.AwayModeActive,
 		IsDevMode:              m.isDevMode(),
+		IsBetaBuild:            m.isBetaBuild(),
 		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
@@ -114,10 +116,21 @@ func (m Model) layoutChromeState() layoutChromeState {
 			ScratchpadOpen:         m.scratchpadOpen,
 			TimerState:             timerState,
 			IsDevMode:              m.isDevMode(),
+			IsBetaBuild:            m.isBetaBuild(),
 			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
 			UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 		}),
 	}
+}
+
+func (m Model) isBetaBuild() bool {
+	if m.kernelInfo != nil && m.kernelInfo.RunningIsBeta {
+		return true
+	}
+	if m.updateStatus != nil && m.updateStatus.RunningIsBeta {
+		return true
+	}
+	return versionpkg.IsBetaRelease()
 }
 
 func sidebarWidth(width int) int {

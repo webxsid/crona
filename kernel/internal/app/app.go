@@ -18,6 +18,7 @@ import (
 	"crona/shared/config"
 	"crona/shared/localipc"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 )
 
 func Run(ctx context.Context) error {
@@ -88,6 +89,8 @@ func Run(ctx context.Context) error {
 		ScratchDir:     paths.ScratchDir,
 		Env:            appEnv.Mode,
 		ExecutablePath: executablePath(),
+		RunningChannel: versionpkg.RunningChannel(),
+		RunningIsBeta:  versionpkg.IsBetaRelease(),
 	}
 
 	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater), logger)

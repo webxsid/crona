@@ -24,6 +24,7 @@ type latestRelease struct {
 	ChecksumsURL string
 	PublishedAt  string
 	IsPrerelease bool
+	IsBeta       bool
 }
 
 func (s *Service) fetchLatestRelease(ctx context.Context, channel sharedtypes.UpdateChannel) (latestRelease, error) {
@@ -151,6 +152,7 @@ func (s *Service) releaseFromPayload(payload githubReleasePayload) (latestReleas
 		ChecksumsURL: checksumsURL,
 		PublishedAt:  strings.TrimSpace(payload.PublishedAt),
 		IsPrerelease: payload.Prerelease,
+		IsBeta:       payload.Prerelease || versionpkg.IsBetaVersion(version) || versionpkg.IsBetaVersion(tag),
 	}, nil
 }
 

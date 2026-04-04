@@ -14,6 +14,7 @@ func SupportDiagnosticsSummary(info *api.KernelInfo, assets *api.ExportAssetStat
 	lines := []string{}
 	if update != nil {
 		lines = append(lines, fmt.Sprintf("Version: v%s", fallbackSupport(strings.TrimSpace(update.CurrentVersion), "unknown")))
+		lines = append(lines, fmt.Sprintf("Running channel: %s", fallbackSupport(strings.TrimSpace(string(update.RunningChannel)), "stable")))
 		lines = append(lines, fmt.Sprintf("Update channel: %s", fallbackSupport(strings.TrimSpace(string(update.Channel)), "stable")))
 	}
 	if info != nil {
@@ -88,10 +89,13 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 	if input.UpdateStatus != nil {
 		lines = append(lines,
 			fmt.Sprintf("version=v%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.CurrentVersion), "unknown")),
+			fmt.Sprintf("running_channel=%s", fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.RunningChannel)), "stable")),
+			fmt.Sprintf("running_is_beta=%t", input.UpdateStatus.RunningIsBeta),
 			fmt.Sprintf("update_channel=%s", fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.Channel)), "stable")),
 			fmt.Sprintf("latest_version=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.LatestVersion), "-")),
 			fmt.Sprintf("release_tag=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.ReleaseTag), "-")),
 			fmt.Sprintf("release_prerelease=%t", input.UpdateStatus.ReleaseIsPrerelease),
+			fmt.Sprintf("latest_is_beta=%t", input.UpdateStatus.LatestIsBeta),
 			fmt.Sprintf("checked_at=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.CheckedAt), "-")),
 			fmt.Sprintf("update_available=%t", input.UpdateStatus.UpdateAvailable),
 			fmt.Sprintf("install_available=%t", input.UpdateStatus.InstallAvailable),
@@ -105,6 +109,8 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 			fmt.Sprintf("kernel_endpoint=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.Endpoint), "-")),
 			fmt.Sprintf("kernel_pid=%d", input.KernelInfo.PID),
 			fmt.Sprintf("kernel_started=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.StartedAt), "-")),
+			fmt.Sprintf("kernel_running_channel=%s", fallbackSupport(strings.TrimSpace(string(input.KernelInfo.RunningChannel)), "stable")),
+			fmt.Sprintf("kernel_running_is_beta=%t", input.KernelInfo.RunningIsBeta),
 			fmt.Sprintf("scratch_dir=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.ScratchDir), "-")),
 		)
 	}

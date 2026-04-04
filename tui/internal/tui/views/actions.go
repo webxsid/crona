@@ -13,12 +13,18 @@ type ActionsState struct {
 	RestModeActive         bool
 	AwayModeActive         bool
 	IsDevMode              bool
+	IsBetaBuild            bool
 	UpdateVisible          bool
 	UpdateInstallAvailable bool
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
-	actions := []string{}
+	actions := []string{
+		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" views"),
+	}
+	if state.IsBetaBuild {
+		actions = append(actions, theme.StyleHeader.Render("[f9]")+theme.StyleDim.Render(" beta support"))
+	}
 	if tabLabel := tabActionLabel(state); tabLabel != "" {
 		actions = append(actions, theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel))
 	}

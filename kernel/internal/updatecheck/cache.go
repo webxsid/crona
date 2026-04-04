@@ -23,6 +23,8 @@ func (s *Service) loadCache() {
 	}
 	cached.CurrentVersion = version.Current()
 	cached.Channel = sharedtypes.NormalizeUpdateChannel(cached.Channel)
+	cached.RunningChannel = version.RunningChannel()
+	cached.RunningIsBeta = version.IsBetaRelease()
 	s.status = cached
 }
 
@@ -55,6 +57,7 @@ func (s *Service) clearReleaseLocked() {
 	s.status.ChecksumsURL = ""
 	s.status.PublishedAt = ""
 	s.status.ReleaseIsPrerelease = false
+	s.status.LatestIsBeta = false
 	s.status.UpdateAvailable = false
 	s.status.InstallAvailable = false
 	s.status.InstallUnavailableReason = ""

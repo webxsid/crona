@@ -164,6 +164,9 @@ func TestFetchLatestReleaseBetaChannelSelectsNewestPrerelease(t *testing.T) {
 	if !release.IsPrerelease {
 		t.Fatalf("expected beta release to be marked prerelease")
 	}
+	if !release.IsBeta {
+		t.Fatalf("expected beta release to be marked beta")
+	}
 }
 
 func TestPrepareLocalReleaseUsesLocalReleaseDir(t *testing.T) {

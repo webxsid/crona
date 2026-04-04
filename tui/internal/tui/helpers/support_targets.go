@@ -57,6 +57,7 @@ func supportBugReportBody(input SupportDiagnosticsInput, bundlePath string) stri
 		"",
 		"## Environment",
 		"- Version: " + supportVersionValue(input.UpdateStatus),
+		"- Running channel: " + supportRunningChannelValue(input.UpdateStatus),
 		"- Update channel: " + supportUpdateChannelValue(input.UpdateStatus),
 		"- Platform: " + runtime.GOOS + "/" + runtime.GOARCH,
 		"- View: " + fallbackSupport(input.View, "-"),
@@ -92,6 +93,17 @@ func supportUpdateChannelValue(updateStatus *api.UpdateStatus) string {
 		return "stable"
 	}
 	value := strings.TrimSpace(string(updateStatus.Channel))
+	if value == "" {
+		return "stable"
+	}
+	return value
+}
+
+func supportRunningChannelValue(updateStatus *api.UpdateStatus) string {
+	if updateStatus == nil {
+		return "stable"
+	}
+	value := strings.TrimSpace(string(updateStatus.RunningChannel))
 	if value == "" {
 		return "stable"
 	}

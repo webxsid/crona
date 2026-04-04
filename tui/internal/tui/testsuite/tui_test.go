@@ -504,9 +504,23 @@ func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[u]", "updates"} {
+	for _, want := range []string{"[v]", "views", "[u]", "updates"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected update actions to contain %q, got %q", want, joined)
+		}
+	}
+}
+
+func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
+	actions := views.GlobalActions(support.Theme(), views.ActionsState{
+		View:        "daily",
+		Pane:        "issues",
+		IsBetaBuild: true,
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[f9]", "beta support"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected beta actions to contain %q, got %q", want, joined)
 		}
 	}
 }
@@ -533,15 +547,18 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 		UpdateStatus: &api.UpdateStatus{
 			Enabled:                  true,
 			PromptEnabled:            true,
+			RunningChannel:           sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:            true,
 			Channel:                  sharedtypes.UpdateChannelBeta,
 			ReleaseIsPrerelease:      true,
+			LatestIsBeta:             true,
 			UpdateAvailable:          true,
 			LatestVersion:            "0.3.0",
 			InstallAvailable:         false,
 			InstallUnavailableReason: "Release is missing the checksums.txt asset.",
 		},
 	})
-	for _, want := range []string{"[i] install unavailable", "Channel: Beta", "Release type: beta prerelease", "Release is missing the checksums.txt asset."} {
+	for _, want := range []string{"[i] install unavailable", "Running channel: Beta", "Configured update channel: Beta", "Latest release kind: beta release", "Release type: beta prerelease", "Release is missing the checksums.txt asset."} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -557,13 +574,17 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		TUIExecutablePath:    "/tmp/crona",
 		KernelExecutablePath: "/tmp/crona-kernel",
 		KernelInfo: &api.KernelInfo{
-			Env:        "prod",
-			Transport:  "unix",
-			Endpoint:   "/tmp/crona.sock",
-			ScratchDir: "/tmp/crona/scratch",
+			Env:            "prod",
+			Transport:      "unix",
+			Endpoint:       "/tmp/crona.sock",
+			ScratchDir:     "/tmp/crona/scratch",
+			RunningChannel: sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:  true,
 		},
 		UpdateStatus: &api.UpdateStatus{
 			CurrentVersion: "0.4.0-beta.2",
+			RunningChannel: sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:  true,
 			Channel:        sharedtypes.UpdateChannelBeta,
 		},
 		ExportAssets: &api.ExportAssetStatus{
@@ -572,7 +593,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Update channel: beta", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
+	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "Beta builds expose [f9]", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
