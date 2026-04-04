@@ -143,11 +143,12 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Installer, updater, and support flows are stable enough for beta testers
 - [x] Feedback and issue intake paths are clear for testers
 - [x] Core workflows are stable enough to start `v1.0.0-beta.1`
+- [x] `v1.0.0-beta.1` is the active prerelease validation target
 
 **Mainline exit criteria**
 - [x] Mainline is focused on stabilization rather than new feature families
 - [x] Beta tester documentation and upgrade guidance are clear
-- [ ] The codebase is ready to begin the `1.0.0` release candidate path
+- [x] The codebase is ready to begin the `1.0.0` prerelease path
 
 ## Post-1.0 Product Work
 

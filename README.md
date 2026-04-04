@@ -36,9 +36,9 @@ crona completion fish
 
 ## Release Channels
 
-- `stable` is the preferred channel for general users once stable releases begin.
+- `stable` is the preferred channel for general users.
 - `beta` is for pre-release testing and faster iteration.
-- `1.0.0` will be the first stable milestone. Until then, published builds are beta-tagged and intended for testers.
+- `v1.0.0-beta.1` starts the `1.0.0` prerelease track for tester validation before the first stable release.
 
 ## Documentation
 

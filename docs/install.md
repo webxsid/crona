@@ -2,10 +2,10 @@
 
 ## Release Channels
 
-- `stable` is the preferred channel for general users once stable releases begin.
+- `stable` is the preferred channel for general users.
 - `beta` is for testers who want pre-release builds and faster iteration.
 - `1.0.0` will be the first stable milestone.
-- Until then, the published install commands below target beta-tagged releases.
+- `v1.0.0-beta.1` is the current prerelease build for tester validation before the first stable release.
 
 See the published builds on [GitHub Releases](https://github.com/webxsid/crona/releases).
 
@@ -97,8 +97,8 @@ Override the binary install directory with `CRONA_INSTALL_DIR`.
 
 ## Updates
 
-- General users should stay on the `stable` update channel once stable releases begin.
+- General users should stay on the `stable` update channel.
 - Beta testers can opt into the `beta` channel from the TUI settings.
-- The current beta train is the pre-`1.0.0` validation path.
+- The current beta train is the `1.0.0` prerelease validation path.
 
 Use the in-app `Updates` view to check, read notes, and install supported updates.

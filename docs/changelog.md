@@ -4,9 +4,28 @@ All notable changes to **Crona** are documented here.
 
 Release channel policy:
 
-- `stable` is the preferred channel for general users once stable releases begin.
+- `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- Until `1.0.0`, published releases remain beta-tagged and are intended for testers.
+- `v1.0.0-beta.1` starts the `1.0.0` prerelease track for tester validation before the first stable release.
+
+## [1.0.0-beta.1] - 2026-04-05
+
+### Added
+- Running release awareness is now exposed across the kernel, updater, and TUI, including the distinction between the running release channel, the configured update channel, and the latest fetched release kind.
+- Beta builds now expose a global `[f9]` support menu for quick bug reporting, releases, roadmap access, diagnostics copy, and support-bundle generation.
+- A global `[v]` view-jump chooser now provides direct mnemonic navigation across the available TUI views.
+- Socket API documentation and the new docs tree now provide clearer open-source reference material for contributors and advanced users.
+
+### Changed
+- The docs layout now lives under `docs/`, with the root `README.md` reduced to a cleaner landing page and direct doc links.
+- View-jump choices are now context-aware, so unavailable views like `Away` or the active session view are hidden when they cannot be entered.
+- Support diagnostics and GitHub issue prefills now include the running release channel information.
+- `v1.0.0-beta.1` is positioned as the pre-stable validation release for beta testers rather than another incremental `0.4.x` beta.
+
+### Fixed
+- Kernel shutdown now cancels active IPC event streams correctly, preventing the process from lingering after `kernel.json` is removed and avoiding duplicate kernel launches on the next TUI start.
+- The TUI now waits for the kernel to actually stop after `K` instead of quitting immediately on the shutdown acknowledgment.
+- The updater and release metadata now track beta/stable release kind explicitly instead of inferring everything from the configured update channel.
 
 ## [0.4.0-beta.3] - 2026-04-03
 
