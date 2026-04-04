@@ -477,7 +477,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 
 	state.Cursors["settings"] = 21
 	rendered = support.RenderSettings(state)
-	for _, want := range []string{"DANGER", "Wipe All Data", "Destructive"} {
+	for _, want := range []string{"DANGER", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}

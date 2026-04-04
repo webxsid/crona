@@ -52,7 +52,7 @@ func renderSessionDialog(theme Theme, state State) string {
 				label += "  " + state.ViewName
 			}
 			if state.IssueEstimateMins != nil && *state.IssueEstimateMins > 0 {
-				label += fmt.Sprintf("  · estimate %dm", *state.IssueEstimateMins)
+				label += fmt.Sprintf("  · estimate %s", FormatDurationMinutesInput(state.IssueEstimateMins))
 			}
 			rows = append(rows, "", theme.StyleDim.Render(label))
 		}
@@ -98,6 +98,6 @@ func manualSessionHint(state State) string {
 	case 1:
 		return "[f2] pick date   [g] today   [tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
 	default:
-		return "[tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+		return "[tab] next   durations: 90, 90m, 1h30m   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
 	}
 }

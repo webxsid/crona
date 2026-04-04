@@ -311,17 +311,17 @@ func openCheckInDialog(state State, kind string, date string, checkIn *api.Daily
 	energy.CharLimit = 1
 	energy.Width = 12
 	sleepHours := textinput.New()
-	sleepHours.Placeholder = "Sleep hours"
-	sleepHours.CharLimit = 5
-	sleepHours.Width = 16
+	sleepHours.Placeholder = "7.5h | 7h30m | 450m"
+	sleepHours.CharLimit = 8
+	sleepHours.Width = 20
 	sleepScore := textinput.New()
 	sleepScore.Placeholder = "Sleep score"
 	sleepScore.CharLimit = 3
 	sleepScore.Width = 16
 	screenTime := textinput.New()
-	screenTime.Placeholder = "Screen minutes"
-	screenTime.CharLimit = 4
-	screenTime.Width = 16
+	screenTime.Placeholder = "45m | 1h20m"
+	screenTime.CharLimit = 8
+	screenTime.Width = 20
 	notes := textinput.New()
 	notes.Placeholder = "Notes (optional)"
 	notes.CharLimit = 200
@@ -330,13 +330,13 @@ func openCheckInDialog(state State, kind string, date string, checkIn *api.Daily
 		mood.SetValue(strconv.Itoa(checkIn.Mood))
 		energy.SetValue(strconv.Itoa(checkIn.Energy))
 		if checkIn.SleepHours != nil {
-			sleepHours.SetValue(strconv.FormatFloat(*checkIn.SleepHours, 'f', -1, 64))
+			sleepHours.SetValue(FormatDurationHoursInput(checkIn.SleepHours))
 		}
 		if checkIn.SleepScore != nil {
 			sleepScore.SetValue(strconv.Itoa(*checkIn.SleepScore))
 		}
 		if checkIn.ScreenTimeMinutes != nil {
-			screenTime.SetValue(strconv.Itoa(*checkIn.ScreenTimeMinutes))
+			screenTime.SetValue(FormatDurationMinutesInput(checkIn.ScreenTimeMinutes))
 		}
 		if checkIn.Notes != nil {
 			notes.SetValue(strings.TrimSpace(*checkIn.Notes))
@@ -447,8 +447,8 @@ func OpenCreateHabit(state State) State {
 	schedule.CharLimit = 32
 	schedule.Width = 52
 	target := textinput.New()
-	target.Placeholder = "Target minutes (optional)"
-	target.CharLimit = 6
+	target.Placeholder = "Target duration (e.g. 30m, 1h)"
+	target.CharLimit = 8
 	target.Width = 52
 	state = Close(state)
 	state.Kind = "create_habit"
@@ -477,11 +477,11 @@ func OpenEditHabit(state State, habitID, streamID int64, name string, descriptio
 	schedule.CharLimit = 32
 	schedule.Width = 52
 	target := textinput.New()
-	target.Placeholder = "Target minutes (optional)"
-	target.CharLimit = 6
+	target.Placeholder = "Target duration (e.g. 30m, 1h)"
+	target.CharLimit = 8
 	target.Width = 52
 	if targetMinutes != nil {
-		target.SetValue(strconv.Itoa(*targetMinutes))
+		target.SetValue(FormatDurationMinutesInput(targetMinutes))
 	}
 	state = Close(state)
 	state.Kind = "edit_habit"
@@ -497,12 +497,12 @@ func OpenEditHabit(state State, habitID, streamID int64, name string, descriptio
 
 func OpenHabitCompletion(state State, habitID int64, date string, durationMinutes *int, notes *string) State {
 	duration := textinput.New()
-	duration.Placeholder = "Duration minutes (optional)"
+	duration.Placeholder = "Duration (e.g. 30m, 1h15m)"
 	duration.Focus()
-	duration.CharLimit = 6
+	duration.CharLimit = 8
 	duration.Width = 52
 	if durationMinutes != nil {
-		duration.SetValue(strconv.Itoa(*durationMinutes))
+		duration.SetValue(FormatDurationMinutesInput(durationMinutes))
 	}
 	description := newDescriptionInput(52, 5)
 	if notes != nil {
@@ -527,8 +527,8 @@ func OpenCreateIssueMeta(state State, streamID int64, streamName, repoName strin
 	title.Width = 52
 	description := newDescriptionInput(52, 5)
 	estimate := textinput.New()
-	estimate.Placeholder = "Estimate minutes (optional)"
-	estimate.CharLimit = 6
+	estimate.Placeholder = "Estimate (e.g. 45m, 1h30m)"
+	estimate.CharLimit = 8
 	estimate.Width = 52
 	due := textinput.New()
 	due.Placeholder = "Due date YYYY-MM-DD (optional)"
@@ -558,11 +558,11 @@ func OpenEditIssue(state State, issueID, streamID int64, title string, descripti
 		descriptionInput.SetValue(strings.TrimSpace(*descriptionValue))
 	}
 	estimateInput := textinput.New()
-	estimateInput.Placeholder = "Estimate minutes (optional)"
-	estimateInput.CharLimit = 6
+	estimateInput.Placeholder = "Estimate (e.g. 45m, 1h30m)"
+	estimateInput.CharLimit = 8
 	estimateInput.Width = 52
 	if estimateMinutes != nil {
-		estimateInput.SetValue(strconv.Itoa(*estimateMinutes))
+		estimateInput.SetValue(FormatDurationMinutesInput(estimateMinutes))
 	}
 	dueInput := textinput.New()
 	dueInput.Placeholder = "Due date YYYY-MM-DD (optional)"
@@ -598,8 +598,8 @@ func OpenCreateIssueDefault(state State) State {
 	title.Width = 52
 	description := newDescriptionInput(52, 5)
 	estimate := textinput.New()
-	estimate.Placeholder = "Estimate minutes (optional)"
-	estimate.CharLimit = 6
+	estimate.Placeholder = "Estimate (e.g. 45m, 1h30m)"
+	estimate.CharLimit = 8
 	estimate.Width = 52
 	due := textinput.New()
 	due.Placeholder = "Due date YYYY-MM-DD (optional)"
@@ -756,8 +756,8 @@ func OpenManualSession(state State, issueID int64, issueLabel string, estimateMi
 	inputs := []textinput.Model{
 		newSessionDetailInput("Summary (optional)"),
 		newSessionDetailInput("YYYY-MM-DD"),
-		newSessionDetailInput("90m"),
-		newSessionDetailInput("15m"),
+		newSessionDetailInput("90 | 90m | 1h30m"),
+		newSessionDetailInput("15m | 0m"),
 		newSessionDetailInput("09:00"),
 		newSessionDetailInput("10:45"),
 		newSessionDetailInput("Notes (optional)"),
@@ -997,223 +997,6 @@ func newSessionDetailInput(placeholder string) textinput.Model {
 	return input
 }
 
-func updateSingleInput(state State, msg tea.KeyMsg, requiredMsg string, submit func(string) *Action) (State, *Action, string) {
-	if len(state.Inputs) == 0 {
-		return Close(state), nil, "dialog input unavailable"
-	}
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			name := strings.TrimSpace(state.Inputs[0].Value())
-			if name == "" {
-				return state, nil, requiredMsg
-			}
-			return Close(state), submit(name), ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateValidatedSingleInput(state State, msg tea.KeyMsg, requiredMsg string, submit func(string) (*Action, string)) (State, *Action, string) {
-	if len(state.Inputs) == 0 {
-		return Close(state), nil, "dialog input unavailable"
-	}
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			value := strings.TrimSpace(state.Inputs[0].Value())
-			if requiredMsg != "" && value == "" {
-				return state, nil, requiredMsg
-			}
-			action, status := submit(value)
-			if status != "" {
-				return state, nil, status
-			}
-			return Close(state), action, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateNameDescription(state State, msg tea.KeyMsg, requiredMsg string, submit func(string, *string) *Action) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
-			dir = -1
-		}
-		state.FocusIdx = (state.FocusIdx + dir + 2) % 2
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			name := strings.TrimSpace(state.Inputs[0].Value())
-			if name == "" {
-				return state, nil, requiredMsg
-			}
-			return Close(state), submit(name, ValueToPointer(strings.TrimSpace(state.Description.Value()))), ""
-		}
-	}
-	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
-		var cmd tea.Cmd
-		state.Description, cmd = state.Description.Update(msg)
-		_ = cmd
-		return clearDialogError(state), nil, ""
-	}
-	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateCreateScratchpad(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
-			dir = -1
-		}
-		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			name := strings.TrimSpace(state.Inputs[0].Value())
-			path := strings.TrimSpace(state.Inputs[1].Value())
-			if name == "" || path == "" {
-				return state, nil, "Name and path are required"
-			}
-			return Close(state), &Action{Kind: "create_scratchpad", Name: name, Path: path}, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateCheckIn(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
-			dir = -1
-		}
-		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			mood, err := strconv.Atoi(strings.TrimSpace(state.Inputs[0].Value()))
-			if err != nil || mood < 1 || mood > 5 {
-				return state, nil, "Mood must be between 1 and 5"
-			}
-			energy, err := strconv.Atoi(strings.TrimSpace(state.Inputs[1].Value()))
-			if err != nil || energy < 1 || energy > 5 {
-				return state, nil, "Energy must be between 1 and 5"
-			}
-			sleepHours, status := parseOptionalFloat(strings.TrimSpace(state.Inputs[2].Value()))
-			if status != "" {
-				return state, nil, status
-			}
-			sleepScore, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[3].Value()), 0, 100, "Sleep score must be between 0 and 100")
-			if status != "" {
-				return state, nil, status
-			}
-			screenTime, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[4].Value()), 0, 100000, "Screen time must be 0 or more")
-			if status != "" {
-				return state, nil, status
-			}
-			note := ValueToPointer(strings.TrimSpace(state.Inputs[5].Value()))
-			return Close(state), &Action{
-				Kind:              state.Kind,
-				CheckInDate:       state.CheckInDate,
-				Mood:              mood,
-				Energy:            energy,
-				SleepHours:        sleepHours,
-				SleepScore:        sleepScore,
-				ScreenTimeMinutes: screenTime,
-				Note:              note,
-			}, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func parseOptionalFloat(raw string) (*float64, string) {
-	if raw == "" {
-		return nil, ""
-	}
-	value, err := strconv.ParseFloat(raw, 64)
-	if err != nil || value < 0 {
-		return nil, "Sleep hours must be 0 or more"
-	}
-	return &value, ""
-}
-
-func parseOptionalIntRange(raw string, min int, max int, message string) (*int, string) {
-	if raw == "" {
-		return nil, ""
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil || value < min || value > max {
-		return nil, message
-	}
-	return &value, ""
-}
-
-func updateConfirmDelete(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "enter":
-		action := &Action{Kind: "delete", ID: state.DeleteID, RepoID: state.RepoID, StreamID: state.StreamID}
-		action.Name = state.DeleteKind
-		action.Title = state.DeleteLabel
-		return Close(state), action, ""
-	}
-	return state, nil, ""
-}
-
-func updateConfirmWipe(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "enter":
-		return Close(state), &Action{Kind: "wipe_runtime_data"}, ""
-	}
-	return state, nil, ""
-}
-
-func updateConfirmUninstall(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "enter":
-		return Close(state), &Action{Kind: "uninstall_crona"}, ""
-	}
-	return state, nil, ""
-}
-
 func updateStashList(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "q":
@@ -1361,505 +1144,6 @@ func updateIssueSessionTransition(state State, ctx UpdateContext, currentDate st
 	return clearDialogError(state), nil, ""
 }
 
-func updateAmendSession(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			note := strings.TrimSpace(state.Inputs[0].Value())
-			if note == "" {
-				return state, nil, "Commit message is required"
-			}
-			return Close(state), &Action{Kind: "amend_session", ID: state.SessionID, Note: ValueToPointer(note)}, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "f2", "ctrl+y":
-		if state.FocusIdx == 1 {
-			return OpenDatePicker(state, "manual_session", state.IssueID, 1, ValueToPointer(state.Inputs[1].Value()), strings.TrimSpace(state.Inputs[1].Value())), nil, ""
-		}
-	case "g":
-		if state.FocusIdx == 1 {
-			state.Inputs[1].SetValue(time.Now().Format("2006-01-02"))
-			return state, nil, ""
-		}
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + len(state.Inputs)) % len(state.Inputs)
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			date := strings.TrimSpace(state.Inputs[1].Value())
-			if _, err := time.Parse("2006-01-02", date); err != nil {
-				return state, nil, "Date must be YYYY-MM-DD"
-			}
-			workSeconds, err := ParseDurationInput(state.Inputs[2].Value(), true, "Work duration")
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			breakSeconds, err := ParseDurationInput(state.Inputs[3].Value(), false, "Break duration")
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			startTime, err := ParseClockInput(state.Inputs[4].Value())
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			endTime, err := ParseClockInput(state.Inputs[5].Value())
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			req := shareddto.ManualSessionLogRequest{
-				IssueID:              state.IssueID,
-				Date:                 date,
-				WorkDurationSeconds:  workSeconds,
-				BreakDurationSeconds: breakSeconds,
-				StartTime:            startTime,
-				EndTime:              endTime,
-				CommitMessage:        ValueToPointer(state.Inputs[0].Value()),
-				Notes:                ValueToPointer(state.Inputs[6].Value()),
-			}
-			return Close(state), &Action{Kind: "manual_session", IssueID: state.IssueID, ManualSession: &req}, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateCreateIssueMeta(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
-		return OpenDatePicker(state, "create_issue_meta", 0, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
-	}
-	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
-		title := strings.TrimSpace(state.Inputs[0].Value())
-		if title == "" {
-			return nil, "Issue title is required"
-		}
-		description := ValueToPointer(strings.TrimSpace(state.Description.Value()))
-		estimate, err := ParseEstimateInput(state.Inputs[1].Value())
-		if err != nil {
-			return nil, err.Error()
-		}
-		dueDate, err := ParseDueDateInput(state.Inputs[2].Value())
-		if err != nil {
-			return nil, err.Error()
-		}
-		return &Action{Kind: "create_issue_meta", StreamID: state.StreamID, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
-	})
-}
-
-func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "f2", "ctrl+y":
-		if state.FocusIdx == 5 {
-			return OpenDatePicker(state, "create_issue_default", 0, 5, ValueToPointer(state.Inputs[4].Value()), currentDate), nil, ""
-		}
-	case "g":
-		if state.FocusIdx == 5 {
-			state.Inputs[4].SetValue(currentDate)
-			return state, nil, ""
-		}
-	case "tab", "shift+tab", "down", "up":
-		if (msg.String() == "down" || msg.String() == "up") && (state.FocusIdx == 0 || state.FocusIdx == 1) {
-			if state.FocusIdx == 0 {
-				state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), ternaryDir(msg.String()))
-				state.StreamIndex = 0
-			} else {
-				state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), ternaryDir(msg.String()))
-			}
-			return state, nil, ""
-		}
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 6) % 6
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	case "left":
-		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), -1)
-			state.StreamIndex = 0
-			return clearDialogError(state), nil, ""
-		}
-		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), -1)
-			return clearDialogError(state), nil, ""
-		}
-	case "right":
-		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), 1)
-			state.StreamIndex = 0
-			return clearDialogError(state), nil, ""
-		}
-		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), 1)
-			return clearDialogError(state), nil, ""
-		}
-	}
-	if isDialogSubmitKey(state, msg.String()) {
-		repoName, streamName := DefaultIssueDialogNames(state.Inputs, state.RepoIndex, state.StreamIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
-		title := strings.TrimSpace(state.Inputs[2].Value())
-		if repoName == "" || streamName == "" || title == "" {
-			return state, nil, "Repo, stream, and issue title are required"
-		}
-		description := ValueToPointer(strings.TrimSpace(state.Description.Value()))
-		estimate, err := ParseEstimateInput(state.Inputs[3].Value())
-		if err != nil {
-			return state, nil, err.Error()
-		}
-		dueDate, err := ParseDueDateInput(state.Inputs[4].Value())
-		if err != nil {
-			return state, nil, err.Error()
-		}
-		return Close(state), &Action{Kind: "create_issue_default", RepoName: repoName, StreamName: streamName, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
-	}
-	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
-		var cmd tea.Cmd
-		state.Description, cmd = state.Description.Update(msg)
-		_ = cmd
-		return clearDialogError(state), nil, ""
-	}
-	inputIdx, ok := dialogInputIndex(state, state.FocusIdx)
-	if !ok {
-		return state, nil, ""
-	}
-	var cmd tea.Cmd
-	state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
-	_ = cmd
-	if inputIdx == 0 {
-		state.RepoIndex = 0
-		state.StreamIndex = 0
-	}
-	if inputIdx == 1 {
-		state.StreamIndex = 0
-	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "c":
-		return Close(state), &Action{Kind: "checkout_context"}, ""
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 2) % 2
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	case "left":
-		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(CheckoutRepoOptions(state.Inputs, ctx.Repos)), -1)
-			state.StreamIndex = 0
-			return state, nil, ""
-		}
-		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(CheckoutStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), -1)
-			return state, nil, ""
-		}
-	case "right":
-		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(CheckoutRepoOptions(state.Inputs, ctx.Repos)), 1)
-			state.StreamIndex = 0
-			return state, nil, ""
-		}
-		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(CheckoutStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), 1)
-			return state, nil, ""
-		}
-	case "enter":
-		repoID, repoName, streamID, streamName := CheckoutDialogSelection(state.Inputs, state.RepoIndex, state.StreamIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
-		if strings.TrimSpace(repoName) == "" && streamID == nil && strings.TrimSpace(streamName) == "" {
-			return Close(state), &Action{Kind: "checkout_context"}, ""
-		}
-		if strings.TrimSpace(repoName) == "" {
-			return state, nil, "Repo is required"
-		}
-		if streamID != nil {
-			return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName, StreamID: *streamID, StreamName: streamName}, ""
-		}
-		if strings.TrimSpace(streamName) == "" {
-			return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName}, ""
-		}
-		return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName, StreamName: streamName}, ""
-	}
-	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
-	if state.FocusIdx == 0 {
-		state.RepoIndex = 0
-		state.StreamIndex = 0
-	}
-	if state.FocusIdx == 1 {
-		state.StreamIndex = 0
-	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
-		return OpenDatePicker(state, "edit_issue", state.IssueID, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
-	}
-	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
-		title := strings.TrimSpace(state.Inputs[0].Value())
-		if title == "" {
-			return nil, "Issue title is required"
-		}
-		description := ValueToPointer(strings.TrimSpace(state.Description.Value()))
-		estimate, err := ParseEstimateInput(state.Inputs[1].Value())
-		if err != nil {
-			return nil, err.Error()
-		}
-		dueDate, err := ParseDueDateInput(state.Inputs[2].Value())
-		if err != nil {
-			return nil, err.Error()
-		}
-		return &Action{Kind: "edit_issue", IssueID: state.IssueID, StreamID: state.StreamID, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
-	})
-}
-
-func updateMultiInputIssue(state State, msg tea.KeyMsg, inputCount int, submit func(State) (*Action, string)) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + inputCount) % inputCount
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			action, status := submit(state)
-			if action == nil {
-				return state, nil, status
-			}
-			return Close(state), action, status
-		}
-	}
-	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
-		var cmd tea.Cmd
-		state.Description, cmd = state.Description.Update(msg)
-		_ = cmd
-		return clearDialogError(state), nil, ""
-	}
-	inputIdx, ok := dialogInputIndex(state, state.FocusIdx)
-	if !ok {
-		return clearDialogError(state), nil, ""
-	}
-	var cmd tea.Cmd
-	state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
-func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc", "q":
-		if state.Processing {
-			return state, nil, ""
-		}
-		return Close(state), nil, ""
-	case "j", "down":
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-	case "k", "up":
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-	case "enter":
-		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
-			return state, nil, "Select an export category"
-		}
-		return OpenExportReportChoices(state, state.ChoiceValues[state.ChoiceCursor]), nil, ""
-	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc", "q":
-		if state.Processing {
-			return state, nil, ""
-		}
-		items, values, details := exportReportCategories()
-		state.Kind = "export_report_category"
-		state.Parent = ""
-		state.ExportCategory = ""
-		state.ChoiceItems = items
-		state.ChoiceValues = values
-		state.ChoiceDetails = details
-		state.ChoiceCursor = 0
-		return clearDialogError(state), nil, ""
-	case "j", "down":
-		if state.Processing {
-			return state, nil, ""
-		}
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-	case "k", "up":
-		if state.Processing {
-			return state, nil, ""
-		}
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-	case "enter":
-		if state.Processing {
-			return state, nil, ""
-		}
-		selected := ""
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceItems) {
-			selected = state.ChoiceItems[state.ChoiceCursor]
-		}
-		action := Action{Kind: "export_report", CheckInDate: state.CheckInDate}
-		switch selected {
-		case "Daily report: write PDF file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
-		case "Weekly summary: write PDF file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
-		case "Daily report: write Markdown file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
-		case "Daily report: copy to clipboard":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeClipboard), nil, ""
-		case "Weekly summary: write Markdown file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
-		case "Repo report: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindRepo
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating repo report..."
-		case "Stream report: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindStream
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating stream report..."
-		case "Issue rollup: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindIssueRollup
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating issue rollup..."
-		case "Calendar export: write ICS file":
-			if len(state.RepoItems) == 0 {
-				return state, nil, "Calendar export requires at least one repo"
-			}
-			return OpenExportCalendarRepo(state), nil, ""
-		default:
-			action.ReportKind = sharedtypes.ExportReportKindCSV
-			action.ReportFormat = sharedtypes.ExportFormatCSV
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating CSV export..."
-		}
-		state.Processing = true
-		return state, &action, ""
-	}
-	return state, nil, ""
-}
-
-func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc", "q":
-		state.Kind = "export_report"
-		state.Parent = ""
-		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
-		state.ChoiceValues = nil
-		state.ExportPresetKind = ""
-		state.ExportPresetFormat = ""
-		state.ExportPresetOutput = ""
-		state.ChoiceCursor = 0
-		return clearDialogError(state), nil, ""
-	case "j", "down":
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-	case "k", "up":
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-	case "enter":
-		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
-			return state, nil, "Select a report style"
-		}
-		presetID := state.ChoiceValues[state.ChoiceCursor]
-		if presetID == "__current__" {
-			presetID = ""
-		}
-		state.Processing = true
-		switch state.ExportPresetKind {
-		case sharedtypes.ExportReportKindDaily:
-			if state.ExportPresetOutput == sharedtypes.ExportOutputModeClipboard {
-				state.ProcessingLabel = "Copying report..."
-			} else {
-				state.ProcessingLabel = "Generating daily report..."
-			}
-		case sharedtypes.ExportReportKindWeekly:
-			state.ProcessingLabel = "Generating weekly report..."
-		default:
-			state.ProcessingLabel = "Generating report..."
-		}
-		return state, &Action{
-			Kind:         "export_report",
-			ReportKind:   state.ExportPresetKind,
-			ReportFormat: state.ExportPresetFormat,
-			OutputMode:   state.ExportPresetOutput,
-			CheckInDate:  state.CheckInDate,
-			PresetID:     presetID,
-		}, ""
-	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc", "q":
-		state.Kind = "export_report"
-		state.Parent = ""
-		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
-		return clearDialogError(state), nil, ""
-	case "j", "down":
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-	case "k", "up":
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-	case "enter":
-		if len(state.RepoItemIDs) == 0 || state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.RepoItemIDs) {
-			return state, nil, "Calendar export requires a repo"
-		}
-		state.RepoIndex = state.ChoiceCursor
-		state.RepoID = state.RepoItemIDs[state.ChoiceCursor]
-		state.RepoName = state.RepoItems[state.ChoiceCursor]
-		state.Kind = "export_report"
-		state.ChoiceItems = nil
-		state.ChoiceCursor = 0
-		state.Parent = ""
-		state.Processing = true
-		state.ProcessingLabel = "Generating calendar export..."
-		return state, &Action{
-			Kind:         "export_report",
-			ReportKind:   sharedtypes.ExportReportKindCalendar,
-			ReportFormat: sharedtypes.ExportFormatICS,
-			OutputMode:   sharedtypes.ExportOutputModeFile,
-			CheckInDate:  state.CheckInDate,
-			RepoID:       state.RepoID,
-			RepoName:     state.RepoName,
-		}, ""
-	}
-	return clearDialogError(state), nil, ""
-}
-
 func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
@@ -1878,9 +1162,9 @@ func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		target, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[2].Value()), 0, 100000, "Target minutes must be 0 or more")
-		if status != "" {
-			return state, nil, status
+		target, err := ParseOptionalDurationMinutes(state.Inputs[2].Value(), "Target")
+		if err != nil {
+			return state, nil, err.Error()
 		}
 		action := &Action{
 			Kind:        kind,
@@ -1959,9 +1243,9 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		target, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[4].Value()), 0, 100000, "Target minutes must be 0 or more")
-		if status != "" {
-			return state, nil, status
+		target, err := ParseOptionalDurationMinutes(state.Inputs[4].Value(), "Target")
+		if err != nil {
+			return state, nil, err.Error()
 		}
 		return Close(state), &Action{
 			Kind:        "create_habit",
@@ -1994,40 +1278,6 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 	if inputIdx == 1 {
 		state.StreamIndex = 0
 	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateHabitCompletion(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 2) % 2
-		state = SyncDialogFocus(state)
-		return clearDialogError(state), nil, ""
-	}
-	if isDialogSubmitKey(state, msg.String()) {
-		duration, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[0].Value()), 0, 100000, "Duration minutes must be 0 or more")
-		if status != "" {
-			return state, nil, status
-		}
-		return Close(state), &Action{
-			Kind:        "complete_habit",
-			HabitID:     state.HabitID,
-			CheckInDate: state.CheckInDate,
-			Estimate:    duration,
-			Note:        ValueToPointer(strings.TrimSpace(state.Description.Value())),
-		}, ""
-	}
-	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
-		var cmd tea.Cmd
-		state.Description, cmd = state.Description.Update(msg)
-		_ = cmd
-		return clearDialogError(state), nil, ""
-	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
 	return clearDialogError(state), nil, ""
 }
 
@@ -2203,208 +1453,6 @@ func WeekdayTokens(days []int) []string {
 		}
 	}
 	return out
-}
-
-func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
-			return Close(state), nil, ""
-		}
-		return closeDatePicker(state), nil, ""
-	case "enter", " ":
-		selected := state.DateCursorValue
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" || state.Parent == "edit_issue" {
-			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
-				state.Inputs[idx].SetValue(selected)
-			}
-			return closeDatePicker(state), nil, ""
-		}
-		if state.Parent == "edit_rest_protection" {
-			state.ProtectionDates = normalizedDateList(append(state.ProtectionDates, selected))
-			return closeDatePicker(state), nil, ""
-		}
-		if state.Parent == "rollup_start" {
-			return Close(state), &Action{Kind: "set_rollup_start_date", DueDate: ValueToPointer(selected)}, ""
-		}
-		if state.Parent == "rollup_end" {
-			return Close(state), &Action{Kind: "set_rollup_end_date", DueDate: ValueToPointer(selected)}, ""
-		}
-		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer(selected)}, ""
-	case "backspace", "delete", "c":
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" || state.Parent == "edit_issue" {
-			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
-				state.Inputs[idx].SetValue("")
-			}
-			return closeDatePicker(state), nil, ""
-		}
-		if state.Parent == "edit_rest_protection" {
-			return closeDatePicker(state), nil, ""
-		}
-		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
-			return Close(state), nil, ""
-		}
-		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer("")}, ""
-	case "left", "h":
-		return shiftDatePicker(state, 0, 0, -1), nil, ""
-	case "right", "l":
-		return shiftDatePicker(state, 0, 0, 1), nil, ""
-	case "up", "k":
-		return shiftDatePicker(state, 0, 0, -7), nil, ""
-	case "down", "j":
-		return shiftDatePicker(state, 0, 0, 7), nil, ""
-	case ",":
-		return shiftDatePicker(state, 0, -1, 0), nil, ""
-	case ".":
-		return shiftDatePicker(state, 0, 1, 0), nil, ""
-	case "g":
-		return OpenDatePicker(state, state.Parent, state.IssueID, state.FocusIdx, ValueToPointer(time.Now().Format("2006-01-02")), currentDate), nil, ""
-	}
-	return state, nil, ""
-}
-
-func ternaryDir(key string) int {
-	if key == "shift+tab" || key == "up" {
-		return -1
-	}
-	return 1
-}
-
-func closeDatePicker(state State) State {
-	parent := state.Parent
-	dateField := state.FocusIdx
-	state.Kind = parent
-	state.Parent = ""
-	state.DateMonthValue = ""
-	state.DateCursorValue = ""
-	if parent == "create_issue_meta" || parent == "create_issue_default" || parent == "edit_issue" {
-		state.FocusIdx = dateField
-		state = SyncDialogFocus(state)
-		return state
-	}
-	for i := range state.Inputs {
-		if i == state.FocusIdx {
-			state.Inputs[i].Focus()
-		} else {
-			state.Inputs[i].Blur()
-		}
-	}
-	return state
-}
-
-func shiftDatePicker(state State, years, months, days int) State {
-	selected := DialogDate(state, time.Now().Format("2006-01-02")).AddDate(years, months, days)
-	monthStart := time.Date(selected.Year(), selected.Month(), 1, 0, 0, 0, 0, selected.Location())
-	state.DateCursorValue = selected.Format("2006-01-02")
-	state.DateMonthValue = monthStart.Format("2006-01-02")
-	return state
-}
-
-func updateRestProtection(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "tab", "right", "l":
-		state.ProtectionStep = (state.ProtectionStep + 1) % 4
-		state.ProtectionCursor = 0
-		return state, nil, ""
-	case "shift+tab", "left", "h":
-		state.ProtectionStep = (state.ProtectionStep + 3) % 4
-		state.ProtectionCursor = 0
-		return state, nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			return Close(state), &Action{
-				Kind:        "patch_rest_protection",
-				StreakKinds: streakKindStrings(state.ProtectionStreaks),
-				IntList:     normalizedWeekdays(state.ProtectionWeekdays),
-				RestDates:   normalizedDateList(state.ProtectionDates),
-			}, ""
-		}
-	}
-	switch state.ProtectionStep {
-	case 0:
-		return updateRestProtectionStreaks(state, msg)
-	case 1:
-		return updateRestProtectionWeekdays(state, msg)
-	case 2:
-		return updateRestProtectionDates(state, currentDate, msg)
-	case 3:
-		return clearDialogError(state), nil, ""
-	}
-	return clearDialogError(state), nil, ""
-}
-
-func updateRestProtectionStreaks(state State, msg tea.KeyMsg) (State, *Action, string) {
-	total := len(sharedtypes.AvailableStreakKinds())
-	switch msg.String() {
-	case "j", "down":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, total, 1)
-	case "k", "up":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, total, -1)
-	case " ":
-		current := sharedtypes.AvailableStreakKinds()[state.ProtectionCursor]
-		state.ProtectionStreaks = toggleStreakKind(state.ProtectionStreaks, current)
-	case "x":
-		current := sharedtypes.AvailableStreakKinds()[state.ProtectionCursor]
-		state.ProtectionStreaks = toggleStreakKind(state.ProtectionStreaks, current)
-	case "a":
-		state.ProtectionStreaks = append([]sharedtypes.StreakKind(nil), sharedtypes.AvailableStreakKinds()...)
-	case "c":
-		state.ProtectionStreaks = nil
-	case "enter":
-		state.ProtectionStep = 1
-		state.ProtectionCursor = 0
-	}
-	return state, nil, ""
-}
-
-func updateRestProtectionWeekdays(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "j", "down":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, 7, 1)
-	case "k", "up":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, 7, -1)
-	case " ", "x":
-		state.ProtectionWeekdays = toggleWeekday(state.ProtectionWeekdays, state.ProtectionCursor)
-	case "c":
-		state.ProtectionWeekdays = nil
-	case "enter":
-		state.ProtectionStep = 2
-		state.ProtectionCursor = 0
-	}
-	return state, nil, ""
-}
-
-func updateRestProtectionDates(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "j", "down":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, max(1, len(state.ProtectionDates)), 1)
-	case "k", "up":
-		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, max(1, len(state.ProtectionDates)), -1)
-	case "a":
-		initial := currentDate
-		if strings.TrimSpace(initial) == "" {
-			initial = time.Now().Format("2006-01-02")
-		}
-		return OpenDatePicker(state, "edit_rest_protection", 0, 0, ValueToPointer(initial), currentDate), nil, ""
-	case "d", "backspace", "delete":
-		if len(state.ProtectionDates) == 0 {
-			return state, nil, ""
-		}
-		idx := state.ProtectionCursor
-		if idx >= len(state.ProtectionDates) {
-			idx = len(state.ProtectionDates) - 1
-		}
-		state.ProtectionDates = append(state.ProtectionDates[:idx], state.ProtectionDates[idx+1:]...)
-		if state.ProtectionCursor >= len(state.ProtectionDates) && state.ProtectionCursor > 0 {
-			state.ProtectionCursor--
-		}
-	case "enter":
-		state.ProtectionStep = 3
-		state.ProtectionCursor = 0
-	}
-	return state, nil, ""
 }
 
 func normalizedWeekdays(values []int) []int {

@@ -254,7 +254,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		}
 		estimate := "-"
 		if issue.EstimateMinutes != nil {
-			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
+			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 		}
 		due := "-"
 		if issue.TodoForDate != nil && strings.TrimSpace(*issue.TodoForDate) != "" {
@@ -366,7 +366,7 @@ func formatHabitTarget(target *int) string {
 	if target == nil {
 		return "-"
 	}
-	return fmt.Sprintf("%dm", *target)
+	return helperpkg.FormatCompactDurationMinutes(*target)
 }
 
 func (m Model) openSelectedDeleteDialog() (Model, bool) {

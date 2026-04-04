@@ -8,6 +8,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -138,7 +139,7 @@ func formatClock(totalSeconds int) string {
 }
 
 func formatEstimateProgress(elapsedSeconds, estimateMinutes int) string {
-	return fmt.Sprintf("%s / %dm", formatClock(elapsedSeconds), estimateMinutes)
+	return fmt.Sprintf("%s / %s", formatClock(elapsedSeconds), helperpkg.FormatCompactDurationMinutes(estimateMinutes))
 }
 
 func splitVertical(total, topMin, bottomMin, topPreferred int) (int, int) {

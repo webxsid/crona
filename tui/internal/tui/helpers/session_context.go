@@ -17,7 +17,7 @@ func SessionContextContentLines(issue *api.IssueWithMeta) []string {
 		fmt.Sprintf("Issue: #%d %s", issue.ID, issue.Title),
 	}
 	if issue.EstimateMinutes != nil && *issue.EstimateMinutes > 0 {
-		lines = append(lines, fmt.Sprintf("Estimate: %dm", *issue.EstimateMinutes))
+		lines = append(lines, fmt.Sprintf("Estimate: %s", FormatCompactDurationMinutes(*issue.EstimateMinutes)))
 	}
 	lines = append(lines, "", "Description:")
 	if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {

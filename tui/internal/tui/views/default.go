@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -177,7 +178,7 @@ func defaultEstimateSummary(state ContentState) string {
 		estimated += *issue.EstimateMinutes
 		scoped++
 	}
-	return fmt.Sprintf("estimated %dm  scoped %d", estimated, scoped)
+	return fmt.Sprintf("estimated %s  scoped %d", helperpkg.FormatCompactDurationMinutes(estimated), scoped)
 }
 
 func renderDefaultIssuePane(theme Theme, state ContentState, title, subtitle string, indices []int, offset int, showFilter bool, height int, emptyText string, sectionActive bool) string {

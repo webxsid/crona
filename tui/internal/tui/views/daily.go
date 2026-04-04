@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	helperpkg "crona/tui/internal/tui/helpers"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -75,16 +77,16 @@ func renderDailySummary(theme Theme, state ContentState, width, height int) stri
 		"%s  %s  %s",
 		theme.StyleHeader.Render("Issues"),
 		theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-		theme.StyleDim.Render(fmt.Sprintf("estimate %dm", totalEstimate)),
+		theme.StyleDim.Render("estimate "+helperpkg.FormatCompactDurationMinutes(totalEstimate)),
 	)
 	habitSummary := fmt.Sprintf(
 		"%s  %s",
 		theme.StyleHeader.Render("Habits"),
 		theme.StyleNormal.Render(fmt.Sprintf("%d/%d completed", completedHabits, totalHabits)),
 	)
-	habitMeta := theme.StyleDim.Render(fmt.Sprintf("logged %dm", habitMinutes))
+	habitMeta := theme.StyleDim.Render("logged " + helperpkg.FormatCompactDurationMinutes(habitMinutes))
 	if habitTargetMinutes > 0 {
-		habitMeta = theme.StyleDim.Render(fmt.Sprintf("logged %dm / target %dm", habitMinutes, habitTargetMinutes))
+		habitMeta = theme.StyleDim.Render(fmt.Sprintf("logged %s / target %s", helperpkg.FormatCompactDurationMinutes(habitMinutes), helperpkg.FormatCompactDurationMinutes(habitTargetMinutes)))
 	}
 	habitVisual := []string{
 		habitSummary,
@@ -114,7 +116,7 @@ func renderDailySummary(theme Theme, state ContentState, width, height int) stri
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d", resolvedCount, totalIssues)),
-					theme.StyleDim.Render(fmt.Sprintf("%dm", totalEstimate)),
+					theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(totalEstimate)),
 					theme.StyleDim.Render(compactIssueLegend(issueStatusCounts)),
 				},
 				func(barWidth int) string { return renderDailyIssueStatusBar(theme, issueStatusCounts, barWidth) },
@@ -139,7 +141,7 @@ func renderDailySummary(theme Theme, state ContentState, width, height int) stri
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-					theme.StyleDim.Render(fmt.Sprintf("estimate %dm", totalEstimate)),
+					theme.StyleDim.Render("estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate)),
 				},
 				func(barWidth int) string { return renderDailyIssueStatusBar(theme, issueStatusCounts, barWidth) },
 				compactSummaryBarWidth,
@@ -162,7 +164,7 @@ func renderDailySummary(theme Theme, state ContentState, width, height int) stri
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-					theme.StyleDim.Render(fmt.Sprintf("estimate %dm", totalEstimate)),
+					theme.StyleDim.Render("estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate)),
 				},
 				func(barWidth int) string { return renderDailyIssueStatusBar(theme, issueStatusCounts, barWidth) },
 				compactSummaryBarWidth,
@@ -279,9 +281,9 @@ func compactIssueLegend(counts map[string]int) string {
 
 func compactHabitProgress(loggedMinutes, targetMinutes int) string {
 	if targetMinutes > 0 {
-		return fmt.Sprintf("%d/%dm", loggedMinutes, targetMinutes)
+		return fmt.Sprintf("%s/%s", helperpkg.FormatCompactDurationMinutes(loggedMinutes), helperpkg.FormatCompactDurationMinutes(targetMinutes))
 	}
-	return fmt.Sprintf("%dm", loggedMinutes)
+	return helperpkg.FormatCompactDurationMinutes(loggedMinutes)
 }
 
 func ansiAwareTruncate(s string, width int) string {
@@ -348,7 +350,7 @@ func renderDailyIssues(theme Theme, state ContentState, width, height int) strin
 		}
 		estimate := "-"
 		if issue.EstimateMinutes != nil {
-			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
+			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 		}
 		title := issue.Title + issueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, truncate(title, titleW), statusW, truncate(plainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, truncate(repoName, repoW), streamW, truncate(streamName, streamW))
@@ -393,9 +395,9 @@ func renderDailyHabits(theme Theme, state ContentState, width, height int) strin
 		}
 		duration := ""
 		if habit.DurationMinutes != nil {
-			duration = fmt.Sprintf("  %dm", *habit.DurationMinutes)
+			duration = "  " + helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes)
 		} else if habit.TargetMinutes != nil {
-			duration = fmt.Sprintf("  target %dm", *habit.TargetMinutes)
+			duration = "  target " + helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes)
 		}
 		row := fmt.Sprintf("%s %s%s", status, habit.Name, duration)
 		lines = append(lines, renderPaneRowStyled(theme, i, cur, active, row, style, width))

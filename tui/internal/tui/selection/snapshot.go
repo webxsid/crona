@@ -158,7 +158,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				issue := scoped[idx]
 				estimate := ""
 				if issue.EstimateMinutes != nil {
-					estimate = fmt.Sprintf(" %dm", *issue.EstimateMinutes)
+					estimate = " " + helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 				}
 				due := helperpkg.IssueScheduleLabel(issue.Issue)
 				if due != "" {
@@ -180,7 +180,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				}
 				estimate := ""
 				if issue.EstimateMinutes != nil {
-					estimate = fmt.Sprintf(" %dm", *issue.EstimateMinutes)
+					estimate = " " + helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 				}
 				due := helperpkg.IssueScheduleLabel(issue)
 				if due != "" {

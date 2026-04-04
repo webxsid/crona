@@ -419,8 +419,15 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		SessionHistory:      m.sessionHistory,
 		Ops:                 m.ops,
 		Settings:            m.settings,
-		ConfigItems:         configitems.Build(m.exportAssets),
+		ConfigItems:         m.configItemsForSnapshot(),
 	})
+}
+
+func (m Model) configItemsForSnapshot() []configitems.Item {
+	if m.view != ViewConfig && m.pane != PaneConfig && (!m.filterEditing || m.filterPane != PaneConfig) {
+		return nil
+	}
+	return configitems.Build(m.exportAssets)
 }
 
 func (m Model) dailyIssuesForSelection() []api.Issue {

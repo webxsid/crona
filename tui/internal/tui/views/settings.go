@@ -90,28 +90,35 @@ func SettingsRows(settings *sharedtypes.CoreSettings) []settingsRow {
 	return []settingsRow{
 		{Section: "Focus Timer", Label: "Timer Mode", Value: string(settings.TimerMode)},
 		{Section: "Focus Timer", Label: "Work Duration", Value: fmt.Sprintf("%d min", settings.WorkDurationMinutes)},
-		{Section: "Breaks", Label: "Breaks Enabled", Value: onOff(settings.BreaksEnabled)},
+		{Section: "Breaks", Label: "Breaks", Value: enabledDisabled(settings.BreaksEnabled)},
 		{Section: "Breaks", Label: "Short Break", Value: fmt.Sprintf("%d min", settings.ShortBreakMinutes)},
 		{Section: "Breaks", Label: "Long Break", Value: fmt.Sprintf("%d min", settings.LongBreakMinutes)},
-		{Section: "Breaks", Label: "Long Break Enabled", Value: onOff(settings.LongBreakEnabled)},
+		{Section: "Breaks", Label: "Long Breaks", Value: enabledDisabled(settings.LongBreakEnabled)},
 		{Section: "Breaks", Label: "Cycles Before Long Break", Value: fmt.Sprintf("%d", settings.CyclesBeforeLongBreak)},
-		{Section: "Breaks", Label: "Auto Start Breaks", Value: onOff(settings.AutoStartBreaks)},
-		{Section: "Breaks", Label: "Auto Start Work", Value: onOff(settings.AutoStartWork)},
-		{Section: "Notifications", Label: "Boundary Notifications", Value: onOff(settings.BoundaryNotifications)},
-		{Section: "Notifications", Label: "Boundary Sound", Value: onOff(settings.BoundarySound)},
-		{Section: "Updates", Label: "Update Checks", Value: onOff(settings.UpdateChecksEnabled)},
-		{Section: "Updates", Label: "Update Prompt", Value: onOff(settings.UpdatePromptEnabled)},
+		{Section: "Breaks", Label: "Auto-Start Breaks", Value: enabledDisabled(settings.AutoStartBreaks)},
+		{Section: "Breaks", Label: "Auto-Start Work", Value: enabledDisabled(settings.AutoStartWork)},
+		{Section: "Notifications", Label: "Boundary Notifications", Value: enabledDisabled(settings.BoundaryNotifications)},
+		{Section: "Notifications", Label: "Boundary Sound", Value: enabledDisabled(settings.BoundarySound)},
+		{Section: "Updates", Label: "Update Checks", Value: enabledDisabled(settings.UpdateChecksEnabled)},
+		{Section: "Updates", Label: "Update Prompt", Value: enabledDisabled(settings.UpdatePromptEnabled)},
 		{Section: "Updates", Label: "Update Channel", Value: updateChannelLabel(settings.UpdateChannel)},
 		{Section: "Sorting", Label: "Repo Sort", Value: repoSortLabel(settings.RepoSort)},
 		{Section: "Sorting", Label: "Stream Sort", Value: streamSortLabel(settings.StreamSort)},
 		{Section: "Sorting", Label: "Issue Sort", Value: issueSortLabel(settings.IssueSort)},
 		{Section: "Sorting", Label: "Habit Sort", Value: habitSortLabel(settings.HabitSort)},
-		{Section: "Recovery", Label: "Away Mode", Value: onOff(settings.AwayModeEnabled)},
+		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
 		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
 		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
-		{Section: "Danger", Label: "Wipe All Data", Value: "Destructive"},
-		{Section: "Danger", Label: "Uninstall Crona", Value: "Remove binaries too"},
+		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
+		{Section: "Danger", Label: "Uninstall Crona", Value: "App + binaries"},
 	}
+}
+
+func enabledDisabled(v bool) string {
+	if v {
+		return "Enabled"
+	}
+	return "Disabled"
 }
 
 func updateChannelLabel(value sharedtypes.UpdateChannel) string {

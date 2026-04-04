@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -133,6 +134,30 @@ func FormatClockText(totalSeconds int) string {
 	minutes := (totalSeconds % 3600) / 60
 	seconds := totalSeconds % 60
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+}
+
+func FormatCompactDurationMinutes(totalMinutes int) string {
+	if totalMinutes < 0 {
+		totalMinutes = 0
+	}
+	hours := totalMinutes / 60
+	minutes := totalMinutes % 60
+	switch {
+	case hours > 0 && minutes > 0:
+		return fmt.Sprintf("%dh%02dm", hours, minutes)
+	case hours > 0:
+		return fmt.Sprintf("%dh", hours)
+	default:
+		return fmt.Sprintf("%dm", minutes)
+	}
+}
+
+func FormatCompactDurationHours(hours float64) string {
+	if hours < 0 {
+		hours = 0
+	}
+	totalMinutes := int(math.Round(hours * 60))
+	return FormatCompactDurationMinutes(totalMinutes)
 }
 
 func FormatSessionDurationText(durationSeconds *int, start string, end *string) string {

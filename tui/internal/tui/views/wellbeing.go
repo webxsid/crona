@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -33,6 +34,8 @@ func renderWellbeingSmallScreenView(theme Theme, state ContentState) string {
 	lines = append(lines, wellbeingCompactCards(theme, state)...)
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		lines = append(lines, theme.StyleDim.Render("No check-in for selected date"))
+	} else if !countsForCheckInStreak(state.DailyCheckIn) {
+		lines = append(lines, theme.StyleError.Render("Backfilled check-in"))
 	}
 	lines = append(lines, wellbeingCompactAccountabilityLines(theme, state)...)
 	lines = append(lines, wellbeingCompactRiskSnapshotLines(theme, state)...)
@@ -82,19 +85,19 @@ func renderWellbeingSummary(theme Theme, state ContentState, width, height int) 
 			fmt.Sprintf("%s  %d/5", theme.StyleHeader.Render("Energy"), state.DailyCheckIn.Energy),
 		)
 		if state.DailyCheckIn.SleepHours != nil {
-			lines = append(lines, fmt.Sprintf("%s  %.1fh", theme.StyleHeader.Render("Sleep"), *state.DailyCheckIn.SleepHours))
+			lines = append(lines, fmt.Sprintf("%s  %s", theme.StyleHeader.Render("Sleep"), helperpkg.FormatCompactDurationHours(*state.DailyCheckIn.SleepHours)))
 		}
 		if state.DailyCheckIn.SleepScore != nil {
 			lines = append(lines, fmt.Sprintf("%s  %d/100", theme.StyleHeader.Render("Sleep Score"), *state.DailyCheckIn.SleepScore))
 		}
 		if state.DailyCheckIn.ScreenTimeMinutes != nil {
-			lines = append(lines, fmt.Sprintf("%s  %dm", theme.StyleHeader.Render("Screen Time"), *state.DailyCheckIn.ScreenTimeMinutes))
+			lines = append(lines, fmt.Sprintf("%s  %s", theme.StyleHeader.Render("Screen Time"), helperpkg.FormatCompactDurationMinutes(*state.DailyCheckIn.ScreenTimeMinutes)))
 		}
 		if state.DailyCheckIn.Notes != nil && *state.DailyCheckIn.Notes != "" {
 			lines = append(lines, "", theme.StyleHeader.Render("Notes"), truncate(*state.DailyCheckIn.Notes, max(20, width-8)))
 		}
 		if !countsForCheckInStreak(state.DailyCheckIn) {
-			lines = append(lines, "", theme.StyleDim.Render("This check-in was backfilled later, so it does not count toward the same-day streak."))
+			lines = append(lines, "", theme.StyleError.Render("Backfilled check-in"), theme.StyleDim.Render("Recorded later, so it does not count toward the same-day streak."))
 		}
 	}
 	lines = append(lines, wellbeingAccountabilityLines(theme, state)...)
@@ -111,6 +114,8 @@ func renderWellbeingCompactSummary(theme Theme, state ContentState, width, heigh
 	lines = append(lines, wellbeingCompactCards(theme, state)...)
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		lines = append(lines, theme.StyleDim.Render("No check-in recorded for this date"))
+	} else if !countsForCheckInStreak(state.DailyCheckIn) {
+		lines = append(lines, theme.StyleError.Render("Backfilled check-in"))
 	}
 	lines = append(lines, wellbeingCompactAccountabilityLines(theme, state)...)
 	lines = append(lines, wellbeingCompactRiskSnapshotLines(theme, state)...)
@@ -256,29 +261,29 @@ func wrapJoinedCards(cards []string, maxWidth int) []string {
 func wellbeingMoodLabel(state ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageMood != nil {
-			return fmt.Sprintf("avg %.1f/5", *state.MetricsRollup.AverageMood)
+			return fmt.Sprintf("7d avg %.1f/5", *state.MetricsRollup.AverageMood)
 		}
 		return "-"
 	}
-	return fmt.Sprintf("%d/5", state.DailyCheckIn.Mood)
+	return fmt.Sprintf("today %d/5", state.DailyCheckIn.Mood)
 }
 
 func wellbeingEnergyLabel(state ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageEnergy != nil {
-			return fmt.Sprintf("avg %.1f/5", *state.MetricsRollup.AverageEnergy)
+			return fmt.Sprintf("7d avg %.1f/5", *state.MetricsRollup.AverageEnergy)
 		}
 		return "-"
 	}
-	return fmt.Sprintf("%d/5", state.DailyCheckIn.Energy)
+	return fmt.Sprintf("today %d/5", state.DailyCheckIn.Energy)
 }
 
 func wellbeingSleepLabel(state ContentState) string {
 	if state.DailyCheckIn != nil && state.DailyCheckIn.SleepHours != nil {
-		return fmt.Sprintf("%.1fh", *state.DailyCheckIn.SleepHours)
+		return "today " + helperpkg.FormatCompactDurationHours(*state.DailyCheckIn.SleepHours)
 	}
 	if state.MetricsRollup != nil && state.MetricsRollup.AverageSleepHours != nil {
-		return fmt.Sprintf("avg %.1fh", *state.MetricsRollup.AverageSleepHours)
+		return "7d avg " + helperpkg.FormatCompactDurationHours(*state.MetricsRollup.AverageSleepHours)
 	}
 	return "-"
 }

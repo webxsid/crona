@@ -2,9 +2,11 @@ package views
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -67,7 +69,7 @@ func renderRollupProgressLine(theme Theme, state ContentState) string {
 	}
 	return fmt.Sprintf("%s  estimated %s  worked %s  status %s",
 		theme.StyleHeader.Render("Progress"),
-		theme.StyleNormal.Render(fmt.Sprintf("%dm", state.GoalProgress.TotalEstimateMinutes)),
+		theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(state.GoalProgress.TotalEstimateMinutes)),
 		theme.StyleNormal.Render(formatClock(state.GoalProgress.TotalActualSeconds)),
 		rollupProgressStyle(theme, state.GoalProgress.EstimateBias, status).Render(status),
 	)
@@ -77,7 +79,7 @@ func renderRollupEstimateBiasLine(theme Theme, state ContentState) string {
 	if state.GoalProgress == nil || state.GoalProgress.EstimatedItems == 0 {
 		return "Estimate Bias  no estimated work in this range"
 	}
-	delta := fmt.Sprintf("%+.0fm", state.GoalProgress.AverageDeltaMinutes)
+	delta := fmt.Sprintf("%+s", helperpkg.FormatCompactDurationMinutes(int(math.Round(state.GoalProgress.AverageDeltaMinutes))))
 	percent := fmt.Sprintf("%+.0f%%", state.GoalProgress.AverageDeltaPercent)
 	bias := strings.TrimSpace(state.GoalProgress.EstimateBias)
 	if bias == "" {

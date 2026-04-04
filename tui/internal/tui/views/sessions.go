@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -128,7 +129,7 @@ func sessionIssueCompactLines(theme Theme, activeIssue *api.IssueWithMeta, width
 		truncate(activeIssue.Title, maxLine),
 	)
 	if activeIssue.EstimateMinutes != nil && *activeIssue.EstimateMinutes > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("Estimate %dm", *activeIssue.EstimateMinutes)))
+		lines = append(lines, theme.StyleDim.Render("Estimate "+helperpkg.FormatCompactDurationMinutes(*activeIssue.EstimateMinutes)))
 	}
 	if activeIssue.Description != nil && strings.TrimSpace(*activeIssue.Description) != "" {
 		lines = append(lines, theme.StyleDim.Render("Desc  "+truncate(collapseSpace(*activeIssue.Description), maxLine)))
