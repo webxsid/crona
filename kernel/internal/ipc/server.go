@@ -27,15 +27,20 @@ type Server struct {
 	handler   Handler
 	logger    *runtime.Logger
 	listener  net.Listener
+	ctx       context.Context
+	cancel    context.CancelFunc
 	wg        sync.WaitGroup
 }
 
 func NewServer(transport, endpoint string, handler Handler, logger *runtime.Logger) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
 		transport: transport,
 		endpoint:  endpoint,
 		handler:   handler,
 		logger:    logger,
+		ctx:       ctx,
+		cancel:    cancel,
 	}
 }
 
@@ -51,15 +56,33 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Close() error {
-	if s.listener == nil {
-		return nil
+	if s.cancel != nil {
+		s.cancel()
 	}
-	err := s.listener.Close()
+	var err error
+	if s.listener != nil {
+		err = s.listener.Close()
+	}
 	s.wg.Wait()
-	if removeErr := localipc.CleanupEndpoint(s.endpoint); removeErr != nil && err == nil {
-		err = removeErr
+	if s.listener != nil {
+		if removeErr := localipc.CleanupEndpoint(s.endpoint); removeErr != nil && err == nil {
+			err = removeErr
+		}
 	}
 	return err
+}
+
+func (s *Server) requestContext() context.Context {
+	if s.ctx != nil {
+		return s.ctx
+	}
+	return context.Background()
+}
+
+func (s *Server) logError(msg string, err error) {
+	if s.logger != nil {
+		s.logger.Error(msg, err)
+	}
 }
 
 func (s *Server) acceptLoop() {
@@ -67,10 +90,10 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
+			if errors.Is(err, net.ErrClosed) || errors.Is(s.requestContext().Err(), context.Canceled) {
 				return
 			}
-			s.logger.Error("ipc accept failed", err)
+			s.logError("ipc accept failed", err)
 			continue
 		}
 
@@ -112,20 +135,20 @@ func (s *Server) handleConn(conn net.Conn) {
 				})
 				return
 			}
-			if err := streamHandler.Stream(context.Background(), req, writer); err != nil {
-				s.logger.Error("ipc event stream failed", err)
+			if err := streamHandler.Stream(s.requestContext(), req, writer); err != nil && !errors.Is(err, context.Canceled) {
+				s.logError("ipc event stream failed", err)
 			}
 			return
 		}
 
-		resp := s.handler.Handle(context.Background(), req)
+		resp := s.handler.Handle(s.requestContext(), req)
 		if err := writer.Encode(resp); err != nil {
-			s.logger.Error("ipc write failed", err)
+			s.logError("ipc write failed", err)
 			return
 		}
 	}
 
-	if err := scanner.Err(); err != nil {
-		s.logger.Error("ipc read failed", err)
+	if err := scanner.Err(); err != nil && !errors.Is(s.requestContext().Err(), context.Canceled) {
+		s.logError("ipc read failed", err)
 	}
 }

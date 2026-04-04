@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const defaultShutdownWait = 5 * time.Second
+
 type Client struct {
 	transport  string
 	endpoint   string
@@ -627,6 +629,26 @@ func (c *Client) PatchSetting(key sharedtypes.CoreSettingsKey, value any) error 
 
 func (c *Client) ShutdownKernel() error {
 	return c.mustOK(protocol.MethodKernelShutdown, nil)
+}
+
+func (c *Client) ShutdownKernelAndWait(timeout time.Duration) error {
+	if err := c.ShutdownKernel(); err != nil {
+		return err
+	}
+	if timeout <= 0 {
+		timeout = defaultShutdownWait
+	}
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if _, err := c.GetHealth(); err != nil {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	if _, err := c.GetHealth(); err != nil {
+		return nil
+	}
+	return fmt.Errorf("kernel shutdown timed out after %s", timeout)
 }
 
 func (c *Client) GetKernelInfo() (*KernelInfo, error) {

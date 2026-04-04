@@ -101,11 +101,6 @@ func Run(ctx context.Context) error {
 	if err := server.Start(); err != nil {
 		return fmt.Errorf("start ipc server: %w", err)
 	}
-	defer func() {
-		if err := server.Close(); err != nil {
-			logger.Error("close ipc server", err)
-		}
-	}()
 
 	if err := runtime.WriteKernelInfo(paths, info); err != nil {
 		return fmt.Errorf("write kernel info: %w", err)
@@ -113,6 +108,11 @@ func Run(ctx context.Context) error {
 	defer func() {
 		if err := runtime.ClearKernelInfo(paths); err != nil {
 			logger.Error("clear kernel info", err)
+		}
+	}()
+	defer func() {
+		if err := server.Close(); err != nil {
+			logger.Error("close ipc server", err)
 		}
 	}()
 

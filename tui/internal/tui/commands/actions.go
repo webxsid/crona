@@ -71,7 +71,7 @@ func DeleteDailyCheckIn(c *api.Client, date string) tea.Cmd {
 
 func ShutdownKernel(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
-		if err := c.ShutdownKernel(); err != nil {
+		if err := c.ShutdownKernelAndWait(5 * time.Second); err != nil {
 			logger.Errorf("ShutdownKernel: %v", err)
 			return ErrMsg{Err: err}
 		}
