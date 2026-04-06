@@ -3,25 +3,46 @@ package support
 import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/app"
+	layoutpkg "crona/tui/internal/tui/layout"
+	configview "crona/tui/internal/tui/views/config"
+	dailyview "crona/tui/internal/tui/views/daily"
 	"crona/tui/internal/tui/dialogs"
-	"crona/tui/internal/tui/views"
+	viewchrome "crona/tui/internal/tui/views/chrome"
+	issuesview "crona/tui/internal/tui/views/issues"
+	reportsview "crona/tui/internal/tui/views/reports"
+	rollupview "crona/tui/internal/tui/views/rollup"
+	scratchpadsview "crona/tui/internal/tui/views/scratchpads"
+	settingsview "crona/tui/internal/tui/views/settings"
+	supportview "crona/tui/internal/tui/views/support"
+	updatesview "crona/tui/internal/tui/views/updates"
+	awayview "crona/tui/internal/tui/views/away"
+	viewtypes "crona/tui/internal/tui/views/types"
+	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
-func Theme() views.Theme { return views.TestTheme() }
+func Theme() viewtypes.Theme { return layoutpkg.ViewTheme() }
 
-func RenderDaily(state views.ContentState) string     { return views.RenderDaily(Theme(), state) }
-func RenderDefault(state views.ContentState) string   { return views.RenderDefault(Theme(), state) }
-func RenderRollup(state views.ContentState) string    { return views.RenderRollup(Theme(), state) }
-func RenderWellbeing(state views.ContentState) string { return views.RenderWellbeing(Theme(), state) }
-func RenderReports(state views.ContentState) string   { return views.RenderReports(Theme(), state) }
-func RenderSettings(state views.ContentState) string  { return views.RenderSettings(Theme(), state) }
-func RenderConfig(state views.ContentState) string    { return views.RenderConfig(Theme(), state) }
-func RenderSupport(state views.ContentState) string   { return views.RenderSupport(Theme(), state) }
-func RenderUpdates(state views.ContentState) string   { return views.RenderContent(Theme(), state) }
-func RenderPaneBox(theme views.Theme, active bool, width, height int, content string) string {
-	return views.RenderPaneBox(theme, active, width, height, content)
+func RenderDaily(state viewtypes.ContentState) string   { return dailyview.Render(Theme(), state) }
+func RenderDefault(state viewtypes.ContentState) string { return issuesview.Render(Theme(), state) }
+func RenderRollup(state viewtypes.ContentState) string  { return rollupview.Render(Theme(), state) }
+func RenderWellbeing(state viewtypes.ContentState) string {
+	return wellbeingview.Render(Theme(), state)
+}
+func RenderReports(state viewtypes.ContentState) string  { return reportsview.Render(Theme(), state) }
+func RenderSettings(state viewtypes.ContentState) string { return settingsview.Render(Theme(), state) }
+func RenderConfig(state viewtypes.ContentState) string   { return configview.Render(Theme(), state) }
+func RenderSupport(state viewtypes.ContentState) string  { return supportview.Render(Theme(), state) }
+func RenderPaneBox(theme viewtypes.Theme, active bool, width, height int, content string) string {
+	return viewchrome.RenderPaneBox(theme, active, width, height, content)
+}
+func RenderUpdates(state viewtypes.ContentState) string {
+	return updatesview.Render(Theme(), state)
+}
+func RenderAway(state viewtypes.ContentState) string { return awayview.Render(Theme(), state) }
+func RenderScratchpads(state viewtypes.ContentState) string {
+	return scratchpadsview.Render(Theme(), state)
 }
 
 func NewDailyModel(width, height int) app.Model { return app.NewDailyRenderModel(width, height) }

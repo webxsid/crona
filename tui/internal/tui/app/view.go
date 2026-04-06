@@ -8,7 +8,8 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
-	"crona/tui/internal/tui/views"
+	viewchrome "crona/tui/internal/tui/views/chrome"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 )
 
 func (m Model) View() string {
@@ -51,7 +52,7 @@ func (m Model) layoutState() layoutpkg.State {
 			state.ContentState.Pane = ""
 		}
 	}
-	state.PaneActions = views.PaneActions(layoutpkg.ViewTheme(), views.ActionsState{
+	state.PaneActions = viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
 		ScratchpadOpen:         m.scratchpadOpen,
@@ -74,7 +75,7 @@ type layoutChromeState struct {
 	RepoName      string
 	StreamName    string
 	TimerState    string
-	HeaderState   views.HeaderState
+	HeaderState   viewchrome.HeaderState
 	GlobalActions []string
 }
 
@@ -93,8 +94,8 @@ func (m Model) layoutChromeState() layoutChromeState {
 	if m.timer != nil {
 		timerState = m.timer.State
 	}
-	protectedMode, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
-	headerState := views.HeaderState{
+	protectedMode, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	headerState := viewchrome.HeaderState{
 		Width:         m.width,
 		View:          string(m.view),
 		Elapsed:       m.elapsed,
@@ -110,7 +111,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 		StreamName:    stream,
 		TimerState:    timerState,
 		HeaderState:   headerState,
-		GlobalActions: views.GlobalActions(layoutpkg.ViewTheme(), views.ActionsState{
+		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
 			Pane:                   string(m.pane),
 			ScratchpadOpen:         m.scratchpadOpen,
@@ -149,20 +150,6 @@ func (m Model) mainContentWidth() int {
 
 func (m Model) isDevMode() bool {
 	return m.kernelInfo != nil && m.kernelInfo.Env == "Dev"
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 func (m Model) contentHeight() int {

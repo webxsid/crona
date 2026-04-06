@@ -8,7 +8,9 @@ import (
 	"crona/tui/internal/tui/dialogs"
 	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
-	"crona/tui/internal/tui/views"
+	viewchrome "crona/tui/internal/tui/views/chrome"
+	viewrenderer "crona/tui/internal/tui/views/renderer"
+	viewtypes "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
@@ -29,8 +31,8 @@ type State struct {
 	RepoName            string
 	StreamName          string
 	TimerActive         bool
-	HeaderState         views.HeaderState
-	ContentState        views.ContentState
+	HeaderState         viewchrome.HeaderState
+	ContentState        viewtypes.ContentState
 	DialogOpen          bool
 	DialogState         dialogs.State
 	HelpOpen            bool
@@ -46,8 +48,8 @@ type State struct {
 	GlobalActions       []string
 }
 
-func ViewTheme() views.Theme {
-	return views.Theme{
+func ViewTheme() viewtypes.Theme {
+	return viewtypes.Theme{
 		ColorBlue: chrome.ColorBlue, ColorCyan: chrome.ColorCyan, ColorGreen: chrome.ColorGreen, ColorMagenta: chrome.ColorMagenta,
 		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
 		StyleActive: chrome.StyleActive, StyleInactive: chrome.StyleInactive, StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim,
@@ -145,7 +147,7 @@ func renderHeader(state State) string {
 		mode,
 	)
 	lines := []string{contextLine}
-	if secondary := views.HeaderSessionLine(ViewTheme(), state.HeaderState); secondary != "" {
+	if secondary := viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState); secondary != "" {
 		lines = append(lines, secondary)
 	}
 	return lipgloss.NewStyle().
@@ -159,7 +161,7 @@ func renderHeader(state State) string {
 func renderBody(state State, height int) string {
 	sidebarWidth, _ := bodyWidths(state.Width)
 	sidebar := renderSidebar(state, sidebarWidth, height)
-	content := views.RenderContent(ViewTheme(), state.ContentState)
+	content := viewrenderer.RenderContent(ViewTheme(), state.ContentState)
 	return lipgloss.NewStyle().
 		Width(state.Width).
 		Render(lipgloss.JoinHorizontal(lipgloss.Top, sidebar, content))
@@ -535,18 +537,4 @@ func clipViewportString(s string, width, height int) string {
 		lines[i] = padRight(lines[i], width)
 	}
 	return strings.Join(lines, "\n")
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

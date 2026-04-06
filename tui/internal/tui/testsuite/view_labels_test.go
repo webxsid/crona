@@ -6,13 +6,14 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 	"crona/tui/internal/tui/views"
 
 	"crona/tui/internal/tui/testsuite/support"
 )
 
 func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
-	rows := views.SettingsRows(&sharedtypes.CoreSettings{
+	rows := settingsmeta.Rows(&sharedtypes.CoreSettings{
 		BreaksEnabled:         true,
 		LongBreakEnabled:      false,
 		AutoStartBreaks:       true,

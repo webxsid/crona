@@ -9,7 +9,9 @@ import (
 	"crona/tui/internal/api"
 	dialogs "crona/tui/internal/tui/dialogs"
 	"crona/tui/internal/tui/testsuite/support"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	"crona/tui/internal/tui/views"
+	viewrenderer "crona/tui/internal/tui/views/renderer"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,7 +20,7 @@ import (
 )
 
 func TestPaneActionLineWrapsInsteadOfDroppingActions(t *testing.T) {
-	rendered := views.RenderPaneActionLine(
+	rendered := viewchrome.RenderPaneActionLine(
 		support.Theme(),
 		"",
 		20,
@@ -155,7 +157,7 @@ func TestAwayViewShowsProtectedModeBlankState(t *testing.T) {
 		RestModeDetail:  "Away mode is active.",
 	}
 
-	rendered := views.RenderContent(support.Theme(), state)
+	rendered := viewrenderer.RenderContent(support.Theme(), state)
 	for _, want := range []string{"Away", "Enjoy your break", "Away mode is active.", "[w]", "disable away"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected away view to contain %q, got %q", want, rendered)
@@ -180,7 +182,7 @@ func TestAwayViewHidesDisableActionOnConfiguredRestDay(t *testing.T) {
 		RestModeDetail:  "This is one of your configured rest days.",
 	}
 
-	rendered := views.RenderContent(support.Theme(), state)
+	rendered := viewrenderer.RenderContent(support.Theme(), state)
 	for _, want := range []string{"Take the day lightly", "configured rest days"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected away view to contain %q, got %q", want, rendered)
@@ -485,7 +487,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 }
 
 func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
-	actions := views.ContextualActions(support.Theme(), views.ActionsState{
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View: "reports",
 		Pane: "export_reports",
 	})
@@ -498,7 +500,7 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 }
 
 func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
-	actions := views.GlobalActions(support.Theme(), views.ActionsState{
+	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:          "daily",
 		Pane:          "issues",
 		UpdateVisible: true,
@@ -512,7 +514,7 @@ func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
 }
 
 func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
-	actions := views.GlobalActions(support.Theme(), views.ActionsState{
+	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:        "daily",
 		Pane:        "issues",
 		IsBetaBuild: true,
@@ -526,7 +528,7 @@ func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
 }
 
 func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
-	actions := views.ContextualActions(support.Theme(), views.ActionsState{
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:                   "updates",
 		UpdateInstallAvailable: true,
 	})
@@ -601,7 +603,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 }
 
 func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
-	actions := views.ContextualActions(support.Theme(), views.ActionsState{
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")

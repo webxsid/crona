@@ -20,7 +20,7 @@ import (
 	appruntime "crona/tui/internal/tui/runtime"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
-	"crona/tui/internal/tui/views"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -444,7 +444,7 @@ func (m Model) inputState() inputpkg.State {
 	protected := false
 	activeView := m.view
 	activePane := m.pane
-	if nextProtected, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
+	if nextProtected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
 		protected = true
 		if activeView != ViewReports && activeView != ViewSessionHistory {
 			activeView = ViewAway
@@ -898,7 +898,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		CurrentWellbeingDate: m.currentWellbeingDate(),
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
 	}
-	dialogSnapshot.ProtectedModeActive, _, _ = views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	dialogSnapshot.ProtectedModeActive, _, _ = viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
 	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
 		dialogSnapshot.SelectedIssueID = issue.ID
 		dialogSnapshot.SelectedStreamID = issue.StreamID
@@ -926,7 +926,7 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 			return next, next.setStatus("Active session view is only available while a timer is running", true)
 		}
 		if target == ViewAway {
-			protected, _, _ := views.ProtectedRestMode(next.settings, time.Now().Format("2006-01-02"))
+			protected, _, _ := viewruntime.ProtectedRestMode(next.settings, time.Now().Format("2006-01-02"))
 			if !protected {
 				return next, next.setStatus("Away view is only available when away mode or rest protection is active", true)
 			}

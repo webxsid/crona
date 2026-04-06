@@ -55,20 +55,6 @@ func fallback(v, def string) string {
 	return v
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func appendDialogFooter(theme Theme, state State, rows []string, hint string) []string {
 	if strings.TrimSpace(state.ErrorMessage) != "" {
 		rows = append(rows, "", theme.StyleError.Render(state.ErrorMessage))

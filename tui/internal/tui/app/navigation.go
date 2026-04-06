@@ -13,7 +13,8 @@ import (
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
-	"crona/tui/internal/tui/views"
+	issuecore "crona/tui/internal/tui/views/issuecore"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -23,7 +24,7 @@ func nextView(current View, dir int) View {
 }
 
 func (m Model) availableViews() []View {
-	if protected, _, _ := views.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
+	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
 		return []View{ViewAway, ViewReports, ViewSessionHistory}
 	}
 	ordered := uistate.ViewOrder()
@@ -79,7 +80,7 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 	if m.view != ViewDefault || m.pane != PaneIssues {
 		return
 	}
-	openIndices, completedIndices := views.SplitDefaultIssueIndices(m.allIssues, m.filters[PaneIssues], m.settings)
+	openIndices, completedIndices := issuecore.SplitDefaultIssueIndices(m.allIssues, m.filters[PaneIssues], m.settings)
 	switch section {
 	case DefaultIssueSectionOpen:
 		if len(openIndices) > 0 {

@@ -8,7 +8,8 @@ import (
 	configitems "crona/tui/internal/tui/configitems"
 	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
-	"crona/tui/internal/tui/views"
+	issuecore "crona/tui/internal/tui/views/issuecore"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 )
 
 type Snapshot struct {
@@ -152,7 +153,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 	case uistate.PaneIssues:
 		if s.View == uistate.ViewDefault {
 			scoped := DefaultScopedIssues(s)
-			ordered := views.PrioritizedDefaultIssueIndices(scoped, s.Filters[pane], s.Settings)
+			ordered := issuecore.PrioritizedDefaultIssueIndices(scoped, s.Filters[pane], s.Settings)
 			items = make([]string, 0, len(ordered))
 			for _, idx := range ordered {
 				issue := scoped[idx]
@@ -241,7 +242,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			items = append(items, fmt.Sprintf("%s %s.%s %s", ts, op.Entity, op.Action, op.EntityID))
 		}
 	case uistate.PaneSettings:
-		items = views.SettingsItemLabels(s.Settings)
+		items = settingsmeta.ItemLabels(s.Settings)
 	default:
 		items = nil
 	}
@@ -255,7 +256,7 @@ func FilteredIndices(s Snapshot, pane uistate.Pane) []int {
 	}
 	var indices []int
 	if pane == uistate.PaneIssues && s.View == uistate.ViewDefault {
-		indices = views.PrioritizedDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
+		indices = issuecore.PrioritizedDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
 	} else {
 		items := PaneItems(s, pane)
 		query := strings.TrimSpace(strings.ToLower(s.Filters[pane]))
