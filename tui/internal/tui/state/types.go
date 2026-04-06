@@ -36,6 +36,8 @@ const (
 	PaneExportReports Pane = "export_reports"
 	PaneConfig        Pane = "config"
 	PaneSettings      Pane = "settings"
+	PaneWellbeingSummary Pane = "wellbeing_summary"
+	PaneWellbeingTrends  Pane = "wellbeing_trends"
 )
 
 type DefaultIssueSection string
@@ -57,7 +59,7 @@ var viewPanes = map[View][]Pane{
 	ViewSessionActive:  {},
 	ViewScratch:        {PaneScratchpads},
 	ViewOps:            {PaneOps},
-	ViewWellbeing:      {},
+	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends},
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
@@ -75,7 +77,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewSessionActive:  PaneIssues,
 	ViewScratch:        PaneScratchpads,
 	ViewOps:            PaneOps,
-	ViewWellbeing:      PaneIssues,
+	ViewWellbeing:      PaneWellbeingSummary,
 	ViewReports:        PaneExportReports,
 	ViewConfig:         PaneConfig,
 	ViewSettings:       PaneSettings,

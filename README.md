@@ -38,7 +38,7 @@ crona completion fish
 
 - `stable` is the preferred channel for general users.
 - `beta` is for pre-release testing and faster iteration.
-- `v1.0.0-beta.1` starts the `1.0.0` prerelease track for tester validation before the first stable release.
+- `v1.0.0-beta.2` is the current `1.0.0` prerelease build for tester validation before the first stable release.
 
 ## Documentation
 

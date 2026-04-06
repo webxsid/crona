@@ -6,7 +6,20 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.0-beta.1` starts the `1.0.0` prerelease track for tester validation before the first stable release.
+- `v1.0.0-beta.2` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+
+## [1.0.0-beta.2] - 2026-04-06
+
+### Added
+- The wellbeing dashboard now exposes selectable summary and trends panes, so larger datasets can be scrolled with `j/k` and the arrow keys instead of clipping in place.
+
+### Changed
+- The TUI view layer has been fully refactored into first-class `views/<view>/` packages, with each migrated view using a dedicated `render.go` entrypoint and smaller per-view support files.
+- Shared view concerns now live in dedicated packages such as `views/chrome`, `views/runtime`, `views/issuecore`, `views/sessionmeta`, `views/settingsmeta`, and `views/contextmeta`, reducing the old root `views` package to a thin type/export surface.
+- Wellbeing large-screen rendering now treats summary and trends as independent panes with active-pane borders and scroll indicators for overflow content.
+
+### Fixed
+- Wellbeing long-form sections no longer lose content behind pane-box clipping when the selected date has dense check-in, accountability, heatmap, or burnout data.
 
 ## [1.0.0-beta.1] - 2026-04-05
 

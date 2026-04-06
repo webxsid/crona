@@ -21,6 +21,7 @@ import (
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -64,6 +65,8 @@ const (
 	PaneExportReports = uistate.PaneExportReports
 	PaneConfig        = uistate.PaneConfig
 	PaneSettings      = uistate.PaneSettings
+	PaneWellbeingSummary = uistate.PaneWellbeingSummary
+	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
@@ -307,6 +310,8 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneExportReports: 0,
 			PaneConfig:        0,
 			PaneSettings:      0,
+			PaneWellbeingSummary: 0,
+			PaneWellbeingTrends:  0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:         "",
@@ -320,6 +325,8 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneExportReports: "",
 			PaneConfig:        "",
 			PaneSettings:      "",
+			PaneWellbeingSummary: "",
+			PaneWellbeingTrends:  "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
@@ -374,6 +381,12 @@ func (m *Model) listLen(p Pane) int {
 			return 0
 		}
 		return len(m.dashboardWindow.Days)
+	}
+	if p == PaneWellbeingSummary || p == PaneWellbeingTrends {
+		snapshot := m.selectionSnapshot()
+		activeIssue := selectionpkg.ActiveIssue(snapshot)
+		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
+		return wellbeingview.PaneLineCount(state, string(p))
 	}
 	snapshot := m.selectionSnapshot()
 	return len(selectionpkg.FilteredIndices(snapshot, p))
