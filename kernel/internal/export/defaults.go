@@ -17,6 +17,22 @@ Generated at {{generatedAt}}
 {{#if checkIn.screenTime}}- Screen time: {{checkIn.screenTime}}{{/if}}
 {{#if metrics.burnout}}- Burnout: {{metrics.burnout.level}} ({{metrics.burnout.score}}){{/if}}
 
+{{#if plan}}
+## Plan Accountability
+
+- Planned: {{summary.plannedCount}}
+- Completed: {{summary.planCompletedCount}}
+- Failed: {{summary.planFailedCount}}
+- Abandoned: {{summary.planAbandonedCount}}
+- Pending rollback: {{summary.planPendingRollbackCount}}
+- Accountability score: {{summary.accountabilityScore}}
+- Backlog pressure: {{summary.backlogPressure}}
+- Delayed issues: {{summary.delayedIssueCount}}
+- High-risk issues: {{summary.highRiskIssueCount}}
+{{#if summary.avgDelayDays}}- Avg delay days: {{summary.avgDelayDays}}{{/if}}
+{{#if summary.maxDelayDays}}- Max delay days: {{summary.maxDelayDays}}{{/if}}
+{{/if}}
+
 {{#if highlights}}
 ## Highlights
 
@@ -118,6 +134,9 @@ Generated at {{generatedAt}}
 
 - Status: {{status}}
 - Worked / estimate: {{workedEstimate}}
+{{#if planStatus}}- Plan status: {{planStatus}}{{/if}}
+{{#if planFailureReason}}- Failure reason: {{planFailureReason}}{{/if}}
+{{#if planCurrentDelayedDays}}- Delayed by: {{planCurrentDelayedDays}} day(s){{/if}}
 {{/each}}
 {{/if}}
 {{/each}}
@@ -155,6 +174,16 @@ const fallbackDailyReportPDFTemplate = `<!doctype html>
       <div class="metric-label">Worked / estimate</div>
       <div class="metric-value">{{summary.workedEstimate}}</div>
     </article>
+    {{#if plan}}
+    <article class="metric-card">
+      <div class="metric-label">Accountability</div>
+      <div class="metric-value">{{summary.accountabilityScore}}</div>
+    </article>
+    <article class="metric-card">
+      <div class="metric-label">Failed / delayed</div>
+      <div class="metric-value">{{summary.planFailedCount}} / {{summary.delayedIssueCount}}</div>
+    </article>
+    {{/if}}
   </section>
 
   {{#if highlights}}
@@ -172,6 +201,19 @@ const fallbackDailyReportPDFTemplate = `<!doctype html>
     <ul class="bullet-list">
       {{#each risks}}<li>{{this}}</li>{{/each}}
     </ul>
+  </section>
+  {{/if}}
+
+  {{#if plan}}
+  <section class="section">
+    <h2>Plan Accountability</h2>
+    <div class="row"><span>Planned</span><span>{{summary.plannedCount}}</span></div>
+    <div class="row"><span>Completed</span><span>{{summary.planCompletedCount}}</span></div>
+    <div class="row"><span>Failed</span><span>{{summary.planFailedCount}}</span></div>
+    <div class="row"><span>Pending rollback</span><span>{{summary.planPendingRollbackCount}}</span></div>
+    <div class="row"><span>Delayed issues</span><span>{{summary.delayedIssueCount}}</span></div>
+    <div class="row"><span>High-risk issues</span><span>{{summary.highRiskIssueCount}}</span></div>
+    <div class="row"><span>Backlog pressure</span><span>{{summary.backlogPressure}}</span></div>
   </section>
   {{/if}}
 
@@ -248,6 +290,17 @@ Top-level variables:
 - {{summary.habitsCompletedCount}}
 - {{summary.habitsPendingCount}}
 - {{summary.habitCompletion}}
+- {{summary.plannedCount}}
+- {{summary.planCompletedCount}}
+- {{summary.planFailedCount}}
+- {{summary.planAbandonedCount}}
+- {{summary.planPendingRollbackCount}}
+- {{summary.accountabilityScore}}
+- {{summary.backlogPressure}}
+- {{summary.delayedIssueCount}}
+- {{summary.highRiskIssueCount}}
+- {{summary.avgDelayDays}}
+- {{summary.maxDelayDays}}
 - {{dayHealth}}
 - {{#each highlights}} ... {{/each}}
 - {{#each risks}} ... {{/each}}
@@ -268,6 +321,12 @@ Nested issue groups for the default template:
       - {{workedSeconds}}
       - {{workedTime}}
       - {{workedEstimate}}
+      - {{planStatus}}
+      - {{planFailureReason}}
+      - {{planPendingFailureReason}}
+      - {{planCurrentDelayedDays}}
+      - {{planMaxDelayedDays}}
+      - {{planFailScore}}
 
 Nested habit groups for the default template:
 - {{#each habitRepos}} ... {{/each}}

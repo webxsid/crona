@@ -216,6 +216,7 @@ const dailyVisualMarkdownTemplate = `# ✨ Daily Pulse — {{date}}
 - Issues: {{summary.issueDoneCount}} ✅  {{summary.issueActiveCount}} 🔄  {{summary.issueBlockedCount}} ⛔
 - Habits: {{summary.habitsCompletedCount}} / {{summary.habitsDueCount}}
 {{#if metrics.burnout}}- Burnout: {{metrics.burnout.level}} ({{metrics.burnout.score}}){{/if}}
+{{#if plan}}- Accountability: {{summary.accountabilityScore}} · failed {{summary.planFailedCount}} · delayed {{summary.delayedIssueCount}}{{/if}}
 
 {{#if highlights}}
 ## 🌟 Wins
@@ -277,6 +278,7 @@ Generated at {{generatedAt}}
 - Active issues: {{summary.issueActiveCount}}
 - Habits: {{summary.habitsCompletedCount}} / {{summary.habitsDueCount}}
 {{#if checkIn}}- Mood / energy: {{checkIn.mood}} / {{checkIn.energy}}{{/if}}
+{{#if plan}}- Accountability: {{summary.accountabilityScore}} (failed {{summary.planFailedCount}}, delayed {{summary.delayedIssueCount}}){{/if}}
 
 {{#if highlights}}
 ## Highlights
@@ -290,6 +292,16 @@ Generated at {{generatedAt}}
 {{#each risks}}
 - {{this}}
 {{/each}}
+{{/if}}
+
+{{#if plan}}
+## Plan Accountability
+- Planned: {{summary.plannedCount}}
+- Completed: {{summary.planCompletedCount}}
+- Failed: {{summary.planFailedCount}}
+- Pending rollback: {{summary.planPendingRollbackCount}}
+- Backlog pressure: {{summary.backlogPressure}}
+- High-risk issues: {{summary.highRiskIssueCount}}
 {{/if}}
 
 {{#if checkIn}}
@@ -337,6 +349,7 @@ const dailyBriefPDFTemplate = `<!doctype html>
 <article class="metric-card"><div class="metric-label">Work</div><div class="metric-value">{{summary.workedEstimate}}</div></article>
 <article class="metric-card"><div class="metric-label">Issues</div><div class="metric-value">{{summary.issueDoneCount}} / {{summary.totalIssues}}</div></article>
 <article class="metric-card"><div class="metric-label">Habits</div><div class="metric-value">{{summary.habitsCompletedCount}} / {{summary.habitsDueCount}}</div></article>
+{{#if plan}}<article class="metric-card"><div class="metric-label">Accountability</div><div class="metric-value">{{summary.accountabilityScore}}</div></article>{{/if}}
 </section>
 {{#if highlights}}<section class="section"><h2>Highlights</h2><ul class="bullet-list">{{#each highlights}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
 {{#if risks}}<section class="section"><h2>Watchouts</h2><ul class="bullet-list">{{#each risks}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
@@ -351,6 +364,7 @@ const dailyVisualPDFTemplate = `<!doctype html>
 <article class="metric-card emphasis"><div class="metric-label">Work / estimate</div><div class="metric-value">{{summary.workedEstimate}}</div></article>
 <article class="metric-card"><div class="metric-label">Issues</div><div class="metric-value">{{summary.issueDoneCount}} ✅ / {{summary.issueActiveCount}} 🔄</div></article>
 <article class="metric-card"><div class="metric-label">Habits</div><div class="metric-value">{{summary.habitsCompletedCount}} / {{summary.habitsDueCount}}</div></article>
+{{#if plan}}<article class="metric-card"><div class="metric-label">Failed / delayed</div><div class="metric-value">{{summary.planFailedCount}} / {{summary.delayedIssueCount}}</div></article>{{/if}}
 </section>
 {{#if highlights}}<section class="section"><h2>🌟 Wins</h2><ul class="bullet-list">{{#each highlights}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
 {{#if risks}}<section class="section"><h2>🚧 Friction</h2><ul class="bullet-list">{{#each risks}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
@@ -363,9 +377,11 @@ const dailyDeepPDFTemplate = `<!doctype html>
 <section class="metric-grid">
 <article class="metric-card"><div class="metric-label">Health</div><div class="metric-value">{{dayHealth}}</div></article>
 <article class="metric-card"><div class="metric-label">Variance</div><div class="metric-value">{{summary.varianceTime}}</div></article>
+{{#if plan}}<article class="metric-card"><div class="metric-label">Accountability</div><div class="metric-value">{{summary.accountabilityScore}}</div></article>{{/if}}
 </section>
 {{#if highlights}}<section class="section"><h2>Highlights</h2><ul class="bullet-list">{{#each highlights}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
 {{#if risks}}<section class="section"><h2>Risks</h2><ul class="bullet-list">{{#each risks}}<li>{{this}}</li>{{/each}}</ul></section>{{/if}}
+{{#if plan}}<section class="section"><h2>Plan Accountability</h2><div class="row"><span>Failed</span><span>{{summary.planFailedCount}}</span></div><div class="row"><span>Delayed issues</span><span>{{summary.delayedIssueCount}}</span></div><div class="row"><span>Backlog pressure</span><span>{{summary.backlogPressure}}</span></div></section>{{/if}}
 <section class="section"><h2>Issues</h2>{{#each repos}}<article class="group"><h3>{{name}}</h3>{{#each streams}}<div class="subgroup"><h4>{{name}}</h4>{{#each completedIssues}}<div class="row row-good"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}{{#each activeIssues}}<div class="row"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}{{#each attentionIssues}}<div class="row row-warn"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}</div>{{/each}}</article>{{/each}}</section>
 </body></html>`
 

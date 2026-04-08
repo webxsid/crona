@@ -17,6 +17,7 @@ import (
 	"crona/kernel/internal/updatecheck"
 	"crona/shared/config"
 	"crona/shared/localipc"
+	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 )
@@ -80,17 +81,18 @@ func Run(ctx context.Context) error {
 	}
 
 	info := sharedtypes.KernelInfo{
-		PID:            os.Getpid(),
-		Transport:      paths.Transport,
-		Endpoint:       paths.Endpoint,
-		SocketPath:     paths.SocketPath,
-		Token:          "",
-		StartedAt:      startedAt,
-		ScratchDir:     paths.ScratchDir,
-		Env:            appEnv.Mode,
-		ExecutablePath: executablePath(),
-		RunningChannel: versionpkg.RunningChannel(),
-		RunningIsBeta:  versionpkg.IsBetaRelease(),
+		PID:             os.Getpid(),
+		Transport:       paths.Transport,
+		Endpoint:        paths.Endpoint,
+		SocketPath:      paths.SocketPath,
+		ProtocolVersion: protocol.Version,
+		Token:           "",
+		StartedAt:       startedAt,
+		ScratchDir:      paths.ScratchDir,
+		Env:             appEnv.Mode,
+		ExecutablePath:  executablePath(),
+		RunningChannel:  versionpkg.RunningChannel(),
+		RunningIsBeta:   versionpkg.IsBetaRelease(),
 	}
 
 	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater, alerts), logger)

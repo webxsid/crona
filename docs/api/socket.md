@@ -71,6 +71,8 @@ Use these files as the canonical contract:
 - The kernel IPC surface is shared across Crona clients.
 - It is intentionally documented because the project is open source.
 - Before `1.0.0`, consumers should expect the shared Go types and method constants to be the source of truth over any prose doc.
+- GUI compatibility should be checked against `kernel.info.get -> protocolVersion`.
+- `protocolVersion` is independent from the Crona release version and only changes when the local IPC contract or its client-visible semantics change.
 
 ## RPC Methods
 
@@ -87,7 +89,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
 | `health.get` | `dto.Empty` | health status object | Kernel health and readiness. |
-| `kernel.info.get` | `dto.Empty` | kernel info object | Runtime version, transport, endpoint, install metadata. |
+| `kernel.info.get` | `dto.Empty` | kernel info object | Runtime metadata, transport, endpoint, install metadata, and `protocolVersion`. |
 | `kernel.shutdown` | `dto.Empty` | `dto.OKResponse` | Graceful local shutdown. |
 | `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local kernel. |
 | `kernel.dev.seed` | `dto.Empty` | `dto.OKResponse` | Dev-only sample data seed. |

@@ -860,18 +860,19 @@ type Health struct {
 }
 
 type KernelInfo struct {
-	PID            int           `json:"pid"`
-	Port           int           `json:"port,omitempty"`
-	Transport      string        `json:"transport,omitempty"`
-	Endpoint       string        `json:"endpoint,omitempty"`
-	SocketPath     string        `json:"socketPath,omitempty"`
-	Token          string        `json:"token"`
-	StartedAt      string        `json:"startedAt"`
-	ScratchDir     string        `json:"scratchDir"`
-	Env            string        `json:"env"`
-	ExecutablePath string        `json:"executablePath,omitempty"`
-	RunningChannel UpdateChannel `json:"runningChannel"`
-	RunningIsBeta  bool          `json:"runningIsBeta"`
+	PID             int           `json:"pid"`
+	Port            int           `json:"port,omitempty"`
+	Transport       string        `json:"transport,omitempty"`
+	Endpoint        string        `json:"endpoint,omitempty"`
+	SocketPath      string        `json:"socketPath,omitempty"`
+	ProtocolVersion string        `json:"protocolVersion"`
+	Token           string        `json:"token"`
+	StartedAt       string        `json:"startedAt"`
+	ScratchDir      string        `json:"scratchDir"`
+	Env             string        `json:"env"`
+	ExecutablePath  string        `json:"executablePath,omitempty"`
+	RunningChannel  UpdateChannel `json:"runningChannel"`
+	RunningIsBeta   bool          `json:"runningIsBeta"`
 }
 
 type AlertRequest struct {
