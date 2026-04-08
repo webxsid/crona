@@ -11,13 +11,23 @@ Release channel policy:
 ## [1.0.0-beta.3] - 2026-04-08
 
 ### Added
+- Dedicated `Alerts` workspace view for notification delivery settings, sound preset selection, backend capability visibility, test actions, and scheduled reminder management.
+- Rich kernel-owned alerts layer with structured alert requests, bundled alert sounds, bundled alert branding assets, and OS-specific local delivery backends.
+- Scheduled local reminder rules for alerts, including check-in reminders with create, edit, enable/disable, and delete flows in the TUI.
 - Kernel info now exposes an independent `protocolVersion` so future GUIs can validate IPC compatibility without relying on the app release version.
 - Daily report exports now surface plan accountability and failure signals more explicitly, including failed-count, accountability score, delayed/high-risk issue metrics, and failed-plan issue details in the default templates.
 - The main TUI header now shows the running app version on the right side.
 
 ### Changed
-- Alert and PDF renderer behavior is now documented more clearly across install, development, concepts, and socket API docs.
+- Utility navigation is now grouped under a `SYSTEM` sidebar section, bringing `Settings`, `Alerts`, `Updates`, and `Support` together.
+- Alerts and reminder behavior is now documented more clearly across install, development, concepts, and socket API docs.
+- PDF renderer behavior and required local tooling are now documented more clearly across install, development, and socket API docs.
 - The Alerts view now focuses on the active backend and capability support instead of advertising backend fallback chains.
+- Daily export templates and presets now reflect the current accountability model instead of leaving those newer plan/failure signals implicit in the data only.
+
+### Fixed
+- Session-history detail overlays now open the amend dialog correctly from `[e]` instead of dropping the dialog state during the overlay handoff.
+- Alerts view selection now clamps correctly to visible selectable rows instead of running past the end of the reminder/backend sections.
 
 ### Removed
 - macOS alert delivery no longer includes the NotifiCLI-specific backend path; supported notification helpers are now documented and implemented as `terminal-notifier` with `osascript` fallback.
