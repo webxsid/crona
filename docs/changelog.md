@@ -6,7 +6,21 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.0-beta.2` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+- `v1.0.0-beta.3` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+
+## [1.0.0-beta.3] - 2026-04-08
+
+### Added
+- Kernel info now exposes an independent `protocolVersion` so future GUIs can validate IPC compatibility without relying on the app release version.
+- Daily report exports now surface plan accountability and failure signals more explicitly, including failed-count, accountability score, delayed/high-risk issue metrics, and failed-plan issue details in the default templates.
+- The main TUI header now shows the running app version on the right side.
+
+### Changed
+- Alert and PDF renderer behavior is now documented more clearly across install, development, concepts, and socket API docs.
+- The Alerts view now focuses on the active backend and capability support instead of advertising backend fallback chains.
+
+### Removed
+- macOS alert delivery no longer includes the NotifiCLI-specific backend path; supported notification helpers are now documented and implemented as `terminal-notifier` with `osascript` fallback.
 
 ## [1.0.0-beta.2] - 2026-04-06
 

@@ -2,7 +2,6 @@ package notify
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -19,14 +18,9 @@ func detectAlertStatus(paths runtimepkg.Paths) sharedtypes.AlertStatus {
 	}
 	switch runtime.GOOS {
 	case "darwin":
-		status.NotificationOptions = []string{"notificli", "terminal-notifier", "osascript"}
+		status.NotificationOptions = []string{"terminal-notifier", "osascript"}
 		status.SoundOptions = []string{"afplay"}
-		if commandAvailable("notificli") {
-			status.NotificationsAvailable = true
-			status.NotificationBackend = "notificli"
-			status.SubtitleSupported = true
-			status.IconSupported = true
-		} else if _, err := exec.LookPath("terminal-notifier"); err == nil {
+		if _, err := exec.LookPath("terminal-notifier"); err == nil {
 			status.NotificationsAvailable = true
 			status.NotificationBackend = "terminal-notifier"
 			status.SubtitleSupported = true
@@ -94,18 +88,6 @@ func AvailableSoundPresets() []sharedtypes.AlertSoundPreset {
 func sendAlertNotification(status sharedtypes.AlertStatus, req sharedtypes.AlertRequest) error {
 	switch runtime.GOOS {
 	case "darwin":
-		if status.NotificationBackend == "notificli" {
-			args := []string{"-title", req.Title, "-message", req.Body}
-			if req.Subtitle != "" {
-				args = append(args, "-subtitle", req.Subtitle)
-			}
-			if req.IconEnabled {
-				if app := macOSNotifierAppRef(); app != "" {
-					args = append(args, "-app", app)
-				}
-			}
-			return runCommand("notificli", args...)
-		}
 		if status.NotificationBackend == "terminal-notifier" {
 			args := []string{"-title", req.Title, "-message", req.Body}
 			if req.Subtitle != "" {
@@ -233,32 +215,6 @@ func powerShellExecutable() string {
 		return "powershell"
 	}
 	return "powershell"
-}
-
-func macOSNotifierAppRef() string {
-	exe, err := os.Executable()
-	if err == nil {
-		clean := filepath.Clean(exe)
-		if idx := strings.Index(clean, ".app/"); idx >= 0 {
-			return clean[:idx+4]
-		}
-	}
-	for _, candidate := range []string{
-		"/Applications/Crona.app",
-		filepath.Join(homeDir(), "Applications", "Crona.app"),
-	} {
-		if candidate != "" {
-			if info, err := os.Stat(candidate); err == nil && info.IsDir() {
-				return candidate
-			}
-		}
-	}
-	return ""
-}
-
-func homeDir() string {
-	home, _ := os.UserHomeDir()
-	return home
 }
 
 func linuxUrgency(value sharedtypes.AlertUrgency) string {

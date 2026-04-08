@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/tui/chrome"
 	"crona/tui/internal/tui/dialogs"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -146,6 +147,16 @@ func renderHeader(state State) string {
 		chrome.StyleDim.Render("stream:"), chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
 		mode,
 	)
+	versionLabel := chrome.StyleDim.Render("version:") + " " + chrome.StyleHeader.Render(versionpkg.Current())
+	contextWidth := ansi.StringWidth(contextLine)
+	versionWidth := ansi.StringWidth(versionLabel)
+	if contextWidth+versionWidth+3 <= state.Width {
+		contextLine += strings.Repeat(" ", state.Width-contextWidth-versionWidth) + versionLabel
+	} else {
+		contextLine = helperpkg.Truncate(contextLine, max(20, state.Width-versionWidth-3))
+		gap := max(1, state.Width-ansi.StringWidth(contextLine)-versionWidth)
+		contextLine += strings.Repeat(" ", gap) + versionLabel
+	}
 	lines := []string{contextLine}
 	if secondary := viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState); secondary != "" {
 		lines = append(lines, secondary)

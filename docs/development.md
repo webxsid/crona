@@ -118,6 +118,38 @@ go test ./tui/internal/tui/... ./tui/internal/api
 go test ./cli/...
 ```
 
+## Notifications And Alerts In Development
+
+The kernel owns alert delivery. Running the TUI alone is not enough for scheduled reminders; the local kernel must stay up.
+
+Current backend expectations by OS:
+
+- macOS: `terminal-notifier`, fallback `osascript`, sound via `afplay`
+- Linux: `notify-send`, sound via `paplay`, `aplay`, `play`, or `canberra-gtk-play`
+- Windows: `BurntToast` preferred, fallback PowerShell toast delivery
+
+The TUI `Alerts` view is the easiest smoke-test surface:
+
+- `Test Notification`
+- `Test Sound`
+- create a check-in reminder for a near-future time
+
+## PDF Rendering In Development
+
+The export layer uses two PDF paths:
+
+- daily/weekly narrative PDF: `weasyprint`
+- repo/stream/issue-rollup PDF: `pandoc` plus `tectonic`, `weasyprint`, `wkhtmltopdf`, `xelatex`, or `pdflatex`
+
+Useful local checks:
+
+```bash
+go test ./kernel/internal/export
+go test ./kernel/internal/... ./shared/... ./tui/internal/api
+```
+
+If renderer tooling is missing, markdown export should still work and the runtime asset status should mark PDF rendering as unavailable.
+
 ## Repository Layout
 
 ```text

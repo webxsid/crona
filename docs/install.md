@@ -5,7 +5,7 @@
 - `stable` is the preferred channel for general users.
 - `beta` is for testers who want pre-release builds and faster iteration.
 - `1.0.0` will be the first stable milestone.
-- `v1.0.0-beta.2` is the current prerelease build for tester validation before the first stable release.
+- `v1.0.0-beta.3` is the current prerelease build for tester validation before the first stable release.
 
 See the published builds on [GitHub Releases](https://github.com/webxsid/crona/releases).
 
@@ -102,3 +102,46 @@ Override the binary install directory with `CRONA_INSTALL_DIR`.
 - The current beta train is the `1.0.0` prerelease validation path.
 
 Use the in-app `Updates` view to check, read notes, and install supported updates.
+
+## Notifications And Alerts
+
+Alerts are emitted by the local kernel. The TUI configures and tests them, but the kernel is the process that decides when to fire:
+
+- timer boundary alerts
+- update-available alerts
+- support/export completion alerts
+- scheduled reminders such as nightly check-in reminders
+
+Scheduled reminders are local-only and only fire while the local kernel is running.
+
+Supported notification helpers by OS:
+
+- macOS:
+  - notifications: `terminal-notifier`, fallback `osascript`
+  - sound playback: `afplay`
+- Linux:
+  - notifications: `notify-send`
+  - sound playback: `paplay`, `aplay`, `play`, fallback `canberra-gtk-play`
+- Windows:
+  - notifications: `BurntToast` when installed, fallback PowerShell toast delivery
+  - sound playback: PowerShell `SoundPlayer`
+
+The `Alerts` view shows the active backend and whether subtitle, urgency, icon, and bundled sound support are currently available on the running machine.
+
+## PDF Rendering
+
+Markdown export works without extra tooling. PDF export requires local renderer support.
+
+Current renderer expectations:
+
+- Daily and weekly narrative PDF exports require `weasyprint`
+- Repo, stream, and issue-rollup PDF exports require `pandoc` plus one supported PDF engine:
+  - `tectonic`
+  - `weasyprint`
+  - `wkhtmltopdf`
+  - `xelatex`
+  - `pdflatex`
+
+Renderer availability is detected at runtime and surfaced in the TUI `Config` view and through `export.assets.get`.
+
+If the required renderer chain is missing, PDF export remains unavailable but markdown export still works.

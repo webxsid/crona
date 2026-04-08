@@ -93,7 +93,7 @@ notes/[[date]]-daily.md
 
 ### Notifications
 
-Crona can trigger local OS notifications and optional sounds at timer boundaries. Today those remain platform-specific fallback integrations rather than a separate native companion layer.
+Crona can trigger local OS notifications and bundled alert sounds from the kernel itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain kernel-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
 
 ### Calendar Export
 

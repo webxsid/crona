@@ -12,6 +12,11 @@ The repository is a Go monorepo with four main modules:
 
 See the full installation guide in [docs/install.md](docs/install.md).
 
+Runtime notes:
+- local alerts are emitted by the kernel, not the TUI process
+- scheduled reminders only fire while the local kernel is running
+- PDF export depends on local renderer tooling; see [docs/install.md](docs/install.md)
+
 Launch the TUI:
 
 ```bash
@@ -38,7 +43,7 @@ crona completion fish
 
 - `stable` is the preferred channel for general users.
 - `beta` is for pre-release testing and faster iteration.
-- `v1.0.0-beta.2` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+- `v1.0.0-beta.3` is the current `1.0.0` prerelease build for tester validation before the first stable release.
 
 ## Documentation
 
@@ -51,6 +56,10 @@ crona completion fish
 - [Roadmap](docs/roadmap.md)
 - [Changelog](docs/changelog.md)
 - [Feature Design](docs/feature-design.md)
+
+Operational references:
+- [Notification and alert behavior](docs/install.md#notifications-and-alerts)
+- [PDF rendering support](docs/install.md#pdf-rendering)
 
 ## Support And Updates
 

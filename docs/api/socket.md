@@ -74,6 +74,12 @@ Use these files as the canonical contract:
 - GUI compatibility should be checked against `kernel.info.get -> protocolVersion`.
 - `protocolVersion` is independent from the Crona release version and only changes when the local IPC contract or its client-visible semantics change.
 
+`kernel.info.get` is the expected GUI handshake:
+
+- `protocolVersion` for compatibility checks
+- runtime transport and endpoint details
+- running release channel metadata
+
 ## RPC Methods
 
 Request DTO names below refer to types in [`shared/dto/requests.go`](../../shared/dto/requests.go). Result payloads are returned as JSON objects or arrays matching the shared domain/DTO types used by the kernel handlers.
@@ -104,6 +110,26 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `update.status.get` | `dto.Empty` | update status object | Current version, channel, availability, notes metadata. |
 | `update.check` | `dto.Empty` | update status object | Performs a refresh against the configured source. |
 | `update.dismiss` | `dto.Empty` | update status object | Dismisses the current update prompt. |
+
+### Alerts
+
+| Method | Request | Result | Notes |
+| --- | --- | --- | --- |
+| `alerts.status.get` | `dto.Empty` | alert status object | Active backend, capability flags, and runtime support for alerts/sound. |
+| `alerts.test_notification` | `dto.Empty` | `dto.OKResponse` | Sends a sample alert through the current backend. |
+| `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
+| `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the kernel alerts layer. |
+| `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
+| `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
+| `alerts.reminders.update` | `dto.AlertReminderUpdateRequest` | reminder object | Updates one scheduled reminder rule. |
+| `alerts.reminders.delete` | `dto.AlertReminderIDRequest` | `dto.OKResponse` | Deletes one scheduled reminder rule. |
+| `alerts.reminders.toggle` | `dto.AlertReminderToggleRequest` | reminder object | Enables or disables one scheduled reminder rule. |
+
+Alert behavior notes:
+
+- the kernel, not the TUI, decides when alerts fire
+- scheduled reminders are local-only and only fire while the kernel is running
+- `AlertStatus` reflects the current OS helper/backend that the kernel detected at runtime
 
 ### Repositories
 
@@ -191,6 +217,13 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `export.reports.delete` | `dto.ExportReportDeleteRequest` | `dto.OKResponse` | Deletes a generated report artifact. |
 | `export.template.reset` | `dto.ExportTemplateResetRequest` | asset reset result | Resets a template/spec to bundled defaults. |
 | `export.template.apply` | `dto.ExportTemplatePresetApplyRequest` | asset preset result | Applies a built-in preset. |
+
+Export behavior notes:
+
+- markdown export does not require extra renderer tooling
+- daily and weekly PDF export require `weasyprint`
+- repo, stream, and issue-rollup PDF export require `pandoc` plus a supported engine
+- `export.assets.get` is the runtime capability/status surface for renderer availability, active template paths, and reports directories
 
 ### Sessions And Timer
 

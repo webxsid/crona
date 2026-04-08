@@ -63,8 +63,6 @@ func Rows(settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders
 	}
 	if status != nil {
 		rows = append(rows,
-			Row{Section: "Backend", Label: "Notification Options", Value: optionsLabel(status.NotificationOptions)},
-			Row{Section: "Backend", Label: "Sound Options", Value: optionsLabel(status.SoundOptions)},
 			Row{Section: "Backend", Label: "Notification Backend", Value: backendLabel(status.NotificationsAvailable, status.NotificationBackend)},
 			Row{Section: "Backend", Label: "Sound Backend", Value: backendLabel(status.SoundAvailable, status.SoundBackend)},
 			Row{Section: "Backend", Label: "Subtitle", Value: supportedLabel(status.SubtitleSupported)},
@@ -222,13 +220,6 @@ func backendLabel(available bool, name string) string {
 		return "Available"
 	}
 	return name
-}
-
-func optionsLabel(values []string) string {
-	if len(values) == 0 {
-		return "-"
-	}
-	return strings.Join(values, " -> ")
 }
 
 func urgencyLabel(value sharedtypes.AlertUrgency) string {

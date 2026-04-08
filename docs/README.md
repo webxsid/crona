@@ -10,6 +10,8 @@ Use this index as the entry point for Crona's project docs.
 - [Changelog](changelog.md)
 - [Feature Design](feature-design.md)
 - [Socket API](api/socket.md)
+- [Notifications and Alerts](install.md#notifications-and-alerts)
+- [PDF Rendering](install.md#pdf-rendering)
 
 Suggested order:
 
