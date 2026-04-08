@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Crona">
+  <rect width="128" height="128" rx="28" fill="#0f172a"/>
+  <rect x="16" y="16" width="96" height="96" rx="22" fill="#111827" stroke="#38bdf8" stroke-width="4"/>
+  <circle cx="64" cy="64" r="24" fill="none" stroke="#22c55e" stroke-width="10"/>
+  <path d="M64 28v14M90 64H76M64 100V86M38 64h14" stroke="#f8fafc" stroke-linecap="round" stroke-width="8"/>
+</svg>

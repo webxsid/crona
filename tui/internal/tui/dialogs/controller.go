@@ -56,6 +56,9 @@ type Action struct {
 	Estimate          *int
 	DueDate           *string
 	Note              *string
+	ReminderKind      sharedtypes.AlertReminderKind
+	ReminderSchedule  sharedtypes.AlertReminderScheduleType
+	ReminderTimeHHMM  string
 	SettingKey        sharedtypes.CoreSettingsKey
 	StringList        []string
 	IntList           []int
@@ -829,6 +832,8 @@ func Close(state State) State {
 	state.ViewTitle = ""
 	state.ViewName = ""
 	state.IssueEstimateMins = nil
+	state.ReminderID = ""
+	state.ReminderKind = ""
 	state.ViewMeta = ""
 	state.ViewBody = ""
 	state.ExportPresetKind = ""
@@ -982,6 +987,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		})
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
+	case "create_alert_reminder", "edit_alert_reminder":
+		return updateAlertReminder(state, msg)
 	case "view_entity":
 		return updateViewEntity(state, msg)
 	case "support_bundle_result":
@@ -1298,24 +1305,11 @@ func ParseHabitSchedule(raw string) (string, []int, error) {
 	parts := strings.Split(value, ",")
 	weekdays := make([]int, 0, len(parts))
 	for _, part := range parts {
-		switch strings.TrimSpace(part) {
-		case "sun":
-			weekdays = append(weekdays, 0)
-		case "mon":
-			weekdays = append(weekdays, 1)
-		case "tue":
-			weekdays = append(weekdays, 2)
-		case "wed":
-			weekdays = append(weekdays, 3)
-		case "thu":
-			weekdays = append(weekdays, 4)
-		case "fri":
-			weekdays = append(weekdays, 5)
-		case "sat":
-			weekdays = append(weekdays, 6)
-		default:
+		weekday, ok := parseWeekdayToken(strings.TrimSpace(part))
+		if !ok {
 			return "", nil, errors.New("schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri")
 		}
+		weekdays = append(weekdays, weekday)
 	}
 	if len(weekdays) == 0 {
 		return "", nil, errors.New("schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri")
@@ -1359,23 +1353,8 @@ func ParseWeekdayList(raw string) ([]int, error) {
 	out := make([]int, 0, len(parts))
 	seen := map[int]struct{}{}
 	for _, part := range parts {
-		var weekday int
-		switch strings.TrimSpace(part) {
-		case "sun":
-			weekday = 0
-		case "mon":
-			weekday = 1
-		case "tue":
-			weekday = 2
-		case "wed":
-			weekday = 3
-		case "thu":
-			weekday = 4
-		case "fri":
-			weekday = 5
-		case "sat":
-			weekday = 6
-		default:
+		weekday, ok := parseWeekdayToken(strings.TrimSpace(part))
+		if !ok {
 			return nil, errors.New("weekdays must be comma-separated tokens like mon,wed,fri")
 		}
 		if _, ok := seen[weekday]; ok {
@@ -1385,6 +1364,27 @@ func ParseWeekdayList(raw string) ([]int, error) {
 		out = append(out, weekday)
 	}
 	return out, nil
+}
+
+func parseWeekdayToken(value string) (int, bool) {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "sun", "sunday":
+		return 0, true
+	case "mon", "monday":
+		return 1, true
+	case "tue", "tues", "tuesday":
+		return 2, true
+	case "wed", "weds", "wednesday":
+		return 3, true
+	case "thu", "thur", "thurs", "thursday":
+		return 4, true
+	case "fri", "friday":
+		return 5, true
+	case "sat", "saturday":
+		return 6, true
+	default:
+		return 0, false
+	}
 }
 
 func ParseSpecificDates(raw string) ([]string, error) {

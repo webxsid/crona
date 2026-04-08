@@ -18,6 +18,7 @@ const (
 	ViewReports        View = "reports"
 	ViewConfig         View = "config"
 	ViewSettings       View = "settings"
+	ViewAlerts         View = "alerts"
 	ViewUpdates        View = "updates"
 	ViewSupport        View = "support"
 )
@@ -25,17 +26,18 @@ const (
 type Pane string
 
 const (
-	PaneRepos         Pane = "repos"
-	PaneStreams       Pane = "streams"
-	PaneIssues        Pane = "issues"
-	PaneHabits        Pane = "habits"
-	PaneRollupDays    Pane = "rollup_days"
-	PaneSessions      Pane = "sessions"
-	PaneScratchpads   Pane = "scratchpads"
-	PaneOps           Pane = "ops"
-	PaneExportReports Pane = "export_reports"
-	PaneConfig        Pane = "config"
-	PaneSettings      Pane = "settings"
+	PaneRepos            Pane = "repos"
+	PaneStreams          Pane = "streams"
+	PaneIssues           Pane = "issues"
+	PaneHabits           Pane = "habits"
+	PaneRollupDays       Pane = "rollup_days"
+	PaneSessions         Pane = "sessions"
+	PaneScratchpads      Pane = "scratchpads"
+	PaneOps              Pane = "ops"
+	PaneExportReports    Pane = "export_reports"
+	PaneConfig           Pane = "config"
+	PaneSettings         Pane = "settings"
+	PaneAlerts           Pane = "alerts"
 	PaneWellbeingSummary Pane = "wellbeing_summary"
 	PaneWellbeingTrends  Pane = "wellbeing_trends"
 )
@@ -47,7 +49,7 @@ const (
 	DefaultIssueSectionCompleted DefaultIssueSection = "completed"
 )
 
-var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewUpdates, ViewSupport}
+var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport}
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},
@@ -63,6 +65,7 @@ var viewPanes = map[View][]Pane{
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
+	ViewAlerts:         {PaneAlerts},
 	ViewUpdates:        {},
 	ViewSupport:        {},
 }
@@ -81,6 +84,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewReports:        PaneExportReports,
 	ViewConfig:         PaneConfig,
 	ViewSettings:       PaneSettings,
+	ViewAlerts:         PaneAlerts,
 	ViewUpdates:        PaneIssues,
 	ViewSupport:        PaneIssues,
 }

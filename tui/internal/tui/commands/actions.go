@@ -25,6 +25,12 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 		}
 		cmds := []tea.Cmd{LoadSettings(c)}
 		switch key {
+		case sharedtypes.CoreSettingsKeyBoundaryNotifications,
+			sharedtypes.CoreSettingsKeyBoundarySound,
+			sharedtypes.CoreSettingsKeyAlertSoundPreset,
+			sharedtypes.CoreSettingsKeyAlertUrgency,
+			sharedtypes.CoreSettingsKeyAlertIconEnabled:
+			cmds = append(cmds, LoadAlertStatus(c))
 		case sharedtypes.CoreSettingsKeyUpdateChecksEnabled, sharedtypes.CoreSettingsKeyUpdatePromptEnabled, sharedtypes.CoreSettingsKeyUpdateChannel:
 			cmds = append(cmds, LoadUpdateStatus(c))
 		case sharedtypes.CoreSettingsKeyRepoSort:

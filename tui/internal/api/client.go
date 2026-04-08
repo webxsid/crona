@@ -585,6 +585,16 @@ func (c *Client) GetUpdateStatus() (*UpdateStatus, error) {
 	return &out, c.call(protocol.MethodUpdateStatusGet, nil, &out)
 }
 
+func (c *Client) GetAlertStatus() (*AlertStatus, error) {
+	var out AlertStatus
+	return &out, c.call(protocol.MethodAlertsStatusGet, nil, &out)
+}
+
+func (c *Client) ListAlertReminders() ([]AlertReminder, error) {
+	var out []AlertReminder
+	return out, c.call(protocol.MethodAlertsRemindersList, nil, &out)
+}
+
 func (c *Client) CheckUpdateNow() (*UpdateStatus, error) {
 	var out UpdateStatus
 	return &out, c.call(protocol.MethodUpdateCheck, nil, &out)
@@ -625,6 +635,37 @@ func (c *Client) PatchSetting(key sharedtypes.CoreSettingsKey, value any) error 
 		Key:   key,
 		Value: value,
 	}, nil)
+}
+
+func (c *Client) TestAlertNotification() error {
+	return c.mustOK(protocol.MethodAlertsTestNotification, nil)
+}
+
+func (c *Client) TestAlertSound() error {
+	return c.mustOK(protocol.MethodAlertsTestSound, nil)
+}
+
+func (c *Client) NotifyAlert(input sharedtypes.AlertRequest) error {
+	return c.call(protocol.MethodAlertsNotify, input, nil)
+}
+
+func (c *Client) CreateAlertReminder(input shareddto.AlertReminderCreateRequest) (*AlertReminder, error) {
+	var out AlertReminder
+	return &out, c.call(protocol.MethodAlertsRemindersCreate, input, &out)
+}
+
+func (c *Client) UpdateAlertReminder(input shareddto.AlertReminderUpdateRequest) (*AlertReminder, error) {
+	var out AlertReminder
+	return &out, c.call(protocol.MethodAlertsRemindersUpdate, input, &out)
+}
+
+func (c *Client) DeleteAlertReminder(id string) error {
+	return c.mustOK(protocol.MethodAlertsRemindersDelete, shareddto.AlertReminderIDRequest{ID: id})
+}
+
+func (c *Client) ToggleAlertReminder(id string, enabled bool) (*AlertReminder, error) {
+	var out AlertReminder
+	return &out, c.call(protocol.MethodAlertsRemindersToggle, shareddto.AlertReminderToggleRequest{ID: id, Enabled: enabled}, &out)
 }
 
 func (c *Client) ShutdownKernel() error {

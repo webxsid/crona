@@ -1,6 +1,7 @@
 package input
 
 import (
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	dialogpkg "crona/tui/internal/tui/dialogs"
@@ -15,6 +16,7 @@ type State struct {
 	ActivePane          uistate.Pane
 	ProtectedModeActive bool
 	Cursor              map[uistate.Pane]int
+	Filters             map[uistate.Pane]string
 	DefaultIssueSection uistate.DefaultIssueSection
 	DashboardDate       string
 	RollupStartDate     string
@@ -39,6 +41,8 @@ type State struct {
 	CurrentExecutable   string
 	RunningIsBeta       bool
 	Settings            *api.CoreSettings
+	AlertStatus         *api.AlertStatus
+	AlertReminders      []api.AlertReminder
 	ExportAssets        *api.ExportAssetStatus
 	DailyCheckIn        *api.DailyCheckIn
 }
@@ -106,6 +110,14 @@ type Deps struct {
 	OpenSessionContextOverlay       func(*State) bool
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
+	TestAlertNotification           func() tea.Cmd
+	TestAlertSound                  func() tea.Cmd
+	CreateAlertReminder             func(shareddto.AlertReminderCreateRequest) tea.Cmd
+	UpdateAlertReminder             func(shareddto.AlertReminderUpdateRequest) tea.Cmd
+	ToggleAlertReminder             func(string, bool) tea.Cmd
+	DeleteAlertReminder             func(string) tea.Cmd
+	OpenCreateAlertReminderDialog   func(*State) bool
+	OpenEditAlertReminderDialog     func(*State, string) bool
 	OpenEditRestProtectionDialog    func(*State) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
 	OpenConfirmUninstallDialog      func(*State) bool
@@ -245,8 +257,17 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 		"d": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewAlerts {
+				return handleDeleteSelectedAlertReminder(s, deps)
+			}
 			cmd, handled := deps.DeleteSelectionAction(&s)
 			return s, cmd, handled
+		},
+		"x": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewAlerts {
+				return handleDeleteSelectedAlertReminder(s, deps)
+			}
+			return s, nil, false
 		},
 		"o": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenSelectionAction(&s)
@@ -348,6 +369,18 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustSelectedSetting(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedSetting(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedSetting(s, deps) },
+	)
+	keyregistry.RegisterSettings(r, uistate.ViewAlerts,
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			s.ActivePane = uistate.PaneAlerts
+			return s, nil, true
+		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleAdjustSelectedAlert(s, deps, -1)
+		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustSelectedAlert(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedAlert(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedAlert(s, deps) },
 	)
 	keyregistry.RegisterConfig(r, uistate.ViewConfig, uistate.PaneConfig,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {

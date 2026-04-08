@@ -73,7 +73,7 @@ func Run(ctx context.Context) error {
 	if err := commandCtx.InitDefaults(runCtx); err != nil {
 		return fmt.Errorf("init command defaults: %w", err)
 	}
-	_ = notify.Start(runCtx, commandCtx, bus, logger)
+	alerts := notify.Start(runCtx, commandCtx, bus, logger, paths)
 	updater := updatecheck.Start(runCtx, commandCtx, bus, logger, paths, appEnv.Mode)
 	if _, err := export.EnsureAssets(paths); err != nil {
 		return fmt.Errorf("ensure export assets: %w", err)
@@ -93,7 +93,7 @@ func Run(ctx context.Context) error {
 		RunningIsBeta:  versionpkg.IsBetaRelease(),
 	}
 
-	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater), logger)
+	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater, alerts), logger)
 	timer := corecommands.GetTimerService(commandCtx)
 	if err := timer.RecoverBoundary(runCtx); err != nil {
 		return fmt.Errorf("recover timer boundary: %w", err)

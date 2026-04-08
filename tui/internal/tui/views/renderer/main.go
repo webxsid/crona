@@ -1,6 +1,7 @@
 package viewrenderer
 
 import (
+	alerts "crona/tui/internal/tui/views/alerts"
 	away "crona/tui/internal/tui/views/away"
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
@@ -13,8 +14,8 @@ import (
 	sessions "crona/tui/internal/tui/views/sessions"
 	settings "crona/tui/internal/tui/views/settings"
 	support "crona/tui/internal/tui/views/support"
-	updates "crona/tui/internal/tui/views/updates"
 	types "crona/tui/internal/tui/views/types"
+	updates "crona/tui/internal/tui/views/updates"
 	wellbeing "crona/tui/internal/tui/views/wellbeing"
 )
 
@@ -44,6 +45,8 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return reports.Render(theme, state)
 	case "settings":
 		return settings.Render(theme, state)
+	case "alerts":
+		return alerts.Render(theme, state)
 	case "updates":
 		return updates.Render(theme, state)
 	case "support":

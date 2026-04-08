@@ -1,6 +1,7 @@
 package app
 
 import (
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
 	dialogruntime "crona/tui/internal/tui/dialog_runtime"
@@ -135,6 +136,7 @@ func (m Model) overlayState() overlaypkg.State {
 	return overlaypkg.State{
 		HelpOpen:           m.helpOpen,
 		FilterEditing:      m.filterEditing,
+		DialogState:        m.dialogState(),
 		SessionDetailOpen:  m.sessionDetailOpen,
 		SessionDetailY:     m.sessionDetailY,
 		SessionDetail:      m.sessionDetail,
@@ -152,6 +154,7 @@ func (m Model) overlayState() overlaypkg.State {
 func (m Model) applyOverlayState(state overlaypkg.State) Model {
 	m.helpOpen = state.HelpOpen
 	m.filterEditing = state.FilterEditing
+	m = m.withDialogState(state.DialogState)
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
 	m.sessionDetail = state.SessionDetail
@@ -182,6 +185,9 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 		OpenAmendSessionDialog: func(state *overlaypkg.State, sessionID string, commit string) {
 			next := m.applyOverlayState(*state)
 			next = next.openAmendSessionDialog(sessionID, commit)
+			next.sessionDetailOpen = false
+			next.sessionDetail = nil
+			next.sessionDetailY = 0
 			*state = next.overlayState()
 		},
 		SessionCommit: helperpkg.SessionCommit,
@@ -342,6 +348,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadStashes:      func() tea.Cmd { return commands.LoadStashes(m.client) },
 		LoadContext:      func() tea.Cmd { return commands.LoadContext(m.client) },
 		LoadTimer:        func() tea.Cmd { return commands.LoadTimer(m.client) },
+		LoadAlertStatus:  func() tea.Cmd { return commands.LoadAlertStatus(m.client) },
 		LoadUpdateStatus: func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
 		LoadOps:          func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
 		TickAfter:        commands.TickAfter,
@@ -396,6 +403,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		Context:                 m.context,
 		Timer:                   m.timer,
 		Health:                  m.health,
+		AlertStatus:             m.alertStatus,
+		AlertReminders:          m.alertReminders,
 		UpdateStatus:            m.updateStatus,
 		UpdateChecking:          m.updateChecking,
 		UpdateInstalling:        m.updateInstalling,
@@ -473,6 +482,8 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.context = state.Context
 	m.timer = state.Timer
 	m.health = state.Health
+	m.alertStatus = state.AlertStatus
+	m.alertReminders = state.AlertReminders
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
 	m.updateInstalling = state.UpdateInstalling
@@ -605,19 +616,22 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next := m.applyDispatchMessageState(state)
 			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(next.timer), 200)
 		},
-		LoadSessionDetail: func(id string) tea.Cmd { return commands.LoadSessionDetail(m.client, id) },
-		LoadScratchpads:   func() tea.Cmd { return commands.LoadScratchpads(m.client) },
-		LoadStashes:       func() tea.Cmd { return commands.LoadStashes(m.client) },
-		LoadOps:           func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
-		LoadContext:       func() tea.Cmd { return commands.LoadContext(m.client) },
-		LoadTimer:         func() tea.Cmd { return commands.LoadTimer(m.client) },
-		LoadHealth:        func() tea.Cmd { return commands.LoadHealth(m.client) },
-		LoadUpdateStatus:  func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
-		LoadSettings:      func() tea.Cmd { return commands.LoadSettings(m.client) },
-		LoadKernelInfo:    func() tea.Cmd { return commands.LoadKernelInfo(m.client) },
-		HealthTickAfter:   commands.HealthTickAfter,
-		TickAfter:         commands.TickAfter,
-		WaitForEvent:      func() tea.Cmd { return commands.WaitForEvent(eventChannel) },
+		LoadSessionDetail:  func(id string) tea.Cmd { return commands.LoadSessionDetail(m.client, id) },
+		LoadScratchpads:    func() tea.Cmd { return commands.LoadScratchpads(m.client) },
+		LoadStashes:        func() tea.Cmd { return commands.LoadStashes(m.client) },
+		LoadOps:            func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
+		LoadContext:        func() tea.Cmd { return commands.LoadContext(m.client) },
+		LoadTimer:          func() tea.Cmd { return commands.LoadTimer(m.client) },
+		LoadHealth:         func() tea.Cmd { return commands.LoadHealth(m.client) },
+		LoadAlertStatus:    func() tea.Cmd { return commands.LoadAlertStatus(m.client) },
+		LoadAlertReminders: func() tea.Cmd { return commands.LoadAlertReminders(m.client) },
+		LoadUpdateStatus:   func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
+		LoadSettings:       func() tea.Cmd { return commands.LoadSettings(m.client) },
+		LoadKernelInfo:     func() tea.Cmd { return commands.LoadKernelInfo(m.client) },
+		NotifyAlert:        func(input sharedtypes.AlertRequest) tea.Cmd { return commands.NotifyAlert(m.client, input) },
+		HealthTickAfter:    commands.HealthTickAfter,
+		TickAfter:          commands.TickAfter,
+		WaitForEvent:       func() tea.Cmd { return commands.WaitForEvent(eventChannel) },
 		HandleKernelEvent: func(state dispatchpkg.MessageState, event api.KernelEvent) (dispatchpkg.MessageState, tea.Cmd) {
 			next := m.applyDispatchMessageState(state)
 			nextModel, cmd := next.handleKernelEvent(event)

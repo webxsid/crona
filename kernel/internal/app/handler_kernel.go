@@ -104,6 +104,69 @@ func (h *Handler) handleKernelMethods(ctx context.Context, req protocol.Request)
 			}
 			return h.updater.DismissLatest()
 		}), true
+	case protocol.MethodAlertsStatusGet:
+		return h.handleNoParams(req, func() (any, error) {
+			if h.alerts == nil {
+				return sharedtypes.AlertStatus{AvailableSoundPresets: sharedtypes.AvailableAlertSoundPresets()}, nil
+			}
+			return h.alerts.Status(), nil
+		}), true
+	case protocol.MethodAlertsTestNotification:
+		return h.handleNoParams(req, func() (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return shareddto.OKResponse{OK: true}, h.alerts.TestNotification(ctx)
+		}), true
+	case protocol.MethodAlertsTestSound:
+		return h.handleNoParams(req, func() (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return shareddto.OKResponse{OK: true}, h.alerts.TestSound(ctx)
+		}), true
+	case protocol.MethodAlertsNotify:
+		return handle(req, func(input sharedtypes.AlertRequest) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return shareddto.OKResponse{OK: true}, h.alerts.Notify(ctx, input)
+		}), true
+	case protocol.MethodAlertsRemindersList:
+		return h.handleNoParams(req, func() (any, error) {
+			if h.alerts == nil {
+				return []sharedtypes.AlertReminder{}, nil
+			}
+			return h.alerts.ListReminders(ctx)
+		}), true
+	case protocol.MethodAlertsRemindersCreate:
+		return handle(req, func(input shareddto.AlertReminderCreateRequest) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return h.alerts.CreateReminder(ctx, input)
+		}), true
+	case protocol.MethodAlertsRemindersUpdate:
+		return handle(req, func(input shareddto.AlertReminderUpdateRequest) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return h.alerts.UpdateReminder(ctx, input)
+		}), true
+	case protocol.MethodAlertsRemindersDelete:
+		return handle(req, func(input shareddto.AlertReminderIDRequest) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return shareddto.OKResponse{OK: true}, h.alerts.DeleteReminder(ctx, input.ID)
+		}), true
+	case protocol.MethodAlertsRemindersToggle:
+		return handle(req, func(input shareddto.AlertReminderToggleRequest) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			return h.alerts.ToggleReminder(ctx, input.ID, input.Enabled)
+		}), true
 	default:
 		return protocol.Response{}, false
 	}

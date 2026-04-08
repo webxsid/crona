@@ -18,6 +18,7 @@ const (
 	ViewScratch        = app.ViewScratch
 	ViewOps            = app.ViewOps
 	ViewSettings       = app.ViewSettings
+	ViewAlerts         = app.ViewAlerts
 	ViewSupport        = app.ViewSupport
 )
 
@@ -29,6 +30,7 @@ const (
 	PaneScratchpads = app.PaneScratchpads
 	PaneOps         = app.PaneOps
 	PaneSettings    = app.PaneSettings
+	PaneAlerts      = app.PaneAlerts
 )
 
 func SetEventChannel(ch <-chan api.KernelEvent) {

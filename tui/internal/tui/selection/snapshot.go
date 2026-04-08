@@ -8,6 +8,7 @@ import (
 	configitems "crona/tui/internal/tui/configitems"
 	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
+	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 )
@@ -33,6 +34,8 @@ type Snapshot struct {
 	SessionHistory      []api.SessionHistoryEntry
 	Ops                 []api.Op
 	Settings            *api.CoreSettings
+	AlertStatus         *api.AlertStatus
+	AlertReminders      []api.AlertReminder
 	ConfigItems         []configitems.Item
 
 	issueMetaIndex         map[int64]int
@@ -243,6 +246,8 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 		}
 	case uistate.PaneSettings:
 		items = settingsmeta.ItemLabels(s.Settings)
+	case uistate.PaneAlerts:
+		items = alertsmeta.ItemLabels(s.Settings, s.AlertStatus, s.AlertReminders)
 	default:
 		items = nil
 	}

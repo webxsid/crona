@@ -73,7 +73,11 @@ type OpsLoadedMsg struct{ Ops []api.Op }
 type ContextLoadedMsg struct{ Ctx *api.ActiveContext }
 type TimerLoadedMsg struct{ Timer *api.TimerState }
 type HealthLoadedMsg struct{ Health *api.Health }
+type AlertStatusLoadedMsg struct{ Status *api.AlertStatus }
+type AlertRemindersLoadedMsg struct{ Reminders []api.AlertReminder }
 type UpdateStatusLoadedMsg struct{ Status *api.UpdateStatus }
+type AlertTestedMsg struct{ Label string }
+type AlertReminderChangedMsg struct{ Label string }
 type UpdateDismissedMsg struct{ Status *api.UpdateStatus }
 type UpdateInstallPreparedMsg struct {
 	Cmd *exec.Cmd

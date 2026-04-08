@@ -2,6 +2,7 @@ package overlays
 
 import (
 	"crona/tui/internal/api"
+	dialogpkg "crona/tui/internal/tui/dialogs"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -10,6 +11,7 @@ import (
 type State struct {
 	HelpOpen          bool
 	FilterEditing     bool
+	DialogState       dialogpkg.State
 	SessionDetailOpen bool
 	SessionDetailY    int
 	SessionDetail     *api.SessionDetail

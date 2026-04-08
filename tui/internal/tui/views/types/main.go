@@ -83,6 +83,8 @@ type ContentState struct {
 	Context                *api.ActiveContext
 	Timer                  *api.TimerState
 	Health                 *api.Health
+	AlertStatus            *api.AlertStatus
+	AlertReminders         []api.AlertReminder
 	UpdateStatus           *api.UpdateStatus
 	UpdateChecking         bool
 	UpdateInstalling       bool

@@ -83,6 +83,8 @@ func OpenSelectedDeleteDialog(m Model) (Model, bool) {
 func (m Model) DialogDeleteKind() string { return m.dialogDeleteKind }
 func (m Model) DialogDeleteID() string   { return m.dialogDeleteID }
 func (m Model) DialogStreamID() int64    { return m.dialogStreamID }
+func (m Model) DialogKind() string       { return m.dialog }
+func (m Model) DialogSessionID() string  { return m.dialogSessionID }
 
 func NewDefaultScopeModel(allIssues []api.IssueWithMeta, context *api.ActiveContext) Model {
 	model := Model{
@@ -149,4 +151,15 @@ func (m Model) SelfUpdateUnsupportedReasonForTest() string {
 }
 func (m Model) SelfUpdateInstallAvailableForTest() bool {
 	return m.selfUpdateInstallAvailable()
+}
+
+func NewSessionDetailModel(detail *api.SessionDetail) Model {
+	return Model{
+		view:              ViewSessionHistory,
+		pane:              PaneSessions,
+		sessionDetailOpen: true,
+		sessionDetail:     detail,
+		cursor:            map[Pane]int{PaneSessions: 0},
+		filters:           map[Pane]string{PaneSessions: ""},
+	}
 }

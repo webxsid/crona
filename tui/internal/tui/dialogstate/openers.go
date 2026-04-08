@@ -18,6 +18,7 @@ type Snapshot struct {
 	UpdateStatus         *api.UpdateStatus
 	ExportAssets         *api.ExportAssetStatus
 	Settings             *api.CoreSettings
+	AlertReminders       []api.AlertReminder
 	CurrentDashboardDate string
 	CurrentWellbeingDate string
 	ProtectedModeActive  bool
@@ -234,4 +235,17 @@ func OpenEditRestProtection(s Snapshot) dialogpkg.State {
 		return dialogpkg.OpenEditRestProtection(s.Dialog, nil, nil, nil)
 	}
 	return dialogpkg.OpenEditRestProtection(s.Dialog, s.Settings.FrozenStreakKinds, s.Settings.RestWeekdays, s.Settings.RestSpecificDates)
+}
+
+func OpenCreateAlertReminder(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenCreateAlertReminder(s.Dialog)
+}
+
+func OpenEditAlertReminder(s Snapshot, id string) dialogpkg.State {
+	for _, reminder := range s.AlertReminders {
+		if reminder.ID == strings.TrimSpace(id) {
+			return dialogpkg.OpenEditAlertReminder(s.Dialog, reminder)
+		}
+	}
+	return s.Dialog
 }

@@ -139,6 +139,14 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" bundle"),
 		}
 	}
+	if state.View == "alerts" {
+		return []string{
+			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[space]") + theme.StyleDim.Render(" toggle"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/run"),
+			theme.StyleHeader.Render("[d/x]") + theme.StyleDim.Render(" delete"),
+		}
+	}
 
 	switch state.Pane {
 	case "repos", "streams":
@@ -218,6 +226,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/toggle/confirm"),
+		}
+	case "alerts":
+		return []string{
+			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" toggle/test"),
 		}
 	}
 	return nil

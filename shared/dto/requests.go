@@ -111,6 +111,31 @@ type DailyCheckInUpsertRequest struct {
 	Notes             *string  `json:"notes,omitempty"`
 }
 
+type AlertReminderCreateRequest struct {
+	Kind         types.AlertReminderKind         `json:"kind"`
+	Enabled      *bool                           `json:"enabled,omitempty"`
+	ScheduleType types.AlertReminderScheduleType `json:"scheduleType"`
+	Weekdays     []int                           `json:"weekdays,omitempty"`
+	TimeHHMM     string                          `json:"timeHHMM"`
+}
+
+type AlertReminderUpdateRequest struct {
+	ID           string                          `json:"id"`
+	Enabled      *bool                           `json:"enabled,omitempty"`
+	ScheduleType *types.AlertReminderScheduleType `json:"scheduleType,omitempty"`
+	Weekdays     []int                           `json:"weekdays,omitempty"`
+	TimeHHMM     *string                         `json:"timeHHMM,omitempty"`
+}
+
+type AlertReminderIDRequest struct {
+	ID string `json:"id"`
+}
+
+type AlertReminderToggleRequest struct {
+	ID      string `json:"id"`
+	Enabled bool   `json:"enabled"`
+}
+
 type DeleteByDateRequest struct {
 	Date string `json:"date"`
 }

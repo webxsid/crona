@@ -42,6 +42,8 @@ type Deps struct {
 	SetExportReportsDir            func(path string) tea.Cmd
 	SetExportICSDir                func(path string) tea.Cmd
 	PatchSetting                   func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
+	CreateAlertReminder            func(input shareddto.AlertReminderCreateRequest) tea.Cmd
+	UpdateAlertReminder            func(input shareddto.AlertReminderUpdateRequest) tea.Cmd
 	DeleteRepo                     func(id int64) tea.Cmd
 	DeleteStream                   func(repoID, streamID int64) tea.Cmd
 	DeleteIssue                    func(issueID, streamID int64, dashboardDate string) tea.Cmd
@@ -112,6 +114,22 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 	r.Register("set_export_reports_dir", func(action dialogpkg.Action) tea.Cmd { return deps.SetExportReportsDir(action.Path) })
 	r.Register("set_export_ics_dir", func(action dialogpkg.Action) tea.Cmd { return deps.SetExportICSDir(action.Path) })
 	r.Register("patch_setting", func(action dialogpkg.Action) tea.Cmd { return patchSettingCmd(action, state, deps) })
+	r.Register("create_alert_reminder", func(action dialogpkg.Action) tea.Cmd {
+		return deps.CreateAlertReminder(shareddto.AlertReminderCreateRequest{
+			Kind:         action.ReminderKind,
+			ScheduleType: action.ReminderSchedule,
+			Weekdays:     action.Weekdays,
+			TimeHHMM:     action.ReminderTimeHHMM,
+		})
+	})
+	r.Register("edit_alert_reminder", func(action dialogpkg.Action) tea.Cmd {
+		return deps.UpdateAlertReminder(shareddto.AlertReminderUpdateRequest{
+			ID:           action.ID,
+			ScheduleType: &action.ReminderSchedule,
+			Weekdays:     action.Weekdays,
+			TimeHHMM:     &action.ReminderTimeHHMM,
+		})
+	})
 	r.Register("patch_rest_protection", func(action dialogpkg.Action) tea.Cmd { return patchRestProtectionCmd(action, state, deps) })
 	r.Register("delete", func(action dialogpkg.Action) tea.Cmd { return deleteCmd(action, state, deps) })
 	r.Register("apply_stash", func(action dialogpkg.Action) tea.Cmd { return deps.ApplyStash(action.ID) })

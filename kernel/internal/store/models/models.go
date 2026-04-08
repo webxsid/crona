@@ -155,6 +155,9 @@ type CoreSettingsModel struct {
 	AutoStartWork         bool   `bun:"auto_start_work,notnull,type:integer"`
 	BoundaryNotifications bool   `bun:"boundary_notifications_enabled,notnull,type:integer"`
 	BoundarySound         bool   `bun:"boundary_sound_enabled,notnull,type:integer"`
+	AlertSoundPreset      string `bun:"alert_sound_preset,notnull,type:text"`
+	AlertUrgency          string `bun:"alert_urgency,notnull,type:text"`
+	AlertIconEnabled      bool   `bun:"alert_icon_enabled,notnull,type:integer"`
 	UpdateChecksEnabled   bool   `bun:"update_checks_enabled,notnull,type:integer"`
 	UpdatePromptEnabled   bool   `bun:"update_prompt_enabled,notnull,type:integer"`
 	UpdateChannel         string `bun:"update_channel,notnull,type:text"`
@@ -223,6 +226,21 @@ type DailyCheckInModel struct {
 	Notes             *string  `bun:"notes,type:text,nullzero"`
 	CreatedAt         string   `bun:"created_at,notnull,type:text"`
 	UpdatedAt         string   `bun:"updated_at,notnull,type:text"`
+}
+
+type AlertReminderModel struct {
+	bun.BaseModel `bun:"table:alert_reminders"`
+
+	ID           string `bun:"id,pk,type:text"`
+	UserID       string `bun:"user_id,notnull,type:text"`
+	DeviceID     string `bun:"device_id,notnull,type:text"`
+	Kind         string `bun:"kind,notnull,type:text"`
+	Enabled      bool   `bun:"enabled,notnull,type:integer"`
+	ScheduleType string `bun:"schedule_type,notnull,type:text"`
+	Weekdays     string `bun:"weekdays,notnull,type:text"`
+	TimeHHMM     string `bun:"time_hhmm,notnull,type:text"`
+	CreatedAt    string `bun:"created_at,notnull,type:text"`
+	UpdatedAt    string `bun:"updated_at,notnull,type:text"`
 }
 
 type DailyPlanModel struct {

@@ -201,6 +201,27 @@ func renderUtilityDialog(theme Theme, state State) string {
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_protection":
 		return renderRestProtectionDialog(theme, state)
+	case "create_alert_reminder", "edit_alert_reminder":
+		title := "Add Check-In Reminder"
+		border := theme.ColorCyan
+		if state.Kind == "edit_alert_reminder" {
+			title = "Edit Check-In Reminder"
+			border = theme.ColorYellow
+		}
+		rows := []string{
+			theme.StylePaneTitle.Render(title),
+			"",
+			theme.StyleDim.Render("Schedule"),
+			dialogInputView(state, 0),
+			"",
+			theme.StyleDim.Render("Time"),
+			dialogInputView(state, 1),
+			"",
+			theme.StyleDim.Render("Use daily, weekdays, or weekday lists like mon,wed,fri."),
+			theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00."),
+		}
+		rows = appendDialogFooter(theme, state, rows, "[tab] next field   "+dialogSubmitHint(state, "save")+"   [esc] cancel")
+		return modal(theme, state.Width, 72, border, rows)
 	case "edit_frozen_streaks":
 		rows := []string{
 			theme.StylePaneTitle.Render("Frozen Streaks"),

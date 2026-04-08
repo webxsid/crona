@@ -20,6 +20,7 @@ import (
 	appruntime "crona/tui/internal/tui/runtime"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
@@ -47,6 +48,7 @@ const (
 	ViewReports        = uistate.ViewReports
 	ViewConfig         = uistate.ViewConfig
 	ViewSettings       = uistate.ViewSettings
+	ViewAlerts         = uistate.ViewAlerts
 	ViewUpdates        = uistate.ViewUpdates
 	ViewSupport        = uistate.ViewSupport
 )
@@ -54,17 +56,18 @@ const (
 type Pane = uistate.Pane
 
 const (
-	PaneRepos         = uistate.PaneRepos
-	PaneStreams       = uistate.PaneStreams
-	PaneIssues        = uistate.PaneIssues
-	PaneHabits        = uistate.PaneHabits
-	PaneRollupDays    = uistate.PaneRollupDays
-	PaneSessions      = uistate.PaneSessions
-	PaneScratchpads   = uistate.PaneScratchpads
-	PaneOps           = uistate.PaneOps
-	PaneExportReports = uistate.PaneExportReports
-	PaneConfig        = uistate.PaneConfig
-	PaneSettings      = uistate.PaneSettings
+	PaneRepos            = uistate.PaneRepos
+	PaneStreams          = uistate.PaneStreams
+	PaneIssues           = uistate.PaneIssues
+	PaneHabits           = uistate.PaneHabits
+	PaneRollupDays       = uistate.PaneRollupDays
+	PaneSessions         = uistate.PaneSessions
+	PaneScratchpads      = uistate.PaneScratchpads
+	PaneOps              = uistate.PaneOps
+	PaneExportReports    = uistate.PaneExportReports
+	PaneConfig           = uistate.PaneConfig
+	PaneSettings         = uistate.PaneSettings
+	PaneAlerts           = uistate.PaneAlerts
 	PaneWellbeingSummary = uistate.PaneWellbeingSummary
 	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
 )
@@ -135,6 +138,8 @@ type Model struct {
 	context               *api.ActiveContext
 	timer                 *api.TimerState
 	health                *api.Health
+	alertStatus           *api.AlertStatus
+	alertReminders        []api.AlertReminder
 	updateStatus          *api.UpdateStatus
 	updateChecking        bool
 	updateInstalling      bool
@@ -198,6 +203,8 @@ type Model struct {
 	dialogViewTitle          string
 	dialogViewName           string
 	dialogIssueEstimateMins  *int
+	dialogReminderID         string
+	dialogReminderKind       sharedtypes.AlertReminderKind
 	dialogViewMeta           string
 	dialogViewBody           string
 	dialogSupportBundlePath  string
@@ -299,32 +306,34 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		pane:                PaneIssues,
 		defaultIssueSection: DefaultIssueSectionOpen,
 		cursor: map[Pane]int{
-			PaneRepos:         0,
-			PaneStreams:       0,
-			PaneIssues:        0,
-			PaneHabits:        0,
-			PaneRollupDays:    0,
-			PaneSessions:      0,
-			PaneScratchpads:   0,
-			PaneOps:           0,
-			PaneExportReports: 0,
-			PaneConfig:        0,
-			PaneSettings:      0,
+			PaneRepos:            0,
+			PaneStreams:          0,
+			PaneIssues:           0,
+			PaneHabits:           0,
+			PaneRollupDays:       0,
+			PaneSessions:         0,
+			PaneScratchpads:      0,
+			PaneOps:              0,
+			PaneExportReports:    0,
+			PaneConfig:           0,
+			PaneSettings:         0,
+			PaneAlerts:           0,
 			PaneWellbeingSummary: 0,
 			PaneWellbeingTrends:  0,
 		},
 		filters: map[Pane]string{
-			PaneRepos:         "",
-			PaneStreams:       "",
-			PaneIssues:        "",
-			PaneHabits:        "",
-			PaneRollupDays:    "",
-			PaneSessions:      "",
-			PaneScratchpads:   "",
-			PaneOps:           "",
-			PaneExportReports: "",
-			PaneConfig:        "",
-			PaneSettings:      "",
+			PaneRepos:            "",
+			PaneStreams:          "",
+			PaneIssues:           "",
+			PaneHabits:           "",
+			PaneRollupDays:       "",
+			PaneSessions:         "",
+			PaneScratchpads:      "",
+			PaneOps:              "",
+			PaneExportReports:    "",
+			PaneConfig:           "",
+			PaneSettings:         "",
+			PaneAlerts:           "",
 			PaneWellbeingSummary: "",
 			PaneWellbeingTrends:  "",
 		},
@@ -353,6 +362,8 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadContext(m.client),
 		commands.LoadTimer(m.client),
 		commands.LoadHealth(m.client),
+		commands.LoadAlertStatus(m.client),
+		commands.LoadAlertReminders(m.client),
 		commands.LoadUpdateStatus(m.client),
 		commands.LoadSettings(m.client),
 		commands.LoadKernelInfo(m.client),
@@ -387,6 +398,9 @@ func (m *Model) listLen(p Pane) int {
 		activeIssue := selectionpkg.ActiveIssue(snapshot)
 		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
 		return wellbeingview.PaneLineCount(state, string(p))
+	}
+	if p == PaneAlerts {
+		return alertsmeta.FilteredSelectableCount(m.filters[PaneAlerts], m.settings, m.alertStatus, m.alertReminders)
 	}
 	snapshot := m.selectionSnapshot()
 	return len(selectionpkg.FilteredIndices(snapshot, p))
@@ -432,6 +446,8 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		SessionHistory:      m.sessionHistory,
 		Ops:                 m.ops,
 		Settings:            m.settings,
+		AlertStatus:         m.alertStatus,
+		AlertReminders:      m.alertReminders,
 		ConfigItems:         m.configItemsForSnapshot(),
 	})
 }
@@ -469,6 +485,7 @@ func (m Model) inputState() inputpkg.State {
 		ActivePane:          activePane,
 		ProtectedModeActive: protected,
 		Cursor:              m.cursor,
+		Filters:             m.filters,
 		DefaultIssueSection: m.defaultIssueSection,
 		DashboardDate:       m.dashboardDate,
 		RollupStartDate:     m.rollupStartDate,
@@ -493,6 +510,8 @@ func (m Model) inputState() inputpkg.State {
 		CurrentExecutable:   m.currentExecutablePath,
 		RunningIsBeta:       m.isBetaBuild(),
 		Settings:            m.settings,
+		AlertStatus:         m.alertStatus,
+		AlertReminders:      m.alertReminders,
 		ExportAssets:        m.exportAssets,
 		DailyCheckIn:        m.dailyCheckIn,
 	}
@@ -502,6 +521,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.view = state.ActiveView
 	m.pane = state.ActivePane
 	m.cursor = state.Cursor
+	m.filters = state.Filters
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dashboardDate = state.DashboardDate
 	m.rollupStartDate = state.RollupStartDate
@@ -527,6 +547,8 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.updateInstallError = state.UpdateInstallError
 	m.currentExecutablePath = state.CurrentExecutable
 	m.settings = state.Settings
+	m.alertStatus = state.AlertStatus
+	m.alertReminders = state.AlertReminders
 	m.exportAssets = state.ExportAssets
 	m.dailyCheckIn = state.DailyCheckIn
 	return m
@@ -842,6 +864,32 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
+		TestAlertNotification: func() tea.Cmd { return commands.TestAlertNotification(m.client) },
+		TestAlertSound:        func() tea.Cmd { return commands.TestAlertSound(m.client) },
+		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
+			return commands.CreateAlertReminder(m.client, input)
+		},
+		UpdateAlertReminder: func(input shareddto.AlertReminderUpdateRequest) tea.Cmd {
+			return commands.UpdateAlertReminder(m.client, input)
+		},
+		ToggleAlertReminder: func(id string, enabled bool) tea.Cmd {
+			return commands.ToggleAlertReminder(m.client, id, enabled)
+		},
+		DeleteAlertReminder: func(id string) tea.Cmd {
+			return commands.DeleteAlertReminder(m.client, id)
+		},
+		OpenCreateAlertReminderDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openCreateAlertReminderDialog()
+			*state = next.inputState()
+			return true
+		},
+		OpenEditAlertReminderDialog: func(state *inputpkg.State, id string) bool {
+			next := m.applyInputState(*state)
+			next = next.openEditAlertReminderDialog(id)
+			*state = next.inputState()
+			return true
+		},
 		OpenEditRestProtectionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openEditRestProtectionDialog()
@@ -907,6 +955,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		UpdateStatus:         m.updateStatus,
 		ExportAssets:         m.exportAssets,
 		Settings:             m.settings,
+		AlertReminders:       m.alertReminders,
 		CurrentDashboardDate: m.currentDashboardDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
@@ -1064,6 +1113,12 @@ func (m Model) openExportReportsDirDialog(current string) Model {
 func (m Model) openExportICSDirDialog(current string) Model {
 	return m.withDialogState(dialogstate.OpenExportICSDir(m.dialogSnapshot(), current))
 }
+func (m Model) openCreateAlertReminderDialog() Model {
+	return m.withDialogState(dialogstate.OpenCreateAlertReminder(m.dialogSnapshot()))
+}
+func (m Model) openEditAlertReminderDialog(id string) Model {
+	return m.withDialogState(dialogstate.OpenEditAlertReminder(m.dialogSnapshot(), id))
+}
 func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(dialogstate.OpenEditRestProtection(m.dialogSnapshot()))
 }
@@ -1118,6 +1173,8 @@ func (m Model) dialogState() dialogpkg.State {
 		ViewTitle:          m.dialogViewTitle,
 		ViewName:           m.dialogViewName,
 		IssueEstimateMins:  m.dialogIssueEstimateMins,
+		ReminderID:         m.dialogReminderID,
+		ReminderKind:       m.dialogReminderKind,
 		ViewMeta:           m.dialogViewMeta,
 		ViewBody:           m.dialogViewBody,
 		SupportBundlePath:  m.dialogSupportBundlePath,
@@ -1175,6 +1232,8 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogViewTitle = state.ViewTitle
 	m.dialogViewName = state.ViewName
 	m.dialogIssueEstimateMins = state.IssueEstimateMins
+	m.dialogReminderID = state.ReminderID
+	m.dialogReminderKind = state.ReminderKind
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
 	m.dialogSupportBundlePath = state.SupportBundlePath
@@ -1251,6 +1310,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		SetExportICSDir:     func(path string) tea.Cmd { return commands.SetExportICSDir(m.client, path) },
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
+		},
+		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
+			return commands.CreateAlertReminder(m.client, input)
+		},
+		UpdateAlertReminder: func(input shareddto.AlertReminderUpdateRequest) tea.Cmd {
+			return commands.UpdateAlertReminder(m.client, input)
 		},
 		DeleteRepo:   func(id int64) tea.Cmd { return commands.DeleteRepo(m.client, id) },
 		DeleteStream: func(repoID, streamID int64) tea.Cmd { return commands.DeleteStream(m.client, repoID, streamID) },

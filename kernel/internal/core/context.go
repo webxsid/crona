@@ -21,6 +21,7 @@ type Context struct {
 	Ops              *repositories.OpRepository
 	Health           *health.Service
 	CoreSettings     *repositories.CoreSettingsRepository
+	AlertReminders   *repositories.AlertReminderRepository
 	SessionSegments  *repositories.SessionSegmentRepository
 	ActiveContext    *repositories.ActiveContextRepository
 	ScratchPads      *repositories.ScratchPadRepository
@@ -47,6 +48,7 @@ func NewContext(db *store.Store, registry *store.Registry, userID string, device
 		Ops:              registry.Ops,
 		Health:           health.NewService(db.Ping),
 		CoreSettings:     registry.CoreSettings,
+		AlertReminders:   registry.AlertReminders,
 		SessionSegments:  registry.SessionSegments,
 		ActiveContext:    registry.ActiveContext,
 		ScratchPads:      registry.ScratchPads,

@@ -3,20 +3,21 @@ package support
 import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/app"
+	"crona/tui/internal/tui/dialogs"
 	layoutpkg "crona/tui/internal/tui/layout"
+	alertsview "crona/tui/internal/tui/views/alerts"
+	awayview "crona/tui/internal/tui/views/away"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	configview "crona/tui/internal/tui/views/config"
 	dailyview "crona/tui/internal/tui/views/daily"
-	"crona/tui/internal/tui/dialogs"
-	viewchrome "crona/tui/internal/tui/views/chrome"
 	issuesview "crona/tui/internal/tui/views/issues"
 	reportsview "crona/tui/internal/tui/views/reports"
 	rollupview "crona/tui/internal/tui/views/rollup"
 	scratchpadsview "crona/tui/internal/tui/views/scratchpads"
 	settingsview "crona/tui/internal/tui/views/settings"
 	supportview "crona/tui/internal/tui/views/support"
-	updatesview "crona/tui/internal/tui/views/updates"
-	awayview "crona/tui/internal/tui/views/away"
 	viewtypes "crona/tui/internal/tui/views/types"
+	updatesview "crona/tui/internal/tui/views/updates"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -32,6 +33,7 @@ func RenderWellbeing(state viewtypes.ContentState) string {
 }
 func RenderReports(state viewtypes.ContentState) string  { return reportsview.Render(Theme(), state) }
 func RenderSettings(state viewtypes.ContentState) string { return settingsview.Render(Theme(), state) }
+func RenderAlerts(state viewtypes.ContentState) string   { return alertsview.Render(Theme(), state) }
 func RenderConfig(state viewtypes.ContentState) string   { return configview.Render(Theme(), state) }
 func RenderSupport(state viewtypes.ContentState) string  { return supportview.Render(Theme(), state) }
 func RenderPaneBox(theme viewtypes.Theme, active bool, width, height int, content string) string {

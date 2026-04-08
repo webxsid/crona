@@ -54,6 +54,96 @@ func NormalizeUpdateChannel(value UpdateChannel) UpdateChannel {
 	}
 }
 
+type AlertUrgency string
+
+const (
+	AlertUrgencyLow    AlertUrgency = "low"
+	AlertUrgencyNormal AlertUrgency = "normal"
+	AlertUrgencyHigh   AlertUrgency = "high"
+)
+
+func NormalizeAlertUrgency(value AlertUrgency) AlertUrgency {
+	switch value {
+	case AlertUrgencyLow, AlertUrgencyHigh:
+		return value
+	default:
+		return AlertUrgencyNormal
+	}
+}
+
+type AlertSoundPreset string
+
+const (
+	AlertSoundPresetChime        AlertSoundPreset = "chime"
+	AlertSoundPresetSoftBell     AlertSoundPreset = "soft_bell"
+	AlertSoundPresetFocusGong    AlertSoundPreset = "focus_gong"
+	AlertSoundPresetMinimalClick AlertSoundPreset = "minimal_click"
+)
+
+func NormalizeAlertSoundPreset(value AlertSoundPreset) AlertSoundPreset {
+	switch value {
+	case AlertSoundPresetSoftBell, AlertSoundPresetFocusGong, AlertSoundPresetMinimalClick:
+		return value
+	default:
+		return AlertSoundPresetChime
+	}
+}
+
+func AvailableAlertSoundPresets() []AlertSoundPreset {
+	return []AlertSoundPreset{
+		AlertSoundPresetChime,
+		AlertSoundPresetSoftBell,
+		AlertSoundPresetFocusGong,
+		AlertSoundPresetMinimalClick,
+	}
+}
+
+type AlertEventKind string
+
+const (
+	AlertEventTimerWorkComplete  AlertEventKind = "timer.work_complete"
+	AlertEventTimerBreakComplete AlertEventKind = "timer.break_complete"
+	AlertEventUpdateAvailable    AlertEventKind = "update.available"
+	AlertEventUpdateInstalled    AlertEventKind = "update.installed"
+	AlertEventSupportBundleReady AlertEventKind = "support.bundle_ready"
+	AlertEventExportCompleted    AlertEventKind = "export.completed"
+	AlertEventRuntimeDegraded    AlertEventKind = "runtime.degraded"
+	AlertEventCheckInReminder    AlertEventKind = "checkin.reminder"
+	AlertEventTestNotification   AlertEventKind = "test.notification"
+	AlertEventTestSound          AlertEventKind = "test.sound"
+)
+
+type AlertReminderKind string
+
+const (
+	AlertReminderKindCheckIn AlertReminderKind = "checkin_reminder"
+)
+
+func NormalizeAlertReminderKind(value AlertReminderKind) AlertReminderKind {
+	switch value {
+	case AlertReminderKindCheckIn:
+		return value
+	default:
+		return AlertReminderKindCheckIn
+	}
+}
+
+type AlertReminderScheduleType string
+
+const (
+	AlertReminderScheduleDaily  AlertReminderScheduleType = "daily"
+	AlertReminderScheduleWeekly AlertReminderScheduleType = "weekly"
+)
+
+func NormalizeAlertReminderScheduleType(value AlertReminderScheduleType) AlertReminderScheduleType {
+	switch value {
+	case AlertReminderScheduleWeekly:
+		return value
+	default:
+		return AlertReminderScheduleDaily
+	}
+}
+
 type RepoSort string
 
 const (
@@ -170,6 +260,9 @@ const (
 	CoreSettingsKeyAutoStartWork         CoreSettingsKey = "autoStartWork"
 	CoreSettingsKeyBoundaryNotifications CoreSettingsKey = "boundaryNotificationsEnabled"
 	CoreSettingsKeyBoundarySound         CoreSettingsKey = "boundarySoundEnabled"
+	CoreSettingsKeyAlertSoundPreset      CoreSettingsKey = "alertSoundPreset"
+	CoreSettingsKeyAlertUrgency          CoreSettingsKey = "alertUrgency"
+	CoreSettingsKeyAlertIconEnabled      CoreSettingsKey = "alertIconEnabled"
 	CoreSettingsKeyUpdateChecksEnabled   CoreSettingsKey = "updateChecksEnabled"
 	CoreSettingsKeyUpdatePromptEnabled   CoreSettingsKey = "updatePromptEnabled"
 	CoreSettingsKeyUpdateChannel         CoreSettingsKey = "updateChannel"
@@ -678,33 +771,36 @@ type ActiveContext struct {
 }
 
 type CoreSettings struct {
-	UserID                string       `json:"userId"`
-	DeviceID              string       `json:"deviceId"`
-	TimerMode             TimerMode    `json:"timerMode"`
-	BreaksEnabled         bool         `json:"breaksEnabled"`
-	WorkDurationMinutes   int          `json:"workDurationMinutes"`
-	ShortBreakMinutes     int          `json:"shortBreakMinutes"`
-	LongBreakMinutes      int          `json:"longBreakMinutes"`
-	LongBreakEnabled      bool         `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int          `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool         `json:"autoStartBreaks"`
-	AutoStartWork         bool         `json:"autoStartWork"`
-	BoundaryNotifications bool         `json:"boundaryNotificationsEnabled"`
-	BoundarySound         bool         `json:"boundarySoundEnabled"`
-	UpdateChecksEnabled   bool         `json:"updateChecksEnabled"`
-	UpdatePromptEnabled   bool         `json:"updatePromptEnabled"`
-	UpdateChannel         UpdateChannel `json:"updateChannel"`
-	RepoSort              RepoSort     `json:"repoSort"`
-	StreamSort            StreamSort   `json:"streamSort"`
-	IssueSort             IssueSort    `json:"issueSort"`
-	HabitSort             HabitSort    `json:"habitSort"`
-	AwayModeEnabled       bool         `json:"awayModeEnabled"`
-	FrozenStreakKinds     []StreakKind `json:"frozenStreakKinds,omitempty"`
-	RestWeekdays          []int        `json:"restWeekdays,omitempty"`
-	RestSpecificDates     []string     `json:"restSpecificDates,omitempty"`
-	DailyPlanRollbackMins int          `json:"dailyPlanRollbackMinutes"`
-	CreatedAt             string       `json:"createdAt"`
-	UpdatedAt             string       `json:"updatedAt"`
+	UserID                string           `json:"userId"`
+	DeviceID              string           `json:"deviceId"`
+	TimerMode             TimerMode        `json:"timerMode"`
+	BreaksEnabled         bool             `json:"breaksEnabled"`
+	WorkDurationMinutes   int              `json:"workDurationMinutes"`
+	ShortBreakMinutes     int              `json:"shortBreakMinutes"`
+	LongBreakMinutes      int              `json:"longBreakMinutes"`
+	LongBreakEnabled      bool             `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int              `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool             `json:"autoStartBreaks"`
+	AutoStartWork         bool             `json:"autoStartWork"`
+	BoundaryNotifications bool             `json:"boundaryNotificationsEnabled"`
+	BoundarySound         bool             `json:"boundarySoundEnabled"`
+	AlertSoundPreset      AlertSoundPreset `json:"alertSoundPreset"`
+	AlertUrgency          AlertUrgency     `json:"alertUrgency"`
+	AlertIconEnabled      bool             `json:"alertIconEnabled"`
+	UpdateChecksEnabled   bool             `json:"updateChecksEnabled"`
+	UpdatePromptEnabled   bool             `json:"updatePromptEnabled"`
+	UpdateChannel         UpdateChannel    `json:"updateChannel"`
+	RepoSort              RepoSort         `json:"repoSort"`
+	StreamSort            StreamSort       `json:"streamSort"`
+	IssueSort             IssueSort        `json:"issueSort"`
+	HabitSort             HabitSort        `json:"habitSort"`
+	AwayModeEnabled       bool             `json:"awayModeEnabled"`
+	FrozenStreakKinds     []StreakKind     `json:"frozenStreakKinds,omitempty"`
+	RestWeekdays          []int            `json:"restWeekdays,omitempty"`
+	RestSpecificDates     []string         `json:"restSpecificDates,omitempty"`
+	DailyPlanRollbackMins int              `json:"dailyPlanRollbackMinutes"`
+	CreatedAt             string           `json:"createdAt"`
+	UpdatedAt             string           `json:"updatedAt"`
 }
 
 type TimerState struct {
@@ -764,43 +860,80 @@ type Health struct {
 }
 
 type KernelInfo struct {
-	PID            int    `json:"pid"`
-	Port           int    `json:"port,omitempty"`
-	Transport      string `json:"transport,omitempty"`
-	Endpoint       string `json:"endpoint,omitempty"`
-	SocketPath     string `json:"socketPath,omitempty"`
-	Token          string `json:"token"`
-	StartedAt      string `json:"startedAt"`
-	ScratchDir     string `json:"scratchDir"`
-	Env            string `json:"env"`
-	ExecutablePath string `json:"executablePath,omitempty"`
+	PID            int           `json:"pid"`
+	Port           int           `json:"port,omitempty"`
+	Transport      string        `json:"transport,omitempty"`
+	Endpoint       string        `json:"endpoint,omitempty"`
+	SocketPath     string        `json:"socketPath,omitempty"`
+	Token          string        `json:"token"`
+	StartedAt      string        `json:"startedAt"`
+	ScratchDir     string        `json:"scratchDir"`
+	Env            string        `json:"env"`
+	ExecutablePath string        `json:"executablePath,omitempty"`
 	RunningChannel UpdateChannel `json:"runningChannel"`
 	RunningIsBeta  bool          `json:"runningIsBeta"`
 }
 
+type AlertRequest struct {
+	Kind        AlertEventKind   `json:"kind"`
+	Title       string           `json:"title"`
+	Subtitle    string           `json:"subtitle,omitempty"`
+	Body        string           `json:"body"`
+	Urgency     AlertUrgency     `json:"urgency"`
+	IconEnabled bool             `json:"iconEnabled"`
+	SoundPreset AlertSoundPreset `json:"soundPreset,omitempty"`
+	PlaySound   bool             `json:"playSound"`
+}
+
+type AlertReminder struct {
+	ID           string                    `json:"id"`
+	Kind         AlertReminderKind         `json:"kind"`
+	Enabled      bool                      `json:"enabled"`
+	ScheduleType AlertReminderScheduleType `json:"scheduleType"`
+	Weekdays     []int                     `json:"weekdays,omitempty"`
+	TimeHHMM     string                    `json:"timeHHMM"`
+	CreatedAt    string                    `json:"createdAt"`
+	UpdatedAt    string                    `json:"updatedAt"`
+}
+
+type AlertStatus struct {
+	NotificationsAvailable bool               `json:"notificationsAvailable"`
+	SoundAvailable         bool               `json:"soundAvailable"`
+	NotificationBackend    string             `json:"notificationBackend,omitempty"`
+	SoundBackend           string             `json:"soundBackend,omitempty"`
+	NotificationOptions    []string           `json:"notificationOptions,omitempty"`
+	SoundOptions           []string           `json:"soundOptions,omitempty"`
+	SubtitleSupported      bool               `json:"subtitleSupported"`
+	UrgencySupported       bool               `json:"urgencySupported"`
+	IconSupported          bool               `json:"iconSupported"`
+	BundledSoundSupported  bool               `json:"bundledSoundSupported"`
+	IconPath               string             `json:"iconPath,omitempty"`
+	AvailableSoundPresets  []AlertSoundPreset `json:"availableSoundPresets,omitempty"`
+}
+
 type UpdateStatus struct {
-	CurrentVersion           string `json:"currentVersion"`
-	LatestVersion            string `json:"latestVersion,omitempty"`
-	ReleaseTag               string `json:"releaseTag,omitempty"`
-	ReleaseName              string `json:"releaseName,omitempty"`
-	ReleaseNotes             string `json:"releaseNotes,omitempty"`
-	ReleaseURL               string `json:"releaseUrl,omitempty"`
-	InstallScriptURL         string `json:"installScriptUrl,omitempty"`
-	ChecksumsURL             string `json:"checksumsUrl,omitempty"`
-	PublishedAt              string `json:"publishedAt,omitempty"`
-	CheckedAt                string `json:"checkedAt,omitempty"`
-	UpdateAvailable          bool   `json:"updateAvailable"`
-	InstallAvailable         bool   `json:"installAvailable"`
-	InstallUnavailableReason string `json:"installUnavailableReason,omitempty"`
-	Enabled                  bool   `json:"enabled"`
-	PromptEnabled            bool   `json:"promptEnabled"`
+	CurrentVersion           string        `json:"currentVersion"`
+	LatestVersion            string        `json:"latestVersion,omitempty"`
+	ReleaseTag               string        `json:"releaseTag,omitempty"`
+	ReleaseName              string        `json:"releaseName,omitempty"`
+	ReleaseNotes             string        `json:"releaseNotes,omitempty"`
+	ReleaseURL               string        `json:"releaseUrl,omitempty"`
+	InstallScriptURL         string        `json:"installScriptUrl,omitempty"`
+	ChecksumsURL             string        `json:"checksumsUrl,omitempty"`
+	PublishedAt              string        `json:"publishedAt,omitempty"`
+	CheckedAt                string        `json:"checkedAt,omitempty"`
+	UpdateAvailable          bool          `json:"updateAvailable"`
+	InstallAvailable         bool          `json:"installAvailable"`
+	InstallUnavailableReason string        `json:"installUnavailableReason,omitempty"`
+	Enabled                  bool          `json:"enabled"`
+	PromptEnabled            bool          `json:"promptEnabled"`
 	Channel                  UpdateChannel `json:"channel"`
 	ReleaseIsPrerelease      bool          `json:"releaseIsPrerelease"`
 	RunningChannel           UpdateChannel `json:"runningChannel"`
 	RunningIsBeta            bool          `json:"runningIsBeta"`
 	LatestIsBeta             bool          `json:"latestIsBeta"`
-	DismissedVersion         string `json:"dismissedVersion,omitempty"`
-	Error                    string `json:"error,omitempty"`
+	DismissedVersion         string        `json:"dismissedVersion,omitempty"`
+	Error                    string        `json:"error,omitempty"`
 }
 
 type ExportOutputMode string

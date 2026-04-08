@@ -72,3 +72,34 @@ func TestFormatDurationInputsUseCompactDurations(t *testing.T) {
 		t.Fatalf("expected 7h30m, got %q", got)
 	}
 }
+
+func TestParseHabitScheduleAcceptsCommonWeekdayAliases(t *testing.T) {
+	tests := []struct {
+		name string
+		raw  string
+		want []int
+	}{
+		{name: "tues thurs aliases", raw: "mon,tues,wed,thurs,fri,sat", want: []int{1, 2, 3, 4, 5, 6}},
+		{name: "full weekday names", raw: "monday,wednesday,friday", want: []int{1, 3, 5}},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			schedule, weekdays, err := ParseHabitSchedule(tc.raw)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if schedule != "weekly" {
+				t.Fatalf("expected weekly schedule, got %q", schedule)
+			}
+			if len(weekdays) != len(tc.want) {
+				t.Fatalf("expected %v, got %v", tc.want, weekdays)
+			}
+			for i := range tc.want {
+				if weekdays[i] != tc.want[i] {
+					t.Fatalf("expected %v, got %v", tc.want, weekdays)
+				}
+			}
+		})
+	}
+}

@@ -35,8 +35,6 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 		{Section: "Breaks", Label: "Cycles Before Long Break", Value: fmt.Sprintf("%d", settings.CyclesBeforeLongBreak)},
 		{Section: "Breaks", Label: "Auto-Start Breaks", Value: enabledDisabled(settings.AutoStartBreaks)},
 		{Section: "Breaks", Label: "Auto-Start Work", Value: enabledDisabled(settings.AutoStartWork)},
-		{Section: "Notifications", Label: "Boundary Notifications", Value: enabledDisabled(settings.BoundaryNotifications)},
-		{Section: "Notifications", Label: "Boundary Sound", Value: enabledDisabled(settings.BoundarySound)},
 		{Section: "Updates", Label: "Update Checks", Value: enabledDisabled(settings.UpdateChecksEnabled)},
 		{Section: "Updates", Label: "Update Prompt", Value: enabledDisabled(settings.UpdatePromptEnabled)},
 		{Section: "Updates", Label: "Update Channel", Value: UpdateChannelLabel(settings.UpdateChannel)},

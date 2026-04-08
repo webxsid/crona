@@ -124,7 +124,7 @@ func handleAdjustOpsLimit(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bo
 
 func handleStartFilter(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	switch s.ActivePane {
-	case uistate.PaneOps, uistate.PaneIssues, uistate.PaneHabits, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneScratchpads, uistate.PaneSessions, uistate.PaneConfig, uistate.PaneExportReports:
+	case uistate.PaneOps, uistate.PaneIssues, uistate.PaneHabits, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneScratchpads, uistate.PaneSessions, uistate.PaneConfig, uistate.PaneExportReports, uistate.PaneAlerts:
 	default:
 		return s, nil, false
 	}
@@ -138,6 +138,12 @@ func handleStartFilter(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 func handleSpace(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView == uistate.ViewSettings {
 		return handleActivateSelectedSetting(s, deps)
+	}
+	if s.ActiveView == uistate.ViewAlerts {
+		if model, cmd, handled := handleToggleSelectedAlertReminder(s, deps); handled {
+			return model, cmd, true
+		}
+		return handleActivateSelectedAlert(s, deps)
 	}
 	cmd, handled := deps.ToggleHabitCompletedAction(&s)
 	return s, cmd, handled

@@ -44,6 +44,7 @@ type EventDeps struct {
 	LoadStashes              func() tea.Cmd
 	LoadContext              func() tea.Cmd
 	LoadTimer                func() tea.Cmd
+	LoadAlertStatus          func() tea.Cmd
 	LoadUpdateStatus         func() tea.Cmd
 	LoadOps                  func(limit int) tea.Cmd
 	TickAfter                func(seq int) tea.Cmd

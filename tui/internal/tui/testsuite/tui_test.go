@@ -9,8 +9,8 @@ import (
 	"crona/tui/internal/api"
 	dialogs "crona/tui/internal/tui/dialogs"
 	"crona/tui/internal/tui/testsuite/support"
-	viewchrome "crona/tui/internal/tui/views/chrome"
 	"crona/tui/internal/tui/views"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewrenderer "crona/tui/internal/tui/views/renderer"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -431,7 +431,7 @@ func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	}
 }
 
-func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
+func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 	state := views.ContentState{
 		View:   "settings",
 		Pane:   "settings",
@@ -455,6 +455,9 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 			AutoStartWork:         false,
 			BoundaryNotifications: true,
 			BoundarySound:         true,
+			AlertSoundPreset:      sharedtypes.AlertSoundPresetFocusGong,
+			AlertUrgency:          sharedtypes.AlertUrgencyHigh,
+			AlertIconEnabled:      true,
 			RepoSort:              sharedtypes.RepoSortChronologicalAsc,
 			StreamSort:            sharedtypes.StreamSortChronologicalAsc,
 			IssueSort:             sharedtypes.IssueSortPriority,
@@ -463,13 +466,30 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"FOCUS TIMER", "BREAKS", "Boundary Notifications", "UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
+	for _, want := range []string{"FOCUS TIMER", "BREAKS", "UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
 	}
+	for _, unwanted := range []string{"Boundary Notifications", "Boundary Sound", "Test Notification"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected settings view not to contain %q, got %q", unwanted, rendered)
+		}
+	}
 
-	state.Cursors["settings"] = 20
+	alertState := state
+	alertState.View = "alerts"
+	alertState.Pane = "alerts"
+	alertState.Cursors = map[string]int{"alerts": 0}
+	alertState.Filters = map[string]string{"alerts": ""}
+	rendered = support.RenderAlerts(alertState)
+	for _, want := range []string{"Alerts", "Notifications", "Sound", "Sound Preset", "Urgency", "Logo Icon", "Test Notification", "Test Sound"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected alerts view to contain %q, got %q", want, rendered)
+		}
+	}
+
+	state.Cursors["settings"] = 18
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
 		if !strings.Contains(rendered, want) {
@@ -477,7 +497,7 @@ func TestSettingsViewShowsBoundaryNotificationToggles(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 21
+	state.Cursors["settings"] = 19
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"DANGER", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {

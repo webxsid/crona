@@ -47,6 +47,9 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyAutoStartWork:         {column: "auto_start_work", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyBoundaryNotifications: {column: "boundary_notifications_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyBoundarySound:         {column: "boundary_sound_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyAlertSoundPreset:      {column: "alert_sound_preset", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyAlertUrgency:          {column: "alert_urgency", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyAlertIconEnabled:      {column: "alert_icon_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyUpdateChecksEnabled:   {column: "update_checks_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyUpdatePromptEnabled:   {column: "update_prompt_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyUpdateChannel:         {column: "update_channel", queryKind: coreSettingQueryString},
@@ -191,6 +194,9 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		AutoStartWork:         sharedconstants.DefaultCoreSettings["autoStartWork"].(bool),
 		BoundaryNotifications: sharedconstants.DefaultCoreSettings["boundaryNotificationsEnabled"].(bool),
 		BoundarySound:         sharedconstants.DefaultCoreSettings["boundarySoundEnabled"].(bool),
+		AlertSoundPreset:      sharedconstants.DefaultCoreSettings["alertSoundPreset"].(string),
+		AlertUrgency:          sharedconstants.DefaultCoreSettings["alertUrgency"].(string),
+		AlertIconEnabled:      sharedconstants.DefaultCoreSettings["alertIconEnabled"].(bool),
 		UpdateChecksEnabled:   updateChecksEnabled,
 		UpdatePromptEnabled:   updatePromptEnabled,
 		UpdateChannel:         sharedconstants.DefaultCoreSettings["updateChannel"].(string),
@@ -233,6 +239,12 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 		return row.BoundaryNotifications
 	case sharedtypes.CoreSettingsKeyBoundarySound:
 		return row.BoundarySound
+	case sharedtypes.CoreSettingsKeyAlertSoundPreset:
+		return sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(row.AlertSoundPreset))
+	case sharedtypes.CoreSettingsKeyAlertUrgency:
+		return sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(row.AlertUrgency))
+	case sharedtypes.CoreSettingsKeyAlertIconEnabled:
+		return row.AlertIconEnabled
 	case sharedtypes.CoreSettingsKeyUpdateChecksEnabled:
 		return row.UpdateChecksEnabled
 	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
@@ -275,6 +287,10 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return sharedtypes.TimerMode(toString(value))
 	case sharedtypes.CoreSettingsKeyUpdateChannel:
 		return sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))
+	case sharedtypes.CoreSettingsKeyAlertSoundPreset:
+		return sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(toString(value)))
+	case sharedtypes.CoreSettingsKeyAlertUrgency:
+		return sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(toString(value)))
 	case sharedtypes.CoreSettingsKeyRepoSort:
 		return sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))
 	case sharedtypes.CoreSettingsKeyStreamSort:
@@ -300,6 +316,10 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 	switch key {
 	case sharedtypes.CoreSettingsKeyUpdateChannel:
 		return string(sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyAlertSoundPreset:
+		return string(sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyAlertUrgency:
+		return string(sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyRepoSort:
 		return string(sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyStreamSort:
@@ -336,6 +356,9 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		AutoStartWork:         row.AutoStartWork,
 		BoundaryNotifications: row.BoundaryNotifications,
 		BoundarySound:         row.BoundarySound,
+		AlertSoundPreset:      sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(row.AlertSoundPreset)),
+		AlertUrgency:          sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(row.AlertUrgency)),
+		AlertIconEnabled:      row.AlertIconEnabled,
 		UpdateChecksEnabled:   row.UpdateChecksEnabled,
 		UpdatePromptEnabled:   row.UpdatePromptEnabled,
 		UpdateChannel:         sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(row.UpdateChannel)),

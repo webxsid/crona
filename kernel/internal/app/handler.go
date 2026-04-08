@@ -9,6 +9,7 @@ import (
 	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/events"
+	"crona/kernel/internal/notify"
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/updatecheck"
 	"crona/shared/protocol"
@@ -26,9 +27,10 @@ type Handler struct {
 	envMode   string
 	paths     runtime.Paths
 	updater   *updatecheck.Service
+	alerts    *notify.Service
 }
 
-func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(context.Context) error, coreCtx *core.Context, bus *events.Bus, shutdown func(), envMode string, paths runtime.Paths, updater *updatecheck.Service) *Handler {
+func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(context.Context) error, coreCtx *core.Context, bus *events.Bus, shutdown func(), envMode string, paths runtime.Paths, updater *updatecheck.Service, alerts *notify.Service) *Handler {
 	return &Handler{
 		startedAt: startedAt,
 		info:      info,
@@ -40,6 +42,7 @@ func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(conte
 		envMode:   envMode,
 		paths:     paths,
 		updater:   updater,
+		alerts:    alerts,
 	}
 }
 

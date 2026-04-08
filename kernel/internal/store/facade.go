@@ -23,6 +23,7 @@ type Registry struct {
 	Stash            *repositories.StashRepository
 	Ops              *repositories.OpRepository
 	CoreSettings     *repositories.CoreSettingsRepository
+	AlertReminders   *repositories.AlertReminderRepository
 	SessionSegments  *repositories.SessionSegmentRepository
 	ActiveContext    *repositories.ActiveContextRepository
 	ScratchPads      *repositories.ScratchPadRepository
@@ -53,6 +54,7 @@ func NewRegistry(db *bun.DB) *Registry {
 		Stash:            repositories.NewStashRepository(db),
 		Ops:              repositories.NewOpRepository(db),
 		CoreSettings:     repositories.NewCoreSettingsRepository(db),
+		AlertReminders:   repositories.NewAlertReminderRepository(db),
 		SessionSegments:  repositories.NewSessionSegmentRepository(db),
 		ActiveContext:    repositories.NewActiveContextRepository(db),
 		ScratchPads:      repositories.NewScratchPadRepository(db),

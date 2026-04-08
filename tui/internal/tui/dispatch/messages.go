@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/commands"
@@ -58,6 +59,8 @@ type MessageState struct {
 	Context                 *api.ActiveContext
 	Timer                   *api.TimerState
 	Health                  *api.Health
+	AlertStatus             *api.AlertStatus
+	AlertReminders          []api.AlertReminder
 	UpdateStatus            *api.UpdateStatus
 	UpdateChecking          bool
 	UpdateInstalling        bool
@@ -124,9 +127,12 @@ type MessageDeps struct {
 	LoadContext                func() tea.Cmd
 	LoadTimer                  func() tea.Cmd
 	LoadHealth                 func() tea.Cmd
+	LoadAlertStatus            func() tea.Cmd
+	LoadAlertReminders         func() tea.Cmd
 	LoadUpdateStatus           func() tea.Cmd
 	LoadSettings               func() tea.Cmd
 	LoadKernelInfo             func() tea.Cmd
+	NotifyAlert                func(sharedtypes.AlertRequest) tea.Cmd
 	HealthTickAfter            func() tea.Cmd
 	TickAfter                  func(int) tea.Cmd
 	WaitForEvent               func() tea.Cmd
@@ -348,10 +354,22 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.HealthLoadedMsg:
 		state.Health = msg.Health
 		return state, nil, true
+	case commands.AlertStatusLoadedMsg:
+		state.AlertStatus = msg.Status
+		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		return state, nil, true
+	case commands.AlertRemindersLoadedMsg:
+		state.AlertReminders = msg.Reminders
+		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		return state, nil, true
 	case commands.UpdateStatusLoadedMsg:
 		state.UpdateChecking = false
 		state.UpdateStatus = msg.Status
 		return state, nil, true
+	case commands.AlertTestedMsg:
+		return state, deps.SetStatus(&state, msg.Label, false), true
+	case commands.AlertReminderChangedMsg:
+		return state, tea.Batch(deps.SetStatus(&state, msg.Label, false), deps.LoadAlertReminders()), true
 	case commands.UpdateDismissedMsg:
 		state.UpdateStatus = msg.Status
 		state.UpdateChecking = false
@@ -381,6 +399,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.SettingsLoadedMsg:
 		state.Settings = msg.Settings
 		deps.ClampFiltered(&state, uistate.PaneSettings)
+		deps.ClampFiltered(&state, uistate.PaneAlerts)
 		return state, nil, true
 	case commands.KernelInfoLoadedMsg:
 		state.KernelInfo = msg.Info
@@ -404,12 +423,12 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		cmd := deps.SetStatus(&state, "Dev seed loaded", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadAlertStatus(), deps.LoadAlertReminders(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
 	case commands.DevClearedMsg:
 		cmd := deps.SetStatus(&state, "Dev data cleared", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadAlertStatus(), deps.LoadAlertReminders(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
 	case commands.LocalUpdatePreparedMsg:
 		state.View = uistate.ViewUpdates
 		state.Pane = uistate.DefaultPane(state.View)
@@ -425,7 +444,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		cmd := deps.SetStatus(&state, "All runtime data wiped", false)
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
-		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
+		return state, tea.Batch(cmd, deps.LoadKernelInfo(), deps.LoadRepos(), deps.LoadAllIssues(), deps.LoadDueHabits(deps.CurrentDashboardDate(state)), deps.LoadDailySummary(state.DashboardDate), deps.LoadWellbeing(deps.CurrentWellbeingDate(state)), deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate), deps.LoadSessionHistoryFor200(state), deps.LoadScratchpads(), deps.LoadStashes(), deps.LoadOps(deps.CurrentOpsLimit(state)), deps.LoadContext(), deps.LoadTimer(), deps.LoadAlertStatus(), deps.LoadAlertReminders(), deps.LoadUpdateStatus(), deps.LoadSettings(), deps.LoadExportAssets(), deps.LoadExportReports()), true
 	case commands.UninstallStartedMsg:
 		deps.CloseEventStop()
 		return state, tea.Quit, true
@@ -510,7 +529,18 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			if strings.TrimSpace(label) == "" {
 				label = "Report"
 			}
-			return state, tea.Batch(deps.SetStatus(&state, label+" written to "+*msg.Result.FilePath, false), deps.LoadExportReports()), true
+			return state, tea.Batch(
+				deps.SetStatus(&state, label+" written to "+*msg.Result.FilePath, false),
+				deps.LoadExportReports(),
+				deps.NotifyAlert(sharedtypes.AlertRequest{
+					Kind:      sharedtypes.AlertEventExportCompleted,
+					Title:     label + " ready",
+					Subtitle:  "Export completed",
+					Body:      *msg.Result.FilePath,
+					Urgency:   sharedtypes.AlertUrgencyLow,
+					PlaySound: false,
+				}),
+			), true
 		}
 		return state, nil, true
 	case commands.CalendarExportGeneratedMsg:
@@ -530,7 +560,17 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		meta := fmt.Sprintf("Issues %s   Sessions %s", msg.Result.IssuesFilePath, msg.Result.SessionsFilePath)
 		body := strings.Join([]string{"Issues ICS", msg.Result.IssuesFilePath, "", "Sessions ICS", msg.Result.SessionsFilePath}, "\n")
 		deps.OpenViewEntityDialog(&state, title, name, meta, body)
-		return state, deps.SetStatus(&state, "Calendar export written", false), true
+		return state, tea.Batch(
+			deps.SetStatus(&state, "Calendar export written", false),
+			deps.NotifyAlert(sharedtypes.AlertRequest{
+				Kind:      sharedtypes.AlertEventExportCompleted,
+				Title:     "Calendar export ready",
+				Subtitle:  name,
+				Body:      msg.Result.IssuesFilePath,
+				Urgency:   sharedtypes.AlertUrgencyLow,
+				PlaySound: false,
+			}),
+		), true
 	case commands.ClipboardCopiedMsg:
 		if isExportDialog(state.Dialog) && state.DialogProcessing {
 			state.Dialog = ""
@@ -542,7 +582,14 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, deps.SetStatus(&state, msg.Message, false), true
 	case commands.SupportBundleGeneratedMsg:
 		deps.OpenSupportBundleDialog(&state, msg.Path, msg.SizeBytes, msg.WindowLabel)
-		return state, nil, true
+		return state, deps.NotifyAlert(sharedtypes.AlertRequest{
+			Kind:      sharedtypes.AlertEventSupportBundleReady,
+			Title:     "Support bundle ready",
+			Subtitle:  msg.WindowLabel,
+			Body:      msg.Path,
+			Urgency:   sharedtypes.AlertUrgencyLow,
+			PlaySound: false,
+		}), true
 	case commands.SupportDiagnosticsWrittenMsg:
 		return state, deps.SetStatus(&state, "Recent diagnostics written to "+msg.Path, false), true
 	default:

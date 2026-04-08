@@ -40,27 +40,42 @@ func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {
 
 			notificationCalls := 0
 			soundCalls := 0
-			sendNotificationFn = func(title, message string) error {
+			alertStatusFn = func(paths runtimepkg.Paths) sharedtypes.AlertStatus {
+				return sharedtypes.AlertStatus{
+					NotificationsAvailable: true,
+					SoundAvailable:         true,
+				}
+			}
+			alertSoundPathFn = func(paths runtimepkg.Paths, preset sharedtypes.AlertSoundPreset) (string, error) {
+				return filepath.Join(t.TempDir(), "sound.wav"), nil
+			}
+			sendAlertNotificationFn = func(status sharedtypes.AlertStatus, req sharedtypes.AlertRequest) error {
 				notificationCalls++
 				return nil
 			}
-			playSoundFn = func() error {
+			playAlertSoundFn = func(status sharedtypes.AlertStatus, soundPath string) error {
 				soundCalls++
 				return nil
 			}
 			defer func() {
-				sendNotificationFn = sendNotification
-				playSoundFn = playSound
+				alertStatusFn = detectAlertStatus
+				alertSoundPathFn = alertSoundPath
+				sendAlertNotificationFn = sendAlertNotification
+				playAlertSoundFn = playAlertSound
 			}()
 
 			service := &Service{
 				core:   coreCtx,
 				logger: testLogger(t),
 			}
-			service.dispatch(ctx, sharedtypes.TimerBoundaryPayload{
-				Title:   "Break done",
-				Message: "Back to work",
-			})
+			if err := service.deliver(ctx, sharedtypes.AlertRequest{
+				Kind:      sharedtypes.AlertEventTimerBreakComplete,
+				Title:     "Break done",
+				Body:      "Back to work",
+				PlaySound: true,
+			}, true); err != nil {
+				t.Fatalf("deliver alert: %v", err)
+			}
 
 			if notificationCalls != tc.wantNotifications {
 				t.Fatalf("expected %d notification calls, got %d", tc.wantNotifications, notificationCalls)

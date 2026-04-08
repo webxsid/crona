@@ -29,6 +29,7 @@ func OpenViewJump(state State, protectedModeActive bool, hasActiveTimer bool) St
 		{Key: "x", Label: "Scratchpads", Value: "scratchpads", Detail: "Filesystem-backed notes and scratchpads."},
 		{Key: "o", Label: "Ops", Value: "ops", Detail: "Recent operation log."},
 		{Key: "s", Label: "Settings", Value: "settings", Detail: "Core settings and danger actions."},
+		{Key: "l", Label: "Alerts", Value: "alerts", Detail: "Notification, sound, and alert backend settings."},
 		{Key: "u", Label: "Updates", Value: "updates", Detail: "Release notes, update checks, and install status."},
 		{Key: "h", Label: "Support", Value: "support", Detail: "Bug reporting, bundles, and GitHub links."},
 		{Key: "y", Label: "History", Value: "session_history", Detail: "Session history and past focus work."},
