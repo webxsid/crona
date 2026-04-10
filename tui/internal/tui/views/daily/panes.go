@@ -7,10 +7,10 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	contextmeta "crona/tui/internal/tui/views/contextmeta"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -25,7 +25,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
-	actions := viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane})
+	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, actions)
 	lines := []string{theme.StylePaneTitle.Render("Planned Tasks [1]"), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
 	if len(issues) == 0 || total == 0 {
@@ -74,7 +74,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	cur := state.Cursors["habits"]
 	indices := viewhelpers.FilteredStrings(viewruntime.HabitDailyItems(state.DueHabits), state.Filters["habits"])
 	total := len(indices)
-	actions := viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane})
+	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["habits"], width-6, actions)
 	lines := []string{theme.StylePaneTitle.Render("Habits Due [2]"), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
 	if total == 0 {

@@ -8,6 +8,7 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	dialogs "crona/tui/internal/tui/dialogs"
+	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/testsuite/support"
 	"crona/tui/internal/tui/views"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -533,6 +534,30 @@ func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
 	}
 }
 
+func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
+	global := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
+		View: "daily",
+		Pane: "issues",
+	})
+	pane := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View: "daily",
+		Pane: "issues",
+	})
+	actions := viewchrome.DedupeActionKeys(global, pane)
+	joined := ansi.Strip(strings.Join(actions, " "))
+
+	for _, want := range []string{"[v]", "views"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected deduped global actions to keep %q, got %q", want, joined)
+		}
+	}
+	for _, blocked := range []string{"[a] new", "[c] context"} {
+		if strings.Contains(joined, blocked) {
+			t.Fatalf("expected deduped global actions to drop %q, got %q", blocked, joined)
+		}
+	}
+}
+
 func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
 	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:        "daily",
@@ -544,6 +569,47 @@ func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected beta actions to contain %q, got %q", want, joined)
 		}
+	}
+}
+
+func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
+	state := views.ContentState{
+		View:                "default",
+		Pane:                "issues",
+		Width:               120,
+		Height:              42,
+		DefaultIssueSection: "open",
+		Cursors: map[string]int{
+			"issues": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+		},
+		DefaultIssues: []api.IssueWithMeta{
+			{
+				Issue: api.Issue{
+					ID:     1,
+					Title:  "Active issue",
+					Status: sharedtypes.IssueStatusInProgress,
+				},
+				RepoName:   "Work",
+				StreamName: "core",
+			},
+			{
+				Issue: api.Issue{
+					ID:     2,
+					Title:  "Completed issue",
+					Status: sharedtypes.IssueStatusDone,
+				},
+				RepoName:   "Work",
+				StreamName: "core",
+			},
+		},
+	}
+
+	rendered := ansi.Strip(support.RenderDefault(state))
+	if got := strings.Count(rendered, "[f] focus"); got != 1 {
+		t.Fatalf("expected exactly one active-pane focus action, got %d in %q", got, rendered)
 	}
 }
 
@@ -1050,7 +1116,7 @@ func compactWellbeingState(height int) views.ContentState {
 	avgMood, avgEnergy := 4.0, 3.7
 	return views.ContentState{
 		View:          "wellbeing",
-		Pane:          "issues",
+		Pane:          string(uistate.PaneWellbeingSummary),
 		Width:         92,
 		Height:        height,
 		WellbeingDate: "2026-03-19",

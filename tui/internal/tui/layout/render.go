@@ -194,7 +194,7 @@ func renderSidebar(state State, width, height int) string {
 	if state.TimerActive {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Active Session"),
-			chrome.StyleDim.Render("[ / ] switch"),
+			chrome.StyleDim.Render("[ and ] switch"),
 			chrome.StyleDim.Render("[v] jump"),
 			"",
 			chrome.StyleDim.Render("SESSION"),
@@ -205,7 +205,7 @@ func renderSidebar(state State, width, height int) string {
 	} else {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Views"),
-			chrome.StyleDim.Render("[ / ] switch"),
+			chrome.StyleDim.Render("[ and ] switch"),
 			chrome.StyleDim.Render("[v] jump"),
 			"",
 			chrome.StyleDim.Render("DASHBOARD"),
@@ -316,6 +316,10 @@ func renderStatusToast(state State) string {
 
 func renderHelpOverlay(state State) string {
 	bodyLines := []string{"Press ? or esc to close", ""}
+	bodyLines = append(bodyLines, state.GlobalActions...)
+	if len(state.GlobalActions) > 0 && len(state.PaneActions) > 0 {
+		bodyLines = append(bodyLines, "")
+	}
 	bodyLines = append(bodyLines, state.PaneActions...)
 	boxWidth := min(max(42, state.Width-8), 88)
 	return overlayBox("Keys", bodyLines, []string{"[?] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)

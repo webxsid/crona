@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+
+	uistate "crona/tui/internal/tui/state"
 )
 
 type menuChoice struct {
@@ -13,12 +15,13 @@ type menuChoice struct {
 	Detail string
 }
 
-func OpenViewJump(state State, protectedModeActive bool, hasActiveTimer bool) State {
+func OpenViewJump(state State, availableViews []uistate.View) State {
 	state = Close(state)
 	state.Kind = "view_jump"
 	state.ViewTitle = "Jump To View"
 	state.ViewName = "Press a mnemonic key or use j/k then enter"
-	choices := []menuChoice{
+	allChoices := []menuChoice{
+		{Key: "a", Label: "Away", Value: "away", Detail: "Protected-mode shell when away or rest mode is active."},
 		{Key: "d", Label: "Daily", Value: "daily", Detail: "Daily dashboard with planned issues and habits."},
 		{Key: "r", Label: "Rollup", Value: "rollup", Detail: "Range summaries and drill-down day details."},
 		{Key: "w", Label: "Wellbeing", Value: "wellbeing", Detail: "Check-ins, burnout signals, and trends."},
@@ -33,12 +36,17 @@ func OpenViewJump(state State, protectedModeActive bool, hasActiveTimer bool) St
 		{Key: "u", Label: "Updates", Value: "updates", Detail: "Release notes, update checks, and install status."},
 		{Key: "h", Label: "Support", Value: "support", Detail: "Bug reporting, bundles, and GitHub links."},
 		{Key: "y", Label: "History", Value: "session_history", Detail: "Session history and past focus work."},
+		{Key: "n", Label: "Session", Value: "session_active", Detail: "Active session view while a timer is running."},
 	}
-	if protectedModeActive {
-		choices = append([]menuChoice{{Key: "a", Label: "Away", Value: "away", Detail: "Protected-mode shell when away or rest mode is active."}}, choices...)
+	allowed := make(map[string]struct{}, len(availableViews))
+	for _, view := range availableViews {
+		allowed[string(view)] = struct{}{}
 	}
-	if hasActiveTimer {
-		choices = append(choices, menuChoice{Key: "n", Label: "Session", Value: "session_active", Detail: "Active session view while a timer is running."})
+	choices := make([]menuChoice, 0, len(allChoices))
+	for _, choice := range allChoices {
+		if _, ok := allowed[choice.Value]; ok {
+			choices = append(choices, choice)
+		}
 	}
 	state.ChoiceItems, state.ChoiceValues, state.ChoiceDetails = menuChoiceLists(choices)
 	return state

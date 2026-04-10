@@ -5,6 +5,7 @@ import (
 
 	"crona/tui/internal/api"
 	dialogpkg "crona/tui/internal/tui/dialogs"
+	uistate "crona/tui/internal/tui/state"
 )
 
 type Snapshot struct {
@@ -23,6 +24,7 @@ type Snapshot struct {
 	CurrentWellbeingDate string
 	ProtectedModeActive  bool
 	HasActiveTimer       bool
+	AvailableViews       []uistate.View
 	HasSelectedIssue     bool
 	SelectedIssueID      int64
 	SelectedStreamID     int64
@@ -180,7 +182,7 @@ func OpenViewEntity(s Snapshot, title, name, meta, body string) dialogpkg.State 
 }
 
 func OpenViewJump(s Snapshot) dialogpkg.State {
-	return dialogpkg.OpenViewJump(s.Dialog, s.ProtectedModeActive, s.HasActiveTimer)
+	return dialogpkg.OpenViewJump(s.Dialog, s.AvailableViews)
 }
 
 func OpenBetaSupport(s Snapshot) dialogpkg.State {

@@ -1,5 +1,11 @@
 package viewchrome
 
+import (
+	"strings"
+
+	"github.com/charmbracelet/x/ansi"
+)
+
 import uistate "crona/tui/internal/tui/state"
 
 type ActionsState struct {
@@ -237,9 +243,38 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 }
 
 func PaneActions(theme Theme, state ActionsState) []string {
-	actions := append([]string{}, GlobalActions(theme, state)...)
-	actions = append(actions, ContextualActions(theme, state)...)
-	return actions
+	return ContextualActions(theme, state)
+}
+
+func DedupeActionKeys(actions []string, suppress []string) []string {
+	if len(actions) == 0 || len(suppress) == 0 {
+		return actions
+	}
+	blocked := map[string]struct{}{}
+	for _, action := range suppress {
+		for _, token := range actionTokens(action) {
+			blocked[token] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(actions))
+	for _, action := range actions {
+		tokens := actionTokens(action)
+		if len(tokens) == 0 {
+			out = append(out, action)
+			continue
+		}
+		duplicate := false
+		for _, token := range tokens {
+			if _, ok := blocked[token]; ok {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			out = append(out, action)
+		}
+	}
+	return out
 }
 
 func tabActionLabel(state ActionsState) string {
@@ -250,4 +285,26 @@ func tabActionLabel(state ActionsState) string {
 		return "next pane"
 	}
 	return ""
+}
+
+func actionTokens(action string) []string {
+	plain := ansi.Strip(action)
+	out := []string{}
+	for {
+		start := strings.IndexByte(plain, '[')
+		if start < 0 {
+			break
+		}
+		plain = plain[start+1:]
+		end := strings.IndexByte(plain, ']')
+		if end < 0 {
+			break
+		}
+		token := strings.TrimSpace(plain[:end])
+		if token != "" {
+			out = append(out, token)
+		}
+		plain = plain[end+1:]
+	}
+	return out
 }

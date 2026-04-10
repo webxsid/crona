@@ -32,5 +32,19 @@ func renderView(theme types.Theme, state types.ContentState) string {
 }
 
 func paneActions(theme types.Theme, state types.ContentState, pane string) []string {
-	return viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: pane})
+	return viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+		View:           state.View,
+		Pane:           pane,
+		ScratchpadOpen: state.ScratchpadOpen,
+		TimerState:     timerStateFromContentState(state),
+		RestModeActive: state.RestModeActive,
+		AwayModeActive: state.AwayModeActive,
+	})
+}
+
+func timerStateFromContentState(state types.ContentState) string {
+	if state.Timer == nil {
+		return ""
+	}
+	return state.Timer.State
 }

@@ -959,6 +959,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		CurrentDashboardDate: m.currentDashboardDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
+		AvailableViews:       m.jumpAvailableViews(),
 	}
 	dialogSnapshot.ProtectedModeActive, _, _ = viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
 	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
@@ -983,6 +984,9 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 		target := View(strings.TrimSpace(action.TargetView))
 		if target == "" {
 			return next, nil
+		}
+		if !next.canJumpToView(target) {
+			return next, next.setStatus("That view is not available right now", true)
 		}
 		if target == ViewSessionActive && (next.timer == nil || next.timer.State == "idle") {
 			return next, next.setStatus("Active session view is only available while a timer is running", true)

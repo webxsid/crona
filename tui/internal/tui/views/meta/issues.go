@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	issuecore "crona/tui/internal/tui/views/issuecore"
 	types "crona/tui/internal/tui/views/types"
 )
 
@@ -20,7 +20,12 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	lines := []string{
 		theme.StylePaneTitle.Render("Issues [3]"),
-		viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, paneActions(theme, state, "issues")),
+		viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, func() []string {
+			if !active {
+				return nil
+			}
+			return paneActions(theme, state, "issues")
+		}()),
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render(emptyText))

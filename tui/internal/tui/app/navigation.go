@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -29,13 +30,27 @@ func (m Model) availableViews() []View {
 	}
 	ordered := uistate.ViewOrder()
 	views := make([]View, 0, len(ordered))
-	for _, view := range ordered {
-		views = append(views, view)
-	}
+	views = append(views, ordered...)
 	if len(views) == 0 {
 		return []View{ViewDaily}
 	}
 	return views
+}
+
+func (m Model) jumpAvailableViews() []View {
+	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
+		return []View{ViewAway, ViewReports, ViewSessionHistory}
+	}
+	if m.timer != nil && m.timer.State != "idle" {
+		return []View{ViewSessionActive, ViewSessionHistory, ViewScratch}
+	}
+	return m.availableViews()
+}
+
+func (m Model) canJumpToView(target View) bool {
+	canJump := slices.Contains(m.jumpAvailableViews(), target)
+
+	return canJump
 }
 
 func (m Model) nextWorkspaceView(dir int) View {

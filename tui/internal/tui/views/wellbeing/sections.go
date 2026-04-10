@@ -45,41 +45,69 @@ func lipglossJoinCompact(theme types.Theme, state types.ContentState, topH, bott
 }
 
 func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
+	active := state.Pane == string(uistate.PaneWellbeingSummary)
+	actionLine := ""
+	if active {
+		actionLine = viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+			View:           state.View,
+			Pane:           state.Pane,
+			RestModeActive: state.RestModeActive,
+			AwayModeActive: state.AwayModeActive,
+		}))
+	}
 	header := []string{
 		theme.StylePaneTitle.Render("Wellbeing"),
 		theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", state.WellbeingDate)),
-		viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
-			View:           state.View,
-			Pane:           state.Pane,
-			RestModeActive: state.RestModeActive,
-			AwayModeActive: state.AwayModeActive,
-		})),
+		actionLine,
 		"",
 	}
-	return renderScrollablePane(theme, state.Pane == string(uistate.PaneWellbeingSummary), width, height, header, summaryBodyLines(theme, state, width, false), state.Cursors[string(uistate.PaneWellbeingSummary)])
+	return renderScrollablePane(theme, active, width, height, header, summaryBodyLines(theme, state, width, false), state.Cursors[string(uistate.PaneWellbeingSummary)])
 }
 
 func renderCompactSummary(theme types.Theme, state types.ContentState, width, height int) string {
-	header := []string{
-		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Wellbeing"), theme.StyleHeader.Render(state.WellbeingDate)),
-		viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+	active := state.Pane == string(uistate.PaneWellbeingSummary)
+	actionLine := ""
+	if active {
+		actionLine = viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
 			View:           state.View,
 			Pane:           state.Pane,
 			RestModeActive: state.RestModeActive,
 			AwayModeActive: state.AwayModeActive,
-		})),
+		}))
 	}
-	return renderScrollablePane(theme, state.Pane == string(uistate.PaneWellbeingSummary), width, height, header, summaryBodyLines(theme, state, width, true), state.Cursors[string(uistate.PaneWellbeingSummary)])
+	header := []string{
+		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Wellbeing"), theme.StyleHeader.Render(state.WellbeingDate)),
+		actionLine,
+	}
+	return renderScrollablePane(theme, active, width, height, header, summaryBodyLines(theme, state, width, true), state.Cursors[string(uistate.PaneWellbeingSummary)])
 }
 
 func renderTrends(theme types.Theme, state types.ContentState, width, height int) string {
+	active := state.Pane == string(uistate.PaneWellbeingTrends)
 	header := []string{theme.StylePaneTitle.Render("Metrics Window")}
-	return renderScrollablePane(theme, state.Pane == string(uistate.PaneWellbeingTrends), width, height, header, trendsBodyLines(theme, state, width, false), state.Cursors[string(uistate.PaneWellbeingTrends)])
+	if active {
+		header = append(header, viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+			View:           state.View,
+			Pane:           state.Pane,
+			RestModeActive: state.RestModeActive,
+			AwayModeActive: state.AwayModeActive,
+		})))
+	}
+	return renderScrollablePane(theme, active, width, height, header, trendsBodyLines(theme, state, width, false), state.Cursors[string(uistate.PaneWellbeingTrends)])
 }
 
 func renderCompactTrends(theme types.Theme, state types.ContentState, width, height int) string {
+	active := state.Pane == string(uistate.PaneWellbeingTrends)
 	header := []string{theme.StylePaneTitle.Render("Metrics Window")}
-	return renderScrollablePane(theme, state.Pane == string(uistate.PaneWellbeingTrends), width, height, header, trendsBodyLines(theme, state, width, true), state.Cursors[string(uistate.PaneWellbeingTrends)])
+	if active {
+		header = append(header, viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+			View:           state.View,
+			Pane:           state.Pane,
+			RestModeActive: state.RestModeActive,
+			AwayModeActive: state.AwayModeActive,
+		})))
+	}
+	return renderScrollablePane(theme, active, width, height, header, trendsBodyLines(theme, state, width, true), state.Cursors[string(uistate.PaneWellbeingTrends)])
 }
 
 func smallScreenTitle(summary bool) string {

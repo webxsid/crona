@@ -19,7 +19,12 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	lines := []string{
 		theme.StylePaneTitle.Render("Habits [4]"),
-		viewchrome.RenderPaneActionLine(theme, state.Filters["habits"], width-6, paneActions(theme, state, "habits")),
+		viewchrome.RenderPaneActionLine(theme, state.Filters["habits"], width-6, func() []string {
+			if !active {
+				return nil
+			}
+			return paneActions(theme, state, "habits")
+		}()),
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No habits — [a] create new"))

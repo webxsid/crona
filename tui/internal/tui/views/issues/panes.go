@@ -7,8 +7,8 @@ import (
 	"crona/tui/internal/api"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	contextmeta "crona/tui/internal/tui/views/contextmeta"
-	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	issuecore "crona/tui/internal/tui/views/issuecore"
 	types "crona/tui/internal/tui/views/types"
 )
 
@@ -34,7 +34,7 @@ func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitl
 		theme.StyleDim.Render(subtitle),
 	}
 	if paneActive {
-		lines = append(lines, viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane})))
+		lines = append(lines, viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, viewchrome.PaneActionsForState(theme, state, paneActive)))
 	} else if showFilter {
 		lines = append(lines, viewchrome.RenderFilterLine(theme, state.Filters["issues"], width-6))
 	} else {
@@ -84,7 +84,7 @@ func renderCompactIssuePane(theme types.Theme, state types.ContentState, title, 
 		theme.StyleDim.Render(subtitle),
 	}
 	if paneActive {
-		lines = append(lines, viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], state.Width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane})))
+		lines = append(lines, viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], state.Width-6, viewchrome.PaneActionsForState(theme, state, paneActive)))
 	} else {
 		lines = append(lines, viewchrome.RenderFilterLine(theme, state.Filters["issues"], state.Width-6))
 	}

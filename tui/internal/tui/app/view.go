@@ -20,6 +20,18 @@ func (m Model) layoutState() layoutpkg.State {
 	snapshot := m.selectionSnapshot()
 	activeIssue := selectionpkg.ActiveIssue(snapshot)
 	chromeState := m.layoutChromeState()
+	paneActions := viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
+		View:                   string(m.view),
+		Pane:                   string(m.pane),
+		ScratchpadOpen:         m.scratchpadOpen,
+		TimerState:             chromeState.TimerState,
+		RestModeActive:         stateRestModeFromChrome(chromeState),
+		AwayModeActive:         stateAwayModeFromContent(m),
+		IsDevMode:              m.isDevMode(),
+		IsBetaBuild:            m.isBetaBuild(),
+		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+	})
 	state := layoutpkg.State{
 		Width:               m.width,
 		Height:              m.height,
@@ -41,7 +53,8 @@ func (m Model) layoutState() layoutpkg.State {
 		SessionContextLines: helperpkg.SessionContextContentLines(activeIssue),
 		StatusMsg:           m.statusMsg,
 		StatusErr:           m.statusErr,
-		GlobalActions:       chromeState.GlobalActions,
+		GlobalActions:       viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions),
+		PaneActions:         paneActions,
 	}
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
 	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state), snapshot, activeIssue)
@@ -52,22 +65,22 @@ func (m Model) layoutState() layoutpkg.State {
 			state.ContentState.Pane = ""
 		}
 	}
-	state.PaneActions = viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
-		View:                   string(m.view),
-		Pane:                   string(m.pane),
-		ScratchpadOpen:         m.scratchpadOpen,
-		TimerState:             chromeState.TimerState,
-		RestModeActive:         state.ContentState.RestModeActive,
-		AwayModeActive:         state.ContentState.AwayModeActive,
-		IsDevMode:              m.isDevMode(),
-		IsBetaBuild:            m.isBetaBuild(),
-		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
-		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
-	})
 	if m.dialog != "" {
 		state.DialogState = m.dialogRenderState()
 	}
 	return state
+}
+
+func stateRestModeFromChrome(state layoutChromeState) bool {
+	return state.ProtectedMode
+}
+
+func stateAwayModeFromContent(m Model) bool {
+	protectedMode, awayMode, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	if !protectedMode {
+		return false
+	}
+	return awayMode
 }
 
 type layoutChromeState struct {
