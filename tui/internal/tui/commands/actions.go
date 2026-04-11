@@ -626,6 +626,15 @@ func StartFocusSession(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
 	return startFocusSession(c, repoID, streamID, issueID, false)
 }
 
+func TouchTimerActivity(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.TouchTimerActivity(); err != nil {
+			logger.Errorf("TouchTimerActivity: %v", err)
+		}
+		return nil
+	}
+}
+
 func ContinueFocusSessionFresh(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
 	return startFocusSession(c, repoID, streamID, issueID, true)
 }

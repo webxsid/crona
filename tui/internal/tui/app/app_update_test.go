@@ -2,8 +2,10 @@ package app
 
 import (
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 )
 
 func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
@@ -28,5 +30,24 @@ func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
 	}
 	if len(roundTripped.dialogChoiceValues) != 2 || roundTripped.dialogChoiceValues[0] != "resume" || roundTripped.dialogChoiceValues[1] != "continue" {
 		t.Fatalf("expected choice values to survive dispatch bridge, got %#v", roundTripped.dialogChoiceValues)
+	}
+}
+
+func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
+	now := time.Date(2026, 4, 11, 10, 0, 0, 0, time.UTC)
+	model := Model{client: api.NewClient("unix", "/tmp/missing.sock", ""), timer: &api.TimerState{State: "idle"}}
+	if cmd := model.timerActivityTouchCmd(now); cmd != nil {
+		t.Fatalf("expected no touch command while idle")
+	}
+
+	model.timer = &api.TimerState{State: "running"}
+	if cmd := model.timerActivityTouchCmd(now); cmd == nil {
+		t.Fatalf("expected touch command for active timer")
+	}
+	if cmd := model.timerActivityTouchCmd(now.Add(30 * time.Second)); cmd != nil {
+		t.Fatalf("expected touch command to be throttled")
+	}
+	if cmd := model.timerActivityTouchCmd(now.Add(61 * time.Second)); cmd == nil {
+		t.Fatalf("expected touch command after throttle window")
 	}
 }

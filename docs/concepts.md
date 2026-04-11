@@ -97,6 +97,8 @@ notes/[[date]]-daily.md
 
 Crona can trigger local OS notifications and bundled alert sounds from the kernel itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain kernel-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
 
+Focus inactivity alerts are also kernel-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, stash, or end the session.
+
 ### Calendar Export
 
 Crona can generate deterministic local `.ics` files for external automations.

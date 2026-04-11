@@ -108,11 +108,12 @@ Use the in-app `Updates` view to check, read notes, and install supported update
 Alerts are emitted by the local kernel. The TUI configures and tests them, but the kernel is the process that decides when to fire:
 
 - timer boundary alerts
+- focus inactivity alerts when an active work session runs too long without TUI activity
 - update-available alerts
 - support/export completion alerts
 - scheduled reminders such as nightly check-in reminders
 
-Scheduled reminders are local-only and only fire while the local kernel is running.
+Scheduled reminders and inactivity alerts are local-only and only fire while the local kernel is running.
 
 Supported notification helpers by OS:
 

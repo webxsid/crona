@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"crona/kernel/internal/core"
 	"crona/kernel/internal/events"
@@ -23,6 +24,10 @@ type Service struct {
 	mu                 sync.Mutex
 	lastUpdateNotified string
 	lastReminderSlots  map[string]string
+	activitySessionID  string
+	lastActivityAt     time.Time
+	inactivitySession  string
+	lastInactivityAt   time.Time
 }
 
 var (
@@ -34,11 +39,11 @@ var (
 
 func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *runtimepkg.Logger, paths runtimepkg.Paths) *Service {
 	service := &Service{
-		core:   coreCtx,
-		bus:    bus,
-		logger: logger,
-		paths:  paths,
-		queue:  make(chan sharedtypes.AlertRequest, 32),
+		core:              coreCtx,
+		bus:               bus,
+		logger:            logger,
+		paths:             paths,
+		queue:             make(chan sharedtypes.AlertRequest, 32),
 		lastReminderSlots: make(map[string]string),
 	}
 	unsubscribe := bus.Subscribe(func(event sharedtypes.KernelEvent) {
@@ -78,6 +83,7 @@ func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *
 		}
 	}()
 	go service.runReminderScheduler(ctx)
+	go service.runInactivityScheduler(ctx)
 	return service
 }
 

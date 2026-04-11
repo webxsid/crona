@@ -13,44 +13,74 @@ import (
 	overlaypkg "crona/tui/internal/tui/overlays"
 	selectionpkg "crona/tui/internal/tui/selection"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyMsg); ok {
+		touch := m.timerActivityTouchCmd(time.Now())
 		if m.dialog != "" {
-			return m.updateDialog(key)
+			next, cmd := m.updateDialog(key)
+			return next, batchCmds(touch, cmd)
 		}
 		if m.sessionDetailOpen {
-			return m.updateSessionDetailOverlay(key)
+			next, cmd := m.updateSessionDetailOverlay(key)
+			return next, batchCmds(touch, cmd)
 		}
 		if m.sessionContextOpen {
-			return m.updateSessionContextOverlay(key)
+			next, cmd := m.updateSessionContextOverlay(key)
+			return next, batchCmds(touch, cmd)
 		}
 		if m.helpOpen {
 			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
-			return m.applyOverlayState(state), cmd
+			return m.applyOverlayState(state), batchCmds(touch, cmd)
 		}
 		if m.pane == PaneScratchpads && m.scratchpadOpen {
-			return m.updateScratchpadPane(key)
+			next, cmd := m.updateScratchpadPane(key)
+			return next, batchCmds(touch, cmd)
 		}
 		if m.filterEditing {
 			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())
 			if cmd != nil || state.FilterEditing != m.filterEditing {
-				return m.applyOverlayState(state), cmd
+				return m.applyOverlayState(state), batchCmds(touch, cmd)
 			}
 			next, cmd := filteringpkg.Update(m.filterState(), key, m.filterDeps())
-			return m.applyFilterState(next), cmd
+			return m.applyFilterState(next), batchCmds(touch, cmd)
 		}
 		state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
-		return m.applyInputState(state), cmd
+		return m.applyInputState(state), batchCmds(touch, cmd)
 	}
 	state, cmd, handled := dispatchpkg.HandleMessage(m.dispatchMessageState(), msg, m.dispatchMessageDeps())
 	if handled {
 		return m.applyDispatchMessageState(state), cmd
 	}
 	return m, nil
+}
+
+func (m *Model) timerActivityTouchCmd(now time.Time) tea.Cmd {
+	if m.client == nil || m.timer == nil || m.timer.State == "idle" {
+		return nil
+	}
+	if !m.lastTimerActivityTouch.IsZero() && now.Sub(m.lastTimerActivityTouch) < time.Minute {
+		return nil
+	}
+	m.lastTimerActivityTouch = now
+	return commands.TouchTimerActivity(m.client)
+}
+
+func batchCmds(cmds ...tea.Cmd) tea.Cmd {
+	filtered := make([]tea.Cmd, 0, len(cmds))
+	for _, cmd := range cmds {
+		if cmd != nil {
+			filtered = append(filtered, cmd)
+		}
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+	return tea.Batch(filtered...)
 }
 
 func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

@@ -67,6 +67,15 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, 12); err != nil {
 		t.Fatalf("set rollback minutes: %v", err)
 	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyInactivityAlerts, false); err != nil {
+		t.Fatalf("set inactivity alerts: %v", err)
+	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyInactivityThreshold, 45); err != nil {
+		t.Fatalf("set inactivity threshold: %v", err)
+	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyInactivityRepeat, 90); err != nil {
+		t.Fatalf("set inactivity repeat: %v", err)
+	}
 
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {
@@ -86,5 +95,11 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 	if settings.DailyPlanRollbackMins != 12 {
 		t.Fatalf("unexpected rollback minutes: %d", settings.DailyPlanRollbackMins)
+	}
+	if settings.InactivityAlerts {
+		t.Fatalf("expected inactivity alerts disabled")
+	}
+	if settings.InactivityThreshold != 45 || settings.InactivityRepeat != 90 {
+		t.Fatalf("unexpected inactivity settings: threshold=%d repeat=%d", settings.InactivityThreshold, settings.InactivityRepeat)
 	}
 }

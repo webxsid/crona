@@ -106,6 +106,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"update_checks_enabled":          1,
 		"update_prompt_enabled":          1,
 		"away_mode_enabled":              0,
+		"inactivity_alerts_enabled":      1,
+		"inactivity_threshold_minutes":   60,
+		"inactivity_repeat_minutes":      60,
 	} {
 		if err := ensureCoreSettingsBoolColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err

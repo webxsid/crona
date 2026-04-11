@@ -50,6 +50,9 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyAlertSoundPreset:      {column: "alert_sound_preset", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyAlertUrgency:          {column: "alert_urgency", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyAlertIconEnabled:      {column: "alert_icon_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyInactivityAlerts:      {column: "inactivity_alerts_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyInactivityThreshold:   {column: "inactivity_threshold_minutes", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyInactivityRepeat:      {column: "inactivity_repeat_minutes", queryKind: coreSettingQueryInt},
 	sharedtypes.CoreSettingsKeyUpdateChecksEnabled:   {column: "update_checks_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyUpdatePromptEnabled:   {column: "update_prompt_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyUpdateChannel:         {column: "update_channel", queryKind: coreSettingQueryString},
@@ -197,6 +200,9 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		AlertSoundPreset:      sharedconstants.DefaultCoreSettings["alertSoundPreset"].(string),
 		AlertUrgency:          sharedconstants.DefaultCoreSettings["alertUrgency"].(string),
 		AlertIconEnabled:      sharedconstants.DefaultCoreSettings["alertIconEnabled"].(bool),
+		InactivityAlerts:      sharedconstants.DefaultCoreSettings["inactivityAlertsEnabled"].(bool),
+		InactivityThreshold:   sharedconstants.DefaultCoreSettings["inactivityThresholdMinutes"].(int),
+		InactivityRepeat:      sharedconstants.DefaultCoreSettings["inactivityRepeatMinutes"].(int),
 		UpdateChecksEnabled:   updateChecksEnabled,
 		UpdatePromptEnabled:   updatePromptEnabled,
 		UpdateChannel:         sharedconstants.DefaultCoreSettings["updateChannel"].(string),
@@ -245,6 +251,12 @@ func coreSettingsValue(row storemodels.CoreSettingsModel, key sharedtypes.CoreSe
 		return sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(row.AlertUrgency))
 	case sharedtypes.CoreSettingsKeyAlertIconEnabled:
 		return row.AlertIconEnabled
+	case sharedtypes.CoreSettingsKeyInactivityAlerts:
+		return row.InactivityAlerts
+	case sharedtypes.CoreSettingsKeyInactivityThreshold:
+		return row.InactivityThreshold
+	case sharedtypes.CoreSettingsKeyInactivityRepeat:
+		return row.InactivityRepeat
 	case sharedtypes.CoreSettingsKeyUpdateChecksEnabled:
 		return row.UpdateChecksEnabled
 	case sharedtypes.CoreSettingsKeyUpdatePromptEnabled:
@@ -307,6 +319,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value)
+	case sharedtypes.CoreSettingsKeyInactivityThreshold, sharedtypes.CoreSettingsKeyInactivityRepeat:
+		return clampInactivityMinutes(value)
 	default:
 		return value
 	}
@@ -336,6 +350,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value), nil
+	case sharedtypes.CoreSettingsKeyInactivityThreshold, sharedtypes.CoreSettingsKeyInactivityRepeat:
+		return clampInactivityMinutes(value), nil
 	default:
 		return value, nil
 	}
@@ -359,6 +375,9 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		AlertSoundPreset:      sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(row.AlertSoundPreset)),
 		AlertUrgency:          sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(row.AlertUrgency)),
 		AlertIconEnabled:      row.AlertIconEnabled,
+		InactivityAlerts:      row.InactivityAlerts,
+		InactivityThreshold:   clampInactivityMinutes(row.InactivityThreshold),
+		InactivityRepeat:      clampInactivityMinutes(row.InactivityRepeat),
 		UpdateChecksEnabled:   row.UpdateChecksEnabled,
 		UpdatePromptEnabled:   row.UpdatePromptEnabled,
 		UpdateChannel:         sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(row.UpdateChannel)),
@@ -374,6 +393,25 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}
+}
+
+func clampInactivityMinutes(value any) int {
+	minutes := 60
+	switch typed := value.(type) {
+	case int:
+		minutes = typed
+	case int64:
+		minutes = int(typed)
+	case float64:
+		minutes = int(typed)
+	}
+	if minutes < 15 {
+		return 15
+	}
+	if minutes > 720 {
+		return 720
+	}
+	return minutes
 }
 
 func clampRollbackMinutes(value any) int {

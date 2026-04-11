@@ -114,6 +114,12 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAlertUrgency, nextAlertUrgency(s.Settings.AlertUrgency, dir), repoID, streamID, s.DashboardDate), true
 	case alertsmeta.RowLogoIcon:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAlertIconEnabled, !s.Settings.AlertIconEnabled, repoID, streamID, s.DashboardDate), true
+	case alertsmeta.RowInactivityAlerts:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyInactivityAlerts, !s.Settings.InactivityAlerts, repoID, streamID, s.DashboardDate), true
+	case alertsmeta.RowInactivityAfter:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyInactivityThreshold, clampAlertMinutes(s.Settings.InactivityThreshold+dir*15), repoID, streamID, s.DashboardDate), true
+	case alertsmeta.RowInactivityRepeat:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyInactivityRepeat, clampAlertMinutes(s.Settings.InactivityRepeat+dir*15), repoID, streamID, s.DashboardDate), true
 	case alertsmeta.RowTestNotification:
 		return s, deps.TestAlertNotification(), true
 	case alertsmeta.RowTestSound:
@@ -231,6 +237,16 @@ func clampMin(value, min int) int {
 func currentRollbackMinutes(value int) int {
 	if value <= 0 {
 		return 5
+	}
+	return value
+}
+
+func clampAlertMinutes(value int) int {
+	if value < 15 {
+		return 15
+	}
+	if value > 720 {
+		return 720
 	}
 	return value
 }

@@ -155,6 +155,13 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 			}
 			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID)
 		}), true
+	case protocol.MethodTimerActivity:
+		return h.handleNoParams(req, func() (any, error) {
+			if h.alerts == nil {
+				return shareddto.OKResponse{OK: true}, nil
+			}
+			return shareddto.OKResponse{OK: true}, h.alerts.TouchTimerActivity(ctx)
+		}), true
 	case protocol.MethodTimerPause:
 		return h.handleNoParams(req, func() (any, error) {
 			return h.timer.Pause(ctx)

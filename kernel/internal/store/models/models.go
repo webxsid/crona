@@ -158,6 +158,9 @@ type CoreSettingsModel struct {
 	AlertSoundPreset      string `bun:"alert_sound_preset,notnull,type:text"`
 	AlertUrgency          string `bun:"alert_urgency,notnull,type:text"`
 	AlertIconEnabled      bool   `bun:"alert_icon_enabled,notnull,type:integer"`
+	InactivityAlerts      bool   `bun:"inactivity_alerts_enabled,notnull,type:integer"`
+	InactivityThreshold   int    `bun:"inactivity_threshold_minutes,notnull,type:integer"`
+	InactivityRepeat      int    `bun:"inactivity_repeat_minutes,notnull,type:integer"`
 	UpdateChecksEnabled   bool   `bun:"update_checks_enabled,notnull,type:integer"`
 	UpdatePromptEnabled   bool   `bun:"update_prompt_enabled,notnull,type:integer"`
 	UpdateChannel         string `bun:"update_channel,notnull,type:text"`

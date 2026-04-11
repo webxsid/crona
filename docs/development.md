@@ -132,7 +132,10 @@ The TUI `Alerts` view is the easiest smoke-test surface:
 
 - `Test Notification`
 - `Test Sound`
+- adjust focus inactivity alert threshold/repeat controls
 - create a check-in reminder for a near-future time
+
+Focus inactivity alerts are kernel-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the kernel sends a review-session alert and repeats on the configured interval.
 
 ## PDF Rendering In Development
 

@@ -17,6 +17,9 @@ const (
 	RowSoundPreset      RowKey = "sound_preset"
 	RowUrgency          RowKey = "urgency"
 	RowLogoIcon         RowKey = "logo_icon"
+	RowInactivityAlerts RowKey = "inactivity_alerts"
+	RowInactivityAfter  RowKey = "inactivity_after"
+	RowInactivityRepeat RowKey = "inactivity_repeat"
 	RowTestNotification RowKey = "test_notification"
 	RowTestSound        RowKey = "test_sound"
 	RowAddReminder      RowKey = "add_checkin_reminder"
@@ -49,6 +52,9 @@ func Rows(settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders
 		{Section: "Delivery", Key: RowSoundPreset, Label: "Sound Preset", Value: soundPresetLabel(settings.AlertSoundPreset), Selectable: true},
 		{Section: "Delivery", Key: RowUrgency, Label: "Urgency", Value: urgencyLabel(settings.AlertUrgency), Selectable: true},
 		{Section: "Delivery", Key: RowLogoIcon, Label: "Logo Icon", Value: enabledDisabled(settings.AlertIconEnabled), Selectable: true},
+		{Section: "Focus Inactivity", Key: RowInactivityAlerts, Label: "Inactivity Alerts", Value: enabledDisabled(settings.InactivityAlerts), Selectable: true},
+		{Section: "Focus Inactivity", Key: RowInactivityAfter, Label: "Alert After", Value: minutesLabel(settings.InactivityThreshold), Selectable: true},
+		{Section: "Focus Inactivity", Key: RowInactivityRepeat, Label: "Repeat Every", Value: minutesLabel(settings.InactivityRepeat), Selectable: true},
 	}
 	for _, reminder := range reminders {
 		rows = append(rows, Row{
@@ -203,6 +209,13 @@ func enabledDisabled(v bool) string {
 		return "Enabled"
 	}
 	return "Disabled"
+}
+
+func minutesLabel(value int) string {
+	if value <= 0 {
+		value = 60
+	}
+	return fmt.Sprintf("%dm", value)
 }
 
 func supportedLabel(v bool) string {

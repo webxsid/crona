@@ -109,6 +109,7 @@ const (
 	AlertEventExportCompleted    AlertEventKind = "export.completed"
 	AlertEventRuntimeDegraded    AlertEventKind = "runtime.degraded"
 	AlertEventCheckInReminder    AlertEventKind = "checkin.reminder"
+	AlertEventFocusInactivity    AlertEventKind = "focus.inactivity"
 	AlertEventTestNotification   AlertEventKind = "test.notification"
 	AlertEventTestSound          AlertEventKind = "test.sound"
 )
@@ -263,6 +264,9 @@ const (
 	CoreSettingsKeyAlertSoundPreset      CoreSettingsKey = "alertSoundPreset"
 	CoreSettingsKeyAlertUrgency          CoreSettingsKey = "alertUrgency"
 	CoreSettingsKeyAlertIconEnabled      CoreSettingsKey = "alertIconEnabled"
+	CoreSettingsKeyInactivityAlerts      CoreSettingsKey = "inactivityAlertsEnabled"
+	CoreSettingsKeyInactivityThreshold   CoreSettingsKey = "inactivityThresholdMinutes"
+	CoreSettingsKeyInactivityRepeat      CoreSettingsKey = "inactivityRepeatMinutes"
 	CoreSettingsKeyUpdateChecksEnabled   CoreSettingsKey = "updateChecksEnabled"
 	CoreSettingsKeyUpdatePromptEnabled   CoreSettingsKey = "updatePromptEnabled"
 	CoreSettingsKeyUpdateChannel         CoreSettingsKey = "updateChannel"
@@ -787,6 +791,9 @@ type CoreSettings struct {
 	AlertSoundPreset      AlertSoundPreset `json:"alertSoundPreset"`
 	AlertUrgency          AlertUrgency     `json:"alertUrgency"`
 	AlertIconEnabled      bool             `json:"alertIconEnabled"`
+	InactivityAlerts      bool             `json:"inactivityAlertsEnabled"`
+	InactivityThreshold   int              `json:"inactivityThresholdMinutes"`
+	InactivityRepeat      int              `json:"inactivityRepeatMinutes"`
 	UpdateChecksEnabled   bool             `json:"updateChecksEnabled"`
 	UpdatePromptEnabled   bool             `json:"updatePromptEnabled"`
 	UpdateChannel         UpdateChannel    `json:"updateChannel"`

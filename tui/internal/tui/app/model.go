@@ -103,52 +103,53 @@ type Model struct {
 	opsLimitPinned bool
 
 	// data
-	repos                 []api.Repo
-	streams               []api.Stream
-	issues                []api.Issue // context-filtered (by active streamId)
-	habits                []api.Habit
-	allIssues             []api.IssueWithMeta
-	dueHabits             []api.HabitDailyItem
-	dailySummary          *api.DailyIssueSummary
-	dailyPlan             *api.DailyPlan
-	dashboardDate         string
-	rollupStartDate       string
-	rollupEndDate         string
-	wellbeingDate         string
-	dailyCheckIn          *api.DailyCheckIn
-	metricsRange          []api.DailyMetricsDay
-	metricsRollup         *api.MetricsRollup
-	streaks               *api.StreakSummary
-	dashboardWindow       *api.DashboardWindowSummary
-	dailyFocusScore       *api.FocusScoreSummary
-	weeklyFocusScore      *api.FocusScoreSummary
-	repoDistribution      *api.TimeDistributionSummary
-	streamDistribution    *api.TimeDistributionSummary
-	issueDistribution     *api.TimeDistributionSummary
-	segmentDistribution   *api.TimeDistributionSummary
-	goalProgress          *api.GoalProgressSummary
-	exportAssets          *api.ExportAssetStatus
-	exportReports         []api.ExportReportFile
-	issueSessions         []api.Session
-	sessionHistory        []api.SessionHistoryEntry
-	sessionDetail         *api.SessionDetail
-	scratchpads           []api.ScratchPad
-	stashes               []api.Stash
-	ops                   []api.Op
-	context               *api.ActiveContext
-	timer                 *api.TimerState
-	health                *api.Health
-	alertStatus           *api.AlertStatus
-	alertReminders        []api.AlertReminder
-	updateStatus          *api.UpdateStatus
-	updateChecking        bool
-	updateInstalling      bool
-	updateInstallError    string
-	currentExecutablePath string
-	settings              *api.CoreSettings
-	kernelInfo            *api.KernelInfo
-	elapsed               int // local seconds since last timer.state event
-	timerTickSeq          int
+	repos                  []api.Repo
+	streams                []api.Stream
+	issues                 []api.Issue // context-filtered (by active streamId)
+	habits                 []api.Habit
+	allIssues              []api.IssueWithMeta
+	dueHabits              []api.HabitDailyItem
+	dailySummary           *api.DailyIssueSummary
+	dailyPlan              *api.DailyPlan
+	dashboardDate          string
+	rollupStartDate        string
+	rollupEndDate          string
+	wellbeingDate          string
+	dailyCheckIn           *api.DailyCheckIn
+	metricsRange           []api.DailyMetricsDay
+	metricsRollup          *api.MetricsRollup
+	streaks                *api.StreakSummary
+	dashboardWindow        *api.DashboardWindowSummary
+	dailyFocusScore        *api.FocusScoreSummary
+	weeklyFocusScore       *api.FocusScoreSummary
+	repoDistribution       *api.TimeDistributionSummary
+	streamDistribution     *api.TimeDistributionSummary
+	issueDistribution      *api.TimeDistributionSummary
+	segmentDistribution    *api.TimeDistributionSummary
+	goalProgress           *api.GoalProgressSummary
+	exportAssets           *api.ExportAssetStatus
+	exportReports          []api.ExportReportFile
+	issueSessions          []api.Session
+	sessionHistory         []api.SessionHistoryEntry
+	sessionDetail          *api.SessionDetail
+	scratchpads            []api.ScratchPad
+	stashes                []api.Stash
+	ops                    []api.Op
+	context                *api.ActiveContext
+	timer                  *api.TimerState
+	health                 *api.Health
+	alertStatus            *api.AlertStatus
+	alertReminders         []api.AlertReminder
+	updateStatus           *api.UpdateStatus
+	updateChecking         bool
+	updateInstalling       bool
+	updateInstallError     string
+	currentExecutablePath  string
+	settings               *api.CoreSettings
+	kernelInfo             *api.KernelInfo
+	elapsed                int // local seconds since last timer.state event
+	timerTickSeq           int
+	lastTimerActivityTouch time.Time
 
 	// terminal dimensions
 	width  int

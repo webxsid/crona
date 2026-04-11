@@ -729,6 +729,10 @@ func (c *Client) StartTimer(repoID, streamID, issueID int64, ignoreExistingStash
 	return c.call(protocol.MethodTimerStart, req, nil)
 }
 
+func (c *Client) TouchTimerActivity() error {
+	return c.mustOK(protocol.MethodTimerActivity, nil)
+}
+
 func (c *Client) PauseTimer() error {
 	return c.call(protocol.MethodTimerPause, nil, nil)
 }

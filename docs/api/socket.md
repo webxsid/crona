@@ -131,6 +131,7 @@ Alert behavior notes:
 
 - the kernel, not the TUI, decides when alerts fire
 - scheduled reminders are local-only and only fire while the kernel is running
+- focus inactivity alerts are kernel-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
 - `AlertStatus` reflects the current OS helper/backend that the kernel detected at runtime
 
 ### Repositories
@@ -244,6 +245,7 @@ Export behavior notes:
 | `session.history` | `dto.SessionHistoryQuery` | session history result | History queries with scope and paging controls. |
 | `timer.get_state` | `dto.Empty` | timer state object | Current timer state. |
 | `timer.start` | `dto.TimerStartRequest` | timer/session state | Starts a timer, optionally from context or an explicit repo/stream/issue path. |
+| `timer.activity.touch` | `dto.Empty` | `dto.OKResponse` | Records recent client activity for active-session inactivity alert suppression. |
 | `timer.pause` | `dto.Empty` | timer/session state | Pauses the timer. |
 | `timer.resume` | `dto.Empty` | timer/session state | Resumes the timer. |
 | `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. |
@@ -255,6 +257,7 @@ Timer start behavior notes:
 - If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
 - `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
 - Clients should offer an explicit resume-vs-continue choice. Resuming should call `stash.apply`; continuing fresh should retry `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.
+- Inactivity alerts use core settings for enablement, first-alert threshold, and repeat interval. The default is enabled, 60 minutes to first alert, and 60 minutes between repeats.
 
 ### Context
 

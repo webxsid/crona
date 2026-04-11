@@ -101,6 +101,7 @@ const (
 
 	MethodTimerGetState = "timer.get_state"
 	MethodTimerStart    = "timer.start"
+	MethodTimerActivity = "timer.activity.touch"
 	MethodTimerPause    = "timer.pause"
 	MethodTimerResume   = "timer.resume"
 	MethodTimerEnd      = "timer.end"
