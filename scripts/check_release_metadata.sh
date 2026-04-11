@@ -30,4 +30,8 @@ if printf '%s' "${project_version}" | grep -- '-beta' >/dev/null 2>&1; then
   fi
 fi
 
+if ! sh "${ROOT_DIR}/scripts/release_notes.sh" "${tag}" >/dev/null; then
+  fail "could not generate release notes for ${tag} from docs/changelog.md"
+fi
+
 echo "release metadata ok: ${tag}, protocol ${protocol_version}"

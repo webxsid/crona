@@ -353,7 +353,8 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err := seedHabitStatus(0, walkHabit.ID, today, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Weather broke the morning routine.")); err != nil {
 		return err
 	}
-	if err := seedHabitStatus(0, inboxHabit.ID, today, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(12), devStringPtr("Inbox and notifications cleared before lunch.")); err != nil {
+	inboxDate, inboxOffset := mostRecentMatchingWeekday(baseNow, []int{1, 2, 3, 4, 5})
+	if err := seedHabitStatus(inboxOffset, inboxHabit.ID, inboxDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(12), devStringPtr("Inbox and notifications cleared before lunch.")); err != nil {
 		return err
 	}
 	if err := seedHabitStatus(-1, journalHabit.ID, yesterday, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(9), devStringPtr("Quick reflection before bed.")); err != nil {

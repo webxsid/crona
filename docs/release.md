@@ -36,7 +36,7 @@ The release version must stay consistent across:
 3. Tag the commit with a version tag such as `v1.0.0-beta.4`.
 4. Push the tag.
 
-The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports. Tags containing `beta` publish GitHub prereleases; stable tags publish normal releases.
+The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Tags containing `beta` publish GitHub prereleases; stable tags publish normal releases.
 
 ## Branch Cleanup
 

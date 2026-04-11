@@ -60,6 +60,11 @@ jobs:
       - name: Build artifacts
         run: make release VERSION="${{ steps.version.outputs.version }}"
 
+      - name: Prepare release notes
+        run: |
+          mkdir -p release-notes
+          sh ./scripts/release_notes.sh "${{ steps.version.outputs.version }}" > release-notes/body.md
+
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -73,4 +78,5 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.version }}
           prerelease: ${{ contains(steps.version.outputs.version, 'beta') }}
+          body_path: release-notes/body.md
           files: release/${{ steps.version.outputs.version }}/*

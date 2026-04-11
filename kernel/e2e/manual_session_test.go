@@ -17,6 +17,7 @@ func TestManualSessionLoggingOverIPC(t *testing.T) {
 	repo := createRepo(t, kernel, "Repo")
 	stream := createStream(t, kernel, repo.ID, "main")
 	issue := createIssue(t, kernel, stream.ID, "Missed timer issue", nil)
+	issue = changeIssueStatus(t, kernel, issue.ID, sharedtypes.IssueStatusPlanned)
 
 	var created sharedtypes.Session
 	kernel.call(t, protocol.MethodSessionLogManual, shareddto.ManualSessionLogRequest{

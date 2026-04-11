@@ -146,13 +146,16 @@ func TestPrepareInstallCommandWithLocalReleaseBundle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("prepareInstallCommand returned error: %v", err)
 	}
-	output, err := cmd.CombinedOutput()
+	var output bytes.Buffer
+	cmd.Stdout = &output
+	cmd.Stderr = &output
+	err = cmd.Run()
 	if err != nil {
-		t.Fatalf("expected successful install flow, got error: %v\noutput:\n%s", err, string(output))
+		t.Fatalf("expected successful install flow, got error: %v\noutput:\n%s", err, output.String())
 	}
 	for _, want := range []string{"Installing Crona", "Installing binaries...", "Extracting bundled assets..."} {
-		if !strings.Contains(string(output), want) {
-			t.Fatalf("expected install output to contain %q, got:\n%s", want, string(output))
+		if !strings.Contains(output.String(), want) {
+			t.Fatalf("expected install output to contain %q, got:\n%s", want, output.String())
 		}
 	}
 	for _, path := range []string{
