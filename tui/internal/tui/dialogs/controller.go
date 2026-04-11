@@ -1435,17 +1435,6 @@ func ParseRecurringDates(raw string) ([]string, error) {
 	return out, nil
 }
 
-func streakKindTokens(values []sharedtypes.StreakKind) []string {
-	if len(values) == 0 {
-		values = sharedtypes.AvailableStreakKinds()
-	}
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		out = append(out, string(value))
-	}
-	return out
-}
-
 func streakKindStrings(values []sharedtypes.StreakKind) []string {
 	out := make([]string, 0, len(values))
 	for _, value := range values {

@@ -28,32 +28,6 @@ func updateSingleInput(state State, msg tea.KeyMsg, requiredMsg string, submit f
 	return clearDialogError(state), nil, ""
 }
 
-func updateValidatedSingleInput(state State, msg tea.KeyMsg, requiredMsg string, submit func(string) (*Action, string)) (State, *Action, string) {
-	if len(state.Inputs) == 0 {
-		return Close(state), nil, "dialog input unavailable"
-	}
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			value := strings.TrimSpace(state.Inputs[0].Value())
-			if requiredMsg != "" && value == "" {
-				return state, nil, requiredMsg
-			}
-			action, status := submit(value)
-			if status != "" {
-				return state, nil, status
-			}
-			return Close(state), action, ""
-		}
-	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
-}
-
 func updateNameDescription(state State, msg tea.KeyMsg, requiredMsg string, submit func(string, *string) *Action) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":

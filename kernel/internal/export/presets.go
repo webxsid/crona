@@ -1,7 +1,6 @@
 package export
 
 import (
-	"fmt"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -158,14 +157,6 @@ func weeklyPDFCSSPresets() []templatePreset {
 		{ID: "visual", Body: weeklyVisualPDFStyles},
 		{ID: "deep", Body: weeklyDeepPDFStyles},
 	}
-}
-
-func presetAssetLabel(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) string {
-	format := "Markdown"
-	if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
-		format = "PDF"
-	}
-	return fmt.Sprintf("%s %s Style", strings.Title(strings.ReplaceAll(string(reportKind), "_", " ")), format)
 }
 
 const dailyBriefMarkdownTemplate = `# 🌤 Daily Snapshot — {{date}}

@@ -1,3 +1,5 @@
+//go:build e2e
+
 package e2e
 
 import (
@@ -8,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -56,6 +59,9 @@ func startTestKernel(t *testing.T) *testKernel {
 		select {
 		case runErr := <-errCh:
 			cancel()
+			if isRestrictedIPCBindError(runErr) {
+				t.Skipf("local IPC bind is not permitted in this environment: %v", runErr)
+			}
 			t.Fatalf("kernel exited before info file: %v", runErr)
 		default:
 		}
@@ -73,6 +79,9 @@ func startTestKernel(t *testing.T) *testKernel {
 		select {
 		case runErr := <-errCh:
 			cancel()
+			if isRestrictedIPCBindError(runErr) {
+				t.Skipf("local IPC bind is not permitted in this environment: %v", runErr)
+			}
 			t.Fatalf("kernel exited before endpoint became healthy: %v", runErr)
 		default:
 		}
@@ -224,6 +233,15 @@ func waitForHealthyKernel(info *sharedtypes.KernelInfo, timeout time.Duration) e
 		time.Sleep(25 * time.Millisecond)
 	}
 	return errors.New("timeout waiting for kernel endpoint")
+}
+
+func isRestrictedIPCBindError(err error) bool {
+	if err == nil {
+		return false
+	}
+	value := strings.ToLower(err.Error())
+	return strings.Contains(value, "bind: operation not permitted") ||
+		strings.Contains(value, "listen unix") && strings.Contains(value, "operation not permitted")
 }
 
 func normalizeKernelInfo(info *sharedtypes.KernelInfo) {

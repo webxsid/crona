@@ -356,7 +356,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		footer := "[j/k] move   [enter] choose   [esc] cancel"
+		var footer string
 		if state.Kind == "view_jump" {
 			footer = "[key] jump   [j/k] move   [enter] jump   [esc] cancel"
 		} else {

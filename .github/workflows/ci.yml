@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "release/**"
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            shared/go.sum
+            kernel/go.sum
+            tui/go.sum
+
+      - name: Install golangci-lint
+        run: make install-lint
+
+      - name: Run CI checks
+        run: make ci
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-summary
+          path: |
+            coverage/summary.txt
+            coverage/*.out
+          if-no-files-found: ignore
+
+  e2e:
+    name: Kernel IPC E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            shared/go.sum
+            kernel/go.sum
+
+      - name: Run kernel e2e tests
+        run: make test-e2e

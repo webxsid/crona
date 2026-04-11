@@ -88,7 +88,9 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 	if err != nil {
 		t.Fatalf("zip.OpenReader: %v", err)
 	}
-	defer reader.Close()
+	defer func() {
+		_ = reader.Close()
+	}()
 
 	files := map[string]string{}
 	for _, file := range reader.File {

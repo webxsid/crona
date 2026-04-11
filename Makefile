@@ -15,7 +15,7 @@ CLI_BINARY := $(PROJECT_NAME)$(BIN_SUFFIX)
 KERNEL_BINARY := $(PROJECT_NAME)-kernel$(BIN_SUFFIX)
 TUI_BINARY := $(PROJECT_NAME)-tui$(BIN_SUFFIX)
 
-.PHONY: help meta build test test-shared test-kernel test-tui test-cli fmt vet lint install-lint run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release
+.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release
 
 help:
 	@printf "%s %s\n" "$(PROJECT_NAME)" "$(PROJECT_VERSION)"
@@ -23,6 +23,9 @@ help:
 	@printf "\nTargets:\n"
 	@printf "  make build           Build shared, kernel, tui, and cli\n"
 	@printf "  make test            Run shared, kernel, tui, and cli tests\n"
+	@printf "  make test-unit       Run non-e2e module tests\n"
+	@printf "  make test-e2e        Run kernel IPC e2e tests\n"
+	@printf "  make test-coverage   Generate module coverage summaries\n"
 	@printf "  make test-shared     Run shared tests\n"
 	@printf "  make test-kernel     Run kernel tests\n"
 	@printf "  make test-tui        Run tui tests\n"
@@ -30,6 +33,8 @@ help:
 	@printf "  make fmt             Format the Go workspace\n"
 	@printf "  make vet             Vet the Go workspace\n"
 	@printf "  make lint            Run golangci-lint with repo config\n"
+	@printf "  make ci              Run release metadata, tests, vet, lint, and coverage\n"
+	@printf "  make release-check   Validate version and prerelease metadata consistency\n"
 	@printf "  make install-lint    Install golangci-lint into GOPATH/bin\n"
 	@printf "  make run-kernel      Run the kernel daemon\n"
 	@printf "  make run-tui         Run the terminal UI\n"
@@ -51,10 +56,19 @@ build:
 	cd cli && GOCACHE=$(GOCACHE) $(GO) build ./...
 
 test:
+	$(MAKE) test-unit
+
+test-unit:
 	cd shared && GOCACHE=$(GOCACHE) $(GO) test ./...
 	cd kernel && GOCACHE=$(GOCACHE) $(GO) test ./...
 	cd tui && GOCACHE=$(GOCACHE) $(GO) test ./...
 	cd cli && GOCACHE=$(GOCACHE) $(GO) test ./...
+
+test-e2e:
+	cd kernel && GOCACHE=$(GOCACHE) $(GO) test -tags=e2e ./e2e
+
+test-coverage:
+	sh ./scripts/coverage.sh
 
 test-shared:
 	cd shared && GOCACHE=$(GOCACHE) $(GO) test ./...
@@ -80,8 +94,18 @@ vet:
 lint:
 	sh ./scripts/lint.sh
 
+ci:
+	$(MAKE) release-check
+	$(MAKE) test-unit
+	$(MAKE) vet
+	$(MAKE) lint
+	$(MAKE) test-coverage
+
+release-check:
+	sh ./scripts/check_release_metadata.sh
+
 install-lint:
-	GOCACHE=$(GOCACHE) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8
+	GOCACHE=$(GOCACHE) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
 
 run-kernel:
 	cd kernel && GOCACHE=$(GOCACHE) $(GO) run ./cmd/crona-kernel

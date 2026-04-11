@@ -53,6 +53,7 @@ crona completion fish
 - [Install](docs/install.md)
 - [Development](docs/development.md)
 - [Contributing](docs/contributing.md)
+- [Release Process](docs/release.md)
 - [Socket API](docs/api/socket.md)
 - [Roadmap](docs/roadmap.md)
 - [Changelog](docs/changelog.md)

@@ -100,6 +100,26 @@ Run the full test suite:
 make test
 ```
 
+Run the same non-publishing checks used by CI:
+
+```bash
+make ci
+```
+
+Run kernel IPC e2e tests explicitly:
+
+```bash
+make test-e2e
+```
+
+The e2e suite is build-tagged and excluded from default `go test ./...` runs because it starts a local kernel and binds local IPC endpoints. Use it in environments that allow Unix sockets or Windows named pipes.
+
+Generate coverage summaries:
+
+```bash
+make test-coverage
+```
+
 Run linting:
 
 ```bash
@@ -118,6 +138,12 @@ Targeted module checks are also used heavily during refactors:
 go test ./kernel/internal/...
 go test ./tui/internal/tui/... ./tui/internal/api
 go test ./cli/...
+```
+
+Release metadata can be checked without building artifacts:
+
+```bash
+make release-check
 ```
 
 ## Notifications And Alerts In Development

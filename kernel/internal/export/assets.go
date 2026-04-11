@@ -501,7 +501,9 @@ func RenderPDFReport(paths runtime.Paths, spec reportWriteSpec, markdown string)
 	if err != nil {
 		return "", "", err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	baseName := spec.BaseName
 	if strings.TrimSpace(baseName) == "" {
@@ -551,7 +553,9 @@ func RenderNarrativePDFReport(paths runtime.Paths, spec reportWriteSpec, html st
 	if err != nil {
 		return "", "", err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	baseName := spec.BaseName
 	if strings.TrimSpace(baseName) == "" {

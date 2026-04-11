@@ -81,7 +81,7 @@ func runCalendar(args []string, deps Deps) error {
 
 func runReports(args []string, deps Deps) error {
 	if len(args) == 0 || flagspkg.IsHelpArg(args[0]) {
-		return fmt.Errorf("usage: crona export reports <list|delete> ...")
+		return fmt.Errorf("usage: crona export reports <list|delete>")
 	}
 	switch args[0] {
 	case "list":

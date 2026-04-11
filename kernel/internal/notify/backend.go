@@ -132,9 +132,9 @@ func sendAlertNotification(status sharedtypes.AlertStatus, req sharedtypes.Alert
 			var script strings.Builder
 			script.WriteString("Import-Module BurntToast -ErrorAction Stop; ")
 			script.WriteString("$builder = New-BTContentBuilder; ")
-			script.WriteString(fmt.Sprintf("$builder = Add-BTText -ContentBuilder $builder -Text @(%s) -PassThru; ", powerShellStringArray(lines)))
+			fmt.Fprintf(&script, "$builder = Add-BTText -ContentBuilder $builder -Text @(%s) -PassThru; ", powerShellStringArray(lines))
 			if req.IconEnabled && status.IconSupported && status.IconPath != "" {
-				script.WriteString(fmt.Sprintf("$builder = Add-BTImage -ContentBuilder $builder -Source '%s' -AppLogoOverride -PassThru; ", escapePowerShell(filepath.Clean(status.IconPath))))
+				fmt.Fprintf(&script, "$builder = Add-BTImage -ContentBuilder $builder -Source '%s' -AppLogoOverride -PassThru; ", escapePowerShell(filepath.Clean(status.IconPath)))
 			}
 			script.WriteString("Show-BTNotification -ContentBuilder $builder")
 			return runCommand(powerShellExecutable(), "-NoProfile", "-Command", script.String())

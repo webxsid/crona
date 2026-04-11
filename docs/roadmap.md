@@ -144,6 +144,8 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Feedback and issue intake paths are clear for testers
 - [x] Core workflows are stable enough to continue the `v1.0.0` prerelease track
 - [x] `v1.0.0-beta.3` is the active prerelease validation target
+- [x] CI, coverage, release-check, and tag-driven release publishing are defined for the stable release path
+- [x] Kernel IPC e2e tests are isolated behind an explicit target for reliable local and CI validation
 
 **Mainline exit criteria**
 - [x] Mainline is focused on stabilization rather than new feature families

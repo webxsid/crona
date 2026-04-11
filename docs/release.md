@@ -1,0 +1,43 @@
+# Release Process
+
+Crona uses `main` as the only long-lived code branch.
+
+Release candidates may use short-lived `release/*` branches, for example `release/v1.0.0-beta.4`. These branches run the same validation as `main` and can build release-candidate artifacts in GitHub Actions, but publishing a GitHub release is tag-driven.
+
+## Validation
+
+Before tagging a release, run:
+
+```bash
+make ci
+make test-e2e
+make release VERSION=v1.0.0-beta.4
+```
+
+`make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the kernel IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
+
+## Version Metadata
+
+The release version must stay consistent across:
+
+- `Makefile`
+- `shared/version/version.go`
+- `README.md`
+- `docs/install.md`
+- `docs/changelog.md`
+- `docs/roadmap.md`
+
+`make release-check` validates these references and keeps the protocol version pinned to `1.0` until an external GUI compatibility requirement forces a protocol bump.
+
+## Publishing
+
+1. Update version metadata and changelog.
+2. Commit the release prep.
+3. Tag the commit with a version tag such as `v1.0.0-beta.4`.
+4. Push the tag.
+
+The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports. Tags containing `beta` publish GitHub prereleases; stable tags publish normal releases.
+
+## Branch Cleanup
+
+Keep `main` as the only long-lived branch. Delete merged or stale `release/*`, feature, and dependabot branches after they are no longer needed.

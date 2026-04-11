@@ -21,6 +21,8 @@ Thanks for contributing to Crona.
 
 - Add or update tests for meaningful behavior changes.
 - Keep higher-level TUI behavior checks in the TUI testsuite, and keep pure helper/parser tests local to the owning package.
+- Use `make ci` before release-facing changes.
+- Use `make test-e2e` when touching kernel IPC startup, shutdown, runtime paths, or protocol behavior.
 - Preserve public JSON and IPC contracts unless the change is intentional and documented.
 - Prefer clear, low-risk decomposition over framework-style rewrites.
 

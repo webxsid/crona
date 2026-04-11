@@ -11,6 +11,9 @@ Release channel policy:
 ## [1.0.0-beta.3] - 2026-04-08
 
 ### Added
+- GitHub CI/CD workflows for mainline validation, release-candidate artifact builds, and tag-driven GitHub release publishing.
+- Explicit `make ci`, `make test-e2e`, `make test-coverage`, and `make release-check` targets for pre-stable validation.
+- Release process documentation covering `main`, short-lived `release/*` branches, version tags, prereleases, checksums, and artifact publishing.
 - Dedicated `Alerts` workspace view for notification delivery settings, sound preset selection, backend capability visibility, test actions, and scheduled reminder management.
 - Rich kernel-owned alerts layer with structured alert requests, bundled alert sounds, bundled alert branding assets, and OS-specific local delivery backends.
 - Scheduled local reminder rules for alerts, including check-in reminders with create, edit, enable/disable, and delete flows in the TUI.
@@ -20,6 +23,8 @@ Release channel policy:
 - The main TUI header now shows the running app version on the right side.
 
 ### Changed
+- Kernel IPC e2e tests are now build-tagged and run through `make test-e2e` instead of default module test sweeps, avoiding false failures in restricted environments.
+- Coverage generation now has a dedicated script and summary output under the ignored `coverage/` directory.
 - Utility navigation is now grouped under a `SYSTEM` sidebar section, bringing `Settings`, `Alerts`, `Updates`, and `Support` together.
 - The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.
 - Alerts and reminder behavior is now documented more clearly across install, development, concepts, and socket API docs.
@@ -34,6 +39,7 @@ Release channel policy:
 - Alerts view selection now clamps correctly to visible selectable rows instead of running past the end of the reminder/backend sections.
 - The stash-conflict dialog now preserves its stash ID, issue path, and choice payload across TUI dispatch, so `[r]`, `[c]`, and `[enter]` work correctly.
 - CLI focus starts now render stash conflicts as actionable errors instead of exposing raw IPC failure text.
+- Repeated TUI full-reload command batches after dev seed, dev clear, and runtime wipe now use one shared reload plan.
 
 ### Removed
 - macOS alert delivery no longer includes the NotifiCLI-specific backend path; supported notification helpers are now documented and implemented as `terminal-notifier` with `osascript` fallback.

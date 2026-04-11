@@ -1085,17 +1085,8 @@ func (m Model) openConfirmDeleteEntity(kind, id, label string) Model {
 func (m Model) openStashListDialog() Model {
 	return m.withDialogState(dialogstate.OpenStashList(m.dialogSnapshot()))
 }
-func (m Model) openIssueStatusDialog(status string) Model {
-	return m.withDialogState(dialogstate.OpenIssueStatus(m.dialogSnapshot(), status))
-}
-func (m Model) openIssueStatusNoteDialog(status, label string, required bool) Model {
-	return m.withDialogState(dialogstate.OpenIssueStatusNote(m.dialogSnapshot(), status, label, required))
-}
 func (m Model) openSessionMessageDialog(kind string) Model {
 	return m.withDialogState(dialogstate.OpenSessionMessage(m.dialogSnapshot(), kind))
-}
-func (m Model) openIssueSessionTransitionDialog(issueID int64, status string) Model {
-	return m.withDialogState(dialogstate.OpenIssueSessionTransition(m.dialogSnapshot(), issueID, status))
 }
 func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
 	return m.withDialogState(dialogstate.OpenAmendSession(m.dialogSnapshot(), sessionID, commit))
@@ -1123,9 +1114,6 @@ func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel
 		"Use o to open the folder, c to copy the path, or g to open the issue tracker.",
 	}, "\n")
 	return m.withDialogState(dialogstate.OpenSupportBundleResult(m.dialogSnapshot(), helperpkg.SupportBundleDisplayName(path), meta, body, path))
-}
-func (m Model) openUpdateNotesDialog() Model {
-	return m.withDialogState(dialogstate.OpenUpdateNotes(m.dialogSnapshot()))
 }
 func (m Model) openExportDailyDialog() Model {
 	return m.withDialogState(dialogstate.OpenExportDaily(m.dialogSnapshot()))

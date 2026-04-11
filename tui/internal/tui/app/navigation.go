@@ -20,10 +20,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func nextView(current View, dir int) View {
-	return navigationutil.NextView(uistate.ViewOrder(), current, dir)
-}
-
 func (m Model) availableViews() []View {
 	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
 		return []View{ViewAway, ViewReports, ViewSessionHistory}
@@ -109,22 +105,6 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 	snapshot := m.selectionSnapshot()
 	indices := selectionpkg.FilteredIndices(snapshot, PaneIssues)
 	m.clamp(PaneIssues, len(indices))
-}
-
-func (m *Model) cycleDefaultIssueSection(dir int) {
-	if dir >= 0 {
-		if m.defaultIssueSection == DefaultIssueSectionOpen {
-			m.setDefaultIssueSection(DefaultIssueSectionCompleted)
-			return
-		}
-		m.setDefaultIssueSection(DefaultIssueSectionOpen)
-		return
-	}
-	if m.defaultIssueSection == DefaultIssueSectionCompleted {
-		m.setDefaultIssueSection(DefaultIssueSectionOpen)
-		return
-	}
-	m.setDefaultIssueSection(DefaultIssueSectionCompleted)
 }
 
 func (m Model) selectedMetaRepo() (int64, string, bool) {

@@ -925,13 +925,6 @@ func estimateLabel(value *int) string {
 	return fmt.Sprintf("%dm", *value)
 }
 
-func estimateTableLabel(value int) string {
-	if value <= 0 {
-		return "-"
-	}
-	return fmt.Sprintf("%dm", value)
-}
-
 func formatOptionalFloat(value *float64) string {
 	if value == nil {
 		return ""
@@ -944,10 +937,6 @@ func optionalString(value *string) string {
 		return ""
 	}
 	return strings.TrimSpace(*value)
-}
-
-func escapeTable(value string) string {
-	return strings.ReplaceAll(value, "|", "\\|")
 }
 
 func csvField(value string) string {

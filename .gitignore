@@ -5,4 +5,5 @@ cli/crona
 !cli/cmd/crona/*.go
 dist/
 release/
+coverage/
 .tmp*/

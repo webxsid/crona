@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - "release/**"
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag to build, for example v1.0.0-beta.4"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  artifacts:
+    name: Build Release Artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            shared/go.sum
+            kernel/go.sum
+            tui/go.sum
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.version }}"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME}"
+          elif [[ "${GITHUB_REF_NAME}" == release/* ]]; then
+            version="${GITHUB_REF_NAME#release/}"
+          else
+            echo "Unsupported release ref: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+          if [[ ! "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-\.][A-Za-z0-9]+)*$ ]]; then
+            echo "Invalid release version: ${version}" >&2
+            exit 1
+          fi
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check metadata
+        run: make release-check
+
+      - name: Build artifacts
+        run: make release VERSION="${{ steps.version.outputs.version }}"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: crona-${{ steps.version.outputs.version }}
+          path: release/${{ steps.version.outputs.version }}/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          prerelease: ${{ contains(steps.version.outputs.version, 'beta') }}
+          files: release/${{ steps.version.outputs.version }}/*
