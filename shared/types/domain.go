@@ -826,6 +826,11 @@ type Stash struct {
 	UpdatedAt         string              `json:"updatedAt"`
 }
 
+type StashConflict struct {
+	IssueID int64   `json:"issueId"`
+	Stashes []Stash `json:"stashes"`
+}
+
 type ScratchPadMeta struct {
 	ID           string `json:"id"`
 	Path         string `json:"path"`

@@ -98,7 +98,7 @@ func CallKernel(deps Deps, method string, params, out any) error {
 		return err
 	}
 	if resp.Error != nil {
-		return fmt.Errorf("%s: %s", resp.Error.Code, resp.Error.Message)
+		return &protocol.RPCError{Code: resp.Error.Code, Message: resp.Error.Message, Data: resp.Error.Data}
 	}
 	if out == nil || len(resp.Result) == 0 {
 		return nil

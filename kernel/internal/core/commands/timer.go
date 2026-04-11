@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
 
 	"crona/kernel/internal/core"
 
+	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
 
@@ -75,7 +77,21 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 	}, nil
 }
 
-func (t *TimerService) Start(ctx context.Context, issueID *int64) (sharedtypes.TimerState, error) {
+func (t *TimerService) Start(ctx context.Context, repoID, streamID, issueID *int64) (sharedtypes.TimerState, error) {
+	return t.start(ctx, repoID, streamID, issueID, false)
+}
+
+func (t *TimerService) StartIgnoringExistingStashes(ctx context.Context, repoID, streamID, issueID *int64) (sharedtypes.TimerState, error) {
+	return t.start(ctx, repoID, streamID, issueID, true)
+}
+
+func (t *TimerService) start(
+	ctx context.Context,
+	repoID,
+	streamID,
+	issueID *int64,
+	ignoreExistingStashes bool,
+) (sharedtypes.TimerState, error) {
 	active, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -109,6 +125,20 @@ func (t *TimerService) Start(ctx context.Context, issueID *int64) (sharedtypes.T
 	if !sharedtypes.CanStartFocus(issue.Status) {
 		return sharedtypes.TimerState{}, errors.New("focus sessions cannot be started for the current issue status")
 	}
+	if !ignoreExistingStashes {
+		stashes, err := t.ctx.Stash.ListByIssue(ctx, resolvedIssueID, t.ctx.UserID)
+		if err != nil {
+			return sharedtypes.TimerState{}, err
+		}
+		if len(stashes) > 0 {
+			return sharedtypes.TimerState{}, StashConflictError{
+				Conflict: sharedtypes.StashConflict{
+					IssueID: resolvedIssueID,
+					Stashes: stashes,
+				},
+			}
+		}
+	}
 	if _, err := StartSession(ctx, t.ctx, resolvedIssueID); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -118,11 +148,13 @@ func (t *TimerService) Start(ctx context.Context, issueID *int64) (sharedtypes.T
 		}
 	}
 	if issueID != nil {
+		contextRepoID := repoID
+		contextStreamID := streamID
 		if _, err := t.ctx.ActiveContext.Set(ctx, t.ctx.UserID, t.ctx.DeviceID, struct {
 			RepoID   *int64
 			StreamID *int64
 			IssueID  *int64
-		}{IssueID: &resolvedIssueID}); err == nil {
+		}{RepoID: contextRepoID, StreamID: contextStreamID, IssueID: &resolvedIssueID}); err == nil {
 			payload, _ := json.Marshal(sharedtypes.ContextChangedPayload{
 				DeviceID: t.ctx.DeviceID,
 				IssueID:  &resolvedIssueID,
@@ -142,6 +174,26 @@ func (t *TimerService) Start(ctx context.Context, issueID *int64) (sharedtypes.T
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
+}
+
+type StashConflictError struct {
+	Conflict sharedtypes.StashConflict
+}
+
+func (e StashConflictError) Error() string {
+	count := len(e.Conflict.Stashes)
+	if count == 1 {
+		return fmt.Sprintf("cannot start focus: 1 stash exists for issue #%d", e.Conflict.IssueID)
+	}
+	return fmt.Sprintf("cannot start focus: %d stashes exist for issue #%d", count, e.Conflict.IssueID)
+}
+
+func (e StashConflictError) ProtocolErrorCode() string {
+	return protocol.ErrorCodeStashConflict
+}
+
+func (e StashConflictError) ProtocolErrorData() any {
+	return e.Conflict
 }
 
 func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error) {

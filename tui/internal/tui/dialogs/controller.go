@@ -997,6 +997,10 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateViewJump(state, msg)
 	case "beta_support":
 		return updateBetaSupport(state, msg)
+	case "stash_conflict_pick":
+		return updateStashConflictPick(state, msg)
+	case "stash_conflict":
+		return updateStashConflict(state, msg)
 	default:
 		return state, nil, ""
 	}

@@ -120,11 +120,11 @@ type AlertReminderCreateRequest struct {
 }
 
 type AlertReminderUpdateRequest struct {
-	ID           string                          `json:"id"`
-	Enabled      *bool                           `json:"enabled,omitempty"`
+	ID           string                           `json:"id"`
+	Enabled      *bool                            `json:"enabled,omitempty"`
 	ScheduleType *types.AlertReminderScheduleType `json:"scheduleType,omitempty"`
-	Weekdays     []int                           `json:"weekdays,omitempty"`
-	TimeHHMM     *string                         `json:"timeHHMM,omitempty"`
+	Weekdays     []int                            `json:"weekdays,omitempty"`
+	TimeHHMM     *string                          `json:"timeHHMM,omitempty"`
 }
 
 type AlertReminderIDRequest struct {
@@ -367,5 +367,8 @@ type StashIDRequest struct {
 }
 
 type TimerStartRequest struct {
-	IssueID *int64 `json:"issueId,omitempty"`
+	RepoID                *int64 `json:"repoId,omitempty"`
+	StreamID              *int64 `json:"streamId,omitempty"`
+	IssueID               *int64 `json:"issueId,omitempty"`
+	IgnoreExistingStashes bool   `json:"ignoreExistingStashes,omitempty"`
 }

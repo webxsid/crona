@@ -37,13 +37,15 @@ The transport is local-only. The canonical wire envelopes live in [`shared/proto
   "result": {},
   "error": {
     "code": "string",
-    "message": "string"
+    "message": "string",
+    "data": {}
   }
 }
 ```
 
 - `result` is omitted on error
 - `error` is omitted on success
+- `error.data` is optional structured metadata for client-recoverable errors
 
 ### Event
 
@@ -241,10 +243,18 @@ Export behavior notes:
 | `session.amend_note` | `dto.AmendSessionNoteRequest` | session object | Rewrites the stored session note. |
 | `session.history` | `dto.SessionHistoryQuery` | session history result | History queries with scope and paging controls. |
 | `timer.get_state` | `dto.Empty` | timer state object | Current timer state. |
-| `timer.start` | `dto.TimerStartRequest` | timer/session state | Starts a timer, optionally from context. |
+| `timer.start` | `dto.TimerStartRequest` | timer/session state | Starts a timer, optionally from context or an explicit repo/stream/issue path. |
 | `timer.pause` | `dto.Empty` | timer/session state | Pauses the timer. |
 | `timer.resume` | `dto.Empty` | timer/session state | Resumes the timer. |
 | `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. |
+
+Timer start behavior notes:
+
+- `TimerStartRequest` can carry `repoId`, `streamId`, and `issueId` so clients can start focus from a selected issue without first mutating the shared active context.
+- If `issueId` is omitted, the kernel resolves the current active context issue.
+- If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
+- `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
+- Clients should offer an explicit resume-vs-continue choice. Resuming should call `stash.apply`; continuing fresh should retry `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.
 
 ### Context
 

@@ -1000,6 +1000,8 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 		next.view = target
 		next.pane = uistate.DefaultPane(target)
 		return next, nil
+	case "continue_focus_fresh":
+		return next, commands.ContinueFocusSessionFresh(next.client, action.RepoID, action.StreamID, action.IssueID)
 	case "copy_support_diagnostics":
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
@@ -1017,6 +1019,13 @@ func (m Model) openViewJumpDialog() Model {
 }
 func (m Model) openBetaSupportDialog() Model {
 	return m.withDialogState(dialogstate.OpenBetaSupport(m.dialogSnapshot()))
+}
+func (m Model) openStashConflictDialog(conflict api.StashConflict, repoID, streamID, issueID int64) Model {
+	state := dialogstate.OpenStashConflict(m.dialogSnapshot(), conflict)
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	return m.withDialogState(state)
 }
 func (m Model) openCreateRepoDialog() Model {
 	return m.withDialogState(dialogstate.OpenCreateRepo(m.dialogSnapshot()))

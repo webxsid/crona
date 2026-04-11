@@ -150,7 +150,10 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 		}), true
 	case protocol.MethodTimerStart:
 		return handle(req, func(input shareddto.TimerStartRequest) (any, error) {
-			return h.timer.Start(ctx, input.IssueID)
+			if input.IgnoreExistingStashes {
+				return h.timer.StartIgnoringExistingStashes(ctx, input.RepoID, input.StreamID, input.IssueID)
+			}
+			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID)
 		}), true
 	case protocol.MethodTimerPause:
 		return h.handleNoParams(req, func() (any, error) {

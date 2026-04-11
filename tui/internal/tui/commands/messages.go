@@ -113,6 +113,13 @@ type FocusSessionChangedMsg struct {
 	ReloadTimer   bool
 }
 
+type FocusSessionStashConflictMsg struct {
+	Conflict api.StashConflict
+	RepoID   int64
+	StreamID int64
+	IssueID  int64
+}
+
 type EditorDoneMsg struct{}
 
 type ScratchpadReloadedMsg struct {

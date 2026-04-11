@@ -152,6 +152,15 @@ func (k *testKernel) call(t *testing.T, method string, params any, out any) {
 
 func (k *testKernel) callError(t *testing.T, method string, params any) string {
 	t.Helper()
+	resp := k.callResponse(t, method, params)
+	if resp.Error == nil {
+		t.Fatalf("%s unexpectedly succeeded", method)
+	}
+	return resp.Error.Message
+}
+
+func (k *testKernel) callResponse(t *testing.T, method string, params any) protocol.Response {
+	t.Helper()
 
 	conn, err := localipc.Dial(kernelEndpoint(k.info), 3*time.Second)
 	if err != nil {
@@ -188,10 +197,7 @@ func (k *testKernel) callError(t *testing.T, method string, params any) string {
 	if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&resp); err != nil {
 		t.Fatalf("decode response for %s: %v", method, err)
 	}
-	if resp.Error == nil {
-		t.Fatalf("%s unexpectedly succeeded", method)
-	}
-	return resp.Error.Message
+	return resp
 }
 
 func waitForFile(path string, timeout time.Duration) error {

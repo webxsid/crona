@@ -143,11 +143,33 @@ func mustResult(id string, value any) protocol.Response {
 }
 
 func errorResponse(id string, err error) protocol.Response {
+	code := "request_failed"
+	var data json.RawMessage
+	type codedError interface {
+		ProtocolErrorCode() string
+	}
+	type dataError interface {
+		ProtocolErrorData() any
+	}
+	if e, ok := err.(codedError); ok {
+		if value := e.ProtocolErrorCode(); value != "" {
+			code = value
+		}
+	}
+	if e, ok := err.(dataError); ok {
+		if payload := e.ProtocolErrorData(); payload != nil {
+			body, marshalErr := json.Marshal(payload)
+			if marshalErr == nil {
+				data = body
+			}
+		}
+	}
 	return protocol.Response{
 		ID: id,
 		Error: &protocol.Error{
-			Code:    "request_failed",
+			Code:    code,
 			Message: err.Error(),
+			Data:    data,
 		},
 	}
 }

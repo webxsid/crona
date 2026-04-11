@@ -11,6 +11,7 @@ import (
 	kernelcmd "crona/cli/internal/command/kernel"
 	sessioncmd "crona/cli/internal/command/session"
 	updatecmd "crona/cli/internal/command/update"
+	shareddto "crona/shared/dto"
 	"crona/shared/localipc"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
@@ -139,10 +140,8 @@ func TestTimerStartFromContextUsesCheckedOutIssue(t *testing.T) {
 				ctx.IssueID = &issueID
 				return nil
 			case protocol.MethodTimerStart:
-				req, ok := params.(struct {
-					IssueID *int64 `json:"issueId,omitempty"`
-				})
-				if !ok || req.IssueID == nil || *req.IssueID != 77 {
+				req, ok := params.(shareddto.TimerStartRequest)
+				if !ok || req.IssueID == nil || *req.IssueID != 77 || req.IgnoreExistingStashes {
 					t.Fatalf("unexpected timer start params: %#v", params)
 				}
 				timer := out.(*sharedtypes.TimerState)
@@ -174,10 +173,8 @@ func TestIssueStartFromContextUsesCheckedOutIssue(t *testing.T) {
 				ctx.IssueID = &issueID
 				return nil
 			case protocol.MethodTimerStart:
-				req, ok := params.(struct {
-					IssueID *int64 `json:"issueId,omitempty"`
-				})
-				if !ok || req.IssueID == nil || *req.IssueID != 91 {
+				req, ok := params.(shareddto.TimerStartRequest)
+				if !ok || req.IssueID == nil || *req.IssueID != 91 || req.IgnoreExistingStashes {
 					t.Fatalf("unexpected timer start params: %#v", params)
 				}
 				timer := out.(*sharedtypes.TimerState)
@@ -191,6 +188,29 @@ func TestIssueStartFromContextUsesCheckedOutIssue(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("issue start --from-context: %v", err)
+	}
+}
+
+func TestIssueStartFormatsStashConflictError(t *testing.T) {
+	err := sessioncmd.RunIssue([]string{"start", "--id", "91"}, sessioncmd.Deps{
+		Stdout: &bytes.Buffer{},
+		CallKernel: func(method string, params, out any) error {
+			if method != protocol.MethodTimerStart {
+				t.Fatalf("unexpected method: %s", method)
+			}
+			conflict := sharedtypes.StashConflict{
+				IssueID: 91,
+				Stashes: []sharedtypes.Stash{{ID: "stash-1"}, {ID: "stash-2"}},
+			}
+			body, marshalErr := json.Marshal(conflict)
+			if marshalErr != nil {
+				t.Fatalf("marshal conflict: %v", marshalErr)
+			}
+			return &protocol.RPCError{Code: protocol.ErrorCodeStashConflict, Message: "cannot start focus: 2 stashes exist for issue #91", Data: body}
+		},
+	})
+	if err == nil || !strings.Contains(err.Error(), "2 stashes exist for issue #91") {
+		t.Fatalf("expected formatted stash conflict error, got %v", err)
 	}
 }
 

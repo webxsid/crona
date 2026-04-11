@@ -75,6 +75,8 @@ It:
 
 A stash suspends the current context and can preserve timer state.
 
+If a user starts a focus session on an issue that already has a stash, the kernel blocks the fresh start and returns a structured conflict. Clients should show the matching stash or stashes and let the user either resume a stash or explicitly continue with a fresh session. Continuing fresh keeps the existing stash for later.
+
 ### Active Context
 
 The shared `{ repo -> stream -> issue }` selection across kernel clients.

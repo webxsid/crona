@@ -66,7 +66,7 @@ func (c *Client) call(method string, params, out any) error {
 		return err
 	}
 	if resp.Error != nil {
-		return fmt.Errorf("%s: %s", resp.Error.Code, resp.Error.Message)
+		return &protocol.RPCError{Code: resp.Error.Code, Message: resp.Error.Message, Data: resp.Error.Data}
 	}
 	if out == nil || len(resp.Result) == 0 {
 		return nil
@@ -714,11 +714,18 @@ func (c *Client) WipeRuntimeData() error {
 	return c.mustOK(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true})
 }
 
-func (c *Client) StartTimer(issueID int64) error {
+func (c *Client) StartTimer(repoID, streamID, issueID int64, ignoreExistingStashes bool) error {
 	req := shareddto.TimerStartRequest{}
+	if repoID != 0 {
+		req.RepoID = &repoID
+	}
+	if streamID != 0 {
+		req.StreamID = &streamID
+	}
 	if issueID != 0 {
 		req.IssueID = &issueID
 	}
+	req.IgnoreExistingStashes = ignoreExistingStashes
 	return c.call(protocol.MethodTimerStart, req, nil)
 }
 

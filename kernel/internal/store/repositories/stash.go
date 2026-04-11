@@ -20,6 +20,17 @@ func NewStashRepository(db *bun.DB) *StashRepository {
 }
 
 func (r *StashRepository) List(ctx context.Context, userID string) ([]sharedtypes.Stash, error) {
+	return r.listWithQuery(ctx, r.baseQuery().Where("stash.user_id = ?", userID).OrderExpr("stash.created_at DESC"))
+}
+
+func (r *StashRepository) ListByIssue(ctx context.Context, issueID int64, userID string) ([]sharedtypes.Stash, error) {
+	return r.listWithQuery(ctx, r.baseQuery().
+		Where("stash.user_id = ?", userID).
+		Where("issues.public_id = ?", issueID).
+		OrderExpr("stash.created_at DESC"))
+}
+
+func (r *StashRepository) listWithQuery(ctx context.Context, query *bun.SelectQuery) ([]sharedtypes.Stash, error) {
 	type row struct {
 		ID             string  `bun:"id"`
 		UserID         string  `bun:"user_id"`
@@ -35,7 +46,7 @@ func (r *StashRepository) List(ctx context.Context, userID string) ([]sharedtype
 		UpdatedAt      string  `bun:"updated_at"`
 	}
 	var rows []row
-	if err := r.baseQuery().Where("stash.user_id = ?", userID).OrderExpr("stash.created_at DESC").Scan(ctx, &rows); err != nil {
+	if err := query.Scan(ctx, &rows); err != nil {
 		return nil, err
 	}
 	out := make([]sharedtypes.Stash, 0, len(rows))

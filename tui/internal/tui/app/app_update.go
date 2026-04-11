@@ -422,7 +422,13 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		StatusErr:               m.statusErr,
 		Dialog:                  m.dialog,
 		DialogErrorMessage:      m.dialogErrorMessage,
+		DialogDeleteID:          m.dialogDeleteID,
+		DialogRepoID:            m.dialogRepoID,
+		DialogStreamID:          m.dialogStreamID,
+		DialogIssueID:           m.dialogIssueID,
 		DialogChoiceItems:       m.dialogChoiceItems,
+		DialogChoiceValues:      m.dialogChoiceValues,
+		DialogChoiceDetails:     m.dialogChoiceDetails,
 		DialogChoiceCursor:      m.dialogChoiceCursor,
 		DialogProcessing:        m.dialogProcessing,
 		DialogProcessingLabel:   m.dialogProcessingLabel,
@@ -501,7 +507,13 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.statusErr = state.StatusErr
 	m.dialog = state.Dialog
 	m.dialogErrorMessage = state.DialogErrorMessage
+	m.dialogDeleteID = state.DialogDeleteID
+	m.dialogRepoID = state.DialogRepoID
+	m.dialogStreamID = state.DialogStreamID
+	m.dialogIssueID = state.DialogIssueID
 	m.dialogChoiceItems = state.DialogChoiceItems
+	m.dialogChoiceValues = state.DialogChoiceValues
+	m.dialogChoiceDetails = state.DialogChoiceDetails
 	m.dialogChoiceCursor = state.DialogChoiceCursor
 	m.dialogProcessing = state.DialogProcessing
 	m.dialogProcessingLabel = state.DialogProcessingLabel
@@ -563,6 +575,11 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		OpenViewEntityDialog: func(state *dispatchpkg.MessageState, title, name, meta, body string) {
 			next := m.applyDispatchMessageState(*state)
 			next = next.openViewEntityDialog(title, name, meta, body)
+			*state = next.dispatchMessageState()
+		},
+		OpenStashConflictDialog: func(state *dispatchpkg.MessageState, conflict api.StashConflict, repoID, streamID, issueID int64) {
+			next := m.applyDispatchMessageState(*state)
+			next = next.openStashConflictDialog(conflict, repoID, streamID, issueID)
 			*state = next.dispatchMessageState()
 		},
 		OpenSupportBundleDialog: func(state *dispatchpkg.MessageState, path string, sizeBytes int64, windowLabel string) {

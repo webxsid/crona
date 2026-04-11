@@ -8,6 +8,7 @@ import (
 	"time"
 
 	shareddto "crona/shared/dto"
+	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
@@ -622,19 +623,23 @@ func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) te
 }
 
 func StartFocusSession(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
+	return startFocusSession(c, repoID, streamID, issueID, false)
+}
+
+func ContinueFocusSessionFresh(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
+	return startFocusSession(c, repoID, streamID, issueID, true)
+}
+
+func startFocusSession(c *api.Client, repoID, streamID, issueID int64, ignoreExistingStashes bool) tea.Cmd {
 	return func() tea.Msg {
-		if repoID != 0 && streamID != 0 && issueID != 0 {
-			if err := c.SetFullContext(repoID, streamID, issueID); err != nil {
-				logger.Errorf("SetFullContext before StartTimer: %v", err)
-				return ErrMsg{Err: err}
+		if err := c.StartTimer(repoID, streamID, issueID, ignoreExistingStashes); err != nil {
+			var rpcErr *protocol.RPCError
+			if errors.As(err, &rpcErr) && rpcErr != nil && rpcErr.Code == protocol.ErrorCodeStashConflict {
+				var conflict api.StashConflict
+				if decodeErr := rpcErr.DecodeData(&conflict); decodeErr == nil && conflict.IssueID != 0 {
+					return FocusSessionStashConflictMsg{Conflict: conflict, RepoID: repoID, StreamID: streamID, IssueID: issueID}
+				}
 			}
-		} else if issueID != 0 {
-			if err := c.SwitchIssue(issueID); err != nil {
-				logger.Errorf("SwitchIssue before StartTimer: %v", err)
-				return ErrMsg{Err: err}
-			}
-		}
-		if err := c.StartTimer(0); err != nil {
 			logger.Errorf("StartTimer: %v", err)
 			return ErrMsg{Err: err}
 		}

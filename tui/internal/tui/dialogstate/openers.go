@@ -3,6 +3,7 @@ package dialogstate
 import (
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	dialogpkg "crona/tui/internal/tui/dialogs"
 	uistate "crona/tui/internal/tui/state"
@@ -187,6 +188,10 @@ func OpenViewJump(s Snapshot) dialogpkg.State {
 
 func OpenBetaSupport(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenBetaSupport(s.Dialog)
+}
+
+func OpenStashConflict(s Snapshot, conflict sharedtypes.StashConflict) dialogpkg.State {
+	return dialogpkg.OpenStashConflict(s.Dialog, conflict)
 }
 
 func OpenSupportBundleResult(s Snapshot, name, meta, body, path string) dialogpkg.State {

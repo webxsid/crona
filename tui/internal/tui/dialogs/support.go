@@ -1,8 +1,10 @@
 package dialogs
 
 import (
+	"fmt"
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	tea "github.com/charmbracelet/bubbletea"
 
 	uistate "crona/tui/internal/tui/state"
@@ -69,6 +71,30 @@ func OpenBetaSupport(state State) State {
 	return state
 }
 
+func OpenStashConflict(state State, conflict sharedtypes.StashConflict) State {
+	if len(conflict.Stashes) <= 1 {
+		if len(conflict.Stashes) == 0 {
+			return Close(state)
+		}
+		return openSingleStashConflict(state, conflict, 0)
+	}
+	state = Close(state)
+	state.Kind = "stash_conflict_pick"
+	state.ViewTitle = "Existing Stash Found"
+	state.ViewName = fmt.Sprintf("Issue #%d already has %d stashes", conflict.IssueID, len(conflict.Stashes))
+	state.ViewMeta = "Choose a stash to resume, or inspect it before continuing fresh."
+	state.ChoiceItems = make([]string, 0, len(conflict.Stashes))
+	state.ChoiceValues = make([]string, 0, len(conflict.Stashes))
+	state.ChoiceDetails = make([]string, 0, len(conflict.Stashes))
+	for _, stash := range conflict.Stashes {
+		state.ChoiceItems = append(state.ChoiceItems, stashConflictLabel(stash))
+		state.ChoiceValues = append(state.ChoiceValues, stash.ID)
+		state.ChoiceDetails = append(state.ChoiceDetails, stashConflictDetail(stash))
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
 func OpenViewEntity(state State, title string, name string, meta string, body string) State {
 	state = Close(state)
 	state.Kind = "view_entity"
@@ -126,6 +152,72 @@ func updateViewJump(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateBetaSupport(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return updateChoiceMenu(state, msg, false)
+}
+
+func updateStashConflictPick(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc", "q":
+		return Close(state), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			return clearDialogError(state), nil, ""
+		}
+		return openSingleStashConflictByID(state, strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor])), nil, ""
+	default:
+		return clearDialogError(state), nil, ""
+	}
+}
+
+func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc", "q":
+		return Close(state), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "r":
+		if strings.TrimSpace(state.DeleteID) == "" {
+			return clearDialogError(state), nil, "Stash is unavailable"
+		}
+		return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
+	case "c":
+		return Close(state), &Action{Kind: "continue_focus_fresh", RepoID: state.RepoID, StreamID: state.StreamID, IssueID: state.IssueID}, ""
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			if strings.TrimSpace(state.DeleteID) == "" {
+				return clearDialogError(state), nil, "Stash is unavailable"
+			}
+			return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
+		}
+		value := strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor])
+		switch value {
+		case "resume":
+			return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
+		case "continue":
+			return Close(state), &Action{Kind: "continue_focus_fresh", RepoID: state.RepoID, StreamID: state.StreamID, IssueID: state.IssueID}, ""
+		default:
+			return clearDialogError(state), nil, ""
+		}
+	default:
+		return clearDialogError(state), nil, ""
+	}
 }
 
 func updateChoiceMenu(state State, msg tea.KeyMsg, jumpMenu bool) (State, *Action, string) {
@@ -191,4 +283,81 @@ func menuChoiceKey(label string) string {
 		return ""
 	}
 	return strings.TrimSpace(label[1:end])
+}
+
+func openSingleStashConflict(state State, conflict sharedtypes.StashConflict, idx int) State {
+	if idx < 0 || idx >= len(conflict.Stashes) {
+		return Close(state)
+	}
+	return openSingleStashConflictByID(withStashConflictItems(state, conflict), conflict.Stashes[idx].ID)
+}
+
+func withStashConflictItems(state State, conflict sharedtypes.StashConflict) State {
+	state = Close(state)
+	state.ViewTitle = "Existing Stash Found"
+	state.ViewName = fmt.Sprintf("Issue #%d already has a stashed session", conflict.IssueID)
+	if len(conflict.Stashes) > 1 {
+		state.ViewName = fmt.Sprintf("Issue #%d has %d stashes", conflict.IssueID, len(conflict.Stashes))
+	}
+	state.ChoiceItems = make([]string, 0, len(conflict.Stashes))
+	state.ChoiceValues = make([]string, 0, len(conflict.Stashes))
+	state.ChoiceDetails = make([]string, 0, len(conflict.Stashes))
+	for _, stash := range conflict.Stashes {
+		state.ChoiceItems = append(state.ChoiceItems, stashConflictLabel(stash))
+		state.ChoiceValues = append(state.ChoiceValues, stash.ID)
+		state.ChoiceDetails = append(state.ChoiceDetails, stashConflictDetail(stash))
+	}
+	return state
+}
+
+func openSingleStashConflictByID(state State, stashID string) State {
+	state.Kind = "stash_conflict"
+	state.DeleteID = stashID
+	selectedIdx := 0
+	for i, value := range state.ChoiceValues {
+		if strings.TrimSpace(value) == strings.TrimSpace(stashID) {
+			selectedIdx = i
+			break
+		}
+	}
+	state.ViewMeta = ""
+	state.ViewBody = ""
+	if selectedIdx >= 0 && selectedIdx < len(state.ChoiceItems) {
+		state.ViewMeta = state.ChoiceItems[selectedIdx]
+	}
+	if selectedIdx >= 0 && selectedIdx < len(state.ChoiceDetails) {
+		state.ViewBody = state.ChoiceDetails[selectedIdx]
+	}
+	state.ChoiceItems = []string{"[r] Resume stash", "[c] Continue fresh"}
+	state.ChoiceValues = []string{"resume", "continue"}
+	state.ChoiceDetails = []string{
+		"Apply this stash and continue the paused session instead of starting a new one.",
+		"Start a fresh focus session on this issue and keep the stash for later.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func stashConflictLabel(stash sharedtypes.Stash) string {
+	if stash.Note != nil && strings.TrimSpace(*stash.Note) != "" {
+		return strings.TrimSpace(*stash.Note)
+	}
+	return "Stash from " + strings.TrimSpace(stash.CreatedAt)
+}
+
+func stashConflictDetail(stash sharedtypes.Stash) string {
+	parts := []string{}
+	if strings.TrimSpace(stash.CreatedAt) != "" {
+		parts = append(parts, "Created "+strings.TrimSpace(stash.CreatedAt))
+	}
+	if stash.PausedSegmentType != nil {
+		parts = append(parts, "Segment "+string(*stash.PausedSegmentType))
+	}
+	if stash.ElapsedSeconds != nil && *stash.ElapsedSeconds > 0 {
+		parts = append(parts, fmt.Sprintf("Elapsed %dm", *stash.ElapsedSeconds/60))
+	}
+	if len(parts) == 0 {
+		return "Resume this stash or continue with a fresh session."
+	}
+	return strings.Join(parts, "  ·  ")
 }

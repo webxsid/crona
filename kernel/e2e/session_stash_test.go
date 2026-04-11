@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"encoding/json"
 	"testing"
 
 	shareddto "crona/shared/dto"
@@ -101,6 +102,43 @@ func TestTimerStashRestoreFlowOverIPC(t *testing.T) {
 	}
 	if timer.IssueID == nil || *timer.IssueID != issueA.ID {
 		t.Fatalf("expected restored issue to resume immediately, got %+v", timer)
+	}
+}
+
+func TestTimerStartReturnsStashConflictForMatchingIssue(t *testing.T) {
+	kernel := startTestKernel(t)
+	defer kernel.close(t)
+
+	repo := createRepo(t, kernel, "Repo A")
+	stream := createStream(t, kernel, repo.ID, "main")
+	issue := createIssue(t, kernel, stream.ID, "Issue A", nil)
+	changeIssueStatus(t, kernel, issue.ID, sharedtypes.IssueStatusPlanned)
+
+	var timer sharedtypes.TimerState
+	kernel.call(t, protocol.MethodTimerStart, shareddto.TimerStartRequest{IssueID: &issue.ID}, &timer)
+	kernel.call(t, protocol.MethodTimerPause, nil, &timer)
+
+	var stash sharedtypes.Stash
+	kernel.call(t, protocol.MethodStashPush, shareddto.CreateStashRequest{StashNote: stringPtr("Paused work")}, &stash)
+
+	resp := kernel.callResponse(t, protocol.MethodTimerStart, shareddto.TimerStartRequest{IssueID: &issue.ID})
+	if resp.Error == nil {
+		t.Fatalf("expected stash conflict response")
+	}
+	if resp.Error.Code != protocol.ErrorCodeStashConflict {
+		t.Fatalf("expected stash conflict code, got %+v", resp.Error)
+	}
+	var conflict sharedtypes.StashConflict
+	if err := json.Unmarshal(resp.Error.Data, &conflict); err != nil {
+		t.Fatalf("decode stash conflict data: %v", err)
+	}
+	if conflict.IssueID != issue.ID || len(conflict.Stashes) != 1 || conflict.Stashes[0].ID != stash.ID {
+		t.Fatalf("unexpected stash conflict payload: %+v", conflict)
+	}
+
+	kernel.call(t, protocol.MethodTimerStart, shareddto.TimerStartRequest{IssueID: &issue.ID, IgnoreExistingStashes: true}, &timer)
+	if timer.State != "running" || timer.IssueID == nil || *timer.IssueID != issue.ID {
+		t.Fatalf("expected timer to start with stash override, got %+v", timer)
 	}
 }
 

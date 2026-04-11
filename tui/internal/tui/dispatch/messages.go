@@ -78,7 +78,13 @@ type MessageState struct {
 	StatusErr               bool
 	Dialog                  string
 	DialogErrorMessage      string
+	DialogDeleteID          string
+	DialogRepoID            int64
+	DialogStreamID          int64
+	DialogIssueID           int64
 	DialogChoiceItems       []string
+	DialogChoiceValues      []string
+	DialogChoiceDetails     []string
 	DialogChoiceCursor      int
 	DialogProcessing        bool
 	DialogProcessingLabel   string
@@ -102,6 +108,7 @@ type MessageDeps struct {
 	SetStatus                  func(*MessageState, string, bool) tea.Cmd
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
+	OpenStashConflictDialog    func(*MessageState, api.StashConflict, int64, int64, int64)
 	EnterScratchpadPane        func(*MessageState, commands.OpenScratchpadMsg)
 	SetScratchpadContent       func(*MessageState, string, string)
 	CurrentDashboardDate       func(MessageState) string
@@ -475,6 +482,9 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			return state, nil, true
 		}
 		return state, tea.Batch(cmds...), true
+	case commands.FocusSessionStashConflictMsg:
+		deps.OpenStashConflictDialog(&state, msg.Conflict, msg.RepoID, msg.StreamID, msg.IssueID)
+		return state, nil, true
 	case commands.TimerTickMsg:
 		if msg.Seq != state.TimerTickSeq {
 			return state, nil, true
