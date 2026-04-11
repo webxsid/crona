@@ -6,40 +6,49 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.0-beta.3` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+- `v1.0.0-beta.4` is the current `1.0.0` prerelease build for tester validation before the first stable release.
 
-## [1.0.0-beta.3] - 2026-04-08
+## [1.0.0-beta.4] - 2026-04-11
 
 ### Added
 - GitHub CI/CD workflows for mainline validation, release-candidate artifact builds, and tag-driven GitHub release publishing.
 - Explicit `make ci`, `make test-e2e`, `make test-coverage`, and `make release-check` targets for pre-stable validation.
 - Release process documentation covering `main`, short-lived `release/*` branches, version tags, prereleases, checksums, and artifact publishing.
+- Kernel-owned focus inactivity alerts with configurable threshold and repeat interval, plus TUI activity reporting to avoid false positives while the user is actively interacting.
+
+### Changed
+- Kernel IPC e2e tests are now build-tagged and run through `make test-e2e` instead of default module test sweeps, avoiding false failures in restricted environments.
+- Coverage generation now has a dedicated script and summary output under the ignored `coverage/` directory.
+- The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.
+- Starting focus from an issue with existing stashes now uses a structured kernel conflict and a TUI resume-or-continue dialog instead of silently starting another session.
+- `timer.start` now accepts an explicit repo/stream/issue path and a stash-conflict override flag so clients can start selected issues without first mutating active context.
+
+### Fixed
+- View-jump choices now stay context-aware while a session is active, hiding views that cannot be entered in that state.
+- The stash-conflict dialog now preserves its stash ID, issue path, and choice payload across TUI dispatch, so `[r]`, `[c]`, and `[enter]` work correctly.
+- CLI focus starts now render stash conflicts as actionable errors instead of exposing raw IPC failure text.
+- Repeated TUI full-reload command batches after dev seed, dev clear, and runtime wipe now use one shared reload plan.
+
+## [1.0.0-beta.3] - 2026-04-08
+
+### Added
 - Dedicated `Alerts` workspace view for notification delivery settings, sound preset selection, backend capability visibility, test actions, and scheduled reminder management.
 - Rich kernel-owned alerts layer with structured alert requests, bundled alert sounds, bundled alert branding assets, and OS-specific local delivery backends.
 - Scheduled local reminder rules for alerts, including check-in reminders with create, edit, enable/disable, and delete flows in the TUI.
-- Kernel-owned focus inactivity alerts with configurable threshold and repeat interval, plus TUI activity reporting to avoid false positives while the user is actively interacting.
 - Kernel info now exposes an independent `protocolVersion` so future GUIs can validate IPC compatibility without relying on the app release version.
 - Daily report exports now surface plan accountability and failure signals more explicitly, including failed-count, accountability score, delayed/high-risk issue metrics, and failed-plan issue details in the default templates.
 - The main TUI header now shows the running app version on the right side.
 
 ### Changed
-- Kernel IPC e2e tests are now build-tagged and run through `make test-e2e` instead of default module test sweeps, avoiding false failures in restricted environments.
-- Coverage generation now has a dedicated script and summary output under the ignored `coverage/` directory.
 - Utility navigation is now grouped under a `SYSTEM` sidebar section, bringing `Settings`, `Alerts`, `Updates`, and `Support` together.
-- The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.
 - Alerts and reminder behavior is now documented more clearly across install, development, concepts, and socket API docs.
 - PDF renderer behavior and required local tooling are now documented more clearly across install, development, and socket API docs.
 - The Alerts view now focuses on the active backend and capability support instead of advertising backend fallback chains.
 - Daily export templates and presets now reflect the current accountability model instead of leaving those newer plan/failure signals implicit in the data only.
-- Starting focus from an issue with existing stashes now uses a structured kernel conflict and a TUI resume-or-continue dialog instead of silently starting another session.
-- `timer.start` now accepts an explicit repo/stream/issue path and a stash-conflict override flag so clients can start selected issues without first mutating active context.
 
 ### Fixed
 - Session-history detail overlays now open the amend dialog correctly from `[e]` instead of dropping the dialog state during the overlay handoff.
 - Alerts view selection now clamps correctly to visible selectable rows instead of running past the end of the reminder/backend sections.
-- The stash-conflict dialog now preserves its stash ID, issue path, and choice payload across TUI dispatch, so `[r]`, `[c]`, and `[enter]` work correctly.
-- CLI focus starts now render stash conflicts as actionable errors instead of exposing raw IPC failure text.
-- Repeated TUI full-reload command batches after dev seed, dev clear, and runtime wipe now use one shared reload plan.
 
 ### Removed
 - macOS alert delivery no longer includes the NotifiCLI-specific backend path; supported notification helpers are now documented and implemented as `terminal-notifier` with `osascript` fallback.
