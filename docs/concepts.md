@@ -20,6 +20,8 @@ Crona has three main runtime pieces:
 
 All clients talk to the local kernel over the shared IPC surface documented in [api/socket.md](api/socket.md).
 
+The TUI owns the terminal tab/window title while it is running. Idle titles show Crona plus the active repo/stream and current view when available; active focus sessions show Crona plus the issue/session context and elapsed timer state. The title is reset on exit on a best-effort basis.
+
 ## Core Entities
 
 ### Repository

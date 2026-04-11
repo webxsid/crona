@@ -9,6 +9,7 @@ import (
 	"crona/tui/internal/kernel"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui"
+	"crona/tui/internal/tui/terminaltitle"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -25,6 +26,8 @@ func main() {
 
 	logger.Info("Crona TUI starting")
 	logger.Infof("Connected to kernel at %s", kernel.EndpointLabel(info))
+	_ = terminaltitle.Write(os.Stdout, "Crona")
+	defer func() { _ = terminaltitle.Reset(os.Stdout) }()
 
 	done := make(chan struct{})
 	eventStream := api.Subscribe(info.Transport, kernel.Endpoint(info), done)

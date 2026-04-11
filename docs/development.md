@@ -71,6 +71,8 @@ make run-tui
 
 `make run-tui` prepends repo-local `bin/` to `PATH`, so a built kernel in `bin/` is discoverable automatically.
 
+The TUI writes the terminal tab/window title while it is running. During active focus sessions the title includes the issue/session context and elapsed timer state; otherwise it includes the current repo/stream context and view. On normal exit the TUI resets the title with a best-effort terminal control sequence.
+
 ### Windows
 
 Use PowerShell from the repo root:

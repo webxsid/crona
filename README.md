@@ -15,6 +15,7 @@ See the full installation guide in [docs/install.md](docs/install.md).
 Runtime notes:
 - local alerts are emitted by the kernel, not the TUI process
 - scheduled reminders only fire while the local kernel is running
+- the TUI owns the terminal tab title while it is running and shows active session context when focused
 - PDF export depends on local renderer tooling; see [docs/install.md](docs/install.md)
 
 Launch the TUI:

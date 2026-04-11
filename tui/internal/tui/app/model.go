@@ -20,6 +20,7 @@ import (
 	appruntime "crona/tui/internal/tui/runtime"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	"crona/tui/internal/tui/terminaltitle"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
@@ -150,6 +151,8 @@ type Model struct {
 	elapsed                int // local seconds since last timer.state event
 	timerTickSeq           int
 	lastTimerActivityTouch time.Time
+	terminalTitleEnabled   bool
+	lastTerminalTitle      string
 
 	// terminal dimensions
 	width  int
@@ -340,7 +343,9 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
+		terminalTitleEnabled:  true,
 	}
+	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
 	return model
 }
 
@@ -350,7 +355,7 @@ var eventChannel <-chan api.KernelEvent
 // ---------- Init ----------
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
@@ -372,7 +377,11 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadExportReports(m.client),
 		commands.HealthTickAfter(),
 		commands.WaitForEvent(eventChannel),
-	)
+	}
+	if m.terminalTitleEnabled {
+		cmds = append(cmds, terminaltitle.Command(m.terminalTitle()))
+	}
+	return tea.Batch(cmds...)
 }
 
 // ---------- Helpers: clamp cursor ----------

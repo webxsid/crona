@@ -21,6 +21,7 @@ Release channel policy:
 
 ### Changed
 - Utility navigation is now grouped under a `SYSTEM` sidebar section, bringing `Settings`, `Alerts`, `Updates`, and `Support` together.
+- The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.
 - Alerts and reminder behavior is now documented more clearly across install, development, concepts, and socket API docs.
 - PDF renderer behavior and required local tooling are now documented more clearly across install, development, and socket API docs.
 - The Alerts view now focuses on the active backend and capability support instead of advertising backend fallback chains.
