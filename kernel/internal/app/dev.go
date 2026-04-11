@@ -285,6 +285,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if _, err := createIssue(-4, infraStream.ID, "Review release support copy", "Check updater and support wording before the tester build.", 20, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Held in review so dev data covers the full lifecycle."); err != nil {
+		return err
+	}
 	if _, err := createIssue(-6, platformStream.ID, "Backfill metrics range tests", "Cover streaks, burnout rollups, and historical summaries.", 55, devDatePtr(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusDone}); err != nil {
 		return err
 	}

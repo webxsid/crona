@@ -150,6 +150,7 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		rest int
 	}
 	segmentByDate := map[string]segmentTotals{}
+	sessionDurationByDate := map[string]int{}
 	sessionCountByDate := map[string]int{}
 	for _, segment := range segments {
 		day := extractISODate(segment.StartTime)
@@ -171,15 +172,20 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		if day == "" {
 			continue
 		}
+		sessionDurationByDate[day] += derefIssueEstimate(session.DurationSeconds)
 		sessionCountByDate[day]++
 	}
 
 	out := make([]sharedtypes.DailyMetricsDay, 0)
 	for day := range eachDate(start, end) {
 		summary := summariesByDate[day]
+		workedSeconds := segmentByDate[day].work
+		if workedSeconds == 0 {
+			workedSeconds = sessionDurationByDate[day]
+		}
 		item := sharedtypes.DailyMetricsDay{
 			Date:                  day,
-			WorkedSeconds:         summary.WorkedSeconds,
+			WorkedSeconds:         workedSeconds,
 			RestSeconds:           segmentByDate[day].rest,
 			SessionCount:          sessionCountByDate[day],
 			TotalIssues:           summary.TotalIssues,
