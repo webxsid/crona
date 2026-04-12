@@ -6,9 +6,9 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.0-beta.4` is the current `1.0.0` prerelease build for tester validation before the first stable release.
+- `v1.0.0` is the current stable release.
 
-## [1.0.0-beta.4] - 2026-04-11
+## [1.0.0] - 2026-04-12
 
 ### Added
 - GitHub CI/CD workflows for mainline validation, release-candidate artifact builds, and tag-driven GitHub release publishing.
@@ -17,6 +17,7 @@ Release channel policy:
 - Kernel-owned focus inactivity alerts with configurable threshold and repeat interval, plus TUI activity reporting to avoid false positives while the user is actively interacting.
 
 ### Changed
+- Promoted the `v1.0.0-beta.4` tester build to the first stable `v1.0.0` release after local and GitHub Actions validation.
 - Kernel IPC e2e tests are now build-tagged and run through `make test-e2e` instead of default module test sweeps, avoiding false failures in restricted environments.
 - Coverage generation now has a dedicated script and summary output under the ignored `coverage/` directory.
 - The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.

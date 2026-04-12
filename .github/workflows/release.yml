@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag to build, for example v1.0.0-beta.4"
+        description: "Version tag to build, for example v1.0.0"
         required: true
 
 permissions:

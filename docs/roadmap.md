@@ -1,6 +1,6 @@
 # Roadmap
 
-Current mainline focus is pre-`1.0.0` hardening. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
+Current mainline focus is the `1.0.0` stable line. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
 
 ## Phase 1 — TUI Core
 Foundation for all future phases. TUI must be stable and usable before anything is layered on top.
@@ -140,17 +140,17 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 ## v1.0 Hardening And Release Prep
 - [x] Kernel, TUI, and CLI code sanitation is complete
 - [x] Documentation, install docs, and API docs are current and navigable
-- [x] Installer, updater, and support flows are stable enough for beta testers
-- [x] Feedback and issue intake paths are clear for testers
-- [x] Core workflows are stable enough to continue the `v1.0.0` prerelease track
-- [x] `v1.0.0-beta.4` is the active prerelease validation target
+- [x] Installer, updater, and support flows are stable enough for stable users
+- [x] Feedback and issue intake paths are clear for users and beta testers
+- [x] Core workflows are stable enough for `v1.0.0`
+- [x] `v1.0.0` is the active stable release target
 - [x] CI, coverage, release-check, and tag-driven release publishing are defined for the stable release path
 - [x] Kernel IPC e2e tests are isolated behind an explicit target for reliable local and CI validation
 
 **Mainline exit criteria**
 - [x] Mainline is focused on stabilization rather than new feature families
-- [x] Beta tester documentation and upgrade guidance are clear
-- [x] The codebase is ready to begin the `1.0.0` prerelease path
+- [x] Stable and beta channel documentation and upgrade guidance are clear
+- [x] The codebase is ready for the first `1.0.0` stable release
 
 ## Post-1.0 Product Work
 

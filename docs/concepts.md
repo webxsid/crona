@@ -123,10 +123,10 @@ Crona does not require direct Google Calendar or iCloud API integration for this
 
 ## Project Status
 
-Crona is in beta. The core workflow is usable, but the product is still settling and some APIs, storage details, and update flows may continue to change before `1.0.0`.
+Crona is in its `1.0.0` stable line. The core workflow is usable for general users, while beta builds remain available for faster validation of upcoming changes.
 
 Current mainline focus:
-- hardening the kernel, TUI, and CLI
+- stable-channel maintenance
 - installer/updater/support polish
 - documentation and contributor-facing references
-- beta tester feedback before the first stable release
+- beta tester feedback for upcoming releases

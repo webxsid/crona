@@ -2,7 +2,7 @@
 
 Crona uses `main` as the only long-lived code branch.
 
-Release candidates may use short-lived `release/*` branches, for example `release/v1.0.0-beta.4`. These branches run the same validation as `main` and can build release-candidate artifacts in GitHub Actions, but publishing a GitHub release is tag-driven.
+Release candidates may use short-lived `release/*` branches, for example `release/v1.0.1-beta.1`. These branches run the same validation as `main` and can build release-candidate artifacts in GitHub Actions, but publishing a GitHub release is tag-driven.
 
 ## Validation
 
@@ -11,7 +11,7 @@ Before tagging a release, run:
 ```bash
 make ci
 make test-e2e
-make release VERSION=v1.0.0-beta.4
+make release VERSION=v1.0.0
 ```
 
 `make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the kernel IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
@@ -33,7 +33,7 @@ The release version must stay consistent across:
 
 1. Update version metadata and changelog.
 2. Commit the release prep.
-3. Tag the commit with a version tag such as `v1.0.0-beta.4`.
+3. Tag the commit with a version tag such as `v1.0.0`.
 4. Push the tag.
 
 The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Tags containing `beta` publish GitHub prereleases; stable tags publish normal releases.
