@@ -496,7 +496,7 @@ func (c *Client) GenerateCalendarExport(input shareddto.ExportCalendarRequest) (
 		return nil, err
 	}
 	if strings.TrimSpace(out.IssuesFilePath) == "" || strings.TrimSpace(out.SessionsFilePath) == "" {
-		return nil, fmt.Errorf("calendar export response is incomplete; restart the kernel so the updated export handler is loaded")
+		return nil, fmt.Errorf("calendar export response is incomplete; restart the local engine so the updated export handler is loaded")
 	}
 	return &out, nil
 }

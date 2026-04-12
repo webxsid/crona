@@ -1,10 +1,14 @@
 # Concepts
 
-Crona is a local-first work kernel for developers. The kernel owns state, and the TUI and CLI act as clients over local IPC.
+Crona is a local-first work tracker for developers. A background local engine owns state, and the TUI and CLI act as clients over local IPC.
+
+## Terminology
+
+The codebase and socket API still use the term `kernel` for the internal engine process and its command namespace. In user-facing docs, this is usually called the local engine or background engine because it is the small local service that owns storage, timers, reminders, update checks, and IPC.
 
 ## Core Ideas
 
-- Local-first state, with the kernel as the source of truth.
+- Local-first state, with the background engine as the source of truth.
 - Terminal-native interaction through the TUI and CLI.
 - Structured work objects instead of loose notes.
 - Deterministic exports and local automation hooks instead of cloud coupling.
@@ -14,11 +18,11 @@ Crona is a local-first work kernel for developers. The kernel owns state, and th
 
 Crona has three main runtime pieces:
 
-- `crona-kernel`: the local daemon that owns storage, timers, updates, and IPC.
+- `crona-kernel`: the background local engine that owns storage, timers, updates, and IPC.
 - `crona-tui`: the interactive terminal UI.
 - `crona`: the scriptable CLI and default launcher.
 
-All clients talk to the local kernel over the shared IPC surface documented in [api/socket.md](api/socket.md).
+All clients talk to the local engine over the shared IPC surface documented in [api/socket.md](api/socket.md).
 
 The TUI owns the terminal tab/window title while it is running. Idle titles show Crona plus the active repo/stream and current view when available; active focus sessions show Crona plus the issue/session context and elapsed timer state. The title is reset on exit on a best-effort basis.
 
@@ -77,11 +81,11 @@ It:
 
 A stash suspends the current context and can preserve timer state.
 
-If a user starts a focus session on an issue that already has a stash, the kernel blocks the fresh start and returns a structured conflict. Clients should show the matching stash or stashes and let the user either resume a stash or explicitly continue with a fresh session. Continuing fresh keeps the existing stash for later.
+If a user starts a focus session on an issue that already has a stash, the local engine blocks the fresh start and returns a structured conflict. Clients should show the matching stash or stashes and let the user either resume a stash or explicitly continue with a fresh session. Continuing fresh keeps the existing stash for later.
 
 ### Active Context
 
-The shared `{ repo -> stream -> issue }` selection across kernel clients.
+The shared `{ repo -> stream -> issue }` selection across local clients.
 
 ### Scratchpads
 
@@ -97,9 +101,9 @@ notes/[[date]]-daily.md
 
 ### Notifications
 
-Crona can trigger local OS notifications and bundled alert sounds from the kernel itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain kernel-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
+Crona can trigger local OS notifications and bundled alert sounds from the local engine itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain local-engine-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
 
-Focus inactivity alerts are also kernel-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, stash, or end the session.
+Focus inactivity alerts are also local-engine-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, stash, or end the session.
 
 ### Calendar Export
 

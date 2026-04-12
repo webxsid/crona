@@ -19,13 +19,13 @@ func main() {
 
 	info, err := kernel.Ensure()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to start kernel: %v\n", err)
-		logger.Errorf("Kernel start failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Failed to start local engine: %v\n", err)
+		logger.Errorf("Local engine start failed: %v", err)
 		os.Exit(1)
 	}
 
 	logger.Info("Crona TUI starting")
-	logger.Infof("Connected to kernel at %s", kernel.EndpointLabel(info))
+	logger.Infof("Connected to local engine at %s", kernel.EndpointLabel(info))
 	_ = terminaltitle.Write(os.Stdout, "Crona")
 	defer func() { _ = terminaltitle.Reset(os.Stdout) }()
 

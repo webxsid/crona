@@ -249,7 +249,7 @@ func renderHelpBar(state State) string {
 		devRightAction = "[f6] seed dev data   [f7] clear dev data   [f8] local update   "
 	}
 	leftActions := append([]string(nil), state.GlobalActions...)
-	rightText := devRightAction + "[K] stop kernel   [q] quit"
+	rightText := devRightAction + "[K] stop engine   [q] quit"
 	if state.Width < 200 && len(leftActions) > 5 {
 		leftActions = leftActions[:5]
 		rightText = "[?] more   [q] quit"

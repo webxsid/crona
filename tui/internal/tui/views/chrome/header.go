@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 )
 
 type HeaderState struct {
@@ -75,12 +75,12 @@ func headerSecondary(theme Theme, state HeaderState) string {
 
 func healthChip(health *api.Health) string {
 	if health == nil {
-		return "kernel: checking"
+		return "engine: checking"
 	}
 	if health.OK == 1 && health.DB {
-		return "kernel: ok"
+		return "engine: ok"
 	}
-	return "kernel: degraded"
+	return "engine: degraded"
 }
 
 func activeIssueWithMeta(state HeaderState) *api.IssueWithMeta {

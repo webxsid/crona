@@ -19,4 +19,4 @@ Suggested order:
 1. Read [concepts.md](concepts.md) if you are new to Crona.
 2. Read [install.md](install.md) if you want to use the app.
 3. Read [development.md](development.md), [contributing.md](contributing.md), and [release.md](release.md) if you want to work on the codebase.
-4. Use [api/socket.md](api/socket.md) if you need the kernel IPC surface.
+4. Use [api/socket.md](api/socket.md) if you need the local engine IPC surface.

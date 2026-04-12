@@ -1,12 +1,14 @@
 # Socket API
 
-This document describes Crona's local kernel IPC surface.
+This document describes Crona's local engine IPC surface.
+
+The protocol and method names still use `kernel` for the internal engine process. Product docs usually call the same process the local engine or background engine.
 
 It is an open-source reference for contributors and advanced users, not a promise of long-term network API stability before `1.0.0`.
 
 ## Transport
 
-Crona uses a local request/response transport between clients and the kernel.
+Crona uses a local request/response transport between clients and the local engine.
 
 - Unix-domain sockets on Unix-like platforms
 - named pipes on Windows
@@ -70,7 +72,7 @@ Use these files as the canonical contract:
 
 ## Compatibility Note
 
-- The kernel IPC surface is shared across Crona clients.
+- The local engine IPC surface is shared across Crona clients.
 - It is intentionally documented because the project is open source.
 - Before `1.0.0`, consumers should expect the shared Go types and method constants to be the source of truth over any prose doc.
 - GUI compatibility should be checked against `kernel.info.get -> protocolVersion`.
@@ -84,7 +86,7 @@ Use these files as the canonical contract:
 
 ## RPC Methods
 
-Request DTO names below refer to types in [`shared/dto/requests.go`](../../shared/dto/requests.go). Result payloads are returned as JSON objects or arrays matching the shared domain/DTO types used by the kernel handlers.
+Request DTO names below refer to types in [`shared/dto/requests.go`](../../shared/dto/requests.go). Result payloads are returned as JSON objects or arrays matching the shared domain/DTO types used by the local engine handlers.
 
 ### Event Subscription
 
@@ -99,7 +101,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `health.get` | `dto.Empty` | health status object | Kernel health and readiness. |
 | `kernel.info.get` | `dto.Empty` | kernel info object | Runtime metadata, transport, endpoint, install metadata, and `protocolVersion`. |
 | `kernel.shutdown` | `dto.Empty` | `dto.OKResponse` | Graceful local shutdown. |
-| `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local kernel. |
+| `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local engine. |
 | `kernel.dev.seed` | `dto.Empty` | `dto.OKResponse` | Dev-only sample data seed. |
 | `kernel.dev.clear` | `dto.Empty` | `dto.OKResponse` | Dev-only local data clear. |
 | `kernel.dev.prepare_local_update` | `dto.Empty` | `dto.LocalUpdatePreparedResponse` | Dev-only local updater simulation setup. |
@@ -120,7 +122,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `alerts.status.get` | `dto.Empty` | alert status object | Active backend, capability flags, and runtime support for alerts/sound. |
 | `alerts.test_notification` | `dto.Empty` | `dto.OKResponse` | Sends a sample alert through the current backend. |
 | `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
-| `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the kernel alerts layer. |
+| `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local engine alerts layer. |
 | `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
 | `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
 | `alerts.reminders.update` | `dto.AlertReminderUpdateRequest` | reminder object | Updates one scheduled reminder rule. |
@@ -129,10 +131,10 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 
 Alert behavior notes:
 
-- the kernel, not the TUI, decides when alerts fire
-- scheduled reminders are local-only and only fire while the kernel is running
-- focus inactivity alerts are kernel-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
-- `AlertStatus` reflects the current OS helper/backend that the kernel detected at runtime
+- the local engine, not the TUI, decides when alerts fire
+- scheduled reminders are local-only and only fire while the local engine is running
+- focus inactivity alerts are local-engine-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
+- `AlertStatus` reflects the current OS helper/backend that the local engine detected at runtime
 
 ### Repositories
 
@@ -253,7 +255,7 @@ Export behavior notes:
 Timer start behavior notes:
 
 - `TimerStartRequest` can carry `repoId`, `streamId`, and `issueId` so clients can start focus from a selected issue without first mutating the shared active context.
-- If `issueId` is omitted, the kernel resolves the current active context issue.
+- If `issueId` is omitted, the local engine resolves the current active context issue.
 - If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
 - `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
 - Clients should offer an explicit resume-vs-continue choice. Resuming should call `stash.apply`; continuing fresh should retry `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.

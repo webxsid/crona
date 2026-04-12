@@ -31,7 +31,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StylePaneTitle.Render("Uninstall Crona"),
 			"",
 			theme.StyleError.Render("This removes all Crona runtime data and installed binaries."),
-			theme.StyleDim.Render("The CLI, TUI, and kernel binaries in the install directory will be deleted."),
+			theme.StyleDim.Render("The CLI, TUI, and local engine binaries in the install directory will be deleted."),
 			theme.StyleDim.Render("This action closes the app immediately after uninstall starts."),
 		}
 		rows = appendDialogFooter(theme, state, rows, "[enter] uninstall   [esc] cancel")

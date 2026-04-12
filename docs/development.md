@@ -17,6 +17,8 @@ make install-tui
 make install-cli
 ```
 
+Development docs use `kernel` when referring to the Go module, binary, command namespace, or IPC method names. For product copy, the same process is the local engine or background engine.
+
 Manual builds from the repo root:
 
 ```bash
@@ -57,7 +59,7 @@ Developer-only TUI hotkeys:
 
 ### macOS And Linux
 
-Run the kernel:
+Run the local engine:
 
 ```bash
 make run-kernel
@@ -69,7 +71,7 @@ Run the TUI:
 make run-tui
 ```
 
-`make run-tui` prepends repo-local `bin/` to `PATH`, so a built kernel in `bin/` is discoverable automatically.
+`make run-tui` prepends repo-local `bin/` to `PATH`, so a built local engine binary in `bin/` is discoverable automatically.
 
 The TUI writes the terminal tab/window title while it is running. During active focus sessions the title includes the issue/session context and elapsed timer state; otherwise it includes the current repo/stream context and view. On normal exit the TUI resets the title with a best-effort terminal control sequence.
 
@@ -85,7 +87,7 @@ $env:PATH = "$PWD\bin;$env:PATH"
 .\bin\crona-dev.exe
 ```
 
-If you want to start the kernel explicitly in a separate terminal:
+If you want to start the local engine explicitly in a separate terminal:
 
 ```powershell
 $env:CRONA_ENV = "Dev"
@@ -106,13 +108,13 @@ Run the same non-publishing checks used by CI:
 make ci
 ```
 
-Run kernel IPC e2e tests explicitly:
+Run local engine IPC e2e tests explicitly:
 
 ```bash
 make test-e2e
 ```
 
-The e2e suite is build-tagged and excluded from default `go test ./...` runs because it starts a local kernel and binds local IPC endpoints. Use it in environments that allow Unix sockets or Windows named pipes.
+The e2e suite is build-tagged and excluded from default `go test ./...` runs because it starts a local engine and binds local IPC endpoints. Use it in environments that allow Unix sockets or Windows named pipes.
 
 Generate coverage summaries:
 
@@ -148,7 +150,7 @@ make release-check
 
 ## Notifications And Alerts In Development
 
-The kernel owns alert delivery. Running the TUI alone is not enough for scheduled reminders; the local kernel must stay up.
+The local engine owns alert delivery. Running the TUI alone is not enough for scheduled reminders; the local engine must stay up.
 
 Current backend expectations by OS:
 
@@ -163,7 +165,7 @@ The TUI `Alerts` view is the easiest smoke-test surface:
 - adjust focus inactivity alert threshold/repeat controls
 - create a check-in reminder for a near-future time
 
-Focus inactivity alerts are kernel-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the kernel sends a review-session alert and repeats on the configured interval.
+Focus inactivity alerts are local-engine-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the local engine sends a review-session alert and repeats on the configured interval.
 
 ## PDF Rendering In Development
 

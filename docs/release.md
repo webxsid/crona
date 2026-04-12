@@ -14,7 +14,7 @@ make test-e2e
 make release VERSION=v1.0.0
 ```
 
-`make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the kernel IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
+`make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the local engine IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
 
 ## Version Metadata
 

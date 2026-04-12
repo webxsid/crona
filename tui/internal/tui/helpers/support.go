@@ -31,7 +31,7 @@ func SupportDiagnosticsSummary(info *api.KernelInfo, assets *api.ExportAssetStat
 		lines = append(lines, fmt.Sprintf("ICS dir: %s", fallbackSupport(strings.TrimSpace(assets.ICSDir), "-")))
 	}
 	lines = append(lines, fmt.Sprintf("TUI path: %s", fallbackSupport(strings.TrimSpace(tuiPath), "-")))
-	lines = append(lines, fmt.Sprintf("Kernel path: %s", fallbackSupport(strings.TrimSpace(kernelPath), "-")))
+	lines = append(lines, fmt.Sprintf("Engine path: %s", fallbackSupport(strings.TrimSpace(kernelPath), "-")))
 	return strings.Join(lines, "\n")
 }
 

@@ -4,9 +4,9 @@ import (
 	"strings"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
-	viewruntime "crona/tui/internal/tui/views/runtime"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewruntime "crona/tui/internal/tui/views/runtime"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 	types "crona/tui/internal/tui/views/types"
 )
 
@@ -84,7 +84,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			lines = append(lines, theme.StyleDim.Render("TUI path: "+strings.TrimSpace(state.TUIExecutablePath)))
 		}
 		if strings.TrimSpace(state.KernelExecutablePath) != "" {
-			lines = append(lines, theme.StyleDim.Render("Kernel path: "+strings.TrimSpace(state.KernelExecutablePath)))
+			lines = append(lines, theme.StyleDim.Render("Engine path: "+strings.TrimSpace(state.KernelExecutablePath)))
 		}
 	}
 	if state.UpdateChecking {

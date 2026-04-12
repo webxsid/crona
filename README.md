@@ -1,20 +1,28 @@
 # Crona
 
-Crona is a local-first work kernel for developers. It combines a local daemon, a terminal UI, and a CLI into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
+Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local engine into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
 
 The repository is a Go monorepo with four main modules:
-- `kernel`: local daemon, SQLite store, timer, IPC, update checks
+- `kernel`: background local engine, SQLite store, timer, IPC, update checks
 - `tui`: Bubble Tea terminal UI
-- `cli`: scriptable commands and kernel control flows
+- `cli`: scriptable commands and local engine control flows
 - `shared`: shared types, config, protocol, and utilities
+
+## Screenshots
+
+![Daily dashboard showing planned issues, habits, and focus summary](docs/screenshots/daily-dashboard.png)
+
+![Issues view showing scoped work and lifecycle status](docs/screenshots/issues.png)
+
+![Wellbeing dashboard showing accountability, check-in trends, and activity heatmap](docs/screenshots/wellbeing-dashboard.png)
 
 ## Quick Start
 
 See the full installation guide in [docs/install.md](docs/install.md).
 
 Runtime notes:
-- local alerts are emitted by the kernel, not the TUI process
-- scheduled reminders only fire while the local kernel is running
+- local alerts are emitted by the background engine, not the TUI process
+- scheduled reminders only fire while the background engine is running
 - the TUI owns the terminal tab title while it is running and shows active session context when focused
 - PDF export depends on local renderer tooling; see [docs/install.md](docs/install.md)
 
@@ -24,13 +32,15 @@ Launch the TUI:
 crona
 ```
 
-Inspect the local kernel from the CLI:
+Inspect the local engine from the CLI:
 
 ```bash
 crona kernel attach --json
 crona kernel status --json
 crona kernel info --json
 ```
+
+The command group is named `kernel` because it controls the internal engine process. User-facing docs generally call it the local engine or background engine.
 
 Generate shell completions:
 

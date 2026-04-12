@@ -17,6 +17,8 @@ Installed binaries:
 - `crona-tui`
 - `crona-kernel`
 
+`crona-kernel` is the internal binary name for Crona's background local engine. Most user-facing docs call it the local engine because it owns storage, timers, reminders, update checks, and local IPC.
+
 Release assets ship as:
 - one platform bundle zip containing all three binaries
 - one shared `crona-assets-<version>.tar.gz` archive for report/export assets
@@ -66,7 +68,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui
 
 Download your platform bundle zip from the release page, extract `crona`, `crona-tui`, and `crona-kernel`, and keep the shared assets archive from the same release if you want the bundled report templates and export assets.
 
-The TUI starts the local kernel automatically when needed. `crona-tui` remains available as a compatibility entrypoint.
+The TUI starts the local engine automatically when needed. `crona-tui` remains available as a compatibility entrypoint.
 
 ## Runtime Layout
 
@@ -83,7 +85,7 @@ Default runtime directories:
 
 Override the runtime directory with `CRONA_HOME`.
 
-On macOS and Linux, legacy `~/.crona` and `~/.crona-dev` directories migrate automatically on install or first kernel start unless `CRONA_HOME` is set.
+On macOS and Linux, legacy `~/.crona` and `~/.crona-dev` directories migrate automatically on install or first local engine start unless `CRONA_HOME` is set.
 
 ### Binary Install Location
 
@@ -104,7 +106,7 @@ Use the in-app `Updates` view to check, read notes, and install supported update
 
 ## Notifications And Alerts
 
-Alerts are emitted by the local kernel. The TUI configures and tests them, but the kernel is the process that decides when to fire:
+Alerts are emitted by the local engine. The TUI configures and tests them, but the background engine is the process that decides when to fire:
 
 - timer boundary alerts
 - focus inactivity alerts when an active work session runs too long without TUI activity
@@ -112,7 +114,7 @@ Alerts are emitted by the local kernel. The TUI configures and tests them, but t
 - support/export completion alerts
 - scheduled reminders such as nightly check-in reminders
 
-Scheduled reminders and inactivity alerts are local-only and only fire while the local kernel is running.
+Scheduled reminders and inactivity alerts are local-only and only fire while the local engine is running.
 
 Supported notification helpers by OS:
 

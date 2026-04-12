@@ -8,7 +8,7 @@ Foundation for all future phases. TUI must be stable and usable before anything 
 - [x] Go monorepo workspace (`kernel`, `tui`, `cli`, `shared`)
 - [x] Go kernel established as the local runtime
 - [x] SQLite store, repositories, commands, and Unix socket IPC in Go
-- [x] Go-native e2e coverage for the kernel IPC boundary
+- [x] Go-native e2e coverage for the local engine IPC boundary
 - [x] Pane-based navigation (1/2/3/4 + j/k)
 - [x] Kernel auto-launch & discovery
 - [x] Real-time Unix socket event sync
