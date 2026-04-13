@@ -1,6 +1,8 @@
 package export
 
-const fallbackDailyReportTemplate = `# Daily Report - {{date}}
+const fallbackDailyReportTemplate = `{{frontmatterBlock}}
+
+# Daily Report - {{date}}
 
 Generated at {{generatedAt}}
 
@@ -393,7 +395,9 @@ Metrics:
 - {{metrics.burnout.score}}
 `
 
-const fallbackWeeklyReportTemplate = `# Weekly Summary
+const fallbackWeeklyReportTemplate = `{{frontmatterBlock}}
+
+# Weekly Summary
 
 Range: {{startDate}} to {{endDate}}
 Generated at {{generatedAt}}
@@ -532,7 +536,9 @@ Days:
   - {{checkIn.energy}}
 `
 
-const fallbackRepoReportTemplate = `# Repo Report - {{repo.name}}
+const fallbackRepoReportTemplate = `{{frontmatterBlock}}
+
+# Repo Report - {{repo.name}}
 
 Range: {{startDate}} to {{endDate}}
 Generated at {{generatedAt}}
@@ -646,7 +652,9 @@ Habits:
   - {{scheduleType}}
 `
 
-const fallbackStreamReportTemplate = `# Stream Report - {{stream.name}}
+const fallbackStreamReportTemplate = `{{frontmatterBlock}}
+
+# Stream Report - {{stream.name}}
 
 Repo: {{repo.name}}
 Range: {{startDate}} to {{endDate}}
@@ -746,7 +754,9 @@ Habits:
   - {{scheduleType}}
 `
 
-const fallbackIssueRollupReportTemplate = `# Session to Issue Rollup
+const fallbackIssueRollupReportTemplate = `{{frontmatterBlock}}
+
+# Session to Issue Rollup
 
 Range: {{startDate}} to {{endDate}}
 Generated at {{generatedAt}}

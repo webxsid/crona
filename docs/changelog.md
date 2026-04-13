@@ -6,7 +6,17 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.1` is the current stable release.
+- `v1.0.2` is the current stable release.
+
+## [1.0.2] - 2026-04-13
+
+### Changed
+- Markdown report exports now include YAML frontmatter tailored to the report kind, with Obsidian-friendly aliases and tags.
+- Markdown report rendering now trims standalone Handlebars control lines and compacts excessive blank lines for cleaner output.
+
+### Fixed
+- Config detail dialogs now honor `[e]` for editable report template and spec rows, opening the active file in `$EDITOR`.
+- Repo, stream, and issue-rollup markdown exports now receive frontmatter even when an existing customized template does not include the bundled frontmatter block.
 
 ## [1.0.1] - 2026-04-13
 

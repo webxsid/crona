@@ -74,6 +74,7 @@ type State struct {
 	ReminderKind        sharedtypes.AlertReminderKind
 	ViewMeta            string
 	ViewBody            string
+	ViewPath            string
 	SupportBundlePath   string
 	DateTitle           string
 	DateHeader          string

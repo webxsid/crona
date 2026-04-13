@@ -140,6 +140,156 @@ func TestFallbackDailyReportTemplateRendersAccountabilityAndFailureDetails(t *te
 	}
 }
 
+func TestMarkdownReportTemplatesRenderYamlFrontmatter(t *testing.T) {
+	data := &sharedtypes.DailyReportData{
+		Date:        "2026-04-13",
+		GeneratedAt: "2026-04-13T10:00:00Z",
+		Summary: sharedtypes.DailyIssueSummary{
+			Date:          "2026-04-13",
+			TotalIssues:   1,
+			WorkedSeconds: 1800,
+		},
+	}
+	spec := reportWriteSpec{
+		Kind:     sharedtypes.ExportReportKindDaily,
+		Label:    "Daily Report",
+		Date:     "2026-04-13",
+		Format:   sharedtypes.ExportFormatMarkdown,
+		BaseName: "daily-2026-04-13",
+	}
+	rendered, err := RenderTemplate(fallbackDailyReportTemplate, attachFrontmatter(buildTemplateDataMap(data), spec))
+	if err != nil {
+		t.Fatalf("render daily report template: %v", err)
+	}
+	for _, snippet := range []string{
+		"---\ntitle: \"Daily Report - 2026-04-13\"",
+		"  - \"crona\"",
+		"  - \"report\"",
+		"  - \"crona/daily\"",
+		"report_kind: \"daily\"",
+		"date: \"2026-04-13\"",
+		"generated_at: \"2026-04-13T10:00:00Z\"",
+		"crona_version: \"",
+		"---\n\n# Daily Report - 2026-04-13",
+	} {
+		if !strings.Contains(rendered, snippet) {
+			t.Fatalf("expected rendered report to contain %q\n%s", snippet, rendered)
+		}
+	}
+	for _, unwanted := range []string{"start_date:", "end_date:", "repo:", "stream:", "scope:"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected daily frontmatter not to contain %q\n%s", unwanted, rendered)
+		}
+	}
+}
+
+func TestScopedMarkdownFrontmatterIncludesObsidianScopeTags(t *testing.T) {
+	data := map[string]any{
+		"generatedAt": "2026-04-13T10:00:00Z",
+		"startDate":   "2026-04-07",
+		"endDate":     "2026-04-13",
+		"repo":        map[string]any{"name": "Webxsid Core"},
+		"stream":      map[string]any{"name": "Report Templates"},
+	}
+	spec := reportWriteSpec{
+		Kind:       sharedtypes.ExportReportKindStream,
+		Label:      "Stream Report",
+		ScopeLabel: "Webxsid Core / Report Templates",
+		Date:       "2026-04-13",
+		StartDate:  "2026-04-07",
+		EndDate:    "2026-04-13",
+		Format:     sharedtypes.ExportFormatMarkdown,
+		BaseName:   "stream-report",
+	}
+	rendered, err := RenderTemplate(fallbackStreamReportTemplate, attachFrontmatter(data, spec))
+	if err != nil {
+		t.Fatalf("render stream report template: %v", err)
+	}
+	for _, snippet := range []string{
+		"title: \"Stream Report - Report Templates\"",
+		"scope: \"Webxsid Core / Report Templates\"",
+		"repo: \"Webxsid Core\"",
+		"stream: \"Report Templates\"",
+		"  - \"repo/webxsid-core\"",
+		"  - \"stream/report-templates\"",
+		"start_date: \"2026-04-07\"",
+		"end_date: \"2026-04-13\"",
+	} {
+		if !strings.Contains(rendered, snippet) {
+			t.Fatalf("expected rendered report to contain %q\n%s", snippet, rendered)
+		}
+	}
+}
+
+func TestRuntimeFrontmatterWrapsMarkdownTemplatesWithoutFrontmatter(t *testing.T) {
+	data := map[string]any{
+		"generatedAt": "2026-04-13T10:00:00Z",
+		"startDate":   "2026-04-07",
+		"endDate":     "2026-04-13",
+		"repo":        map[string]any{"name": "Webxsid Core"},
+	}
+	spec := reportWriteSpec{
+		Kind:       sharedtypes.ExportReportKindRepo,
+		Label:      "Repo Report",
+		ScopeLabel: "Webxsid Core",
+		Date:       "2026-04-13",
+		StartDate:  "2026-04-07",
+		EndDate:    "2026-04-13",
+		Format:     sharedtypes.ExportFormatMarkdown,
+		BaseName:   "repo-report",
+	}
+	rendered, err := RenderTemplate("# Custom Repo Report\n\nBody", attachFrontmatter(data, spec))
+	if err != nil {
+		t.Fatalf("render custom repo template: %v", err)
+	}
+	wrapped := ensureMarkdownFrontmatter(rendered, data, spec)
+	for _, snippet := range []string{
+		"---\ntitle: \"Repo Report - Webxsid Core\"",
+		"report_kind: \"repo\"",
+		"repo: \"Webxsid Core\"",
+		"---\n\n# Custom Repo Report",
+	} {
+		if !strings.Contains(wrapped, snippet) {
+			t.Fatalf("expected wrapped report to contain %q\n%s", snippet, wrapped)
+		}
+	}
+	if strings.Contains(wrapped, "stream:") {
+		t.Fatalf("expected repo frontmatter not to contain stream\n%s", wrapped)
+	}
+}
+
+func TestMarkdownPresetsRenderFrontmatter(t *testing.T) {
+	body, ok := presetTemplateBody(sharedtypes.ExportReportKindWeekly, sharedtypes.ExportAssetKindTemplateMarkdown, "brief")
+	if !ok {
+		t.Fatal("expected weekly brief markdown preset")
+	}
+	data := map[string]any{
+		"generatedAt": "2026-04-13T10:00:00Z",
+		"startDate":   "2026-04-07",
+		"endDate":     "2026-04-13",
+		"summary":     map[string]any{},
+		"streaks":     map[string]any{},
+		"days":        []map[string]any{},
+	}
+	rendered, err := RenderTemplate(body, attachFrontmatter(data, reportWriteSpec{
+		Kind:      sharedtypes.ExportReportKindWeekly,
+		Label:     "Weekly Summary",
+		Date:      "2026-04-13",
+		StartDate: "2026-04-07",
+		EndDate:   "2026-04-13",
+		Format:    sharedtypes.ExportFormatMarkdown,
+		BaseName:  "weekly-2026-04-07-to-2026-04-13",
+	}))
+	if err != nil {
+		t.Fatalf("render weekly preset: %v", err)
+	}
+	for _, snippet := range []string{"---\ntitle: \"Weekly Summary - 2026-04-07 to 2026-04-13\"", "report_kind: \"weekly\"", "# 📅 Weekly Snapshot"} {
+		if !strings.Contains(rendered, snippet) {
+			t.Fatalf("expected rendered preset to contain %q\n%s", snippet, rendered)
+		}
+	}
+}
+
 func planFailurePtr(reason sharedtypes.DailyPlanFailureReason) *sharedtypes.DailyPlanFailureReason {
 	return &reason
 }

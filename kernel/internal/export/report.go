@@ -71,23 +71,25 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 		result.FilePath = &filePath
 		result.Renderer = &renderer
 	default:
+		spec := reportWriteSpec{
+			Kind:     sharedtypes.ExportReportKindDaily,
+			Label:    "Daily Report",
+			Date:     date,
+			Format:   format,
+			BaseName: "daily-" + date,
+		}
 		templateBody, _, err := LoadReportTemplate(paths, sharedtypes.ExportReportKindDaily, format, presetID)
 		if err != nil {
 			return nil, err
 		}
-		rendered, err := RenderTemplate(string(templateBody), buildTemplateDataMap(data))
+		templateData := attachFrontmatter(buildTemplateDataMap(data), spec)
+		rendered, err := RenderTemplate(string(templateBody), templateData)
 		if err != nil {
 			return nil, err
 		}
-		result.Content = rendered
+		result.Content = ensureMarkdownFrontmatter(rendered, templateData, spec)
 		if mode == sharedtypes.ExportOutputModeFile {
-			filePath, err := WriteReport(paths, reportWriteSpec{
-				Kind:     sharedtypes.ExportReportKindDaily,
-				Label:    "Daily Report",
-				Date:     date,
-				Format:   format,
-				BaseName: "daily-" + date,
-			}, []byte(result.Content))
+			filePath, err := WriteReport(paths, spec, []byte(result.Content))
 			if err != nil {
 				return nil, err
 			}

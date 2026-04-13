@@ -211,6 +211,7 @@ type Model struct {
 	dialogReminderKind       sharedtypes.AlertReminderKind
 	dialogViewMeta           string
 	dialogViewBody           string
+	dialogViewPath           string
 	dialogSupportBundlePath  string
 	dialogProtectionStep     int
 	dialogProtectionCursor   int
@@ -1016,6 +1017,12 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
 		return next, next.generateSupportBundleCmd(next.inputState())
+	case "open_view_entity_editor":
+		path := strings.TrimSpace(action.Path)
+		if path == "" {
+			return next, nil
+		}
+		return next, dialogruntime.OpenEditor(path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
 	case "open_export_reports_dir_dialog":
 		if next.exportAssets == nil {
 			return next, nil
@@ -1120,6 +1127,9 @@ func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputInd
 func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {
 	return m.withDialogState(dialogstate.OpenViewEntity(m.dialogSnapshot(), title, name, meta, body))
 }
+func (m Model) openViewEntityDialogWithPath(title string, name string, meta string, body string, path string) Model {
+	return m.withDialogState(dialogstate.OpenViewEntityWithPath(m.dialogSnapshot(), title, name, meta, body, path))
+}
 func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel string) Model {
 	meta := strings.Join([]string{
 		"Size " + helperpkg.HumanizeSupportBytes(sizeBytes),
@@ -1208,6 +1218,7 @@ func (m Model) dialogState() dialogpkg.State {
 		ReminderKind:       m.dialogReminderKind,
 		ViewMeta:           m.dialogViewMeta,
 		ViewBody:           m.dialogViewBody,
+		ViewPath:           m.dialogViewPath,
 		SupportBundlePath:  m.dialogSupportBundlePath,
 		ProtectionStep:     m.dialogProtectionStep,
 		ProtectionCursor:   m.dialogProtectionCursor,
@@ -1267,6 +1278,7 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogReminderKind = state.ReminderKind
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
+	m.dialogViewPath = state.ViewPath
 	m.dialogSupportBundlePath = state.SupportBundlePath
 	m.dialogProtectionStep = state.ProtectionStep
 	m.dialogProtectionCursor = state.ProtectionCursor

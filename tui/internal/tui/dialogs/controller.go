@@ -836,6 +836,7 @@ func Close(state State) State {
 	state.ReminderKind = ""
 	state.ViewMeta = ""
 	state.ViewBody = ""
+	state.ViewPath = ""
 	state.ExportPresetKind = ""
 	state.ExportPresetFormat = ""
 	state.ExportPresetOutput = ""

@@ -34,7 +34,11 @@ func RenderTemplate(source string, data map[string]any) (string, error) {
 	if pos != len(source) {
 		return "", fmt.Errorf("unexpected template tail at %d", pos)
 	}
-	return renderNodes(nodes, data, data)
+	rendered, err := renderNodes(nodes, data, data)
+	if err != nil {
+		return "", err
+	}
+	return compactExcessBlankLines(rendered), nil
 }
 
 func parseNodes(source string, pos int, endTag string) ([]node, int, error) {
@@ -56,6 +60,12 @@ func parseNodes(source string, pos int, endTag string) ([]node, int, error) {
 		closeIdx += open + 2
 		token := strings.TrimSpace(source[open+2 : closeIdx])
 		pos = closeIdx + 2
+		if isControlToken(token) {
+			if nextPos, ok := standaloneControlLineEnd(source, open, closeIdx+2); ok {
+				trimStandalonePrefix(&nodes)
+				pos = nextPos
+			}
+		}
 
 		if token == endTag {
 			return nodes, pos, nil
@@ -87,6 +97,67 @@ func parseNodes(source string, pos int, endTag string) ([]node, int, error) {
 		return nil, 0, fmt.Errorf("missing closing tag %q", endTag)
 	}
 	return nodes, pos, nil
+}
+
+func isControlToken(token string) bool {
+	return strings.HasPrefix(token, "#if ") ||
+		strings.HasPrefix(token, "#each ") ||
+		token == "/if" ||
+		token == "/each"
+}
+
+func standaloneControlLineEnd(source string, open int, closeEnd int) (int, bool) {
+	lineStart := strings.LastIndex(source[:open], "\n") + 1
+	for _, r := range source[lineStart:open] {
+		if r != ' ' && r != '\t' && r != '\r' {
+			return closeEnd, false
+		}
+	}
+	pos := closeEnd
+	for pos < len(source) {
+		switch source[pos] {
+		case ' ', '\t':
+			pos++
+		case '\r':
+			if pos+1 < len(source) && source[pos+1] == '\n' {
+				return pos + 2, true
+			}
+			return pos + 1, true
+		case '\n':
+			return pos + 1, true
+		default:
+			return closeEnd, false
+		}
+	}
+	return pos, true
+}
+
+func trimStandalonePrefix(nodes *[]node) {
+	if len(*nodes) == 0 {
+		return
+	}
+	last, ok := (*nodes)[len(*nodes)-1].(textNode)
+	if !ok {
+		return
+	}
+	idx := strings.LastIndex(last.text, "\n")
+	prefix := last.text[idx+1:]
+	if strings.TrimSpace(prefix) != "" {
+		return
+	}
+	last.text = last.text[:idx+1]
+	if last.text == "" {
+		*nodes = (*nodes)[:len(*nodes)-1]
+		return
+	}
+	(*nodes)[len(*nodes)-1] = last
+}
+
+func compactExcessBlankLines(value string) string {
+	for strings.Contains(value, "\n\n\n") {
+		value = strings.ReplaceAll(value, "\n\n\n", "\n\n")
+	}
+	return value
 }
 
 func renderNodes(nodes []node, current any, root any) (string, error) {

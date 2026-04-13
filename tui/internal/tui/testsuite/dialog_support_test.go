@@ -125,6 +125,34 @@ func TestDirectoryDetailDialogRoutesChangeAndResetKeys(t *testing.T) {
 	}
 }
 
+func TestViewEntityDialogRoutesEditorKeyWhenPathIsAvailable(t *testing.T) {
+	state := dialogs.OpenViewEntityWithPath(dialogs.State{}, "Template", "Daily report template", "", "Press e to open in $EDITOR.", "/tmp/report.hbs")
+	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got kind %q", next.Kind)
+	}
+	if action == nil || action.Kind != "open_view_entity_editor" || action.Path != "/tmp/report.hbs" {
+		t.Fatalf("unexpected action %+v", action)
+	}
+}
+
+func TestViewEntityDialogIgnoresEditorKeyWithoutPath(t *testing.T) {
+	state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", "Reports directory", "", "Press c to change the directory.")
+	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "view_entity" {
+		t.Fatalf("expected dialog to remain open, got kind %q", next.Kind)
+	}
+	if action != nil {
+		t.Fatalf("expected no action, got %+v", action)
+	}
+}
+
 func TestStashConflictDialogOffersResumeAndContinue(t *testing.T) {
 	state := dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
 		IssueID: 42,

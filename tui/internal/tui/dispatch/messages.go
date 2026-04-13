@@ -92,6 +92,7 @@ type MessageState struct {
 	DialogViewName          string
 	DialogViewMeta          string
 	DialogViewBody          string
+	DialogViewPath          string
 	DialogSupportBundlePath string
 	OpsLimit                int
 	OpsLimitPinned          bool

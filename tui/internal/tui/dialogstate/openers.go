@@ -182,6 +182,10 @@ func OpenViewEntity(s Snapshot, title, name, meta, body string) dialogpkg.State 
 	return dialogpkg.OpenViewEntity(s.Dialog, title, name, meta, body)
 }
 
+func OpenViewEntityWithPath(s Snapshot, title, name, meta, body, path string) dialogpkg.State {
+	return dialogpkg.OpenViewEntityWithPath(s.Dialog, title, name, meta, body, path)
+}
+
 func OpenViewJump(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenViewJump(s.Dialog, s.AvailableViews)
 }

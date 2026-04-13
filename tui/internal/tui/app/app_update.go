@@ -458,6 +458,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DialogViewName:          m.dialogViewName,
 		DialogViewMeta:          m.dialogViewMeta,
 		DialogViewBody:          m.dialogViewBody,
+		DialogViewPath:          m.dialogViewPath,
 		DialogSupportBundlePath: m.dialogSupportBundlePath,
 		OpsLimit:                m.opsLimit,
 		OpsLimitPinned:          m.opsLimitPinned,
@@ -543,6 +544,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dialogViewName = state.DialogViewName
 	m.dialogViewMeta = state.DialogViewMeta
 	m.dialogViewBody = state.DialogViewBody
+	m.dialogViewPath = state.DialogViewPath
 	m.dialogSupportBundlePath = state.DialogSupportBundlePath
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned

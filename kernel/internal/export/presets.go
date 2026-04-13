@@ -159,7 +159,9 @@ func weeklyPDFCSSPresets() []templatePreset {
 	}
 }
 
-const dailyBriefMarkdownTemplate = `# 🌤 Daily Snapshot — {{date}}
+const dailyBriefMarkdownTemplate = `{{frontmatterBlock}}
+
+# 🌤 Daily Snapshot — {{date}}
 
 ## At a glance
 - Work: {{summary.workedEstimate}}
@@ -199,7 +201,9 @@ const dailyBriefMarkdownTemplate = `# 🌤 Daily Snapshot — {{date}}
 {{/each}}
 `
 
-const dailyVisualMarkdownTemplate = `# ✨ Daily Pulse — {{date}}
+const dailyVisualMarkdownTemplate = `{{frontmatterBlock}}
+
+# ✨ Daily Pulse — {{date}}
 
 ## 🧭 Summary Card
 - Health: {{dayHealth}}
@@ -257,7 +261,9 @@ Attention
 {{/each}}
 `
 
-const dailyDeepMarkdownTemplate = `# 📝 Daily Review — {{date}}
+const dailyDeepMarkdownTemplate = `{{frontmatterBlock}}
+
+# 📝 Daily Review — {{date}}
 
 Generated at {{generatedAt}}
 
@@ -376,7 +382,9 @@ const dailyDeepPDFTemplate = `<!doctype html>
 <section class="section"><h2>Issues</h2>{{#each repos}}<article class="group"><h3>{{name}}</h3>{{#each streams}}<div class="subgroup"><h4>{{name}}</h4>{{#each completedIssues}}<div class="row row-good"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}{{#each activeIssues}}<div class="row"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}{{#each attentionIssues}}<div class="row row-warn"><span>#{{id}} {{title}}</span><span>{{workedEstimate}}</span></div>{{/each}}</div>{{/each}}</article>{{/each}}</section>
 </body></html>`
 
-const weeklyBriefMarkdownTemplate = `# 📅 Weekly Snapshot
+const weeklyBriefMarkdownTemplate = `{{frontmatterBlock}}
+
+# 📅 Weekly Snapshot
 
 {{startDate}} → {{endDate}}
 
@@ -397,7 +405,9 @@ const weeklyBriefMarkdownTemplate = `# 📅 Weekly Snapshot
 {{/each}}
 `
 
-const weeklyVisualMarkdownTemplate = `# ✨ Weekly Pulse
+const weeklyVisualMarkdownTemplate = `{{frontmatterBlock}}
+
+# ✨ Weekly Pulse
 
 ## 🧭 Rollup
 - Focus days: {{summary.focusDays}}
@@ -423,7 +433,9 @@ const weeklyVisualMarkdownTemplate = `# ✨ Weekly Pulse
 {{/each}}
 `
 
-const weeklyDeepMarkdownTemplate = `# 📝 Weekly Review
+const weeklyDeepMarkdownTemplate = `{{frontmatterBlock}}
+
+# 📝 Weekly Review
 
 Range: {{startDate}} to {{endDate}}
 Generated at {{generatedAt}}

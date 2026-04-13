@@ -660,7 +660,11 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 	snapshot := m.selectionSnapshot()
 	if m.view == ViewConfig && m.pane == PaneConfig {
 		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok {
-			m = m.openViewEntityDialog(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody)
+			if item.Editable && strings.TrimSpace(item.Path) != "" {
+				m = m.openViewEntityDialogWithPath(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody, item.Path)
+			} else {
+				m = m.openViewEntityDialog(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody)
+			}
 			return m, nil, true
 		}
 		return m, nil, true

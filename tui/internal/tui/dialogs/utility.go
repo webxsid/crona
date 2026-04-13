@@ -324,7 +324,11 @@ func renderUtilityDialog(theme Theme, state State) string {
 			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
-		rows = appendDialogFooter(theme, state, rows, "[enter/esc] close")
+		footer := "[enter/esc] close"
+		if strings.TrimSpace(state.ViewPath) != "" {
+			footer = "[e] edit   " + footer
+		}
+		rows = appendDialogFooter(theme, state, rows, footer)
 		return modal(theme, state.Width, 76, theme.ColorCyan, rows)
 	case "support_bundle_result":
 		rows := []string{

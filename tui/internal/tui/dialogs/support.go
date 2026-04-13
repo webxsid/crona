@@ -96,12 +96,17 @@ func OpenStashConflict(state State, conflict sharedtypes.StashConflict) State {
 }
 
 func OpenViewEntity(state State, title string, name string, meta string, body string) State {
+	return OpenViewEntityWithPath(state, title, name, meta, body, "")
+}
+
+func OpenViewEntityWithPath(state State, title string, name string, meta string, body string, path string) State {
 	state = Close(state)
 	state.Kind = "view_entity"
 	state.ViewTitle = title
 	state.ViewName = name
 	state.ViewMeta = meta
 	state.ViewBody = body
+	state.ViewPath = strings.TrimSpace(path)
 	return state
 }
 
@@ -120,6 +125,10 @@ func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "enter", "q":
 		return Close(state), nil, ""
+	case "e":
+		if strings.TrimSpace(state.ViewPath) != "" {
+			return Close(state), &Action{Kind: "open_view_entity_editor", Path: state.ViewPath}, ""
+		}
 	case "c":
 		switch state.ViewName {
 		case "Reports directory":

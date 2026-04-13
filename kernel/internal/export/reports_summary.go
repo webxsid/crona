@@ -663,9 +663,16 @@ func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKin
 	if err != nil {
 		return nil, err
 	}
+	markdown := normalizeFormatForKind(spec.Kind, spec.Format) == sharedtypes.ExportFormatMarkdown
+	if markdown {
+		data = attachFrontmatter(data, spec)
+	}
 	rendered, err := RenderTemplate(string(templateBody), data)
 	if err != nil {
 		return nil, err
+	}
+	if markdown {
+		rendered = ensureMarkdownFrontmatter(rendered, data, spec)
 	}
 	return finalizeReport(paths, spec, strings.TrimSpace(rendered), mode, scope...)
 }
