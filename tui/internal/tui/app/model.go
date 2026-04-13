@@ -1016,6 +1016,26 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
 		return next, next.generateSupportBundleCmd(next.inputState())
+	case "open_export_reports_dir_dialog":
+		if next.exportAssets == nil {
+			return next, nil
+		}
+		return next.openExportReportsDirDialog(next.exportAssets.ReportsDir), nil
+	case "open_export_ics_dir_dialog":
+		if next.exportAssets == nil {
+			return next, nil
+		}
+		return next.openExportICSDirDialog(next.exportAssets.ICSDir), nil
+	case "reset_export_reports_dir":
+		if next.exportAssets == nil {
+			return next, nil
+		}
+		return next, commands.SetExportReportsDir(next.client, "")
+	case "reset_export_ics_dir":
+		if next.exportAssets == nil {
+			return next, nil
+		}
+		return next, commands.SetExportICSDir(next.client, "")
 	default:
 		return next, next.dialogActionCmd(action)
 	}

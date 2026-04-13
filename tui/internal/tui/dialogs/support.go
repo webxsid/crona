@@ -120,9 +120,24 @@ func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "enter", "q":
 		return Close(state), nil, ""
+	case "c":
+		switch state.ViewName {
+		case "Reports directory":
+			return Close(state), &Action{Kind: "open_export_reports_dir_dialog"}, ""
+		case "ICS export directory":
+			return Close(state), &Action{Kind: "open_export_ics_dir_dialog"}, ""
+		}
+	case "r":
+		switch state.ViewName {
+		case "Reports directory":
+			return Close(state), &Action{Kind: "reset_export_reports_dir"}, ""
+		case "ICS export directory":
+			return Close(state), &Action{Kind: "reset_export_ics_dir"}, ""
+		}
 	default:
 		return clearDialogError(state), nil, ""
 	}
+	return clearDialogError(state), nil, ""
 }
 
 func updateSupportBundleResult(state State, msg tea.KeyMsg) (State, *Action, string) {

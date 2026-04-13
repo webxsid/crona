@@ -106,7 +106,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		actions := []string{
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit/open"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
-			theme.StyleHeader.Render("[space]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[c/space]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[R]") + theme.StyleDim.Render(" rescan tools"),
 		}
 		if state.TimerState == "" || state.TimerState == "idle" {

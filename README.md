@@ -54,7 +54,7 @@ crona completion fish
 
 - `stable` is the preferred channel for general users.
 - `beta` is for pre-release testing and faster iteration.
-- `v1.0.0` is the current stable release.
+- `v1.0.1` is the current stable release.
 
 ## Documentation
 

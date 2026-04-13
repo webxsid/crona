@@ -6,7 +6,13 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
-- `v1.0.0` is the current stable release.
+- `v1.0.1` is the current stable release.
+
+## [1.0.1] - 2026-04-13
+
+### Fixed
+- Config view report and ICS directory rows now honor `c` as the documented change-directory shortcut, while keeping space as an alternate change action.
+- Directory detail dialogs now route `c` to the edit-directory dialog and `r` to restore the default directory instead of swallowing those keys.
 
 ## [1.0.0] - 2026-04-12
 

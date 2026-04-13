@@ -73,6 +73,58 @@ func TestBetaSupportDialogUsesMnemonicKeys(t *testing.T) {
 	}
 }
 
+func TestDirectoryDetailDialogRoutesChangeAndResetKeys(t *testing.T) {
+	tests := []struct {
+		name       string
+		viewName   string
+		changeKind string
+		resetKind  string
+	}{
+		{
+			name:       "reports",
+			viewName:   "Reports directory",
+			changeKind: "open_export_reports_dir_dialog",
+			resetKind:  "reset_export_reports_dir",
+		},
+		{
+			name:       "ics",
+			viewName:   "ICS export directory",
+			changeKind: "open_export_ics_dir_dialog",
+			resetKind:  "reset_export_ics_dir",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name+" change", func(t *testing.T) {
+			state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", tt.viewName, "", "")
+			next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			if status != "" {
+				t.Fatalf("unexpected status %q", status)
+			}
+			if next.Kind != "" {
+				t.Fatalf("expected dialog to close, got kind %q", next.Kind)
+			}
+			if action == nil || action.Kind != tt.changeKind {
+				t.Fatalf("unexpected action %+v", action)
+			}
+		})
+
+		t.Run(tt.name+" reset", func(t *testing.T) {
+			state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", tt.viewName, "", "")
+			next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			if status != "" {
+				t.Fatalf("unexpected status %q", status)
+			}
+			if next.Kind != "" {
+				t.Fatalf("expected dialog to close, got kind %q", next.Kind)
+			}
+			if action == nil || action.Kind != tt.resetKind {
+				t.Fatalf("unexpected action %+v", action)
+			}
+		})
+	}
+}
+
 func TestStashConflictDialogOffersResumeAndContinue(t *testing.T) {
 	state := dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
 		IssueID: 42,
