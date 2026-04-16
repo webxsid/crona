@@ -12,6 +12,10 @@ func updateCreateIssueMeta(state State, currentDate string, msg tea.KeyMsg) (Sta
 	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
 		return OpenDatePicker(state, "create_issue_meta", 0, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
 	}
+	if state.FocusIdx == 3 && msg.String() == "g" {
+		state.Inputs[2].SetValue(currentDate)
+		return clearDialogError(state), nil, ""
+	}
 	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
 		title := strings.TrimSpace(state.Inputs[0].Value())
 		if title == "" {
@@ -179,6 +183,10 @@ func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (Stat
 func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
 	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
 		return OpenDatePicker(state, "edit_issue", state.IssueID, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
+	}
+	if state.FocusIdx == 3 && msg.String() == "g" {
+		state.Inputs[2].SetValue(currentDate)
+		return clearDialogError(state), nil, ""
 	}
 	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
 		title := strings.TrimSpace(state.Inputs[0].Value())

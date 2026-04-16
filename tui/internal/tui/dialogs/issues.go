@@ -119,7 +119,7 @@ func issueDialogHint(state State, submitLabel string) string {
 		case 1:
 			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}

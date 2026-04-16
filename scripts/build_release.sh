@@ -183,9 +183,10 @@ sed \
 
 mkdir -p "${RELEASE_DIR}/assets"
 cp -R "${ROOT_DIR}/assets/export" "${RELEASE_DIR}/assets/"
+cp -R "${ROOT_DIR}/assets/alerts" "${RELEASE_DIR}/assets/"
 (
   cd "${RELEASE_DIR}/assets"
-  tar -czf "../crona-assets-${VERSION}.tar.gz" export
+  tar -czf "../crona-assets-${VERSION}.tar.gz" export alerts
 )
 rm -rf "${RELEASE_DIR}/assets"
 

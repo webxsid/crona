@@ -163,6 +163,7 @@ func TestPrepareInstallCommandWithLocalReleaseBundle(t *testing.T) {
 		filepath.Join(installDir, "crona-kernel"),
 		filepath.Join(installDir, "crona-tui"),
 		filepath.Join(runtimeDir, "assets", "bundled", "export", "sample.txt"),
+		filepath.Join(runtimeDir, "assets", "bundled", "alerts", "sounds", "chime.wav"),
 	} {
 		if _, err := os.Stat(path); err != nil {
 			t.Fatalf("expected installed artifact %s: %v", path, err)
@@ -218,7 +219,19 @@ func writeLocalAssets(path string) error {
 	if err := tw.WriteHeader(header); err != nil {
 		return err
 	}
-	_, err = tw.Write(body)
+	if _, err := tw.Write(body); err != nil {
+		return err
+	}
+	soundBody := []byte("sample sound\n")
+	soundHeader := &tar.Header{
+		Name: "alerts/sounds/chime.wav",
+		Mode: 0o644,
+		Size: int64(len(soundBody)),
+	}
+	if err := tw.WriteHeader(soundHeader); err != nil {
+		return err
+	}
+	_, err = tw.Write(soundBody)
 	return err
 }
 
