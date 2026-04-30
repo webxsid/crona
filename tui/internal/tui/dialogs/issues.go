@@ -159,13 +159,13 @@ func renderDefaultIssueContextColumns(theme Theme, state State, width, maxWidth 
 		theme.StyleDim.Render("Repo"),
 		state.Inputs[0].View(),
 		"",
-		renderSelector(theme, state.RepoSelectorLabel, state.FocusIdx == 0),
+		renderSelector(theme, state, state.RepoSelectorLabel, state.FocusIdx == 0),
 	}, "\n"))
 	streamCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
 		theme.StyleDim.Render("Stream"),
 		state.Inputs[1].View(),
 		"",
-		renderSelector(theme, state.StreamSelectorLabel, state.FocusIdx == 1),
+		renderSelector(theme, state, state.StreamSelectorLabel, state.FocusIdx == 1),
 	}, "\n"))
 	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
 }

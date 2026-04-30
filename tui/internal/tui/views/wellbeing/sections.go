@@ -3,6 +3,7 @@ package wellbeing
 import (
 	"fmt"
 
+	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
@@ -12,8 +13,9 @@ import (
 
 func renderSmallScreen(theme types.Theme, state types.ContentState) string {
 	activeSummary := state.Pane != string(uistate.PaneWellbeingTrends)
+	displayDate := helperpkg.FormatDisplayDate(state.WellbeingDate, state.Settings)
 	header := []string{
-		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render(smallScreenTitle(activeSummary)), theme.StyleHeader.Render(state.WellbeingDate)),
+		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render(smallScreenTitle(activeSummary)), theme.StyleHeader.Render(displayDate)),
 		viewchrome.RenderActionLine(theme, state.Width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
 			View:           state.View,
 			Pane:           state.Pane,
@@ -46,6 +48,7 @@ func lipglossJoinCompact(theme types.Theme, state types.ContentState, topH, bott
 
 func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == string(uistate.PaneWellbeingSummary)
+	displayDate := helperpkg.FormatDisplayDate(state.WellbeingDate, state.Settings)
 	actionLine := ""
 	if active {
 		actionLine = viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
@@ -57,7 +60,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	}
 	header := []string{
 		theme.StylePaneTitle.Render("Wellbeing"),
-		theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", state.WellbeingDate)),
+		theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", displayDate)),
 		actionLine,
 		"",
 	}
@@ -66,6 +69,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 
 func renderCompactSummary(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == string(uistate.PaneWellbeingSummary)
+	displayDate := helperpkg.FormatDisplayDate(state.WellbeingDate, state.Settings)
 	actionLine := ""
 	if active {
 		actionLine = viewchrome.RenderActionLine(theme, width-6, viewchrome.ContextualActions(theme, viewchrome.ActionsState{
@@ -76,7 +80,7 @@ func renderCompactSummary(theme types.Theme, state types.ContentState, width, he
 		}))
 	}
 	header := []string{
-		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Wellbeing"), theme.StyleHeader.Render(state.WellbeingDate)),
+		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Wellbeing"), theme.StyleHeader.Render(displayDate)),
 		actionLine,
 	}
 	return renderScrollablePane(theme, active, width, height, header, summaryBodyLines(theme, state, width, true), state.Cursors[string(uistate.PaneWellbeingSummary)])

@@ -16,6 +16,7 @@ import (
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/sessionnotes"
+	shareddatefmt "crona/shared/datefmt"
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
@@ -210,6 +211,7 @@ func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Pa
 	for _, day := range days {
 		item := map[string]any{
 			"date":            day.Date,
+			"displayDate":     shareddatefmt.FormatISODate(day.Date, settings),
 			"workedTime":      formatDurationHMS(day.WorkedSeconds),
 			"sessionCount":    day.SessionCount,
 			"totalIssues":     day.TotalIssues,
@@ -224,9 +226,11 @@ func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Pa
 	}
 
 	data := map[string]any{
-		"startDate":   start,
-		"endDate":     end,
-		"generatedAt": time.Now().UTC().Format(time.RFC3339),
+		"startDate":        start,
+		"endDate":          end,
+		"displayStartDate": shareddatefmt.FormatISODate(start, settings),
+		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
+		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
 		"summary": map[string]any{
 			"days":            rollup.Days,
 			"checkInDays":     rollup.CheckInDays,
@@ -307,10 +311,13 @@ func generateRepoExport(ctx context.Context, c *core.Context, paths runtime.Path
 		return nil, err
 	}
 	issueGroups := buildIssueGroups(issues, sessions)
+	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
-		"generatedAt": time.Now().UTC().Format(time.RFC3339),
-		"startDate":   start,
-		"endDate":     end,
+		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
+		"startDate":        start,
+		"endDate":          end,
+		"displayStartDate": shareddatefmt.FormatISODate(start, settings),
+		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
 		"repo": map[string]any{
 			"name":        repo.Name,
 			"description": optionalString(repo.Description),
@@ -387,10 +394,13 @@ func generateStreamExport(ctx context.Context, c *core.Context, paths runtime.Pa
 	if repo != nil {
 		scope.RepoName = &repo.Name
 	}
+	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
-		"generatedAt": time.Now().UTC().Format(time.RFC3339),
-		"startDate":   start,
-		"endDate":     end,
+		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
+		"startDate":        start,
+		"endDate":          end,
+		"displayStartDate": shareddatefmt.FormatISODate(start, settings),
+		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
 		"repo": map[string]any{
 			"name": repoName,
 		},
@@ -493,11 +503,14 @@ func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runti
 			Sessions: item.entries,
 		})
 	}
+	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
-		"generatedAt": time.Now().UTC().Format(time.RFC3339),
-		"startDate":   start,
-		"endDate":     end,
-		"issues":      mapDetailedIssueGroups(detailedGroups, map[int64]map[string]any{}),
+		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
+		"startDate":        start,
+		"endDate":          end,
+		"displayStartDate": shareddatefmt.FormatISODate(start, settings),
+		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
+		"issues":           mapDetailedIssueGroups(detailedGroups, map[int64]map[string]any{}),
 	}
 	return renderNarrativeReport(paths, sharedtypes.ExportReportKindIssueRollup, data, reportWriteSpec{
 		Kind:      sharedtypes.ExportReportKindIssueRollup,

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	shareddatefmt "crona/shared/datefmt"
 )
 
 func PopulateDatePresentation(theme Theme, state State, currentDate string) State {
@@ -14,7 +16,7 @@ func PopulateDatePresentation(theme Theme, state State, currentDate string) Stat
 		title = "Pick Due Date For New Issue (Optional)"
 	}
 	state.DateTitle = title
-	state.DateHeader = selected.Format("Mon, 02 Jan 2006")
+	state.DateHeader = selected.Format("Mon") + ", " + shareddatefmt.FormatDate(selected, nil)
 	state.DateMonth = monthStart.Format("January 2006")
 	state.DateGrid = renderCalendarGrid(theme, monthStart, selected)
 	return state

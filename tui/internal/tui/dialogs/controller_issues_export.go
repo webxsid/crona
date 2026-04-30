@@ -9,7 +9,7 @@ import (
 )
 
 func updateCreateIssueMeta(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
+	if state.FocusIdx == 3 && isDatePickerShortcut(msg.String()) {
 		return OpenDatePicker(state, "create_issue_meta", 0, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
@@ -38,7 +38,7 @@ func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "f2", "ctrl+y":
+	case "f2", "ctrl+e", "ctrl+y":
 		if state.FocusIdx == 5 {
 			return OpenDatePicker(state, "create_issue_default", 0, 5, ValueToPointer(state.Inputs[4].Value()), currentDate), nil, ""
 		}
@@ -181,7 +181,7 @@ func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (Stat
 }
 
 func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
-	if state.FocusIdx == 3 && (msg.String() == "f2" || msg.String() == "ctrl+y") {
+	if state.FocusIdx == 3 && isDatePickerShortcut(msg.String()) {
 		return OpenDatePicker(state, "edit_issue", state.IssueID, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
@@ -237,6 +237,10 @@ func updateMultiInputIssue(state State, msg tea.KeyMsg, inputCount int, submit f
 	state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
+}
+
+func isDatePickerShortcut(key string) bool {
+	return key == "f2" || key == "ctrl+e" || key == "ctrl+y"
 }
 
 func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) {

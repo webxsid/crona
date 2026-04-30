@@ -65,6 +65,9 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyRestWeekdays:          {column: "rest_weekdays", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyRestSpecificDates:     {column: "rest_specific_dates", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyDailyPlanRollbackMins: {column: "daily_plan_rollback_minutes", queryKind: coreSettingQueryInt},
+	sharedtypes.CoreSettingsKeyDateDisplayPreset:     {column: "date_display_preset", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyDateDisplayFormat:     {column: "date_display_format", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyPromptGlyphMode:       {column: "prompt_glyph_mode", queryKind: coreSettingQueryString},
 }
 
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
@@ -215,6 +218,9 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
 		DailyPlanRollbackMins: sharedconstants.DefaultCoreSettings["dailyPlanRollbackMinutes"].(int),
+		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
+		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
+		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
@@ -239,6 +245,10 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))
+	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
+		return sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))
+	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
+		return sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))
 	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
 		return parseStreakKinds(toString(value))
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
@@ -270,6 +280,10 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return string(sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
+		return string(sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
+		return string(sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
 		return streakKindsJSON(value)
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
@@ -318,6 +332,9 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
 		DailyPlanRollbackMins: row.DailyPlanRollbackMins,
+		DateDisplayPreset:     sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(row.DateDisplayPreset)),
+		DateDisplayFormat:     strings.TrimSpace(row.DateDisplayFormat),
+		PromptGlyphMode:       sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(row.PromptGlyphMode)),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}

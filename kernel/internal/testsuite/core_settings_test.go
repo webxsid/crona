@@ -42,6 +42,12 @@ func TestGetAllSettingsReturnsPublicCoreSettingsShape(t *testing.T) {
 	if settings.BoundarySound {
 		t.Fatalf("expected boundary sound false, got true")
 	}
+	if settings.DateDisplayPreset != sharedtypes.DateDisplayPresetISO {
+		t.Fatalf("expected default date display preset iso, got %q", settings.DateDisplayPreset)
+	}
+	if settings.PromptGlyphMode != sharedtypes.PromptGlyphModeEmoji {
+		t.Fatalf("expected default prompt glyph mode emoji, got %q", settings.PromptGlyphMode)
+	}
 }
 
 func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
@@ -76,6 +82,15 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyInactivityRepeat, 90); err != nil {
 		t.Fatalf("set inactivity repeat: %v", err)
 	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyDateDisplayPreset, string(sharedtypes.DateDisplayPresetCustom)); err != nil {
+		t.Fatalf("set date display preset: %v", err)
+	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyDateDisplayFormat, "Do MMM YYYY"); err != nil {
+		t.Fatalf("set date display format: %v", err)
+	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyPromptGlyphMode, string(sharedtypes.PromptGlyphModeASCII)); err != nil {
+		t.Fatalf("set prompt glyph mode: %v", err)
+	}
 
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {
@@ -101,5 +116,14 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 	if settings.InactivityThreshold != 45 || settings.InactivityRepeat != 90 {
 		t.Fatalf("unexpected inactivity settings: threshold=%d repeat=%d", settings.InactivityThreshold, settings.InactivityRepeat)
+	}
+	if settings.DateDisplayPreset != sharedtypes.DateDisplayPresetCustom {
+		t.Fatalf("expected custom date display preset, got %q", settings.DateDisplayPreset)
+	}
+	if settings.DateDisplayFormat != "Do MMM YYYY" {
+		t.Fatalf("unexpected date display format: %q", settings.DateDisplayFormat)
+	}
+	if settings.PromptGlyphMode != sharedtypes.PromptGlyphModeASCII {
+		t.Fatalf("unexpected prompt glyph mode: %q", settings.PromptGlyphMode)
 	}
 }

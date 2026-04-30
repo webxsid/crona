@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/sessionnotes"
+	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 )
 
@@ -162,7 +164,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 			if !ok {
 				continue
 			}
-			issues = append(issues, sharedtypes.DailyReportIssue{
+			reportIssue := sharedtypes.DailyReportIssue{
 				IssueWithMeta: sharedtypes.IssueWithMeta{
 					Issue:      meta.Issue,
 					RepoID:     meta.RepoID,
@@ -182,12 +184,13 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 				PlanCurrentDelayedDays:   entry.CurrentDelayedDays,
 				PlanMaxDelayedDays:       entry.MaxDelayedDays,
 				PlanFailScore:            entry.FailScore,
-			})
+			}
+			issues = append(issues, sanitizeDailyReportIssue(reportIssue))
 		}
 	} else {
 		for _, issue := range summary.Issues {
 			meta := issueMeta[issue.ID]
-			issues = append(issues, sharedtypes.DailyReportIssue{
+			issues = append(issues, sanitizeDailyReportIssue(sharedtypes.DailyReportIssue{
 				IssueWithMeta: sharedtypes.IssueWithMeta{
 					Issue:      issue,
 					RepoID:     meta.RepoID,
@@ -199,7 +202,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 				PlanCommittedAt:        date + "T00:00:00Z",
 				PlanBaselineDate:       date,
 				PlanCurrentPlannedDate: date,
-			})
+			}))
 		}
 	}
 
@@ -228,17 +231,18 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	}
 
 	return &sharedtypes.DailyReportData{
-		Date:          date,
-		GeneratedAt:   time.Now().UTC().Format(time.RFC3339),
-		Summary:       summary,
-		Plan:          plan,
-		Issues:        issues,
-		Sessions:      sessions,
-		Habits:        habits,
-		CheckIn:       checkIn,
-		Metrics:       metrics,
-		MetricsRollup: rollup,
-		Streaks:       streaks,
+		Date:            date,
+		GeneratedAt:     time.Now().UTC().Format(time.RFC3339),
+		Summary:         summary,
+		Plan:            plan,
+		Issues:          issues,
+		Sessions:        sessions,
+		Habits:          habits,
+		CheckIn:         checkIn,
+		Metrics:         metrics,
+		MetricsRollup:   rollup,
+		Streaks:         streaks,
+		DisplaySettings: settings,
 	}, nil
 }
 
@@ -249,6 +253,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 	dayHealth := deriveDayHealth(data, summary, risks)
 	items := map[string]any{
 		"date":          data.Date,
+		"displayDate":   shareddatefmt.FormatISODate(data.Date, data.DisplaySettings),
 		"generatedAt":   data.GeneratedAt,
 		"summary":       summary,
 		"plan":          nil,
@@ -300,7 +305,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 				"postponeCount":        entry.PostponeCount,
 				"currentDelayedDays":   entry.CurrentDelayedDays,
 				"maxDelayedDays":       entry.MaxDelayedDays,
-				"failScore":            entry.FailScore,
+				"failScore":            roundReportMetric(entry.FailScore),
 			}
 			entries = append(entries, item)
 		}
@@ -313,11 +318,11 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 				"failedCount":          data.Plan.Summary.FailedCount,
 				"abandonedCount":       data.Plan.Summary.AbandonedCount,
 				"pendingRollbackCount": data.Plan.Summary.PendingRollbackCount,
-				"accountabilityScore":  data.Plan.Summary.AccountabilityScore,
-				"backlogPressure":      data.Plan.Summary.BacklogPressure,
+				"accountabilityScore":  roundReportMetric(data.Plan.Summary.AccountabilityScore),
+				"backlogPressure":      roundReportMetric(data.Plan.Summary.BacklogPressure),
 				"delayedIssueCount":    data.Plan.Summary.DelayedIssueCount,
 				"highRiskIssueCount":   data.Plan.Summary.HighRiskIssueCount,
-				"avgDelayDays":         data.Plan.Summary.AvgDelayDays,
+				"avgDelayDays":         roundReportMetric(data.Plan.Summary.AvgDelayDays),
 				"maxDelayDays":         data.Plan.Summary.MaxDelayDays,
 			},
 			"entries": entries,
@@ -409,11 +414,11 @@ func buildSummaryMap(data *sharedtypes.DailyReportData) map[string]any {
 		summary["planFailedCount"] = data.Plan.Summary.FailedCount
 		summary["planAbandonedCount"] = data.Plan.Summary.AbandonedCount
 		summary["planPendingRollbackCount"] = data.Plan.Summary.PendingRollbackCount
-		summary["accountabilityScore"] = data.Plan.Summary.AccountabilityScore
-		summary["backlogPressure"] = data.Plan.Summary.BacklogPressure
+		summary["accountabilityScore"] = roundReportMetric(data.Plan.Summary.AccountabilityScore)
+		summary["backlogPressure"] = roundReportMetric(data.Plan.Summary.BacklogPressure)
 		summary["delayedIssueCount"] = data.Plan.Summary.DelayedIssueCount
 		summary["highRiskIssueCount"] = data.Plan.Summary.HighRiskIssueCount
-		summary["avgDelayDays"] = data.Plan.Summary.AvgDelayDays
+		summary["avgDelayDays"] = roundReportMetric(data.Plan.Summary.AvgDelayDays)
 		summary["maxDelayDays"] = data.Plan.Summary.MaxDelayDays
 	}
 	return summary
@@ -691,6 +696,7 @@ func formatStatusLabel(value string, fallback string) string {
 }
 
 func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
+	issue = sanitizeDailyReportIssue(issue)
 	return map[string]any{
 		"id":                       issue.ID,
 		"title":                    issue.Title,
@@ -715,8 +721,24 @@ func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
 		"planPostponeCount":        issue.PlanPostponeCount,
 		"planCurrentDelayedDays":   issue.PlanCurrentDelayedDays,
 		"planMaxDelayedDays":       issue.PlanMaxDelayedDays,
-		"planFailScore":            issue.PlanFailScore,
+		"planFailScore":            roundReportMetric(issue.PlanFailScore),
 	}
+}
+
+func sanitizeDailyReportIssue(issue sharedtypes.DailyReportIssue) sharedtypes.DailyReportIssue {
+	switch issue.Status {
+	case sharedtypes.IssueStatusDone, sharedtypes.IssueStatusAbandoned:
+		issue.PlanCurrentDelayedDays = 0
+		issue.PlanMaxDelayedDays = 0
+		issue.PlanFailScore = 0
+		issue.PlanPendingFailureAt = nil
+		issue.PlanPendingFailureReason = nil
+	}
+	return issue
+}
+
+func roundReportMetric(value float64) float64 {
+	return math.Round(value*10) / 10
 }
 
 func mapHabitTemplateItem(habit sharedtypes.HabitDailyItem) map[string]any {

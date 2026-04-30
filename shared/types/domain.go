@@ -279,7 +279,46 @@ const (
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
 	CoreSettingsKeyDailyPlanRollbackMins CoreSettingsKey = "dailyPlanRollbackMinutes"
+	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
+	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
+	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
 )
+
+type DateDisplayPreset string
+
+const (
+	DateDisplayPresetISO    DateDisplayPreset = "iso"
+	DateDisplayPresetUS     DateDisplayPreset = "us"
+	DateDisplayPresetEurope DateDisplayPreset = "europe"
+	DateDisplayPresetLong   DateDisplayPreset = "long"
+	DateDisplayPresetCustom DateDisplayPreset = "custom"
+)
+
+func NormalizeDateDisplayPreset(value DateDisplayPreset) DateDisplayPreset {
+	switch value {
+	case DateDisplayPresetUS, DateDisplayPresetEurope, DateDisplayPresetLong, DateDisplayPresetCustom:
+		return value
+	default:
+		return DateDisplayPresetISO
+	}
+}
+
+type PromptGlyphMode string
+
+const (
+	PromptGlyphModeEmoji   PromptGlyphMode = "emoji"
+	PromptGlyphModeUnicode PromptGlyphMode = "unicode"
+	PromptGlyphModeASCII   PromptGlyphMode = "ascii"
+)
+
+func NormalizePromptGlyphMode(value PromptGlyphMode) PromptGlyphMode {
+	switch value {
+	case PromptGlyphModeUnicode, PromptGlyphModeASCII:
+		return value
+	default:
+		return PromptGlyphModeEmoji
+	}
+}
 
 type StreakKind string
 
@@ -775,39 +814,42 @@ type ActiveContext struct {
 }
 
 type CoreSettings struct {
-	UserID                string           `json:"userId"`
-	DeviceID              string           `json:"deviceId"`
-	TimerMode             TimerMode        `json:"timerMode"`
-	BreaksEnabled         bool             `json:"breaksEnabled"`
-	WorkDurationMinutes   int              `json:"workDurationMinutes"`
-	ShortBreakMinutes     int              `json:"shortBreakMinutes"`
-	LongBreakMinutes      int              `json:"longBreakMinutes"`
-	LongBreakEnabled      bool             `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int              `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool             `json:"autoStartBreaks"`
-	AutoStartWork         bool             `json:"autoStartWork"`
-	BoundaryNotifications bool             `json:"boundaryNotificationsEnabled"`
-	BoundarySound         bool             `json:"boundarySoundEnabled"`
-	AlertSoundPreset      AlertSoundPreset `json:"alertSoundPreset"`
-	AlertUrgency          AlertUrgency     `json:"alertUrgency"`
-	AlertIconEnabled      bool             `json:"alertIconEnabled"`
-	InactivityAlerts      bool             `json:"inactivityAlertsEnabled"`
-	InactivityThreshold   int              `json:"inactivityThresholdMinutes"`
-	InactivityRepeat      int              `json:"inactivityRepeatMinutes"`
-	UpdateChecksEnabled   bool             `json:"updateChecksEnabled"`
-	UpdatePromptEnabled   bool             `json:"updatePromptEnabled"`
-	UpdateChannel         UpdateChannel    `json:"updateChannel"`
-	RepoSort              RepoSort         `json:"repoSort"`
-	StreamSort            StreamSort       `json:"streamSort"`
-	IssueSort             IssueSort        `json:"issueSort"`
-	HabitSort             HabitSort        `json:"habitSort"`
-	AwayModeEnabled       bool             `json:"awayModeEnabled"`
-	FrozenStreakKinds     []StreakKind     `json:"frozenStreakKinds,omitempty"`
-	RestWeekdays          []int            `json:"restWeekdays,omitempty"`
-	RestSpecificDates     []string         `json:"restSpecificDates,omitempty"`
-	DailyPlanRollbackMins int              `json:"dailyPlanRollbackMinutes"`
-	CreatedAt             string           `json:"createdAt"`
-	UpdatedAt             string           `json:"updatedAt"`
+	UserID                string            `json:"userId"`
+	DeviceID              string            `json:"deviceId"`
+	TimerMode             TimerMode         `json:"timerMode"`
+	BreaksEnabled         bool              `json:"breaksEnabled"`
+	WorkDurationMinutes   int               `json:"workDurationMinutes"`
+	ShortBreakMinutes     int               `json:"shortBreakMinutes"`
+	LongBreakMinutes      int               `json:"longBreakMinutes"`
+	LongBreakEnabled      bool              `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int               `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool              `json:"autoStartBreaks"`
+	AutoStartWork         bool              `json:"autoStartWork"`
+	BoundaryNotifications bool              `json:"boundaryNotificationsEnabled"`
+	BoundarySound         bool              `json:"boundarySoundEnabled"`
+	AlertSoundPreset      AlertSoundPreset  `json:"alertSoundPreset"`
+	AlertUrgency          AlertUrgency      `json:"alertUrgency"`
+	AlertIconEnabled      bool              `json:"alertIconEnabled"`
+	InactivityAlerts      bool              `json:"inactivityAlertsEnabled"`
+	InactivityThreshold   int               `json:"inactivityThresholdMinutes"`
+	InactivityRepeat      int               `json:"inactivityRepeatMinutes"`
+	UpdateChecksEnabled   bool              `json:"updateChecksEnabled"`
+	UpdatePromptEnabled   bool              `json:"updatePromptEnabled"`
+	UpdateChannel         UpdateChannel     `json:"updateChannel"`
+	RepoSort              RepoSort          `json:"repoSort"`
+	StreamSort            StreamSort        `json:"streamSort"`
+	IssueSort             IssueSort         `json:"issueSort"`
+	HabitSort             HabitSort         `json:"habitSort"`
+	AwayModeEnabled       bool              `json:"awayModeEnabled"`
+	FrozenStreakKinds     []StreakKind      `json:"frozenStreakKinds,omitempty"`
+	RestWeekdays          []int             `json:"restWeekdays,omitempty"`
+	RestSpecificDates     []string          `json:"restSpecificDates,omitempty"`
+	DailyPlanRollbackMins int               `json:"dailyPlanRollbackMinutes"`
+	DateDisplayPreset     DateDisplayPreset `json:"dateDisplayPreset"`
+	DateDisplayFormat     string            `json:"dateDisplayFormat,omitempty"`
+	PromptGlyphMode       PromptGlyphMode   `json:"promptGlyphMode"`
+	CreatedAt             string            `json:"createdAt"`
+	UpdatedAt             string            `json:"updatedAt"`
 }
 
 type TimerState struct {
@@ -1057,17 +1099,18 @@ type DailyReportSession struct {
 }
 
 type DailyReportData struct {
-	Date          string               `json:"date"`
-	GeneratedAt   string               `json:"generatedAt"`
-	Summary       DailyIssueSummary    `json:"summary"`
-	Plan          *DailyPlan           `json:"plan,omitempty"`
-	Issues        []DailyReportIssue   `json:"issues"`
-	Sessions      []DailyReportSession `json:"sessions"`
-	Habits        []HabitDailyItem     `json:"habits"`
-	CheckIn       *DailyCheckIn        `json:"checkIn,omitempty"`
-	Metrics       *DailyMetricsDay     `json:"metrics,omitempty"`
-	MetricsRollup *MetricsRollup       `json:"metricsRollup,omitempty"`
-	Streaks       *StreakSummary       `json:"streaks,omitempty"`
+	Date            string               `json:"date"`
+	GeneratedAt     string               `json:"generatedAt"`
+	Summary         DailyIssueSummary    `json:"summary"`
+	Plan            *DailyPlan           `json:"plan,omitempty"`
+	Issues          []DailyReportIssue   `json:"issues"`
+	Sessions        []DailyReportSession `json:"sessions"`
+	Habits          []HabitDailyItem     `json:"habits"`
+	CheckIn         *DailyCheckIn        `json:"checkIn,omitempty"`
+	Metrics         *DailyMetricsDay     `json:"metrics,omitempty"`
+	MetricsRollup   *MetricsRollup       `json:"metricsRollup,omitempty"`
+	Streaks         *StreakSummary       `json:"streaks,omitempty"`
+	DisplaySettings *CoreSettings        `json:"-"`
 }
 
 type ExportAssetStatus struct {

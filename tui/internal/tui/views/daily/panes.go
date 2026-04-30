@@ -59,7 +59,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		if issue.EstimateMinutes != nil {
 			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 		}
-		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt)
+		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, viewhelpers.Truncate(title, titleW), statusW, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, viewhelpers.Truncate(repoName, repoW), streamW, viewhelpers.Truncate(streamName, streamW))
 		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, row, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
 	}

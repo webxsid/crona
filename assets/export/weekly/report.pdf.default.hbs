@@ -1,5 +1,5 @@
 # Weekly Summary
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 ## Rollup
 - Days: {{summary.days}}
@@ -11,5 +11,5 @@ Generated at {{generatedAt}}
 - Abandoned issues: {{summary.abandonedIssues}}
 ## Days
 {{#each days}}
-- {{date}} | {{workedTime}} | {{sessionCount}} sessions
+- {{displayDate}} | {{workedTime}} | {{sessionCount}} sessions
 {{/each}}

@@ -26,11 +26,11 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 				FailedCount:          1,
 				AbandonedCount:       0,
 				PendingRollbackCount: 1,
-				AccountabilityScore:  74.5,
-				BacklogPressure:      2.1,
+				AccountabilityScore:  74.54,
+				BacklogPressure:      2.14,
 				DelayedIssueCount:    2,
 				HighRiskIssueCount:   1,
-				AvgDelayDays:         1.5,
+				AvgDelayDays:         1.46,
 				MaxDelayDays:         4,
 			},
 		},
@@ -49,7 +49,7 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 				WorkedSeconds:          1800,
 				PlanStatus:             sharedtypes.DailyPlanEntryStatusFailed,
 				PlanCurrentDelayedDays: 4,
-				PlanFailScore:          0.8,
+				PlanFailScore:          0.84,
 				PlanFailureReason:      planFailurePtr(sharedtypes.DailyPlanFailureReasonMissed),
 			},
 		},
@@ -61,7 +61,13 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 		t.Fatalf("expected planFailedCount 1, got %#v", got)
 	}
 	if got := summary["accountabilityScore"]; got != 74.5 {
-		t.Fatalf("expected accountabilityScore 74.5, got %#v", got)
+		t.Fatalf("expected rounded accountabilityScore 74.5, got %#v", got)
+	}
+	if got := summary["backlogPressure"]; got != 2.1 {
+		t.Fatalf("expected rounded backlogPressure 2.1, got %#v", got)
+	}
+	if got := summary["avgDelayDays"]; got != 1.5 {
+		t.Fatalf("expected rounded avgDelayDays 1.5, got %#v", got)
 	}
 	if got := summary["delayedIssueCount"]; got != 2 {
 		t.Fatalf("expected delayedIssueCount 2, got %#v", got)
@@ -73,6 +79,9 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 	}
 	if got := issues[0]["planCurrentDelayedDays"]; got != 4 {
 		t.Fatalf("expected delayed days 4, got %#v", got)
+	}
+	if got := issues[0]["planFailScore"]; got != 0.8 {
+		t.Fatalf("expected rounded fail score 0.8, got %#v", got)
 	}
 }
 
@@ -136,6 +145,61 @@ func TestFallbackDailyReportTemplateRendersAccountabilityAndFailureDetails(t *te
 	} {
 		if !strings.Contains(rendered, snippet) {
 			t.Fatalf("expected rendered report to contain %q\n%s", snippet, rendered)
+		}
+	}
+}
+
+func TestBuildTemplateDataMapSuppressesStalePlanRiskForResolvedIssues(t *testing.T) {
+	pendingAt := "2026-04-08T08:00:00Z"
+	data := &sharedtypes.DailyReportData{
+		Date:        "2026-04-08",
+		GeneratedAt: "2026-04-08T10:00:00Z",
+		Summary: sharedtypes.DailyIssueSummary{
+			Date:        "2026-04-08",
+			TotalIssues: 1,
+		},
+		Issues: []sharedtypes.DailyReportIssue{
+			{
+				IssueWithMeta: sharedtypes.IssueWithMeta{
+					Issue: sharedtypes.Issue{
+						ID:     11,
+						Title:  "Already shipped",
+						Status: sharedtypes.IssueStatusDone,
+					},
+					RepoName:   "Work",
+					StreamName: "core",
+				},
+				PlanStatus:               sharedtypes.DailyPlanEntryStatusCompleted,
+				PlanCurrentDelayedDays:   5,
+				PlanMaxDelayedDays:       7,
+				PlanFailScore:            2.84,
+				PlanPendingFailureAt:     &pendingAt,
+				PlanPendingFailureReason: planFailurePtr(sharedtypes.DailyPlanFailureReasonMoved),
+			},
+		},
+	}
+
+	items := buildTemplateDataMap(data)
+	issues := items["issues"].([]map[string]any)
+	if got := issues[0]["planCurrentDelayedDays"]; got != 0 {
+		t.Fatalf("expected resolved issue delayed days cleared, got %#v", got)
+	}
+	if got := issues[0]["planMaxDelayedDays"]; got != 0 {
+		t.Fatalf("expected resolved issue max delayed days cleared, got %#v", got)
+	}
+	if got := issues[0]["planFailScore"]; got != 0.0 {
+		t.Fatalf("expected resolved issue fail score cleared, got %#v", got)
+	}
+	if got := issues[0]["planPendingFailureAt"]; got != nil {
+		pending, ok := got.(*string)
+		if !ok || pending != nil {
+			t.Fatalf("expected resolved issue pending failure timestamp cleared, got %#v", got)
+		}
+	}
+	if got := issues[0]["planPendingFailureReason"]; got != nil {
+		reason, ok := got.(*sharedtypes.DailyPlanFailureReason)
+		if !ok || reason != nil {
+			t.Fatalf("expected resolved issue pending failure reason cleared, got %#v", got)
 		}
 	}
 }

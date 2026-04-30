@@ -281,6 +281,19 @@ func OpenExportICSDir(state State, current string) State {
 	return state
 }
 
+func OpenEditDateDisplayFormat(state State, current string) State {
+	input := textinput.New()
+	input.Placeholder = "YYYY-MM-DD | Do MMM YYYY | MM/DD/YYYY"
+	input.SetValue(strings.TrimSpace(current))
+	input.Focus()
+	input.CharLimit = 120
+	input.Width = 56
+	state = Close(state)
+	state.Kind = "edit_date_display_format"
+	state.Inputs = []textinput.Model{input}
+	return state
+}
+
 func OpenEditRestProtection(state State, streaks []sharedtypes.StreakKind, weekdays []int, dates []string) State {
 	state = Close(state)
 	state.Kind = "edit_rest_protection"
@@ -318,6 +331,7 @@ func openCheckInDialog(state State, kind string, date string, checkIn *api.Daily
 	sleepHours.Placeholder = "7.5h | 7h30m | 450m"
 	sleepHours.CharLimit = 8
 	sleepHours.Width = 20
+	sleepHours = withTimePrompt(state, sleepHours)
 	sleepScore := textinput.New()
 	sleepScore.Placeholder = "Sleep score"
 	sleepScore.CharLimit = 3
@@ -326,6 +340,7 @@ func openCheckInDialog(state State, kind string, date string, checkIn *api.Daily
 	screenTime.Placeholder = "45m | 1h20m"
 	screenTime.CharLimit = 8
 	screenTime.Width = 20
+	screenTime = withTimePrompt(state, screenTime)
 	notes := textinput.New()
 	notes.Placeholder = "Notes (optional)"
 	notes.CharLimit = 200
@@ -436,10 +451,12 @@ func OpenCreateHabit(state State) State {
 	repoFilter.Placeholder = "Search repo"
 	repoFilter.CharLimit = 80
 	repoFilter.Width = 52
+	repoFilter = withSearchPrompt(state, repoFilter)
 	streamFilter := textinput.New()
 	streamFilter.Placeholder = "Search stream"
 	streamFilter.CharLimit = 80
 	streamFilter.Width = 52
+	streamFilter = withSearchPrompt(state, streamFilter)
 	name := textinput.New()
 	name.Placeholder = "Habit name"
 	name.Focus()
@@ -454,6 +471,7 @@ func OpenCreateHabit(state State) State {
 	target.Placeholder = "Target duration (e.g. 30m, 1h)"
 	target.CharLimit = 8
 	target.Width = 52
+	target = withTimePrompt(state, target)
 	state = Close(state)
 	state.Kind = "create_habit"
 	state.Inputs = []textinput.Model{repoFilter, streamFilter, name, schedule, target}
@@ -484,6 +502,7 @@ func OpenEditHabit(state State, habitID, streamID int64, name string, descriptio
 	target.Placeholder = "Target duration (e.g. 30m, 1h)"
 	target.CharLimit = 8
 	target.Width = 52
+	target = withTimePrompt(state, target)
 	if targetMinutes != nil {
 		target.SetValue(FormatDurationMinutesInput(targetMinutes))
 	}
@@ -505,6 +524,7 @@ func OpenHabitCompletion(state State, habitID int64, date string, durationMinute
 	duration.Focus()
 	duration.CharLimit = 8
 	duration.Width = 52
+	duration = withTimePrompt(state, duration)
 	if durationMinutes != nil {
 		duration.SetValue(FormatDurationMinutesInput(durationMinutes))
 	}
@@ -534,10 +554,12 @@ func OpenCreateIssueMeta(state State, streamID int64, streamName, repoName strin
 	estimate.Placeholder = "Estimate (e.g. 45m, 1h30m)"
 	estimate.CharLimit = 8
 	estimate.Width = 52
+	estimate = withTimePrompt(state, estimate)
 	due := textinput.New()
 	due.Placeholder = "Due date YYYY-MM-DD (optional)"
 	due.CharLimit = 10
 	due.Width = 52
+	due = withDatePrompt(state, due)
 	state = Close(state)
 	state.Kind = "create_issue_meta"
 	state.Inputs = []textinput.Model{title, estimate, due}
@@ -565,6 +587,7 @@ func OpenEditIssue(state State, issueID, streamID int64, title string, descripti
 	estimateInput.Placeholder = "Estimate (e.g. 45m, 1h30m)"
 	estimateInput.CharLimit = 8
 	estimateInput.Width = 52
+	estimateInput = withTimePrompt(state, estimateInput)
 	if estimateMinutes != nil {
 		estimateInput.SetValue(FormatDurationMinutesInput(estimateMinutes))
 	}
@@ -572,6 +595,7 @@ func OpenEditIssue(state State, issueID, streamID int64, title string, descripti
 	dueInput.Placeholder = "Due date YYYY-MM-DD (optional)"
 	dueInput.CharLimit = 10
 	dueInput.Width = 52
+	dueInput = withDatePrompt(state, dueInput)
 	if todoForDate != nil {
 		dueInput.SetValue(strings.TrimSpace(*todoForDate))
 	}
@@ -591,10 +615,12 @@ func OpenCreateIssueDefault(state State) State {
 	repoFilter.Placeholder = "Search repo"
 	repoFilter.CharLimit = 80
 	repoFilter.Width = 52
+	repoFilter = withSearchPrompt(state, repoFilter)
 	streamFilter := textinput.New()
 	streamFilter.Placeholder = "Search stream"
 	streamFilter.CharLimit = 80
 	streamFilter.Width = 52
+	streamFilter = withSearchPrompt(state, streamFilter)
 	title := textinput.New()
 	title.Placeholder = "Issue title"
 	title.Focus()
@@ -605,10 +631,12 @@ func OpenCreateIssueDefault(state State) State {
 	estimate.Placeholder = "Estimate (e.g. 45m, 1h30m)"
 	estimate.CharLimit = 8
 	estimate.Width = 52
+	estimate = withTimePrompt(state, estimate)
 	due := textinput.New()
 	due.Placeholder = "Due date YYYY-MM-DD (optional)"
 	due.CharLimit = 10
 	due.Width = 52
+	due = withDatePrompt(state, due)
 	state = Close(state)
 	state.Kind = "create_issue_default"
 	state.Inputs = []textinput.Model{repoFilter, streamFilter, title, estimate, due}
@@ -625,10 +653,12 @@ func OpenCheckoutContext(state State) State {
 	repoFilter.CharLimit = 80
 	repoFilter.Width = 52
 	repoFilter.Focus()
+	repoFilter = withSearchPrompt(state, repoFilter)
 	streamFilter := textinput.New()
 	streamFilter.Placeholder = "Search stream"
 	streamFilter.CharLimit = 80
 	streamFilter.Width = 52
+	streamFilter = withSearchPrompt(state, streamFilter)
 	state = Close(state)
 	state.Kind = "checkout_context"
 	state.Inputs = []textinput.Model{repoFilter, streamFilter}
@@ -758,13 +788,13 @@ func OpenAmendSession(state State, sessionID string, commit string) State {
 
 func OpenManualSession(state State, issueID int64, issueLabel string, estimateMinutes *int, date string) State {
 	inputs := []textinput.Model{
-		newSessionDetailInput("Summary (optional)"),
-		newSessionDetailInput("YYYY-MM-DD"),
-		newSessionDetailInput("90 | 90m | 1h30m"),
-		newSessionDetailInput("15m | 0m"),
-		newSessionDetailInput("09:00"),
-		newSessionDetailInput("10:45"),
-		newSessionDetailInput("Notes (optional)"),
+		newSessionDetailInput(state, "Summary (optional)"),
+		newSessionDetailInput(state, "YYYY-MM-DD"),
+		newSessionDetailInput(state, "90 | 90m | 1h30m"),
+		newSessionDetailInput(state, "15m | 0m"),
+		newSessionDetailInput(state, "09:00"),
+		newSessionDetailInput(state, "10:45"),
+		newSessionDetailInput(state, "Notes (optional)"),
 	}
 	inputs[1].SetValue(strings.TrimSpace(date))
 	inputs[2].Focus()
@@ -889,7 +919,7 @@ func ToggleEndSessionAdvanced(state State) State {
 	}
 	if len(state.Inputs) > 1 {
 		commit := state.Inputs[0].Value()
-		input := newSessionDetailInput("Commit message")
+		input := newSessionDetailInput(state, "Commit message")
 		input.SetValue(commit)
 		input.Focus()
 		state.Inputs = []textinput.Model{input}
@@ -898,12 +928,12 @@ func ToggleEndSessionAdvanced(state State) State {
 	}
 	commit := state.Inputs[0].Value()
 	inputs := []textinput.Model{
-		newSessionDetailInput("Commit message"),
-		newSessionDetailInput("Worked on"),
-		newSessionDetailInput("Outcome"),
-		newSessionDetailInput("Next step"),
-		newSessionDetailInput("Blockers"),
-		newSessionDetailInput("Links"),
+		newSessionDetailInput(state, "Commit message"),
+		newSessionDetailInput(state, "Worked on"),
+		newSessionDetailInput(state, "Outcome"),
+		newSessionDetailInput(state, "Next step"),
+		newSessionDetailInput(state, "Blockers"),
+		newSessionDetailInput(state, "Links"),
 	}
 	inputs[0].SetValue(commit)
 	inputs[0].Focus()
@@ -986,6 +1016,10 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateSingleInput(state, msg, "ICS export directory is required", func(value string) *Action {
 			return &Action{Kind: "set_export_ics_dir", Path: value}
 		})
+	case "edit_date_display_format":
+		return updateSingleInput(state, msg, "Date format is required", func(value string) *Action {
+			return &Action{Kind: "patch_setting", SettingKey: sharedtypes.CoreSettingsKeyDateDisplayFormat, Path: value}
+		})
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
 	case "create_alert_reminder", "edit_alert_reminder":
@@ -1007,11 +1041,17 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 	}
 }
 
-func newSessionDetailInput(placeholder string) textinput.Model {
+func newSessionDetailInput(state State, placeholder string) textinput.Model {
 	input := textinput.New()
 	input.Placeholder = placeholder
 	input.CharLimit = 200
 	input.Width = 48
+	switch placeholder {
+	case "YYYY-MM-DD":
+		input = withDatePrompt(state, input)
+	case "90 | 90m | 1h30m", "15m | 0m", "09:00", "10:45":
+		input = withTimePrompt(state, input)
+	}
 	return input
 }
 

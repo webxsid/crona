@@ -222,6 +222,7 @@ type Model struct {
 	dialogExportPresetFormat sharedtypes.ExportFormat
 	dialogExportPresetOutput sharedtypes.ExportOutputMode
 	dialogExportIncludePDF   bool
+	dialogPromptGlyphMode    sharedtypes.PromptGlyphMode
 
 	// status / error flash
 	statusMsg string
@@ -901,6 +902,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenEditDateDisplayFormatDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openEditDateDisplayFormatDialog()
+			*state = next.inputState()
+			return true
+		},
 		OpenEditRestProtectionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openEditRestProtectionDialog()
@@ -955,8 +962,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 
 func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	selectionSnapshot := m.selectionSnapshot()
+	dialogState := m.dialogState()
+	if m.settings != nil {
+		dialogState.PromptGlyphMode = sharedtypes.NormalizePromptGlyphMode(m.settings.PromptGlyphMode)
+	}
 	dialogSnapshot := dialogstate.Snapshot{
-		Dialog:               m.dialogState(),
+		Dialog:               dialogState,
 		Repos:                m.repos,
 		Streams:              m.streams,
 		AllIssues:            m.allIssues,
@@ -1160,6 +1171,13 @@ func (m Model) openCreateAlertReminderDialog() Model {
 func (m Model) openEditAlertReminderDialog(id string) Model {
 	return m.withDialogState(dialogstate.OpenEditAlertReminder(m.dialogSnapshot(), id))
 }
+func (m Model) openEditDateDisplayFormatDialog() Model {
+	current := ""
+	if m.settings != nil {
+		current = m.settings.DateDisplayFormat
+	}
+	return m.withDialogState(dialogstate.OpenEditDateDisplayFormat(m.dialogSnapshot(), current))
+}
 func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(dialogstate.OpenEditRestProtection(m.dialogSnapshot()))
 }
@@ -1229,6 +1247,7 @@ func (m Model) dialogState() dialogpkg.State {
 		ExportPresetFormat: m.dialogExportPresetFormat,
 		ExportPresetOutput: m.dialogExportPresetOutput,
 		ExportIncludePDF:   m.dialogExportIncludePDF,
+		PromptGlyphMode:    m.dialogPromptGlyphMode,
 	}
 }
 
@@ -1289,6 +1308,7 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogExportPresetFormat = state.ExportPresetFormat
 	m.dialogExportPresetOutput = state.ExportPresetOutput
 	m.dialogExportIncludePDF = state.ExportIncludePDF
+	m.dialogPromptGlyphMode = state.PromptGlyphMode
 	return m
 }
 
@@ -1419,6 +1439,8 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			switch action.SettingKey {
 			case sharedtypes.CoreSettingsKeyRestWeekdays:
 				return action.IntList
+			case sharedtypes.CoreSettingsKeyDateDisplayFormat:
+				return action.Path
 			default:
 				return action.StringList
 			}

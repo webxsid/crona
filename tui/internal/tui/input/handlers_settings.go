@@ -60,8 +60,16 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 15:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyHabitSort, nextHabitSort(s.Settings.HabitSort, dir), repoID, streamID, s.DashboardDate), true
 	case 16:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDateDisplayPreset, nextDateDisplayPreset(s.Settings.DateDisplayPreset, dir), repoID, streamID, s.DashboardDate), true
 	case 17:
+		return s, nil, true
+	case 18:
+		return s, nil, true
+	case 19:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyPromptGlyphMode, nextPromptGlyphMode(s.Settings.PromptGlyphMode, dir), repoID, streamID, s.DashboardDate), true
+	case 20:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+	case 21:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1), repoID, streamID, s.DashboardDate), true
 	default:
 		return s, nil, true
@@ -73,13 +81,18 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 		return s, nil, true
 	}
 	switch s.Cursor[uistate.PaneSettings] {
-	case 18:
+	case 17:
+		if deps.OpenEditDateDisplayFormatDialog != nil {
+			deps.OpenEditDateDisplayFormatDialog(&s)
+		}
+		return s, nil, true
+	case 22:
 		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
-	case 19:
+	case 23:
 		deps.OpenConfirmWipeDataDialog(&s)
 		return s, nil, true
-	case 20:
+	case 24:
 		deps.OpenConfirmUninstallDialog(&s)
 		return s, nil, true
 	default:
@@ -259,6 +272,35 @@ func nextRepoSort(current sharedtypes.RepoSort, dir int) sharedtypes.RepoSort {
 		sharedtypes.RepoSortChronologicalDesc,
 	}
 	return options[nextIndex(current, options, dir)]
+}
+
+func nextDateDisplayPreset(current sharedtypes.DateDisplayPreset, dir int) sharedtypes.DateDisplayPreset {
+	options := []sharedtypes.DateDisplayPreset{
+		sharedtypes.DateDisplayPresetISO,
+		sharedtypes.DateDisplayPresetUS,
+		sharedtypes.DateDisplayPresetEurope,
+		sharedtypes.DateDisplayPresetLong,
+		sharedtypes.DateDisplayPresetCustom,
+	}
+	index := 0
+	normalized := sharedtypes.NormalizeDateDisplayPreset(current)
+	for i, option := range options {
+		if option == normalized {
+			index = i
+			break
+		}
+	}
+	index = (index + dir + len(options)) % len(options)
+	return options[index]
+}
+
+func nextPromptGlyphMode(current sharedtypes.PromptGlyphMode, dir int) sharedtypes.PromptGlyphMode {
+	options := []sharedtypes.PromptGlyphMode{
+		sharedtypes.PromptGlyphModeEmoji,
+		sharedtypes.PromptGlyphModeUnicode,
+		sharedtypes.PromptGlyphModeASCII,
+	}
+	return options[nextIndex(sharedtypes.NormalizePromptGlyphMode(current), options, dir)]
 }
 
 func nextStreamSort(current sharedtypes.StreamSort, dir int) sharedtypes.StreamSort {

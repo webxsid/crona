@@ -14,9 +14,12 @@ import (
 )
 
 func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
+	startDateText := helperpkg.FormatDisplayDate(state.RollupStartDate, state.Settings)
+	endDateText := helperpkg.FormatDisplayDate(state.RollupEndDate, state.Settings)
+
 	lines := []string{
 		theme.StylePaneTitle.Render("Rollup Dashboard"),
-		fmt.Sprintf("%s  %s -> %s", theme.StyleHeader.Render("Range"), theme.StyleNormal.Render(state.RollupStartDate), theme.StyleNormal.Render(state.RollupEndDate)),
+		fmt.Sprintf("%s  %s -> %s", theme.StyleHeader.Render("Range"), theme.StyleNormal.Render(startDateText), theme.StyleNormal.Render(endDateText)),
 		theme.StyleDim.Render("[S/E] calendar   [h/l] start   [,/.] end   [g] weekly"),
 		"",
 		renderWindowLine(theme, state),
@@ -25,7 +28,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 		renderEstimateBiasLine(theme, state),
 	}
 	lines = viewchrome.ClipSummaryLines(theme, lines, height)
-	return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorDim).Padding(1, 2).Width(width-2).Height(max(1, height-2)).Render(viewhelpers.StringsJoin(lines))
+	return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorDim).Padding(1, 2).Width(width - 2).Height(max(1, height-2)).Render(viewhelpers.StringsJoin(lines))
 }
 
 func renderWindowLine(theme types.Theme, state types.ContentState) string {

@@ -241,6 +241,10 @@ func OpenExportICSDir(s Snapshot, current string) dialogpkg.State {
 	return dialogpkg.OpenExportICSDir(s.Dialog, current)
 }
 
+func OpenEditDateDisplayFormat(s Snapshot, current string) dialogpkg.State {
+	return dialogpkg.OpenEditDateDisplayFormat(s.Dialog, current)
+}
+
 func OpenEditRestProtection(s Snapshot) dialogpkg.State {
 	if s.Settings == nil {
 		return dialogpkg.OpenEditRestProtection(s.Dialog, nil, nil, nil)

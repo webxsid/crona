@@ -5,12 +5,14 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
+	helperpkg "crona/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 )
 
 func renderUtilityDialog(theme Theme, state State) string {
+	displayDate := helperpkg.FormatDisplayDate(state.CheckInDate, nil)
 	switch state.Kind {
 	case "confirm_delete":
 		rows := []string{theme.StylePaneTitle.Render("Confirm Delete"), "", theme.StyleError.Render(fallback(state.DeleteLabel, "this item"))}
@@ -56,7 +58,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StylePaneTitle.Render(title),
 			"",
 			theme.StyleDim.Render("Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
+			theme.StyleHeader.Render(displayDate),
 			"",
 			theme.StyleDim.Render("Mood"),
 			state.Inputs[0].View(),
@@ -87,7 +89,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StyleHeader.Render(exportCategoryTitle(state.ExportCategory)),
 			"",
 			theme.StyleDim.Render("Anchor Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
+			theme.StyleHeader.Render(displayDate),
 			"",
 		}
 		for i, item := range state.ChoiceItems {
@@ -117,7 +119,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StylePaneTitle.Render("Export Report"),
 			"",
 			theme.StyleDim.Render("Anchor Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
+			theme.StyleHeader.Render(displayDate),
 			"",
 		}
 		for i, item := range state.ChoiceItems {
@@ -137,7 +139,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StylePaneTitle.Render("Choose Report Style"),
 			"",
 			theme.StyleDim.Render("Anchor Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
+			theme.StyleHeader.Render(displayDate),
 			"",
 		}
 		for i, item := range state.ChoiceItems {
@@ -158,7 +160,7 @@ func renderUtilityDialog(theme Theme, state State) string {
 			theme.StylePaneTitle.Render("Calendar Export Repo"),
 			"",
 			theme.StyleDim.Render("Anchor Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
+			theme.StyleHeader.Render(displayDate),
 			"",
 			theme.StyleDim.Render("Select Repo"),
 		}
@@ -243,6 +245,17 @@ func renderUtilityDialog(theme Theme, state State) string {
 			state.Inputs[0].View(),
 			"",
 			theme.StyleDim.Render("Use an absolute path or ~/..."),
+		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "edit_date_display_format":
+		rows := []string{
+			theme.StylePaneTitle.Render("Custom Date Format"),
+			"",
+			theme.StyleDim.Render("Moment-style pattern"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Examples: YYYY-MM-DD   Do MMM YYYY   MM/DD/YYYY   [Week] W"),
 		}
 		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)

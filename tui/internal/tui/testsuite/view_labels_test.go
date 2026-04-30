@@ -7,8 +7,8 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 	"crona/tui/internal/tui/views"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 
 	"crona/tui/internal/tui/testsuite/support"
 )
@@ -35,6 +35,9 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 		StreamSort:            sharedtypes.StreamSortAlphabeticalAsc,
 		IssueSort:             sharedtypes.IssueSortPriority,
 		HabitSort:             sharedtypes.HabitSortSchedule,
+		DateDisplayPreset:     sharedtypes.DateDisplayPresetCustom,
+		DateDisplayFormat:     "Do MMM YYYY",
+		PromptGlyphMode:       sharedtypes.PromptGlyphModeUnicode,
 	})
 
 	rowMap := map[string]string{}
@@ -47,6 +50,15 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 	}
 	if rowMap["Long Breaks"] != "Disabled" {
 		t.Fatalf("expected Long Breaks to be Disabled, got %q", rowMap["Long Breaks"])
+	}
+	if rowMap["Date Format"] != "Custom" {
+		t.Fatalf("expected Date Format to be Custom, got %q", rowMap["Date Format"])
+	}
+	if rowMap["Custom Date Format"] != "Do MMM YYYY" {
+		t.Fatalf("expected Custom Date Format row, got %q", rowMap["Custom Date Format"])
+	}
+	if rowMap["Prompt Glyphs"] != "Unicode" {
+		t.Fatalf("expected Prompt Glyphs row to be Unicode, got %q", rowMap["Prompt Glyphs"])
 	}
 	if rowMap["Wipe Runtime Data"] != "Destructive" {
 		t.Fatalf("expected renamed wipe row, got %q", rowMap["Wipe Runtime Data"])
@@ -151,10 +163,10 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 		},
 		MetricsRange: makeMetricsRange(21),
 		MetricsRollup: &api.MetricsRollup{
-			Days:          21,
-			CheckInDays:   15,
-			FocusDays:     11,
-			WorkedSeconds: 7200,
+			Days:              21,
+			CheckInDays:       15,
+			FocusDays:         11,
+			WorkedSeconds:     7200,
 			AverageSleepHours: &sleep,
 		},
 	}
@@ -198,12 +210,12 @@ func TestWellbeingTrendsPaneSupportsScrolling(t *testing.T) {
 				Level: "guarded",
 				Score: 58,
 				Factors: map[string]float64{
-					"workloadPressure":   0.36,
-					"breakDebt":          0.22,
-					"moodEnergyDrag":     0.19,
-					"sleepDebt":          0.17,
+					"workloadPressure":    0.36,
+					"breakDebt":           0.22,
+					"moodEnergyDrag":      0.19,
+					"sleepDebt":           0.17,
 					"recoveryConsistency": -0.12,
-					"recoveryBreaks":     -0.09,
+					"recoveryBreaks":      -0.09,
 				},
 			},
 		},

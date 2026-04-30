@@ -38,7 +38,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	}
 	for i := start; i < end; i++ {
 		issue := issues[indices[i]]
-		text := fmt.Sprintf("[%s] %s%s", issuecore.PlainIssueStatus(string(issue.Status)), issue.Title, issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+		text := fmt.Sprintf("[%s] %s%s", issuecore.PlainIssueStatus(string(issue.Status)), issue.Title, issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings))
 		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, text, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
 	}
 	if remaining := total - end; remaining > 0 {

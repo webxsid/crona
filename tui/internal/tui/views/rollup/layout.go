@@ -1,6 +1,7 @@
 package rollup
 
 import (
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
@@ -45,7 +46,7 @@ func renderWindowDays(theme types.Theme, state types.ContentState, width, height
 	for idx := start; idx < end; idx++ {
 		day := state.DashboardWindow.Days[idx]
 		status := statusStyle(theme, string(day.Status)).Render(prettyWindowStatus(string(day.Status)))
-		row := day.Date + "  " + padStatus(status, 11) + "  " + "p" + itoa(day.PlannedCount) + " d" + itoa(day.CompletedCount) + " f" + itoa(day.FailedCount) + " c" + itoa(day.CarryOverCount)
+		row := helperpkg.FormatDisplayDate(day.Date, state.Settings) + "  " + padStatus(status, 11) + "  " + "p" + itoa(day.PlannedCount) + " d" + itoa(day.CompletedCount) + " f" + itoa(day.FailedCount) + " c" + itoa(day.CarryOverCount)
 		switch {
 		case active && idx == cur:
 			lines = append(lines, theme.StyleCursor.Render("▶ "+row))

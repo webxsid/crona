@@ -885,6 +885,136 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 	}
 }
 
+func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
+	estimate := 60
+	target := 15
+	state := views.ContentState{
+		View:   "daily",
+		Pane:   "issues",
+		Width:  120,
+		Height: 58,
+		Cursors: map[string]int{
+			"issues": 0,
+			"habits": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+			"habits": "",
+		},
+		DailySummary: &api.DailyIssueSummary{
+			Date: "2026-03-19",
+			Issues: []api.Issue{
+				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			},
+		},
+		DailyIssues: []api.Issue{
+			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+		},
+		DueHabits: []api.HabitDailyItem{
+			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+		},
+		Context: &api.ActiveContext{
+			RepoName:   strPtr("Work"),
+			StreamName: strPtr("app"),
+		},
+	}
+
+	rendered := support.RenderDaily(state)
+	if !strings.Contains(rendered, "Issues  0/1 resolved") {
+		t.Fatalf("expected issue summary row to remain visible on large screens")
+	}
+	if !strings.Contains(rendered, "Habits  0/1 completed") {
+		t.Fatalf("expected habit summary row to remain visible on large screens")
+	}
+	for _, want := range []string{"For 2026-03-19 - Week 12", "March 2026", "Week 12", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wide-screen daily summary to include %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Daily Dashboard  March 2026") {
+		t.Fatalf("expected calendar to sit beside the summary without collapsing the left header, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "████████") {
+		t.Fatalf("expected wide-screen bars to remain visibly long")
+	}
+}
+
+func TestDailySummaryKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
+	target := 15
+	state := views.ContentState{
+		View:   "daily",
+		Pane:   "issues",
+		Width:  120,
+		Height: 46,
+		Cursors: map[string]int{
+			"issues": 0,
+			"habits": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+			"habits": "",
+		},
+		DailySummary: &api.DailyIssueSummary{
+			Date: "2026-04-30",
+		},
+		DueHabits: []api.HabitDailyItem{
+			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+		},
+		Context: &api.ActiveContext{
+			RepoName:   strPtr("Work"),
+			StreamName: strPtr("app"),
+		},
+	}
+
+	rendered := support.RenderDaily(state)
+	for _, want := range []string{"April 2026", "Wk  Mo Tu We Th Fr Sa Su", "30"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected medium-height daily summary to include %q, got %q", want, rendered)
+		}
+	}
+	if got := lipgloss.Height(rendered); got > state.Height {
+		t.Fatalf("daily view height %d exceeds allocated height %d", got, state.Height)
+	}
+}
+
+func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
+	target := 15
+	state := views.ContentState{
+		View:   "daily",
+		Pane:   "issues",
+		Width:  120,
+		Height: 30,
+		Cursors: map[string]int{
+			"issues": 0,
+			"habits": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+			"habits": "",
+		},
+		DailySummary: &api.DailyIssueSummary{
+			Date: "2026-04-30",
+		},
+		DueHabits: []api.HabitDailyItem{
+			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+		},
+		Context: &api.ActiveContext{
+			RepoName:   strPtr("Work"),
+			StreamName: strPtr("app"),
+		},
+	}
+
+	rendered := support.RenderDaily(state)
+	for _, want := range []string{"April 2026", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected short wide daily summary to include %q, got %q", want, rendered)
+		}
+	}
+	if got := lipgloss.Height(rendered); got > state.Height {
+		t.Fatalf("daily view height %d exceeds allocated height %d", got, state.Height)
+	}
+}
+
 func TestDailySummaryUsesTinyHeightModeAt36(t *testing.T) {
 	estimate := 60
 	target := 15

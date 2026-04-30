@@ -62,7 +62,7 @@ func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitl
 		if issue.EstimateMinutes != nil {
 			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
 		}
-		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt)
+		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, viewhelpers.Truncate(title, titleW), statusW, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, viewhelpers.Truncate(issue.RepoName, repoW), streamW, viewhelpers.Truncate(issue.StreamName, streamW))
 
 		selected := paneActive && pos == localCur
@@ -95,7 +95,7 @@ func renderCompactIssuePane(theme types.Theme, state types.ContentState, title, 
 	}
 	start, end := viewchrome.ListWindow(max(0, cur), len(indices), inner)
 	for pos := start; pos < end; pos++ {
-		lines = append(lines, renderCompactIssueRow(theme, state.Width, paneActive && pos == cur, active, state.DefaultIssues[indices[pos]]))
+		lines = append(lines, renderCompactIssueRow(theme, state.Width, paneActive && pos == cur, active, state.DefaultIssues[indices[pos]], state.Settings))
 	}
 	if remaining := len(indices) - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("... %d more", remaining)))
@@ -103,8 +103,8 @@ func renderCompactIssuePane(theme types.Theme, state types.ContentState, title, 
 	return viewchrome.RenderPaneBox(theme, paneActive, state.Width, height, viewhelpers.StringsJoin(lines))
 }
 
-func renderCompactIssueRow(theme types.Theme, width int, selected, active bool, issue api.IssueWithMeta) string {
-	parts := []string{viewhelpers.Truncate(issue.Title+issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt), max(18, width/2))}
+func renderCompactIssueRow(theme types.Theme, width int, selected, active bool, issue api.IssueWithMeta, settings *api.CoreSettings) string {
+	parts := []string{viewhelpers.Truncate(issue.Title+issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, settings), max(18, width/2))}
 	parts = append(parts, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11))
 	if issue.EstimateMinutes != nil {
 		parts = append(parts, fmt.Sprintf("%dm", *issue.EstimateMinutes))

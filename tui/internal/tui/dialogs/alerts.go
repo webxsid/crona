@@ -13,7 +13,7 @@ import (
 func OpenCreateAlertReminder(state State) State {
 	inputs := []textinput.Model{
 		newAlertReminderInput("daily | weekdays | mon,wed,fri"),
-		newAlertReminderInput("20:00"),
+		withTimePrompt(state, newAlertReminderInput("20:00")),
 	}
 	inputs[0].SetValue("daily")
 	inputs[0].Focus()

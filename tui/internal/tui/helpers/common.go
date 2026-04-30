@@ -6,12 +6,13 @@ import (
 	"strings"
 	"time"
 
+	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 )
 
-func IssueScheduleLabel(issue api.Issue) string {
-	if date := resolvedOnDate(issue.Status, issue.CompletedAt, issue.AbandonedAt); date != "" {
+func IssueScheduleLabel(issue api.Issue, settings *api.CoreSettings) string {
+	if date := resolvedOnDate(issue.Status, issue.CompletedAt, issue.AbandonedAt, settings); date != "" {
 		return "on " + date
 	}
 	if issue.TodoForDate == nil {
@@ -24,10 +25,10 @@ func IssueScheduleLabel(issue api.Issue) string {
 	if date == time.Now().Format("2006-01-02") {
 		return "today"
 	}
-	return "due " + date
+	return "due " + FormatDisplayDate(date, settings)
 }
 
-func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string) string {
+func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
 	var raw string
 	switch status {
 	case sharedtypes.IssueStatusDone:
@@ -42,13 +43,7 @@ func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *st
 	if raw == "" {
 		return ""
 	}
-	if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
-		return parsed.Format("2006-01-02")
-	}
-	if len(raw) >= len("2006-01-02") {
-		return raw[:10]
-	}
-	return raw
+	return FormatDisplayDateTime(raw, settings)
 }
 
 func Deref(s *string) string {
@@ -172,4 +167,12 @@ func FormatSessionDurationText(durationSeconds *int, start string, end *string) 
 		}
 	}
 	return "-"
+}
+
+func FormatDisplayDate(raw string, settings *api.CoreSettings) string {
+	return shareddatefmt.FormatISODate(raw, settings)
+}
+
+func FormatDisplayDateTime(raw string, settings *api.CoreSettings) string {
+	return shareddatefmt.FormatRFC3339Date(raw, settings)
 }

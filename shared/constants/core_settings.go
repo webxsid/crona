@@ -30,4 +30,7 @@ var DefaultCoreSettings = map[string]any{
 	"restWeekdays":                 []int{},
 	"restSpecificDates":            []string{},
 	"dailyPlanRollbackMinutes":     5,
+	"dateDisplayPreset":            "iso",
+	"dateDisplayFormat":            "",
+	"promptGlyphMode":              "emoji",
 }

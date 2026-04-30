@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	viewtypes "crona/tui/internal/tui/views/types"
@@ -72,8 +73,8 @@ func IssueStatusStyle(theme Theme, status string) *lipgloss.Style {
 	}
 }
 
-func IssueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, abandonedAt *string) string {
-	if resolvedOn := resolvedOnDate(status, completedAt, abandonedAt); resolvedOn != "" {
+func IssueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
+	if resolvedOn := resolvedOnDate(status, completedAt, abandonedAt, settings); resolvedOn != "" {
 		return "  [on " + resolvedOn + "]"
 	}
 	if todoForDate == nil || strings.TrimSpace(*todoForDate) == "" {
@@ -95,10 +96,10 @@ func IssueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, ab
 			return fmt.Sprintf("  [overdue %dd]", overdueDays)
 		}
 	}
-	return "  [due " + date + "]"
+	return "  [due " + shareddatefmt.FormatISODate(date, settings) + "]"
 }
 
-func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string) string {
+func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
 	var raw string
 	switch status {
 	case sharedtypes.IssueStatusDone:
@@ -113,13 +114,7 @@ func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *st
 	if raw == "" {
 		return ""
 	}
-	if len(raw) >= len("2006-01-02") {
-		if parsed, err := time.Parse(time.RFC3339, raw); err == nil {
-			return parsed.Format("2006-01-02")
-		}
-		return raw[:10]
-	}
-	return raw
+	return shareddatefmt.FormatRFC3339Date(raw, settings)
 }
 
 func FilteredIssueIndices(issues []APIIssue, filter string) []int {

@@ -3,7 +3,9 @@ package settingsmeta
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 )
@@ -42,6 +44,10 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 		{Section: "Sorting", Label: "Stream Sort", Value: streamSortLabel(settings.StreamSort)},
 		{Section: "Sorting", Label: "Issue Sort", Value: issueSortLabel(settings.IssueSort)},
 		{Section: "Sorting", Label: "Habit Sort", Value: habitSortLabel(settings.HabitSort)},
+		{Section: "Dates", Label: "Date Format", Value: dateDisplayPresetLabel(settings)},
+		{Section: "Dates", Label: "Custom Date Format", Value: customDateFormatLabel(settings)},
+		{Section: "Dates", Label: "Date Preview", Value: shareddatefmt.Preview(settings, time.Now())},
+		{Section: "Dates", Label: "Prompt Glyphs", Value: promptGlyphModeLabel(settings)},
 		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
 		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
 		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
@@ -209,9 +215,56 @@ func dateListLabel(values []string) string {
 		return "-"
 	}
 	if len(values) <= 2 {
-		return strings.Join(values, ",")
+		formatted := make([]string, 0, len(values))
+		for _, value := range values {
+			formatted = append(formatted, shareddatefmt.FormatISODate(value, nil))
+		}
+		return strings.Join(formatted, ",")
 	}
-	return fmt.Sprintf("%s +%d", values[0], len(values)-1)
+	return fmt.Sprintf("%s +%d", shareddatefmt.FormatISODate(values[0], nil), len(values)-1)
+}
+
+func dateDisplayPresetLabel(settings *sharedtypes.CoreSettings) string {
+	if settings == nil {
+		return "YYYY-MM-DD"
+	}
+	switch sharedtypes.NormalizeDateDisplayPreset(settings.DateDisplayPreset) {
+	case sharedtypes.DateDisplayPresetUS:
+		return "MM/DD/YYYY"
+	case sharedtypes.DateDisplayPresetEurope:
+		return "DD/MM/YYYY"
+	case sharedtypes.DateDisplayPresetLong:
+		return "D MMM YYYY"
+	case sharedtypes.DateDisplayPresetCustom:
+		return "Custom"
+	default:
+		return "YYYY-MM-DD"
+	}
+}
+
+func customDateFormatLabel(settings *sharedtypes.CoreSettings) string {
+	if settings == nil {
+		return "-"
+	}
+	value := strings.TrimSpace(settings.DateDisplayFormat)
+	if value == "" {
+		return "-"
+	}
+	return value
+}
+
+func promptGlyphModeLabel(settings *sharedtypes.CoreSettings) string {
+	if settings == nil {
+		return "Emoji"
+	}
+	switch sharedtypes.NormalizePromptGlyphMode(settings.PromptGlyphMode) {
+	case sharedtypes.PromptGlyphModeUnicode:
+		return "Unicode"
+	case sharedtypes.PromptGlyphModeASCII:
+		return "ASCII"
+	default:
+		return "Emoji"
+	}
 }
 
 func restProtectionLabel(settings *sharedtypes.CoreSettings) string {

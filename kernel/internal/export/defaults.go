@@ -2,7 +2,7 @@ package export
 
 const fallbackDailyReportTemplate = `{{frontmatterBlock}}
 
-# Daily Report - {{date}}
+# Daily Report - {{displayDate}}
 
 Generated at {{generatedAt}}
 
@@ -149,13 +149,13 @@ const fallbackDailyReportPDFTemplate = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Daily Report - {{date}}</title>
+  <title>Daily Report - {{displayDate}}</title>
   <link rel="stylesheet" href="report.css">
 </head>
 <body class="report report-daily theme-balanced">
   <header class="hero">
     <div class="eyebrow">Daily report</div>
-    <h1>{{date}}</h1>
+    <h1>{{displayDate}}</h1>
     <div class="subtle">Generated at {{generatedAt}}</div>
   </header>
 
@@ -272,7 +272,7 @@ Supported blocks in v1:
 - {{#each items}}...{{/each}}
 
 Top-level variables:
-- {{date}}
+- {{displayDate}}
 - {{generatedAt}}
 - {{summary.totalIssues}}
 - {{summary.issueDoneCount}}
@@ -399,7 +399,7 @@ const fallbackWeeklyReportTemplate = `{{frontmatterBlock}}
 
 # Weekly Summary
 
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 
 ## Rollup
@@ -423,7 +423,7 @@ Generated at {{generatedAt}}
 ## Days
 
 {{#each days}}
-### {{date}}
+### {{displayDate}}
 
 - Worked: {{workedTime}}
 - Sessions: {{sessionCount}}
@@ -436,13 +436,13 @@ const fallbackWeeklyReportPDFTemplate = `<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Weekly Summary - {{startDate}} to {{endDate}}</title>
+  <title>Weekly Summary - {{displayStartDate}} to {{displayEndDate}}</title>
   <link rel="stylesheet" href="report.css">
 </head>
 <body class="report report-weekly theme-balanced">
   <header class="hero">
     <div class="eyebrow">Weekly summary</div>
-    <h1>{{startDate}} → {{endDate}}</h1>
+    <h1>{{displayStartDate}} → {{displayEndDate}}</h1>
     <div class="subtle">Generated at {{generatedAt}}</div>
   </header>
 
@@ -464,7 +464,7 @@ const fallbackWeeklyReportPDFTemplate = `<!doctype html>
     {{#each days}}
     <article class="day-card">
       <div class="day-header">
-        <h3>{{date}}</h3>
+        <h3>{{displayDate}}</h3>
         <div class="pill">{{workedTime}}</div>
       </div>
       <div class="day-grid">
@@ -502,8 +502,8 @@ h3 { margin: 0; font-size: 12pt; }
 const fallbackWeeklyReportVariables = `# Weekly Report Template Variables
 
 Top-level:
-- {{startDate}}
-- {{endDate}}
+- {{displayStartDate}}
+- {{displayEndDate}}
 - {{generatedAt}}
 
 Summary:
@@ -526,7 +526,7 @@ Streaks:
 
 Days:
 - {{#each days}}
-  - {{date}}
+  - {{displayDate}}
   - {{workedTime}}
   - {{sessionCount}}
   - {{totalIssues}}
@@ -540,7 +540,7 @@ const fallbackRepoReportTemplate = `{{frontmatterBlock}}
 
 # Repo Report - {{repo.name}}
 
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 
 {{#if repo.description}}
@@ -597,7 +597,7 @@ Sessions
 `
 
 const fallbackRepoReportPDFTemplate = `# Repo Report - {{repo.name}}
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 ## Snapshot
 - Streams: {{summary.streamCount}}
@@ -613,8 +613,8 @@ Generated at {{generatedAt}}
 const fallbackRepoReportVariables = `# Repo Report Template Variables
 
 Top-level:
-- {{startDate}}
-- {{endDate}}
+- {{displayStartDate}}
+- {{displayEndDate}}
 - {{generatedAt}}
 - {{repo.name}}
 - {{repo.description}}
@@ -657,7 +657,7 @@ const fallbackStreamReportTemplate = `{{frontmatterBlock}}
 # Stream Report - {{stream.name}}
 
 Repo: {{repo.name}}
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 
 {{#if stream.description}}
@@ -707,7 +707,7 @@ Sessions
 
 const fallbackStreamReportPDFTemplate = `# Stream Report - {{stream.name}}
 Repo: {{repo.name}}
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 ## Snapshot
 - Issues: {{summary.issueCount}}
 - Habits: {{summary.habitCount}}
@@ -721,8 +721,8 @@ Range: {{startDate}} to {{endDate}}
 const fallbackStreamReportVariables = `# Stream Report Template Variables
 
 Top-level:
-- {{startDate}}
-- {{endDate}}
+- {{displayStartDate}}
+- {{displayEndDate}}
 - {{generatedAt}}
 - {{repo.name}}
 - {{stream.name}}
@@ -758,7 +758,7 @@ const fallbackIssueRollupReportTemplate = `{{frontmatterBlock}}
 
 # Session to Issue Rollup
 
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 
 ## Rollup Table
@@ -798,7 +798,7 @@ Sessions
 `
 
 const fallbackIssueRollupReportPDFTemplate = `# Session to Issue Rollup
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 {{#each issues}}
 - #{{id}} {{title}} | {{status}} | {{sessionCount}} sessions | {{workedTime}}
@@ -808,8 +808,8 @@ Generated at {{generatedAt}}
 const fallbackIssueRollupReportVariables = `# Issue Rollup Template Variables
 
 Top-level:
-- {{startDate}}
-- {{endDate}}
+- {{displayStartDate}}
+- {{displayEndDate}}
 - {{generatedAt}}
 
 Issues:

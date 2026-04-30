@@ -161,7 +161,7 @@ func weeklyPDFCSSPresets() []templatePreset {
 
 const dailyBriefMarkdownTemplate = `{{frontmatterBlock}}
 
-# 🌤 Daily Snapshot — {{date}}
+# 🌤 Daily Snapshot — {{displayDate}}
 
 ## At a glance
 - Work: {{summary.workedEstimate}}
@@ -203,7 +203,7 @@ const dailyBriefMarkdownTemplate = `{{frontmatterBlock}}
 
 const dailyVisualMarkdownTemplate = `{{frontmatterBlock}}
 
-# ✨ Daily Pulse — {{date}}
+# ✨ Daily Pulse — {{displayDate}}
 
 ## 🧭 Summary Card
 - Health: {{dayHealth}}
@@ -263,7 +263,7 @@ Attention
 
 const dailyDeepMarkdownTemplate = `{{frontmatterBlock}}
 
-# 📝 Daily Review — {{date}}
+# 📝 Daily Review — {{displayDate}}
 
 Generated at {{generatedAt}}
 
@@ -339,9 +339,9 @@ Generated at {{generatedAt}}
 `
 
 const dailyBriefPDFTemplate = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Daily Snapshot - {{date}}</title><link rel="stylesheet" href="report.css"></head>
+<html><head><meta charset="utf-8"><title>Daily Snapshot - {{displayDate}}</title><link rel="stylesheet" href="report.css"></head>
 <body class="report daily brief">
-<header class="hero"><div class="eyebrow">🌤 Daily snapshot</div><h1>{{date}}</h1></header>
+<header class="hero"><div class="eyebrow">🌤 Daily snapshot</div><h1>{{displayDate}}</h1></header>
 <section class="metric-grid compact">
 <article class="metric-card"><div class="metric-label">Work</div><div class="metric-value">{{summary.workedEstimate}}</div></article>
 <article class="metric-card"><div class="metric-label">Issues</div><div class="metric-value">{{summary.issueDoneCount}} / {{summary.totalIssues}}</div></article>
@@ -353,9 +353,9 @@ const dailyBriefPDFTemplate = `<!doctype html>
 </body></html>`
 
 const dailyVisualPDFTemplate = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Daily Pulse - {{date}}</title><link rel="stylesheet" href="report.css"></head>
+<html><head><meta charset="utf-8"><title>Daily Pulse - {{displayDate}}</title><link rel="stylesheet" href="report.css"></head>
 <body class="report daily visual">
-<header class="hero accent"><div class="eyebrow">✨ Daily pulse</div><h1>{{date}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
+<header class="hero accent"><div class="eyebrow">✨ Daily pulse</div><h1>{{displayDate}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
 <section class="metric-grid">
 <article class="metric-card emphasis"><div class="metric-label">Health</div><div class="metric-value">{{dayHealth}}</div></article>
 <article class="metric-card emphasis"><div class="metric-label">Work / estimate</div><div class="metric-value">{{summary.workedEstimate}}</div></article>
@@ -368,9 +368,9 @@ const dailyVisualPDFTemplate = `<!doctype html>
 </body></html>`
 
 const dailyDeepPDFTemplate = `<!doctype html>
-<html><head><meta charset="utf-8"><title>Daily Review - {{date}}</title><link rel="stylesheet" href="report.css"></head>
+<html><head><meta charset="utf-8"><title>Daily Review - {{displayDate}}</title><link rel="stylesheet" href="report.css"></head>
 <body class="report daily deep">
-<header class="hero"><div class="eyebrow">📝 Daily review</div><h1>{{date}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
+<header class="hero"><div class="eyebrow">📝 Daily review</div><h1>{{displayDate}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
 <section class="metric-grid">
 <article class="metric-card"><div class="metric-label">Health</div><div class="metric-value">{{dayHealth}}</div></article>
 <article class="metric-card"><div class="metric-label">Variance</div><div class="metric-value">{{summary.varianceTime}}</div></article>
@@ -386,7 +386,7 @@ const weeklyBriefMarkdownTemplate = `{{frontmatterBlock}}
 
 # 📅 Weekly Snapshot
 
-{{startDate}} → {{endDate}}
+{{displayStartDate}} → {{displayEndDate}}
 
 ## At a glance
 - Focus days: {{summary.focusDays}}
@@ -401,7 +401,7 @@ const weeklyBriefMarkdownTemplate = `{{frontmatterBlock}}
 
 ## Days
 {{#each days}}
-- {{date}} · {{workedTime}} · {{sessionCount}} sessions
+- {{displayDate}} · {{workedTime}} · {{sessionCount}} sessions
 {{/each}}
 `
 
@@ -425,7 +425,7 @@ const weeklyVisualMarkdownTemplate = `{{frontmatterBlock}}
 
 ## 📌 Daily Cards
 {{#each days}}
-### {{date}}
+### {{displayDate}}
 - Worked: {{workedTime}}
 - Sessions: {{sessionCount}}
 - Issues: {{completedIssues}} ✅ / {{abandonedIssues}} 🚧 / {{totalIssues}} total
@@ -437,7 +437,7 @@ const weeklyDeepMarkdownTemplate = `{{frontmatterBlock}}
 
 # 📝 Weekly Review
 
-Range: {{startDate}} to {{endDate}}
+Range: {{displayStartDate}} to {{displayEndDate}}
 Generated at {{generatedAt}}
 
 ## Rollup
@@ -458,7 +458,7 @@ Generated at {{generatedAt}}
 
 ## Daily Breakdown
 {{#each days}}
-### {{date}}
+### {{displayDate}}
 - Worked: {{workedTime}}
 - Sessions: {{sessionCount}}
 - Issues: {{totalIssues}} total / {{completedIssues}} completed / {{abandonedIssues}} abandoned
@@ -469,15 +469,15 @@ Generated at {{generatedAt}}
 const weeklyBriefPDFTemplate = `<!doctype html>
 <html><head><meta charset="utf-8"><title>Weekly Snapshot</title><link rel="stylesheet" href="report.css"></head>
 <body class="report weekly brief">
-<header class="hero"><div class="eyebrow">📅 Weekly snapshot</div><h1>{{startDate}} → {{endDate}}</h1></header>
+<header class="hero"><div class="eyebrow">📅 Weekly snapshot</div><h1>{{displayStartDate}} → {{displayEndDate}}</h1></header>
 <section class="metric-grid compact"><article class="metric-card"><div class="metric-label">Focus days</div><div class="metric-value">{{summary.focusDays}}</div></article><article class="metric-card"><div class="metric-label">Worked</div><div class="metric-value">{{summary.workedTime}}</div></article></section>
-<section class="section"><h2>Days</h2>{{#each days}}<div class="row"><span>{{date}}</span><span>{{workedTime}} · {{sessionCount}} sessions</span></div>{{/each}}</section>
+<section class="section"><h2>Days</h2>{{#each days}}<div class="row"><span>{{displayDate}}</span><span>{{workedTime}} · {{sessionCount}} sessions</span></div>{{/each}}</section>
 </body></html>`
 
 const weeklyVisualPDFTemplate = `<!doctype html>
 <html><head><meta charset="utf-8"><title>Weekly Pulse</title><link rel="stylesheet" href="report.css"></head>
 <body class="report weekly visual">
-<header class="hero accent"><div class="eyebrow">✨ Weekly pulse</div><h1>{{startDate}} → {{endDate}}</h1></header>
+<header class="hero accent"><div class="eyebrow">✨ Weekly pulse</div><h1>{{displayStartDate}} → {{displayEndDate}}</h1></header>
 <section class="metric-grid"><article class="metric-card emphasis"><div class="metric-label">Focus days</div><div class="metric-value">{{summary.focusDays}}</div></article><article class="metric-card emphasis"><div class="metric-label">Worked</div><div class="metric-value">{{summary.workedTime}}</div></article><article class="metric-card"><div class="metric-label">Check-ins</div><div class="metric-value">{{summary.checkInDays}}</div></article><article class="metric-card"><div class="metric-label">Rest</div><div class="metric-value">{{summary.restTime}}</div></article></section>
 <section class="section"><h2>🔥 Streaks</h2><div class="row"><span>Focus</span><span>{{streaks.currentFocusDays}} / {{streaks.longestFocusDays}}</span></div><div class="row"><span>Check-ins</span><span>{{streaks.currentCheckInDays}} / {{streaks.longestCheckInDays}}</span></div></section>
 </body></html>`
@@ -485,9 +485,9 @@ const weeklyVisualPDFTemplate = `<!doctype html>
 const weeklyDeepPDFTemplate = `<!doctype html>
 <html><head><meta charset="utf-8"><title>Weekly Review</title><link rel="stylesheet" href="report.css"></head>
 <body class="report weekly deep">
-<header class="hero"><div class="eyebrow">📝 Weekly review</div><h1>{{startDate}} → {{endDate}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
+<header class="hero"><div class="eyebrow">📝 Weekly review</div><h1>{{displayStartDate}} → {{displayEndDate}}</h1><div class="subtle">Generated at {{generatedAt}}</div></header>
 <section class="metric-grid"><article class="metric-card"><div class="metric-label">Worked</div><div class="metric-value">{{summary.workedTime}}</div></article><article class="metric-card"><div class="metric-label">Completed issues</div><div class="metric-value">{{summary.completedIssues}}</div></article></section>
-<section class="section"><h2>Days</h2>{{#each days}}<article class="day-card"><div class="day-header"><h3>{{date}}</h3><div class="pill">{{workedTime}}</div></div><div class="day-grid"><div>Sessions: {{sessionCount}}</div><div>Issues: {{completedIssues}} completed / {{totalIssues}} total</div>{{#if checkIn}}<div>Check-in: mood {{checkIn.mood}} / energy {{checkIn.energy}}</div>{{/if}}</div></article>{{/each}}</section>
+<section class="section"><h2>Days</h2>{{#each days}}<article class="day-card"><div class="day-header"><h3>{{displayDate}}</h3><div class="pill">{{workedTime}}</div></div><div class="day-grid"><div>Sessions: {{sessionCount}}</div><div>Issues: {{completedIssues}} completed / {{totalIssues}} total</div>{{#if checkIn}}<div>Check-in: mood {{checkIn.mood}} / energy {{checkIn.energy}}</div>{{/if}}</div></article>{{/each}}</section>
 </body></html>`
 
 const dailyBriefPDFStyles = `@page { margin: 18mm; } body { font-family: Inter, Arial, sans-serif; color: #142018; font-size: 11pt; } .hero { margin-bottom: 16px; } .eyebrow { color: #1d7a57; text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 24pt; } .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border: 1px solid #dbe9df; border-radius: 10px; padding: 10px 12px; background: #f8fbf8; } .metric-label { font-size: 8.5pt; color: #5c6b61; text-transform: uppercase; } .metric-value { font-size: 14pt; font-weight: 700; margin-top: 4px; } .section { margin-top: 16px; } h2 { font-size: 14pt; margin: 0 0 8px; } .bullet-list { padding-left: 18px; margin: 0; } .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #edf3ee; }`

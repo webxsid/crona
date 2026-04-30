@@ -164,7 +164,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				if issue.EstimateMinutes != nil {
 					estimate = " " + helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 				}
-				due := helperpkg.IssueScheduleLabel(issue.Issue)
+				due := helperpkg.IssueScheduleLabel(issue.Issue, s.Settings)
 				if due != "" {
 					due = " " + due
 				}
@@ -186,7 +186,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				if issue.EstimateMinutes != nil {
 					estimate = " " + helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 				}
-				due := helperpkg.IssueScheduleLabel(issue)
+				due := helperpkg.IssueScheduleLabel(issue, s.Settings)
 				if due != "" {
 					due = " " + due
 				}
@@ -196,7 +196,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 		}
 		items = make([]string, 0, len(s.Issues))
 		for _, issue := range s.Issues {
-			due := helperpkg.IssueScheduleLabel(issue)
+			due := helperpkg.IssueScheduleLabel(issue, s.Settings)
 			if due != "" {
 				due = " " + due
 			}

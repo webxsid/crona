@@ -317,3 +317,70 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 		t.Fatalf("expected away mode to clear aggregate burden, got %+v", plan.Summary)
 	}
 }
+
+func TestDailyPlanActiveSummaryExcludesResolvedDelayedIssues(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-03-25T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, _ := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	stream, _ := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	today := "2026-03-25"
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Finish delayed item", TodoForDate: &today})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+
+	currentNow = "2026-03-25T09:02:00Z"
+	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-30"); err != nil {
+		t.Fatalf("delay issue: %v", err)
+	}
+
+	plan, err := corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")
+	if err != nil {
+		t.Fatalf("get delayed plan: %v", err)
+	}
+	if plan.Summary.DelayedIssueCount != 1 || plan.Summary.HighRiskIssueCount != 1 {
+		t.Fatalf("expected delayed issue to count before resolution, got %+v", plan.Summary)
+	}
+
+	currentNow = "2026-03-25T09:05:00Z"
+	if _, err := corecommands.ChangeIssueStatus(ctx, coreCtx, issue.ID, sharedtypes.IssueStatusInProgress, nil); err != nil {
+		t.Fatalf("start issue: %v", err)
+	}
+	if _, err := corecommands.ChangeIssueStatus(ctx, coreCtx, issue.ID, sharedtypes.IssueStatusDone, nil); err != nil {
+		t.Fatalf("complete issue: %v", err)
+	}
+
+	active, err := coreCtx.DailyPlans.ListActiveEntries(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list active entries: %v", err)
+	}
+	if len(active) != 0 {
+		t.Fatalf("expected resolved issue to drop out of active entries, got %+v", active)
+	}
+
+	plan, err = corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")
+	if err != nil {
+		t.Fatalf("get resolved plan: %v", err)
+	}
+	if plan.Summary.DelayedIssueCount != 0 || plan.Summary.HighRiskIssueCount != 0 || plan.Summary.AccountabilityScore != 0 {
+		t.Fatalf("expected resolved issue to stop contributing to active accountability, got %+v", plan.Summary)
+	}
+}

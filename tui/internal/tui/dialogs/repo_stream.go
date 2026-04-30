@@ -25,12 +25,12 @@ func renderRepoStreamDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Repo"),
 			state.Inputs[0].View(),
 			"",
-			renderSelector(theme, state.RepoSelectorLabel, true),
+			renderSelector(theme, state, state.RepoSelectorLabel, true),
 			"",
 			theme.StyleDim.Render("Stream"),
 			state.Inputs[1].View(),
 			"",
-			renderSelector(theme, state.StreamSelectorLabel, false),
+			renderSelector(theme, state, state.StreamSelectorLabel, false),
 			"",
 		}
 		rows = appendDialogFooter(theme, state, rows, checkoutHint())
@@ -49,7 +49,7 @@ func renderRepoStreamDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Schedule"),
 			state.Inputs[3].View(),
 			"",
-			theme.StyleDim.Render("Target Minutes (Optional)"),
+			theme.StyleDim.Render("Target Duration (Optional)"),
 			state.Inputs[4].View(),
 			"",
 			contextRow,
@@ -70,7 +70,7 @@ func renderRepoStreamDialog(theme Theme, state State) string {
 			theme.StyleDim.Render("Schedule"),
 			state.Inputs[1].View(),
 			"",
-			theme.StyleDim.Render("Target Minutes (Optional)"),
+			theme.StyleDim.Render("Target Duration (Optional)"),
 			state.Inputs[2].View(),
 			"",
 		}

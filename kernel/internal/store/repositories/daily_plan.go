@@ -488,6 +488,7 @@ func (r *DailyPlanRepository) ListActiveEntries(ctx context.Context, userID stri
 		Where("p.user_id = ?", userID).
 		Where("e.status = ?", string(sharedtypes.DailyPlanEntryStatusPlanned)).
 		Where("issues.todo_for_date = p.date").
+		Where("issues.status NOT IN (?, ?)", string(sharedtypes.IssueStatusDone), string(sharedtypes.IssueStatusAbandoned)).
 		OrderExpr("p.date ASC, issues.public_id ASC").
 		Scan(ctx, &rows); err != nil {
 		return nil, err

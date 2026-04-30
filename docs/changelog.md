@@ -6,7 +6,28 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `beta` is the testing channel for pre-release validation and faster iteration.
+- `v1.1.0-beta.1` is the current beta prerelease.
 - `v1.0.2` is the current stable release.
+
+## [1.1.0-beta.1] - 2026-04-30
+
+This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improvements for wider validation before the `1.1.0` stable cut.
+
+### Added
+- Configurable date display formats, including presets and custom Moment-style date patterns across the TUI and Crona-owned report rendering.
+- Prompt glyph compatibility modes in Settings, with `emoji`, `unicode`, and `ascii` options for dialog search, date, and time fields.
+- A right-side calendar surface in the daily dashboard summary when there is enough terminal width, while preserving the existing left-aligned summary behavior.
+
+### Changed
+- Large-screen daily summary progress bars now use more of the available summary width instead of spanning the full pane or collapsing into very short bars.
+- Report templates and bundled export defaults now use display-formatted dates in human-facing headings and labels.
+- Accountability metrics shown in reports are now rounded for readability instead of rendering long raw float precision.
+
+### Fixed
+- Issue create/edit due-date fields now open the calendar reliably across terminals that emit `f2`, `ctrl+y`, or `ctrl+e` for that shortcut.
+- Active accountability reporting no longer counts delayed high-risk issues after those issues have been resolved or abandoned.
+- Report issue rows no longer show stale delay and fail-score accountability detail for resolved or abandoned issues.
+- The new prompt glyph setting now responds correctly to `space`, `enter`, `h/l`, and left/right in the Settings view.
 
 ## [1.0.2] - 2026-04-13
 

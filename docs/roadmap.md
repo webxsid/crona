@@ -1,6 +1,6 @@
 # Roadmap
 
-Current mainline focus is the `1.0.2` stable line. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
+Current mainline focus is the `v1.1.0-beta.1` beta prerelease line while `v1.0.2` remains the current stable release. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
 
 ## Phase 1 — TUI Core
 Foundation for all future phases. TUI must be stable and usable before anything is layered on top.
@@ -143,7 +143,8 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Installer, updater, and support flows are stable enough for stable users
 - [x] Feedback and issue intake paths are clear for users and beta testers
 - [x] Core workflows are stable enough for `v1.0.0`
-- [x] `v1.0.2` is the active stable release target
+- [x] `v1.0.2` is the current stable release
+- [x] `v1.1.0-beta.1` is the active beta prerelease target
 - [x] CI, coverage, release-check, and tag-driven release publishing are defined for the stable release path
 - [x] Kernel IPC e2e tests are isolated behind an explicit target for reliable local and CI validation
 
@@ -154,7 +155,17 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 
 ## Post-1.0 Product Work
 
-These are candidate tracks after the `1.0` stabilization path, not blockers for the stable release.
+These are candidate tracks after the `1.0` stabilization path, ordered by current product priority. They are not blockers for the stable release.
+
+### Website, Logo, And Public Home
+Create a small public home for Crona that makes the stable release easier to find, install, and trust without turning the project into a marketing-heavy product site.
+
+- [ ] Domain and canonical public home for Crona
+- [ ] Simple placeholder logo / wordmark suitable for README, favicon, GitHub, release pages, and future integrations
+- [ ] Docs-first homepage with install links, screenshots, release links, changelog, roadmap, support, and GitHub
+- [ ] Concise positioning for Crona as a local-first work tracker for developers
+- [ ] Reuse existing TUI screenshots for the first website pass
+- [ ] Keep the website lightweight: no pricing-style pages, testimonials, comparison pages, or large marketing launch surface
 
 ### Bulk Issue Import
 Introduce a watched inbox for bulk issue creation so users can drop structured files into Crona without going through the TUI one item at a time.
@@ -165,18 +176,22 @@ Introduce a watched inbox for bulk issue creation so users can drop structured f
 - [ ] Processed / archived / failed file handling for imports
 - [ ] Import status visibility and last-run feedback in Crona
 
-### Configurable Dashboards
-Introduce a constrained YAML-driven dashboard composition layer on top of the stable summary APIs and terminal-native section renderers. This is post-stable product work, not a blocker for the stable release.
+### TUI Personality
 
-- [ ] YAML-based dashboard configuration
-- [ ] Configurable section ordering and enable/disable per dashboard view
-- [ ] Configurable scope and date-window per section
-- [ ] Configurable streak sections
-- [ ] Configurable heatmap sections
-- [ ] Configurable line-graph sections
-- [ ] Configurable bar-graph sections
-- [ ] Pre-built starter YAML layouts for daily-focused, wellbeing-focused, and accountability-focused setups
-- [ ] Keep customization terminal-native: stacked sections, simple splits, and fixed section types instead of freeform layout
+Nice-to-have and slightly quirky TUI tracks for users who want more personality in the existing default TUI.
+
+- [ ] Multiple bundled theme presets
+- [ ] Theme selection from settings / config
+- [ ] Readable light, dark, and high-contrast-friendly theme options
+- [ ] Keep v1 themes preset-based rather than introducing a full user theme editor
+
+### Vim Mode
+
+- [ ] Vim Mode as a separate TUI layout and interaction strategy
+- [ ] Vim Mode should closely mimic Vim/Neovim interaction patterns instead of only adding a few extra keybindings
+- [ ] Modal navigation, command-line style actions, and keyboard-first layout choices for Vim Mode
+- [ ] Evaluate whether Vim Mode belongs in a separate package / binary boundary from the current TUI
+- [ ] Keep Vim Mode optional so the current TUI remains the default experience
 
 ### Multi-Device Sync
 See [`feature-design.md`](feature-design.md) for design proposal.
@@ -190,6 +205,19 @@ See [`feature-design.md`](feature-design.md) for design proposal.
 ## Deferred Exploration
 
 These are intentionally not on the active mainline path right now.
+
+### Configurable Dashboards
+Currently out of scope because there is not enough clear demand or utility for user-configurable dashboard composition.
+
+- [ ] YAML-based dashboard configuration
+- [ ] Configurable section ordering and enable/disable per dashboard view
+- [ ] Configurable scope and date-window per section
+- [ ] Configurable streak sections
+- [ ] Configurable heatmap sections
+- [ ] Configurable line-graph sections
+- [ ] Configurable bar-graph sections
+- [ ] Pre-built starter YAML layouts for daily-focused, wellbeing-focused, and accountability-focused setups
+- [ ] Keep customization terminal-native: stacked sections, simple splits, and fixed section types instead of freeform layout
 
 ### Native OS Integration
 - [ ] Finalize the native client and distribution strategy before implementation resumes

@@ -45,6 +45,13 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 			if streamID != 0 {
 				cmds = append(cmds, LoadIssues(c, streamID))
 			}
+		case sharedtypes.CoreSettingsKeyDateDisplayPreset,
+			sharedtypes.CoreSettingsKeyDateDisplayFormat:
+			cmds = append(cmds, LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadExportReports(c))
+			if streamID != 0 {
+				cmds = append(cmds, LoadIssues(c, streamID))
+			}
+			cmds = append(cmds, LoadAllIssues(c))
 		case sharedtypes.CoreSettingsKeyAwayModeEnabled,
 			sharedtypes.CoreSettingsKeyFrozenStreakKinds,
 			sharedtypes.CoreSettingsKeyRestWeekdays,

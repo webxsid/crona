@@ -4,6 +4,7 @@
 
 - `stable` is the preferred channel for general users.
 - `beta` is for testers who want pre-release builds and faster iteration.
+- `v1.1.0-beta.1` is the current beta prerelease.
 - `v1.0.2` is the current stable release.
 
 See the published builds on [GitHub Releases](https://github.com/webxsid/crona/releases).
