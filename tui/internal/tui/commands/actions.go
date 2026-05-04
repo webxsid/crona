@@ -230,11 +230,12 @@ func DeleteStream(c *api.Client, repoID, streamID int64) tea.Cmd {
 
 func CreateIssueOnly(c *api.Client, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) tea.Cmd {
 	return func() tea.Msg {
-		if _, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate); err != nil {
+		issue, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate)
+		if err != nil {
 			logger.Errorf("CreateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadIssues(c, streamID), LoadAllIssues(c), LoadDailySummary(c, ""))()
+		return tea.Batch(LoadIssuesSelecting(c, streamID, issue.ID), LoadAllIssuesSelecting(c, issue.ID), LoadDailySummary(c, ""))()
 	}
 }
 
@@ -311,9 +312,9 @@ func UpdateIssue(c *api.Client, issueID, streamID int64, title string, descripti
 			logger.Errorf("SetIssueTodoDate after UpdateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c)}
+		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c)}
 		if streamID != 0 {
-			cmds = append(cmds, LoadIssues(c, streamID))
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
 		return tea.Batch(cmds...)()
 	}
@@ -375,11 +376,12 @@ func CreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			}
 			streamID = stream.ID
 		}
-		if _, err := c.CreateIssue(streamID, title, issueDescription, estimateMinutes, todoForDate); err != nil {
+		issue, err := c.CreateIssue(streamID, title, issueDescription, estimateMinutes, todoForDate)
+		if err != nil {
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadIssues(c, streamID), LoadAllIssues(c), LoadDailySummary(c, ""), LoadDashboardSummaries(c, time.Now().Format("2006-01-02")))()
+		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadIssuesSelecting(c, streamID, issue.ID), LoadAllIssuesSelecting(c, issue.ID), LoadDailySummary(c, ""), LoadDashboardSummaries(c, time.Now().Format("2006-01-02")))()
 	}
 }
 
@@ -542,9 +544,9 @@ func ChangeIssueStatus(c *api.Client, issueID int64, status string, note *string
 			logger.Errorf("ChangeIssueStatus: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
 		if streamID != 0 {
-			cmds = append(cmds, LoadIssues(c, streamID))
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
 		return tea.Batch(cmds...)()
 	}
@@ -562,9 +564,9 @@ func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamI
 			logger.Errorf("ToggleIssueToday: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
 		if streamID != 0 {
-			cmds = append(cmds, LoadIssues(c, streamID))
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
 		return tea.Batch(cmds...)()
 	}
@@ -582,9 +584,9 @@ func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64,
 			logger.Errorf("SetIssueTodoDate: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
 		if streamID != 0 {
-			cmds = append(cmds, LoadIssues(c, streamID))
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
 		return tea.Batch(cmds...)()
 	}
@@ -600,9 +602,9 @@ func ChangeIssueStatusAndEndSession(c *api.Client, issueID int64, status string,
 			logger.Errorf("ChangeIssueStatus after EndTimer: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c), LoadTimer(c)}
+		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c), LoadTimer(c)}
 		if streamID != 0 {
-			cmds = append(cmds, LoadIssues(c, streamID))
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
 		return tea.Batch(cmds...)()
 	}

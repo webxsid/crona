@@ -319,10 +319,15 @@ func (m Model) updateScratchpadPane(msg tea.KeyMsg) (Model, tea.Cmd) {
 }
 
 func (m Model) dispatchEventState() dispatchpkg.EventState {
+	var selectedIssueID *int64
+	if issue, ok := selectionpkg.SelectedIssueDetail(m.selectionSnapshot()); ok {
+		selectedIssueID = &issue.ID
+	}
 	return dispatchpkg.EventState{
 		View:               m.view,
 		Pane:               m.pane,
 		Cursor:             m.cursor,
+		SelectedIssueID:    selectedIssueID,
 		Streams:            m.streams,
 		Issues:             m.issues,
 		Habits:             m.habits,
@@ -354,11 +359,17 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 
 func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 	state, cmd := dispatchpkg.HandleEvent(m.dispatchEventState(), dispatchpkg.EventDeps{
-		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadStreams:         func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
-		LoadIssues:          func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
-		LoadHabits:          func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
-		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadRepos:   func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadStreams: func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
+		LoadIssues:  func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
+		LoadIssuesSelecting: func(streamID, selectedIssueID int64) tea.Cmd {
+			return commands.LoadIssuesSelecting(m.client, streamID, selectedIssueID)
+		},
+		LoadHabits:    func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
+		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadAllIssuesSelecting: func(selectedIssueID int64) tea.Cmd {
+			return commands.LoadAllIssuesSelecting(m.client, selectedIssueID)
+		},
 		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
@@ -385,6 +396,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		View:                    m.view,
 		Pane:                    m.pane,
 		Cursor:                  m.cursor,
+		Filters:                 m.filters,
 		Repos:                   m.repos,
 		Streams:                 m.streams,
 		Issues:                  m.issues,
@@ -471,6 +483,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.view = state.View
 	m.pane = state.Pane
 	m.cursor = state.Cursor
+	m.filters = state.Filters
 	m.repos = state.Repos
 	m.streams = state.Streams
 	m.issues = state.Issues

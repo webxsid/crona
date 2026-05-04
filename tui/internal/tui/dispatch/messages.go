@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/commands"
+	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,6 +20,7 @@ type MessageState struct {
 	View                    uistate.View
 	Pane                    uistate.Pane
 	Cursor                  map[uistate.Pane]int
+	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
 	Streams                 []api.Stream
 	Issues                  []api.Issue
@@ -177,7 +179,11 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, nil, true
 	case commands.IssuesLoadedMsg:
 		state.Issues = msg.Issues
-		deps.ClampFiltered(&state, uistate.PaneIssues)
+		if state.View == uistate.ViewDaily || state.View == uistate.ViewMeta {
+			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
+				deps.ClampFiltered(&state, uistate.PaneIssues)
+			}
+		}
 		return state, nil, true
 	case commands.HabitsLoadedMsg:
 		state.Habits = msg.Habits
@@ -185,8 +191,10 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, nil, true
 	case commands.AllIssuesLoadedMsg:
 		state.AllIssues = msg.Issues
-		if state.View == uistate.ViewDefault || state.View == uistate.ViewDaily {
-			deps.ClampFiltered(&state, uistate.PaneIssues)
+		if state.View == uistate.ViewDefault {
+			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
+				deps.ClampFiltered(&state, uistate.PaneIssues)
+			}
 		}
 		return state, nil, true
 	case commands.DueHabitsLoadedMsg:
@@ -199,9 +207,6 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.DailySummary = msg.Summary
 		if state.DashboardDate == "" && msg.Summary != nil {
 			state.DashboardDate = msg.Summary.Date
-		}
-		if state.View == uistate.ViewDaily {
-			deps.ClampFiltered(&state, uistate.PaneIssues)
 		}
 		return state, nil, true
 	case commands.DailyPlanLoadedMsg:
@@ -606,6 +611,35 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	default:
 		return state, nil, false
 	}
+}
+
+func restoreIssueCursorByID(state *MessageState, pane uistate.Pane, selectedIssueID *int64) bool {
+	if selectedIssueID == nil || *selectedIssueID == 0 {
+		return false
+	}
+	snapshot := selectionSnapshotFromMessageState(*state)
+	if filteredCur := selectionpkg.FilteredCursorForIssueID(snapshot, pane, *selectedIssueID); filteredCur >= 0 {
+		if state.Cursor == nil {
+			state.Cursor = map[uistate.Pane]int{}
+		}
+		state.Cursor[pane] = filteredCur
+		return true
+	}
+	return false
+}
+
+func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot {
+	return selectionpkg.PrepareSnapshot(selectionpkg.Snapshot{
+		View:      state.View,
+		Pane:      state.Pane,
+		Cursors:   state.Cursor,
+		Filters:   state.Filters,
+		Context:   state.Context,
+		Timer:     state.Timer,
+		Settings:  state.Settings,
+		AllIssues: state.AllIssues,
+		Issues:    state.Issues,
+	})
 }
 
 func shouldSuppressUpdateInstallError(state MessageState, err error) bool {

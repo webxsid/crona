@@ -17,6 +17,7 @@ type EventState struct {
 	Cursor             map[uistate.Pane]int
 	Streams            []api.Stream
 	Issues             []api.Issue
+	SelectedIssueID    *int64
 	Habits             []api.Habit
 	Context            *api.ActiveContext
 	Timer              *api.TimerState
@@ -33,8 +34,10 @@ type EventDeps struct {
 	LoadRepos                func() tea.Cmd
 	LoadStreams              func(repoID int64) tea.Cmd
 	LoadIssues               func(streamID int64) tea.Cmd
+	LoadIssuesSelecting      func(streamID, selectedIssueID int64) tea.Cmd
 	LoadHabits               func(streamID int64) tea.Cmd
 	LoadAllIssues            func() tea.Cmd
+	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
 	LoadWellbeing            func(date string) tea.Cmd
@@ -61,9 +64,18 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, nil
 	case "issue.created", "issue.updated", "issue.deleted":
-		cmds := []tea.Cmd{deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDash), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
+		cmds := []tea.Cmd{deps.LoadDailySummary(state.CurrentDash), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
 		if state.Context != nil && state.Context.StreamID != nil {
-			cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID))
+			if state.SelectedIssueID != nil {
+				cmds = append(cmds, deps.LoadIssuesSelecting(*state.Context.StreamID, *state.SelectedIssueID))
+			} else {
+				cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID))
+			}
+		}
+		if state.SelectedIssueID != nil {
+			cmds = append(cmds, deps.LoadAllIssuesSelecting(*state.SelectedIssueID))
+		} else {
+			cmds = append(cmds, deps.LoadAllIssues())
 		}
 		return state, tea.Batch(cmds...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":

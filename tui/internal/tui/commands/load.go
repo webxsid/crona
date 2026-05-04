@@ -43,6 +43,17 @@ func LoadIssues(c *api.Client, streamID int64) tea.Cmd {
 	}
 }
 
+func LoadIssuesSelecting(c *api.Client, streamID, selectedIssueID int64) tea.Cmd {
+	return func() tea.Msg {
+		issues, err := c.ListIssues(streamID)
+		if err != nil {
+			logger.Errorf("loadIssues(%d): %v", streamID, err)
+			return ErrMsg{Err: err}
+		}
+		return IssuesLoadedMsg{StreamID: streamID, Issues: issues, SelectedIssueID: int64Ptr(selectedIssueID)}
+	}
+}
+
 func LoadHabits(c *api.Client, streamID int64) tea.Cmd {
 	return func() tea.Msg {
 		habits, err := c.ListHabits(streamID)
@@ -62,6 +73,17 @@ func LoadAllIssues(c *api.Client) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return AllIssuesLoadedMsg{Issues: issues}
+	}
+}
+
+func LoadAllIssuesSelecting(c *api.Client, selectedIssueID int64) tea.Cmd {
+	return func() tea.Msg {
+		issues, err := c.ListAllIssues()
+		if err != nil {
+			logger.Errorf("loadAllIssues: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return AllIssuesLoadedMsg{Issues: issues, SelectedIssueID: int64Ptr(selectedIssueID)}
 	}
 }
 
@@ -86,6 +108,8 @@ func LoadDailySummary(c *api.Client, date string) tea.Cmd {
 		return DailySummaryLoadedMsg{Summary: summary}
 	}
 }
+
+func int64Ptr(v int64) *int64 { return &v }
 
 func LoadDailyPlan(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {

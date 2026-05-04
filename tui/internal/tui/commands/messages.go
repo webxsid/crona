@@ -9,8 +9,9 @@ type ReposLoadedMsg struct{ Repos []api.Repo }
 type StreamsLoadedMsg struct{ Streams []api.Stream }
 
 type IssuesLoadedMsg struct {
-	StreamID int64
-	Issues   []api.Issue
+	StreamID        int64
+	Issues          []api.Issue
+	SelectedIssueID *int64
 }
 
 type HabitsLoadedMsg struct {
@@ -18,7 +19,10 @@ type HabitsLoadedMsg struct {
 	Habits   []api.Habit
 }
 
-type AllIssuesLoadedMsg struct{ Issues []api.IssueWithMeta }
+type AllIssuesLoadedMsg struct {
+	Issues          []api.IssueWithMeta
+	SelectedIssueID *int64
+}
 type DueHabitsLoadedMsg struct{ Habits []api.HabitDailyItem }
 type DailySummaryLoadedMsg struct{ Summary *api.DailyIssueSummary }
 type DailyPlanLoadedMsg struct{ Plan *api.DailyPlan }

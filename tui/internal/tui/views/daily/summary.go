@@ -176,9 +176,7 @@ func tinySummaryBarWidth(totalWidth, textWidth int) int {
 
 func wideSummaryBarWidth(totalWidth int) int {
 	width := totalWidth * 3 / 4
-	if width < 20 {
-		width = 20
-	}
+	width = max(width, 20)
 	if width > totalWidth-4 {
 		width = max(12, totalWidth-4)
 	}

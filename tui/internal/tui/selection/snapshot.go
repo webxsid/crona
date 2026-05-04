@@ -301,6 +301,14 @@ func FilteredCursorForRawIndex(s Snapshot, pane uistate.Pane, rawIdx int) int {
 	return -1
 }
 
+func FilteredCursorForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {
+	rawIdx := rawIndexForIssueID(s, pane, issueID)
+	if rawIdx < 0 {
+		return -1
+	}
+	return FilteredCursorForRawIndex(s, pane, rawIdx)
+}
+
 func SelectedMetaRepo(s Snapshot) (int64, string, bool) {
 	if s.View != uistate.ViewMeta {
 		return 0, "", false
@@ -530,4 +538,34 @@ func buildDailyScopedIssues(s Snapshot) []api.Issue {
 		return out
 	}
 	return issues
+}
+
+func rawIndexForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {
+	switch pane {
+	case uistate.PaneIssues:
+		switch s.View {
+		case uistate.ViewDefault:
+			scoped := DefaultScopedIssues(s)
+			ordered := issuecore.PrioritizedDefaultIssueIndices(scoped, s.Filters[pane], s.Settings)
+			for rawIdx, scopedIdx := range ordered {
+				if scoped[scopedIdx].ID == issueID {
+					return rawIdx
+				}
+			}
+		case uistate.ViewDaily:
+			issues := DailyScopedIssues(s)
+			for i, issue := range issues {
+				if issue.ID == issueID {
+					return i
+				}
+			}
+		case uistate.ViewMeta:
+			for i, issue := range s.Issues {
+				if issue.ID == issueID {
+					return i
+				}
+			}
+		}
+	}
+	return -1
 }
