@@ -23,6 +23,12 @@ func handleCycleView(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 		s.ActiveView = deps.NextWorkspaceView(s, dir)
 	}
 	s.ActivePane = deps.DefaultPane(s.ActiveView)
+	if s.ActiveView == uistate.ViewHabitHistory && deps.EnterHabitHistoryView != nil {
+		cmd, handled := deps.EnterHabitHistoryView(&s)
+		if handled {
+			return s, cmd, true
+		}
+	}
 	return s, nil, true
 }
 

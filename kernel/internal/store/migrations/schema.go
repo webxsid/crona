@@ -18,6 +18,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.IssueModel)(nil),
 		(*storemodels.HabitModel)(nil),
 		(*storemodels.HabitCompletionModel)(nil),
+		(*storemodels.HabitFocusSessionModel)(nil),
 		(*storemodels.SessionModel)(nil),
 		(*storemodels.StashModel)(nil),
 		(*storemodels.OpModel)(nil),
@@ -58,6 +59,17 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "habit_completions", column: "snapshot_description"},
 		{table: "habit_completions", column: "snapshot_schedule_type"},
 		{table: "habit_completions", column: "snapshot_weekdays"},
+		{table: "habit_completions", column: "kind"},
+		{table: "habit_completions", column: "started_at"},
+		{table: "habit_completions", column: "ended_at"},
+		{table: "habit_focus_sessions", column: "kind"},
+		{table: "habit_focus_sessions", column: "date"},
+		{table: "habit_focus_sessions", column: "started_at"},
+		{table: "habit_focus_sessions", column: "ended_at"},
+		{table: "habit_focus_sessions", column: "snapshot_name"},
+		{table: "habit_focus_sessions", column: "snapshot_description"},
+		{table: "habit_focus_sessions", column: "snapshot_schedule_type"},
+		{table: "habit_focus_sessions", column: "snapshot_weekdays"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
@@ -77,6 +89,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		}
 	}
 	if err := ensureNullableIntegerColumn(ctx, db, "habit_completions", "snapshot_target_minutes"); err != nil {
+		return err
+	}
+	if err := ensureNullableIntegerColumn(ctx, db, "habit_focus_sessions", "snapshot_target_minutes"); err != nil {
 		return err
 	}
 	for columnName, defaultValue := range map[string]string{
@@ -120,13 +135,16 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	if err := ensureHabitCompletionStatusColumn(ctx, db); err != nil {
 		return err
 	}
-	for _, table := range []string{"repos", "streams", "issues", "habits", "habit_completions"} {
+	for _, table := range []string{"repos", "streams", "issues", "habits", "habit_completions", "habit_focus_sessions"} {
 		if err := ensurePublicIDColumn(ctx, db, table); err != nil {
 			return err
 		}
 		if err := backfillPublicIDs(ctx, db, table); err != nil {
 			return err
 		}
+	}
+	if err := backfillHabitCompletionKinds(ctx, db); err != nil {
+		return err
 	}
 	if err := migrateLegacyIssueStatuses(ctx, db); err != nil {
 		return err
@@ -138,11 +156,14 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_public_id ON issues (public_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_habits_public_id ON habits (public_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_completions_public_id ON habit_completions (public_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_focus_sessions_public_id ON habit_focus_sessions (public_id)",
 		"CREATE INDEX IF NOT EXISTS idx_streams_repo_id ON streams (repo_id)",
 		"CREATE INDEX IF NOT EXISTS idx_issues_stream_id ON issues (stream_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habits_stream_id ON habits (stream_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habit_completions_habit_id ON habit_completions (habit_id)",
+		"CREATE INDEX IF NOT EXISTS idx_habit_focus_sessions_habit_id ON habit_focus_sessions (habit_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_completions_habit_date ON habit_completions (habit_id, date, user_id) WHERE deleted_at IS NULL",
+		"CREATE INDEX IF NOT EXISTS idx_habit_focus_sessions_habit_date ON habit_focus_sessions (habit_id, date, user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_sessions_issue_id ON sessions (issue_id)",
 		"CREATE INDEX IF NOT EXISTS idx_stash_repo_id ON stash (repo_id)",
 		"CREATE INDEX IF NOT EXISTS idx_stash_stream_id ON stash (stream_id)",
@@ -153,6 +174,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_issues_user_id ON issues (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habit_completions_user_id ON habit_completions (user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_habit_focus_sessions_user_id ON habit_focus_sessions (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_stash_user_id ON stash (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_ops_user_id ON ops (user_id)",
@@ -236,6 +258,19 @@ func ensureTextColumn(ctx context.Context, db *bun.DB, tableName string, columnN
 
 func backfillSessionSource(ctx context.Context, db *bun.DB) error {
 	if _, err := db.ExecContext(ctx, "UPDATE sessions SET source = ? WHERE source IS NULL OR TRIM(source) = ''", string(sharedtypes.SessionSourceTracked)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func backfillHabitCompletionKinds(ctx context.Context, db *bun.DB) error {
+	if _, err := db.ExecContext(ctx, "UPDATE habit_completions SET kind = ? WHERE kind IS NULL OR TRIM(kind) = ''", string(sharedtypes.HabitHistoryKindCompletion)); err != nil {
+		return err
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE habit_completions SET started_at = NULL WHERE started_at IS NULL OR TRIM(started_at) = ''"); err != nil {
+		return err
+	}
+	if _, err := db.ExecContext(ctx, "UPDATE habit_completions SET ended_at = NULL WHERE ended_at IS NULL OR TRIM(ended_at) = ''"); err != nil {
 		return err
 	}
 	return nil

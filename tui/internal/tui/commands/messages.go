@@ -18,6 +18,11 @@ type HabitsLoadedMsg struct {
 	StreamID int64
 	Habits   []api.Habit
 }
+type HabitHistoryLoadedMsg struct {
+	Completions            []api.HabitCompletion
+	SelectedHabitHistoryID *int64
+	Scope                  *api.ActiveContext
+}
 
 type AllIssuesLoadedMsg struct {
 	Issues          []api.IssueWithMeta

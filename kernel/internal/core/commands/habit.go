@@ -326,8 +326,8 @@ func UncompleteHabit(ctx context.Context, c *core.Context, habitID int64, date s
 	return nil
 }
 
-func ListHabitHistory(ctx context.Context, c *core.Context, habitID int64) ([]sharedtypes.HabitCompletion, error) {
-	return c.HabitCompletions.ListByHabit(ctx, habitID, c.UserID)
+func ListHabitHistory(ctx context.Context, c *core.Context, repoID, streamID *int64) ([]sharedtypes.HabitCompletion, error) {
+	return c.HabitCompletions.ListHistory(ctx, c.UserID, repoID, streamID)
 }
 
 func normalizeHabitSchedule(raw string, weekdays []int) (sharedtypes.HabitScheduleType, []int, error) {

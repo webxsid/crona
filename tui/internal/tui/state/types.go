@@ -11,6 +11,7 @@ const (
 	ViewRollup         View = "rollup"
 	ViewMeta           View = "meta"
 	ViewSessionHistory View = "session_history"
+	ViewHabitHistory   View = "habit_history"
 	ViewSessionActive  View = "session_active"
 	ViewScratch        View = "scratchpads"
 	ViewOps            View = "ops"
@@ -32,6 +33,7 @@ const (
 	PaneHabits           Pane = "habits"
 	PaneRollupDays       Pane = "rollup_days"
 	PaneSessions         Pane = "sessions"
+	PaneHabitHistory     Pane = "habit_history"
 	PaneScratchpads      Pane = "scratchpads"
 	PaneOps              Pane = "ops"
 	PaneExportReports    Pane = "export_reports"
@@ -49,7 +51,7 @@ const (
 	DefaultIssueSectionCompleted DefaultIssueSection = "completed"
 )
 
-var viewOrder = []View{ViewSessionHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport}
+var viewOrder = []View{ViewSessionHistory, ViewHabitHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport}
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},
@@ -58,6 +60,7 @@ var viewPanes = map[View][]Pane{
 	ViewRollup:         {PaneRollupDays},
 	ViewMeta:           {PaneRepos, PaneStreams, PaneIssues, PaneHabits},
 	ViewSessionHistory: {PaneSessions},
+	ViewHabitHistory:   {PaneHabitHistory},
 	ViewSessionActive:  {},
 	ViewScratch:        {PaneScratchpads},
 	ViewOps:            {PaneOps},
@@ -77,6 +80,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewRollup:         PaneRollupDays,
 	ViewMeta:           PaneRepos,
 	ViewSessionHistory: PaneSessions,
+	ViewHabitHistory:   PaneHabitHistory,
 	ViewSessionActive:  PaneIssues,
 	ViewScratch:        PaneScratchpads,
 	ViewOps:            PaneOps,

@@ -166,7 +166,7 @@ func updateHabitCompletion(state State, msg tea.KeyMsg) (State, *Action, string)
 			return state, nil, err.Error()
 		}
 		return Close(state), &Action{
-			Kind:        "complete_habit",
+			Kind:        state.Kind,
 			HabitID:     state.HabitID,
 			CheckInDate: state.CheckInDate,
 			Estimate:    duration,

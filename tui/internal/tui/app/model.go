@@ -42,6 +42,7 @@ const (
 	ViewRollup         = uistate.ViewRollup
 	ViewMeta           = uistate.ViewMeta
 	ViewSessionHistory = uistate.ViewSessionHistory
+	ViewHabitHistory   = uistate.ViewHabitHistory
 	ViewSessionActive  = uistate.ViewSessionActive
 	ViewScratch        = uistate.ViewScratch
 	ViewOps            = uistate.ViewOps
@@ -63,6 +64,7 @@ const (
 	PaneHabits           = uistate.PaneHabits
 	PaneRollupDays       = uistate.PaneRollupDays
 	PaneSessions         = uistate.PaneSessions
+	PaneHabitHistory     = uistate.PaneHabitHistory
 	PaneScratchpads      = uistate.PaneScratchpads
 	PaneOps              = uistate.PaneOps
 	PaneExportReports    = uistate.PaneExportReports
@@ -132,6 +134,10 @@ type Model struct {
 	exportReports          []api.ExportReportFile
 	issueSessions          []api.Session
 	sessionHistory         []api.SessionHistoryEntry
+	habitHistory           []api.HabitCompletion
+	habitHistoryHabitID    int64
+	habitHistoryTitle      string
+	habitHistoryMeta       string
 	sessionDetail          *api.SessionDetail
 	scratchpads            []api.ScratchPad
 	stashes                []api.Stash
@@ -318,6 +324,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneHabits:           0,
 			PaneRollupDays:       0,
 			PaneSessions:         0,
+			PaneHabitHistory:     0,
 			PaneScratchpads:      0,
 			PaneOps:              0,
 			PaneExportReports:    0,
@@ -334,6 +341,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneHabits:           "",
 			PaneRollupDays:       "",
 			PaneSessions:         "",
+			PaneHabitHistory:     "",
 			PaneScratchpads:      "",
 			PaneOps:              "",
 			PaneExportReports:    "",
@@ -411,6 +419,9 @@ func (m *Model) listLen(p Pane) int {
 		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
 		return wellbeingview.PaneLineCount(state, string(p))
 	}
+	if p == PaneHabitHistory {
+		return len(m.habitHistory)
+	}
 	if p == PaneAlerts {
 		return alertsmeta.FilteredSelectableCount(m.filters[PaneAlerts], m.settings, m.alertStatus, m.alertReminders)
 	}
@@ -453,6 +464,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Habits:              m.habits,
 		AllIssues:           m.allIssues,
 		DueHabits:           m.dueHabits,
+		HabitHistory:        m.habitHistory,
 		ExportReports:       m.exportReports,
 		Scratchpads:         m.scratchpads,
 		SessionHistory:      m.sessionHistory,
@@ -487,7 +499,7 @@ func (m Model) inputState() inputpkg.State {
 	activePane := m.pane
 	if nextProtected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
 		protected = true
-		if activeView != ViewReports && activeView != ViewSessionHistory {
+		if activeView != ViewReports && activeView != ViewSessionHistory && activeView != ViewHabitHistory {
 			activeView = ViewAway
 			activePane = uistate.DefaultPane(activeView)
 		}
@@ -790,6 +802,22 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return cmd, handled
 		},
+		OpenHabitLogAction: func(state *inputpkg.State) (tea.Cmd, bool) {
+			next := m.applyInputState(*state)
+			habit, ok := next.selectedHabitForAction()
+			if !ok {
+				return nil, false
+			}
+			next = next.openHabitCompletionDialog(habit.ID, next.currentDashboardDate(), habit.TargetMinutes, nil)
+			*state = next.inputState()
+			return nil, true
+		},
+		EnterHabitHistoryView: func(state *inputpkg.State) (tea.Cmd, bool) {
+			next := m.applyInputState(*state)
+			next, cmd := next.enterHabitHistoryViewFromSelection()
+			*state = next.inputState()
+			return cmd, true
+		},
 		DeleteSelectionAction: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)
 			next, cmd, handled := next.handleInputDeleteSelection()
@@ -1019,6 +1047,9 @@ func (m Model) handleDialogAction(next Model, action dialogpkg.Action) (Model, t
 				return next, next.setStatus("Away view is only available when away mode or rest protection is active", true)
 			}
 		}
+		if target == ViewHabitHistory {
+			return next.enterHabitHistoryViewFromSelection()
+		}
 		next.view = target
 		next.pane = uistate.DefaultPane(target)
 		return next, nil
@@ -1102,6 +1133,46 @@ func (m Model) openEditHabitDialog(habitID, streamID int64, name string, descrip
 func (m Model) openHabitCompletionDialog(habitID int64, date string, durationMinutes *int, notes *string) Model {
 	return m.withDialogState(dialogstate.OpenHabitCompletion(m.dialogSnapshot(), habitID, date, durationMinutes, notes))
 }
+func (m Model) openHabitHistoryView() Model {
+	m.view = ViewHabitHistory
+	m.pane = PaneHabitHistory
+	m.habitHistoryHabitID = 0
+	m.habitHistoryTitle = "Habit History"
+	m.habitHistoryMeta = habitHistoryScopeLabel(m.context)
+	m.cursor[PaneHabitHistory] = 0
+	return m
+}
+
+func (m Model) enterHabitHistoryViewFromSelection() (Model, tea.Cmd) {
+	next := m
+	next = next.openHabitHistoryView()
+	return next, commands.LoadHabitHistory(m.client, m.context, nil)
+}
+
+func habitHistoryScopeLabel(ctx *api.ActiveContext) string {
+	if ctx == nil {
+		return "Recent habit activity across the workspace"
+	}
+	repoName := ""
+	if ctx.RepoName != nil {
+		repoName = strings.TrimSpace(*ctx.RepoName)
+	}
+	streamName := ""
+	if ctx.StreamName != nil {
+		streamName = strings.TrimSpace(*ctx.StreamName)
+	}
+	switch {
+	case repoName != "" && streamName != "":
+		return "Recent habit activity in " + repoName + " > " + streamName
+	case repoName != "":
+		return "Recent habit activity in " + repoName
+	case streamName != "":
+		return "Recent habit activity in " + streamName
+	default:
+		return "Recent habit activity across the workspace"
+	}
+}
+
 func (m Model) openCreateIssueDefaultDialog() Model {
 	return m.withDialogState(dialogstate.OpenCreateIssueDefault(m.dialogSnapshot()))
 }

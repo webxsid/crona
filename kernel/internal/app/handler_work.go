@@ -296,7 +296,7 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 		}), true
 	case protocol.MethodHabitHistory:
 		return handle(req, func(input shareddto.HabitHistoryQuery) (any, error) {
-			return corecommands.ListHabitHistory(ctx, h.core, input.HabitID)
+			return corecommands.ListHabitHistory(ctx, h.core, input.RepoID, input.StreamID)
 		}), true
 	case protocol.MethodCheckInGet:
 		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {

@@ -75,8 +75,34 @@ type HabitCompletionModel struct {
 	InternalID      string  `bun:"id,pk,type:text"`
 	PublicID        int64   `bun:"public_id,notnull,type:integer"`
 	HabitID         string  `bun:"habit_id,notnull,type:text"`
+	Kind            string  `bun:"kind,notnull,type:text"`
 	Date            string  `bun:"date,notnull,type:text"`
 	Status          string  `bun:"status,notnull,type:text"`
+	StartedAt       *string `bun:"started_at,type:text,nullzero"`
+	EndedAt         *string `bun:"ended_at,type:text,nullzero"`
+	DurationMinutes *int    `bun:"duration_minutes,type:integer,nullzero"`
+	Notes           *string `bun:"notes,type:text,nullzero"`
+	SnapshotName    *string `bun:"snapshot_name,type:text,nullzero"`
+	SnapshotDesc    *string `bun:"snapshot_description,type:text,nullzero"`
+	SnapshotType    *string `bun:"snapshot_schedule_type,type:text,nullzero"`
+	SnapshotDays    *string `bun:"snapshot_weekdays,type:text,nullzero"`
+	SnapshotTarget  *int    `bun:"snapshot_target_minutes,type:integer,nullzero"`
+	UserID          string  `bun:"user_id,notnull,type:text"`
+	CreatedAt       string  `bun:"created_at,notnull,type:text"`
+	UpdatedAt       string  `bun:"updated_at,notnull,type:text"`
+	DeletedAt       *string `bun:"deleted_at,type:text,nullzero"`
+}
+
+type HabitFocusSessionModel struct {
+	bun.BaseModel `bun:"table:habit_focus_sessions"`
+
+	InternalID      string  `bun:"id,pk,type:text"`
+	PublicID        int64   `bun:"public_id,notnull,type:integer"`
+	HabitID         string  `bun:"habit_id,notnull,type:text"`
+	Kind            string  `bun:"kind,notnull,type:text"`
+	Date            string  `bun:"date,notnull,type:text"`
+	StartedAt       string  `bun:"started_at,notnull,type:text"`
+	EndedAt         *string `bun:"ended_at,type:text,nullzero"`
 	DurationMinutes *int    `bun:"duration_minutes,type:integer,nullzero"`
 	Notes           *string `bun:"notes,type:text,nullzero"`
 	SnapshotName    *string `bun:"snapshot_name,type:text,nullzero"`

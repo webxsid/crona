@@ -520,6 +520,24 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 	}
 }
 
+func TestHabitsViewActionsExposeManualLogOnly(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View: "daily",
+		Pane: "habits",
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[m]", "log", "[x]", "toggle", "[F]", "fail"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected daily habit actions to contain %q, got %q", want, joined)
+		}
+	}
+	for _, unwanted := range []string{"[f]", "focus", "[y]", "history"} {
+		if strings.Contains(joined, unwanted) {
+			t.Fatalf("expected daily habit actions to omit %q, got %q", unwanted, joined)
+		}
+	}
+}
+
 func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
 	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:          "daily",

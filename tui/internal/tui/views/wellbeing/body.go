@@ -70,6 +70,9 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 			fmt.Sprintf("%s  %d  %s  %d", theme.StyleHeader.Render("Days"), state.MetricsRollup.Days, theme.StyleHeader.Render("Check-ins"), state.MetricsRollup.CheckInDays),
 			fmt.Sprintf("%s  %d  %s  %s", theme.StyleHeader.Render("Focus"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClock(state.MetricsRollup.WorkedSeconds)),
 		)
+		if state.MetricsRollup.HabitDueCount > 0 || state.MetricsRollup.HabitCompletedCount > 0 || state.MetricsRollup.HabitFailedCount > 0 {
+			lines = append(lines, fmt.Sprintf("%s  %d  %s  %d  %s  %d", theme.StyleHeader.Render("Habits due"), state.MetricsRollup.HabitDueCount, theme.StyleHeader.Render("Done"), state.MetricsRollup.HabitCompletedCount, theme.StyleHeader.Render("Failed"), state.MetricsRollup.HabitFailedCount))
+		}
 		if state.MetricsRollup.AverageMood != nil || state.MetricsRollup.AverageEnergy != nil {
 			avgMood := "-"
 			avgEnergy := "-"
@@ -82,7 +85,7 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 			lines = append(lines, fmt.Sprintf("%s  %s  %s  %s", theme.StyleHeader.Render("Mood"), avgMood, theme.StyleHeader.Render("Energy"), avgEnergy))
 		}
 		if state.Streaks != nil {
-			lines = append(lines, fmt.Sprintf("Check-in %d/%d  Focus %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays))
+			lines = append(lines, fmt.Sprintf("Check-in %d/%d  Focus %d/%d  Habit %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays))
 		}
 		if strips := trendStrips(theme, state); len(strips) > 0 {
 			lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(strips[0], width-6)))
@@ -103,10 +106,14 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 	if state.MetricsRollup.AverageEnergy != nil {
 		lines = append(lines, fmt.Sprintf("%s  %.1f", theme.StyleHeader.Render("Avg Energy"), *state.MetricsRollup.AverageEnergy))
 	}
+	if state.MetricsRollup.HabitDueCount > 0 || state.MetricsRollup.HabitCompletedCount > 0 || state.MetricsRollup.HabitFailedCount > 0 {
+		lines = append(lines, fmt.Sprintf("%s  %d  %s  %d  %s  %d", theme.StyleHeader.Render("Habits due"), state.MetricsRollup.HabitDueCount, theme.StyleHeader.Render("Done"), state.MetricsRollup.HabitCompletedCount, theme.StyleHeader.Render("Failed"), state.MetricsRollup.HabitFailedCount))
+	}
 	if state.Streaks != nil {
 		lines = append(lines, "",
 			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Same-Day Check-In Streak"), state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays),
 			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Focus Streak"), state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays),
+			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Habit Streak"), state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays),
 		)
 	}
 	if strips := trendStrips(theme, state); len(strips) > 0 {

@@ -26,7 +26,7 @@ var DefaultCoreSettings = map[string]any{
 	"issueSort":                    string("priority"),
 	"habitSort":                    string("schedule"),
 	"awayModeEnabled":              false,
-	"frozenStreakKinds":            []string{"focus_days", "checkin_days"},
+	"frozenStreakKinds":            []string{"focus_days", "checkin_days", "habit_days"},
 	"restWeekdays":                 []int{},
 	"restSpecificDates":            []string{},
 	"dailyPlanRollbackMinutes":     5,

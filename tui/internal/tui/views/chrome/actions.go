@@ -85,6 +85,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
 		}
 	}
+	if state.View == "habit_history" {
+		return []string{
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
+		}
+	}
 	if state.View == "wellbeing" {
 		return []string{
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
@@ -188,10 +193,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			return []string{
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
+				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle"),
 				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" fail"),
 				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
-				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
 		}
@@ -199,6 +204,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
+			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	case "scratchpads":

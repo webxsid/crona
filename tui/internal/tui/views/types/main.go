@@ -47,6 +47,8 @@ type ContentState struct {
 	DefaultIssueSection string
 	SessionHistoryTitle string
 	SessionHistoryMeta  string
+	HabitHistoryTitle   string
+	HabitHistoryMeta    string
 	RestModeActive      bool
 	AwayModeActive      bool
 	RestModeMessage     string
@@ -78,6 +80,7 @@ type ContentState struct {
 	ExportReports          []api.ExportReportFile
 	IssueSessions          []api.Session
 	SessionHistory         []api.SessionHistoryEntry
+	HabitHistory           []api.HabitCompletion
 	Scratchpads            []api.ScratchPad
 	Ops                    []api.Op
 	Context                *api.ActiveContext

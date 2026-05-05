@@ -59,7 +59,7 @@ func (m Model) layoutState() layoutpkg.State {
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
 	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state), snapshot, activeIssue)
 	if state.ContentState.RestModeActive {
-		if m.view != ViewReports && m.view != ViewSessionHistory {
+		if m.view != ViewReports && m.view != ViewSessionHistory && m.view != ViewHabitHistory {
 			state.View = ViewAway
 			state.ContentState.View = "away"
 			state.ContentState.Pane = ""

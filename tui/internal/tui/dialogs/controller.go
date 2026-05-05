@@ -519,6 +519,10 @@ func OpenEditHabit(state State, habitID, streamID int64, name string, descriptio
 }
 
 func OpenHabitCompletion(state State, habitID int64, date string, durationMinutes *int, notes *string) State {
+	return openHabitActivity(state, "complete_habit", "Habit Log", habitID, date, durationMinutes, notes)
+}
+
+func openHabitActivity(state State, kind, title string, habitID int64, date string, durationMinutes *int, notes *string) State {
 	duration := textinput.New()
 	duration.Placeholder = "Duration (e.g. 30m, 1h15m)"
 	duration.Focus()
@@ -533,13 +537,14 @@ func OpenHabitCompletion(state State, habitID int64, date string, durationMinute
 		description.SetValue(strings.TrimSpace(*notes))
 	}
 	state = Close(state)
-	state.Kind = "complete_habit"
+	state.Kind = kind
 	state.Inputs = []textinput.Model{duration}
 	state.Description = description
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = 1
 	state.HabitID = habitID
 	state.CheckInDate = date
+	state.ViewTitle = title
 	return state
 }
 

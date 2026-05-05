@@ -323,23 +323,28 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 	if issue, ok := selectionpkg.SelectedIssueDetail(m.selectionSnapshot()); ok {
 		selectedIssueID = &issue.ID
 	}
+	var selectedHabitHistoryID *int64
+	if entry, ok := selectionpkg.SelectedHabitHistoryEntry(m.selectionSnapshot()); ok {
+		selectedHabitHistoryID = &entry.ID
+	}
 	return dispatchpkg.EventState{
-		View:               m.view,
-		Pane:               m.pane,
-		Cursor:             m.cursor,
-		SelectedIssueID:    selectedIssueID,
-		Streams:            m.streams,
-		Issues:             m.issues,
-		Habits:             m.habits,
-		Context:            m.context,
-		Timer:              m.timer,
-		Elapsed:            m.elapsed,
-		TimerTickSeq:       m.timerTickSeq,
-		CurrentDash:        m.currentDashboardDate(),
-		CurrentRollupStart: m.currentRollupStartDate(),
-		CurrentRollupEnd:   m.currentRollupEndDate(),
-		CurrentWell:        m.currentWellbeingDate(),
-		CurrentOpsLim:      m.currentOpsLimit(),
+		View:                   m.view,
+		Pane:                   m.pane,
+		Cursor:                 m.cursor,
+		SelectedIssueID:        selectedIssueID,
+		Streams:                m.streams,
+		Issues:                 m.issues,
+		Habits:                 m.habits,
+		SelectedHabitHistoryID: selectedHabitHistoryID,
+		Context:                m.context,
+		Timer:                  m.timer,
+		Elapsed:                m.elapsed,
+		TimerTickSeq:           m.timerTickSeq,
+		CurrentDash:            m.currentDashboardDate(),
+		CurrentRollupStart:     m.currentRollupStartDate(),
+		CurrentRollupEnd:       m.currentRollupEndDate(),
+		CurrentWell:            m.currentWellbeingDate(),
+		CurrentOpsLim:          m.currentOpsLimit(),
 	}
 }
 
@@ -370,8 +375,11 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadAllIssuesSelecting: func(selectedIssueID int64) tea.Cmd {
 			return commands.LoadAllIssuesSelecting(m.client, selectedIssueID)
 		},
-		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
+			return commands.LoadHabitHistory(m.client, ctx, selectedID)
+		},
 		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadScratchpads:     func() tea.Cmd { return commands.LoadScratchpads(m.client) },
@@ -390,6 +398,10 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 }
 
 func (m Model) dispatchMessageState() dispatchpkg.MessageState {
+	var selectedHabitHistoryID *int64
+	if entry, ok := selectionpkg.SelectedHabitHistoryEntry(m.selectionSnapshot()); ok {
+		selectedHabitHistoryID = &entry.ID
+	}
 	return dispatchpkg.MessageState{
 		Width:                   m.width,
 		Height:                  m.height,
@@ -425,6 +437,10 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		ExportReports:           m.exportReports,
 		IssueSessions:           m.issueSessions,
 		SessionHistory:          m.sessionHistory,
+		HabitHistory:            m.habitHistory,
+		SelectedHabitHistoryID:  selectedHabitHistoryID,
+		HabitHistoryTitle:       m.habitHistoryTitle,
+		HabitHistoryMeta:        m.habitHistoryMeta,
 		SessionDetail:           m.sessionDetail,
 		SessionDetailOpen:       m.sessionDetailOpen,
 		SessionDetailY:          m.sessionDetailY,
@@ -512,6 +528,9 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.exportReports = state.ExportReports
 	m.issueSessions = state.IssueSessions
 	m.sessionHistory = state.SessionHistory
+	m.habitHistory = state.HabitHistory
+	m.habitHistoryTitle = state.HabitHistoryTitle
+	m.habitHistoryMeta = state.HabitHistoryMeta
 	m.sessionDetail = state.SessionDetail
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
@@ -666,6 +685,9 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadExportAssets:    func() tea.Cmd { return commands.LoadExportAssets(m.client) },
 		LoadExportReports:   func() tea.Cmd { return commands.LoadExportReports(m.client) },
 		LoadIssueSessions:   func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
+		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
+			return commands.LoadHabitHistory(m.client, ctx, selectedID)
+		},
 		LoadSessionHistoryFor200: func(state dispatchpkg.MessageState) tea.Cmd {
 			next := m.applyDispatchMessageState(state)
 			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(next.timer), 200)

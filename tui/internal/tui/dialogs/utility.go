@@ -382,8 +382,12 @@ func renderUtilityDialog(theme Theme, state State) string {
 		rows = appendDialogFooter(theme, state, rows, footer)
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "complete_habit":
+		title := "Habit Log"
+		if strings.TrimSpace(state.ViewTitle) != "" {
+			title = state.ViewTitle
+		}
 		rows := []string{
-			theme.StylePaneTitle.Render("Habit Log"),
+			theme.StylePaneTitle.Render(title),
 			"",
 			theme.StyleDim.Render("Date"),
 			theme.StyleHeader.Render(state.CheckInDate),

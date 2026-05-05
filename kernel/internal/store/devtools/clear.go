@@ -18,6 +18,7 @@ func ClearAllData(ctx context.Context, db *bun.DB) error {
 		"daily_plans",
 		"daily_checkins",
 		"habit_completions",
+		"habit_focus_sessions",
 		"habits",
 		"active_context",
 		"issues",

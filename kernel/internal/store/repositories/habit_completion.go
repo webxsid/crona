@@ -49,6 +49,9 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 			Model((*storemodels.HabitCompletionModel)(nil)).
 			Where("public_id = ?", existing.ID).
 			Where("user_id = ?", userID).
+			Set("kind = ?", string(sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion))).
+			Set("started_at = NULL").
+			Set("ended_at = NULL").
 			Set("status = ?", completion.Status).
 			Set("duration_minutes = ?", completion.DurationMinutes).
 			Set("notes = ?", completion.Notes).
@@ -67,6 +70,9 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 			return sharedtypes.HabitCompletion{}, errors.New("habit completion not found")
 		}
 		existing.Status = completion.Status
+		existing.Kind = sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion)
+		existing.StartedAt = nil
+		existing.EndedAt = nil
 		existing.DurationMinutes = completion.DurationMinutes
 		existing.Notes = completion.Notes
 		existing.SnapshotName = completion.SnapshotName
@@ -89,8 +95,11 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 		InternalID:      habitCompletionInternalID(completion.ID),
 		PublicID:        completion.ID,
 		HabitID:         habitInternalID,
+		Kind:            string(sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion)),
 		Date:            completion.Date,
 		Status:          string(completion.Status),
+		StartedAt:       nil,
+		EndedAt:         nil,
 		DurationMinutes: completion.DurationMinutes,
 		Notes:           completion.Notes,
 		SnapshotName:    completion.SnapshotName,
@@ -107,6 +116,9 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 	}
 	completion.CreatedAt = now
 	completion.UpdatedAt = now
+	completion.Kind = sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion)
+	completion.StartedAt = nil
+	completion.EndedAt = nil
 	return completion, nil
 }
 
@@ -114,8 +126,11 @@ func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habit
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
+		Kind            string  `bun:"kind"`
 		Date            string  `bun:"date"`
 		Status          string  `bun:"status"`
+		StartedAt       *string `bun:"started_at"`
+		EndedAt         *string `bun:"ended_at"`
 		DurationMinutes *int    `bun:"duration_minutes"`
 		Notes           *string `bun:"notes"`
 		SnapshotName    *string `bun:"snapshot_name"`
@@ -132,8 +147,11 @@ func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habit
 		Join("INNER JOIN habits ON habits.id = habit_completions.habit_id").
 		ColumnExpr("habit_completions.public_id").
 		ColumnExpr("habits.public_id AS habit_public_id").
+		ColumnExpr("habit_completions.kind").
 		ColumnExpr("habit_completions.date").
 		ColumnExpr("habit_completions.status").
+		ColumnExpr("habit_completions.started_at").
+		ColumnExpr("habit_completions.ended_at").
 		ColumnExpr("habit_completions.duration_minutes").
 		ColumnExpr("habit_completions.notes").
 		ColumnExpr("habit_completions.snapshot_name").
@@ -163,8 +181,11 @@ func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habit
 	return &sharedtypes.HabitCompletion{
 		ID:              item.PublicID,
 		HabitID:         item.HabitPublicID,
+		Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(item.Kind)),
 		Date:            item.Date,
 		Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(item.Status)),
+		StartedAt:       item.StartedAt,
+		EndedAt:         item.EndedAt,
 		DurationMinutes: item.DurationMinutes,
 		Notes:           item.Notes,
 		SnapshotName:    item.SnapshotName,
@@ -181,8 +202,11 @@ func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
+		Kind            string  `bun:"kind"`
 		Date            string  `bun:"date"`
 		Status          string  `bun:"status"`
+		StartedAt       *string `bun:"started_at"`
+		EndedAt         *string `bun:"ended_at"`
 		DurationMinutes *int    `bun:"duration_minutes"`
 		Notes           *string `bun:"notes"`
 		SnapshotName    *string `bun:"snapshot_name"`
@@ -199,8 +223,11 @@ func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int
 		Join("INNER JOIN habits ON habits.id = habit_completions.habit_id").
 		ColumnExpr("habit_completions.public_id").
 		ColumnExpr("habits.public_id AS habit_public_id").
+		ColumnExpr("habit_completions.kind").
 		ColumnExpr("habit_completions.date").
 		ColumnExpr("habit_completions.status").
+		ColumnExpr("habit_completions.started_at").
+		ColumnExpr("habit_completions.ended_at").
 		ColumnExpr("habit_completions.duration_minutes").
 		ColumnExpr("habit_completions.notes").
 		ColumnExpr("habit_completions.snapshot_name").
@@ -227,8 +254,102 @@ func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int
 		out = append(out, sharedtypes.HabitCompletion{
 			ID:              row.PublicID,
 			HabitID:         row.HabitPublicID,
+			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
 			Date:            row.Date,
 			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			StartedAt:       row.StartedAt,
+			EndedAt:         row.EndedAt,
+			DurationMinutes: row.DurationMinutes,
+			Notes:           row.Notes,
+			SnapshotName:    row.SnapshotName,
+			SnapshotDesc:    row.SnapshotDesc,
+			SnapshotType:    snapshotType,
+			SnapshotDays:    parseWeekdays(row.SnapshotDays),
+			SnapshotTarget:  row.SnapshotTarget,
+			CreatedAt:       row.CreatedAt,
+			UpdatedAt:       row.UpdatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (r *HabitCompletionRepository) ListHistory(ctx context.Context, userID string, repoID, streamID *int64) ([]sharedtypes.HabitCompletion, error) {
+	type row struct {
+		PublicID        int64   `bun:"public_id"`
+		HabitPublicID   int64   `bun:"habit_public_id"`
+		HabitName       string  `bun:"habit_name"`
+		RepoName        string  `bun:"repo_name"`
+		StreamName      string  `bun:"stream_name"`
+		Kind            string  `bun:"kind"`
+		Date            string  `bun:"date"`
+		Status          string  `bun:"status"`
+		StartedAt       *string `bun:"started_at"`
+		EndedAt         *string `bun:"ended_at"`
+		DurationMinutes *int    `bun:"duration_minutes"`
+		Notes           *string `bun:"notes"`
+		SnapshotName    *string `bun:"snapshot_name"`
+		SnapshotDesc    *string `bun:"snapshot_description"`
+		SnapshotType    *string `bun:"snapshot_schedule_type"`
+		SnapshotDays    *string `bun:"snapshot_weekdays"`
+		SnapshotTarget  *int    `bun:"snapshot_target_minutes"`
+		CreatedAt       string  `bun:"created_at"`
+		UpdatedAt       string  `bun:"updated_at"`
+	}
+	q := r.db.NewSelect().
+		TableExpr("habit_completions").
+		Join("INNER JOIN habits ON habits.id = habit_completions.habit_id").
+		Join("INNER JOIN streams ON streams.id = habits.stream_id").
+		Join("INNER JOIN repos ON repos.id = streams.repo_id").
+		ColumnExpr("habit_completions.public_id").
+		ColumnExpr("habits.public_id AS habit_public_id").
+		ColumnExpr("habits.name AS habit_name").
+		ColumnExpr("repos.name AS repo_name").
+		ColumnExpr("streams.name AS stream_name").
+		ColumnExpr("habit_completions.kind").
+		ColumnExpr("habit_completions.date").
+		ColumnExpr("habit_completions.status").
+		ColumnExpr("habit_completions.started_at").
+		ColumnExpr("habit_completions.ended_at").
+		ColumnExpr("habit_completions.duration_minutes").
+		ColumnExpr("habit_completions.notes").
+		ColumnExpr("habit_completions.snapshot_name").
+		ColumnExpr("habit_completions.snapshot_description").
+		ColumnExpr("habit_completions.snapshot_schedule_type").
+		ColumnExpr("habit_completions.snapshot_weekdays").
+		ColumnExpr("habit_completions.snapshot_target_minutes").
+		ColumnExpr("habit_completions.created_at").
+		ColumnExpr("habit_completions.updated_at").
+		Where("habit_completions.user_id = ?", userID).
+		Where("habit_completions.deleted_at IS NULL").
+		OrderExpr("habit_completions.date DESC, repos.name ASC, streams.name ASC, habits.name ASC, habit_completions.created_at DESC")
+	if repoID != nil {
+		q = q.Where("repos.public_id = ?", *repoID)
+	}
+	if streamID != nil {
+		q = q.Where("streams.public_id = ?", *streamID)
+	}
+	var rows []row
+	if err := q.Scan(ctx, &rows); err != nil {
+		return nil, err
+	}
+	out := make([]sharedtypes.HabitCompletion, 0, len(rows))
+	for _, row := range rows {
+		var snapshotType *sharedtypes.HabitScheduleType
+		if row.SnapshotType != nil && *row.SnapshotType != "" {
+			value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(*row.SnapshotType))
+			snapshotType = &value
+		}
+		out = append(out, sharedtypes.HabitCompletion{
+			ID:              row.PublicID,
+			HabitID:         row.HabitPublicID,
+			HabitName:       row.HabitName,
+			RepoName:        row.RepoName,
+			StreamName:      row.StreamName,
+			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
+			Date:            row.Date,
+			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			StartedAt:       row.StartedAt,
+			EndedAt:         row.EndedAt,
 			DurationMinutes: row.DurationMinutes,
 			Notes:           row.Notes,
 			SnapshotName:    row.SnapshotName,
@@ -247,8 +368,11 @@ func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userI
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
+		Kind            string  `bun:"kind"`
 		Date            string  `bun:"date"`
 		Status          string  `bun:"status"`
+		StartedAt       *string `bun:"started_at"`
+		EndedAt         *string `bun:"ended_at"`
 		DurationMinutes *int    `bun:"duration_minutes"`
 		Notes           *string `bun:"notes"`
 		SnapshotName    *string `bun:"snapshot_name"`
@@ -265,8 +389,11 @@ func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userI
 		Join("INNER JOIN habits ON habits.id = habit_completions.habit_id").
 		ColumnExpr("habit_completions.public_id").
 		ColumnExpr("habits.public_id AS habit_public_id").
+		ColumnExpr("habit_completions.kind").
 		ColumnExpr("habit_completions.date").
 		ColumnExpr("habit_completions.status").
+		ColumnExpr("habit_completions.started_at").
+		ColumnExpr("habit_completions.ended_at").
 		ColumnExpr("habit_completions.duration_minutes").
 		ColumnExpr("habit_completions.notes").
 		ColumnExpr("habit_completions.snapshot_name").
@@ -292,8 +419,11 @@ func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userI
 		out = append(out, sharedtypes.HabitCompletion{
 			ID:              row.PublicID,
 			HabitID:         row.HabitPublicID,
+			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
 			Date:            row.Date,
 			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			StartedAt:       row.StartedAt,
+			EndedAt:         row.EndedAt,
 			DurationMinutes: row.DurationMinutes,
 			Notes:           row.Notes,
 			SnapshotName:    row.SnapshotName,

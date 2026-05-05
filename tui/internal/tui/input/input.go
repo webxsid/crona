@@ -103,6 +103,8 @@ type Deps struct {
 	DeleteSelectionAction           func(*State) (tea.Cmd, bool)
 	OpenSelectionAction             func(*State) (tea.Cmd, bool)
 	EnterAction                     func(*State) (tea.Cmd, bool)
+	OpenHabitLogAction              func(*State) (tea.Cmd, bool)
+	EnterHabitHistoryView           func(*State) (tea.Cmd, bool)
 	ToggleHabitCompletedAction      func(*State) (tea.Cmd, bool)
 	SetHabitFailedAction            func(*State) (tea.Cmd, bool)
 	StartFocusFromSelection         func(*State) tea.Cmd
@@ -317,15 +319,23 @@ func newRouter(deps Deps) *router {
 			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled
 		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, nil, false },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false
+			}
+			if deps.OpenHabitLogAction != nil {
+				cmd, handled := deps.OpenHabitLogAction(&s)
+				if handled {
+					return s, cmd, true
+				}
 			}
 			if deps.OpenManualSessionDialog(&s) {
 				return s, nil, true
 			}
 			return s, nil, false
 		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, nil, false },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.SetHabitFailedAction(&s)
 			return s, cmd, handled
@@ -359,6 +369,23 @@ func newRouter(deps Deps) *router {
 			return s, nil, true
 		},
 	)
+	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "e", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		cmd, handled := deps.OpenEditorAction(&s)
+		return s, cmd, handled
+	})
+	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "f", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, nil, false
+	})
+	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "m", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenHabitLogAction != nil {
+			cmd, handled := deps.OpenHabitLogAction(&s)
+			return s, cmd, handled
+		}
+		return s, nil, false
+	})
+	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "y", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return s, nil, false
+	})
 	keyregistry.RegisterSettings(r, uistate.ViewSettings,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneSettings

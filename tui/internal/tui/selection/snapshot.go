@@ -32,6 +32,7 @@ type Snapshot struct {
 	ExportReports       []api.ExportReportFile
 	Scratchpads         []api.ScratchPad
 	SessionHistory      []api.SessionHistoryEntry
+	HabitHistory        []api.HabitCompletion
 	Ops                 []api.Op
 	Settings            *api.CoreSettings
 	AlertStatus         *api.AlertStatus
@@ -235,6 +236,11 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 		for _, session := range s.SessionHistory {
 			items = append(items, helperpkg.SessionHistorySummary(session))
 		}
+	case uistate.PaneHabitHistory:
+		items = make([]string, 0, len(s.HabitHistory))
+		for _, entry := range s.HabitHistory {
+			items = append(items, habitHistorySummary(entry, s.Settings))
+		}
 	case uistate.PaneOps:
 		items = make([]string, 0, len(s.Ops))
 		for _, op := range s.Ops {
@@ -307,6 +313,18 @@ func FilteredCursorForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int 
 		return -1
 	}
 	return FilteredCursorForRawIndex(s, pane, rawIdx)
+}
+
+func FilteredCursorForHabitHistoryID(s Snapshot, pane uistate.Pane, habitHistoryID int64) int {
+	if pane != uistate.PaneHabitHistory {
+		return -1
+	}
+	for i, entry := range s.HabitHistory {
+		if entry.ID == habitHistoryID {
+			return FilteredCursorForRawIndex(s, pane, i)
+		}
+	}
+	return -1
 }
 
 func SelectedMetaRepo(s Snapshot) (int64, string, bool) {
@@ -429,6 +447,18 @@ func SelectedSessionHistoryEntry(s Snapshot) (*api.SessionHistoryEntry, bool) {
 	return &copy, true
 }
 
+func SelectedHabitHistoryEntry(s Snapshot) (*api.HabitCompletion, bool) {
+	if s.View != uistate.ViewHabitHistory || s.Pane != uistate.PaneHabitHistory {
+		return nil, false
+	}
+	rawIdx := FilteredIndexAtCursor(s, uistate.PaneHabitHistory)
+	if rawIdx < 0 || rawIdx >= len(s.HabitHistory) {
+		return nil, false
+	}
+	copy := s.HabitHistory[rawIdx]
+	return &copy, true
+}
+
 func SelectedConfigItem(s Snapshot) (configitems.Item, bool) {
 	if s.View != uistate.ViewConfig || s.Pane != uistate.PaneConfig {
 		return configitems.Item{}, false
@@ -511,6 +541,33 @@ func buildFilteredDueHabits(s Snapshot) []api.HabitDailyItem {
 		return out
 	}
 	return s.DueHabits
+}
+
+func habitHistorySummary(entry api.HabitCompletion, settings *api.CoreSettings) string {
+	parts := []string{helperpkg.FormatDisplayDate(entry.Date, settings), strings.TrimSpace(entry.HabitName)}
+	if parts[1] == "" {
+		parts[1] = fmt.Sprintf("habit %d", entry.HabitID)
+	}
+	scope := strings.TrimSpace(entry.RepoName)
+	if strings.TrimSpace(entry.StreamName) != "" {
+		if scope != "" {
+			scope += " > "
+		}
+		scope += strings.TrimSpace(entry.StreamName)
+	}
+	if scope != "" {
+		parts = append(parts, scope)
+	}
+	parts = append(parts, string(entry.Status))
+	if entry.DurationMinutes != nil {
+		parts = append(parts, helperpkg.FormatCompactDurationMinutes(*entry.DurationMinutes))
+	}
+	if entry.Notes != nil && strings.TrimSpace(*entry.Notes) != "" {
+		parts = append(parts, strings.TrimSpace(*entry.Notes))
+	} else if entry.SnapshotName != nil && strings.TrimSpace(*entry.SnapshotName) != "" {
+		parts = append(parts, strings.TrimSpace(*entry.SnapshotName))
+	}
+	return strings.Join(parts, "  ")
 }
 
 func buildDailyScopedIssues(s Snapshot) []api.Issue {

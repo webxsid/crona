@@ -6,6 +6,7 @@ import (
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	issues "crona/tui/internal/tui/views/issues"
+	habits "crona/tui/internal/tui/views/habits"
 	meta "crona/tui/internal/tui/views/meta"
 	ops "crona/tui/internal/tui/views/ops"
 	reports "crona/tui/internal/tui/views/reports"
@@ -33,6 +34,8 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return meta.Render(theme, state)
 	case "session_history", "session_active":
 		return sessions.Render(theme, state)
+	case "habit_history":
+		return habits.Render(theme, state)
 	case "scratchpads":
 		return scratchpads.Render(theme, state)
 	case "ops":

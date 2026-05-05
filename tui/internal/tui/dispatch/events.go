@@ -12,22 +12,23 @@ import (
 )
 
 type EventState struct {
-	View               uistate.View
-	Pane               uistate.Pane
-	Cursor             map[uistate.Pane]int
-	Streams            []api.Stream
-	Issues             []api.Issue
-	SelectedIssueID    *int64
-	Habits             []api.Habit
-	Context            *api.ActiveContext
-	Timer              *api.TimerState
-	Elapsed            int
-	TimerTickSeq       int
-	CurrentDash        string
-	CurrentRollupStart string
-	CurrentRollupEnd   string
-	CurrentWell        string
-	CurrentOpsLim      int
+	View                   uistate.View
+	Pane                   uistate.Pane
+	Cursor                 map[uistate.Pane]int
+	Streams                []api.Stream
+	Issues                 []api.Issue
+	SelectedIssueID        *int64
+	Habits                 []api.Habit
+	SelectedHabitHistoryID *int64
+	Context                *api.ActiveContext
+	Timer                  *api.TimerState
+	Elapsed                int
+	TimerTickSeq           int
+	CurrentDash            string
+	CurrentRollupStart     string
+	CurrentRollupEnd       string
+	CurrentWell            string
+	CurrentOpsLim          int
 }
 
 type EventDeps struct {
@@ -40,6 +41,7 @@ type EventDeps struct {
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
+	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
 	LoadWellbeing            func(date string) tea.Cmd
 	LoadRollupSummaries      func(start, end string) tea.Cmd
 	LoadScratchpads          func() tea.Cmd
@@ -79,9 +81,12 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(cmds...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
-		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash)}
+		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash), deps.LoadDailySummary(state.CurrentDash), deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds, deps.LoadHabits(*state.Context.StreamID))
+		}
+		if state.View == uistate.ViewHabitHistory {
+			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
 		}
 		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":

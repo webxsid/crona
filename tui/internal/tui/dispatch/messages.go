@@ -49,6 +49,10 @@ type MessageState struct {
 	ExportReports           []api.ExportReportFile
 	IssueSessions           []api.Session
 	SessionHistory          []api.SessionHistoryEntry
+	HabitHistory            []api.HabitCompletion
+	SelectedHabitHistoryID  *int64
+	HabitHistoryTitle       string
+	HabitHistoryMeta        string
 	SessionDetail           *api.SessionDetail
 	SessionDetailOpen       bool
 	SessionDetailY          int
@@ -129,6 +133,7 @@ type MessageDeps struct {
 	LoadExportAssets           func() tea.Cmd
 	LoadExportReports          func() tea.Cmd
 	LoadIssueSessions          func(int64) tea.Cmd
+	LoadHabitHistory           func(*api.ActiveContext, *int64) tea.Cmd
 	LoadSessionHistoryFor200   func(MessageState) tea.Cmd
 	LoadSessionDetail          func(string) tea.Cmd
 	LoadScratchpads            func() tea.Cmd
@@ -188,6 +193,16 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.HabitsLoadedMsg:
 		state.Habits = msg.Habits
 		deps.ClampFiltered(&state, uistate.PaneHabits)
+		return state, nil, true
+	case commands.HabitHistoryLoadedMsg:
+		state.HabitHistory = msg.Completions
+		state.HabitHistoryTitle = "Habit History"
+		state.HabitHistoryMeta = habitHistoryScopeLabel(msg.Scope)
+		if state.View == uistate.ViewHabitHistory {
+			if !restoreHabitHistoryCursorByID(&state, uistate.PaneHabitHistory, msg.SelectedHabitHistoryID) {
+				deps.ClampFiltered(&state, uistate.PaneHabitHistory)
+			}
+		}
 		return state, nil, true
 	case commands.AllIssuesLoadedMsg:
 		state.AllIssues = msg.Issues
@@ -335,6 +350,9 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			deps.ClampFiltered(&state, uistate.PaneHabits)
 		}
 		cmds := []tea.Cmd{deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate)}
+		if state.View == uistate.ViewHabitHistory {
+			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
+		}
 		if state.Context != nil && state.Context.IssueID != nil {
 			cmds = append(cmds, deps.LoadIssueSessions(*state.Context.IssueID))
 			return state, tea.Batch(cmds...), true
@@ -628,17 +646,57 @@ func restoreIssueCursorByID(state *MessageState, pane uistate.Pane, selectedIssu
 	return false
 }
 
+func restoreHabitHistoryCursorByID(state *MessageState, pane uistate.Pane, selectedHabitHistoryID *int64) bool {
+	if selectedHabitHistoryID == nil || *selectedHabitHistoryID == 0 {
+		return false
+	}
+	snapshot := selectionSnapshotFromMessageState(*state)
+	if filteredCur := selectionpkg.FilteredCursorForHabitHistoryID(snapshot, pane, *selectedHabitHistoryID); filteredCur >= 0 {
+		if state.Cursor == nil {
+			state.Cursor = map[uistate.Pane]int{}
+		}
+		state.Cursor[pane] = filteredCur
+		return true
+	}
+	return false
+}
+
+func habitHistoryScopeLabel(ctx *api.ActiveContext) string {
+	if ctx == nil {
+		return "Recent habit activity across the workspace"
+	}
+	repoName := ""
+	if ctx.RepoName != nil {
+		repoName = strings.TrimSpace(*ctx.RepoName)
+	}
+	streamName := ""
+	if ctx.StreamName != nil {
+		streamName = strings.TrimSpace(*ctx.StreamName)
+	}
+	switch {
+	case repoName != "" && streamName != "":
+		return "Recent habit activity in " + repoName + " > " + streamName
+	case repoName != "":
+		return "Recent habit activity in " + repoName
+	case streamName != "":
+		return "Recent habit activity in " + streamName
+	default:
+		return "Recent habit activity across the workspace"
+	}
+}
+
 func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot {
 	return selectionpkg.PrepareSnapshot(selectionpkg.Snapshot{
-		View:      state.View,
-		Pane:      state.Pane,
-		Cursors:   state.Cursor,
-		Filters:   state.Filters,
-		Context:   state.Context,
-		Timer:     state.Timer,
-		Settings:  state.Settings,
-		AllIssues: state.AllIssues,
-		Issues:    state.Issues,
+		View:         state.View,
+		Pane:         state.Pane,
+		Cursors:      state.Cursor,
+		Filters:      state.Filters,
+		Context:      state.Context,
+		Timer:        state.Timer,
+		Settings:     state.Settings,
+		AllIssues:    state.AllIssues,
+		Issues:       state.Issues,
+		HabitHistory: state.HabitHistory,
 	})
 }
 

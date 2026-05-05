@@ -77,6 +77,8 @@ func terminalViewTitle(view View) string {
 		return "Meta"
 	case ViewSessionHistory:
 		return "History"
+	case ViewHabitHistory:
+		return "Habit History"
 	case ViewSessionActive:
 		return "Session"
 	case ViewScratch:

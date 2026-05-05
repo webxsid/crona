@@ -65,6 +65,22 @@ func LoadHabits(c *api.Client, streamID int64) tea.Cmd {
 	}
 }
 
+func LoadHabitHistory(c *api.Client, context *api.ActiveContext, selectedHabitHistoryID *int64) tea.Cmd {
+	return func() tea.Msg {
+		var repoID, streamID *int64
+		if context != nil {
+			repoID = context.RepoID
+			streamID = context.StreamID
+		}
+		completions, err := c.ListHabitHistory(repoID, streamID)
+		if err != nil {
+			logger.Errorf("loadHabitHistory: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return HabitHistoryLoadedMsg{Completions: completions, SelectedHabitHistoryID: selectedHabitHistoryID, Scope: context}
+	}
+}
+
 func LoadAllIssues(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := c.ListAllIssues()

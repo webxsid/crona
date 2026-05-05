@@ -188,6 +188,7 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewAway, "Away"),
 			renderSidebarItem(state, uistate.ViewReports, "Reports"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
+			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
 		}
 		return chrome.StyleInactive.Width(width-4).Height(max(3, height-2)).Padding(1, 1).Render(strings.Join(lines, "\n"))
 	}
@@ -200,6 +201,7 @@ func renderSidebar(state State, width, height int) string {
 			chrome.StyleDim.Render("SESSION"),
 			renderSidebarItem(state, uistate.ViewSessionActive, "Session"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
+			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
 			renderSidebarItem(state, uistate.ViewScratch, "Scratchpads"),
 		}
 	} else {
@@ -231,6 +233,7 @@ func renderSidebar(state State, width, height int) string {
 			"",
 			chrome.StyleDim.Render("SESSION"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
+			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
 		}
 	}
 	return chrome.StyleInactive.Width(width-4).Height(max(3, height-2)).Padding(1, 1).Render(strings.Join(lines, "\n"))

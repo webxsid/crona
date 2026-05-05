@@ -190,9 +190,9 @@ func (c *Client) UncompleteHabit(habitID int64, date string) error {
 	})
 }
 
-func (c *Client) ListHabitHistory(habitID int64) ([]HabitCompletion, error) {
+func (c *Client) ListHabitHistory(repoID, streamID *int64) ([]HabitCompletion, error) {
 	var out []HabitCompletion
-	return out, c.call(protocol.MethodHabitHistory, shareddto.HabitHistoryQuery{HabitID: habitID}, &out)
+	return out, c.call(protocol.MethodHabitHistory, shareddto.HabitHistoryQuery{RepoID: repoID, StreamID: streamID}, &out)
 }
 
 func (c *Client) ListAllIssues() ([]IssueWithMeta, error) {

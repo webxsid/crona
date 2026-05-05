@@ -325,11 +325,12 @@ type StreakKind string
 const (
 	StreakKindFocusDays   StreakKind = "focus_days"
 	StreakKindCheckInDays StreakKind = "checkin_days"
+	StreakKindHabitDays   StreakKind = "habit_days"
 )
 
 func NormalizeStreakKind(value StreakKind) StreakKind {
 	switch value {
-	case StreakKindCheckInDays:
+	case StreakKindCheckInDays, StreakKindHabitDays:
 		return value
 	default:
 		return StreakKindFocusDays
@@ -340,6 +341,7 @@ func AvailableStreakKinds() []StreakKind {
 	return []StreakKind{
 		StreakKindFocusDays,
 		StreakKindCheckInDays,
+		StreakKindHabitDays,
 	}
 }
 
@@ -411,11 +413,33 @@ func NormalizeHabitCompletionStatus(value HabitCompletionStatus) HabitCompletion
 	}
 }
 
+type HabitHistoryKind string
+
+const (
+	HabitHistoryKindCompletion HabitHistoryKind = "completion"
+	HabitHistoryKindFocus      HabitHistoryKind = "focus"
+)
+
+func NormalizeHabitHistoryKind(value HabitHistoryKind) HabitHistoryKind {
+	switch value {
+	case HabitHistoryKindFocus:
+		return value
+	default:
+		return HabitHistoryKindCompletion
+	}
+}
+
 type HabitCompletion struct {
 	ID              int64                 `json:"id"`
 	HabitID         int64                 `json:"habitId"`
+	HabitName       string                `json:"habitName,omitempty"`
+	RepoName        string                `json:"repoName,omitempty"`
+	StreamName      string                `json:"streamName,omitempty"`
+	Kind            HabitHistoryKind      `json:"kind,omitempty"`
 	Date            string                `json:"date"`
 	Status          HabitCompletionStatus `json:"status"`
+	StartedAt       *string               `json:"startedAt,omitempty"`
+	EndedAt         *string               `json:"endedAt,omitempty"`
 	DurationMinutes *int                  `json:"durationMinutes,omitempty"`
 	Notes           *string               `json:"notes,omitempty"`
 	SnapshotName    *string               `json:"snapshotName,omitempty"`
@@ -597,6 +621,9 @@ type DailyMetricsDay struct {
 	CompletedIssues       int               `json:"completedIssues"`
 	AbandonedIssues       int               `json:"abandonedIssues"`
 	TotalEstimatedMinutes int               `json:"totalEstimatedMinutes"`
+	HabitDueCount         int               `json:"habitDueCount"`
+	HabitCompletedCount   int               `json:"habitCompletedCount"`
+	HabitFailedCount      int               `json:"habitFailedCount"`
 	CheckIn               *DailyCheckIn     `json:"checkIn,omitempty"`
 	Burnout               *BurnoutIndicator `json:"burnout,omitempty"`
 }
@@ -613,6 +640,9 @@ type MetricsRollup struct {
 	CompletedIssues       int               `json:"completedIssues"`
 	AbandonedIssues       int               `json:"abandonedIssues"`
 	TotalEstimatedMinutes int               `json:"totalEstimatedMinutes"`
+	HabitDueCount         int               `json:"habitDueCount"`
+	HabitCompletedCount   int               `json:"habitCompletedCount"`
+	HabitFailedCount      int               `json:"habitFailedCount"`
 	AverageMood           *float64          `json:"averageMood,omitempty"`
 	AverageEnergy         *float64          `json:"averageEnergy,omitempty"`
 	AverageSleepHours     *float64          `json:"averageSleepHours,omitempty"`
@@ -626,6 +656,8 @@ type StreakSummary struct {
 	LongestFocusDays   int `json:"longestFocusDays"`
 	CurrentCheckInDays int `json:"currentCheckInDays"`
 	LongestCheckInDays int `json:"longestCheckInDays"`
+	CurrentHabitDays   int `json:"currentHabitDays"`
+	LongestHabitDays   int `json:"longestHabitDays"`
 }
 
 type DashboardWindowDayStatus string

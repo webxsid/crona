@@ -183,6 +183,10 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		if workedSeconds == 0 {
 			workedSeconds = sessionDurationByDate[day]
 		}
+		habitDueCount, habitCompletedCount, habitFailedCount, err := loadHabitCountsForDate(ctx, c, day)
+		if err != nil {
+			return nil, err
+		}
 		item := sharedtypes.DailyMetricsDay{
 			Date:                  day,
 			WorkedSeconds:         workedSeconds,
@@ -192,6 +196,9 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 			CompletedIssues:       summary.CompletedIssues,
 			AbandonedIssues:       summary.AbandonedIssues,
 			TotalEstimatedMinutes: summary.TotalEstimatedMinutes,
+			HabitDueCount:         habitDueCount,
+			HabitCompletedCount:   habitCompletedCount,
+			HabitFailedCount:      habitFailedCount,
 		}
 		if checkIn, ok := checkInByDate[day]; ok {
 			copy := checkIn
@@ -229,6 +236,9 @@ func ComputeMetricsRollupFromDays(start string, end string, days []sharedtypes.D
 		rollup.CompletedIssues += day.CompletedIssues
 		rollup.AbandonedIssues += day.AbandonedIssues
 		rollup.TotalEstimatedMinutes += day.TotalEstimatedMinutes
+		rollup.HabitDueCount += day.HabitDueCount
+		rollup.HabitCompletedCount += day.HabitCompletedCount
+		rollup.HabitFailedCount += day.HabitFailedCount
 		if day.WorkedSeconds > 0 {
 			rollup.FocusDays++
 		}
@@ -306,7 +316,64 @@ func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings 
 	streaks.CurrentCheckInDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) }, func(day sharedtypes.DailyMetricsDay) bool {
 		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays)
 	})
+	streaks.CurrentHabitDays, streaks.LongestHabitDays = habitStreakFromDays(days, settings)
 	return &streaks
+}
+
+func loadHabitCountsForDate(ctx context.Context, c *core.Context, date string) (due, completed, failed int, err error) {
+	habits, err := ListHabitsDueForDate(ctx, c, date)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	for _, habit := range habits {
+		due++
+		switch habit.Status {
+		case sharedtypes.HabitCompletionStatusCompleted:
+			completed++
+		case sharedtypes.HabitCompletionStatusFailed:
+			failed++
+		}
+	}
+	return due, completed, failed, nil
+}
+
+func habitStreakFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) (current int, longest int) {
+	for _, day := range days {
+		if day.HabitDueCount == 0 {
+			continue
+		}
+		if day.HabitCompletedCount == day.HabitDueCount && day.HabitFailedCount == 0 {
+			current++
+			if current > longest {
+				longest = current
+			}
+			continue
+		}
+		if isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindHabitDays) {
+			continue
+		}
+		current = 0
+	}
+	return trailingHabitStreak(days, settings), longest
+}
+
+func trailingHabitStreak(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) int {
+	streak := 0
+	for i := len(days) - 1; i >= 0; i-- {
+		day := days[i]
+		if day.HabitDueCount == 0 {
+			continue
+		}
+		if day.HabitCompletedCount == day.HabitDueCount && day.HabitFailedCount == 0 {
+			streak++
+			continue
+		}
+		if isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindHabitDays) {
+			continue
+		}
+		break
+	}
+	return streak
 }
 
 func validateCheckInDate(date string, now string, rejectFuture bool) error {

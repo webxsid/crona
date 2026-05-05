@@ -86,7 +86,8 @@ type HabitCompletionUpsertRequest struct {
 }
 
 type HabitHistoryQuery struct {
-	HabitID int64 `json:"habitId"`
+	RepoID   *int64 `json:"repoId,omitempty"`
+	StreamID *int64 `json:"streamId,omitempty"`
 }
 
 type DailyIssueSummaryQuery struct {

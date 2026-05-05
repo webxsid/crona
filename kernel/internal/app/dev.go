@@ -363,7 +363,6 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err := seedHabitStatus(-1, journalHabit.ID, yesterday, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(9), devStringPtr("Quick reflection before bed.")); err != nil {
 		return err
 	}
-
 	checkInNotes := []string{
 		"Low-energy restart day with too much catch-up.",
 		"Better morning structure but still some drag.",

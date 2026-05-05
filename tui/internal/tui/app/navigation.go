@@ -22,7 +22,7 @@ import (
 
 func (m Model) availableViews() []View {
 	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
-		return []View{ViewAway, ViewReports, ViewSessionHistory}
+		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory}
 	}
 	ordered := uistate.ViewOrder()
 	views := make([]View, 0, len(ordered))
@@ -35,7 +35,7 @@ func (m Model) availableViews() []View {
 
 func (m Model) jumpAvailableViews() []View {
 	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
-		return []View{ViewAway, ViewReports, ViewSessionHistory}
+		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory}
 	}
 	if m.timer != nil && m.timer.State != "idle" {
 		return []View{ViewSessionActive, ViewSessionHistory, ViewScratch}
@@ -137,8 +137,23 @@ func (m Model) selectedDailyHabitRecord() (*api.HabitDailyItem, bool) {
 	return selectionpkg.SelectedDailyHabit(m.selectionSnapshot())
 }
 
+func (m Model) selectedHabitForAction() (*api.Habit, bool) {
+	if m.view == ViewDaily {
+		if habit, ok := m.selectedDailyHabitRecord(); ok {
+			copy := habit.Habit
+			return &copy, true
+		}
+		return nil, false
+	}
+	return m.selectedHabitRecord()
+}
+
 func (m Model) selectedSessionHistoryEntry() (*api.SessionHistoryEntry, bool) {
 	return selectionpkg.SelectedSessionHistoryEntry(m.selectionSnapshot())
+}
+
+func (m Model) selectedHabitHistoryEntry() (*api.HabitCompletion, bool) {
+	return selectionpkg.SelectedHabitHistoryEntry(m.selectionSnapshot())
 }
 
 func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
@@ -694,6 +709,59 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
+	if m.view == ViewHabitHistory && m.pane == PaneHabitHistory {
+		if entry, ok := m.selectedHabitHistoryEntry(); ok {
+			durationText := formatHabitCompletionDuration(entry.DurationMinutes)
+			contextLabel := strings.TrimSpace(entry.RepoName)
+			if strings.TrimSpace(entry.StreamName) != "" {
+				if contextLabel != "" {
+					contextLabel += " > "
+				}
+				contextLabel += strings.TrimSpace(entry.StreamName)
+			}
+			if contextLabel == "" {
+				contextLabel = "-"
+			}
+			habitLabel := strings.TrimSpace(entry.HabitName)
+			if habitLabel == "" {
+				habitLabel = fmt.Sprintf("Habit %d", entry.HabitID)
+			}
+			meta := strings.Join([]string{
+				fmt.Sprintf("Habit %s", habitLabel),
+				fmt.Sprintf("Context %s", contextLabel),
+				fmt.Sprintf("Status %s", strings.ReplaceAll(string(entry.Status), "_", " ")),
+				fmt.Sprintf("Duration %s", durationText),
+			}, "   ")
+			body := strings.Join([]string{
+				"Habit",
+				habitLabel,
+				"",
+				"Context",
+				contextLabel,
+				"",
+				"Date",
+				entry.Date,
+				"",
+				"Status",
+				strings.ReplaceAll(string(entry.Status), "_", " "),
+				"",
+				"Duration",
+				durationText,
+				"",
+				"Notes",
+				derefHabitNotes(entry.Notes),
+				"",
+				"Snapshot",
+				strings.TrimSpace(strings.Join([]string{
+					derefHabitSnapshot(entry.SnapshotName),
+					derefHabitSnapshot(entry.SnapshotDesc),
+				}, " / ")),
+			}, "\n")
+			m = m.openViewEntityDialog("Habit History Entry", habitLabel, meta, body)
+			return m, nil, true
+		}
+		return m, nil, true
+	}
 	if m.dialog == "" {
 		if next, ok := m.openSelectedViewDialog(); ok {
 			return next, nil, true
@@ -709,6 +777,27 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 		return m, commands.OpenScratchpad(m.client, m.scratchpads, rawIdx), true
 	}
 	return m, nil, false
+}
+
+func formatHabitCompletionDuration(value *int) string {
+	if value == nil {
+		return "-"
+	}
+	return helperpkg.FormatCompactDurationMinutes(*value)
+}
+
+func derefHabitNotes(value *string) string {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return "-"
+	}
+	return strings.TrimSpace(*value)
+}
+
+func derefHabitSnapshot(value *string) string {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return "-"
+	}
+	return strings.TrimSpace(*value)
 }
 
 func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
