@@ -129,7 +129,7 @@ func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
 		due := strings.TrimSpace(*issue.TodoForDate)
 		switch {
 		case section == "overdue":
-			return due != "" && due < anchorDate
+			return due != "" && due < anchorDate && issue.Status != "done" && issue.Status != "abandoned"
 		case section == "planned":
 			return due == anchorDate
 		}

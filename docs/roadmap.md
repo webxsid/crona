@@ -1,6 +1,6 @@
 # Roadmap
 
-Current mainline focus is the `v1.2.0` prerelease line while `v1.0.2` remains the current stable release. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
+Current mainline focus is the `v1.2.1` prerelease line while `v1.0.2` remains the current stable release. Native OS integration is out of scope for the current mainline and remains deferred until the product, packaging, and distribution model is settled.
 
 ## Phase 1 — TUI Core
 Foundation for all future phases. TUI must be stable and usable before anything is layered on top.
@@ -144,7 +144,7 @@ Prioritise machine-friendly flows and local integrations before deeper TUI dashb
 - [x] Feedback and issue intake paths are clear for users and beta testers
 - [x] Core workflows are stable enough for `v1.0.0`
 - [x] `v1.0.2` is the current stable release
-- [x] `v1.2.0` is the active prerelease target
+- [x] `v1.2.1` is the active prerelease target
 - [x] CI, coverage, release-check, and tag-driven release publishing are defined for the stable release path
 - [x] Kernel IPC e2e tests are isolated behind an explicit target for reliable local and CI validation
 

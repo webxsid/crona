@@ -6,8 +6,15 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `prerelease` is the testing channel for pre-release validation and faster iteration.
-- `v1.2.0` is the current prerelease.
+- `v1.2.1` is the current prerelease.
 - `v1.0.2` is the current stable release.
+
+## [1.2.1] - 2026-05-07
+
+This patch release keeps the current prerelease line moving with a Daily tasks correction that preserves historical planned items while keeping overdue entries unresolved-only.
+
+### Fixed
+- Planned Daily tasks now continue to show resolved items when viewing the matching date, while overdue remains limited to unresolved work.
 
 ## [1.2.0] - 2026-05-05
 

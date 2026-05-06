@@ -26,7 +26,7 @@ func TestRunningChannelReflectsCurrentVersion(t *testing.T) {
 		t.Fatalf("expected stable channel, got %q", got)
 	}
 
-	Version = "1.2.0"
+	Version = "1.2.1"
 	if IsBetaRelease() {
 		t.Fatalf("expected release without beta suffix to be treated as stable")
 	}

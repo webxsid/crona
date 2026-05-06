@@ -978,15 +978,15 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 		},
 		DailySummary: &api.DailyIssueSummary{Date: "2026-04-30"},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Old task", Status: "planned", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28")},
-			{ID: 2, Title: "Today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30")},
+			{ID: 1, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")},
+			{ID: 2, Title: "Today task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), CompletedAt: strPtr("2026-04-30T18:00:00Z")},
 			{ID: 4, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true},
 			{ID: 3, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true},
 			{ID: 5, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true},
 		},
 		AllIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "planned", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 2, StreamID: 10, Title: "Today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 2, StreamID: 10, Title: "Today task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), CompletedAt: strPtr("2026-04-30T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
 			{Issue: api.Issue{ID: 4, StreamID: 10, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
 			{Issue: api.Issue{ID: 3, StreamID: 10, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
 			{Issue: api.Issue{ID: 5, StreamID: 10, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
@@ -1014,6 +1014,22 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 		t.Fatalf("expected planned section header to highlight Planned, got %q", plannedRendered)
 	}
 
+	past := base
+	past.DashboardDate = "2026-04-28"
+	past.DailyTaskSection = "planned"
+	past.DailySummary = &api.DailyIssueSummary{Date: "2026-04-28"}
+	past.DailyIssues = []api.Issue{
+		{ID: 1, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")},
+	}
+	past.AllIssues = []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+	}
+	pastRendered := support.RenderDaily(past)
+	pastStripped := ansi.Strip(pastRendered)
+	if !strings.Contains(pastStripped, "Old task") {
+		t.Fatalf("expected past planned section to retain resolved older task, got %q", pastStripped)
+	}
+
 	pinned := base
 	pinned.DailyTaskSection = "pinned"
 	pinnedRendered := support.RenderDaily(pinned)
@@ -1036,12 +1052,12 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	overdue.DailyTaskSection = "overdue"
 	overdueRendered := support.RenderDaily(overdue)
 	overdueStripped := ansi.Strip(overdueRendered)
-	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Old task", "Pinned over"} {
+	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned over"} {
 		if !strings.Contains(overdueStripped, want) {
 			t.Fatalf("expected overdue section to contain %q, got %q", want, overdueStripped)
 		}
 	}
-	for _, unwanted := range []string{"Today task", "Pinned future task", "Pinned today task"} {
+	for _, unwanted := range []string{"Old task", "Today task", "Pinned future task", "Pinned today task"} {
 		if strings.Contains(overdueStripped, unwanted) {
 			t.Fatalf("expected overdue section to hide %q, got %q", unwanted, overdueStripped)
 		}

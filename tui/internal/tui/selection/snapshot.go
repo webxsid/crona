@@ -577,7 +577,7 @@ func buildDailyScopedIssues(s Snapshot) []api.Issue {
 	anchorDate := dailyAnchorDate(s)
 	out := make([]api.Issue, 0)
 	for _, issue := range s.AllIssues {
-		if !issueMatchesDailyContext(issue, s.Context) || isClosedDailyIssue(issue.Issue) {
+		if !issueMatchesDailyContext(issue, s.Context) {
 			continue
 		}
 		switch s.DailyTaskSection {
@@ -636,6 +636,9 @@ func dailyIssueSection(issue api.Issue, anchorDate string) string {
 }
 
 func dailyIssueOverdue(issue api.Issue, anchorDate string) bool {
+	if isClosedDailyIssue(issue) {
+		return false
+	}
 	if issue.PinnedDaily {
 		if issue.TodoForDate == nil {
 			return false

@@ -19,6 +19,8 @@ type MessageState struct {
 	Height                  int
 	View                    uistate.View
 	Pane                    uistate.Pane
+	DailyTaskSection        uistate.DailyTaskSection
+	DashboardDate           string
 	Cursor                  map[uistate.Pane]int
 	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
@@ -30,7 +32,6 @@ type MessageState struct {
 	DueHabits               []api.HabitDailyItem
 	DailySummary            *api.DailyIssueSummary
 	DailyPlan               *api.DailyPlan
-	DashboardDate           string
 	RollupStartDate         string
 	RollupEndDate           string
 	WellbeingDate           string
@@ -697,17 +698,23 @@ func habitHistoryScopeLabel(ctx *api.ActiveContext) string {
 }
 
 func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot {
+	dailySection := state.DailyTaskSection
+	if state.View == uistate.ViewDaily && dailySection == "" {
+		dailySection = uistate.DailyTaskSectionPlanned
+	}
 	return selectionpkg.PrepareSnapshot(selectionpkg.Snapshot{
-		View:         state.View,
-		Pane:         state.Pane,
-		Cursors:      state.Cursor,
-		Filters:      state.Filters,
-		Context:      state.Context,
-		Timer:        state.Timer,
-		Settings:     state.Settings,
-		AllIssues:    state.AllIssues,
-		Issues:       state.Issues,
-		HabitHistory: state.HabitHistory,
+		View:             state.View,
+		Pane:             state.Pane,
+		DailyTaskSection: dailySection,
+		DashboardDate:    state.DashboardDate,
+		Cursors:          state.Cursor,
+		Filters:          state.Filters,
+		Context:          state.Context,
+		Timer:            state.Timer,
+		Settings:         state.Settings,
+		AllIssues:        state.AllIssues,
+		Issues:           state.Issues,
+		HabitHistory:     state.HabitHistory,
 	})
 }
 
