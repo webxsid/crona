@@ -139,6 +139,11 @@ func (c *Client) ListHabits(streamID int64) ([]Habit, error) {
 	return out, c.call(protocol.MethodHabitList, shareddto.ListHabitsQuery{StreamID: streamID}, &out)
 }
 
+func (c *Client) ListAllHabits() ([]HabitWithMeta, error) {
+	var out []HabitWithMeta
+	return out, c.call(protocol.MethodHabitListAll, nil, &out)
+}
+
 func (c *Client) ListDueHabits(date string) ([]HabitDailyItem, error) {
 	var out []HabitDailyItem
 	return out, c.call(protocol.MethodHabitListDue, shareddto.ListHabitsDueQuery{Date: strings.TrimSpace(date)}, &out)

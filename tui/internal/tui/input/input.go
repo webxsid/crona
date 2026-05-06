@@ -121,6 +121,7 @@ type Deps struct {
 	OpenCreateAlertReminderDialog   func(*State) bool
 	OpenEditAlertReminderDialog     func(*State, string) bool
 	OpenEditDateDisplayFormatDialog func(*State) bool
+	OpenEditHabitStreaksDialog      func(*State) bool
 	OpenEditRestProtectionDialog    func(*State) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
 	OpenConfirmUninstallDialog      func(*State) bool

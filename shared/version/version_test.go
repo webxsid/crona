@@ -25,4 +25,12 @@ func TestRunningChannelReflectsCurrentVersion(t *testing.T) {
 	if got := RunningChannel(); got != sharedtypes.UpdateChannelStable {
 		t.Fatalf("expected stable channel, got %q", got)
 	}
+
+	Version = "1.2.0"
+	if IsBetaRelease() {
+		t.Fatalf("expected release without beta suffix to be treated as stable")
+	}
+	if got := RunningChannel(); got != sharedtypes.UpdateChannelStable {
+		t.Fatalf("expected stable channel for plain semver, got %q", got)
+	}
 }

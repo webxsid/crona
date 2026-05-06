@@ -68,8 +68,10 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 19:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyPromptGlyphMode, nextPromptGlyphMode(s.Settings.PromptGlyphMode, dir), repoID, streamID, s.DashboardDate), true
 	case 20:
-		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+		return s, nil, true
 	case 21:
+		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
+	case 22:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1), repoID, streamID, s.DashboardDate), true
 	default:
 		return s, nil, true
@@ -86,13 +88,18 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 			deps.OpenEditDateDisplayFormatDialog(&s)
 		}
 		return s, nil, true
-	case 22:
-		deps.OpenEditRestProtectionDialog(&s)
+	case 20:
+		if deps.OpenEditHabitStreaksDialog != nil {
+			deps.OpenEditHabitStreaksDialog(&s)
+		}
 		return s, nil, true
 	case 23:
-		deps.OpenConfirmWipeDataDialog(&s)
+		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
 	case 24:
+		deps.OpenConfirmWipeDataDialog(&s)
+		return s, nil, true
+	case 25:
 		deps.OpenConfirmUninstallDialog(&s)
 		return s, nil, true
 	default:

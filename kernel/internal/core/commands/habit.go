@@ -25,6 +25,15 @@ func ListHabitsByStream(ctx context.Context, c *core.Context, streamID int64) ([
 	return habits, nil
 }
 
+func ListAllHabits(ctx context.Context, c *core.Context) ([]sharedtypes.HabitWithMeta, error) {
+	habits, err := c.Habits.ListAllWithMeta(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	sortHabitMetas(habits, loadListSortSettings(ctx, c).habitSort)
+	return habits, nil
+}
+
 func ListHabitsDueForDate(ctx context.Context, c *core.Context, date string) ([]sharedtypes.HabitDailyItem, error) {
 	if !isISODate(date) {
 		return nil, errors.New("date must be YYYY-MM-DD")

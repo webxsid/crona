@@ -232,6 +232,10 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 		return handle(req, func(input shareddto.ListHabitsQuery) (any, error) {
 			return corecommands.ListHabitsByStream(ctx, h.core, input.StreamID)
 		}), true
+	case protocol.MethodHabitListAll:
+		return h.handleNoParams(req, func() (any, error) {
+			return corecommands.ListAllHabits(ctx, h.core)
+		}), true
 	case protocol.MethodHabitListDue:
 		return handle(req, func(input shareddto.ListHabitsDueQuery) (any, error) {
 			return corecommands.ListHabitsDueForDate(ctx, h.core, input.Date)

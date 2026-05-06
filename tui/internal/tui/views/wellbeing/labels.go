@@ -76,5 +76,9 @@ func wellbeingStreakLabel(state types.ContentState) string {
 	if state.Streaks == nil {
 		return "-"
 	}
+	if len(state.Streaks.CustomHabitStreaks) > 0 {
+		first := state.Streaks.CustomHabitStreaks[0]
+		return fmt.Sprintf("C%d/%d F%d/%d H%d/%d %s %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays, first.Name, first.Current, first.Longest)
+	}
 	return fmt.Sprintf("C%d/%d F%d/%d H%d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays)
 }

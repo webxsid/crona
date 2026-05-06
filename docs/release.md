@@ -2,7 +2,7 @@
 
 Crona uses `main` as the only long-lived code branch.
 
-Release candidates may use short-lived `release/*` branches, for example `release/v1.0.1-beta.1`. These branches run the same validation as `main` and can build release-candidate artifacts in GitHub Actions, but publishing a GitHub release is tag-driven.
+Release builds may come from `main`, short-lived `release/*` branches, or version tags. These branches run the same validation, and the release workflow publishes prereleases by default. Stable promotion is manual.
 
 ## Validation
 
@@ -36,7 +36,7 @@ The release version must stay consistent across:
 3. Tag the commit with a version tag such as `v1.0.0`.
 4. Push the tag.
 
-The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Tags containing `beta` publish GitHub prereleases; stable tags publish normal releases.
+The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Prereleases are the default publication mode; stable releases are promoted manually.
 
 ## Branch Cleanup
 

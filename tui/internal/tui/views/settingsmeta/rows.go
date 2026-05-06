@@ -48,6 +48,7 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 		{Section: "Dates", Label: "Custom Date Format", Value: customDateFormatLabel(settings)},
 		{Section: "Dates", Label: "Date Preview", Value: shareddatefmt.Preview(settings, time.Now())},
 		{Section: "Dates", Label: "Prompt Glyphs", Value: promptGlyphModeLabel(settings)},
+		{Section: "Recovery", Label: "Habit Streaks", Value: habitStreakDefsLabel(settings)},
 		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
 		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
 		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
@@ -265,6 +266,22 @@ func promptGlyphModeLabel(settings *sharedtypes.CoreSettings) string {
 	default:
 		return "Emoji"
 	}
+}
+
+func habitStreakDefsLabel(settings *sharedtypes.CoreSettings) string {
+	if settings == nil || len(settings.HabitStreakDefs) == 0 {
+		return "None"
+	}
+	active := 0
+	for _, def := range settings.HabitStreakDefs {
+		if def.Enabled {
+			active++
+		}
+	}
+	if active == 0 {
+		return fmt.Sprintf("%d configured", len(settings.HabitStreakDefs))
+	}
+	return fmt.Sprintf("%d configured, %d active", len(settings.HabitStreakDefs), active)
 }
 
 func restProtectionLabel(settings *sharedtypes.CoreSettings) string {

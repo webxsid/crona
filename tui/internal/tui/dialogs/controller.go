@@ -63,6 +63,7 @@ type Action struct {
 	StringList        []string
 	IntList           []int
 	StreakKinds       []string
+	HabitStreakDefs   []sharedtypes.HabitStreakDefinition
 	RestDates         []string
 	Mood              int
 	Energy            int
@@ -306,6 +307,25 @@ func OpenEditRestProtection(state State, streaks []sharedtypes.StreakKind, weekd
 	}
 	state.ProtectionWeekdays = append([]int(nil), weekdays...)
 	state.ProtectionDates = normalizedDateList(dates)
+	return state
+}
+
+func OpenEditHabitStreaks(state State, settings *api.CoreSettings, habits []api.HabitWithMeta) State {
+	state = Close(state)
+	state.Kind = "edit_habit_streaks"
+	state.HabitItems = append([]sharedtypes.HabitWithMeta(nil), habits...)
+	if settings != nil {
+		state.HabitStreakDefs = append([]sharedtypes.HabitStreakDefinition(nil), settings.HabitStreakDefs...)
+	}
+	state.HabitStreakDefs = sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs)
+	state.HabitStreakStep = 0
+	state.HabitStreakCursor = 0
+	state.HabitStreakEditIdx = -1
+	state.HabitStreakDraft = sharedtypes.HabitStreakDefinition{
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodDay,
+		RequiredCount: 1,
+	}
 	return state
 }
 
@@ -1027,6 +1047,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		})
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
+	case "edit_habit_streaks":
+		return updateHabitStreaks(state, msg)
 	case "create_alert_reminder", "edit_alert_reminder":
 		return updateAlertReminder(state, msg)
 	case "view_entity":

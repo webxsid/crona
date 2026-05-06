@@ -84,3 +84,81 @@ func TestHabitMetricsCountDueCompletedAndFailedDays(t *testing.T) {
 		t.Fatalf("expected longest habit streak of 2, got %+v", streaks)
 	}
 }
+
+func TestCustomHabitStreaksUseCalendarBucketsAndThresholds(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-04-15T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Personal"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "wellbeing"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	walk, err := corecommands.CreateHabit(ctx, coreCtx, struct {
+		StreamID      int64
+		Name          string
+		Description   *string
+		ScheduleType  string
+		Weekdays      []int
+		TargetMinutes *int
+	}{StreamID: stream.ID, Name: "Walk", ScheduleType: string(sharedtypes.HabitScheduleDaily)})
+	if err != nil {
+		t.Fatalf("create walk: %v", err)
+	}
+	journal, err := corecommands.CreateHabit(ctx, coreCtx, struct {
+		StreamID      int64
+		Name          string
+		Description   *string
+		ScheduleType  string
+		Weekdays      []int
+		TargetMinutes *int
+	}{StreamID: stream.ID, Name: "Journal", ScheduleType: string(sharedtypes.HabitScheduleDaily)})
+	if err != nil {
+		t.Fatalf("create journal: %v", err)
+	}
+
+	for _, date := range []string{"2026-04-01", "2026-04-03", "2026-04-08", "2026-04-10"} {
+		if _, err := corecommands.CompleteHabit(ctx, coreCtx, walk.ID, date, sharedtypes.HabitCompletionStatusCompleted, nil, nil); err != nil {
+			t.Fatalf("complete walk %s: %v", date, err)
+		}
+	}
+	if _, err := corecommands.CompleteHabit(ctx, coreCtx, journal.ID, "2026-04-09", sharedtypes.HabitCompletionStatusCompleted, nil, nil); err != nil {
+		t.Fatalf("complete journal: %v", err)
+	}
+
+	defs := []sharedtypes.HabitStreakDefinition{{
+		ID:            "health",
+		Name:          "Health streak",
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 2,
+		HabitIDs:      []int64{walk.ID, journal.ID},
+	}}
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
+		t.Fatalf("set custom streak defs: %v", err)
+	}
+
+	streaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-01", "2026-04-12")
+	if err != nil {
+		t.Fatalf("compute streaks: %v", err)
+	}
+	if len(streaks.CustomHabitStreaks) != 1 {
+		t.Fatalf("expected one custom streak, got %+v", streaks.CustomHabitStreaks)
+	}
+	if streaks.CustomHabitStreaks[0].Current != 2 || streaks.CustomHabitStreaks[0].Longest != 2 {
+		t.Fatalf("unexpected custom streak summary: %+v", streaks.CustomHabitStreaks[0])
+	}
+}

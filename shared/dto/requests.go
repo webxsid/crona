@@ -54,6 +54,8 @@ type ListHabitsQuery struct {
 	StreamID int64 `json:"streamId"`
 }
 
+type ListAllHabitsQuery struct{}
+
 type ListHabitsDueQuery struct {
 	Date string `json:"date"`
 }

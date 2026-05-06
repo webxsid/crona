@@ -146,13 +146,13 @@ func (r *HabitFocusSessionRepository) list(ctx context.Context, userID string, w
 	return rows, nil
 }
 
-func (r *HabitFocusSessionRepository) listByHabitID(ctx context.Context, habitID int64, userID string) ([]habitFocusRow, error) {
-	return r.list(ctx, userID, []string{"habits.public_id = ?"}, []any{habitID}, "habit_focus_sessions.started_at DESC")
-}
-
-func (r *HabitFocusSessionRepository) listByDate(ctx context.Context, date, userID string) ([]habitFocusRow, error) {
-	return r.list(ctx, userID, []string{"habit_focus_sessions.date = ?"}, []any{date}, "habit_focus_sessions.started_at DESC")
-}
+// func (r *HabitFocusSessionRepository) listByHabitID(ctx context.Context, habitID int64, userID string) ([]habitFocusRow, error) {
+// 	return r.list(ctx, userID, []string{"habits.public_id = ?"}, []any{habitID}, "habit_focus_sessions.started_at DESC")
+// }
+//
+// func (r *HabitFocusSessionRepository) listByDate(ctx context.Context, date, userID string) ([]habitFocusRow, error) {
+// 	return r.list(ctx, userID, []string{"habit_focus_sessions.date = ?"}, []any{date}, "habit_focus_sessions.started_at DESC")
+// }
 
 func (row habitFocusRow) toCompletion() sharedtypes.HabitCompletion {
 	return sharedtypes.HabitCompletion{

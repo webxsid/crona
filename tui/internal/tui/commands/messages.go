@@ -7,6 +7,7 @@ import (
 
 type ReposLoadedMsg struct{ Repos []api.Repo }
 type StreamsLoadedMsg struct{ Streams []api.Stream }
+type AllHabitsLoadedMsg struct{ Habits []api.HabitWithMeta }
 
 type IssuesLoadedMsg struct {
 	StreamID        int64

@@ -12,11 +12,11 @@ func Update(snapshot Snapshot, msg tea.KeyMsg) (dialogpkg.State, *dialogpkg.Acti
 
 func UpdateContext(snapshot Snapshot) dialogpkg.UpdateContext {
 	ctx := dialogpkg.UpdateContext{
-		Repos:     snapshot.Repos,
-		Streams:   snapshot.Streams,
+		Repos:    snapshot.Repos,
+		Streams:  snapshot.Streams,
 		AllIssues: snapshot.AllIssues,
-		Context:   snapshot.Context,
-		Stashes:   snapshot.Stashes,
+		Context:  snapshot.Context,
+		Stashes:  snapshot.Stashes,
 	}
 	if snapshot.HasSelectedIssue {
 		ctx.SelectedIssueID = snapshot.SelectedIssueID

@@ -3,14 +3,20 @@ name: Release
 on:
   push:
     branches:
+      - main
       - "release/**"
     tags:
       - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag to build, for example v1.0.0"
+        description: "Version tag to build, for example v1.2.0"
         required: true
+      prerelease:
+        description: "Publish the GitHub release as a prerelease"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -38,10 +44,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          prerelease=true
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             version="${{ inputs.version }}"
+            prerelease="${{ inputs.prerelease }}"
           elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
             version="${GITHUB_REF_NAME}"
+          elif [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" == "main" ]]; then
+            version="v$(awk '/^PROJECT_VERSION := / { print $3 }' Makefile)"
           elif [[ "${GITHUB_REF_NAME}" == release/* ]]; then
             version="${GITHUB_REF_NAME#release/}"
           else
@@ -53,6 +63,7 @@ jobs:
             exit 1
           fi
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "prerelease=${prerelease}" >> "${GITHUB_OUTPUT}"
 
       - name: Check metadata
         run: make release-check
@@ -74,9 +85,8 @@ jobs:
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
-        if: github.ref_type == 'tag'
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          prerelease: ${{ contains(steps.version.outputs.version, 'beta') }}
+          prerelease: ${{ steps.version.outputs.prerelease }}
           body_path: release-notes/body.md
           files: release/${{ steps.version.outputs.version }}/*

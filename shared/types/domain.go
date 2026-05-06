@@ -1,5 +1,7 @@
 package types
 
+import "strings"
+
 // Shared domain and wire types used across the Go workspace.
 
 type IssueStatus string
@@ -282,6 +284,7 @@ const (
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
+	CoreSettingsKeyHabitStreakDefs       CoreSettingsKey = "habitStreakDefinitions"
 )
 
 type DateDisplayPreset string
@@ -318,6 +321,83 @@ func NormalizePromptGlyphMode(value PromptGlyphMode) PromptGlyphMode {
 	default:
 		return PromptGlyphModeEmoji
 	}
+}
+
+type HabitStreakPeriod string
+
+const (
+	HabitStreakPeriodDay   HabitStreakPeriod = "day"
+	HabitStreakPeriodWeek  HabitStreakPeriod = "week"
+	HabitStreakPeriodMonth HabitStreakPeriod = "month"
+)
+
+func NormalizeHabitStreakPeriod(value HabitStreakPeriod) HabitStreakPeriod {
+	switch value {
+	case HabitStreakPeriodWeek, HabitStreakPeriodMonth:
+		return value
+	default:
+		return HabitStreakPeriodDay
+	}
+}
+
+type HabitStreakDefinition struct {
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Enabled       bool              `json:"enabled"`
+	Period        HabitStreakPeriod `json:"period"`
+	RequiredCount int               `json:"requiredCount"`
+	HabitIDs      []int64           `json:"habitIds,omitempty"`
+}
+
+func NormalizeHabitStreakDefinition(value HabitStreakDefinition) HabitStreakDefinition {
+	value.ID = strings.TrimSpace(value.ID)
+	value.Name = strings.TrimSpace(value.Name)
+	value.Period = NormalizeHabitStreakPeriod(value.Period)
+	if value.Period == HabitStreakPeriodDay {
+		value.RequiredCount = 1
+	} else if value.RequiredCount <= 0 {
+		value.RequiredCount = 1
+	}
+	if len(value.HabitIDs) > 0 {
+		seen := make(map[int64]struct{}, len(value.HabitIDs))
+		ids := make([]int64, 0, len(value.HabitIDs))
+		for _, id := range value.HabitIDs {
+			if id <= 0 {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			ids = append(ids, id)
+		}
+		value.HabitIDs = ids
+	}
+	return value
+}
+
+func NormalizeHabitStreakDefinitions(values []HabitStreakDefinition) []HabitStreakDefinition {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]HabitStreakDefinition, 0, len(values))
+	seen := map[string]struct{}{}
+	for _, value := range values {
+		value = NormalizeHabitStreakDefinition(value)
+		key := value.ID
+		if key == "" {
+			key = value.Name
+		}
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, value)
+	}
+	return out
 }
 
 type StreakKind string
@@ -652,12 +732,23 @@ type MetricsRollup struct {
 }
 
 type StreakSummary struct {
-	CurrentFocusDays   int `json:"currentFocusDays"`
-	LongestFocusDays   int `json:"longestFocusDays"`
-	CurrentCheckInDays int `json:"currentCheckInDays"`
-	LongestCheckInDays int `json:"longestCheckInDays"`
-	CurrentHabitDays   int `json:"currentHabitDays"`
-	LongestHabitDays   int `json:"longestHabitDays"`
+	CurrentFocusDays   int                        `json:"currentFocusDays"`
+	LongestFocusDays   int                        `json:"longestFocusDays"`
+	CurrentCheckInDays int                        `json:"currentCheckInDays"`
+	LongestCheckInDays int                        `json:"longestCheckInDays"`
+	CurrentHabitDays   int                        `json:"currentHabitDays"`
+	LongestHabitDays   int                        `json:"longestHabitDays"`
+	CustomHabitStreaks []CustomHabitStreakSummary `json:"customHabitStreaks,omitempty"`
+}
+
+type CustomHabitStreakSummary struct {
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Enabled       bool              `json:"enabled"`
+	Period        HabitStreakPeriod `json:"period"`
+	RequiredCount int               `json:"requiredCount"`
+	Current       int               `json:"current"`
+	Longest       int               `json:"longest"`
 }
 
 type DashboardWindowDayStatus string
@@ -846,42 +937,43 @@ type ActiveContext struct {
 }
 
 type CoreSettings struct {
-	UserID                string            `json:"userId"`
-	DeviceID              string            `json:"deviceId"`
-	TimerMode             TimerMode         `json:"timerMode"`
-	BreaksEnabled         bool              `json:"breaksEnabled"`
-	WorkDurationMinutes   int               `json:"workDurationMinutes"`
-	ShortBreakMinutes     int               `json:"shortBreakMinutes"`
-	LongBreakMinutes      int               `json:"longBreakMinutes"`
-	LongBreakEnabled      bool              `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int               `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool              `json:"autoStartBreaks"`
-	AutoStartWork         bool              `json:"autoStartWork"`
-	BoundaryNotifications bool              `json:"boundaryNotificationsEnabled"`
-	BoundarySound         bool              `json:"boundarySoundEnabled"`
-	AlertSoundPreset      AlertSoundPreset  `json:"alertSoundPreset"`
-	AlertUrgency          AlertUrgency      `json:"alertUrgency"`
-	AlertIconEnabled      bool              `json:"alertIconEnabled"`
-	InactivityAlerts      bool              `json:"inactivityAlertsEnabled"`
-	InactivityThreshold   int               `json:"inactivityThresholdMinutes"`
-	InactivityRepeat      int               `json:"inactivityRepeatMinutes"`
-	UpdateChecksEnabled   bool              `json:"updateChecksEnabled"`
-	UpdatePromptEnabled   bool              `json:"updatePromptEnabled"`
-	UpdateChannel         UpdateChannel     `json:"updateChannel"`
-	RepoSort              RepoSort          `json:"repoSort"`
-	StreamSort            StreamSort        `json:"streamSort"`
-	IssueSort             IssueSort         `json:"issueSort"`
-	HabitSort             HabitSort         `json:"habitSort"`
-	AwayModeEnabled       bool              `json:"awayModeEnabled"`
-	FrozenStreakKinds     []StreakKind      `json:"frozenStreakKinds,omitempty"`
-	RestWeekdays          []int             `json:"restWeekdays,omitempty"`
-	RestSpecificDates     []string          `json:"restSpecificDates,omitempty"`
-	DailyPlanRollbackMins int               `json:"dailyPlanRollbackMinutes"`
-	DateDisplayPreset     DateDisplayPreset `json:"dateDisplayPreset"`
-	DateDisplayFormat     string            `json:"dateDisplayFormat,omitempty"`
-	PromptGlyphMode       PromptGlyphMode   `json:"promptGlyphMode"`
-	CreatedAt             string            `json:"createdAt"`
-	UpdatedAt             string            `json:"updatedAt"`
+	UserID                string                  `json:"userId"`
+	DeviceID              string                  `json:"deviceId"`
+	TimerMode             TimerMode               `json:"timerMode"`
+	BreaksEnabled         bool                    `json:"breaksEnabled"`
+	WorkDurationMinutes   int                     `json:"workDurationMinutes"`
+	ShortBreakMinutes     int                     `json:"shortBreakMinutes"`
+	LongBreakMinutes      int                     `json:"longBreakMinutes"`
+	LongBreakEnabled      bool                    `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int                     `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool                    `json:"autoStartBreaks"`
+	AutoStartWork         bool                    `json:"autoStartWork"`
+	BoundaryNotifications bool                    `json:"boundaryNotificationsEnabled"`
+	BoundarySound         bool                    `json:"boundarySoundEnabled"`
+	AlertSoundPreset      AlertSoundPreset        `json:"alertSoundPreset"`
+	AlertUrgency          AlertUrgency            `json:"alertUrgency"`
+	AlertIconEnabled      bool                    `json:"alertIconEnabled"`
+	InactivityAlerts      bool                    `json:"inactivityAlertsEnabled"`
+	InactivityThreshold   int                     `json:"inactivityThresholdMinutes"`
+	InactivityRepeat      int                     `json:"inactivityRepeatMinutes"`
+	UpdateChecksEnabled   bool                    `json:"updateChecksEnabled"`
+	UpdatePromptEnabled   bool                    `json:"updatePromptEnabled"`
+	UpdateChannel         UpdateChannel           `json:"updateChannel"`
+	RepoSort              RepoSort                `json:"repoSort"`
+	StreamSort            StreamSort              `json:"streamSort"`
+	IssueSort             IssueSort               `json:"issueSort"`
+	HabitSort             HabitSort               `json:"habitSort"`
+	AwayModeEnabled       bool                    `json:"awayModeEnabled"`
+	FrozenStreakKinds     []StreakKind            `json:"frozenStreakKinds,omitempty"`
+	RestWeekdays          []int                   `json:"restWeekdays,omitempty"`
+	RestSpecificDates     []string                `json:"restSpecificDates,omitempty"`
+	DailyPlanRollbackMins int                     `json:"dailyPlanRollbackMinutes"`
+	DateDisplayPreset     DateDisplayPreset       `json:"dateDisplayPreset"`
+	DateDisplayFormat     string                  `json:"dateDisplayFormat,omitempty"`
+	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`
+	HabitStreakDefs       []HabitStreakDefinition `json:"habitStreakDefinitions,omitempty"`
+	CreatedAt             string                  `json:"createdAt"`
+	UpdatedAt             string                  `json:"updatedAt"`
 }
 
 type TimerState struct {

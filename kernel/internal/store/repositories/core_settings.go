@@ -68,6 +68,7 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyDateDisplayPreset:     {column: "date_display_preset", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyDateDisplayFormat:     {column: "date_display_format", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyPromptGlyphMode:       {column: "prompt_glyph_mode", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyHabitStreakDefs:       {column: "habit_streak_definitions", queryKind: coreSettingQueryString},
 }
 
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
@@ -221,6 +222,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
+		HabitStreakDefs:       mustJSON(sharedconstants.DefaultCoreSettings["habitStreakDefinitions"]),
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}).Exec(ctx)
@@ -249,6 +251,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))
 	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
 		return sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))
+	case sharedtypes.CoreSettingsKeyHabitStreakDefs:
+		return parseHabitStreakDefinitions(toString(value))
 	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
 		return parseStreakKinds(toString(value))
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
@@ -284,6 +288,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return string(sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
 		return string(sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyHabitStreakDefs:
+		return habitStreakDefinitionsJSON(value)
 	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
 		return streakKindsJSON(value)
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
@@ -335,8 +341,51 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		DateDisplayPreset:     sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(row.DateDisplayPreset)),
 		DateDisplayFormat:     strings.TrimSpace(row.DateDisplayFormat),
 		PromptGlyphMode:       sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(row.PromptGlyphMode)),
+		HabitStreakDefs:       parseHabitStreakDefinitions(row.HabitStreakDefs),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
+	}
+}
+
+func parseHabitStreakDefinitions(raw string) []sharedtypes.HabitStreakDefinition {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var out []sharedtypes.HabitStreakDefinition
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return nil
+	}
+	return sharedtypes.NormalizeHabitStreakDefinitions(out)
+}
+
+func habitStreakDefinitionsJSON(value any) (string, error) {
+	switch typed := value.(type) {
+	case []sharedtypes.HabitStreakDefinition:
+		b, err := json.Marshal(sharedtypes.NormalizeHabitStreakDefinitions(typed))
+		return string(b), err
+	case []*sharedtypes.HabitStreakDefinition:
+		flat := make([]sharedtypes.HabitStreakDefinition, 0, len(typed))
+		for _, item := range typed {
+			if item == nil {
+				continue
+			}
+			flat = append(flat, *item)
+		}
+		b, err := json.Marshal(sharedtypes.NormalizeHabitStreakDefinitions(flat))
+		return string(b), err
+	default:
+		b, err := json.Marshal(value)
+		if err != nil {
+			return "", err
+		}
+		var out []sharedtypes.HabitStreakDefinition
+		if err := json.Unmarshal(b, &out); err != nil {
+			return "", err
+		}
+		normalized := sharedtypes.NormalizeHabitStreakDefinitions(out)
+		b, err = json.Marshal(normalized)
+		return string(b), err
 	}
 }
 

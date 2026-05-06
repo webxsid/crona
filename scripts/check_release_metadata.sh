@@ -24,12 +24,6 @@ for doc in README.md docs/install.md docs/changelog.md docs/roadmap.md; do
   fi
 done
 
-if printf '%s' "${project_version}" | grep -- '-beta' >/dev/null 2>&1; then
-  if ! grep -F "prerelease" "${ROOT_DIR}/docs/changelog.md" >/dev/null 2>&1; then
-    fail "beta version is active but changelog does not describe prerelease status"
-  fi
-fi
-
 if ! sh "${ROOT_DIR}/scripts/release_notes.sh" "${tag}" >/dev/null; then
   fail "could not generate release notes for ${tag} from docs/changelog.md"
 fi

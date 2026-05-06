@@ -25,6 +25,7 @@ type MessageState struct {
 	Streams                 []api.Stream
 	Issues                  []api.Issue
 	Habits                  []api.Habit
+	AllHabits               []api.HabitWithMeta
 	AllIssues               []api.IssueWithMeta
 	DueHabits               []api.HabitDailyItem
 	DailySummary            *api.DailyIssueSummary
@@ -125,6 +126,7 @@ type MessageDeps struct {
 	LoadStreams                func(int64) tea.Cmd
 	LoadIssues                 func(int64) tea.Cmd
 	LoadHabits                 func(int64) tea.Cmd
+	LoadAllHabits              func() tea.Cmd
 	LoadDueHabits              func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
 	LoadWellbeing              func(string) tea.Cmd
@@ -181,6 +183,9 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.StreamsLoadedMsg:
 		state.Streams = msg.Streams
 		deps.ClampFiltered(&state, uistate.PaneStreams)
+		return state, nil, true
+	case commands.AllHabitsLoadedMsg:
+		state.AllHabits = msg.Habits
 		return state, nil, true
 	case commands.IssuesLoadedMsg:
 		state.Issues = msg.Issues

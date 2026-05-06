@@ -105,6 +105,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"date_display_preset":  "iso",
 		"date_display_format":  "",
 		"prompt_glyph_mode":    "emoji",
+		"habit_streak_definitions": "[]",
 		"frozen_streak_kinds":  "[]",
 		"rest_weekdays":        "[]",
 		"rest_specific_dates":  "[]",

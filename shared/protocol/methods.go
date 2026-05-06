@@ -51,6 +51,7 @@ const (
 	MethodDailyPlanGet      = "daily_plan.get"
 
 	MethodHabitList       = "habit.list"
+	MethodHabitListAll    = "habit.list_all"
 	MethodHabitListDue    = "habit.list_due"
 	MethodHabitCreate     = "habit.create"
 	MethodHabitUpdate     = "habit.update"

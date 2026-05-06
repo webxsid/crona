@@ -371,6 +371,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 			return commands.LoadIssuesSelecting(m.client, streamID, selectedIssueID)
 		},
 		LoadHabits:    func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
+		LoadAllHabits: func() tea.Cmd { return commands.LoadAllHabits(m.client) },
 		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },
 		LoadAllIssuesSelecting: func(selectedIssueID int64) tea.Cmd {
 			return commands.LoadAllIssuesSelecting(m.client, selectedIssueID)
@@ -413,6 +414,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		Streams:                 m.streams,
 		Issues:                  m.issues,
 		Habits:                  m.habits,
+		AllHabits:               m.allHabits,
 		AllIssues:               m.allIssues,
 		DueHabits:               m.dueHabits,
 		DailySummary:            m.dailySummary,
@@ -504,6 +506,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.streams = state.Streams
 	m.issues = state.Issues
 	m.habits = state.Habits
+	m.allHabits = state.AllHabits
 	m.allIssues = state.AllIssues
 	m.dueHabits = state.DueHabits
 	m.dailySummary = state.DailySummary

@@ -91,6 +91,17 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyPromptGlyphMode, string(sharedtypes.PromptGlyphModeASCII)); err != nil {
 		t.Fatalf("set prompt glyph mode: %v", err)
 	}
+	defs := []sharedtypes.HabitStreakDefinition{{
+		ID:            "health",
+		Name:          "Health streak",
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 2,
+		HabitIDs:      []int64{11, 12},
+	}}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
+		t.Fatalf("set habit streak definitions: %v", err)
+	}
 
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {
@@ -125,5 +136,43 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 	if settings.PromptGlyphMode != sharedtypes.PromptGlyphModeASCII {
 		t.Fatalf("unexpected prompt glyph mode: %q", settings.PromptGlyphMode)
+	}
+	if len(settings.HabitStreakDefs) != 1 {
+		t.Fatalf("expected one custom habit streak, got %+v", settings.HabitStreakDefs)
+	}
+	if settings.HabitStreakDefs[0].Name != "Health streak" || settings.HabitStreakDefs[0].Period != sharedtypes.HabitStreakPeriodWeek || settings.HabitStreakDefs[0].RequiredCount != 2 {
+		t.Fatalf("unexpected habit streak definition: %+v", settings.HabitStreakDefs[0])
+	}
+}
+
+func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	repo := repositories.NewCoreSettingsRepository(store.DB())
+	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
+		t.Fatalf("initialize defaults: %v", err)
+	}
+	defs := []sharedtypes.HabitStreakDefinition{{
+		ID:            "daily-health",
+		Name:          "Daily health",
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodDay,
+		RequiredCount: 4,
+		HabitIDs:      []int64{11},
+	}}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
+		t.Fatalf("set habit streak definitions: %v", err)
+	}
+
+	settings, err := repo.Get(ctx, "local")
+	if err != nil {
+		t.Fatalf("get settings: %v", err)
+	}
+	if len(settings.HabitStreakDefs) != 1 {
+		t.Fatalf("expected one habit streak, got %+v", settings.HabitStreakDefs)
+	}
+	if settings.HabitStreakDefs[0].RequiredCount != 1 {
+		t.Fatalf("expected daily streak count normalized to 1, got %+v", settings.HabitStreakDefs[0])
 	}
 }

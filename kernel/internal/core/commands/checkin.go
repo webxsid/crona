@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"math"
 	"strings"
 	"time"
@@ -283,7 +284,13 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	if err != nil {
 		return nil, err
 	}
-	return ComputeMetricsStreaksFromDays(days, settings), nil
+	streaks := ComputeMetricsStreaksFromDays(days, settings)
+	history, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	streaks.CustomHabitStreaks = ComputeCustomHabitStreaks(history, start, end, settings)
+	return streaks, nil
 }
 
 func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) *sharedtypes.StreakSummary {
@@ -374,6 +381,129 @@ func trailingHabitStreak(days []sharedtypes.DailyMetricsDay, settings *sharedtyp
 		break
 	}
 	return streak
+}
+
+func ComputeCustomHabitStreaks(history []sharedtypes.HabitCompletion, start string, end string, settings *sharedtypes.CoreSettings) []sharedtypes.CustomHabitStreakSummary {
+	if settings == nil || len(settings.HabitStreakDefs) == 0 {
+		return nil
+	}
+	bucketsByDef := make([]map[string]int, len(settings.HabitStreakDefs))
+	for i, def := range settings.HabitStreakDefs {
+		bucketsByDef[i] = map[string]int{}
+		if !def.Enabled || len(def.HabitIDs) == 0 {
+			continue
+		}
+		habitSet := make(map[int64]struct{}, len(def.HabitIDs))
+		for _, id := range def.HabitIDs {
+			habitSet[id] = struct{}{}
+		}
+		for _, entry := range history {
+			if entry.Date < start || entry.Date > end {
+				continue
+			}
+			if entry.Status != sharedtypes.HabitCompletionStatusCompleted {
+				continue
+			}
+			if _, ok := habitSet[entry.HabitID]; !ok {
+				continue
+			}
+			bucket := customHabitBucketKey(entry.Date, def.Period)
+			if bucket == "" {
+				continue
+			}
+			bucketsByDef[i][bucket]++
+		}
+	}
+	results := make([]sharedtypes.CustomHabitStreakSummary, 0, len(settings.HabitStreakDefs))
+	for i, rawDef := range settings.HabitStreakDefs {
+		def := sharedtypes.NormalizeHabitStreakDefinition(rawDef)
+		summary := sharedtypes.CustomHabitStreakSummary{
+			ID:            def.ID,
+			Name:          def.Name,
+			Enabled:       def.Enabled,
+			Period:        def.Period,
+			RequiredCount: def.RequiredCount,
+		}
+		if def.Enabled && len(def.HabitIDs) > 0 {
+			buckets := customHabitRangeBuckets(start, end, def.Period)
+			current := 0
+			for _, bucket := range buckets {
+				if bucketsByDef[i][bucket] >= def.RequiredCount {
+					current++
+					if current > summary.Longest {
+						summary.Longest = current
+					}
+				} else {
+					current = 0
+				}
+			}
+			summary.Current = current
+		}
+		results = append(results, summary)
+	}
+	return results
+}
+
+func customHabitBucketKey(date string, period sharedtypes.HabitStreakPeriod) string {
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return ""
+	}
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		year, week := parsed.ISOWeek()
+		return fmt.Sprintf("%04d-W%02d", year, week)
+	case sharedtypes.HabitStreakPeriodMonth:
+		return parsed.Format("2006-01")
+	default:
+		return parsed.Format("2006-01-02")
+	}
+}
+
+func customHabitRangeBuckets(start string, end string, period sharedtypes.HabitStreakPeriod) []string {
+	startTime, err := time.Parse("2006-01-02", start)
+	if err != nil {
+		return nil
+	}
+	endTime, err := time.Parse("2006-01-02", end)
+	if err != nil || endTime.Before(startTime) {
+		return nil
+	}
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		cursor := startOfISOWeek(startTime)
+		last := startOfISOWeek(endTime)
+		out := []string{}
+		for !cursor.After(last) {
+			year, week := cursor.ISOWeek()
+			out = append(out, fmt.Sprintf("%04d-W%02d", year, week))
+			cursor = cursor.AddDate(0, 0, 7)
+		}
+		return out
+	case sharedtypes.HabitStreakPeriodMonth:
+		cursor := time.Date(startTime.Year(), startTime.Month(), 1, 0, 0, 0, 0, startTime.Location())
+		last := time.Date(endTime.Year(), endTime.Month(), 1, 0, 0, 0, 0, endTime.Location())
+		out := []string{}
+		for !cursor.After(last) {
+			out = append(out, cursor.Format("2006-01"))
+			cursor = cursor.AddDate(0, 1, 0)
+		}
+		return out
+	default:
+		out := []string{}
+		for cursor := startTime; !cursor.After(endTime); cursor = cursor.AddDate(0, 0, 1) {
+			out = append(out, cursor.Format("2006-01-02"))
+		}
+		return out
+	}
+}
+
+func startOfISOWeek(value time.Time) time.Time {
+	weekday := int(value.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location()).AddDate(0, 0, -(weekday - 1))
 }
 
 func validateCheckInDate(date string, now string, rejectFuture bool) error {

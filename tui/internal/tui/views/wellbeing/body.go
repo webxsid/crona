@@ -86,6 +86,9 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 		}
 		if state.Streaks != nil {
 			lines = append(lines, fmt.Sprintf("Check-in %d/%d  Focus %d/%d  Habit %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays))
+			for _, streak := range state.Streaks.CustomHabitStreaks {
+				lines = append(lines, fmt.Sprintf("%s %d/%d", streak.Name, streak.Current, streak.Longest))
+			}
 		}
 		if strips := trendStrips(theme, state); len(strips) > 0 {
 			lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(strips[0], width-6)))
@@ -111,10 +114,18 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 	}
 	if state.Streaks != nil {
 		lines = append(lines, "",
-			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Same-Day Check-In Streak"), state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays),
+			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Check-In Streak"), state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays),
 			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Focus Streak"), state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays),
-			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Habit Streak"), state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays),
 		)
+		// add a divider between the main streaks and any custom habit streakks
+		lines = append(lines, theme.StyleDim.Render("─ "+viewhelpers.Truncate("Other Habit Streaks", width-6)+" ─"))
+		// add a fallback no habit streak message if there are no custom habit streaks to show
+		if len(state.Streaks.CustomHabitStreaks) == 0 {
+			lines = append(lines, theme.StyleDim.Render("No custom habit streaks"))
+		}
+		for _, streak := range state.Streaks.CustomHabitStreaks {
+			lines = append(lines, fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render(streak.Name), streak.Current, streak.Longest))
+		}
 	}
 	if strips := trendStrips(theme, state); len(strips) > 0 {
 		lines = append(lines, "", theme.StyleHeader.Render("Signals (7d)"))

@@ -32,6 +32,17 @@ func LoadStreams(c *api.Client, repoID int64) tea.Cmd {
 	}
 }
 
+func LoadAllHabits(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		habits, err := c.ListAllHabits()
+		if err != nil {
+			logger.Errorf("loadAllHabits: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return AllHabitsLoadedMsg{Habits: habits}
+	}
+}
+
 func LoadIssues(c *api.Client, streamID int64) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := c.ListIssues(streamID)

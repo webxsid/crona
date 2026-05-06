@@ -56,7 +56,8 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 			sharedtypes.CoreSettingsKeyFrozenStreakKinds,
 			sharedtypes.CoreSettingsKeyRestWeekdays,
 			sharedtypes.CoreSettingsKeyRestSpecificDates,
-			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
+			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
+			sharedtypes.CoreSettingsKeyHabitStreakDefs:
 			cmds = append(cmds, LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate))
 		}
 		return tea.Batch(cmds...)()
@@ -245,7 +246,7 @@ func CreateHabitOnly(c *api.Client, streamID int64, name string, description *st
 			logger.Errorf("CreateHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadHabits(c, streamID), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
+		return tea.Batch(LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
 	}
 }
 
@@ -255,7 +256,7 @@ func UpdateHabit(c *api.Client, habitID, streamID int64, name string, descriptio
 			logger.Errorf("UpdateHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadHabits(c, streamID), LoadDueHabits(c, dashboardDate))()
+		return tea.Batch(LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, dashboardDate))()
 	}
 }
 
@@ -265,7 +266,7 @@ func DeleteHabit(c *api.Client, habitID, streamID int64, dashboardDate string) t
 			logger.Errorf("DeleteHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadDueHabits(c, dashboardDate)}
+		cmds := []tea.Cmd{LoadDueHabits(c, dashboardDate), LoadAllHabits(c)}
 		if streamID != 0 {
 			cmds = append(cmds, LoadHabits(c, streamID))
 		}
@@ -431,7 +432,7 @@ func CreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			logger.Errorf("CreateHabit in CreateHabitWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadHabits(c, streamID), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
+		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
 	}
 }
 

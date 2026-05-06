@@ -37,6 +37,7 @@ type EventDeps struct {
 	LoadIssues               func(streamID int64) tea.Cmd
 	LoadIssuesSelecting      func(streamID, selectedIssueID int64) tea.Cmd
 	LoadHabits               func(streamID int64) tea.Cmd
+	LoadAllHabits            func() tea.Cmd
 	LoadAllIssues            func() tea.Cmd
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
@@ -81,7 +82,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(cmds...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
-		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash), deps.LoadDailySummary(state.CurrentDash), deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd)}
+		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash), deps.LoadDailySummary(state.CurrentDash), deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd), deps.LoadAllHabits()}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds, deps.LoadHabits(*state.Context.StreamID))
 		}

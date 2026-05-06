@@ -13,6 +13,7 @@ type Snapshot struct {
 	Dialog               dialogpkg.State
 	Repos                []api.Repo
 	Streams              []api.Stream
+	AllHabits            []api.HabitWithMeta
 	AllIssues            []api.IssueWithMeta
 	Context              *api.ActiveContext
 	Stashes              []api.Stash
@@ -130,6 +131,10 @@ func OpenCreateCheckIn(s Snapshot) dialogpkg.State {
 
 func OpenEditCheckIn(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenEditCheckIn(s.Dialog, s.DailyCheckIn, s.CurrentWellbeingDate)
+}
+
+func OpenEditHabitStreaks(s Snapshot) dialogpkg.State {
+	return dialogpkg.OpenEditHabitStreaks(s.Dialog, s.Settings, s.AllHabits)
 }
 
 func OpenConfirmDelete(s Snapshot, id string) dialogpkg.State {

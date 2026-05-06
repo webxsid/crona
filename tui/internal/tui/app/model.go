@@ -110,6 +110,7 @@ type Model struct {
 	streams                []api.Stream
 	issues                 []api.Issue // context-filtered (by active streamId)
 	habits                 []api.Habit
+	allHabits              []api.HabitWithMeta
 	allIssues              []api.IssueWithMeta
 	dueHabits              []api.HabitDailyItem
 	dailySummary           *api.DailyIssueSummary
@@ -224,6 +225,11 @@ type Model struct {
 	dialogProtectionStreaks  []sharedtypes.StreakKind
 	dialogProtectionWeekdays []int
 	dialogProtectionDates    []string
+	dialogHabitStreakStep    int
+	dialogHabitStreakCursor  int
+	dialogHabitStreakDefs    []sharedtypes.HabitStreakDefinition
+	dialogHabitStreakDraft   sharedtypes.HabitStreakDefinition
+	dialogHabitStreakEditIdx int
 	dialogExportPresetKind   sharedtypes.ExportReportKind
 	dialogExportPresetFormat sharedtypes.ExportFormat
 	dialogExportPresetOutput sharedtypes.ExportOutputMode
@@ -367,6 +373,7 @@ var eventChannel <-chan api.KernelEvent
 func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
+		commands.LoadAllHabits(m.client),
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
@@ -936,6 +943,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenEditHabitStreaksDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openEditHabitStreaksDialog()
+			*state = next.inputState()
+			return true
+		},
 		OpenEditRestProtectionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openEditRestProtectionDialog()
@@ -998,6 +1011,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		Dialog:               dialogState,
 		Repos:                m.repos,
 		Streams:              m.streams,
+		AllHabits:            m.allHabits,
 		AllIssues:            m.allIssues,
 		Context:              m.context,
 		Stashes:              m.stashes,
@@ -1252,6 +1266,9 @@ func (m Model) openEditDateDisplayFormatDialog() Model {
 func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(dialogstate.OpenEditRestProtection(m.dialogSnapshot()))
 }
+func (m Model) openEditHabitStreaksDialog() Model {
+	return m.withDialogState(dialogstate.OpenEditHabitStreaks(m.dialogSnapshot()))
+}
 func (m Model) openConfirmWipeDataDialog() Model {
 	return m.withDialogState(dialogstate.OpenConfirmWipeData(m.dialogSnapshot()))
 }
@@ -1314,6 +1331,12 @@ func (m Model) dialogState() dialogpkg.State {
 		ProtectionStreaks:  m.dialogProtectionStreaks,
 		ProtectionWeekdays: m.dialogProtectionWeekdays,
 		ProtectionDates:    m.dialogProtectionDates,
+		HabitItems:         m.allHabits,
+		HabitStreakStep:    m.dialogHabitStreakStep,
+		HabitStreakCursor:  m.dialogHabitStreakCursor,
+		HabitStreakDefs:    m.dialogHabitStreakDefs,
+		HabitStreakDraft:   m.dialogHabitStreakDraft,
+		HabitStreakEditIdx: m.dialogHabitStreakEditIdx,
 		ExportPresetKind:   m.dialogExportPresetKind,
 		ExportPresetFormat: m.dialogExportPresetFormat,
 		ExportPresetOutput: m.dialogExportPresetOutput,
@@ -1375,6 +1398,11 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogProtectionStreaks = state.ProtectionStreaks
 	m.dialogProtectionWeekdays = state.ProtectionWeekdays
 	m.dialogProtectionDates = state.ProtectionDates
+	m.dialogHabitStreakStep = state.HabitStreakStep
+	m.dialogHabitStreakCursor = state.HabitStreakCursor
+	m.dialogHabitStreakDefs = state.HabitStreakDefs
+	m.dialogHabitStreakDraft = state.HabitStreakDraft
+	m.dialogHabitStreakEditIdx = state.HabitStreakEditIdx
 	m.dialogExportPresetKind = state.ExportPresetKind
 	m.dialogExportPresetFormat = state.ExportPresetFormat
 	m.dialogExportPresetOutput = state.ExportPresetOutput
@@ -1512,6 +1540,8 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				return action.IntList
 			case sharedtypes.CoreSettingsKeyDateDisplayFormat:
 				return action.Path
+			case sharedtypes.CoreSettingsKeyHabitStreakDefs:
+				return action.HabitStreakDefs
 			default:
 				return action.StringList
 			}

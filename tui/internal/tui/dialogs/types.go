@@ -85,6 +85,12 @@ type State struct {
 	ProtectionStreaks   []sharedtypes.StreakKind
 	ProtectionWeekdays  []int
 	ProtectionDates     []string
+	HabitItems          []sharedtypes.HabitWithMeta
+	HabitStreakStep     int
+	HabitStreakCursor   int
+	HabitStreakDefs     []sharedtypes.HabitStreakDefinition
+	HabitStreakDraft    sharedtypes.HabitStreakDefinition
+	HabitStreakEditIdx  int
 	ExportPresetKind    sharedtypes.ExportReportKind
 	ExportPresetFormat  sharedtypes.ExportFormat
 	ExportPresetOutput  sharedtypes.ExportOutputMode
@@ -106,7 +112,7 @@ func Render(theme Theme, state State) string {
 		return renderIssueDialog(theme, state)
 	case "end_session", "stash_session", "issue_session_transition", "stash_list", "amend_session", "manual_session":
 		return renderSessionDialog(theme, state)
-	case "confirm_delete", "confirm_wipe", "confirm_uninstall", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report_category", "export_report", "export_preset", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_date_display_format", "edit_rest_protection", "create_alert_reminder", "edit_alert_reminder", "view_entity", "support_bundle_result", "complete_habit", "view_jump", "beta_support", "stash_conflict_pick", "stash_conflict":
+	case "confirm_delete", "confirm_wipe", "confirm_uninstall", "pick_date", "create_scratchpad", "create_checkin", "edit_checkin", "export_report_category", "export_report", "export_preset", "export_calendar_repo", "edit_export_reports_dir", "edit_export_ics_dir", "edit_date_display_format", "edit_rest_protection", "edit_habit_streaks", "create_alert_reminder", "edit_alert_reminder", "view_entity", "support_bundle_result", "complete_habit", "view_jump", "beta_support", "stash_conflict_pick", "stash_conflict":
 		return renderUtilityDialog(theme, state)
 	default:
 		return ""

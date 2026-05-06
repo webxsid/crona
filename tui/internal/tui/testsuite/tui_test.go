@@ -664,7 +664,7 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 			InstallUnavailableReason: "Release is missing the checksums.txt asset.",
 		},
 	})
-	for _, want := range []string{"[i] install unavailable", "Running channel: Beta", "Configured update channel: Beta", "Latest release kind: beta release", "Release type: beta prerelease", "Release is missing the checksums.txt asset."} {
+	for _, want := range []string{"[i] install unavailable", "Running channel: Beta", "Configured update channel: Beta", "Latest release kind: prerelease release", "Release type: prerelease", "Release is missing the checksums.txt asset."} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
