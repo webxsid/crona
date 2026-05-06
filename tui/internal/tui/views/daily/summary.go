@@ -267,9 +267,7 @@ func summaryCalendarWindow(theme types.Theme, selected time.Time, maxLines int) 
 	monthStart := time.Date(selected.Year(), selected.Month(), 1, 0, 0, 0, 0, selected.Location())
 	selectedWeek := weekIndexForDate(monthStart, selected)
 	start := selectedWeek - (visibleWeeks / 2)
-	if start < 0 {
-		start = 0
-	}
+	start = max(0, start)
 	if start+visibleWeeks > len(weeks) {
 		start = len(weeks) - visibleWeeks
 	}

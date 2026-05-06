@@ -107,6 +107,19 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 	m.clamp(PaneIssues, len(indices))
 }
 
+func (m *Model) setDailyTaskSection(section DailyTaskSection) {
+	if section != DailyTaskSectionPlanned && section != DailyTaskSectionPinned && section != DailyTaskSectionOverdue {
+		section = DailyTaskSectionPlanned
+	}
+	m.dailyTaskSection = section
+	if m.view != ViewDaily || m.pane != PaneIssues {
+		return
+	}
+	snapshot := m.selectionSnapshot()
+	indices := selectionpkg.FilteredIndices(snapshot, PaneIssues)
+	m.clamp(PaneIssues, len(indices))
+}
+
 func (m Model) selectedMetaRepo() (int64, string, bool) {
 	return selectionpkg.SelectedMetaRepo(m.selectionSnapshot())
 }

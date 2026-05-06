@@ -31,6 +31,7 @@ func (m Model) viewContentState(width, height int, snapshot selectionpkg.Snapsho
 		RollupEndDate:          m.currentRollupEndDate(),
 		WellbeingDate:          m.currentWellbeingDate(),
 		DefaultIssueSection:    string(m.defaultIssueSection),
+		DailyTaskSection:       string(m.dailyTaskSection),
 		SessionHistoryTitle:    helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue),
 		SessionHistoryMeta:     helperpkg.SessionHistorySubtitle(sessionIssueID, sessionIssue),
 		HabitHistoryTitle:      m.habitHistoryTitle,

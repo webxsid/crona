@@ -39,6 +39,7 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 		Status:          sharedtypes.IssueStatusBacklog,
 		EstimateMinutes: input.EstimateMinutes,
 		Notes:           input.Notes,
+		PinnedDaily:     false,
 		TodoForDate:     input.TodoForDate,
 	}
 	if input.TodoForDate != nil && strings.TrimSpace(*input.TodoForDate) != "" {
@@ -78,6 +79,7 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	Description     sharedtypes.Patch[string]
 	EstimateMinutes sharedtypes.Patch[int]
 	Notes           sharedtypes.Patch[string]
+	PinnedDaily     sharedtypes.Patch[bool]
 }) (*sharedtypes.Issue, error) {
 	if updates.Title.Set && updates.Title.Value != nil && strings.TrimSpace(*updates.Title.Value) == "" {
 		return nil, errors.New("issue title cannot be empty")
@@ -99,6 +101,7 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes sharedtypes.Patch[int]
 		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
 		TodoForDate     sharedtypes.Patch[string]
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]
@@ -107,6 +110,7 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 		Description:     updates.Description,
 		EstimateMinutes: updates.EstimateMinutes,
 		Notes:           updates.Notes,
+		PinnedDaily:     updates.PinnedDaily,
 	})
 	if err != nil {
 		return nil, err
@@ -183,6 +187,7 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes sharedtypes.Patch[int]
 		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
 		TodoForDate     sharedtypes.Patch[string]
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]
@@ -331,6 +336,7 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes sharedtypes.Patch[int]
 		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
 		TodoForDate     sharedtypes.Patch[string]
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]
@@ -409,6 +415,7 @@ func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) 
 		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
 		EstimateMinutes sharedtypes.Patch[int]
 		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
 		TodoForDate     sharedtypes.Patch[string]
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]

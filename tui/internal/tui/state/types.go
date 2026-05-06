@@ -51,6 +51,14 @@ const (
 	DefaultIssueSectionCompleted DefaultIssueSection = "completed"
 )
 
+type DailyTaskSection string
+
+const (
+	DailyTaskSectionPlanned DailyTaskSection = "planned"
+	DailyTaskSectionPinned  DailyTaskSection = "pinned"
+	DailyTaskSectionOverdue DailyTaskSection = "overdue"
+)
+
 var viewOrder = []View{ViewSessionHistory, ViewHabitHistory, ViewDaily, ViewRollup, ViewWellbeing, ViewReports, ViewConfig, ViewDefault, ViewMeta, ViewScratch, ViewOps, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport}
 
 var viewPanes = map[View][]Pane{

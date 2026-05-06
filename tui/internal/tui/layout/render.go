@@ -54,7 +54,7 @@ func ViewTheme() viewtypes.Theme {
 		ColorBlue: chrome.ColorBlue, ColorCyan: chrome.ColorCyan, ColorGreen: chrome.ColorGreen, ColorMagenta: chrome.ColorMagenta,
 		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
 		StyleActive: chrome.StyleActive, StyleInactive: chrome.StyleInactive, StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim,
-		StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleNormal: chrome.StyleNormal,
+		StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleSelectedInverse: chrome.StyleSelectedInverse, StyleNormal: chrome.StyleNormal,
 	}
 }
 

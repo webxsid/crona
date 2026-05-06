@@ -167,16 +167,22 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 			if err != nil {
 				return nil, err
 			}
+			pinnedDaily, pinnedDailySet, err := decodeOptionalBoolFromMap(raw, "pinnedDaily")
+			if err != nil {
+				return nil, err
+			}
 			return corecommands.UpdateIssue(ctx, h.core, id, struct {
 				Title           sharedtypes.Patch[string]
 				Description     sharedtypes.Patch[string]
 				EstimateMinutes sharedtypes.Patch[int]
 				Notes           sharedtypes.Patch[string]
+				PinnedDaily     sharedtypes.Patch[bool]
 			}{
 				Title:           sharedtypes.Patch[string]{Set: titleSet, Value: title},
 				Description:     sharedtypes.Patch[string]{Set: descriptionSet, Value: description},
 				EstimateMinutes: sharedtypes.Patch[int]{Set: estimateSet, Value: estimate},
 				Notes:           sharedtypes.Patch[string]{Set: notesSet, Value: notes},
+				PinnedDaily:     sharedtypes.Patch[bool]{Set: pinnedDailySet, Value: pinnedDaily},
 			})
 		}), true
 	case protocol.MethodIssueDelete:

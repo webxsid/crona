@@ -17,15 +17,16 @@ type Theme struct {
 	ColorDim     lipgloss.Color
 	ColorWhite   lipgloss.Color
 
-	StyleActive    lipgloss.Style
-	StyleInactive  lipgloss.Style
-	StylePaneTitle lipgloss.Style
-	StyleDim       lipgloss.Style
-	StyleCursor    lipgloss.Style
-	StyleHeader    lipgloss.Style
-	StyleError     lipgloss.Style
-	StyleSelected  lipgloss.Style
-	StyleNormal    lipgloss.Style
+	StyleActive          lipgloss.Style
+	StyleInactive        lipgloss.Style
+	StylePaneTitle       lipgloss.Style
+	StyleDim             lipgloss.Style
+	StyleCursor          lipgloss.Style
+	StyleHeader          lipgloss.Style
+	StyleError           lipgloss.Style
+	StyleSelected        lipgloss.Style
+	StyleSelectedInverse lipgloss.Style
+	StyleNormal          lipgloss.Style
 }
 
 type ContentState struct {
@@ -45,6 +46,7 @@ type ContentState struct {
 	RollupEndDate       string
 	WellbeingDate       string
 	DefaultIssueSection string
+	DailyTaskSection    string
 	SessionHistoryTitle string
 	SessionHistoryMeta  string
 	HabitHistoryTitle   string

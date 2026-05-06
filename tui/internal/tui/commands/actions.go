@@ -573,6 +573,29 @@ func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamI
 	}
 }
 
+func ToggleIssuePinnedDaily(c *api.Client, issueID int64, pinned bool, streamID int64, dashboardDate string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.SetIssuePinnedDaily(issueID, !pinned); err != nil {
+			logger.Errorf("ToggleIssuePinnedDaily: %v", err)
+			return ErrMsg{Err: err}
+		}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+			func() tea.Msg {
+				return IssuePinnedDailyChangedMsg{IssueID: issueID, Pinned: !pinned}
+			},
+		}
+		if streamID != 0 {
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
+		}
+		return tea.Batch(cmds...)()
+	}
+}
+
 func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
 	return func() tea.Msg {
 		var err error

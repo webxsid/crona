@@ -3,6 +3,7 @@ package selection
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"crona/tui/internal/api"
 	configitems "crona/tui/internal/tui/configitems"
@@ -17,7 +18,9 @@ type Snapshot struct {
 	View                uistate.View
 	Pane                uistate.Pane
 	DefaultIssueSection uistate.DefaultIssueSection
+	DailyTaskSection    uistate.DailyTaskSection
 	PreferActiveIssue   bool
+	DashboardDate       string
 	Cursors             map[uistate.Pane]int
 	Filters             map[uistate.Pane]string
 	Context             *api.ActiveContext
@@ -571,30 +574,93 @@ func habitHistorySummary(entry api.HabitCompletion, settings *api.CoreSettings) 
 }
 
 func buildDailyScopedIssues(s Snapshot) []api.Issue {
-	issues := s.Issues
-	if s.Context == nil {
-		return issues
-	}
-	if s.Context.StreamID != nil {
-		out := make([]api.Issue, 0, len(issues))
-		for _, issue := range issues {
-			if issue.StreamID == *s.Context.StreamID {
-				out = append(out, issue)
+	anchorDate := dailyAnchorDate(s)
+	out := make([]api.Issue, 0)
+	for _, issue := range s.AllIssues {
+		if !issueMatchesDailyContext(issue, s.Context) || isClosedDailyIssue(issue.Issue) {
+			continue
+		}
+		switch s.DailyTaskSection {
+		case uistate.DailyTaskSectionPinned:
+			if dailyIssuePinned(issue.Issue, anchorDate) {
+				out = append(out, issue.Issue)
+			}
+		case uistate.DailyTaskSectionOverdue:
+			if dailyIssueOverdue(issue.Issue, anchorDate) {
+				out = append(out, issue.Issue)
+			}
+		default:
+			if dailyIssueToday(issue.Issue, anchorDate) {
+				out = append(out, issue.Issue)
 			}
 		}
-		return out
 	}
-	if s.Context.RepoID != nil {
-		out := make([]api.Issue, 0, len(issues))
-		for _, issue := range issues {
-			meta := IssueMetaByID(s, issue.ID)
-			if meta != nil && meta.RepoID == *s.Context.RepoID {
-				out = append(out, issue)
-			}
+	return out
+}
+
+func dailyAnchorDate(s Snapshot) string {
+	if trimmed := strings.TrimSpace(s.DashboardDate); trimmed != "" {
+		return trimmed
+	}
+	return time.Now().Format("2006-01-02")
+}
+
+func issueMatchesDailyContext(issue api.IssueWithMeta, ctx *api.ActiveContext) bool {
+	if ctx == nil {
+		return true
+	}
+	if ctx.StreamID != nil {
+		return issue.StreamID == *ctx.StreamID
+	}
+	if ctx.RepoID != nil {
+		return issue.RepoID == *ctx.RepoID
+	}
+	return true
+}
+
+func isClosedDailyIssue(issue api.Issue) bool {
+	return issue.Status == "done" || issue.Status == "abandoned"
+}
+
+func dailyIssueSection(issue api.Issue, anchorDate string) string {
+	if dailyIssueOverdue(issue, anchorDate) {
+		return "overdue"
+	}
+	if dailyIssueToday(issue, anchorDate) {
+		return "today"
+	}
+	if dailyIssuePinned(issue, anchorDate) {
+		return "pinned"
+	}
+	return ""
+}
+
+func dailyIssueOverdue(issue api.Issue, anchorDate string) bool {
+	if issue.PinnedDaily {
+		if issue.TodoForDate == nil {
+			return false
 		}
-		return out
 	}
-	return issues
+	if issue.TodoForDate != nil {
+		due := strings.TrimSpace(*issue.TodoForDate)
+		return due != "" && due < anchorDate
+	}
+	return false
+}
+
+func dailyIssueToday(issue api.Issue, anchorDate string) bool {
+	if issue.TodoForDate == nil {
+		return false
+	}
+	due := strings.TrimSpace(*issue.TodoForDate)
+	return due == anchorDate
+}
+
+func dailyIssuePinned(issue api.Issue, anchorDate string) bool {
+	if !issue.PinnedDaily {
+		return false
+	}
+	return !dailyIssueOverdue(issue, anchorDate)
 }
 
 func rawIndexForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {

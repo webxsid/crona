@@ -41,6 +41,7 @@ func (r *IssueRepository) Create(ctx context.Context, issue sharedtypes.Issue, u
 		Status:          string(sharedtypes.NormalizeIssueStatus(issue.Status)),
 		EstimateMinutes: issue.EstimateMinutes,
 		Notes:           issue.Notes,
+		PinnedDaily:     issue.PinnedDaily,
 		TodoForDate:     issue.TodoForDate,
 		CompletedAt:     issue.CompletedAt,
 		AbandonedAt:     issue.AbandonedAt,
@@ -63,6 +64,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -79,6 +81,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -101,6 +104,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
+			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
@@ -118,6 +122,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -134,6 +139,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -157,6 +163,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(item.Status)),
 		EstimateMinutes: item.EstimateMinutes,
 		Notes:           item.Notes,
+		PinnedDaily:     item.PinnedDaily,
 		TodoForDate:     item.TodoForDate,
 		CompletedAt:     item.CompletedAt,
 		AbandonedAt:     item.AbandonedAt,
@@ -189,6 +196,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -208,6 +216,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -233,6 +242,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 				Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 				EstimateMinutes: row.EstimateMinutes,
 				Notes:           row.Notes,
+				PinnedDaily:     row.PinnedDaily,
 				TodoForDate:     row.TodoForDate,
 				CompletedAt:     row.CompletedAt,
 				AbandonedAt:     row.AbandonedAt,
@@ -254,6 +264,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -269,6 +280,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -289,6 +301,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
+			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
@@ -306,6 +319,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -321,6 +335,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -341,6 +356,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
+			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
@@ -358,6 +374,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
 		Notes           *string `bun:"notes"`
+		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
@@ -373,6 +390,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
 		ColumnExpr("issues.notes").
+		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
@@ -394,6 +412,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
 			Notes:           row.Notes,
+			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
@@ -408,6 +427,7 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 	Status          Patch[sharedtypes.IssueStatus]
 	EstimateMinutes Patch[int]
 	Notes           Patch[string]
+	PinnedDaily     Patch[bool]
 	TodoForDate     Patch[string]
 	CompletedAt     Patch[string]
 	AbandonedAt     Patch[string]
@@ -444,6 +464,13 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 			q = q.Set("notes = NULL")
 		} else {
 			q = q.Set("notes = ?", *updates.Notes.Value)
+		}
+	}
+	if updates.PinnedDaily.Set {
+		if updates.PinnedDaily.Value == nil {
+			q = q.Set("pinned_daily = ?", false)
+		} else {
+			q = q.Set("pinned_daily = ?", *updates.PinnedDaily.Value)
 		}
 	}
 	if updates.TodoForDate.Set {

@@ -569,10 +569,13 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 			t.Fatalf("expected deduped global actions to keep %q, got %q", want, joined)
 		}
 	}
-	for _, blocked := range []string{"[a] new", "[c] context"} {
+	for _, blocked := range []string{"[a] new"} {
 		if strings.Contains(joined, blocked) {
 			t.Fatalf("expected deduped global actions to drop %q, got %q", blocked, joined)
 		}
+	}
+	if !strings.Contains(joined, "[c] context") {
+		t.Fatalf("expected deduped global actions to keep global-only context action, got %q", joined)
 	}
 }
 
@@ -954,6 +957,116 @@ func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "████████") {
 		t.Fatalf("expected wide-screen bars to remain visibly long")
+	}
+}
+
+func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
+	estimate := 45
+	base := views.ContentState{
+		View:          "daily",
+		Pane:          "issues",
+		Width:         100,
+		Height:        38,
+		DashboardDate: "2026-04-30",
+		Cursors: map[string]int{
+			"issues": 0,
+			"habits": 0,
+		},
+		Filters: map[string]string{
+			"issues": "",
+			"habits": "",
+		},
+		DailySummary: &api.DailyIssueSummary{Date: "2026-04-30"},
+		DailyIssues: []api.Issue{
+			{ID: 1, Title: "Old task", Status: "planned", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28")},
+			{ID: 2, Title: "Today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30")},
+			{ID: 4, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true},
+			{ID: 3, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true},
+			{ID: 5, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true},
+		},
+		AllIssues: []api.IssueWithMeta{
+			{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "planned", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 2, StreamID: 10, Title: "Today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 4, StreamID: 10, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 3, StreamID: 10, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 5, StreamID: 10, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+		},
+		Context: &api.ActiveContext{
+			RepoName:   strPtr("Work"),
+			StreamName: strPtr("app"),
+		},
+	}
+	planned := base
+	planned.DailyTaskSection = "planned"
+	plannedRendered := support.RenderDaily(planned)
+	plannedStripped := ansi.Strip(plannedRendered)
+	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Today task", "Pinned toda"} {
+		if !strings.Contains(plannedStripped, want) {
+			t.Fatalf("expected planned section to contain %q, got %q", want, plannedStripped)
+		}
+	}
+	for _, unwanted := range []string{"Old task", "Pinned future task", "Pinned overdue task"} {
+		if strings.Contains(plannedStripped, unwanted) {
+			t.Fatalf("expected planned section to hide %q, got %q", unwanted, plannedStripped)
+		}
+	}
+	if !strings.Contains(plannedRendered, support.Theme().StyleSelected.Render("Planned")) {
+		t.Fatalf("expected planned section header to highlight Planned, got %q", plannedRendered)
+	}
+
+	pinned := base
+	pinned.DailyTaskSection = "pinned"
+	pinnedRendered := support.RenderDaily(pinned)
+	pinnedStripped := ansi.Strip(pinnedRendered)
+	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned futu", "Pinned toda"} {
+		if !strings.Contains(pinnedStripped, want) {
+			t.Fatalf("expected pinned section to contain %q, got %q", want, pinnedStripped)
+		}
+	}
+	for _, unwanted := range []string{"Old task", "Today task", "Pinned overdue task"} {
+		if strings.Contains(pinnedStripped, unwanted) {
+			t.Fatalf("expected pinned section to hide %q, got %q", unwanted, pinnedStripped)
+		}
+	}
+	if !strings.Contains(pinnedRendered, support.Theme().StyleSelected.Render("Pinned")) {
+		t.Fatalf("expected pinned section header to highlight Pinned, got %q", pinnedRendered)
+	}
+
+	overdue := base
+	overdue.DailyTaskSection = "overdue"
+	overdueRendered := support.RenderDaily(overdue)
+	overdueStripped := ansi.Strip(overdueRendered)
+	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Old task", "Pinned over"} {
+		if !strings.Contains(overdueStripped, want) {
+			t.Fatalf("expected overdue section to contain %q, got %q", want, overdueStripped)
+		}
+	}
+	for _, unwanted := range []string{"Today task", "Pinned future task", "Pinned today task"} {
+		if strings.Contains(overdueStripped, unwanted) {
+			t.Fatalf("expected overdue section to hide %q, got %q", unwanted, overdueStripped)
+		}
+	}
+	if !strings.Contains(overdueRendered, support.Theme().StyleSelected.Render("Overdue")) {
+		t.Fatalf("expected overdue section header to highlight Overdue, got %q", overdueRendered)
+	}
+}
+
+func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
+	theme := support.Theme()
+	defaultActions := strings.Join(viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "default", Pane: "issues"}), " ")
+	if !strings.Contains(defaultActions, "[c]") || !strings.Contains(defaultActions, "[E]") {
+		t.Fatalf("expected default global actions to expose context and export, got %q", defaultActions)
+	}
+	dailyIssueActions := strings.Join(viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: "daily", Pane: "issues"}), " ")
+	if strings.Contains(dailyIssueActions, "[c]") {
+		t.Fatalf("expected daily issue pane actions to omit context, got %q", dailyIssueActions)
+	}
+	if !strings.Contains(dailyIssueActions, "[h/l]") {
+		t.Fatalf("expected daily issue pane actions to advertise section switching, got %q", dailyIssueActions)
+	}
+	wellbeingActions := strings.Join(viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "wellbeing", Pane: "wellbeing_summary"}), " ")
+	if !strings.Contains(wellbeingActions, "[c]") || !strings.Contains(wellbeingActions, "[E]") {
+		t.Fatalf("expected wellbeing global actions to expose context and export, got %q", wellbeingActions)
 	}
 }
 

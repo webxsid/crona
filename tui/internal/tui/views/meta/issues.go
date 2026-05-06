@@ -14,7 +14,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	cur := state.Cursors["issues"]
 	issues := make([]issuecore.APIIssue, 0, len(state.Issues))
 	for _, issue := range state.Issues {
-		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)

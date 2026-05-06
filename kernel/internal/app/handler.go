@@ -242,6 +242,21 @@ func decodeOptionalInt64FromMap(raw map[string]json.RawMessage, key string) (*in
 	return &out, true, nil
 }
 
+func decodeOptionalBoolFromMap(raw map[string]json.RawMessage, key string) (*bool, bool, error) {
+	value, ok := raw[key]
+	if !ok {
+		return nil, false, nil
+	}
+	if string(value) == "null" {
+		return nil, true, nil
+	}
+	var out bool
+	if err := json.Unmarshal(value, &out); err != nil {
+		return nil, false, err
+	}
+	return &out, true, nil
+}
+
 func ptrTo[T any](value T) *T {
 	ptr := new(T)
 	*ptr = value

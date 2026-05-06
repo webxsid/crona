@@ -211,7 +211,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		return state, nil, true
 	case commands.AllIssuesLoadedMsg:
 		state.AllIssues = msg.Issues
-		if state.View == uistate.ViewDefault {
+		if state.View == uistate.ViewDefault || state.View == uistate.ViewDaily {
 			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
 				deps.ClampFiltered(&state, uistate.PaneIssues)
 			}
@@ -499,6 +499,12 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			cmds = append(cmds, deps.LoadWellbeing(msg.Date))
 		}
 		return state, tea.Batch(cmds...), true
+	case commands.IssuePinnedDailyChangedMsg:
+		label := "Issue pinned"
+		if !msg.Pinned {
+			label = "Issue unpinned"
+		}
+		return state, deps.SetStatus(&state, label, false), true
 	case commands.FocusSessionChangedMsg:
 		cmds := []tea.Cmd{}
 		if msg.ReloadContext {

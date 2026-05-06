@@ -91,19 +91,24 @@ func TestAllIssuesLoadedRestoresCreatedIssueInDefaultView(t *testing.T) {
 func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 	selectedID := int64(20)
 	state, _, handled := HandleMessage(MessageState{
-		View:    uistate.ViewDaily,
-		Pane:    uistate.PaneIssues,
-		Cursor:  map[uistate.Pane]int{uistate.PaneIssues: 0},
-		Filters: map[uistate.Pane]string{uistate.PaneIssues: ""},
+		View:          uistate.ViewDaily,
+		Pane:          uistate.PaneIssues,
+		DashboardDate: "2026-05-06",
+		Cursor:        map[uistate.Pane]int{uistate.PaneIssues: 0},
+		Filters:       map[uistate.Pane]string{uistate.PaneIssues: ""},
 		Issues: []api.Issue{
-			{ID: 10, Title: "Alpha", Status: "planned"},
-			{ID: 20, Title: "Bravo", Status: "in_progress"},
+			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")},
+			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")},
+		},
+		AllIssues: []api.IssueWithMeta{
+			{Issue: api.Issue{ID: 10, StreamID: 1, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{Issue: api.Issue{ID: 20, StreamID: 1, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
 		},
 	}, commands.IssuesLoadedMsg{
 		StreamID: 1,
 		Issues: []api.Issue{
-			{ID: 10, Title: "Alpha", Status: "planned"},
-			{ID: 20, Title: "Bravo", Status: "in_progress"},
+			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")},
+			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")},
 		},
 		SelectedIssueID: &selectedID,
 	}, MessageDeps{
@@ -145,4 +150,47 @@ func TestIssuesLoadedClampsWhenSelectedIssueMissing(t *testing.T) {
 	if got := state.Cursor[uistate.PaneIssues]; got != 0 {
 		t.Fatalf("expected cursor to clamp to the remaining issue, got %d", got)
 	}
+}
+
+func TestIssuePinnedDailyChangedSetsStatusMessage(t *testing.T) {
+	state, _, handled := HandleMessage(MessageState{}, commands.IssuePinnedDailyChangedMsg{
+		IssueID: 42,
+		Pinned:  true,
+	}, MessageDeps{
+		SetStatus: func(state *MessageState, message string, isErr bool) tea.Cmd {
+			state.StatusMsg = message
+			state.StatusErr = isErr
+			return nil
+		},
+	})
+	if !handled {
+		t.Fatalf("expected pin change message to be handled")
+	}
+	if got := state.StatusMsg; got != "Issue pinned" {
+		t.Fatalf("expected status message to reflect pinning, got %q", got)
+	}
+	if state.StatusErr {
+		t.Fatalf("expected pin status to be informational")
+	}
+
+	state, _, handled = HandleMessage(MessageState{}, commands.IssuePinnedDailyChangedMsg{
+		IssueID: 42,
+		Pinned:  false,
+	}, MessageDeps{
+		SetStatus: func(state *MessageState, message string, isErr bool) tea.Cmd {
+			state.StatusMsg = message
+			state.StatusErr = isErr
+			return nil
+		},
+	})
+	if !handled {
+		t.Fatalf("expected unpin change message to be handled")
+	}
+	if got := state.StatusMsg; got != "Issue unpinned" {
+		t.Fatalf("expected status message to reflect unpinning, got %q", got)
+	}
+}
+
+func strPtr(value string) *string {
+	return &value
 }

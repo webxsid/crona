@@ -18,6 +18,7 @@ type State struct {
 	Cursor              map[uistate.Pane]int
 	Filters             map[uistate.Pane]string
 	DefaultIssueSection uistate.DefaultIssueSection
+	DailyTaskSection    uistate.DailyTaskSection
 	DashboardDate       string
 	RollupStartDate     string
 	RollupEndDate       string
@@ -63,6 +64,7 @@ type Deps struct {
 	DefaultPane                     func(uistate.View) uistate.Pane
 	NextPane                        func(uistate.View, uistate.Pane, int) uistate.Pane
 	SetDefaultIssueSection          func(*State, uistate.DefaultIssueSection)
+	SetDailyTaskSection             func(*State, uistate.DailyTaskSection)
 	ListLen                         func(State, uistate.Pane) int
 	LoadExportAssets                func() tea.Cmd
 	SetStatus                       func(*State, string, bool) tea.Cmd
@@ -96,6 +98,7 @@ type Deps struct {
 	OpenIssueStatusFromSelection    func(*State) bool
 	AbandonSelectedIssue            func(*State) tea.Cmd
 	ToggleSelectedIssueToday        func(*State) tea.Cmd
+	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
 	OpenSelectedIssueTodoDateDialog func(*State) bool
 	HandleCreateAction              func(*State) bool
 	OpenExportDailyDialog           func(*State) bool
@@ -185,6 +188,30 @@ func newRouter(deps Deps) *router {
 		"[":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, -1) },
 		"tab":       func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, 1) },
 		"shift+tab": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, -1) },
+		"h": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+				return handleCyclePane(s, deps, -1)
+			}
+			return s, nil, false
+		},
+		"left": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+				return handleCyclePane(s, deps, -1)
+			}
+			return s, nil, false
+		},
+		"l": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+				return handleCyclePane(s, deps, 1)
+			}
+			return s, nil, false
+		},
+		"right": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+				return handleCyclePane(s, deps, 1)
+			}
+			return s, nil, false
+		},
 		"v":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
 		"u":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenUpdates(s) },
 		"R":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
@@ -224,6 +251,12 @@ func newRouter(deps Deps) *router {
 				return s, nil, false
 			}
 			return s, deps.ToggleSelectedIssueToday(&s), true
+		},
+		"P": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive || s.ActivePane != uistate.PaneIssues {
+				return s, nil, false
+			}
+			return s, deps.ToggleSelectedIssuePinnedDaily(&s), true
 		},
 		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
@@ -349,6 +382,16 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleToggleAwayMode(s, deps)
 	})
+	for _, view := range []uistate.View{
+		uistate.ViewDefault,
+		uistate.ViewMeta,
+		uistate.ViewWellbeing,
+		uistate.ViewReports,
+	} {
+		r.RegisterView(view, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleOpenExportDaily(s, deps)
+		})
+	}
 	r.RegisterView(uistate.ViewAway, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleToggleAwayMode(s, deps)
 	})

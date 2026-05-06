@@ -232,6 +232,13 @@ func (c *Client) UpdateIssue(id int64, title string, description *string, estima
 	return c.call(protocol.MethodIssueUpdate, body, nil)
 }
 
+func (c *Client) SetIssuePinnedDaily(id int64, pinned bool) error {
+	return c.call(protocol.MethodIssueUpdate, shareddto.UpdateIssueRequest{
+		ID:          id,
+		PinnedDaily: &pinned,
+	}, nil)
+}
+
 func (c *Client) DeleteIssue(id int64) error {
 	return c.mustOK(protocol.MethodIssueDelete, shareddto.NumericIDRequest{ID: id})
 }

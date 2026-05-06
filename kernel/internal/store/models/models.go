@@ -42,6 +42,7 @@ type IssueModel struct {
 	Status          string  `bun:"status,notnull,type:text"`
 	EstimateMinutes *int    `bun:"estimate_minutes,type:integer,nullzero"`
 	Notes           *string `bun:"notes,type:text,nullzero"`
+	PinnedDaily     bool    `bun:"pinned_daily,notnull,type:integer"`
 	TodoForDate     *string `bun:"todo_for_date,type:text,nullzero"`
 	CompletedAt     *string `bun:"completed_at,type:text,nullzero"`
 	AbandonedAt     *string `bun:"abandoned_at,type:text,nullzero"`

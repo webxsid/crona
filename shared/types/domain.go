@@ -561,6 +561,7 @@ type Issue struct {
 	Status          IssueStatus `json:"status"`
 	EstimateMinutes *int        `json:"estimateMinutes,omitempty"`
 	Notes           *string     `json:"notes,omitempty"`
+	PinnedDaily     bool        `json:"pinnedDaily"`
 	TodoForDate     *string     `json:"todoForDate,omitempty"`
 	CompletedAt     *string     `json:"completedAt,omitempty"`
 	AbandonedAt     *string     `json:"abandonedAt,omitempty"`

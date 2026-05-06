@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	contextmeta "crona/tui/internal/tui/views/contextmeta"
@@ -20,16 +21,16 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	active := state.Pane == "issues"
 	cur := state.Cursors["issues"]
 	issues := make([]issuecore.APIIssue, 0, len(state.DailyIssues))
-	for _, issue := range state.DailyIssues {
-		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+	for _, issue := range filteredDailyIssues(state) {
+		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, actions)
-	lines := []string{theme.StylePaneTitle.Render("Planned Tasks [1]"), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
+	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
 	if len(issues) == 0 || total == 0 {
-		lines = append(lines, theme.StyleDim.Render("No planned tasks for this date"))
+		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
 	}
 	statusW := 11
@@ -43,12 +44,13 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	header := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, "Issue", statusW, "Status", estimateW, "Estimate", repoW, "Repo", streamW, "Stream")
 	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, width-6)))
 	inner := viewchrome.RemainingPaneHeight(height, lines)
-	start, end := viewchrome.ListWindow(cur, total, inner)
+	issueSlots := max(1, inner)
+	start, end := viewchrome.ListWindow(cur, total, issueSlots)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
-	for i := start; i < end; i++ {
-		issue := issues[indices[i]]
+	for _, rawIdx := range indices[start:end] {
+		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
 		repoName, streamName := "-", "-"
 		if meta != nil {
@@ -61,12 +63,87 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		}
 		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
 		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, viewhelpers.Truncate(title, titleW), statusW, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, viewhelpers.Truncate(repoName, repoW), streamW, viewhelpers.Truncate(streamName, streamW))
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, row, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
+		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, rawIdx, cur, active, row, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+}
+
+func dailyTaskTitle(theme types.Theme, section string) string {
+	options := []struct {
+		key   string
+		label string
+	}{
+		{key: "planned", label: "Planned"},
+		{key: "pinned", label: "Pinned"},
+		{key: "overdue", label: "Overdue"},
+	}
+	parts := []string{theme.StylePaneTitle.Render("Tasks [1]")}
+	for _, opt := range options {
+		label := opt.label
+		if section == opt.key {
+			label = theme.StyleSelectedInverse.Render(label)
+		} else {
+			label = theme.StyleDim.Render(label)
+		}
+		parts = append(parts, label)
+	}
+	return strings.Join(parts, "  ")
+}
+
+func dailyTaskEmptyMessage(section string) string {
+	switch section {
+	case "pinned":
+		return "No pinned tasks in this scope"
+	case "overdue":
+		return "No overdue tasks in this scope"
+	default:
+		return "No planned tasks for this date"
+	}
+}
+
+func filteredDailyIssues(state types.ContentState) []api.Issue {
+	if len(state.DailyIssues) == 0 {
+		return nil
+	}
+	anchorDate := strings.TrimSpace(state.DashboardDate)
+	if anchorDate == "" && state.DailySummary != nil {
+		anchorDate = strings.TrimSpace(state.DailySummary.Date)
+	}
+	if anchorDate == "" {
+		return state.DailyIssues
+	}
+	out := make([]api.Issue, 0, len(state.DailyIssues))
+	for _, issue := range state.DailyIssues {
+		if dailyTaskMatchesSection(issue, anchorDate, state.DailyTaskSection) {
+			out = append(out, issue)
+		}
+	}
+	return out
+}
+
+func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
+	if issue.TodoForDate != nil {
+		due := strings.TrimSpace(*issue.TodoForDate)
+		switch {
+		case section == "overdue":
+			return due != "" && due < anchorDate
+		case section == "planned":
+			return due == anchorDate
+		}
+	}
+	if section == "pinned" {
+		if issue.PinnedDaily {
+			if issue.TodoForDate == nil {
+				return true
+			}
+			due := strings.TrimSpace(*issue.TodoForDate)
+			return due >= anchorDate
+		}
+	}
+	return false
 }
 
 func renderHabits(theme types.Theme, state types.ContentState, width, height int) string {

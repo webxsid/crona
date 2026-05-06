@@ -76,10 +76,14 @@ const (
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
+type DailyTaskSection = uistate.DailyTaskSection
 
 const (
 	DefaultIssueSectionOpen      = uistate.DefaultIssueSectionOpen
 	DefaultIssueSectionCompleted = uistate.DefaultIssueSectionCompleted
+	DailyTaskSectionPlanned      = uistate.DailyTaskSectionPlanned
+	DailyTaskSectionPinned       = uistate.DailyTaskSectionPinned
+	DailyTaskSectionOverdue      = uistate.DailyTaskSectionOverdue
 )
 
 // ---------- Model ----------
@@ -97,6 +101,7 @@ type Model struct {
 	cursor              map[Pane]int
 	filters             map[Pane]string
 	defaultIssueSection DefaultIssueSection
+	dailyTaskSection    DailyTaskSection
 
 	// pane-local search/filter input
 	filterEditing  bool
@@ -323,6 +328,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		view:                ViewDaily,
 		pane:                PaneIssues,
 		defaultIssueSection: DefaultIssueSectionOpen,
+		dailyTaskSection:    DailyTaskSectionPlanned,
 		cursor: map[Pane]int{
 			PaneRepos:            0,
 			PaneStreams:          0,
@@ -460,7 +466,9 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		View:                m.view,
 		Pane:                m.pane,
 		DefaultIssueSection: m.defaultIssueSection,
+		DailyTaskSection:    m.dailyTaskSection,
 		PreferActiveIssue:   m.timer != nil && m.timer.State != "idle" && (m.view == ViewSessionActive || m.view == ViewScratch),
+		DashboardDate:       m.currentDashboardDate(),
 		Cursors:             m.cursor,
 		Filters:             m.filters,
 		Context:             m.context,
@@ -518,6 +526,7 @@ func (m Model) inputState() inputpkg.State {
 		Cursor:              m.cursor,
 		Filters:             m.filters,
 		DefaultIssueSection: m.defaultIssueSection,
+		DailyTaskSection:    m.dailyTaskSection,
 		DashboardDate:       m.dashboardDate,
 		RollupStartDate:     m.rollupStartDate,
 		RollupEndDate:       m.rollupEndDate,
@@ -554,6 +563,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.cursor = state.Cursor
 	m.filters = state.Filters
 	m.defaultIssueSection = state.DefaultIssueSection
+	m.dailyTaskSection = state.DailyTaskSection
 	m.dashboardDate = state.DashboardDate
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
@@ -604,6 +614,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 		SetDefaultIssueSection: func(state *inputpkg.State, section uistate.DefaultIssueSection) {
 			next := m.applyInputState(*state)
 			next.setDefaultIssueSection(section)
+			*state = next.inputState()
+		},
+		SetDailyTaskSection: func(state *inputpkg.State, section uistate.DailyTaskSection) {
+			next := m.applyInputState(*state)
+			next.setDailyTaskSection(section)
 			*state = next.inputState()
 		},
 		ListLen: func(state inputpkg.State, pane uistate.Pane) int {
@@ -779,6 +794,14 @@ func (m Model) inputDeps() inputpkg.Deps {
 					date = next.currentDashboardDate()
 				}
 				return commands.SetIssueTodoDate(m.client, issue.ID, date, issue.StreamID, next.currentDashboardDate())
+			}
+			return nil
+		},
+		ToggleSelectedIssuePinnedDaily: func(state *inputpkg.State) tea.Cmd {
+			next := m.applyInputState(*state)
+			snapshot := next.selectionSnapshot()
+			if issue, ok := selectionpkg.SelectedIssue(snapshot); ok {
+				return commands.ToggleIssuePinnedDaily(m.client, issue.ID, issue.PinnedDaily, issue.StreamID, next.currentDashboardDate())
 			}
 			return nil
 		},

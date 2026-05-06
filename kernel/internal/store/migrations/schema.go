@@ -80,6 +80,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		column       string
 		defaultValue int
 	}{
+		{table: "issues", column: "pinned_daily", defaultValue: 0},
 		{table: "daily_plan_entries", column: "postpone_count", defaultValue: 0},
 		{table: "daily_plan_entries", column: "max_delayed_days", defaultValue: 0},
 		{table: "core_settings", column: "daily_plan_rollback_minutes", defaultValue: 5},
@@ -95,21 +96,21 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		return err
 	}
 	for columnName, defaultValue := range map[string]string{
-		"repo_sort":            "chronological_asc",
-		"stream_sort":          "chronological_asc",
-		"issue_sort":           "priority",
-		"habit_sort":           "schedule",
-		"alert_sound_preset":   "chime",
-		"alert_urgency":        "normal",
-		"update_channel":       "stable",
-		"date_display_preset":  "iso",
-		"date_display_format":  "",
-		"prompt_glyph_mode":    "emoji",
+		"repo_sort":                "chronological_asc",
+		"stream_sort":              "chronological_asc",
+		"issue_sort":               "priority",
+		"habit_sort":               "schedule",
+		"alert_sound_preset":       "chime",
+		"alert_urgency":            "normal",
+		"update_channel":           "stable",
+		"date_display_preset":      "iso",
+		"date_display_format":      "",
+		"prompt_glyph_mode":        "emoji",
 		"habit_streak_definitions": "[]",
-		"frozen_streak_kinds":  "[]",
-		"rest_weekdays":        "[]",
-		"rest_specific_dates":  "[]",
-		"rest_recurring_dates": "[]",
+		"frozen_streak_kinds":      "[]",
+		"rest_weekdays":            "[]",
+		"rest_specific_dates":      "[]",
+		"rest_recurring_dates":     "[]",
 	} {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err

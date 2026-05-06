@@ -1,6 +1,8 @@
 package chrome
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+)
 
 var (
 	ColorBlue    = lipgloss.Color("12")
@@ -12,6 +14,7 @@ var (
 	ColorRed     = lipgloss.Color("9")
 	ColorDim     = lipgloss.Color("8")
 	ColorWhite   = lipgloss.Color("15")
+	ColorBlack   = lipgloss.Color("0")
 
 	StyleActive = lipgloss.NewStyle().
 			BorderStyle(lipgloss.RoundedBorder()).
@@ -21,11 +24,12 @@ var (
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(ColorDim)
 
-	StylePaneTitle = lipgloss.NewStyle().Bold(true).Foreground(ColorCyan)
-	StyleDim       = lipgloss.NewStyle().Foreground(ColorDim)
-	StyleCursor    = lipgloss.NewStyle().Foreground(ColorGreen).Bold(true)
-	StyleHeader    = lipgloss.NewStyle().Foreground(ColorCyan)
-	StyleError     = lipgloss.NewStyle().Foreground(ColorRed)
-	StyleSelected  = lipgloss.NewStyle().Foreground(ColorGreen)
-	StyleNormal    = lipgloss.NewStyle()
+	StylePaneTitle       = lipgloss.NewStyle().Bold(true).Foreground(ColorCyan)
+	StyleDim             = lipgloss.NewStyle().Foreground(ColorDim)
+	StyleCursor          = lipgloss.NewStyle().Foreground(ColorGreen).Bold(true)
+	StyleHeader          = lipgloss.NewStyle().Foreground(ColorCyan)
+	StyleError           = lipgloss.NewStyle().Foreground(ColorRed)
+	StyleSelected        = lipgloss.NewStyle().Foreground(ColorGreen)
+	StyleSelectedInverse = lipgloss.NewStyle().Background(ColorGreen).Foreground(ColorBlack).Padding(0, 1)
+	StyleNormal          = lipgloss.NewStyle()
 )

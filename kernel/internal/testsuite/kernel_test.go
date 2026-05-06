@@ -79,6 +79,72 @@ func TestHabitCascadeDeleteAndRestoreByStreamAndRepo(t *testing.T) {
 	}
 }
 
+func TestIssuePinnedDailyRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-05-06T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{
+		StreamID: stream.ID,
+		Title:    "Keep this in daily",
+	})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	if issue.PinnedDaily {
+		t.Fatalf("new issue should not start pinned")
+	}
+
+	pinned := true
+	updated, err := corecommands.UpdateIssue(ctx, coreCtx, issue.ID, struct {
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
+	}{
+		PinnedDaily: sharedtypes.Patch[bool]{Set: true, Value: &pinned},
+	})
+	if err != nil {
+		t.Fatalf("pin issue: %v", err)
+	}
+	if updated == nil || !updated.PinnedDaily {
+		t.Fatalf("expected pinned issue after update, got %+v", updated)
+	}
+
+	got, err := coreCtx.Issues.GetByID(ctx, issue.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("get pinned issue: %v", err)
+	}
+	if got == nil || !got.PinnedDaily {
+		t.Fatalf("expected pinned issue persisted, got %+v", got)
+	}
+}
+
 func openTestStore(t *testing.T) *store.Store {
 	t.Helper()
 

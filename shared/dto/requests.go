@@ -221,6 +221,7 @@ type UpdateIssueRequest struct {
 	Description     *string `json:"description,omitempty"`
 	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
 	Notes           *string `json:"notes,omitempty"`
+	PinnedDaily     *bool   `json:"pinnedDaily,omitempty"`
 }
 
 type ChangeIssueStatusRequest struct {

@@ -49,6 +49,16 @@ func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 		}
 		return s, nil, true
 	}
+	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+		sections := []uistate.DailyTaskSection{
+			uistate.DailyTaskSectionPlanned,
+			uistate.DailyTaskSectionPinned,
+			uistate.DailyTaskSectionOverdue,
+		}
+		next := nextIndex(s.DailyTaskSection, sections, dir)
+		deps.SetDailyTaskSection(&s, sections[next])
+		return s, nil, true
+	}
 	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
 	return s, nil, true
 }
@@ -98,7 +108,7 @@ func handleIssueStatus(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleContextCheckout(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if (s.ActiveView == uistate.ViewDefault && s.ActivePane == uistate.PaneIssues) || s.ActiveView == uistate.ViewDaily {
+	if shouldOpenContextDialog(s.ActiveView) {
 		deps.OpenCheckoutContextDialog(&s)
 		return s, nil, true
 	}
@@ -156,11 +166,45 @@ func handleSpace(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleOpenExportDaily(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if !supportsGlobalExport(s.ActiveView) {
+		return s, nil, false
+	}
 	if s.Dialog != "" {
 		return s, nil, false
 	}
 	deps.OpenExportDailyDialog(&s)
 	return s, nil, true
+}
+
+func shouldOpenContextDialog(view uistate.View) bool {
+	switch view {
+	case uistate.ViewDefault,
+		uistate.ViewDaily,
+		uistate.ViewMeta,
+		uistate.ViewRollup,
+		uistate.ViewWellbeing,
+		uistate.ViewReports,
+		uistate.ViewOps,
+		uistate.ViewScratch,
+		uistate.ViewSessionHistory,
+		uistate.ViewHabitHistory:
+		return true
+	default:
+		return false
+	}
+}
+
+func supportsGlobalExport(view uistate.View) bool {
+	switch view {
+	case uistate.ViewDefault,
+		uistate.ViewDaily,
+		uistate.ViewMeta,
+		uistate.ViewWellbeing,
+		uistate.ViewReports:
+		return true
+	default:
+		return false
+	}
 }
 
 func viewsShouldShowUpdate(status *api.UpdateStatus) bool {

@@ -31,17 +31,17 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 	if tabLabel := tabActionLabel(state); tabLabel != "" {
 		actions = append(actions, theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel))
 	}
-	if state.View == "default" || state.View == "daily" {
-		actions = append(actions,
-			theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" new"),
-			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" context"),
-		)
+	if supportsGlobalCreate(state.View) {
+		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" new"))
 	}
-	if state.View == "daily" {
-		actions = append(actions,
-			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"),
-			theme.StyleHeader.Render("[w]")+theme.StyleDim.Render(" away"),
-		)
+	if supportsGlobalContext(state.View) {
+		actions = append(actions, theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" context"))
+	}
+	if supportsGlobalExport(state.View) {
+		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"))
+	}
+	if state.View == "daily" || state.View == "wellbeing" {
+		actions = append(actions, theme.StyleHeader.Render("[w]")+theme.StyleDim.Render(" away"))
 	}
 	if state.UpdateVisible {
 		actions = append(actions, theme.StyleHeader.Render("[u]")+theme.StyleDim.Render(" updates"))
@@ -163,7 +163,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "repos", "streams":
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" checkout"),
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
@@ -171,13 +170,14 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "issues":
 		if state.View == "daily" {
 			return []string{
+				theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" section"),
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-				theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
 				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
+				theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
 			}
 		}
 		return []string{
@@ -186,6 +186,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
+			theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
 			theme.StyleHeader.Render("[e/d]") + theme.StyleDim.Render(" edit/delete"),
 		}
 	case "habits":
@@ -246,6 +247,28 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	return nil
+}
+
+func supportsGlobalCreate(view string) bool {
+	return view == "default" || view == "daily"
+}
+
+func supportsGlobalContext(view string) bool {
+	switch view {
+	case "default", "daily", "meta", "rollup", "wellbeing", "reports", "ops", "scratchpads", "session_history", "habit_history":
+		return true
+	default:
+		return false
+	}
+}
+
+func supportsGlobalExport(view string) bool {
+	switch view {
+	case "default", "daily", "meta", "wellbeing", "reports":
+		return true
+	default:
+		return false
+	}
 }
 
 func PaneActions(theme Theme, state ActionsState) []string {

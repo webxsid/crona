@@ -76,6 +76,10 @@ type ManualSessionLoggedMsg struct {
 	IssueID int64
 	Date    string
 }
+type IssuePinnedDailyChangedMsg struct {
+	IssueID int64
+	Pinned  bool
+}
 type SessionAmendedMsg struct{ ID string }
 type ScratchpadsLoadedMsg struct{ Pads []api.ScratchPad }
 type StashesLoadedMsg struct{ Stashes []api.Stash }
