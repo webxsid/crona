@@ -38,6 +38,8 @@ The release version must stay consistent across:
 
 The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Prereleases are the default publication mode; stable releases are promoted manually.
 
+Going forward, public release notes should live in `docs/release-notes/<tag>.md` and the release workflow should use those files when present. The changelog remains the internal development log and a fallback source during the transition.
+
 ## Branch Cleanup
 
 Keep `main` as the only long-lived branch. Delete merged or stale `release/*`, feature, and dependabot branches after they are no longer needed.
