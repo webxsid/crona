@@ -622,19 +622,6 @@ func isClosedDailyIssue(issue api.Issue) bool {
 	return issue.Status == "done" || issue.Status == "abandoned"
 }
 
-func dailyIssueSection(issue api.Issue, anchorDate string) string {
-	if dailyIssueOverdue(issue, anchorDate) {
-		return "overdue"
-	}
-	if dailyIssueToday(issue, anchorDate) {
-		return "today"
-	}
-	if dailyIssuePinned(issue, anchorDate) {
-		return "pinned"
-	}
-	return ""
-}
-
 func dailyIssueOverdue(issue api.Issue, anchorDate string) bool {
 	if isClosedDailyIssue(issue) {
 		return false

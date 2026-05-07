@@ -127,10 +127,10 @@ func filteredDailyIssues(state types.ContentState) []api.Issue {
 func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
 	if issue.TodoForDate != nil {
 		due := strings.TrimSpace(*issue.TodoForDate)
-		switch {
-		case section == "overdue":
+		switch section {
+		case "overdue":
 			return due != "" && due < anchorDate && issue.Status != "done" && issue.Status != "abandoned"
-		case section == "planned":
+		case "planned":
 			return due == anchorDate
 		}
 	}
