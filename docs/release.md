@@ -25,7 +25,6 @@ The release version must stay consistent across:
 - `README.md`
 - `docs/install.md`
 - `docs/changelog.md`
-- `docs/roadmap.md`
 
 `make release-check` validates these references and keeps the protocol version pinned to `1.0` until an external GUI compatibility requirement forces a protocol bump.
 
@@ -36,9 +35,7 @@ The release version must stay consistent across:
 3. Tag the commit with a version tag such as `v1.0.0`.
 4. Push the tag.
 
-The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches release notes generated from the matching `docs/changelog.md` section. Prereleases are the default publication mode; stable releases are promoted manually.
-
-Going forward, public release notes should live in `docs/release-notes/<tag>.md` and the release workflow should use those files when present. The changelog remains the internal development log and a fallback source during the transition.
+The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches public release notes from `docs/release-notes/<tag>.md` when present. The changelog remains the internal development log and a fallback source during the transition. Prereleases are the default publication mode; stable releases are promoted manually.
 
 ## Branch Cleanup
 

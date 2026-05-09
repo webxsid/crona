@@ -170,7 +170,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "issues":
 		if state.View == "daily" {
 			return []string{
-				theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" section"),
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),

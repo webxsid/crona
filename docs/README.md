@@ -7,7 +7,6 @@ Use this index as the entry point for Crona's project docs.
 - [Development](development.md)
 - [Contributing](contributing.md)
 - [Release Process](release.md)
-- [Roadmap](roadmap.md)
 - [Changelog](changelog.md)
 - [Feature Design](feature-design.md)
 - [Socket API](api/socket.md)

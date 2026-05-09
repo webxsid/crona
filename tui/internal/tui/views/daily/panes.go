@@ -28,7 +28,14 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, actions)
-	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
+	titleLine := dailyTaskTitle(theme, state.DailyTaskSection)
+
+	// append [h/l] to the title line
+	titleLine += viewhelpers.StringsJoin([]string{
+		theme.StyleDim.Render("  [h/l]"),
+	})
+
+	lines := []string{titleLine, theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
@@ -38,9 +45,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	repoW := max(10, width/7)
 	streamW := max(10, width/7)
 	titleW := width - statusW - estimateW - repoW - streamW - 16
-	if titleW < 14 {
-		titleW = 14
-	}
+	titleW = max(14, titleW)
 	header := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, "Issue", statusW, "Status", estimateW, "Estimate", repoW, "Repo", streamW, "Stream")
 	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, width-6)))
 	inner := viewchrome.RemainingPaneHeight(height, lines)

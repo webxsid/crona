@@ -141,8 +141,10 @@ type Deps struct {
 	OpenBetaSupportDialog           func(*State) bool
 }
 
-type handler = keyregistry.Handler[State]
-type router = keyregistry.Router[State, uistate.View, uistate.Pane]
+type (
+	handler = keyregistry.Handler[State]
+	router  = keyregistry.Router[State, uistate.View, uistate.Pane]
+)
 
 func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 	next, cmd := newRouter(deps).Handle(state, state.ActiveView, state.ActivePane, key)
@@ -190,35 +192,35 @@ func newRouter(deps Deps) *router {
 		"shift+tab": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, -1) },
 		"h": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCyclePane(s, deps, -1)
+				return handleCycleIssueSection(s, deps, -1)
 			}
 			return s, nil, false
 		},
 		"left": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCyclePane(s, deps, -1)
+				return handleCycleIssueSection(s, deps, -1)
 			}
 			return s, nil, false
 		},
 		"l": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCyclePane(s, deps, 1)
+				return handleCycleIssueSection(s, deps, 1)
 			}
 			return s, nil, false
 		},
 		"right": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCyclePane(s, deps, 1)
+				return handleCycleIssueSection(s, deps, 1)
 			}
 			return s, nil, false
 		},
-		"v":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
-		"u":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenUpdates(s) },
-		"R":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
-		"j":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
-		"down":      func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
-		"k":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
-		"up":        func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
+		"v":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
+		"u":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenUpdates(s) },
+		"R":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
+		"j":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
+		"down": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
+		"k":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
+		"up":   func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"f": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false

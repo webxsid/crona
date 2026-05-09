@@ -1077,8 +1077,8 @@ func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 	if strings.Contains(dailyIssueActions, "[c]") {
 		t.Fatalf("expected daily issue pane actions to omit context, got %q", dailyIssueActions)
 	}
-	if !strings.Contains(dailyIssueActions, "[h/l]") {
-		t.Fatalf("expected daily issue pane actions to advertise section switching, got %q", dailyIssueActions)
+	if strings.Contains(dailyIssueActions, "[h/l]") {
+		t.Fatalf("expected daily issue pane actions to keep section switching out of the action line, got %q", dailyIssueActions)
 	}
 	wellbeingActions := strings.Join(viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "wellbeing", Pane: "wellbeing_summary"}), " ")
 	if !strings.Contains(wellbeingActions, "[c]") || !strings.Contains(wellbeingActions, "[E]") {

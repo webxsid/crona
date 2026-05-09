@@ -49,6 +49,21 @@ func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 		}
 		return s, nil, true
 	}
+	// if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+	// 	sections := []uistate.DailyTaskSection{
+	// 		uistate.DailyTaskSectionPlanned,
+	// 		uistate.DailyTaskSectionPinned,
+	// 		uistate.DailyTaskSectionOverdue,
+	// 	}
+	// 	next := nextIndex(s.DailyTaskSection, sections, dir)
+	// 	deps.SetDailyTaskSection(&s, sections[next])
+	// 	return s, nil, true
+	// }
+	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
+	return s, nil, true
+}
+
+func handleCycleIssueSection(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 		sections := []uistate.DailyTaskSection{
 			uistate.DailyTaskSectionPlanned,
@@ -59,8 +74,8 @@ func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 		deps.SetDailyTaskSection(&s, sections[next])
 		return s, nil, true
 	}
-	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
-	return s, nil, true
+
+	return s, nil, false
 }
 
 func handleOpenUpdates(s State) (tea.Model, tea.Cmd, bool) {
@@ -89,9 +104,7 @@ func handleCursor(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
 		return s, nil, true
 	}
 	next := s.Cursor[s.ActivePane] + delta
-	if next < 0 {
-		next = 0
-	}
+	next = max(next, 0)
 	if next >= total {
 		next = total - 1
 	}

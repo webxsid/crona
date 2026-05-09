@@ -217,7 +217,7 @@ func renderSummaryCalendar(theme types.Theme, selected time.Time) []string {
 	offset := (int(monthStart.Weekday()) + 6) % 7
 	gridStart := monthStart.AddDate(0, 0, -offset)
 	selectedWeek := isoWeek(selected)
-	for week := 0; week < 6; week++ {
+	for week := range 6 {
 		rowStart := gridStart.AddDate(0, 0, week*7)
 		rowWeek := isoWeek(rowStart)
 		weekLabel := fmt.Sprintf("%2d", rowWeek)
@@ -227,7 +227,7 @@ func renderSummaryCalendar(theme types.Theme, selected time.Time) []string {
 			weekLabel = theme.StyleDim.Render(weekLabel)
 		}
 		cells := make([]string, 0, 7)
-		for day := 0; day < 7; day++ {
+		for day := range 7 {
 			current := rowStart.AddDate(0, 0, day)
 			cell := fmt.Sprintf("%2d", current.Day())
 			switch {
@@ -276,7 +276,14 @@ func summaryCalendarWindow(theme types.Theme, selected time.Time, maxLines int) 
 	return window
 }
 
-func buildSummaryLines(theme types.Theme, paneHeight, width int, dateText, scopeText string, issueStatusCounts map[string]int, resolvedCount, totalIssues, totalEstimate, completedHabits, totalHabits, failedHabits, habitMinutes, habitTargetMinutes int, habitMeta string) []string {
+func buildSummaryLines(
+	theme types.Theme,
+	paneHeight, width int,
+	dateText, scopeText string,
+	issueStatusCounts map[string]int,
+	resolvedCount, totalIssues, totalEstimate, completedHabits, totalHabits, failedHabits, habitMinutes, habitTargetMinutes int,
+	habitMeta string,
+) []string {
 	issueSummary := fmt.Sprintf(
 		"%s  %s  %s",
 		theme.StyleHeader.Render("Issues"),
@@ -409,7 +416,7 @@ func mergeSummaryCalendar(leftLines, calendarLines []string, summaryInnerW, gutt
 	}
 	merged := make([]string, 0, totalLines)
 	gutter := strings.Repeat(" ", gutterWidth)
-	for i := 0; i < totalLines; i++ {
+	for i := range totalLines {
 		left := ""
 		if i < len(leftLines) {
 			left = ansi.Truncate(leftLines[i], leftWidth, "")

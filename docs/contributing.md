@@ -7,7 +7,7 @@ Thanks for contributing to Crona.
 - Read [concepts.md](concepts.md) for the product model.
 - Read [development.md](development.md) for build and test workflows.
 - Read [api/socket.md](api/socket.md) if your change touches local engine IPC.
-- Check [roadmap.md](roadmap.md) before starting larger feature work.
+- Check [release.md](release.md) and the current changelog before starting larger release-facing work.
 
 ## Workflow Expectations
 

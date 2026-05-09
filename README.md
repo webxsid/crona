@@ -1,5 +1,9 @@
 # Crona
 
+<p align="center">
+  <img src="docs/logo/Logo%20Extended%20Dark.png" alt="Crona" width="480" />
+</p>
+
 Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local engine into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
 
 The repository is a Go monorepo with four main modules:
@@ -53,9 +57,8 @@ crona completion fish
 ## Release Channels
 
 - `stable` is the preferred channel for general users.
-- `prerelease` is for staged validation and faster iteration.
-- `v1.2.1` is the current prerelease.
-- `v1.0.2` is the current stable release.
+- `prerelease` remains available for staged validation and faster iteration.
+- `v1.2.2` is the current stable release.
 
 ## Documentation
 
@@ -66,7 +69,6 @@ crona completion fish
 - [Contributing](docs/contributing.md)
 - [Release Process](docs/release.md)
 - [Socket API](docs/api/socket.md)
-- [Roadmap](docs/roadmap.md)
 - [Changelog](docs/changelog.md)
 - [Feature Design](docs/feature-design.md)
 
@@ -81,7 +83,7 @@ Public support surfaces live on GitHub:
 - Bugs: [Issues](https://github.com/webxsid/crona/issues)
 - Help and ideas: [Discussions](https://github.com/webxsid/crona/discussions)
 - Release updates: [Releases](https://github.com/webxsid/crona/releases)
-- Roadmap reading: [docs/roadmap.md](docs/roadmap.md)
+- Release process: [docs/release.md](docs/release.md)
 
 Generate a support bundle from the TUI Support view before filing a bug when possible.
 
