@@ -73,6 +73,8 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, !s.Settings.AwayModeEnabled, repoID, streamID, s.DashboardDate), true
 	case 22:
 		return s, deps.PatchSetting(sharedtypes.CoreSettingsKeyDailyPlanRollbackMins, clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1), repoID, streamID, s.DashboardDate), true
+	case 23:
+		return s, nil, true
 	default:
 		return s, nil, true
 	}
@@ -97,9 +99,14 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
 	case 24:
-		deps.OpenConfirmWipeDataDialog(&s)
+		if deps.OpenEditTelemetrySettingsDialog != nil {
+			deps.OpenEditTelemetrySettingsDialog(&s)
+		}
 		return s, nil, true
 	case 25:
+		deps.OpenConfirmWipeDataDialog(&s)
+		return s, nil, true
+	case 26:
 		deps.OpenConfirmUninstallDialog(&s)
 		return s, nil, true
 	default:

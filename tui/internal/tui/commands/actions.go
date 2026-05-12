@@ -11,6 +11,7 @@ import (
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/kernel"
 	"crona/tui/internal/logger"
 	helperpkg "crona/tui/internal/tui/helpers"
 
@@ -91,6 +92,34 @@ func ShutdownKernel(c *api.Client) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return KernelShutdownMsg{}
+	}
+}
+
+func PatchTelemetrySettings(c *api.Client, usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyUsageTelemetryEnabled, usageEnabled); err != nil {
+			logger.Errorf("PatchTelemetrySettings usage: %v", err)
+			return ErrMsg{Err: err}
+		}
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyErrorReportingEnabled, errorReportingEnabled); err != nil {
+			logger.Errorf("PatchTelemetrySettings errors: %v", err)
+			return ErrMsg{Err: err}
+		}
+		if restartNow {
+			if err := c.ShutdownKernelAndWait(5 * time.Second); err != nil {
+				logger.Errorf("RestartKernel shutdown: %v", err)
+				return ErrMsg{Err: err}
+			}
+			if _, err := kernel.Ensure(); err != nil {
+				logger.Errorf("RestartKernel ensure: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return KernelRestartedMsg{}
+		}
+		return tea.Batch(
+			LoadSettings(c),
+			func() tea.Msg { return TelemetrySettingsSavedMsg{} },
+		)()
 	}
 }
 

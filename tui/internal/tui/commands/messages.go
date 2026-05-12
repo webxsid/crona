@@ -103,6 +103,8 @@ type SettingsLoadedMsg struct{ Settings *api.CoreSettings }
 type KernelInfoLoadedMsg struct{ Info *api.KernelInfo }
 type KernelEventMsg struct{ Event api.KernelEvent }
 type KernelShutdownMsg struct{}
+type KernelRestartedMsg struct{}
+type TelemetrySettingsSavedMsg struct{}
 type DevSeededMsg struct{}
 type DevClearedMsg struct{}
 type LocalUpdatePreparedMsg struct {
@@ -113,7 +115,10 @@ type RuntimeDataWipedMsg struct{}
 type UninstallStartedMsg struct{}
 type TimerTickMsg struct{ Seq int }
 type HealthTickMsg struct{}
-type ErrMsg struct{ Err error }
+type ErrMsg struct {
+	Err       error
+	Operation string
+}
 type ClearStatusMsg struct{ Seq int }
 
 type OpenScratchpadMsg struct {

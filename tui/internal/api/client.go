@@ -684,6 +684,10 @@ func (c *Client) ShutdownKernel() error {
 	return c.mustOK(protocol.MethodKernelShutdown, nil)
 }
 
+func (c *Client) RestartKernel() error {
+	return c.mustOK(protocol.MethodKernelRestart, nil)
+}
+
 func (c *Client) ShutdownKernelAndWait(timeout time.Duration) error {
 	if err := c.ShutdownKernel(); err != nil {
 		return err

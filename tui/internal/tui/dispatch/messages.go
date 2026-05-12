@@ -151,6 +151,7 @@ type MessageDeps struct {
 	LoadSettings               func() tea.Cmd
 	LoadKernelInfo             func() tea.Cmd
 	NotifyAlert                func(sharedtypes.AlertRequest) tea.Cmd
+	ReportHandledError         func(error, string) tea.Cmd
 	HealthTickAfter            func() tea.Cmd
 	TickAfter                  func(int) tea.Cmd
 	WaitForEvent               func() tea.Cmd
@@ -456,6 +457,11 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 	case commands.KernelShutdownMsg:
 		deps.CloseEventStop()
 		return state, tea.Quit, true
+	case commands.KernelRestartedMsg:
+		deps.CloseEventStop()
+		return state, tea.Quit, true
+	case commands.TelemetrySettingsSavedMsg:
+		return state, deps.SetStatus(&state, "Telemetry settings saved. Restart required.", false), true
 	case commands.DevSeededMsg:
 		cmd := deps.SetStatus(&state, "Dev seed loaded", false)
 		state.View = uistate.ViewDaily
@@ -548,10 +554,13 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			}
 			state.DialogErrorMessage = "Error: " + msg.Err.Error()
 			logger.Errorf("update error: %v", msg.Err)
-			return state, nil, true
+			return state, deps.ReportHandledError(msg.Err, msg.Operation), true
 		}
 		logger.Errorf("update error: %v", msg.Err)
-		return state, deps.SetStatus(&state, "Error: "+msg.Err.Error(), true), true
+		return state, tea.Batch(
+			deps.ReportHandledError(msg.Err, msg.Operation),
+			deps.SetStatus(&state, "Error: "+msg.Err.Error(), true),
+		), true
 	case commands.OpenScratchpadMsg:
 		deps.EnterScratchpadPane(&state, msg)
 		return state, nil, true

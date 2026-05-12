@@ -1,6 +1,7 @@
 package app
 
 import (
+	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -709,9 +710,21 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadSettings:       func() tea.Cmd { return commands.LoadSettings(m.client) },
 		LoadKernelInfo:     func() tea.Cmd { return commands.LoadKernelInfo(m.client) },
 		NotifyAlert:        func(input sharedtypes.AlertRequest) tea.Cmd { return commands.NotifyAlert(m.client, input) },
-		HealthTickAfter:    commands.HealthTickAfter,
-		TickAfter:          commands.TickAfter,
-		WaitForEvent:       func() tea.Cmd { return commands.WaitForEvent(eventChannel) },
+		ReportHandledError: func(err error, operation string) tea.Cmd {
+			if m.telemetry == nil {
+				return nil
+			}
+			return func() tea.Msg {
+				_ = m.telemetry.ReportError("handled", err, sharedposthog.Properties{
+					"entrypoint": "tui",
+					"operation":  operation,
+				})
+				return nil
+			}
+		},
+		HealthTickAfter: commands.HealthTickAfter,
+		TickAfter:       commands.TickAfter,
+		WaitForEvent:    func() tea.Cmd { return commands.WaitForEvent(eventChannel) },
 		HandleKernelEvent: func(state dispatchpkg.MessageState, event api.KernelEvent) (dispatchpkg.MessageState, tea.Cmd) {
 			next := m.applyDispatchMessageState(state)
 			nextModel, cmd := next.handleKernelEvent(event)

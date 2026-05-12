@@ -203,6 +203,8 @@ type CoreSettingsModel struct {
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
+	UsageTelemetryEnabled bool   `bun:"usage_telemetry_enabled,notnull,type:integer"`
+	ErrorReportingEnabled bool   `bun:"error_reporting_enabled,notnull,type:integer"`
 	HabitStreakDefs       string `bun:"habit_streak_definitions,notnull,type:text"`
 	RestRecurringDates    string `bun:"rest_recurring_dates,notnull,type:text"`
 	CreatedAt             string `bun:"created_at,notnull,type:text"`

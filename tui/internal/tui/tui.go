@@ -1,6 +1,7 @@
 package tui
 
 import (
+	sharedposthog "crona/shared/posthog"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/app"
 )
@@ -37,6 +38,6 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 	app.SetEventChannel(ch)
 }
 
-func New(transport, endpoint, scratchDir, env, executablePath string, done chan struct{}) Model {
-	return app.New(transport, endpoint, scratchDir, env, executablePath, done)
+func New(transport, endpoint, scratchDir, env, executablePath string, done chan struct{}, telemetry sharedposthog.Client) Model {
+	return app.New(transport, endpoint, scratchDir, env, executablePath, done, telemetry)
 }

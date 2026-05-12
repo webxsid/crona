@@ -18,7 +18,10 @@ import (
 	flagspkg "crona/cli/internal/flags"
 	runtimepkg "crona/cli/internal/runtime"
 	"crona/shared/config"
+	sharedposthog "crona/shared/posthog"
+	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 )
 
 var (
@@ -45,8 +48,39 @@ var (
 )
 
 func main() {
-	_ = config.Load()
+	appEnv := config.Load()
+	telemetryConfig := sharedposthog.LoadConfig("cli")
+	telemetryConfig.Version = versionpkg.Current()
+	telemetryConfig.Mode = appEnv.Mode
+	telemetryConfig.UsageEnabled = false
+	telemetryConfig.ErrorReportingEnabled = false
+	if settings, settingsErr := loadCLISettings(); settingsErr == nil {
+		telemetryConfig.ErrorReportingEnabled = telemetryConfig.Enabled && settings.ErrorReportingEnabled
+	}
+	telemetry, err := sharedposthog.New(telemetryConfig)
+	if err == nil {
+		defer func() { _ = telemetry.Close() }()
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			if telemetry != nil {
+				_ = telemetry.ReportError("panic", panicError(r), sharedposthog.Properties{
+					"entrypoint": "cli",
+					"operation":  "main",
+				})
+				_ = telemetry.Flush()
+			}
+			panic(r)
+		}
+	}()
 	if err := run(os.Args[1:]); err != nil {
+		if telemetry != nil {
+			_ = telemetry.ReportError("handled", err, sharedposthog.Properties{
+				"entrypoint": "cli",
+				"operation":  cliOperation(os.Args[1:]),
+			})
+			_ = telemetry.Flush()
+		}
 		fail(err.Error())
 	}
 }
@@ -151,4 +185,33 @@ func cliCommandName() string {
 func fail(message string) {
 	fmt.Fprintln(os.Stderr, message)
 	os.Exit(1)
+}
+
+func loadCLISettings() (*sharedtypes.CoreSettings, error) {
+	var raw map[string]sharedtypes.CoreSettings
+	if err := callKernelFn(protocol.MethodSettingsGetAll, nil, &raw); err != nil {
+		return nil, err
+	}
+	if settings, ok := raw["local"]; ok {
+		return &settings, nil
+	}
+	for _, settings := range raw {
+		value := settings
+		return &value, nil
+	}
+	return nil, fmt.Errorf("settings not found")
+}
+
+func cliOperation(args []string) string {
+	if len(args) == 0 {
+		return "launch_tui"
+	}
+	return strings.TrimSpace(args[0])
+}
+
+func panicError(recovered any) error {
+	if err, ok := recovered.(error); ok {
+		return err
+	}
+	return fmt.Errorf("panic: %v", recovered)
 }

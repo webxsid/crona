@@ -257,6 +257,13 @@ func OpenEditRestProtection(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenEditRestProtection(s.Dialog, s.Settings.FrozenStreakKinds, s.Settings.RestWeekdays, s.Settings.RestSpecificDates)
 }
 
+func OpenEditTelemetrySettings(s Snapshot) dialogpkg.State {
+	if s.Settings == nil {
+		return dialogpkg.OpenEditTelemetrySettings(s.Dialog, false, false)
+	}
+	return dialogpkg.OpenEditTelemetrySettings(s.Dialog, s.Settings.UsageTelemetryEnabled, s.Settings.ErrorReportingEnabled)
+}
+
 func OpenCreateAlertReminder(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenCreateAlertReminder(s.Dialog)
 }

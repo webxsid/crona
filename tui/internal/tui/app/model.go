@@ -7,6 +7,7 @@ import (
 
 	"crona/shared/config"
 	shareddto "crona/shared/dto"
+	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -90,7 +91,8 @@ const (
 
 type Model struct {
 	// kernel client
-	client *api.Client
+	client    *api.Client
+	telemetry sharedposthog.Client
 
 	// kernel event stream
 	eventStop *eventStreamStop
@@ -230,6 +232,9 @@ type Model struct {
 	dialogProtectionStreaks  []sharedtypes.StreakKind
 	dialogProtectionWeekdays []int
 	dialogProtectionDates    []string
+	dialogTelemetryStep      int
+	dialogTelemetryUsage     bool
+	dialogTelemetryErrors    bool
 	dialogHabitStreakStep    int
 	dialogHabitStreakCursor  int
 	dialogHabitStreakDefs    []sharedtypes.HabitStreakDefinition
@@ -321,9 +326,10 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 	eventChannel = ch
 }
 
-func New(transport, endpoint, scratchDir string, env string, executablePath string, done chan struct{}) Model {
+func New(transport, endpoint, scratchDir string, env string, executablePath string, done chan struct{}, telemetry sharedposthog.Client) Model {
 	model := Model{
 		client:              api.NewClient(transport, endpoint, scratchDir),
+		telemetry:           telemetry,
 		eventStop:           newEventStreamStop(done),
 		view:                ViewDaily,
 		pane:                PaneIssues,
@@ -934,6 +940,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
+		OpenEditTelemetrySettingsDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(dialogstate.OpenEditTelemetrySettings(next.dialogSnapshot()))
+			*state = next.inputState()
+			return true
+		},
 		TestAlertNotification: func() tea.Cmd { return commands.TestAlertNotification(m.client) },
 		TestAlertSound:        func() tea.Cmd { return commands.TestAlertSound(m.client) },
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
@@ -1354,6 +1366,9 @@ func (m Model) dialogState() dialogpkg.State {
 		ProtectionStreaks:  m.dialogProtectionStreaks,
 		ProtectionWeekdays: m.dialogProtectionWeekdays,
 		ProtectionDates:    m.dialogProtectionDates,
+		TelemetryStep:      m.dialogTelemetryStep,
+		TelemetryUsage:     m.dialogTelemetryUsage,
+		TelemetryErrors:    m.dialogTelemetryErrors,
 		HabitItems:         m.allHabits,
 		HabitStreakStep:    m.dialogHabitStreakStep,
 		HabitStreakCursor:  m.dialogHabitStreakCursor,
@@ -1421,6 +1436,9 @@ func (m Model) withDialogState(state dialogpkg.State) Model {
 	m.dialogProtectionStreaks = state.ProtectionStreaks
 	m.dialogProtectionWeekdays = state.ProtectionWeekdays
 	m.dialogProtectionDates = state.ProtectionDates
+	m.dialogTelemetryStep = state.TelemetryStep
+	m.dialogTelemetryUsage = state.TelemetryUsage
+	m.dialogTelemetryErrors = state.TelemetryErrors
 	m.dialogHabitStreakStep = state.HabitStreakStep
 	m.dialogHabitStreakCursor = state.HabitStreakCursor
 	m.dialogHabitStreakDefs = state.HabitStreakDefs
@@ -1495,6 +1513,9 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		SetExportICSDir:     func(path string) tea.Cmd { return commands.SetExportICSDir(m.client, path) },
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
+		},
+		PatchTelemetrySettings: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+			return commands.PatchTelemetrySettings(m.client, usageEnabled, errorReportingEnabled, restartNow)
 		},
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
 			return commands.CreateAlertReminder(m.client, input)

@@ -25,6 +25,7 @@ func TestKernelInfoIncludesProtocolVersion(t *testing.T) {
 		runtime.Paths{},
 		nil,
 		nil,
+		nil,
 	)
 
 	resp := handler.Handle(context.Background(), protocol.Request{

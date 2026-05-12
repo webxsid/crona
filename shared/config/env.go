@@ -4,13 +4,17 @@ import (
 	"bufio"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
 const (
-	EnvVarMode = "CRONA_ENV"
-	ModeProd   = "Prod"
-	ModeDev    = "Dev"
+	EnvVarMode           = "CRONA_ENV"
+	EnvVarPostHogAPIKey  = "CRONA_POSTHOG_API_KEY"
+	EnvVarPostHogHost    = "CRONA_POSTHOG_HOST"
+	EnvVarPostHogEnabled = "CRONA_POSTHOG_ENABLED"
+	ModeProd             = "Prod"
+	ModeDev              = "Dev"
 )
 
 type AppEnv struct {
@@ -32,6 +36,26 @@ func Current() AppEnv {
 
 func (e AppEnv) IsDev() bool {
 	return e.Mode == ModeDev
+}
+
+func PostHogAPIKey() string {
+	return strings.TrimSpace(os.Getenv(EnvVarPostHogAPIKey))
+}
+
+func PostHogHost() string {
+	return strings.TrimSpace(os.Getenv(EnvVarPostHogHost))
+}
+
+func PostHogEnabled() bool {
+	value := strings.TrimSpace(os.Getenv(EnvVarPostHogEnabled))
+	if value == "" {
+		return false
+	}
+	enabled, err := strconv.ParseBool(value)
+	if err != nil {
+		return false
+	}
+	return enabled
 }
 
 func loadDotEnvUp(name string) error {

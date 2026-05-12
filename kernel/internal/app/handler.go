@@ -12,6 +12,7 @@ import (
 	"crona/kernel/internal/notify"
 	"crona/kernel/internal/runtime"
 	"crona/kernel/internal/updatecheck"
+	sharedposthog "crona/shared/posthog"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
@@ -28,9 +29,10 @@ type Handler struct {
 	paths     runtime.Paths
 	updater   *updatecheck.Service
 	alerts    *notify.Service
+	telemetry sharedposthog.Client
 }
 
-func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(context.Context) error, coreCtx *core.Context, bus *events.Bus, shutdown func(), envMode string, paths runtime.Paths, updater *updatecheck.Service, alerts *notify.Service) *Handler {
+func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(context.Context) error, coreCtx *core.Context, bus *events.Bus, shutdown func(), envMode string, paths runtime.Paths, updater *updatecheck.Service, alerts *notify.Service, telemetry sharedposthog.Client) *Handler {
 	return &Handler{
 		startedAt: startedAt,
 		info:      info,
@@ -43,6 +45,7 @@ func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(conte
 		paths:     paths,
 		updater:   updater,
 		alerts:    alerts,
+		telemetry: telemetry,
 	}
 }
 
@@ -77,21 +80,40 @@ func (h *Handler) Stream(ctx context.Context, req protocol.Request, writer *json
 
 func (h *Handler) Handle(ctx context.Context, req protocol.Request) protocol.Response {
 	if resp, ok := h.handleKernelMethods(ctx, req); ok {
+		h.reportHandledError(req, resp)
 		return resp
 	}
 	if resp, ok := h.handleWorkMethods(ctx, req); ok {
+		h.reportHandledError(req, resp)
 		return resp
 	}
 	if resp, ok := h.handleRuntimeMethods(ctx, req); ok {
+		h.reportHandledError(req, resp)
 		return resp
 	}
-	return protocol.Response{
+	resp := protocol.Response{
 		ID: req.ID,
 		Error: &protocol.Error{
 			Code:    "not_implemented",
 			Message: "kernel method not implemented yet",
 		},
 	}
+	h.reportHandledError(req, resp)
+	return resp
+}
+
+func (h *Handler) reportHandledError(req protocol.Request, resp protocol.Response) {
+	if h == nil || h.telemetry == nil || resp.Error == nil {
+		return
+	}
+	_ = h.telemetry.ReportError("handled", &protocol.RPCError{
+		Code:    resp.Error.Code,
+		Message: resp.Error.Message,
+		Data:    resp.Error.Data,
+	}, sharedposthog.Properties{
+		"entrypoint": "daemon",
+		"operation":  req.Method,
+	})
 }
 
 func (h *Handler) handleNoParams(req protocol.Request, fn func() (any, error)) protocol.Response {

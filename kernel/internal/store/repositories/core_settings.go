@@ -68,6 +68,8 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyDateDisplayPreset:     {column: "date_display_preset", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyDateDisplayFormat:     {column: "date_display_format", queryKind: coreSettingQueryString},
 	sharedtypes.CoreSettingsKeyPromptGlyphMode:       {column: "prompt_glyph_mode", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyUsageTelemetryEnabled: {column: "usage_telemetry_enabled", queryKind: coreSettingQueryBool},
+	sharedtypes.CoreSettingsKeyErrorReportingEnabled: {column: "error_reporting_enabled", queryKind: coreSettingQueryBool},
 	sharedtypes.CoreSettingsKeyHabitStreakDefs:       {column: "habit_streak_definitions", queryKind: coreSettingQueryString},
 }
 
@@ -222,6 +224,8 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
+		UsageTelemetryEnabled: sharedconstants.DefaultCoreSettings["usageTelemetryEnabled"].(bool),
+		ErrorReportingEnabled: sharedconstants.DefaultCoreSettings["errorReportingEnabled"].(bool),
 		HabitStreakDefs:       mustJSON(sharedconstants.DefaultCoreSettings["habitStreakDefinitions"]),
 		CreatedAt:             now,
 		UpdatedAt:             now,
@@ -341,6 +345,8 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		DateDisplayPreset:     sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(row.DateDisplayPreset)),
 		DateDisplayFormat:     strings.TrimSpace(row.DateDisplayFormat),
 		PromptGlyphMode:       sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(row.PromptGlyphMode)),
+		UsageTelemetryEnabled: row.UsageTelemetryEnabled,
+		ErrorReportingEnabled: row.ErrorReportingEnabled,
 		HabitStreakDefs:       parseHabitStreakDefinitions(row.HabitStreakDefs),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,

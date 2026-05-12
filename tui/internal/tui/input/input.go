@@ -126,6 +126,7 @@ type Deps struct {
 	OpenEditDateDisplayFormatDialog func(*State) bool
 	OpenEditHabitStreaksDialog      func(*State) bool
 	OpenEditRestProtectionDialog    func(*State) bool
+	OpenEditTelemetrySettingsDialog func(*State) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
 	OpenConfirmUninstallDialog      func(*State) bool
 	WipeRuntimeData                 func() tea.Cmd
