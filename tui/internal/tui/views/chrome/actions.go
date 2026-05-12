@@ -161,8 +161,13 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 
 	switch state.Pane {
 	case "repos", "streams":
+		contextLabel := " checkout"
+		if state.View != "meta" {
+			contextLabel = " context"
+		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
+			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(contextLabel),
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),

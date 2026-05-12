@@ -579,6 +579,20 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 	}
 }
 
+func TestMetaRepoPaneShowsCheckoutAction(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View: "meta",
+		Pane: "repos",
+	})
+	joined := ansi.Strip(strings.Join(actions, " "))
+	if !strings.Contains(joined, "[c] checkout") {
+		t.Fatalf("expected meta repo pane to expose checkout action, got %q", joined)
+	}
+	if strings.Contains(joined, "[c] context") {
+		t.Fatalf("expected meta repo pane to stop advertising context on c, got %q", joined)
+	}
+}
+
 func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
 	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:        "daily",

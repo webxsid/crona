@@ -121,6 +121,12 @@ func handleIssueStatus(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleContextCheckout(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ActiveView == uistate.ViewMeta {
+		switch s.ActivePane {
+		case uistate.PaneRepos, uistate.PaneStreams:
+			return s, deps.Checkout(&s), true
+		}
+	}
 	if shouldOpenContextDialog(s.ActiveView) {
 		deps.OpenCheckoutContextDialog(&s)
 		return s, nil, true

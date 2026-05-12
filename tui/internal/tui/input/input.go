@@ -414,6 +414,12 @@ func newRouter(deps Deps) *router {
 			s.ActivePane = uistate.PaneHabits
 			return s, nil, true
 		},
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			return handleContextCheckout(s, deps)
+		},
 	)
 	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "e", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		cmd, handled := deps.OpenEditorAction(&s)
