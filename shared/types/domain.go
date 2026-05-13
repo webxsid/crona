@@ -284,6 +284,7 @@ const (
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
+	CoreSettingsKeyOnboardingCompleted   CoreSettingsKey = "onboardingCompleted"
 	CoreSettingsKeyUsageTelemetryEnabled CoreSettingsKey = "usageTelemetryEnabled"
 	CoreSettingsKeyErrorReportingEnabled CoreSettingsKey = "errorReportingEnabled"
 	CoreSettingsKeyHabitStreakDefs       CoreSettingsKey = "habitStreakDefinitions"
@@ -974,6 +975,7 @@ type CoreSettings struct {
 	DateDisplayPreset     DateDisplayPreset       `json:"dateDisplayPreset"`
 	DateDisplayFormat     string                  `json:"dateDisplayFormat,omitempty"`
 	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`
+	OnboardingCompleted   bool                    `json:"onboardingCompleted"`
 	UsageTelemetryEnabled bool                    `json:"usageTelemetryEnabled"`
 	ErrorReportingEnabled bool                    `json:"errorReportingEnabled"`
 	HabitStreakDefs       []HabitStreakDefinition `json:"habitStreakDefinitions,omitempty"`

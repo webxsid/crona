@@ -191,6 +191,54 @@ func TestIssuePinnedDailyChangedSetsStatusMessage(t *testing.T) {
 	}
 }
 
+func TestSettingsLoadedOpensOnboardingWhenIncomplete(t *testing.T) {
+	opened := false
+	state, _, handled := HandleMessage(MessageState{}, commands.SettingsLoadedMsg{
+		Settings: &api.CoreSettings{
+			OnboardingCompleted: false,
+		},
+	}, MessageDeps{
+		ClampFiltered: func(*MessageState, uistate.Pane) {},
+		OpenOnboardingDialog: func(state *MessageState) {
+			opened = true
+			state.Dialog = "onboarding"
+		},
+	})
+	if !handled {
+		t.Fatalf("expected settings load to be handled")
+	}
+	if !opened {
+		t.Fatalf("expected onboarding dialog to open")
+	}
+	if state.Dialog != "onboarding" {
+		t.Fatalf("expected onboarding dialog state, got %q", state.Dialog)
+	}
+}
+
+func TestSettingsLoadedSkipsOnboardingWhenCompleted(t *testing.T) {
+	opened := false
+	state, _, handled := HandleMessage(MessageState{}, commands.SettingsLoadedMsg{
+		Settings: &api.CoreSettings{
+			OnboardingCompleted: true,
+		},
+	}, MessageDeps{
+		ClampFiltered: func(*MessageState, uistate.Pane) {},
+		OpenOnboardingDialog: func(state *MessageState) {
+			opened = true
+			state.Dialog = "onboarding"
+		},
+	})
+	if !handled {
+		t.Fatalf("expected settings load to be handled")
+	}
+	if opened {
+		t.Fatalf("did not expect onboarding dialog to open")
+	}
+	if state.Dialog != "" {
+		t.Fatalf("expected no dialog, got %q", state.Dialog)
+	}
+}
+
 func strPtr(value string) *string {
 	return &value
 }

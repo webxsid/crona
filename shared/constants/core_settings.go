@@ -33,6 +33,7 @@ var DefaultCoreSettings = map[string]any{
 	"dateDisplayPreset":            "iso",
 	"dateDisplayFormat":            "",
 	"promptGlyphMode":              "emoji",
+	"onboardingCompleted":          false,
 	"usageTelemetryEnabled":        false,
 	"errorReportingEnabled":        false,
 	"habitStreakDefinitions":       []map[string]any{},

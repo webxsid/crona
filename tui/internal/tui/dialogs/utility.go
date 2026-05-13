@@ -263,6 +263,8 @@ func renderUtilityDialog(theme Theme, state State) string {
 		return renderRestProtectionDialog(theme, state)
 	case "edit_telemetry_settings":
 		return renderTelemetrySettingsDialog(theme, state)
+	case "onboarding":
+		return renderOnboardingDialog(theme, state)
 	case "edit_habit_streaks":
 		return renderHabitStreakDialog(theme, state)
 	case "create_alert_reminder", "edit_alert_reminder":
@@ -574,6 +576,86 @@ func renderTelemetrySettingsDialog(theme Theme, state State) string {
 		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [shift+tab] back   [esc] cancel")
 	}
 	return modal(theme, state.Width, 82, theme.ColorCyan, rows)
+}
+
+func renderOnboardingDialog(theme Theme, state State) string {
+	steps := []string{"Welcome", "Usage", "Errors", "Review"}
+	progress := make([]string, 0, len(steps))
+	for i, step := range steps {
+		label := fmt.Sprintf("%d.%s", i+1, step)
+		if i == state.TelemetryStep {
+			progress = append(progress, theme.StyleCursor.Render(label))
+			continue
+		}
+		progress = append(progress, theme.StyleDim.Render(label))
+	}
+	rows := []string{
+		theme.StylePaneTitle.Render("Welcome to Crona"),
+		"",
+		strings.Join(progress, "   "),
+		"",
+	}
+	switch state.TelemetryStep {
+	case 0:
+		rows = append(rows,
+			theme.StyleDim.Render("Crona keeps a few startup preferences locally and lets you choose what, if anything, gets shared."),
+			theme.StyleDim.Render("You can change these choices later in Settings > Telemetry & Error Reporting."),
+			"",
+			theme.StyleHeader.Render("Usage insights"),
+			theme.StyleDim.Render("Anonymous startup analytics for tui_started, daemon_started, and daemon_stopped."),
+			"",
+			theme.StyleHeader.Render("Error reporting"),
+			theme.StyleDim.Render("Sanitized error_reported events for handled app errors and interceptable panics."),
+		)
+		rows = appendDialogFooter(theme, state, rows, "[tab/enter] next")
+	case 1:
+		rows = append(rows,
+			theme.StyleDim.Render("Current usage telemetry sends startup events only: tui_started, daemon_started, and daemon_stopped."),
+			theme.StyleDim.Render("Each event includes an anonymous install ID plus app, app_version, env_mode, goos, arch, and entrypoint."),
+			theme.StyleDim.Render("Daemon events also include transport and running_channel."),
+			theme.StyleDim.Render("Repo names, stream names, issue titles, notes, paths, commands, and freeform work content are not sent."),
+			"",
+			theme.StyleCursor.Render("▶ "+toggleLabel(state.TelemetryUsage, "Enabled")),
+		)
+		rows = appendDialogFooter(theme, state, rows, "[space] toggle   [tab/enter] next   [shift+tab] back")
+	case 2:
+		rows = append(rows,
+			theme.StyleDim.Render("Current error reporting sends sanitized error_reported events for handled app errors and interceptable panics."),
+			theme.StyleDim.Render("Each report includes an anonymous install ID plus app, app_version, env_mode, goos, arch, entrypoint, operation, error_kind, error_class, and a sanitized short message."),
+			theme.StyleDim.Render("RPC failures also include rpc_code when available."),
+			theme.StyleDim.Render("Repo names, stream names, issue titles, notes, absolute paths, commands, request payloads, and freeform work content are not sent."),
+			"",
+			theme.StyleCursor.Render("▶ "+toggleLabel(state.TelemetryErrors, "Enabled")),
+		)
+		rows = appendDialogFooter(theme, state, rows, "[space] toggle   [tab/enter] next   [shift+tab] back")
+	default:
+		rows = append(rows,
+			theme.StyleDim.Render("Usage insights"),
+			theme.StyleHeader.Render(telemetryStateLabel(state.TelemetryUsage)),
+			"",
+			theme.StyleDim.Render("Error reporting"),
+			theme.StyleHeader.Render(telemetryStateLabel(state.TelemetryErrors)),
+			"",
+			theme.StyleDim.Render("Current usage events: tui_started, daemon_started, daemon_stopped."),
+			theme.StyleDim.Render("Current error events: error_reported for handled errors and interceptable panics."),
+			"",
+			theme.StyleError.Render("Changes take effect after restart."),
+			theme.StyleDim.Render("Finish and restart now to apply them immediately."),
+			theme.StyleDim.Render("You can change these choices later in Settings."),
+			"",
+		)
+		items := []string{"Finish", "Finish and Restart Now"}
+		for idx, item := range items {
+			line := "  " + item
+			if idx == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				continue
+			}
+			rows = append(rows, theme.StyleNormal.Render(line))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [shift+tab] back")
+	}
+	return modal(theme, state.Width, 84, theme.ColorCyan, rows)
 }
 
 func toggleLabel(enabled bool, label string) string {

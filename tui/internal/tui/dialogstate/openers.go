@@ -264,6 +264,13 @@ func OpenEditTelemetrySettings(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenEditTelemetrySettings(s.Dialog, s.Settings.UsageTelemetryEnabled, s.Settings.ErrorReportingEnabled)
 }
 
+func OpenOnboarding(s Snapshot) dialogpkg.State {
+	if s.Settings == nil {
+		return dialogpkg.OpenOnboarding(s.Dialog, false, false)
+	}
+	return dialogpkg.OpenOnboarding(s.Dialog, s.Settings.UsageTelemetryEnabled, s.Settings.ErrorReportingEnabled)
+}
+
 func OpenCreateAlertReminder(s Snapshot) dialogpkg.State {
 	return dialogpkg.OpenCreateAlertReminder(s.Dialog)
 }

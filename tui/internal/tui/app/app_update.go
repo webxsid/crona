@@ -648,6 +648,11 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next = next.openSupportBundleDialog(path, sizeBytes, windowLabel)
 			*state = next.dispatchMessageState()
 		},
+		OpenOnboardingDialog: func(state *dispatchpkg.MessageState) {
+			next := m.applyDispatchMessageState(*state)
+			next = next.withDialogState(dialogstate.OpenOnboarding(next.dialogSnapshot()))
+			*state = next.dispatchMessageState()
+		},
 		EnterScratchpadPane: func(state *dispatchpkg.MessageState, msg commands.OpenScratchpadMsg) {
 			next := m.applyDispatchMessageState(*state)
 			next.scratchpadOpen = true

@@ -68,6 +68,7 @@ type Action struct {
 	UsageTelemetry    bool
 	ErrorReporting    bool
 	RestartAfterSave  bool
+	OnboardingDone    bool
 	Mood              int
 	Energy            int
 	SleepHours        *float64
@@ -316,6 +317,16 @@ func OpenEditRestProtection(state State, streaks []sharedtypes.StreakKind, weekd
 func OpenEditTelemetrySettings(state State, usageEnabled, errorReportingEnabled bool) State {
 	state = Close(state)
 	state.Kind = "edit_telemetry_settings"
+	state.TelemetryStep = 0
+	state.TelemetryUsage = usageEnabled
+	state.TelemetryErrors = errorReportingEnabled
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenOnboarding(state State, usageEnabled, errorReportingEnabled bool) State {
+	state = Close(state)
+	state.Kind = "onboarding"
 	state.TelemetryStep = 0
 	state.TelemetryUsage = usageEnabled
 	state.TelemetryErrors = errorReportingEnabled
@@ -1065,6 +1076,8 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateRestProtection(state, currentDate, msg)
 	case "edit_telemetry_settings":
 		return updateTelemetrySettings(state, msg)
+	case "onboarding":
+		return updateOnboarding(state, msg)
 	case "edit_habit_streaks":
 		return updateHabitStreaks(state, msg)
 	case "create_alert_reminder", "edit_alert_reminder":

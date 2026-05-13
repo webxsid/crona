@@ -73,3 +73,25 @@ func TestCaptureDaemonStopped(t *testing.T) {
 		t.Fatalf("expected beta channel, got %#v", got)
 	}
 }
+
+func TestTelemetryUsageAndErrorReportingRequireOnboarding(t *testing.T) {
+	settings := &sharedtypes.CoreSettings{
+		OnboardingCompleted:   false,
+		UsageTelemetryEnabled: true,
+		ErrorReportingEnabled: true,
+	}
+	if telemetryUsageEnabled(settings) {
+		t.Fatalf("expected usage telemetry disabled before onboarding completes")
+	}
+	if telemetryErrorReportingEnabled(settings) {
+		t.Fatalf("expected error reporting disabled before onboarding completes")
+	}
+
+	settings.OnboardingCompleted = true
+	if !telemetryUsageEnabled(settings) {
+		t.Fatalf("expected usage telemetry enabled after onboarding completes")
+	}
+	if !telemetryErrorReportingEnabled(settings) {
+		t.Fatalf("expected error reporting enabled after onboarding completes")
+	}
+}

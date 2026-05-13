@@ -2,10 +2,14 @@ package main
 
 import sharedtypes "crona/shared/types"
 
+func telemetryOnboardingCompleted(settings *sharedtypes.CoreSettings) bool {
+	return settings != nil && settings.OnboardingCompleted
+}
+
 func telemetryUsageEnabled(settings *sharedtypes.CoreSettings) bool {
-	return settings != nil && settings.UsageTelemetryEnabled
+	return telemetryOnboardingCompleted(settings) && settings.UsageTelemetryEnabled
 }
 
 func telemetryErrorReportingEnabled(settings *sharedtypes.CoreSettings) bool {
-	return settings != nil && settings.ErrorReportingEnabled
+	return telemetryOnboardingCompleted(settings) && settings.ErrorReportingEnabled
 }

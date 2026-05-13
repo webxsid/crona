@@ -57,8 +57,10 @@ func main() {
 				panic(r)
 			}
 		}()
-		if captureErr := captureTUIStarted(telemetry); captureErr != nil {
-			logger.Errorf("Telemetry capture failed: %v", captureErr)
+		if telemetry.UsageEnabled() {
+			if captureErr := captureTUIStarted(telemetry); captureErr != nil {
+				logger.Errorf("Telemetry capture failed: %v", captureErr)
+			}
 		}
 	}
 

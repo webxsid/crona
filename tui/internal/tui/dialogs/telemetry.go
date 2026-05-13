@@ -88,3 +88,64 @@ func updateTelemetryReview(state State, msg tea.KeyMsg) (State, *Action, string)
 	}
 	return state, nil, ""
 }
+
+func updateOnboarding(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch state.TelemetryStep {
+	case 0:
+		switch msg.String() {
+		case "tab", "right", "l", "enter":
+			state.TelemetryStep = 1
+			return clearDialogError(state), nil, ""
+		}
+	case 1:
+		switch msg.String() {
+		case " ", "x":
+			state.TelemetryUsage = !state.TelemetryUsage
+			return clearDialogError(state), nil, ""
+		case "shift+tab", "left", "h":
+			state.TelemetryStep = 0
+			return clearDialogError(state), nil, ""
+		case "tab", "right", "l", "enter":
+			state.TelemetryStep = 2
+			return clearDialogError(state), nil, ""
+		}
+	case 2:
+		switch msg.String() {
+		case " ", "x":
+			state.TelemetryErrors = !state.TelemetryErrors
+			return clearDialogError(state), nil, ""
+		case "shift+tab", "left", "h":
+			state.TelemetryStep = 1
+			return clearDialogError(state), nil, ""
+		case "tab", "right", "l", "enter":
+			state.TelemetryStep = 3
+			state.ChoiceCursor = 0
+			return clearDialogError(state), nil, ""
+		}
+	default:
+		switch msg.String() {
+		case "shift+tab", "left", "h":
+			state.TelemetryStep = 2
+			return clearDialogError(state), nil, ""
+		case "j", "down":
+			if state.ChoiceCursor < 1 {
+				state.ChoiceCursor++
+			}
+			return clearDialogError(state), nil, ""
+		case "k", "up":
+			if state.ChoiceCursor > 0 {
+				state.ChoiceCursor--
+			}
+			return clearDialogError(state), nil, ""
+		case "enter":
+			return Close(state), &Action{
+				Kind:             "complete_onboarding",
+				UsageTelemetry:   state.TelemetryUsage,
+				ErrorReporting:   state.TelemetryErrors,
+				RestartAfterSave: state.ChoiceCursor == 1,
+				OnboardingDone:   true,
+			}, ""
+		}
+	}
+	return state, nil, ""
+}

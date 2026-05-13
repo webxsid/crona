@@ -48,6 +48,9 @@ func TestGetAllSettingsReturnsPublicCoreSettingsShape(t *testing.T) {
 	if settings.PromptGlyphMode != sharedtypes.PromptGlyphModeEmoji {
 		t.Fatalf("expected default prompt glyph mode emoji, got %q", settings.PromptGlyphMode)
 	}
+	if settings.OnboardingCompleted {
+		t.Fatalf("expected onboarding to be incomplete by default")
+	}
 }
 
 func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {

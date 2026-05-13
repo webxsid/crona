@@ -1517,6 +1517,9 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		PatchTelemetrySettings: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
 			return commands.PatchTelemetrySettings(m.client, usageEnabled, errorReportingEnabled, restartNow)
 		},
+		CompleteOnboarding: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+			return commands.CompleteOnboarding(m.client, usageEnabled, errorReportingEnabled, restartNow)
+		},
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
 			return commands.CreateAlertReminder(m.client, input)
 		},

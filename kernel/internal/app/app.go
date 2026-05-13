@@ -148,7 +148,7 @@ func Run(ctx context.Context) (runErr error) {
 	if err := runtime.WriteKernelInfo(paths, info); err != nil {
 		return fmt.Errorf("write kernel info: %w", err)
 	}
-	if telemetry != nil {
+	if telemetry != nil && telemetry.UsageEnabled() {
 		if captureErr := captureDaemonStarted(telemetry, paths.Transport, info.RunningChannel); captureErr != nil {
 			logger.Error("capture daemon started", captureErr)
 		}
@@ -167,7 +167,7 @@ func Run(ctx context.Context) (runErr error) {
 	logger.Info("kernel listening on " + localipc.Label(paths.Transport, paths.Endpoint))
 
 	<-runCtx.Done()
-	if telemetry != nil {
+	if telemetry != nil && telemetry.UsageEnabled() {
 		if captureErr := captureDaemonStopped(telemetry, paths.Transport, info.RunningChannel); captureErr != nil {
 			logger.Error("capture daemon stopped", captureErr)
 		}

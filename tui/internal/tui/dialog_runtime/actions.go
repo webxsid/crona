@@ -43,6 +43,7 @@ type Deps struct {
 	SetExportICSDir                func(path string) tea.Cmd
 	PatchSetting                   func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
 	PatchTelemetrySettings         func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
+	CompleteOnboarding             func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
 	CreateAlertReminder            func(input shareddto.AlertReminderCreateRequest) tea.Cmd
 	UpdateAlertReminder            func(input shareddto.AlertReminderUpdateRequest) tea.Cmd
 	DeleteRepo                     func(id int64) tea.Cmd
@@ -117,6 +118,9 @@ func Resolve(action dialogpkg.Action, state State, deps Deps) tea.Cmd {
 	r.Register("patch_setting", func(action dialogpkg.Action) tea.Cmd { return patchSettingCmd(action, state, deps) })
 	r.Register("patch_telemetry_settings", func(action dialogpkg.Action) tea.Cmd {
 		return deps.PatchTelemetrySettings(action.UsageTelemetry, action.ErrorReporting, action.RestartAfterSave)
+	})
+	r.Register("complete_onboarding", func(action dialogpkg.Action) tea.Cmd {
+		return deps.CompleteOnboarding(action.UsageTelemetry, action.ErrorReporting, action.RestartAfterSave)
 	})
 	r.Register("create_alert_reminder", func(action dialogpkg.Action) tea.Cmd {
 		return deps.CreateAlertReminder(shareddto.AlertReminderCreateRequest{

@@ -129,6 +129,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"inactivity_alerts_enabled":      1,
 		"inactivity_threshold_minutes":   60,
 		"inactivity_repeat_minutes":      60,
+		"onboarding_completed":           0,
 		"usage_telemetry_enabled":        0,
 		"error_reporting_enabled":        0,
 	} {

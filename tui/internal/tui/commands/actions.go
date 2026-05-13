@@ -123,6 +123,35 @@ func PatchTelemetrySettings(c *api.Client, usageEnabled, errorReportingEnabled b
 	}
 }
 
+func CompleteOnboarding(c *api.Client, usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyOnboardingCompleted, true); err != nil {
+			logger.Errorf("CompleteOnboarding completed: %v", err)
+			return ErrMsg{Err: err}
+		}
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyUsageTelemetryEnabled, usageEnabled); err != nil {
+			logger.Errorf("CompleteOnboarding usage: %v", err)
+			return ErrMsg{Err: err}
+		}
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyErrorReportingEnabled, errorReportingEnabled); err != nil {
+			logger.Errorf("CompleteOnboarding errors: %v", err)
+			return ErrMsg{Err: err}
+		}
+		if restartNow {
+			if err := c.ShutdownKernelAndWait(5 * time.Second); err != nil {
+				logger.Errorf("CompleteOnboarding restart shutdown: %v", err)
+				return ErrMsg{Err: err}
+			}
+			if _, err := kernel.Ensure(); err != nil {
+				logger.Errorf("CompleteOnboarding restart ensure: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return KernelRestartedMsg{}
+		}
+		return LoadSettings(c)()
+	}
+}
+
 func DismissUpdate(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		status, err := c.DismissUpdate()

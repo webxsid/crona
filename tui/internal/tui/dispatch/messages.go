@@ -118,6 +118,7 @@ type MessageDeps struct {
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
 	OpenStashConflictDialog    func(*MessageState, api.StashConflict, int64, int64, int64)
+	OpenOnboardingDialog       func(*MessageState)
 	EnterScratchpadPane        func(*MessageState, commands.OpenScratchpadMsg)
 	SetScratchpadContent       func(*MessageState, string, string)
 	CurrentDashboardDate       func(MessageState) string
@@ -438,6 +439,9 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.Settings = msg.Settings
 		deps.ClampFiltered(&state, uistate.PaneSettings)
 		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		if msg.Settings != nil && !msg.Settings.OnboardingCompleted && state.Dialog == "" && deps.OpenOnboardingDialog != nil {
+			deps.OpenOnboardingDialog(&state)
+		}
 		return state, nil, true
 	case commands.KernelInfoLoadedMsg:
 		state.KernelInfo = msg.Info

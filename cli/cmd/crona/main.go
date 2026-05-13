@@ -55,7 +55,7 @@ func main() {
 	telemetryConfig.UsageEnabled = false
 	telemetryConfig.ErrorReportingEnabled = false
 	if settings, settingsErr := loadCLISettings(); settingsErr == nil {
-		telemetryConfig.ErrorReportingEnabled = telemetryConfig.Enabled && settings.ErrorReportingEnabled
+		telemetryConfig.ErrorReportingEnabled = telemetryConfig.Enabled && settings.OnboardingCompleted && settings.ErrorReportingEnabled
 	}
 	telemetry, err := sharedposthog.New(telemetryConfig)
 	if err == nil {
