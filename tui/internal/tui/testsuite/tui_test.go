@@ -1176,6 +1176,48 @@ func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 	}
 }
 
+func TestRollupSummaryShowsRangeCalendarWhenWide(t *testing.T) {
+	state := views.ContentState{
+		View:            "rollup",
+		Pane:            "rollup_days",
+		Width:           140,
+		Height:          34,
+		RollupStartDate: "2026-03-17",
+		RollupEndDate:   "2026-03-23",
+		Cursors: map[string]int{
+			"rollup_days": 0,
+		},
+	}
+
+	rendered := ansi.Strip(support.RenderRollup(state))
+	for _, want := range []string{"Rollup Dashboard", "March 2026", "Range W12-W13", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected rollup summary calendar to include %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestWellbeingSummaryShowsMetricsWindowCalendarWhenWide(t *testing.T) {
+	state := views.ContentState{
+		View:          "wellbeing",
+		Pane:          "wellbeing_summary",
+		Width:         140,
+		Height:        44,
+		WellbeingDate: "2026-03-19",
+		Cursors: map[string]int{
+			"wellbeing_summary": 0,
+		},
+		Filters: map[string]string{},
+	}
+
+	rendered := ansi.Strip(support.RenderWellbeing(state))
+	for _, want := range []string{"Wellbeing", "March 2026", "Range W11-W12", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wellbeing summary calendar to include %q, got %q", want, rendered)
+		}
+	}
+}
+
 func TestDailySummaryUsesTinyHeightModeAt36(t *testing.T) {
 	estimate := 60
 	target := 15

@@ -158,6 +158,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	}
 
 	issues := make([]sharedtypes.DailyReportIssue, 0)
+	includedIssueIDs := make(map[int64]struct{})
 	if plan != nil && len(plan.Entries) > 0 {
 		for _, entry := range plan.Entries {
 			meta, ok := issueMeta[entry.IssueID]
@@ -186,6 +187,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 				PlanFailScore:            entry.FailScore,
 			}
 			issues = append(issues, sanitizeDailyReportIssue(reportIssue))
+			includedIssueIDs[entry.IssueID] = struct{}{}
 		}
 	} else {
 		for _, issue := range summary.Issues {
@@ -203,8 +205,10 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 				PlanBaselineDate:       date,
 				PlanCurrentPlannedDate: date,
 			}))
+			includedIssueIDs[issue.ID] = struct{}{}
 		}
 	}
+	issues = appendWorkedPinnedFutureIssues(issues, allIssues, workedByIssue, includedIssueIDs, date)
 
 	habits, err := corecommands.ListHabitsDueForDate(ctx, c, date)
 	if err != nil {
@@ -214,11 +218,12 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	if err != nil {
 		return nil, err
 	}
-	days, err := corecommands.ComputeMetricsRange(ctx, c, date, date)
+	metricsStart := dailyReportMetricsStart(date)
+	days, err := corecommands.ComputeMetricsRange(ctx, c, metricsStart, date)
 	if err != nil {
 		return nil, err
 	}
-	rollup := corecommands.ComputeMetricsRollupFromDays(date, date, days)
+	rollup := corecommands.ComputeMetricsRollupFromDays(metricsStart, date, days)
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -231,7 +236,7 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	streaks.CustomHabitStreaks = corecommands.ComputeCustomHabitStreaks(habitHistory, date, date, settings)
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
-		copy := days[0]
+		copy := days[len(days)-1]
 		metrics = &copy
 	}
 
@@ -249,6 +254,41 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 		Streaks:         streaks,
 		DisplaySettings: settings,
 	}, nil
+}
+
+func appendWorkedPinnedFutureIssues(issues []sharedtypes.DailyReportIssue, allIssues []sharedtypes.IssueWithMeta, workedByIssue map[int64]int, included map[int64]struct{}, date string) []sharedtypes.DailyReportIssue {
+	for _, meta := range allIssues {
+		if _, ok := included[meta.ID]; ok {
+			continue
+		}
+		workedSeconds := workedByIssue[meta.ID]
+		if workedSeconds <= 0 || !meta.PinnedDaily || meta.TodoForDate == nil {
+			continue
+		}
+		due := strings.TrimSpace(*meta.TodoForDate)
+		if due <= date {
+			continue
+		}
+		issues = append(issues, sanitizeDailyReportIssue(sharedtypes.DailyReportIssue{
+			IssueWithMeta: sharedtypes.IssueWithMeta{
+				Issue:      meta.Issue,
+				RepoID:     meta.RepoID,
+				RepoName:   meta.RepoName,
+				StreamName: meta.StreamName,
+			},
+			WorkedSeconds: workedSeconds,
+		}))
+		included[meta.ID] = struct{}{}
+	}
+	return issues
+}
+
+func dailyReportMetricsStart(date string) string {
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return date
+	}
+	return parsed.AddDate(0, 0, -6).Format("2006-01-02")
 }
 
 func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {

@@ -5,6 +5,7 @@ import (
 
 	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
+	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
 
@@ -64,7 +65,21 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 		actionLine,
 		"",
 	}
-	return renderScrollablePane(theme, active, width, height, header, summaryBodyLines(theme, state, width, false), state.Cursors[string(uistate.PaneWellbeingSummary)])
+	body := summaryBodyLines(theme, state, width, false)
+	innerWidth := max(24, width-8)
+	if viewcalendar.ShouldRender(innerWidth) {
+		start := viewcalendar.ShiftDate(state.WellbeingDate, -6)
+		calendarLines := viewcalendar.Render(theme, viewcalendar.Selection{
+			AnchorDate: state.WellbeingDate,
+			RangeStart: start,
+			RangeEnd:   state.WellbeingDate,
+			MaxLines:   max(4, min(len(body), height-len(header)-2)),
+		})
+		if len(calendarLines) > 0 {
+			body = viewcalendar.MergeBeside(body, calendarLines, innerWidth, 3)
+		}
+	}
+	return renderScrollablePane(theme, active, width, height, header, body, state.Cursors[string(uistate.PaneWellbeingSummary)])
 }
 
 func renderCompactSummary(theme types.Theme, state types.ContentState, width, height int) string {
