@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sharedtypes "crona/shared/types"
-	dialogs "crona/tui/internal/tui/dialogs"
+	dialogs "crona/tui/internal/tui/dialogs/controller"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"

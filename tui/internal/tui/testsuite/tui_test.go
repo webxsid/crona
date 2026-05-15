@@ -7,7 +7,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	dialogs "crona/tui/internal/tui/dialogs"
+	dialogs "crona/tui/internal/tui/dialogs/controller"
 	"crona/tui/internal/tui/testsuite/support"
 	"crona/tui/internal/tui/views"
 	viewchrome "crona/tui/internal/tui/views/chrome"

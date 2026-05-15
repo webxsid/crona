@@ -2,8 +2,8 @@ package support
 
 import (
 	"crona/tui/internal/api"
-	"crona/tui/internal/tui/app"
-	"crona/tui/internal/tui/dialogs"
+	controller "crona/tui/internal/tui/dialogs/controller"
+	modelpkg "crona/tui/internal/tui/model"
 	layoutpkg "crona/tui/internal/tui/layout"
 	alertsview "crona/tui/internal/tui/views/alerts"
 	awayview "crona/tui/internal/tui/views/away"
@@ -47,19 +47,19 @@ func RenderScratchpads(state viewtypes.ContentState) string {
 	return scratchpadsview.Render(Theme(), state)
 }
 
-func NewDailyModel(width, height int) app.Model { return app.NewDailyRenderModel(width, height) }
-func NewDailyHabitDeleteModel(habits []api.HabitDailyItem) app.Model {
-	return app.NewDailyHabitDeleteModel(habits)
+func NewDailyModel(width, height int) modelpkg.Model { return modelpkg.NewDailyRenderModel(width, height) }
+func NewDailyHabitDeleteModel(habits []api.HabitDailyItem) modelpkg.Model {
+	return modelpkg.NewDailyHabitDeleteModel(habits)
 }
-func MinimumSize() (int, int) { return app.MinimumSize() }
-func OpenSelectedDeleteDialog(m app.Model) (app.Model, bool) {
-	return app.OpenSelectedDeleteDialog(m)
+func MinimumSize() (int, int) { return modelpkg.MinimumSize() }
+func OpenSelectedDeleteDialog(m modelpkg.Model) (modelpkg.Model, bool) {
+	return modelpkg.OpenSelectedDeleteDialog(m)
 }
 
-func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []dialogs.SelectorOption {
-	return dialogs.DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []controller.SelectorOption {
+	return controller.DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 }
 
 func MatchStreamSelection(raw string, repoID int64, repoName string, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string) {
-	return dialogs.MatchStreamSelection(raw, repoID, repoName, streamIndex, repos, allIssues, streams, context)
+	return controller.MatchStreamSelection(raw, repoID, repoName, streamIndex, repos, allIssues, streams, context)
 }

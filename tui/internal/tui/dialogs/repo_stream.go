@@ -1,6 +1,8 @@
 package dialogs
 
-func renderRepoStreamDialog(theme Theme, state State) string {
+import controllerpkg "crona/tui/internal/tui/dialogs/controller"
+
+func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
 	case "create_repo":
 		rows := []string{theme.StylePaneTitle.Render("New Repo"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Description (Optional)"), state.Description.View()}
@@ -81,7 +83,7 @@ func renderRepoStreamDialog(theme Theme, state State) string {
 	}
 }
 
-func nameDescriptionHint(state State, submitLabel string) string {
+func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
 	if state.FocusIdx == state.DescriptionIndex {
 		return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 	}
@@ -92,7 +94,7 @@ func checkoutHint() string {
 	return "[type] filter   [left/right] choose   [up/down/tab] move   [enter] checkout/create   [c] clear   [esc] cancel"
 }
 
-func habitDialogHint(state State, submitLabel string) string {
+func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 	if state.Kind == "create_habit" {
 		switch state.FocusIdx {
 		case 0, 1:

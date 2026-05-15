@@ -1,13 +1,11 @@
-package dialogs
+package controller
 
 import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -22,30 +20,6 @@ const (
 	dialogDatePromptASCII     = "d "
 	dialogValuePrompt         = "> "
 )
-
-func modal(theme Theme, width, maxWidth int, border lipgloss.Color, rows []string) string {
-	return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(border).Padding(1, 3).Width(min(width-8, maxWidth)).Render(strings.Join(rows, "\n"))
-}
-
-func renderSelector(theme Theme, state controllerpkg.State, label string, active bool) string {
-	style := theme.StyleNormal
-	if active {
-		style = theme.StyleCursor
-	}
-	return style.Render("[ " + promptGlyphSet(state).Value + label + " ]")
-}
-
-func renderInputColumns(width, maxWidth int, left string, right string) string {
-	contentWidth := min(width-8, maxWidth) - 8
-	contentWidth = max(28, contentWidth)
-	colWidth := (contentWidth - 2) / 2
-	if colWidth < 12 {
-		colWidth = 12
-	}
-	leftCol := lipgloss.NewStyle().Width(colWidth).Render(left)
-	rightCol := lipgloss.NewStyle().Width(colWidth).Render(right)
-	return lipgloss.JoinHorizontal(lipgloss.Top, leftCol, "  ", rightCol)
-}
 
 func plainIssueStatus(status string) string {
 	switch status {
@@ -65,25 +39,23 @@ func fallback(v, def string) string {
 	return v
 }
 
-func appendDialogFooter(theme Theme, state controllerpkg.State, rows []string, hint string) []string {
-	if strings.TrimSpace(state.ErrorMessage) != "" {
-		rows = append(rows, "", theme.StyleError.Render(state.ErrorMessage))
-	}
-	if strings.TrimSpace(hint) != "" {
-		rows = append(rows, "", theme.StyleDim.Render(hint))
-	}
-	return rows
-}
-
-func dialogSubmitChord(state controllerpkg.State) string {
+func dialogSubmitChord(state State) string {
 	return "ctrl+s"
 }
 
-func dialogSubmitHint(state controllerpkg.State, label string) string {
+func dialogSubmitHint(state State, label string) string {
 	return "[" + dialogSubmitChord(state) + "] " + label
 }
 
-func isDialogSubmitKey(state controllerpkg.State, key string) bool {
+func renderSelector(theme Theme, state State, label string, active bool) string {
+	style := theme.StyleNormal
+	if active {
+		style = theme.StyleCursor
+	}
+	return style.Render("[ " + promptGlyphSet(state).Value + label + " ]")
+}
+
+func isDialogSubmitKey(state State, key string) bool {
 	switch key {
 	case "ctrl+s":
 		return true
@@ -104,7 +76,7 @@ type dialogPromptSet struct {
 	Date   string
 }
 
-func promptGlyphSet(state controllerpkg.State) dialogPromptSet {
+func promptGlyphSet(state State) dialogPromptSet {
 	switch sharedtypes.NormalizePromptGlyphMode(state.PromptGlyphMode) {
 	case sharedtypes.PromptGlyphModeUnicode:
 		return dialogPromptSet{
@@ -130,14 +102,41 @@ func promptGlyphSet(state controllerpkg.State) dialogPromptSet {
 	}
 }
 
-func withSearchPrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
+func withSearchPrompt(state State, input textinput.Model) textinput.Model {
 	return withDialogPrompt(input, promptGlyphSet(state).Search)
 }
 
-func withTimePrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
+func withTimePrompt(state State, input textinput.Model) textinput.Model {
 	return withDialogPrompt(input, promptGlyphSet(state).Time)
 }
 
-func withDatePrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
+func withDatePrompt(state State, input textinput.Model) textinput.Model {
 	return withDialogPrompt(input, promptGlyphSet(state).Date)
+}
+
+func issueDialogHint(state State, submitLabel string) string {
+	switch state.Kind {
+	case "create_issue_default":
+		switch state.FocusIdx {
+		case 0, 1:
+			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		case 3:
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		case 5:
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		default:
+			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		}
+	case "create_issue_meta", "edit_issue":
+		switch state.FocusIdx {
+		case 1:
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		case 3:
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		default:
+			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		}
+	default:
+		return dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+	}
 }

@@ -4,7 +4,7 @@ import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	dialogpkg "crona/tui/internal/tui/dialogs"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	keyregistry "crona/tui/internal/tui/key_registry"
 	uistate "crona/tui/internal/tui/state"
 
@@ -24,7 +24,7 @@ type State struct {
 	RollupEndDate       string
 	WellbeingDate       string
 	Dialog              string
-	DialogState         dialogpkg.State
+	DialogState         dialogstate.State
 	HelpOpen            bool
 	SessionDetailOpen   bool
 	SessionDetailY      int

@@ -2,41 +2,41 @@ package tui
 
 import (
 	"crona/tui/internal/api"
-	"crona/tui/internal/tui/app"
+	modelpkg "crona/tui/internal/tui/model"
 )
 
-type Model = app.Model
-type View = app.View
-type Pane = app.Pane
+type Model = modelpkg.Model
+type View = modelpkg.View
+type Pane = modelpkg.Pane
 
 const (
-	ViewDefault        = app.ViewDefault
-	ViewDaily          = app.ViewDaily
-	ViewMeta           = app.ViewMeta
-	ViewSessionHistory = app.ViewSessionHistory
-	ViewSessionActive  = app.ViewSessionActive
-	ViewScratch        = app.ViewScratch
-	ViewOps            = app.ViewOps
-	ViewSettings       = app.ViewSettings
-	ViewAlerts         = app.ViewAlerts
-	ViewSupport        = app.ViewSupport
+	ViewDefault        = modelpkg.ViewDefault
+	ViewDaily          = modelpkg.ViewDaily
+	ViewMeta           = modelpkg.ViewMeta
+	ViewSessionHistory = modelpkg.ViewSessionHistory
+	ViewSessionActive  = modelpkg.ViewSessionActive
+	ViewScratch        = modelpkg.ViewScratch
+	ViewOps            = modelpkg.ViewOps
+	ViewSettings       = modelpkg.ViewSettings
+	ViewAlerts         = modelpkg.ViewAlerts
+	ViewSupport        = modelpkg.ViewSupport
 )
 
 const (
-	PaneRepos       = app.PaneRepos
-	PaneStreams     = app.PaneStreams
-	PaneIssues      = app.PaneIssues
-	PaneSessions    = app.PaneSessions
-	PaneScratchpads = app.PaneScratchpads
-	PaneOps         = app.PaneOps
-	PaneSettings    = app.PaneSettings
-	PaneAlerts      = app.PaneAlerts
+	PaneRepos       = modelpkg.PaneRepos
+	PaneStreams     = modelpkg.PaneStreams
+	PaneIssues      = modelpkg.PaneIssues
+	PaneSessions    = modelpkg.PaneSessions
+	PaneScratchpads = modelpkg.PaneScratchpads
+	PaneOps         = modelpkg.PaneOps
+	PaneSettings    = modelpkg.PaneSettings
+	PaneAlerts      = modelpkg.PaneAlerts
 )
 
 func SetEventChannel(ch <-chan api.KernelEvent) {
-	app.SetEventChannel(ch)
+	modelpkg.SetEventChannel(ch)
 }
 
 func New(transport, endpoint, scratchDir, env, executablePath string, done chan struct{}) Model {
-	return app.New(transport, endpoint, scratchDir, env, executablePath, done)
+	return modelpkg.New(transport, endpoint, scratchDir, env, executablePath, done)
 }
