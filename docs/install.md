@@ -4,7 +4,7 @@
 
 - `stable` is the preferred channel for general users.
 - `prerelease` remains available for testers who want pre-release builds and faster iteration.
-- `v1.2.2` is the current stable release.
+- `v1.3.0` is the current stable release.
 
 See the published builds on [GitHub Releases](https://github.com/webxsid/crona/releases).
 

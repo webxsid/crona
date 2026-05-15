@@ -6,7 +6,7 @@ import (
 
 	"crona/shared/config"
 	"crona/tui/internal/api"
-	"crona/tui/internal/tui/app"
+	app "crona/tui/internal/tui/model"
 )
 
 func TestAvailableViewsAlwaysIncludeUpdates(t *testing.T) {

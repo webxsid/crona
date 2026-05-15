@@ -65,59 +65,61 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 	}
 }
 
-func TestWellbeingViewShowsTodayAndAverageDurationLabels(t *testing.T) {
-	sleep := 7.5
-	state := views.ContentState{
-		View:          "wellbeing",
-		Pane:          "wellbeing",
-		Width:         120,
-		Height:        40,
-		WellbeingDate: "2026-04-04",
-		DailyCheckIn: &api.DailyCheckIn{
-			Date:       "2026-04-04",
-			Mood:       4,
-			Energy:     3,
-			SleepHours: &sleep,
-		},
-	}
+func TestWellbeingViewLabels(t *testing.T) {
+	t.Run("today and average duration", func(t *testing.T) {
+		sleep := 7.5
+		state := views.ContentState{
+			View:          "wellbeing",
+			Pane:          "wellbeing",
+			Width:         120,
+			Height:        40,
+			WellbeingDate: "2026-04-04",
+			DailyCheckIn: &api.DailyCheckIn{
+				Date:       "2026-04-04",
+				Mood:       4,
+				Energy:     3,
+				SleepHours: &sleep,
+			},
+		}
 
-	rendered := support.RenderWellbeing(state)
-	if !strings.Contains(rendered, "today 7h30m") {
-		t.Fatalf("expected today sleep label in wellbeing view, got %q", rendered)
-	}
+		rendered := support.RenderWellbeing(state)
+		if !strings.Contains(rendered, "today 7h30m") {
+			t.Fatalf("expected today sleep label in wellbeing view, got %q", rendered)
+		}
 
-	state.DailyCheckIn = nil
-	state.MetricsRollup = &api.MetricsRollup{AverageSleepHours: &sleep}
-	rendered = support.RenderWellbeing(state)
-	if !strings.Contains(rendered, "7d avg 7h30m") {
-		t.Fatalf("expected average sleep label in wellbeing view, got %q", rendered)
-	}
-}
+		state.DailyCheckIn = nil
+		state.MetricsRollup = &api.MetricsRollup{AverageSleepHours: &sleep}
+		rendered = support.RenderWellbeing(state)
+		if !strings.Contains(rendered, "7d avg 7h30m") {
+			t.Fatalf("expected average sleep label in wellbeing view, got %q", rendered)
+		}
+	})
 
-func TestWellbeingViewShowsBackfilledIndicator(t *testing.T) {
-	sleep := 7.5
-	screen := 80
-	createdAt := "2026-04-05T11:30:00Z"
-	state := views.ContentState{
-		View:          "wellbeing",
-		Pane:          "wellbeing",
-		Width:         120,
-		Height:        36,
-		WellbeingDate: "2026-04-04",
-		DailyCheckIn: &api.DailyCheckIn{
-			Date:              "2026-04-04",
-			Mood:              4,
-			Energy:            3,
-			SleepHours:        &sleep,
-			ScreenTimeMinutes: &screen,
-			CreatedAt:         createdAt,
-		},
-	}
+	t.Run("backfilled indicator", func(t *testing.T) {
+		sleep := 7.5
+		screen := 80
+		createdAt := "2026-04-05T11:30:00Z"
+		state := views.ContentState{
+			View:          "wellbeing",
+			Pane:          "wellbeing",
+			Width:         120,
+			Height:        36,
+			WellbeingDate: "2026-04-04",
+			DailyCheckIn: &api.DailyCheckIn{
+				Date:              "2026-04-04",
+				Mood:              4,
+				Energy:            3,
+				SleepHours:        &sleep,
+				ScreenTimeMinutes: &screen,
+				CreatedAt:         createdAt,
+			},
+		}
 
-	rendered := support.RenderWellbeing(state)
-	if !strings.Contains(rendered, "Backfilled check-in") {
-		t.Fatalf("expected backfilled indicator in wellbeing view, got %q", rendered)
-	}
+		rendered := support.RenderWellbeing(state)
+		if !strings.Contains(rendered, "Backfilled check-in") {
+			t.Fatalf("expected backfilled indicator in wellbeing view, got %q", rendered)
+		}
+	})
 }
 
 func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {

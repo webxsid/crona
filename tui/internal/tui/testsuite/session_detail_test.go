@@ -5,7 +5,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	app "crona/tui/internal/tui/app"
+	app "crona/tui/internal/tui/model"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

@@ -7,8 +7,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	dialogs "crona/tui/internal/tui/dialogs"
-	uistate "crona/tui/internal/tui/state"
+	dialogs "crona/tui/internal/tui/dialogs/controller"
 	"crona/tui/internal/tui/testsuite/support"
 	"crona/tui/internal/tui/views"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -1176,104 +1175,46 @@ func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 	}
 }
 
-func TestDailySummaryUsesTinyHeightModeAt36(t *testing.T) {
-	estimate := 60
-	target := 15
+func TestRollupSummaryShowsRangeCalendarWhenWide(t *testing.T) {
 	state := views.ContentState{
-		View:   "daily",
-		Pane:   "issues",
-		Width:  70,
-		Height: 36,
+		View:            "rollup",
+		Pane:            "rollup_days",
+		Width:           140,
+		Height:          34,
+		RollupStartDate: "2026-03-17",
+		RollupEndDate:   "2026-03-23",
 		Cursors: map[string]int{
-			"issues": 0,
-			"habits": 0,
-		},
-		Filters: map[string]string{
-			"issues": "",
-			"habits": "",
-		},
-		DailySummary: &api.DailyIssueSummary{
-			Date: "2026-03-19",
-			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
-			},
-		},
-		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
-		},
-		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
-		},
-		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			"rollup_days": 0,
 		},
 	}
 
-	rendered := support.RenderDaily(state)
-	assertTinySummary(t, rendered)
+	rendered := ansi.Strip(support.RenderRollup(state))
+	for _, want := range []string{"Rollup Dashboard", "March 2026", "Range W12-W13", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected rollup summary calendar to include %q, got %q", want, rendered)
+		}
+	}
 }
 
-func TestDailySummaryUsesTinyHeightModeAt30(t *testing.T) {
-	estimate := 60
-	target := 15
+func TestWellbeingSummaryShowsMetricsWindowCalendarWhenWide(t *testing.T) {
 	state := views.ContentState{
-		View:   "daily",
-		Pane:   "issues",
-		Width:  70,
-		Height: 30,
+		View:          "wellbeing",
+		Pane:          "wellbeing_summary",
+		Width:         140,
+		Height:        44,
+		WellbeingDate: "2026-03-19",
 		Cursors: map[string]int{
-			"issues": 0,
-			"habits": 0,
+			"wellbeing_summary": 0,
 		},
-		Filters: map[string]string{
-			"issues": "",
-			"habits": "",
-		},
-		DailySummary: &api.DailyIssueSummary{
-			Date: "2026-03-19",
-			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
-			},
-		},
-		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
-		},
-		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
-		},
-		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
-		},
+		Filters: map[string]string{},
 	}
 
-	rendered := support.RenderDaily(state)
-	assertTinySummary(t, rendered)
-}
-
-func TestDefaultViewUsesCompactModeAt36(t *testing.T) {
-	state := compactDefaultState(36)
-	rendered := support.RenderDefault(state)
-	assertCompactDefault(t, rendered, state.Height)
-}
-
-func TestDefaultViewUsesCompactModeAt30(t *testing.T) {
-	state := compactDefaultState(30)
-	rendered := support.RenderDefault(state)
-	assertCompactDefault(t, rendered, state.Height)
-}
-
-func TestWellbeingViewUsesCompactModeAt36(t *testing.T) {
-	state := compactWellbeingState(36)
-	rendered := support.RenderWellbeing(state)
-	assertCompactWellbeing(t, rendered, state.Height)
-}
-
-func TestWellbeingViewUsesCompactModeAt30(t *testing.T) {
-	state := compactWellbeingState(30)
-	rendered := support.RenderWellbeing(state)
-	assertCompactWellbeing(t, rendered, state.Height)
+	rendered := ansi.Strip(support.RenderWellbeing(state))
+	for _, want := range []string{"Wellbeing", "March 2026", "Range W11-W12", "Wk  Mo Tu We Th Fr Sa Su"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wellbeing summary calendar to include %q, got %q", want, rendered)
+		}
+	}
 }
 
 func TestUndersizedWidthShowsMinimumSizeWarning(t *testing.T) {
@@ -1347,158 +1288,6 @@ func assertMinimumSizeWarning(t *testing.T, rendered string, currentWidth, curre
 	if strings.Contains(rendered, "Daily Dashboard") {
 		t.Fatalf("expected normal UI to be suppressed while undersized")
 	}
-}
-
-func strPtr(v string) *string { return &v }
-
-func assertTinySummary(t *testing.T, rendered string) {
-	t.Helper()
-	if !strings.Contains(rendered, "Daily Dashboard") {
-		t.Fatalf("expected dashboard title in tiny summary")
-	}
-	if !strings.Contains(rendered, "2026-03-19") {
-		t.Fatalf("expected date in tiny summary")
-	}
-	if !strings.Contains(rendered, "Scope: Work > app") {
-		t.Fatalf("expected scope in tiny summary")
-	}
-	if !strings.Contains(rendered, "[,] [.] [g]") {
-		t.Fatalf("expected compact date hints in tiny summary")
-	}
-	if !strings.Contains(rendered, "Issues  0/1") || !strings.Contains(rendered, "Habits  0/1") {
-		t.Fatalf("expected both issue and habit summary rows in tiny summary")
-	}
-	if !strings.Contains(rendered, "p1") {
-		t.Fatalf("expected abbreviated issue legend in tiny summary")
-	}
-	if !strings.Contains(rendered, "f0 r1") {
-		t.Fatalf("expected abbreviated habit tail in tiny summary")
-	}
-	if !strings.Contains(rendered, "█") {
-		t.Fatalf("expected micro-bars in tiny summary")
-	}
-}
-
-func compactDefaultState(height int) views.ContentState {
-	estimate1, estimate2, estimate3 := 60, 35, 25
-	today := "2026-03-19"
-	return views.ContentState{
-		View:   "default",
-		Pane:   "issues",
-		Width:  92,
-		Height: height,
-		Cursors: map[string]int{
-			"issues": 0,
-		},
-		Filters: map[string]string{
-			"issues": "",
-		},
-		DefaultIssueSection: "open",
-		DefaultIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate1, TodoForDate: &today}, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 2, Title: "Improve install docs for Linux", Status: "planned", EstimateMinutes: &estimate2, TodoForDate: &today}, RepoName: "OSS", StreamName: "cli"},
-			{Issue: api.Issue{ID: 3, Title: "Research standing desk options", Status: "abandoned", EstimateMinutes: &estimate3}, RepoName: "Personal", StreamName: "home"},
-		},
-		Context: &api.ActiveContext{},
-	}
-}
-
-func compactWellbeingState(height int) views.ContentState {
-	avgMood, avgEnergy := 4.0, 3.7
-	return views.ContentState{
-		View:          "wellbeing",
-		Pane:          string(uistate.PaneWellbeingSummary),
-		Width:         92,
-		Height:        height,
-		WellbeingDate: "2026-03-19",
-		DailyPlan: &api.DailyPlan{
-			Date: "2026-03-19",
-			Summary: api.DailyPlanAccountabilitySummary{
-				PlannedCount:         3,
-				CompletedCount:       1,
-				FailedCount:          1,
-				PendingRollbackCount: 1,
-				AccountabilityScore:  2.6,
-				DelayedIssueCount:    1,
-			},
-			Entries: []api.DailyPlanEntry{
-				{ID: "1", Date: "2026-03-19", IssueID: 1, Status: "completed", CommittedAt: "2026-03-19T08:00:00Z"},
-				{ID: "2", Date: "2026-03-19", IssueID: 2, Status: "failed", CommittedAt: "2026-03-19T08:00:00Z", FailureReason: dailyPlanFailureReasonPtr("moved")},
-				{ID: "3", Date: "2026-03-19", IssueID: 3, Status: "planned", CommittedAt: "2026-03-19T08:00:00Z", PendingFailureAt: strPtr("2026-03-19T10:00:00Z")},
-			},
-		},
-		MetricsRollup: &api.MetricsRollup{
-			Days:          7,
-			CheckInDays:   6,
-			FocusDays:     1,
-			WorkedSeconds: 4956,
-			RestSeconds:   2,
-			AverageMood:   &avgMood,
-			AverageEnergy: &avgEnergy,
-			LatestBurnout: &api.BurnoutIndicator{
-				Level:   "low",
-				Score:   31,
-				Factors: map[string]float64{"workloadPressure": 0.22, "recoveryBreaks": -0.14},
-			},
-		},
-		Streaks: &api.StreakSummary{
-			CurrentCheckInDays: 0,
-			LongestCheckInDays: 6,
-			CurrentFocusDays:   0,
-			LongestFocusDays:   1,
-		},
-	}
-}
-
-func assertCompactDefault(t *testing.T, rendered string, height int) {
-	t.Helper()
-	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Default Dashboard") {
-		t.Fatalf("expected compact stats header in default view")
-	}
-	if !strings.Contains(plain, "Active Issues [1]") {
-		t.Fatalf("expected primary issue list in compact default view")
-	}
-	if !strings.Contains(plain, "Closed") {
-		t.Fatalf("expected compact completed footer in default view")
-	}
-	if !strings.Contains(plain, "Add keyboard-first command palette") {
-		t.Fatalf("expected open issue rows in compact default view")
-	}
-	if got := lipgloss.Height(rendered); got > height {
-		t.Fatalf("default compact view height %d exceeds allocated height %d", got, height)
-	}
-}
-
-func assertCompactWellbeing(t *testing.T, rendered string, height int) {
-	t.Helper()
-	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Wellbeing") || !strings.Contains(plain, "2026-03-19") {
-		t.Fatalf("expected compact wellbeing header")
-	}
-	if !strings.Contains(plain, "[,/.]") && !strings.Contains(plain, "[a/e]") {
-		t.Fatalf("expected action hints in compact wellbeing view")
-	}
-	if !strings.Contains(plain, "No check-in recorded for this date") {
-		t.Fatalf("expected current day summary in compact wellbeing view")
-	}
-	if !strings.Contains(plain, "Burnout") || !strings.Contains(plain, "31 LOW") {
-		t.Fatalf("expected burnout summary in compact wellbeing view")
-	}
-	if !strings.Contains(plain, "Metrics Window") || !strings.Contains(plain, "Days  7") {
-		t.Fatalf("expected compact metrics block in wellbeing view")
-	}
-	if !strings.Contains(plain, "Accountability") || !strings.Contains(plain, "Planned 3  Completed 1  Failed 1  Pending 1") {
-		t.Fatalf("expected compact accountability summary in wellbeing view")
-	}
-	if got := lipgloss.Height(rendered); got > height {
-		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)
-	}
-}
-
-func dailyPlanFailureReasonPtr(value string) *api.DailyPlanFailureReason {
-	reason := api.DailyPlanFailureReason(value)
-	return &reason
 }
 
 func TestDailyHabitDeleteDialogUsesDailySelection(t *testing.T) {

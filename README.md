@@ -58,7 +58,7 @@ crona completion fish
 
 - `stable` is the preferred channel for general users.
 - `prerelease` remains available for staged validation and faster iteration.
-- `v1.2.2` is the current stable release.
+- `v1.3.0` is the current stable release.
 
 ## Documentation
 

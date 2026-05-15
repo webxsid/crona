@@ -7,6 +7,7 @@ import (
 	versionpkg "crona/shared/version"
 	"crona/tui/internal/tui/chrome"
 	"crona/tui/internal/tui/dialogs"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
 	uistate "crona/tui/internal/tui/state"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -35,7 +36,7 @@ type State struct {
 	HeaderState         viewchrome.HeaderState
 	ContentState        viewtypes.ContentState
 	DialogOpen          bool
-	DialogState         dialogs.State
+	DialogState         dialogstate.State
 	HelpOpen            bool
 	SessionDetailOpen   bool
 	SessionDetailY      int

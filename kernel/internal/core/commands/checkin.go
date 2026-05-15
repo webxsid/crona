@@ -293,6 +293,42 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	return streaks, nil
 }
 
+func ComputeMetricsLifetimeStreaks(ctx context.Context, c *core.Context, throughDate string) (*sharedtypes.StreakSummary, error) {
+	if err := validateCheckInDate(throughDate, "", false); err != nil {
+		return nil, err
+	}
+	start, err := earliestMetricsHistoryDate(ctx, c, throughDate)
+	if err != nil {
+		return nil, err
+	}
+	return ComputeMetricsStreaks(ctx, c, start, throughDate)
+}
+
+func earliestMetricsHistoryDate(ctx context.Context, c *core.Context, throughDate string) (string, error) {
+	start := throughDate
+	consider := func(candidate *string) {
+		if candidate != nil && *candidate != "" && *candidate < start {
+			start = *candidate
+		}
+	}
+	focusDate, err := c.Sessions.EarliestEndedDate(ctx, c.UserID, throughDate)
+	if err != nil {
+		return "", err
+	}
+	consider(focusDate)
+	checkInDate, err := c.DailyCheckIns.EarliestDate(ctx, c.UserID, throughDate)
+	if err != nil {
+		return "", err
+	}
+	consider(checkInDate)
+	habitDate, err := c.HabitCompletions.EarliestDate(ctx, c.UserID, throughDate)
+	if err != nil {
+		return "", err
+	}
+	consider(habitDate)
+	return start, nil
+}
+
 func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) *sharedtypes.StreakSummary {
 	var streaks sharedtypes.StreakSummary
 	currentFocus := 0
@@ -427,13 +463,16 @@ func ComputeCustomHabitStreaks(history []sharedtypes.HabitCompletion, start stri
 		if def.Enabled && len(def.HabitIDs) > 0 {
 			buckets := customHabitRangeBuckets(start, end, def.Period)
 			current := 0
-			for _, bucket := range buckets {
+			for bucketIdx, bucket := range buckets {
 				if bucketsByDef[i][bucket] >= def.RequiredCount {
 					current++
 					if current > summary.Longest {
 						summary.Longest = current
 					}
 				} else {
+					if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+						continue
+					}
 					current = 0
 				}
 			}
@@ -442,6 +481,21 @@ func ComputeCustomHabitStreaks(history []sharedtypes.HabitCompletion, start stri
 		results = append(results, summary)
 	}
 	return results
+}
+
+func customHabitTrailingIncompleteBucketIsOpen(end string, period sharedtypes.HabitStreakPeriod) bool {
+	parsed, err := time.Parse("2006-01-02", end)
+	if err != nil {
+		return false
+	}
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		return parsed.Weekday() != time.Sunday
+	case sharedtypes.HabitStreakPeriodMonth:
+		return parsed.AddDate(0, 0, 1).Month() == parsed.Month()
+	default:
+		return false
+	}
 }
 
 func customHabitBucketKey(date string, period sharedtypes.HabitStreakPeriod) string {

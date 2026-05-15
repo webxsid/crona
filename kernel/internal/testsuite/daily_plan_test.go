@@ -3,7 +3,9 @@ package testsuite
 import (
 	"context"
 	"testing"
+	"time"
 
+	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/export"
 	sharedtypes "crona/shared/types"
@@ -182,6 +184,166 @@ func TestDailyReportKeepsFailedPlannedIssueAfterReschedule(t *testing.T) {
 	}
 }
 
+func TestDailyReportIncludesWorkedPinnedFutureIssue(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-05-06T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, _ := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	stream, _ := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	reportDate := "2026-05-06"
+	futureDate := "2026-05-10"
+
+	planned, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Today planned", TodoForDate: &reportDate})
+	if err != nil {
+		t.Fatalf("create planned issue: %v", err)
+	}
+	workedPinned, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Worked pinned future", TodoForDate: &futureDate})
+	if err != nil {
+		t.Fatalf("create worked pinned issue: %v", err)
+	}
+	quietPinned, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Quiet pinned future", TodoForDate: &futureDate})
+	if err != nil {
+		t.Fatalf("create quiet pinned issue: %v", err)
+	}
+	pinned := true
+	for _, issueID := range []int64{workedPinned.ID, quietPinned.ID} {
+		if _, err := corecommands.UpdateIssue(ctx, coreCtx, issueID, struct {
+			Title           sharedtypes.Patch[string]
+			Description     sharedtypes.Patch[string]
+			EstimateMinutes sharedtypes.Patch[int]
+			Notes           sharedtypes.Patch[string]
+			PinnedDaily     sharedtypes.Patch[bool]
+		}{PinnedDaily: sharedtypes.Patch[bool]{Set: true, Value: &pinned}}); err != nil {
+			t.Fatalf("pin issue %d: %v", issueID, err)
+		}
+	}
+	if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
+		IssueID:             workedPinned.ID,
+		Date:                reportDate,
+		WorkDurationSeconds: 1800,
+		StartTime:           strPtr("10:00"),
+	}); err != nil {
+		t.Fatalf("log manual session: %v", err)
+	}
+
+	data, err := export.BuildDailyReportData(ctx, coreCtx, reportDate)
+	if err != nil {
+		t.Fatalf("build daily report data: %v", err)
+	}
+	titles := map[string]sharedtypes.DailyReportIssue{}
+	for _, issue := range data.Issues {
+		titles[issue.Title] = issue
+	}
+	if _, ok := titles[planned.Title]; !ok {
+		t.Fatalf("expected planned issue in report, got %+v", data.Issues)
+	}
+	if got, ok := titles[workedPinned.Title]; !ok || got.WorkedSeconds != 1800 {
+		t.Fatalf("expected worked pinned future issue with 1800s, got %+v", got)
+	}
+	if _, ok := titles[quietPinned.Title]; ok {
+		t.Fatalf("expected quiet pinned future issue to stay out of report, got %+v", data.Issues)
+	}
+}
+
+func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-05-07T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, _ := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	stream, _ := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	reportDate := "2026-05-07"
+	startDate := "2026-05-01"
+	for day := startDate; day < reportDate; day = mustShiftISODate(t, day, 1) {
+		issue := mustCreateCommandIssue(t, ctx, coreCtx, stream.ID, "Burnout window work "+day, &day)
+		if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
+			IssueID:             issue.ID,
+			Date:                day,
+			WorkDurationSeconds: 8 * 60 * 60,
+			StartTime:           strPtr("09:00"),
+		}); err != nil {
+			t.Fatalf("log heavy session for %s: %v", day, err)
+		}
+	}
+	issue := mustCreateCommandIssue(t, ctx, coreCtx, stream.ID, "Burnout window work "+reportDate, &reportDate)
+	if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
+		IssueID:             issue.ID,
+		Date:                reportDate,
+		WorkDurationSeconds: 30 * 60,
+		StartTime:           strPtr("09:00"),
+	}); err != nil {
+		t.Fatalf("log report date session: %v", err)
+	}
+
+	data, err := export.BuildDailyReportData(ctx, coreCtx, reportDate)
+	if err != nil {
+		t.Fatalf("build daily report data: %v", err)
+	}
+	if data.Metrics == nil || data.Metrics.Burnout == nil {
+		t.Fatalf("expected report metrics burnout, got %+v", data.Metrics)
+	}
+	days, err := corecommands.ComputeMetricsRange(ctx, coreCtx, startDate, reportDate)
+	if err != nil {
+		t.Fatalf("compute metrics range: %v", err)
+	}
+	if len(days) != 7 || days[len(days)-1].Burnout == nil {
+		t.Fatalf("expected seven-day burnout range, got %+v", days)
+	}
+	if data.Metrics.Burnout.Score != days[len(days)-1].Burnout.Score {
+		t.Fatalf("expected report burnout score %d from seven-day window, got %d", days[len(days)-1].Burnout.Score, data.Metrics.Burnout.Score)
+	}
+	oneDay, err := corecommands.ComputeMetricsRange(ctx, coreCtx, reportDate, reportDate)
+	if err != nil {
+		t.Fatalf("compute one-day metrics range: %v", err)
+	}
+	if len(oneDay) != 1 || oneDay[0].Burnout == nil {
+		t.Fatalf("expected one-day burnout, got %+v", oneDay)
+	}
+	if oneDay[0].Burnout.Score == data.Metrics.Burnout.Score {
+		t.Fatalf("test setup should distinguish one-day and seven-day burnout scores; both were %d", data.Metrics.Burnout.Score)
+	}
+}
+
 func TestDailyPlanScoreTracksPostponeAndRecovery(t *testing.T) {
 	ctx := context.Background()
 	currentNow := "2026-03-25T09:00:00Z"
@@ -255,6 +417,31 @@ func TestDailyPlanScoreTracksPostponeAndRecovery(t *testing.T) {
 	if entry.FailScore >= 2.6 {
 		t.Fatalf("expected reduced fail score after recovery, got %.2f", entry.FailScore)
 	}
+}
+
+func mustShiftISODate(t *testing.T, date string, days int) string {
+	t.Helper()
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		t.Fatalf("parse date %q: %v", date, err)
+	}
+	return parsed.AddDate(0, 0, days).Format("2006-01-02")
+}
+
+func mustCreateCommandIssue(t *testing.T, ctx context.Context, coreCtx *core.Context, streamID int64, title string, todoForDate *string) sharedtypes.Issue {
+	t.Helper()
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: streamID, Title: title, TodoForDate: todoForDate})
+	if err != nil {
+		t.Fatalf("create issue %q: %v", title, err)
+	}
+	return issue
 }
 
 func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
-	"crona/tui/internal/tui/app"
-	dialogs "crona/tui/internal/tui/dialogs"
+	dialogs "crona/tui/internal/tui/dialogs/controller"
+	app "crona/tui/internal/tui/model"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

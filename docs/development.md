@@ -55,6 +55,8 @@ Developer-only TUI hotkeys:
 - `f7` clears local data
 - `f8` prepares a local update simulation
 
+The dev seed data is intentionally shaped for dashboard validation. It creates roughly 30 days of check-ins, focus/work history, due habits, habit completions, misses, and varied wellbeing signals. It also seeds custom habit streak definitions with daily, weekly, and monthly cadences so the Wellbeing Momentum pane can be tested against short daily streaks, weekly thresholds, and monthly threshold behavior without hand-entering history.
+
 ## Running From Source
 
 ### macOS And Linux

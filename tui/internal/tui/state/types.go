@@ -42,6 +42,7 @@ const (
 	PaneAlerts           Pane = "alerts"
 	PaneWellbeingSummary Pane = "wellbeing_summary"
 	PaneWellbeingTrends  Pane = "wellbeing_trends"
+	PaneWellbeingStreaks Pane = "wellbeing_streaks"
 )
 
 type DefaultIssueSection string
@@ -72,7 +73,7 @@ var viewPanes = map[View][]Pane{
 	ViewSessionActive:  {},
 	ViewScratch:        {PaneScratchpads},
 	ViewOps:            {PaneOps},
-	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends},
+	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends, PaneWellbeingStreaks},
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},

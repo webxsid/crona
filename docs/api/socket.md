@@ -194,6 +194,15 @@ Alert behavior notes:
 | `metrics.range` | `dto.DateRangeQuery` | metrics range object | Per-day metrics for a date window. |
 | `metrics.rollup` | `dto.DateRangeQuery` | metrics rollup object | Aggregate rollups for a date window. |
 | `metrics.streaks` | `dto.DateRangeQuery` | streak summary object | Streak calculations over a date window. |
+| `metrics.streaks_lifetime` | `dto.DailyCheckInQuery` | streak summary object | Streak calculations across stored history through one date. |
+
+Streak behavior notes:
+
+- `metrics.streaks` keeps range-based semantics for callers that need streaks constrained to a specific date window.
+- `metrics.streaks_lifetime` computes the same streak summary shape across stored local history through the requested date, excluding future records.
+- The lifetime start date is derived from the earliest stored ended focus session, check-in, or habit completion at or before the requested date. If no history exists, the requested date is used as the start date.
+- The TUI Wellbeing dashboard uses `metrics.streaks_lifetime` for Momentum while retaining 7-day `metrics.range`, `metrics.rollup`, burnout, and dashboard summary calls.
+- For weekly and monthly custom habit streaks, an incomplete current week/month does not break the current streak while that bucket is still open.
 
 ### Dashboards
 

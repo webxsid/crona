@@ -388,6 +388,33 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 	return out, nil
 }
 
+func (r *SessionRepository) EarliestEndedDate(ctx context.Context, userID string, throughDate string) (*string, error) {
+	type row struct {
+		Date string `bun:"date"`
+	}
+	var item row
+	err := r.db.NewSelect().
+		TableExpr("sessions").
+		ColumnExpr("substr(start_time, 1, 10) AS date").
+		Where("user_id = ?", userID).
+		Where("end_time IS NOT NULL").
+		Where("deleted_at IS NULL").
+		Where("substr(start_time, 1, 10) <= ?", throughDate).
+		OrderExpr("start_time ASC").
+		Limit(1).
+		Scan(ctx, &item)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if item.Date == "" {
+		return nil, nil
+	}
+	return &item.Date, nil
+}
+
 func (r *SessionRepository) selectOne(ctx context.Context, q *bun.SelectQuery) (*sharedtypes.Session, error) {
 	type row struct {
 		ID              string  `bun:"id"`

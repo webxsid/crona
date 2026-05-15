@@ -364,6 +364,32 @@ func (r *HabitCompletionRepository) ListHistory(ctx context.Context, userID stri
 	return out, nil
 }
 
+func (r *HabitCompletionRepository) EarliestDate(ctx context.Context, userID string, throughDate string) (*string, error) {
+	type row struct {
+		Date string `bun:"date"`
+	}
+	var item row
+	err := r.db.NewSelect().
+		TableExpr("habit_completions").
+		ColumnExpr("date").
+		Where("user_id = ?", userID).
+		Where("deleted_at IS NULL").
+		Where("date <= ?", throughDate).
+		OrderExpr("date ASC").
+		Limit(1).
+		Scan(ctx, &item)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if item.Date == "" {
+		return nil, nil
+	}
+	return &item.Date, nil
+}
+
 func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userID string) ([]sharedtypes.HabitCompletion, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`

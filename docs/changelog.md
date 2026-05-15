@@ -6,7 +6,24 @@ Release channel policy:
 
 - `stable` is the preferred channel for general users.
 - `prerelease` is the testing channel for pre-release validation and faster iteration.
-- `v1.2.2` is the current stable release.
+- `v1.3.0` is the current stable release.
+
+## [1.3.0] - 2026-05-15
+
+This stable release expands the Wellbeing experience and tightens the terminal UI around the new Momentum and calendar presentation.
+
+### Added
+- Lifetime wellbeing streaks now compute from all stored local history through the selected date, while the 7-day metrics window remains unchanged.
+- The Wellbeing lower section now splits into a separate Momentum pane on wider terminals, and the pane can be focused and scrolled independently.
+- Custom habit momentum now shows cadence-aware visual ladders and explicit current/best values for daily, weekly, and monthly streaks.
+- Calendar dates now use background and border styling instead of bracket markers.
+
+### Changed
+- The Wellbeing Metrics Window remains the 7-day source for mood, energy, sleep, screen time, burnout, focus, and habit rollups.
+- Weekly and monthly custom streaks now keep the current in-progress bucket from breaking an existing streak until that bucket actually fails its threshold.
+- The generic habit streak row was removed from the detailed streak view in favor of built-in and custom momentum sections.
+- Dev seed data now covers roughly 30 days and includes daily, weekly, and monthly custom streak scenarios for testing.
+- The release notes and socket docs now describe the lifetime streak API and the split Wellbeing layout.
 
 ## [1.2.2] - 2026-05-09
 

@@ -1,8 +1,12 @@
 package dialogs
 
-import "fmt"
+import (
+	"fmt"
 
-func renderSessionDialog(theme Theme, state State) string {
+	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+)
+
+func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
 	case "stash_list":
 		rows := []string{theme.StylePaneTitle.Render("Stashes"), ""}
@@ -52,7 +56,7 @@ func renderSessionDialog(theme Theme, state State) string {
 				label += "  " + state.ViewName
 			}
 			if state.IssueEstimateMins != nil && *state.IssueEstimateMins > 0 {
-				label += fmt.Sprintf("  · estimate %s", FormatDurationMinutesInput(state.IssueEstimateMins))
+				label += fmt.Sprintf("  · estimate %s", controllerpkg.FormatDurationMinutesInput(state.IssueEstimateMins))
 			}
 			rows = append(rows, "", theme.StyleDim.Render(label))
 		}
@@ -93,7 +97,7 @@ func itoa(v int64) string {
 	return fmt.Sprintf("%d", v)
 }
 
-func manualSessionHint(state State) string {
+func manualSessionHint(state controllerpkg.State) string {
 	switch state.FocusIdx {
 	case 1:
 		return "[f2] pick date   [g] today   [tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"

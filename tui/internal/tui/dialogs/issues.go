@@ -3,10 +3,11 @@ package dialogs
 import (
 	"strings"
 
+	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	"github.com/charmbracelet/lipgloss"
 )
 
-func renderIssueDialog(theme Theme, state State) string {
+func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	const issueDialogWidth = 92
 	switch state.Kind {
 	case "create_issue_meta":
@@ -101,7 +102,7 @@ func renderIssueDialog(theme Theme, state State) string {
 	}
 }
 
-func issueDialogHint(state State, submitLabel string) string {
+func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 	switch state.Kind {
 	case "create_issue_default":
 		switch state.FocusIdx {
@@ -146,7 +147,7 @@ func renderIssueContextColumns(theme Theme, width, maxWidth int, repoName, strea
 	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
 }
 
-func renderDefaultIssueContextColumns(theme Theme, state State, width, maxWidth int) string {
+func renderDefaultIssueContextColumns(theme Theme, state controllerpkg.State, width, maxWidth int) string {
 	contentWidth := min(width-8, maxWidth) - 8
 	if contentWidth < 28 {
 		contentWidth = 28
