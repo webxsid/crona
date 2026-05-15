@@ -17,7 +17,7 @@ func TestRenderSingleDateMarksSelectionTodayAndCurrentWeek(t *testing.T) {
 		Today:        "2026-05-14",
 	}), "\n"))
 
-	for _, want := range []string{"March 2026", "Week 12", "Today [14]", "Wk [20]", "19"} {
+	for _, want := range []string{"March 2026", "Week 12", "Today 14", "Wk 20", "19"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected calendar to contain %q, got %q", want, rendered)
 		}
@@ -32,9 +32,14 @@ func TestRenderRangeMarksVisibleRangeAndTodayCell(t *testing.T) {
 		Today:      "2026-05-14",
 	}), "\n"))
 
-	for _, want := range []string{"May 2026", "Range W20-W20", "12", "13", "[14]", "15", "16", "[20]"} {
+	for _, want := range []string{"May 2026", "Range W20-W20", "12", "13", "14", "15", "16", "20"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected range calendar to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"[14]", "[20]"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected calendar to avoid bracket marker %q, got %q", unwanted, rendered)
 		}
 	}
 }
@@ -54,8 +59,22 @@ func TestRenderWindowKeepsAnchorWeekVisible(t *testing.T) {
 	if !strings.Contains(rendered, "30") {
 		t.Fatalf("expected clipped calendar to keep anchor week visible, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Today [14]") || !strings.Contains(rendered, "Wk [20]") {
+	if !strings.Contains(rendered, "Today 14") || !strings.Contains(rendered, "Wk 20") {
 		t.Fatalf("expected clipped calendar metadata to keep today/current week visible, got %q", rendered)
+	}
+}
+
+func TestRenderUsesStyledCellsWithoutBracketMarkers(t *testing.T) {
+	rendered := ansi.Strip(strings.Join(Render(testTheme(), Selection{
+		AnchorDate:   "2026-05-14",
+		SelectedDate: "2026-05-14",
+		Today:        "2026-05-14",
+	}), "\n"))
+
+	for _, unwanted := range []string{"[14]", "[20]"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected styled calendar cells without bracket marker %q, got %q", unwanted, rendered)
+		}
 	}
 }
 

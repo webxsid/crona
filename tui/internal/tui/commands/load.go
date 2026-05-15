@@ -193,6 +193,17 @@ func LoadMetricsStreaks(c *api.Client, start, end string) tea.Cmd {
 	}
 }
 
+func LoadMetricsLifetimeStreaks(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		streaks, err := c.GetMetricsLifetimeStreaks(date)
+		if err != nil {
+			logger.Errorf("loadMetricsLifetimeStreaks: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return StreaksLoadedMsg{Streaks: streaks}
+	}
+}
+
 func LoadIssueSessions(c *api.Client, issueID int64) tea.Cmd {
 	return func() tea.Msg {
 		sessions, err := c.ListSessionsByIssue(issueID)
@@ -382,7 +393,7 @@ func LoadWellbeing(c *api.Client, date string) tea.Cmd {
 		LoadDailyCheckIn(c, date),
 		LoadMetricsRange(c, start, date),
 		LoadMetricsRollup(c, start, date),
-		LoadMetricsStreaks(c, start, date),
+		LoadMetricsLifetimeStreaks(c, date),
 		LoadDashboardSummaries(c, date),
 	)
 }

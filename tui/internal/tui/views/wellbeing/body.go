@@ -2,10 +2,14 @@ package wellbeing
 
 import (
 	"fmt"
+	"strings"
 
+	sharedtypes "crona/shared/types"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func summaryBodyLines(theme types.Theme, state types.ContentState, width int, compact bool) []string {
@@ -60,6 +64,14 @@ func summaryBodyLines(theme types.Theme, state types.ContentState, width int, co
 }
 
 func trendsBodyLines(theme types.Theme, state types.ContentState, width int, compact bool) []string {
+	return trendsBodyLinesWithStreaks(theme, state, width, compact, true)
+}
+
+func metricsBodyLines(theme types.Theme, state types.ContentState, width int, compact bool) []string {
+	return trendsBodyLinesWithStreaks(theme, state, width, compact, false)
+}
+
+func trendsBodyLinesWithStreaks(theme types.Theme, state types.ContentState, width int, compact bool, includeStreaks bool) []string {
 	if state.MetricsRollup == nil {
 		return []string{theme.StyleDim.Render("Loading metrics...")}
 	}
@@ -84,11 +96,8 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 			}
 			lines = append(lines, fmt.Sprintf("%s  %s  %s  %s", theme.StyleHeader.Render("Mood"), avgMood, theme.StyleHeader.Render("Energy"), avgEnergy))
 		}
-		if state.Streaks != nil {
-			lines = append(lines, fmt.Sprintf("Check-in %d/%d  Focus %d/%d  Habit %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays))
-			for _, streak := range state.Streaks.CustomHabitStreaks {
-				lines = append(lines, fmt.Sprintf("%s %d/%d", streak.Name, streak.Current, streak.Longest))
-			}
+		if includeStreaks {
+			lines = append(lines, streaksBodyLines(theme, state, width, true)...)
 		}
 		if strips := trendStrips(theme, state); len(strips) > 0 {
 			lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(strips[0], width-6)))
@@ -112,20 +121,9 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 	if state.MetricsRollup.HabitDueCount > 0 || state.MetricsRollup.HabitCompletedCount > 0 || state.MetricsRollup.HabitFailedCount > 0 {
 		lines = append(lines, fmt.Sprintf("%s  %d  %s  %d  %s  %d", theme.StyleHeader.Render("Habits due"), state.MetricsRollup.HabitDueCount, theme.StyleHeader.Render("Done"), state.MetricsRollup.HabitCompletedCount, theme.StyleHeader.Render("Failed"), state.MetricsRollup.HabitFailedCount))
 	}
-	if state.Streaks != nil {
-		lines = append(lines, "",
-			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Check-In Streak"), state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays),
-			fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render("Focus Streak"), state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays),
-		)
-		// add a divider between the main streaks and any custom habit streakks
-		lines = append(lines, theme.StyleDim.Render("─ "+viewhelpers.Truncate("Other Habit Streaks", width-6)+" ─"))
-		// add a fallback no habit streak message if there are no custom habit streaks to show
-		if len(state.Streaks.CustomHabitStreaks) == 0 {
-			lines = append(lines, theme.StyleDim.Render("No custom habit streaks"))
-		}
-		for _, streak := range state.Streaks.CustomHabitStreaks {
-			lines = append(lines, fmt.Sprintf("%s  %d current / %d longest", theme.StyleHeader.Render(streak.Name), streak.Current, streak.Longest))
-		}
+	if includeStreaks {
+		lines = append(lines, "")
+		lines = append(lines, streaksBodyLines(theme, state, width, false)...)
 	}
 	if strips := trendStrips(theme, state); len(strips) > 0 {
 		lines = append(lines, "", theme.StyleHeader.Render("Signals (7d)"))
@@ -143,4 +141,118 @@ func trendsBodyLines(theme types.Theme, state types.ContentState, width int, com
 		}
 	}
 	return lines
+}
+
+func streaksBodyLines(theme types.Theme, state types.ContentState, width int, compact bool) []string {
+	if state.Streaks == nil {
+		return []string{theme.StyleDim.Render("Loading momentum...")}
+	}
+	if compact {
+		lines := []string{
+			compactMomentumRow(theme, "Check-ins", "", sharedtypes.HabitStreakPeriodDay, state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, width),
+			compactMomentumRow(theme, "Focus", "", sharedtypes.HabitStreakPeriodDay, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, width),
+		}
+		for _, streak := range state.Streaks.CustomHabitStreaks {
+			lines = append(lines, compactMomentumRow(theme, streak.Name, habitStreakCadenceLabel(streak.Period), streak.Period, streak.Current, streak.Longest, width))
+		}
+		return lines
+	}
+	lines := []string{}
+	lines = append(lines, momentumRow(theme, "Check-ins", "", sharedtypes.HabitStreakPeriodDay, state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, width)...)
+	lines = append(lines, momentumRow(theme, "Focus", "", sharedtypes.HabitStreakPeriodDay, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, width)...)
+	lines = append(lines, "", theme.StyleHeader.Render(viewhelpers.Truncate("Custom Momentum", width-6)))
+	if len(state.Streaks.CustomHabitStreaks) == 0 {
+		lines = append(lines, theme.StyleDim.Render("No custom momentum yet"))
+	}
+	for _, streak := range state.Streaks.CustomHabitStreaks {
+		lines = append(lines, momentumRow(theme, streak.Name, habitStreakCadenceLabel(streak.Period), streak.Period, streak.Current, streak.Longest, width)...)
+	}
+	return lines
+}
+
+func momentumRow(theme types.Theme, name, cadence string, period sharedtypes.HabitStreakPeriod, current, longest, width int) []string {
+	label := viewhelpers.Truncate(name, max(8, width-10))
+	if cadence != "" {
+		label = fmt.Sprintf("%s  %s", label, theme.StyleDim.Render("["+cadence+"]"))
+	}
+	unit := momentumUnit(period)
+	return []string{
+		theme.StyleHeader.Render(label),
+		fmt.Sprintf("%s  %s current · %s best", momentumLadder(theme, period, current, longest), formatMomentumLength(current, unit), formatMomentumLength(longest, unit)),
+	}
+}
+
+func compactMomentumRow(theme types.Theme, name, cadence string, period sharedtypes.HabitStreakPeriod, current, longest, width int) string {
+	label := name
+	if cadence != "" {
+		label = fmt.Sprintf("%s [%s]", label, cadence)
+	}
+	return viewhelpers.Truncate(fmt.Sprintf("%s  %s  %s", label, momentumLadder(theme, period, current, longest), formatMomentumLength(current, momentumUnit(period))), max(12, width-6))
+}
+
+func momentumLadder(theme types.Theme, period sharedtypes.HabitStreakPeriod, current, longest int) string {
+	thresholds := momentumThresholds(period)
+	filled := momentumTierCount(period, current)
+	ladder := strings.Repeat("▰", filled) + strings.Repeat("▱", len(thresholds)-filled)
+	style := lipgloss.NewStyle().Foreground(theme.ColorDim)
+	switch {
+	case current > 0 && current == longest:
+		style = lipgloss.NewStyle().Foreground(theme.ColorCyan)
+	case filled >= 4:
+		style = lipgloss.NewStyle().Foreground(theme.ColorGreen)
+	case filled > 0:
+		style = lipgloss.NewStyle().Foreground(theme.ColorYellow)
+	}
+	return style.Render(ladder)
+}
+
+func momentumTierCount(period sharedtypes.HabitStreakPeriod, current int) int {
+	if current <= 0 {
+		return 0
+	}
+	filled := 0
+	for _, threshold := range momentumThresholds(period) {
+		if current < threshold {
+			break
+		}
+		filled++
+	}
+	return filled
+}
+
+func momentumThresholds(period sharedtypes.HabitStreakPeriod) []int {
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		return []int{1, 2, 4, 8, 13, 26, 52}
+	case sharedtypes.HabitStreakPeriodMonth:
+		return []int{1, 2, 3, 6, 12, 24}
+	default:
+		return []int{1, 3, 7, 14, 30, 60, 100}
+	}
+}
+
+func momentumUnit(period sharedtypes.HabitStreakPeriod) string {
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		return "w"
+	case sharedtypes.HabitStreakPeriodMonth:
+		return "mo"
+	default:
+		return "d"
+	}
+}
+
+func formatMomentumLength(value int, unit string) string {
+	return fmt.Sprintf("%d%s", value, unit)
+}
+
+func habitStreakCadenceLabel(period sharedtypes.HabitStreakPeriod) string {
+	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
+	case sharedtypes.HabitStreakPeriodWeek:
+		return "weekly"
+	case sharedtypes.HabitStreakPeriodMonth:
+		return "monthly"
+	default:
+		return "daily"
+	}
 }

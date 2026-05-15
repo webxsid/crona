@@ -14,6 +14,7 @@ import (
 	shareddto "crona/shared/dto"
 	"crona/shared/localipc"
 	"crona/shared/protocol"
+	sharedtypes "crona/shared/types"
 )
 
 func testEndpoint(t *testing.T) string {
@@ -120,6 +121,59 @@ func TestDecodeSettingsReadsBoundarySettingsFromPublicShape(t *testing.T) {
 	}
 	if !settings.BoundarySound {
 		t.Fatalf("expected boundary sound true, got false")
+	}
+}
+
+func TestGetMetricsLifetimeStreaksUsesLifetimeMethodAndDateQuery(t *testing.T) {
+	endpoint := testEndpoint(t)
+	ln, err := localipc.Listen(endpoint)
+	if err != nil {
+		if runtime.GOOS != "windows" && strings.Contains(err.Error(), "operation not permitted") {
+			t.Skipf("local ipc listen unavailable in this environment: %v", err)
+		}
+		t.Fatalf("listen: %v", err)
+	}
+	defer func() { _ = ln.Close() }()
+
+	gotReq := make(chan protocol.Request, 1)
+	go func() {
+		conn, err := ln.Accept()
+		if err != nil {
+			return
+		}
+		defer func() { _ = conn.Close() }()
+		var req protocol.Request
+		if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&req); err != nil {
+			return
+		}
+		gotReq <- req
+		body, _ := json.Marshal(sharedtypes.StreakSummary{CurrentFocusDays: 12})
+		_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: body})
+	}()
+
+	client := NewClient(localipc.DefaultTransport(), endpoint, "")
+	streaks, err := client.GetMetricsLifetimeStreaks(" 2026-04-10 ")
+	if err != nil {
+		t.Fatalf("GetMetricsLifetimeStreaks: %v", err)
+	}
+	if streaks == nil || streaks.CurrentFocusDays != 12 {
+		t.Fatalf("unexpected streak response: %+v", streaks)
+	}
+
+	select {
+	case req := <-gotReq:
+		if req.Method != protocol.MethodMetricsStreaksLifetime {
+			t.Fatalf("expected %s, got %s", protocol.MethodMetricsStreaksLifetime, req.Method)
+		}
+		var query shareddto.DailyCheckInQuery
+		if err := json.Unmarshal(req.Params, &query); err != nil {
+			t.Fatalf("unmarshal params: %v", err)
+		}
+		if query.Date != "2026-04-10" {
+			t.Fatalf("expected trimmed date query, got %+v", query)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for request")
 	}
 }
 

@@ -66,8 +66,6 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	}
 
 	baseNow := time.Now().UTC()
-	today := baseNow.Format("2006-01-02")
-	yesterday := baseNow.Add(-24 * time.Hour).Format("2006-01-02")
 	dateAt := func(offset int) string {
 		return baseNow.AddDate(0, 0, offset).Format("2006-01-02")
 	}
@@ -326,43 +324,39 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
-	workoutHabit, err := createHabit(-6, wellbeingStream.ID, "Strength Training", "Three lifting sessions each week with basic progression.", "weekly", []int{1, 3, 5}, devIntPtr(60))
+	workoutHabit, err := createHabit(-29, wellbeingStream.ID, "Strength Training", "Three lifting sessions each week with basic progression.", "weekly", []int{1, 3, 5}, devIntPtr(60))
 	if err != nil {
 		return err
 	}
-	walkHabit, err := createHabit(-6, wellbeingStream.ID, "Morning Walk", "Get outside before work for a short walk.", "daily", nil, devIntPtr(25))
+	walkHabit, err := createHabit(-29, wellbeingStream.ID, "Morning Walk", "Get outside before work for a short walk.", "daily", nil, devIntPtr(25))
 	if err != nil {
 		return err
 	}
-	journalHabit, err := createHabit(-6, wellbeingStream.ID, "Journal", "Capture a quick end-of-day reflection.", "daily", nil, devIntPtr(10))
+	journalHabit, err := createHabit(-29, wellbeingStream.ID, "Journal", "Capture a quick end-of-day reflection.", "daily", nil, devIntPtr(10))
 	if err != nil {
 		return err
 	}
-	inboxHabit, err := createHabit(-6, appStream.ID, "Inbox Zero Sweep", "Clear triage inboxes before the afternoon block.", "weekdays", nil, devIntPtr(15))
+	inboxHabit, err := createHabit(-29, appStream.ID, "Inbox Zero Sweep", "Clear triage inboxes before the afternoon block.", "weekdays", nil, devIntPtr(15))
 	if err != nil {
 		return err
 	}
-	if _, err := createHabit(-6, homeStream.ID, "Laundry Reset", "Run and fold one load every Sunday.", "weekly", []int{0}, devIntPtr(45)); err != nil {
+	if _, err := createHabit(-29, homeStream.ID, "Laundry Reset", "Run and fold one load every Sunday.", "weekly", []int{0}, devIntPtr(45)); err != nil {
 		return err
 	}
-	if _, err := createHabit(-6, cliStream.ID, "Read Release Notes", "Scan upstream release notes for dependency changes.", "weekly", []int{2, 4}, devIntPtr(20)); err != nil {
+	if _, err := createHabit(-29, cliStream.ID, "Read Release Notes", "Scan upstream release notes for dependency changes.", "weekly", []int{2, 4}, devIntPtr(20)); err != nil {
 		return err
 	}
 
-	workoutDate, workoutOffset := mostRecentMatchingWeekday(baseNow, []int{1, 3, 5})
-	if err := seedHabitStatus(workoutOffset, workoutHabit.ID, workoutDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(58), devStringPtr("Main lifts plus accessory work.")); err != nil {
+	habitStreakDefs := []sharedtypes.HabitStreakDefinition{
+		{ID: "daily-reflection", Name: "Daily Reflection", Enabled: true, Period: sharedtypes.HabitStreakPeriodDay, RequiredCount: 1, HabitIDs: []int64{journalHabit.ID}},
+		{ID: "training-week", Name: "Training Week", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 2, HabitIDs: []int64{workoutHabit.ID}},
+		{ID: "recovery-mix", Name: "Recovery Mix", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 10, HabitIDs: []int64{walkHabit.ID, journalHabit.ID}},
+		{ID: "wellbeing-month", Name: "Wellbeing Month", Enabled: true, Period: sharedtypes.HabitStreakPeriodMonth, RequiredCount: 24, HabitIDs: []int64{walkHabit.ID, journalHabit.ID, workoutHabit.ID}},
+	}
+	if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, habitStreakDefs); err != nil {
 		return err
 	}
-	if err := seedHabitStatus(0, walkHabit.ID, today, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Weather broke the morning routine.")); err != nil {
-		return err
-	}
-	inboxDate, inboxOffset := mostRecentMatchingWeekday(baseNow, []int{1, 2, 3, 4, 5})
-	if err := seedHabitStatus(inboxOffset, inboxHabit.ID, inboxDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(12), devStringPtr("Inbox and notifications cleared before lunch.")); err != nil {
-		return err
-	}
-	if err := seedHabitStatus(-1, journalHabit.ID, yesterday, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(9), devStringPtr("Quick reflection before bed.")); err != nil {
-		return err
-	}
+
 	checkInNotes := []string{
 		"Low-energy restart day with too much catch-up.",
 		"Better morning structure but still some drag.",
@@ -372,17 +366,57 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Productive, but sleep debt still showed up.",
 		"Stable finish with good control over context switching.",
 	}
-	moods := []int{2, 3, 4, 2, 4, 3, 4}
-	energies := []int{2, 3, 4, 2, 4, 3, 4}
-	sleepHours := []float64{5.9, 6.5, 7.6, 5.8, 8.0, 6.7, 7.3}
-	sleepScores := []int{58, 68, 84, 55, 88, 71, 79}
-	screenMinutes := []int{255, 225, 178, 290, 165, 214, 186}
-	for i := 6; i >= 0; i-- {
+	for i := 29; i >= 0; i-- {
 		date := baseNow.AddDate(0, 0, -i).Format("2006-01-02")
-		idx := 6 - i
-		if err := seedCheckIn(-i, date, moods[idx], energies[idx], sleepHours[idx], sleepScores[idx], screenMinutes[idx], checkInNotes[idx]); err != nil {
+		idx := (29 - i) % len(checkInNotes)
+		mood := 2 + ((29 - i + 1) % 4)
+		energy := 2 + ((29 - i + 2) % 4)
+		sleep := 5.8 + float64((29-i)%8)*0.3
+		sleepScore := 58 + ((29 - i) % 7 * 6)
+		screenTime := 165 + ((29 - i) % 6 * 24)
+		if err := seedCheckIn(-i, date, mood, energy, sleep, sleepScore, screenTime, checkInNotes[idx]); err != nil {
 			return err
 		}
+		weekday := int(baseNow.AddDate(0, 0, -i).Weekday())
+		if i == 0 {
+			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Weather broke the morning routine.")); err != nil {
+				return err
+			}
+		} else if i%9 != 0 {
+			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(22+(i%6)), devStringPtr("Morning walk logged for the 30-day seed window.")); err != nil {
+				return err
+			}
+		}
+		if i%11 != 0 {
+			if err := seedHabitStatus(-i, journalHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(8+(i%5)), devStringPtr("Short reflection for streak testing.")); err != nil {
+				return err
+			}
+		}
+		if weekday == 1 || weekday == 3 || weekday == 5 {
+			if i%13 != 0 {
+				if err := seedHabitStatus(-i, workoutHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(48+(i%5)*4), devStringPtr("Strength session for weekly streak cadence.")); err != nil {
+					return err
+				}
+			}
+		}
+		if weekday >= 1 && weekday <= 5 && i%10 != 0 {
+			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(10+(i%4)), devStringPtr("Inbox and notifications cleared.")); err != nil {
+				return err
+			}
+		}
+		if weekday >= 1 && weekday <= 5 && i%17 == 0 {
+			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Inbox sweep missed during a heavy day.")); err != nil {
+				return err
+			}
+		}
+	}
+	workoutDate, workoutOffset := mostRecentMatchingWeekday(baseNow, []int{1, 3, 5})
+	if err := seedHabitStatus(workoutOffset, workoutHabit.ID, workoutDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(58), devStringPtr("Main lifts plus accessory work.")); err != nil {
+		return err
+	}
+	inboxDate, inboxOffset := mostRecentMatchingWeekday(baseNow, []int{1, 2, 3, 4, 5})
+	if err := seedHabitStatus(inboxOffset, inboxHabit.ID, inboxDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(12), devStringPtr("Inbox and notifications cleared before lunch.")); err != nil {
+		return err
 	}
 
 	sessionPlan := []struct {

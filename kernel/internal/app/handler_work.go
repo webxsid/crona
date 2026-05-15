@@ -336,6 +336,10 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
 			return corecommands.ComputeMetricsStreaks(ctx, h.core, input.Start, input.End)
 		}), true
+	case protocol.MethodMetricsStreaksLifetime:
+		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {
+			return corecommands.ComputeMetricsLifetimeStreaks(ctx, h.core, input.Date)
+		}), true
 	case protocol.MethodDashboardWindow:
 		return handle(req, func(input shareddto.DashboardWindowQuery) (any, error) {
 			return corecommands.ComputeDashboardWindowSummary(ctx, h.core, input)

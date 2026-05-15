@@ -52,17 +52,21 @@ func Render(theme types.Theme, selection Selection) []string {
 		selectedWeek = ISOWeek(rangeEnd)
 	}
 	currentWeek := ISOWeek(today)
+	selectedDateStyle := lipgloss.NewStyle().Background(theme.ColorGreen).Foreground(lipgloss.Color("0")).Bold(true)
+	todayStyle := lipgloss.NewStyle().Background(theme.ColorYellow).Foreground(lipgloss.Color("0")).Bold(true)
+	rangeStyle := lipgloss.NewStyle().Background(theme.ColorBlue).Foreground(theme.ColorWhite)
+	currentWeekStyle := lipgloss.NewStyle().Background(theme.ColorYellow).Foreground(lipgloss.Color("0")).Bold(true)
 	for week := range 6 {
 		rowStart := gridStart.AddDate(0, 0, week*7)
 		rowWeek := ISOWeek(rowStart)
 		weekLabel := fmt.Sprintf("%2d", rowWeek)
 		switch {
 		case rowWeek == currentWeek:
-			weekLabel = theme.StyleCursor.Render("[" + weekLabel + "]")
+			weekLabel = currentWeekStyle.Render(weekLabel)
 		case rowWeek == selectedWeek:
-			weekLabel = theme.StyleHeader.Render(" " + weekLabel + " ")
+			weekLabel = theme.StyleHeader.Render(weekLabel)
 		default:
-			weekLabel = theme.StyleDim.Render(" " + weekLabel + " ")
+			weekLabel = theme.StyleDim.Render(weekLabel)
 		}
 		cells := make([]string, 0, 7)
 		for day := range 7 {
@@ -71,16 +75,13 @@ func Render(theme types.Theme, selection Selection) []string {
 			inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) && !current.After(rangeEnd)
 			isToday := sameDay(current, today)
 			cell := fmt.Sprintf("%2d", current.Day())
-			if isToday {
-				cell = "[" + cell + "]"
-			} else {
-				cell = " " + cell + " "
-			}
 			switch {
 			case inSelected:
-				cell = theme.StyleCursor.Render(cell)
+				cell = selectedDateStyle.Render(cell)
+			case isToday:
+				cell = todayStyle.Render(cell)
 			case inRange:
-				cell = theme.StyleSelected.Render(cell)
+				cell = rangeStyle.Render(cell)
 			case current.Month() != monthStart.Month():
 				cell = theme.StyleDim.Render(cell)
 			case rowWeek == selectedWeek && selectedWeek != 0:
@@ -90,7 +91,7 @@ func Render(theme types.Theme, selection Selection) []string {
 			}
 			cells = append(cells, cell)
 		}
-		lines = append(lines, weekLabel+" "+strings.Join(cells, ""))
+		lines = append(lines, weekLabel+"  "+strings.Join(cells, " "))
 	}
 	return Window(lines, anchor, selection.MaxLines)
 }
@@ -206,7 +207,7 @@ func calendarMetaLine(theme types.Theme, selected time.Time, hasSelected bool, r
 	} else if hasSelected {
 		parts = append(parts, fmt.Sprintf("Week %02d", ISOWeek(selected)))
 	}
-	parts = append(parts, fmt.Sprintf("Today [%02d]", today.Day()), fmt.Sprintf("Wk [%02d]", ISOWeek(today)))
+	parts = append(parts, fmt.Sprintf("Today %02d", today.Day()), fmt.Sprintf("Wk %02d", ISOWeek(today)))
 	return theme.StyleDim.Render(viewhelpers.Truncate(strings.Join(parts, "   "), 44))
 }
 

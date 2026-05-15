@@ -103,6 +103,31 @@ func (r *DailyCheckInRepository) ListRange(ctx context.Context, userID string, s
 	return out, nil
 }
 
+func (r *DailyCheckInRepository) EarliestDate(ctx context.Context, userID string, throughDate string) (*string, error) {
+	type row struct {
+		Date string `bun:"date"`
+	}
+	var item row
+	err := r.db.NewSelect().
+		Model((*storemodels.DailyCheckInModel)(nil)).
+		ColumnExpr("date").
+		Where("user_id = ?", userID).
+		Where("date <= ?", throughDate).
+		OrderExpr("date ASC").
+		Limit(1).
+		Scan(ctx, &item)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	if item.Date == "" {
+		return nil, nil
+	}
+	return &item.Date, nil
+}
+
 func dailyCheckInFromModel(model storemodels.DailyCheckInModel) *sharedtypes.DailyCheckIn {
 	return &sharedtypes.DailyCheckIn{
 		Date:              model.Date,

@@ -97,6 +97,36 @@ Example:
 notes/[[date]]-daily.md
 ```
 
+## Wellbeing Metrics
+
+The Wellbeing view combines a selected-day check-in with a rolling metrics window. Mood, energy, sleep, screen time, burnout, focus, and habit rollups are still shown for the recent 7-day window ending on the selected wellbeing date.
+
+Momentum is separate from that 7-day window. It uses all stored local history up to the selected wellbeing date, so focus, check-in, and habit streaks can exceed the visible metrics window. The range-based streak API remains available for reports and callers that intentionally want date-window streak calculations.
+
+Custom habit momentum follows the habit streak definitions configured in Settings:
+
+- daily definitions count matching completed days
+- weekly definitions count weeks that meet their configured completion threshold
+- monthly definitions count months that meet their configured completion threshold
+
+For weekly and monthly custom momentum, the current in-progress bucket does not break an existing streak just because it has not reached its threshold yet. It only extends the streak once the threshold is met.
+
+The Momentum pane visualizes current streak length with a cadence-specific ladder. Filled blocks are milestones reached by the current streak; empty blocks are future milestones.
+
+```text
+Daily/check-in/focus: 1d, 3d, 7d, 14d, 30d, 60d, 100d
+Weekly customs:       1w, 2w, 4w, 8w, 13w, 26w, 52w
+Monthly customs:      1mo, 2mo, 3mo, 6mo, 12mo, 24mo
+```
+
+The exact current and best values are shown next to the ladder, for example `14d current · 30d best`.
+
+## Terminal UI Surfaces
+
+On wider terminals, the Wellbeing dashboard splits its lower region into a 7-day Metrics Window pane and a separate Momentum pane. The Momentum pane is focusable and scrollable independently so custom habit momentum can grow without clipping the metrics content.
+
+Calendar surfaces use terminal background styling for selected dates, date ranges, today, and the current week rather than bracket markers. This keeps date cells fixed-width while relying on color and background state to distinguish selection and today.
+
 ## Notifications And Automation
 
 ### Notifications

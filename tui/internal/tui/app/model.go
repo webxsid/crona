@@ -73,6 +73,7 @@ const (
 	PaneAlerts           = uistate.PaneAlerts
 	PaneWellbeingSummary = uistate.PaneWellbeingSummary
 	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
+	PaneWellbeingStreaks = uistate.PaneWellbeingStreaks
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
@@ -345,6 +346,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneAlerts:           0,
 			PaneWellbeingSummary: 0,
 			PaneWellbeingTrends:  0,
+			PaneWellbeingStreaks: 0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:            "",
@@ -362,6 +364,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneAlerts:           "",
 			PaneWellbeingSummary: "",
 			PaneWellbeingTrends:  "",
+			PaneWellbeingStreaks: "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
@@ -426,7 +429,7 @@ func (m *Model) listLen(p Pane) int {
 		}
 		return len(m.dashboardWindow.Days)
 	}
-	if p == PaneWellbeingSummary || p == PaneWellbeingTrends {
+	if p == PaneWellbeingSummary || p == PaneWellbeingTrends || p == PaneWellbeingStreaks {
 		snapshot := m.selectionSnapshot()
 		activeIssue := selectionpkg.ActiveIssue(snapshot)
 		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)

@@ -363,6 +363,16 @@ func (c *Client) GetMetricsStreaks(start, end string) (*StreakSummary, error) {
 	return &out, nil
 }
 
+func (c *Client) GetMetricsLifetimeStreaks(date string) (*StreakSummary, error) {
+	var out StreakSummary
+	if err := c.call(protocol.MethodMetricsStreaksLifetime, shareddto.DailyCheckInQuery{
+		Date: strings.TrimSpace(date),
+	}, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *Client) GetDashboardWindowSummary(start, end string, repoID, streamID, issueID *int64) (*DashboardWindowSummary, error) {
 	var out DashboardWindowSummary
 	if err := c.call(protocol.MethodDashboardWindow, shareddto.DashboardWindowQuery{
