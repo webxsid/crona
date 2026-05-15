@@ -67,3 +67,31 @@ func TestHandleActivateSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 		t.Fatalf("expected prompt glyph mode patch on activation, got %q", patchedKey)
 	}
 }
+
+func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T) {
+	state := State{
+		ActiveView: uistate.ViewSettings,
+		Settings: &sharedtypes.CoreSettings{
+			UsageTelemetryEnabled: true,
+			ErrorReportingEnabled:  false,
+		},
+		Cursor: map[uistate.Pane]int{
+			uistate.PaneSettings: 24,
+		},
+	}
+	deps := Deps{
+		OpenEditTelemetrySettingsDialog: func(state *State) bool {
+			state.Dialog = "edit_telemetry_settings"
+			return true
+		},
+	}
+
+	next, _, handled := handleActivateSelectedSetting(state, deps)
+	if !handled {
+		t.Fatalf("expected telemetry settings row activation to be handled")
+	}
+	out := next.(State)
+	if out.Dialog != "edit_telemetry_settings" {
+		t.Fatalf("expected telemetry settings dialog to open, got %q", out.Dialog)
+	}
+}

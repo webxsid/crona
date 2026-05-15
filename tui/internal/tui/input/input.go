@@ -4,6 +4,7 @@ import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/logger"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	keyregistry "crona/tui/internal/tui/key_registry"
 	uistate "crona/tui/internal/tui/state"
@@ -148,7 +149,11 @@ type (
 )
 
 func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
+	logger.Infof("input.Handle: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t scratchpad=%t", key.String(), state.ActiveView, state.ActivePane, state.Dialog, state.HelpOpen, state.SessionDetailOpen, state.SessionContextOpen, state.ScratchpadOpen)
 	next, cmd := newRouter(deps).Handle(state, state.ActiveView, state.ActivePane, key)
+	if routed, ok := next.(State); ok {
+		logger.Infof("input.Handle result: key=%q next_view=%s next_pane=%s dialog=%q", key.String(), routed.ActiveView, routed.ActivePane, routed.Dialog)
+	}
 	return next.(State), cmd
 }
 

@@ -6,6 +6,8 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
@@ -49,5 +51,36 @@ func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	}
 	if cmd := model.timerActivityTouchCmd(now.Add(61 * time.Second)); cmd == nil {
 		t.Fatalf("expected touch command after throttle window")
+	}
+}
+
+func TestDialogModeQuitsOnQAndCtrlC(t *testing.T) {
+	model := Model{}.withDialogState(dialogstate.State{Kind: "onboarding"})
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd == nil {
+		t.Fatalf("expected quit command for q")
+	}
+	if next.(Model).dialog != "onboarding" {
+		t.Fatalf("expected dialog state to remain unchanged, got %q", next.(Model).dialog)
+	}
+
+	next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	if cmd == nil {
+		t.Fatalf("expected quit command for ctrl+c")
+	}
+	if next.(Model).dialog != "onboarding" {
+		t.Fatalf("expected dialog state to remain unchanged, got %q", next.(Model).dialog)
+	}
+}
+
+func TestDialogRuntimeDepsWireTelemetryHooks(t *testing.T) {
+	model := Model{client: api.NewClient("unix", "/tmp/missing.sock", "")}
+	deps := model.dialogRuntimeDeps()
+	if deps.PatchTelemetrySettings == nil {
+		t.Fatal("expected patch telemetry settings hook to be wired")
+	}
+	if deps.CompleteOnboarding == nil {
+		t.Fatal("expected complete onboarding hook to be wired")
 	}
 }

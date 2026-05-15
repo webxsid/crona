@@ -7,6 +7,7 @@ import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
 	dialogruntime "crona/tui/internal/tui/dialog_runtime"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
@@ -293,6 +294,10 @@ func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditRestProtection())
 }
 
+func (m Model) openEditTelemetrySettingsDialog() Model {
+	return m.withDialogState(m.dialogSnapshot().OpenEditTelemetrySettings())
+}
+
 func (m Model) openEditHabitStreaksDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditHabitStreaks())
 }
@@ -307,74 +312,82 @@ func (m Model) openConfirmUninstallDialog() Model {
 
 func (m Model) dialogState() dialogstate.State {
 	return dialogstate.State{
-		Kind:               m.dialog,
-		Width:              m.width,
-		Inputs:             m.dialogInputs,
-		Description:        m.dialogDescription,
-		DescriptionEnabled: m.dialogDescriptionOn,
-		DescriptionIndex:   m.dialogDescriptionIdx,
-		FocusIdx:           m.dialogFocusIdx,
-		ErrorMessage:       m.dialogErrorMessage,
-		DeleteID:           m.dialogDeleteID,
-		DeleteKind:         m.dialogDeleteKind,
-		DeleteLabel:        m.dialogDeleteLabel,
-		SessionID:          m.dialogSessionID,
-		IssueID:            m.dialogIssueID,
-		HabitID:            m.dialogHabitID,
-		IssueStatus:        m.dialogIssueStatus,
-		CheckInDate:        m.dialogCheckInDate,
-		RepoID:             m.dialogRepoID,
-		RepoName:           m.dialogRepoName,
-		RepoItems:          m.dialogRepoItems,
-		RepoItemIDs:        m.dialogRepoItemIDs,
-		StreamID:           m.dialogStreamID,
-		StreamName:         m.dialogStreamName,
-		RepoIndex:          m.dialogRepoIndex,
-		StreamIndex:        m.dialogStreamIndex,
-		Parent:             m.dialogParent,
-		DateMonthValue:     m.dialogDateMonth,
-		DateCursorValue:    m.dialogDateCursor,
-		StashCursor:        m.dialogStashCursor,
-		StatusItems:        m.dialogStatusItems,
-		StatusCursor:       m.dialogStatusCursor,
-		ChoiceItems:        m.dialogChoiceItems,
-		ChoiceValues:       m.dialogChoiceValues,
-		ChoiceDetails:      m.dialogChoiceDetails,
-		TemplateAssets:     m.dialogTemplateAssets,
-		ChoiceCursor:       m.dialogChoiceCursor,
-		Processing:         m.dialogProcessing,
-		ProcessingLabel:    m.dialogProcessingLabel,
-		StatusLabel:        m.dialogStatusLabel,
-		StatusRequired:     m.dialogStatusRequired,
-		ViewTitle:          m.dialogViewTitle,
-		ViewName:           m.dialogViewName,
-		IssueEstimateMins:  m.dialogIssueEstimateMins,
-		ReminderID:         m.dialogReminderID,
-		ReminderKind:       m.dialogReminderKind,
-		ViewMeta:           m.dialogViewMeta,
-		ViewBody:           m.dialogViewBody,
-		ViewPath:           m.dialogViewPath,
-		SupportBundlePath:  m.dialogSupportBundlePath,
-		ProtectionStep:     m.dialogProtectionStep,
-		ProtectionCursor:   m.dialogProtectionCursor,
-		ProtectionStreaks:  m.dialogProtectionStreaks,
-		ProtectionWeekdays: m.dialogProtectionWeekdays,
-		ProtectionDates:    m.dialogProtectionDates,
-		HabitItems:         m.allHabits,
-		HabitStreakStep:    m.dialogHabitStreakStep,
-		HabitStreakCursor:  m.dialogHabitStreakCursor,
-		HabitStreakDefs:    m.dialogHabitStreakDefs,
-		HabitStreakDraft:   m.dialogHabitStreakDraft,
-		HabitStreakEditIdx: m.dialogHabitStreakEditIdx,
-		ExportPresetKind:   m.dialogExportPresetKind,
-		ExportPresetFormat: m.dialogExportPresetFormat,
-		ExportPresetOutput: m.dialogExportPresetOutput,
-		ExportIncludePDF:   m.dialogExportIncludePDF,
-		PromptGlyphMode:    m.dialogPromptGlyphMode,
+		Kind:                   m.dialog,
+		Width:                  m.width,
+		Inputs:                 m.dialogInputs,
+		Description:            m.dialogDescription,
+		DescriptionEnabled:     m.dialogDescriptionOn,
+		DescriptionIndex:       m.dialogDescriptionIdx,
+		FocusIdx:               m.dialogFocusIdx,
+		ErrorMessage:           m.dialogErrorMessage,
+		DeleteID:               m.dialogDeleteID,
+		DeleteKind:             m.dialogDeleteKind,
+		DeleteLabel:            m.dialogDeleteLabel,
+		SessionID:              m.dialogSessionID,
+		IssueID:                m.dialogIssueID,
+		HabitID:                m.dialogHabitID,
+		IssueStatus:            m.dialogIssueStatus,
+		CheckInDate:            m.dialogCheckInDate,
+		RepoID:                 m.dialogRepoID,
+		RepoName:               m.dialogRepoName,
+		RepoItems:              m.dialogRepoItems,
+		RepoItemIDs:            m.dialogRepoItemIDs,
+		StreamID:               m.dialogStreamID,
+		StreamName:             m.dialogStreamName,
+		RepoIndex:              m.dialogRepoIndex,
+		StreamIndex:            m.dialogStreamIndex,
+		Parent:                 m.dialogParent,
+		DateMonthValue:         m.dialogDateMonth,
+		DateCursorValue:        m.dialogDateCursor,
+		StashCursor:            m.dialogStashCursor,
+		StatusItems:            m.dialogStatusItems,
+		StatusCursor:           m.dialogStatusCursor,
+		ChoiceItems:            m.dialogChoiceItems,
+		ChoiceValues:           m.dialogChoiceValues,
+		ChoiceDetails:          m.dialogChoiceDetails,
+		TemplateAssets:         m.dialogTemplateAssets,
+		ChoiceCursor:           m.dialogChoiceCursor,
+		Processing:             m.dialogProcessing,
+		ProcessingLabel:        m.dialogProcessingLabel,
+		StatusLabel:            m.dialogStatusLabel,
+		StatusRequired:         m.dialogStatusRequired,
+		ViewTitle:              m.dialogViewTitle,
+		ViewName:               m.dialogViewName,
+		IssueEstimateMins:      m.dialogIssueEstimateMins,
+		ReminderID:             m.dialogReminderID,
+		ReminderKind:           m.dialogReminderKind,
+		ViewMeta:               m.dialogViewMeta,
+		ViewBody:               m.dialogViewBody,
+		ViewPath:               m.dialogViewPath,
+		SupportBundlePath:      m.dialogSupportBundlePath,
+		ProtectionStep:         m.dialogProtectionStep,
+		ProtectionCursor:       m.dialogProtectionCursor,
+		ProtectionStreaks:      m.dialogProtectionStreaks,
+		ProtectionWeekdays:     m.dialogProtectionWeekdays,
+		ProtectionDates:        m.dialogProtectionDates,
+		HabitItems:             m.allHabits,
+		HabitStreakStep:        m.dialogHabitStreakStep,
+		HabitStreakCursor:      m.dialogHabitStreakCursor,
+		HabitStreakDefs:        m.dialogHabitStreakDefs,
+		HabitStreakDraft:       m.dialogHabitStreakDraft,
+		HabitStreakEditIdx:     m.dialogHabitStreakEditIdx,
+		ExportPresetKind:       m.dialogExportPresetKind,
+		ExportPresetFormat:     m.dialogExportPresetFormat,
+		ExportPresetOutput:     m.dialogExportPresetOutput,
+		ExportIncludePDF:       m.dialogExportIncludePDF,
+		PromptGlyphMode:        m.dialogPromptGlyphMode,
+		TelemetryStep:          m.dialogTelemetryStep,
+		TelemetryUsage:         m.dialogTelemetryUsage,
+		TelemetryErrors:        m.dialogTelemetryErrors,
+		TelemetryPrivacyCursor: m.dialogTelemetryPrivacyCursor,
+		TelemetryReviewCursor:  m.dialogTelemetryReviewCursor,
 	}
 }
 
 func (m Model) withDialogState(state dialogstate.State) Model {
+	if m.dialog != state.Kind {
+		logger.Infof("tui dialog transition: %q -> %q width=%d inputs=%d choice_items=%d processing=%t", m.dialog, state.Kind, state.Width, len(state.Inputs), len(state.ChoiceItems), state.Processing)
+	}
 	m.dialog = state.Kind
 	m.dialogInputs = state.Inputs
 	m.dialogDescription = state.Description
@@ -437,6 +450,11 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogExportPresetOutput = state.ExportPresetOutput
 	m.dialogExportIncludePDF = state.ExportIncludePDF
 	m.dialogPromptGlyphMode = state.PromptGlyphMode
+	m.dialogTelemetryStep = state.TelemetryStep
+	m.dialogTelemetryUsage = state.TelemetryUsage
+	m.dialogTelemetryErrors = state.TelemetryErrors
+	m.dialogTelemetryPrivacyCursor = state.TelemetryPrivacyCursor
+	m.dialogTelemetryReviewCursor = state.TelemetryReviewCursor
 	return m
 }
 
@@ -501,6 +519,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		SetExportICSDir:     func(path string) tea.Cmd { return commands.SetExportICSDir(m.client, path) },
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
+		},
+		PatchTelemetrySettings: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+			return commands.PatchTelemetrySettings(m.client, usageEnabled, errorReportingEnabled, restartNow)
+		},
+		CompleteOnboarding: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+			return commands.CompleteOnboarding(m.client, usageEnabled, errorReportingEnabled, restartNow)
 		},
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
 			return commands.CreateAlertReminder(m.client, input)

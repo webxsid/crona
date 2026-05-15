@@ -52,7 +52,7 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
 		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
 		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
-		{Section: "Privacy", Label: "Telemetry & Error Reporting", Value: telemetrySettingsLabel(settings)},
+		{Section: "Privacy", Label: "Privacy & Diagnostics", Value: telemetrySettingsLabel(settings)},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 		{Section: "Danger", Label: "Uninstall Crona", Value: "App + binaries"},
 	}
@@ -246,17 +246,17 @@ func dateDisplayPresetLabel(settings *sharedtypes.CoreSettings) string {
 
 func telemetrySettingsLabel(settings *sharedtypes.CoreSettings) string {
 	if settings == nil {
-		return "Usage off, Errors off"
+		return "Usage off, Diagnostics off"
 	}
 	usage := "off"
 	if settings.UsageTelemetryEnabled {
 		usage = "on"
 	}
-	errors := "off"
+	diagnostics := "off"
 	if settings.ErrorReportingEnabled {
-		errors = "on"
+		diagnostics = "on"
 	}
-	return fmt.Sprintf("Usage %s, Errors %s", usage, errors)
+	return fmt.Sprintf("Usage %s, Diagnostics %s", usage, diagnostics)
 }
 
 func customDateFormatLabel(settings *sharedtypes.CoreSettings) string {

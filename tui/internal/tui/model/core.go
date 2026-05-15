@@ -6,6 +6,7 @@ import (
 	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
@@ -79,7 +80,7 @@ const (
 
 type Model struct {
 	// kernel client
-	client *api.Client
+	client    *api.Client
 	telemetry sharedposthog.Client
 
 	// kernel event stream
@@ -168,68 +169,73 @@ type Model struct {
 	scratchpadViewport viewport.Model
 
 	// dialog state
-	dialog                   string // "" | "create_scratchpad" | "confirm_delete" | "stash_list"
-	dialogInputs             []textinput.Model
-	dialogDescription        textarea.Model
-	dialogDescriptionOn      bool
-	dialogDescriptionIdx     int
-	dialogFocusIdx           int
-	dialogErrorMessage       string
-	dialogDeleteID           string // scratchpad id pending deletion
-	dialogDeleteKind         string
-	dialogDeleteLabel        string
-	dialogSessionID          string
-	dialogIssueID            int64
-	dialogHabitID            int64
-	dialogIssueStatus        string
-	dialogCheckInDate        string
-	dialogRepoID             int64
-	dialogRepoName           string
-	dialogRepoItems          []string
-	dialogRepoItemIDs        []int64
-	dialogStreamID           int64
-	dialogStreamName         string
-	dialogRepoIndex          int
-	dialogStreamIndex        int
-	dialogParent             string
-	dialogDateMonth          string
-	dialogDateCursor         string
-	dialogStashCursor        int
-	dialogStatusItems        []sharedtypes.IssueStatus
-	dialogStatusCursor       int
-	dialogChoiceItems        []string
-	dialogChoiceValues       []string
-	dialogChoiceDetails      []string
-	dialogTemplateAssets     []sharedtypes.ExportTemplateAsset
-	dialogChoiceCursor       int
-	dialogProcessing         bool
-	dialogProcessingLabel    string
-	dialogStatusLabel        string
-	dialogStatusRequired     bool
-	dialogViewTitle          string
-	dialogViewName           string
-	dialogIssueEstimateMins  *int
-	dialogReminderID         string
-	dialogReminderKind       sharedtypes.AlertReminderKind
-	dialogViewMeta           string
-	dialogViewBody           string
-	dialogViewPath           string
-	dialogSupportBundlePath  string
-	dialogProtectionStep     int
-	dialogProtectionCursor   int
-	dialogProtectionStreaks  []sharedtypes.StreakKind
-	dialogProtectionWeekdays []int
-	dialogProtectionDates    []string
-	dialogHabitStreakStep    int
-	dialogHabitStreakCursor  int
-	dialogHabitStreakDefs    []sharedtypes.HabitStreakDefinition
-	dialogHabitStreakDraft   sharedtypes.HabitStreakDefinition
-	dialogHabitStreakEditIdx int
-	dialogExportPresetKind   sharedtypes.ExportReportKind
-	dialogExportPresetFormat sharedtypes.ExportFormat
-	dialogExportPresetOutput sharedtypes.ExportOutputMode
-	dialogExportIncludePDF   bool
-	dialogPromptGlyphMode    sharedtypes.PromptGlyphMode
+	dialog                       string // "" | "create_scratchpad" | "confirm_delete" | "stash_list"
+	dialogInputs                 []textinput.Model
+	dialogDescription            textarea.Model
+	dialogDescriptionOn          bool
+	dialogDescriptionIdx         int
+	dialogFocusIdx               int
+	dialogErrorMessage           string
+	dialogDeleteID               string // scratchpad id pending deletion
+	dialogDeleteKind             string
+	dialogDeleteLabel            string
+	dialogSessionID              string
+	dialogIssueID                int64
+	dialogHabitID                int64
+	dialogIssueStatus            string
+	dialogCheckInDate            string
+	dialogRepoID                 int64
+	dialogRepoName               string
+	dialogRepoItems              []string
+	dialogRepoItemIDs            []int64
+	dialogStreamID               int64
+	dialogStreamName             string
+	dialogRepoIndex              int
+	dialogStreamIndex            int
+	dialogParent                 string
+	dialogDateMonth              string
+	dialogDateCursor             string
+	dialogStashCursor            int
+	dialogStatusItems            []sharedtypes.IssueStatus
+	dialogStatusCursor           int
+	dialogChoiceItems            []string
+	dialogChoiceValues           []string
+	dialogChoiceDetails          []string
+	dialogTemplateAssets         []sharedtypes.ExportTemplateAsset
+	dialogChoiceCursor           int
+	dialogProcessing             bool
+	dialogProcessingLabel        string
+	dialogStatusLabel            string
+	dialogStatusRequired         bool
+	dialogViewTitle              string
+	dialogViewName               string
+	dialogIssueEstimateMins      *int
+	dialogReminderID             string
+	dialogReminderKind           sharedtypes.AlertReminderKind
+	dialogViewMeta               string
+	dialogViewBody               string
+	dialogViewPath               string
+	dialogSupportBundlePath      string
+	dialogProtectionStep         int
+	dialogProtectionCursor       int
+	dialogProtectionStreaks      []sharedtypes.StreakKind
+	dialogProtectionWeekdays     []int
+	dialogProtectionDates        []string
+	dialogHabitStreakStep        int
+	dialogHabitStreakCursor      int
+	dialogHabitStreakDefs        []sharedtypes.HabitStreakDefinition
+	dialogHabitStreakDraft       sharedtypes.HabitStreakDefinition
+	dialogHabitStreakEditIdx     int
+	dialogExportPresetKind       sharedtypes.ExportReportKind
+	dialogExportPresetFormat     sharedtypes.ExportFormat
+	dialogExportPresetOutput     sharedtypes.ExportOutputMode
+	dialogExportIncludePDF       bool
+	dialogPromptGlyphMode        sharedtypes.PromptGlyphMode
+	dialogTelemetryStep          int
+	dialogTelemetryUsage         bool
+	dialogTelemetryErrors        bool
+	dialogTelemetryPrivacyCursor int
+	dialogTelemetryReviewCursor  int
 
 	// status / error flash
 	statusMsg string
@@ -299,6 +305,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		terminalTitleEnabled:  true,
 	}
 	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
+	logger.Infof("tui model new: view=%s pane=%s env=%s telemetry=%t executable=%q", model.view, model.pane, env, telemetry != nil, executablePath)
 	return model
 }
 
@@ -308,6 +315,7 @@ var eventChannel <-chan api.KernelEvent
 // ---------- Init ----------
 
 func (m Model) Init() tea.Cmd {
+	logger.Infof("tui model init: view=%s pane=%s width=%d height=%d dialog=%q", m.view, m.pane, m.width, m.height, m.dialog)
 	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
 		commands.LoadAllHabits(m.client),

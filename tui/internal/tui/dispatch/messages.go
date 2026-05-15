@@ -440,6 +440,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		deps.ClampFiltered(&state, uistate.PaneSettings)
 		deps.ClampFiltered(&state, uistate.PaneAlerts)
 		if msg.Settings != nil && !msg.Settings.OnboardingCompleted && state.Dialog == "" && deps.OpenOnboardingDialog != nil {
+			logger.Infof("tui settings loaded: opening onboarding dialog onboarding_completed=%t usage=%t errors=%t dialog=%q", msg.Settings.OnboardingCompleted, msg.Settings.UsageTelemetryEnabled, msg.Settings.ErrorReportingEnabled, state.Dialog)
 			deps.OpenOnboardingDialog(&state)
 		}
 		return state, nil, true

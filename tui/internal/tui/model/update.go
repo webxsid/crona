@@ -4,6 +4,7 @@ import (
 	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	filteringpkg "crona/tui/internal/tui/filtering"
@@ -26,28 +27,43 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyMsg); ok {
+		logger.Infof("tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t scratchpad=%t filter_editing=%t", key.String(), m.view, m.pane, m.dialog, m.helpOpen, m.sessionDetailOpen, m.sessionContextOpen, m.scratchpadOpen, m.filterEditing)
+		if key.String() == "q" || key.String() == "ctrl+c" {
+			logger.Infof("tui key route: quit")
+			m.stopEventStream()
+			return m, tea.Quit
+		}
 		touch := m.timerActivityTouchCmd(time.Now())
 		if m.dialog != "" {
+			logger.Infof("tui key route: dialog")
 			next, cmd := m.updateDialog(key)
+			if model, ok := next.(Model); ok {
+				logger.Infof("tui key route result: dialog next_view=%s next_pane=%s next_dialog=%q", model.view, model.pane, model.dialog)
+			}
 			return next, batchCmds(touch, cmd)
 		}
 		if m.sessionDetailOpen {
+			logger.Infof("tui key route: session_detail_overlay")
 			next, cmd := m.updateSessionDetailOverlay(key)
 			return next, batchCmds(touch, cmd)
 		}
 		if m.sessionContextOpen {
+			logger.Infof("tui key route: session_context_overlay")
 			next, cmd := m.updateSessionContextOverlay(key)
 			return next, batchCmds(touch, cmd)
 		}
 		if m.helpOpen {
+			logger.Infof("tui key route: help_overlay")
 			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
 			return m.applyOverlayState(state), batchCmds(touch, cmd)
 		}
 		if m.pane == PaneScratchpads && m.scratchpadOpen {
+			logger.Infof("tui key route: scratchpad")
 			next, cmd := m.updateScratchpadPane(key)
 			return next, batchCmds(touch, cmd)
 		}
 		if m.filterEditing {
+			logger.Infof("tui key route: filter_editing")
 			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())
 			if cmd != nil || state.FilterEditing != m.filterEditing {
 				return m.applyOverlayState(state), batchCmds(touch, cmd)
@@ -55,7 +71,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			next, cmd := filteringpkg.Update(m.filterState(), key, m.filterDeps())
 			return m.applyFilterState(next), batchCmds(touch, cmd)
 		}
+		logger.Infof("tui key route: input")
 		state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
+		logger.Infof("tui key route result: input next_view=%s next_pane=%s dialog=%q", state.ActiveView, state.ActivePane, state.Dialog)
 		return m.applyInputState(state), batchCmds(touch, cmd)
 	}
 	state, cmd, handled := dispatchpkg.HandleMessage(m.dispatchMessageState(), msg, m.dispatchMessageDeps())
@@ -140,7 +158,6 @@ func (m Model) filterDeps() filteringpkg.Deps {
 		},
 	}
 }
-
 
 func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 	var selectedHabitHistoryID *int64

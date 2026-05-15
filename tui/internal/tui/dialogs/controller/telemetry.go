@@ -19,10 +19,7 @@ func updateTelemetryUsage(state State, msg tea.KeyMsg) (State, *Action, string) 
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "enter":
-		state.TelemetryStep = 1
-		return clearDialogError(state), nil, ""
-	case " ", "x":
+	case " ", "x", "enter":
 		state.TelemetryUsage = !state.TelemetryUsage
 		return clearDialogError(state), nil, ""
 	case "tab", "right", "l":
@@ -36,13 +33,13 @@ func updateTelemetryErrors(state State, msg tea.KeyMsg) (State, *Action, string)
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case " ", "x":
+	case " ", "x", "enter":
 		state.TelemetryErrors = !state.TelemetryErrors
 		return clearDialogError(state), nil, ""
 	case "shift+tab", "left", "h":
 		state.TelemetryStep = 0
 		return clearDialogError(state), nil, ""
-	case "tab", "right", "l", "enter":
+	case "tab", "right", "l":
 		state.TelemetryStep = 2
 		state.ChoiceCursor = 0
 		return clearDialogError(state), nil, ""
@@ -93,8 +90,11 @@ func updateOnboarding(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch state.TelemetryStep {
 	case 0:
 		switch msg.String() {
-		case "tab", "right", "l", "enter":
+		case "tab", "right", "l":
 			state.TelemetryStep = 1
+			return clearDialogError(state), nil, ""
+		case "shift+tab", "left", "h":
+			state.TelemetryStep = 3
 			return clearDialogError(state), nil, ""
 		}
 	case 1:
@@ -105,21 +105,34 @@ func updateOnboarding(state State, msg tea.KeyMsg) (State, *Action, string) {
 		case "shift+tab", "left", "h":
 			state.TelemetryStep = 0
 			return clearDialogError(state), nil, ""
-		case "tab", "right", "l", "enter":
+		case "tab", "right", "l":
 			state.TelemetryStep = 2
 			return clearDialogError(state), nil, ""
 		}
 	case 2:
 		switch msg.String() {
 		case " ", "x":
-			state.TelemetryErrors = !state.TelemetryErrors
+			if state.TelemetryPrivacyCursor == 0 {
+				state.TelemetryUsage = !state.TelemetryUsage
+			} else {
+				state.TelemetryErrors = !state.TelemetryErrors
+			}
+			return clearDialogError(state), nil, ""
+		case "j", "down":
+			state.TelemetryPrivacyCursor = (state.TelemetryPrivacyCursor + 1) % 2
 			return clearDialogError(state), nil, ""
 		case "shift+tab", "left", "h":
 			state.TelemetryStep = 1
 			return clearDialogError(state), nil, ""
-		case "tab", "right", "l", "enter":
+		case "k", "up":
+			if state.TelemetryPrivacyCursor == 0 {
+				state.TelemetryPrivacyCursor = 1
+			} else {
+				state.TelemetryPrivacyCursor = 0
+			}
+			return clearDialogError(state), nil, ""
+		case "tab", "right", "l":
 			state.TelemetryStep = 3
-			state.ChoiceCursor = 0
 			return clearDialogError(state), nil, ""
 		}
 	default:
@@ -128,23 +141,38 @@ func updateOnboarding(state State, msg tea.KeyMsg) (State, *Action, string) {
 			state.TelemetryStep = 2
 			return clearDialogError(state), nil, ""
 		case "j", "down":
-			if state.ChoiceCursor < 1 {
-				state.ChoiceCursor++
+			if state.TelemetryReviewCursor < 2 {
+				state.TelemetryReviewCursor++
 			}
 			return clearDialogError(state), nil, ""
 		case "k", "up":
-			if state.ChoiceCursor > 0 {
-				state.ChoiceCursor--
+			if state.TelemetryReviewCursor > 0 {
+				state.TelemetryReviewCursor--
 			}
 			return clearDialogError(state), nil, ""
+		case "tab", "right", "l":
+			state.TelemetryStep = 0
+			return clearDialogError(state), nil, ""
 		case "enter":
-			return Close(state), &Action{
-				Kind:             "complete_onboarding",
-				UsageTelemetry:   state.TelemetryUsage,
-				ErrorReporting:   state.TelemetryErrors,
-				RestartAfterSave: state.ChoiceCursor == 1,
-				OnboardingDone:   true,
-			}, ""
+			switch state.TelemetryReviewCursor {
+			case 0:
+				return Close(state), &Action{
+					Kind:           "complete_onboarding",
+					UsageTelemetry: state.TelemetryUsage,
+					ErrorReporting: state.TelemetryErrors,
+					OnboardingDone: true,
+				}, ""
+			case 1:
+				return Close(state), &Action{
+					Kind:             "complete_onboarding",
+					UsageTelemetry:   state.TelemetryUsage,
+					ErrorReporting:   state.TelemetryErrors,
+					RestartAfterSave: true,
+					OnboardingDone:   true,
+				}, ""
+			default:
+				return Close(state), nil, ""
+			}
 		}
 	}
 	return state, nil, ""

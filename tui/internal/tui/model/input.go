@@ -535,6 +535,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenEditTelemetrySettingsDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openEditTelemetrySettingsDialog()
+			*state = next.inputState()
+			return true
+		},
 		OpenConfirmWipeDataDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openConfirmWipeDataDialog()

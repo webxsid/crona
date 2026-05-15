@@ -277,6 +277,10 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 		return updateRestProtection(state, currentDate, msg)
 	case "edit_habit_streaks":
 		return updateHabitStreaks(state, msg)
+	case "edit_telemetry_settings":
+		return updateTelemetrySettings(state, msg)
+	case "onboarding":
+		return updateOnboarding(state, msg)
 	case "create_alert_reminder", "edit_alert_reminder":
 		return updateAlertReminder(state, msg)
 	case "view_entity":

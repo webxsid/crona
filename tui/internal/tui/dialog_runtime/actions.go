@@ -6,6 +6,7 @@ import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	commands "crona/tui/internal/tui/commands"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -117,9 +118,15 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	r.Register("set_export_ics_dir", func(action dialogstate.Action) tea.Cmd { return deps.SetExportICSDir(action.Path) })
 	r.Register("patch_setting", func(action dialogstate.Action) tea.Cmd { return patchSettingCmd(action, state, deps) })
 	r.Register("patch_telemetry_settings", func(action dialogstate.Action) tea.Cmd {
+		if deps.PatchTelemetrySettings == nil {
+			return missingRuntimeHookCmd("patch_telemetry_settings")
+		}
 		return deps.PatchTelemetrySettings(action.UsageTelemetry, action.ErrorReporting, action.RestartAfterSave)
 	})
 	r.Register("complete_onboarding", func(action dialogstate.Action) tea.Cmd {
+		if deps.CompleteOnboarding == nil {
+			return missingRuntimeHookCmd("complete_onboarding")
+		}
 		return deps.CompleteOnboarding(action.UsageTelemetry, action.ErrorReporting, action.RestartAfterSave)
 	})
 	r.Register("create_alert_reminder", func(action dialogstate.Action) tea.Cmd {
@@ -261,6 +268,12 @@ func exportCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		}
 	}
 	return deps.GenerateReport(req)
+}
+
+func missingRuntimeHookCmd(kind string) tea.Cmd {
+	return func() tea.Msg {
+		return commands.ErrMsg{Err: errors.New(kind + " runtime hook is not configured")}
+	}
 }
 
 func patchSettingCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
