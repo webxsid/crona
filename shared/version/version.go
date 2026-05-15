@@ -6,7 +6,7 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-var Version = "1.2.2"
+var Version = "1.3.0"
 
 const (
 	RepoOwner = "webxsid"
