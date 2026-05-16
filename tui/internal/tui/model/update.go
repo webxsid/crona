@@ -185,6 +185,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		RollupStartDate:         m.currentRollupStartDate(),
 		RollupEndDate:           m.currentRollupEndDate(),
 		WellbeingDate:           m.wellbeingDate,
+		WellbeingWindowDays:     m.currentWellbeingWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
 		MetricsRollup:           m.metricsRollup,
@@ -277,6 +278,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
 	m.wellbeingDate = state.WellbeingDate
+	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup
@@ -439,9 +441,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		CurrentDashboardDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentDashboardDate()
 		},
-		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
-			return m.applyDispatchMessageState(state).currentWellbeingDate()
-		},
+		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string { return m.applyDispatchMessageState(state).currentWellbeingDate() },
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
 		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
@@ -450,7 +450,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
 		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadWellbeing:       func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
 		LoadDailyPlan:       func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
 		LoadExportAssets:    func() tea.Cmd { return commands.LoadExportAssets(m.client) },
 		LoadExportReports:   func() tea.Cmd { return commands.LoadExportReports(m.client) },

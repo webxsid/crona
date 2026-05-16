@@ -38,7 +38,7 @@ func label(label_type LabelTypes, state types.ContentState) string {
 func wellbeingMoodLabel(state types.ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageMood != nil {
-			return fmt.Sprintf("7d avg %.1f/5", *state.MetricsRollup.AverageMood)
+			return fmt.Sprintf("%s avg %.1f/5", wellbeingWindowLabel(state), *state.MetricsRollup.AverageMood)
 		}
 		return "-"
 	}
@@ -48,7 +48,7 @@ func wellbeingMoodLabel(state types.ContentState) string {
 func wellbeingEnergyLabel(state types.ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageEnergy != nil {
-			return fmt.Sprintf("7d avg %.1f/5", *state.MetricsRollup.AverageEnergy)
+			return fmt.Sprintf("%s avg %.1f/5", wellbeingWindowLabel(state), *state.MetricsRollup.AverageEnergy)
 		}
 		return "-"
 	}
@@ -60,7 +60,7 @@ func wellbeingSleepLabel(state types.ContentState) string {
 		return "today " + helperpkg.FormatCompactDurationHours(*state.DailyCheckIn.SleepHours)
 	}
 	if state.MetricsRollup != nil && state.MetricsRollup.AverageSleepHours != nil {
-		return "7d avg " + helperpkg.FormatCompactDurationHours(*state.MetricsRollup.AverageSleepHours)
+		return wellbeingWindowLabel(state) + " avg " + helperpkg.FormatCompactDurationHours(*state.MetricsRollup.AverageSleepHours)
 	}
 	return "-"
 }
@@ -69,7 +69,7 @@ func wellbeingWorkedLabel(state types.ContentState) string {
 	if state.MetricsRollup == nil {
 		return "-"
 	}
-	return viewhelpers.FormatClock(state.MetricsRollup.WorkedSeconds)
+	return viewhelpers.FormatClockText(state.MetricsRollup.WorkedSeconds)
 }
 
 func wellbeingStreakLabel(state types.ContentState) string {

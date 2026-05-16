@@ -10,7 +10,7 @@ import (
 )
 
 func renderView(theme types.Theme, state types.ContentState) string {
-	headerH, detailH := viewhelpers.SplitVertical(state.Height, 10, 8, 12)
+	headerH, detailH := viewhelpers.SplitVertical(state.Height, 10, 8, state.Height/3)
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		renderSummary(theme, state, state.Width, headerH),

@@ -1,6 +1,7 @@
 package wellbeing
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -15,13 +16,17 @@ import (
 
 func TestWideWellbeingSplitsMetricsAndStreaks(t *testing.T) {
 	state := splitTestState()
+	state.Height = 60
 	state.Pane = string(uistate.PaneWellbeingStreaks)
 
 	rendered := ansi.Strip(Render(splitTestTheme(), state))
-	for _, want := range []string{"Metrics Window", "Momentum", "Check-ins", "Focus", "Training", "▰"} {
+	for _, want := range []string{"Metrics Window", "Momentum", "Signals (14d)", "Mood", "Energy", "Work", "Recovery", "Training", "▰"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected wide wellbeing split to contain %q, got %q", want, rendered)
 		}
+	}
+	if !strings.ContainsFunc(rendered, func(r rune) bool { return r >= 0x2800 && r <= 0x28ff }) {
+		t.Fatalf("expected wide wellbeing split to contain braille graph output, got %q", rendered)
 	}
 }
 
@@ -126,13 +131,14 @@ func splitTestState() types.ContentState {
 		Width:         120,
 		Height:        40,
 		WellbeingDate: "2026-04-04",
+		WellbeingWindowDays: 14,
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
 			string(uistate.PaneWellbeingTrends):  0,
 			string(uistate.PaneWellbeingStreaks): 0,
 		},
 		MetricsRollup: &api.MetricsRollup{
-			Days:          7,
+			Days:          14,
 			CheckInDays:   5,
 			FocusDays:     4,
 			WorkedSeconds: 7200,
@@ -141,6 +147,7 @@ func splitTestState() types.ContentState {
 			AverageMood:   &avgMood,
 			AverageEnergy: &avgEnergy,
 		},
+		MetricsRange: makeWellbeingMetricsRange(14),
 		Streaks: &api.StreakSummary{
 			CurrentCheckInDays: 3,
 			LongestCheckInDays: 7,
@@ -153,6 +160,31 @@ func splitTestState() types.ContentState {
 			},
 		},
 	}
+}
+
+func makeWellbeingMetricsRange(days int) []api.DailyMetricsDay {
+	out := make([]api.DailyMetricsDay, 0, days)
+	for i := 0; i < days; i++ {
+		mood := 1 + (i % 5)
+		energy := 1 + ((i + 2) % 5)
+		sleep := 6.0 + float64(i%3)*0.5
+		work := 1200 + i*240
+		rest := 180 + i*30
+		out = append(out, api.DailyMetricsDay{
+			Date: fmt.Sprintf("2026-04-%02d", i+1),
+			CheckIn: &api.DailyCheckIn{
+				Date:        fmt.Sprintf("2026-04-%02d", i+1),
+				Mood:        mood,
+				Energy:      energy,
+				SleepHours:  &sleep,
+				CreatedAt:   fmt.Sprintf("2026-04-%02dT09:00:00Z", i+1),
+			},
+			WorkedSeconds: work,
+			RestSeconds:   rest,
+			SessionCount:  1 + (i % 4),
+		})
+	}
+	return out
 }
 
 func splitTestTheme() types.Theme {

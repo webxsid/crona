@@ -113,6 +113,146 @@ drained:
 	}
 }
 
+func TestLoadWellbeingWindowUsesRequestedRange(t *testing.T) {
+	endpoint := testCommandEndpoint()
+	ln, err := localipc.Listen(endpoint)
+	if err != nil {
+		if runtime.GOOS != "windows" && strings.Contains(err.Error(), "operation not permitted") {
+			t.Skipf("local ipc listen unavailable in this environment: %v", err)
+		}
+		t.Fatalf("listen: %v", err)
+	}
+	defer func() { _ = ln.Close() }()
+
+	requests := make(chan protocol.Request, 16)
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func(conn net.Conn) {
+				defer func() { _ = conn.Close() }()
+				var req protocol.Request
+				if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&req); err != nil {
+					return
+				}
+				requests <- req
+				body, _ := json.Marshal(resultForWellbeingLoadMethod(req.Method))
+				_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: body})
+			}(conn)
+		}
+	}()
+
+	client := api.NewClient(localipc.DefaultTransport(), endpoint, "")
+	msg := LoadWellbeingWindow(client, "2026-04-10", 14)()
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("expected LoadWellbeingWindow to return tea.BatchMsg, got %T", msg)
+	}
+	done := make(chan struct{})
+	go func() {
+		runBatchCommands(batch)
+		close(done)
+	}()
+
+	got := map[string][]protocol.Request{}
+	deadline := time.After(3 * time.Second)
+	collecting := true
+	for collecting {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		case <-done:
+			collecting = false
+		case <-deadline:
+			t.Fatalf("timed out waiting for wellbeing load requests, got methods %+v", methodKeys(got))
+		}
+	}
+	for {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		default:
+			goto drained
+		}
+	}
+drained:
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRange), "2026-03-28", "2026-04-10")
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRollup), "2026-03-28", "2026-04-10")
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardWindow), "2026-03-28", "2026-04-10")
+}
+
+func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
+	endpoint := testCommandEndpoint()
+	ln, err := localipc.Listen(endpoint)
+	if err != nil {
+		if runtime.GOOS != "windows" && strings.Contains(err.Error(), "operation not permitted") {
+			t.Skipf("local ipc listen unavailable in this environment: %v", err)
+		}
+		t.Fatalf("listen: %v", err)
+	}
+	defer func() { _ = ln.Close() }()
+
+	requests := make(chan protocol.Request, 16)
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func(conn net.Conn) {
+				defer func() { _ = conn.Close() }()
+				var req protocol.Request
+				if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&req); err != nil {
+					return
+				}
+				requests <- req
+				body, _ := json.Marshal(resultForWellbeingLoadMethod(req.Method))
+				_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: body})
+			}(conn)
+		}
+	}()
+
+	client := api.NewClient(localipc.DefaultTransport(), endpoint, "")
+	msg := LoadWellbeingWindow(client, "2026-04-10", 60)()
+	batch, ok := msg.(tea.BatchMsg)
+	if !ok {
+		t.Fatalf("expected LoadWellbeingWindow to return tea.BatchMsg, got %T", msg)
+	}
+	done := make(chan struct{})
+	go func() {
+		runBatchCommands(batch)
+		close(done)
+	}()
+
+	got := map[string][]protocol.Request{}
+	deadline := time.After(3 * time.Second)
+	collecting := true
+	for collecting {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		case <-done:
+			collecting = false
+		case <-deadline:
+			t.Fatalf("timed out waiting for wellbeing load requests, got methods %+v", methodKeys(got))
+		}
+	}
+	for {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		default:
+			goto drained
+		}
+	}
+drained:
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRange), "2026-03-12", "2026-04-10")
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRollup), "2026-03-12", "2026-04-10")
+	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardWindow), "2026-03-12", "2026-04-10")
+}
+
 func runBatchCommands(batch tea.BatchMsg) {
 	var cmdWG sync.WaitGroup
 	for _, cmd := range batch {

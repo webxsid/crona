@@ -58,3 +58,30 @@ func TestWellbeingRenderShowsHabitRollupCounts(t *testing.T) {
 		}
 	}
 }
+
+func TestWellbeingLabelsReflectSelectedWindow(t *testing.T) {
+	sleep := 7.5
+	state := types.ContentState{
+		View:                "wellbeing",
+		Pane:                "wellbeing",
+		Width:               120,
+		Height:              40,
+		WellbeingWindowDays: 14,
+		MetricsRollup: &api.MetricsRollup{
+			AverageMood:       floatPtr(4.2),
+			AverageEnergy:     floatPtr(3.8),
+			AverageSleepHours: &sleep,
+		},
+	}
+
+	rendered := wellbeingviews.Render(layoutpkg.ViewTheme(), state)
+	for _, want := range []string{"14d avg 4.2/5", "14d avg 3.8/5", "14d avg 7h30m"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wellbeing render to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func floatPtr(v float64) *float64 {
+	return &v
+}

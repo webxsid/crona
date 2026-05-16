@@ -94,6 +94,8 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
+			theme.StyleHeader.Render("[+/-]") + theme.StyleDim.Render(" window"),
+			theme.StyleHeader.Render("[0]") + theme.StyleDim.Render(" reset window"),
 			theme.StyleHeader.Render("[a/e]") + theme.StyleDim.Render(" check-in"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}

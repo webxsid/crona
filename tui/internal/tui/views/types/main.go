@@ -45,6 +45,7 @@ type ContentState struct {
 	RollupStartDate     string
 	RollupEndDate       string
 	WellbeingDate       string
+	WellbeingWindowDays int
 	DefaultIssueSection string
 	DailyTaskSection    string
 	SessionHistoryTitle string

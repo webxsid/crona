@@ -485,6 +485,13 @@ func (m Model) currentWellbeingDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
+func (m Model) currentWellbeingWindowDays() int {
+	if m.wellbeingWindowDays < 1 {
+		return 7
+	}
+	return m.wellbeingWindowDays
+}
+
 func shiftISODate(date string, days int) string {
 	t, err := time.Parse("2006-01-02", date)
 	if err != nil {

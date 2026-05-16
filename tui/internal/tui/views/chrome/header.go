@@ -47,7 +47,7 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 
 	parts := []string{
 		LipStyle(theme, stateColor).Render(stateText),
-		theme.StyleHeader.Render(viewhelpers.FormatClock(total)),
+		theme.StyleHeader.Render(viewhelpers.FormatClockText(total)),
 	}
 
 	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)

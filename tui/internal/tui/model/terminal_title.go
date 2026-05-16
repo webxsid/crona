@@ -121,13 +121,10 @@ func compactElapsed(totalSeconds int) string {
 		totalSeconds = 0
 	}
 	duration := time.Duration(totalSeconds) * time.Second
-	totalMinutes := int(duration.Minutes())
-	hours := totalMinutes / 60
-	minutes := totalMinutes % 60
-	if hours > 0 {
-		return fmt.Sprintf("%dh%02dm", hours, minutes)
-	}
-	return fmt.Sprintf("%dm", minutes)
+	hours := int(duration.Hours())
+	minutes := int(duration.Minutes()) % 60
+	seconds := int(duration.Seconds()) % 60
+	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
 }
 
 func compactTitleParts(parts []string) []string {

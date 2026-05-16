@@ -28,6 +28,7 @@ type EventState struct {
 	CurrentRollupStart     string
 	CurrentRollupEnd       string
 	CurrentWell            string
+	WellbeingWindowDays    int
 	CurrentOpsLim          int
 }
 
@@ -43,7 +44,7 @@ type EventDeps struct {
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
 	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
-	LoadWellbeing            func(date string) tea.Cmd
+	LoadWellbeing            func(date string, windowDays int) tea.Cmd
 	LoadRollupSummaries      func(start, end string) tea.Cmd
 	LoadScratchpads          func() tea.Cmd
 	LoadSessionHistoryFor200 func(EventState) tea.Cmd
@@ -82,7 +83,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(cmds...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
-		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash), deps.LoadDailySummary(state.CurrentDash), deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd), deps.LoadAllHabits()}
+		cmds := []tea.Cmd{deps.LoadDueHabits(state.CurrentDash), deps.LoadDailySummary(state.CurrentDash), deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd), deps.LoadAllHabits()}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds, deps.LoadHabits(*state.Context.StreamID))
 		}
@@ -91,7 +92,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":
-		return state, tea.Batch(deps.LoadWellbeing(state.CurrentWell), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd))
+		return state, tea.Batch(deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays), deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd))
 	case "scratchpad.created", "scratchpad.updated", "scratchpad.deleted":
 		return state, deps.LoadScratchpads()
 	case "session.started", "session.stopped":

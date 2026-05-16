@@ -35,6 +35,7 @@ type MessageState struct {
 	RollupStartDate         string
 	RollupEndDate           string
 	WellbeingDate           string
+	WellbeingWindowDays     int
 	DailyCheckIn            *api.DailyCheckIn
 	MetricsRange            []api.DailyMetricsDay
 	MetricsRollup           *api.MetricsRollup
@@ -131,7 +132,7 @@ type MessageDeps struct {
 	LoadAllHabits              func() tea.Cmd
 	LoadDueHabits              func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
-	LoadWellbeing              func(string) tea.Cmd
+	LoadWellbeing              func(string, int) tea.Cmd
 	LoadRollupSummaries        func(string, string) tea.Cmd
 	LoadDailyPlan              func(string) tea.Cmd
 	LoadExportAssets           func() tea.Cmd
@@ -508,7 +509,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			cmds = append(cmds, deps.LoadDailySummary(msg.Date))
 		}
 		if deps.CurrentWellbeingDate(state) == strings.TrimSpace(msg.Date) {
-			cmds = append(cmds, deps.LoadWellbeing(msg.Date))
+			cmds = append(cmds, deps.LoadWellbeing(msg.Date, state.WellbeingWindowDays))
 		}
 		return state, tea.Batch(cmds...), true
 	case commands.IssuePinnedDailyChangedMsg:
@@ -748,7 +749,7 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadAllIssues(),
 		deps.LoadDueHabits(deps.CurrentDashboardDate(state)),
 		deps.LoadDailySummary(state.DashboardDate),
-		deps.LoadWellbeing(deps.CurrentWellbeingDate(state)),
+		deps.LoadWellbeing(deps.CurrentWellbeingDate(state), state.WellbeingWindowDays),
 		deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate),
 		deps.LoadSessionHistoryFor200(state),
 		deps.LoadScratchpads(),

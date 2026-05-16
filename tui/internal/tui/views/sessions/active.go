@@ -6,8 +6,8 @@ import (
 
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -19,36 +19,57 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		activeIssue = sessionmeta.IssueMetaByID(state.AllIssues, *state.Timer.IssueID)
 	}
 	total := state.Timer.ElapsedSeconds + state.Elapsed
-	elapsed := viewhelpers.FormatClock(total)
+	elapsed := viewhelpers.FormatClockText(total)
 	seg := "work"
 	if state.Timer.SegmentType != nil {
 		seg = string(*state.Timer.SegmentType)
 	}
 	stateColor := theme.ColorGreen
 	timerTitle := "Focus Session"
-	timerHint := "p=pause  x=end  z=stash  i=context  [ ]=session/history/scratch"
+	timerHint := "p=pause  x=end  z=stash  i=context"
 	if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
-		timerHint = "r=resume  x=end  z=stash  i=context  [ ]=session/history/scratch"
+		timerHint = "r=resume  x=end  z=stash  i=context"
 		seg = "paused"
 	}
 	leftW := state.Width - 4
-	totalH := max(12, state.Height)
-	timerH, issueH := viewhelpers.SplitVertical(totalH, 10, 7, max(10, totalH*3/5))
-	timerText := sessionmeta.RenderBigClock(elapsed)
+	totalH := state.Height
+	totalH = max(totalH, 1)
+	timerH, issueH := viewhelpers.SplitVertical(totalH, 8, 8, max(8, totalH/2))
+	clockWidth := max(12, leftW-4)
+	clockHeight := max(7, timerH-8)
+	timerText := sessionmeta.RenderResponsiveClock(elapsed, clockWidth, clockHeight, stateColor, theme.ColorDim)
+	timerText = lipgloss.NewStyle().
+		Width(clockWidth).
+		AlignHorizontal(lipgloss.Center).
+		Render(timerText)
 	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)
-	progress := theme.StyleDim.Render(fmt.Sprintf("Completed sessions: %d", completedSessions))
-	if activeIssue != nil && activeIssue.EstimateMinutes != nil {
-		progress += "\n" + theme.StyleDim.Render(sessionmeta.FormatEstimateProgress(priorWorkedSeconds+total, *activeIssue.EstimateMinutes))
+	metadataLines := []string{
+		theme.StyleDim.Render(fmt.Sprintf("%s  ·  Completed sessions: %d", strings.ToUpper(seg), completedSessions)),
 	}
+	if activeIssue != nil && activeIssue.EstimateMinutes != nil {
+		metadataLines = append(metadataLines, theme.StyleDim.Render(sessionmeta.FormatEstimateProgress(priorWorkedSeconds+total, *activeIssue.EstimateMinutes)))
+	}
+	centerWidth := max(1, leftW-4)
+	timerBody := strings.Join([]string{
+		timerTitle,
+		"",
+		lipgloss.NewStyle().
+			Width(centerWidth).
+			AlignHorizontal(lipgloss.Center).
+			Render(lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText)),
+		"",
+		centerLines(metadataLines, centerWidth),
+	}, "\n")
 	timerSection := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(stateColor).
 		Padding(1, 2).
 		Width(leftW).
+		AlignVertical(lipgloss.Top).
 		Height(max(1, timerH-2)).
-		Render(fmt.Sprintf("%s\n\n%s\n\n%s%s", timerTitle, lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText), theme.StyleDim.Render(strings.ToUpper(seg)), "\n\n"+progress))
+		Render(timerBody)
 	issueSection := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(theme.ColorCyan).
@@ -57,6 +78,14 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		Height(max(1, issueH-2)).
 		Render(strings.Join(sessionIssueCompactLines(theme, activeIssue, leftW, state.Height, timerHint), "\n"))
 	return lipgloss.JoinVertical(lipgloss.Left, timerSection, issueSection)
+}
+
+func centerLines(lines []string, width int) string {
+	centered := make([]string, 0, len(lines))
+	for _, line := range lines {
+		centered = append(centered, lipgloss.NewStyle().Width(max(1, width)).AlignHorizontal(lipgloss.Center).Render(line))
+	}
+	return strings.Join(centered, "\n")
 }
 
 func sessionIssueCompactLines(theme types.Theme, activeIssue *api.IssueWithMeta, width, height int, timerHint string) []string {

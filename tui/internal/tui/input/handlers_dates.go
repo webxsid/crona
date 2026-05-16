@@ -58,10 +58,56 @@ func handleResetDailyDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 
 func handleShiftWellbeingDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	s.WellbeingDate = navigationutil.ShiftISODate(deps.CurrentWellbeingDate(s), dir)
-	return s, deps.LoadWellbeing(s.WellbeingDate), true
+	return s, deps.LoadWellbeing(s.WellbeingDate, s.WellbeingWindowDays), true
 }
 
 func handleResetWellbeingDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	s.WellbeingDate = ""
-	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s)), true
+	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
+}
+
+var wellbeingWindowDaysPresets = []int{7, 14, 21, 30}
+
+func handleShiftWellbeingWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.WellbeingWindowDays = shiftWellbeingWindowDays(s.WellbeingWindowDays, dir)
+	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
+}
+
+func handleResetWellbeingWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.WellbeingWindowDays = 7
+	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
+}
+
+func shiftWellbeingWindowDays(current, dir int) int {
+	if current < 1 {
+		current = 7
+	}
+	if current > wellbeingWindowDaysPresets[len(wellbeingWindowDaysPresets)-1] {
+		current = wellbeingWindowDaysPresets[len(wellbeingWindowDaysPresets)-1]
+	}
+	idx := -1
+	for i, days := range wellbeingWindowDaysPresets {
+		if days == current {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		idx = 0
+		for i, days := range wellbeingWindowDaysPresets {
+			if current < days {
+				idx = i
+				break
+			}
+			idx = i
+		}
+	}
+	idx += dir
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(wellbeingWindowDaysPresets) {
+		idx = len(wellbeingWindowDaysPresets) - 1
+	}
+	return wellbeingWindowDaysPresets[idx]
 }

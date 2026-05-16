@@ -387,19 +387,39 @@ func WaitForEvent(ch <-chan api.KernelEvent) tea.Cmd {
 }
 
 func LoadWellbeing(c *api.Client, date string) tea.Cmd {
-	start := shiftISODate(date, -6)
+	return LoadWellbeingWindow(c, date, 7)
+}
+
+func LoadWellbeingWindow(c *api.Client, date string, windowDays int) tea.Cmd {
+	if windowDays < 1 {
+		windowDays = 7
+	}
+	if windowDays > 30 {
+		windowDays = 30
+	}
+	start := shiftISODate(date, -(windowDays - 1))
 	return tea.Batch(
 		LoadDailyPlan(c, date),
 		LoadDailyCheckIn(c, date),
 		LoadMetricsRange(c, start, date),
 		LoadMetricsRollup(c, start, date),
 		LoadMetricsLifetimeStreaks(c, date),
-		LoadDashboardSummaries(c, date),
+		LoadDashboardSummariesWindow(c, date, windowDays),
 	)
 }
 
 func LoadDashboardSummaries(c *api.Client, date string) tea.Cmd {
-	return LoadRollupSummaries(c, shiftISODate(date, -6), date)
+	return LoadDashboardSummariesWindow(c, date, 7)
+}
+
+func LoadDashboardSummariesWindow(c *api.Client, date string, windowDays int) tea.Cmd {
+	if windowDays < 1 {
+		windowDays = 7
+	}
+	if windowDays > 30 {
+		windowDays = 30
+	}
+	return LoadRollupSummaries(c, shiftISODate(date, -(windowDays-1)), date)
 }
 
 func LoadRollupSummaries(c *api.Client, start, end string) tea.Cmd {

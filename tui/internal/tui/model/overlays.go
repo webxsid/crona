@@ -216,6 +216,7 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		CurrentRollupStart:     m.currentRollupStartDate(),
 		CurrentRollupEnd:       m.currentRollupEndDate(),
 		CurrentWell:            m.currentWellbeingDate(),
+		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
 		CurrentOpsLim:          m.currentOpsLimit(),
 	}
 }
@@ -231,6 +232,7 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 	m.timer = state.Timer
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
+	m.wellbeingWindowDays = state.WellbeingWindowDays
 	return m
 }
 
@@ -253,7 +255,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)
 		},
-		LoadWellbeing:       func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadWellbeing:       func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadScratchpads:     func() tea.Cmd { return commands.LoadScratchpads(m.client) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {

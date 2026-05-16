@@ -88,6 +88,7 @@ func (m Model) inputState() inputpkg.State {
 		RollupStartDate:     m.rollupStartDate,
 		RollupEndDate:       m.rollupEndDate,
 		WellbeingDate:       m.wellbeingDate,
+		WellbeingWindowDays: m.currentWellbeingWindowDays(),
 		Dialog:              m.dialog,
 		DialogState:         m.dialogState(),
 		HelpOpen:            m.helpOpen,
@@ -125,6 +126,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
 	m.wellbeingDate = state.WellbeingDate
+	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m = m.withDialogState(state.DialogState)
 	if state.DialogState.Kind == "" {
 		m.dialog = state.Dialog
@@ -199,7 +201,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		CurrentRollupEndDate: func(state inputpkg.State) string {
 			return m.applyInputState(state).currentRollupEndDate()
 		},
-		LoadWellbeing:        func(date string) tea.Cmd { return commands.LoadWellbeing(m.client, date) },
+		LoadWellbeing:        func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)

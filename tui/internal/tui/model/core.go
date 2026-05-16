@@ -115,6 +115,7 @@ type Model struct {
 	rollupStartDate        string
 	rollupEndDate          string
 	wellbeingDate          string
+	wellbeingWindowDays    int
 	dailyCheckIn           *api.DailyCheckIn
 	metricsRange           []api.DailyMetricsDay
 	metricsRollup          *api.MetricsRollup
@@ -278,9 +279,9 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneConfig:           0,
 			PaneSettings:         0,
 			PaneAlerts:           0,
-			PaneWellbeingSummary: 0,
-			PaneWellbeingTrends:  0,
-			PaneWellbeingStreaks: 0,
+			PaneWellbeingSummary: 1 << 30,
+			PaneWellbeingTrends:  1 << 30,
+			PaneWellbeingStreaks: 1 << 30,
 		},
 		filters: map[Pane]string{
 			PaneRepos:            "",
@@ -303,6 +304,7 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
 		terminalTitleEnabled:  true,
+		wellbeingWindowDays:   7,
 	}
 	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
 	logger.Infof("tui model new: view=%s pane=%s env=%s telemetry=%t executable=%q", model.view, model.pane, env, telemetry != nil, executablePath)
@@ -322,7 +324,7 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
-		commands.LoadWellbeing(m.client, time.Now().Format("2006-01-02")),
+		commands.LoadWellbeingWindow(m.client, time.Now().Format("2006-01-02"), m.currentWellbeingWindowDays()),
 		commands.LoadRollupSummaries(m.client, shiftISODate(time.Now().Format("2006-01-02"), -6), time.Now().Format("2006-01-02")),
 		loadSessionHistoryForModel(m, 200),
 		commands.LoadScratchpads(m.client),

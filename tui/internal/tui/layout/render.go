@@ -158,11 +158,15 @@ func renderHeader(state State) string {
 	if state.IsDevMode {
 		mode = "   " + chrome.StyleDim.Render("env:") + " " + chrome.StyleHeader.Render("Dev")
 	}
+	brand := chrome.StyleHeader.Render(viewchrome.LogoTiny())
 	contextLine := fmt.Sprintf("%s %s   %s %s%s",
 		chrome.StyleDim.Render("repo:"), chrome.StyleHeader.Render(helperpkg.Truncate(state.RepoName, max(16, state.Width/4))),
 		chrome.StyleDim.Render("stream:"), chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
 		mode,
 	)
+	if strings.TrimSpace(brand) != "" {
+		contextLine = brand + "  " + contextLine
+	}
 	versionLabel := chrome.StyleDim.Render("version:") + " " + chrome.StyleHeader.Render(versionpkg.Current())
 	contextWidth := ansi.StringWidth(contextLine)
 	versionWidth := ansi.StringWidth(versionLabel)

@@ -19,7 +19,7 @@ func renderDistributionSection(theme types.Theme, title string, summary *api.Tim
 	limit := min(3, len(summary.Rows))
 	for i := 0; i < limit; i++ {
 		row := summary.Rows[i]
-		lines = append(lines, fmt.Sprintf("  %s  %d%%  %s", viewhelpers.Truncate(row.Label, 18), int(row.Percent+0.5), viewhelpers.FormatClock(row.WorkedSeconds)))
+		lines = append(lines, fmt.Sprintf("  %s  %d%%  %s", viewhelpers.Truncate(row.Label, 18), int(row.Percent+0.5), viewhelpers.FormatClockText(row.WorkedSeconds)))
 	}
 	return lines
 }

@@ -43,9 +43,7 @@ func renderCompact(theme types.Theme, state types.ContentState) string {
 		return renderStreaks(theme, state, state.Width, state.Height, true)
 	}
 	topH := max(10, state.Height*11/20)
-	if topH > state.Height-6 {
-		topH = state.Height - 6
-	}
+	topH = min(topH, state.Height-6)
 	bottomH := max(6, state.Height-topH)
 	return lipglossJoinCompact(theme, state, topH, bottomH)
 }

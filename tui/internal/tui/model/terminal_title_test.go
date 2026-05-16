@@ -24,7 +24,7 @@ func TestTerminalTitleActiveSessionUsesIssueTimerAndState(t *testing.T) {
 		}},
 	}
 
-	if got, want := model.terminalTitle(), "Crona · Fix checkout title handling · 42m WORK"; got != want {
+	if got, want := model.terminalTitle(), "Crona · Fix checkout title handling · 00:42:00 WORK"; got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
@@ -39,7 +39,7 @@ func TestTerminalTitleActiveSessionFallsBackToIssueIDAndPausedState(t *testing.T
 		},
 	}
 
-	if got, want := model.terminalTitle(), "Crona · Issue #42 · 1h05m PAUSED"; got != want {
+	if got, want := model.terminalTitle(), "Crona · Issue #42 · 01:05:00 PAUSED"; got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }

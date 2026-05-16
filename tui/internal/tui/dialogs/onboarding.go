@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -17,7 +18,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 
 	progress := onboardingProgress(theme, state.TelemetryStep)
 	rows := []string{
-		centerBlock(renderOnboardingLogo(theme), contentWidth),
+		centerBlock(theme.StyleNormal.Render(viewchrome.LogoLarge()), contentWidth),
 		"",
 		centerLine(theme.StyleHeader.Render("Let's get things set up."), contentWidth),
 		"",
@@ -33,8 +34,11 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			centerLine(theme.StyleNormal.Render("Keep issues, sessions, habits, reports, and wellbeing in one place."), contentWidth),
 			centerLine(theme.StyleNormal.Render("Move through your work without leaving the terminal."), contentWidth),
 			centerLine(theme.StyleNormal.Render("Set your privacy preferences before you continue."), contentWidth),
+			"",
+			"",
+			centerLine(theme.StyleDim.Render("[h/l] navigate"), contentWidth),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[l] next section   [h] previous section")
+
 	case 1:
 		rows = append(rows,
 			centerLine(theme.StyleHeader.Render("Your workspace"), contentWidth),
@@ -43,8 +47,10 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			centerLine(theme.StyleNormal.Render("Daily work, focus sessions, habits, and reports all stay connected."), contentWidth),
 			centerLine(theme.StyleNormal.Render("Wellbeing and momentum stay visible without extra setup."), contentWidth),
 			centerLine(theme.StyleNormal.Render("Everything stays local, searchable, and quick."), contentWidth),
+			"",
+			"",
+			centerLine(theme.StyleDim.Render("[h/l] navigate"), contentWidth),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[space] toggle	[l] next section   [h] previous section")
 	case 2:
 		usageLine := toggleLine(state.TelemetryPrivacyCursor == 0, state.TelemetryUsage, "Share usage signals")
 		diagnosticsLine := toggleLine(state.TelemetryPrivacyCursor == 1, state.TelemetryErrors, "Share diagnostics")
@@ -57,8 +63,11 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			"",
 			centerLine(theme.StyleDim.Render("Usage signals help improve the app and catch issues early."), contentWidth),
 			centerLine(theme.StyleDim.Render("Diagnostics help us investigate failures without your work content."), contentWidth),
+			"",
+			"",
+			centerLine(theme.StyleDim.Render("[space] toggle	[j/k] choose   [h/l] navigate"), contentWidth),
+			"",
 		)
-		rows = appendDialogFooter(theme, state, rows, "[space] toggle   [j/k] choose   [l] next section   [h] previous section")
 	default:
 		startLabel := reviewChoiceLine(state.TelemetryReviewCursor == 0, "Start Crona")
 		restartLabel := reviewChoiceLine(state.TelemetryReviewCursor == 1, "Start and Restart Now")
@@ -79,23 +88,12 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			centerLine(startLabel, contentWidth),
 			centerLine(restartLabel, contentWidth),
 			centerLine(backLabel, contentWidth),
+			"",
+			"",
+			centerLine(theme.StyleDim.Render("[enter] confirm	[j/k] choose   [h/l] navigate"), contentWidth),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[j/k] choose   [enter] finish   [l] next section   [h] previous section")
 	}
 	return lipgloss.NewStyle().Width(contentWidth).Render(strings.Join(rows, "\n"))
-}
-
-func renderOnboardingLogo(theme Theme) string {
-	lines := []string{
-		" ██████╗██████╗  ██████╗ ███╗   ██╗ █████╗ ",
-		"██╔════╝██╔══██╗██╔═══██╗████╗  ██║██╔══██╗",
-		"██║     ██████╔╝██║   ██║██╔██╗ ██║███████║",
-		"██║     ██╔══██╗██║   ██║██║╚██╗██║██╔══██║",
-		"╚██████╗██║  ██║╚██████╔╝██║ ╚████║██║  ██║",
-		" ╚═════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝",
-		"",
-	}
-	return strings.Join(lines, "\n")
 }
 
 func onboardingProgress(theme Theme, step int) string {

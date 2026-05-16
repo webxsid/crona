@@ -24,6 +24,7 @@ type State struct {
 	RollupStartDate     string
 	RollupEndDate       string
 	WellbeingDate       string
+	WellbeingWindowDays int
 	Dialog              string
 	DialogState         dialogstate.State
 	HelpOpen            bool
@@ -75,7 +76,7 @@ type Deps struct {
 	LoadRollupSummaries             func(string, string) tea.Cmd
 	CurrentRollupStartDate          func(State) string
 	CurrentRollupEndDate            func(State) string
-	LoadWellbeing                   func(string) tea.Cmd
+	LoadWellbeing                   func(string, int) tea.Cmd
 	CurrentWellbeingDate            func(State) string
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
@@ -562,11 +563,20 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(uistate.ViewSupport, "b", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return s, deps.GenerateSupportBundle(s), true
 	})
-	keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
-	)
+		keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
+			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
+			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
+			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
+		)
+	r.RegisterView(uistate.ViewWellbeing, "+", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleShiftWellbeingWindow(s, deps, 1)
+	})
+	r.RegisterView(uistate.ViewWellbeing, "-", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleShiftWellbeingWindow(s, deps, -1)
+	})
+	r.RegisterView(uistate.ViewWellbeing, "0", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleResetWellbeingWindow(s, deps)
+	})
 	keyregistry.RegisterRollup(r, uistate.ViewRollup,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, 1) },

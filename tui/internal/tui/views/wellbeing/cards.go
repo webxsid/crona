@@ -30,8 +30,8 @@ func compactCards(theme types.Theme, state types.ContentState) []string {
 func trendCards(theme types.Theme, state types.ContentState) []string {
 	return []string{
 		fmt.Sprintf("%s  %d   %s  %d", theme.StyleHeader.Render("Days"), state.MetricsRollup.Days, theme.StyleHeader.Render("Check-ins"), state.MetricsRollup.CheckInDays),
-		fmt.Sprintf("%s  %d   %s  %s", theme.StyleHeader.Render("Focus Days"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClock(state.MetricsRollup.WorkedSeconds)),
-		fmt.Sprintf("%s  %s   %s  %d", theme.StyleHeader.Render("Rest"), viewhelpers.FormatClock(state.MetricsRollup.RestSeconds), theme.StyleHeader.Render("Sessions"), state.MetricsRollup.SessionCount),
+		fmt.Sprintf("%s  %d   %s  %s", theme.StyleHeader.Render("Focus Days"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClockText(state.MetricsRollup.WorkedSeconds)),
+		fmt.Sprintf("%s  %s   %s  %d", theme.StyleHeader.Render("Rest"), viewhelpers.FormatClockText(state.MetricsRollup.RestSeconds), theme.StyleHeader.Render("Sessions"), state.MetricsRollup.SessionCount),
 	}
 }
 

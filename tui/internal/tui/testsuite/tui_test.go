@@ -317,7 +317,7 @@ func TestRollupViewRendersExplicitRangeAndDailyStatuses(t *testing.T) {
 	}
 
 	rendered := support.RenderRollup(state)
-	for _, want := range []string{"Rollup Dashboard", "Range  2026-03-26 -> 2026-04-01", "Estimate Bias", "2026-03-31", "carry over", "Repos", "Work  58%  70:00"} {
+	for _, want := range []string{"Rollup Dashboard", "Range  2026-03-26 -> 2026-04-01", "Estimate Bias", "2026-03-31", "carry over", "Repos", "Work  58%  01:10:00"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected rollup dashboard to contain %q, got %q", want, rendered)
 		}

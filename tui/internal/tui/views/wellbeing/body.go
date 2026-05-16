@@ -80,7 +80,7 @@ func trendsBodyLinesWithStreaks(theme types.Theme, state types.ContentState, wid
 	if compact {
 		lines = append(lines,
 			fmt.Sprintf("%s  %d  %s  %d", theme.StyleHeader.Render("Days"), state.MetricsRollup.Days, theme.StyleHeader.Render("Check-ins"), state.MetricsRollup.CheckInDays),
-			fmt.Sprintf("%s  %d  %s  %s", theme.StyleHeader.Render("Focus"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClock(state.MetricsRollup.WorkedSeconds)),
+			fmt.Sprintf("%s  %d  %s  %s", theme.StyleHeader.Render("Focus"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClockText(state.MetricsRollup.WorkedSeconds)),
 		)
 		if state.MetricsRollup.HabitDueCount > 0 || state.MetricsRollup.HabitCompletedCount > 0 || state.MetricsRollup.HabitFailedCount > 0 {
 			lines = append(lines, fmt.Sprintf("%s  %d  %s  %d  %s  %d", theme.StyleHeader.Render("Habits due"), state.MetricsRollup.HabitDueCount, theme.StyleHeader.Render("Done"), state.MetricsRollup.HabitCompletedCount, theme.StyleHeader.Render("Failed"), state.MetricsRollup.HabitFailedCount))
@@ -99,7 +99,10 @@ func trendsBodyLinesWithStreaks(theme types.Theme, state types.ContentState, wid
 		if includeStreaks {
 			lines = append(lines, streaksBodyLines(theme, state, width, true)...)
 		}
-		if strips := trendStrips(theme, state); len(strips) > 0 {
+		if canvas := trendCanvas(theme, state, width-6, state.Height); len(canvas) > 0 {
+			lines = append(lines, canvas...)
+		} else if strips := trendStrips(theme, state); len(strips) > 0 {
+			lines = append(lines, theme.StyleHeader.Render(fmt.Sprintf("Signals (%s)", wellbeingWindowLabel(state))))
 			lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(strips[0], width-6)))
 		}
 		if burnout := latestBurnout(state); burnout != nil {
@@ -125,8 +128,11 @@ func trendsBodyLinesWithStreaks(theme types.Theme, state types.ContentState, wid
 		lines = append(lines, "")
 		lines = append(lines, streaksBodyLines(theme, state, width, false)...)
 	}
-	if strips := trendStrips(theme, state); len(strips) > 0 {
-		lines = append(lines, "", theme.StyleHeader.Render("Signals (7d)"))
+	if canvas := trendCanvas(theme, state, width-6, state.Height); len(canvas) > 0 {
+		lines = append(lines, "")
+		lines = append(lines, canvas...)
+	} else if strips := trendStrips(theme, state); len(strips) > 0 {
+		lines = append(lines, "", theme.StyleHeader.Render(fmt.Sprintf("Signals (%s)", wellbeingWindowLabel(state))))
 		lines = append(lines, strips...)
 	}
 	if burnout := latestBurnout(state); burnout != nil {

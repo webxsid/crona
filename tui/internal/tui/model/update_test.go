@@ -54,6 +54,19 @@ func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	}
 }
 
+func TestNewStartsWellbeingCursorsAtScrollableBottom(t *testing.T) {
+	model := New("unix", "/tmp/missing.sock", "", "dev", "/tmp/crona", make(chan struct{}), nil)
+	if model.cursor[PaneWellbeingSummary] == 0 {
+		t.Fatal("expected wellbeing summary cursor to start near bottom")
+	}
+	if model.cursor[PaneWellbeingTrends] == 0 {
+		t.Fatal("expected wellbeing trends cursor to start near bottom")
+	}
+	if model.cursor[PaneWellbeingStreaks] == 0 {
+		t.Fatal("expected wellbeing streaks cursor to start near bottom")
+	}
+}
+
 func TestDialogModeQuitsOnQAndCtrlC(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{Kind: "onboarding"})
 
