@@ -10,7 +10,7 @@ Release channel policy:
 
 ## [1.3.0] - 2026-05-15
 
-This stable release expands the Wellbeing experience and tightens the terminal UI around the new Momentum and calendar presentation.
+This stable release expands the Wellbeing experience, tightens the terminal UI around the new Momentum and calendar presentation, and adds telemetry metadata that separates dev and beta traffic from stable release usage.
 
 ### Added
 - Lifetime wellbeing streaks now compute from all stored local history through the selected date, while the 7-day metrics window remains unchanged.
@@ -23,6 +23,7 @@ This stable release expands the Wellbeing experience and tightens the terminal U
 - Weekly and monthly custom streaks now keep the current in-progress bucket from breaking an existing streak until that bucket actually fails its threshold.
 - The generic habit streak row was removed from the detailed streak view in favor of built-in and custom momentum sections.
 - Dev seed data now covers roughly 30 days and includes daily, weekly, and monthly custom streak scenarios for testing.
+- Telemetry events now carry `running_channel` and `running_is_beta` so release filtering can separate dev and beta traffic from stable usage.
 - The release notes and socket docs now describe the lifetime streak API and the split Wellbeing layout.
 
 ## [1.2.2] - 2026-05-09
