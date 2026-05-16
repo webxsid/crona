@@ -60,10 +60,10 @@ func Render(theme types.Theme, selection Selection) []string {
 		rowStart := gridStart.AddDate(0, 0, week*7)
 		rowWeek := ISOWeek(rowStart)
 		weekLabel := fmt.Sprintf("%2d", rowWeek)
-		switch {
-		case rowWeek == currentWeek:
+		switch rowWeek {
+		case currentWeek:
 			weekLabel = currentWeekStyle.Render(weekLabel)
-		case rowWeek == selectedWeek:
+		case selectedWeek:
 			weekLabel = theme.StyleHeader.Render(weekLabel)
 		default:
 			weekLabel = theme.StyleDim.Render(weekLabel)

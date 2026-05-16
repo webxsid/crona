@@ -15,6 +15,9 @@ const (
 	EnvVarPostHogEnabled = "CRONA_POSTHOG_ENABLED"
 	ModeProd             = "Prod"
 	ModeDev              = "Dev"
+
+	defaultPostHogAPIKey = "phc_wZiFJ92DtZGMMnNMB7UhKcG3dbTURCUuWnm2pSepWyVb"
+	defaultPostHogHost   = "https://eu.i.posthog.com"
 )
 
 type AppEnv struct {
@@ -39,17 +42,29 @@ func (e AppEnv) IsDev() bool {
 }
 
 func PostHogAPIKey() string {
-	return strings.TrimSpace(os.Getenv(EnvVarPostHogAPIKey))
+	if value := strings.TrimSpace(os.Getenv(EnvVarPostHogAPIKey)); value != "" {
+		return value
+	}
+	if Current().IsDev() {
+		return ""
+	}
+	return defaultPostHogAPIKey
 }
 
 func PostHogHost() string {
-	return strings.TrimSpace(os.Getenv(EnvVarPostHogHost))
+	if value := strings.TrimSpace(os.Getenv(EnvVarPostHogHost)); value != "" {
+		return value
+	}
+	if Current().IsDev() {
+		return ""
+	}
+	return defaultPostHogHost
 }
 
 func PostHogEnabled() bool {
 	value := strings.TrimSpace(os.Getenv(EnvVarPostHogEnabled))
 	if value == "" {
-		return false
+		return !Current().IsDev()
 	}
 	enabled, err := strconv.ParseBool(value)
 	if err != nil {

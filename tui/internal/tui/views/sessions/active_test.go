@@ -35,7 +35,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if titleAt < 0 || clockAt < 0 || metricAt < 0 || issueAt < 0 {
 		t.Fatalf("expected title, clock, metadata, and issue pane to render, got %q", rendered)
 	}
-	if !(titleAt < clockAt && clockAt < metricAt && metricAt < issueAt) {
+	if titleAt >= clockAt || clockAt >= metricAt || metricAt >= issueAt {
 		t.Fatalf("expected title above clock above metadata above issue pane, got %q", rendered)
 	}
 

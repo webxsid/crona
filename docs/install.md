@@ -1,13 +1,5 @@
 # Install
 
-## Release Channels
-
-- `stable` is the preferred channel for general users.
-- `prerelease` remains available for testers who want pre-release builds and faster iteration.
-- `v1.3.0` is the current stable release.
-
-See the published builds on [GitHub Releases](https://github.com/webxsid/crona/releases).
-
 ## Release Artifacts
 
 End users do not need Go installed.
@@ -98,9 +90,8 @@ Override the binary install directory with `CRONA_INSTALL_DIR`.
 
 ## Updates
 
-- General users should stay on the `stable` update channel.
-- Prerelease testers can opt into the prerelease channel from the TUI settings.
-- Stable users receive normal releases; prerelease users can opt into future validation builds.
+Users can switch release tracks from the TUI settings.
+The default track follows normal releases, and testers can opt into upcoming builds.
 
 Use the in-app `Updates` view to check, read notes, and install supported updates.
 

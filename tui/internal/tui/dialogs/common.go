@@ -5,8 +5,6 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-
-	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -83,20 +81,6 @@ func dialogSubmitHint(state controllerpkg.State, label string) string {
 	return "[" + dialogSubmitChord(state) + "] " + label
 }
 
-func isDialogSubmitKey(state controllerpkg.State, key string) bool {
-	switch key {
-	case "ctrl+s":
-		return true
-	default:
-		return false
-	}
-}
-
-func withDialogPrompt(input textinput.Model, prompt string) textinput.Model {
-	input.Prompt = prompt
-	return input
-}
-
 type dialogPromptSet struct {
 	Search string
 	Value  string
@@ -128,16 +112,4 @@ func promptGlyphSet(state controllerpkg.State) dialogPromptSet {
 			Date:   dialogDatePromptEmoji,
 		}
 	}
-}
-
-func withSearchPrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
-	return withDialogPrompt(input, promptGlyphSet(state).Search)
-}
-
-func withTimePrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
-	return withDialogPrompt(input, promptGlyphSet(state).Time)
-}
-
-func withDatePrompt(state controllerpkg.State, input textinput.Model) textinput.Model {
-	return withDialogPrompt(input, promptGlyphSet(state).Date)
 }

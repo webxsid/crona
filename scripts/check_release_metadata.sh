@@ -19,14 +19,12 @@ protocol_version="$(sed -n 's/^const Version = "\([^"]*\)".*/\1/p' "${ROOT_DIR}/
 
 tag="v${project_version}"
 release_notes_file="${ROOT_DIR}/docs/release-notes/${tag}.md"
-for doc in README.md docs/install.md docs/changelog.md; do
-  if ! grep -F "${tag}" "${ROOT_DIR}/${doc}" >/dev/null 2>&1; then
-    fail "${doc} does not mention current release tag ${tag}"
-  fi
-done
-
 if [ ! -f "${release_notes_file}" ]; then
   fail "missing public release notes file ${release_notes_file}"
+fi
+
+if ! grep -F "## [${project_version}] - " "${ROOT_DIR}/docs/changelog.md" >/dev/null 2>&1; then
+  fail "docs/changelog.md does not contain the current release entry ${project_version}"
 fi
 
 if ! sh "${ROOT_DIR}/scripts/release_notes.sh" "${tag}" >/dev/null; then

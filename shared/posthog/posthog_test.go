@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	sharedconfig "crona/shared/config"
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 )
@@ -91,6 +92,44 @@ func TestNewCreatesIdentityFileWhenEnabled(t *testing.T) {
 		if !strings.Contains(plain, want) {
 			t.Fatalf("expected log to contain %q, got %q", want, plain)
 		}
+	}
+}
+
+func TestLoadConfigUsesReleaseDefaultsInProd(t *testing.T) {
+	t.Setenv(sharedconfig.EnvVarMode, sharedconfig.ModeProd)
+	t.Setenv(sharedconfig.EnvVarPostHogAPIKey, "")
+	t.Setenv(sharedconfig.EnvVarPostHogHost, "")
+	t.Setenv(sharedconfig.EnvVarPostHogEnabled, "")
+
+	cfg := LoadConfig("tui")
+	if cfg.APIKey == "" {
+		t.Fatal("expected release api key default")
+	}
+	if cfg.Host == "" {
+		t.Fatal("expected release host default")
+	}
+	if !cfg.Enabled {
+		t.Fatal("expected release telemetry to default to enabled")
+	}
+}
+
+func TestNewRespectsConsentEvenWithReleaseDefaults(t *testing.T) {
+	t.Setenv(sharedconfig.EnvVarMode, sharedconfig.ModeProd)
+	t.Setenv(sharedconfig.EnvVarPostHogAPIKey, "")
+	t.Setenv(sharedconfig.EnvVarPostHogHost, "")
+	t.Setenv(sharedconfig.EnvVarPostHogEnabled, "")
+
+	cfg := LoadConfig("tui")
+	cfg.RuntimeDir = t.TempDir()
+	cfg.UsageEnabled = false
+	cfg.ErrorReportingEnabled = false
+
+	client, err := New(cfg)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if client.Enabled() {
+		t.Fatal("expected telemetry to remain disabled until consent is enabled")
 	}
 }
 

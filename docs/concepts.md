@@ -157,10 +157,10 @@ Crona does not require direct Google Calendar or iCloud API integration for this
 
 ## Project Status
 
-Crona is in its `1.3.0` stable release line. The core workflow is usable for general users, while prerelease builds remain available for faster validation of upcoming changes.
+The core workflow is usable for general users, while validation builds remain available for faster feedback on upcoming changes.
 
 Current mainline focus:
 - stable-channel maintenance
 - installer/updater/support polish
 - documentation and contributor-facing references
-- prerelease tester feedback for upcoming releases
+- tester feedback for upcoming releases

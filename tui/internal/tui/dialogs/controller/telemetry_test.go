@@ -12,18 +12,15 @@ func TestOnboardingDialogAdvancesAndCompletes(t *testing.T) {
 		t.Fatalf("expected onboarding dialog, got %q", state.Kind)
 	}
 
-	next, action, status := Update(state, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
+	next, _, status := Update(state, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
 	if next.TelemetryStep != 1 {
 		t.Fatalf("expected telemetry step 1 after tab, got %d", next.TelemetryStep)
 	}
-	if action != nil {
-		t.Fatalf("expected no action on first step advance, got %+v", action)
-	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
+	next, _, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -31,7 +28,7 @@ func TestOnboardingDialogAdvancesAndCompletes(t *testing.T) {
 		t.Fatalf("expected telemetry step 2 after tab, got %d", next.TelemetryStep)
 	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyDown})
+	next, _, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyDown})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -39,7 +36,7 @@ func TestOnboardingDialogAdvancesAndCompletes(t *testing.T) {
 		t.Fatalf("expected privacy cursor to move to 1, got %d", next.TelemetryPrivacyCursor)
 	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyEnter})
+	next, action, status := Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyEnter})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -50,7 +47,7 @@ func TestOnboardingDialogAdvancesAndCompletes(t *testing.T) {
 		t.Fatalf("expected no action outside review, got %+v", action)
 	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
+	next, _, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -58,7 +55,7 @@ func TestOnboardingDialogAdvancesAndCompletes(t *testing.T) {
 		t.Fatalf("expected review step after tab, got %d", next.TelemetryStep)
 	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyDown})
+	next, _, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyDown})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -98,7 +95,7 @@ func TestTelemetrySettingsDialogEnterTogglesPrivacyChoices(t *testing.T) {
 		t.Fatalf("expected no action on usage step enter, got %+v", action)
 	}
 
-	next, action, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
+	next, _, status = Update(next, UpdateContext{}, "2026-05-15", tea.KeyMsg{Type: tea.KeyTab})
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}

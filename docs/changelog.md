@@ -2,11 +2,14 @@
 
 All notable changes to **Crona** are documented here.
 
-Release channel policy:
 
-- `stable` is the preferred channel for general users.
-- `prerelease` is the testing channel for pre-release validation and faster iteration.
-- `v1.3.0` is the current stable release.
+## [1.3.1] - 2026-05-16
+
+This patch release makes bundled installs pick up telemetry defaults without requiring users to set environment variables, while keeping consent gating inside the app.
+
+### Fixed
+- Bundled release installs now initialize telemetry with built-in release defaults, so PostHog works without a `.env` file or manual environment setup.
+- Release telemetry still respects the in-app consent settings before sending any usage or error events.
 
 ## [1.3.0] - 2026-05-15
 

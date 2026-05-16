@@ -1,8 +1,6 @@
 package controller
 
 import (
-	"strings"
-
 	sharedtypes "crona/shared/types"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -20,24 +18,6 @@ const (
 	dialogDatePromptASCII     = "d "
 	dialogValuePrompt         = "> "
 )
-
-func plainIssueStatus(status string) string {
-	switch status {
-	case "in_progress":
-		return "in progress"
-	case "in_review":
-		return "in review"
-	default:
-		return status
-	}
-}
-
-func fallback(v, def string) string {
-	if strings.TrimSpace(v) == "" {
-		return def
-	}
-	return v
-}
 
 func dialogSubmitChord(state State) string {
 	return "ctrl+s"
@@ -80,24 +60,24 @@ func promptGlyphSet(state State) dialogPromptSet {
 	switch sharedtypes.NormalizePromptGlyphMode(state.PromptGlyphMode) {
 	case sharedtypes.PromptGlyphModeUnicode:
 		return dialogPromptSet{
-			Search: dialogSearchPromptUnicode,
+			Search: "⌕ ",
 			Value:  dialogValuePrompt,
-			Time:   dialogTimePromptUnicode,
-			Date:   dialogDatePromptUnicode,
+			Time:   "◷ ",
+			Date:   "◫ ",
 		}
 	case sharedtypes.PromptGlyphModeASCII:
 		return dialogPromptSet{
-			Search: dialogSearchPromptASCII,
+			Search: "? ",
 			Value:  dialogValuePrompt,
-			Time:   dialogTimePromptASCII,
-			Date:   dialogDatePromptASCII,
+			Time:   "t ",
+			Date:   "d ",
 		}
 	default:
 		return dialogPromptSet{
-			Search: dialogSearchPromptEmoji,
+			Search: "🔎 ",
 			Value:  dialogValuePrompt,
-			Time:   dialogTimePromptEmoji,
-			Date:   dialogDatePromptEmoji,
+			Time:   "🕒 ",
+			Date:   "📅 ",
 		}
 	}
 }

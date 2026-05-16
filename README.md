@@ -54,11 +54,6 @@ crona completion bash
 crona completion fish
 ```
 
-## Release Channels
-
-- `stable` is the preferred channel for general users.
-- `prerelease` remains available for staged validation and faster iteration.
-- `v1.3.0` is the current stable release.
 
 ## Documentation
 

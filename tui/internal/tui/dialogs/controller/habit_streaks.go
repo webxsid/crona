@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -317,17 +316,6 @@ func habitStreakInputIndex(row habitStreakDetailRow) (int, bool) {
 	}
 }
 
-func habitStreakPeriodLabel(period sharedtypes.HabitStreakPeriod) string {
-	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
-	case sharedtypes.HabitStreakPeriodWeek:
-		return "Weekly"
-	case sharedtypes.HabitStreakPeriodMonth:
-		return "Monthly"
-	default:
-		return "Daily"
-	}
-}
-
 func toggleHabitMembership(values []int64, habitID int64) []int64 {
 	for i, value := range values {
 		if value == habitID {
@@ -335,35 +323,4 @@ func toggleHabitMembership(values []int64, habitID int64) []int64 {
 		}
 	}
 	return append(values, habitID)
-}
-
-func containsHabitID(values []int64, habitID int64) bool {
-	for _, value := range values {
-		if value == habitID {
-			return true
-		}
-	}
-	return false
-}
-
-func habitStreakHabitSummary(ids []int64, habits []sharedtypes.HabitWithMeta) string {
-	if len(ids) == 0 {
-		return "None"
-	}
-	labels := make([]string, 0, len(ids))
-	for _, id := range ids {
-		for _, habit := range habits {
-			if habit.ID == id {
-				labels = append(labels, habit.Name)
-				break
-			}
-		}
-	}
-	if len(labels) == 0 {
-		return fmt.Sprintf("%d habits", len(ids))
-	}
-	if len(labels) <= 3 {
-		return strings.Join(labels, ", ")
-	}
-	return fmt.Sprintf("%s, %s, %s +%d", labels[0], labels[1], labels[2], len(labels)-3)
 }

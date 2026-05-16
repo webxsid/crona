@@ -2,7 +2,7 @@
 
 Crona uses `main` as the only long-lived code branch.
 
-Release builds may come from `main`, short-lived `release/*` branches, or version tags. These branches run the same validation, and the release workflow publishes prereleases by default. Stable promotion is manual.
+Release builds may come from `main`, short-lived `release/*` branches, or version tags. These branches run the same validation, and the release workflow handles artifact publication.
 
 ## Validation
 
@@ -22,11 +22,9 @@ The release version must stay consistent across:
 
 - `Makefile`
 - `shared/version/version.go`
-- `README.md`
-- `docs/install.md`
 - `docs/changelog.md`
 
-`make release-check` validates these references and keeps the protocol version pinned to `1.0` until an external GUI compatibility requirement forces a protocol bump.
+`make release-check` validates these references, confirms the matching release notes file exists, and keeps the protocol version pinned to `1.0` until an external GUI compatibility requirement forces a protocol bump.
 
 ## Publishing
 
@@ -35,7 +33,7 @@ The release version must stay consistent across:
 3. Tag the commit with a version tag such as `v1.0.0`.
 4. Push the tag.
 
-The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches public release notes from `docs/release-notes/<tag>.md` when present. The changelog remains the internal development log and a fallback source during the transition. Prereleases are the default publication mode; stable releases are promoted manually.
+The release workflow builds cross-platform bundles, installer scripts, bundled assets, checksums, and size reports, then attaches public release notes from `docs/release-notes/<tag>.md` when present. The changelog remains the internal development log and a fallback source during the transition.
 
 ## Branch Cleanup
 

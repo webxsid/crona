@@ -1,6 +1,6 @@
 PROJECT_NAME := crona
 PROJECT_REPO := webxsid/crona
-PROJECT_VERSION := 1.3.0
+PROJECT_VERSION := 1.3.1
 PROJECT_DESCRIPTION := Local-first work kernel, TUI, and shared contracts
 GO ?= go
 GOCACHE ?= /tmp/crona-go-cache
