@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 )
 
 func TestNewReturnsNoopWhenDisabled(t *testing.T) {
@@ -219,6 +222,33 @@ func TestReportErrorSanitizesPathBearingMessages(t *testing.T) {
 	}
 	if got := props["operation"]; got != "load_settings" {
 		t.Fatalf("expected operation to survive sanitization, got %#v", got)
+	}
+}
+
+func TestDefaultEventPropertiesIncludeRuntimeChannel(t *testing.T) {
+	oldVersion := versionpkg.Version
+	versionpkg.Version = "1.3.0-beta.1"
+	defer func() { versionpkg.Version = oldVersion }()
+
+	props := defaultEventProperties(Config{
+		App:     "tui",
+		Version: "1.3.0-beta.1",
+		Mode:    "Dev",
+	})
+	if got := props["app"]; got != "tui" {
+		t.Fatalf("expected app property, got %#v", got)
+	}
+	if got := props["env_mode"]; got != "Dev" {
+		t.Fatalf("expected env_mode property, got %#v", got)
+	}
+	if got, ok := props["running_channel"].(sharedtypes.UpdateChannel); !ok || got != sharedtypes.UpdateChannelBeta {
+		t.Fatalf("expected beta running channel, got %#v", props["running_channel"])
+	}
+	if got := props["running_is_beta"]; got != true {
+		t.Fatalf("expected beta running flag, got %#v", got)
+	}
+	if got := props["app_version"]; got != "1.3.0-beta.1" {
+		t.Fatalf("expected app version property, got %#v", got)
 	}
 }
 

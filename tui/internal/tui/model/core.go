@@ -279,9 +279,9 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneConfig:           0,
 			PaneSettings:         0,
 			PaneAlerts:           0,
-			PaneWellbeingSummary: 1 << 30,
-			PaneWellbeingTrends:  1 << 30,
-			PaneWellbeingStreaks: 1 << 30,
+			PaneWellbeingSummary: 0,
+			PaneWellbeingTrends:  0,
+			PaneWellbeingStreaks: 0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:            "",

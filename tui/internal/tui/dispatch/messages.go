@@ -122,6 +122,7 @@ type MessageDeps struct {
 	OpenOnboardingDialog       func(*MessageState)
 	EnterScratchpadPane        func(*MessageState, commands.OpenScratchpadMsg)
 	SetScratchpadContent       func(*MessageState, string, string)
+	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
 	CurrentDashboardDate       func(MessageState) string
 	CurrentWellbeingDate       func(MessageState) string
 	LoadRepos                  func() tea.Cmd
@@ -241,15 +242,27 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		if state.DailyCheckIn != nil && state.WellbeingDate == "" {
 			state.WellbeingDate = state.DailyCheckIn.Date
 		}
+		if deps.AnchorWellbeingScroll != nil {
+			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingSummary)
+		}
 		return state, nil, true
 	case commands.MetricsRangeLoadedMsg:
 		state.MetricsRange = msg.Days
+		if deps.AnchorWellbeingScroll != nil {
+			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
+		}
 		return state, nil, true
 	case commands.MetricsRollupLoadedMsg:
 		state.MetricsRollup = msg.Rollup
+		if deps.AnchorWellbeingScroll != nil {
+			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
+		}
 		return state, nil, true
 	case commands.StreaksLoadedMsg:
 		state.Streaks = msg.Streaks
+		if deps.AnchorWellbeingScroll != nil {
+			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingStreaks)
+		}
 		return state, nil, true
 	case commands.DashboardWindowLoadedMsg:
 		state.DashboardWindow = msg.Summary

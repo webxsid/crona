@@ -7,6 +7,9 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	dispatchpkg "crona/tui/internal/tui/dispatch"
+	uistate "crona/tui/internal/tui/state"
+	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -54,16 +57,46 @@ func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	}
 }
 
-func TestNewStartsWellbeingCursorsAtScrollableBottom(t *testing.T) {
-	model := New("unix", "/tmp/missing.sock", "", "dev", "/tmp/crona", make(chan struct{}), nil)
-	if model.cursor[PaneWellbeingSummary] == 0 {
-		t.Fatal("expected wellbeing summary cursor to start near bottom")
+func TestAnchorWellbeingScrollUsesCurrentPaneHeight(t *testing.T) {
+	model := Model{width: 100, height: 40}
+	state := dispatchpkg.MessageState{
+		Width:               100,
+		Height:              40,
+		View:                uistate.ViewWellbeing,
+		Pane:                uistate.PaneWellbeingTrends,
+		WellbeingWindowDays: 14,
+		Cursor: map[uistate.Pane]int{
+			uistate.PaneWellbeingSummary: 0,
+			uistate.PaneWellbeingTrends:  0,
+			uistate.PaneWellbeingStreaks: 0,
+		},
+		MetricsRange: makeWellbeingRangeForAnchorTest(14),
+		MetricsRollup: &api.MetricsRollup{
+			Days:          14,
+			CheckInDays:   10,
+			FocusDays:     8,
+			WorkedSeconds: 14400,
+			RestSeconds:   2400,
+		},
+		Streaks: &api.StreakSummary{
+			CurrentCheckInDays: 3,
+			LongestCheckInDays: 7,
+			CurrentFocusDays:   2,
+			LongestFocusDays:   5,
+		},
 	}
-	if model.cursor[PaneWellbeingTrends] == 0 {
-		t.Fatal("expected wellbeing trends cursor to start near bottom")
+	deps := model.dispatchMessageDeps()
+	if deps.AnchorWellbeingScroll == nil {
+		t.Fatal("expected anchor wellbeing scroll hook to be wired")
 	}
-	if model.cursor[PaneWellbeingStreaks] == 0 {
-		t.Fatal("expected wellbeing streaks cursor to start near bottom")
+	next := model.applyDispatchMessageState(state)
+	expected := wellbeingview.PaneLineCount(next.viewContentState(next.mainContentWidth(), next.contentHeight(), next.selectionSnapshot(), nil), string(uistate.PaneWellbeingTrends)) - 1
+	deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
+	if state.Cursor[uistate.PaneWellbeingTrends] <= 0 {
+		t.Fatalf("expected trends cursor to anchor near bottom, got %d", state.Cursor[uistate.PaneWellbeingTrends])
+	}
+	if state.Cursor[uistate.PaneWellbeingTrends] != expected {
+		t.Fatalf("expected cursor to anchor to bottom of rendered pane, got %d", state.Cursor[uistate.PaneWellbeingTrends])
 	}
 }
 
@@ -96,4 +129,23 @@ func TestDialogRuntimeDepsWireTelemetryHooks(t *testing.T) {
 	if deps.CompleteOnboarding == nil {
 		t.Fatal("expected complete onboarding hook to be wired")
 	}
+}
+
+func makeWellbeingRangeForAnchorTest(days int) []api.DailyMetricsDay {
+	out := make([]api.DailyMetricsDay, 0, days)
+	for i := 0; i < days; i++ {
+		sleep := 7.0
+		out = append(out, api.DailyMetricsDay{
+			Date:          "2026-04-04",
+			WorkedSeconds: 3600 + i*120,
+			RestSeconds:   300 + i*30,
+			CheckIn: &api.DailyCheckIn{
+				Date:       "2026-04-04",
+				Mood:       3 + (i % 3),
+				Energy:     2 + (i % 4),
+				SleepHours: &sleep,
+			},
+		})
+	}
+	return out
 }

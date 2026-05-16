@@ -12,6 +12,7 @@ import (
 	inputpkg "crona/tui/internal/tui/input"
 	overlaypkg "crona/tui/internal/tui/overlays"
 	selectionpkg "crona/tui/internal/tui/selection"
+	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -438,10 +439,23 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next.scratchpadViewport.SetContent(rendered)
 			*state = next.dispatchMessageState()
 		},
+		AnchorWellbeingScroll: func(state *dispatchpkg.MessageState, pane Pane) {
+			next := m.applyDispatchMessageState(*state)
+			snapshot := next.selectionSnapshot()
+			count := wellbeingview.PaneLineCount(next.viewContentState(next.mainContentWidth(), next.contentHeight(), snapshot, selectionpkg.ActiveIssue(snapshot)), string(pane))
+			if count > 0 {
+				if current := next.cursor[pane]; current <= 0 {
+					next.cursor[pane] = count - 1
+				}
+			}
+			*state = next.dispatchMessageState()
+		},
 		CurrentDashboardDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentDashboardDate()
 		},
-		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string { return m.applyDispatchMessageState(state).currentWellbeingDate() },
+		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
+			return m.applyDispatchMessageState(state).currentWellbeingDate()
+		},
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
 		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
@@ -450,11 +464,13 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
 		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadWellbeing:       func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
-		LoadDailyPlan:       func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
-		LoadExportAssets:    func() tea.Cmd { return commands.LoadExportAssets(m.client) },
-		LoadExportReports:   func() tea.Cmd { return commands.LoadExportReports(m.client) },
-		LoadIssueSessions:   func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
+		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadWellbeingWindow(m.client, date, windowDays)
+		},
+		LoadDailyPlan:     func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
+		LoadExportAssets:  func() tea.Cmd { return commands.LoadExportAssets(m.client) },
+		LoadExportReports: func() tea.Cmd { return commands.LoadExportReports(m.client) },
+		LoadIssueSessions: func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)
 		},

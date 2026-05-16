@@ -138,17 +138,10 @@ func New(cfg Config) (Client, error) {
 
 	disableGeoIP := true
 	inner, err := vendorposthog.NewWithConfig(cfg.APIKey, vendorposthog.Config{
-		Endpoint:     cfg.Host,
-		Logger:       noopLogger{},
-		DisableGeoIP: &disableGeoIP,
-		DefaultEventProperties: vendorposthog.Properties{
-			"app":         cfg.App,
-			"app_version": cfg.Version,
-			"env_mode":    cfg.Mode,
-			"os":          runtime.GOOS,
-			"goos":        runtime.GOOS,
-			"arch":        runtime.GOARCH,
-		},
+		Endpoint:               cfg.Host,
+		Logger:                 noopLogger{},
+		DisableGeoIP:           &disableGeoIP,
+		DefaultEventProperties: defaultEventProperties(cfg),
 	})
 	if err != nil {
 		return noopClient{}, err
@@ -378,6 +371,19 @@ func normalizeConfig(cfg Config) Config {
 		}
 	}
 	return cfg
+}
+
+func defaultEventProperties(cfg Config) vendorposthog.Properties {
+	return vendorposthog.Properties{
+		"app":             cfg.App,
+		"app_version":     cfg.Version,
+		"env_mode":        cfg.Mode,
+		"running_channel": versionpkg.RunningChannel(),
+		"running_is_beta": versionpkg.IsBetaRelease(),
+		"os":              runtime.GOOS,
+		"goos":            runtime.GOOS,
+		"arch":            runtime.GOARCH,
+	}
 }
 
 func sanitizedErrorProperties(kind string, err error, properties Properties) Properties {
