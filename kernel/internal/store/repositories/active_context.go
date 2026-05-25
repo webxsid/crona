@@ -21,7 +21,11 @@ func NewActiveContextRepository(db *bun.DB) *ActiveContextRepository {
 	return &ActiveContextRepository{db: db}
 }
 
-func (r *ActiveContextRepository) Get(ctx context.Context, userID string, deviceID string) (*sharedtypes.ActiveContext, error) {
+func (r *ActiveContextRepository) Get(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+) (*sharedtypes.ActiveContext, error) {
 	type row struct {
 		UserID     string  `bun:"user_id"`
 		DeviceID   string  `bun:"device_id"`
@@ -72,11 +76,15 @@ func (r *ActiveContextRepository) Get(ctx context.Context, userID string, device
 	}, nil
 }
 
-func (r *ActiveContextRepository) Set(ctx context.Context, userID string, deviceID string, value struct {
-	RepoID   *int64
-	StreamID *int64
-	IssueID  *int64
-},
+func (r *ActiveContextRepository) Set(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+	value struct {
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+	},
 ) (*sharedtypes.ActiveContext, error) {
 	var (
 		repoInternalID   *string
@@ -152,7 +160,11 @@ func (r *ActiveContextRepository) Clear(ctx context.Context, userID string, devi
 	return err
 }
 
-func (r *ActiveContextRepository) InitializeDefaults(ctx context.Context, userID string, deviceID string) error {
+func (r *ActiveContextRepository) InitializeDefaults(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+) error {
 	existing, err := r.Get(ctx, userID, deviceID)
 	if err != nil || existing != nil {
 		return err

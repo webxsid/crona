@@ -23,7 +23,6 @@ func (m Model) layoutState() layoutpkg.State {
 	paneActions := viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
-		ScratchpadOpen:         m.scratchpadOpen,
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
 		TimerNextSegment:       chromeState.TimerNextSegment,
@@ -60,7 +59,12 @@ func (m Model) layoutState() layoutpkg.State {
 		PaneActions:         paneActions,
 	}
 	contentWidth := max(0, m.width-sidebarWidth(m.width))
-	state.ContentState = m.viewContentState(contentWidth, layoutpkg.ContentHeight(state), snapshot, activeIssue)
+	state.ContentState = m.viewContentState(
+		contentWidth,
+		layoutpkg.ContentHeight(state),
+		snapshot,
+		activeIssue,
+	)
 	if state.ContentState.RestModeActive {
 		if m.view != ViewReports && m.view != ViewSessionHistory && m.view != ViewHabitHistory {
 			state.View = ViewAway
@@ -79,7 +83,10 @@ func stateRestModeFromChrome(state layoutChromeState) bool {
 }
 
 func stateAwayModeFromContent(m Model) bool {
-	protectedMode, awayMode, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	protectedMode, awayMode, _ := viewruntime.ProtectedRestMode(
+		m.settings,
+		time.Now().Format("2006-01-02"),
+	)
 	if !protectedMode {
 		return false
 	}
@@ -123,8 +130,12 @@ func (m Model) layoutChromeState() layoutChromeState {
 			timerNextSegment = string(*m.timer.NextSegmentType)
 		}
 	}
-	structuredTimer := m.settings != nil && m.settings.TimerMode == "structured" && m.settings.BreaksEnabled
-	protectedMode, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	structuredTimer := m.settings != nil && m.settings.TimerMode == "structured" &&
+		m.settings.BreaksEnabled
+	protectedMode, _, _ := viewruntime.ProtectedRestMode(
+		m.settings,
+		time.Now().Format("2006-01-02"),
+	)
 	headerState := viewchrome.HeaderState{
 		Width:         m.width,
 		View:          string(m.view),
@@ -147,7 +158,6 @@ func (m Model) layoutChromeState() layoutChromeState {
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
 			Pane:                   string(m.pane),
-			ScratchpadOpen:         m.scratchpadOpen,
 			TimerState:             timerState,
 			TimerSegment:           timerSegment,
 			TimerNextSegment:       timerNextSegment,

@@ -73,10 +73,31 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 			"note":  "private note",
 		},
 	}}
-	tuiErrors := []string{"[2026-04-02T11:55:00Z] [ERROR] failed to open " + filepath.Join(baseDir, "scratch", "notes.md")}
-	kernelErrors := []string{"[2026-04-02T11:56:00Z] [ERROR] ipc write failed\n  Detail: " + filepath.Join(baseDir, "socket", "crona.sock")}
+	tuiErrors := []string{
+		"[2026-04-02T11:55:00Z] [ERROR] failed to open " + filepath.Join(
+			baseDir,
+			"scratch",
+			"notes.md",
+		),
+	}
+	kernelErrors := []string{
+		"[2026-04-02T11:56:00Z] [ERROR] ipc write failed\n  Detail: " + filepath.Join(
+			baseDir,
+			"socket",
+			"crona.sock",
+		),
+	}
 
-	path, sizeBytes, err := helperpkg.GenerateSupportBundle(baseDir, now, window, input, ops, tuiErrors, kernelErrors, nil)
+	path, sizeBytes, err := helperpkg.GenerateSupportBundle(
+		baseDir,
+		now,
+		window,
+		input,
+		ops,
+		tuiErrors,
+		kernelErrors,
+		nil,
+	)
 	if err != nil {
 		t.Fatalf("GenerateSupportBundle returned error: %v", err)
 	}
@@ -122,10 +143,13 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 		t.Fatalf("expected summary to redact endpoint, got %q", files["summary.txt"])
 	}
 
-	if strings.Contains(files["recent_ops.json"], "Secret Issue") || strings.Contains(files["recent_ops.json"], "private note") || strings.Contains(files["recent_ops.json"], baseDir) {
+	if strings.Contains(files["recent_ops.json"], "Secret Issue") ||
+		strings.Contains(files["recent_ops.json"], "private note") ||
+		strings.Contains(files["recent_ops.json"], baseDir) {
 		t.Fatalf("expected ops json to redact payload details, got %q", files["recent_ops.json"])
 	}
-	if strings.Contains(files["recent_errors_tui.log"], baseDir) || strings.Contains(files["recent_errors_kernel.log"], baseDir) {
+	if strings.Contains(files["recent_errors_tui.log"], baseDir) ||
+		strings.Contains(files["recent_errors_kernel.log"], baseDir) {
 		t.Fatalf("expected error logs to redact runtime paths")
 	}
 

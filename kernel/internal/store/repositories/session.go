@@ -21,7 +21,13 @@ func NewSessionRepository(db *bun.DB) *SessionRepository {
 	return &SessionRepository{db: db}
 }
 
-func (r *SessionRepository) Start(ctx context.Context, session sharedtypes.Session, userID string, deviceID string, now string) (sharedtypes.Session, error) {
+func (r *SessionRepository) Start(
+	ctx context.Context,
+	session sharedtypes.Session,
+	userID string,
+	deviceID string,
+	now string,
+) (sharedtypes.Session, error) {
 	issueInternalID, err := resolveIssueInternalID(ctx, r.db, session.IssueID, userID)
 	if err != nil {
 		return sharedtypes.Session{}, err
@@ -48,7 +54,13 @@ func (r *SessionRepository) Start(ctx context.Context, session sharedtypes.Sessi
 	return session, nil
 }
 
-func (r *SessionRepository) CreateCompleted(ctx context.Context, session sharedtypes.Session, userID string, deviceID string, now string) (sharedtypes.Session, error) {
+func (r *SessionRepository) CreateCompleted(
+	ctx context.Context,
+	session sharedtypes.Session,
+	userID string,
+	deviceID string,
+	now string,
+) (sharedtypes.Session, error) {
 	issueInternalID, err := resolveIssueInternalID(ctx, r.db, session.IssueID, userID)
 	if err != nil {
 		return sharedtypes.Session{}, err
@@ -107,7 +119,10 @@ func (r *SessionRepository) Stop(ctx context.Context, sessionID string, updates 
 	return r.GetByID(ctx, sessionID, userID)
 }
 
-func (r *SessionRepository) GetActiveSession(ctx context.Context, userID string) (*sharedtypes.Session, error) {
+func (r *SessionRepository) GetActiveSession(
+	ctx context.Context,
+	userID string,
+) (*sharedtypes.Session, error) {
 	return r.selectOne(ctx, r.db.NewSelect().
 		TableExpr("sessions").
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
@@ -123,7 +138,11 @@ func (r *SessionRepository) GetActiveSession(ctx context.Context, userID string)
 		Limit(1))
 }
 
-func (r *SessionRepository) GetByID(ctx context.Context, sessionID string, userID string) (*sharedtypes.Session, error) {
+func (r *SessionRepository) GetByID(
+	ctx context.Context,
+	sessionID string,
+	userID string,
+) (*sharedtypes.Session, error) {
 	return r.selectOne(ctx, r.db.NewSelect().
 		TableExpr("sessions").
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
@@ -140,7 +159,11 @@ func (r *SessionRepository) GetByID(ctx context.Context, sessionID string, userI
 		Limit(1))
 }
 
-func (r *SessionRepository) GetDetail(ctx context.Context, sessionID string, userID string) (*sharedtypes.SessionDetail, error) {
+func (r *SessionRepository) GetDetail(
+	ctx context.Context,
+	sessionID string,
+	userID string,
+) (*sharedtypes.SessionDetail, error) {
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
@@ -206,7 +229,11 @@ func (r *SessionRepository) GetDetail(ctx context.Context, sessionID string, use
 	}, nil
 }
 
-func (r *SessionRepository) ListByIssue(ctx context.Context, issueID int64, userID string) ([]sharedtypes.Session, error) {
+func (r *SessionRepository) ListByIssue(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) ([]sharedtypes.Session, error) {
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`
@@ -251,7 +278,11 @@ func (r *SessionRepository) ListByIssue(ctx context.Context, issueID int64, user
 	return out, nil
 }
 
-func (r *SessionRepository) GetLastSessionForIssue(ctx context.Context, issueID int64, userID string) (*sharedtypes.Session, error) {
+func (r *SessionRepository) GetLastSessionForIssue(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) (*sharedtypes.Session, error) {
 	return r.selectOne(ctx, r.db.NewSelect().
 		TableExpr("sessions").
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
@@ -269,7 +300,10 @@ func (r *SessionRepository) GetLastSessionForIssue(ctx context.Context, issueID 
 		Limit(1))
 }
 
-func (r *SessionRepository) GetLastSessionForUser(ctx context.Context, userID string) (*sharedtypes.Session, error) {
+func (r *SessionRepository) GetLastSessionForUser(
+	ctx context.Context,
+	userID string,
+) (*sharedtypes.Session, error) {
 	return r.selectOne(ctx, r.db.NewSelect().
 		TableExpr("sessions").
 		Join("INNER JOIN issues ON issues.id = sessions.issue_id").
@@ -286,7 +320,14 @@ func (r *SessionRepository) GetLastSessionForUser(ctx context.Context, userID st
 		Limit(1))
 }
 
-func (r *SessionRepository) AmendSessionNotes(ctx context.Context, sessionID string, notes string, userID string, deviceID string, now string) (*sharedtypes.Session, error) {
+func (r *SessionRepository) AmendSessionNotes(
+	ctx context.Context,
+	sessionID string,
+	notes string,
+	userID string,
+	deviceID string,
+	now string,
+) (*sharedtypes.Session, error) {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.SessionModel)(nil)).
 		Where("id = ?", sessionID).
@@ -388,7 +429,11 @@ func (r *SessionRepository) ListEnded(ctx context.Context, input struct {
 	return out, nil
 }
 
-func (r *SessionRepository) EarliestEndedDate(ctx context.Context, userID string, throughDate string) (*string, error) {
+func (r *SessionRepository) EarliestEndedDate(
+	ctx context.Context,
+	userID string,
+	throughDate string,
+) (*string, error) {
 	type row struct {
 		Date string `bun:"date"`
 	}
@@ -415,7 +460,10 @@ func (r *SessionRepository) EarliestEndedDate(ctx context.Context, userID string
 	return &item.Date, nil
 }
 
-func (r *SessionRepository) selectOne(ctx context.Context, q *bun.SelectQuery) (*sharedtypes.Session, error) {
+func (r *SessionRepository) selectOne(
+	ctx context.Context,
+	q *bun.SelectQuery,
+) (*sharedtypes.Session, error) {
 	type row struct {
 		ID              string  `bun:"id"`
 		IssuePublicID   int64   `bun:"issue_public_id"`

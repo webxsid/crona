@@ -48,7 +48,11 @@ func (r *OpRepository) Latest(ctx context.Context, limit int) ([]sharedtypes.Op,
 	return out, nil
 }
 
-func (r *OpRepository) ListSince(ctx context.Context, userID string, sinceTimestamp string) ([]sharedtypes.Op, error) {
+func (r *OpRepository) ListSince(
+	ctx context.Context,
+	userID string,
+	sinceTimestamp string,
+) ([]sharedtypes.Op, error) {
 	var rows []storemodels.OpModel
 	if err := r.db.NewSelect().Model(&rows).Where("user_id = ?", userID).Where("timestamp > ?", sinceTimestamp).Order("timestamp ASC").Scan(ctx); err != nil {
 		return nil, err
@@ -60,7 +64,13 @@ func (r *OpRepository) ListSince(ctx context.Context, userID string, sinceTimest
 	return out, nil
 }
 
-func (r *OpRepository) ListByEntity(ctx context.Context, entity sharedtypes.OpEntity, entityID string, userID string, limit int) ([]sharedtypes.Op, error) {
+func (r *OpRepository) ListByEntity(
+	ctx context.Context,
+	entity sharedtypes.OpEntity,
+	entityID string,
+	userID string,
+	limit int,
+) ([]sharedtypes.Op, error) {
 	if limit <= 0 {
 		limit = 100
 	}

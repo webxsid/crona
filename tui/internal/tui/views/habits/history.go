@@ -31,11 +31,22 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	lines := []string{
 		theme.StylePaneTitle.Render(title),
 		theme.StyleDim.Render(subtitle),
-		viewchrome.RenderPaneActionLine(theme, state.Filters["habit_history"], state.Width-6, viewchrome.PaneActionsForState(theme, state, active)),
+		viewchrome.RenderPaneActionLine(
+			theme,
+			state.Filters["habit_history"],
+			state.Width-6,
+			viewchrome.PaneActionsForState(theme, state, active),
+		),
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No habit history recorded"))
-		return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			state.Width,
+			state.Height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	dateW := 12
 	habitW := 18
@@ -46,7 +57,21 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	if notesW < 16 {
 		notesW = 16
 	}
-	header := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s %s", "", dateW, "Date", habitW, "Habit", contextW, "Context", statusW, "Status", durW, "Duration", "Notes")
+	header := fmt.Sprintf(
+		"%-2s %-*s %-*s %-*s %-*s %-*s %s",
+		"",
+		dateW,
+		"Date",
+		habitW,
+		"Habit",
+		contextW,
+		"Context",
+		statusW,
+		"Status",
+		durW,
+		"Duration",
+		"Notes",
+	)
 	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, state.Width-6)))
 	inner := viewchrome.RemainingPaneHeight(state.Height, lines)
 	start, end := viewchrome.ListWindow(cur, total, inner)
@@ -64,13 +89,44 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 			duration = helperpkg.FormatCompactDurationMinutes(*entry.DurationMinutes)
 		}
 		notes := habitHistoryDetail(entry, notesW)
-		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s %s", "", dateW, date, habitW, habit, contextW, contextLabel, statusW, status, durW, duration, notes)
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, row, habitHistoryStatusStyle(theme, entry), state.Width))
+		row := fmt.Sprintf(
+			"%-2s %-*s %-*s %-*s %-*s %-*s %s",
+			"",
+			dateW,
+			date,
+			habitW,
+			habit,
+			contextW,
+			contextLabel,
+			statusW,
+			status,
+			durW,
+			duration,
+			notes,
+		)
+		lines = append(
+			lines,
+			viewchrome.RenderPaneRowStyled(
+				theme,
+				i,
+				cur,
+				active,
+				row,
+				habitHistoryStatusStyle(theme, entry),
+				state.Width,
+			),
+		)
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+	return viewchrome.RenderPaneBox(
+		theme,
+		active,
+		state.Width,
+		state.Height,
+		viewhelpers.StringsJoin(lines),
+	)
 }
 
 func habitHistoryItems(state types.ContentState) []string {
@@ -82,7 +138,12 @@ func habitHistoryItems(state types.ContentState) []string {
 }
 
 func habitHistoryItemSummary(entry api.HabitCompletion) string {
-	parts := []string{entry.Date, habitHistoryHabitLabel(entry), habitHistoryContextLabel(entry), habitHistoryStatusLabel(entry)}
+	parts := []string{
+		entry.Date,
+		habitHistoryHabitLabel(entry),
+		habitHistoryContextLabel(entry),
+		habitHistoryStatusLabel(entry),
+	}
 	if entry.DurationMinutes != nil {
 		parts = append(parts, helperpkg.FormatCompactDurationMinutes(*entry.DurationMinutes))
 	}

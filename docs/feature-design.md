@@ -83,7 +83,6 @@ Since ops are immutable and timestamped, conflicts are resolved deterministicall
 
 ### What Does Not Sync
 
-- scratchpad file contents
 - active context
 - timer state
 - auth tokens

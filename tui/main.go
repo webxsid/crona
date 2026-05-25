@@ -26,7 +26,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	settingsClient := api.NewClient(info.Transport, kernel.Endpoint(info), info.ScratchDir)
+	settingsClient := api.NewClient(info.Transport, kernel.Endpoint(info))
 	telemetryConfig := sharedposthog.LoadConfig("tui")
 	telemetryConfig.Version = versionpkg.Current()
 	telemetryConfig.Mode = appEnv.Mode
@@ -78,7 +78,15 @@ func main() {
 		logger.Errorf("WriteTUIRuntimeState failed: %v", err)
 	}
 
-	model := tui.New(info.Transport, kernel.Endpoint(info), info.ScratchDir, info.Env, executablePath, done, telemetry)
+	model := tui.New(
+		info.Transport,
+		kernel.Endpoint(info),
+		info.ScratchDir,
+		info.Env,
+		executablePath,
+		done,
+		telemetry,
+	)
 	prog := tea.NewProgram(model, tea.WithAltScreen())
 
 	if _, err := prog.Run(); err != nil {

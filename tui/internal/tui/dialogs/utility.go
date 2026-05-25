@@ -6,6 +6,7 @@ import (
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -14,37 +15,66 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 	displayDate := helperpkg.FormatDisplayDate(state.CheckInDate, nil)
 	switch state.Kind {
 	case "confirm_delete":
-		rows := []string{theme.StylePaneTitle.Render("Confirm Delete"), "", theme.StyleError.Render(fallback(state.DeleteLabel, "this item"))}
+		rows := []string{
+			theme.StylePaneTitle.Render("Confirm Delete"),
+			"",
+			theme.StyleError.Render(fallback(state.DeleteLabel, "this item")),
+		}
 		rows = appendDialogFooter(theme, state, rows, "[enter] delete   [esc] cancel")
-		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 44)).Render(strings.Join(rows, "\n"))
+		return lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(theme.ColorRed).
+			Padding(1, 3).
+			Width(min(state.Width-8, 44)).
+			Render(strings.Join(rows, "\n"))
 	case "confirm_wipe":
 		rows := []string{
 			theme.StylePaneTitle.Render("Wipe All Data"),
 			"",
 			theme.StyleError.Render("This deletes all Crona runtime data."),
-			theme.StyleDim.Render("Issues, sessions, habits, reports, scratchpads, and settings will be reset."),
+			theme.StyleDim.Render("Issues, sessions, habits, reports, and settings will be reset."),
 			theme.StyleDim.Render("Installed binaries will remain untouched."),
 		}
 		rows = appendDialogFooter(theme, state, rows, "[enter] wipe data   [esc] cancel")
-		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 68)).Render(strings.Join(rows, "\n"))
+		return lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(theme.ColorRed).
+			Padding(1, 3).
+			Width(min(state.Width-8, 68)).
+			Render(strings.Join(rows, "\n"))
 	case "confirm_uninstall":
 		rows := []string{
 			theme.StylePaneTitle.Render("Uninstall Crona"),
 			"",
 			theme.StyleError.Render("This removes all Crona runtime data and installed binaries."),
-			theme.StyleDim.Render("The CLI, TUI, and local engine binaries in the install directory will be deleted."),
+			theme.StyleDim.Render(
+				"The CLI, TUI, and local engine binaries in the install directory will be deleted.",
+			),
 			theme.StyleDim.Render("This action closes the app immediately after uninstall starts."),
 		}
 		rows = appendDialogFooter(theme, state, rows, "[enter] uninstall   [esc] cancel")
-		return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorRed).Padding(1, 3).Width(min(state.Width-8, 74)).Render(strings.Join(rows, "\n"))
+		return lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			BorderForeground(theme.ColorRed).
+			Padding(1, 3).
+			Width(min(state.Width-8, 74)).
+			Render(strings.Join(rows, "\n"))
 	case "pick_date":
-		rows := []string{theme.StylePaneTitle.Render(state.DateTitle), "", theme.StyleHeader.Render(state.DateHeader), theme.StyleDim.Render(state.DateMonth), "", state.DateGrid}
-		rows = appendDialogFooter(theme, state, rows, "[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back")
+		rows := []string{
+			theme.StylePaneTitle.Render(state.DateTitle),
+			"",
+			theme.StyleHeader.Render(state.DateHeader),
+			theme.StyleDim.Render(state.DateMonth),
+			"",
+			state.DateGrid,
+		}
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back",
+		)
 		return modal(theme, state.Width, 46, theme.ColorCyan, rows)
-	case "create_scratchpad":
-		rows := []string{theme.StylePaneTitle.Render("New Scratchpad"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Path  (supports [[date]], [[timestamp]])"), state.Inputs[1].View()}
-		rows = appendDialogFooter(theme, state, rows, "[tab] next field   "+dialogSubmitHint(state, "create")+"   [esc] cancel")
-		return modal(theme, state.Width, 54, theme.ColorCyan, rows)
 	case "create_checkin", "edit_checkin":
 		title := "New Check-In"
 		border := theme.ColorCyan
@@ -98,17 +128,28 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 				continue
 			}
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
+			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
 		rows = append(rows, "")
 		if state.Processing {
-			rows = appendDialogFooter(theme, state, append(rows, theme.StyleHeader.Render(state.ProcessingLabel), "", theme.StyleDim.Render("Please wait...")), "")
+			rows = appendDialogFooter(
+				theme,
+				state,
+				append(
+					rows,
+					theme.StyleHeader.Render(state.ProcessingLabel),
+					"",
+					theme.StyleDim.Render("Please wait..."),
+				),
+				"",
+			)
 		} else {
 			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] back")
 		}
@@ -123,15 +164,21 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		for i, item := range state.ChoiceItems {
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render("  "+item))
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
+			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose category   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [enter] choose category   [esc] cancel",
+		)
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "export_preset":
 		rows := []string{
@@ -144,13 +191,18 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		for i, item := range state.ChoiceItems {
 			line := "  " + item
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
-			rows = append(rows, "", theme.StyleDim.Render("Preview"), renderViewEntityBody(theme, state.ChoiceDetails[state.ChoiceCursor]))
+			rows = append(
+				rows,
+				"",
+				theme.StyleDim.Render("Preview"),
+				renderViewEntityBody(theme, state.ChoiceDetails[state.ChoiceCursor]),
+			)
 		}
 		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] use style   [esc] back")
 		return modal(theme, state.Width, 74, theme.ColorGreen, rows)
@@ -170,7 +222,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 				continue
 			}
 			if i == state.ChoiceCursor {
-				line = "▶ " + item
+				line = viewchrome.SelectionCursor + " " + item
 				rows = append(rows, theme.StyleCursor.Render(line))
 				continue
 			}
@@ -190,15 +242,21 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		rows = append(rows, "")
 		for i, item := range state.ChoiceItems {
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 			} else {
 				rows = append(rows, theme.StyleNormal.Render("  "+item))
 			}
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
+			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] inspect stash   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [enter] inspect stash   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorYellow, rows)
 	case "stash_conflict":
 		rows := []string{
@@ -215,15 +273,21 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		rows = append(rows, "")
 		for i, item := range state.ChoiceItems {
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 			} else {
 				rows = append(rows, theme.StyleNormal.Render("  "+item))
 			}
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
+			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [r] resume   [c] continue fresh   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [r] resume   [c] continue fresh   [esc] cancel",
+		)
 		return modal(theme, state.Width, 74, theme.ColorYellow, rows)
 	case "edit_export_reports_dir":
 		rows := []string{
@@ -234,7 +298,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Use an absolute path or ~/..."),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_export_ics_dir":
 		rows := []string{
@@ -245,7 +314,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Use an absolute path or ~/..."),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_date_display_format":
 		rows := []string{
@@ -256,7 +330,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Examples: YYYY-MM-DD   Do MMM YYYY   MM/DD/YYYY   [Week] W"),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_protection":
 		return renderRestProtectionDialog(theme, state)
@@ -285,7 +364,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleDim.Render("Use daily, weekdays, or weekday lists like mon,wed,fri."),
 			theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00."),
 		}
-		rows = appendDialogFooter(theme, state, rows, "[tab] next field   "+dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[tab] next field   "+dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, border, rows)
 	case "edit_frozen_streaks":
 		rows := []string{
@@ -297,7 +381,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleDim.Render("Use: focus_days,checkin_days"),
 			theme.StyleDim.Render("Leave blank to freeze all available streaks"),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_weekdays":
 		rows := []string{
@@ -308,7 +397,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Use: sun,mon,tue,wed,thu,fri,sat"),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_rest_dates":
 		rows := []string{
@@ -319,7 +413,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Use YYYY-MM-DD"),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "edit_recurring_rest_dates":
 		rows := []string{
@@ -330,7 +429,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"",
 			theme.StyleDim.Render("Use MM-DD"),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "view_entity":
 		rows := []string{
@@ -358,7 +462,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
-		rows = appendDialogFooter(theme, state, rows, "[o] open folder   [c] copy path   [g] report issue   [enter/esc] close")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[o] open folder   [c] copy path   [g] report issue   [enter/esc] close",
+		)
 		return modal(theme, state.Width, 76, theme.ColorGreen, rows)
 	case "view_jump", "beta_support":
 		rows := []string{
@@ -370,12 +479,13 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		for i, item := range state.ChoiceItems {
 			line := "  " + item
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
+			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
 		var footer string
@@ -406,7 +516,10 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		hint := "[tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
 		if state.FocusIdx == state.DescriptionIndex {
-			hint = "[enter] newline in notes   [tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+			hint = "[enter] newline in notes   [tab] next   " + dialogSubmitHint(
+				state,
+				"save",
+			) + "   [esc] cancel"
 		}
 		rows = appendDialogFooter(theme, state, rows, hint)
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
@@ -433,31 +546,66 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 	}
 	switch state.TelemetryStep {
 	case 0:
-		rows = append(rows,
-			theme.StyleDim.Render("Share anonymous usage signals so Crona can spot problems early and understand which parts of the app people use."),
-			theme.StyleDim.Render("This does not include your work content, paths, notes, or anything you type into Crona."),
+		rows = append(
+			rows,
+			theme.StyleDim.Render(
+				"Share anonymous usage signals so Crona can spot problems early and understand which parts of the app people use.",
+			),
+			theme.StyleDim.Render(
+				"This does not include your work content, paths, notes, or anything you type into Crona.",
+			),
 			"",
-			theme.StyleCursor.Render("▶ "+toggleLabel(state.TelemetryUsage, "Share usage signals")),
+			theme.StyleCursor.Render(
+				viewchrome.SelectionCursor+" "+toggleLabel(
+					state.TelemetryUsage,
+					"Share usage signals",
+				),
+			),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[space/enter] toggle   [tab] next   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[space/enter] toggle   [tab] next   [esc] cancel",
+		)
 	case 1:
-		rows = append(rows,
-			theme.StyleDim.Render("Share sanitized diagnostic reports when Crona runs into an error it can explain or recover from."),
-			theme.StyleDim.Render("The report is stripped down to help us debug the problem without collecting your work content."),
+		rows = append(
+			rows,
+			theme.StyleDim.Render(
+				"Share sanitized diagnostic reports when Crona runs into an error it can explain or recover from.",
+			),
+			theme.StyleDim.Render(
+				"The report is stripped down to help us debug the problem without collecting your work content.",
+			),
 			"",
-			theme.StyleCursor.Render("▶ "+toggleLabel(state.TelemetryErrors, "Share diagnostics")),
+			theme.StyleCursor.Render(
+				viewchrome.SelectionCursor+" "+toggleLabel(
+					state.TelemetryErrors,
+					"Share diagnostics",
+				),
+			),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[space/enter] toggle   [tab] next   [shift+tab] back   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[space/enter] toggle   [tab] next   [shift+tab] back   [esc] cancel",
+		)
 	default:
-		rows = append(rows,
+		rows = append(
+			rows,
 			theme.StyleDim.Render("Usage signals"),
 			theme.StyleHeader.Render(telemetryStateLabel(state.TelemetryUsage)),
 			"",
 			theme.StyleDim.Render("Diagnostics"),
 			theme.StyleHeader.Render(telemetryStateLabel(state.TelemetryErrors)),
 			"",
-			theme.StyleDim.Render("Usage signals help us understand the app and catch regressions sooner."),
-			theme.StyleDim.Render("Diagnostics help us investigate failures without your work content."),
+			theme.StyleDim.Render(
+				"Usage signals help us understand the app and catch regressions sooner.",
+			),
+			theme.StyleDim.Render(
+				"Diagnostics help us investigate failures without your work content.",
+			),
 			"",
 			theme.StyleError.Render("Changes take effect after restart."),
 			theme.StyleDim.Render("Save now, or restart immediately to apply them right away."),
@@ -467,12 +615,17 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 		for idx, item := range items {
 			line := "  " + item
 			if idx == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
 				continue
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [shift+tab] back   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [enter] choose   [shift+tab] back   [esc] cancel",
+		)
 	}
 	return modal(theme, state.Width, 82, theme.ColorCyan, rows)
 }

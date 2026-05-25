@@ -27,7 +27,10 @@ type latestRelease struct {
 	IsBeta       bool
 }
 
-func (s *Service) fetchLatestRelease(ctx context.Context, channel sharedtypes.UpdateChannel) (latestRelease, error) {
+func (s *Service) fetchLatestRelease(
+	ctx context.Context,
+	channel sharedtypes.UpdateChannel,
+) (latestRelease, error) {
 	if release, ok := s.currentLocalRelease(); ok {
 		return release, nil
 	}
@@ -38,7 +41,16 @@ func (s *Service) fetchLatestRelease(ctx context.Context, channel sharedtypes.Up
 }
 
 func (s *Service) fetchLatestStableRelease(ctx context.Context) (latestRelease, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", versionpkg.RepoOwner, versionpkg.RepoName), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(
+			"https://api.github.com/repos/%s/%s/releases/latest",
+			versionpkg.RepoOwner,
+			versionpkg.RepoName,
+		),
+		nil,
+	)
 	if err != nil {
 		return latestRelease{}, err
 	}
@@ -62,7 +74,16 @@ func (s *Service) fetchLatestStableRelease(ctx context.Context) (latestRelease, 
 }
 
 func (s *Service) fetchLatestReleaseFromList(ctx context.Context) (latestRelease, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("https://api.github.com/repos/%s/%s/releases", versionpkg.RepoOwner, versionpkg.RepoName), nil)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf(
+			"https://api.github.com/repos/%s/%s/releases",
+			versionpkg.RepoOwner,
+			versionpkg.RepoName,
+		),
+		nil,
+	)
 	if err != nil {
 		return latestRelease{}, err
 	}
@@ -152,7 +173,8 @@ func (s *Service) releaseFromPayload(payload githubReleasePayload) (latestReleas
 		ChecksumsURL: checksumsURL,
 		PublishedAt:  strings.TrimSpace(payload.PublishedAt),
 		IsPrerelease: payload.Prerelease,
-		IsBeta:       payload.Prerelease || versionpkg.IsBetaVersion(version) || versionpkg.IsBetaVersion(tag),
+		IsBeta: payload.Prerelease || versionpkg.IsBetaVersion(version) ||
+			versionpkg.IsBetaVersion(tag),
 	}, nil
 }
 

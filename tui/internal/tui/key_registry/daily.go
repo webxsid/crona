@@ -2,7 +2,12 @@ package keyregistry
 
 import tea "github.com/charmbracelet/bubbletea"
 
-func RegisterDaily[M tea.Model, V comparable, P comparable](r *Router[M, V, P], view V, issuesPane, habitsPane P, one, two, prevDay, nextDay, today, exportDaily, checkout, editHabit, focusHabit, logHabit, historyHabit, failHabit, toggleHabit Handler[M]) {
+func RegisterDaily[M tea.Model, V comparable, P comparable](
+	r *Router[M, V, P],
+	view V,
+	issuesPane, habitsPane P,
+	one, two, prevDay, nextDay, today, exportDaily, checkout, editHabit, focusHabit, logHabit, historyHabit, failHabit, toggleHabit Handler[M],
+) {
 	r.RegisterView(view, "1", one)
 	r.RegisterView(view, "2", two)
 	r.RegisterView(view, ",", prevDay)

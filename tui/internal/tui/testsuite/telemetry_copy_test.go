@@ -7,10 +7,14 @@ import (
 	"crona/tui/internal/tui/dialogs"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	layoutpkg "crona/tui/internal/tui/layout"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
 func TestTelemetryDialogCopyUsesProductLanguage(t *testing.T) {
-	onboarding := dialogs.Render(layoutpkg.DialogTheme(), dialogstate.OpenOnboarding(dialogstate.State{}, true, false))
+	onboarding := dialogs.Render(
+		layoutpkg.DialogTheme(),
+		dialogstate.OpenOnboarding(dialogstate.State{}, true, false),
+	)
 	for _, want := range []string{
 		"Welcome",
 		"Let's get things set up.",
@@ -46,14 +50,14 @@ func TestTelemetryDialogCopyUsesProductLanguage(t *testing.T) {
 	privacy := dialogs.Render(layoutpkg.DialogTheme(), onboardingPrivacy)
 	for _, want := range []string{
 		"Privacy choices",
-		"▶ [ ] Share diagnostics",
+		viewchrome.SelectionCursor + " [ ] Share diagnostics",
 		"[x] Share usage signals",
 	} {
 		if !strings.Contains(privacy, want) {
 			t.Fatalf("expected onboarding privacy copy to contain %q, got %q", want, privacy)
 		}
 	}
-	if strings.Contains(privacy, "▶ [x] Share usage signals") {
+	if strings.Contains(privacy, viewchrome.SelectionCursor+" [x] Share usage signals") {
 		t.Fatalf("expected onboarding privacy cursor to select only one toggle, got %q", privacy)
 	}
 
@@ -63,7 +67,7 @@ func TestTelemetryDialogCopyUsesProductLanguage(t *testing.T) {
 	review := dialogs.Render(layoutpkg.DialogTheme(), onboardingReview)
 	for _, want := range []string{
 		"Review your choices",
-		"▶ Start and Restart Now",
+		viewchrome.SelectionCursor + " Start and Restart Now",
 		"Start Crona",
 		"Back",
 	} {

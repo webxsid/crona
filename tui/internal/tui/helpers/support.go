@@ -10,28 +10,95 @@ import (
 	"crona/tui/internal/api"
 )
 
-func SupportDiagnosticsSummary(info *api.KernelInfo, assets *api.ExportAssetStatus, update *api.UpdateStatus, health *api.Health, tuiPath, kernelPath string) string {
+func SupportDiagnosticsSummary(
+	info *api.KernelInfo,
+	assets *api.ExportAssetStatus,
+	update *api.UpdateStatus,
+	health *api.Health,
+	tuiPath, kernelPath string,
+) string {
 	lines := []string{}
 	if update != nil {
-		lines = append(lines, fmt.Sprintf("Version: v%s", fallbackSupport(strings.TrimSpace(update.CurrentVersion), "unknown")))
-		lines = append(lines, fmt.Sprintf("Running channel: %s", fallbackSupport(strings.TrimSpace(string(update.RunningChannel)), "stable")))
-		lines = append(lines, fmt.Sprintf("Update channel: %s", fallbackSupport(strings.TrimSpace(string(update.Channel)), "stable")))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Version: v%s",
+				fallbackSupport(strings.TrimSpace(update.CurrentVersion), "unknown"),
+			),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Running channel: %s",
+				fallbackSupport(strings.TrimSpace(string(update.RunningChannel)), "stable"),
+			),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Update channel: %s",
+				fallbackSupport(strings.TrimSpace(string(update.Channel)), "stable"),
+			),
+		)
 	}
 	if info != nil {
-		lines = append(lines, fmt.Sprintf("Environment: %s", fallbackSupport(strings.TrimSpace(info.Env), "unknown")))
-		lines = append(lines, fmt.Sprintf("Kernel transport: %s", fallbackSupport(strings.TrimSpace(info.Transport), "-")))
-		lines = append(lines, fmt.Sprintf("Kernel endpoint: %s", fallbackSupport(strings.TrimSpace(info.Endpoint), "-")))
-		lines = append(lines, fmt.Sprintf("Scratch dir: %s", fallbackSupport(strings.TrimSpace(info.ScratchDir), "-")))
+		lines = append(
+			lines,
+			fmt.Sprintf("Environment: %s", fallbackSupport(strings.TrimSpace(info.Env), "unknown")),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Kernel transport: %s",
+				fallbackSupport(strings.TrimSpace(info.Transport), "-"),
+			),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Kernel endpoint: %s",
+				fallbackSupport(strings.TrimSpace(info.Endpoint), "-"),
+			),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Scratch dir: %s",
+				fallbackSupport(strings.TrimSpace(info.ScratchDir), "-"),
+			),
+		)
 	}
 	if health != nil {
-		lines = append(lines, fmt.Sprintf("Health: %s (db=%t)", fallbackSupport(strings.TrimSpace(health.Status), "unknown"), health.DB))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Health: %s (db=%t)",
+				fallbackSupport(strings.TrimSpace(health.Status), "unknown"),
+				health.DB,
+			),
+		)
 	}
 	if assets != nil {
-		lines = append(lines, fmt.Sprintf("Reports dir: %s", fallbackSupport(strings.TrimSpace(assets.ReportsDir), "-")))
-		lines = append(lines, fmt.Sprintf("ICS dir: %s", fallbackSupport(strings.TrimSpace(assets.ICSDir), "-")))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"Reports dir: %s",
+				fallbackSupport(strings.TrimSpace(assets.ReportsDir), "-"),
+			),
+		)
+		lines = append(
+			lines,
+			fmt.Sprintf("ICS dir: %s", fallbackSupport(strings.TrimSpace(assets.ICSDir), "-")),
+		)
 	}
-	lines = append(lines, fmt.Sprintf("TUI path: %s", fallbackSupport(strings.TrimSpace(tuiPath), "-")))
-	lines = append(lines, fmt.Sprintf("Engine path: %s", fallbackSupport(strings.TrimSpace(kernelPath), "-")))
+	lines = append(
+		lines,
+		fmt.Sprintf("TUI path: %s", fallbackSupport(strings.TrimSpace(tuiPath), "-")),
+	)
+	lines = append(
+		lines,
+		fmt.Sprintf("Engine path: %s", fallbackSupport(strings.TrimSpace(kernelPath), "-")),
+	)
 	return strings.Join(lines, "\n")
 }
 
@@ -52,7 +119,6 @@ type SupportDiagnosticsInput struct {
 	DueHabitsCount      int
 	ReportsCount        int
 	SessionHistoryCount int
-	ScratchpadsCount    int
 	OpsCount            int
 	Context             *api.ActiveContext
 	Timer               *api.TimerState
@@ -87,36 +153,87 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 	}
 
 	if input.UpdateStatus != nil {
-		lines = append(lines,
-			fmt.Sprintf("version=v%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.CurrentVersion), "unknown")),
-			fmt.Sprintf("running_channel=%s", fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.RunningChannel)), "stable")),
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"version=v%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.CurrentVersion), "unknown"),
+			),
+			fmt.Sprintf(
+				"running_channel=%s",
+				fallbackSupport(
+					strings.TrimSpace(string(input.UpdateStatus.RunningChannel)),
+					"stable",
+				),
+			),
 			fmt.Sprintf("running_is_beta=%t", input.UpdateStatus.RunningIsBeta),
-			fmt.Sprintf("update_channel=%s", fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.Channel)), "stable")),
-			fmt.Sprintf("latest_version=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.LatestVersion), "-")),
-			fmt.Sprintf("release_tag=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.ReleaseTag), "-")),
+			fmt.Sprintf(
+				"update_channel=%s",
+				fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.Channel)), "stable"),
+			),
+			fmt.Sprintf(
+				"latest_version=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.LatestVersion), "-"),
+			),
+			fmt.Sprintf(
+				"release_tag=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.ReleaseTag), "-"),
+			),
 			fmt.Sprintf("release_prerelease=%t", input.UpdateStatus.ReleaseIsPrerelease),
 			fmt.Sprintf("latest_is_beta=%t", input.UpdateStatus.LatestIsBeta),
-			fmt.Sprintf("checked_at=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.CheckedAt), "-")),
+			fmt.Sprintf(
+				"checked_at=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.CheckedAt), "-"),
+			),
 			fmt.Sprintf("update_available=%t", input.UpdateStatus.UpdateAvailable),
 			fmt.Sprintf("install_available=%t", input.UpdateStatus.InstallAvailable),
-			fmt.Sprintf("update_error=%s", fallbackSupport(strings.TrimSpace(input.UpdateStatus.Error), "-")),
+			fmt.Sprintf(
+				"update_error=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.Error), "-"),
+			),
 		)
 	}
 	if input.KernelInfo != nil {
-		lines = append(lines,
-			fmt.Sprintf("env=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.Env), "unknown")),
-			fmt.Sprintf("kernel_transport=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.Transport), "-")),
-			fmt.Sprintf("kernel_endpoint=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.Endpoint), "-")),
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"env=%s",
+				fallbackSupport(strings.TrimSpace(input.KernelInfo.Env), "unknown"),
+			),
+			fmt.Sprintf(
+				"kernel_transport=%s",
+				fallbackSupport(strings.TrimSpace(input.KernelInfo.Transport), "-"),
+			),
+			fmt.Sprintf(
+				"kernel_endpoint=%s",
+				fallbackSupport(strings.TrimSpace(input.KernelInfo.Endpoint), "-"),
+			),
 			fmt.Sprintf("kernel_pid=%d", input.KernelInfo.PID),
-			fmt.Sprintf("kernel_started=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.StartedAt), "-")),
-			fmt.Sprintf("kernel_running_channel=%s", fallbackSupport(strings.TrimSpace(string(input.KernelInfo.RunningChannel)), "stable")),
+			fmt.Sprintf(
+				"kernel_started=%s",
+				fallbackSupport(strings.TrimSpace(input.KernelInfo.StartedAt), "-"),
+			),
+			fmt.Sprintf(
+				"kernel_running_channel=%s",
+				fallbackSupport(
+					strings.TrimSpace(string(input.KernelInfo.RunningChannel)),
+					"stable",
+				),
+			),
 			fmt.Sprintf("kernel_running_is_beta=%t", input.KernelInfo.RunningIsBeta),
-			fmt.Sprintf("scratch_dir=%s", fallbackSupport(strings.TrimSpace(input.KernelInfo.ScratchDir), "-")),
+			fmt.Sprintf(
+				"scratch_dir=%s",
+				fallbackSupport(strings.TrimSpace(input.KernelInfo.ScratchDir), "-"),
+			),
 		)
 	}
 	if input.Health != nil {
-		lines = append(lines,
-			fmt.Sprintf("health_status=%s", fallbackSupport(strings.TrimSpace(input.Health.Status), "unknown")),
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"health_status=%s",
+				fallbackSupport(strings.TrimSpace(input.Health.Status), "unknown"),
+			),
 			fmt.Sprintf("health_db=%t", input.Health.DB),
 			fmt.Sprintf("health_uptime_seconds=%.0f", input.Health.Uptime),
 		)
@@ -124,14 +241,27 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 
 	lines = append(lines, "", "[context]")
 	if input.Context != nil {
-		lines = append(lines,
+		lines = append(
+			lines,
 			fmt.Sprintf("repo_id=%s", optionalInt64String(input.Context.RepoID)),
-			fmt.Sprintf("repo_name=%s", fallbackSupport(pointerString(input.Context.RepoName), "-")),
+			fmt.Sprintf(
+				"repo_name=%s",
+				fallbackSupport(pointerString(input.Context.RepoName), "-"),
+			),
 			fmt.Sprintf("stream_id=%s", optionalInt64String(input.Context.StreamID)),
-			fmt.Sprintf("stream_name=%s", fallbackSupport(pointerString(input.Context.StreamName), "-")),
+			fmt.Sprintf(
+				"stream_name=%s",
+				fallbackSupport(pointerString(input.Context.StreamName), "-"),
+			),
 			fmt.Sprintf("issue_id=%s", optionalInt64String(input.Context.IssueID)),
-			fmt.Sprintf("issue_title=%s", fallbackSupport(pointerString(input.Context.IssueTitle), "-")),
-			fmt.Sprintf("context_updated=%s", fallbackSupport(pointerString(input.Context.UpdatedAt), "-")),
+			fmt.Sprintf(
+				"issue_title=%s",
+				fallbackSupport(pointerString(input.Context.IssueTitle), "-"),
+			),
+			fmt.Sprintf(
+				"context_updated=%s",
+				fallbackSupport(pointerString(input.Context.UpdatedAt), "-"),
+			),
 		)
 	} else {
 		lines = append(lines, "context=unavailable")
@@ -139,11 +269,21 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 
 	lines = append(lines, "", "[timer]")
 	if input.Timer != nil {
-		lines = append(lines,
-			fmt.Sprintf("state=%s", fallbackSupport(strings.TrimSpace(input.Timer.State), "unknown")),
-			fmt.Sprintf("session_id=%s", fallbackSupport(pointerString(input.Timer.SessionID), "-")),
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"state=%s",
+				fallbackSupport(strings.TrimSpace(input.Timer.State), "unknown"),
+			),
+			fmt.Sprintf(
+				"session_id=%s",
+				fallbackSupport(pointerString(input.Timer.SessionID), "-"),
+			),
 			fmt.Sprintf("issue_id=%s", optionalInt64String(input.Timer.IssueID)),
-			fmt.Sprintf("segment_type=%s", fallbackSupport(optionalSegmentString(input.Timer.SegmentType), "-")),
+			fmt.Sprintf(
+				"segment_type=%s",
+				fallbackSupport(optionalSegmentString(input.Timer.SegmentType), "-"),
+			),
 			fmt.Sprintf("elapsed_seconds=%d", input.Timer.ElapsedSeconds),
 		)
 	} else {
@@ -176,21 +316,33 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 		fmt.Sprintf("habits=%d", input.HabitsCount),
 		fmt.Sprintf("due_habits=%d", input.DueHabitsCount),
 		fmt.Sprintf("session_history=%d", input.SessionHistoryCount),
-		fmt.Sprintf("scratchpads=%d", input.ScratchpadsCount),
 		fmt.Sprintf("ops=%d", input.OpsCount),
 		fmt.Sprintf("export_reports=%d", input.ReportsCount),
 	)
 
 	lines = append(lines, "", "[export]")
 	if input.ExportAssets != nil {
-		lines = append(lines,
-			fmt.Sprintf("reports_dir=%s", fallbackSupport(strings.TrimSpace(input.ExportAssets.ReportsDir), "-")),
-			fmt.Sprintf("ics_dir=%s", fallbackSupport(strings.TrimSpace(input.ExportAssets.ICSDir), "-")),
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"reports_dir=%s",
+				fallbackSupport(strings.TrimSpace(input.ExportAssets.ReportsDir), "-"),
+			),
+			fmt.Sprintf(
+				"ics_dir=%s",
+				fallbackSupport(strings.TrimSpace(input.ExportAssets.ICSDir), "-"),
+			),
 			fmt.Sprintf("reports_dir_customized=%t", input.ExportAssets.ReportsDirCustomized),
 			fmt.Sprintf("ics_dir_customized=%t", input.ExportAssets.ICSDirCustomized),
 			fmt.Sprintf("pdf_renderer_available=%t", input.ExportAssets.PDFRendererAvailable),
-			fmt.Sprintf("pdf_renderer_name=%s", fallbackSupport(strings.TrimSpace(input.ExportAssets.PDFRendererName), "-")),
-			fmt.Sprintf("pdf_renderer_path=%s", fallbackSupport(strings.TrimSpace(input.ExportAssets.PDFRendererPath), "-")),
+			fmt.Sprintf(
+				"pdf_renderer_name=%s",
+				fallbackSupport(strings.TrimSpace(input.ExportAssets.PDFRendererName), "-"),
+			),
+			fmt.Sprintf(
+				"pdf_renderer_path=%s",
+				fallbackSupport(strings.TrimSpace(input.ExportAssets.PDFRendererPath), "-"),
+			),
 		)
 	} else {
 		lines = append(lines, "export_assets=unavailable")

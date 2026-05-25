@@ -15,33 +15,67 @@ import (
 	viewtypes "crona/tui/internal/tui/views/types"
 )
 
-func (m Model) viewContentState(width, height int, snapshot selectionpkg.Snapshot, activeIssue *api.IssueWithMeta) viewtypes.ContentState {
+func (m Model) viewContentState(
+	width, height int,
+	snapshot selectionpkg.Snapshot,
+	activeIssue *api.IssueWithMeta,
+) viewtypes.ContentState {
 	sessionIssueID := helperpkg.SessionHistoryScopeIssueID(m.timer)
 	sessionIssue := activeIssue
 	dailyIssues := selectionpkg.DailyScopedIssues(snapshot)
 	defaultIssues := selectionpkg.DefaultScopedIssues(snapshot)
 	dueHabits := selectionpkg.FilteredDueHabits(snapshot)
 	state := viewtypes.ContentState{
-		View:                   string(m.view),
-		Pane:                   string(m.pane),
-		Width:                  width,
-		Height:                 height,
-		Elapsed:                m.elapsed,
-		DashboardDate:          m.dashboardDate,
-		RollupStartDate:        m.currentRollupStartDate(),
-		RollupEndDate:          m.currentRollupEndDate(),
-		WellbeingDate:          m.currentWellbeingDate(),
-		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
-		DefaultIssueSection:    string(m.defaultIssueSection),
-		DailyTaskSection:       string(m.dailyTaskSection),
-		SessionHistoryTitle:    helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue),
-		SessionHistoryMeta:     helperpkg.SessionHistorySubtitle(sessionIssueID, sessionIssue),
-		HabitHistoryTitle:      m.habitHistoryTitle,
-		HabitHistoryMeta:       m.habitHistoryMeta,
-		Cursors:                map[string]int{"repos": m.cursor[PaneRepos], "streams": m.cursor[PaneStreams], "issues": m.cursor[PaneIssues], "habits": m.cursor[PaneHabits], "habit_history": m.cursor[PaneHabitHistory], "rollup_days": m.cursor[PaneRollupDays], "sessions": m.cursor[PaneSessions], "scratchpads": m.cursor[PaneScratchpads], "ops": m.cursor[PaneOps], "export_reports": m.cursor[PaneExportReports], "config": m.cursor[PaneConfig], "settings": m.cursor[PaneSettings], "alerts": m.cursor[PaneAlerts], "wellbeing_summary": m.cursor[PaneWellbeingSummary], "wellbeing_trends": m.cursor[PaneWellbeingTrends], "wellbeing_streaks": m.cursor[PaneWellbeingStreaks]},
-		Filters:                map[string]string{"repos": m.filters[PaneRepos], "streams": m.filters[PaneStreams], "issues": m.filters[PaneIssues], "habits": m.filters[PaneHabits], "habit_history": m.filters[PaneHabitHistory], "rollup_days": m.filters[PaneRollupDays], "sessions": m.filters[PaneSessions], "scratchpads": m.filters[PaneScratchpads], "ops": m.filters[PaneOps], "export_reports": m.filters[PaneExportReports], "config": m.filters[PaneConfig], "settings": m.filters[PaneSettings], "alerts": m.filters[PaneAlerts], "wellbeing_summary": m.filters[PaneWellbeingSummary], "wellbeing_trends": m.filters[PaneWellbeingTrends], "wellbeing_streaks": m.filters[PaneWellbeingStreaks]},
-		ScratchpadOpen:         m.scratchpadOpen,
-		ScratchpadRendered:     m.scratchpadViewport.View(),
+		View:                string(m.view),
+		Pane:                string(m.pane),
+		Width:               width,
+		Height:              height,
+		Elapsed:             m.elapsed,
+		DashboardDate:       m.dashboardDate,
+		RollupStartDate:     m.currentRollupStartDate(),
+		RollupEndDate:       m.currentRollupEndDate(),
+		WellbeingDate:       m.currentWellbeingDate(),
+		WellbeingWindowDays: m.currentWellbeingWindowDays(),
+		DefaultIssueSection: string(m.defaultIssueSection),
+		DailyTaskSection:    string(m.dailyTaskSection),
+		SessionHistoryTitle: helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue),
+		SessionHistoryMeta:  helperpkg.SessionHistorySubtitle(sessionIssueID, sessionIssue),
+		HabitHistoryTitle:   m.habitHistoryTitle,
+		HabitHistoryMeta:    m.habitHistoryMeta,
+		Cursors: map[string]int{
+			"repos":             m.cursor[PaneRepos],
+			"streams":           m.cursor[PaneStreams],
+			"issues":            m.cursor[PaneIssues],
+			"habits":            m.cursor[PaneHabits],
+			"habit_history":     m.cursor[PaneHabitHistory],
+			"rollup_days":       m.cursor[PaneRollupDays],
+			"sessions":          m.cursor[PaneSessions],
+			"ops":               m.cursor[PaneOps],
+			"export_reports":    m.cursor[PaneExportReports],
+			"config":            m.cursor[PaneConfig],
+			"settings":          m.cursor[PaneSettings],
+			"alerts":            m.cursor[PaneAlerts],
+			"wellbeing_summary": m.cursor[PaneWellbeingSummary],
+			"wellbeing_trends":  m.cursor[PaneWellbeingTrends],
+			"wellbeing_streaks": m.cursor[PaneWellbeingStreaks],
+		},
+		Filters: map[string]string{
+			"repos":             m.filters[PaneRepos],
+			"streams":           m.filters[PaneStreams],
+			"issues":            m.filters[PaneIssues],
+			"habits":            m.filters[PaneHabits],
+			"habit_history":     m.filters[PaneHabitHistory],
+			"rollup_days":       m.filters[PaneRollupDays],
+			"sessions":          m.filters[PaneSessions],
+			"ops":               m.filters[PaneOps],
+			"export_reports":    m.filters[PaneExportReports],
+			"config":            m.filters[PaneConfig],
+			"settings":          m.filters[PaneSettings],
+			"alerts":            m.filters[PaneAlerts],
+			"wellbeing_summary": m.filters[PaneWellbeingSummary],
+			"wellbeing_trends":  m.filters[PaneWellbeingTrends],
+			"wellbeing_streaks": m.filters[PaneWellbeingStreaks],
+		},
 		Repos:                  m.repos,
 		Streams:                m.streams,
 		Issues:                 m.issues,
@@ -69,7 +103,6 @@ func (m Model) viewContentState(width, height int, snapshot selectionpkg.Snapsho
 		IssueSessions:          m.issueSessions,
 		SessionHistory:         m.sessionHistory,
 		HabitHistory:           m.habitHistory,
-		Scratchpads:            m.scratchpads,
 		Ops:                    m.ops,
 		Context:                m.context,
 		Timer:                  m.timer,
@@ -94,10 +127,6 @@ func (m Model) viewContentState(width, height int, snapshot selectionpkg.Snapsho
 		state.RestModeDetail = detail
 		state.RestModeMessage = viewruntime.RestModeMessage(restDate)
 	}
-	if m.scratchpadMeta != nil {
-		state.ScratchpadName = m.scratchpadMeta.Name
-		state.ScratchpadPath = m.scratchpadMeta.Path
-	}
 	return state
 }
 
@@ -105,13 +134,33 @@ func (m Model) dialogRenderState() dialogstate.State {
 	state := m.dialogState()
 	state.Width = m.width
 	if m.dialog == "create_issue_default" || m.dialog == "create_habit" {
-		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.DefaultIssueDialogLabels(m.dialogInputs, m.dialogRepoIndex, m.dialogStreamIndex, m.repos, m.allIssues, m.streams, m.context)
+		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.DefaultIssueDialogLabels(
+			m.dialogInputs,
+			m.dialogRepoIndex,
+			m.dialogStreamIndex,
+			m.repos,
+			m.allIssues,
+			m.streams,
+			m.context,
+		)
 	}
 	if m.dialog == "checkout_context" {
-		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.CheckoutDialogLabels(m.dialogInputs, m.dialogRepoIndex, m.dialogStreamIndex, m.repos, m.allIssues, m.streams, m.context)
+		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.CheckoutDialogLabels(
+			m.dialogInputs,
+			m.dialogRepoIndex,
+			m.dialogStreamIndex,
+			m.repos,
+			m.allIssues,
+			m.streams,
+			m.context,
+		)
 	}
 	if m.dialog == "pick_date" {
-		state = dialogstate.PopulateDatePresentation(dialogControllerTheme(layoutpkg.DialogTheme()), state, m.currentDashboardDate())
+		state = dialogstate.PopulateDatePresentation(
+			dialogControllerTheme(layoutpkg.DialogTheme()),
+			state,
+			m.currentDashboardDate(),
+		)
 	}
 	for _, stash := range m.stashes {
 		label := stash.CreatedAt
@@ -132,7 +181,13 @@ func (m Model) dialogRenderState() dialogstate.State {
 		if len(contextBits) > 0 {
 			meta += "  " + strings.Join(contextBits, "  ")
 		}
-		state.Stashes = append(state.Stashes, dialogstate.StashItem{Label: helperpkg.Truncate(label, 42), Meta: helperpkg.Truncate(meta, 48)})
+		state.Stashes = append(
+			state.Stashes,
+			dialogstate.StashItem{
+				Label: helperpkg.Truncate(label, 42),
+				Meta:  helperpkg.Truncate(meta, 48),
+			},
+		)
 	}
 	return state
 }

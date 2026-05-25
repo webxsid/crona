@@ -62,7 +62,8 @@ func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates stru
 	Description sharedtypes.Patch[string]
 	Color       sharedtypes.Patch[string]
 }) (*sharedtypes.Repo, error) {
-	if updates.Name.Set && updates.Name.Value != nil && strings.TrimSpace(*updates.Name.Value) == "" {
+	if updates.Name.Set && updates.Name.Value != nil &&
+		strings.TrimSpace(*updates.Name.Value) == "" {
 		return nil, errors.New("repo name cannot be empty")
 	}
 	if updates.Name.Set && updates.Name.Value != nil {

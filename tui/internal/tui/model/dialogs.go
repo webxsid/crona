@@ -23,7 +23,9 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	selectionSnapshot := m.selectionSnapshot()
 	dialogState := m.dialogState()
 	if m.settings != nil {
-		dialogState.PromptGlyphMode = sharedtypes.NormalizePromptGlyphMode(m.settings.PromptGlyphMode)
+		dialogState.PromptGlyphMode = sharedtypes.NormalizePromptGlyphMode(
+			m.settings.PromptGlyphMode,
+		)
 	}
 	dialogSnapshot := dialogstate.Snapshot{
 		Dialog:               dialogState,
@@ -43,7 +45,10 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
 		AvailableViews:       m.jumpAvailableViews(),
 	}
-	dialogSnapshot.ProtectedModeActive, _, _ = viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
+	dialogSnapshot.ProtectedModeActive, _, _ = viewruntime.ProtectedRestMode(
+		m.settings,
+		time.Now().Format("2006-01-02"),
+	)
 	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
 		dialogSnapshot.SelectedIssueID = issue.ID
 		dialogSnapshot.SelectedStreamID = issue.StreamID
@@ -71,12 +76,21 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 			return next, next.setStatus("That view is not available right now", true)
 		}
 		if target == ViewSessionActive && (next.timer == nil || next.timer.State == "idle") {
-			return next, next.setStatus("Active session view is only available while a timer is running", true)
+			return next, next.setStatus(
+				"Active session view is only available while a timer is running",
+				true,
+			)
 		}
 		if target == ViewAway {
-			protected, _, _ := viewruntime.ProtectedRestMode(next.settings, time.Now().Format("2006-01-02"))
+			protected, _, _ := viewruntime.ProtectedRestMode(
+				next.settings,
+				time.Now().Format("2006-01-02"),
+			)
 			if !protected {
-				return next, next.setStatus("Away view is only available when away mode or rest protection is active", true)
+				return next, next.setStatus(
+					"Away view is only available when away mode or rest protection is active",
+					true,
+				)
 			}
 		}
 		if target == ViewHabitHistory {
@@ -86,7 +100,12 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		next.pane = uistate.DefaultPane(target)
 		return next, nil
 	case "continue_focus_fresh":
-		return next, commands.ContinueFocusSessionFresh(next.client, action.RepoID, action.StreamID, action.IssueID)
+		return next, commands.ContinueFocusSessionFresh(
+			next.client,
+			action.RepoID,
+			action.StreamID,
+			action.IssueID,
+		)
 	case "copy_support_diagnostics":
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
@@ -96,7 +115,10 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		if path == "" {
 			return next, nil
 		}
-		return next, dialogruntime.OpenEditor(path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
+		return next, dialogruntime.OpenEditor(
+			path,
+			func(err error) tea.Msg { return commands.ErrMsg{Err: err} },
+		)
 	case "open_export_reports_dir_dialog":
 		if next.exportAssets == nil {
 			return next, nil
@@ -122,10 +144,6 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 	}
 }
 
-func (m Model) openCreateScratchpad() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenCreateScratchpad())
-}
-
 func (m Model) openViewJumpDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenViewJump())
 }
@@ -134,7 +152,10 @@ func (m Model) openBetaSupportDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenBetaSupport())
 }
 
-func (m Model) openStashConflictDialog(conflict api.StashConflict, repoID, streamID, issueID int64) Model {
+func (m Model) openStashConflictDialog(
+	conflict api.StashConflict,
+	repoID, streamID, issueID int64,
+) Model {
 	state := m.dialogSnapshot().OpenStashConflict(conflict)
 	state.RepoID = repoID
 	state.StreamID = streamID
@@ -147,7 +168,9 @@ func (m Model) openCreateRepoDialog() Model {
 }
 
 func (m Model) openEditRepoDialog(repoID int64, name string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenEditRepo(repoID, name, m.repoDescriptionByID(repoID)))
+	return m.withDialogState(
+		m.dialogSnapshot().OpenEditRepo(repoID, name, m.repoDescriptionByID(repoID)),
+	)
 }
 
 func (m Model) openCreateStreamDialog(repoID int64, repoName string) Model {
@@ -155,7 +178,10 @@ func (m Model) openCreateStreamDialog(repoID int64, repoName string) Model {
 }
 
 func (m Model) openEditStreamDialog(streamID, repoID int64, streamName, repoName string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenEditStream(streamID, repoID, streamName, repoName, m.streamDescriptionByID(streamID)))
+	return m.withDialogState(
+		m.dialogSnapshot().
+			OpenEditStream(streamID, repoID, streamName, repoName, m.streamDescriptionByID(streamID)),
+	)
 }
 
 func (m Model) openCreateIssueMetaDialog(streamID int64, streamName, repoName string) Model {
@@ -166,16 +192,43 @@ func (m Model) openCreateHabitDialog(streamID int64, streamName, repoName string
 	return m.withDialogState(m.dialogSnapshot().OpenCreateHabit(streamID, streamName, repoName))
 }
 
-func (m Model) openEditIssueDialog(issueID, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenEditIssue(issueID, streamID, title, description, estimateMinutes, todoForDate))
+func (m Model) openEditIssueDialog(
+	issueID, streamID int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().
+			OpenEditIssue(issueID, streamID, title, description, estimateMinutes, todoForDate),
+	)
 }
 
-func (m Model) openEditHabitDialog(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, targetMinutes *int, active bool) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenEditHabit(habitID, streamID, name, description, schedule, weekdays, targetMinutes, active))
+func (m Model) openEditHabitDialog(
+	habitID, streamID int64,
+	name string,
+	description *string,
+	schedule string,
+	weekdays []int,
+	targetMinutes *int,
+	active bool,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().
+			OpenEditHabit(habitID, streamID, name, description, schedule, weekdays, targetMinutes, active),
+	)
 }
 
-func (m Model) openHabitCompletionDialog(habitID int64, date string, durationMinutes *int, notes *string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenHabitCompletion(habitID, date, durationMinutes, notes))
+func (m Model) openHabitCompletionDialog(
+	habitID int64,
+	date string,
+	durationMinutes *int,
+	notes *string,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().OpenHabitCompletion(habitID, date, durationMinutes, notes),
+	)
 }
 
 func (m Model) openHabitHistoryView() Model {
@@ -210,10 +263,6 @@ func (m Model) openEditCheckInDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditCheckIn())
 }
 
-func (m Model) openConfirmDelete(id string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenConfirmDelete(id))
-}
-
 func (m Model) openConfirmDeleteEntity(kind, id, label string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenConfirmDeleteEntity(kind, id, label))
 }
@@ -230,20 +279,42 @@ func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenAmendSession(sessionID, commit))
 }
 
-func (m Model) openManualSessionDialog(issueID int64, issueLabel string, estimateMinutes *int, date string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenManualSession(issueID, issueLabel, estimateMinutes, date))
+func (m Model) openManualSessionDialog(
+	issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	date string,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().OpenManualSession(issueID, issueLabel, estimateMinutes, date),
+	)
 }
 
-func (m Model) openDatePickerDialog(parentDialog string, issueID int64, inputIndex int, initial *string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenDatePicker(parentDialog, issueID, inputIndex, initial))
+func (m Model) openDatePickerDialog(
+	parentDialog string,
+	issueID int64,
+	inputIndex int,
+	initial *string,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().OpenDatePicker(parentDialog, issueID, inputIndex, initial),
+	)
 }
 
 func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenViewEntity(title, name, meta, body))
 }
 
-func (m Model) openViewEntityDialogWithPath(title string, name string, meta string, body string, path string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenViewEntityWithPath(title, name, meta, body, path))
+func (m Model) openViewEntityDialogWithPath(
+	title string,
+	name string,
+	meta string,
+	body string,
+	path string,
+) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().OpenViewEntityWithPath(title, name, meta, body, path),
+	)
 }
 
 func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel string) Model {
@@ -259,7 +330,10 @@ func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel
 		"Attach this zip to a bug report if you need deeper diagnostics.",
 		"Use o to open the folder, c to copy the path, or g to open the issue tracker.",
 	}, "\n")
-	return m.withDialogState(m.dialogSnapshot().OpenSupportBundleResult(helperpkg.SupportBundleDisplayName(path), meta, body, path))
+	return m.withDialogState(
+		m.dialogSnapshot().
+			OpenSupportBundleResult(helperpkg.SupportBundleDisplayName(path), meta, body, path),
+	)
 }
 
 func (m Model) openExportDailyDialog() Model {
@@ -386,7 +460,15 @@ func (m Model) dialogState() dialogstate.State {
 
 func (m Model) withDialogState(state dialogstate.State) Model {
 	if m.dialog != state.Kind {
-		logger.Infof("tui dialog transition: %q -> %q width=%d inputs=%d choice_items=%d processing=%t", m.dialog, state.Kind, state.Width, len(state.Inputs), len(state.ChoiceItems), state.Processing)
+		logger.Infof(
+			"tui dialog transition: %q -> %q width=%d inputs=%d choice_items=%d processing=%t",
+			m.dialog,
+			state.Kind,
+			state.Width,
+			len(state.Inputs),
+			len(state.ChoiceItems),
+			state.Processing,
+		)
 	}
 	m.dialog = state.Kind
 	m.dialogInputs = state.Inputs
@@ -473,7 +555,6 @@ func (m Model) dialogRuntimeState() dialogruntime.State {
 
 func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 	return dialogruntime.Deps{
-		CreateScratchpad: func(name, path string) tea.Cmd { return commands.CreateScratchpad(m.client, name, path) },
 		CreateRepo: func(name string, description *string) tea.Cmd {
 			return commands.CreateRepoOnly(m.client, name, description)
 		},
@@ -487,16 +568,55 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.UpdateStream(m.client, repoID, streamID, name, description)
 		},
 		CreateIssueOnly: func(streamID int64, title string, description *string, estimateMinutes *int, dueDate *string) tea.Cmd {
-			return commands.CreateIssueOnly(m.client, streamID, title, description, estimateMinutes, dueDate)
+			return commands.CreateIssueOnly(
+				m.client,
+				streamID,
+				title,
+				description,
+				estimateMinutes,
+				dueDate,
+			)
 		},
 		CreateHabitWithPath: func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int) tea.Cmd {
-			return commands.CreateHabitWithPath(m.client, repoName, "", streamName, "", name, description, schedule, weekdays, estimateMinutes)
+			return commands.CreateHabitWithPath(
+				m.client,
+				repoName,
+				"",
+				streamName,
+				"",
+				name,
+				description,
+				schedule,
+				weekdays,
+				estimateMinutes,
+			)
 		},
 		UpdateHabit: func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd {
-			return commands.UpdateHabit(m.client, habitID, streamID, name, description, schedule, weekdays, estimateMinutes, active, dashboardDate)
+			return commands.UpdateHabit(
+				m.client,
+				habitID,
+				streamID,
+				name,
+				description,
+				schedule,
+				weekdays,
+				estimateMinutes,
+				active,
+				dashboardDate,
+			)
 		},
 		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string) tea.Cmd {
-			return commands.CreateIssueWithPath(m.client, repoName, "", streamName, "", title, description, estimateMinutes, dueDate)
+			return commands.CreateIssueWithPath(
+				m.client,
+				repoName,
+				"",
+				streamName,
+				"",
+				title,
+				description,
+				estimateMinutes,
+				dueDate,
+			)
 		},
 		CheckoutContext: func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd {
 			return commands.CheckoutContext(m.client, repoID, repoName, streamID, streamName)
@@ -505,7 +625,16 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.UpsertDailyCheckIn(m.client, req, refreshDate)
 		},
 		UpdateIssue: func(issueID, streamID int64, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
-			return commands.UpdateIssue(m.client, issueID, streamID, title, description, estimateMinutes, dueDate, dashboardDate)
+			return commands.UpdateIssue(
+				m.client,
+				issueID,
+				streamID,
+				title,
+				description,
+				estimateMinutes,
+				dueDate,
+				dashboardDate,
+			)
 		},
 		SetHabitStatus: func(habitID int64, date string, status sharedtypes.HabitCompletionStatus, estimateMinutes *int, note *string) tea.Cmd {
 			return commands.SetHabitStatus(m.client, habitID, date, status, estimateMinutes, note)
@@ -521,10 +650,20 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
 		PatchTelemetrySettings: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
-			return commands.PatchTelemetrySettings(m.client, usageEnabled, errorReportingEnabled, restartNow)
+			return commands.PatchTelemetrySettings(
+				m.client,
+				usageEnabled,
+				errorReportingEnabled,
+				restartNow,
+			)
 		},
 		CompleteOnboarding: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
-			return commands.CompleteOnboarding(m.client, usageEnabled, errorReportingEnabled, restartNow)
+			return commands.CompleteOnboarding(
+				m.client,
+				usageEnabled,
+				errorReportingEnabled,
+				restartNow,
+			)
 		},
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
 			return commands.CreateAlertReminder(m.client, input)
@@ -542,11 +681,17 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		DeleteDailyCheckIn: func(id string) tea.Cmd { return commands.DeleteDailyCheckIn(m.client, id) },
 		DeleteExportReport: func(report api.ExportReportFile) tea.Cmd { return commands.DeleteExportReport(m.client, report) },
-		DeleteScratchpad:   func(id string) tea.Cmd { return commands.DeleteScratchpad(m.client, id) },
 		ApplyStash:         func(id string) tea.Cmd { return commands.ApplyStash(m.client, id) },
 		DropStash:          func(id string) tea.Cmd { return commands.DropStash(m.client, id) },
 		ChangeIssueStatus: func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd {
-			return commands.ChangeIssueStatus(m.client, issueID, status, note, streamID, dashboardDate)
+			return commands.ChangeIssueStatus(
+				m.client,
+				issueID,
+				status,
+				note,
+				streamID,
+				dashboardDate,
+			)
 		},
 		AmendSessionNote: func(id string, note string) tea.Cmd { return commands.AmendSessionNote(m.client, id, note) },
 		LogManualSession: func(input shareddto.ManualSessionLogRequest) tea.Cmd {
@@ -557,7 +702,15 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		StashFocusSession: func(note string) tea.Cmd { return commands.StashFocusSession(m.client, note) },
 		ChangeIssueStatusAndEndSession: func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd {
-			return commands.ChangeIssueStatusAndEndSession(m.client, issueID, status, note, streamID, dashboardDate, payload)
+			return commands.ChangeIssueStatusAndEndSession(
+				m.client,
+				issueID,
+				status,
+				note,
+				streamID,
+				dashboardDate,
+				payload,
+			)
 		},
 		SetIssueTodoDate: func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.SetIssueTodoDate(m.client, issueID, date, streamID, dashboardDate)
@@ -576,7 +729,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		WipeRuntimeData: func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		UninstallCrona: func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd {
-			return commands.UninstallCrona(m.client, currentExecutablePath, kernelExecutablePath, kernelInfo)
+			return commands.UninstallCrona(
+				m.client,
+				currentExecutablePath,
+				kernelExecutablePath,
+				kernelInfo,
+			)
 		},
 		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
 		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },

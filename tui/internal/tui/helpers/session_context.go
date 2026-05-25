@@ -17,7 +17,10 @@ func SessionContextContentLines(issue *api.IssueWithMeta) []string {
 		fmt.Sprintf("Issue: #%d %s", issue.ID, issue.Title),
 	}
 	if issue.EstimateMinutes != nil && *issue.EstimateMinutes > 0 {
-		lines = append(lines, fmt.Sprintf("Estimate: %s", FormatCompactDurationMinutes(*issue.EstimateMinutes)))
+		lines = append(
+			lines,
+			fmt.Sprintf("Estimate: %s", FormatCompactDurationMinutes(*issue.EstimateMinutes)),
+		)
 	}
 	lines = append(lines, "", "Description:")
 	if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {
@@ -35,9 +38,9 @@ func SessionContextContentLines(issue *api.IssueWithMeta) []string {
 }
 
 func SessionContextMaxOffset(width, height int, lines []string) int {
-	boxWidth := minInt(maxInt(50, width-10), 92)
+	boxWidth := Min(Max(50, width-10), 92)
 	innerWidth := boxWidth - 4
-	visibleHeight := maxInt(6, height-10)
+	visibleHeight := Max(6, height-10)
 	wrapped := make([]string, 0, len(lines))
 	for _, line := range lines {
 		if line == "" {
@@ -46,5 +49,5 @@ func SessionContextMaxOffset(width, height int, lines []string) int {
 		}
 		wrapped = append(wrapped, wrapText(line, innerWidth)...)
 	}
-	return maxInt(0, len(wrapped)-visibleHeight)
+	return Max(0, len(wrapped)-visibleHeight)
 }

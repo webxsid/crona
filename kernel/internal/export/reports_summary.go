@@ -60,7 +60,12 @@ type csvExportColumn struct {
 	Field  string `json:"field"`
 }
 
-func GenerateReport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func GenerateReport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	kind := normalizeReportKind(input.Kind)
 	switch kind {
 	case sharedtypes.ExportReportKindDaily:
@@ -80,7 +85,12 @@ func GenerateReport(ctx context.Context, c *core.Context, paths runtime.Paths, i
 	}
 }
 
-func GenerateCalendarExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportCalendarRequest) (*sharedtypes.CalendarExportResult, error) {
+func GenerateCalendarExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportCalendarRequest,
+) (*sharedtypes.CalendarExportResult, error) {
 	if input.RepoID == 0 {
 		return nil, errors.New("calendar export requires repoId")
 	}
@@ -98,7 +108,8 @@ func GenerateCalendarExport(ctx context.Context, c *core.Context, paths runtime.
 	}
 	issues := make([]sharedtypes.IssueWithMeta, 0)
 	for _, issue := range allIssues {
-		if issue.RepoID == repo.ID && issue.TodoForDate != nil && strings.TrimSpace(*issue.TodoForDate) != "" {
+		if issue.RepoID == repo.ID && issue.TodoForDate != nil &&
+			strings.TrimSpace(*issue.TodoForDate) != "" {
 			issues = append(issues, issue)
 		}
 	}
@@ -178,13 +189,31 @@ func GenerateCalendarExport(ctx context.Context, c *core.Context, paths runtime.
 	}, nil
 }
 
-func generateDailyExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateDailyExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	date := normalizeReportDate(input.Date)
 	format := normalizeNarrativeFormat(input.Format)
-	return generateDailyReportWithKind(ctx, c, paths, date, format, input.OutputMode, input.PresetID)
+	return generateDailyReportWithKind(
+		ctx,
+		c,
+		paths,
+		date,
+		format,
+		input.OutputMode,
+		input.PresetID,
+	)
 }
 
-func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateWeeklyExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	start, end := normalizeRange(input.Start, input.End, input.Date)
 	format := normalizeNarrativeFormat(input.Format)
 
@@ -263,7 +292,12 @@ func generateWeeklyExport(ctx context.Context, c *core.Context, paths runtime.Pa
 	}, input.OutputMode, input.PresetID)
 }
 
-func generateRepoExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateRepoExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	if input.RepoID == nil || *input.RepoID == 0 {
 		return nil, errors.New("repo report requires repoId")
 	}
@@ -344,7 +378,12 @@ func generateRepoExport(ctx context.Context, c *core.Context, paths runtime.Path
 	}, input.OutputMode, "", &sharedtypes.ExportReportScope{RepoID: &repo.ID, RepoName: &repo.Name})
 }
 
-func generateStreamExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateStreamExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	if input.StreamID == nil || *input.StreamID == 0 {
 		return nil, errors.New("stream report requires streamId")
 	}
@@ -424,11 +463,22 @@ func generateStreamExport(ctx context.Context, c *core.Context, paths runtime.Pa
 		StartDate:  start,
 		EndDate:    end,
 		Format:     format,
-		BaseName:   fmt.Sprintf("stream-%d-%s-%s-to-%s", stream.ID, slugify(stream.Name), start, end),
+		BaseName: fmt.Sprintf(
+			"stream-%d-%s-%s-to-%s",
+			stream.ID,
+			slugify(stream.Name),
+			start,
+			end,
+		),
 	}, input.OutputMode, "", scope)
 }
 
-func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateIssueRollupExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	start, end := normalizeRange(input.Start, input.End, input.Date)
 	format := normalizeNarrativeFormat(input.Format)
 	entries, err := corecommands.ListSessionHistory(ctx, c, struct {
@@ -494,7 +544,10 @@ func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runti
 	for id := range rollups {
 		ids = append(ids, id)
 	}
-	sort.Slice(ids, func(i, j int) bool { return rollups[ids[i]].workedSecs > rollups[ids[j]].workedSecs })
+	sort.Slice(
+		ids,
+		func(i, j int) bool { return rollups[ids[i]].workedSecs > rollups[ids[j]].workedSecs },
+	)
 	detailedGroups := make([]reportIssueGroup, 0, len(ids))
 	for _, id := range ids {
 		item := rollups[id]
@@ -512,18 +565,30 @@ func generateIssueRollupExport(ctx context.Context, c *core.Context, paths runti
 		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
 		"issues":           mapDetailedIssueGroups(detailedGroups, map[int64]map[string]any{}),
 	}
-	return renderNarrativeReport(paths, sharedtypes.ExportReportKindIssueRollup, data, reportWriteSpec{
-		Kind:      sharedtypes.ExportReportKindIssueRollup,
-		Label:     "Session to Issue Rollup",
-		Date:      end,
-		StartDate: start,
-		EndDate:   end,
-		Format:    format,
-		BaseName:  fmt.Sprintf("issue-rollup-%s-to-%s", start, end),
-	}, input.OutputMode, "")
+	return renderNarrativeReport(
+		paths,
+		sharedtypes.ExportReportKindIssueRollup,
+		data,
+		reportWriteSpec{
+			Kind:      sharedtypes.ExportReportKindIssueRollup,
+			Label:     "Session to Issue Rollup",
+			Date:      end,
+			StartDate: start,
+			EndDate:   end,
+			Format:    format,
+			BaseName:  fmt.Sprintf("issue-rollup-%s-to-%s", start, end),
+		},
+		input.OutputMode,
+		"",
+	)
 }
 
-func generateCSVExport(ctx context.Context, c *core.Context, paths runtime.Paths, input shareddto.ExportReportRequest) (*sharedtypes.ExportReportResult, error) {
+func generateCSVExport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
 	start, end := normalizeRange(input.Start, input.End, input.Date)
 	entries, err := corecommands.ListSessionHistory(ctx, c, struct {
 		RepoID   *int64
@@ -588,12 +653,19 @@ func generateCSVExport(ctx context.Context, c *core.Context, paths runtime.Paths
 	}, content, sharedtypes.ExportOutputModeFile)
 }
 
-func finalizeReport(paths runtime.Paths, spec reportWriteSpec, content string, mode sharedtypes.ExportOutputMode, scope ...*sharedtypes.ExportReportScope) (*sharedtypes.ExportReportResult, error) {
+func finalizeReport(
+	paths runtime.Paths,
+	spec reportWriteSpec,
+	content string,
+	mode sharedtypes.ExportOutputMode,
+	scope ...*sharedtypes.ExportReportScope,
+) (*sharedtypes.ExportReportResult, error) {
 	format := normalizeFormatForKind(spec.Kind, spec.Format)
 	if spec.Kind == sharedtypes.ExportReportKindCSV && mode != sharedtypes.ExportOutputModeFile {
 		return nil, errors.New("csv export only supports file output")
 	}
-	if spec.Kind == sharedtypes.ExportReportKindCalendar && mode != sharedtypes.ExportOutputModeFile {
+	if spec.Kind == sharedtypes.ExportReportKindCalendar &&
+		mode != sharedtypes.ExportOutputModeFile {
 		return nil, errors.New("calendar export only supports file output")
 	}
 	if format == sharedtypes.ExportFormatPDF && mode != sharedtypes.ExportOutputModeFile {
@@ -637,7 +709,15 @@ func finalizeReport(paths runtime.Paths, spec reportWriteSpec, content string, m
 	return result, nil
 }
 
-func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKind, data map[string]any, spec reportWriteSpec, mode sharedtypes.ExportOutputMode, presetID string, scope ...*sharedtypes.ExportReportScope) (*sharedtypes.ExportReportResult, error) {
+func renderNarrativeReport(
+	paths runtime.Paths,
+	kind sharedtypes.ExportReportKind,
+	data map[string]any,
+	spec reportWriteSpec,
+	mode sharedtypes.ExportOutputMode,
+	presetID string,
+	scope ...*sharedtypes.ExportReportScope,
+) (*sharedtypes.ExportReportResult, error) {
 	if spec.Format == sharedtypes.ExportFormatPDF && kind == sharedtypes.ExportReportKindWeekly {
 		htmlTemplate, cssTemplate, assets, err := LoadNarrativePDFAssets(paths, kind, presetID)
 		if err != nil {
@@ -664,7 +744,12 @@ func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKin
 		if mode != sharedtypes.ExportOutputModeFile {
 			return nil, errors.New("pdf export only supports file output")
 		}
-		filePath, renderer, err := RenderNarrativePDFReport(paths, spec, result.Content, string(cssTemplate))
+		filePath, renderer, err := RenderNarrativePDFReport(
+			paths,
+			spec,
+			result.Content,
+			string(cssTemplate),
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -692,7 +777,11 @@ func renderNarrativeReport(paths runtime.Paths, kind sharedtypes.ExportReportKin
 
 func normalizeReportKind(kind sharedtypes.ExportReportKind) sharedtypes.ExportReportKind {
 	switch kind {
-	case sharedtypes.ExportReportKindWeekly, sharedtypes.ExportReportKindRepo, sharedtypes.ExportReportKindStream, sharedtypes.ExportReportKindIssueRollup, sharedtypes.ExportReportKindCSV:
+	case sharedtypes.ExportReportKindWeekly,
+		sharedtypes.ExportReportKindRepo,
+		sharedtypes.ExportReportKindStream,
+		sharedtypes.ExportReportKindIssueRollup,
+		sharedtypes.ExportReportKindCSV:
 		return kind
 	default:
 		return sharedtypes.ExportReportKindDaily
@@ -733,7 +822,10 @@ func normalizeNarrativeFormat(format sharedtypes.ExportFormat) sharedtypes.Expor
 	return sharedtypes.ExportFormatMarkdown
 }
 
-func normalizeFormatForKind(kind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat) sharedtypes.ExportFormat {
+func normalizeFormatForKind(
+	kind sharedtypes.ExportReportKind,
+	format sharedtypes.ExportFormat,
+) sharedtypes.ExportFormat {
 	if kind == sharedtypes.ExportReportKindCSV {
 		return sharedtypes.ExportFormatCSV
 	}
@@ -786,17 +878,29 @@ func renderIssueCalendarICS(issues []sharedtypes.IssueWithMeta) string {
 			"Planned for: " + strings.TrimSpace(*issue.TodoForDate),
 		}
 		if issue.EstimateMinutes != nil {
-			descriptionParts = append(descriptionParts, fmt.Sprintf("Estimate: %dm", *issue.EstimateMinutes))
+			descriptionParts = append(
+				descriptionParts,
+				fmt.Sprintf("Estimate: %dm", *issue.EstimateMinutes),
+			)
 		}
 		if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {
-			descriptionParts = append(descriptionParts, "Description: "+strings.TrimSpace(*issue.Description))
+			descriptionParts = append(
+				descriptionParts,
+				"Description: "+strings.TrimSpace(*issue.Description),
+			)
 		}
 		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
-			descriptionParts = append(descriptionParts, "Issue notes: "+strings.TrimSpace(*issue.Notes))
+			descriptionParts = append(
+				descriptionParts,
+				"Issue notes: "+strings.TrimSpace(*issue.Notes),
+			)
 		}
-		lines = append(lines,
+		lines = append(
+			lines,
 			"BEGIN:VEVENT",
-			"UID:"+icsEscape(fmt.Sprintf("issue-%d-%s@crona", issue.ID, strings.TrimSpace(*issue.TodoForDate))),
+			"UID:"+icsEscape(
+				fmt.Sprintf("issue-%d-%s@crona", issue.ID, strings.TrimSpace(*issue.TodoForDate)),
+			),
 			"DTSTAMP:"+icsDateTime(now),
 			"DTSTART;VALUE=DATE:"+icsDate(day),
 			"DTEND;VALUE=DATE:"+icsDate(day.AddDate(0, 0, 1)),
@@ -809,7 +913,10 @@ func renderIssueCalendarICS(issues []sharedtypes.IssueWithMeta) string {
 	return strings.Join(lines, "\r\n")
 }
 
-func renderSessionCalendarICS(entries []sharedtypes.SessionHistoryEntry, issues []sharedtypes.IssueWithMeta) string {
+func renderSessionCalendarICS(
+	entries []sharedtypes.SessionHistoryEntry,
+	issues []sharedtypes.IssueWithMeta,
+) string {
 	issueMeta := make(map[int64]sharedtypes.IssueWithMeta, len(issues))
 	for _, issue := range issues {
 		issueMeta[issue.ID] = issue
@@ -846,13 +953,22 @@ func renderSessionCalendarICS(entries []sharedtypes.SessionHistoryEntry, issues 
 			"Status: " + string(meta.Status),
 		}
 		if meta.EstimateMinutes != nil {
-			descriptionParts = append(descriptionParts, fmt.Sprintf("Estimate: %dm", *meta.EstimateMinutes))
+			descriptionParts = append(
+				descriptionParts,
+				fmt.Sprintf("Estimate: %dm", *meta.EstimateMinutes),
+			)
 		}
 		if meta.Description != nil && strings.TrimSpace(*meta.Description) != "" {
-			descriptionParts = append(descriptionParts, "Description: "+strings.TrimSpace(*meta.Description))
+			descriptionParts = append(
+				descriptionParts,
+				"Description: "+strings.TrimSpace(*meta.Description),
+			)
 		}
 		if meta.Notes != nil && strings.TrimSpace(*meta.Notes) != "" {
-			descriptionParts = append(descriptionParts, "Issue notes: "+strings.TrimSpace(*meta.Notes))
+			descriptionParts = append(
+				descriptionParts,
+				"Issue notes: "+strings.TrimSpace(*meta.Notes),
+			)
 		}
 		parsedNotes := sessionnotes.Parse(entry.Notes)
 		for _, section := range []sharedtypes.SessionNoteSection{
@@ -982,7 +1098,10 @@ func renderCSVExport(paths runtime.Paths, rows []map[string]any) (string, error)
 	for _, row := range rows {
 		values := make([]string, 0, len(spec.Columns))
 		for _, column := range spec.Columns {
-			values = append(values, csvField(fmt.Sprint(resolvePath(strings.TrimSpace(column.Field), row, row))))
+			values = append(
+				values,
+				csvField(fmt.Sprint(resolvePath(strings.TrimSpace(column.Field), row, row))),
+			)
 		}
 		lines = append(lines, strings.Join(values, ","))
 	}
@@ -995,7 +1114,8 @@ func loadCSVExportSpec(paths runtime.Paths) (*csvExportSpec, error) {
 		return nil, err
 	}
 	for _, asset := range status.TemplateAssets {
-		if asset.ReportKind == sharedtypes.ExportReportKindCSV && asset.AssetKind == sharedtypes.ExportAssetKindCSVSpec {
+		if asset.ReportKind == sharedtypes.ExportReportKindCSV &&
+			asset.AssetKind == sharedtypes.ExportAssetKindCSVSpec {
 			body, err := os.ReadFile(asset.UserPath)
 			if err != nil {
 				return nil, err
@@ -1010,7 +1130,10 @@ func loadCSVExportSpec(paths runtime.Paths) (*csvExportSpec, error) {
 	return nil, errors.New("csv export spec not found")
 }
 
-func buildIssueGroups(issues []sharedtypes.IssueWithMeta, sessions []sharedtypes.SessionHistoryEntry) []reportIssueGroup {
+func buildIssueGroups(
+	issues []sharedtypes.IssueWithMeta,
+	sessions []sharedtypes.SessionHistoryEntry,
+) []reportIssueGroup {
 	groups := make([]reportIssueGroup, 0, len(issues))
 	indexByIssue := make(map[int64]int, len(issues))
 	for _, issue := range issues {
@@ -1023,12 +1146,20 @@ func buildIssueGroups(issues []sharedtypes.IssueWithMeta, sessions []sharedtypes
 			continue
 		}
 		session.ParsedNotes = sessionnotes.Parse(session.Notes)
-		groups[idx].Sessions = append(groups[idx].Sessions, reportIssueSession{SessionHistoryEntry: session})
+		groups[idx].Sessions = append(
+			groups[idx].Sessions,
+			reportIssueSession{SessionHistoryEntry: session},
+		)
 	}
 	return groups
 }
 
-func buildIssueGroupsWithStream(issues []sharedtypes.Issue, repoName string, streamName string, sessions []sharedtypes.SessionHistoryEntry) []reportIssueGroup {
+func buildIssueGroupsWithStream(
+	issues []sharedtypes.Issue,
+	repoName string,
+	streamName string,
+	sessions []sharedtypes.SessionHistoryEntry,
+) []reportIssueGroup {
 	withMeta := make([]sharedtypes.IssueWithMeta, 0, len(issues))
 	for _, issue := range issues {
 		withMeta = append(withMeta, sharedtypes.IssueWithMeta{
@@ -1048,7 +1179,10 @@ func renderDetailedIssueGroups(groups []reportIssueGroup) []string {
 		lines = append(lines, fmt.Sprintf("- Status: %s", issue.Status))
 		lines = append(lines, fmt.Sprintf("- Estimate: %s", estimateLabel(issue.EstimateMinutes)))
 		if strings.TrimSpace(issue.RepoName) != "" || strings.TrimSpace(issue.StreamName) != "" {
-			lines = append(lines, fmt.Sprintf("- Scope: %s", joinNonEmpty(" / ", issue.RepoName, issue.StreamName)))
+			lines = append(
+				lines,
+				fmt.Sprintf("- Scope: %s", joinNonEmpty(" / ", issue.RepoName, issue.StreamName)),
+			)
 		}
 		if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {
 			lines = append(lines, "", "Description", strings.TrimSpace(*issue.Description))
@@ -1068,9 +1202,15 @@ func renderIssueSessionsSection(sessions []reportIssueSession) []string {
 		return []string{"Sessions", "- No sessions in range"}
 	}
 	lines := []string{"Sessions"}
-	sort.Slice(sessions, func(i, j int) bool { return sessions[i].StartTime < sessions[j].StartTime })
+	sort.Slice(
+		sessions,
+		func(i, j int) bool { return sessions[i].StartTime < sessions[j].StartTime },
+	)
 	for _, session := range sessions {
-		lines = append(lines, fmt.Sprintf("- %s", renderSessionSummaryLine(session.SessionHistoryEntry)))
+		lines = append(
+			lines,
+			fmt.Sprintf("- %s", renderSessionSummaryLine(session.SessionHistoryEntry)),
+		)
 		sessionLines := renderParsedSessionNotes(session.SessionHistoryEntry)
 		for _, line := range sessionLines {
 			lines = append(lines, "  "+line)
@@ -1177,7 +1317,10 @@ func mapHabits(habits []sharedtypes.Habit) []map[string]any {
 	return items
 }
 
-func mapDetailedIssueGroups(groups []reportIssueGroup, enrich ...map[int64]map[string]any) []map[string]any {
+func mapDetailedIssueGroups(
+	groups []reportIssueGroup,
+	enrich ...map[int64]map[string]any,
+) []map[string]any {
 	var extra map[int64]map[string]any
 	if len(enrich) > 0 {
 		extra = enrich[0]
@@ -1219,15 +1362,20 @@ func workedTimeForSessions(sessions []reportIssueSession) string {
 
 func mapIssueSessions(sessions []reportIssueSession) []map[string]any {
 	items := make([]map[string]any, 0, len(sessions))
-	sort.Slice(sessions, func(i, j int) bool { return sessions[i].StartTime < sessions[j].StartTime })
+	sort.Slice(
+		sessions,
+		func(i, j int) bool { return sessions[i].StartTime < sessions[j].StartTime },
+	)
 	for _, session := range sessions {
 		items = append(items, map[string]any{
 			"id":      session.ID,
 			"summary": renderSessionSummaryLine(session.SessionHistoryEntry),
 			"commit":  strings.TrimSpace(session.ParsedNotes[sharedtypes.SessionNoteSectionCommit]),
-			"context": strings.TrimSpace(session.ParsedNotes[sharedtypes.SessionNoteSectionContext]),
-			"work":    strings.TrimSpace(session.ParsedNotes[sharedtypes.SessionNoteSectionWork]),
-			"notes":   sessionNoteText(session.SessionHistoryEntry),
+			"context": strings.TrimSpace(
+				session.ParsedNotes[sharedtypes.SessionNoteSectionContext],
+			),
+			"work":  strings.TrimSpace(session.ParsedNotes[sharedtypes.SessionNoteSectionWork]),
+			"notes": sessionNoteText(session.SessionHistoryEntry),
 		})
 	}
 	return items

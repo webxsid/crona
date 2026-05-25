@@ -22,20 +22,31 @@ func TestTimerStructuredBoundaryPreparesBreakWhenAutoStartBreaksDisabled(t *test
 	if err != nil {
 		t.Fatalf("start session: %v", err)
 	}
-	state, err := service.applyBoundaryTransition(ctx, session.ID, sharedtypes.SessionSegmentWork, &boundaryResult{NextSegment: sharedtypes.SessionSegmentShortBreak})
+	state, err := service.applyBoundaryTransition(
+		ctx,
+		session.ID,
+		sharedtypes.SessionSegmentWork,
+		&boundaryResult{NextSegment: sharedtypes.SessionSegmentShortBreak},
+	)
 	if err != nil {
 		t.Fatalf("apply boundary: %v", err)
 	}
 	if state.State != "ready" {
 		t.Fatalf("expected ready state, got %q", state.State)
 	}
-	if state.ReadySegmentType == nil || *state.ReadySegmentType != sharedtypes.SessionSegmentShortBreak {
+	if state.ReadySegmentType == nil ||
+		*state.ReadySegmentType != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected prepared short break, got %+v", state.ReadySegmentType)
 	}
 	if state.ElapsedSeconds != 0 {
 		t.Fatalf("expected zero elapsed for prepared segment, got %d", state.ElapsedSeconds)
 	}
-	activeSegment, err := coreCtx.SessionSegments.GetActive(ctx, coreCtx.UserID, coreCtx.DeviceID, session.ID)
+	activeSegment, err := coreCtx.SessionSegments.GetActive(
+		ctx,
+		coreCtx.UserID,
+		coreCtx.DeviceID,
+		session.ID,
+	)
 	if err != nil {
 		t.Fatalf("get active segment: %v", err)
 	}
@@ -54,7 +65,12 @@ func TestTimerStructuredBoundaryAutoStartsBreakWhenEnabled(t *testing.T) {
 	if err != nil {
 		t.Fatalf("start session: %v", err)
 	}
-	state, err := service.applyBoundaryTransition(ctx, session.ID, sharedtypes.SessionSegmentWork, &boundaryResult{NextSegment: sharedtypes.SessionSegmentShortBreak})
+	state, err := service.applyBoundaryTransition(
+		ctx,
+		session.ID,
+		sharedtypes.SessionSegmentWork,
+		&boundaryResult{NextSegment: sharedtypes.SessionSegmentShortBreak},
+	)
 	if err != nil {
 		t.Fatalf("apply boundary: %v", err)
 	}
@@ -82,7 +98,12 @@ func TestTimerStructuredBoundaryPreparesWorkWhenAutoStartWorkDisabled(t *testing
 	if err := PauseSession(ctx, coreCtx, sharedtypes.SessionSegmentShortBreak); err != nil {
 		t.Fatalf("start short break: %v", err)
 	}
-	state, err := service.applyBoundaryTransition(ctx, session.ID, sharedtypes.SessionSegmentShortBreak, &boundaryResult{NextSegment: sharedtypes.SessionSegmentWork})
+	state, err := service.applyBoundaryTransition(
+		ctx,
+		session.ID,
+		sharedtypes.SessionSegmentShortBreak,
+		&boundaryResult{NextSegment: sharedtypes.SessionSegmentWork},
+	)
 	if err != nil {
 		t.Fatalf("apply boundary: %v", err)
 	}
@@ -110,7 +131,12 @@ func TestTimerStructuredBoundaryAutoStartsWorkWhenEnabled(t *testing.T) {
 	if err := PauseSession(ctx, coreCtx, sharedtypes.SessionSegmentShortBreak); err != nil {
 		t.Fatalf("start short break: %v", err)
 	}
-	state, err := service.applyBoundaryTransition(ctx, session.ID, sharedtypes.SessionSegmentShortBreak, &boundaryResult{NextSegment: sharedtypes.SessionSegmentWork})
+	state, err := service.applyBoundaryTransition(
+		ctx,
+		session.ID,
+		sharedtypes.SessionSegmentShortBreak,
+		&boundaryResult{NextSegment: sharedtypes.SessionSegmentWork},
+	)
 	if err != nil {
 		t.Fatalf("apply boundary: %v", err)
 	}
@@ -135,7 +161,12 @@ func TestTimerStructuredBoundaryPreparesWorkAfterLongBreakWhenAutoStartWorkDisab
 	if err := PauseSession(ctx, coreCtx, sharedtypes.SessionSegmentLongBreak); err != nil {
 		t.Fatalf("start long break: %v", err)
 	}
-	state, err := service.applyBoundaryTransition(ctx, session.ID, sharedtypes.SessionSegmentLongBreak, &boundaryResult{NextSegment: sharedtypes.SessionSegmentWork})
+	state, err := service.applyBoundaryTransition(
+		ctx,
+		session.ID,
+		sharedtypes.SessionSegmentLongBreak,
+		&boundaryResult{NextSegment: sharedtypes.SessionSegmentWork},
+	)
 	if err != nil {
 		t.Fatalf("apply boundary: %v", err)
 	}
@@ -171,7 +202,10 @@ func TestTimerAdvanceStartsPreparedSegment(t *testing.T) {
 		t.Fatalf("expected active short break after advance, got %+v", state.SegmentType)
 	}
 	if state.ReadySegmentType != nil {
-		t.Fatalf("expected prepared segment to clear after advance, got %+v", state.ReadySegmentType)
+		t.Fatalf(
+			"expected prepared segment to clear after advance, got %+v",
+			state.ReadySegmentType,
+		)
 	}
 }
 
@@ -188,8 +222,12 @@ func TestTimerAdvanceFromActiveStructuredWorkStartsNextBreak(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get state: %v", err)
 	}
-	if state.NextSegmentType == nil || *state.NextSegmentType != sharedtypes.SessionSegmentShortBreak {
-		t.Fatalf("expected active work to advertise short break next, got %+v", state.NextSegmentType)
+	if state.NextSegmentType == nil ||
+		*state.NextSegmentType != sharedtypes.SessionSegmentShortBreak {
+		t.Fatalf(
+			"expected active work to advertise short break next, got %+v",
+			state.NextSegmentType,
+		)
 	}
 	state, err = service.Advance(ctx)
 	if err != nil {
@@ -230,7 +268,12 @@ func TestTimerAdvanceFromActiveStructuredBreakStartsWork(t *testing.T) {
 	if state.SegmentType == nil || *state.SegmentType != sharedtypes.SessionSegmentWork {
 		t.Fatalf("expected work after manual advance, got %+v", state.SegmentType)
 	}
-	activeSegment, err := coreCtx.SessionSegments.GetActive(ctx, coreCtx.UserID, coreCtx.DeviceID, session.ID)
+	activeSegment, err := coreCtx.SessionSegments.GetActive(
+		ctx,
+		coreCtx.UserID,
+		coreCtx.DeviceID,
+		session.ID,
+	)
 	if err != nil {
 		t.Fatalf("get active segment: %v", err)
 	}
@@ -262,7 +305,8 @@ func TestTimerRecoverBoundaryPreservesPreparedSegment(t *testing.T) {
 	if state.State != "ready" {
 		t.Fatalf("expected prepared state after recovery, got %q", state.State)
 	}
-	if state.ReadySegmentType == nil || *state.ReadySegmentType != sharedtypes.SessionSegmentShortBreak {
+	if state.ReadySegmentType == nil ||
+		*state.ReadySegmentType != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected prepared short break after recovery, got %+v", state.ReadySegmentType)
 	}
 	if state.ElapsedSeconds != 0 {
@@ -270,7 +314,10 @@ func TestTimerRecoverBoundaryPreservesPreparedSegment(t *testing.T) {
 	}
 }
 
-func newTimerTestContext(t *testing.T, now func() string) (*core.Context, *TimerService, sharedtypes.Issue) {
+func newTimerTestContext(
+	t *testing.T,
+	now func() string,
+) (*core.Context, *TimerService, sharedtypes.Issue) {
 	t.Helper()
 
 	base := t.TempDir()
@@ -288,7 +335,15 @@ func newTimerTestContext(t *testing.T, now func() string) (*core.Context, *Timer
 	}
 
 	registry := store.NewRegistry(db.DB())
-	coreCtx := core.NewContext(db, registry, "local", "test-device", filepath.Join(base, "scratch"), now, events.NewBus())
+	coreCtx := core.NewContext(
+		db,
+		registry,
+		"local",
+		"test-device",
+		filepath.Join(base, "scratch"),
+		now,
+		events.NewBus(),
+	)
 	if err := coreCtx.InitDefaults(context.Background()); err != nil {
 		t.Fatalf("init defaults: %v", err)
 	}
@@ -325,7 +380,13 @@ func newTimerTestContext(t *testing.T, now func() string) (*core.Context, *Timer
 	return coreCtx, GetTimerService(coreCtx), issue
 }
 
-func configureStructuredTimer(t *testing.T, ctx context.Context, coreCtx *core.Context, autoStartBreaks bool, autoStartWork bool) {
+func configureStructuredTimer(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	autoStartBreaks bool,
+	autoStartWork bool,
+) {
 	t.Helper()
 
 	settings := map[sharedtypes.CoreSettingsKey]any{

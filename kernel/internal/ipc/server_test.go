@@ -20,7 +20,11 @@ func (h *streamOnlyHandler) Handle(ctx context.Context, req protocol.Request) pr
 	return protocol.Response{ID: req.ID}
 }
 
-func (h *streamOnlyHandler) Stream(ctx context.Context, req protocol.Request, writer *json.Encoder) error {
+func (h *streamOnlyHandler) Stream(
+	ctx context.Context,
+	req protocol.Request,
+	writer *json.Encoder,
+) error {
 	close(h.started)
 	<-ctx.Done()
 	close(h.stopped)

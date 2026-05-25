@@ -67,7 +67,11 @@ func InstallUpdate(status *api.UpdateStatus, supported bool, unsupportedReason s
 	}
 }
 
-func prepareInstallCommand(status *api.UpdateStatus, supported bool, unsupportedReason string) (*exec.Cmd, error) {
+func prepareInstallCommand(
+	status *api.UpdateStatus,
+	supported bool,
+	unsupportedReason string,
+) (*exec.Cmd, error) {
 	if status == nil {
 		return nil, fmt.Errorf("update status is unavailable")
 	}
@@ -209,12 +213,16 @@ func expectedChecksum(assetName string, checksums []byte) string {
 
 func releaseBaseURLForInstaller(installURL string) string {
 	parsed, err := url.Parse(strings.TrimSpace(installURL))
-	if err != nil || strings.TrimSpace(parsed.Scheme) == "" || strings.TrimSpace(parsed.Host) == "" {
+	if err != nil || strings.TrimSpace(parsed.Scheme) == "" ||
+		strings.TrimSpace(parsed.Host) == "" {
 		return ""
 	}
 	parsed.RawQuery = ""
 	parsed.Fragment = ""
-	parsed.Path = strings.TrimSuffix(parsed.Path, "/"+config.InstallerAssetNameForGOOS(runtime.GOOS))
+	parsed.Path = strings.TrimSuffix(
+		parsed.Path,
+		"/"+config.InstallerAssetNameForGOOS(runtime.GOOS),
+	)
 	return strings.TrimSuffix(parsed.String(), "/")
 }
 
@@ -265,7 +273,14 @@ func updateInstallCommand(installerPath string) (*exec.Cmd, error) {
 		if err != nil {
 			return nil, err
 		}
-		return exec.Command(powershellPath, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", installerPath), nil
+		return exec.Command(
+			powershellPath,
+			"-NoProfile",
+			"-ExecutionPolicy",
+			"Bypass",
+			"-File",
+			installerPath,
+		), nil
 	default:
 		shellPath, err := exec.LookPath("sh")
 		if err != nil {

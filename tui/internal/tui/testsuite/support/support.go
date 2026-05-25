@@ -3,8 +3,8 @@ package support
 import (
 	"crona/tui/internal/api"
 	controller "crona/tui/internal/tui/dialogs/controller"
-	modelpkg "crona/tui/internal/tui/model"
 	layoutpkg "crona/tui/internal/tui/layout"
+	modelpkg "crona/tui/internal/tui/model"
 	alertsview "crona/tui/internal/tui/views/alerts"
 	awayview "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -13,7 +13,6 @@ import (
 	issuesview "crona/tui/internal/tui/views/issues"
 	reportsview "crona/tui/internal/tui/views/reports"
 	rollupview "crona/tui/internal/tui/views/rollup"
-	scratchpadsview "crona/tui/internal/tui/views/scratchpads"
 	settingsview "crona/tui/internal/tui/views/settings"
 	supportview "crona/tui/internal/tui/views/support"
 	viewtypes "crona/tui/internal/tui/views/types"
@@ -31,11 +30,36 @@ func RenderRollup(state viewtypes.ContentState) string  { return rollupview.Rend
 func RenderWellbeing(state viewtypes.ContentState) string {
 	return wellbeingview.Render(Theme(), state)
 }
-func RenderReports(state viewtypes.ContentState) string  { return reportsview.Render(Theme(), state) }
-func RenderSettings(state viewtypes.ContentState) string { return settingsview.Render(Theme(), state) }
-func RenderAlerts(state viewtypes.ContentState) string   { return alertsview.Render(Theme(), state) }
-func RenderConfig(state viewtypes.ContentState) string   { return configview.Render(Theme(), state) }
-func RenderSupport(state viewtypes.ContentState) string  { return supportview.Render(Theme(), state) }
+
+func RenderReports(
+	state viewtypes.ContentState,
+) string {
+	return reportsview.Render(Theme(), state)
+}
+
+func RenderSettings(
+	state viewtypes.ContentState,
+) string {
+	return settingsview.Render(Theme(), state)
+}
+
+func RenderAlerts(
+	state viewtypes.ContentState,
+) string {
+	return alertsview.Render(Theme(), state)
+}
+
+func RenderConfig(
+	state viewtypes.ContentState,
+) string {
+	return configview.Render(Theme(), state)
+}
+
+func RenderSupport(
+	state viewtypes.ContentState,
+) string {
+	return supportview.Render(Theme(), state)
+}
 func RenderPaneBox(theme viewtypes.Theme, active bool, width, height int, content string) string {
 	return viewchrome.RenderPaneBox(theme, active, width, height, content)
 }
@@ -43,11 +67,10 @@ func RenderUpdates(state viewtypes.ContentState) string {
 	return updatesview.Render(Theme(), state)
 }
 func RenderAway(state viewtypes.ContentState) string { return awayview.Render(Theme(), state) }
-func RenderScratchpads(state viewtypes.ContentState) string {
-	return scratchpadsview.Render(Theme(), state)
-}
 
-func NewDailyModel(width, height int) modelpkg.Model { return modelpkg.NewDailyRenderModel(width, height) }
+func NewDailyModel(width, height int) modelpkg.Model {
+	return modelpkg.NewDailyRenderModel(width, height)
+}
 func NewDailyHabitDeleteModel(habits []api.HabitDailyItem) modelpkg.Model {
 	return modelpkg.NewDailyHabitDeleteModel(habits)
 }
@@ -56,10 +79,35 @@ func OpenSelectedDeleteDialog(m modelpkg.Model) (modelpkg.Model, bool) {
 	return modelpkg.OpenSelectedDeleteDialog(m)
 }
 
-func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []controller.SelectorOption {
+func DefaultStreamOptions(
+	inputs []textinput.Model,
+	repoIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) []controller.SelectorOption {
 	return controller.DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 }
 
-func MatchStreamSelection(raw string, repoID int64, repoName string, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string) {
-	return controller.MatchStreamSelection(raw, repoID, repoName, streamIndex, repos, allIssues, streams, context)
+func MatchStreamSelection(
+	raw string,
+	repoID int64,
+	repoName string,
+	streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (int64, string) {
+	return controller.MatchStreamSelection(
+		raw,
+		repoID,
+		repoName,
+		streamIndex,
+		repos,
+		allIssues,
+		streams,
+		context,
+	)
 }

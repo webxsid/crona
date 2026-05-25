@@ -107,7 +107,8 @@ func (s *Service) inactivitySubtitle(ctx context.Context, issueID int64) string 
 		}
 	}
 	if len(parts) == 0 {
-		if issue, err := s.core.Issues.GetByID(ctx, issueID, s.core.UserID); err == nil && issue != nil {
+		if issue, err := s.core.Issues.GetByID(ctx, issueID, s.core.UserID); err == nil &&
+			issue != nil {
 			if title := strings.TrimSpace(issue.Title); title != "" {
 				parts = append(parts, title)
 			}
@@ -142,10 +143,15 @@ func (s *Service) inactivityBaseline(sessionID string, startedAt time.Time) time
 	return s.lastActivityAt
 }
 
-func (s *Service) shouldDeliverInactivity(sessionID string, now time.Time, repeat time.Duration) bool {
+func (s *Service) shouldDeliverInactivity(
+	sessionID string,
+	now time.Time,
+	repeat time.Duration,
+) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.inactivitySession != sessionID || s.lastInactivityAt.IsZero() || now.Sub(s.lastInactivityAt) >= repeat
+	return s.inactivitySession != sessionID || s.lastInactivityAt.IsZero() ||
+		now.Sub(s.lastInactivityAt) >= repeat
 }
 
 func (s *Service) markInactivityDelivered(sessionID string, at time.Time) {

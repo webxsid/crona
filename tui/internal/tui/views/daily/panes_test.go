@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -38,7 +39,8 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 	lines := strings.Split(plain, "\n")
 	var headerLine, rowLine string
 	for _, line := range lines {
-		if strings.Contains(line, "Status") && strings.Contains(line, "Estimate") && strings.Contains(line, "Spent") {
+		if strings.Contains(line, "Status") && strings.Contains(line, "Estimate") &&
+			strings.Contains(line, "Spent") {
 			headerLine = line
 		}
 		if strings.Contains(line, "in progress") {
@@ -51,16 +53,24 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 	headerLine = normalizeTableLine(headerLine)
 	rowLine = normalizeTableLine(rowLine)
 	if strings.Index(headerLine, "Status") != strings.Index(rowLine, "in progress") {
-		t.Fatalf("expected status header and value to align, got header %q row %q", headerLine, rowLine)
+		t.Fatalf(
+			"expected status header and value to align, got header %q row %q",
+			headerLine,
+			rowLine,
+		)
 	}
 	if strings.Index(headerLine, "Spent") != strings.Index(rowLine, "1h15m") {
-		t.Fatalf("expected spent header and value to align, got header %q row %q", headerLine, rowLine)
+		t.Fatalf(
+			"expected spent header and value to align, got header %q row %q",
+			headerLine,
+			rowLine,
+		)
 	}
 }
 
 func normalizeTableLine(line string) string {
 	line = strings.TrimLeft(line, " ")
-	line = strings.TrimPrefix(line, "▶ ")
+	line = strings.TrimPrefix(line, viewchrome.SelectionCursor+" ")
 	line = strings.TrimPrefix(line, "  ")
 	line = strings.TrimLeft(line, " ")
 	return line

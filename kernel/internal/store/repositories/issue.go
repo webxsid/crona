@@ -23,7 +23,12 @@ func (r *IssueRepository) NextID(ctx context.Context) (int64, error) {
 	return nextPublicID(ctx, r.db, "issues")
 }
 
-func (r *IssueRepository) Create(ctx context.Context, issue sharedtypes.Issue, userID string, now string) (sharedtypes.Issue, error) {
+func (r *IssueRepository) Create(
+	ctx context.Context,
+	issue sharedtypes.Issue,
+	userID string,
+	now string,
+) (sharedtypes.Issue, error) {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, issue.StreamID, userID)
 	if err != nil {
 		return sharedtypes.Issue{}, err
@@ -55,7 +60,11 @@ func (r *IssueRepository) Create(ctx context.Context, issue sharedtypes.Issue, u
 	return issue, nil
 }
 
-func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, userID string) ([]sharedtypes.Issue, error) {
+func (r *IssueRepository) ListByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+) ([]sharedtypes.Issue, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -116,7 +125,11 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 	return out, nil
 }
 
-func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID string) (*sharedtypes.Issue, error) {
+func (r *IssueRepository) GetByID(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) (*sharedtypes.Issue, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -176,11 +189,18 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 	}, nil
 }
 
-func (r *IssueRepository) ResolveInternalID(ctx context.Context, issueID int64, userID string) (string, error) {
+func (r *IssueRepository) ResolveInternalID(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) (string, error) {
 	return resolveIssueInternalID(ctx, r.db, issueID, userID)
 }
 
-func (r *IssueRepository) ResolvePublicID(ctx context.Context, issueInternalID string) (int64, error) {
+func (r *IssueRepository) ResolvePublicID(
+	ctx context.Context,
+	issueInternalID string,
+) (int64, error) {
 	var publicID int64
 	if err := r.db.NewSelect().
 		TableExpr("issues").
@@ -193,7 +213,10 @@ func (r *IssueRepository) ResolvePublicID(ctx context.Context, issueInternalID s
 	return publicID, nil
 }
 
-func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedtypes.IssueWithMeta, error) {
+func (r *IssueRepository) ListAll(
+	ctx context.Context,
+	userID string,
+) ([]sharedtypes.IssueWithMeta, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -243,11 +266,13 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 	for _, row := range rows {
 		out = append(out, sharedtypes.IssueWithMeta{
 			Issue: sharedtypes.Issue{
-				ID:              row.PublicID,
-				StreamID:        row.StreamPublicID,
-				Title:           row.Title,
-				Description:     row.Description,
-				Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
+				ID:          row.PublicID,
+				StreamID:    row.StreamPublicID,
+				Title:       row.Title,
+				Description: row.Description,
+				Status: sharedtypes.NormalizeIssueStatus(
+					sharedtypes.IssueStatus(row.Status),
+				),
 				EstimateMinutes: row.EstimateMinutes,
 				WorkedSeconds:   row.WorkedSeconds,
 				Notes:           row.Notes,
@@ -264,7 +289,11 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 	return out, nil
 }
 
-func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int64, userID string) ([]sharedtypes.Issue, error) {
+func (r *IssueRepository) ListDeletedByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+) ([]sharedtypes.Issue, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -322,7 +351,11 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 	return out, nil
 }
 
-func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate string, userID string) ([]sharedtypes.Issue, error) {
+func (r *IssueRepository) ListByTodoForDate(
+	ctx context.Context,
+	todoForDate string,
+	userID string,
+) ([]sharedtypes.Issue, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -380,7 +413,12 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 	return out, nil
 }
 
-func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate string, endDate string, userID string) ([]sharedtypes.Issue, error) {
+func (r *IssueRepository) ListByTodoDateRange(
+	ctx context.Context,
+	startDate string,
+	endDate string,
+	userID string,
+) ([]sharedtypes.Issue, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
@@ -439,17 +477,22 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 	return out, nil
 }
 
-func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID string, now string, updates struct {
-	Title           Patch[string]
-	Description     Patch[string]
-	Status          Patch[sharedtypes.IssueStatus]
-	EstimateMinutes Patch[int]
-	Notes           Patch[string]
-	PinnedDaily     Patch[bool]
-	TodoForDate     Patch[string]
-	CompletedAt     Patch[string]
-	AbandonedAt     Patch[string]
-},
+func (r *IssueRepository) Update(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+	now string,
+	updates struct {
+		Title           Patch[string]
+		Description     Patch[string]
+		Status          Patch[sharedtypes.IssueStatus]
+		EstimateMinutes Patch[int]
+		Notes           Patch[string]
+		PinnedDaily     Patch[bool]
+		TodoForDate     Patch[string]
+		CompletedAt     Patch[string]
+		AbandonedAt     Patch[string]
+	},
 ) (*sharedtypes.Issue, error) {
 	q := r.db.NewUpdate().
 		Model((*storemodels.IssueModel)(nil)).
@@ -522,7 +565,12 @@ func (r *IssueRepository) Update(ctx context.Context, issueID int64, userID stri
 	return r.GetByID(ctx, issueID, userID)
 }
 
-func (r *IssueRepository) SoftDelete(ctx context.Context, issueID int64, userID string, now string) error {
+func (r *IssueRepository) SoftDelete(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
@@ -540,7 +588,12 @@ func (r *IssueRepository) SoftDelete(ctx context.Context, issueID int64, userID 
 	return nil
 }
 
-func (r *IssueRepository) CascadeSoftDeleteByStream(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *IssueRepository) CascadeSoftDeleteByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
 	if err != nil || streamInternalID == "" {
 		return err
@@ -556,7 +609,12 @@ func (r *IssueRepository) CascadeSoftDeleteByStream(ctx context.Context, streamI
 	return err
 }
 
-func (r *IssueRepository) CascadeSoftDeleteByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *IssueRepository) CascadeSoftDeleteByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err
@@ -572,7 +630,12 @@ func (r *IssueRepository) CascadeSoftDeleteByRepo(ctx context.Context, repoID in
 	return err
 }
 
-func (r *IssueRepository) RestoreDeletedByID(ctx context.Context, issueID int64, userID string, now string) error {
+func (r *IssueRepository) RestoreDeletedByID(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
@@ -590,7 +653,12 @@ func (r *IssueRepository) RestoreDeletedByID(ctx context.Context, issueID int64,
 	return nil
 }
 
-func (r *IssueRepository) RestoreDeletedByStream(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *IssueRepository) RestoreDeletedByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
 	if err != nil || streamInternalID == "" {
 		return err
@@ -606,7 +674,12 @@ func (r *IssueRepository) RestoreDeletedByStream(ctx context.Context, streamID i
 	return err
 }
 
-func (r *IssueRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *IssueRepository) RestoreDeletedByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err

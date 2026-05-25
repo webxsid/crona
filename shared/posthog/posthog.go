@@ -180,7 +180,13 @@ func (c *client) DistinctID() string {
 func (c *client) Capture(event string, properties Properties) error {
 	if c == nil || !c.usageEnabled {
 		if c != nil {
-			c.logAttempt("capture", strings.TrimSpace(event), properties, "skipped", "usage_disabled")
+			c.logAttempt(
+				"capture",
+				strings.TrimSpace(event),
+				properties,
+				"skipped",
+				"usage_disabled",
+			)
 		}
 		return nil
 	}
@@ -218,7 +224,13 @@ func (c *client) Identify(properties Properties) error {
 func (c *client) ReportError(kind string, err error, properties Properties) error {
 	if c == nil || !c.errorReportingEnabled {
 		if c != nil {
-			c.logAttempt("report_error", EventErrorReported, properties, "skipped", "error_reporting_disabled")
+			c.logAttempt(
+				"report_error",
+				EventErrorReported,
+				properties,
+				"skipped",
+				"error_reporting_disabled",
+			)
 		}
 		return nil
 	}
@@ -448,7 +460,8 @@ func sanitizeErrorMessage(message string) string {
 	if message == "" {
 		return "unknown error"
 	}
-	if strings.Contains(message, "/") || strings.Contains(message, `\`) || strings.Contains(message, "~") {
+	if strings.Contains(message, "/") || strings.Contains(message, `\`) ||
+		strings.Contains(message, "~") {
 		return "redacted path-bearing error"
 	}
 	if len(message) > 160 {
@@ -512,7 +525,8 @@ func loadOrCreateIdentity(runtimeDir string) (identityState, error) {
 	body, err := os.ReadFile(path)
 	if err == nil {
 		var state identityState
-		if jsonErr := json.Unmarshal(body, &state); jsonErr == nil && strings.TrimSpace(state.DistinctID) != "" {
+		if jsonErr := json.Unmarshal(body, &state); jsonErr == nil &&
+			strings.TrimSpace(state.DistinctID) != "" {
 			return state, nil
 		}
 	}

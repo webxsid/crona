@@ -8,7 +8,6 @@ import (
 	sharedtypes "crona/shared/types"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -17,17 +16,15 @@ import (
 const defaultShutdownWait = 5 * time.Second
 
 type Client struct {
-	transport  string
-	endpoint   string
-	scratchDir string
-	nextID     atomic.Uint64
+	transport string
+	endpoint  string
+	nextID    atomic.Uint64
 }
 
-func NewClient(transport, endpoint, scratchDir string) *Client {
+func NewClient(transport, endpoint string) *Client {
 	return &Client{
-		transport:  transport,
-		endpoint:   endpoint,
-		scratchDir: scratchDir,
+		transport: transport,
+		endpoint:  endpoint,
 	}
 }
 
@@ -66,7 +63,11 @@ func (c *Client) call(method string, params, out any) error {
 		return err
 	}
 	if resp.Error != nil {
-		return &protocol.RPCError{Code: resp.Error.Code, Message: resp.Error.Message, Data: resp.Error.Data}
+		return &protocol.RPCError{
+			Code:    resp.Error.Code,
+			Message: resp.Error.Message,
+			Data:    resp.Error.Data,
+		}
 	}
 	if out == nil || len(resp.Result) == 0 {
 		return nil
@@ -92,7 +93,11 @@ func (c *Client) ListRepos() ([]Repo, error) {
 
 func (c *Client) CreateRepo(name string, description *string) (*Repo, error) {
 	var out Repo
-	return &out, c.call(protocol.MethodRepoCreate, shareddto.CreateRepoRequest{Name: name, Description: description}, &out)
+	return &out, c.call(
+		protocol.MethodRepoCreate,
+		shareddto.CreateRepoRequest{Name: name, Description: description},
+		&out,
+	)
 }
 
 func (c *Client) UpdateRepo(id int64, name string, description *string) error {
@@ -114,7 +119,11 @@ func (c *Client) ListStreams(repoID int64) ([]Stream, error) {
 
 func (c *Client) CreateStream(repoID int64, name string, description *string) (*Stream, error) {
 	var out Stream
-	return &out, c.call(protocol.MethodStreamCreate, shareddto.CreateStreamRequest{RepoID: repoID, Name: name, Description: description}, &out)
+	return &out, c.call(
+		protocol.MethodStreamCreate,
+		shareddto.CreateStreamRequest{RepoID: repoID, Name: name, Description: description},
+		&out,
+	)
 }
 
 func (c *Client) UpdateStream(id int64, name string, description *string) error {
@@ -131,12 +140,20 @@ func (c *Client) DeleteStream(id int64) error {
 
 func (c *Client) ListIssues(streamID int64) ([]Issue, error) {
 	var out []Issue
-	return out, c.call(protocol.MethodIssueList, shareddto.ListIssuesQuery{StreamID: streamID}, &out)
+	return out, c.call(
+		protocol.MethodIssueList,
+		shareddto.ListIssuesQuery{StreamID: streamID},
+		&out,
+	)
 }
 
 func (c *Client) ListHabits(streamID int64) ([]Habit, error) {
 	var out []Habit
-	return out, c.call(protocol.MethodHabitList, shareddto.ListHabitsQuery{StreamID: streamID}, &out)
+	return out, c.call(
+		protocol.MethodHabitList,
+		shareddto.ListHabitsQuery{StreamID: streamID},
+		&out,
+	)
 }
 
 func (c *Client) ListAllHabits() ([]HabitWithMeta, error) {
@@ -146,10 +163,21 @@ func (c *Client) ListAllHabits() ([]HabitWithMeta, error) {
 
 func (c *Client) ListDueHabits(date string) ([]HabitDailyItem, error) {
 	var out []HabitDailyItem
-	return out, c.call(protocol.MethodHabitListDue, shareddto.ListHabitsDueQuery{Date: strings.TrimSpace(date)}, &out)
+	return out, c.call(
+		protocol.MethodHabitListDue,
+		shareddto.ListHabitsDueQuery{Date: strings.TrimSpace(date)},
+		&out,
+	)
 }
 
-func (c *Client) CreateHabit(streamID int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int) (*Habit, error) {
+func (c *Client) CreateHabit(
+	streamID int64,
+	name string,
+	description *string,
+	scheduleType string,
+	weekdays []int,
+	targetMinutes *int,
+) (*Habit, error) {
 	var out Habit
 	return &out, c.call(protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
 		StreamID:      streamID,
@@ -161,7 +189,15 @@ func (c *Client) CreateHabit(streamID int64, name string, description *string, s
 	}, &out)
 }
 
-func (c *Client) UpdateHabit(id int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int, active bool) error {
+func (c *Client) UpdateHabit(
+	id int64,
+	name string,
+	description *string,
+	scheduleType string,
+	weekdays []int,
+	targetMinutes *int,
+	active bool,
+) error {
 	return c.call(protocol.MethodHabitUpdate, shareddto.UpdateHabitRequest{
 		ID:            id,
 		Name:          &name,
@@ -177,7 +213,13 @@ func (c *Client) DeleteHabit(id int64) error {
 	return c.mustOK(protocol.MethodHabitDelete, shareddto.NumericIDRequest{ID: id})
 }
 
-func (c *Client) CompleteHabit(habitID int64, date string, status sharedtypes.HabitCompletionStatus, durationMinutes *int, notes *string) (*HabitCompletion, error) {
+func (c *Client) CompleteHabit(
+	habitID int64,
+	date string,
+	status sharedtypes.HabitCompletionStatus,
+	durationMinutes *int,
+	notes *string,
+) (*HabitCompletion, error) {
 	var out HabitCompletion
 	return &out, c.call(protocol.MethodHabitComplete, shareddto.HabitCompletionUpsertRequest{
 		HabitID:         habitID,
@@ -197,7 +239,11 @@ func (c *Client) UncompleteHabit(habitID int64, date string) error {
 
 func (c *Client) ListHabitHistory(repoID, streamID *int64) ([]HabitCompletion, error) {
 	var out []HabitCompletion
-	return out, c.call(protocol.MethodHabitHistory, shareddto.HabitHistoryQuery{RepoID: repoID, StreamID: streamID}, &out)
+	return out, c.call(
+		protocol.MethodHabitHistory,
+		shareddto.HabitHistoryQuery{RepoID: repoID, StreamID: streamID},
+		&out,
+	)
 }
 
 func (c *Client) ListAllIssues() ([]IssueWithMeta, error) {
@@ -205,7 +251,13 @@ func (c *Client) ListAllIssues() ([]IssueWithMeta, error) {
 	return out, c.call(protocol.MethodIssueListAll, nil, &out)
 }
 
-func (c *Client) CreateIssue(streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) (*Issue, error) {
+func (c *Client) CreateIssue(
+	streamID int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) (*Issue, error) {
 	body := shareddto.CreateIssueRequest{
 		StreamID:    streamID,
 		Title:       title,
@@ -222,7 +274,12 @@ func (c *Client) CreateIssue(streamID int64, title string, description *string, 
 	return &out, c.call(protocol.MethodIssueCreate, body, &out)
 }
 
-func (c *Client) UpdateIssue(id int64, title string, description *string, estimateMinutes *int) error {
+func (c *Client) UpdateIssue(
+	id int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+) error {
 	body := shareddto.UpdateIssueRequest{
 		ID:          id,
 		Title:       &title,
@@ -245,7 +302,11 @@ func (c *Client) DeleteIssue(id int64) error {
 
 func (c *Client) ListSessionsByIssue(issueID int64) ([]Session, error) {
 	var out []Session
-	return out, c.call(protocol.MethodSessionListByIssue, shareddto.ListSessionsQuery{IssueID: &issueID}, &out)
+	return out, c.call(
+		protocol.MethodSessionListByIssue,
+		shareddto.ListSessionsQuery{IssueID: &issueID},
+		&out,
+	)
 }
 
 func (c *Client) ListSessionHistory(issueID *int64, limit int) ([]SessionHistoryEntry, error) {
@@ -321,7 +382,9 @@ func (c *Client) ListDailyCheckIns(start, end string) ([]DailyCheckIn, error) {
 	}, &out)
 }
 
-func (c *Client) UpsertDailyCheckIn(input shareddto.DailyCheckInUpsertRequest) (*DailyCheckIn, error) {
+func (c *Client) UpsertDailyCheckIn(
+	input shareddto.DailyCheckInUpsertRequest,
+) (*DailyCheckIn, error) {
 	var out DailyCheckIn
 	if err := c.call(protocol.MethodCheckInUpsert, input, &out); err != nil {
 		return nil, err
@@ -330,7 +393,10 @@ func (c *Client) UpsertDailyCheckIn(input shareddto.DailyCheckInUpsertRequest) (
 }
 
 func (c *Client) DeleteDailyCheckIn(date string) error {
-	return c.mustOK(protocol.MethodCheckInDelete, shareddto.DeleteByDateRequest{Date: strings.TrimSpace(date)})
+	return c.mustOK(
+		protocol.MethodCheckInDelete,
+		shareddto.DeleteByDateRequest{Date: strings.TrimSpace(date)},
+	)
 }
 
 func (c *Client) GetMetricsRange(start, end string) ([]DailyMetricsDay, error) {
@@ -373,7 +439,10 @@ func (c *Client) GetMetricsLifetimeStreaks(date string) (*StreakSummary, error) 
 	return &out, nil
 }
 
-func (c *Client) GetDashboardWindowSummary(start, end string, repoID, streamID, issueID *int64) (*DashboardWindowSummary, error) {
+func (c *Client) GetDashboardWindowSummary(
+	start, end string,
+	repoID, streamID, issueID *int64,
+) (*DashboardWindowSummary, error) {
 	var out DashboardWindowSummary
 	if err := c.call(protocol.MethodDashboardWindow, shareddto.DashboardWindowQuery{
 		Start:    strings.TrimSpace(start),
@@ -398,7 +467,10 @@ func (c *Client) GetFocusScoreSummary(start, end string) (*FocusScoreSummary, er
 	return &out, nil
 }
 
-func (c *Client) GetTimeDistributionSummary(start, end, groupBy string, repoID, streamID, issueID *int64) (*TimeDistributionSummary, error) {
+func (c *Client) GetTimeDistributionSummary(
+	start, end, groupBy string,
+	repoID, streamID, issueID *int64,
+) (*TimeDistributionSummary, error) {
 	var out TimeDistributionSummary
 	if err := c.call(protocol.MethodDashboardDistribution, shareddto.DashboardSummaryQuery{
 		Start:    strings.TrimSpace(start),
@@ -413,7 +485,10 @@ func (c *Client) GetTimeDistributionSummary(start, end, groupBy string, repoID, 
 	return &out, nil
 }
 
-func (c *Client) GetGoalProgressSummary(start, end, groupBy string, repoID, streamID, issueID *int64) (*GoalProgressSummary, error) {
+func (c *Client) GetGoalProgressSummary(
+	start, end, groupBy string,
+	repoID, streamID, issueID *int64,
+) (*GoalProgressSummary, error) {
 	var out GoalProgressSummary
 	if err := c.call(protocol.MethodDashboardGoalProgress, shareddto.DashboardSummaryQuery{
 		Start:    strings.TrimSpace(start),
@@ -464,7 +539,10 @@ func (c *Client) DeleteExportReport(path string) error {
 	}, nil)
 }
 
-func (c *Client) ResetExportTemplate(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) (*ExportAssetStatus, error) {
+func (c *Client) ResetExportTemplate(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+) (*ExportAssetStatus, error) {
 	var out ExportAssetStatus
 	if err := c.call(protocol.MethodExportTemplateReset, shareddto.ExportTemplateResetRequest{ReportKind: reportKind, AssetKind: assetKind}, &out); err != nil {
 		return nil, err
@@ -472,7 +550,11 @@ func (c *Client) ResetExportTemplate(reportKind sharedtypes.ExportReportKind, as
 	return &out, nil
 }
 
-func (c *Client) ApplyExportTemplatePreset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) (*ExportAssetStatus, error) {
+func (c *Client) ApplyExportTemplatePreset(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+	presetID string,
+) (*ExportAssetStatus, error) {
 	var out ExportAssetStatus
 	if err := c.call(protocol.MethodExportTemplateApply, shareddto.ExportTemplatePresetApplyRequest{
 		ReportKind: reportKind,
@@ -512,18 +594,27 @@ func (c *Client) GenerateReport(input shareddto.ExportReportRequest) (*ExportRep
 	return &out, nil
 }
 
-func (c *Client) GenerateCalendarExport(input shareddto.ExportCalendarRequest) (*CalendarExportResult, error) {
+func (c *Client) GenerateCalendarExport(
+	input shareddto.ExportCalendarRequest,
+) (*CalendarExportResult, error) {
 	var out CalendarExportResult
 	if err := c.call(protocol.MethodExportCalendar, input, &out); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(out.IssuesFilePath) == "" || strings.TrimSpace(out.SessionsFilePath) == "" {
-		return nil, fmt.Errorf("calendar export response is incomplete; restart the local engine so the updated export handler is loaded")
+	if strings.TrimSpace(out.IssuesFilePath) == "" ||
+		strings.TrimSpace(out.SessionsFilePath) == "" {
+		return nil, fmt.Errorf(
+			"calendar export response is incomplete; restart the local engine so the updated export handler is loaded",
+		)
 	}
 	return &out, nil
 }
 
-func (c *Client) GenerateDailyReport(date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*DailyReportResult, error) {
+func (c *Client) GenerateDailyReport(
+	date string,
+	format sharedtypes.ExportFormat,
+	mode sharedtypes.ExportOutputMode,
+) (*DailyReportResult, error) {
 	return c.GenerateReport(shareddto.ExportReportRequest{
 		Kind:       sharedtypes.ExportReportKindDaily,
 		Date:       date,
@@ -563,15 +654,27 @@ func (c *Client) GetContext() (*ActiveContext, error) {
 }
 
 func (c *Client) SwitchRepo(repoID int64) error {
-	return c.call(protocol.MethodContextSwitchRepo, shareddto.SwitchRepoRequest{RepoID: repoID}, nil)
+	return c.call(
+		protocol.MethodContextSwitchRepo,
+		shareddto.SwitchRepoRequest{RepoID: repoID},
+		nil,
+	)
 }
 
 func (c *Client) SwitchStream(streamID int64) error {
-	return c.call(protocol.MethodContextSwitchStream, shareddto.SwitchStreamRequest{StreamID: streamID}, nil)
+	return c.call(
+		protocol.MethodContextSwitchStream,
+		shareddto.SwitchStreamRequest{StreamID: streamID},
+		nil,
+	)
 }
 
 func (c *Client) SwitchIssue(issueID int64) error {
-	return c.call(protocol.MethodContextSwitchIssue, shareddto.SwitchIssueRequest{IssueID: issueID}, nil)
+	return c.call(
+		protocol.MethodContextSwitchIssue,
+		shareddto.SwitchIssueRequest{IssueID: issueID},
+		nil,
+	)
 }
 
 func (c *Client) SetFullContext(repoID, streamID, issueID int64) error {
@@ -671,12 +774,16 @@ func (c *Client) NotifyAlert(input sharedtypes.AlertRequest) error {
 	return c.call(protocol.MethodAlertsNotify, input, nil)
 }
 
-func (c *Client) CreateAlertReminder(input shareddto.AlertReminderCreateRequest) (*AlertReminder, error) {
+func (c *Client) CreateAlertReminder(
+	input shareddto.AlertReminderCreateRequest,
+) (*AlertReminder, error) {
 	var out AlertReminder
 	return &out, c.call(protocol.MethodAlertsRemindersCreate, input, &out)
 }
 
-func (c *Client) UpdateAlertReminder(input shareddto.AlertReminderUpdateRequest) (*AlertReminder, error) {
+func (c *Client) UpdateAlertReminder(
+	input shareddto.AlertReminderUpdateRequest,
+) (*AlertReminder, error) {
 	var out AlertReminder
 	return &out, c.call(protocol.MethodAlertsRemindersUpdate, input, &out)
 }
@@ -687,7 +794,11 @@ func (c *Client) DeleteAlertReminder(id string) error {
 
 func (c *Client) ToggleAlertReminder(id string, enabled bool) (*AlertReminder, error) {
 	var out AlertReminder
-	return &out, c.call(protocol.MethodAlertsRemindersToggle, shareddto.AlertReminderToggleRequest{ID: id, Enabled: enabled}, &out)
+	return &out, c.call(
+		protocol.MethodAlertsRemindersToggle,
+		shareddto.AlertReminderToggleRequest{ID: id, Enabled: enabled},
+		&out,
+	)
 }
 
 func (c *Client) ShutdownKernel() error {
@@ -737,7 +848,10 @@ func (c *Client) PrepareLocalUpdate() (*LocalUpdatePrepared, error) {
 }
 
 func (c *Client) WipeRuntimeData() error {
-	return c.mustOK(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true})
+	return c.mustOK(
+		protocol.MethodKernelWipeData,
+		shareddto.ConfirmDangerousActionRequest{Confirm: true},
+	)
 }
 
 func (c *Client) StartTimer(repoID, streamID, issueID int64, ignoreExistingStashes bool) error {
@@ -794,52 +908,6 @@ func (c *Client) ApplyStash(id string) error {
 
 func (c *Client) DropStash(id string) error {
 	return c.mustOK(protocol.MethodStashDrop, shareddto.StashIDRequest{ID: id})
-}
-
-func (c *Client) ListScratchpads() ([]ScratchPad, error) {
-	var out []ScratchPad
-	return out, c.call(protocol.MethodScratchpadList, shareddto.ListScratchpadsQuery{}, &out)
-}
-
-func (c *Client) RegisterScratchpad(id, name, path string) error {
-	pinned := false
-	lastOpenedAt := time.Now().UTC().Format(time.RFC3339)
-	body := shareddto.RegisterScratchpadRequest{
-		ID:           &id,
-		Name:         name,
-		Path:         path,
-		Pinned:       &pinned,
-		LastOpenedAt: &lastOpenedAt,
-	}
-	return c.call(protocol.MethodScratchpadRegister, body, nil)
-}
-
-func (c *Client) ReadScratchpad(id string) (string, string, error) {
-	var out sharedtypes.ScratchPadRead
-	if err := c.call(protocol.MethodScratchpadRead, shareddto.ScratchpadIDRequest{ID: id}, &out); err != nil {
-		return "", "", err
-	}
-	path := ""
-	if out.Meta != nil {
-		relativePath := out.Meta.Path
-		if !strings.HasSuffix(relativePath, ".md") {
-			relativePath += ".md"
-		}
-		if c.scratchDir != "" {
-			path = filepath.Join(c.scratchDir, relativePath)
-		} else {
-			path = relativePath
-		}
-	}
-	content := ""
-	if out.Content != nil {
-		content = *out.Content
-	}
-	return path, content, nil
-}
-
-func (c *Client) DeleteScratchpad(id string) error {
-	return c.mustOK(protocol.MethodScratchpadDelete, shareddto.ScratchpadIDRequest{ID: id})
 }
 
 func (c *Client) ListOps(limit int) ([]Op, error) {

@@ -12,9 +12,9 @@ import (
 
 func TestResolveTelemetryActionsCallHooks(t *testing.T) {
 	cases := []struct {
-		name       string
-		kind       string
-		register   func(*bool) Deps
+		name     string
+		kind     string
+		register func(*bool) Deps
 	}{
 		{
 			name: "patch telemetry settings",
@@ -55,7 +55,7 @@ func TestResolveTelemetryActionsCallHooks(t *testing.T) {
 				Kind:             tc.kind,
 				UsageTelemetry:   true,
 				ErrorReporting:   false,
-				RestartAfterSave:  strings.Contains(tc.kind, "complete"),
+				RestartAfterSave: strings.Contains(tc.kind, "complete"),
 			}
 
 			cmd := Resolve(action, State{}, deps)
@@ -96,7 +96,10 @@ func TestResolveTelemetryActionsMissingHookReturnsErrorMsg(t *testing.T) {
 			if errMsg.Err == nil {
 				t.Fatal("expected an error")
 			}
-			if want := tc.kind + " runtime hook is not configured"; !strings.Contains(errMsg.Err.Error(), want) {
+			if want := tc.kind + " runtime hook is not configured"; !strings.Contains(
+				errMsg.Err.Error(),
+				want,
+			) {
 				t.Fatalf("expected error to contain %q, got %q", want, errMsg.Err.Error())
 			}
 		})

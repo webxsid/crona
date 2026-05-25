@@ -36,49 +36,160 @@ type coreSettingMeta struct {
 }
 
 var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
-	sharedtypes.CoreSettingsKeyTimerMode:             {column: "timer_mode", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyBreaksEnabled:         {column: "breaks_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyWorkDurationMinutes:   {column: "work_duration_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyShortBreakMinutes:     {column: "short_break_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyLongBreakMinutes:      {column: "long_break_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyLongBreakEnabled:      {column: "long_break_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak: {column: "cycles_before_long_break", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyAutoStartBreaks:       {column: "auto_start_breaks", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyAutoStartWork:         {column: "auto_start_work", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyBoundaryNotifications: {column: "boundary_notifications_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyBoundarySound:         {column: "boundary_sound_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyAlertSoundPreset:      {column: "alert_sound_preset", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyAlertUrgency:          {column: "alert_urgency", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyAlertIconEnabled:      {column: "alert_icon_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyInactivityAlerts:      {column: "inactivity_alerts_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyInactivityThreshold:   {column: "inactivity_threshold_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyInactivityRepeat:      {column: "inactivity_repeat_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyUpdateChecksEnabled:   {column: "update_checks_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyUpdatePromptEnabled:   {column: "update_prompt_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyUpdateChannel:         {column: "update_channel", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyRepoSort:              {column: "repo_sort", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyStreamSort:            {column: "stream_sort", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyIssueSort:             {column: "issue_sort", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyHabitSort:             {column: "habit_sort", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyAwayModeEnabled:       {column: "away_mode_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyFrozenStreakKinds:     {column: "frozen_streak_kinds", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyRestWeekdays:          {column: "rest_weekdays", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyRestSpecificDates:     {column: "rest_specific_dates", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyDailyPlanRollbackMins: {column: "daily_plan_rollback_minutes", queryKind: coreSettingQueryInt},
-	sharedtypes.CoreSettingsKeyDateDisplayPreset:     {column: "date_display_preset", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyDateDisplayFormat:     {column: "date_display_format", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyPromptGlyphMode:       {column: "prompt_glyph_mode", queryKind: coreSettingQueryString},
-	sharedtypes.CoreSettingsKeyOnboardingCompleted:   {column: "onboarding_completed", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyUsageTelemetryEnabled: {column: "usage_telemetry_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyErrorReportingEnabled: {column: "error_reporting_enabled", queryKind: coreSettingQueryBool},
-	sharedtypes.CoreSettingsKeyHabitStreakDefs:       {column: "habit_streak_definitions", queryKind: coreSettingQueryString},
+	sharedtypes.CoreSettingsKeyTimerMode: {
+		column:    "timer_mode",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyBreaksEnabled: {
+		column:    "breaks_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyWorkDurationMinutes: {
+		column:    "work_duration_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyShortBreakMinutes: {
+		column:    "short_break_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyLongBreakMinutes: {
+		column:    "long_break_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyLongBreakEnabled: {
+		column:    "long_break_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak: {
+		column:    "cycles_before_long_break",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyAutoStartBreaks: {
+		column:    "auto_start_breaks",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyAutoStartWork: {
+		column:    "auto_start_work",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyBoundaryNotifications: {
+		column:    "boundary_notifications_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyBoundarySound: {
+		column:    "boundary_sound_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyAlertSoundPreset: {
+		column:    "alert_sound_preset",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyAlertUrgency: {
+		column:    "alert_urgency",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyAlertIconEnabled: {
+		column:    "alert_icon_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyInactivityAlerts: {
+		column:    "inactivity_alerts_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyInactivityThreshold: {
+		column:    "inactivity_threshold_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyInactivityRepeat: {
+		column:    "inactivity_repeat_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyUpdateChecksEnabled: {
+		column:    "update_checks_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyUpdatePromptEnabled: {
+		column:    "update_prompt_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyUpdateChannel: {
+		column:    "update_channel",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyRepoSort: {
+		column:    "repo_sort",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyStreamSort: {
+		column:    "stream_sort",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyIssueSort: {
+		column:    "issue_sort",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyHabitSort: {
+		column:    "habit_sort",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyAwayModeEnabled: {
+		column:    "away_mode_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyFrozenStreakKinds: {
+		column:    "frozen_streak_kinds",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyRestWeekdays: {
+		column:    "rest_weekdays",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyRestSpecificDates: {
+		column:    "rest_specific_dates",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyDailyPlanRollbackMins: {
+		column:    "daily_plan_rollback_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyDateDisplayPreset: {
+		column:    "date_display_preset",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyDateDisplayFormat: {
+		column:    "date_display_format",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyPromptGlyphMode: {
+		column:    "prompt_glyph_mode",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyOnboardingCompleted: {
+		column:    "onboarding_completed",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyUsageTelemetryEnabled: {
+		column:    "usage_telemetry_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyErrorReportingEnabled: {
+		column:    "error_reporting_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyHabitStreakDefs: {
+		column:    "habit_streak_definitions",
+		queryKind: coreSettingQueryString,
+	},
 }
 
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
 	return &CoreSettingsRepository{db: db}
 }
 
-func (r *CoreSettingsRepository) Get(ctx context.Context, userID string) (*sharedtypes.CoreSettings, error) {
+func (r *CoreSettingsRepository) Get(
+	ctx context.Context,
+	userID string,
+) (*sharedtypes.CoreSettings, error) {
 	var model storemodels.CoreSettingsModel
 	err := r.db.NewSelect().
 		Model(&model).
@@ -95,7 +206,11 @@ func (r *CoreSettingsRepository) Get(ctx context.Context, userID string) (*share
 	return &settings, nil
 }
 
-func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey) (any, error) {
+func (r *CoreSettingsRepository) GetSetting(
+	ctx context.Context,
+	userID string,
+	key sharedtypes.CoreSettingsKey,
+) (any, error) {
 	meta, ok := coreSettingMetas[key]
 	if !ok {
 		return nil, nil
@@ -149,8 +264,16 @@ func (r *CoreSettingsRepository) GetSetting(ctx context.Context, userID string, 
 	}
 }
 
-func (r *CoreSettingsRepository) SetSetting(ctx context.Context, userID string, key sharedtypes.CoreSettingsKey, value any) error {
-	q := r.db.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).Where("user_id = ?", userID).Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10))
+func (r *CoreSettingsRepository) SetSetting(
+	ctx context.Context,
+	userID string,
+	key sharedtypes.CoreSettingsKey,
+	value any,
+) error {
+	q := r.db.NewUpdate().
+		Model((*storemodels.CoreSettingsModel)(nil)).
+		Where("user_id = ?", userID).
+		Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10))
 	if meta, ok := coreSettingMetas[key]; ok {
 		dbValue, err := coreSettingsDBValue(key, value)
 		if err != nil {
@@ -174,9 +297,18 @@ func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string
 	return result, nil
 }
 
-func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID string, deviceID string) error {
+func (r *CoreSettingsRepository) InitializeDefaults(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+) error {
 	var exists int
-	err := r.db.NewSelect().Model((*storemodels.CoreSettingsModel)(nil)).ColumnExpr("1").Where("user_id = ?", userID).Limit(1).Scan(ctx, &exists)
+	err := r.db.NewSelect().
+		Model((*storemodels.CoreSettingsModel)(nil)).
+		ColumnExpr("1").
+		Where("user_id = ?", userID).
+		Limit(1).
+		Scan(ctx, &exists)
 	if err == nil {
 		return nil
 	}
@@ -228,9 +360,11 @@ func (r *CoreSettingsRepository) InitializeDefaults(ctx context.Context, userID 
 		OnboardingCompleted:   sharedconstants.DefaultCoreSettings["onboardingCompleted"].(bool),
 		UsageTelemetryEnabled: sharedconstants.DefaultCoreSettings["usageTelemetryEnabled"].(bool),
 		ErrorReportingEnabled: sharedconstants.DefaultCoreSettings["errorReportingEnabled"].(bool),
-		HabitStreakDefs:       mustJSON(sharedconstants.DefaultCoreSettings["habitStreakDefinitions"]),
-		CreatedAt:             now,
-		UpdatedAt:             now,
+		HabitStreakDefs: mustJSON(
+			sharedconstants.DefaultCoreSettings["habitStreakDefinitions"],
+		),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}).Exec(ctx)
 	return err
 }
@@ -254,7 +388,9 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))
 	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
-		return sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))
+		return sharedtypes.NormalizeDateDisplayPreset(
+			sharedtypes.DateDisplayPreset(toString(value)),
+		)
 	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
 		return sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))
 	case sharedtypes.CoreSettingsKeyHabitStreakDefs:
@@ -267,7 +403,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value)
-	case sharedtypes.CoreSettingsKeyInactivityThreshold, sharedtypes.CoreSettingsKeyInactivityRepeat:
+	case sharedtypes.CoreSettingsKeyInactivityThreshold,
+		sharedtypes.CoreSettingsKeyInactivityRepeat:
 		return clampInactivityMinutes(value)
 	default:
 		return value
@@ -277,11 +414,17 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error) {
 	switch key {
 	case sharedtypes.CoreSettingsKeyUpdateChannel:
-		return string(sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value)))), nil
+		return string(
+			sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(toString(value))),
+		), nil
 	case sharedtypes.CoreSettingsKeyAlertSoundPreset:
-		return string(sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(toString(value)))), nil
+		return string(
+			sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(toString(value))),
+		), nil
 	case sharedtypes.CoreSettingsKeyAlertUrgency:
-		return string(sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(toString(value)))), nil
+		return string(
+			sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(toString(value))),
+		), nil
 	case sharedtypes.CoreSettingsKeyRepoSort:
 		return string(sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyStreamSort:
@@ -291,9 +434,13 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
-		return string(sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value)))), nil
+		return string(
+			sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value))),
+		), nil
 	case sharedtypes.CoreSettingsKeyPromptGlyphMode:
-		return string(sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value)))), nil
+		return string(
+			sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(toString(value))),
+		), nil
 	case sharedtypes.CoreSettingsKeyHabitStreakDefs:
 		return habitStreakDefinitionsJSON(value)
 	case sharedtypes.CoreSettingsKeyFrozenStreakKinds:
@@ -304,7 +451,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value), nil
-	case sharedtypes.CoreSettingsKeyInactivityThreshold, sharedtypes.CoreSettingsKeyInactivityRepeat:
+	case sharedtypes.CoreSettingsKeyInactivityThreshold,
+		sharedtypes.CoreSettingsKeyInactivityRepeat:
 		return clampInactivityMinutes(value), nil
 	default:
 		return value, nil
@@ -326,17 +474,25 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		AutoStartWork:         row.AutoStartWork,
 		BoundaryNotifications: row.BoundaryNotifications,
 		BoundarySound:         row.BoundarySound,
-		AlertSoundPreset:      sharedtypes.NormalizeAlertSoundPreset(sharedtypes.AlertSoundPreset(row.AlertSoundPreset)),
-		AlertUrgency:          sharedtypes.NormalizeAlertUrgency(sharedtypes.AlertUrgency(row.AlertUrgency)),
-		AlertIconEnabled:      row.AlertIconEnabled,
-		InactivityAlerts:      row.InactivityAlerts,
-		InactivityThreshold:   clampInactivityMinutes(row.InactivityThreshold),
-		InactivityRepeat:      clampInactivityMinutes(row.InactivityRepeat),
-		UpdateChecksEnabled:   row.UpdateChecksEnabled,
-		UpdatePromptEnabled:   row.UpdatePromptEnabled,
-		UpdateChannel:         sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(row.UpdateChannel)),
-		RepoSort:              sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(row.RepoSort)),
-		StreamSort:            sharedtypes.NormalizeStreamSort(sharedtypes.StreamSort(row.StreamSort)),
+		AlertSoundPreset: sharedtypes.NormalizeAlertSoundPreset(
+			sharedtypes.AlertSoundPreset(row.AlertSoundPreset),
+		),
+		AlertUrgency: sharedtypes.NormalizeAlertUrgency(
+			sharedtypes.AlertUrgency(row.AlertUrgency),
+		),
+		AlertIconEnabled:    row.AlertIconEnabled,
+		InactivityAlerts:    row.InactivityAlerts,
+		InactivityThreshold: clampInactivityMinutes(row.InactivityThreshold),
+		InactivityRepeat:    clampInactivityMinutes(row.InactivityRepeat),
+		UpdateChecksEnabled: row.UpdateChecksEnabled,
+		UpdatePromptEnabled: row.UpdatePromptEnabled,
+		UpdateChannel: sharedtypes.NormalizeUpdateChannel(
+			sharedtypes.UpdateChannel(row.UpdateChannel),
+		),
+		RepoSort: sharedtypes.NormalizeRepoSort(sharedtypes.RepoSort(row.RepoSort)),
+		StreamSort: sharedtypes.NormalizeStreamSort(
+			sharedtypes.StreamSort(row.StreamSort),
+		),
 		IssueSort:             sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(row.IssueSort)),
 		HabitSort:             sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(row.HabitSort)),
 		AwayModeEnabled:       row.AwayModeEnabled,
@@ -344,9 +500,13 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
 		DailyPlanRollbackMins: row.DailyPlanRollbackMins,
-		DateDisplayPreset:     sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(row.DateDisplayPreset)),
-		DateDisplayFormat:     strings.TrimSpace(row.DateDisplayFormat),
-		PromptGlyphMode:       sharedtypes.NormalizePromptGlyphMode(sharedtypes.PromptGlyphMode(row.PromptGlyphMode)),
+		DateDisplayPreset: sharedtypes.NormalizeDateDisplayPreset(
+			sharedtypes.DateDisplayPreset(row.DateDisplayPreset),
+		),
+		DateDisplayFormat: strings.TrimSpace(row.DateDisplayFormat),
+		PromptGlyphMode: sharedtypes.NormalizePromptGlyphMode(
+			sharedtypes.PromptGlyphMode(row.PromptGlyphMode),
+		),
 		OnboardingCompleted:   row.OnboardingCompleted,
 		UsageTelemetryEnabled: row.UsageTelemetryEnabled,
 		ErrorReportingEnabled: row.ErrorReportingEnabled,

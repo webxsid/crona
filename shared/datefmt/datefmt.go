@@ -165,9 +165,27 @@ func renderToken(value time.Time, token string) string {
 	case "W":
 		return strconv.Itoa(isoWeek(value))
 	case "L":
-		return renderToken(value, "MM") + "/" + renderToken(value, "DD") + "/" + renderToken(value, "YYYY")
+		return renderToken(
+			value,
+			"MM",
+		) + "/" + renderToken(
+			value,
+			"DD",
+		) + "/" + renderToken(
+			value,
+			"YYYY",
+		)
 	case "LL":
-		return renderToken(value, "D") + " " + renderToken(value, "MMM") + " " + renderToken(value, "YYYY")
+		return renderToken(
+			value,
+			"D",
+		) + " " + renderToken(
+			value,
+			"MMM",
+		) + " " + renderToken(
+			value,
+			"YYYY",
+		)
 	default:
 		return token
 	}

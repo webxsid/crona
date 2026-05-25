@@ -58,7 +58,13 @@ func TestDefaultRuntimeBaseDirForModeOnOS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := DefaultRuntimeBaseDirForModeOnOS(tt.mode, tt.goos, home, tt.xdgDataHome, tt.localAppData)
+			got, err := DefaultRuntimeBaseDirForModeOnOS(
+				tt.mode,
+				tt.goos,
+				home,
+				tt.xdgDataHome,
+				tt.localAppData,
+			)
 			if err != nil {
 				t.Fatalf("DefaultRuntimeBaseDirForModeOnOS: %v", err)
 			}
@@ -72,13 +78,22 @@ func TestDefaultRuntimeBaseDirForModeOnOS(t *testing.T) {
 func TestLegacyRuntimeBaseDirForModeOnOS(t *testing.T) {
 	home := "/home/alice"
 
-	if got := LegacyRuntimeBaseDirForModeOnOS(ModeProd, "darwin", home); got != filepath.Join(home, ".crona") {
+	if got := LegacyRuntimeBaseDirForModeOnOS(ModeProd, "darwin", home); got != filepath.Join(
+		home,
+		".crona",
+	) {
 		t.Fatalf("expected prod legacy dir, got %q", got)
 	}
-	if got := LegacyRuntimeBaseDirForModeOnOS(ModeDev, "linux", home); got != filepath.Join(home, ".crona-dev") {
+	if got := LegacyRuntimeBaseDirForModeOnOS(ModeDev, "linux", home); got != filepath.Join(
+		home,
+		".crona-dev",
+	) {
 		t.Fatalf("expected dev legacy dir, got %q", got)
 	}
-	if got := LegacyRuntimeBaseDirForModeOnOS(ModeProd, "windows", home); got != filepath.Join(home, "Crona") {
+	if got := LegacyRuntimeBaseDirForModeOnOS(ModeProd, "windows", home); got != filepath.Join(
+		home,
+		"Crona",
+	) {
 		t.Fatalf("expected windows runtime dir, got %q", got)
 	}
 }

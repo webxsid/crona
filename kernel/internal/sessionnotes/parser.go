@@ -31,7 +31,9 @@ func Parse(raw *string) sharedtypes.ParsedSessionNotes {
 	for _, line := range lines {
 		if strings.HasPrefix(line, "::") {
 			flush()
-			current = sharedtypes.SessionNoteSection(strings.TrimSpace(strings.TrimPrefix(line, "::")))
+			current = sharedtypes.SessionNoteSection(
+				strings.TrimSpace(strings.TrimPrefix(line, "::")),
+			)
 			hasSection = true
 			continue
 		}
@@ -131,8 +133,16 @@ func ComputeWorkSummary(segments []sharedtypes.SessionSegment) sharedtypes.Sessi
 
 func FormatWorkSummary(summary sharedtypes.SessionWorkSummary) []string {
 	return []string{
-		fmt.Sprintf("Work: %s (%d segments)", formatDuration(summary.WorkSeconds), summary.WorkSegments),
-		fmt.Sprintf("Rest: %s (%d segments)", formatDuration(summary.RestSeconds), summary.RestSegments),
+		fmt.Sprintf(
+			"Work: %s (%d segments)",
+			formatDuration(summary.WorkSeconds),
+			summary.WorkSegments,
+		),
+		fmt.Sprintf(
+			"Rest: %s (%d segments)",
+			formatDuration(summary.RestSeconds),
+			summary.RestSegments,
+		),
 		fmt.Sprintf("Total: %s", formatDuration(summary.TotalSeconds)),
 	}
 }

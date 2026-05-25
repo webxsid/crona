@@ -61,10 +61,24 @@ func burnoutContributorLines(burnout *api.BurnoutIndicator) (risks []string, rec
 	risks = make([]string, 0, riskLimit)
 	recoveries = make([]string, 0, recoveryLimit)
 	for i := 0; i < riskLimit; i++ {
-		risks = append(risks, fmt.Sprintf("- %s: +%d", prettifyBurnoutFactor(positive[i].name), int(math.Round(positive[i].score*100))))
+		risks = append(
+			risks,
+			fmt.Sprintf(
+				"- %s: +%d",
+				prettifyBurnoutFactor(positive[i].name),
+				int(math.Round(positive[i].score*100)),
+			),
+		)
 	}
 	for i := 0; i < recoveryLimit; i++ {
-		recoveries = append(recoveries, fmt.Sprintf("- %s: -%d", prettifyBurnoutFactor(negative[i].name), int(math.Round(math.Abs(negative[i].score)*100))))
+		recoveries = append(
+			recoveries,
+			fmt.Sprintf(
+				"- %s: -%d",
+				prettifyBurnoutFactor(negative[i].name),
+				int(math.Round(math.Abs(negative[i].score)*100)),
+			),
+		)
 	}
 	return risks, recoveries
 }

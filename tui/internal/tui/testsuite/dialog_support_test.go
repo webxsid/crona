@@ -11,8 +11,16 @@ import (
 )
 
 func TestViewJumpDialogUsesMnemonicKeys(t *testing.T) {
-	state := dialogs.OpenViewJump(dialogs.State{}, []uistate.View{uistate.ViewUpdates, uistate.ViewSupport})
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-04", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}})
+	state := dialogs.OpenViewJump(
+		dialogs.State{},
+		[]uistate.View{uistate.ViewUpdates, uistate.ViewSupport},
+	)
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-04",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -25,14 +33,22 @@ func TestViewJumpDialogUsesMnemonicKeys(t *testing.T) {
 }
 
 func TestViewJumpDialogHidesUnavailableViews(t *testing.T) {
-	state := dialogs.OpenViewJump(dialogs.State{}, []uistate.View{uistate.ViewDaily, uistate.ViewSupport})
+	state := dialogs.OpenViewJump(
+		dialogs.State{},
+		[]uistate.View{uistate.ViewDaily, uistate.ViewSupport},
+	)
 	for _, item := range state.ChoiceItems {
 		if item == "[a] Away" || item == "[n] Session" || item == "[u] Updates" {
 			t.Fatalf("unexpected unavailable item %q", item)
 		}
 	}
 
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-04", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-04",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -48,11 +64,10 @@ func TestViewJumpDialogRestrictsChoicesDuringActiveSession(t *testing.T) {
 	state := dialogs.OpenViewJump(dialogs.State{}, []uistate.View{
 		uistate.ViewSessionActive,
 		uistate.ViewSessionHistory,
-		uistate.ViewScratch,
 	})
 	for _, item := range state.ChoiceItems {
 		switch item {
-		case "[n] Session", "[y] History", "[x] Scratchpads":
+		case "[n] Session", "[y] History":
 		default:
 			t.Fatalf("unexpected item %q in active-session jump menu", item)
 		}
@@ -61,7 +76,12 @@ func TestViewJumpDialogRestrictsChoicesDuringActiveSession(t *testing.T) {
 
 func TestBetaSupportDialogUsesMnemonicKeys(t *testing.T) {
 	state := dialogs.OpenBetaSupport(dialogs.State{})
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-04", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}})
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-04",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'b'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -97,7 +117,12 @@ func TestDirectoryDetailDialogRoutesChangeAndResetKeys(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name+" change", func(t *testing.T) {
 			state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", tt.viewName, "", "")
-			next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+			next, action, status := dialogs.Update(
+				state,
+				dialogs.UpdateContext{},
+				"2026-04-10",
+				tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+			)
 			if status != "" {
 				t.Fatalf("unexpected status %q", status)
 			}
@@ -111,7 +136,12 @@ func TestDirectoryDetailDialogRoutesChangeAndResetKeys(t *testing.T) {
 
 		t.Run(tt.name+" reset", func(t *testing.T) {
 			state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", tt.viewName, "", "")
-			next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+			next, action, status := dialogs.Update(
+				state,
+				dialogs.UpdateContext{},
+				"2026-04-10",
+				tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}},
+			)
 			if status != "" {
 				t.Fatalf("unexpected status %q", status)
 			}
@@ -126,22 +156,46 @@ func TestDirectoryDetailDialogRoutesChangeAndResetKeys(t *testing.T) {
 }
 
 func TestViewEntityDialogRoutesEditorKeyWhenPathIsAvailable(t *testing.T) {
-	state := dialogs.OpenViewEntityWithPath(dialogs.State{}, "Template", "Daily report template", "", "Press e to open in $EDITOR.", "/tmp/report.hbs")
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+	state := dialogs.OpenViewEntityWithPath(
+		dialogs.State{},
+		"Template",
+		"Daily report template",
+		"",
+		"Press e to open in $EDITOR.",
+		"/tmp/report.hbs",
+	)
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
 	if next.Kind != "" {
 		t.Fatalf("expected dialog to close, got kind %q", next.Kind)
 	}
-	if action == nil || action.Kind != "open_view_entity_editor" || action.Path != "/tmp/report.hbs" {
+	if action == nil || action.Kind != "open_view_entity_editor" ||
+		action.Path != "/tmp/report.hbs" {
 		t.Fatalf("unexpected action %+v", action)
 	}
 }
 
 func TestViewEntityDialogIgnoresEditorKeyWithoutPath(t *testing.T) {
-	state := dialogs.OpenViewEntity(dialogs.State{}, "Directory", "Reports directory", "", "Press c to change the directory.")
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+	state := dialogs.OpenViewEntity(
+		dialogs.State{},
+		"Directory",
+		"Reports directory",
+		"",
+		"Press c to change the directory.",
+	)
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -164,7 +218,12 @@ func TestStashConflictDialogOffersResumeAndContinue(t *testing.T) {
 	if state.Kind != "stash_conflict" {
 		t.Fatalf("expected single-stash conflict dialog, got %q", state.Kind)
 	}
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}})
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'r'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -185,14 +244,21 @@ func TestStashConflictDialogOffersResumeAndContinue(t *testing.T) {
 	state.RepoID = 7
 	state.StreamID = 8
 	state.IssueID = 42
-	next, action, status = dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}})
+	next, action, status = dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
 	if next.Kind != "" {
 		t.Fatalf("expected dialog to close, got %q", next.Kind)
 	}
-	if action == nil || action.Kind != "continue_focus_fresh" || action.RepoID != 7 || action.StreamID != 8 || action.IssueID != 42 {
+	if action == nil || action.Kind != "continue_focus_fresh" || action.RepoID != 7 ||
+		action.StreamID != 8 ||
+		action.IssueID != 42 {
 		t.Fatalf("unexpected continue action %+v", action)
 	}
 }
@@ -208,11 +274,21 @@ func TestStashConflictPickDialogOpensSelectedStash(t *testing.T) {
 	if state.Kind != "stash_conflict_pick" {
 		t.Fatalf("expected stash picker, got %q", state.Kind)
 	}
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}})
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}},
+	)
 	if status != "" || action != nil {
 		t.Fatalf("unexpected move result action=%+v status=%q", action, status)
 	}
-	next, action, status = dialogs.Update(next, dialogs.UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyEnter})
+	next, action, status = dialogs.Update(
+		next,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -220,6 +296,10 @@ func TestStashConflictPickDialogOpensSelectedStash(t *testing.T) {
 		t.Fatalf("expected no immediate action, got %+v", action)
 	}
 	if next.Kind != "stash_conflict" || next.DeleteID != "stash-2" {
-		t.Fatalf("expected selected stash conflict dialog, got kind=%q id=%q", next.Kind, next.DeleteID)
+		t.Fatalf(
+			"expected selected stash conflict dialog, got kind=%q id=%q",
+			next.Kind,
+			next.DeleteID,
+		)
 	}
 }

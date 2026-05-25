@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
 )
 
@@ -23,11 +23,26 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	if strings.TrimSpace(subtitle) == "" {
 		subtitle = "Recent sessions across the workspace"
 	}
-	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["sessions"], state.Width-6, viewchrome.PaneActionsForState(theme, state, active))
-	lines := []string{theme.StylePaneTitle.Render(title), theme.StyleDim.Render(subtitle), actionLine}
+	actionLine := viewchrome.RenderPaneActionLine(
+		theme,
+		state.Filters["sessions"],
+		state.Width-6,
+		viewchrome.PaneActionsForState(theme, state, active),
+	)
+	lines := []string{
+		theme.StylePaneTitle.Render(title),
+		theme.StyleDim.Render(subtitle),
+		actionLine,
+	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No sessions recorded"))
-		return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			state.Width,
+			state.Height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	dateW, durW := 16, 10
 	issueW := state.Width - dateW - durW - 12
@@ -48,11 +63,31 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 			ended = *entry.EndTime
 		}
 		ended = sessionmeta.FormatSessionTimestamp(ended)
-		duration := sessionmeta.FormatSessionDuration(entry.DurationSeconds, entry.StartTime, entry.EndTime)
+		duration := sessionmeta.FormatSessionDuration(
+			entry.DurationSeconds,
+			entry.StartTime,
+			entry.EndTime,
+		)
 		note := sessionmeta.SessionHistorySummary(entry)
-		row := fmt.Sprintf("%-2s %-*s %-*s %s", "", dateW, ended, durW, duration, viewhelpers.Truncate(note, issueW))
+		row := fmt.Sprintf(
+			"%-2s %-*s %-*s %s",
+			"",
+			dateW,
+			ended,
+			durW,
+			duration,
+			viewhelpers.Truncate(note, issueW),
+		)
 		if pos == cur && active {
-			lines = append(lines, theme.StyleCursor.Render("▶ "+viewhelpers.Truncate(strings.TrimPrefix(row, "  "), state.Width-6)))
+			lines = append(
+				lines,
+				theme.StyleCursor.Render(
+					viewchrome.SelectionCursor+" "+viewhelpers.Truncate(
+						strings.TrimPrefix(row, "  "),
+						state.Width-6,
+					),
+				),
+			)
 		} else if pos == cur {
 			lines = append(lines, theme.StyleSelected.Render("  "+viewhelpers.Truncate(strings.TrimPrefix(row, "  "), state.Width-6)))
 		} else {
@@ -62,5 +97,11 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	if end < total {
 		lines = append(lines, theme.StyleDim.Render("..."))
 	}
-	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+	return viewchrome.RenderPaneBox(
+		theme,
+		active,
+		state.Width,
+		state.Height,
+		viewhelpers.StringsJoin(lines),
+	)
 }

@@ -34,7 +34,13 @@ func RuntimeBaseDirNameForMode(mode string) string {
 		return runtimeBaseDirName(runtime.GOOS, mode)
 	}
 
-	path, err := DefaultRuntimeBaseDirForModeOnOS(mode, runtime.GOOS, home, os.Getenv("XDG_DATA_HOME"), os.Getenv("LocalAppData"))
+	path, err := DefaultRuntimeBaseDirForModeOnOS(
+		mode,
+		runtime.GOOS,
+		home,
+		os.Getenv("XDG_DATA_HOME"),
+		os.Getenv("LocalAppData"),
+	)
 	if err != nil {
 		return runtimeBaseDirName(runtime.GOOS, mode)
 	}
@@ -59,7 +65,13 @@ func RuntimeBaseDirForMode(mode string) (string, error) {
 		return "", err
 	}
 
-	return DefaultRuntimeBaseDirForModeOnOS(mode, runtime.GOOS, home, os.Getenv("XDG_DATA_HOME"), os.Getenv("LocalAppData"))
+	return DefaultRuntimeBaseDirForModeOnOS(
+		mode,
+		runtime.GOOS,
+		home,
+		os.Getenv("XDG_DATA_HOME"),
+		os.Getenv("LocalAppData"),
+	)
 }
 
 func LegacyRuntimeBaseDirForMode(mode string) (string, error) {
@@ -75,7 +87,9 @@ func RuntimeBaseDirOverride() string {
 	return strings.TrimSpace(os.Getenv(EnvVarRuntimeDir))
 }
 
-func DefaultRuntimeBaseDirForModeOnOS(mode, goos, home, xdgDataHome, localAppData string) (string, error) {
+func DefaultRuntimeBaseDirForModeOnOS(
+	mode, goos, home, xdgDataHome, localAppData string,
+) (string, error) {
 	home = strings.TrimSpace(home)
 	if home == "" {
 		return "", os.ErrNotExist
@@ -91,7 +105,12 @@ func DefaultRuntimeBaseDirForModeOnOS(mode, goos, home, xdgDataHome, localAppDat
 
 	switch goos {
 	case "darwin":
-		return filepath.Join(home, "Library", "Application Support", runtimeBaseDirName(goos, mode)), nil
+		return filepath.Join(
+			home,
+			"Library",
+			"Application Support",
+			runtimeBaseDirName(goos, mode),
+		), nil
 	default:
 		xdgDataHome = strings.TrimSpace(xdgDataHome)
 		if xdgDataHome == "" {

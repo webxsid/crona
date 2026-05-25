@@ -33,9 +33,6 @@ type Snapshot struct {
 	ActiveIssueStream    int64
 }
 
-func (s Snapshot) OpenCreateScratchpad() State {
-	return OpenCreateScratchpad(s.Dialog)
-}
 func (s Snapshot) OpenCreateRepo() State { return OpenCreateRepo(s.Dialog) }
 
 func (s Snapshot) OpenEditRepo(repoID int64, name string, description *string) State {
@@ -46,7 +43,11 @@ func (s Snapshot) OpenCreateStream(repoID int64, repoName string) State {
 	return OpenCreateStream(s.Dialog, repoID, repoName)
 }
 
-func (s Snapshot) OpenEditStream(streamID, repoID int64, streamName, repoName string, description *string) State {
+func (s Snapshot) OpenEditStream(
+	streamID, repoID int64,
+	streamName, repoName string,
+	description *string,
+) State {
 	return OpenEditStream(s.Dialog, streamID, repoID, streamName, repoName, description)
 }
 
@@ -71,19 +72,55 @@ func (s Snapshot) OpenCreateHabit(streamID int64, streamName, repoName string) S
 	return next
 }
 
-func (s Snapshot) OpenEditIssue(issueID, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) State {
-	return OpenEditIssue(s.Dialog, issueID, streamID, title, description, estimateMinutes, todoForDate)
+func (s Snapshot) OpenEditIssue(
+	issueID, streamID int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) State {
+	return OpenEditIssue(
+		s.Dialog,
+		issueID,
+		streamID,
+		title,
+		description,
+		estimateMinutes,
+		todoForDate,
+	)
 }
 
-func (s Snapshot) OpenEditHabit(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, targetMinutes *int, active bool) State {
+func (s Snapshot) OpenEditHabit(
+	habitID, streamID int64,
+	name string,
+	description *string,
+	schedule string,
+	weekdays []int,
+	targetMinutes *int,
+	active bool,
+) State {
 	scheduleValue := schedule
 	if schedule == "weekly" {
 		scheduleValue = strings.Join(WeekdayTokens(weekdays), ",")
 	}
-	return OpenEditHabit(s.Dialog, habitID, streamID, name, description, scheduleValue, targetMinutes, active)
+	return OpenEditHabit(
+		s.Dialog,
+		habitID,
+		streamID,
+		name,
+		description,
+		scheduleValue,
+		targetMinutes,
+		active,
+	)
 }
 
-func (s Snapshot) OpenHabitCompletion(habitID int64, date string, durationMinutes *int, notes *string) State {
+func (s Snapshot) OpenHabitCompletion(
+	habitID int64,
+	date string,
+	durationMinutes *int,
+	notes *string,
+) State {
 	return OpenHabitCompletion(s.Dialog, habitID, date, durationMinutes, notes)
 }
 
@@ -136,10 +173,6 @@ func (s Snapshot) OpenEditHabitStreaks() State {
 	return OpenEditHabitStreaks(s.Dialog, s.Settings, s.AllHabits)
 }
 
-func (s Snapshot) OpenConfirmDelete(id string) State {
-	return OpenConfirmDelete(s.Dialog, "scratchpad", id, "this scratchpad", 0, 0)
-}
-
 func (s Snapshot) OpenConfirmDeleteEntity(kind, id, label string) State {
 	return OpenConfirmDelete(s.Dialog, kind, id, label, s.Dialog.RepoID, s.Dialog.StreamID)
 }
@@ -159,7 +192,14 @@ func (s Snapshot) OpenIssueStatus(status string) State {
 }
 
 func (s Snapshot) OpenIssueStatusNote(status, label string, required bool) State {
-	return OpenIssueStatusNote(s.Dialog, s.Dialog.IssueID, s.Dialog.StreamID, status, label, required)
+	return OpenIssueStatusNote(
+		s.Dialog,
+		s.Dialog.IssueID,
+		s.Dialog.StreamID,
+		status,
+		label,
+		required,
+	)
 }
 
 func (s Snapshot) OpenSessionMessage(kind string) State {
@@ -174,12 +214,29 @@ func (s Snapshot) OpenAmendSession(sessionID string, commit string) State {
 	return OpenAmendSession(s.Dialog, sessionID, commit)
 }
 
-func (s Snapshot) OpenManualSession(issueID int64, issueLabel string, estimateMinutes *int, date string) State {
+func (s Snapshot) OpenManualSession(
+	issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	date string,
+) State {
 	return OpenManualSession(s.Dialog, issueID, issueLabel, estimateMinutes, date)
 }
 
-func (s Snapshot) OpenDatePicker(parentDialog string, issueID int64, inputIndex int, initial *string) State {
-	return OpenDatePicker(s.Dialog, parentDialog, issueID, inputIndex, initial, s.CurrentDashboardDate)
+func (s Snapshot) OpenDatePicker(
+	parentDialog string,
+	issueID int64,
+	inputIndex int,
+	initial *string,
+) State {
+	return OpenDatePicker(
+		s.Dialog,
+		parentDialog,
+		issueID,
+		inputIndex,
+		initial,
+		s.CurrentDashboardDate,
+	)
 }
 
 func (s Snapshot) OpenViewEntity(title, name, meta, body string) State {
@@ -234,7 +291,14 @@ func (s Snapshot) OpenExportDaily() State {
 	if s.Context != nil {
 		checkedRepoID = s.Context.RepoID
 	}
-	return OpenExportDaily(s.Dialog, s.CurrentDashboardDate, includePDF, s.Repos, checkedRepoID, s.ExportAssets)
+	return OpenExportDaily(
+		s.Dialog,
+		s.CurrentDashboardDate,
+		includePDF,
+		s.Repos,
+		checkedRepoID,
+		s.ExportAssets,
+	)
 }
 
 func (s Snapshot) OpenExportReportsDir(current string) State {
@@ -253,21 +317,34 @@ func (s Snapshot) OpenEditRestProtection() State {
 	if s.Settings == nil {
 		return OpenEditRestProtection(s.Dialog, nil, nil, nil)
 	}
-	return OpenEditRestProtection(s.Dialog, s.Settings.FrozenStreakKinds, s.Settings.RestWeekdays, s.Settings.RestSpecificDates)
+	return OpenEditRestProtection(
+		s.Dialog,
+		s.Settings.FrozenStreakKinds,
+		s.Settings.RestWeekdays,
+		s.Settings.RestSpecificDates,
+	)
 }
 
 func (s Snapshot) OpenEditTelemetrySettings() State {
 	if s.Settings == nil {
 		return OpenEditTelemetrySettings(s.Dialog, false, false)
 	}
-	return OpenEditTelemetrySettings(s.Dialog, s.Settings.UsageTelemetryEnabled, s.Settings.ErrorReportingEnabled)
+	return OpenEditTelemetrySettings(
+		s.Dialog,
+		s.Settings.UsageTelemetryEnabled,
+		s.Settings.ErrorReportingEnabled,
+	)
 }
 
 func (s Snapshot) OpenOnboarding() State {
 	if s.Settings == nil {
 		return OpenOnboarding(s.Dialog, false, false)
 	}
-	return OpenOnboarding(s.Dialog, s.Settings.UsageTelemetryEnabled, s.Settings.ErrorReportingEnabled)
+	return OpenOnboarding(
+		s.Dialog,
+		s.Settings.UsageTelemetryEnabled,
+		s.Settings.ErrorReportingEnabled,
+	)
 }
 
 func (s Snapshot) OpenCreateAlertReminder() State {

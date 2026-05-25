@@ -32,7 +32,11 @@ func SessionHistorySubtitle(issueID *int64, issue *api.IssueWithMeta) string {
 		return "Recent sessions across the workspace"
 	}
 	if issue != nil {
-		return fmt.Sprintf("Previous sessions for the active issue in [%s/%s]", issue.RepoName, issue.StreamName)
+		return fmt.Sprintf(
+			"Previous sessions for the active issue in [%s/%s]",
+			issue.RepoName,
+			issue.StreamName,
+		)
 	}
 	return "Previous sessions for the active issue"
 }

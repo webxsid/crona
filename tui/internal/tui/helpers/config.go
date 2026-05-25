@@ -43,7 +43,9 @@ func ExportAssetStateLabel(asset sharedtypes.ExportTemplateAsset) string {
 
 func ExportPresetLabel(asset sharedtypes.ExportTemplateAsset) string {
 	format := "Markdown"
-	if asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDF || asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFHTML || asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+	if asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+		asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
+		asset.AssetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
 		format = "PDF"
 	}
 	kind := strings.ReplaceAll(string(asset.ReportKind), "_", " ")

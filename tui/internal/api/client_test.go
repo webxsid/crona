@@ -151,7 +151,7 @@ func TestGetMetricsLifetimeStreaksUsesLifetimeMethodAndDateQuery(t *testing.T) {
 		_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: body})
 	}()
 
-	client := NewClient(localipc.DefaultTransport(), endpoint, "")
+	client := NewClient(localipc.DefaultTransport(), endpoint)
 	streaks, err := client.GetMetricsLifetimeStreaks(" 2026-04-10 ")
 	if err != nil {
 		t.Fatalf("GetMetricsLifetimeStreaks: %v", err)
@@ -182,7 +182,7 @@ func TestShutdownKernelAndWaitReturnsAfterKernelStops(t *testing.T) {
 	ln := serveShutdownThenClose(t, endpoint, 150*time.Millisecond)
 	defer func() { _ = ln.Close() }()
 
-	client := NewClient(localipc.DefaultTransport(), endpoint, "")
+	client := NewClient(localipc.DefaultTransport(), endpoint)
 	start := time.Now()
 	if err := client.ShutdownKernelAndWait(2 * time.Second); err != nil {
 		t.Fatalf("ShutdownKernelAndWait: %v", err)

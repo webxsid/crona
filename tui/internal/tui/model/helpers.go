@@ -35,5 +35,9 @@ func habitHistoryScopeLabel(ctx *api.ActiveContext) string {
 }
 
 func loadSessionHistoryForModel(m Model, limit int) tea.Cmd {
-	return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(m.timer), limit)
+	return commands.LoadSessionHistory(
+		m.client,
+		helperpkg.SessionHistoryScopeIssueID(m.timer),
+		limit,
+	)
 }

@@ -73,7 +73,7 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 		ActiveView: uistate.ViewSettings,
 		Settings: &sharedtypes.CoreSettings{
 			UsageTelemetryEnabled: true,
-			ErrorReportingEnabled:  false,
+			ErrorReportingEnabled: false,
 		},
 		Cursor: map[uistate.Pane]int{
 			uistate.PaneSettings: 24,

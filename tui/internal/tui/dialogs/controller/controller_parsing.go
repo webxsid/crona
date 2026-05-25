@@ -22,12 +22,16 @@ func ParseHabitSchedule(raw string) (string, []int, error) {
 	for _, part := range parts {
 		weekday, ok := parseWeekdayToken(strings.TrimSpace(part))
 		if !ok {
-			return "", nil, errors.New("schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri")
+			return "", nil, errors.New(
+				"schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri",
+			)
 		}
 		weekdays = append(weekdays, weekday)
 	}
 	if len(weekdays) == 0 {
-		return "", nil, errors.New("schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri")
+		return "", nil, errors.New(
+			"schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri",
+		)
 	}
 	return "weekly", weekdays, nil
 }
@@ -48,7 +52,9 @@ func ParseStreakKinds(raw string) ([]sharedtypes.StreakKind, error) {
 		case "checkin", "checkins", "check-in", "check_in_days", "checkin_days":
 			kind = sharedtypes.StreakKindCheckInDays
 		default:
-			return nil, errors.New("streaks must be comma-separated values from focus_days,checkin_days")
+			return nil, errors.New(
+				"streaks must be comma-separated values from focus_days,checkin_days",
+			)
 		}
 		if _, ok := seen[kind]; ok {
 			continue
@@ -219,7 +225,10 @@ func toggleWeekday(values []int, target int) []int {
 	return normalizedWeekdays(out)
 }
 
-func toggleStreakKind(values []sharedtypes.StreakKind, target sharedtypes.StreakKind) []sharedtypes.StreakKind {
+func toggleStreakKind(
+	values []sharedtypes.StreakKind,
+	target sharedtypes.StreakKind,
+) []sharedtypes.StreakKind {
 	out := make([]sharedtypes.StreakKind, 0, len(values))
 	found := false
 	for _, value := range values {

@@ -14,9 +14,13 @@ import (
 
 func TestUpdateInstallPreparedRunsTerminalProcess(t *testing.T) {
 	stopped := false
-	state, cmd, handled := HandleMessage(MessageState{}, commands.UpdateInstallPreparedMsg{Cmd: exec.Command("sh", "-c", "exit 0")}, MessageDeps{
-		CloseEventStop: func() { stopped = true },
-	})
+	state, cmd, handled := HandleMessage(
+		MessageState{},
+		commands.UpdateInstallPreparedMsg{Cmd: exec.Command("sh", "-c", "exit 0")},
+		MessageDeps{
+			CloseEventStop: func() { stopped = true },
+		},
+	)
 	if !handled {
 		t.Fatalf("expected prepared install to be handled")
 	}
@@ -101,8 +105,30 @@ func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")},
 		},
 		AllIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 10, StreamID: 1, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 20, StreamID: 1, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{
+				Issue: api.Issue{
+					ID:          10,
+					StreamID:    1,
+					Title:       "Alpha",
+					Status:      "planned",
+					TodoForDate: strPtr("2026-05-06"),
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:          20,
+					StreamID:    1,
+					Title:       "Bravo",
+					Status:      "in_progress",
+					TodoForDate: strPtr("2026-05-06"),
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
 		},
 	}, commands.IssuesLoadedMsg{
 		StreamID: 1,

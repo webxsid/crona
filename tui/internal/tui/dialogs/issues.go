@@ -11,7 +11,13 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	const issueDialogWidth = 92
 	switch state.Kind {
 	case "create_issue_meta":
-		contextRow := renderIssueContextColumns(theme, state.Width, issueDialogWidth, state.RepoName, state.StreamName)
+		contextRow := renderIssueContextColumns(
+			theme,
+			state.Width,
+			issueDialogWidth,
+			state.RepoName,
+			state.StreamName,
+		)
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
 			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
 			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[2].View(),
@@ -76,7 +82,12 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	case "issue_status":
 		rows := []string{theme.StylePaneTitle.Render("Set Issue Status"), ""}
 		if len(state.StatusItems) == 0 {
-			rows = appendDialogFooter(theme, state, append(rows, theme.StyleDim.Render("No valid status transitions")), "[esc] close")
+			rows = appendDialogFooter(
+				theme,
+				state,
+				append(rows, theme.StyleDim.Render("No valid status transitions")),
+				"[esc] close",
+			)
 		} else {
 			for i, status := range state.StatusItems {
 				label := plainIssueStatus(string(status))
@@ -94,8 +105,18 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 		if title == "" {
 			title = "Status Note"
 		}
-		rows := []string{theme.StylePaneTitle.Render(title), "", theme.StyleDim.Render(state.StatusLabel), state.Inputs[0].View()}
-		rows = appendDialogFooter(theme, state, rows, "[tab] next   "+dialogSubmitHint(state, "set")+"   [esc] cancel")
+		rows := []string{
+			theme.StylePaneTitle.Render(title),
+			"",
+			theme.StyleDim.Render(state.StatusLabel),
+			state.Inputs[0].View(),
+		}
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[tab] next   "+dialogSubmitHint(state, "set")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
 	default:
 		return ""
@@ -107,20 +128,35 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 3:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 5:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
 	case "create_issue_meta", "edit_issue":
 		switch state.FocusIdx {
 		case 1:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
@@ -129,7 +165,11 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 	}
 }
 
-func renderIssueContextColumns(theme Theme, width, maxWidth int, repoName, streamName string) string {
+func renderIssueContextColumns(
+	theme Theme,
+	width, maxWidth int,
+	repoName, streamName string,
+) string {
 	contentWidth := min(width-8, maxWidth) - 8
 	if contentWidth < 28 {
 		contentWidth = 28
@@ -142,12 +182,17 @@ func renderIssueContextColumns(theme Theme, width, maxWidth int, repoName, strea
 		theme.StyleDim.Render("Repo") + "\n" + theme.StyleHeader.Render(fallback(repoName, "-")),
 	)
 	streamCol := lipgloss.NewStyle().Width(colWidth).Render(
-		theme.StyleDim.Render("Stream") + "\n" + theme.StyleHeader.Render(fallback(streamName, "-")),
+		theme.StyleDim.Render("Stream") +
+			"\n" + theme.StyleHeader.Render(fallback(streamName, "-")),
 	)
 	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
 }
 
-func renderDefaultIssueContextColumns(theme Theme, state controllerpkg.State, width, maxWidth int) string {
+func renderDefaultIssueContextColumns(
+	theme Theme,
+	state controllerpkg.State,
+	width, maxWidth int,
+) string {
 	contentWidth := min(width-8, maxWidth) - 8
 	if contentWidth < 28 {
 		contentWidth = 28

@@ -9,12 +9,30 @@ import (
 	types "crona/tui/internal/tui/views/types"
 )
 
-func renderIssues(theme types.Theme, state types.ContentState, width, height int, emptyText string) string {
+func renderIssues(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	emptyText string,
+) string {
 	active := state.Pane == "issues"
 	cur := state.Cursors["issues"]
 	issues := make([]issuecore.APIIssue, 0, len(state.Issues))
 	for _, issue := range state.Issues {
-		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.WorkedSeconds, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+		issues = append(
+			issues,
+			issuecore.NewAPIIssue(
+				issue.ID,
+				issue.Title,
+				issue.Status,
+				issue.EstimateMinutes,
+				issue.WorkedSeconds,
+				issue.PinnedDaily,
+				issue.TodoForDate,
+				issue.CompletedAt,
+				issue.AbandonedAt,
+			),
+		)
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
@@ -29,7 +47,13 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render(emptyText))
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	start, end := viewchrome.ListWindow(cur, total, inner)
@@ -42,8 +66,31 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		if issue.WorkedSeconds > 0 {
 			spent = viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds)
 		}
-		text := fmt.Sprintf("[%s] %s%s  spent %s", issuecore.PlainIssueStatus(string(issue.Status)), issue.Title, issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings), spent)
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, text, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
+		text := fmt.Sprintf(
+			"[%s] %s%s  spent %s",
+			issuecore.PlainIssueStatus(string(issue.Status)),
+			issue.Title,
+			issuecore.IssueDueSuffix(
+				issue.Status,
+				issue.TodoForDate,
+				issue.CompletedAt,
+				issue.AbandonedAt,
+				state.Settings,
+			),
+			spent,
+		)
+		lines = append(
+			lines,
+			viewchrome.RenderPaneRowStyled(
+				theme,
+				i,
+				cur,
+				active,
+				text,
+				issuecore.IssueStatusStyle(theme, string(issue.Status)),
+				width,
+			),
+		)
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))

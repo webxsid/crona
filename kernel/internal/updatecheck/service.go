@@ -36,7 +36,14 @@ type Service struct {
 	stopLocalRelease func() error
 }
 
-func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *runtimepkg.Logger, paths runtimepkg.Paths, envMode string) *Service {
+func Start(
+	ctx context.Context,
+	coreCtx *core.Context,
+	bus *events.Bus,
+	logger *runtimepkg.Logger,
+	paths runtimepkg.Paths,
+	envMode string,
+) *Service {
 	service := &Service{
 		core:      coreCtx,
 		bus:       bus,
@@ -73,9 +80,13 @@ func (s *Service) CheckNow(ctx context.Context) (sharedtypes.UpdateStatus, error
 	return s.refresh(ctx, true)
 }
 
-func (s *Service) PrepareLocalRelease(ctx context.Context) (shareddto.LocalUpdatePreparedResponse, error) {
+func (s *Service) PrepareLocalRelease(
+	ctx context.Context,
+) (shareddto.LocalUpdatePreparedResponse, error) {
 	if !strings.EqualFold(strings.TrimSpace(s.envMode), config.ModeDev) {
-		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf("local update simulation is only available in Dev mode")
+		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf(
+			"local update simulation is only available in Dev mode",
+		)
 	}
 	release, releaseDir, baseURL, err := s.prepareLocalReleaseSource(ctx)
 	if err != nil {
@@ -86,7 +97,10 @@ func (s *Service) PrepareLocalRelease(ctx context.Context) (shareddto.LocalUpdat
 		return shareddto.LocalUpdatePreparedResponse{}, err
 	}
 	if !status.InstallAvailable {
-		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf("local release %s is missing required installer assets", release.Version)
+		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf(
+			"local release %s is missing required installer assets",
+			release.Version,
+		)
 	}
 	return shareddto.LocalUpdatePreparedResponse{
 		Version:    release.Version,
@@ -153,7 +167,9 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.RunningChannel = versionpkg.RunningChannel()
 	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
-	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
+	s.status.Enabled = enabled &&
+		(!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) &&
+		(!versionpkg.IsDevBuild() || localOverrideActive)
 	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = effectiveUpdateChannel(settings)
 
@@ -183,7 +199,9 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.RunningChannel = versionpkg.RunningChannel()
 	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
-	s.status.Enabled = enabled && (!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) && (!versionpkg.IsDevBuild() || localOverrideActive)
+	s.status.Enabled = enabled &&
+		(!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) &&
+		(!versionpkg.IsDevBuild() || localOverrideActive)
 	s.status.PromptEnabled = promptEnabled && s.status.Enabled
 	s.status.Channel = channel
 	s.status.CheckedAt = time.Now().UTC().Format(time.RFC3339)

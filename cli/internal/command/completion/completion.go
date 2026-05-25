@@ -91,7 +91,8 @@ complete -F _%s %s
 }
 
 func fish(name string) string {
-	return fmt.Sprintf(`complete -c %s -f -n "__fish_use_subcommand" -a "kernel completion context timer issue update export dev"
+	return fmt.Sprintf(
+		`complete -c %s -f -n "__fish_use_subcommand" -a "kernel completion context timer issue update export dev"
 complete -c %s -f -n "__fish_seen_subcommand_from kernel" -a "attach detach restart wipe-data info status"
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
 complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
@@ -100,5 +101,15 @@ complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start"
 complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismiss notes"
 complete -c %s -f -n "__fish_seen_subcommand_from export" -a "daily weekly repo stream issue-rollup csv calendar reports"
 complete -c %s -f -n "__fish_seen_subcommand_from dev" -a "seed clear"
-`, name, name, name, name, name, name, name, name, name)
+`,
+		name,
+		name,
+		name,
+		name,
+		name,
+		name,
+		name,
+		name,
+		name,
+	)
 }

@@ -63,7 +63,10 @@ func supportBugReportBody(input SupportDiagnosticsInput, bundlePath string) stri
 		"- View: " + fallbackSupport(input.View, "-"),
 	}
 	if input.Timer != nil {
-		lines = append(lines, "- Timer state: "+fallbackSupport(strings.TrimSpace(input.Timer.State), "unknown"))
+		lines = append(
+			lines,
+			"- Timer state: "+fallbackSupport(strings.TrimSpace(input.Timer.State), "unknown"),
+		)
 	}
 	lines = append(lines,
 		"",
@@ -73,7 +76,10 @@ func supportBugReportBody(input SupportDiagnosticsInput, bundlePath string) stri
 	if name := strings.TrimSpace(filepath.Base(bundlePath)); name != "" {
 		lines = append(lines, "- Bundle ready locally: `"+name+"`")
 	}
-	lines = append(lines, "- If you cannot attach the bundle, paste the copied diagnostics summary instead.")
+	lines = append(
+		lines,
+		"- If you cannot attach the bundle, paste the copied diagnostics summary instead.",
+	)
 	return strings.Join(lines, "\n")
 }
 

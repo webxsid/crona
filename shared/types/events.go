@@ -33,9 +33,6 @@ const (
 	EventTypeStashDropped         = "stash.dropped"
 	EventTypeTimerBoundary        = "timer.boundary"
 	EventTypeTimerTick            = "timer.tick"
-	EventTypeScratchpadCreated    = "scratchpad.created"
-	EventTypeScratchpadUpdated    = "scratchpad.updated"
-	EventTypeScratchpadDeleted    = "scratchpad.deleted"
 	EventTypeUpdateStatus         = "update.status"
 )
 

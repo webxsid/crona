@@ -62,7 +62,10 @@ func buildFilteredDueHabits(s Snapshot) []api.HabitDailyItem {
 }
 
 func habitHistorySummary(entry api.HabitCompletion, settings *api.CoreSettings) string {
-	parts := []string{helperpkg.FormatDisplayDate(entry.Date, settings), strings.TrimSpace(entry.HabitName)}
+	parts := []string{
+		helperpkg.FormatDisplayDate(entry.Date, settings),
+		strings.TrimSpace(entry.HabitName),
+	}
 	if parts[1] == "" {
 		parts[1] = fmt.Sprintf("habit %d", entry.HabitID)
 	}

@@ -301,17 +301,6 @@ Timer start behavior notes:
 | `stash.apply` | `dto.StashIDRequest` | active context object | Applies a stash. |
 | `stash.drop` | `dto.StashIDRequest` | `dto.OKResponse` | Deletes a stash. |
 
-### Scratchpads
-
-| Method | Request | Result | Notes |
-| --- | --- | --- | --- |
-| `scratchpad.list` | `dto.ListScratchpadsQuery` | scratchpad metadata list | Lists scratchpads. |
-| `scratchpad.register` | `dto.RegisterScratchpadRequest` | scratchpad metadata | Registers or updates a scratchpad path. |
-| `scratchpad.get_meta` | `dto.ScratchpadIDRequest` | scratchpad metadata | Gets one scratchpad's metadata. |
-| `scratchpad.read` | `dto.ScratchpadIDRequest` | scratchpad content result | Reads scratchpad contents. |
-| `scratchpad.pin` | `dto.PinScratchpadRequest` | scratchpad metadata | Pins or unpins a scratchpad. |
-| `scratchpad.delete` | `dto.ScratchpadIDRequest` | `dto.OKResponse` | Deletes a scratchpad registration and backing file where supported. |
-
 ### Operations Log
 
 | Method | Request | Result | Notes |
@@ -342,9 +331,6 @@ Event types live in [`shared/types/events.go`](../../shared/types/events.go).
 - `habit.uncompleted`
 - `checkin.updated`
 - `checkin.deleted`
-- `scratchpad.created`
-- `scratchpad.updated`
-- `scratchpad.deleted`
 
 Typical payload:
 - `types.IDEventPayload`

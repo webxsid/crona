@@ -22,7 +22,13 @@ func TestRenderResponsiveClockSelectsSizeByPaneSpace(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			got := RenderResponsiveClock("00:12:34", tc.width, tc.height, lipgloss.Color(""), lipgloss.Color(""))
+			got := RenderResponsiveClock(
+				"00:12:34",
+				tc.width,
+				tc.height,
+				lipgloss.Color(""),
+				lipgloss.Color(""),
+			)
 			if got != tc.want {
 				t.Fatalf("expected responsive clock to select %q, got %q", tc.want, got)
 			}
@@ -34,13 +40,16 @@ func TestClockRenderVariantsHaveExpectedShape(t *testing.T) {
 	if got := RenderClockTiny("00:12:34"); got != "00:12:34" {
 		t.Fatalf("expected tiny clock to be plain text, got %q", got)
 	}
-	if got := RenderClockSmall("00:12:34"); countLines(got) != 5 || !strings.Contains(got, "█") || strings.Contains(got, "░") {
+	if got := RenderClockSmall("00:12:34"); countLines(got) != 5 || !strings.Contains(got, "█") ||
+		strings.Contains(got, "░") {
 		t.Fatalf("expected small clock to render a 5-line tile display, got %q", got)
 	}
-	if got := RenderClockMedium("00:12:34"); countLines(got) != 10 || !strings.Contains(got, "█") || strings.Contains(got, "░") {
+	if got := RenderClockMedium("00:12:34"); countLines(got) != 10 || !strings.Contains(got, "█") ||
+		strings.Contains(got, "░") {
 		t.Fatalf("expected medium clock to render a 10-line tile display, got %q", got)
 	}
-	if got := RenderClockLarge("00:12:34"); countLines(got) != 15 || !strings.Contains(got, "█") || strings.Contains(got, "░") {
+	if got := RenderClockLarge("00:12:34"); countLines(got) != 15 || !strings.Contains(got, "█") ||
+		strings.Contains(got, "░") {
 		t.Fatalf("expected large clock to render a 15-line tile display, got %q", got)
 	}
 }

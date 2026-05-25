@@ -36,10 +36,6 @@ type ContentState struct {
 	Height              int
 	Cursors             map[string]int
 	Filters             map[string]string
-	ScratchpadOpen      bool
-	ScratchpadName      string
-	ScratchpadPath      string
-	ScratchpadRendered  string
 	Elapsed             int
 	DashboardDate       string
 	RollupStartDate     string
@@ -84,7 +80,6 @@ type ContentState struct {
 	IssueSessions          []api.Session
 	SessionHistory         []api.SessionHistoryEntry
 	HabitHistory           []api.HabitCompletion
-	Scratchpads            []api.ScratchPad
 	Ops                    []api.Op
 	Context                *api.ActiveContext
 	Timer                  *api.TimerState

@@ -25,10 +25,34 @@ func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {
 		wantNotifications int
 		wantSounds        int
 	}{
-		{name: "both disabled", notifications: false, sound: false, wantNotifications: 0, wantSounds: 0},
-		{name: "notification only", notifications: true, sound: false, wantNotifications: 1, wantSounds: 0},
-		{name: "sound only", notifications: false, sound: true, wantNotifications: 0, wantSounds: 1},
-		{name: "both enabled", notifications: true, sound: true, wantNotifications: 1, wantSounds: 1},
+		{
+			name:              "both disabled",
+			notifications:     false,
+			sound:             false,
+			wantNotifications: 0,
+			wantSounds:        0,
+		},
+		{
+			name:              "notification only",
+			notifications:     true,
+			sound:             false,
+			wantNotifications: 1,
+			wantSounds:        0,
+		},
+		{
+			name:              "sound only",
+			notifications:     false,
+			sound:             true,
+			wantNotifications: 0,
+			wantSounds:        1,
+		},
+		{
+			name:              "both enabled",
+			notifications:     true,
+			sound:             true,
+			wantNotifications: 1,
+			wantSounds:        1,
+		},
 	}
 
 	for _, tc := range cases {
@@ -82,7 +106,11 @@ func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {
 			}
 
 			if notificationCalls != tc.wantNotifications {
-				t.Fatalf("expected %d notification calls, got %d", tc.wantNotifications, notificationCalls)
+				t.Fatalf(
+					"expected %d notification calls, got %d",
+					tc.wantNotifications,
+					notificationCalls,
+				)
 			}
 			if soundCalls != tc.wantSounds {
 				t.Fatalf("expected %d sound calls, got %d", tc.wantSounds, soundCalls)
@@ -211,7 +239,15 @@ func testFullCoreContext(t *testing.T, now func() string) *core.Context {
 	if err := store.InitSchema(context.Background(), db.DB()); err != nil {
 		t.Fatalf("init schema: %v", err)
 	}
-	coreCtx := core.NewContext(db, store.NewRegistry(db.DB()), "local", "device-1", t.TempDir(), now, events.NewBus())
+	coreCtx := core.NewContext(
+		db,
+		store.NewRegistry(db.DB()),
+		"local",
+		"device-1",
+		t.TempDir(),
+		now,
+		events.NewBus(),
+	)
 	if err := coreCtx.InitDefaults(context.Background()); err != nil {
 		t.Fatalf("init defaults: %v", err)
 	}
@@ -221,11 +257,26 @@ func testFullCoreContext(t *testing.T, now func() string) *core.Context {
 func mustStartInactivitySession(t *testing.T, ctx context.Context, coreCtx *core.Context) {
 	t.Helper()
 
-	repo, err := coreCtx.Repos.Create(ctx, sharedtypes.Repo{ID: 1, Name: "Work"}, coreCtx.UserID, coreCtx.Now())
+	repo, err := coreCtx.Repos.Create(
+		ctx,
+		sharedtypes.Repo{ID: 1, Name: "Work"},
+		coreCtx.UserID,
+		coreCtx.Now(),
+	)
 	if err != nil {
 		t.Fatalf("create repo: %v", err)
 	}
-	stream, err := coreCtx.Streams.Create(ctx, sharedtypes.Stream{ID: 1, RepoID: repo.ID, Name: "App", Visibility: sharedtypes.StreamVisibilityPersonal}, coreCtx.UserID, coreCtx.Now())
+	stream, err := coreCtx.Streams.Create(
+		ctx,
+		sharedtypes.Stream{
+			ID:         1,
+			RepoID:     repo.ID,
+			Name:       "App",
+			Visibility: sharedtypes.StreamVisibilityPersonal,
+		},
+		coreCtx.UserID,
+		coreCtx.Now(),
+	)
 	if err != nil {
 		t.Fatalf("create stream: %v", err)
 	}

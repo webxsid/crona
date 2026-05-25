@@ -32,7 +32,6 @@ type Snapshot struct {
 	AllIssues           []api.IssueWithMeta
 	DueHabits           []api.HabitDailyItem
 	ExportReports       []api.ExportReportFile
-	Scratchpads         []api.ScratchPad
 	SessionHistory      []api.SessionHistoryEntry
 	HabitHistory        []api.HabitCompletion
 	Ops                 []api.Op
@@ -171,7 +170,18 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				if due != "" {
 					due = " " + due
 				}
-				items = append(items, fmt.Sprintf("[%s/%s] %s %s%s%s", issue.RepoName, issue.StreamName, issue.Status, issue.Title, estimate, due))
+				items = append(
+					items,
+					fmt.Sprintf(
+						"[%s/%s] %s %s%s%s",
+						issue.RepoName,
+						issue.StreamName,
+						issue.Status,
+						issue.Title,
+						estimate,
+						due,
+					),
+				)
 			}
 			break
 		}
@@ -193,7 +203,18 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 				if due != "" {
 					due = " " + due
 				}
-				items = append(items, fmt.Sprintf("[%s/%s] %s %s%s%s", repoName, streamName, issue.Status, issue.Title, estimate, due))
+				items = append(
+					items,
+					fmt.Sprintf(
+						"[%s/%s] %s %s%s%s",
+						repoName,
+						streamName,
+						issue.Status,
+						issue.Title,
+						estimate,
+						due,
+					),
+				)
 			}
 			break
 		}
@@ -210,18 +231,16 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			habits := FilteredDueHabits(s)
 			items = make([]string, 0, len(habits))
 			for _, habit := range habits {
-				items = append(items, fmt.Sprintf("[%s/%s] %s", habit.RepoName, habit.StreamName, habit.Name))
+				items = append(
+					items,
+					fmt.Sprintf("[%s/%s] %s", habit.RepoName, habit.StreamName, habit.Name),
+				)
 			}
 			break
 		}
 		items = make([]string, 0, len(s.Habits))
 		for _, habit := range s.Habits {
 			items = append(items, habit.Name)
-		}
-	case uistate.PaneScratchpads:
-		items = make([]string, 0, len(s.Scratchpads))
-		for _, scratchpad := range s.Scratchpads {
-			items = append(items, scratchpad.Name)
 		}
 	case uistate.PaneConfig:
 		items = make([]string, 0, len(s.ConfigItems))
@@ -231,7 +250,10 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 	case uistate.PaneExportReports:
 		items = make([]string, 0, len(s.ExportReports))
 		for _, report := range s.ExportReports {
-			items = append(items, fmt.Sprintf("%s  [%s] %s", report.Date, report.Format, report.Name))
+			items = append(
+				items,
+				fmt.Sprintf("%s  [%s] %s", report.Date, report.Format, report.Name),
+			)
 		}
 	case uistate.PaneSessions:
 		items = make([]string, 0, len(s.SessionHistory))
@@ -269,7 +291,11 @@ func FilteredIndices(s Snapshot, pane uistate.Pane) []int {
 	}
 	var indices []int
 	if pane == uistate.PaneIssues && s.View == uistate.ViewDefault {
-		indices = issuecore.PrioritizedDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
+		indices = issuecore.PrioritizedDefaultIssueIndices(
+			DefaultScopedIssues(s),
+			s.Filters[pane],
+			s.Settings,
+		)
 	} else {
 		items := PaneItems(s, pane)
 		query := strings.TrimSpace(strings.ToLower(s.Filters[pane]))
@@ -357,7 +383,10 @@ func SelectedMetaStream(s Snapshot) (int64, string, string, bool) {
 		if s.Context.RepoName != nil {
 			repoName = *s.Context.RepoName
 		}
-		return *s.Context.StreamID, helperpkg.FirstNonEmpty(s.Context.StreamName, nil), repoName, true
+		return *s.Context.StreamID, helperpkg.FirstNonEmpty(
+			s.Context.StreamName,
+			nil,
+		), repoName, true
 	}
 	return 0, "", "", false
 }

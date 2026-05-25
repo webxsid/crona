@@ -55,13 +55,16 @@ func TestRenderedDailyTemplateAvoidsControlLineWhitespaceNoise(t *testing.T) {
 			WorkedSeconds: 1800,
 		},
 	})
-	rendered, err := RenderTemplate(fallbackDailyReportTemplate, attachFrontmatter(data, reportWriteSpec{
-		Kind:     "daily",
-		Label:    "Daily Report",
-		Date:     "2026-04-13",
-		Format:   "markdown",
-		BaseName: "daily-2026-04-13",
-	}))
+	rendered, err := RenderTemplate(
+		fallbackDailyReportTemplate,
+		attachFrontmatter(data, reportWriteSpec{
+			Kind:     "daily",
+			Label:    "Daily Report",
+			Date:     "2026-04-13",
+			Format:   "markdown",
+			BaseName: "daily-2026-04-13",
+		}),
+	)
 	if err != nil {
 		t.Fatalf("render daily report: %v", err)
 	}

@@ -5,19 +5,57 @@ import controllerpkg "crona/tui/internal/tui/dialogs/controller"
 func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
 	case "create_repo":
-		rows := []string{theme.StylePaneTitle.Render("New Repo"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Description (Optional)"), state.Description.View()}
+		rows := []string{
+			theme.StylePaneTitle.Render("New Repo"),
+			"",
+			theme.StyleDim.Render("Name"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+		}
 		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "create"))
 		return modal(theme, state.Width, 56, theme.ColorCyan, rows)
 	case "edit_repo":
-		rows := []string{theme.StylePaneTitle.Render("Edit Repo"), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Description (Optional)"), state.Description.View()}
+		rows := []string{
+			theme.StylePaneTitle.Render("Edit Repo"),
+			"",
+			theme.StyleDim.Render("Name"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+		}
 		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "save"))
 		return modal(theme, state.Width, 56, theme.ColorYellow, rows)
 	case "create_stream":
-		rows := []string{theme.StylePaneTitle.Render("New Stream"), "", theme.StyleDim.Render("Repo"), theme.StyleHeader.Render(state.RepoName), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Description (Optional)"), state.Description.View()}
+		rows := []string{
+			theme.StylePaneTitle.Render("New Stream"),
+			"",
+			theme.StyleDim.Render("Repo"),
+			theme.StyleHeader.Render(state.RepoName),
+			"",
+			theme.StyleDim.Render("Name"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+		}
 		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "create"))
 		return modal(theme, state.Width, 56, theme.ColorCyan, rows)
 	case "edit_stream":
-		rows := []string{theme.StylePaneTitle.Render("Edit Stream"), "", theme.StyleDim.Render("Repo"), theme.StyleHeader.Render(state.RepoName), "", theme.StyleDim.Render("Name"), state.Inputs[0].View(), "", theme.StyleDim.Render("Description (Optional)"), state.Description.View()}
+		rows := []string{
+			theme.StylePaneTitle.Render("Edit Stream"),
+			"",
+			theme.StyleDim.Render("Repo"),
+			theme.StyleHeader.Render(state.RepoName),
+			"",
+			theme.StyleDim.Render("Name"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Description (Optional)"),
+			state.Description.View(),
+		}
 		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "save"))
 		return modal(theme, state.Width, 56, theme.ColorYellow, rows)
 	case "checkout_context":
@@ -85,7 +123,10 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 
 func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
 	if state.FocusIdx == state.DescriptionIndex {
-		return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		return "[enter] newline   [tab] next   " + dialogSubmitHint(
+			state,
+			submitLabel,
+		) + "   [esc] cancel"
 	}
 	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 }
@@ -98,15 +139,24 @@ func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 	if state.Kind == "create_habit" {
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 3:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
 	}
 	if state.FocusIdx == state.DescriptionIndex {
-		return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+		return "[enter] newline   [tab] next   " + dialogSubmitHint(
+			state,
+			submitLabel,
+		) + "   [esc] cancel"
 	}
 	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 }

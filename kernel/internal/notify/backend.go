@@ -132,9 +132,17 @@ func sendAlertNotification(status sharedtypes.AlertStatus, req sharedtypes.Alert
 			var script strings.Builder
 			script.WriteString("Import-Module BurntToast -ErrorAction Stop; ")
 			script.WriteString("$builder = New-BTContentBuilder; ")
-			fmt.Fprintf(&script, "$builder = Add-BTText -ContentBuilder $builder -Text @(%s) -PassThru; ", powerShellStringArray(lines))
+			fmt.Fprintf(
+				&script,
+				"$builder = Add-BTText -ContentBuilder $builder -Text @(%s) -PassThru; ",
+				powerShellStringArray(lines),
+			)
 			if req.IconEnabled && status.IconSupported && status.IconPath != "" {
-				fmt.Fprintf(&script, "$builder = Add-BTImage -ContentBuilder $builder -Source '%s' -AppLogoOverride -PassThru; ", escapePowerShell(filepath.Clean(status.IconPath)))
+				fmt.Fprintf(
+					&script,
+					"$builder = Add-BTImage -ContentBuilder $builder -Source '%s' -AppLogoOverride -PassThru; ",
+					escapePowerShell(filepath.Clean(status.IconPath)),
+				)
 			}
 			script.WriteString("Show-BTNotification -ContentBuilder $builder")
 			return runCommand(powerShellExecutable(), "-NoProfile", "-Command", script.String())
@@ -150,10 +158,19 @@ func sendAlertNotification(status sharedtypes.AlertStatus, req sharedtypes.Alert
 		}
 		logo := ""
 		if req.IconEnabled && status.IconSupported && status.IconPath != "" {
-			logo = fmt.Sprintf("<image placement='appLogoOverride' hint-crop='none' src='%s'/>", escapeXML(fileURI(status.IconPath)))
+			logo = fmt.Sprintf(
+				"<image placement='appLogoOverride' hint-crop='none' src='%s'/>",
+				escapeXML(fileURI(status.IconPath)),
+			)
 		}
-		xml := "<toast><visual><binding template='ToastGeneric'>" + logo + strings.Join(textNodes, "") + "</binding></visual></toast>"
-		script := fmt.Sprintf(`[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null; $xml = New-Object Windows.Data.Xml.Dom.XmlDocument; $xml.LoadXml('%s'); $toast = [Windows.UI.Notifications.ToastNotification]::new($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Crona').Show($toast)`, escapePowerShell(xml))
+		xml := "<toast><visual><binding template='ToastGeneric'>" + logo + strings.Join(
+			textNodes,
+			"",
+		) + "</binding></visual></toast>"
+		script := fmt.Sprintf(
+			`[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] > $null; $xml = New-Object Windows.Data.Xml.Dom.XmlDocument; $xml.LoadXml('%s'); $toast = [Windows.UI.Notifications.ToastNotification]::new($xml); [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Crona').Show($toast)`,
+			escapePowerShell(xml),
+		)
 		return runCommand(powerShellExecutable(), "-NoProfile", "-Command", script)
 	default:
 		return nil
@@ -178,7 +195,10 @@ func playAlertSound(status sharedtypes.AlertStatus, soundPath string) error {
 			return runCommand("canberra-gtk-play", "--id", "bell")
 		}
 	case "windows":
-		script := fmt.Sprintf(`$player = New-Object System.Media.SoundPlayer '%s'; $player.PlaySync()`, escapePowerShell(filepath.Clean(soundPath)))
+		script := fmt.Sprintf(
+			`$player = New-Object System.Media.SoundPlayer '%s'; $player.PlaySync()`,
+			escapePowerShell(filepath.Clean(soundPath)),
+		)
 		return runCommand(powerShellExecutable(), "-NoProfile", "-Command", script)
 	}
 	return nil
@@ -199,7 +219,12 @@ func burntToastAvailable() bool {
 	if powershell == "" {
 		return false
 	}
-	cmd := exec.Command(powershell, "-NoProfile", "-Command", "Get-Module -ListAvailable -Name BurntToast | Select-Object -First 1 | ForEach-Object { $_.Name }")
+	cmd := exec.Command(
+		powershell,
+		"-NoProfile",
+		"-Command",
+		"Get-Module -ListAvailable -Name BurntToast | Select-Object -First 1 | ForEach-Object { $_.Name }",
+	)
 	output, err := cmd.Output()
 	if err != nil {
 		return false

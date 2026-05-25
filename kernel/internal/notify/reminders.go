@@ -18,7 +18,10 @@ func (s *Service) ListReminders(ctx context.Context) ([]sharedtypes.AlertReminde
 	return s.core.AlertReminders.List(ctx, s.core.UserID)
 }
 
-func (s *Service) CreateReminder(ctx context.Context, input shareddto.AlertReminderCreateRequest) (*sharedtypes.AlertReminder, error) {
+func (s *Service) CreateReminder(
+	ctx context.Context,
+	input shareddto.AlertReminderCreateRequest,
+) (*sharedtypes.AlertReminder, error) {
 	enabled := true
 	if input.Enabled != nil {
 		enabled = *input.Enabled
@@ -36,7 +39,10 @@ func (s *Service) CreateReminder(ctx context.Context, input shareddto.AlertRemin
 	return s.core.AlertReminders.Create(ctx, s.core.UserID, s.core.DeviceID, reminder, s.core.Now())
 }
 
-func (s *Service) UpdateReminder(ctx context.Context, input shareddto.AlertReminderUpdateRequest) (*sharedtypes.AlertReminder, error) {
+func (s *Service) UpdateReminder(
+	ctx context.Context,
+	input shareddto.AlertReminderUpdateRequest,
+) (*sharedtypes.AlertReminder, error) {
 	current, err := s.core.AlertReminders.GetByID(ctx, s.core.UserID, strings.TrimSpace(input.ID))
 	if err != nil {
 		return nil, err
@@ -66,8 +72,18 @@ func (s *Service) DeleteReminder(ctx context.Context, id string) error {
 	return s.core.AlertReminders.Delete(ctx, s.core.UserID, strings.TrimSpace(id))
 }
 
-func (s *Service) ToggleReminder(ctx context.Context, id string, enabled bool) (*sharedtypes.AlertReminder, error) {
-	return s.core.AlertReminders.SetEnabled(ctx, s.core.UserID, strings.TrimSpace(id), enabled, s.core.Now())
+func (s *Service) ToggleReminder(
+	ctx context.Context,
+	id string,
+	enabled bool,
+) (*sharedtypes.AlertReminder, error) {
+	return s.core.AlertReminders.SetEnabled(
+		ctx,
+		s.core.UserID,
+		strings.TrimSpace(id),
+		enabled,
+		s.core.Now(),
+	)
 }
 
 func (s *Service) runReminderScheduler(ctx context.Context) {
@@ -110,7 +126,12 @@ func (s *Service) processReminderTick(ctx context.Context, now time.Time) {
 	}
 }
 
-func shouldSuppressReminder(ctx context.Context, s *Service, reminder sharedtypes.AlertReminder, now time.Time) bool {
+func shouldSuppressReminder(
+	ctx context.Context,
+	s *Service,
+	reminder sharedtypes.AlertReminder,
+	now time.Time,
+) bool {
 	switch reminder.Kind {
 	case sharedtypes.AlertReminderKindCheckIn:
 		checkIn, err := s.core.DailyCheckIns.GetByDate(ctx, s.core.UserID, now.Format("2006-01-02"))
@@ -170,7 +191,8 @@ func validateReminder(reminder sharedtypes.AlertReminder) error {
 	if _, _, ok := parseReminderTime(reminder.TimeHHMM); !ok {
 		return errors.New("reminder time must be in HH:MM format")
 	}
-	if reminder.ScheduleType == sharedtypes.AlertReminderScheduleWeekly && len(normalizeReminderWeekdays(reminder.Weekdays)) == 0 {
+	if reminder.ScheduleType == sharedtypes.AlertReminderScheduleWeekly &&
+		len(normalizeReminderWeekdays(reminder.Weekdays)) == 0 {
 		return errors.New("weekly reminders require at least one weekday")
 	}
 	return nil

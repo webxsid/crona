@@ -61,7 +61,11 @@ func LoadIssuesSelecting(c *api.Client, streamID, selectedIssueID int64) tea.Cmd
 			logger.Errorf("loadIssues(%d): %v", streamID, err)
 			return ErrMsg{Err: err}
 		}
-		return IssuesLoadedMsg{StreamID: streamID, Issues: issues, SelectedIssueID: int64Ptr(selectedIssueID)}
+		return IssuesLoadedMsg{
+			StreamID:        streamID,
+			Issues:          issues,
+			SelectedIssueID: int64Ptr(selectedIssueID),
+		}
 	}
 }
 
@@ -76,7 +80,11 @@ func LoadHabits(c *api.Client, streamID int64) tea.Cmd {
 	}
 }
 
-func LoadHabitHistory(c *api.Client, context *api.ActiveContext, selectedHabitHistoryID *int64) tea.Cmd {
+func LoadHabitHistory(
+	c *api.Client,
+	context *api.ActiveContext,
+	selectedHabitHistoryID *int64,
+) tea.Cmd {
 	return func() tea.Msg {
 		var repoID, streamID *int64
 		if context != nil {
@@ -88,7 +96,11 @@ func LoadHabitHistory(c *api.Client, context *api.ActiveContext, selectedHabitHi
 			logger.Errorf("loadHabitHistory: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return HabitHistoryLoadedMsg{Completions: completions, SelectedHabitHistoryID: selectedHabitHistoryID, Scope: context}
+		return HabitHistoryLoadedMsg{
+			Completions:            completions,
+			SelectedHabitHistoryID: selectedHabitHistoryID,
+			Scope:                  context,
+		}
 	}
 }
 
@@ -234,17 +246,6 @@ func LoadSessionDetail(c *api.Client, id string) tea.Cmd {
 			return SessionDetailFailedMsg{Err: err}
 		}
 		return SessionDetailLoadedMsg{Detail: detail}
-	}
-}
-
-func LoadScratchpads(c *api.Client) tea.Cmd {
-	return func() tea.Msg {
-		pads, err := c.ListScratchpads()
-		if err != nil {
-			logger.Errorf("loadScratchpads: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return ScratchpadsLoadedMsg{Pads: pads}
 	}
 }
 

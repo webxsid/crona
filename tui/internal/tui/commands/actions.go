@@ -16,10 +16,15 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/google/uuid"
 )
 
-func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
+func PatchSetting(
+	c *api.Client,
+	key sharedtypes.CoreSettingsKey,
+	value any,
+	repoID, streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.PatchSetting(key, value); err != nil {
 			logger.Errorf("PatchSetting(%s): %v", key, err)
@@ -33,7 +38,9 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 			sharedtypes.CoreSettingsKeyAlertUrgency,
 			sharedtypes.CoreSettingsKeyAlertIconEnabled:
 			cmds = append(cmds, LoadAlertStatus(c))
-		case sharedtypes.CoreSettingsKeyUpdateChecksEnabled, sharedtypes.CoreSettingsKeyUpdatePromptEnabled, sharedtypes.CoreSettingsKeyUpdateChannel:
+		case sharedtypes.CoreSettingsKeyUpdateChecksEnabled,
+			sharedtypes.CoreSettingsKeyUpdatePromptEnabled,
+			sharedtypes.CoreSettingsKeyUpdateChannel:
 			cmds = append(cmds, LoadUpdateStatus(c))
 		case sharedtypes.CoreSettingsKeyRepoSort:
 			cmds = append(cmds, LoadRepos(c))
@@ -48,7 +55,13 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 			}
 		case sharedtypes.CoreSettingsKeyDateDisplayPreset,
 			sharedtypes.CoreSettingsKeyDateDisplayFormat:
-			cmds = append(cmds, LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadExportReports(c))
+			cmds = append(
+				cmds,
+				LoadDailySummary(c, dashboardDate),
+				LoadDashboardSummaries(c, dashboardDate),
+				LoadWellbeing(c, dashboardDate),
+				LoadExportReports(c),
+			)
 			if streamID != 0 {
 				cmds = append(cmds, LoadIssues(c, streamID))
 			}
@@ -59,13 +72,21 @@ func PatchSetting(c *api.Client, key sharedtypes.CoreSettingsKey, value any, rep
 			sharedtypes.CoreSettingsKeyRestSpecificDates,
 			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
 			sharedtypes.CoreSettingsKeyHabitStreakDefs:
-			cmds = append(cmds, LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate))
+			cmds = append(
+				cmds,
+				LoadWellbeing(c, dashboardDate),
+				LoadDashboardSummaries(c, dashboardDate),
+			)
 		}
 		return tea.Batch(cmds...)()
 	}
 }
 
-func UpsertDailyCheckIn(c *api.Client, input shareddto.DailyCheckInUpsertRequest, date string) tea.Cmd {
+func UpsertDailyCheckIn(
+	c *api.Client,
+	input shareddto.DailyCheckInUpsertRequest,
+	date string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if _, err := c.UpsertDailyCheckIn(input); err != nil {
 			logger.Errorf("UpsertDailyCheckIn: %v", err)
@@ -95,7 +116,11 @@ func ShutdownKernel(c *api.Client) tea.Cmd {
 	}
 }
 
-func PatchTelemetrySettings(c *api.Client, usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+func PatchTelemetrySettings(
+	c *api.Client,
+	usageEnabled, errorReportingEnabled bool,
+	restartNow bool,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyUsageTelemetryEnabled, usageEnabled); err != nil {
 			logger.Errorf("PatchTelemetrySettings usage: %v", err)
@@ -123,7 +148,11 @@ func PatchTelemetrySettings(c *api.Client, usageEnabled, errorReportingEnabled b
 	}
 }
 
-func CompleteOnboarding(c *api.Client, usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
+func CompleteOnboarding(
+	c *api.Client,
+	usageEnabled, errorReportingEnabled bool,
+	restartNow bool,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyOnboardingCompleted, true); err != nil {
 			logger.Errorf("CompleteOnboarding completed: %v", err)
@@ -212,17 +241,6 @@ func WipeRuntimeData(c *api.Client) tea.Cmd {
 	}
 }
 
-func CreateScratchpad(c *api.Client, name, path string) tea.Cmd {
-	return func() tea.Msg {
-		id := uuid.New().String()
-		if err := c.RegisterScratchpad(id, name, path); err != nil {
-			logger.Errorf("RegisterScratchpad: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return LoadScratchpads(c)()
-	}
-}
-
 func CreateRepoOnly(c *api.Client, name string, description *string) tea.Cmd {
 	return func() tea.Msg {
 		if _, err := c.CreateRepo(name, description); err != nil {
@@ -269,7 +287,12 @@ func UpdateStream(c *api.Client, repoID, streamID int64, name string, descriptio
 			logger.Errorf("UpdateStream: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadStreams(c, repoID), LoadAllIssues(c), LoadDailySummary(c, ""), LoadContext(c))()
+		return tea.Batch(
+			LoadStreams(c, repoID),
+			LoadAllIssues(c),
+			LoadDailySummary(c, ""),
+			LoadContext(c),
+		)()
 	}
 }
 
@@ -287,34 +310,71 @@ func DeleteStream(c *api.Client, repoID, streamID int64) tea.Cmd {
 	}
 }
 
-func CreateIssueOnly(c *api.Client, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string) tea.Cmd {
+func CreateIssueOnly(
+	c *api.Client,
+	streamID int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) tea.Cmd {
 	return func() tea.Msg {
 		issue, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate)
 		if err != nil {
 			logger.Errorf("CreateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadIssuesSelecting(c, streamID, issue.ID), LoadAllIssuesSelecting(c, issue.ID), LoadDailySummary(c, ""))()
+		return tea.Batch(
+			LoadIssuesSelecting(c, streamID, issue.ID),
+			LoadAllIssuesSelecting(c, issue.ID),
+			LoadDailySummary(c, ""),
+		)()
 	}
 }
 
-func CreateHabitOnly(c *api.Client, streamID int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int) tea.Cmd {
+func CreateHabitOnly(
+	c *api.Client,
+	streamID int64,
+	name string,
+	description *string,
+	scheduleType string,
+	weekdays []int,
+	targetMinutes *int,
+) tea.Cmd {
 	return func() tea.Msg {
 		if _, err := c.CreateHabit(streamID, name, description, scheduleType, weekdays, targetMinutes); err != nil {
 			logger.Errorf("CreateHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
+		return tea.Batch(
+			LoadHabits(c, streamID),
+			LoadAllHabits(c),
+			LoadDueHabits(c, time.Now().Format("2006-01-02")),
+		)()
 	}
 }
 
-func UpdateHabit(c *api.Client, habitID, streamID int64, name string, description *string, scheduleType string, weekdays []int, targetMinutes *int, active bool, dashboardDate string) tea.Cmd {
+func UpdateHabit(
+	c *api.Client,
+	habitID, streamID int64,
+	name string,
+	description *string,
+	scheduleType string,
+	weekdays []int,
+	targetMinutes *int,
+	active bool,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.UpdateHabit(habitID, name, description, scheduleType, weekdays, targetMinutes, active); err != nil {
 			logger.Errorf("UpdateHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, dashboardDate))()
+		return tea.Batch(
+			LoadHabits(c, streamID),
+			LoadAllHabits(c),
+			LoadDueHabits(c, dashboardDate),
+		)()
 	}
 }
 
@@ -332,7 +392,14 @@ func DeleteHabit(c *api.Client, habitID, streamID int64, dashboardDate string) t
 	}
 }
 
-func SetHabitStatus(c *api.Client, habitID int64, date string, status sharedtypes.HabitCompletionStatus, durationMinutes *int, notes *string) tea.Cmd {
+func SetHabitStatus(
+	c *api.Client,
+	habitID int64,
+	date string,
+	status sharedtypes.HabitCompletionStatus,
+	durationMinutes *int,
+	notes *string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if _, err := c.CompleteHabit(habitID, date, status, durationMinutes, notes); err != nil {
 			logger.Errorf("CompleteHabit: %v", err)
@@ -352,7 +419,15 @@ func UncompleteHabit(c *api.Client, habitID int64, date string) tea.Cmd {
 	}
 }
 
-func UpdateIssue(c *api.Client, issueID, streamID int64, title string, description *string, estimateMinutes *int, todoForDate *string, dashboardDate string) tea.Cmd {
+func UpdateIssue(
+	c *api.Client,
+	issueID, streamID int64,
+	title string,
+	description *string,
+	estimateMinutes *int,
+	todoForDate *string,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.UpdateIssue(issueID, title, description, estimateMinutes); err != nil {
 			logger.Errorf("UpdateIssue: %v", err)
@@ -371,7 +446,14 @@ func UpdateIssue(c *api.Client, issueID, streamID int64, title string, descripti
 			logger.Errorf("SetIssueTodoDate after UpdateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c)}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+			LoadContext(c),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
@@ -385,7 +467,13 @@ func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) t
 			logger.Errorf("DeleteIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c), LoadTimer(c)}
+		cmds := []tea.Cmd{
+			LoadAllIssues(c),
+			LoadDailySummary(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+			LoadContext(c),
+			LoadTimer(c),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}
@@ -393,7 +481,13 @@ func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) t
 	}
 }
 
-func CreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName, streamDescription, title string, issueDescription *string, estimateMinutes *int, todoForDate *string) tea.Cmd {
+func CreateIssueWithPath(
+	c *api.Client,
+	repoName, repoDescription, streamName, streamDescription, title string,
+	issueDescription *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
 		if err != nil {
@@ -428,7 +522,11 @@ func CreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			}
 		}
 		if streamID == 0 {
-			stream, err := c.CreateStream(repoID, streamName, helperpkg.NormalizeOptionalValue(streamDescription))
+			stream, err := c.CreateStream(
+				repoID,
+				streamName,
+				helperpkg.NormalizeOptionalValue(streamDescription),
+			)
 			if err != nil {
 				logger.Errorf("CreateStream before CreateIssueWithPath: %v", err)
 				return ErrMsg{Err: err}
@@ -440,11 +538,25 @@ func CreateIssueWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadIssuesSelecting(c, streamID, issue.ID), LoadAllIssuesSelecting(c, issue.ID), LoadDailySummary(c, ""), LoadDashboardSummaries(c, time.Now().Format("2006-01-02")))()
+		return tea.Batch(
+			LoadRepos(c),
+			LoadStreams(c, repoID),
+			LoadIssuesSelecting(c, streamID, issue.ID),
+			LoadAllIssuesSelecting(c, issue.ID),
+			LoadDailySummary(c, ""),
+			LoadDashboardSummaries(c, time.Now().Format("2006-01-02")),
+		)()
 	}
 }
 
-func CreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName, streamDescription, name string, habitDescription *string, scheduleType string, weekdays []int, targetMinutes *int) tea.Cmd {
+func CreateHabitWithPath(
+	c *api.Client,
+	repoName, repoDescription, streamName, streamDescription, name string,
+	habitDescription *string,
+	scheduleType string,
+	weekdays []int,
+	targetMinutes *int,
+) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
 		if err != nil {
@@ -479,7 +591,11 @@ func CreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			}
 		}
 		if streamID == 0 {
-			stream, err := c.CreateStream(repoID, streamName, helperpkg.NormalizeOptionalValue(streamDescription))
+			stream, err := c.CreateStream(
+				repoID,
+				streamName,
+				helperpkg.NormalizeOptionalValue(streamDescription),
+			)
 			if err != nil {
 				logger.Errorf("CreateStream before CreateHabitWithPath: %v", err)
 				return ErrMsg{Err: err}
@@ -490,17 +606,13 @@ func CreateHabitWithPath(c *api.Client, repoName, repoDescription, streamName, s
 			logger.Errorf("CreateHabit in CreateHabitWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadRepos(c), LoadStreams(c, repoID), LoadHabits(c, streamID), LoadAllHabits(c), LoadDueHabits(c, time.Now().Format("2006-01-02")))()
-	}
-}
-
-func DeleteScratchpad(c *api.Client, id string) tea.Cmd {
-	return func() tea.Msg {
-		if err := c.DeleteScratchpad(id); err != nil {
-			logger.Errorf("DeleteScratchpad(%s): %v", id, err)
-			return ErrMsg{Err: err}
-		}
-		return LoadScratchpads(c)()
+		return tea.Batch(
+			LoadRepos(c),
+			LoadStreams(c, repoID),
+			LoadHabits(c, streamID),
+			LoadAllHabits(c),
+			LoadDueHabits(c, time.Now().Format("2006-01-02")),
+		)()
 	}
 }
 
@@ -511,21 +623,6 @@ func CopyTextToClipboard(text, message string) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return ClipboardCopiedMsg{Message: message}
-	}
-}
-
-func OpenScratchpad(c *api.Client, scratchpads []api.ScratchPad, idx int) tea.Cmd {
-	return func() tea.Msg {
-		if idx >= len(scratchpads) {
-			return nil
-		}
-		pad := scratchpads[idx]
-		filePath, content, err := c.ReadScratchpad(pad.ID)
-		if err != nil {
-			logger.Errorf("ReadScratchpad(%s): %v", pad.ID, err)
-			return ErrMsg{Err: err}
-		}
-		return OpenScratchpadMsg{Meta: pad, FilePath: filePath, Content: content}
 	}
 }
 
@@ -549,9 +646,16 @@ func CheckoutStream(c *api.Client, streamID int64) tea.Cmd {
 	}
 }
 
-func CheckoutContext(c *api.Client, repoID int64, repoName string, streamID int64, streamName string) tea.Cmd {
+func CheckoutContext(
+	c *api.Client,
+	repoID int64,
+	repoName string,
+	streamID int64,
+	streamName string,
+) tea.Cmd {
 	return func() tea.Msg {
-		if repoID == 0 && strings.TrimSpace(repoName) == "" && streamID == 0 && strings.TrimSpace(streamName) == "" {
+		if repoID == 0 && strings.TrimSpace(repoName) == "" && streamID == 0 &&
+			strings.TrimSpace(streamName) == "" {
 			if err := c.ClearContext(); err != nil {
 				logger.Errorf("ClearContext during checkout: %v", err)
 				return ErrMsg{Err: err}
@@ -575,7 +679,13 @@ func CheckoutContext(c *api.Client, repoID int64, repoName string, streamID int6
 				logger.Errorf("SetFullContext during checkout: %v", err)
 				return ErrMsg{Err: err}
 			}
-			return tea.Batch(LoadContext(c), LoadRepos(c), LoadStreams(c, resolvedRepoID), LoadIssues(c, streamID), LoadAllIssues(c))()
+			return tea.Batch(
+				LoadContext(c),
+				LoadRepos(c),
+				LoadStreams(c, resolvedRepoID),
+				LoadIssues(c, streamID),
+				LoadAllIssues(c),
+			)()
 		}
 		if strings.TrimSpace(streamName) != "" {
 			stream, err := c.CreateStream(resolvedRepoID, streamName, nil)
@@ -587,23 +697,47 @@ func CheckoutContext(c *api.Client, repoID int64, repoName string, streamID int6
 				logger.Errorf("SetFullContext after create during checkout: %v", err)
 				return ErrMsg{Err: err}
 			}
-			return tea.Batch(LoadContext(c), LoadRepos(c), LoadStreams(c, resolvedRepoID), LoadIssues(c, stream.ID), LoadAllIssues(c))()
+			return tea.Batch(
+				LoadContext(c),
+				LoadRepos(c),
+				LoadStreams(c, resolvedRepoID),
+				LoadIssues(c, stream.ID),
+				LoadAllIssues(c),
+			)()
 		}
 		if err := c.SwitchRepo(resolvedRepoID); err != nil {
 			logger.Errorf("SwitchRepo during checkout: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadContext(c), LoadRepos(c), LoadStreams(c, resolvedRepoID), LoadAllIssues(c))()
+		return tea.Batch(
+			LoadContext(c),
+			LoadRepos(c),
+			LoadStreams(c, resolvedRepoID),
+			LoadAllIssues(c),
+		)()
 	}
 }
 
-func ChangeIssueStatus(c *api.Client, issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd {
+func ChangeIssueStatus(
+	c *api.Client,
+	issueID int64,
+	status string,
+	note *string,
+	streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.ChangeIssueStatus(issueID, status, note); err != nil {
 			logger.Errorf("ChangeIssueStatus: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
@@ -611,7 +745,13 @@ func ChangeIssueStatus(c *api.Client, issueID int64, status string, note *string
 	}
 }
 
-func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamID int64, dashboardDate string) tea.Cmd {
+func ToggleIssueToday(
+	c *api.Client,
+	issueID int64,
+	markedForToday bool,
+	streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		var err error
 		if markedForToday {
@@ -623,7 +763,13 @@ func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamI
 			logger.Errorf("ToggleIssueToday: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
@@ -631,7 +777,13 @@ func ToggleIssueToday(c *api.Client, issueID int64, markedForToday bool, streamI
 	}
 }
 
-func ToggleIssuePinnedDaily(c *api.Client, issueID int64, pinned bool, streamID int64, dashboardDate string) tea.Cmd {
+func ToggleIssuePinnedDaily(
+	c *api.Client,
+	issueID int64,
+	pinned bool,
+	streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.SetIssuePinnedDaily(issueID, !pinned); err != nil {
 			logger.Errorf("ToggleIssuePinnedDaily: %v", err)
@@ -654,7 +806,13 @@ func ToggleIssuePinnedDaily(c *api.Client, issueID int64, pinned bool, streamID 
 	}
 }
 
-func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
+func SetIssueTodoDate(
+	c *api.Client,
+	issueID int64,
+	date string,
+	streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		var err error
 		if strings.TrimSpace(date) == "" {
@@ -666,7 +824,13 @@ func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64,
 			logger.Errorf("SetIssueTodoDate: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDailyPlan(c, dashboardDate), LoadWellbeing(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate)}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
@@ -674,7 +838,15 @@ func SetIssueTodoDate(c *api.Client, issueID int64, date string, streamID int64,
 	}
 }
 
-func ChangeIssueStatusAndEndSession(c *api.Client, issueID int64, status string, note *string, streamID int64, dashboardDate string, endInput shareddto.EndSessionRequest) tea.Cmd {
+func ChangeIssueStatusAndEndSession(
+	c *api.Client,
+	issueID int64,
+	status string,
+	note *string,
+	streamID int64,
+	dashboardDate string,
+	endInput shareddto.EndSessionRequest,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.EndTimer(endInput); err != nil {
 			logger.Errorf("EndTimer before ChangeIssueStatus: %v", err)
@@ -684,7 +856,13 @@ func ChangeIssueStatusAndEndSession(c *api.Client, issueID int64, status string,
 			logger.Errorf("ChangeIssueStatus after EndTimer: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c), LoadTimer(c)}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+			LoadContext(c),
+			LoadTimer(c),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
 		}
@@ -730,14 +908,25 @@ func ContinueFocusSessionFresh(c *api.Client, repoID, streamID, issueID int64) t
 	return startFocusSession(c, repoID, streamID, issueID, true)
 }
 
-func startFocusSession(c *api.Client, repoID, streamID, issueID int64, ignoreExistingStashes bool) tea.Cmd {
+func startFocusSession(
+	c *api.Client,
+	repoID, streamID, issueID int64,
+	ignoreExistingStashes bool,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.StartTimer(repoID, streamID, issueID, ignoreExistingStashes); err != nil {
 			var rpcErr *protocol.RPCError
-			if errors.As(err, &rpcErr) && rpcErr != nil && rpcErr.Code == protocol.ErrorCodeStashConflict {
+			if errors.As(err, &rpcErr) && rpcErr != nil &&
+				rpcErr.Code == protocol.ErrorCodeStashConflict {
 				var conflict api.StashConflict
-				if decodeErr := rpcErr.DecodeData(&conflict); decodeErr == nil && conflict.IssueID != 0 {
-					return FocusSessionStashConflictMsg{Conflict: conflict, RepoID: repoID, StreamID: streamID, IssueID: issueID}
+				if decodeErr := rpcErr.DecodeData(&conflict); decodeErr == nil &&
+					conflict.IssueID != 0 {
+					return FocusSessionStashConflictMsg{
+						Conflict: conflict,
+						RepoID:   repoID,
+						StreamID: streamID,
+						IssueID:  issueID,
+					}
 				}
 			}
 			logger.Errorf("StartTimer: %v", err)
@@ -783,13 +972,25 @@ func ResumeFocusSession(c *api.Client, timer *api.TimerState) tea.Cmd {
 	}
 }
 
-func EndFocusSession(c *api.Client, streamID int64, dashboardDate string, endInput shareddto.EndSessionRequest) tea.Cmd {
+func EndFocusSession(
+	c *api.Client,
+	streamID int64,
+	dashboardDate string,
+	endInput shareddto.EndSessionRequest,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.EndTimer(endInput); err != nil {
 			logger.Errorf("EndTimer: %v", err)
 			return ErrMsg{Err: err}
 		}
-		cmds := []tea.Cmd{LoadAllIssues(c), LoadDailySummary(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c), LoadTimer(c), LoadSessionHistory(c, nil, 200)}
+		cmds := []tea.Cmd{
+			LoadAllIssues(c),
+			LoadDailySummary(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+			LoadContext(c),
+			LoadTimer(c),
+			LoadSessionHistory(c, nil, 200),
+		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssues(c, streamID))
 		}
@@ -813,7 +1014,12 @@ func ApplyStash(c *api.Client, id string) tea.Cmd {
 			logger.Errorf("ApplyStash: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadStashes(c), LoadContext(c), LoadTimer(c), LoadSessionHistory(c, nil, 200))()
+		return tea.Batch(
+			LoadStashes(c),
+			LoadContext(c),
+			LoadTimer(c),
+			LoadSessionHistory(c, nil, 200),
+		)()
 	}
 }
 
@@ -849,7 +1055,12 @@ func GenerateCalendarExport(c *api.Client, input shareddto.ExportCalendarRequest
 	}
 }
 
-func GenerateDailyReport(c *api.Client, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) tea.Cmd {
+func GenerateDailyReport(
+	c *api.Client,
+	date string,
+	format sharedtypes.ExportFormat,
+	mode sharedtypes.ExportOutputMode,
+) tea.Cmd {
 	return GenerateReport(c, shareddto.ExportReportRequest{
 		Kind:       sharedtypes.ExportReportKindDaily,
 		Date:       date,
@@ -860,7 +1071,11 @@ func GenerateDailyReport(c *api.Client, date string, format sharedtypes.ExportFo
 
 func CopyDailyReport(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {
-		result, err := c.GenerateDailyReport(date, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeClipboard)
+		result, err := c.GenerateDailyReport(
+			date,
+			sharedtypes.ExportFormatMarkdown,
+			sharedtypes.ExportOutputModeClipboard,
+		)
 		if err != nil {
 			logger.Errorf("GenerateDailyReport clipboard: %v", err)
 			return ErrMsg{Err: err}
@@ -872,7 +1087,11 @@ func CopyDailyReport(c *api.Client, date string) tea.Cmd {
 	}
 }
 
-func ResetExportTemplate(c *api.Client, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) tea.Cmd {
+func ResetExportTemplate(
+	c *api.Client,
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+) tea.Cmd {
 	return func() tea.Msg {
 		assets, err := c.ResetExportTemplate(reportKind, assetKind)
 		if err != nil {
@@ -883,7 +1102,12 @@ func ResetExportTemplate(c *api.Client, reportKind sharedtypes.ExportReportKind,
 	}
 }
 
-func ApplyExportTemplatePreset(c *api.Client, reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) tea.Cmd {
+func ApplyExportTemplatePreset(
+	c *api.Client,
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+	presetID string,
+) tea.Cmd {
 	return func() tea.Msg {
 		assets, err := c.ApplyExportTemplatePreset(reportKind, assetKind, presetID)
 		if err != nil {

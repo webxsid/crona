@@ -57,7 +57,12 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID)
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		activeSession.ID,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -88,7 +93,12 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 	if activeSegment.SegmentType != sharedtypes.SessionSegmentWork {
 		state = "paused"
 	}
-	nextSegment, err := t.nextSegmentForActiveState(ctx, activeSession.ID, activeSegment.SegmentType, settings)
+	nextSegment, err := t.nextSegmentForActiveState(
+		ctx,
+		activeSession.ID,
+		activeSegment.SegmentType,
+		settings,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -106,11 +116,17 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 	}, nil
 }
 
-func (t *TimerService) Start(ctx context.Context, repoID, streamID, issueID *int64) (sharedtypes.TimerState, error) {
+func (t *TimerService) Start(
+	ctx context.Context,
+	repoID, streamID, issueID *int64,
+) (sharedtypes.TimerState, error) {
 	return t.start(ctx, repoID, streamID, issueID, false)
 }
 
-func (t *TimerService) StartIgnoringExistingStashes(ctx context.Context, repoID, streamID, issueID *int64) (sharedtypes.TimerState, error) {
+func (t *TimerService) StartIgnoringExistingStashes(
+	ctx context.Context,
+	repoID, streamID, issueID *int64,
+) (sharedtypes.TimerState, error) {
 	return t.start(ctx, repoID, streamID, issueID, true)
 }
 
@@ -129,7 +145,9 @@ func (t *TimerService) start(
 		return sharedtypes.TimerState{}, err
 	}
 	if active != nil {
-		return sharedtypes.TimerState{}, errors.New("cannot start a new session while another session is active")
+		return sharedtypes.TimerState{}, errors.New(
+			"cannot start a new session while another session is active",
+		)
 	}
 	var resolvedIssueID int64
 	if issueID != nil {
@@ -145,7 +163,9 @@ func (t *TimerService) start(
 		}
 	}
 	if resolvedIssueID == 0 {
-		return sharedtypes.TimerState{}, errors.New("no issue specified and no active issue in context")
+		return sharedtypes.TimerState{}, errors.New(
+			"no issue specified and no active issue in context",
+		)
 	}
 	issue, err := t.ctx.Issues.GetByID(ctx, resolvedIssueID, t.ctx.UserID)
 	if err != nil {
@@ -155,7 +175,9 @@ func (t *TimerService) start(
 		return sharedtypes.TimerState{}, errors.New("issue not found")
 	}
 	if !sharedtypes.CanStartFocus(issue.Status) {
-		return sharedtypes.TimerState{}, errors.New("focus sessions cannot be started for the current issue status")
+		return sharedtypes.TimerState{}, errors.New(
+			"focus sessions cannot be started for the current issue status",
+		)
 	}
 	if !ignoreExistingStashes {
 		stashes, err := t.ctx.Stash.ListByIssue(ctx, resolvedIssueID, t.ctx.UserID)
@@ -174,7 +196,9 @@ func (t *TimerService) start(
 	if _, err := StartSession(ctx, t.ctx, resolvedIssueID); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status) {
+	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(
+		issue.Status,
+	) {
 		if _, err := changeIssueStatus(ctx, t.ctx, resolvedIssueID, nextStatus, nil, true); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
@@ -217,7 +241,11 @@ func (e StashConflictError) Error() string {
 	if count == 1 {
 		return fmt.Sprintf("cannot start focus: 1 stash exists for issue #%d", e.Conflict.IssueID)
 	}
-	return fmt.Sprintf("cannot start focus: %d stashes exist for issue #%d", count, e.Conflict.IssueID)
+	return fmt.Sprintf(
+		"cannot start focus: %d stashes exist for issue #%d",
+		count,
+		e.Conflict.IssueID,
+	)
 }
 
 func (e StashConflictError) ProtocolErrorCode() string {
@@ -298,14 +326,24 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID)
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		activeSession.ID,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if activeSegment == nil {
 		return sharedtypes.TimerState{}, errors.New("no prepared timer segment")
 	}
-	nextSegment, err := t.nextSegmentForActiveState(ctx, activeSession.ID, activeSegment.SegmentType, settings)
+	nextSegment, err := t.nextSegmentForActiveState(
+		ctx,
+		activeSession.ID,
+		activeSegment.SegmentType,
+		settings,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -325,7 +363,11 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	emit(t.ctx, sharedtypes.EventTypeTimerBoundary, t.boundaryPayload(activeSegment.SegmentType, *nextSegment, true))
+	emit(
+		t.ctx,
+		sharedtypes.EventTypeTimerBoundary,
+		t.boundaryPayload(activeSegment.SegmentType, *nextSegment, true),
+	)
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	if err := t.ScheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
@@ -333,7 +375,10 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	return state, nil
 }
 
-func (t *TimerService) End(ctx context.Context, input SessionEndInput) (sharedtypes.TimerState, error) {
+func (t *TimerService) End(
+	ctx context.Context,
+	input SessionEndInput,
+) (sharedtypes.TimerState, error) {
 	if _, err := StopSession(ctx, t.ctx, input); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -408,7 +453,12 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	if prepared != nil {
 		return nil
 	}
-	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID)
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		activeSession.ID,
+	)
 	if err != nil || activeSegment == nil {
 		return err
 	}
@@ -423,12 +473,22 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 		return nil
 	}
 	t.scheduleBoundary(time.Duration(boundary.AfterMinutes)*time.Minute, func() {
-		_, _ = t.applyBoundaryTransition(context.Background(), activeSession.ID, activeSegment.SegmentType, boundary)
+		_, _ = t.applyBoundaryTransition(
+			context.Background(),
+			activeSession.ID,
+			activeSegment.SegmentType,
+			boundary,
+		)
 	})
 	return nil
 }
 
-func (t *TimerService) applyBoundaryTransition(ctx context.Context, sessionID string, currentType sharedtypes.SessionSegmentType, boundary *boundaryResult) (sharedtypes.TimerState, error) {
+func (t *TimerService) applyBoundaryTransition(
+	ctx context.Context,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+	boundary *boundaryResult,
+) (sharedtypes.TimerState, error) {
 	current, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, sessionID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -478,7 +538,11 @@ func (t *TimerService) applyBoundaryTransition(ctx context.Context, sessionID st
 		return sharedtypes.TimerState{}, err
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
-	emit(t.ctx, sharedtypes.EventTypeTimerBoundary, t.boundaryPayload(currentType, boundary.NextSegment, autoStart))
+	emit(
+		t.ctx,
+		sharedtypes.EventTypeTimerBoundary,
+		t.boundaryPayload(currentType, boundary.NextSegment, autoStart),
+	)
 	if autoStart {
 		if err := t.ScheduleNextBoundary(ctx); err != nil {
 			return sharedtypes.TimerState{}, err
@@ -487,7 +551,10 @@ func (t *TimerService) applyBoundaryTransition(ctx context.Context, sessionID st
 	return state, nil
 }
 
-func (t *TimerService) boundaryPayload(from, to sharedtypes.SessionSegmentType, started bool) sharedtypes.TimerBoundaryPayload {
+func (t *TimerService) boundaryPayload(
+	from, to sharedtypes.SessionSegmentType,
+	started bool,
+) sharedtypes.TimerBoundaryPayload {
 	payload := sharedtypes.TimerBoundaryPayload{
 		From:    from,
 		To:      to,
@@ -495,7 +562,11 @@ func (t *TimerService) boundaryPayload(from, to sharedtypes.SessionSegmentType, 
 		Title:   boundaryTitle(to, started),
 		Message: boundaryMessage(from, to, started),
 	}
-	activeContext, err := t.ctx.ActiveContext.Get(context.Background(), t.ctx.UserID, t.ctx.DeviceID)
+	activeContext, err := t.ctx.ActiveContext.Get(
+		context.Background(),
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+	)
 	if err != nil || activeContext == nil {
 		return payload
 	}
@@ -586,12 +657,17 @@ type boundaryResult struct {
 	AfterMinutes int
 }
 
-func computeNextBoundary(current sharedtypes.SessionSegmentType, settings *sharedtypes.CoreSettings, completedWorkCycles int) *boundaryResult {
+func computeNextBoundary(
+	current sharedtypes.SessionSegmentType,
+	settings *sharedtypes.CoreSettings,
+	completedWorkCycles int,
+) *boundaryResult {
 	if settings.TimerMode != "structured" || !settings.BreaksEnabled {
 		return nil
 	}
 	if current == sharedtypes.SessionSegmentWork {
-		isLongBreak := settings.LongBreakEnabled && completedWorkCycles > 0 && completedWorkCycles%settings.CyclesBeforeLongBreak == 0
+		isLongBreak := settings.LongBreakEnabled && completedWorkCycles > 0 &&
+			completedWorkCycles%settings.CyclesBeforeLongBreak == 0
 		next := sharedtypes.SessionSegmentShortBreak
 		if isLongBreak {
 			next = sharedtypes.SessionSegmentLongBreak
@@ -599,15 +675,25 @@ func computeNextBoundary(current sharedtypes.SessionSegmentType, settings *share
 		return &boundaryResult{NextSegment: next, AfterMinutes: settings.WorkDurationMinutes}
 	}
 	if current == sharedtypes.SessionSegmentShortBreak {
-		return &boundaryResult{NextSegment: sharedtypes.SessionSegmentWork, AfterMinutes: settings.ShortBreakMinutes}
+		return &boundaryResult{
+			NextSegment:  sharedtypes.SessionSegmentWork,
+			AfterMinutes: settings.ShortBreakMinutes,
+		}
 	}
 	if current == sharedtypes.SessionSegmentLongBreak {
-		return &boundaryResult{NextSegment: sharedtypes.SessionSegmentWork, AfterMinutes: settings.LongBreakMinutes}
+		return &boundaryResult{
+			NextSegment:  sharedtypes.SessionSegmentWork,
+			AfterMinutes: settings.LongBreakMinutes,
+		}
 	}
 	return nil
 }
 
-func (t *TimerService) nextBoundary(ctx context.Context, sessionID string, current sharedtypes.SessionSegmentType) (*boundaryResult, error) {
+func (t *TimerService) nextBoundary(
+	ctx context.Context,
+	sessionID string,
+	current sharedtypes.SessionSegmentType,
+) (*boundaryResult, error) {
 	settings, err := t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
 	if err != nil {
 		return nil, err
@@ -625,7 +711,12 @@ func (t *TimerService) nextBoundary(ctx context.Context, sessionID string, curre
 	return computeNextBoundary(current, settings, completedWorkCycles), nil
 }
 
-func (t *TimerService) nextSegmentForActiveState(ctx context.Context, sessionID string, current sharedtypes.SessionSegmentType, settings *sharedtypes.CoreSettings) (*sharedtypes.SessionSegmentType, error) {
+func (t *TimerService) nextSegmentForActiveState(
+	ctx context.Context,
+	sessionID string,
+	current sharedtypes.SessionSegmentType,
+	settings *sharedtypes.CoreSettings,
+) (*sharedtypes.SessionSegmentType, error) {
 	if settings == nil {
 		var err error
 		settings, err = t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
@@ -651,7 +742,10 @@ func (t *TimerService) nextSegmentForActiveState(ctx context.Context, sessionID 
 	return &next, nil
 }
 
-func shouldAutoStart(segment sharedtypes.SessionSegmentType, settings *sharedtypes.CoreSettings) bool {
+func shouldAutoStart(
+	segment sharedtypes.SessionSegmentType,
+	settings *sharedtypes.CoreSettings,
+) bool {
 	if settings == nil {
 		return false
 	}
@@ -661,7 +755,9 @@ func shouldAutoStart(segment sharedtypes.SessionSegmentType, settings *sharedtyp
 	return settings.AutoStartBreaks
 }
 
-func (t *TimerService) preparedStateForSession(sessionID string) (*runtimepkg.PreparedTimerState, error) {
+func (t *TimerService) preparedStateForSession(
+	sessionID string,
+) (*runtimepkg.PreparedTimerState, error) {
 	prepared, err := runtimepkg.ReadPreparedTimerState()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -669,7 +765,8 @@ func (t *TimerService) preparedStateForSession(sessionID string) (*runtimepkg.Pr
 		}
 		var syntaxErr *json.SyntaxError
 		var typeErr *json.UnmarshalTypeError
-		if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) || strings.Contains(err.Error(), "invalid prepared timer state") {
+		if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) ||
+			strings.Contains(err.Error(), "invalid prepared timer state") {
 			_ = runtimepkg.ClearPreparedTimerState()
 			return nil, nil
 		}

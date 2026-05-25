@@ -32,7 +32,8 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	}
 	timerTitle := "Focus Session"
 	timerHint := "[p] pause  [x] end  [z] stash  [i] context"
-	structured := state.Settings != nil && state.Settings.TimerMode == "structured" && state.Settings.BreaksEnabled
+	structured := state.Settings != nil && state.Settings.TimerMode == "structured" &&
+		state.Settings.BreaksEnabled
 	nextLabel := sessionActionSegmentLabel(state.Timer)
 	stateColor := activeTimerColor(theme, state.Timer)
 	if state.Timer.State == "ready" {
@@ -58,18 +59,36 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	timerH, issueH := viewhelpers.SplitVertical(totalH, 8, 8, max(8, totalH/2))
 	clockWidth := max(12, leftW-4)
 	clockHeight := max(7, timerH-8)
-	timerText := sessionmeta.RenderResponsiveClock(elapsed, clockWidth, clockHeight, stateColor, theme.ColorDim)
+	timerText := sessionmeta.RenderResponsiveClock(
+		elapsed,
+		clockWidth,
+		clockHeight,
+		stateColor,
+		theme.ColorDim,
+	)
 	timerText = lipgloss.NewStyle().
 		Width(clockWidth).
 		AlignHorizontal(lipgloss.Center).
 		Render(timerText)
 	timingLabel := sessionTimingLabel(state)
-	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)
+	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(
+		state.IssueSessions,
+	)
 	metadataLines := []string{
-		theme.StyleDim.Render(fmt.Sprintf("%s  ·  Completed sessions: %d", strings.ToUpper(seg), completedSessions)),
+		theme.StyleDim.Render(
+			fmt.Sprintf("%s  ·  Completed sessions: %d", strings.ToUpper(seg), completedSessions),
+		),
 	}
 	if activeIssue != nil && activeIssue.EstimateMinutes != nil {
-		metadataLines = append(metadataLines, theme.StyleDim.Render(sessionmeta.FormatEstimateProgress(priorWorkedSeconds+total, *activeIssue.EstimateMinutes)))
+		metadataLines = append(
+			metadataLines,
+			theme.StyleDim.Render(
+				sessionmeta.FormatEstimateProgress(
+					priorWorkedSeconds+total,
+					*activeIssue.EstimateMinutes,
+				),
+			),
+		)
 	}
 	centerWidth := max(1, leftW-4)
 	progressLine := ""
@@ -174,7 +193,10 @@ func segmentReadyLabel(segment sharedtypes.SessionSegmentType) string {
 	}
 }
 
-func segmentDurationSeconds(settings *api.CoreSettings, segment sharedtypes.SessionSegmentType) (int, bool) {
+func segmentDurationSeconds(
+	settings *api.CoreSettings,
+	segment sharedtypes.SessionSegmentType,
+) (int, bool) {
 	if settings == nil {
 		return 0, false
 	}
@@ -297,12 +319,20 @@ func structuredProgressBar(theme types.Theme, state types.ContentState, width in
 func centerLines(lines []string, width int) string {
 	centered := make([]string, 0, len(lines))
 	for _, line := range lines {
-		centered = append(centered, lipgloss.NewStyle().Width(max(1, width)).AlignHorizontal(lipgloss.Center).Render(line))
+		centered = append(
+			centered,
+			lipgloss.NewStyle().Width(max(1, width)).AlignHorizontal(lipgloss.Center).Render(line),
+		)
 	}
 	return strings.Join(centered, "\n")
 }
 
-func sessionIssueCompactLines(theme types.Theme, activeIssue *api.IssueWithMeta, width, height int, timerHint string) []string {
+func sessionIssueCompactLines(
+	theme types.Theme,
+	activeIssue *api.IssueWithMeta,
+	width, height int,
+	timerHint string,
+) []string {
 	lines := []string{"Active Issue", ""}
 	if activeIssue == nil {
 		lines = append(lines, "No issue selected", "", theme.StyleDim.Render(timerHint))
@@ -314,13 +344,29 @@ func sessionIssueCompactLines(theme types.Theme, activeIssue *api.IssueWithMeta,
 		viewhelpers.Truncate(activeIssue.Title, maxLine),
 	)
 	if activeIssue.EstimateMinutes != nil && *activeIssue.EstimateMinutes > 0 {
-		lines = append(lines, "", theme.StyleDim.Render("Estimate "+helperpkg.FormatCompactDurationMinutes(*activeIssue.EstimateMinutes)))
+		lines = append(
+			lines,
+			"",
+			theme.StyleDim.Render(
+				"Estimate "+helperpkg.FormatCompactDurationMinutes(*activeIssue.EstimateMinutes),
+			),
+		)
 	}
 	if activeIssue.Description != nil && strings.TrimSpace(*activeIssue.Description) != "" {
-		lines = append(lines, theme.StyleDim.Render("Desc  "+viewhelpers.Truncate(collapseSpace(*activeIssue.Description), maxLine)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(
+				"Desc  "+viewhelpers.Truncate(collapseSpace(*activeIssue.Description), maxLine),
+			),
+		)
 	}
 	if activeIssue.Notes != nil && strings.TrimSpace(*activeIssue.Notes) != "" {
-		lines = append(lines, theme.StyleDim.Render("Notes "+viewhelpers.Truncate(collapseSpace(*activeIssue.Notes), maxLine)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(
+				"Notes "+viewhelpers.Truncate(collapseSpace(*activeIssue.Notes), maxLine),
+			),
+		)
 	}
 	lines = append(lines, "", theme.StyleDim.Render(timerHint))
 	return lines

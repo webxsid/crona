@@ -15,7 +15,11 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func StartSession(ctx context.Context, c *core.Context, issueID int64) (sharedtypes.Session, error) {
+func StartSession(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+) (sharedtypes.Session, error) {
 	existing, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {
 		return sharedtypes.Session{}, err
@@ -72,7 +76,11 @@ type ManualSessionInput struct {
 	Notes                *string
 }
 
-func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*sharedtypes.Session, error) {
+func StopSession(
+	ctx context.Context,
+	c *core.Context,
+	input SessionEndInput,
+) (*sharedtypes.Session, error) {
 	active, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -99,7 +107,9 @@ func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*
 
 	var mergedCommit *string
 	existingCommit := parsedExisting[sharedtypes.SessionNoteSectionCommit]
-	newCommit := strings.TrimSpace(strings.Join([]string{existingCommit, valueOrEmpty(input.CommitMessage)}, "\n"))
+	newCommit := strings.TrimSpace(
+		strings.Join([]string{existingCommit, valueOrEmpty(input.CommitMessage)}, "\n"),
+	)
 	if newCommit != "" {
 		mergedCommit = &newCommit
 	}
@@ -110,7 +120,10 @@ func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*
 		workLines = append(workLines, strings.Split(existingWork, "\n")...)
 	}
 
-	userNotes := mergeSessionNotes(parsedExisting[sharedtypes.SessionNoteSectionNotes], formatSessionDetailNotes(input))
+	userNotes := mergeSessionNotes(
+		parsedExisting[sharedtypes.SessionNoteSectionNotes],
+		formatSessionDetailNotes(input),
+	)
 
 	var repoID, streamID, issueID *int64
 	if activeContext != nil {
@@ -174,7 +187,11 @@ func StopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*
 	return stopped, nil
 }
 
-func LogManualSession(ctx context.Context, c *core.Context, input ManualSessionInput) (*sharedtypes.Session, error) {
+func LogManualSession(
+	ctx context.Context,
+	c *core.Context,
+	input ManualSessionInput,
+) (*sharedtypes.Session, error) {
 	if input.IssueID == 0 {
 		return nil, errors.New("issueId is required")
 	}
@@ -208,7 +225,9 @@ func LogManualSession(ctx context.Context, c *core.Context, input ManualSessionI
 	if !sharedtypes.CanStartFocus(issue.Status) {
 		return nil, errors.New("focus sessions cannot be started for the current issue status")
 	}
-	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status) {
+	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(
+		issue.Status,
+	) {
 		if _, err := changeIssueStatus(ctx, c, input.IssueID, nextStatus, nil, true); err != nil {
 			return nil, err
 		}
@@ -342,7 +361,12 @@ func formatSessionDetailNotes(input SessionEndInput) *string {
 	return &joined
 }
 
-func AmendSessionNotes(ctx context.Context, c *core.Context, message string, sessionID *string) (*sharedtypes.Session, error) {
+func AmendSessionNotes(
+	ctx context.Context,
+	c *core.Context,
+	message string,
+	sessionID *string,
+) (*sharedtypes.Session, error) {
 	var (
 		session *sharedtypes.Session
 		err     error
@@ -389,7 +413,11 @@ func AmendSessionNotes(ctx context.Context, c *core.Context, message string, ses
 	return updated, nil
 }
 
-func GetSessionDetail(ctx context.Context, c *core.Context, sessionID string) (*sharedtypes.SessionDetail, error) {
+func GetSessionDetail(
+	ctx context.Context,
+	c *core.Context,
+	sessionID string,
+) (*sharedtypes.SessionDetail, error) {
 	detail, err := c.Sessions.GetDetail(ctx, sessionID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -406,7 +434,11 @@ func GetSessionDetail(ctx context.Context, c *core.Context, sessionID string) (*
 	return detail, nil
 }
 
-func PauseSession(ctx context.Context, c *core.Context, nextSegmentType sharedtypes.SessionSegmentType) error {
+func PauseSession(
+	ctx context.Context,
+	c *core.Context,
+	nextSegmentType sharedtypes.SessionSegmentType,
+) error {
 	active, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil || active == nil {
 		return err
@@ -434,7 +466,13 @@ func ResumeSession(ctx context.Context, c *core.Context) error {
 	if current != nil && current.SegmentType == sharedtypes.SessionSegmentWork {
 		return nil
 	}
-	_, err = c.SessionSegments.StartSegment(ctx, c.UserID, c.DeviceID, active.ID, sharedtypes.SessionSegmentWork)
+	_, err = c.SessionSegments.StartSegment(
+		ctx,
+		c.UserID,
+		c.DeviceID,
+		active.ID,
+		sharedtypes.SessionSegmentWork,
+	)
 	return err
 }
 
@@ -527,7 +565,9 @@ func resolveManualSessionWindow(input ManualSessionInput) (string, string, error
 			return "", "", errors.New("end time must be after start time")
 		}
 		if windowSeconds != totalSeconds {
-			return "", "", fmt.Errorf("work and break durations must add up to the provided time window")
+			return "", "", fmt.Errorf(
+				"work and break durations must add up to the provided time window",
+			)
 		}
 		return start, end, nil
 	}

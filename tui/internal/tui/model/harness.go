@@ -34,12 +34,22 @@ func NewDailyRenderModel(width, height int) Model {
 		dailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		allIssues: []api.IssueWithMeta{
 			{
-				Issue:      api.Issue{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				Issue: api.Issue{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 				RepoName:   "Work",
 				StreamName: "app",
 			},
@@ -120,7 +130,14 @@ func (m Model) DialogInputValue(index int) string {
 
 func (m Model) DialogFocusIndex() int { return m.dialogFocusIdx }
 
-func NewUpdateViewModel(view View, pane Pane, statusMsg string, updateStatus *api.UpdateStatus, executablePath string, kernelInfo *api.KernelInfo) Model {
+func NewUpdateViewModel(
+	view View,
+	pane Pane,
+	statusMsg string,
+	updateStatus *api.UpdateStatus,
+	executablePath string,
+	kernelInfo *api.KernelInfo,
+) Model {
 	model := Model{
 		view:                  view,
 		pane:                  pane,

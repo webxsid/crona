@@ -5,7 +5,12 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func ReportWriteSpecForTesting(kind sharedtypes.ExportReportKind, label, scopeLabel, date, startDate, endDate string, format sharedtypes.ExportFormat, baseName string) reportWriteSpec {
+func ReportWriteSpecForTesting(
+	kind sharedtypes.ExportReportKind,
+	label, scopeLabel, date, startDate, endDate string,
+	format sharedtypes.ExportFormat,
+	baseName string,
+) reportWriteSpec {
 	return reportWriteSpec{
 		Kind:       kind,
 		Label:      label,
@@ -30,7 +35,10 @@ func ResolveICSDirForTesting(paths runtime.Paths, raw string) (string, error) {
 	return normalizeICSDir(paths, raw)
 }
 
-func RenderDetailedIssueGroupForTesting(issue sharedtypes.IssueWithMeta, sessions []sharedtypes.SessionHistoryEntry) []string {
+func RenderDetailedIssueGroupForTesting(
+	issue sharedtypes.IssueWithMeta,
+	sessions []sharedtypes.SessionHistoryEntry,
+) []string {
 	group := reportIssueGroup{Issue: issue}
 	for _, session := range sessions {
 		group.Sessions = append(group.Sessions, reportIssueSession{SessionHistoryEntry: session})

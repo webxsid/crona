@@ -28,8 +28,26 @@ type APIIssue struct {
 	AbandonedAt     *string
 }
 
-func NewAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, workedSeconds int, pinnedDaily bool, todoForDate, completedAt, abandonedAt *string) APIIssue {
-	return APIIssue{ID: id, Title: title, Status: status, EstimateMinutes: estimateMinutes, WorkedSeconds: workedSeconds, PinnedDaily: pinnedDaily, TodoForDate: todoForDate, CompletedAt: completedAt, AbandonedAt: abandonedAt}
+func NewAPIIssue(
+	id int64,
+	title string,
+	status sharedtypes.IssueStatus,
+	estimateMinutes *int,
+	workedSeconds int,
+	pinnedDaily bool,
+	todoForDate, completedAt, abandonedAt *string,
+) APIIssue {
+	return APIIssue{
+		ID:              id,
+		Title:           title,
+		Status:          status,
+		EstimateMinutes: estimateMinutes,
+		WorkedSeconds:   workedSeconds,
+		PinnedDaily:     pinnedDaily,
+		TodoForDate:     todoForDate,
+		CompletedAt:     completedAt,
+		AbandonedAt:     abandonedAt,
+	}
 }
 
 func PlainIssueStatus(status string) string {
@@ -75,7 +93,11 @@ func IssueStatusStyle(theme Theme, status string) *lipgloss.Style {
 	}
 }
 
-func IssueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
+func IssueDueSuffix(
+	status sharedtypes.IssueStatus,
+	todoForDate, completedAt, abandonedAt *string,
+	settings *api.CoreSettings,
+) string {
 	if resolvedOn := resolvedOnDate(status, completedAt, abandonedAt, settings); resolvedOn != "" {
 		return "  [on " + resolvedOn + "]"
 	}
@@ -101,7 +123,11 @@ func IssueDueSuffix(status sharedtypes.IssueStatus, todoForDate, completedAt, ab
 	return "  [due " + shareddatefmt.FormatISODate(date, settings) + "]"
 }
 
-func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
+func resolvedOnDate(
+	status sharedtypes.IssueStatus,
+	completedAt, abandonedAt *string,
+	settings *api.CoreSettings,
+) string {
 	var raw string
 	switch status {
 	case sharedtypes.IssueStatusDone:
@@ -135,7 +161,12 @@ func filteredIssueMetaIndices(issues []api.IssueWithMeta, filter string) []int {
 	filter = normalizeFilter(filter)
 	out := []int{}
 	for i, issue := range issues {
-		text := strings.ToLower(strings.Join([]string{issue.Title, issue.RepoName, issue.StreamName, string(issue.Status)}, " "))
+		text := strings.ToLower(
+			strings.Join(
+				[]string{issue.Title, issue.RepoName, issue.StreamName, string(issue.Status)},
+				" ",
+			),
+		)
 		if filter == "" || strings.Contains(text, filter) {
 			out = append(out, i)
 		}
@@ -143,9 +174,14 @@ func filteredIssueMetaIndices(issues []api.IssueWithMeta, filter string) []int {
 	return out
 }
 
-func PrioritizedDefaultIssueIndices(issues []api.IssueWithMeta, filter string, settings *api.CoreSettings) []int {
+func PrioritizedDefaultIssueIndices(
+	issues []api.IssueWithMeta,
+	filter string,
+	settings *api.CoreSettings,
+) []int {
 	indices := filteredIssueMetaIndices(issues, filter)
-	if settings != nil && settings.IssueSort != "" && settings.IssueSort != sharedtypes.IssueSortPriority {
+	if settings != nil && settings.IssueSort != "" &&
+		settings.IssueSort != sharedtypes.IssueSortPriority {
 		open := make([]int, 0, len(indices))
 		completed := make([]int, 0, len(indices))
 		for _, idx := range indices {
@@ -189,7 +225,11 @@ func PrioritizedDefaultIssueIndices(issues []api.IssueWithMeta, filter string, s
 	return indices
 }
 
-func SplitDefaultIssueIndices(issues []api.IssueWithMeta, filter string, settings *api.CoreSettings) ([]int, []int) {
+func SplitDefaultIssueIndices(
+	issues []api.IssueWithMeta,
+	filter string,
+	settings *api.CoreSettings,
+) ([]int, []int) {
 	ordered := PrioritizedDefaultIssueIndices(issues, filter, settings)
 	open := make([]int, 0, len(ordered))
 	completed := make([]int, 0, len(ordered))
@@ -203,7 +243,10 @@ func SplitDefaultIssueIndices(issues []api.IssueWithMeta, filter string, setting
 	return open, completed
 }
 
-func defaultIssuePriority(issue api.IssueWithMeta, today string) (bucket int, statusRank int, due string) {
+func defaultIssuePriority(
+	issue api.IssueWithMeta,
+	today string,
+) (bucket int, statusRank int, due string) {
 	if isClosedIssueStatus(issue.Status) {
 		return 3, closedIssueRank(issue.Status), closedIssueSortDate(issue)
 	}

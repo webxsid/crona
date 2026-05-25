@@ -11,7 +11,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func renderDistributionSection(theme types.Theme, title string, summary *api.TimeDistributionSummary) []string {
+func renderDistributionSection(
+	theme types.Theme,
+	title string,
+	summary *api.TimeDistributionSummary,
+) []string {
 	lines := []string{theme.StyleHeader.Render(title)}
 	if summary == nil || len(summary.Rows) == 0 {
 		return append(lines, theme.StyleDim.Render("  No data"))
@@ -19,7 +23,15 @@ func renderDistributionSection(theme types.Theme, title string, summary *api.Tim
 	limit := min(3, len(summary.Rows))
 	for i := 0; i < limit; i++ {
 		row := summary.Rows[i]
-		lines = append(lines, fmt.Sprintf("  %s  %d%%  %s", viewhelpers.Truncate(row.Label, 18), int(row.Percent+0.5), viewhelpers.FormatClockText(row.WorkedSeconds)))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"  %s  %d%%  %s",
+				viewhelpers.Truncate(row.Label, 18),
+				int(row.Percent+0.5),
+				viewhelpers.FormatClockText(row.WorkedSeconds),
+			),
+		)
 	}
 	return lines
 }

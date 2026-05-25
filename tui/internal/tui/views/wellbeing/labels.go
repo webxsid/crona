@@ -38,7 +38,11 @@ func label(label_type LabelTypes, state types.ContentState) string {
 func wellbeingMoodLabel(state types.ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageMood != nil {
-			return fmt.Sprintf("%s avg %.1f/5", wellbeingWindowLabel(state), *state.MetricsRollup.AverageMood)
+			return fmt.Sprintf(
+				"%s avg %.1f/5",
+				wellbeingWindowLabel(state),
+				*state.MetricsRollup.AverageMood,
+			)
 		}
 		return "-"
 	}
@@ -48,7 +52,11 @@ func wellbeingMoodLabel(state types.ContentState) string {
 func wellbeingEnergyLabel(state types.ContentState) string {
 	if state.DailyCheckIn == nil || state.DailyCheckIn.Date == "" {
 		if state.MetricsRollup != nil && state.MetricsRollup.AverageEnergy != nil {
-			return fmt.Sprintf("%s avg %.1f/5", wellbeingWindowLabel(state), *state.MetricsRollup.AverageEnergy)
+			return fmt.Sprintf(
+				"%s avg %.1f/5",
+				wellbeingWindowLabel(state),
+				*state.MetricsRollup.AverageEnergy,
+			)
 		}
 		return "-"
 	}
@@ -60,7 +68,11 @@ func wellbeingSleepLabel(state types.ContentState) string {
 		return "today " + helperpkg.FormatCompactDurationHours(*state.DailyCheckIn.SleepHours)
 	}
 	if state.MetricsRollup != nil && state.MetricsRollup.AverageSleepHours != nil {
-		return wellbeingWindowLabel(state) + " avg " + helperpkg.FormatCompactDurationHours(*state.MetricsRollup.AverageSleepHours)
+		return wellbeingWindowLabel(
+			state,
+		) + " avg " + helperpkg.FormatCompactDurationHours(
+			*state.MetricsRollup.AverageSleepHours,
+		)
 	}
 	return "-"
 }
@@ -78,7 +90,26 @@ func wellbeingStreakLabel(state types.ContentState) string {
 	}
 	if len(state.Streaks.CustomHabitStreaks) > 0 {
 		first := state.Streaks.CustomHabitStreaks[0]
-		return fmt.Sprintf("C%d/%d F%d/%d H%d/%d %s %d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays, first.Name, first.Current, first.Longest)
+		return fmt.Sprintf(
+			"C%d/%d F%d/%d H%d/%d %s %d/%d",
+			state.Streaks.CurrentCheckInDays,
+			state.Streaks.LongestCheckInDays,
+			state.Streaks.CurrentFocusDays,
+			state.Streaks.LongestFocusDays,
+			state.Streaks.CurrentHabitDays,
+			state.Streaks.LongestHabitDays,
+			first.Name,
+			first.Current,
+			first.Longest,
+		)
 	}
-	return fmt.Sprintf("C%d/%d F%d/%d H%d/%d", state.Streaks.CurrentCheckInDays, state.Streaks.LongestCheckInDays, state.Streaks.CurrentFocusDays, state.Streaks.LongestFocusDays, state.Streaks.CurrentHabitDays, state.Streaks.LongestHabitDays)
+	return fmt.Sprintf(
+		"C%d/%d F%d/%d H%d/%d",
+		state.Streaks.CurrentCheckInDays,
+		state.Streaks.LongestCheckInDays,
+		state.Streaks.CurrentFocusDays,
+		state.Streaks.LongestFocusDays,
+		state.Streaks.CurrentHabitDays,
+		state.Streaks.LongestHabitDays,
+	)
 }

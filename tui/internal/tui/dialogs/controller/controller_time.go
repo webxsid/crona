@@ -36,7 +36,12 @@ func updateCheckIn(state State, msg tea.KeyMsg) (State, *Action, string) {
 			if err != nil {
 				return state, nil, err.Error()
 			}
-			sleepScore, status := parseOptionalIntRange(strings.TrimSpace(state.Inputs[3].Value()), 0, 100, "Sleep score must be between 0 and 100")
+			sleepScore, status := parseOptionalIntRange(
+				strings.TrimSpace(state.Inputs[3].Value()),
+				0,
+				100,
+				"Sleep score must be between 0 and 100",
+			)
 			if status != "" {
 				return state, nil, status
 			}
@@ -84,7 +89,13 @@ func updateAmendSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 			if note == "" {
 				return state, nil, "Commit message is required"
 			}
-			return Close(state), &Action{Kind: "amend_session", ID: state.SessionID, Note: ValueToPointer(note)}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind: "amend_session",
+					ID:   state.SessionID,
+					Note: ValueToPointer(note),
+				}, ""
 		}
 	}
 	var cmd tea.Cmd
@@ -99,7 +110,14 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 		return Close(state), nil, ""
 	case "f2", "ctrl+y":
 		if state.FocusIdx == 1 {
-			return OpenDatePicker(state, "manual_session", state.IssueID, 1, ValueToPointer(state.Inputs[1].Value()), strings.TrimSpace(state.Inputs[1].Value())), nil, ""
+			return OpenDatePicker(
+				state,
+				"manual_session",
+				state.IssueID,
+				1,
+				ValueToPointer(state.Inputs[1].Value()),
+				strings.TrimSpace(state.Inputs[1].Value()),
+			), nil, ""
 		}
 	case "g":
 		if state.FocusIdx == 1 {
@@ -107,7 +125,9 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 			return state, nil, ""
 		}
 	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + len(state.Inputs)) % len(state.Inputs)
+		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + len(state.Inputs)) % len(
+			state.Inputs,
+		)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	default:
@@ -120,7 +140,11 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 			if err != nil {
 				return state, nil, err.Error()
 			}
-			breakSeconds, err := ParseDurationInput(state.Inputs[3].Value(), false, "Break duration")
+			breakSeconds, err := ParseDurationInput(
+				state.Inputs[3].Value(),
+				false,
+				"Break duration",
+			)
 			if err != nil {
 				return state, nil, err.Error()
 			}
@@ -142,7 +166,13 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 				CommitMessage:        ValueToPointer(state.Inputs[0].Value()),
 				Notes:                ValueToPointer(state.Inputs[6].Value()),
 			}
-			return Close(state), &Action{Kind: "manual_session", IssueID: state.IssueID, ManualSession: &req}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:          "manual_session",
+					IssueID:       state.IssueID,
+					ManualSession: &req,
+				}, ""
 		}
 	}
 	var cmd tea.Cmd

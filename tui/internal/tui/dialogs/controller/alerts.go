@@ -97,7 +97,9 @@ func parseAlertReminderSchedule(raw string) (sharedtypes.AlertReminderScheduleTy
 			return "", nil, err
 		}
 		if len(weekdays) == 0 {
-			return "", nil, errors.New("schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri")
+			return "", nil, errors.New(
+				"schedule must be daily, weekdays, or comma-separated weekdays like mon,wed,fri",
+			)
 		}
 		return sharedtypes.AlertReminderScheduleWeekly, weekdays, nil
 	}

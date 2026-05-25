@@ -90,7 +90,8 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			if errors.Is(err, net.ErrClosed) || errors.Is(s.requestContext().Err(), context.Canceled) {
+			if errors.Is(err, net.ErrClosed) ||
+				errors.Is(s.requestContext().Err(), context.Canceled) {
 				return
 			}
 			s.logError("ipc accept failed", err)
@@ -135,7 +136,8 @@ func (s *Server) handleConn(conn net.Conn) {
 				})
 				return
 			}
-			if err := streamHandler.Stream(s.requestContext(), req, writer); err != nil && !errors.Is(err, context.Canceled) {
+			if err := streamHandler.Stream(s.requestContext(), req, writer); err != nil &&
+				!errors.Is(err, context.Canceled) {
 				s.logError("ipc event stream failed", err)
 			}
 			return

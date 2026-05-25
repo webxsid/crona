@@ -9,16 +9,39 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func RenderScratchpadPlaceholder(theme Theme, state ContentState) string {
-	actions := PaneActionsForState(theme, state, state.Pane == "scratchpads")
-	return RenderSimplePaneWithActions(theme, "Scratchpads", state.Filters["scratchpads"], state.Cursors["scratchpads"], viewhelpers.ScratchpadItems(state.Scratchpads), state.Pane == "scratchpads", state.Width, state.Height, "No scratchpads — [a] create new", actions)
+func RenderSimplePane(
+	theme Theme,
+	title, filter string,
+	cursor int,
+	items []string,
+	active bool,
+	width, height int,
+	empty string,
+) string {
+	return RenderSimplePaneWithActions(
+		theme,
+		title,
+		filter,
+		cursor,
+		items,
+		active,
+		width,
+		height,
+		empty,
+		nil,
+	)
 }
 
-func RenderSimplePane(theme Theme, title, filter string, cursor int, items []string, active bool, width, height int, empty string) string {
-	return RenderSimplePaneWithActions(theme, title, filter, cursor, items, active, width, height, empty, nil)
-}
-
-func RenderSimplePaneWithActions(theme Theme, title, filter string, cursor int, items []string, active bool, width, height int, empty string, actions []string) string {
+func RenderSimplePaneWithActions(
+	theme Theme,
+	title, filter string,
+	cursor int,
+	items []string,
+	active bool,
+	width, height int,
+	empty string,
+	actions []string,
+) string {
 	indices := viewhelpers.FilteredStrings(items, filter)
 	total := len(indices)
 	if !active {
@@ -131,7 +154,6 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 	return ContextualActions(theme, ActionsState{
 		View:                   state.View,
 		Pane:                   state.Pane,
-		ScratchpadOpen:         state.ScratchpadOpen,
 		TimerState:             timerStateFromContent(state),
 		TimerSegment:           timerSegmentFromContent(state),
 		TimerNextSegment:       timerNextSegmentFromContent(state),
@@ -171,16 +193,24 @@ func timerNextSegmentFromContent(state ContentState) string {
 }
 
 func structuredTimerFromContent(state ContentState) bool {
-	return state.Settings != nil && state.Settings.TimerMode == "structured" && state.Settings.BreaksEnabled
+	return state.Settings != nil && state.Settings.TimerMode == "structured" &&
+		state.Settings.BreaksEnabled
 }
 
-func RenderPaneRowStyled(theme Theme, i, cur int, active bool, text string, contentStyle *lipgloss.Style, width int) string {
+func RenderPaneRowStyled(
+	theme Theme,
+	i, cur int,
+	active bool,
+	text string,
+	contentStyle *lipgloss.Style,
+	width int,
+) string {
 	line := viewhelpers.Truncate(text, width-6)
 	if contentStyle != nil {
 		line = contentStyle.Render(line)
 	}
 	if i == cur && active {
-		return theme.StyleCursor.Render("▶ " + line)
+		return theme.StyleCursor.Render(SelectionCursor + " " + line)
 	}
 	if i == cur {
 		return theme.StyleSelected.Render("  " + line)
@@ -193,7 +223,10 @@ func RenderPaneBox(theme Theme, active bool, width, height int, content string) 
 	if active {
 		box = theme.StyleActive
 	}
-	return box.Width(width-2).Height(height-2).Padding(0, 1).Render(clipBoxContent(content, height-2))
+	return box.Width(width-2).
+		Height(height-2).
+		Padding(0, 1).
+		Render(clipBoxContent(content, height-2))
 }
 
 func clipBoxContent(content string, maxLines int) string {

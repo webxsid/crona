@@ -32,7 +32,12 @@ func ProtectedRestMode(settings *api.CoreSettings, date string) (bool, bool, str
 }
 
 func RestModeMessage(date string) string {
-	messages := []string{"Enjoy your break", "Rest is part of the work", "Step away and reset", "Take the day lightly"}
+	messages := []string{
+		"Enjoy your break",
+		"Rest is part of the work",
+		"Step away and reset",
+		"Take the day lightly",
+	}
 	sum := 0
 	for _, r := range date {
 		sum += int(r)

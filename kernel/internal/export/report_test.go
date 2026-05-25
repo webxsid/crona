@@ -221,7 +221,10 @@ func TestMarkdownReportTemplatesRenderYamlFrontmatter(t *testing.T) {
 		Format:   sharedtypes.ExportFormatMarkdown,
 		BaseName: "daily-2026-04-13",
 	}
-	rendered, err := RenderTemplate(fallbackDailyReportTemplate, attachFrontmatter(buildTemplateDataMap(data), spec))
+	rendered, err := RenderTemplate(
+		fallbackDailyReportTemplate,
+		attachFrontmatter(buildTemplateDataMap(data), spec),
+	)
 	if err != nil {
 		t.Fatalf("render daily report template: %v", err)
 	}
@@ -323,7 +326,11 @@ func TestRuntimeFrontmatterWrapsMarkdownTemplatesWithoutFrontmatter(t *testing.T
 }
 
 func TestMarkdownPresetsRenderFrontmatter(t *testing.T) {
-	body, ok := presetTemplateBody(sharedtypes.ExportReportKindWeekly, sharedtypes.ExportAssetKindTemplateMarkdown, "brief")
+	body, ok := presetTemplateBody(
+		sharedtypes.ExportReportKindWeekly,
+		sharedtypes.ExportAssetKindTemplateMarkdown,
+		"brief",
+	)
 	if !ok {
 		t.Fatal("expected weekly brief markdown preset")
 	}

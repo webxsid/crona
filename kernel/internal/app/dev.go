@@ -9,7 +9,6 @@ import (
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/export"
 	runtimepkg "crona/kernel/internal/runtime"
-	"crona/kernel/internal/scratchfile"
 	"crona/kernel/internal/store"
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
@@ -54,9 +53,6 @@ func (h *Handler) resetRuntimeFiles(ctx context.Context) error {
 	if _, err := export.EnsureAssets(h.paths); err != nil {
 		return fmt.Errorf("ensure export assets: %w", err)
 	}
-	if err := scratchfile.ClearAll(h.core.ScratchDir); err != nil {
-		return fmt.Errorf("clear scratch files: %w", err)
-	}
 	return nil
 }
 
@@ -77,7 +73,8 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return fn()
 	}
 	seedAt := func(dayOffset, hour, minute int, fn func() error) error {
-		ts := time.Date(baseNow.Year(), baseNow.Month(), baseNow.Day(), hour, minute, 0, 0, time.UTC).AddDate(0, 0, dayOffset)
+		ts := time.Date(baseNow.Year(), baseNow.Month(), baseNow.Day(), hour, minute, 0, 0, time.UTC).
+			AddDate(0, 0, dayOffset)
 		return withSeedNow(ts, fn)
 	}
 	createRepo := func(name, description, color string) (sharedtypes.Repo, error) {
@@ -150,7 +147,12 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			currentStatus := issue.Status
 			for _, nextStatus := range transitions {
 				if !sharedtypes.IsValidIssueTransition(currentStatus, nextStatus) {
-					return fmt.Errorf("invalid seeded issue transition for %q: %s -> %s", title, currentStatus, nextStatus)
+					return fmt.Errorf(
+						"invalid seeded issue transition for %q: %s -> %s",
+						title,
+						currentStatus,
+						nextStatus,
+					)
 				}
 				if _, err := corecommands.ChangeIssueStatus(ctx, h.core, issue.ID, nextStatus, notePtr); err != nil {
 					return err
@@ -189,26 +191,39 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	}
 	seedHabitStatus := func(dayOffset int, habitID int64, date string, status sharedtypes.HabitCompletionStatus, durationMinutes *int, notes *string) error {
 		return seedAt(dayOffset, 20, 15, func() error {
-			_, err := corecommands.CompleteHabit(ctx, h.core, habitID, date, status, durationMinutes, notes)
+			_, err := corecommands.CompleteHabit(
+				ctx,
+				h.core,
+				habitID,
+				date,
+				status,
+				durationMinutes,
+				notes,
+			)
 			return err
 		})
 	}
 	seedCheckIn := func(dayOffset int, date string, mood, energy int, sleepHours float64, sleepScore, screenMinutes int, notes string) error {
 		return seedAt(dayOffset, 7, 45, func() error {
-			_, err := corecommands.UpsertDailyCheckIn(ctx, h.core, shareddto.DailyCheckInUpsertRequest{
-				Date:              date,
-				Mood:              mood,
-				Energy:            energy,
-				SleepHours:        devFloatPtr(sleepHours),
-				SleepScore:        devIntPtr(sleepScore),
-				ScreenTimeMinutes: devIntPtr(screenMinutes),
-				Notes:             devStringPtr(notes),
-			})
+			_, err := corecommands.UpsertDailyCheckIn(
+				ctx,
+				h.core,
+				shareddto.DailyCheckInUpsertRequest{
+					Date:              date,
+					Mood:              mood,
+					Energy:            energy,
+					SleepHours:        devFloatPtr(sleepHours),
+					SleepScore:        devIntPtr(sleepScore),
+					ScreenTimeMinutes: devIntPtr(screenMinutes),
+					Notes:             devStringPtr(notes),
+				},
+			)
 			return err
 		})
 	}
 	seedSession := func(dayOffset int, issueID int64, startHour, startMinute, durationMinutes int, input corecommands.SessionEndInput) error {
-		start := time.Date(baseNow.Year(), baseNow.Month(), baseNow.Day(), startHour, startMinute, 0, 0, time.UTC).AddDate(0, 0, dayOffset)
+		start := time.Date(baseNow.Year(), baseNow.Month(), baseNow.Day(), startHour, startMinute, 0, 0, time.UTC).
+			AddDate(0, 0, dayOffset)
 		if err := withSeedNow(start, func() error {
 			_, err := corecommands.StartSession(ctx, h.core, issueID)
 			return err
@@ -221,15 +236,27 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		})
 	}
 
-	workRepo, err := createRepo("Work", "Team delivery, product design, and release operations.", "blue")
+	workRepo, err := createRepo(
+		"Work",
+		"Team delivery, product design, and release operations.",
+		"blue",
+	)
 	if err != nil {
 		return err
 	}
-	personalRepo, err := createRepo("Personal", "Life admin, routines, and home maintenance.", "green")
+	personalRepo, err := createRepo(
+		"Personal",
+		"Life admin, routines, and home maintenance.",
+		"green",
+	)
 	if err != nil {
 		return err
 	}
-	ossRepo, err := createRepo("OSS", "Open-source tooling and documentation experiments.", "magenta")
+	ossRepo, err := createRepo(
+		"OSS",
+		"Open-source tooling and documentation experiments.",
+		"magenta",
+	)
 	if err != nil {
 		return err
 	}
@@ -238,11 +265,19 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	infraStream, err := createStream(workRepo.ID, "infra", "Release, packaging, and deployment plumbing.")
+	infraStream, err := createStream(
+		workRepo.ID,
+		"infra",
+		"Release, packaging, and deployment plumbing.",
+	)
 	if err != nil {
 		return err
 	}
-	platformStream, err := createStream(workRepo.ID, "platform", "Shared APIs, reliability, and observability.")
+	platformStream, err := createStream(
+		workRepo.ID,
+		"platform",
+		"Shared APIs, reliability, and observability.",
+	)
 	if err != nil {
 		return err
 	}
@@ -250,7 +285,11 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	wellbeingStream, err := createStream(personalRepo.ID, "wellbeing", "Health, fitness, and routines.")
+	wellbeingStream, err := createStream(
+		personalRepo.ID,
+		"wellbeing",
+		"Health, fitness, and routines.",
+	)
 	if err != nil {
 		return err
 	}
@@ -259,27 +298,84 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
-	focusIssue, err := createIssue(-6, appStream.ID, "Port dev tooling to Go", "Validate the IPC-first workflow and replace the remaining shell scripts.", 90, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress}, "Drive the migration end-to-end and keep dev experience tight.")
+	focusIssue, err := createIssue(
+		-6,
+		appStream.ID,
+		"Port dev tooling to Go",
+		"Validate the IPC-first workflow and replace the remaining shell scripts.",
+		90,
+		devDatePtr(dateAt(-1)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress},
+		"Drive the migration end-to-end and keep dev experience tight.",
+	)
 	if err != nil {
 		return err
 	}
-	underEstimateIssue, err := createIssue(-5, appStream.ID, "Add keyboard-first command palette", "Speed up common view and dialog actions from one launcher.", 35, devDatePtr(dateAt(-3)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress}, "Intentionally underestimated for seed accuracy drift.")
+	underEstimateIssue, err := createIssue(
+		-5,
+		appStream.ID,
+		"Add keyboard-first command palette",
+		"Speed up common view and dialog actions from one launcher.",
+		35,
+		devDatePtr(dateAt(-3)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress},
+		"Intentionally underestimated for seed accuracy drift.",
+	)
 	if err != nil {
 		return err
 	}
-	overEstimateIssue, err := createIssue(-4, appStream.ID, "Review lifecycle UX copy", "Tighten action labels and empty-state wording across the dashboard.", 95, devDatePtr(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Intentionally overestimated for rollup estimate-bias testing.")
+	overEstimateIssue, err := createIssue(
+		-4,
+		appStream.ID,
+		"Review lifecycle UX copy",
+		"Tighten action labels and empty-state wording across the dashboard.",
+		95,
+		devDatePtr(dateAt(-2)),
+		[]sharedtypes.IssueStatus{
+			sharedtypes.IssueStatusInProgress,
+			sharedtypes.IssueStatusInReview,
+		},
+		"Intentionally overestimated for rollup estimate-bias testing.",
+	)
 	if err != nil {
 		return err
 	}
-	readyIssue, err := createIssue(-6, infraStream.ID, "Prepare rollout checklist", "Capture deploy sequencing, smoke tests, and rollback checkpoints.", 45, devDatePtr(dateAt(-4)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Waiting only on final go/no-go review.")
+	readyIssue, err := createIssue(
+		-6,
+		infraStream.ID,
+		"Prepare rollout checklist",
+		"Capture deploy sequencing, smoke tests, and rollback checkpoints.",
+		45,
+		devDatePtr(dateAt(-4)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady},
+		"Waiting only on final go/no-go review.",
+	)
 	if err != nil {
 		return err
 	}
-	inProgressIssue, err := createIssue(-6, infraStream.ID, "Wire release packaging checks", "Verify built artifacts, checksums, and update install docs.", 75, devDatePtr(dateAt(-5)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress}, "Partially implemented; needs artifact verification.")
+	inProgressIssue, err := createIssue(
+		-6,
+		infraStream.ID,
+		"Wire release packaging checks",
+		"Verify built artifacts, checksums, and update install docs.",
+		75,
+		devDatePtr(dateAt(-5)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress},
+		"Partially implemented; needs artifact verification.",
+	)
 	if err != nil {
 		return err
 	}
-	blockedIssue, err := createIssue(-6, infraStream.ID, "Provision CI signing secrets", "Unblock package signing in CI and production release automation.", 30, devDatePtr(dateAt(-4)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusBlocked}, "Awaiting access to the signing account.")
+	blockedIssue, err := createIssue(
+		-6,
+		infraStream.ID,
+		"Provision CI signing secrets",
+		"Unblock package signing in CI and production release automation.",
+		30,
+		devDatePtr(dateAt(-4)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusBlocked},
+		"Awaiting access to the signing account.",
+	)
 	if err != nil {
 		return err
 	}
@@ -292,7 +388,16 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if _, err := createIssue(-6, platformStream.ID, "Reduce websocket reconnect churn", "Stabilize event fanout under network flaps.", 50, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Superseded by the unix socket migration."); err != nil {
 		return err
 	}
-	docsIssue, err := createIssue(-3, cliStream.ID, "Improve install docs for Linux", "Add shell completion, troubleshooting, and verification notes.", 35, devDatePtr(dateAt(1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Future planned work to keep the window from being all closed.")
+	docsIssue, err := createIssue(
+		-3,
+		cliStream.ID,
+		"Improve install docs for Linux",
+		"Add shell completion, troubleshooting, and verification notes.",
+		35,
+		devDatePtr(dateAt(1)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady},
+		"Future planned work to keep the window from being all closed.",
+	)
 	if err != nil {
 		return err
 	}
@@ -324,19 +429,51 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
-	workoutHabit, err := createHabit(-29, wellbeingStream.ID, "Strength Training", "Three lifting sessions each week with basic progression.", "weekly", []int{1, 3, 5}, devIntPtr(60))
+	workoutHabit, err := createHabit(
+		-29,
+		wellbeingStream.ID,
+		"Strength Training",
+		"Three lifting sessions each week with basic progression.",
+		"weekly",
+		[]int{1, 3, 5},
+		devIntPtr(60),
+	)
 	if err != nil {
 		return err
 	}
-	walkHabit, err := createHabit(-29, wellbeingStream.ID, "Morning Walk", "Get outside before work for a short walk.", "daily", nil, devIntPtr(25))
+	walkHabit, err := createHabit(
+		-29,
+		wellbeingStream.ID,
+		"Morning Walk",
+		"Get outside before work for a short walk.",
+		"daily",
+		nil,
+		devIntPtr(25),
+	)
 	if err != nil {
 		return err
 	}
-	journalHabit, err := createHabit(-29, wellbeingStream.ID, "Journal", "Capture a quick end-of-day reflection.", "daily", nil, devIntPtr(10))
+	journalHabit, err := createHabit(
+		-29,
+		wellbeingStream.ID,
+		"Journal",
+		"Capture a quick end-of-day reflection.",
+		"daily",
+		nil,
+		devIntPtr(10),
+	)
 	if err != nil {
 		return err
 	}
-	inboxHabit, err := createHabit(-29, appStream.ID, "Inbox Zero Sweep", "Clear triage inboxes before the afternoon block.", "weekdays", nil, devIntPtr(15))
+	inboxHabit, err := createHabit(
+		-29,
+		appStream.ID,
+		"Inbox Zero Sweep",
+		"Clear triage inboxes before the afternoon block.",
+		"weekdays",
+		nil,
+		devIntPtr(15),
+	)
 	if err != nil {
 		return err
 	}
@@ -348,10 +485,38 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	}
 
 	habitStreakDefs := []sharedtypes.HabitStreakDefinition{
-		{ID: "daily-reflection", Name: "Daily Reflection", Enabled: true, Period: sharedtypes.HabitStreakPeriodDay, RequiredCount: 1, HabitIDs: []int64{journalHabit.ID}},
-		{ID: "training-week", Name: "Training Week", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 2, HabitIDs: []int64{workoutHabit.ID}},
-		{ID: "recovery-mix", Name: "Recovery Mix", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 10, HabitIDs: []int64{walkHabit.ID, journalHabit.ID}},
-		{ID: "wellbeing-month", Name: "Wellbeing Month", Enabled: true, Period: sharedtypes.HabitStreakPeriodMonth, RequiredCount: 24, HabitIDs: []int64{walkHabit.ID, journalHabit.ID, workoutHabit.ID}},
+		{
+			ID:            "daily-reflection",
+			Name:          "Daily Reflection",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+			HabitIDs:      []int64{journalHabit.ID},
+		},
+		{
+			ID:            "training-week",
+			Name:          "Training Week",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 2,
+			HabitIDs:      []int64{workoutHabit.ID},
+		},
+		{
+			ID:            "recovery-mix",
+			Name:          "Recovery Mix",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 10,
+			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID},
+		},
+		{
+			ID:            "wellbeing-month",
+			Name:          "Wellbeing Month",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodMonth,
+			RequiredCount: 24,
+			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID, workoutHabit.ID},
+		},
 	}
 	if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, habitStreakDefs); err != nil {
 		return err
@@ -427,16 +592,126 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		durationMinutes int
 		input           corecommands.SessionEndInput
 	}{
-		{-6, focusIssue.ID, 9, 15, 42, corecommands.SessionEndInput{CommitMessage: devStringPtr("refactor: bootstrap kernel repos"), WorkedOn: devStringPtr("repo and stream initialization"), Outcome: devStringPtr("baseline workspace created")}},
-		{-5, inProgressIssue.ID, 9, 40, 72, corecommands.SessionEndInput{CommitMessage: devStringPtr("chore: verify packaging outputs"), WorkedOn: devStringPtr("artifact checks and hashes"), Outcome: devStringPtr("release checks mostly wired")}},
-		{-4, readyIssue.ID, 10, 0, 38, corecommands.SessionEndInput{CommitMessage: devStringPtr("docs: shape rollout checklist"), WorkedOn: devStringPtr("deploy sequencing and rollback notes"), Outcome: devStringPtr("carry-over item clarified")}},
-		{-3, underEstimateIssue.ID, 9, 30, 84, corecommands.SessionEndInput{CommitMessage: devStringPtr("feat: add command palette navigation"), WorkedOn: devStringPtr("palette actions and filtering"), Outcome: devStringPtr("underestimate case seeded")}},
-		{-3, underEstimateIssue.ID, 14, 10, 27, corecommands.SessionEndInput{CommitMessage: devStringPtr("fix: polish command palette hints"), WorkedOn: devStringPtr("labels and keyboard copy"), Outcome: devStringPtr("issue should exceed estimate cleanly")}},
-		{-2, readyIssue.ID, 13, 30, 31, corecommands.SessionEndInput{CommitMessage: devStringPtr("chore: finish rollout checklist"), WorkedOn: devStringPtr("go/no-go notes"), Outcome: devStringPtr("carried item completed")}},
-		{-2, overEstimateIssue.ID, 16, 15, 24, corecommands.SessionEndInput{CommitMessage: devStringPtr("copy: revise lifecycle prompts"), WorkedOn: devStringPtr("short UX copy pass"), Outcome: devStringPtr("overestimate case remains under target")}},
-		{-1, focusIssue.ID, 9, 45, 58, corecommands.SessionEndInput{CommitMessage: devStringPtr("feat: refresh rollup dashboard"), WorkedOn: devStringPtr("range summaries and details"), Outcome: devStringPtr("focus issue moved forward")}},
-		{-1, focusIssue.ID, 15, 55, 22, corecommands.SessionEndInput{CommitMessage: devStringPtr("fix: small-screen rollup layout"), WorkedOn: devStringPtr("compact dashboard polish"), Outcome: devStringPtr("session mix for a strong recent day")}},
-		{0, docsIssue.ID, 11, 0, 19, corecommands.SessionEndInput{CommitMessage: devStringPtr("docs: note linux install caveat"), WorkedOn: devStringPtr("shell completion docs"), Outcome: devStringPtr("future work has early progress")}},
+		{
+			-6,
+			focusIssue.ID,
+			9,
+			15,
+			42,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("refactor: bootstrap kernel repos"),
+				WorkedOn:      devStringPtr("repo and stream initialization"),
+				Outcome:       devStringPtr("baseline workspace created"),
+			},
+		},
+		{
+			-5,
+			inProgressIssue.ID,
+			9,
+			40,
+			72,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("chore: verify packaging outputs"),
+				WorkedOn:      devStringPtr("artifact checks and hashes"),
+				Outcome:       devStringPtr("release checks mostly wired"),
+			},
+		},
+		{
+			-4,
+			readyIssue.ID,
+			10,
+			0,
+			38,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("docs: shape rollout checklist"),
+				WorkedOn:      devStringPtr("deploy sequencing and rollback notes"),
+				Outcome:       devStringPtr("carry-over item clarified"),
+			},
+		},
+		{
+			-3,
+			underEstimateIssue.ID,
+			9,
+			30,
+			84,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("feat: add command palette navigation"),
+				WorkedOn:      devStringPtr("palette actions and filtering"),
+				Outcome:       devStringPtr("underestimate case seeded"),
+			},
+		},
+		{
+			-3,
+			underEstimateIssue.ID,
+			14,
+			10,
+			27,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("fix: polish command palette hints"),
+				WorkedOn:      devStringPtr("labels and keyboard copy"),
+				Outcome:       devStringPtr("issue should exceed estimate cleanly"),
+			},
+		},
+		{
+			-2,
+			readyIssue.ID,
+			13,
+			30,
+			31,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("chore: finish rollout checklist"),
+				WorkedOn:      devStringPtr("go/no-go notes"),
+				Outcome:       devStringPtr("carried item completed"),
+			},
+		},
+		{
+			-2,
+			overEstimateIssue.ID,
+			16,
+			15,
+			24,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("copy: revise lifecycle prompts"),
+				WorkedOn:      devStringPtr("short UX copy pass"),
+				Outcome:       devStringPtr("overestimate case remains under target"),
+			},
+		},
+		{
+			-1,
+			focusIssue.ID,
+			9,
+			45,
+			58,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("feat: refresh rollup dashboard"),
+				WorkedOn:      devStringPtr("range summaries and details"),
+				Outcome:       devStringPtr("focus issue moved forward"),
+			},
+		},
+		{
+			-1,
+			focusIssue.ID,
+			15,
+			55,
+			22,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("fix: small-screen rollup layout"),
+				WorkedOn:      devStringPtr("compact dashboard polish"),
+				Outcome:       devStringPtr("session mix for a strong recent day"),
+			},
+		},
+		{
+			0,
+			docsIssue.ID,
+			11,
+			0,
+			19,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("docs: note linux install caveat"),
+				WorkedOn:      devStringPtr("shell completion docs"),
+				Outcome:       devStringPtr("future work has early progress"),
+			},
+		},
 	}
 	for _, item := range sessionPlan {
 		if err := seedSession(item.dayOffset, item.issueID, item.startHour, item.startMinute, item.durationMinutes, item.input); err != nil {
@@ -453,27 +728,6 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		_, err := corecommands.ChangeIssueStatus(ctx, h.core, overEstimateIssue.ID, sharedtypes.IssueStatusDone, devStringPtr("Wrapped quickly; estimate was padded."))
 		return err
 	}); err != nil {
-		return err
-	}
-
-	scratchPath, err := corecommands.RegisterScratchpad(ctx, h.core, sharedtypes.ScratchPadMeta{
-		Name: "Daily Notes",
-		Path: "dev/[[date]]-notes.md",
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := scratchfile.Create(h.core.ScratchDir, scratchPath, "Daily Notes"); err != nil {
-		return err
-	}
-	designPath, err := corecommands.RegisterScratchpad(ctx, h.core, sharedtypes.ScratchPadMeta{
-		Name: "Launch Checklist",
-		Path: "dev/launch-checklist.md",
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := scratchfile.Create(h.core.ScratchDir, designPath, "Launch Checklist"); err != nil {
 		return err
 	}
 

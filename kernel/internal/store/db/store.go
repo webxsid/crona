@@ -16,7 +16,10 @@ type Store struct {
 }
 
 func Open(dbPath string) (*Store, error) {
-	sqlDB, err := sql.Open(sqliteshim.ShimName, fmt.Sprintf("file:%s?_busy_timeout=5000&_journal_mode=WAL", dbPath))
+	sqlDB, err := sql.Open(
+		sqliteshim.ShimName,
+		fmt.Sprintf("file:%s?_busy_timeout=5000&_journal_mode=WAL", dbPath),
+	)
 	if err != nil {
 		return nil, err
 	}

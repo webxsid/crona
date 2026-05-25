@@ -6,6 +6,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
@@ -52,12 +53,17 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			}
 			line := prefix + label
 			if i == state.ProtectionCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
 			} else {
 				rows = append(rows, theme.StyleNormal.Render("  "+line))
 			}
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [space] toggle   [a] all   [c] none   [tab] next")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [space] toggle   [a] all   [c] none   [tab] next",
+		)
 	case 1:
 		rows = append(rows, theme.StyleDim.Render("Select default rest weekdays"))
 		labels := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
@@ -68,12 +74,17 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			}
 			line := prefix + label
 			if i == state.ProtectionCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
 			} else {
 				rows = append(rows, theme.StyleNormal.Render("  "+line))
 			}
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [space] toggle   [c] clear   [tab] next")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [space] toggle   [c] clear   [tab] next",
+		)
 	case 2:
 		rows = append(rows, theme.StyleDim.Render("Manage one-off rest dates"))
 		if len(state.ProtectionDates) == 0 {
@@ -82,13 +93,18 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			for i, value := range state.ProtectionDates {
 				line := value
 				if i == state.ProtectionCursor {
-					rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+					rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
 				} else {
 					rows = append(rows, theme.StyleNormal.Render("  "+line))
 				}
 			}
 		}
-		rows = appendDialogFooter(theme, state, rows, "[a] add date   [d] remove selected   [tab] next")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[a] add date   [d] remove selected   [tab] next",
+		)
 	case 3:
 		rows = append(rows,
 			theme.StyleDim.Render("Protected Streaks"),
@@ -100,7 +116,12 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleDim.Render("Rest Dates"),
 			theme.StyleHeader.Render(restDatesSummary(state.ProtectionDates)),
 		)
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [shift+tab] back   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [shift+tab] back   [esc] cancel",
+		)
 	}
 	return modal(theme, state.Width, 76, theme.ColorCyan, rows)
 }
@@ -203,7 +224,10 @@ func renderViewMeta(theme Theme, meta string) []string {
 			lines = append(lines, theme.StyleDim.Render(part))
 			continue
 		}
-		lines = append(lines, theme.StyleDim.Render(key)+": "+theme.StyleHeader.Render(strings.TrimSpace(value)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(key)+": "+theme.StyleHeader.Render(strings.TrimSpace(value)),
+		)
 	}
 	return lines
 }

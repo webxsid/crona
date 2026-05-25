@@ -108,7 +108,11 @@ var clockGlyphRows = map[rune][]string{
 }
 
 func FormatEstimateProgress(elapsedSeconds, estimateMinutes int) string {
-	return fmt.Sprintf("%s / %s", viewhelpers.FormatClockText(elapsedSeconds), helperpkg.FormatCompactDurationMinutes(estimateMinutes))
+	return fmt.Sprintf(
+		"%s / %s",
+		viewhelpers.FormatClockText(elapsedSeconds),
+		helperpkg.FormatCompactDurationMinutes(estimateMinutes),
+	)
 }
 
 func SessionHistorySummary(entry api.SessionHistoryEntry) string {
@@ -177,7 +181,11 @@ func RenderClockLarge(clock string) string {
 	return renderClockCanvas(clock, clockTileSpecs[2], lipgloss.Color(""))
 }
 
-func RenderResponsiveClock(clock string, width, height int, litColor, dimColor lipgloss.Color) string {
+func RenderResponsiveClock(
+	clock string,
+	width, height int,
+	litColor, dimColor lipgloss.Color,
+) string {
 	for i := len(clockTileSpecs) - 1; i >= 0; i-- {
 		spec := clockTileSpecs[i]
 		if spec.fits(clock, width, height) {

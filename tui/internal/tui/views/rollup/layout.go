@@ -34,7 +34,13 @@ func renderWindowDays(theme types.Theme, state types.ContentState, width, height
 	}
 	if state.DashboardWindow == nil || len(state.DashboardWindow.Days) == 0 {
 		lines = append(lines, theme.StyleDim.Render("No daily rollup data for this range"))
-		return viewchrome.RenderPaneBox(theme, state.View == "rollup", width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			state.View == "rollup",
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	active := state.View == "rollup" && state.Pane == "rollup_days"
 	cur := state.Cursors["rollup_days"]
@@ -45,11 +51,28 @@ func renderWindowDays(theme types.Theme, state types.ContentState, width, height
 	}
 	for idx := start; idx < end; idx++ {
 		day := state.DashboardWindow.Days[idx]
-		status := statusStyle(theme, string(day.Status)).Render(prettyWindowStatus(string(day.Status)))
-		row := helperpkg.FormatDisplayDate(day.Date, state.Settings) + "  " + padStatus(status, 11) + "  " + "p" + itoa(day.PlannedCount) + " d" + itoa(day.CompletedCount) + " f" + itoa(day.FailedCount) + " c" + itoa(day.CarryOverCount)
+		status := statusStyle(
+			theme,
+			string(day.Status),
+		).Render(prettyWindowStatus(string(day.Status)))
+		row := helperpkg.FormatDisplayDate(
+			day.Date,
+			state.Settings,
+		) + "  " + padStatus(
+			status,
+			11,
+		) + "  " + "p" + itoa(
+			day.PlannedCount,
+		) + " d" + itoa(
+			day.CompletedCount,
+		) + " f" + itoa(
+			day.FailedCount,
+		) + " c" + itoa(
+			day.CarryOverCount,
+		)
 		switch {
 		case active && idx == cur:
-			lines = append(lines, theme.StyleCursor.Render("▶ "+row))
+			lines = append(lines, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+row))
 		case idx == cur:
 			lines = append(lines, theme.StyleSelected.Render("  "+row))
 		default:
@@ -70,6 +93,8 @@ func renderDistributionPane(theme types.Theme, state types.ContentState, width, 
 	lines = append(lines, renderDistributionSection(theme, "Repos", state.RepoDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Streams", state.StreamDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Issues", state.IssueDistribution)...)
-	lines = append(lines, renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
+	lines = append(
+		lines,
+		renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
 	return viewchrome.RenderPaneBox(theme, false, width, height, viewhelpers.StringsJoin(lines))
 }

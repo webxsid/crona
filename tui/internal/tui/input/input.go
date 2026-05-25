@@ -32,7 +32,6 @@ type State struct {
 	SessionDetailY      int
 	SessionContextOpen  bool
 	SessionContextY     int
-	ScratchpadOpen      bool
 	OpsLimit            int
 	OpsLimitPinned      bool
 	Context             *api.ActiveContext
@@ -150,10 +149,25 @@ type (
 )
 
 func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
-	logger.Infof("input.Handle: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t scratchpad=%t", key.String(), state.ActiveView, state.ActivePane, state.Dialog, state.HelpOpen, state.SessionDetailOpen, state.SessionContextOpen, state.ScratchpadOpen)
+	logger.Infof(
+		"input.Handle: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t",
+		key.String(),
+		state.ActiveView,
+		state.ActivePane,
+		state.Dialog,
+		state.HelpOpen,
+		state.SessionDetailOpen,
+		state.SessionContextOpen,
+	)
 	next, cmd := newRouter(deps).Handle(state, state.ActiveView, state.ActivePane, key)
 	if routed, ok := next.(State); ok {
-		logger.Infof("input.Handle result: key=%q next_view=%s next_pane=%s dialog=%q", key.String(), routed.ActiveView, routed.ActivePane, routed.Dialog)
+		logger.Infof(
+			"input.Handle result: key=%q next_view=%s next_pane=%s dialog=%q",
+			key.String(),
+			routed.ActiveView,
+			routed.ActivePane,
+			routed.Dialog,
+		)
 	}
 	return next.(State), cmd
 }
@@ -341,7 +355,11 @@ func newRouter(deps Deps) *router {
 			return s, nil, true
 		},
 	)
-	keyregistry.RegisterDaily(r, uistate.ViewDaily, uistate.PaneIssues, uistate.PaneHabits,
+	keyregistry.RegisterDaily(
+		r,
+		uistate.ViewDaily,
+		uistate.PaneIssues,
+		uistate.PaneHabits,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneIssues
 			return s, nil, true
@@ -404,7 +422,13 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(uistate.ViewAway, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleToggleAwayMode(s, deps)
 	})
-	keyregistry.RegisterMeta(r, uistate.ViewMeta, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneIssues, uistate.PaneHabits,
+	keyregistry.RegisterMeta(
+		r,
+		uistate.ViewMeta,
+		uistate.PaneRepos,
+		uistate.PaneStreams,
+		uistate.PaneIssues,
+		uistate.PaneHabits,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneRepos
 			return s, nil, true
@@ -428,24 +452,46 @@ func newRouter(deps Deps) *router {
 			return handleContextCheckout(s, deps)
 		},
 	)
-	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "e", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		cmd, handled := deps.OpenEditorAction(&s)
-		return s, cmd, handled
-	})
-	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "f", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, nil, false
-	})
-	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "m", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		if deps.OpenHabitLogAction != nil {
-			cmd, handled := deps.OpenHabitLogAction(&s)
+	r.RegisterPane(
+		uistate.ViewMeta,
+		uistate.PaneHabits,
+		"e",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled
-		}
-		return s, nil, false
-	})
-	r.RegisterPane(uistate.ViewMeta, uistate.PaneHabits, "y", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, nil, false
-	})
-	keyregistry.RegisterSettings(r, uistate.ViewSettings,
+		},
+	)
+	r.RegisterPane(
+		uistate.ViewMeta,
+		uistate.PaneHabits,
+		"f",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, nil, false
+		},
+	)
+	r.RegisterPane(
+		uistate.ViewMeta,
+		uistate.PaneHabits,
+		"m",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenHabitLogAction != nil {
+				cmd, handled := deps.OpenHabitLogAction(&s)
+				return s, cmd, handled
+			}
+			return s, nil, false
+		},
+	)
+	r.RegisterPane(
+		uistate.ViewMeta,
+		uistate.PaneHabits,
+		"y",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, nil, false
+		},
+	)
+	keyregistry.RegisterSettings(
+		r,
+		uistate.ViewSettings,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneSettings
 			return s, nil, true
@@ -457,7 +503,9 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedSetting(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedSetting(s, deps) },
 	)
-	keyregistry.RegisterSettings(r, uistate.ViewAlerts,
+	keyregistry.RegisterSettings(
+		r,
+		uistate.ViewAlerts,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneAlerts
 			return s, nil, true
@@ -469,7 +517,10 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedAlert(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleActivateSelectedAlert(s, deps) },
 	)
-	keyregistry.RegisterConfig(r, uistate.ViewConfig, uistate.PaneConfig,
+	keyregistry.RegisterConfig(
+		r,
+		uistate.ViewConfig,
+		uistate.PaneConfig,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneConfig
 			return s, nil, true
@@ -506,7 +557,10 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
-	keyregistry.RegisterSession(r, uistate.ViewSessionActive, uistate.ViewSessionHistory,
+	keyregistry.RegisterSession(
+		r,
+		uistate.ViewSessionActive,
+		uistate.ViewSessionHistory,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handlePauseSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResumeSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleEndSession(s, deps) },
@@ -526,16 +580,16 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
-	r.RegisterView(uistate.ViewSessionActive, "m", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleStructuredManualPause(s, deps)
-	})
-	keyregistry.RegisterScratch(r, uistate.ViewScratch,
+	r.RegisterView(
+		uistate.ViewSessionActive,
+		"m",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneScratchpads
-			return s, nil, true
+			return handleStructuredManualPause(s, deps)
 		},
 	)
-	keyregistry.RegisterUpdates(r, uistate.ViewUpdates,
+	keyregistry.RegisterUpdates(
+		r,
+		uistate.ViewUpdates,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.UpdateChecking = true
 			s.UpdateInstallError = ""
@@ -548,39 +602,79 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
-	r.RegisterView(uistate.ViewSupport, "o", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.OpenSupportIssueURL(), true
-	})
-	r.RegisterView(uistate.ViewSupport, "d", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.OpenSupportDiscussionsURL(), true
-	})
-	r.RegisterView(uistate.ViewSupport, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.OpenSupportReleasesURL(), true
-	})
-	r.RegisterView(uistate.ViewSupport, "g", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.OpenSupportRoadmapURL(), true
-	})
-	r.RegisterView(uistate.ViewSupport, "c", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.CopySupportDiagnostics(s), true
-	})
-	r.RegisterView(uistate.ViewSupport, "b", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return s, deps.GenerateSupportBundle(s), true
-	})
-	keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
+	r.RegisterView(
+		uistate.ViewSupport,
+		"o",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.OpenSupportIssueURL(), true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"d",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.OpenSupportDiscussionsURL(), true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"r",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.OpenSupportReleasesURL(), true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"g",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.OpenSupportRoadmapURL(), true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"c",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.CopySupportDiagnostics(s), true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"b",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, deps.GenerateSupportBundle(s), true
+		},
+	)
+	keyregistry.RegisterWellbeing(
+		r,
+		uistate.ViewWellbeing,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
 	)
-	r.RegisterView(uistate.ViewWellbeing, "+", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleShiftWellbeingWindow(s, deps, 1)
-	})
-	r.RegisterView(uistate.ViewWellbeing, "-", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleShiftWellbeingWindow(s, deps, -1)
-	})
-	r.RegisterView(uistate.ViewWellbeing, "0", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleResetWellbeingWindow(s, deps)
-	})
-	keyregistry.RegisterRollup(r, uistate.ViewRollup,
+	r.RegisterView(
+		uistate.ViewWellbeing,
+		"+",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleShiftWellbeingWindow(s, deps, 1)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewWellbeing,
+		"-",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleShiftWellbeingWindow(s, deps, -1)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewWellbeing,
+		"0",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleResetWellbeingWindow(s, deps)
+		},
+	)
+	keyregistry.RegisterRollup(
+		r,
+		uistate.ViewRollup,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupEndDate(s, deps, -1) },
@@ -599,10 +693,17 @@ func newRouter(deps Deps) *router {
 		}
 		return s, nil, false
 	})
-	r.RegisterView(uistate.ViewWellbeing, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleToggleAwayMode(s, deps)
-	})
-	keyregistry.RegisterOps(r, uistate.ViewOps, uistate.PaneOps,
+	r.RegisterView(
+		uistate.ViewWellbeing,
+		"w",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleToggleAwayMode(s, deps)
+		},
+	)
+	keyregistry.RegisterOps(
+		r,
+		uistate.ViewOps,
+		uistate.PaneOps,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
 	)

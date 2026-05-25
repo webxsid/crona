@@ -69,33 +69,45 @@ func trendCanvas(theme types.Theme, state types.ContentState, width, height int)
 	}
 	series := []metricSeries{
 		{
-			name:         "Mood",
-			color:        theme.ColorCyan,
-			values:       metricTrendValues(state.MetricsRange, func(day api.DailyMetricsDay) float64 { return metricMoodValue(day) }),
+			name:  "Mood",
+			color: theme.ColorCyan,
+			values: metricTrendValues(
+				state.MetricsRange,
+				func(day api.DailyMetricsDay) float64 { return metricMoodValue(day) },
+			),
 			min:          1,
 			max:          5,
 			formatLatest: func(value float64) string { return fmt.Sprintf("%.1f/5", value) },
 		},
 		{
-			name:         "Energy",
-			color:        theme.ColorYellow,
-			values:       metricTrendValues(state.MetricsRange, func(day api.DailyMetricsDay) float64 { return metricEnergyValue(day) }),
+			name:  "Energy",
+			color: theme.ColorYellow,
+			values: metricTrendValues(
+				state.MetricsRange,
+				func(day api.DailyMetricsDay) float64 { return metricEnergyValue(day) },
+			),
 			min:          1,
 			max:          5,
 			formatLatest: func(value float64) string { return fmt.Sprintf("%.1f/5", value) },
 		},
 		{
-			name:         "Work",
-			color:        theme.ColorGreen,
-			values:       metricTrendValues(state.MetricsRange, func(day api.DailyMetricsDay) float64 { return float64(day.WorkedSeconds) / 3600.0 }),
+			name:  "Work",
+			color: theme.ColorGreen,
+			values: metricTrendValues(
+				state.MetricsRange,
+				func(day api.DailyMetricsDay) float64 { return float64(day.WorkedSeconds) / 3600.0 },
+			),
 			min:          0,
 			max:          8,
 			formatLatest: func(value float64) string { return fmt.Sprintf("%.1fh", value) },
 		},
 		{
-			name:         "Recovery",
-			color:        theme.ColorMagenta,
-			values:       metricTrendValues(state.MetricsRange, func(day api.DailyMetricsDay) float64 { return metricRecoveryValue(day) }),
+			name:  "Recovery",
+			color: theme.ColorMagenta,
+			values: metricTrendValues(
+				state.MetricsRange,
+				func(day api.DailyMetricsDay) float64 { return metricRecoveryValue(day) },
+			),
 			min:          0,
 			max:          1,
 			formatLatest: func(value float64) string { return fmt.Sprintf("%.0f%%", value*100) },
@@ -164,7 +176,11 @@ func metricRecoveryValue(day api.DailyMetricsDay) float64 {
 	return clamp01((sleep + clamp01(breakRatio/0.2)) / 2.0)
 }
 
-func renderMetricCanvas(theme types.Theme, metric metricSeries, labelWidth, chartWidth, rowHeight int) []string {
+func renderMetricCanvas(
+	theme types.Theme,
+	metric metricSeries,
+	labelWidth, chartWidth, rowHeight int,
+) []string {
 	if len(metric.values) == 0 {
 		return []string{theme.StyleHeader.Render(metric.name), theme.StyleDim.Render("no data")}
 	}

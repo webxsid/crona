@@ -13,7 +13,11 @@ import (
 const defaultDailyPlanRollbackMinutes = 5
 const dailyPlanHighRiskThreshold = 2.5
 
-func GetDailyPlan(ctx context.Context, c *core.Context, date string) (*sharedtypes.DailyPlan, error) {
+func GetDailyPlan(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) (*sharedtypes.DailyPlan, error) {
 	if err := finalizeExpiredDailyPlanFailures(ctx, c, c.Now()); err != nil {
 		return nil, err
 	}
@@ -37,7 +41,11 @@ func finalizeExpiredDailyPlanFailures(ctx context.Context, c *core.Context, now 
 		return nil
 	}
 	cutoff = cutoff.Add(-dailyPlanRollbackWindow(settings))
-	entries, err := c.DailyPlans.ListPendingFailuresBefore(ctx, c.UserID, cutoff.Format(time.RFC3339))
+	entries, err := c.DailyPlans.ListPendingFailuresBefore(
+		ctx,
+		c.UserID,
+		cutoff.Format(time.RFC3339),
+	)
 	if err != nil {
 		return err
 	}
@@ -68,12 +76,34 @@ func dailyPlanRollbackWindow(settings *sharedtypes.CoreSettings) time.Duration {
 	return time.Duration(minutes) * time.Minute
 }
 
-func commitIssueToDailyPlan(ctx context.Context, c *core.Context, issueID int64, date, now string) error {
+func commitIssueToDailyPlan(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	date, now string,
+) error {
 	return commitIssueToDailyPlanWithChain(ctx, c, issueID, date, now, date, date, 0, 0)
 }
 
-func commitIssueToDailyPlanWithChain(ctx context.Context, c *core.Context, issueID int64, date, now, baselineDate, currentPlannedDate string, postponeCount, maxDelayedDays int) error {
-	entry, action, err := c.DailyPlans.UpsertCommittedEntryWithChain(ctx, c.UserID, date, "todo_for_date", now, issueID, baselineDate, currentPlannedDate, postponeCount, maxDelayedDays)
+func commitIssueToDailyPlanWithChain(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	date, now, baselineDate, currentPlannedDate string,
+	postponeCount, maxDelayedDays int,
+) error {
+	entry, action, err := c.DailyPlans.UpsertCommittedEntryWithChain(
+		ctx,
+		c.UserID,
+		date,
+		"todo_for_date",
+		now,
+		issueID,
+		baselineDate,
+		currentPlannedDate,
+		postponeCount,
+		maxDelayedDays,
+	)
 	if err != nil || entry == nil {
 		return err
 	}
@@ -89,25 +119,58 @@ func commitIssueToDailyPlanWithChain(ctx context.Context, c *core.Context, issue
 	if action == "unchanged" {
 		return nil
 	}
-	return c.DailyPlans.AppendEvent(ctx, entry.ID, c.UserID, c.DeviceID, now, sharedtypes.DailyPlanEventCommitted, nil, map[string]any{
-		"issueId": issueID,
-		"date":    date,
-	})
+	return c.DailyPlans.AppendEvent(
+		ctx,
+		entry.ID,
+		c.UserID,
+		c.DeviceID,
+		now,
+		sharedtypes.DailyPlanEventCommitted,
+		nil,
+		map[string]any{
+			"issueId": issueID,
+			"date":    date,
+		},
+	)
 }
 
-func markDailyPlanPendingFailure(ctx context.Context, c *core.Context, issueID int64, date, now string, reason sharedtypes.DailyPlanFailureReason, eventType sharedtypes.DailyPlanEventType) error {
+func markDailyPlanPendingFailure(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	date, now string,
+	reason sharedtypes.DailyPlanFailureReason,
+	eventType sharedtypes.DailyPlanEventType,
+) error {
 	entry, err := c.DailyPlans.MarkPendingFailure(ctx, c.UserID, date, now, issueID, reason)
 	if err != nil || entry == nil {
 		return err
 	}
-	return c.DailyPlans.AppendEvent(ctx, entry.ID, c.UserID, c.DeviceID, now, eventType, &reason, map[string]any{
-		"issueId": issueID,
-		"date":    date,
-		"reason":  reason,
-	})
+	return c.DailyPlans.AppendEvent(
+		ctx,
+		entry.ID,
+		c.UserID,
+		c.DeviceID,
+		now,
+		eventType,
+		&reason,
+		map[string]any{
+			"issueId": issueID,
+			"date":    date,
+			"reason":  reason,
+		},
+	)
 }
 
-func resolveDailyPlanEntry(ctx context.Context, c *core.Context, issueID int64, date, now string, status sharedtypes.DailyPlanEntryStatus, eventType sharedtypes.DailyPlanEventType, reason *sharedtypes.DailyPlanFailureReason) error {
+func resolveDailyPlanEntry(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	date, now string,
+	status sharedtypes.DailyPlanEntryStatus,
+	eventType sharedtypes.DailyPlanEventType,
+	reason *sharedtypes.DailyPlanFailureReason,
+) error {
 	entry, err := c.DailyPlans.GetEntry(ctx, c.UserID, date, issueID)
 	if err != nil || entry == nil {
 		return err
@@ -115,11 +178,20 @@ func resolveDailyPlanEntry(ctx context.Context, c *core.Context, issueID int64, 
 	if err := c.DailyPlans.ResolveEntry(ctx, entry.ID, now, status, reason); err != nil {
 		return err
 	}
-	return c.DailyPlans.AppendEvent(ctx, entry.ID, c.UserID, c.DeviceID, now, eventType, reason, map[string]any{
-		"issueId": issueID,
-		"date":    date,
-		"status":  status,
-	})
+	return c.DailyPlans.AppendEvent(
+		ctx,
+		entry.ID,
+		c.UserID,
+		c.DeviceID,
+		now,
+		eventType,
+		reason,
+		map[string]any{
+			"issueId": issueID,
+			"date":    date,
+			"status":  status,
+		},
+	)
 }
 
 func issueCommittedDate(issue *sharedtypes.Issue) string {
@@ -156,7 +228,11 @@ func ensureDailyPlanDate(date string) error {
 	return err
 }
 
-func scoreDailyPlan(ctx context.Context, c *core.Context, plan *sharedtypes.DailyPlan) (*sharedtypes.DailyPlan, error) {
+func scoreDailyPlan(
+	ctx context.Context,
+	c *core.Context,
+	plan *sharedtypes.DailyPlan,
+) (*sharedtypes.DailyPlan, error) {
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -175,7 +251,10 @@ func scoreDailyPlan(ctx context.Context, c *core.Context, plan *sharedtypes.Dail
 	return plan, nil
 }
 
-func buildDailyPlanSummary(entries []sharedtypes.DailyPlanEntry, active []sharedtypes.DailyPlanEntry) sharedtypes.DailyPlanAccountabilitySummary {
+func buildDailyPlanSummary(
+	entries []sharedtypes.DailyPlanEntry,
+	active []sharedtypes.DailyPlanEntry,
+) sharedtypes.DailyPlanAccountabilitySummary {
 	summary := sharedtypes.DailyPlanAccountabilitySummary{}
 	for _, entry := range entries {
 		summary.PlannedCount++
@@ -235,7 +314,11 @@ func applyDailyPlanScore(entry *sharedtypes.DailyPlanEntry, settings *sharedtype
 	entry.FailScore = delayScore + (0.5 * frequencyScore)
 }
 
-func nextDailyPlanChainState(previous *sharedtypes.DailyPlanEntry, previousDate, nextDate string, settings *sharedtypes.CoreSettings) (string, string, int, int) {
+func nextDailyPlanChainState(
+	previous *sharedtypes.DailyPlanEntry,
+	previousDate, nextDate string,
+	settings *sharedtypes.CoreSettings,
+) (string, string, int, int) {
 	baselineDate := previousDate
 	postponeCount := 0
 	maxDelayedDays := 0
@@ -256,7 +339,10 @@ func nextDailyPlanChainState(previous *sharedtypes.DailyPlanEntry, previousDate,
 	return baselineDate, nextDate, postponeCount, maxDelayedDays
 }
 
-func protectedDelayDays(baselineDate, currentPlannedDate string, settings *sharedtypes.CoreSettings) int {
+func protectedDelayDays(
+	baselineDate, currentPlannedDate string,
+	settings *sharedtypes.CoreSettings,
+) int {
 	if baselineDate == "" || currentPlannedDate == "" || currentPlannedDate <= baselineDate {
 		return 0
 	}

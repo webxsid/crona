@@ -31,7 +31,12 @@ func StashPush(ctx context.Context, c *core.Context, stashNote *string) (sharedt
 	var elapsed *int
 
 	if activeSession != nil {
-		activeSegment, err := c.SessionSegments.GetActive(ctx, c.UserID, c.DeviceID, activeSession.ID)
+		activeSegment, err := c.SessionSegments.GetActive(
+			ctx,
+			c.UserID,
+			c.DeviceID,
+			activeSession.ID,
+		)
 		if err != nil {
 			return sharedtypes.Stash{}, err
 		}
@@ -78,7 +83,9 @@ func StashPush(ctx context.Context, c *core.Context, stashNote *string) (sharedt
 	}
 	emit(c, sharedtypes.EventTypeStashCreated, stash)
 	payload, _ := json.Marshal(sharedtypes.ContextClearedPayload{DeviceID: c.DeviceID})
-	c.Events.Emit(sharedtypes.KernelEvent{Type: sharedtypes.EventTypeContextCleared, Payload: payload})
+	c.Events.Emit(
+		sharedtypes.KernelEvent{Type: sharedtypes.EventTypeContextCleared, Payload: payload},
+	)
 	return stash, nil
 }
 
@@ -109,7 +116,8 @@ func StashPop(ctx context.Context, c *core.Context, timer *TimerService, stashID
 		return err
 	}
 
-	if stash.SessionID != nil && stash.IssueID != nil && stash.PausedSegmentType != nil && timer != nil {
+	if stash.SessionID != nil && stash.IssueID != nil && stash.PausedSegmentType != nil &&
+		timer != nil {
 		if err := timer.RestoreFromStash(ctx, struct {
 			IssueID        int64
 			SegmentType    sharedtypes.SessionSegmentType

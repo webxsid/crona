@@ -13,6 +13,7 @@ import (
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
+	viewui "crona/tui/internal/tui/views/ui"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
@@ -23,12 +24,26 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	cur := state.Cursors["issues"]
 	issues := make([]issuecore.APIIssue, 0, len(state.DailyIssues))
 	for _, issue := range filteredDailyIssues(state) {
-		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.WorkedSeconds, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+		issues = append(
+			issues,
+			issuecore.NewAPIIssue(
+				issue.ID,
+				issue.Title,
+				issue.Status,
+				issue.EstimateMinutes,
+				issue.WorkedSeconds,
+				issue.PinnedDaily,
+				issue.TodoForDate,
+				issue.CompletedAt,
+				issue.AbandonedAt,
+			),
+		)
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
-	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, actions)
+	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
+	actionLine := base.ControlLine(theme, state.Filters["issues"], width-6, active, actions, true)
 	titleLine := dailyTaskTitle(theme, state.DailyTaskSection)
 
 	// append [h/l] to the title line
@@ -36,10 +51,15 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		theme.StyleDim.Render("  [h/l]"),
 	})
 
-	lines := []string{titleLine, theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
+	lines := base.HeaderLines(
+		titleLine,
+		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
+		"",
+	)
+	lines = append(lines, actionLine)
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return base.Render(theme, viewhelpers.StringsJoin(lines))
 	}
 	statusW := 14
 	estimateW := 11
@@ -52,7 +72,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	issueSlots := max(1, inner)
 	start, end := viewchrome.ListWindow(cur, total, issueSlots)
 	if start > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
+		lines = append(lines, base.MoreAbove(theme, start))
 	}
 	tableRows := make([]table.Row, 0, end-start)
 	for _, rawIdx := range indices[start:end] {
@@ -74,7 +94,13 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			spent = viewhelpers.FormatCompactDurationSeconds(meta.WorkedSeconds)
 		}
 		title := issue.Title
-		title += issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
+		title += issuecore.IssueDueSuffix(
+			issue.Status,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
+			state.Settings,
+		)
 		rowStyle := lipgloss.NewStyle()
 		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
 			rowStyle = *statusStyle
@@ -84,15 +110,39 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		}
 		cursor := " "
 		if rawIdx == cur && active {
-			cursor = "▶"
+			cursor = viewchrome.SelectionCursor
 		}
-		tableRows = append(tableRows, issuecore.IssueTableRow(cursor, title, issuecore.PlainIssueStatus(string(issue.Status)), estimate, spent, repoName, streamName, rowStyle))
+		tableRows = append(
+			tableRows,
+			issuecore.IssueTableRow(
+				cursor,
+				title,
+				issuecore.PlainIssueStatus(string(issue.Status)),
+				estimate,
+				spent,
+				repoName,
+				streamName,
+				rowStyle,
+			),
+		)
 	}
-	lines = append(lines, issuecore.IssueTableView(issuecore.IssueTableColumns(titleW, statusW, estimateW, spentW, repoW, streamW), tableRows, theme.StyleDim))
+	tablePane := viewui.TablePane{
+		Columns: issuecore.IssueTableColumns(
+			titleW,
+			statusW,
+			estimateW,
+			spentW,
+			repoW,
+			streamW,
+		),
+		Rows:        tableRows,
+		HeaderStyle: theme.StyleDim,
+	}
+	lines = append(lines, tablePane.View())
 	if remaining := total - end; remaining > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
+		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
-	return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+	return base.Render(theme, viewhelpers.StringsJoin(lines))
 }
 
 func dailyTaskTitle(theme types.Theme, section string) string {
@@ -153,7 +203,8 @@ func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
 		due := strings.TrimSpace(*issue.TodoForDate)
 		switch section {
 		case "overdue":
-			return due != "" && due < anchorDate && issue.Status != "done" && issue.Status != "abandoned"
+			return due != "" && due < anchorDate && issue.Status != "done" &&
+				issue.Status != "abandoned"
 		case "planned":
 			return due == anchorDate
 		}
@@ -173,14 +224,27 @@ func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
 func renderHabits(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "habits"
 	cur := state.Cursors["habits"]
-	indices := viewhelpers.FilteredStrings(viewruntime.HabitDailyItems(state.DueHabits), state.Filters["habits"])
+	indices := viewhelpers.FilteredStrings(
+		viewruntime.HabitDailyItems(state.DueHabits),
+		state.Filters["habits"],
+	)
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["habits"], width-6, actions)
-	lines := []string{theme.StylePaneTitle.Render("Habits Due [2]"), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)), actionLine}
+	lines := []string{
+		theme.StylePaneTitle.Render("Habits Due [2]"),
+		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
+		actionLine,
+	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	start, end := viewchrome.ListWindow(cur, total, inner)
@@ -207,7 +271,18 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		} else if habit.TargetMinutes != nil {
 			duration = "  target " + helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes)
 		}
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, fmt.Sprintf("%s %s%s", status, habit.Name, duration), style, width))
+		lines = append(
+			lines,
+			viewchrome.RenderPaneRowStyled(
+				theme,
+				i,
+				cur,
+				active,
+				fmt.Sprintf("%s %s%s", status, habit.Name, duration),
+				style,
+				width,
+			),
+		)
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
@@ -216,9 +291,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 }
 
 func renderIssueStatusBar(theme types.Theme, counts map[string]int, width int) string {
-	if width < 8 {
-		width = 8
-	}
+	width = max(8, width)
 	order := []struct {
 		status string
 		color  lipgloss.Color
@@ -265,7 +338,10 @@ func renderIssueStatusBar(theme types.Theme, counts map[string]int, width int) s
 		if segmentWidth <= 0 {
 			continue
 		}
-		segments = append(segments, lipgloss.NewStyle().Foreground(item.color).Render(strings.Repeat("█", segmentWidth)))
+		segments = append(
+			segments,
+			lipgloss.NewStyle().Foreground(item.color).Render(strings.Repeat("█", segmentWidth)),
+		)
 		used += segmentWidth
 		remainingStatuses--
 	}
@@ -321,7 +397,13 @@ func renderHabitBar(theme types.Theme, completed, failed, total, width int) stri
 		failedWidth = max(0, width-completedWidth)
 	}
 	remainingWidth := width - completedWidth - failedWidth
-	return lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(strings.Repeat("█", completedWidth)) +
-		lipgloss.NewStyle().Foreground(theme.ColorRed).Render(strings.Repeat("█", failedWidth)) +
-		theme.StyleDim.Render(strings.Repeat("█", remainingWidth))
+	return lipgloss.NewStyle().
+		Foreground(theme.ColorGreen).
+		Render(strings.Repeat("█", completedWidth)) +
+		lipgloss.NewStyle().
+			Foreground(theme.ColorRed).
+			Render(strings.Repeat("█", failedWidth)) +
+		theme.StyleDim.Render(
+			strings.Repeat("█", remainingWidth),
+		)
 }

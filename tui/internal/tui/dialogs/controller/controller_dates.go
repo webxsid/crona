@@ -9,7 +9,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateDatePicker(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
@@ -18,7 +23,8 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 		return closeDatePicker(state), nil, ""
 	case "enter", " ":
 		selected := state.DateCursorValue
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" || state.Parent == "edit_issue" {
+		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" ||
+			state.Parent == "edit_issue" {
 			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
 				state.Inputs[idx].SetValue(selected)
 			}
@@ -29,14 +35,32 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 			return closeDatePicker(state), nil, ""
 		}
 		if state.Parent == "rollup_start" {
-			return Close(state), &Action{Kind: "set_rollup_start_date", DueDate: ValueToPointer(selected)}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:    "set_rollup_start_date",
+					DueDate: ValueToPointer(selected),
+				}, ""
 		}
 		if state.Parent == "rollup_end" {
-			return Close(state), &Action{Kind: "set_rollup_end_date", DueDate: ValueToPointer(selected)}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:    "set_rollup_end_date",
+					DueDate: ValueToPointer(selected),
+				}, ""
 		}
-		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer(selected)}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:     "set_issue_todo_date",
+				IssueID:  state.IssueID,
+				StreamID: ctx.ActiveIssueStream,
+				DueDate:  ValueToPointer(selected),
+			}, ""
 	case "backspace", "delete", "c":
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" || state.Parent == "edit_issue" {
+		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" ||
+			state.Parent == "edit_issue" {
 			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
 				state.Inputs[idx].SetValue("")
 			}
@@ -48,7 +72,14 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
 			return Close(state), nil, ""
 		}
-		return Close(state), &Action{Kind: "set_issue_todo_date", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, DueDate: ValueToPointer("")}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:     "set_issue_todo_date",
+				IssueID:  state.IssueID,
+				StreamID: ctx.ActiveIssueStream,
+				DueDate:  ValueToPointer(""),
+			}, ""
 	case "left", "h":
 		return shiftDatePicker(state, 0, 0, -1), nil, ""
 	case "right", "l":
@@ -62,7 +93,14 @@ func updateDatePicker(state State, ctx UpdateContext, currentDate string, msg te
 	case ".":
 		return shiftDatePicker(state, 0, 1, 0), nil, ""
 	case "g":
-		return OpenDatePicker(state, state.Parent, state.IssueID, state.FocusIdx, ValueToPointer(time.Now().Format("2006-01-02")), currentDate), nil, ""
+		return OpenDatePicker(
+			state,
+			state.Parent,
+			state.IssueID,
+			state.FocusIdx,
+			ValueToPointer(time.Now().Format("2006-01-02")),
+			currentDate,
+		), nil, ""
 	}
 	return state, nil, ""
 }
@@ -104,7 +142,11 @@ func shiftDatePicker(state State, years, months, days int) State {
 	return state
 }
 
-func updateRestProtection(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateRestProtection(
+	state State,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -150,7 +192,9 @@ func updateRestProtectionStreaks(state State, msg tea.KeyMsg) (State, *Action, s
 		current := sharedtypes.AvailableStreakKinds()[state.ProtectionCursor]
 		state.ProtectionStreaks = toggleStreakKind(state.ProtectionStreaks, current)
 	case "a":
-		state.ProtectionStreaks = append([]sharedtypes.StreakKind(nil), sharedtypes.AvailableStreakKinds()...)
+		state.ProtectionStreaks = append(
+			[]sharedtypes.StreakKind(nil),
+			sharedtypes.AvailableStreakKinds()...)
 	case "c":
 		state.ProtectionStreaks = nil
 	case "enter":
@@ -177,7 +221,11 @@ func updateRestProtectionWeekdays(state State, msg tea.KeyMsg) (State, *Action, 
 	return state, nil, ""
 }
 
-func updateRestProtectionDates(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateRestProtectionDates(
+	state State,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	totalDates := len(state.ProtectionDates)
 	if totalDates < 1 {
 		totalDates = 1
@@ -192,7 +240,14 @@ func updateRestProtectionDates(state State, currentDate string, msg tea.KeyMsg) 
 		if strings.TrimSpace(initial) == "" {
 			initial = time.Now().Format("2006-01-02")
 		}
-		return OpenDatePicker(state, "edit_rest_protection", 0, 0, ValueToPointer(initial), currentDate), nil, ""
+		return OpenDatePicker(
+			state,
+			"edit_rest_protection",
+			0,
+			0,
+			ValueToPointer(initial),
+			currentDate,
+		), nil, ""
 	case "d", "backspace", "delete":
 		if len(state.ProtectionDates) == 0 {
 			return state, nil, ""
@@ -201,7 +256,9 @@ func updateRestProtectionDates(state State, currentDate string, msg tea.KeyMsg) 
 		if idx >= len(state.ProtectionDates) {
 			idx = len(state.ProtectionDates) - 1
 		}
-		state.ProtectionDates = append(state.ProtectionDates[:idx], state.ProtectionDates[idx+1:]...)
+		state.ProtectionDates = append(
+			state.ProtectionDates[:idx],
+			state.ProtectionDates[idx+1:]...)
 		if state.ProtectionCursor >= len(state.ProtectionDates) && state.ProtectionCursor > 0 {
 			state.ProtectionCursor--
 		}

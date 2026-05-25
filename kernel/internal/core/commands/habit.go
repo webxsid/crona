@@ -16,7 +16,11 @@ import (
 	"crona/shared/utils"
 )
 
-func ListHabitsByStream(ctx context.Context, c *core.Context, streamID int64) ([]sharedtypes.Habit, error) {
+func ListHabitsByStream(
+	ctx context.Context,
+	c *core.Context,
+	streamID int64,
+) ([]sharedtypes.Habit, error) {
 	habits, err := c.Habits.ListByStream(ctx, streamID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -34,7 +38,11 @@ func ListAllHabits(ctx context.Context, c *core.Context) ([]sharedtypes.HabitWit
 	return habits, nil
 }
 
-func ListHabitsDueForDate(ctx context.Context, c *core.Context, date string) ([]sharedtypes.HabitDailyItem, error) {
+func ListHabitsDueForDate(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) ([]sharedtypes.HabitDailyItem, error) {
 	if !isISODate(date) {
 		return nil, errors.New("date must be YYYY-MM-DD")
 	}
@@ -168,7 +176,8 @@ func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates st
 	if updates.Description.Set {
 		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
 	}
-	if updates.TargetMinutes.Set && updates.TargetMinutes.Value != nil && *updates.TargetMinutes.Value < 0 {
+	if updates.TargetMinutes.Set && updates.TargetMinutes.Value != nil &&
+		*updates.TargetMinutes.Value < 0 {
 		return nil, errors.New("targetMinutes must be >= 0")
 	}
 	if updates.ScheduleType != nil || updates.WeekdaysSet {
@@ -206,9 +215,12 @@ func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates st
 		TargetMinutes sharedtypes.Patch[int]
 		Active        *bool
 	}{
-		Name:          updates.Name,
-		Description:   updates.Description,
-		ScheduleType:  sharedtypes.Patch[string]{Set: updates.ScheduleType != nil, Value: updates.ScheduleType},
+		Name:        updates.Name,
+		Description: updates.Description,
+		ScheduleType: sharedtypes.Patch[string]{
+			Set:   updates.ScheduleType != nil,
+			Value: updates.ScheduleType,
+		},
 		Weekdays:      updates.Weekdays,
 		WeekdaysSet:   updates.WeekdaysSet,
 		TargetMinutes: updates.TargetMinutes,
@@ -256,7 +268,15 @@ func DeleteHabit(ctx context.Context, c *core.Context, habitID int64) error {
 	return nil
 }
 
-func CompleteHabit(ctx context.Context, c *core.Context, habitID int64, date string, status sharedtypes.HabitCompletionStatus, durationMinutes *int, notes *string) (*sharedtypes.HabitCompletion, error) {
+func CompleteHabit(
+	ctx context.Context,
+	c *core.Context,
+	habitID int64,
+	date string,
+	status sharedtypes.HabitCompletionStatus,
+	durationMinutes *int,
+	notes *string,
+) (*sharedtypes.HabitCompletion, error) {
 	if !isISODate(date) {
 		return nil, errors.New("date must be YYYY-MM-DD")
 	}
@@ -335,12 +355,21 @@ func UncompleteHabit(ctx context.Context, c *core.Context, habitID int64, date s
 	return nil
 }
 
-func ListHabitHistory(ctx context.Context, c *core.Context, repoID, streamID *int64) ([]sharedtypes.HabitCompletion, error) {
+func ListHabitHistory(
+	ctx context.Context,
+	c *core.Context,
+	repoID, streamID *int64,
+) ([]sharedtypes.HabitCompletion, error) {
 	return c.HabitCompletions.ListHistory(ctx, c.UserID, repoID, streamID)
 }
 
-func normalizeHabitSchedule(raw string, weekdays []int) (sharedtypes.HabitScheduleType, []int, error) {
-	value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(strings.TrimSpace(raw)))
+func normalizeHabitSchedule(
+	raw string,
+	weekdays []int,
+) (sharedtypes.HabitScheduleType, []int, error) {
+	value := sharedtypes.NormalizeHabitScheduleType(
+		sharedtypes.HabitScheduleType(strings.TrimSpace(raw)),
+	)
 	switch value {
 	case sharedtypes.HabitScheduleWeekdays:
 		return value, nil, nil

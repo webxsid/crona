@@ -37,7 +37,13 @@ var (
 	playAlertSoundFn        = playAlertSound
 )
 
-func Start(ctx context.Context, coreCtx *core.Context, bus *events.Bus, logger *runtimepkg.Logger, paths runtimepkg.Paths) *Service {
+func Start(
+	ctx context.Context,
+	coreCtx *core.Context,
+	bus *events.Bus,
+	logger *runtimepkg.Logger,
+	paths runtimepkg.Paths,
+) *Service {
 	service := &Service{
 		core:              coreCtx,
 		bus:               bus,
@@ -137,7 +143,9 @@ func (s *Service) enqueue(req sharedtypes.AlertRequest) {
 	}
 }
 
-func (s *Service) updateAvailableAlert(status sharedtypes.UpdateStatus) (sharedtypes.AlertRequest, bool) {
+func (s *Service) updateAvailableAlert(
+	status sharedtypes.UpdateStatus,
+) (sharedtypes.AlertRequest, bool) {
 	if !status.UpdateAvailable || strings.TrimSpace(status.LatestVersion) == "" {
 		return sharedtypes.AlertRequest{}, false
 	}
@@ -207,7 +215,11 @@ func timerBoundarySubtitle(payload sharedtypes.TimerBoundaryPayload) string {
 	return strings.Join(parts, " / ")
 }
 
-func (s *Service) deliver(ctx context.Context, req sharedtypes.AlertRequest, respectSettings bool) error {
+func (s *Service) deliver(
+	ctx context.Context,
+	req sharedtypes.AlertRequest,
+	respectSettings bool,
+) error {
 	settings, err := s.core.CoreSettings.Get(ctx, s.core.UserID)
 	if err != nil {
 		return err
@@ -224,7 +236,8 @@ func (s *Service) deliver(ctx context.Context, req sharedtypes.AlertRequest, res
 	}
 
 	req = normalizeRequest(req, settings)
-	if respectSettings && !settings.BoundaryNotifications && (!settings.BoundarySound || !req.PlaySound) {
+	if respectSettings && !settings.BoundaryNotifications &&
+		(!settings.BoundarySound || !req.PlaySound) {
 		return nil
 	}
 
@@ -252,7 +265,10 @@ func (s *Service) deliver(ctx context.Context, req sharedtypes.AlertRequest, res
 	return firstErr
 }
 
-func normalizeRequest(req sharedtypes.AlertRequest, settings *sharedtypes.CoreSettings) sharedtypes.AlertRequest {
+func normalizeRequest(
+	req sharedtypes.AlertRequest,
+	settings *sharedtypes.CoreSettings,
+) sharedtypes.AlertRequest {
 	req.Title = strings.TrimSpace(req.Title)
 	req.Subtitle = strings.TrimSpace(req.Subtitle)
 	req.Body = strings.TrimSpace(req.Body)

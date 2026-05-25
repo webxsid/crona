@@ -79,7 +79,11 @@ func TestParseHabitScheduleAcceptsCommonWeekdayAliases(t *testing.T) {
 		raw  string
 		want []int
 	}{
-		{name: "tues thurs aliases", raw: "mon,tues,wed,thurs,fri,sat", want: []int{1, 2, 3, 4, 5, 6}},
+		{
+			name: "tues thurs aliases",
+			raw:  "mon,tues,wed,thurs,fri,sat",
+			want: []int{1, 2, 3, 4, 5, 6},
+		},
 		{name: "full weekday names", raw: "monday,wednesday,friday", want: []int{1, 3, 5}},
 	}
 

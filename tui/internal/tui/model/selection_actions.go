@@ -89,23 +89,28 @@ func (m Model) handleInputCreateAction() Model {
 	if m.view == ViewWellbeing {
 		return m.openCreateCheckInDialog()
 	}
-	if m.pane == PaneScratchpads {
-		return m.openCreateScratchpad()
-	}
 	return m
 }
 
 func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 	snapshot := m.selectionSnapshot()
 	if m.view == ViewConfig && m.pane == PaneConfig {
-		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok && item.Editable && strings.TrimSpace(item.Path) != "" {
-			return m, dialogruntime.OpenEditor(item.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok && item.Editable &&
+			strings.TrimSpace(item.Path) != "" {
+			return m, dialogruntime.OpenEditor(
+				item.Path,
+				func(err error) tea.Msg { return commands.ErrMsg{Err: err} },
+			), true
 		}
 		return m, nil, true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok && strings.TrimSpace(report.Path) != "" {
-			return m, dialogruntime.OpenEditor(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok &&
+			strings.TrimSpace(report.Path) != "" {
+			return m, dialogruntime.OpenEditor(
+				report.Path,
+				func(err error) tea.Msg { return commands.ErrMsg{Err: err} },
+			), true
 		}
 		return m, nil, true
 	}
@@ -147,7 +152,14 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 		if habit.Status == sharedtypes.HabitCompletionStatusFailed {
 			return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
 		}
-		return commands.SetHabitStatus(m.client, habit.ID, m.currentDashboardDate(), sharedtypes.HabitCompletionStatusFailed, habit.DurationMinutes, habit.Notes), true
+		return commands.SetHabitStatus(
+			m.client,
+			habit.ID,
+			m.currentDashboardDate(),
+			sharedtypes.HabitCompletionStatusFailed,
+			habit.DurationMinutes,
+			habit.Notes,
+		), true
 	}
 	return nil, true
 }
@@ -168,13 +180,6 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
-	if m.pane == PaneScratchpads {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
-		if rawIdx >= 0 && rawIdx < len(m.scratchpads) {
-			m = m.openConfirmDelete(m.scratchpads[rawIdx].ID)
-			return m, nil, true
-		}
-	}
 	if m.dialog == "" {
 		if next, ok := m.openSelectedDeleteDialog(); ok {
 			return next, nil, true
@@ -189,13 +194,14 @@ func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
 		return commands.OpenExternalURL(m.updateStatus.ReleaseURL), true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
-		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok && strings.TrimSpace(report.Path) != "" {
-			return dialogruntime.OpenDefaultViewer(report.Path, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
+		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok &&
+			strings.TrimSpace(report.Path) != "" {
+			return dialogruntime.OpenDefaultViewer(
+				report.Path,
+				func(err error) tea.Msg { return commands.ErrMsg{Err: err} },
+			), true
 		}
 		return nil, true
-	}
-	if m.pane == PaneScratchpads && m.scratchpadOpen && strings.TrimSpace(m.scratchpadFilePath) != "" {
-		return dialogruntime.OpenDefaultViewer(m.scratchpadFilePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} }), true
 	}
 	return nil, false
 }
@@ -205,7 +211,13 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 	if m.view == ViewConfig && m.pane == PaneConfig {
 		if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok {
 			if item.Editable && strings.TrimSpace(item.Path) != "" {
-				m = m.openViewEntityDialogWithPath(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody, item.Path)
+				m = m.openViewEntityDialogWithPath(
+					item.DetailTitle,
+					item.Label,
+					item.DetailMeta,
+					item.DetailBody,
+					item.Path,
+				)
 			} else {
 				m = m.openViewEntityDialog(item.DetailTitle, item.Label, item.DetailMeta, item.DetailBody)
 			}
@@ -215,7 +227,12 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
 		if report, ok := selectionpkg.SelectedExportReport(snapshot); ok {
-			meta := fmt.Sprintf("Kind %s   Format %s   Modified %s", report.Kind, report.Format, report.ModifiedAt)
+			meta := fmt.Sprintf(
+				"Kind %s   Format %s   Modified %s",
+				report.Kind,
+				report.Format,
+				report.ModifiedAt,
+			)
 			scope := strings.TrimSpace(report.ScopeLabel)
 			if scope == "" {
 				scope = "-"
@@ -224,7 +241,10 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 			if dateLabel == "" {
 				dateLabel = report.Date
 			}
-			body := "Scope\n" + scope + "\n\nDate\n" + dateLabel + "\n\nPath\n" + report.Path + "\n\nSize\n" + fmt.Sprintf("%d bytes", report.SizeBytes)
+			body := "Scope\n" + scope + "\n\nDate\n" + dateLabel + "\n\nPath\n" + report.Path + "\n\nSize\n" + fmt.Sprintf(
+				"%d bytes",
+				report.SizeBytes,
+			)
 			m = m.openViewEntityDialog("Export Report", report.Name, meta, body)
 			return m, nil, true
 		}
@@ -296,15 +316,6 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 			return next, nil, true
 		}
 	}
-	if m.pane == PaneScratchpads {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
-		if rawIdx < 0 || rawIdx >= len(m.scratchpads) {
-			return m, nil, true
-		}
-		m.scratchpadOpen = true
-		m.scratchpadMeta = helperpkg.ScratchpadMetaAt(m.scratchpads, rawIdx)
-		return m, commands.OpenScratchpad(m.client, m.scratchpads, rawIdx), true
-	}
 	return m, nil, false
 }
 
@@ -335,7 +346,14 @@ func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
 			if habit.Status == sharedtypes.HabitCompletionStatusCompleted {
 				return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
 			}
-			return commands.SetHabitStatus(m.client, habit.ID, m.currentDashboardDate(), sharedtypes.HabitCompletionStatusCompleted, nil, nil), true
+			return commands.SetHabitStatus(
+				m.client,
+				habit.ID,
+				m.currentDashboardDate(),
+				sharedtypes.HabitCompletionStatusCompleted,
+				nil,
+				nil,
+			), true
 		}
 	}
 	return nil, false
@@ -376,14 +394,20 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 	}
 	if m.view == ViewSessionActive {
 		if m.timer == nil || m.timer.State == "idle" {
-			if m.context == nil || m.context.RepoID == nil || m.context.StreamID == nil || m.context.IssueID == nil {
+			if m.context == nil || m.context.RepoID == nil || m.context.StreamID == nil ||
+				m.context.IssueID == nil {
 				return m, m.setStatus("No active issue in context", true)
 			}
 			meta := selectionpkg.ActiveIssue(snapshot)
 			if meta == nil {
 				return m, m.setStatus("Active issue metadata unavailable", true)
 			}
-			return m, commands.StartFocusSession(m.client, *m.context.RepoID, *m.context.StreamID, *m.context.IssueID)
+			return m, commands.StartFocusSession(
+				m.client,
+				*m.context.RepoID,
+				*m.context.StreamID,
+				*m.context.IssueID,
+			)
 		}
 		return m, nil
 	}

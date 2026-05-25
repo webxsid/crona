@@ -76,10 +76,12 @@ func TestHabitHistoryScopesByRepoAndStream(t *testing.T) {
 	if len(allRows) != 2 {
 		t.Fatalf("expected 2 repo-scoped rows, got %d", len(allRows))
 	}
-	if allRows[0].HabitName != "Inbox Zero" || allRows[0].StreamName != "app" || allRows[0].RepoName != "Work" {
+	if allRows[0].HabitName != "Inbox Zero" || allRows[0].StreamName != "app" ||
+		allRows[0].RepoName != "Work" {
 		t.Fatalf("unexpected first repo-scoped row: %+v", allRows[0])
 	}
-	if allRows[1].HabitName != "Review Queue" || allRows[1].StreamName != "ops" || allRows[1].RepoName != "Work" {
+	if allRows[1].HabitName != "Review Queue" || allRows[1].StreamName != "ops" ||
+		allRows[1].RepoName != "Work" {
 		t.Fatalf("unexpected second repo-scoped row: %+v", allRows[1])
 	}
 

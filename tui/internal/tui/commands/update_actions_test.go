@@ -93,7 +93,9 @@ func TestPrepareInstallCommandWithLocalReleaseBundle(t *testing.T) {
 	}
 
 	installerName := config.InstallerAssetNameForGOOS(runtime.GOOS)
-	installerBody, err := os.ReadFile(filepath.Join("..", "..", "..", "..", "scripts", "install_tui.sh.tmpl"))
+	installerBody, err := os.ReadFile(
+		filepath.Join("..", "..", "..", "..", "scripts", "install_tui.sh.tmpl"),
+	)
 	if err != nil {
 		t.Fatalf("ReadFile installer template: %v", err)
 	}
@@ -151,7 +153,11 @@ func TestPrepareInstallCommandWithLocalReleaseBundle(t *testing.T) {
 	cmd.Stderr = &output
 	err = cmd.Run()
 	if err != nil {
-		t.Fatalf("expected successful install flow, got error: %v\noutput:\n%s", err, output.String())
+		t.Fatalf(
+			"expected successful install flow, got error: %v\noutput:\n%s",
+			err,
+			output.String(),
+		)
 	}
 	for _, want := range []string{"Installing Crona", "Installing binaries...", "Extracting bundled assets..."} {
 		if !strings.Contains(output.String(), want) {

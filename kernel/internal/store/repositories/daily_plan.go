@@ -22,7 +22,10 @@ func NewDailyPlanRepository(db *bun.DB) *DailyPlanRepository {
 	return &DailyPlanRepository{db: db}
 }
 
-func (r *DailyPlanRepository) EnsurePlan(ctx context.Context, userID, date, now string) (*sharedtypes.DailyPlan, error) {
+func (r *DailyPlanRepository) EnsurePlan(
+	ctx context.Context,
+	userID, date, now string,
+) (*sharedtypes.DailyPlan, error) {
 	var model storemodels.DailyPlanModel
 	err := r.db.NewSelect().
 		Model(&model).
@@ -59,7 +62,10 @@ func (r *DailyPlanRepository) EnsurePlan(ctx context.Context, userID, date, now 
 	}, nil
 }
 
-func (r *DailyPlanRepository) GetByDate(ctx context.Context, userID, date string) (*sharedtypes.DailyPlan, error) {
+func (r *DailyPlanRepository) GetByDate(
+	ctx context.Context,
+	userID, date string,
+) (*sharedtypes.DailyPlan, error) {
 	type planRow struct {
 		ID        string `bun:"id"`
 		Date      string `bun:"date"`
@@ -93,7 +99,10 @@ func (r *DailyPlanRepository) GetByDate(ctx context.Context, userID, date string
 	}, nil
 }
 
-func (r *DailyPlanRepository) ListByDateRange(ctx context.Context, userID, startDate, endDate string) ([]sharedtypes.DailyPlan, error) {
+func (r *DailyPlanRepository) ListByDateRange(
+	ctx context.Context,
+	userID, startDate, endDate string,
+) ([]sharedtypes.DailyPlan, error) {
 	type planRow struct {
 		ID        string `bun:"id"`
 		Date      string `bun:"date"`
@@ -135,7 +144,11 @@ func (r *DailyPlanRepository) ListByDateRange(ctx context.Context, userID, start
 	return out, nil
 }
 
-func (r *DailyPlanRepository) GetEntry(ctx context.Context, userID, date string, issueID int64) (*sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) GetEntry(
+	ctx context.Context,
+	userID, date string,
+	issueID int64,
+) (*sharedtypes.DailyPlanEntry, error) {
 	plan, err := r.GetByDate(ctx, userID, date)
 	if err != nil || plan == nil {
 		return nil, err
@@ -149,11 +162,32 @@ func (r *DailyPlanRepository) GetEntry(ctx context.Context, userID, date string,
 	return nil, nil
 }
 
-func (r *DailyPlanRepository) UpsertCommittedEntry(ctx context.Context, userID, date, source, now string, issueID int64) (*sharedtypes.DailyPlanEntry, string, error) {
-	return r.UpsertCommittedEntryWithChain(ctx, userID, date, source, now, issueID, date, date, 0, 0)
+func (r *DailyPlanRepository) UpsertCommittedEntry(
+	ctx context.Context,
+	userID, date, source, now string,
+	issueID int64,
+) (*sharedtypes.DailyPlanEntry, string, error) {
+	return r.UpsertCommittedEntryWithChain(
+		ctx,
+		userID,
+		date,
+		source,
+		now,
+		issueID,
+		date,
+		date,
+		0,
+		0,
+	)
 }
 
-func (r *DailyPlanRepository) UpsertCommittedEntryWithChain(ctx context.Context, userID, date, source, now string, issueID int64, baselineDate, currentPlannedDate string, postponeCount, maxDelayedDays int) (*sharedtypes.DailyPlanEntry, string, error) {
+func (r *DailyPlanRepository) UpsertCommittedEntryWithChain(
+	ctx context.Context,
+	userID, date, source, now string,
+	issueID int64,
+	baselineDate, currentPlannedDate string,
+	postponeCount, maxDelayedDays int,
+) (*sharedtypes.DailyPlanEntry, string, error) {
 	plan, err := r.EnsurePlan(ctx, userID, date, now)
 	if err != nil {
 		return nil, "", err
@@ -213,7 +247,12 @@ func (r *DailyPlanRepository) UpsertCommittedEntryWithChain(ctx context.Context,
 	return entry, "unchanged", err
 }
 
-func (r *DailyPlanRepository) MarkPendingFailure(ctx context.Context, userID, date, now string, issueID int64, reason sharedtypes.DailyPlanFailureReason) (*sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) MarkPendingFailure(
+	ctx context.Context,
+	userID, date, now string,
+	issueID int64,
+	reason sharedtypes.DailyPlanFailureReason,
+) (*sharedtypes.DailyPlanEntry, error) {
 	entry, err := r.GetEntry(ctx, userID, date, issueID)
 	if err != nil || entry == nil {
 		return entry, err
@@ -231,7 +270,12 @@ func (r *DailyPlanRepository) MarkPendingFailure(ctx context.Context, userID, da
 	return r.GetEntry(ctx, userID, date, issueID)
 }
 
-func (r *DailyPlanRepository) ResolveEntry(ctx context.Context, entryID, now string, status sharedtypes.DailyPlanEntryStatus, reason *sharedtypes.DailyPlanFailureReason) error {
+func (r *DailyPlanRepository) ResolveEntry(
+	ctx context.Context,
+	entryID, now string,
+	status sharedtypes.DailyPlanEntryStatus,
+	reason *sharedtypes.DailyPlanFailureReason,
+) error {
 	q := r.db.NewUpdate().
 		Model((*storemodels.DailyPlanEntryModel)(nil)).
 		Where("id = ?", entryID).
@@ -249,7 +293,11 @@ func (r *DailyPlanRepository) ResolveEntry(ctx context.Context, entryID, now str
 	return err
 }
 
-func (r *DailyPlanRepository) UpdateChainState(ctx context.Context, entryID, now, baselineDate, currentPlannedDate string, postponeCount, maxDelayedDays int) error {
+func (r *DailyPlanRepository) UpdateChainState(
+	ctx context.Context,
+	entryID, now, baselineDate, currentPlannedDate string,
+	postponeCount, maxDelayedDays int,
+) error {
 	_, err := r.db.NewUpdate().
 		Model((*storemodels.DailyPlanEntryModel)(nil)).
 		Where("id = ?", entryID).
@@ -262,7 +310,10 @@ func (r *DailyPlanRepository) UpdateChainState(ctx context.Context, entryID, now
 	return err
 }
 
-func (r *DailyPlanRepository) ListPendingFailuresBefore(ctx context.Context, userID, cutoff string) ([]sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) ListPendingFailuresBefore(
+	ctx context.Context,
+	userID, cutoff string,
+) ([]sharedtypes.DailyPlanEntry, error) {
 	type row struct {
 		ID                   string  `bun:"id"`
 		Date                 string  `bun:"date"`
@@ -308,12 +359,36 @@ func (r *DailyPlanRepository) ListPendingFailuresBefore(ctx context.Context, use
 	}
 	out := make([]sharedtypes.DailyPlanEntry, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapDailyPlanEntryRow(row.ID, row.Date, row.IssuePublicID, row.Source, row.Status, row.FailureReason, row.PendingFailureReason, row.CommittedAt, row.PendingFailureAt, row.ResolvedAt, row.BaselineDate, row.CurrentPlannedDate, row.PostponeCount, row.MaxDelayedDays))
+		out = append(
+			out,
+			mapDailyPlanEntryRow(
+				row.ID,
+				row.Date,
+				row.IssuePublicID,
+				row.Source,
+				row.Status,
+				row.FailureReason,
+				row.PendingFailureReason,
+				row.CommittedAt,
+				row.PendingFailureAt,
+				row.ResolvedAt,
+				row.BaselineDate,
+				row.CurrentPlannedDate,
+				row.PostponeCount,
+				row.MaxDelayedDays,
+			),
+		)
 	}
 	return out, nil
 }
 
-func (r *DailyPlanRepository) AppendEvent(ctx context.Context, entryID, userID, deviceID, now string, eventType sharedtypes.DailyPlanEventType, reason *sharedtypes.DailyPlanFailureReason, payload any) error {
+func (r *DailyPlanRepository) AppendEvent(
+	ctx context.Context,
+	entryID, userID, deviceID, now string,
+	eventType sharedtypes.DailyPlanEventType,
+	reason *sharedtypes.DailyPlanFailureReason,
+	payload any,
+) error {
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -336,7 +411,10 @@ func (r *DailyPlanRepository) AppendEvent(ctx context.Context, entryID, userID, 
 	return err
 }
 
-func (r *DailyPlanRepository) listEntriesByPlanIDs(ctx context.Context, planIDs []string) ([]sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) listEntriesByPlanIDs(
+	ctx context.Context,
+	planIDs []string,
+) ([]sharedtypes.DailyPlanEntry, error) {
 	grouped, err := r.listEntriesGroupedByPlanIDs(ctx, planIDs)
 	if err != nil {
 		return nil, err
@@ -347,7 +425,10 @@ func (r *DailyPlanRepository) listEntriesByPlanIDs(ctx context.Context, planIDs 
 	return grouped[planIDs[0]], nil
 }
 
-func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(ctx context.Context, planIDs []string) (map[string][]sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(
+	ctx context.Context,
+	planIDs []string,
+) (map[string][]sharedtypes.DailyPlanEntry, error) {
 	if len(planIDs) == 0 {
 		return map[string][]sharedtypes.DailyPlanEntry{}, nil
 	}
@@ -399,14 +480,32 @@ func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(ctx context.Context, p
 	}
 	grouped := make(map[string][]sharedtypes.DailyPlanEntry, len(planIDs))
 	for _, row := range rows {
-		entry := mapDailyPlanEntryRow(row.ID, row.Date, row.IssuePublicID, row.Source, row.Status, row.FailureReason, row.PendingFailureReason, row.CommittedAt, row.PendingFailureAt, row.ResolvedAt, row.BaselineDate, row.CurrentPlannedDate, row.PostponeCount, row.MaxDelayedDays)
+		entry := mapDailyPlanEntryRow(
+			row.ID,
+			row.Date,
+			row.IssuePublicID,
+			row.Source,
+			row.Status,
+			row.FailureReason,
+			row.PendingFailureReason,
+			row.CommittedAt,
+			row.PendingFailureAt,
+			row.ResolvedAt,
+			row.BaselineDate,
+			row.CurrentPlannedDate,
+			row.PostponeCount,
+			row.MaxDelayedDays,
+		)
 		entry.Events = events[row.ID]
 		grouped[row.PlanID] = append(grouped[row.PlanID], entry)
 	}
 	return grouped, nil
 }
 
-func (r *DailyPlanRepository) listEventsByPlanIDs(ctx context.Context, planIDs []string) (map[string][]sharedtypes.DailyPlanEvent, error) {
+func (r *DailyPlanRepository) listEventsByPlanIDs(
+	ctx context.Context,
+	planIDs []string,
+) (map[string][]sharedtypes.DailyPlanEvent, error) {
 	if len(planIDs) == 0 {
 		return map[string][]sharedtypes.DailyPlanEvent{}, nil
 	}
@@ -449,7 +548,10 @@ func (r *DailyPlanRepository) listEventsByPlanIDs(ctx context.Context, planIDs [
 	return out, nil
 }
 
-func (r *DailyPlanRepository) ListActiveEntries(ctx context.Context, userID string) ([]sharedtypes.DailyPlanEntry, error) {
+func (r *DailyPlanRepository) ListActiveEntries(
+	ctx context.Context,
+	userID string,
+) ([]sharedtypes.DailyPlanEntry, error) {
 	type row struct {
 		ID                   string  `bun:"id"`
 		Date                 string  `bun:"date"`
@@ -495,12 +597,39 @@ func (r *DailyPlanRepository) ListActiveEntries(ctx context.Context, userID stri
 	}
 	out := make([]sharedtypes.DailyPlanEntry, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, mapDailyPlanEntryRow(row.ID, row.Date, row.IssuePublicID, row.Source, row.Status, row.FailureReason, row.PendingFailureReason, row.CommittedAt, row.PendingFailureAt, row.ResolvedAt, row.BaselineDate, row.CurrentPlannedDate, row.PostponeCount, row.MaxDelayedDays))
+		out = append(
+			out,
+			mapDailyPlanEntryRow(
+				row.ID,
+				row.Date,
+				row.IssuePublicID,
+				row.Source,
+				row.Status,
+				row.FailureReason,
+				row.PendingFailureReason,
+				row.CommittedAt,
+				row.PendingFailureAt,
+				row.ResolvedAt,
+				row.BaselineDate,
+				row.CurrentPlannedDate,
+				row.PostponeCount,
+				row.MaxDelayedDays,
+			),
+		)
 	}
 	return out, nil
 }
 
-func mapDailyPlanEntryRow(id, date string, issueID int64, source, status string, failureReason, pendingFailureReason *string, committedAt string, pendingFailureAt, resolvedAt *string, baselineDate, currentPlannedDate string, postponeCount, maxDelayedDays int) sharedtypes.DailyPlanEntry {
+func mapDailyPlanEntryRow(
+	id, date string,
+	issueID int64,
+	source, status string,
+	failureReason, pendingFailureReason *string,
+	committedAt string,
+	pendingFailureAt, resolvedAt *string,
+	baselineDate, currentPlannedDate string,
+	postponeCount, maxDelayedDays int,
+) sharedtypes.DailyPlanEntry {
 	var finalReason *sharedtypes.DailyPlanFailureReason
 	if failureReason != nil {
 		value := sharedtypes.DailyPlanFailureReason(*failureReason)

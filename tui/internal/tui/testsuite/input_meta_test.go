@@ -16,16 +16,20 @@ func TestMetaRepoPaneCUsesCheckout(t *testing.T) {
 		ActiveView: uistate.ViewMeta,
 		ActivePane: uistate.PaneRepos,
 	}
-	next, _ := inputpkg.Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}, inputpkg.Deps{
-		Checkout: func(_ *inputpkg.State) tea.Cmd {
-			calledCheckout = true
-			return nil
+	next, _ := inputpkg.Handle(
+		state,
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+		inputpkg.Deps{
+			Checkout: func(_ *inputpkg.State) tea.Cmd {
+				calledCheckout = true
+				return nil
+			},
+			OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
+				openedDialog = true
+				return true
+			},
 		},
-		OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
-			openedDialog = true
-			return true
-		},
-	})
+	)
 	if next.ActiveView != uistate.ViewMeta || next.ActivePane != uistate.PaneRepos {
 		t.Fatalf("unexpected state after repo c: view=%q pane=%q", next.ActiveView, next.ActivePane)
 	}
@@ -44,18 +48,26 @@ func TestMetaStreamPaneCUsesCheckout(t *testing.T) {
 		ActiveView: uistate.ViewMeta,
 		ActivePane: uistate.PaneStreams,
 	}
-	next, _ := inputpkg.Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}, inputpkg.Deps{
-		Checkout: func(_ *inputpkg.State) tea.Cmd {
-			calledCheckout = true
-			return nil
+	next, _ := inputpkg.Handle(
+		state,
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+		inputpkg.Deps{
+			Checkout: func(_ *inputpkg.State) tea.Cmd {
+				calledCheckout = true
+				return nil
+			},
+			OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
+				openedDialog = true
+				return true
+			},
 		},
-		OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
-			openedDialog = true
-			return true
-		},
-	})
+	)
 	if next.ActiveView != uistate.ViewMeta || next.ActivePane != uistate.PaneStreams {
-		t.Fatalf("unexpected state after stream c: view=%q pane=%q", next.ActiveView, next.ActivePane)
+		t.Fatalf(
+			"unexpected state after stream c: view=%q pane=%q",
+			next.ActiveView,
+			next.ActivePane,
+		)
 	}
 	if !calledCheckout {
 		t.Fatal("expected stream-pane c to invoke checkout")
@@ -72,18 +84,26 @@ func TestMetaIssuePaneCStillOpensDialog(t *testing.T) {
 		ActiveView: uistate.ViewMeta,
 		ActivePane: uistate.PaneIssues,
 	}
-	next, _ := inputpkg.Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}}, inputpkg.Deps{
-		Checkout: func(_ *inputpkg.State) tea.Cmd {
-			calledCheckout = true
-			return nil
+	next, _ := inputpkg.Handle(
+		state,
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+		inputpkg.Deps{
+			Checkout: func(_ *inputpkg.State) tea.Cmd {
+				calledCheckout = true
+				return nil
+			},
+			OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
+				openedDialog = true
+				return true
+			},
 		},
-		OpenCheckoutContextDialog: func(_ *inputpkg.State) bool {
-			openedDialog = true
-			return true
-		},
-	})
+	)
 	if next.ActiveView != uistate.ViewMeta || next.ActivePane != uistate.PaneIssues {
-		t.Fatalf("unexpected state after issue c: view=%q pane=%q", next.ActiveView, next.ActivePane)
+		t.Fatalf(
+			"unexpected state after issue c: view=%q pane=%q",
+			next.ActiveView,
+			next.ActivePane,
+		)
 	}
 	if calledCheckout {
 		t.Fatal("expected issue-pane c to avoid direct checkout")

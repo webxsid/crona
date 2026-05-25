@@ -35,7 +35,6 @@ func paneActions(theme types.Theme, state types.ContentState, pane string) []str
 	return viewchrome.ContextualActions(theme, viewchrome.ActionsState{
 		View:           state.View,
 		Pane:           pane,
-		ScratchpadOpen: state.ScratchpadOpen,
 		TimerState:     timerStateFromContentState(state),
 		RestModeActive: state.RestModeActive,
 		AwayModeActive: state.AwayModeActive,

@@ -62,7 +62,13 @@ func TestManualSessionLoggingAppliesFocusStatusRules(t *testing.T) {
 		t.Fatalf("expected focus status denial for backlog issue, got %v", err)
 	}
 
-	planned, err := corecommands.ChangeIssueStatus(ctx, coreCtx, issue.ID, sharedtypes.IssueStatusPlanned, nil)
+	planned, err := corecommands.ChangeIssueStatus(
+		ctx,
+		coreCtx,
+		issue.ID,
+		sharedtypes.IssueStatusPlanned,
+		nil,
+	)
 	if err != nil {
 		t.Fatalf("plan issue: %v", err)
 	}

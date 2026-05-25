@@ -12,7 +12,11 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func ComputeDashboardWindowSummary(ctx context.Context, c *core.Context, input shareddto.DashboardWindowQuery) (*sharedtypes.DashboardWindowSummary, error) {
+func ComputeDashboardWindowSummary(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DashboardWindowQuery,
+) (*sharedtypes.DashboardWindowSummary, error) {
 	if err := validateRange(input.Start, input.End); err != nil {
 		return nil, err
 	}
@@ -66,7 +70,8 @@ func ComputeDashboardWindowSummary(ctx context.Context, c *core.Context, input s
 			case sharedtypes.DailyPlanEntryStatusFailed:
 				item.FailedCount++
 				summary.FailedCount++
-				if entry.FailureReason != nil && *entry.FailureReason == sharedtypes.DailyPlanFailureReasonMissed {
+				if entry.FailureReason != nil &&
+					*entry.FailureReason == sharedtypes.DailyPlanFailureReasonMissed {
 					summary.MissedCount++
 				}
 			case sharedtypes.DailyPlanEntryStatusAbandoned:
@@ -87,7 +92,11 @@ func ComputeDashboardWindowSummary(ctx context.Context, c *core.Context, input s
 	return summary, nil
 }
 
-func ComputeFocusScoreSummary(ctx context.Context, c *core.Context, input shareddto.DashboardSummaryQuery) (*sharedtypes.FocusScoreSummary, error) {
+func ComputeFocusScoreSummary(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DashboardSummaryQuery,
+) (*sharedtypes.FocusScoreSummary, error) {
 	if err := validateRange(input.Start, input.End); err != nil {
 		return nil, err
 	}
@@ -136,7 +145,17 @@ func ComputeFocusScoreSummary(ctx context.Context, c *core.Context, input shared
 		noBreakPenalty = 10.0
 	}
 	spikePenalty := focusSpikePenalty(days)
-	score := int(math.Round(math.Max(0, math.Min(100, base+consistencyScore+breakContribution-overworkPenalty-noBreakPenalty-spikePenalty))))
+	score := int(
+		math.Round(
+			math.Max(
+				0,
+				math.Min(
+					100,
+					base+consistencyScore+breakContribution-overworkPenalty-noBreakPenalty-spikePenalty,
+				),
+			),
+		),
+	)
 	level := sharedtypes.FocusScoreLevelLow
 	switch {
 	case workedRatio > 1.30 && restRatio < 0.12:
@@ -160,7 +179,11 @@ func ComputeFocusScoreSummary(ctx context.Context, c *core.Context, input shared
 	}, nil
 }
 
-func ComputeTimeDistributionSummary(ctx context.Context, c *core.Context, input shareddto.DashboardSummaryQuery) (*sharedtypes.TimeDistributionSummary, error) {
+func ComputeTimeDistributionSummary(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DashboardSummaryQuery,
+) (*sharedtypes.TimeDistributionSummary, error) {
 	if err := validateRange(input.Start, input.End); err != nil {
 		return nil, err
 	}
@@ -202,7 +225,11 @@ func ComputeTimeDistributionSummary(ctx context.Context, c *core.Context, input 
 	}, nil
 }
 
-func ComputeGoalProgressSummary(ctx context.Context, c *core.Context, input shareddto.DashboardSummaryQuery) (*sharedtypes.GoalProgressSummary, error) {
+func ComputeGoalProgressSummary(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DashboardSummaryQuery,
+) (*sharedtypes.GoalProgressSummary, error) {
 	if err := validateRange(input.Start, input.End); err != nil {
 		return nil, err
 	}
@@ -304,7 +331,11 @@ type dashboardData struct {
 	segmentTotals map[string]int
 }
 
-func loadDashboardData(ctx context.Context, c *core.Context, input shareddto.DashboardSummaryQuery) (*dashboardData, error) {
+func loadDashboardData(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DashboardSummaryQuery,
+) (*dashboardData, error) {
 	issues, err := scopedIssues(ctx, c, input.RepoID, input.StreamID, input.IssueID)
 	if err != nil {
 		return nil, err
@@ -313,7 +344,15 @@ func loadDashboardData(ctx context.Context, c *core.Context, input shareddto.Das
 	for _, issue := range issues {
 		issueByID[issue.ID] = issue
 	}
-	sessions, err := listScopedSessions(ctx, c, input.Start, input.End, input.RepoID, input.StreamID, input.IssueID)
+	sessions, err := listScopedSessions(
+		ctx,
+		c,
+		input.Start,
+		input.End,
+		input.RepoID,
+		input.StreamID,
+		input.IssueID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +369,11 @@ func loadDashboardData(ctx context.Context, c *core.Context, input shareddto.Das
 	}, nil
 }
 
-func scopedIssues(ctx context.Context, c *core.Context, repoID, streamID, issueID *int64) ([]sharedtypes.IssueWithMeta, error) {
+func scopedIssues(
+	ctx context.Context,
+	c *core.Context,
+	repoID, streamID, issueID *int64,
+) ([]sharedtypes.IssueWithMeta, error) {
 	allIssues, err := c.Issues.ListAll(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -351,7 +394,12 @@ func scopedIssues(ctx context.Context, c *core.Context, repoID, streamID, issueI
 	return out, nil
 }
 
-func listScopedSessions(ctx context.Context, c *core.Context, start, end string, repoID, streamID, issueID *int64) ([]sharedtypes.SessionHistoryEntry, error) {
+func listScopedSessions(
+	ctx context.Context,
+	c *core.Context,
+	start, end string,
+	repoID, streamID, issueID *int64,
+) ([]sharedtypes.SessionHistoryEntry, error) {
 	startTime := start + "T00:00:00.000Z"
 	endTime := end + "T23:59:59.999Z"
 	return c.Sessions.ListEnded(ctx, struct {
@@ -373,7 +421,11 @@ func listScopedSessions(ctx context.Context, c *core.Context, start, end string,
 	})
 }
 
-func sessionWorkTotals(ctx context.Context, c *core.Context, sessions []sharedtypes.SessionHistoryEntry) (map[string]int, map[string]int, error) {
+func sessionWorkTotals(
+	ctx context.Context,
+	c *core.Context,
+	sessions []sharedtypes.SessionHistoryEntry,
+) (map[string]int, map[string]int, error) {
 	workBySession := map[string]int{}
 	segmentTotals := map[string]int{
 		string(sharedtypes.SessionSegmentWork):       0,
@@ -413,14 +465,19 @@ func sessionWorkTotals(ctx context.Context, c *core.Context, sessions []sharedty
 		}
 	}
 	for _, session := range sessions {
-		if workBySession[session.ID] == 0 && session.DurationSeconds != nil && *session.DurationSeconds > 0 {
+		if workBySession[session.ID] == 0 && session.DurationSeconds != nil &&
+			*session.DurationSeconds > 0 {
 			workBySession[session.ID] = *session.DurationSeconds
 		}
 	}
 	return workBySession, segmentTotals, nil
 }
 
-func loadScoredDailyPlansByDate(ctx context.Context, c *core.Context, start, end string) (map[string]*sharedtypes.DailyPlan, error) {
+func loadScoredDailyPlansByDate(
+	ctx context.Context,
+	c *core.Context,
+	start, end string,
+) (map[string]*sharedtypes.DailyPlan, error) {
 	plans, err := c.DailyPlans.ListByDateRange(ctx, c.UserID, start, end)
 	if err != nil {
 		return nil, err
@@ -447,7 +504,10 @@ func loadScoredDailyPlansByDate(ctx context.Context, c *core.Context, start, end
 	return out, nil
 }
 
-func distributionRows(accum map[string]int, labels map[string]string) ([]sharedtypes.TimeDistributionRow, int) {
+func distributionRows(
+	accum map[string]int,
+	labels map[string]string,
+) ([]sharedtypes.TimeDistributionRow, int) {
 	total := 0
 	for _, seconds := range accum {
 		total += seconds
@@ -473,7 +533,10 @@ func distributionRows(accum map[string]int, labels map[string]string) ([]sharedt
 	return rows, total
 }
 
-func distributionKeyAndLabel(groupBy sharedtypes.DistributionGroup, issue sharedtypes.IssueWithMeta) (string, string) {
+func distributionKeyAndLabel(
+	groupBy sharedtypes.DistributionGroup,
+	issue sharedtypes.IssueWithMeta,
+) (string, string) {
 	switch groupBy {
 	case sharedtypes.DistributionGroupStream:
 		return fmt.Sprintf("stream:%d", issue.StreamID), issue.StreamName
@@ -484,7 +547,10 @@ func distributionKeyAndLabel(groupBy sharedtypes.DistributionGroup, issue shared
 	}
 }
 
-func goalProgressKeyAndLabel(groupBy sharedtypes.GoalProgressGroup, issue sharedtypes.IssueWithMeta) (string, string) {
+func goalProgressKeyAndLabel(
+	groupBy sharedtypes.GoalProgressGroup,
+	issue sharedtypes.IssueWithMeta,
+) (string, string) {
 	switch groupBy {
 	case sharedtypes.GoalProgressGroupIssue:
 		return fmt.Sprintf("issue:%d", issue.ID), issue.Title
@@ -495,7 +561,9 @@ func goalProgressKeyAndLabel(groupBy sharedtypes.GoalProgressGroup, issue shared
 	}
 }
 
-func dashboardWindowDayStatus(day sharedtypes.DashboardWindowDay) sharedtypes.DashboardWindowDayStatus {
+func dashboardWindowDayStatus(
+	day sharedtypes.DashboardWindowDay,
+) sharedtypes.DashboardWindowDayStatus {
 	switch {
 	case day.CarryOverCount > 0 && (day.CompletedCount > 0 || day.FailedCount > 0):
 		return sharedtypes.DashboardWindowDayMixed

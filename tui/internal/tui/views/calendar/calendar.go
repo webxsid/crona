@@ -22,7 +22,14 @@ type Selection struct {
 }
 
 func Render(theme types.Theme, selection Selection) []string {
-	anchor, ok := parseISODate(firstNonEmpty(selection.AnchorDate, selection.SelectedDate, selection.RangeEnd, selection.RangeStart))
+	anchor, ok := parseISODate(
+		firstNonEmpty(
+			selection.AnchorDate,
+			selection.SelectedDate,
+			selection.RangeEnd,
+			selection.RangeStart,
+		),
+	)
 	if !ok {
 		return nil
 	}
@@ -40,7 +47,15 @@ func Render(theme types.Theme, selection Selection) []string {
 	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
 	lines := []string{
 		theme.StyleHeader.Render(monthStart.Format("January 2006")),
-		calendarMetaLine(theme, selected, hasSelected, rangeStart, rangeEnd, hasRangeStart && hasRangeEnd, today),
+		calendarMetaLine(
+			theme,
+			selected,
+			hasSelected,
+			rangeStart,
+			rangeEnd,
+			hasRangeStart && hasRangeEnd,
+			today,
+		),
 		theme.StyleDim.Render("Wk  Mo Tu We Th Fr Sa Su"),
 	}
 	offset := (int(monthStart.Weekday()) + 6) % 7
@@ -52,10 +67,19 @@ func Render(theme types.Theme, selection Selection) []string {
 		selectedWeek = ISOWeek(rangeEnd)
 	}
 	currentWeek := ISOWeek(today)
-	selectedDateStyle := lipgloss.NewStyle().Background(theme.ColorGreen).Foreground(lipgloss.Color("0")).Bold(true)
-	todayStyle := lipgloss.NewStyle().Background(theme.ColorYellow).Foreground(lipgloss.Color("0")).Bold(true)
+	selectedDateStyle := lipgloss.NewStyle().
+		Background(theme.ColorGreen).
+		Foreground(lipgloss.Color("0")).
+		Bold(true)
+	todayStyle := lipgloss.NewStyle().
+		Background(theme.ColorYellow).
+		Foreground(lipgloss.Color("0")).
+		Bold(true)
 	rangeStyle := lipgloss.NewStyle().Background(theme.ColorBlue).Foreground(theme.ColorWhite)
-	currentWeekStyle := lipgloss.NewStyle().Background(theme.ColorYellow).Foreground(lipgloss.Color("0")).Bold(true)
+	currentWeekStyle := lipgloss.NewStyle().
+		Background(theme.ColorYellow).
+		Foreground(lipgloss.Color("0")).
+		Bold(true)
 	for week := range 6 {
 		rowStart := gridStart.AddDate(0, 0, week*7)
 		rowWeek := ISOWeek(rowStart)
@@ -72,7 +96,8 @@ func Render(theme types.Theme, selection Selection) []string {
 		for day := range 7 {
 			current := rowStart.AddDate(0, 0, day)
 			inSelected := hasSelected && sameDay(current, selected)
-			inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) && !current.After(rangeEnd)
+			inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) &&
+				!current.After(rangeEnd)
 			isToday := sameDay(current, today)
 			cell := fmt.Sprintf("%2d", current.Day())
 			switch {
@@ -144,7 +169,10 @@ func MergeBeside(leftLines, calendarLines []string, innerWidth, gutterWidth int)
 		}
 		left = lipgloss.NewStyle().Width(leftWidth).MaxWidth(leftWidth).Render(left)
 		if i >= start && i < start+len(calendarLines) {
-			right := lipgloss.NewStyle().Width(rightWidth).MaxWidth(rightWidth).Render(calendarLines[i-start])
+			right := lipgloss.NewStyle().
+				Width(rightWidth).
+				MaxWidth(rightWidth).
+				Render(calendarLines[i-start])
 			merged = append(merged, left+gutter+right)
 			continue
 		}
@@ -200,14 +228,28 @@ func ShiftDate(raw string, days int) string {
 	return parsed.AddDate(0, 0, days).Format("2006-01-02")
 }
 
-func calendarMetaLine(theme types.Theme, selected time.Time, hasSelected bool, rangeStart, rangeEnd time.Time, hasRange bool, today time.Time) string {
+func calendarMetaLine(
+	theme types.Theme,
+	selected time.Time,
+	hasSelected bool,
+	rangeStart, rangeEnd time.Time,
+	hasRange bool,
+	today time.Time,
+) string {
 	parts := []string{}
 	if hasRange {
-		parts = append(parts, fmt.Sprintf("Range W%02d-W%02d", ISOWeek(rangeStart), ISOWeek(rangeEnd)))
+		parts = append(
+			parts,
+			fmt.Sprintf("Range W%02d-W%02d", ISOWeek(rangeStart), ISOWeek(rangeEnd)),
+		)
 	} else if hasSelected {
 		parts = append(parts, fmt.Sprintf("Week %02d", ISOWeek(selected)))
 	}
-	parts = append(parts, fmt.Sprintf("Today %02d", today.Day()), fmt.Sprintf("Wk %02d", ISOWeek(today)))
+	parts = append(
+		parts,
+		fmt.Sprintf("Today %02d", today.Day()),
+		fmt.Sprintf("Wk %02d", ISOWeek(today)),
+	)
 	return theme.StyleDim.Render(viewhelpers.Truncate(strings.Join(parts, "   "), 44))
 }
 

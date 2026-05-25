@@ -53,7 +53,7 @@ func TestLoadWellbeingUsesLifetimeStreaksAndSevenDayMetrics(t *testing.T) {
 		}
 	}()
 
-	client := api.NewClient(localipc.DefaultTransport(), endpoint, "")
+	client := api.NewClient(localipc.DefaultTransport(), endpoint)
 	msg := LoadWellbeing(client, "2026-04-10")()
 	batch, ok := msg.(tea.BatchMsg)
 	if !ok {
@@ -75,7 +75,10 @@ func TestLoadWellbeingUsesLifetimeStreaksAndSevenDayMetrics(t *testing.T) {
 		case <-done:
 			collecting = false
 		case <-deadline:
-			t.Fatalf("timed out waiting for wellbeing load requests, got methods %+v", methodKeys(got))
+			t.Fatalf(
+				"timed out waiting for wellbeing load requests, got methods %+v",
+				methodKeys(got),
+			)
 		}
 	}
 	for {
@@ -90,17 +93,42 @@ drained:
 	_ = ln.Close()
 	wg.Wait()
 
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRange), "2026-04-04", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRollup), "2026-04-04", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardWindow), "2026-04-04", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardFocusScore), "2026-04-04", "2026-04-10")
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodMetricsRange),
+		"2026-04-04",
+		"2026-04-10",
+	)
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodMetricsRollup),
+		"2026-04-04",
+		"2026-04-10",
+	)
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodDashboardWindow),
+		"2026-04-04",
+		"2026-04-10",
+	)
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodDashboardFocusScore),
+		"2026-04-04",
+		"2026-04-10",
+	)
 	for _, req := range got[protocol.MethodDashboardDistribution] {
 		assertDateRangeQuery(t, req, "2026-04-04", "2026-04-10")
 	}
 	if len(got[protocol.MethodDashboardDistribution]) == 0 {
 		t.Fatalf("expected at least one distribution request")
 	}
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardGoalProgress), "2026-04-04", "2026-04-10")
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodDashboardGoalProgress),
+		"2026-04-04",
+		"2026-04-10",
+	)
 	if len(got[protocol.MethodMetricsStreaks]) > 0 {
 		t.Fatalf("wellbeing load should not call range-based %s", protocol.MethodMetricsStreaks)
 	}
@@ -144,7 +172,7 @@ func TestLoadWellbeingWindowUsesRequestedRange(t *testing.T) {
 		}
 	}()
 
-	client := api.NewClient(localipc.DefaultTransport(), endpoint, "")
+	client := api.NewClient(localipc.DefaultTransport(), endpoint)
 	msg := LoadWellbeingWindow(client, "2026-04-10", 14)()
 	batch, ok := msg.(tea.BatchMsg)
 	if !ok {
@@ -166,7 +194,10 @@ func TestLoadWellbeingWindowUsesRequestedRange(t *testing.T) {
 		case <-done:
 			collecting = false
 		case <-deadline:
-			t.Fatalf("timed out waiting for wellbeing load requests, got methods %+v", methodKeys(got))
+			t.Fatalf(
+				"timed out waiting for wellbeing load requests, got methods %+v",
+				methodKeys(got),
+			)
 		}
 	}
 	for {
@@ -179,8 +210,18 @@ func TestLoadWellbeingWindowUsesRequestedRange(t *testing.T) {
 	}
 drained:
 	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRange), "2026-03-28", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRollup), "2026-03-28", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardWindow), "2026-03-28", "2026-04-10")
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodMetricsRollup),
+		"2026-03-28",
+		"2026-04-10",
+	)
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodDashboardWindow),
+		"2026-03-28",
+		"2026-04-10",
+	)
 }
 
 func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
@@ -214,7 +255,7 @@ func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
 		}
 	}()
 
-	client := api.NewClient(localipc.DefaultTransport(), endpoint, "")
+	client := api.NewClient(localipc.DefaultTransport(), endpoint)
 	msg := LoadWellbeingWindow(client, "2026-04-10", 60)()
 	batch, ok := msg.(tea.BatchMsg)
 	if !ok {
@@ -236,7 +277,10 @@ func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
 		case <-done:
 			collecting = false
 		case <-deadline:
-			t.Fatalf("timed out waiting for wellbeing load requests, got methods %+v", methodKeys(got))
+			t.Fatalf(
+				"timed out waiting for wellbeing load requests, got methods %+v",
+				methodKeys(got),
+			)
 		}
 	}
 	for {
@@ -249,8 +293,18 @@ func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
 	}
 drained:
 	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRange), "2026-03-12", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodMetricsRollup), "2026-03-12", "2026-04-10")
-	assertDateRangeQuery(t, firstRequest(got, protocol.MethodDashboardWindow), "2026-03-12", "2026-04-10")
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodMetricsRollup),
+		"2026-03-12",
+		"2026-04-10",
+	)
+	assertDateRangeQuery(
+		t,
+		firstRequest(got, protocol.MethodDashboardWindow),
+		"2026-03-12",
+		"2026-04-10",
+	)
 }
 
 func runBatchCommands(batch tea.BatchMsg) {

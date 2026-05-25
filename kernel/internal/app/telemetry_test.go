@@ -49,7 +49,9 @@ func TestCaptureDaemonStarted(t *testing.T) {
 	if got := telemetry.events[0].properties["transport"]; got != "unix" {
 		t.Fatalf("expected unix transport, got %#v", got)
 	}
-	if got := telemetry.events[0].properties["running_channel"]; got != string(sharedtypes.UpdateChannelStable) {
+	if got := telemetry.events[0].properties["running_channel"]; got != string(
+		sharedtypes.UpdateChannelStable,
+	) {
 		t.Fatalf("expected stable channel, got %#v", got)
 	}
 }
@@ -69,7 +71,9 @@ func TestCaptureDaemonStopped(t *testing.T) {
 	if got := telemetry.events[0].properties["transport"]; got != "tcp" {
 		t.Fatalf("expected tcp transport, got %#v", got)
 	}
-	if got := telemetry.events[0].properties["running_channel"]; got != string(sharedtypes.UpdateChannelBeta) {
+	if got := telemetry.events[0].properties["running_channel"]; got != string(
+		sharedtypes.UpdateChannelBeta,
+	) {
 		t.Fatalf("expected beta channel, got %#v", got)
 	}
 }

@@ -24,7 +24,12 @@ func (r *StreamRepository) NextID(ctx context.Context) (int64, error) {
 	return nextPublicID(ctx, r.db, "streams")
 }
 
-func (r *StreamRepository) Create(ctx context.Context, stream sharedtypes.Stream, userID string, now string) (sharedtypes.Stream, error) {
+func (r *StreamRepository) Create(
+	ctx context.Context,
+	stream sharedtypes.Stream,
+	userID string,
+	now string,
+) (sharedtypes.Stream, error) {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, stream.RepoID, userID)
 	if err != nil {
 		return sharedtypes.Stream{}, err
@@ -50,7 +55,11 @@ func (r *StreamRepository) Create(ctx context.Context, stream sharedtypes.Stream
 	return stream, nil
 }
 
-func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID string) ([]sharedtypes.Stream, error) {
+func (r *StreamRepository) ListByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+) ([]sharedtypes.Stream, error) {
 	type row struct {
 		PublicID    int64   `bun:"public_id"`
 		RepoPublic  int64   `bun:"repo_public_id"`
@@ -90,7 +99,11 @@ func (r *StreamRepository) ListByRepo(ctx context.Context, repoID int64, userID 
 	return out, nil
 }
 
-func (r *StreamRepository) GetByID(ctx context.Context, streamID int64, userID string) (*sharedtypes.Stream, error) {
+func (r *StreamRepository) GetByID(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+) (*sharedtypes.Stream, error) {
 	type row struct {
 		PublicID    int64   `bun:"public_id"`
 		RepoPublic  int64   `bun:"repo_public_id"`
@@ -130,7 +143,11 @@ func (r *StreamRepository) GetByID(ctx context.Context, streamID int64, userID s
 	}, nil
 }
 
-func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, userID string) ([]sharedtypes.Stream, error) {
+func (r *StreamRepository) ListDeletedByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+) ([]sharedtypes.Stream, error) {
 	type row struct {
 		PublicID    int64   `bun:"public_id"`
 		RepoPublic  int64   `bun:"repo_public_id"`
@@ -170,11 +187,16 @@ func (r *StreamRepository) ListDeletedByRepo(ctx context.Context, repoID int64, 
 	return out, nil
 }
 
-func (r *StreamRepository) Update(ctx context.Context, streamID int64, userID string, now string, updates struct {
-	Name        *string
-	Description sharedtypes.Patch[string]
-	Visibility  *sharedtypes.StreamVisibility
-},
+func (r *StreamRepository) Update(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+	updates struct {
+		Name        *string
+		Description sharedtypes.Patch[string]
+		Visibility  *sharedtypes.StreamVisibility
+	},
 ) (*sharedtypes.Stream, error) {
 	q := r.db.NewUpdate().
 		Model((*storemodels.StreamModel)(nil)).
@@ -205,7 +227,12 @@ func (r *StreamRepository) Update(ctx context.Context, streamID int64, userID st
 	return r.GetByID(ctx, streamID, userID)
 }
 
-func (r *StreamRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *StreamRepository) SoftDeleteByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err
@@ -221,7 +248,12 @@ func (r *StreamRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, u
 	return err
 }
 
-func (r *StreamRepository) SoftDelete(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *StreamRepository) SoftDelete(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
@@ -239,7 +271,12 @@ func (r *StreamRepository) SoftDelete(ctx context.Context, streamID int64, userI
 	return nil
 }
 
-func (r *StreamRepository) Restore(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *StreamRepository) Restore(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
@@ -257,7 +294,12 @@ func (r *StreamRepository) Restore(ctx context.Context, streamID int64, userID s
 	return nil
 }
 
-func (r *StreamRepository) RestoreByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *StreamRepository) RestoreByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err

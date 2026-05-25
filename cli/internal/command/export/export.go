@@ -66,8 +66,11 @@ func runCalendar(args []string, deps Deps) error {
 	if err := deps.CallKernel(protocol.MethodExportCalendar, req, &out); err != nil {
 		return err
 	}
-	if strings.TrimSpace(out.IssuesFilePath) == "" || strings.TrimSpace(out.SessionsFilePath) == "" {
-		return errors.New("calendar export response is incomplete; restart the kernel so the updated export handler is loaded")
+	if strings.TrimSpace(out.IssuesFilePath) == "" ||
+		strings.TrimSpace(out.SessionsFilePath) == "" {
+		return errors.New(
+			"calendar export response is incomplete; restart the kernel so the updated export handler is loaded",
+		)
 	}
 	if *jsonOut {
 		return outputpkg.PrintJSON(deps.Stdout, out)
@@ -75,7 +78,11 @@ func runCalendar(args []string, deps Deps) error {
 	if _, err := fmt.Fprintf(deps.Stdout, "calendar issues export written: %s\n", out.IssuesFilePath); err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(deps.Stdout, "calendar sessions export written: %s\n", out.SessionsFilePath)
+	_, err = fmt.Fprintf(
+		deps.Stdout,
+		"calendar sessions export written: %s\n",
+		out.SessionsFilePath,
+	)
 	return err
 }
 
@@ -174,7 +181,9 @@ func resolveCalendarRepoID(explicit int64, deps Deps) (int64, error) {
 		return explicit, nil
 	}
 	var ctxOut sharedtypes.ActiveContext
-	if err := deps.CallKernel(protocol.MethodContextGet, nil, &ctxOut); err == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
+	if err := deps.CallKernel(protocol.MethodContextGet, nil, &ctxOut); err == nil &&
+		ctxOut.RepoID != nil &&
+		*ctxOut.RepoID > 0 {
 		return *ctxOut.RepoID, nil
 	}
 	var repos []sharedtypes.Repo
@@ -254,7 +263,10 @@ func parseExportFormat(value string, kind sharedtypes.ExportReportKind) sharedty
 	}
 }
 
-func parseExportOutput(value string, kind sharedtypes.ExportReportKind) sharedtypes.ExportOutputMode {
+func parseExportOutput(
+	value string,
+	kind sharedtypes.ExportReportKind,
+) sharedtypes.ExportOutputMode {
 	switch kind {
 	case sharedtypes.ExportReportKindCSV:
 		return sharedtypes.ExportOutputModeFile

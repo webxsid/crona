@@ -164,7 +164,10 @@ func kernelLaunchCandidates() []launchCandidate {
 	seen := make(map[string]struct{})
 
 	add := func(candidate launchCandidate) {
-		key := candidate.cmd + "\x00" + strings.Join(candidate.args, "\x00") + "\x00" + candidate.dir
+		key := candidate.cmd + "\x00" + strings.Join(
+			candidate.args,
+			"\x00",
+		) + "\x00" + candidate.dir
 		if _, ok := seen[key]; ok {
 			return
 		}
@@ -231,7 +234,8 @@ func findRepoRoot() (string, error) {
 			}
 			seen[dir] = struct{}{}
 
-			if fileExists(filepath.Join(dir, "go.work")) && fileExists(filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
+			if fileExists(filepath.Join(dir, "go.work")) &&
+				fileExists(filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
 				return dir, nil
 			}
 

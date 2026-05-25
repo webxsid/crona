@@ -16,7 +16,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -33,7 +32,6 @@ const (
 	ViewSessionHistory = uistate.ViewSessionHistory
 	ViewHabitHistory   = uistate.ViewHabitHistory
 	ViewSessionActive  = uistate.ViewSessionActive
-	ViewScratch        = uistate.ViewScratch
 	ViewOps            = uistate.ViewOps
 	ViewWellbeing      = uistate.ViewWellbeing
 	ViewReports        = uistate.ViewReports
@@ -54,7 +52,6 @@ const (
 	PaneRollupDays       = uistate.PaneRollupDays
 	PaneSessions         = uistate.PaneSessions
 	PaneHabitHistory     = uistate.PaneHabitHistory
-	PaneScratchpads      = uistate.PaneScratchpads
 	PaneOps              = uistate.PaneOps
 	PaneExportReports    = uistate.PaneExportReports
 	PaneConfig           = uistate.PaneConfig
@@ -137,7 +134,6 @@ type Model struct {
 	habitHistoryTitle      string
 	habitHistoryMeta       string
 	sessionDetail          *api.SessionDetail
-	scratchpads            []api.ScratchPad
 	stashes                []api.Stash
 	ops                    []api.Op
 	context                *api.ActiveContext
@@ -162,22 +158,15 @@ type Model struct {
 	width  int
 	height int
 
-	// scratchpad reader state within the scratchpads pane
-	scratchpadOpen     bool
-	scratchpadMeta     *api.ScratchPad
-	scratchpadFilePath string // resolved absolute path for $EDITOR
-	scratchpadRendered string // plain text scratchpad content
-	scratchpadViewport viewport.Model
-
 	// dialog state
-	dialog                       string // "" | "create_scratchpad" | "confirm_delete" | "stash_list"
+	dialog                       string // "" | "confirm_delete" | "stash_list"
 	dialogInputs                 []textinput.Model
 	dialogDescription            textarea.Model
 	dialogDescriptionOn          bool
 	dialogDescriptionIdx         int
 	dialogFocusIdx               int
 	dialogErrorMessage           string
-	dialogDeleteID               string // scratchpad id pending deletion
+		dialogDeleteID               string
 	dialogDeleteKind             string
 	dialogDeleteLabel            string
 	dialogSessionID              string
@@ -256,9 +245,15 @@ func SetEventChannel(ch <-chan api.KernelEvent) {
 	eventChannel = ch
 }
 
-func New(transport, endpoint, scratchDir string, env string, executablePath string, done chan struct{}, telemetry sharedposthog.Client) Model {
+func New(
+	transport, endpoint, scratchDir string,
+	env string,
+	executablePath string,
+	done chan struct{},
+	telemetry sharedposthog.Client,
+) Model {
 	model := Model{
-		client:              api.NewClient(transport, endpoint, scratchDir),
+		client:              api.NewClient(transport, endpoint),
 		telemetry:           telemetry,
 		eventStop:           newEventStreamStop(done),
 		view:                ViewDaily,
@@ -273,7 +268,6 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneRollupDays:       0,
 			PaneSessions:         0,
 			PaneHabitHistory:     0,
-			PaneScratchpads:      0,
 			PaneOps:              0,
 			PaneExportReports:    0,
 			PaneConfig:           0,
@@ -291,7 +285,6 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 			PaneRollupDays:       "",
 			PaneSessions:         "",
 			PaneHabitHistory:     "",
-			PaneScratchpads:      "",
 			PaneOps:              "",
 			PaneExportReports:    "",
 			PaneConfig:           "",
@@ -307,7 +300,14 @@ func New(transport, endpoint, scratchDir string, env string, executablePath stri
 		wellbeingWindowDays:   7,
 	}
 	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
-	logger.Infof("tui model new: view=%s pane=%s env=%s telemetry=%t executable=%q", model.view, model.pane, env, telemetry != nil, executablePath)
+	logger.Infof(
+		"tui model new: view=%s pane=%s env=%s telemetry=%t executable=%q",
+		model.view,
+		model.pane,
+		env,
+		telemetry != nil,
+		executablePath,
+	)
 	return model
 }
 
@@ -317,17 +317,31 @@ var eventChannel <-chan api.KernelEvent
 // ---------- Init ----------
 
 func (m Model) Init() tea.Cmd {
-	logger.Infof("tui model init: view=%s pane=%s width=%d height=%d dialog=%q", m.view, m.pane, m.width, m.height, m.dialog)
+	logger.Infof(
+		"tui model init: view=%s pane=%s width=%d height=%d dialog=%q",
+		m.view,
+		m.pane,
+		m.width,
+		m.height,
+		m.dialog,
+	)
 	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
 		commands.LoadAllHabits(m.client),
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
-		commands.LoadWellbeingWindow(m.client, time.Now().Format("2006-01-02"), m.currentWellbeingWindowDays()),
-		commands.LoadRollupSummaries(m.client, shiftISODate(time.Now().Format("2006-01-02"), -6), time.Now().Format("2006-01-02")),
+		commands.LoadWellbeingWindow(
+			m.client,
+			time.Now().Format("2006-01-02"),
+			m.currentWellbeingWindowDays(),
+		),
+		commands.LoadRollupSummaries(
+			m.client,
+			shiftISODate(time.Now().Format("2006-01-02"), -6),
+			time.Now().Format("2006-01-02"),
+		),
 		loadSessionHistoryForModel(m, 200),
-		commands.LoadScratchpads(m.client),
 		commands.LoadOps(m.client, m.currentOpsLimit()),
 		commands.LoadContext(m.client),
 		commands.LoadTimer(m.client),
@@ -377,7 +391,12 @@ func (m *Model) listLen(p Pane) int {
 		return len(m.habitHistory)
 	}
 	if p == PaneAlerts {
-		return alertsmeta.FilteredSelectableCount(m.filters[PaneAlerts], m.settings, m.alertStatus, m.alertReminders)
+		return alertsmeta.FilteredSelectableCount(
+			m.filters[PaneAlerts],
+			m.settings,
+			m.alertStatus,
+			m.alertReminders,
+		)
 	}
 	snapshot := m.selectionSnapshot()
 	return len(selectionpkg.FilteredIndices(snapshot, p))

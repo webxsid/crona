@@ -8,9 +8,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func updateCreateIssueMeta(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateCreateIssueMeta(
+	state State,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	if state.FocusIdx == 3 && isDatePickerShortcut(msg.String()) {
-		return OpenDatePicker(state, "create_issue_meta", 0, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
+		return OpenDatePicker(
+			state,
+			"create_issue_meta",
+			0,
+			3,
+			ValueToPointer(state.Inputs[2].Value()),
+			currentDate,
+		), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
 		state.Inputs[2].SetValue(currentDate)
@@ -30,17 +41,36 @@ func updateCreateIssueMeta(state State, currentDate string, msg tea.KeyMsg) (Sta
 		if err != nil {
 			return nil, err.Error()
 		}
-		return &Action{Kind: "create_issue_meta", StreamID: state.StreamID, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
+		return &Action{
+			Kind:        "create_issue_meta",
+			StreamID:    state.StreamID,
+			Title:       title,
+			Description: description,
+			Estimate:    estimate,
+			DueDate:     dueDate,
+		}, ""
 	})
 }
 
-func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateCreateIssueDefault(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
 	case "f2", "ctrl+e", "ctrl+y":
 		if state.FocusIdx == 5 {
-			return OpenDatePicker(state, "create_issue_default", 0, 5, ValueToPointer(state.Inputs[4].Value()), currentDate), nil, ""
+			return OpenDatePicker(
+				state,
+				"create_issue_default",
+				0,
+				5,
+				ValueToPointer(state.Inputs[4].Value()),
+				currentDate,
+			), nil, ""
 		}
 	case "g":
 		if state.FocusIdx == 5 {
@@ -48,9 +78,14 @@ func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string
 			return state, nil, ""
 		}
 	case "tab", "shift+tab", "down", "up":
-		if (msg.String() == "down" || msg.String() == "up") && (state.FocusIdx == 0 || state.FocusIdx == 1) {
+		if (msg.String() == "down" || msg.String() == "up") &&
+			(state.FocusIdx == 0 || state.FocusIdx == 1) {
 			if state.FocusIdx == 0 {
-				state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), ternaryDir(msg.String()))
+				state.RepoIndex = ShiftSelection(
+					state.RepoIndex,
+					len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+					ternaryDir(msg.String()),
+				)
 				state.StreamIndex = 0
 			} else {
 				state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), ternaryDir(msg.String()))
@@ -62,27 +97,69 @@ func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string
 		return clearDialogError(state), nil, ""
 	case "left":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), -1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+				-1,
+			)
 			state.StreamIndex = 0
 			return clearDialogError(state), nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), -1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					DefaultStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				-1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 	case "right":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), 1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+				1,
+			)
 			state.StreamIndex = 0
 			return clearDialogError(state), nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), 1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					DefaultStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 	}
 	if isDialogSubmitKey(state, msg.String()) {
-		repoName, streamName := DefaultIssueDialogNames(state.Inputs, state.RepoIndex, state.StreamIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
+		repoName, streamName := DefaultIssueDialogNames(
+			state.Inputs,
+			state.RepoIndex,
+			state.StreamIndex,
+			ctx.Repos,
+			ctx.AllIssues,
+			ctx.Streams,
+			ctx.Context,
+		)
 		title := strings.TrimSpace(state.Inputs[2].Value())
 		if repoName == "" || streamName == "" || title == "" {
 			return state, nil, "Repo, stream, and issue title are required"
@@ -96,7 +173,17 @@ func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		return Close(state), &Action{Kind: "create_issue_default", RepoName: repoName, StreamName: streamName, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:        "create_issue_default",
+				RepoName:    repoName,
+				StreamName:  streamName,
+				Title:       title,
+				Description: description,
+				Estimate:    estimate,
+				DueDate:     dueDate,
+			}, ""
 	}
 	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
 		var cmd tea.Cmd
@@ -121,7 +208,11 @@ func updateCreateIssueDefault(state State, ctx UpdateContext, currentDate string
 	return clearDialogError(state), nil, ""
 }
 
-func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+func updateCheckoutContext(
+	state State,
+	ctx UpdateContext,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -133,39 +224,103 @@ func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (Stat
 		return clearDialogError(state), nil, ""
 	case "left":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(CheckoutRepoOptions(state.Inputs, ctx.Repos)), -1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(CheckoutRepoOptions(state.Inputs, ctx.Repos)),
+				-1,
+			)
 			state.StreamIndex = 0
 			return state, nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(CheckoutStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), -1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					CheckoutStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				-1,
+			)
 			return state, nil, ""
 		}
 	case "right":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(CheckoutRepoOptions(state.Inputs, ctx.Repos)), 1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(CheckoutRepoOptions(state.Inputs, ctx.Repos)),
+				1,
+			)
 			state.StreamIndex = 0
 			return state, nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(CheckoutStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), 1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					CheckoutStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				1,
+			)
 			return state, nil, ""
 		}
 	case "enter":
-		repoID, repoName, streamID, streamName := CheckoutDialogSelection(state.Inputs, state.RepoIndex, state.StreamIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
-		if strings.TrimSpace(repoName) == "" && streamID == nil && strings.TrimSpace(streamName) == "" {
+		repoID, repoName, streamID, streamName := CheckoutDialogSelection(
+			state.Inputs,
+			state.RepoIndex,
+			state.StreamIndex,
+			ctx.Repos,
+			ctx.AllIssues,
+			ctx.Streams,
+			ctx.Context,
+		)
+		if strings.TrimSpace(repoName) == "" && streamID == nil &&
+			strings.TrimSpace(streamName) == "" {
 			return Close(state), &Action{Kind: "checkout_context"}, ""
 		}
 		if strings.TrimSpace(repoName) == "" {
 			return state, nil, "Repo is required"
 		}
 		if streamID != nil {
-			return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName, StreamID: *streamID, StreamName: streamName}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:       "checkout_context",
+					RepoID:     repoID,
+					RepoName:   repoName,
+					StreamID:   *streamID,
+					StreamName: streamName,
+				}, ""
 		}
 		if strings.TrimSpace(streamName) == "" {
-			return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "checkout_context",
+					RepoID:   repoID,
+					RepoName: repoName,
+				}, ""
 		}
-		return Close(state), &Action{Kind: "checkout_context", RepoID: repoID, RepoName: repoName, StreamName: streamName}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:       "checkout_context",
+				RepoID:     repoID,
+				RepoName:   repoName,
+				StreamName: streamName,
+			}, ""
 	}
 	var cmd tea.Cmd
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
@@ -182,7 +337,14 @@ func updateCheckoutContext(state State, ctx UpdateContext, msg tea.KeyMsg) (Stat
 
 func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
 	if state.FocusIdx == 3 && isDatePickerShortcut(msg.String()) {
-		return OpenDatePicker(state, "edit_issue", state.IssueID, 3, ValueToPointer(state.Inputs[2].Value()), currentDate), nil, ""
+		return OpenDatePicker(
+			state,
+			"edit_issue",
+			state.IssueID,
+			3,
+			ValueToPointer(state.Inputs[2].Value()),
+			currentDate,
+		), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
 		state.Inputs[2].SetValue(currentDate)
@@ -202,11 +364,24 @@ func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *A
 		if err != nil {
 			return nil, err.Error()
 		}
-		return &Action{Kind: "edit_issue", IssueID: state.IssueID, StreamID: state.StreamID, Title: title, Description: description, Estimate: estimate, DueDate: dueDate}, ""
+		return &Action{
+			Kind:        "edit_issue",
+			IssueID:     state.IssueID,
+			StreamID:    state.StreamID,
+			Title:       title,
+			Description: description,
+			Estimate:    estimate,
+			DueDate:     dueDate,
+		}, ""
 	})
 }
 
-func updateMultiInputIssue(state State, msg tea.KeyMsg, inputCount int, submit func(State) (*Action, string)) (State, *Action, string) {
+func updateMultiInputIssue(
+	state State,
+	msg tea.KeyMsg,
+	inputCount int,
+	submit func(State) (*Action, string),
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -307,15 +482,40 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 		action := Action{Kind: "export_report", CheckInDate: state.CheckInDate}
 		switch selected {
 		case "Daily report: write PDF file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
+			return OpenExportPreset(
+				state,
+				sharedtypes.ExportReportKindDaily,
+				sharedtypes.ExportFormatPDF,
+				sharedtypes.ExportOutputModeFile,
+			), nil, ""
 		case "Weekly summary: write PDF file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatPDF, sharedtypes.ExportOutputModeFile), nil, ""
+			return OpenExportPreset(
+				state,
+				sharedtypes.ExportReportKindWeekly,
+				sharedtypes.ExportFormatPDF,
+				sharedtypes.ExportOutputModeFile,
+			), nil, ""
 		case "Daily report: write Markdown file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
+			return OpenExportPreset(
+				state,
+				sharedtypes.ExportReportKindDaily,
+				sharedtypes.ExportFormatMarkdown,
+				sharedtypes.ExportOutputModeFile,
+			), nil, ""
 		case "Daily report: copy to clipboard":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindDaily, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeClipboard), nil, ""
+			return OpenExportPreset(
+				state,
+				sharedtypes.ExportReportKindDaily,
+				sharedtypes.ExportFormatMarkdown,
+				sharedtypes.ExportOutputModeClipboard,
+			), nil, ""
 		case "Weekly summary: write Markdown file":
-			return OpenExportPreset(state, sharedtypes.ExportReportKindWeekly, sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile), nil, ""
+			return OpenExportPreset(
+				state,
+				sharedtypes.ExportReportKindWeekly,
+				sharedtypes.ExportFormatMarkdown,
+				sharedtypes.ExportOutputModeFile,
+			), nil, ""
 		case "Repo report: write Markdown file":
 			action.ReportKind = sharedtypes.ExportReportKindRepo
 			action.ReportFormat = sharedtypes.ExportFormatMarkdown
@@ -353,7 +553,10 @@ func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 	case "esc", "q":
 		state.Kind = "export_report"
 		state.Parent = ""
-		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
+		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(
+			state.ExportCategory,
+			state.ExportIncludePDF,
+		)
 		state.ChoiceValues = nil
 		state.ExportPresetKind = ""
 		state.ExportPresetFormat = ""
@@ -406,7 +609,10 @@ func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, stri
 	case "esc", "q":
 		state.Kind = "export_report"
 		state.Parent = ""
-		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(state.ExportCategory, state.ExportIncludePDF)
+		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(
+			state.ExportCategory,
+			state.ExportIncludePDF,
+		)
 		state.ChoiceValues = nil
 		state.ChoiceCursor = 0
 		return clearDialogError(state), nil, ""
@@ -419,7 +625,8 @@ func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, stri
 			state.ChoiceCursor--
 		}
 	case "enter":
-		if len(state.RepoItemIDs) == 0 || state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.RepoItemIDs) {
+		if len(state.RepoItemIDs) == 0 || state.ChoiceCursor < 0 ||
+			state.ChoiceCursor >= len(state.RepoItemIDs) {
 			return state, nil, "Calendar export requires a repo"
 		}
 		state.RepoIndex = state.ChoiceCursor

@@ -25,7 +25,10 @@ func HeaderSessionLine(theme Theme, state HeaderState) string {
 	if state.Timer == nil || state.Timer.State == "idle" {
 		return ""
 	}
-	return viewhelpers.Truncate(headerSessionSummary(theme, state)+"  ·  "+headerSecondary(theme, state), max(20, state.Width-4))
+	return viewhelpers.Truncate(
+		headerSessionSummary(theme, state)+"  ·  "+headerSecondary(theme, state),
+		max(20, state.Width-4),
+	)
 }
 
 func headerSessionSummary(theme Theme, state HeaderState) string {
@@ -46,7 +49,8 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 		stateText = "PAUSED"
 		stateColor = theme.ColorYellow
 	}
-	if state.Timer.State == "ready" && state.Timer.ReadySegmentType != nil && *state.Timer.ReadySegmentType != "" {
+	if state.Timer.State == "ready" && state.Timer.ReadySegmentType != nil &&
+		*state.Timer.ReadySegmentType != "" {
 		stateText = "READY:" + strings.ToUpper(string(*state.Timer.ReadySegmentType))
 	} else if state.Timer.SegmentType != nil && *state.Timer.SegmentType != "" && *state.Timer.SegmentType != "work" {
 		stateText = strings.ToUpper(string(*state.Timer.SegmentType))
@@ -58,11 +62,21 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 		theme.StyleHeader.Render(viewhelpers.FormatClockText(total)),
 	}
 
-	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)
+	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(
+		state.IssueSessions,
+	)
 	parts = append(parts, theme.StyleDim.Render(fmt.Sprintf("sessions:%d", completedSessions)))
 
 	if issue := activeIssueWithMeta(state); issue != nil && issue.EstimateMinutes != nil {
-		parts = append(parts, theme.StyleDim.Render(sessionmeta.FormatEstimateProgress(priorWorkedSeconds+total, *issue.EstimateMinutes)))
+		parts = append(
+			parts,
+			theme.StyleDim.Render(
+				sessionmeta.FormatEstimateProgress(
+					priorWorkedSeconds+total,
+					*issue.EstimateMinutes,
+				),
+			),
+		)
 	}
 
 	return strings.Join(parts, theme.StyleDim.Render("  ·  "))
@@ -73,7 +87,11 @@ func headerSecondary(theme Theme, state HeaderState) string {
 	if state.Timer != nil && state.Timer.State != "idle" {
 		parts = append(parts, healthChip(state.Health))
 		if issue := activeIssueWithMeta(state); issue != nil {
-			parts = append(parts, "status:"+issuecore.IssueStatusStyle(theme, string(issue.Status)).Render(strings.ToUpper(issuecore.PlainIssueStatus(string(issue.Status)))))
+			parts = append(
+				parts,
+				"status:"+issuecore.IssueStatusStyle(theme, string(issue.Status)).
+					Render(strings.ToUpper(issuecore.PlainIssueStatus(string(issue.Status)))),
+			)
 		}
 	} else if state.View == "daily" || state.View == "wellbeing" {
 		parts = append(parts, healthChip(state.Health))

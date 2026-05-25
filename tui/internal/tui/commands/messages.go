@@ -81,7 +81,6 @@ type IssuePinnedDailyChangedMsg struct {
 	Pinned  bool
 }
 type SessionAmendedMsg struct{ ID string }
-type ScratchpadsLoadedMsg struct{ Pads []api.ScratchPad }
 type StashesLoadedMsg struct{ Stashes []api.Stash }
 type OpsLoadedMsg struct{ Ops []api.Op }
 type ContextLoadedMsg struct{ Ctx *api.ActiveContext }
@@ -121,12 +120,6 @@ type ErrMsg struct {
 }
 type ClearStatusMsg struct{ Seq int }
 
-type OpenScratchpadMsg struct {
-	Meta     api.ScratchPad
-	FilePath string
-	Content  string
-}
-
 type FocusSessionChangedMsg struct {
 	ReloadContext bool
 	ReloadTimer   bool
@@ -140,8 +133,3 @@ type FocusSessionStashConflictMsg struct {
 }
 
 type EditorDoneMsg struct{}
-
-type ScratchpadReloadedMsg struct {
-	Rendered string
-	FilePath string
-}

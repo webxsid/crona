@@ -23,7 +23,10 @@ func NewAlertReminderRepository(db *bun.DB) *AlertReminderRepository {
 	return &AlertReminderRepository{db: db}
 }
 
-func (r *AlertReminderRepository) List(ctx context.Context, userID string) ([]sharedtypes.AlertReminder, error) {
+func (r *AlertReminderRepository) List(
+	ctx context.Context,
+	userID string,
+) ([]sharedtypes.AlertReminder, error) {
 	var models []storemodels.AlertReminderModel
 	if err := r.db.NewSelect().
 		Model(&models).
@@ -39,7 +42,11 @@ func (r *AlertReminderRepository) List(ctx context.Context, userID string) ([]sh
 	return out, nil
 }
 
-func (r *AlertReminderRepository) GetByID(ctx context.Context, userID string, id string) (*sharedtypes.AlertReminder, error) {
+func (r *AlertReminderRepository) GetByID(
+	ctx context.Context,
+	userID string,
+	id string,
+) (*sharedtypes.AlertReminder, error) {
 	var model storemodels.AlertReminderModel
 	if err := r.db.NewSelect().
 		Model(&model).
@@ -56,7 +63,12 @@ func (r *AlertReminderRepository) GetByID(ctx context.Context, userID string, id
 	return &reminder, nil
 }
 
-func (r *AlertReminderRepository) Create(ctx context.Context, userID, deviceID string, reminder sharedtypes.AlertReminder, now string) (*sharedtypes.AlertReminder, error) {
+func (r *AlertReminderRepository) Create(
+	ctx context.Context,
+	userID, deviceID string,
+	reminder sharedtypes.AlertReminder,
+	now string,
+) (*sharedtypes.AlertReminder, error) {
 	weekdays, err := encodeWeekdays(reminder.Weekdays)
 	if err != nil {
 		return nil, err
@@ -80,7 +92,12 @@ func (r *AlertReminderRepository) Create(ctx context.Context, userID, deviceID s
 	return &out, nil
 }
 
-func (r *AlertReminderRepository) Update(ctx context.Context, userID string, reminder sharedtypes.AlertReminder, now string) (*sharedtypes.AlertReminder, error) {
+func (r *AlertReminderRepository) Update(
+	ctx context.Context,
+	userID string,
+	reminder sharedtypes.AlertReminder,
+	now string,
+) (*sharedtypes.AlertReminder, error) {
 	weekdays, err := encodeWeekdays(reminder.Weekdays)
 	if err != nil {
 		return nil, err
@@ -106,7 +123,12 @@ func (r *AlertReminderRepository) Update(ctx context.Context, userID string, rem
 	return r.GetByID(ctx, userID, reminder.ID)
 }
 
-func (r *AlertReminderRepository) SetEnabled(ctx context.Context, userID, id string, enabled bool, now string) (*sharedtypes.AlertReminder, error) {
+func (r *AlertReminderRepository) SetEnabled(
+	ctx context.Context,
+	userID, id string,
+	enabled bool,
+	now string,
+) (*sharedtypes.AlertReminder, error) {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.AlertReminderModel)(nil)).
 		Set("enabled = ?", enabled).
@@ -142,14 +164,18 @@ func (r *AlertReminderRepository) Delete(ctx context.Context, userID, id string)
 
 func alertReminderFromModel(model storemodels.AlertReminderModel) sharedtypes.AlertReminder {
 	return sharedtypes.AlertReminder{
-		ID:           model.ID,
-		Kind:         sharedtypes.NormalizeAlertReminderKind(sharedtypes.AlertReminderKind(model.Kind)),
-		Enabled:      model.Enabled,
-		ScheduleType: sharedtypes.NormalizeAlertReminderScheduleType(sharedtypes.AlertReminderScheduleType(model.ScheduleType)),
-		Weekdays:     decodeWeekdays(model.Weekdays),
-		TimeHHMM:     strings.TrimSpace(model.TimeHHMM),
-		CreatedAt:    model.CreatedAt,
-		UpdatedAt:    model.UpdatedAt,
+		ID: model.ID,
+		Kind: sharedtypes.NormalizeAlertReminderKind(
+			sharedtypes.AlertReminderKind(model.Kind),
+		),
+		Enabled: model.Enabled,
+		ScheduleType: sharedtypes.NormalizeAlertReminderScheduleType(
+			sharedtypes.AlertReminderScheduleType(model.ScheduleType),
+		),
+		Weekdays:  decodeWeekdays(model.Weekdays),
+		TimeHHMM:  strings.TrimSpace(model.TimeHHMM),
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
 	}
 }
 
@@ -192,5 +218,6 @@ func decodeWeekdays(raw string) []int {
 }
 
 func isNotFound(err error) bool {
-	return errors.Is(err, sql.ErrNoRows) || strings.Contains(strings.ToLower(err.Error()), "no rows")
+	return errors.Is(err, sql.ErrNoRows) ||
+		strings.Contains(strings.ToLower(err.Error()), "no rows")
 }

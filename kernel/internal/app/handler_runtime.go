@@ -5,13 +5,15 @@ import (
 	"errors"
 
 	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/scratchfile"
 	shareddto "crona/shared/dto"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
 
-func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request) (protocol.Response, bool) {
+func (h *Handler) handleRuntimeMethods(
+	ctx context.Context,
+	req protocol.Request,
+) (protocol.Response, bool) {
 	switch req.Method {
 	case protocol.MethodContextGet:
 		return h.handleNoParams(req, func() (any, error) {
@@ -89,7 +91,13 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 		}), true
 	case protocol.MethodSessionPause:
 		return h.handleNoParams(req, func() (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.PauseSession(ctx, h.core, sharedtypes.SessionSegmentRest)
+			return shareddto.OKResponse{
+					OK: true,
+				}, corecommands.PauseSession(
+					ctx,
+					h.core,
+					sharedtypes.SessionSegmentRest,
+				)
 		}), true
 	case protocol.MethodSessionResume:
 		return h.handleNoParams(req, func() (any, error) {
@@ -151,7 +159,12 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 	case protocol.MethodTimerStart:
 		return handle(req, func(input shareddto.TimerStartRequest) (any, error) {
 			if input.IgnoreExistingStashes {
-				return h.timer.StartIgnoringExistingStashes(ctx, input.RepoID, input.StreamID, input.IssueID)
+				return h.timer.StartIgnoringExistingStashes(
+					ctx,
+					input.RepoID,
+					input.StreamID,
+					input.IssueID,
+				)
 			}
 			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID)
 		}), true
@@ -199,91 +212,18 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 		}), true
 	case protocol.MethodStashApply:
 		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.StashPop(ctx, h.core, h.timer, input.ID)
+			return shareddto.OKResponse{
+					OK: true,
+				}, corecommands.StashPop(
+					ctx,
+					h.core,
+					h.timer,
+					input.ID,
+				)
 		}), true
 	case protocol.MethodStashDrop:
 		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
 			return shareddto.OKResponse{OK: true}, corecommands.StashDrop(ctx, h.core, input.ID)
-		}), true
-	case protocol.MethodScratchpadList:
-		return handle(req, func(input shareddto.ListScratchpadsQuery) (any, error) {
-			return corecommands.ListScratchpads(ctx, h.core, input.PinnedOnly != nil && *input.PinnedOnly)
-		}), true
-	case protocol.MethodScratchpadRegister:
-		return handle(req, func(input shareddto.RegisterScratchpadRequest) (any, error) {
-			pinned := false
-			if input.Pinned != nil {
-				pinned = *input.Pinned
-			}
-			lastOpenedAt := ""
-			if input.LastOpenedAt != nil {
-				lastOpenedAt = *input.LastOpenedAt
-			}
-			id := ""
-			if input.ID != nil {
-				id = *input.ID
-			}
-			filePath, err := corecommands.RegisterScratchpad(ctx, h.core, sharedtypes.ScratchPadMeta{
-				ID:           id,
-				Name:         input.Name,
-				Path:         input.Path,
-				Pinned:       pinned,
-				LastOpenedAt: lastOpenedAt,
-			})
-			if err != nil {
-				return nil, err
-			}
-			if _, err := scratchfile.Create(h.core.ScratchDir, filePath, input.Name); err != nil {
-				_ = corecommands.RemoveScratchpad(ctx, h.core, id)
-				return nil, err
-			}
-			return map[string]any{"ok": true, "filePath": filePath}, nil
-		}), true
-	case protocol.MethodScratchpadGetMeta:
-		return handle(req, func(input shareddto.ScratchpadIDRequest) (any, error) {
-			meta, err := corecommands.GetScratchpad(ctx, h.core, input.ID)
-			if err != nil {
-				return nil, err
-			}
-			if meta == nil {
-				return shareddto.ErrorResponse{OK: false, Error: "Scratchpad not found"}, nil
-			}
-			return map[string]any{"ok": true, "meta": meta}, nil
-		}), true
-	case protocol.MethodScratchpadRead:
-		return handle(req, func(input shareddto.ScratchpadIDRequest) (any, error) {
-			meta, err := corecommands.GetScratchpad(ctx, h.core, input.ID)
-			if err != nil {
-				return nil, err
-			}
-			if meta == nil {
-				return sharedtypes.ScratchPadRead{OK: false, Error: ptrTo("Scratchpad not found")}, nil
-			}
-			content, err := scratchfile.Read(h.core.ScratchDir, meta.Path)
-			if err != nil {
-				return nil, err
-			}
-			return sharedtypes.ScratchPadRead{OK: true, Meta: meta, Content: &content}, nil
-		}), true
-	case protocol.MethodScratchpadPin:
-		return handle(req, func(input shareddto.PinScratchpadRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.PinScratchpad(ctx, h.core, input.ID, input.Pinned)
-		}), true
-	case protocol.MethodScratchpadDelete:
-		return handle(req, func(input shareddto.ScratchpadIDRequest) (any, error) {
-			meta, err := corecommands.GetScratchpad(ctx, h.core, input.ID)
-			if err != nil {
-				return nil, err
-			}
-			if err := corecommands.RemoveScratchpad(ctx, h.core, input.ID); err != nil {
-				return nil, err
-			}
-			if meta != nil {
-				if err := scratchfile.Delete(h.core.ScratchDir, meta.Path); err != nil {
-					return nil, err
-				}
-			}
-			return shareddto.OKResponse{OK: true}, nil
 		}), true
 	case protocol.MethodSettingsGetAll:
 		return h.handleNoParams(req, func() (any, error) {

@@ -60,7 +60,10 @@ func TestRenderWindowKeepsAnchorWeekVisible(t *testing.T) {
 		t.Fatalf("expected clipped calendar to keep anchor week visible, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "Today 14") || !strings.Contains(rendered, "Wk 20") {
-		t.Fatalf("expected clipped calendar metadata to keep today/current week visible, got %q", rendered)
+		t.Fatalf(
+			"expected clipped calendar metadata to keep today/current week visible, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -73,7 +76,11 @@ func TestRenderUsesStyledCellsWithoutBracketMarkers(t *testing.T) {
 
 	for _, unwanted := range []string{"[14]", "[20]"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected styled calendar cells without bracket marker %q, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected styled calendar cells without bracket marker %q, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 }

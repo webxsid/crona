@@ -12,7 +12,11 @@ func TestEditIssueDueDateGSetsToday(t *testing.T) {
 	state.FocusIdx = 3
 	state = SyncDialogFocus(state)
 
-	next, action, status := updateEditIssue(state, "2026-04-16", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}})
+	next, action, status := updateEditIssue(
+		state,
+		"2026-04-16",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'g'}},
+	)
 	if action != nil || status != "" {
 		t.Fatalf("expected no action/status, got action=%+v status=%q", action, status)
 	}
@@ -48,7 +52,11 @@ func TestCreateIssueMetaDueDateF2FallbackOpensCalendar(t *testing.T) {
 	state.Inputs[2].SetValue("2026-04-19")
 	state = SyncDialogFocus(state)
 
-	next, action, status := updateCreateIssueMeta(state, "2026-04-20", tea.KeyMsg{Type: tea.KeyCtrlE})
+	next, action, status := updateCreateIssueMeta(
+		state,
+		"2026-04-20",
+		tea.KeyMsg{Type: tea.KeyCtrlE},
+	)
 	if action != nil || status != "" {
 		t.Fatalf("expected no action/status, got action=%+v status=%q", action, status)
 	}
@@ -69,7 +77,12 @@ func TestCreateIssueDefaultDueDateF2FallbackOpensCalendar(t *testing.T) {
 	state.Inputs[4].SetValue("2026-04-21")
 	state = SyncDialogFocus(state)
 
-	next, action, status := updateCreateIssueDefault(state, UpdateContext{}, "2026-04-20", tea.KeyMsg{Type: tea.KeyCtrlE})
+	next, action, status := updateCreateIssueDefault(
+		state,
+		UpdateContext{},
+		"2026-04-20",
+		tea.KeyMsg{Type: tea.KeyCtrlE},
+	)
 	if action != nil || status != "" {
 		t.Fatalf("expected no action/status, got action=%+v status=%q", action, status)
 	}

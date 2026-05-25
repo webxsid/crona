@@ -62,9 +62,17 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	resolvedCount := completedCount + abandonedCount
 	scopeText := contextmeta.DefaultScopeLabel(state.Context)
 	summaryInnerW := max(24, width-8)
-	habitMeta := theme.StyleDim.Render("logged " + helperpkg.FormatCompactDurationMinutes(habitMinutes))
+	habitMeta := theme.StyleDim.Render(
+		"logged " + helperpkg.FormatCompactDurationMinutes(habitMinutes),
+	)
 	if habitTargetMinutes > 0 {
-		habitMeta = theme.StyleDim.Render(fmt.Sprintf("logged %s / target %s", helperpkg.FormatCompactDurationMinutes(habitMinutes), helperpkg.FormatCompactDurationMinutes(habitTargetMinutes)))
+		habitMeta = theme.StyleDim.Render(
+			fmt.Sprintf(
+				"logged %s / target %s",
+				helperpkg.FormatCompactDurationMinutes(habitMinutes),
+				helperpkg.FormatCompactDurationMinutes(habitTargetMinutes),
+			),
+		)
 	}
 	leftWidth := summaryInnerW
 	lines := buildSummaryLines(
@@ -92,7 +100,11 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 			SelectedDate: rawDate,
 			MaxLines:     len(lines),
 		})
-		leftWidth, _ = viewcalendar.ColumnWidths(summaryInnerW, viewcalendar.MaxLineWidth(calendarLines), 3)
+		leftWidth, _ = viewcalendar.ColumnWidths(
+			summaryInnerW,
+			viewcalendar.MaxLineWidth(calendarLines),
+			3,
+		)
 		if leftWidth != summaryInnerW {
 			lines = buildSummaryLines(
 				theme,
@@ -122,10 +134,21 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	if len(calendarLines) > 0 {
 		lines = viewcalendar.MergeBeside(lines, calendarLines, summaryInnerW, 3)
 	}
-	return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(theme.ColorDim).Padding(1, 2).Width(width - 2).Height(max(1, height-2)).Render(viewhelpers.StringsJoin(lines))
+	return lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorDim).
+		Padding(1, 2).
+		Width(width - 2).
+		Height(max(1, height-2)).
+		Render(viewhelpers.StringsJoin(lines))
 }
 
-func renderCompactSummaryRow(width int, segments []string, renderBar func(int) string, sizeBar func(int, int) int) string {
+func renderCompactSummaryRow(
+	width int,
+	segments []string,
+	renderBar func(int) string,
+	sizeBar func(int, int) int,
+) string {
 	parts := make([]string, 0, len(segments))
 	for _, segment := range segments {
 		if strings.TrimSpace(segment) != "" {
@@ -215,7 +238,13 @@ func buildSummaryLines(
 		habitSummary,
 		renderHabitBar(theme, completedHabits, failedHabits, totalHabits, issueBarWidth),
 		habitMeta,
-		theme.StyleDim.Render(fmt.Sprintf("failed %d   remaining %d", failedHabits, max(0, totalHabits-completedHabits-failedHabits))),
+		theme.StyleDim.Render(
+			fmt.Sprintf(
+				"failed %d   remaining %d",
+				failedHabits,
+				max(0, totalHabits-completedHabits-failedHabits),
+			),
+		),
 	}
 	lines := []string{
 		theme.StylePaneTitle.Render("Daily Dashboard"),
@@ -235,7 +264,8 @@ func buildSummaryLines(
 				theme.StyleDim.Render(scopeText),
 				theme.StyleDim.Render("[,] [.] [g]"),
 			),
-			renderCompactSummaryRow(width,
+			renderCompactSummaryRow(
+				width,
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d", resolvedCount, totalIssues)),
@@ -250,21 +280,38 @@ func buildSummaryLines(
 					theme.StyleHeader.Render("Habits"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d", completedHabits, totalHabits)),
 					theme.StyleDim.Render(compactHabitProgress(habitMinutes, habitTargetMinutes)),
-					theme.StyleDim.Render(fmt.Sprintf("f%d r%d", failedHabits, max(0, totalHabits-completedHabits-failedHabits))),
+					theme.StyleDim.Render(
+						fmt.Sprintf(
+							"f%d r%d",
+							failedHabits,
+							max(0, totalHabits-completedHabits-failedHabits),
+						),
+					),
 				},
 				func(barWidth int) string {
-					return renderHabitBar(theme, completedHabits, failedHabits, totalHabits, barWidth)
+					return renderHabitBar(
+						theme,
+						completedHabits,
+						failedHabits,
+						totalHabits,
+						barWidth,
+					)
 				},
 				tinySummaryBarWidth,
 			),
 		}
 	case paneHeight < 48:
 		lines = append(lines,
-			renderCompactSummaryRow(width,
+			renderCompactSummaryRow(
+				width,
 				[]string{
 					theme.StyleHeader.Render("Issues"),
-					theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-					theme.StyleDim.Render("estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate)),
+					theme.StyleNormal.Render(
+						fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues),
+					),
+					theme.StyleDim.Render(
+						"estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate),
+					),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },
 				compactSummaryBarWidth,
@@ -272,22 +319,36 @@ func buildSummaryLines(
 			renderCompactSummaryRow(width,
 				[]string{
 					theme.StyleHeader.Render("Habits"),
-					theme.StyleNormal.Render(fmt.Sprintf("%d/%d completed", completedHabits, totalHabits)),
+					theme.StyleNormal.Render(
+						fmt.Sprintf("%d/%d completed", completedHabits, totalHabits),
+					),
 					habitMeta,
 				},
 				func(barWidth int) string {
-					return renderHabitBar(theme, completedHabits, failedHabits, totalHabits, barWidth)
+					return renderHabitBar(
+						theme,
+						completedHabits,
+						failedHabits,
+						totalHabits,
+						barWidth,
+					)
 				},
 				compactSummaryBarWidth,
 			),
 		)
 	case paneHeight < 55:
-		lines = append(lines,
-			renderCompactSummaryRow(width,
+		lines = append(
+			lines,
+			renderCompactSummaryRow(
+				width,
 				[]string{
 					theme.StyleHeader.Render("Issues"),
-					theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-					theme.StyleDim.Render("estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate)),
+					theme.StyleNormal.Render(
+						fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues),
+					),
+					theme.StyleDim.Render(
+						"estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate),
+					),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },
 				compactSummaryBarWidth,
@@ -297,15 +358,29 @@ func buildSummaryLines(
 			renderCompactSummaryRow(width,
 				[]string{
 					theme.StyleHeader.Render("Habits"),
-					theme.StyleNormal.Render(fmt.Sprintf("%d/%d completed", completedHabits, totalHabits)),
+					theme.StyleNormal.Render(
+						fmt.Sprintf("%d/%d completed", completedHabits, totalHabits),
+					),
 					habitMeta,
 				},
 				func(barWidth int) string {
-					return renderHabitBar(theme, completedHabits, failedHabits, totalHabits, barWidth)
+					return renderHabitBar(
+						theme,
+						completedHabits,
+						failedHabits,
+						totalHabits,
+						barWidth,
+					)
 				},
 				compactSummaryBarWidth,
 			),
-			theme.StyleDim.Render(fmt.Sprintf("failed %d   remaining %d", failedHabits, max(0, totalHabits-completedHabits-failedHabits))),
+			theme.StyleDim.Render(
+				fmt.Sprintf(
+					"failed %d   remaining %d",
+					failedHabits,
+					max(0, totalHabits-completedHabits-failedHabits),
+				),
+			),
 		)
 	default:
 		lines = append(lines,
@@ -327,7 +402,16 @@ func displayPatternIncludesWeek(settings *api.CoreSettings) bool {
 }
 
 func compactIssueLegend(counts map[string]int) string {
-	order := []string{"done", "abandoned", "blocked", "in_progress", "in_review", "ready", "planned", "backlog"}
+	order := []string{
+		"done",
+		"abandoned",
+		"blocked",
+		"in_progress",
+		"in_review",
+		"ready",
+		"planned",
+		"backlog",
+	}
 	labels := map[string]string{
 		"done":        "d",
 		"abandoned":   "a",
@@ -352,7 +436,11 @@ func compactIssueLegend(counts map[string]int) string {
 
 func compactHabitProgress(loggedMinutes, targetMinutes int) string {
 	if targetMinutes > 0 {
-		return fmt.Sprintf("%s/%s", helperpkg.FormatCompactDurationMinutes(loggedMinutes), helperpkg.FormatCompactDurationMinutes(targetMinutes))
+		return fmt.Sprintf(
+			"%s/%s",
+			helperpkg.FormatCompactDurationMinutes(loggedMinutes),
+			helperpkg.FormatCompactDurationMinutes(targetMinutes),
+		)
 	}
 	return helperpkg.FormatCompactDurationMinutes(loggedMinutes)
 }

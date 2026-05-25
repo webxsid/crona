@@ -159,8 +159,18 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 				HighRiskIssueCount:   2,
 			},
 			Entries: []api.DailyPlanEntry{
-				{ID: "1", IssueID: 1, Status: "failed", FailureReason: dailyPlanFailureReasonPtr("missed")},
-				{ID: "2", IssueID: 2, Status: "failed", FailureReason: dailyPlanFailureReasonPtr("moved")},
+				{
+					ID:            "1",
+					IssueID:       1,
+					Status:        "failed",
+					FailureReason: dailyPlanFailureReasonPtr("missed"),
+				},
+				{
+					ID:            "2",
+					IssueID:       2,
+					Status:        "failed",
+					FailureReason: dailyPlanFailureReasonPtr("moved"),
+				},
 			},
 		},
 		MetricsRange: makeMetricsRange(21),
@@ -181,7 +191,10 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 	state.Cursors[string(uistate.PaneWellbeingSummary)] = 16
 	rendered = support.RenderWellbeing(state)
 	if !strings.Contains(rendered, "↑ more") {
-		t.Fatalf("expected summary pane to show upward scroll indicator after scrolling, got %q", rendered)
+		t.Fatalf(
+			"expected summary pane to show upward scroll indicator after scrolling, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -237,7 +250,10 @@ func TestWellbeingTrendsPaneSupportsScrolling(t *testing.T) {
 	state.Cursors[string(uistate.PaneWellbeingTrends)] = 12
 	rendered = support.RenderWellbeing(state)
 	if !strings.Contains(rendered, "↑ more") {
-		t.Fatalf("expected trends pane to show upward scroll indicator after scrolling, got %q", rendered)
+		t.Fatalf(
+			"expected trends pane to show upward scroll indicator after scrolling, got %q",
+			rendered,
+		)
 	}
 }
 

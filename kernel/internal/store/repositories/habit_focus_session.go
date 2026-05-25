@@ -24,7 +24,12 @@ func (r *HabitFocusSessionRepository) NextID(ctx context.Context) (int64, error)
 	return nextPublicID(ctx, r.db, "habit_focus_sessions")
 }
 
-func (r *HabitFocusSessionRepository) Create(ctx context.Context, entry sharedtypes.HabitCompletion, userID string, now string) (sharedtypes.HabitCompletion, error) {
+func (r *HabitFocusSessionRepository) Create(
+	ctx context.Context,
+	entry sharedtypes.HabitCompletion,
+	userID string,
+	now string,
+) (sharedtypes.HabitCompletion, error) {
 	habitInternalID, err := resolveHabitInternalID(ctx, r.db, entry.HabitID, userID)
 	if err != nil {
 		return sharedtypes.HabitCompletion{}, err
@@ -66,8 +71,18 @@ func (r *HabitFocusSessionRepository) Create(ctx context.Context, entry sharedty
 	return entry, nil
 }
 
-func (r *HabitFocusSessionRepository) ListByHabit(ctx context.Context, habitID int64, userID string) ([]sharedtypes.HabitCompletion, error) {
-	rows, err := r.list(ctx, userID, []string{"habits.public_id = ?"}, []any{habitID}, "habit_focus_sessions.started_at DESC")
+func (r *HabitFocusSessionRepository) ListByHabit(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+) ([]sharedtypes.HabitCompletion, error) {
+	rows, err := r.list(
+		ctx,
+		userID,
+		[]string{"habits.public_id = ?"},
+		[]any{habitID},
+		"habit_focus_sessions.started_at DESC",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +93,17 @@ func (r *HabitFocusSessionRepository) ListByHabit(ctx context.Context, habitID i
 	return out, nil
 }
 
-func (r *HabitFocusSessionRepository) ListForDate(ctx context.Context, date, userID string) ([]sharedtypes.HabitCompletion, error) {
-	rows, err := r.list(ctx, userID, []string{"habit_focus_sessions.date = ?"}, []any{date}, "habit_focus_sessions.started_at DESC")
+func (r *HabitFocusSessionRepository) ListForDate(
+	ctx context.Context,
+	date, userID string,
+) ([]sharedtypes.HabitCompletion, error) {
+	rows, err := r.list(
+		ctx,
+		userID,
+		[]string{"habit_focus_sessions.date = ?"},
+		[]any{date},
+		"habit_focus_sessions.started_at DESC",
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +132,13 @@ type habitFocusRow struct {
 	UpdatedAt       string  `bun:"updated_at"`
 }
 
-func (r *HabitFocusSessionRepository) list(ctx context.Context, userID string, where []string, args []any, orderExpr string) ([]habitFocusRow, error) {
+func (r *HabitFocusSessionRepository) list(
+	ctx context.Context,
+	userID string,
+	where []string,
+	args []any,
+	orderExpr string,
+) ([]habitFocusRow, error) {
 	var rows []habitFocusRow
 	q := r.db.NewSelect().
 		TableExpr("habit_focus_sessions").
@@ -146,19 +176,23 @@ func (r *HabitFocusSessionRepository) list(ctx context.Context, userID string, w
 	return rows, nil
 }
 
-// func (r *HabitFocusSessionRepository) listByHabitID(ctx context.Context, habitID int64, userID string) ([]habitFocusRow, error) {
-// 	return r.list(ctx, userID, []string{"habits.public_id = ?"}, []any{habitID}, "habit_focus_sessions.started_at DESC")
+// func (r *HabitFocusSessionRepository) listByHabitID(ctx context.Context, habitID int64, userID
+// string) ([]habitFocusRow, error) { 	return r.list(ctx, userID, []string{"habits.public_id = ?"},
+// []any{habitID}, "habit_focus_sessions.started_at DESC")
 // }
 //
-// func (r *HabitFocusSessionRepository) listByDate(ctx context.Context, date, userID string) ([]habitFocusRow, error) {
-// 	return r.list(ctx, userID, []string{"habit_focus_sessions.date = ?"}, []any{date}, "habit_focus_sessions.started_at DESC")
+// func (r *HabitFocusSessionRepository) listByDate(ctx context.Context, date, userID string)
+// ([]habitFocusRow, error) { 	return r.list(ctx, userID, []string{"habit_focus_sessions.date = ?"},
+// []any{date}, "habit_focus_sessions.started_at DESC")
 // }
 
 func (row habitFocusRow) toCompletion() sharedtypes.HabitCompletion {
 	return sharedtypes.HabitCompletion{
-		ID:              row.PublicID,
-		HabitID:         row.HabitPublicID,
-		Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
+		ID:      row.PublicID,
+		HabitID: row.HabitPublicID,
+		Kind: sharedtypes.NormalizeHabitHistoryKind(
+			sharedtypes.HabitHistoryKind(row.Kind),
+		),
 		Date:            row.Date,
 		Status:          sharedtypes.HabitCompletionStatusCompleted,
 		StartedAt:       &row.StartedAt,
@@ -201,7 +235,9 @@ func habitFocusScheduleTypePtr(value *string) *sharedtypes.HabitScheduleType {
 	if value == nil || strings.TrimSpace(*value) == "" {
 		return nil
 	}
-	normalized := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(strings.TrimSpace(*value)))
+	normalized := sharedtypes.NormalizeHabitScheduleType(
+		sharedtypes.HabitScheduleType(strings.TrimSpace(*value)),
+	)
 	return &normalized
 }
 

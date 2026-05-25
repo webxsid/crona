@@ -14,7 +14,9 @@ import (
 	"crona/shared/config"
 )
 
-func (s *Service) prepareLocalReleaseSource(ctx context.Context) (latestRelease, string, string, error) {
+func (s *Service) prepareLocalReleaseSource(
+	ctx context.Context,
+) (latestRelease, string, string, error) {
 	releaseDir, err := resolveLocalReleaseDir(s.targetGOOS())
 	if err != nil {
 		return latestRelease{}, "", "", err
@@ -71,7 +73,10 @@ func resolveLocalReleaseDir(goos string) (string, error) {
 		}
 		wd = parent
 	}
-	return "", fmt.Errorf("could not find a local release directory; set %s or run from the repo", config.EnvVarDevUpdateReleaseDir)
+	return "", fmt.Errorf(
+		"could not find a local release directory; set %s or run from the repo",
+		config.EnvVarDevUpdateReleaseDir,
+	)
 }
 
 func latestReleaseDir(root, goos string) (string, error) {
@@ -114,11 +119,18 @@ func localReleaseFromDir(releaseDir, goos string) (latestRelease, error) {
 	tag := strings.TrimSpace(filepath.Base(releaseDir))
 	version := normalizeVersion(tag)
 	if version == "" || strings.HasSuffix(tag, "-") || strings.HasSuffix(version, "-") {
-		return latestRelease{}, fmt.Errorf("release dir %s does not look like a versioned release", releaseDir)
+		return latestRelease{}, fmt.Errorf(
+			"release dir %s does not look like a versioned release",
+			releaseDir,
+		)
 	}
 	installerName := config.InstallerAssetNameForGOOS(goos)
 	if _, err := os.Stat(filepath.Join(releaseDir, installerName)); err != nil {
-		return latestRelease{}, fmt.Errorf("local release %s is missing %s", releaseDir, installerName)
+		return latestRelease{}, fmt.Errorf(
+			"local release %s is missing %s",
+			releaseDir,
+			installerName,
+		)
 	}
 	if _, err := os.Stat(filepath.Join(releaseDir, "checksums.txt")); err != nil {
 		return latestRelease{}, fmt.Errorf("local release %s is missing checksums.txt", releaseDir)

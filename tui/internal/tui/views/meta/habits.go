@@ -28,7 +28,13 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No habits — [a] create new"))
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	start, end := viewchrome.ListWindow(cur, total, inner)
@@ -36,7 +42,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
 	for i := start; i < end; i++ {
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, i, cur, active, items[indices[i]], nil, width))
+		lines = append(
+			lines,
+			viewchrome.RenderPaneRowStyled(theme, i, cur, active, items[indices[i]], nil, width),
+		)
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))

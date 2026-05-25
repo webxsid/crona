@@ -22,16 +22,22 @@ func attachFrontmatter(data map[string]any, spec reportWriteSpec) map[string]any
 		tags = append(tags, "stream/"+slugify(streamName))
 	}
 	fields := map[string]any{
-		"title":        yamlString(title),
-		"aliases":      yamlStringList([]string{title}),
-		"tags":         yamlStringList(tags),
-		"reportKind":   yamlString(string(spec.Kind)),
-		"date":         yamlString(spec.Date),
-		"startDate":    yamlString(spec.StartDate),
-		"endDate":      yamlString(spec.EndDate),
-		"generatedAt":  yamlString(firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date)),
-		"created":      yamlString(firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date)),
-		"updated":      yamlString(firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date)),
+		"title":      yamlString(title),
+		"aliases":    yamlStringList([]string{title}),
+		"tags":       yamlStringList(tags),
+		"reportKind": yamlString(string(spec.Kind)),
+		"date":       yamlString(spec.Date),
+		"startDate":  yamlString(spec.StartDate),
+		"endDate":    yamlString(spec.EndDate),
+		"generatedAt": yamlString(
+			firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date),
+		),
+		"created": yamlString(
+			firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date),
+		),
+		"updated": yamlString(
+			firstNonEmptyString(stringFromMap(data, "generatedAt"), spec.Date),
+		),
 		"scope":        yamlString(spec.ScopeLabel),
 		"repo":         yamlString(repoName),
 		"stream":       yamlString(streamName),
@@ -130,7 +136,9 @@ func reportFrontmatterTitle(spec reportWriteSpec, data map[string]any) string {
 	case "daily":
 		return strings.TrimSpace("Daily Report - " + spec.Date)
 	case "weekly":
-		return strings.TrimSpace("Weekly Summary - " + joinNonEmpty(" to ", spec.StartDate, spec.EndDate))
+		return strings.TrimSpace(
+			"Weekly Summary - " + joinNonEmpty(" to ", spec.StartDate, spec.EndDate),
+		)
 	case "repo":
 		if repoName := nestedString(data, "repo", "name"); repoName != "" {
 			return "Repo Report - " + repoName
@@ -140,7 +148,9 @@ func reportFrontmatterTitle(spec reportWriteSpec, data map[string]any) string {
 			return "Stream Report - " + streamName
 		}
 	case "issue_rollup":
-		return strings.TrimSpace("Session to Issue Rollup - " + joinNonEmpty(" to ", spec.StartDate, spec.EndDate))
+		return strings.TrimSpace(
+			"Session to Issue Rollup - " + joinNonEmpty(" to ", spec.StartDate, spec.EndDate),
+		)
 	}
 	if spec.Label != "" {
 		return spec.Label

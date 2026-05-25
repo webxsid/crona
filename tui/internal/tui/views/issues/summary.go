@@ -17,29 +17,78 @@ func renderSummary(theme types.Theme, state types.ContentState, height int) stri
 	topH, bottomH := viewhelpers.SplitVertical(height, 3, 3, height/2)
 	row1Left, row1Right := viewhelpers.SplitHorizontal(state.Width, 28, 28, state.Width/2)
 	row2Left, row2Right := viewhelpers.SplitHorizontal(state.Width, 28, 28, state.Width/2)
-	row1 := lipgloss.JoinHorizontal(lipgloss.Top,
-		renderStatCard(theme, "Open", openSummary(state), "active workload", theme.ColorYellow, row1Left, topH),
-		renderStatCard(theme, "Closed", closedSummary(state), "done + abandoned", theme.ColorCyan, row1Right, topH),
+	row1 := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		renderStatCard(
+			theme,
+			"Open",
+			openSummary(state),
+			"active workload",
+			theme.ColorYellow,
+			row1Left,
+			topH,
+		),
+		renderStatCard(
+			theme,
+			"Closed",
+			closedSummary(state),
+			"done + abandoned",
+			theme.ColorCyan,
+			row1Right,
+			topH,
+		),
 	)
-	row2 := lipgloss.JoinHorizontal(lipgloss.Top,
-		renderStatCard(theme, "Due", dueSummary(state), "today vs overdue", theme.ColorGreen, row2Left, bottomH),
-		renderStatCard(theme, "Estimate", estimateSummary(state), "current issue load", theme.ColorMagenta, row2Right, bottomH),
+	row2 := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		renderStatCard(
+			theme,
+			"Due",
+			dueSummary(state),
+			"today vs overdue",
+			theme.ColorGreen,
+			row2Left,
+			bottomH,
+		),
+		renderStatCard(
+			theme,
+			"Estimate",
+			estimateSummary(state),
+			"current issue load",
+			theme.ColorMagenta,
+			row2Right,
+			bottomH,
+		),
 	)
 	return lipgloss.JoinVertical(lipgloss.Left, row1, row2)
 }
 
 func renderCompactSummary(theme types.Theme, state types.ContentState, height int) string {
 	lines := []string{
-		fmt.Sprintf("%s  %s", theme.StylePaneTitle.Render("Default Dashboard"), theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context))),
+		fmt.Sprintf(
+			"%s  %s",
+			theme.StylePaneTitle.Render("Default Dashboard"),
+			theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
+		),
 		viewhelpers.Truncate(openSummary(state), state.Width-6),
 		viewhelpers.Truncate(closedSummary(state), state.Width-6),
 		viewhelpers.Truncate(dueSummary(state), state.Width-6),
 		viewhelpers.Truncate(estimateSummary(state), state.Width-6),
 	}
-	return viewchrome.RenderPaneBox(theme, false, state.Width, height, viewhelpers.StringsJoin(lines))
+	return viewchrome.RenderPaneBox(
+		theme,
+		false,
+		state.Width,
+		height,
+		viewhelpers.StringsJoin(lines),
+	)
 }
 
-func renderStatCard(theme types.Theme, label, value, hint string, border lipgloss.Color, width, height int) string {
+func renderStatCard(
+	theme types.Theme,
+	label, value, hint string,
+	border lipgloss.Color,
+	width, height int,
+) string {
 	body := []string{
 		theme.StyleDim.Render(label),
 		lipStyle(theme, border).Render(value),
@@ -110,7 +159,11 @@ func estimateSummary(state types.ContentState) string {
 		estimated += *issue.EstimateMinutes
 		scoped++
 	}
-	return fmt.Sprintf("estimated %s  scoped %d", helperpkg.FormatCompactDurationMinutes(estimated), scoped)
+	return fmt.Sprintf(
+		"estimated %s  scoped %d",
+		helperpkg.FormatCompactDurationMinutes(estimated),
+		scoped,
+	)
 }
 
 func lipStyle(theme types.Theme, color interface{}) styleLike {

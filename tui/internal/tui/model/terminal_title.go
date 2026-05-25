@@ -59,12 +59,14 @@ func terminalTimerState(m Model) string {
 		return ""
 	}
 	if m.timer.State == "ready" {
-		if m.timer.ReadySegmentType != nil && strings.TrimSpace(string(*m.timer.ReadySegmentType)) != "" {
+		if m.timer.ReadySegmentType != nil &&
+			strings.TrimSpace(string(*m.timer.ReadySegmentType)) != "" {
 			return "READY " + strings.ToUpper(string(*m.timer.ReadySegmentType))
 		}
 		return "READY"
 	}
-	if m.timer.SegmentType != nil && strings.TrimSpace(string(*m.timer.SegmentType)) != "" && *m.timer.SegmentType != "work" {
+	if m.timer.SegmentType != nil && strings.TrimSpace(string(*m.timer.SegmentType)) != "" &&
+		*m.timer.SegmentType != "work" {
 		return strings.ToUpper(string(*m.timer.SegmentType))
 	}
 	if m.timer.State == "paused" {
@@ -91,8 +93,6 @@ func terminalViewTitle(view View) string {
 		return "Habit History"
 	case ViewSessionActive:
 		return "Session"
-	case ViewScratch:
-		return "Scratchpads"
 	case ViewOps:
 		return "Ops"
 	case ViewWellbeing:

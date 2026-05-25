@@ -57,7 +57,11 @@ func Run(args []string, deps Deps) error {
 			_, err := fmt.Fprintln(deps.Stdout, "no update dismissed")
 			return err
 		}
-		_, err := fmt.Fprintf(deps.Stdout, "dismissed update prompt for v%s\n", out.DismissedVersion)
+		_, err := fmt.Fprintf(
+			deps.Stdout,
+			"dismissed update prompt for v%s\n",
+			out.DismissedVersion,
+		)
 		return err
 	case "notes":
 		var out sharedtypes.UpdateStatus

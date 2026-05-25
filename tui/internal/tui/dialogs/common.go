@@ -22,7 +22,12 @@ const (
 )
 
 func modal(theme Theme, width, maxWidth int, border lipgloss.Color, rows []string) string {
-	return lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).BorderForeground(border).Padding(1, 3).Width(min(width-8, maxWidth)).Render(strings.Join(rows, "\n"))
+	return lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(border).
+		Padding(1, 3).
+		Width(min(width-8, maxWidth)).
+		Render(strings.Join(rows, "\n"))
 }
 
 func renderSelector(theme Theme, state controllerpkg.State, label string, active bool) string {
@@ -63,7 +68,12 @@ func fallback(v, def string) string {
 	return v
 }
 
-func appendDialogFooter(theme Theme, state controllerpkg.State, rows []string, hint string) []string {
+func appendDialogFooter(
+	theme Theme,
+	state controllerpkg.State,
+	rows []string,
+	hint string,
+) []string {
 	if strings.TrimSpace(state.ErrorMessage) != "" {
 		rows = append(rows, "", theme.StyleError.Render(state.ErrorMessage))
 	}

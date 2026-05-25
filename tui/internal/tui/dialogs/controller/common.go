@@ -99,20 +99,35 @@ func issueDialogHint(state State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 3:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 5:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}
 	case "create_issue_meta", "edit_issue":
 		switch state.FocusIdx {
 		case 1:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[enter] newline   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+				state,
+				submitLabel,
+			) + "   [esc] cancel"
 		default:
 			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 		}

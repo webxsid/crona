@@ -23,10 +23,27 @@ func wellbeingRiskSnapshotLines(theme types.Theme, state types.ContentState) []s
 	score, pressure, delayed, _ := dailyPlanSignals(state.DailyPlan)
 	lines := []string{"", theme.StyleHeader.Render("Risk Snapshot")}
 	if burnout != nil {
-		lines = append(lines, fmt.Sprintf("%s  %s", theme.StyleHeader.Render("Burnout"), burnoutBadge(theme, burnout)))
+		lines = append(
+			lines,
+			fmt.Sprintf(
+				"%s  %s",
+				theme.StyleHeader.Render("Burnout"),
+				burnoutBadge(theme, burnout),
+			),
+		)
 		lines = append(lines, theme.StyleDim.Render(burnoutSummary(burnout)))
 	}
-	lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("accountability %.1f   backlog %.1f   delayed %d", score, pressure, delayed)))
+	lines = append(
+		lines,
+		theme.StyleDim.Render(
+			fmt.Sprintf(
+				"accountability %.1f   backlog %.1f   delayed %d",
+				score,
+				pressure,
+				delayed,
+			),
+		),
+	)
 	return lines
 }
 

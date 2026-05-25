@@ -11,7 +11,6 @@ import uistate "crona/tui/internal/tui/state"
 type ActionsState struct {
 	View                   string
 	Pane                   string
-	ScratchpadOpen         bool
 	TimerState             string
 	TimerSegment           string
 	TimerNextSegment       string
@@ -29,10 +28,16 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" views"),
 	}
 	if state.IsBetaBuild {
-		actions = append(actions, theme.StyleHeader.Render("[f9]")+theme.StyleDim.Render(" beta support"))
+		actions = append(
+			actions,
+			theme.StyleHeader.Render("[f9]")+theme.StyleDim.Render(" beta support"),
+		)
 	}
 	if tabLabel := tabActionLabel(state); tabLabel != "" {
-		actions = append(actions, theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel))
+		actions = append(
+			actions,
+			theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel),
+		)
 	}
 	if supportsGlobalCreate(state.View) {
 		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" new"))
@@ -70,7 +75,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		if state.TimerState == "ready" {
 			return []string{
-				theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" start "+timerActionSegmentLabel(state.TimerNextSegment)),
+				theme.StyleHeader.Render(
+					"[r]",
+				) + theme.StyleDim.Render(
+					" start "+timerActionSegmentLabel(state.TimerNextSegment),
+				),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
 				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
@@ -79,14 +88,23 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		if state.StructuredTimer {
 			actions := []string{
-				theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" start "+timerActionSegmentLabel(state.TimerNextSegment)),
+				theme.StyleHeader.Render(
+					"[r]",
+				) + theme.StyleDim.Render(
+					" start "+timerActionSegmentLabel(state.TimerNextSegment),
+				),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
 				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
 			}
-			if state.TimerSegment == "work" || state.TimerSegment == "short_break" || state.TimerSegment == "long_break" {
-				actions = append([]string{theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" manual pause")}, actions...)
+			if state.TimerSegment == "work" || state.TimerSegment == "short_break" ||
+				state.TimerSegment == "long_break" {
+				actions = append(
+					[]string{
+						theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" manual pause"),
+					},
+					actions...)
 			}
 			return actions
 		}
@@ -142,7 +160,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[R]") + theme.StyleDim.Render(" rescan tools"),
 		}
 		if state.TimerState == "" || state.TimerState == "idle" {
-			actions = append(actions, theme.StyleHeader.Render("[r]")+theme.StyleDim.Render(" reset selected"))
+			actions = append(
+				actions,
+				theme.StyleHeader.Render("[r]")+theme.StyleDim.Render(" reset selected"),
+			)
 		}
 		return actions
 	}
@@ -161,7 +182,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
 		}
 		if state.UpdateInstallAvailable {
-			actions = append(actions, theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" install"))
+			actions = append(
+				actions,
+				theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" install"),
+			)
 		} else {
 			actions = append(actions, theme.StyleDim.Render("[i] install unavailable"))
 		}
@@ -239,28 +263,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
-	case "scratchpads":
-		if state.ScratchpadOpen {
-			actions := []string{
-				theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" switch"),
-				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
-				theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open"),
-				theme.StyleHeader.Render("[esc]") + theme.StyleDim.Render(" close"),
-			}
-			if state.TimerState != "" && state.TimerState != "idle" {
-				actions = append(actions, theme.StyleHeader.Render("[s/A]")+theme.StyleDim.Render(" issue"))
-			}
-			return actions
-		}
-		actions := []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open"),
-			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
-		}
-		if state.TimerState != "" && state.TimerState != "idle" {
-			actions = append(actions, theme.StyleHeader.Render("[s/A]")+theme.StyleDim.Render(" issue"))
-		}
-		return actions
 	case "ops":
 		return []string{
 			theme.StyleHeader.Render("[+]") + theme.StyleDim.Render(" more"),
@@ -299,7 +301,15 @@ func supportsGlobalCreate(view string) bool {
 
 func supportsGlobalContext(view string) bool {
 	switch view {
-	case "default", "daily", "meta", "rollup", "wellbeing", "reports", "ops", "scratchpads", "session_history", "habit_history":
+	case "default",
+		"daily",
+		"meta",
+		"rollup",
+		"wellbeing",
+		"reports",
+		"ops",
+		"session_history",
+		"habit_history":
 		return true
 	default:
 		return false

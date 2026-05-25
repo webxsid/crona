@@ -97,7 +97,12 @@ func legacyKernelRunning(base string) (bool, error) {
 
 	cmd, err := exec.Command("ps", "-p", fmt.Sprintf("%d", info.PID), "-o", "command=").Output()
 	if err != nil {
-		return false, fmt.Errorf("could not inspect process %d referenced by %s: %w", info.PID, infoPath, err)
+		return false, fmt.Errorf(
+			"could not inspect process %d referenced by %s: %w",
+			info.PID,
+			infoPath,
+			err,
+		)
 	}
 	return strings.Contains(strings.TrimSpace(string(cmd)), "crona-kernel"), nil
 }

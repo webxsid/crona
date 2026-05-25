@@ -75,7 +75,8 @@ func TestDailyPlanMarksMovedTodayIssueFailedAfterRollbackWindow(t *testing.T) {
 	if entry.Status != sharedtypes.DailyPlanEntryStatusFailed {
 		t.Fatalf("expected failed entry after rollback window, got %s", entry.Status)
 	}
-	if entry.FailureReason == nil || *entry.FailureReason != sharedtypes.DailyPlanFailureReasonMoved {
+	if entry.FailureReason == nil ||
+		*entry.FailureReason != sharedtypes.DailyPlanFailureReasonMoved {
 		t.Fatalf("expected moved failure reason, got %+v", entry.FailureReason)
 	}
 }
@@ -295,7 +296,14 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 	reportDate := "2026-05-07"
 	startDate := "2026-05-01"
 	for day := startDate; day < reportDate; day = mustShiftISODate(t, day, 1) {
-		issue := mustCreateCommandIssue(t, ctx, coreCtx, stream.ID, "Burnout window work "+day, &day)
+		issue := mustCreateCommandIssue(
+			t,
+			ctx,
+			coreCtx,
+			stream.ID,
+			"Burnout window work "+day,
+			&day,
+		)
 		if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
 			IssueID:             issue.ID,
 			Date:                day,
@@ -305,7 +313,14 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 			t.Fatalf("log heavy session for %s: %v", day, err)
 		}
 	}
-	issue := mustCreateCommandIssue(t, ctx, coreCtx, stream.ID, "Burnout window work "+reportDate, &reportDate)
+	issue := mustCreateCommandIssue(
+		t,
+		ctx,
+		coreCtx,
+		stream.ID,
+		"Burnout window work "+reportDate,
+		&reportDate,
+	)
 	if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
 		IssueID:             issue.ID,
 		Date:                reportDate,
@@ -330,7 +345,11 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 		t.Fatalf("expected seven-day burnout range, got %+v", days)
 	}
 	if data.Metrics.Burnout.Score != days[len(days)-1].Burnout.Score {
-		t.Fatalf("expected report burnout score %d from seven-day window, got %d", days[len(days)-1].Burnout.Score, data.Metrics.Burnout.Score)
+		t.Fatalf(
+			"expected report burnout score %d from seven-day window, got %d",
+			days[len(days)-1].Burnout.Score,
+			data.Metrics.Burnout.Score,
+		)
 	}
 	oneDay, err := corecommands.ComputeMetricsRange(ctx, coreCtx, reportDate, reportDate)
 	if err != nil {
@@ -340,7 +359,10 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 		t.Fatalf("expected one-day burnout, got %+v", oneDay)
 	}
 	if oneDay[0].Burnout.Score == data.Metrics.Burnout.Score {
-		t.Fatalf("test setup should distinguish one-day and seven-day burnout scores; both were %d", data.Metrics.Burnout.Score)
+		t.Fatalf(
+			"test setup should distinguish one-day and seven-day burnout scores; both were %d",
+			data.Metrics.Burnout.Score,
+		)
 	}
 }
 
@@ -428,7 +450,14 @@ func mustShiftISODate(t *testing.T, date string, days int) string {
 	return parsed.AddDate(0, 0, days).Format("2006-01-02")
 }
 
-func mustCreateCommandIssue(t *testing.T, ctx context.Context, coreCtx *core.Context, streamID int64, title string, todoForDate *string) sharedtypes.Issue {
+func mustCreateCommandIssue(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	streamID int64,
+	title string,
+	todoForDate *string,
+) sharedtypes.Issue {
 	t.Helper()
 	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
 		StreamID        int64
@@ -487,7 +516,10 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 	}
 	entry := plan.Entries[0]
 	if entry.CurrentDelayedDays != 1 {
-		t.Fatalf("expected only Monday to count after excluding weekend rest days, got %d", entry.CurrentDelayedDays)
+		t.Fatalf(
+			"expected only Monday to count after excluding weekend rest days, got %d",
+			entry.CurrentDelayedDays,
+		)
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyAwayModeEnabled, true); err != nil {
 		t.Fatalf("enable away mode: %v", err)
@@ -498,7 +530,11 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 	}
 	entry = plan.Entries[0]
 	if entry.CurrentDelayedDays != 0 || entry.FailScore != 0 {
-		t.Fatalf("expected away mode to zero out delay burden, got delayed=%d score=%.2f", entry.CurrentDelayedDays, entry.FailScore)
+		t.Fatalf(
+			"expected away mode to zero out delay burden, got delayed=%d score=%.2f",
+			entry.CurrentDelayedDays,
+			entry.FailScore,
+		)
 	}
 	if plan.Summary.DelayedIssueCount != 0 || plan.Summary.AccountabilityScore != 0 {
 		t.Fatalf("expected away mode to clear aggregate burden, got %+v", plan.Summary)
@@ -567,7 +603,11 @@ func TestDailyPlanActiveSummaryExcludesResolvedDelayedIssues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get resolved plan: %v", err)
 	}
-	if plan.Summary.DelayedIssueCount != 0 || plan.Summary.HighRiskIssueCount != 0 || plan.Summary.AccountabilityScore != 0 {
-		t.Fatalf("expected resolved issue to stop contributing to active accountability, got %+v", plan.Summary)
+	if plan.Summary.DelayedIssueCount != 0 || plan.Summary.HighRiskIssueCount != 0 ||
+		plan.Summary.AccountabilityScore != 0 {
+		t.Fatalf(
+			"expected resolved issue to stop contributing to active accountability, got %+v",
+			plan.Summary,
+		)
 	}
 }

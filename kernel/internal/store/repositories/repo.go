@@ -20,7 +20,12 @@ func NewRepoRepository(db *bun.DB) *RepoRepository {
 	return &RepoRepository{db: db}
 }
 
-func (r *RepoRepository) Create(ctx context.Context, repo sharedtypes.Repo, userID string, now string) (sharedtypes.Repo, error) {
+func (r *RepoRepository) Create(
+	ctx context.Context,
+	repo sharedtypes.Repo,
+	userID string,
+	now string,
+) (sharedtypes.Repo, error) {
 	model := storemodels.RepoModel{
 		InternalID:  repoInternalID(repo.ID),
 		PublicID:    repo.ID,
@@ -41,7 +46,11 @@ func (r *RepoRepository) NextID(ctx context.Context) (int64, error) {
 	return nextPublicID(ctx, r.db, "repos")
 }
 
-func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID string) (*sharedtypes.Repo, error) {
+func (r *RepoRepository) GetByID(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+) (*sharedtypes.Repo, error) {
 	var model storemodels.RepoModel
 	err := r.db.NewSelect().
 		Model(&model).
@@ -57,7 +66,12 @@ func (r *RepoRepository) GetByID(ctx context.Context, repoID int64, userID strin
 		}
 		return nil, err
 	}
-	return &sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color}, nil
+	return &sharedtypes.Repo{
+		ID:          model.PublicID,
+		Name:        model.Name,
+		Description: model.Description,
+		Color:       model.Color,
+	}, nil
 }
 
 func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes.Repo, error) {
@@ -74,12 +88,23 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 
 	out := make([]sharedtypes.Repo, 0, len(models))
 	for _, model := range models {
-		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color})
+		out = append(
+			out,
+			sharedtypes.Repo{
+				ID:          model.PublicID,
+				Name:        model.Name,
+				Description: model.Description,
+				Color:       model.Color,
+			},
+		)
 	}
 	return out, nil
 }
 
-func (r *RepoRepository) ListDeleted(ctx context.Context, userID string) ([]sharedtypes.Repo, error) {
+func (r *RepoRepository) ListDeleted(
+	ctx context.Context,
+	userID string,
+) ([]sharedtypes.Repo, error) {
 	var models []storemodels.RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
@@ -93,16 +118,29 @@ func (r *RepoRepository) ListDeleted(ctx context.Context, userID string) ([]shar
 
 	out := make([]sharedtypes.Repo, 0, len(models))
 	for _, model := range models {
-		out = append(out, sharedtypes.Repo{ID: model.PublicID, Name: model.Name, Description: model.Description, Color: model.Color})
+		out = append(
+			out,
+			sharedtypes.Repo{
+				ID:          model.PublicID,
+				Name:        model.Name,
+				Description: model.Description,
+				Color:       model.Color,
+			},
+		)
 	}
 	return out, nil
 }
 
-func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string, now string, updates struct {
-	Name        Patch[string]
-	Description Patch[string]
-	Color       Patch[string]
-},
+func (r *RepoRepository) Update(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+	updates struct {
+		Name        Patch[string]
+		Description Patch[string]
+		Color       Patch[string]
+	},
 ) (*sharedtypes.Repo, error) {
 	q := r.db.NewUpdate().
 		Model((*storemodels.RepoModel)(nil)).
@@ -139,7 +177,12 @@ func (r *RepoRepository) Update(ctx context.Context, repoID int64, userID string
 	return r.GetByID(ctx, repoID, userID)
 }
 
-func (r *RepoRepository) SoftDelete(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *RepoRepository) SoftDelete(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
@@ -157,7 +200,12 @@ func (r *RepoRepository) SoftDelete(ctx context.Context, repoID int64, userID st
 	return nil
 }
 
-func (r *RepoRepository) Restore(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *RepoRepository) Restore(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).

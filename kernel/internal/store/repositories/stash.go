@@ -20,17 +20,27 @@ func NewStashRepository(db *bun.DB) *StashRepository {
 }
 
 func (r *StashRepository) List(ctx context.Context, userID string) ([]sharedtypes.Stash, error) {
-	return r.listWithQuery(ctx, r.baseQuery().Where("stash.user_id = ?", userID).OrderExpr("stash.created_at DESC"))
+	return r.listWithQuery(
+		ctx,
+		r.baseQuery().Where("stash.user_id = ?", userID).OrderExpr("stash.created_at DESC"),
+	)
 }
 
-func (r *StashRepository) ListByIssue(ctx context.Context, issueID int64, userID string) ([]sharedtypes.Stash, error) {
+func (r *StashRepository) ListByIssue(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) ([]sharedtypes.Stash, error) {
 	return r.listWithQuery(ctx, r.baseQuery().
 		Where("stash.user_id = ?", userID).
 		Where("issues.public_id = ?", issueID).
 		OrderExpr("stash.created_at DESC"))
 }
 
-func (r *StashRepository) listWithQuery(ctx context.Context, query *bun.SelectQuery) ([]sharedtypes.Stash, error) {
+func (r *StashRepository) listWithQuery(
+	ctx context.Context,
+	query *bun.SelectQuery,
+) ([]sharedtypes.Stash, error) {
 	type row struct {
 		ID             string  `bun:"id"`
 		UserID         string  `bun:"user_id"`
@@ -74,7 +84,11 @@ func (r *StashRepository) listWithQuery(ctx context.Context, query *bun.SelectQu
 	return out, nil
 }
 
-func (r *StashRepository) Get(ctx context.Context, id string, userID string) (*sharedtypes.Stash, error) {
+func (r *StashRepository) Get(
+	ctx context.Context,
+	id string,
+	userID string,
+) (*sharedtypes.Stash, error) {
 	type row struct {
 		ID             string  `bun:"id"`
 		UserID         string  `bun:"user_id"`
@@ -90,7 +104,11 @@ func (r *StashRepository) Get(ctx context.Context, id string, userID string) (*s
 		UpdatedAt      string  `bun:"updated_at"`
 	}
 	var item row
-	err := r.baseQuery().Where("stash.id = ?", id).Where("stash.user_id = ?", userID).Limit(1).Scan(ctx, &item)
+	err := r.baseQuery().
+		Where("stash.id = ?", id).
+		Where("stash.user_id = ?", userID).
+		Limit(1).
+		Scan(ctx, &item)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -170,7 +188,11 @@ func (r *StashRepository) Save(ctx context.Context, stash sharedtypes.Stash) err
 }
 
 func (r *StashRepository) Delete(ctx context.Context, id string, userID string) error {
-	_, err := r.db.NewDelete().Model((*storemodels.StashModel)(nil)).Where("id = ?", id).Where("user_id = ?", userID).Exec(ctx)
+	_, err := r.db.NewDelete().
+		Model((*storemodels.StashModel)(nil)).
+		Where("id = ?", id).
+		Where("user_id = ?", userID).
+		Exec(ctx)
 	return err
 }
 

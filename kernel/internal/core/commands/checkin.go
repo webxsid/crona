@@ -17,14 +17,22 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func GetDailyCheckIn(ctx context.Context, c *core.Context, date string) (*sharedtypes.DailyCheckIn, error) {
+func GetDailyCheckIn(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) (*sharedtypes.DailyCheckIn, error) {
 	if err := validateCheckInDate(date, c.Now(), false); err != nil {
 		return nil, err
 	}
 	return c.DailyCheckIns.GetByDate(ctx, c.UserID, date)
 }
 
-func UpsertDailyCheckIn(ctx context.Context, c *core.Context, input shareddto.DailyCheckInUpsertRequest) (*sharedtypes.DailyCheckIn, error) {
+func UpsertDailyCheckIn(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DailyCheckInUpsertRequest,
+) (*sharedtypes.DailyCheckIn, error) {
 	if err := validateCheckInDate(input.Date, c.Now(), true); err != nil {
 		return nil, err
 	}
@@ -100,14 +108,24 @@ func DeleteDailyCheckIn(ctx context.Context, c *core.Context, date string) error
 	return nil
 }
 
-func ListDailyCheckInsInRange(ctx context.Context, c *core.Context, start string, end string) ([]sharedtypes.DailyCheckIn, error) {
+func ListDailyCheckInsInRange(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+) ([]sharedtypes.DailyCheckIn, error) {
 	if err := validateRange(start, end); err != nil {
 		return nil, err
 	}
 	return c.DailyCheckIns.ListRange(ctx, c.UserID, start, end)
 }
 
-func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end string) ([]sharedtypes.DailyMetricsDay, error) {
+func ComputeMetricsRange(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+) ([]sharedtypes.DailyMetricsDay, error) {
 	if err := validateRange(start, end); err != nil {
 		return nil, err
 	}
@@ -184,7 +202,11 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 		if workedSeconds == 0 {
 			workedSeconds = sessionDurationByDate[day]
 		}
-		habitDueCount, habitCompletedCount, habitFailedCount, err := loadHabitCountsForDate(ctx, c, day)
+		habitDueCount, habitCompletedCount, habitFailedCount, err := loadHabitCountsForDate(
+			ctx,
+			c,
+			day,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -214,7 +236,12 @@ func ComputeMetricsRange(ctx context.Context, c *core.Context, start string, end
 	return out, nil
 }
 
-func ComputeMetricsRollup(ctx context.Context, c *core.Context, start string, end string) (*sharedtypes.MetricsRollup, error) {
+func ComputeMetricsRollup(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+) (*sharedtypes.MetricsRollup, error) {
 	days, err := ComputeMetricsRange(ctx, c, start, end)
 	if err != nil {
 		return nil, err
@@ -222,7 +249,11 @@ func ComputeMetricsRollup(ctx context.Context, c *core.Context, start string, en
 	return ComputeMetricsRollupFromDays(start, end, days), nil
 }
 
-func ComputeMetricsRollupFromDays(start string, end string, days []sharedtypes.DailyMetricsDay) *sharedtypes.MetricsRollup {
+func ComputeMetricsRollupFromDays(
+	start string,
+	end string,
+	days []sharedtypes.DailyMetricsDay,
+) *sharedtypes.MetricsRollup {
 	rollup := &sharedtypes.MetricsRollup{
 		StartDate: start,
 		EndDate:   end,
@@ -275,7 +306,12 @@ func ComputeMetricsRollupFromDays(start string, end string, days []sharedtypes.D
 	return rollup
 }
 
-func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, end string) (*sharedtypes.StreakSummary, error) {
+func ComputeMetricsStreaks(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+) (*sharedtypes.StreakSummary, error) {
 	days, err := ComputeMetricsRange(ctx, c, start, end)
 	if err != nil {
 		return nil, err
@@ -293,7 +329,11 @@ func ComputeMetricsStreaks(ctx context.Context, c *core.Context, start string, e
 	return streaks, nil
 }
 
-func ComputeMetricsLifetimeStreaks(ctx context.Context, c *core.Context, throughDate string) (*sharedtypes.StreakSummary, error) {
+func ComputeMetricsLifetimeStreaks(
+	ctx context.Context,
+	c *core.Context,
+	throughDate string,
+) (*sharedtypes.StreakSummary, error) {
 	if err := validateCheckInDate(throughDate, "", false); err != nil {
 		return nil, err
 	}
@@ -304,7 +344,11 @@ func ComputeMetricsLifetimeStreaks(ctx context.Context, c *core.Context, through
 	return ComputeMetricsStreaks(ctx, c, start, throughDate)
 }
 
-func earliestMetricsHistoryDate(ctx context.Context, c *core.Context, throughDate string) (string, error) {
+func earliestMetricsHistoryDate(
+	ctx context.Context,
+	c *core.Context,
+	throughDate string,
+) (string, error) {
 	start := throughDate
 	consider := func(candidate *string) {
 		if candidate != nil && *candidate != "" && *candidate < start {
@@ -329,7 +373,10 @@ func earliestMetricsHistoryDate(ctx context.Context, c *core.Context, throughDat
 	return start, nil
 }
 
-func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) *sharedtypes.StreakSummary {
+func ComputeMetricsStreaksFromDays(
+	days []sharedtypes.DailyMetricsDay,
+	settings *sharedtypes.CoreSettings,
+) *sharedtypes.StreakSummary {
 	var streaks sharedtypes.StreakSummary
 	currentFocus := 0
 	currentCheckIn := 0
@@ -353,17 +400,29 @@ func ComputeMetricsStreaksFromDays(days []sharedtypes.DailyMetricsDay, settings 
 			currentCheckIn = 0
 		}
 	}
-	streaks.CurrentFocusDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return day.WorkedSeconds > 0 }, func(day sharedtypes.DailyMetricsDay) bool {
-		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindFocusDays)
-	})
-	streaks.CurrentCheckInDays = trailingStreak(days, func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) }, func(day sharedtypes.DailyMetricsDay) bool {
-		return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays)
-	})
+	streaks.CurrentFocusDays = trailingStreak(
+		days,
+		func(day sharedtypes.DailyMetricsDay) bool { return day.WorkedSeconds > 0 },
+		func(day sharedtypes.DailyMetricsDay) bool {
+			return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindFocusDays)
+		},
+	)
+	streaks.CurrentCheckInDays = trailingStreak(
+		days,
+		func(day sharedtypes.DailyMetricsDay) bool { return countsForCheckInStreak(day.CheckIn) },
+		func(day sharedtypes.DailyMetricsDay) bool {
+			return isProtectedStreakDay(day.Date, settings, sharedtypes.StreakKindCheckInDays)
+		},
+	)
 	streaks.CurrentHabitDays, streaks.LongestHabitDays = habitStreakFromDays(days, settings)
 	return &streaks
 }
 
-func loadHabitCountsForDate(ctx context.Context, c *core.Context, date string) (due, completed, failed int, err error) {
+func loadHabitCountsForDate(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) (due, completed, failed int, err error) {
 	habits, err := ListHabitsDueForDate(ctx, c, date)
 	if err != nil {
 		return 0, 0, 0, err
@@ -380,7 +439,10 @@ func loadHabitCountsForDate(ctx context.Context, c *core.Context, date string) (
 	return due, completed, failed, nil
 }
 
-func habitStreakFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) (current int, longest int) {
+func habitStreakFromDays(
+	days []sharedtypes.DailyMetricsDay,
+	settings *sharedtypes.CoreSettings,
+) (current int, longest int) {
 	for _, day := range days {
 		if day.HabitDueCount == 0 {
 			continue
@@ -400,7 +462,10 @@ func habitStreakFromDays(days []sharedtypes.DailyMetricsDay, settings *sharedtyp
 	return trailingHabitStreak(days, settings), longest
 }
 
-func trailingHabitStreak(days []sharedtypes.DailyMetricsDay, settings *sharedtypes.CoreSettings) int {
+func trailingHabitStreak(
+	days []sharedtypes.DailyMetricsDay,
+	settings *sharedtypes.CoreSettings,
+) int {
 	streak := 0
 	for i := len(days) - 1; i >= 0; i-- {
 		day := days[i]
@@ -419,7 +484,12 @@ func trailingHabitStreak(days []sharedtypes.DailyMetricsDay, settings *sharedtyp
 	return streak
 }
 
-func ComputeCustomHabitStreaks(history []sharedtypes.HabitCompletion, start string, end string, settings *sharedtypes.CoreSettings) []sharedtypes.CustomHabitStreakSummary {
+func ComputeCustomHabitStreaks(
+	history []sharedtypes.HabitCompletion,
+	start string,
+	end string,
+	settings *sharedtypes.CoreSettings,
+) []sharedtypes.CustomHabitStreakSummary {
 	if settings == nil || len(settings.HabitStreakDefs) == 0 {
 		return nil
 	}
@@ -483,7 +553,10 @@ func ComputeCustomHabitStreaks(history []sharedtypes.HabitCompletion, start stri
 	return results
 }
 
-func customHabitTrailingIncompleteBucketIsOpen(end string, period sharedtypes.HabitStreakPeriod) bool {
+func customHabitTrailingIncompleteBucketIsOpen(
+	end string,
+	period sharedtypes.HabitStreakPeriod,
+) bool {
 	parsed, err := time.Parse("2006-01-02", end)
 	if err != nil {
 		return false
@@ -514,7 +587,11 @@ func customHabitBucketKey(date string, period sharedtypes.HabitStreakPeriod) str
 	}
 }
 
-func customHabitRangeBuckets(start string, end string, period sharedtypes.HabitStreakPeriod) []string {
+func customHabitRangeBuckets(
+	start string,
+	end string,
+	period sharedtypes.HabitStreakPeriod,
+) []string {
 	startTime, err := time.Parse("2006-01-02", start)
 	if err != nil {
 		return nil
@@ -535,7 +612,16 @@ func customHabitRangeBuckets(start string, end string, period sharedtypes.HabitS
 		}
 		return out
 	case sharedtypes.HabitStreakPeriodMonth:
-		cursor := time.Date(startTime.Year(), startTime.Month(), 1, 0, 0, 0, 0, startTime.Location())
+		cursor := time.Date(
+			startTime.Year(),
+			startTime.Month(),
+			1,
+			0,
+			0,
+			0,
+			0,
+			startTime.Location(),
+		)
 		last := time.Date(endTime.Year(), endTime.Month(), 1, 0, 0, 0, 0, endTime.Location())
 		out := []string{}
 		for !cursor.After(last) {
@@ -557,7 +643,8 @@ func startOfISOWeek(value time.Time) time.Time {
 	if weekday == 0 {
 		weekday = 7
 	}
-	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location()).AddDate(0, 0, -(weekday - 1))
+	return time.Date(value.Year(), value.Month(), value.Day(), 0, 0, 0, 0, value.Location()).
+		AddDate(0, 0, -(weekday - 1))
 }
 
 func validateCheckInDate(date string, now string, rejectFuture bool) error {
@@ -604,7 +691,13 @@ func extractISODate(value string) string {
 	return ""
 }
 
-func loadDailyIssueSummariesByDate(ctx context.Context, c *core.Context, start string, end string, rangeSessions []sharedtypes.SessionHistoryEntry) (map[string]sharedtypes.DailyIssueSummary, error) {
+func loadDailyIssueSummariesByDate(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+	rangeSessions []sharedtypes.SessionHistoryEntry,
+) (map[string]sharedtypes.DailyIssueSummary, error) {
 	issues, err := c.Issues.ListByTodoDateRange(ctx, start, end, c.UserID)
 	if err != nil {
 		return nil, err
@@ -712,7 +805,11 @@ func averageOrNil(sum float64, count int) *float64 {
 	return &value
 }
 
-func trailingStreak(days []sharedtypes.DailyMetricsDay, predicate func(sharedtypes.DailyMetricsDay) bool, skip func(sharedtypes.DailyMetricsDay) bool) int {
+func trailingStreak(
+	days []sharedtypes.DailyMetricsDay,
+	predicate func(sharedtypes.DailyMetricsDay) bool,
+	skip func(sharedtypes.DailyMetricsDay) bool,
+) int {
 	total := 0
 	for i := len(days) - 1; i >= 0; i-- {
 		if predicate(days[i]) {
@@ -727,7 +824,11 @@ func trailingStreak(days []sharedtypes.DailyMetricsDay, predicate func(sharedtyp
 	return total
 }
 
-func isProtectedStreakDay(date string, settings *sharedtypes.CoreSettings, kind sharedtypes.StreakKind) bool {
+func isProtectedStreakDay(
+	date string,
+	settings *sharedtypes.CoreSettings,
+	kind sharedtypes.StreakKind,
+) bool {
 	if settings == nil || !freezesStreakKind(settings, kind) {
 		return false
 	}
@@ -876,7 +977,10 @@ func computeBurnout(days []sharedtypes.DailyMetricsDay, idx int) sharedtypes.Bur
 	}
 }
 
-func averageAndTrend(days []sharedtypes.DailyMetricsDay, pick func(sharedtypes.DailyMetricsDay) *int) (avg float64, trend float64, count int) {
+func averageAndTrend(
+	days []sharedtypes.DailyMetricsDay,
+	pick func(sharedtypes.DailyMetricsDay) *int,
+) (avg float64, trend float64, count int) {
 	values := make([]float64, 0, len(days))
 	for _, day := range days {
 		value := pick(day)
@@ -898,7 +1002,9 @@ func averageAndTrend(days []sharedtypes.DailyMetricsDay, pick func(sharedtypes.D
 	return avg, trend, count
 }
 
-func sleepDebtAndRecovery(days []sharedtypes.DailyMetricsDay) (debt float64, recovery float64, count int) {
+func sleepDebtAndRecovery(
+	days []sharedtypes.DailyMetricsDay,
+) (debt float64, recovery float64, count int) {
 	var total float64
 	var recoveryTotal float64
 	for _, day := range days {
@@ -952,19 +1058,27 @@ func breakDebtAndRecovery(days []sharedtypes.DailyMetricsDay) (debt float64, rec
 	return debt, recovery
 }
 
-func moodEnergySignals(days []sharedtypes.DailyMetricsDay) (drag float64, recovery float64, moodCount int, energyCount int) {
-	moodAvg, moodTrend, moodValues := averageAndTrend(days, func(day sharedtypes.DailyMetricsDay) *int {
-		if day.CheckIn == nil {
-			return nil
-		}
-		return &day.CheckIn.Mood
-	})
-	energyAvg, energyTrend, energyValues := averageAndTrend(days, func(day sharedtypes.DailyMetricsDay) *int {
-		if day.CheckIn == nil {
-			return nil
-		}
-		return &day.CheckIn.Energy
-	})
+func moodEnergySignals(
+	days []sharedtypes.DailyMetricsDay,
+) (drag float64, recovery float64, moodCount int, energyCount int) {
+	moodAvg, moodTrend, moodValues := averageAndTrend(
+		days,
+		func(day sharedtypes.DailyMetricsDay) *int {
+			if day.CheckIn == nil {
+				return nil
+			}
+			return &day.CheckIn.Mood
+		},
+	)
+	energyAvg, energyTrend, energyValues := averageAndTrend(
+		days,
+		func(day sharedtypes.DailyMetricsDay) *int {
+			if day.CheckIn == nil {
+				return nil
+			}
+			return &day.CheckIn.Energy
+		},
+	)
 	moodCount = moodValues
 	energyCount = energyValues
 	if moodCount == 0 && energyCount == 0 {

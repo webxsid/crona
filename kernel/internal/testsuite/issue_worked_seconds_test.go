@@ -60,6 +60,9 @@ func TestListAllIssuesIncludesWorkedSeconds(t *testing.T) {
 		t.Fatalf("expected 1 issue, got %d", len(allIssues))
 	}
 	if allIssues[0].WorkedSeconds != 4500 {
-		t.Fatalf("expected worked seconds to survive list-all mapping, got %d", allIssues[0].WorkedSeconds)
+		t.Fatalf(
+			"expected worked seconds to survive list-all mapping, got %d",
+			allIssues[0].WorkedSeconds,
+		)
 	}
 }

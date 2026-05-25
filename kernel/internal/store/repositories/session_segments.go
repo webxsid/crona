@@ -21,7 +21,12 @@ func NewSessionSegmentRepository(db *bun.DB) *SessionSegmentRepository {
 	return &SessionSegmentRepository{db: db}
 }
 
-func (r *SessionSegmentRepository) GetActive(ctx context.Context, userID string, deviceID string, sessionID string) (*sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) GetActive(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+	sessionID string,
+) (*sharedtypes.SessionSegment, error) {
 	var model storemodels.SessionSegmentModel
 	err := r.db.NewSelect().
 		Model(&model).
@@ -40,7 +45,13 @@ func (r *SessionSegmentRepository) GetActive(ctx context.Context, userID string,
 	return segmentFromModel(model), nil
 }
 
-func (r *SessionSegmentRepository) StartSegment(ctx context.Context, userID string, deviceID string, sessionID string, segmentType sharedtypes.SessionSegmentType) (*sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) StartSegment(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+	sessionID string,
+	segmentType sharedtypes.SessionSegmentType,
+) (*sharedtypes.SessionSegment, error) {
 	if err := r.EndActiveSegment(ctx, userID, deviceID, sessionID); err != nil {
 		return nil, err
 	}
@@ -60,7 +71,12 @@ func (r *SessionSegmentRepository) StartSegment(ctx context.Context, userID stri
 	return segmentFromModel(model), nil
 }
 
-func (r *SessionSegmentRepository) EndActiveSegment(ctx context.Context, userID string, deviceID string, sessionID string) error {
+func (r *SessionSegmentRepository) EndActiveSegment(
+	ctx context.Context,
+	userID string,
+	deviceID string,
+	sessionID string,
+) error {
 	_, err := r.db.NewUpdate().
 		Model((*storemodels.SessionSegmentModel)(nil)).
 		Where("user_id = ?", userID).
@@ -72,7 +88,10 @@ func (r *SessionSegmentRepository) EndActiveSegment(ctx context.Context, userID 
 	return err
 }
 
-func (r *SessionSegmentRepository) CreateEnded(ctx context.Context, segment sharedtypes.SessionSegment) (*sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) CreateEnded(
+	ctx context.Context,
+	segment sharedtypes.SessionSegment,
+) (*sharedtypes.SessionSegment, error) {
 	model := storemodels.SessionSegmentModel{
 		ID:                   segment.ID,
 		UserID:               segment.UserID,
@@ -90,7 +109,10 @@ func (r *SessionSegmentRepository) CreateEnded(ctx context.Context, segment shar
 	return segmentFromModel(model), nil
 }
 
-func (r *SessionSegmentRepository) ListBySession(ctx context.Context, sessionID string) ([]sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) ListBySession(
+	ctx context.Context,
+	sessionID string,
+) ([]sharedtypes.SessionSegment, error) {
 	var models []storemodels.SessionSegmentModel
 	if err := r.db.NewSelect().Model(&models).Where("session_id = ?", sessionID).Order("start_time ASC").Scan(ctx); err != nil {
 		return nil, err
@@ -102,7 +124,12 @@ func (r *SessionSegmentRepository) ListBySession(ctx context.Context, sessionID 
 	return out, nil
 }
 
-func (r *SessionSegmentRepository) ListEndedInRange(ctx context.Context, userID string, since string, until string) ([]sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) ListEndedInRange(
+	ctx context.Context,
+	userID string,
+	since string,
+	until string,
+) ([]sharedtypes.SessionSegment, error) {
 	var models []storemodels.SessionSegmentModel
 	if err := r.db.NewSelect().
 		Model(&models).
@@ -121,7 +148,11 @@ func (r *SessionSegmentRepository) ListEndedInRange(ctx context.Context, userID 
 	return out, nil
 }
 
-func (r *SessionSegmentRepository) ListEndedForSessions(ctx context.Context, userID string, sessionIDs []string) ([]sharedtypes.SessionSegment, error) {
+func (r *SessionSegmentRepository) ListEndedForSessions(
+	ctx context.Context,
+	userID string,
+	sessionIDs []string,
+) ([]sharedtypes.SessionSegment, error) {
 	if len(sessionIDs) == 0 {
 		return nil, nil
 	}
@@ -142,7 +173,11 @@ func (r *SessionSegmentRepository) ListEndedForSessions(ctx context.Context, use
 	return out, nil
 }
 
-func (r *SessionSegmentRepository) ApplyElapsedOffset(ctx context.Context, sessionID string, offsetSeconds int) error {
+func (r *SessionSegmentRepository) ApplyElapsedOffset(
+	ctx context.Context,
+	sessionID string,
+	offsetSeconds int,
+) error {
 	if offsetSeconds <= 0 {
 		return nil
 	}
@@ -155,7 +190,10 @@ func (r *SessionSegmentRepository) ApplyElapsedOffset(ctx context.Context, sessi
 	return err
 }
 
-func (r *SessionSegmentRepository) CountWorkSegments(ctx context.Context, sessionID string) (int, error) {
+func (r *SessionSegmentRepository) CountWorkSegments(
+	ctx context.Context,
+	sessionID string,
+) (int, error) {
 	count, err := r.db.NewSelect().
 		Model((*storemodels.SessionSegmentModel)(nil)).
 		Where("session_id = ?", sessionID).

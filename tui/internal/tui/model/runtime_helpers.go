@@ -10,11 +10,14 @@ import (
 )
 
 func (m Model) selfUpdateInstallAvailable() bool {
-	return m.updateStatus != nil && m.updateStatus.InstallAvailable && m.selfUpdateUnsupportedReason() == ""
+	return m.updateStatus != nil && m.updateStatus.InstallAvailable &&
+		m.selfUpdateUnsupportedReason() == ""
 }
 
 func (m Model) selfUpdateUnsupportedReason() string {
-	if m.updateStatus != nil && commands.IsLocalLoopbackUpdateURL(m.updateStatus.InstallScriptURL) && m.isDevMode() {
+	if m.updateStatus != nil &&
+		commands.IsLocalLoopbackUpdateURL(m.updateStatus.InstallScriptURL) &&
+		m.isDevMode() {
 		return ""
 	}
 	if reason := appruntime.NonStandardRuntimeReason(m.currentExecutablePath, config.TUIBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {

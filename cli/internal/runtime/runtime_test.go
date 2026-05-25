@@ -25,7 +25,10 @@ func TestNormalizeKernelInfoPreservesWindowsNamedPipeFields(t *testing.T) {
 		t.Fatalf("expected endpoint to be preserved, got %q", info.Endpoint)
 	}
 	if info.SocketPath != "" {
-		t.Fatalf("expected socket path to stay empty for windows transport, got %q", info.SocketPath)
+		t.Fatalf(
+			"expected socket path to stay empty for windows transport, got %q",
+			info.SocketPath,
+		)
 	}
 }
 

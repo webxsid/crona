@@ -6,6 +6,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
 func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
@@ -34,13 +35,22 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 		for i, def := range state.HabitStreakDefs {
 			prefix := "  "
 			if i == state.HabitStreakCursor {
-				prefix = "▶ "
+				prefix = viewchrome.SelectionCursor + " "
 			}
 			status := "off"
 			if def.Enabled {
 				status = "on"
 			}
-			line := fmt.Sprintf("%s%s  %s  %s  %d/%s  %d habits", prefix, fallback(def.Name, "(unnamed)"), status, habitStreakPeriodLabel(def.Period), max(1, def.RequiredCount), strings.ToLower(habitStreakPeriodLabel(def.Period)), len(def.HabitIDs))
+			line := fmt.Sprintf(
+				"%s%s  %s  %s  %d/%s  %d habits",
+				prefix,
+				fallback(def.Name, "(unnamed)"),
+				status,
+				habitStreakPeriodLabel(def.Period),
+				max(1, def.RequiredCount),
+				strings.ToLower(habitStreakPeriodLabel(def.Period)),
+				len(def.HabitIDs),
+			)
 			if i == state.HabitStreakCursor {
 				rows = append(rows, theme.StyleCursor.Render(line))
 			} else {
@@ -49,12 +59,17 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 		}
 		createLine := "  + Create new streak"
 		if state.HabitStreakCursor == len(state.HabitStreakDefs) {
-			createLine = "▶ + Create new streak"
+			createLine = viewchrome.SelectionCursor + " + Create new streak"
 			rows = append(rows, theme.StyleCursor.Render(createLine))
 		} else {
 			rows = append(rows, theme.StyleNormal.Render(createLine))
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [enter] edit   [n] new   [x] toggle   [d] delete")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [enter] edit   [n] new   [x] toggle   [d] delete",
+		)
 	case 1:
 		rows = append(rows,
 			habitStreakRowLabel(theme, state, 0, "Name"),
@@ -66,7 +81,12 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 			habitStreakRowLabel(theme, state, 2, "Required completions per bucket (daily = 1)"),
 			dialogInputView(state, 1),
 		)
-		rows = appendDialogFooter(theme, state, rows, "[tab] next field   [h/l] period   [enter] next   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[tab] next field   [h/l] period   [enter] next   [esc] cancel",
+		)
 	case 2:
 		rows = append(rows, theme.StyleDim.Render("Select contributing habits"))
 		if len(state.HabitItems) == 0 {
@@ -79,24 +99,43 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 			}
 			line := fmt.Sprintf("%s%s  %s / %s", prefix, item.Name, item.RepoName, item.StreamName)
 			if i == state.HabitStreakCursor {
-				rows = append(rows, theme.StyleCursor.Render("▶ "+line))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
 			} else {
 				rows = append(rows, theme.StyleNormal.Render("  "+line))
 			}
 		}
-		rows = appendDialogFooter(theme, state, rows, "[space] toggle   [a] all   [c] none   [tab] review")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[space] toggle   [a] all   [c] none   [tab] review",
+		)
 	case 3:
-		rows = append(rows,
+		rows = append(
+			rows,
 			theme.StyleDim.Render("Name"),
 			theme.StyleHeader.Render(fallback(state.HabitStreakDraft.Name, "-")),
 			"",
 			theme.StyleDim.Render("Rule"),
-			theme.StyleHeader.Render(fmt.Sprintf("%d+ completions per %s", max(1, state.HabitStreakDraft.RequiredCount), strings.ToLower(habitStreakPeriodLabel(state.HabitStreakDraft.Period)))),
+			theme.StyleHeader.Render(
+				fmt.Sprintf(
+					"%d+ completions per %s",
+					max(1, state.HabitStreakDraft.RequiredCount),
+					strings.ToLower(habitStreakPeriodLabel(state.HabitStreakDraft.Period)),
+				),
+			),
 			"",
 			theme.StyleDim.Render("Habits"),
-			theme.StyleHeader.Render(habitStreakHabitSummary(state.HabitStreakDraft.HabitIDs, state.HabitItems)),
+			theme.StyleHeader.Render(
+				habitStreakHabitSummary(state.HabitStreakDraft.HabitIDs, state.HabitItems),
+			),
 		)
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save streak")+"   [shift+tab] back   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save streak")+"   [shift+tab] back   [esc] cancel",
+		)
 	}
 	return modal(theme, state.Width, 88, theme.ColorCyan, rows)
 }
@@ -113,7 +152,10 @@ func renderHabitStreakPeriodChoice(theme Theme, state controllerpkg.State) strin
 		label := habitStreakPeriodLabel(option)
 		if option == current {
 			if state.FocusIdx == 1 {
-				parts = append(parts, theme.StyleCursor.Render("▶ "+label))
+				parts = append(
+					parts,
+					theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+label),
+				)
 			} else {
 				parts = append(parts, theme.StyleCursor.Render(label))
 			}
@@ -126,7 +168,7 @@ func renderHabitStreakPeriodChoice(theme Theme, state controllerpkg.State) strin
 
 func habitStreakRowLabel(theme Theme, state controllerpkg.State, row int, label string) string {
 	if state.FocusIdx == row {
-		return theme.StyleCursor.Render("▶ " + label)
+		return theme.StyleCursor.Render(viewchrome.SelectionCursor + " " + label)
 	}
 	return theme.StyleDim.Render(label)
 }

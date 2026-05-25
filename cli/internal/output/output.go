@@ -39,12 +39,25 @@ func PrintOK(w io.Writer) error {
 }
 
 func PrintContext(w io.Writer, out sharedtypes.ActiveContext) error {
-	_, err := fmt.Fprintf(w, "repo: %s\nstream: %s\nissue: %s\n", OptionalText(out.RepoName, "-"), OptionalText(out.StreamName, "-"), OptionalText(out.IssueTitle, "-"))
+	_, err := fmt.Fprintf(
+		w,
+		"repo: %s\nstream: %s\nissue: %s\n",
+		OptionalText(out.RepoName, "-"),
+		OptionalText(out.StreamName, "-"),
+		OptionalText(out.IssueTitle, "-"),
+	)
 	return err
 }
 
 func PrintContextInline(w io.Writer, prefix string, out sharedtypes.ActiveContext) error {
-	_, err := fmt.Fprintf(w, "%s: repo=%s stream=%s issue=%s\n", prefix, OptionalText(out.RepoName, "-"), OptionalText(out.StreamName, "-"), OptionalText(out.IssueTitle, "-"))
+	_, err := fmt.Fprintf(
+		w,
+		"%s: repo=%s stream=%s issue=%s\n",
+		prefix,
+		OptionalText(out.RepoName, "-"),
+		OptionalText(out.StreamName, "-"),
+		OptionalText(out.IssueTitle, "-"),
+	)
 	return err
 }
 
@@ -63,12 +76,26 @@ func PrintTimerStatus(w io.Writer, out sharedtypes.TimerState) error {
 	if out.SessionID != nil {
 		session = *out.SessionID
 	}
-	_, err := fmt.Fprintf(w, "state: %s\nsegment: %s\nissue: %s\nsession: %s\nelapsed: %ds\n", out.State, segment, issue, session, out.ElapsedSeconds)
+	_, err := fmt.Fprintf(
+		w,
+		"state: %s\nsegment: %s\nissue: %s\nsession: %s\nelapsed: %ds\n",
+		out.State,
+		segment,
+		issue,
+		session,
+		out.ElapsedSeconds,
+	)
 	return err
 }
 
 func PrintTimerResult(w io.Writer, out sharedtypes.TimerState, message string) error {
-	_, err := fmt.Fprintf(w, "%s\nstate: %s\nelapsed: %ds\n", message, out.State, out.ElapsedSeconds)
+	_, err := fmt.Fprintf(
+		w,
+		"%s\nstate: %s\nelapsed: %ds\n",
+		message,
+		out.State,
+		out.ElapsedSeconds,
+	)
 	return err
 }
 
@@ -78,7 +105,16 @@ func PrintKernelAttach(w io.Writer, info *sharedtypes.KernelInfo, endpoint strin
 }
 
 func PrintKernelInfo(w io.Writer, out sharedtypes.KernelInfo, transport, endpoint string) error {
-	_, err := fmt.Fprintf(w, "pid: %d\ntransport: %s\nendpoint: %s\nenv: %s\nstarted: %s\nscratch: %s\n", out.PID, transport, endpoint, out.Env, out.StartedAt, out.ScratchDir)
+	_, err := fmt.Fprintf(
+		w,
+		"pid: %d\ntransport: %s\nendpoint: %s\nenv: %s\nstarted: %s\nscratch: %s\n",
+		out.PID,
+		transport,
+		endpoint,
+		out.Env,
+		out.StartedAt,
+		out.ScratchDir,
+	)
 	return err
 }
 

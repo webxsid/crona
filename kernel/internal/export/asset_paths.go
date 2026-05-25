@@ -57,10 +57,19 @@ func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte
 			return body, candidate, nil
 		}
 	}
-	return []byte(descriptor.fallback), filepath.Join(paths.BundledAssetsDir, "export", descriptor.bundledPath), nil
+	return []byte(
+			descriptor.fallback,
+		), filepath.Join(
+			paths.BundledAssetsDir,
+			"export",
+			descriptor.bundledPath,
+		), nil
 }
 
-func readLegacyUserAsset(paths runtime.Paths, descriptor assetDescriptor) ([]byte, templateMeta, bool, error) {
+func readLegacyUserAsset(
+	paths runtime.Paths,
+	descriptor assetDescriptor,
+) ([]byte, templateMeta, bool, error) {
 	legacyPath := legacyUserTemplatePath(paths, descriptor)
 	if legacyPath == "" {
 		return nil, templateMeta{}, false, nil

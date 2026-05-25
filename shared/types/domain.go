@@ -197,7 +197,12 @@ const (
 
 func NormalizeIssueSort(value IssueSort) IssueSort {
 	switch value {
-	case IssueSortDueDateAsc, IssueSortDueDateDesc, IssueSortChronologicalAsc, IssueSortChronologicalDesc, IssueSortAlphabeticalAsc, IssueSortAlphabeticalDesc:
+	case IssueSortDueDateAsc,
+		IssueSortDueDateDesc,
+		IssueSortChronologicalAsc,
+		IssueSortChronologicalDesc,
+		IssueSortAlphabeticalAsc,
+		IssueSortAlphabeticalDesc:
 		return value
 	default:
 		return IssueSortPriority
@@ -218,7 +223,12 @@ const (
 
 func NormalizeHabitSort(value HabitSort) HabitSort {
 	switch value {
-	case HabitSortTargetMinutesAsc, HabitSortTargetMinutesDesc, HabitSortChronologicalAsc, HabitSortChronologicalDesc, HabitSortAlphabeticalAsc, HabitSortAlphabeticalDesc:
+	case HabitSortTargetMinutesAsc,
+		HabitSortTargetMinutesDesc,
+		HabitSortChronologicalAsc,
+		HabitSortChronologicalDesc,
+		HabitSortAlphabeticalAsc,
+		HabitSortAlphabeticalDesc:
 		return value
 	default:
 		return HabitSortSchedule
@@ -302,7 +312,10 @@ const (
 
 func NormalizeDateDisplayPreset(value DateDisplayPreset) DateDisplayPreset {
 	switch value {
-	case DateDisplayPresetUS, DateDisplayPresetEurope, DateDisplayPresetLong, DateDisplayPresetCustom:
+	case DateDisplayPresetUS,
+		DateDisplayPresetEurope,
+		DateDisplayPresetLong,
+		DateDisplayPresetCustom:
 		return value
 	default:
 		return DateDisplayPresetISO
@@ -1012,21 +1025,6 @@ type Stash struct {
 type StashConflict struct {
 	IssueID int64   `json:"issueId"`
 	Stashes []Stash `json:"stashes"`
-}
-
-type ScratchPadMeta struct {
-	ID           string `json:"id"`
-	Path         string `json:"path"`
-	Name         string `json:"name"`
-	LastOpenedAt string `json:"lastOpenedAt"`
-	Pinned       bool   `json:"pinned"`
-}
-
-type ScratchPadRead struct {
-	OK      bool            `json:"ok"`
-	Error   *string         `json:"error,omitempty"`
-	Meta    *ScratchPadMeta `json:"meta,omitempty"`
-	Content *string         `json:"content,omitempty"`
 }
 
 type Op struct {

@@ -148,7 +148,9 @@ func RunIssue(args []string, deps Deps) error {
 			return err
 		}
 		if *fromContext {
-			resolvedIssueID, err := contextcmd.ResolveIssueID(contextcmd.Deps{Stdout: deps.Stdout, CallKernel: deps.CallKernel})
+			resolvedIssueID, err := contextcmd.ResolveIssueID(
+				contextcmd.Deps{Stdout: deps.Stdout, CallKernel: deps.CallKernel},
+			)
 			if err != nil {
 				return err
 			}
@@ -181,7 +183,14 @@ func formatStartFocusError(err error) error {
 	}
 	count := len(conflict.Stashes)
 	if count == 1 {
-		return fmt.Errorf("cannot start focus: 1 stash exists for issue #%d; resume or drop the stash before starting a new session", conflict.IssueID)
+		return fmt.Errorf(
+			"cannot start focus: 1 stash exists for issue #%d; resume or drop the stash before starting a new session",
+			conflict.IssueID,
+		)
 	}
-	return fmt.Errorf("cannot start focus: %d stashes exist for issue #%d; resume or drop a stash before starting a new session", count, conflict.IssueID)
+	return fmt.Errorf(
+		"cannot start focus: %d stashes exist for issue #%d; resume or drop a stash before starting a new session",
+		count,
+		conflict.IssueID,
+	)
 }

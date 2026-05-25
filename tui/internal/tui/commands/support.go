@@ -13,7 +13,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func GenerateSupportBundle(c *api.Client, input helperpkg.SupportDiagnosticsInput, window time.Duration) tea.Cmd {
+func GenerateSupportBundle(
+	c *api.Client,
+	input helperpkg.SupportDiagnosticsInput,
+	window time.Duration,
+) tea.Cmd {
 	return func() tea.Msg {
 		now := time.Now().UTC()
 		since := now.Add(-window)
@@ -26,18 +30,37 @@ func GenerateSupportBundle(c *api.Client, input helperpkg.SupportDiagnosticsInpu
 		}
 
 		baseDir := helperpkg.SupportRuntimeBaseDir(input.KernelInfo)
-		tuiErrors, kernelErrors, logErrs := helperpkg.ReadRecentSupportErrorEntries(baseDir, since, now)
+		tuiErrors, kernelErrors, logErrs := helperpkg.ReadRecentSupportErrorEntries(
+			baseDir,
+			since,
+			now,
+		)
 		collectionErrors = append(collectionErrors, logErrs...)
 
-		path, sizeBytes, err := helperpkg.GenerateSupportBundle(baseDir, now, window, input, ops, tuiErrors, kernelErrors, collectionErrors)
+		path, sizeBytes, err := helperpkg.GenerateSupportBundle(
+			baseDir,
+			now,
+			window,
+			input,
+			ops,
+			tuiErrors,
+			kernelErrors,
+			collectionErrors,
+		)
 		if err != nil {
 			logger.Errorf("GenerateSupportBundle write: %v", err)
 			if strings.TrimSpace(baseDir) == "" {
-				return ErrMsg{Err: fmt.Errorf("runtime base directory unavailable for support bundle")}
+				return ErrMsg{
+					Err: fmt.Errorf("runtime base directory unavailable for support bundle"),
+				}
 			}
 			return ErrMsg{Err: err}
 		}
-		return SupportBundleGeneratedMsg{Path: path, SizeBytes: sizeBytes, WindowLabel: helperpkg.SupportRecentWindowLabel(window)}
+		return SupportBundleGeneratedMsg{
+			Path:        path,
+			SizeBytes:   sizeBytes,
+			WindowLabel: helperpkg.SupportRecentWindowLabel(window),
+		}
 	}
 }
 

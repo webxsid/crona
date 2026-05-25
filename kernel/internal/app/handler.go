@@ -32,7 +32,19 @@ type Handler struct {
 	telemetry sharedposthog.Client
 }
 
-func NewHandler(startedAt string, info sharedtypes.KernelInfo, pingDB func(context.Context) error, coreCtx *core.Context, bus *events.Bus, shutdown func(), envMode string, paths runtime.Paths, updater *updatecheck.Service, alerts *notify.Service, telemetry sharedposthog.Client) *Handler {
+func NewHandler(
+	startedAt string,
+	info sharedtypes.KernelInfo,
+	pingDB func(context.Context) error,
+	coreCtx *core.Context,
+	bus *events.Bus,
+	shutdown func(),
+	envMode string,
+	paths runtime.Paths,
+	updater *updatecheck.Service,
+	alerts *notify.Service,
+	telemetry sharedposthog.Client,
+) *Handler {
 	return &Handler{
 		startedAt: startedAt,
 		info:      info,
@@ -219,7 +231,10 @@ func decodeRequiredInt64(raw map[string]json.RawMessage, key string) (int64, err
 	return out, nil
 }
 
-func decodeOptionalStringFromMap(raw map[string]json.RawMessage, key string) (*string, bool, error) {
+func decodeOptionalStringFromMap(
+	raw map[string]json.RawMessage,
+	key string,
+) (*string, bool, error) {
 	value, ok := raw[key]
 	if !ok {
 		return nil, false, nil

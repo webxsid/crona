@@ -136,7 +136,24 @@ func Run(ctx context.Context) (runErr error) {
 		RunningIsBeta:   versionpkg.IsBetaRelease(),
 	}
 
-	server := ipc.NewServer(paths.Transport, paths.Endpoint, NewHandler(startedAt, info, dbStore.Ping, commandCtx, bus, cancel, appEnv.Mode, paths, updater, alerts, telemetry), logger)
+	server := ipc.NewServer(
+		paths.Transport,
+		paths.Endpoint,
+		NewHandler(
+			startedAt,
+			info,
+			dbStore.Ping,
+			commandCtx,
+			bus,
+			cancel,
+			appEnv.Mode,
+			paths,
+			updater,
+			alerts,
+			telemetry,
+		),
+		logger,
+	)
 	timer := corecommands.GetTimerService(commandCtx)
 	if err := timer.RecoverBoundary(runCtx); err != nil {
 		return fmt.Errorf("recover timer boundary: %w", err)

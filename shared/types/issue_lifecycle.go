@@ -6,7 +6,14 @@ func NormalizeIssueStatus(status IssueStatus) IssueStatus {
 		return IssueStatusBacklog
 	case "active":
 		return IssueStatusInProgress
-	case IssueStatusBacklog, IssueStatusPlanned, IssueStatusReady, IssueStatusInProgress, IssueStatusBlocked, IssueStatusInReview, IssueStatusDone, IssueStatusAbandoned:
+	case IssueStatusBacklog,
+		IssueStatusPlanned,
+		IssueStatusReady,
+		IssueStatusInProgress,
+		IssueStatusBlocked,
+		IssueStatusInReview,
+		IssueStatusDone,
+		IssueStatusAbandoned:
 		return status
 	default:
 		return status
@@ -31,15 +38,39 @@ func AllowedIssueStatusTransitions(status IssueStatus) []IssueStatus {
 	case IssueStatusBacklog:
 		return []IssueStatus{IssueStatusPlanned, IssueStatusReady, IssueStatusAbandoned}
 	case IssueStatusPlanned:
-		return []IssueStatus{IssueStatusBacklog, IssueStatusReady, IssueStatusInProgress, IssueStatusBlocked, IssueStatusAbandoned}
+		return []IssueStatus{
+			IssueStatusBacklog,
+			IssueStatusReady,
+			IssueStatusInProgress,
+			IssueStatusBlocked,
+			IssueStatusAbandoned,
+		}
 	case IssueStatusReady:
-		return []IssueStatus{IssueStatusPlanned, IssueStatusInProgress, IssueStatusBlocked, IssueStatusAbandoned}
+		return []IssueStatus{
+			IssueStatusPlanned,
+			IssueStatusInProgress,
+			IssueStatusBlocked,
+			IssueStatusAbandoned,
+		}
 	case IssueStatusInProgress:
-		return []IssueStatus{IssueStatusPlanned, IssueStatusReady, IssueStatusBlocked, IssueStatusInReview, IssueStatusDone, IssueStatusAbandoned}
+		return []IssueStatus{
+			IssueStatusPlanned,
+			IssueStatusReady,
+			IssueStatusBlocked,
+			IssueStatusInReview,
+			IssueStatusDone,
+			IssueStatusAbandoned,
+		}
 	case IssueStatusBlocked:
 		return []IssueStatus{IssueStatusPlanned, IssueStatusReady, IssueStatusAbandoned}
 	case IssueStatusInReview:
-		return []IssueStatus{IssueStatusPlanned, IssueStatusReady, IssueStatusInProgress, IssueStatusDone, IssueStatusAbandoned}
+		return []IssueStatus{
+			IssueStatusPlanned,
+			IssueStatusReady,
+			IssueStatusInProgress,
+			IssueStatusDone,
+			IssueStatusAbandoned,
+		}
 	case IssueStatusDone:
 		return []IssueStatus{IssueStatusPlanned}
 	case IssueStatusAbandoned:

@@ -48,7 +48,6 @@ type Health = sharedtypes.Health
 type Session = sharedtypes.Session
 type SessionHistoryEntry = sharedtypes.SessionHistoryEntry
 type SessionDetail = sharedtypes.SessionDetail
-type ScratchPad = sharedtypes.ScratchPadMeta
 type Stash = sharedtypes.Stash
 type StashConflict = sharedtypes.StashConflict
 type Op = sharedtypes.Op

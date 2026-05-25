@@ -81,14 +81,16 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	Notes           sharedtypes.Patch[string]
 	PinnedDaily     sharedtypes.Patch[bool]
 }) (*sharedtypes.Issue, error) {
-	if updates.Title.Set && updates.Title.Value != nil && strings.TrimSpace(*updates.Title.Value) == "" {
+	if updates.Title.Set && updates.Title.Value != nil &&
+		strings.TrimSpace(*updates.Title.Value) == "" {
 		return nil, errors.New("issue title cannot be empty")
 	}
 	if updates.Title.Set && updates.Title.Value != nil {
 		trimmed := strings.TrimSpace(*updates.Title.Value)
 		updates.Title.Value = &trimmed
 	}
-	if updates.EstimateMinutes.Set && updates.EstimateMinutes.Value != nil && *updates.EstimateMinutes.Value < 0 {
+	if updates.EstimateMinutes.Set && updates.EstimateMinutes.Value != nil &&
+		*updates.EstimateMinutes.Value < 0 {
 		return nil, errors.New("estimate must be >= 0")
 	}
 	if updates.Description.Set {
@@ -133,11 +135,24 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	return updated, nil
 }
 
-func ChangeIssueStatus(ctx context.Context, c *core.Context, issueID int64, nextStatus sharedtypes.IssueStatus, note *string) (*sharedtypes.Issue, error) {
+func ChangeIssueStatus(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	nextStatus sharedtypes.IssueStatus,
+	note *string,
+) (*sharedtypes.Issue, error) {
 	return changeIssueStatus(ctx, c, issueID, nextStatus, note, false)
 }
 
-func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, nextStatus sharedtypes.IssueStatus, note *string, allowWhenActive bool) (*sharedtypes.Issue, error) {
+func changeIssueStatus(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	nextStatus sharedtypes.IssueStatus,
+	note *string,
+	allowWhenActive bool,
+) (*sharedtypes.Issue, error) {
 	issue, err := c.Issues.GetByID(ctx, issueID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -157,10 +172,12 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 	if !sharedtypes.IsValidIssueTransition(currentStatus, nextStatus) {
 		return nil, errors.New("invalid status transition")
 	}
-	if nextStatus == sharedtypes.IssueStatusBlocked && (note == nil || strings.TrimSpace(*note) == "") {
+	if nextStatus == sharedtypes.IssueStatusBlocked &&
+		(note == nil || strings.TrimSpace(*note) == "") {
 		return nil, errors.New("blocked status requires a blocker note")
 	}
-	if nextStatus == sharedtypes.IssueStatusAbandoned && (note == nil || strings.TrimSpace(*note) == "") {
+	if nextStatus == sharedtypes.IssueStatusAbandoned &&
+		(note == nil || strings.TrimSpace(*note) == "") {
 		return nil, errors.New("abandoned status requires a reason")
 	}
 
@@ -232,12 +249,18 @@ func changeIssueStatus(ctx context.Context, c *core.Context, issueID int64, next
 	return updated, nil
 }
 
-func appendIssueStatusNote(existing *string, now string, from, to sharedtypes.IssueStatus, note *string) *string {
+func appendIssueStatusNote(
+	existing *string,
+	now string,
+	from, to sharedtypes.IssueStatus,
+	note *string,
+) *string {
 	trimmedNote := ""
 	if note != nil {
 		trimmedNote = strings.TrimSpace(*note)
 	}
-	if trimmedNote == "" && to != sharedtypes.IssueStatusBlocked && to != sharedtypes.IssueStatusInReview {
+	if trimmedNote == "" && to != sharedtypes.IssueStatusBlocked &&
+		to != sharedtypes.IssueStatusInReview {
 		return existing
 	}
 
@@ -291,7 +314,11 @@ func RestoreIssue(ctx context.Context, c *core.Context, issueID int64) error {
 	})
 }
 
-func ListIssuesByStream(ctx context.Context, c *core.Context, streamID int64) ([]sharedtypes.Issue, error) {
+func ListIssuesByStream(
+	ctx context.Context,
+	c *core.Context,
+	streamID int64,
+) ([]sharedtypes.Issue, error) {
 	issues, err := c.Issues.ListByStream(ctx, streamID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -309,7 +336,12 @@ func ListAllIssues(ctx context.Context, c *core.Context) ([]sharedtypes.IssueWit
 	return issues, nil
 }
 
-func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, todoForDate string) (*sharedtypes.Issue, error) {
+func MarkIssueTodoForDate(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+	todoForDate string,
+) (*sharedtypes.Issue, error) {
 	if err := ensureDailyPlanDate(todoForDate); err != nil {
 		return nil, err
 	}
@@ -341,7 +373,10 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]
 	}{
-		Status:      sharedtypes.Patch[sharedtypes.IssueStatus]{Set: nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status), Value: &nextStatus},
+		Status: sharedtypes.Patch[sharedtypes.IssueStatus]{
+			Set:   nextStatus != sharedtypes.NormalizeIssueStatus(issue.Status),
+			Value: &nextStatus,
+		},
 		TodoForDate: sharedtypes.Patch[string]{Set: true, Value: &todoForDate},
 	})
 	if err != nil {
@@ -358,7 +393,12 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 		if err != nil {
 			return nil, err
 		}
-		baselineDate, currentPlannedDate, postponeCount, maxDelayedDays = nextDailyPlanChainState(previousEntry, previousDate, todoForDate, settings)
+		baselineDate, currentPlannedDate, postponeCount, maxDelayedDays = nextDailyPlanChainState(
+			previousEntry,
+			previousDate,
+			todoForDate,
+			settings,
+		)
 		if previousEntry != nil {
 			if err := c.DailyPlans.UpdateChainState(ctx, previousEntry.ID, now, baselineDate, currentPlannedDate, postponeCount, maxDelayedDays); err != nil {
 				return nil, err
@@ -389,7 +429,11 @@ func MarkIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64, t
 	return updated, nil
 }
 
-func MarkIssueTodoForToday(ctx context.Context, c *core.Context, issueID int64) (*sharedtypes.Issue, error) {
+func MarkIssueTodoForToday(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+) (*sharedtypes.Issue, error) {
 	today := strings.Split(c.Now(), "T")[0]
 	if today == "" {
 		return nil, errors.New("invalid date")
@@ -397,7 +441,11 @@ func MarkIssueTodoForToday(ctx context.Context, c *core.Context, issueID int64) 
 	return MarkIssueTodoForDate(ctx, c, issueID, today)
 }
 
-func ClearIssueTodoForDate(ctx context.Context, c *core.Context, issueID int64) (*sharedtypes.Issue, error) {
+func ClearIssueTodoForDate(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+) (*sharedtypes.Issue, error) {
 	issue, err := c.Issues.GetByID(ctx, issueID, c.UserID)
 	if err != nil {
 		return nil, err
@@ -466,7 +514,11 @@ func ClearTodayTodos(ctx context.Context, c *core.Context) error {
 	return nil
 }
 
-func ComputeDailyIssueSummaryForDate(ctx context.Context, c *core.Context, date string) (sharedtypes.DailyIssueSummary, error) {
+func ComputeDailyIssueSummaryForDate(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) (sharedtypes.DailyIssueSummary, error) {
 	if date == "" {
 		return sharedtypes.DailyIssueSummary{}, errors.New("invalid date")
 	}
@@ -499,7 +551,10 @@ func ComputeDailyIssueSummaryForDate(ctx context.Context, c *core.Context, date 
 	return sharedtypes.DailyIssueSummary{Date: date}, nil
 }
 
-func ComputeDailyIssueSummaryForToday(ctx context.Context, c *core.Context) (sharedtypes.DailyIssueSummary, error) {
+func ComputeDailyIssueSummaryForToday(
+	ctx context.Context,
+	c *core.Context,
+) (sharedtypes.DailyIssueSummary, error) {
 	today := strings.Split(c.Now(), "T")[0]
 	if today == "" {
 		return sharedtypes.DailyIssueSummary{}, errors.New("invalid date")

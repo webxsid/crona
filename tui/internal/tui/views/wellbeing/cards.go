@@ -22,16 +22,46 @@ func cards(theme types.Theme, state types.ContentState, width int) []string {
 
 func compactCards(theme types.Theme, state types.ContentState) []string {
 	return []string{
-		fmt.Sprintf("%s  %s   %s  %s", theme.StyleHeader.Render("Mood"), label(LabelTypeMood, state), theme.StyleHeader.Render("Energy"), label(LabelTypeEnergy, state)),
-		fmt.Sprintf("%s  %s   %s  %s", theme.StyleHeader.Render("Sleep"), label(LabelTypeSleep, state), theme.StyleHeader.Render("Worked"), label(LabelTypeWorked, state)),
+		fmt.Sprintf(
+			"%s  %s   %s  %s",
+			theme.StyleHeader.Render("Mood"),
+			label(LabelTypeMood, state),
+			theme.StyleHeader.Render("Energy"),
+			label(LabelTypeEnergy, state),
+		),
+		fmt.Sprintf(
+			"%s  %s   %s  %s",
+			theme.StyleHeader.Render("Sleep"),
+			label(LabelTypeSleep, state),
+			theme.StyleHeader.Render("Worked"),
+			label(LabelTypeWorked, state),
+		),
 	}
 }
 
 func trendCards(theme types.Theme, state types.ContentState) []string {
 	return []string{
-		fmt.Sprintf("%s  %d   %s  %d", theme.StyleHeader.Render("Days"), state.MetricsRollup.Days, theme.StyleHeader.Render("Check-ins"), state.MetricsRollup.CheckInDays),
-		fmt.Sprintf("%s  %d   %s  %s", theme.StyleHeader.Render("Focus Days"), state.MetricsRollup.FocusDays, theme.StyleHeader.Render("Worked"), viewhelpers.FormatClockText(state.MetricsRollup.WorkedSeconds)),
-		fmt.Sprintf("%s  %s   %s  %d", theme.StyleHeader.Render("Rest"), viewhelpers.FormatClockText(state.MetricsRollup.RestSeconds), theme.StyleHeader.Render("Sessions"), state.MetricsRollup.SessionCount),
+		fmt.Sprintf(
+			"%s  %d   %s  %d",
+			theme.StyleHeader.Render("Days"),
+			state.MetricsRollup.Days,
+			theme.StyleHeader.Render("Check-ins"),
+			state.MetricsRollup.CheckInDays,
+		),
+		fmt.Sprintf(
+			"%s  %d   %s  %s",
+			theme.StyleHeader.Render("Focus Days"),
+			state.MetricsRollup.FocusDays,
+			theme.StyleHeader.Render("Worked"),
+			viewhelpers.FormatClockText(state.MetricsRollup.WorkedSeconds),
+		),
+		fmt.Sprintf(
+			"%s  %s   %s  %d",
+			theme.StyleHeader.Render("Rest"),
+			viewhelpers.FormatClockText(state.MetricsRollup.RestSeconds),
+			theme.StyleHeader.Render("Sessions"),
+			state.MetricsRollup.SessionCount,
+		),
 	}
 }
 

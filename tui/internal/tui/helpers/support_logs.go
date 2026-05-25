@@ -78,7 +78,14 @@ type SupportCollectionMeta struct {
 	CollectionWarnings []string `json:"collectionWarnings,omitempty"`
 }
 
-func GenerateSupportBundle(baseDir string, now time.Time, window time.Duration, input SupportDiagnosticsInput, ops []api.Op, tuiErrors, kernelErrors, collectionErrors []string) (string, int64, error) {
+func GenerateSupportBundle(
+	baseDir string,
+	now time.Time,
+	window time.Duration,
+	input SupportDiagnosticsInput,
+	ops []api.Op,
+	tuiErrors, kernelErrors, collectionErrors []string,
+) (string, int64, error) {
 	if strings.TrimSpace(baseDir) == "" {
 		return "", 0, os.ErrNotExist
 	}
@@ -115,7 +122,10 @@ func GenerateSupportBundle(baseDir string, now time.Time, window time.Duration, 
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", 0, err
 	}
-	path := filepath.Join(dir, fmt.Sprintf("support-bundle-%s.zip", now.UTC().Format("20060102T150405Z")))
+	path := filepath.Join(
+		dir,
+		fmt.Sprintf("support-bundle-%s.zip", now.UTC().Format("20060102T150405Z")),
+	)
 
 	var archive bytes.Buffer
 	zw := zip.NewWriter(&archive)
@@ -147,7 +157,10 @@ func GenerateSupportBundle(baseDir string, now time.Time, window time.Duration, 
 	return path, info.Size(), nil
 }
 
-func ReadRecentSupportErrorEntries(baseDir string, since, until time.Time) (tuiErrors []string, kernelErrors []string, errs []string) {
+func ReadRecentSupportErrorEntries(
+	baseDir string,
+	since, until time.Time,
+) (tuiErrors []string, kernelErrors []string, errs []string) {
 	if strings.TrimSpace(baseDir) == "" {
 		return nil, nil, []string{"runtime base directory unavailable"}
 	}

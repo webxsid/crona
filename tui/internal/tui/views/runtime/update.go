@@ -13,7 +13,8 @@ func ShouldShowUpdatesView(status *api.UpdateStatus) bool {
 	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
 		return false
 	}
-	return strings.TrimSpace(status.LatestVersion) != "" && strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
+	return strings.TrimSpace(status.LatestVersion) != "" &&
+		strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
 }
 
 func WrapMultilineBlock(value string, width int) []string {

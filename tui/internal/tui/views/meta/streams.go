@@ -6,7 +6,12 @@ import (
 	types "crona/tui/internal/tui/views/types"
 )
 
-func renderStreams(theme types.Theme, state types.ContentState, width, height int, emptyText string) string {
+func renderStreams(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	emptyText string,
+) string {
 	return viewchrome.RenderSimplePaneWithActions(
 		theme,
 		"Streams [2]",

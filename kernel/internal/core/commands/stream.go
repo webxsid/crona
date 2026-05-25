@@ -123,7 +123,11 @@ func DeleteStream(ctx context.Context, c *core.Context, streamID int64) error {
 	return nil
 }
 
-func ListStreamsByRepo(ctx context.Context, c *core.Context, repoID int64) ([]sharedtypes.Stream, error) {
+func ListStreamsByRepo(
+	ctx context.Context,
+	c *core.Context,
+	repoID int64,
+) ([]sharedtypes.Stream, error) {
 	streams, err := c.Streams.ListByRepo(ctx, repoID, c.UserID)
 	if err != nil {
 		return nil, err

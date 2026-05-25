@@ -58,9 +58,38 @@ func compactDefaultState(height int) views.ContentState {
 		},
 		DefaultIssueSection: "open",
 		DefaultIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate1, TodoForDate: &today}, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 2, Title: "Improve install docs for Linux", Status: "planned", EstimateMinutes: &estimate2, TodoForDate: &today}, RepoName: "OSS", StreamName: "cli"},
-			{Issue: api.Issue{ID: 3, Title: "Research standing desk options", Status: "abandoned", EstimateMinutes: &estimate3}, RepoName: "Personal", StreamName: "home"},
+			{
+				Issue: api.Issue{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate1,
+					TodoForDate:     &today,
+				},
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              2,
+					Title:           "Improve install docs for Linux",
+					Status:          "planned",
+					EstimateMinutes: &estimate2,
+					TodoForDate:     &today,
+				},
+				RepoName:   "OSS",
+				StreamName: "cli",
+			},
+			{
+				Issue: api.Issue{
+					ID:              3,
+					Title:           "Research standing desk options",
+					Status:          "abandoned",
+					EstimateMinutes: &estimate3,
+				},
+				RepoName:   "Personal",
+				StreamName: "home",
+			},
 		},
 		Context: &api.ActiveContext{},
 	}
@@ -85,9 +114,29 @@ func compactWellbeingState(height int) views.ContentState {
 				DelayedIssueCount:    1,
 			},
 			Entries: []api.DailyPlanEntry{
-				{ID: "1", Date: "2026-03-19", IssueID: 1, Status: "completed", CommittedAt: "2026-03-19T08:00:00Z"},
-				{ID: "2", Date: "2026-03-19", IssueID: 2, Status: "failed", CommittedAt: "2026-03-19T08:00:00Z", FailureReason: dailyPlanFailureReasonPtr("moved")},
-				{ID: "3", Date: "2026-03-19", IssueID: 3, Status: "planned", CommittedAt: "2026-03-19T08:00:00Z", PendingFailureAt: strPtr("2026-03-19T10:00:00Z")},
+				{
+					ID:          "1",
+					Date:        "2026-03-19",
+					IssueID:     1,
+					Status:      "completed",
+					CommittedAt: "2026-03-19T08:00:00Z",
+				},
+				{
+					ID:            "2",
+					Date:          "2026-03-19",
+					IssueID:       2,
+					Status:        "failed",
+					CommittedAt:   "2026-03-19T08:00:00Z",
+					FailureReason: dailyPlanFailureReasonPtr("moved"),
+				},
+				{
+					ID:               "3",
+					Date:             "2026-03-19",
+					IssueID:          3,
+					Status:           "planned",
+					CommittedAt:      "2026-03-19T08:00:00Z",
+					PendingFailureAt: strPtr("2026-03-19T10:00:00Z"),
+				},
 			},
 		},
 		MetricsRollup: &api.MetricsRollup{
@@ -151,7 +200,8 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "Metrics Window") || !strings.Contains(plain, "Days  7") {
 		t.Fatalf("expected compact metrics block in wellbeing view")
 	}
-	if !strings.Contains(plain, "Accountability") || !strings.Contains(plain, "Planned 3  Completed 1  Failed 1  Pending 1") {
+	if !strings.Contains(plain, "Accountability") ||
+		!strings.Contains(plain, "Planned 3  Completed 1  Failed 1  Pending 1") {
 		t.Fatalf("expected compact accountability summary in wellbeing view")
 	}
 	if got := lipgloss.Height(rendered); got > height {

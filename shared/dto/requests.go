@@ -337,27 +337,6 @@ type SwitchIssueRequest struct {
 	IssueID int64 `json:"issueId"`
 }
 
-type ListScratchpadsQuery struct {
-	PinnedOnly *bool `json:"pinnedOnly,omitempty"`
-}
-
-type RegisterScratchpadRequest struct {
-	ID           *string `json:"id,omitempty"`
-	Path         string  `json:"path"`
-	Name         string  `json:"name"`
-	LastOpenedAt *string `json:"lastOpenedAt,omitempty"`
-	Pinned       *bool   `json:"pinned,omitempty"`
-}
-
-type PinScratchpadRequest struct {
-	ID     string `json:"id"`
-	Pinned bool   `json:"pinned"`
-}
-
-type ScratchpadIDRequest struct {
-	ID string `json:"id"`
-}
-
 type CreateStashRequest struct {
 	StashNote *string `json:"stashNote,omitempty"`
 }

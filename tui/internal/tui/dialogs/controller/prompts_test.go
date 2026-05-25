@@ -38,14 +38,25 @@ func TestIssueDialogPromptsRespectUnicodeMode(t *testing.T) {
 }
 
 func TestManualSessionPromptsRespectASCIIMode(t *testing.T) {
-	state := OpenManualSession(State{PromptGlyphMode: sharedtypes.PromptGlyphModeASCII}, 42, "Fix prompts", nil, "2026-04-30")
+	state := OpenManualSession(
+		State{PromptGlyphMode: sharedtypes.PromptGlyphModeASCII},
+		42,
+		"Fix prompts",
+		nil,
+		"2026-04-30",
+	)
 
 	if got := state.Inputs[1].Prompt; got != dialogDatePromptASCII {
 		t.Fatalf("expected manual session date prompt %q, got %q", dialogDatePromptASCII, got)
 	}
 	for _, idx := range []int{2, 3, 4, 5} {
 		if got := state.Inputs[idx].Prompt; got != dialogTimePromptASCII {
-			t.Fatalf("expected manual session input %d prompt %q, got %q", idx, dialogTimePromptASCII, got)
+			t.Fatalf(
+				"expected manual session input %d prompt %q, got %q",
+				idx,
+				dialogTimePromptASCII,
+				got,
+			)
 		}
 	}
 }
@@ -59,7 +70,12 @@ func TestAlertReminderTimePromptUsesConfiguredGlyphs(t *testing.T) {
 }
 
 func TestRenderSelectorShowsValueMarker(t *testing.T) {
-	rendered := renderSelector(Theme{}, State{PromptGlyphMode: sharedtypes.PromptGlyphModeASCII}, "Work", false)
+	rendered := renderSelector(
+		Theme{},
+		State{PromptGlyphMode: sharedtypes.PromptGlyphModeASCII},
+		"Work",
+		false,
+	)
 	if rendered != "[ > Work ]" {
 		t.Fatalf("expected selector output with value marker, got %q", rendered)
 	}

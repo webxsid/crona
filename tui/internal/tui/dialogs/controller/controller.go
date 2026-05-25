@@ -195,26 +195,65 @@ func ToggleEndSessionAdvanced(state State) State {
 	return state
 }
 
-func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func Update(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch state.Kind {
 	case "create_repo":
-		return updateNameDescription(state, msg, "Repo name is required", func(name string, description *string) *Action {
-			return &Action{Kind: "create_repo", Name: name, Description: description}
-		})
+		return updateNameDescription(
+			state,
+			msg,
+			"Repo name is required",
+			func(name string, description *string) *Action {
+				return &Action{Kind: "create_repo", Name: name, Description: description}
+			},
+		)
 	case "edit_repo":
-		return updateNameDescription(state, msg, "Repo name is required", func(name string, description *string) *Action {
-			return &Action{Kind: "edit_repo", RepoID: state.RepoID, Name: name, Description: description}
-		})
+		return updateNameDescription(
+			state,
+			msg,
+			"Repo name is required",
+			func(name string, description *string) *Action {
+				return &Action{
+					Kind:        "edit_repo",
+					RepoID:      state.RepoID,
+					Name:        name,
+					Description: description,
+				}
+			},
+		)
 	case "create_stream":
-		return updateNameDescription(state, msg, "Stream name is required", func(name string, description *string) *Action {
-			return &Action{Kind: "create_stream", RepoID: state.RepoID, Name: name, Description: description}
-		})
+		return updateNameDescription(
+			state,
+			msg,
+			"Stream name is required",
+			func(name string, description *string) *Action {
+				return &Action{
+					Kind:        "create_stream",
+					RepoID:      state.RepoID,
+					Name:        name,
+					Description: description,
+				}
+			},
+		)
 	case "edit_stream":
-		return updateNameDescription(state, msg, "Stream name is required", func(name string, description *string) *Action {
-			return &Action{Kind: "edit_stream", RepoID: state.RepoID, StreamID: state.StreamID, Name: name, Description: description}
-		})
-	case "create_scratchpad":
-		return updateCreateScratchpad(state, msg)
+		return updateNameDescription(
+			state,
+			msg,
+			"Stream name is required",
+			func(name string, description *string) *Action {
+				return &Action{
+					Kind:        "edit_stream",
+					RepoID:      state.RepoID,
+					StreamID:    state.StreamID,
+					Name:        name,
+					Description: description,
+				}
+			},
+		)
 	case "confirm_delete":
 		return updateConfirmDelete(state, msg)
 	case "confirm_wipe":
@@ -262,16 +301,30 @@ func Update(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) 
 	case "export_calendar_repo":
 		return updateExportCalendarRepo(state, msg)
 	case "edit_export_reports_dir":
-		return updateSingleInput(state, msg, "Reports directory is required", func(value string) *Action {
-			return &Action{Kind: "set_export_reports_dir", Path: value}
-		})
+		return updateSingleInput(
+			state,
+			msg,
+			"Reports directory is required",
+			func(value string) *Action {
+				return &Action{Kind: "set_export_reports_dir", Path: value}
+			},
+		)
 	case "edit_export_ics_dir":
-		return updateSingleInput(state, msg, "ICS export directory is required", func(value string) *Action {
-			return &Action{Kind: "set_export_ics_dir", Path: value}
-		})
+		return updateSingleInput(
+			state,
+			msg,
+			"ICS export directory is required",
+			func(value string) *Action {
+				return &Action{Kind: "set_export_ics_dir", Path: value}
+			},
+		)
 	case "edit_date_display_format":
 		return updateSingleInput(state, msg, "Date format is required", func(value string) *Action {
-			return &Action{Kind: "patch_setting", SettingKey: sharedtypes.CoreSettingsKeyDateDisplayFormat, Path: value}
+			return &Action{
+				Kind:       "patch_setting",
+				SettingKey: sharedtypes.CoreSettingsKeyDateDisplayFormat,
+				Path:       value,
+			}
 		})
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
@@ -340,7 +393,12 @@ func updateStashList(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Ac
 	return state, nil, ""
 }
 
-func updateIssueStatus(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateIssueStatus(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc", "q":
 		return Close(state), nil, ""
@@ -353,27 +411,67 @@ func updateIssueStatus(state State, ctx UpdateContext, currentDate string, msg t
 			state.StatusCursor--
 		}
 	case "enter":
-		if !ctx.HasSelectedIssue || len(state.StatusItems) == 0 || state.StatusCursor < 0 || state.StatusCursor >= len(state.StatusItems) {
+		if !ctx.HasSelectedIssue || len(state.StatusItems) == 0 || state.StatusCursor < 0 ||
+			state.StatusCursor >= len(state.StatusItems) {
 			return state, nil, ""
 		}
 		status := string(state.StatusItems[state.StatusCursor])
 		switch status {
 		case "blocked":
-			return OpenIssueStatusNote(state, ctx.SelectedIssueID, ctx.SelectedStreamID, status, "Blocker reason", true), nil, ""
+			return OpenIssueStatusNote(
+				state,
+				ctx.SelectedIssueID,
+				ctx.SelectedStreamID,
+				status,
+				"Blocker reason",
+				true,
+			), nil, ""
 		case "in_review":
-			return OpenIssueStatusNote(state, ctx.SelectedIssueID, ctx.SelectedStreamID, status, "Review note (optional)", false), nil, ""
+			return OpenIssueStatusNote(
+				state,
+				ctx.SelectedIssueID,
+				ctx.SelectedStreamID,
+				status,
+				"Review note (optional)",
+				false,
+			), nil, ""
 		case "done":
-			return OpenIssueStatusNote(state, ctx.SelectedIssueID, ctx.SelectedStreamID, status, "Completion note (optional)", false), nil, ""
+			return OpenIssueStatusNote(
+				state,
+				ctx.SelectedIssueID,
+				ctx.SelectedStreamID,
+				status,
+				"Completion note (optional)",
+				false,
+			), nil, ""
 		case "abandoned":
-			return OpenIssueStatusNote(state, ctx.SelectedIssueID, ctx.SelectedStreamID, status, "Abandon reason", true), nil, ""
+			return OpenIssueStatusNote(
+				state,
+				ctx.SelectedIssueID,
+				ctx.SelectedStreamID,
+				status,
+				"Abandon reason",
+				true,
+			), nil, ""
 		default:
-			return Close(state), &Action{Kind: "change_issue_status", IssueID: ctx.SelectedIssueID, StreamID: ctx.SelectedStreamID, Status: status}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "change_issue_status",
+					IssueID:  ctx.SelectedIssueID,
+					StreamID: ctx.SelectedStreamID,
+					Status:   status,
+				}, ""
 		}
 	}
 	return state, nil, ""
 }
 
-func updateIssueStatusNote(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateIssueStatusNote(
+	state State,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -383,7 +481,15 @@ func updateIssueStatusNote(state State, currentDate string, msg tea.KeyMsg) (Sta
 			if state.StatusRequired && note == nil {
 				return state, nil, state.StatusLabel + " is required"
 			}
-			return Close(state), &Action{Kind: "change_issue_status", IssueID: state.IssueID, StreamID: state.StreamID, Status: state.IssueStatus, Note: note}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "change_issue_status",
+					IssueID:  state.IssueID,
+					StreamID: state.StreamID,
+					Status:   state.IssueStatus,
+					Note:     note,
+				}, ""
 		}
 	}
 	var cmd tea.Cmd
@@ -392,7 +498,12 @@ func updateIssueStatusNote(state State, currentDate string, msg tea.KeyMsg) (Sta
 	return clearDialogError(state), nil, ""
 }
 
-func updateSessionMessage(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateSessionMessage(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -418,7 +529,11 @@ func updateSessionMessage(state State, ctx UpdateContext, currentDate string, ms
 				if !ctx.HasActiveIssue {
 					return state, nil, "Active issue metadata unavailable"
 				}
-				return state, &Action{Kind: "end_session", StreamID: ctx.ActiveIssueStream, Payload: payload}, ""
+				return state, &Action{
+					Kind:     "end_session",
+					StreamID: ctx.ActiveIssueStream,
+					Payload:  payload,
+				}, ""
 			}
 			return state, &Action{Kind: "stash_session", Note: payload.CommitMessage}, ""
 		}
@@ -429,7 +544,12 @@ func updateSessionMessage(state State, ctx UpdateContext, currentDate string, ms
 	return clearDialogError(state), nil, ""
 }
 
-func updateIssueSessionTransition(state State, ctx UpdateContext, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateIssueSessionTransition(
+	state State,
+	ctx UpdateContext,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -439,7 +559,15 @@ func updateIssueSessionTransition(state State, ctx UpdateContext, currentDate st
 		}
 	case "y", "Y":
 		if state.IssueStatus != "done" && state.IssueStatus != "abandoned" {
-			return Close(state), &Action{Kind: "change_issue_status_and_end_session", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, Status: state.IssueStatus, Payload: shareddto.EndSessionRequest{}}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "change_issue_status_and_end_session",
+					IssueID:  state.IssueID,
+					StreamID: ctx.ActiveIssueStream,
+					Status:   state.IssueStatus,
+					Payload:  shareddto.EndSessionRequest{},
+				}, ""
 		}
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
@@ -450,7 +578,16 @@ func updateIssueSessionTransition(state State, ctx UpdateContext, currentDate st
 			if state.IssueStatus == "abandoned" && note == nil {
 				return state, nil, "Abandon reason is required"
 			}
-			return Close(state), &Action{Kind: "change_issue_status_and_end_session", IssueID: state.IssueID, StreamID: ctx.ActiveIssueStream, Status: state.IssueStatus, Note: note, Payload: shareddto.EndSessionRequest{CommitMessage: note}}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "change_issue_status_and_end_session",
+					IssueID:  state.IssueID,
+					StreamID: ctx.ActiveIssueStream,
+					Status:   state.IssueStatus,
+					Note:     note,
+					Payload:  shareddto.EndSessionRequest{CommitMessage: note},
+				}, ""
 		}
 	}
 	if (state.IssueStatus == "done" || state.IssueStatus == "abandoned") && len(state.Inputs) > 0 {
@@ -517,9 +654,14 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 	case "esc":
 		return Close(state), nil, ""
 	case "tab", "shift+tab", "down", "up":
-		if (msg.String() == "down" || msg.String() == "up") && (state.FocusIdx == 0 || state.FocusIdx == 1) {
+		if (msg.String() == "down" || msg.String() == "up") &&
+			(state.FocusIdx == 0 || state.FocusIdx == 1) {
 			if state.FocusIdx == 0 {
-				state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), ternaryDir(msg.String()))
+				state.RepoIndex = ShiftSelection(
+					state.RepoIndex,
+					len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+					ternaryDir(msg.String()),
+				)
 				state.StreamIndex = 0
 			} else {
 				state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), ternaryDir(msg.String()))
@@ -531,27 +673,69 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 		return clearDialogError(state), nil, ""
 	case "left":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), -1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+				-1,
+			)
 			state.StreamIndex = 0
 			return clearDialogError(state), nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), -1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					DefaultStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				-1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 	case "right":
 		if state.FocusIdx == 0 {
-			state.RepoIndex = ShiftSelection(state.RepoIndex, len(DefaultRepoOptions(state.Inputs, ctx.Repos)), 1)
+			state.RepoIndex = ShiftSelection(
+				state.RepoIndex,
+				len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
+				1,
+			)
 			state.StreamIndex = 0
 			return clearDialogError(state), nil, ""
 		}
 		if state.FocusIdx == 1 {
-			state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), 1)
+			state.StreamIndex = ShiftSelection(
+				state.StreamIndex,
+				len(
+					DefaultStreamOptions(
+						state.Inputs,
+						state.RepoIndex,
+						ctx.Repos,
+						ctx.AllIssues,
+						ctx.Streams,
+						ctx.Context,
+					),
+				),
+				1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 	}
 	if isDialogSubmitKey(state, msg.String()) {
-		repoName, streamName := DefaultIssueDialogNames(state.Inputs, state.RepoIndex, state.StreamIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
+		repoName, streamName := DefaultIssueDialogNames(
+			state.Inputs,
+			state.RepoIndex,
+			state.StreamIndex,
+			ctx.Repos,
+			ctx.AllIssues,
+			ctx.Streams,
+			ctx.Context,
+		)
 		name := strings.TrimSpace(state.Inputs[2].Value())
 		if repoName == "" || streamName == "" || name == "" {
 			return state, nil, "Repo, stream, and habit name are required"

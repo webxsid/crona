@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
 func renderSessionDialog(theme Theme, state controllerpkg.State) string {
@@ -15,19 +16,31 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		} else {
 			for i, stash := range state.Stashes {
 				if i == state.StashCursor {
-					rows = append(rows, theme.StyleCursor.Render("▶ "+stash.Label))
+					rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+stash.Label))
 				} else {
 					rows = append(rows, theme.StyleNormal.Render("  "+stash.Label))
 				}
 				rows = append(rows, theme.StyleDim.Render("  "+stash.Meta))
 			}
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] pop   [x] drop   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[j/k] move   [enter] pop   [x] drop   [esc] cancel",
+		)
 		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
 	case "end_session", "stash_session":
 		title := "End Session"
 		hint := dialogSubmitHint(state, "confirm") + "   [ctrl+e] details   [esc] cancel"
-		labels := []string{"Commit message", "Worked on", "Outcome", "Next step", "Blockers", "Links"}
+		labels := []string{
+			"Commit message",
+			"Worked on",
+			"Outcome",
+			"Next step",
+			"Blockers",
+			"Links",
+		}
 		if state.Kind == "stash_session" {
 			title = "Stash Session"
 			hint = dialogSubmitHint(state, "confirm") + "   [esc] cancel"
@@ -46,7 +59,12 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleDim.Render("Commit message"),
 			state.Inputs[0].View(),
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [esc] cancel")
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "save")+"   [esc] cancel",
+		)
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "manual_session":
 		rows := []string{theme.StylePaneTitle.Render("Log Session")}
@@ -56,11 +74,22 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 				label += "  " + state.ViewName
 			}
 			if state.IssueEstimateMins != nil && *state.IssueEstimateMins > 0 {
-				label += fmt.Sprintf("  · estimate %s", controllerpkg.FormatDurationMinutesInput(state.IssueEstimateMins))
+				label += fmt.Sprintf(
+					"  · estimate %s",
+					controllerpkg.FormatDurationMinutesInput(state.IssueEstimateMins),
+				)
 			}
 			rows = append(rows, "", theme.StyleDim.Render(label))
 		}
-		labels := []string{"Summary", "Date", "Work duration", "Break duration", "Start time", "End time", "Notes"}
+		labels := []string{
+			"Summary",
+			"Date",
+			"Work duration",
+			"Break duration",
+			"Start time",
+			"End time",
+			"Notes",
+		}
 		for i := range state.Inputs {
 			rows = append(rows, "", theme.StyleDim.Render(labels[i]), state.Inputs[i].View())
 		}
@@ -78,7 +107,8 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			title, body, border = "Abandon Issue", "Abandon the issue and end the active session.", theme.ColorRed
 		}
 		rows := []string{theme.StylePaneTitle.Render(title), "", body}
-		if (state.IssueStatus == "done" || state.IssueStatus == "abandoned") && len(state.Inputs) > 0 {
+		if (state.IssueStatus == "done" || state.IssueStatus == "abandoned") &&
+			len(state.Inputs) > 0 {
 			hint = dialogSubmitHint(state, "confirm") + "   [esc] cancel"
 			label := "Abandon reason"
 			if state.IssueStatus == "done" {
@@ -100,8 +130,14 @@ func itoa(v int64) string {
 func manualSessionHint(state controllerpkg.State) string {
 	switch state.FocusIdx {
 	case 1:
-		return "[f2] pick date   [g] today   [tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+		return "[f2] pick date   [g] today   [tab] next   " + dialogSubmitHint(
+			state,
+			"save",
+		) + "   [esc] cancel"
 	default:
-		return "[tab] next   durations: 90, 90m, 1h30m   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
+		return "[tab] next   durations: 90, 90m, 1h30m   " + dialogSubmitHint(
+			state,
+			"save",
+		) + "   [esc] cancel"
 	}
 }

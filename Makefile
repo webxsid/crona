@@ -15,7 +15,7 @@ CLI_BINARY := $(PROJECT_NAME)$(BIN_SUFFIX)
 KERNEL_BINARY := $(PROJECT_NAME)-kernel$(BIN_SUFFIX)
 TUI_BINARY := $(PROJECT_NAME)-tui$(BIN_SUFFIX)
 
-.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release
+.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release
 
 help:
 	@printf "%s %s\n" "$(PROJECT_NAME)" "$(PROJECT_VERSION)"
@@ -30,12 +30,13 @@ help:
 	@printf "  make test-kernel     Run kernel tests\n"
 	@printf "  make test-tui        Run tui tests\n"
 	@printf "  make test-cli        Run cli tests\n"
-	@printf "  make fmt             Format the Go workspace\n"
+	@printf "  make fmt             Format the Go workspace with gofmt and golines\n"
 	@printf "  make vet             Vet the Go workspace\n"
 	@printf "  make lint            Run golangci-lint with repo config\n"
 	@printf "  make ci              Run release metadata, tests, vet, lint, and coverage\n"
 	@printf "  make release-check   Validate version and prerelease metadata consistency\n"
 	@printf "  make install-lint    Install golangci-lint into GOPATH/bin\n"
+	@printf "  make install-fmt     Install golines into GOPATH/bin\n"
 	@printf "  make run-kernel      Run the kernel daemon\n"
 	@printf "  make run-tui         Run the terminal UI\n"
 	@printf "  make install-kernel  Build %s into ./bin\n" "$(KERNEL_BINARY)"
@@ -83,7 +84,7 @@ test-cli:
 	cd cli && GOCACHE=$(GOCACHE) $(GO) test ./...
 
 fmt:
-	GOCACHE=$(GOCACHE) $(GO) fmt ./...
+	sh ./scripts/fmt.sh
 
 vet:
 	cd shared && GOCACHE=$(GOCACHE) $(GO) vet ./...
@@ -106,6 +107,9 @@ release-check:
 
 install-lint:
 	GOCACHE=$(GOCACHE) $(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4
+
+install-fmt:
+	GOCACHE=$(GOCACHE) $(GO) install github.com/segmentio/golines@v0.13.0
 
 run-kernel:
 	cd kernel && GOCACHE=$(GOCACHE) $(GO) run ./cmd/crona-kernel

@@ -25,7 +25,11 @@ func GetActiveContext(ctx context.Context, c *core.Context) (*sharedtypes.Active
 	return c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 }
 
-func SwitchRepo(ctx context.Context, c *core.Context, repoID int64) (*sharedtypes.ActiveContext, error) {
+func SwitchRepo(
+	ctx context.Context,
+	c *core.Context,
+	repoID int64,
+) (*sharedtypes.ActiveContext, error) {
 	now := c.Now()
 	updated, err := c.ActiveContext.Set(ctx, c.UserID, c.DeviceID, struct {
 		RepoID   *int64
@@ -43,7 +47,11 @@ func SwitchRepo(ctx context.Context, c *core.Context, repoID int64) (*sharedtype
 	return updated, emitContextSnapshot(c, sharedtypes.EventTypeContextRepoChanged, updated)
 }
 
-func SwitchStream(ctx context.Context, c *core.Context, streamID int64) (*sharedtypes.ActiveContext, error) {
+func SwitchStream(
+	ctx context.Context,
+	c *core.Context,
+	streamID int64,
+) (*sharedtypes.ActiveContext, error) {
 	existing, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 	if err != nil {
 		return nil, err
@@ -69,7 +77,11 @@ func SwitchStream(ctx context.Context, c *core.Context, streamID int64) (*shared
 	return updated, emitContextSnapshot(c, sharedtypes.EventTypeContextStreamChanged, updated)
 }
 
-func SwitchIssue(ctx context.Context, c *core.Context, issueID int64) (*sharedtypes.ActiveContext, error) {
+func SwitchIssue(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+) (*sharedtypes.ActiveContext, error) {
 	existing, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 	if err != nil {
 		return nil, err
@@ -138,7 +150,11 @@ func ClearContext(ctx context.Context, c *core.Context) error {
 	return nil
 }
 
-func SetContext(ctx context.Context, c *core.Context, patch ContextPatch) (*sharedtypes.ActiveContext, error) {
+func SetContext(
+	ctx context.Context,
+	c *core.Context,
+	patch ContextPatch,
+) (*sharedtypes.ActiveContext, error) {
 	existing, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 	if err != nil {
 		return nil, err
@@ -211,7 +227,13 @@ func SetContext(ctx context.Context, c *core.Context, patch ContextPatch) (*shar
 	return updated, nil
 }
 
-func appendContextOp(ctx context.Context, c *core.Context, payload any, action sharedtypes.OpAction, now string) error {
+func appendContextOp(
+	ctx context.Context,
+	c *core.Context,
+	payload any,
+	action sharedtypes.OpAction,
+	now string,
+) error {
 	return c.Ops.Append(ctx, sharedtypes.Op{
 		ID:        uuid.NewString(),
 		Entity:    sharedtypes.OpEntityActiveContext,
@@ -224,7 +246,11 @@ func appendContextOp(ctx context.Context, c *core.Context, payload any, action s
 	})
 }
 
-func emitContextSnapshot(c *core.Context, eventType string, active *sharedtypes.ActiveContext) error {
+func emitContextSnapshot(
+	c *core.Context,
+	eventType string,
+	active *sharedtypes.ActiveContext,
+) error {
 	payload, err := json.Marshal(sharedtypes.ContextChangedPayload{
 		DeviceID: c.DeviceID,
 		RepoID:   active.RepoID,

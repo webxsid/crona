@@ -58,7 +58,9 @@ func BuildSections(exportAssets *api.ExportAssetStatus) []Section {
 			target = &daily
 		case sharedtypes.ExportReportKindWeekly:
 			target = &weekly
-		case sharedtypes.ExportReportKindRepo, sharedtypes.ExportReportKindStream, sharedtypes.ExportReportKindIssueRollup:
+		case sharedtypes.ExportReportKindRepo,
+			sharedtypes.ExportReportKindStream,
+			sharedtypes.ExportReportKindIssueRollup:
 			target = &project
 		case sharedtypes.ExportReportKindCSV, sharedtypes.ExportReportKindCalendar:
 			target = &data
@@ -146,7 +148,10 @@ func buildPresetItem(asset api.ExportTemplateAsset, allAssets []api.ExportTempla
 	if detailBody == "" {
 		detailBody = "Built-in starter preset."
 	}
-	detailBody += "\n\nPreview\n" + firstNonEmpty(presetPreviewBody(asset, selected.ID), "No sample preview available.")
+	detailBody += "\n\nPreview\n" + firstNonEmpty(
+		presetPreviewBody(asset, selected.ID),
+		"No sample preview available.",
+	)
 	if cssPath := pairedNarrativePDFCSSPath(asset, allAssets); cssPath != "" {
 		detailBody += "\n\nPaired stylesheet\n" + cssPath + "\n\nPress e to open the active HTML template in $EDITOR."
 		detailBody += "\nOpen the stylesheet separately if you want to tune fonts, spacing, or colors."
@@ -159,7 +164,9 @@ func buildPresetItem(asset api.ExportTemplateAsset, allAssets []api.ExportTempla
 		Value:       value,
 		Path:        asset.UserPath,
 		DetailTitle: helperpkg.ExportPresetLabel(asset),
-		DetailMeta:  "Preset " + selected.Label + "   Template " + helperpkg.ExportAssetStateLabel(asset),
+		DetailMeta: "Preset " + selected.Label + "   Template " + helperpkg.ExportAssetStateLabel(
+			asset,
+		),
 		DetailBody:  detailBody,
 		Editable:    true,
 		Mutable:     true,
@@ -176,18 +183,24 @@ func isHiddenNarrativePDFCSSAsset(asset api.ExportTemplateAsset) bool {
 	if asset.AssetKind != sharedtypes.ExportAssetKindTemplatePDFCSS {
 		return false
 	}
-	return asset.ReportKind == sharedtypes.ExportReportKindDaily || asset.ReportKind == sharedtypes.ExportReportKindWeekly
+	return asset.ReportKind == sharedtypes.ExportReportKindDaily ||
+		asset.ReportKind == sharedtypes.ExportReportKindWeekly
 }
 
-func pairedNarrativePDFCSSPath(asset api.ExportTemplateAsset, allAssets []api.ExportTemplateAsset) string {
+func pairedNarrativePDFCSSPath(
+	asset api.ExportTemplateAsset,
+	allAssets []api.ExportTemplateAsset,
+) string {
 	if asset.AssetKind != sharedtypes.ExportAssetKindTemplatePDFHTML {
 		return ""
 	}
-	if asset.ReportKind != sharedtypes.ExportReportKindDaily && asset.ReportKind != sharedtypes.ExportReportKindWeekly {
+	if asset.ReportKind != sharedtypes.ExportReportKindDaily &&
+		asset.ReportKind != sharedtypes.ExportReportKindWeekly {
 		return ""
 	}
 	for _, candidate := range allAssets {
-		if candidate.ReportKind == asset.ReportKind && candidate.AssetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+		if candidate.ReportKind == asset.ReportKind &&
+			candidate.AssetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
 			return candidate.UserPath
 		}
 	}

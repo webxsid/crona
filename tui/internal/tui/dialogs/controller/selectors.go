@@ -21,7 +21,10 @@ func DefaultRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOp
 		if query != "" && !strings.Contains(normalizeSelectorName(repo.Name), query) {
 			continue
 		}
-		options = append(options, SelectorOption{ID: strconv.FormatInt(repo.ID, 10), Label: repo.Name})
+		options = append(
+			options,
+			SelectorOption{ID: strconv.FormatInt(repo.ID, 10), Label: repo.Name},
+		)
 	}
 	if raw := strings.TrimSpace(inputs[0].Value()); raw != "" {
 		options = append(options, SelectorOption{ID: "__new__", Label: "Create New Repo: " + raw})
@@ -33,7 +36,14 @@ func CheckoutRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorO
 	return DefaultRepoOptions(inputs, repos)
 }
 
-func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []SelectorOption {
+func DefaultStreamOptions(
+	inputs []textinput.Model,
+	repoIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) []SelectorOption {
 	_ = context
 	query := normalizeSelectorName(inputs[1].Value())
 	repoOptions := DefaultRepoOptions(inputs, repos)
@@ -48,14 +58,18 @@ func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.R
 	seen := map[string]bool{}
 	options := []SelectorOption{}
 	for _, issue := range allIssues {
-		if strconv.FormatInt(issue.RepoID, 10) != repoOpt.ID || seen[strconv.FormatInt(issue.StreamID, 10)] {
+		if strconv.FormatInt(issue.RepoID, 10) != repoOpt.ID ||
+			seen[strconv.FormatInt(issue.StreamID, 10)] {
 			continue
 		}
 		if query != "" && !strings.Contains(normalizeSelectorName(issue.StreamName), query) {
 			continue
 		}
 		seen[strconv.FormatInt(issue.StreamID, 10)] = true
-		options = append(options, SelectorOption{ID: strconv.FormatInt(issue.StreamID, 10), Label: issue.StreamName})
+		options = append(
+			options,
+			SelectorOption{ID: strconv.FormatInt(issue.StreamID, 10), Label: issue.StreamName},
+		)
 	}
 	for _, stream := range streams {
 		if strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
@@ -77,11 +91,25 @@ func DefaultStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.R
 	return options
 }
 
-func CheckoutStreamOptions(inputs []textinput.Model, repoIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) []SelectorOption {
+func CheckoutStreamOptions(
+	inputs []textinput.Model,
+	repoIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) []SelectorOption {
 	return DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 }
 
-func CheckoutDialogLabels(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (string, string) {
+func CheckoutDialogLabels(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (string, string) {
 	repoOptions := CheckoutRepoOptions(inputs, repos)
 	streamOptions := CheckoutStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 	if len(repoOptions) == 0 {
@@ -93,7 +121,14 @@ func CheckoutDialogLabels(inputs []textinput.Model, repoIndex, streamIndex int, 
 	return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, streamOptions[minInt(streamIndex, len(streamOptions)-1)].Label
 }
 
-func CheckoutDialogSelection(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string, *int64, string) {
+func CheckoutDialogSelection(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (int64, string, *int64, string) {
 	repoRaw := strings.TrimSpace(inputs[0].Value())
 	streamRaw := strings.TrimSpace(inputs[1].Value())
 	if repoRaw == "" && streamRaw == "" {
@@ -108,7 +143,16 @@ func CheckoutDialogSelection(inputs []textinput.Model, repoIndex, streamIndex in
 		return repoID, repoName, nil, ""
 	}
 
-	streamID, streamName := MatchStreamSelection(streamRaw, repoID, repoName, streamIndex, repos, allIssues, streams, context)
+	streamID, streamName := MatchStreamSelection(
+		streamRaw,
+		repoID,
+		repoName,
+		streamIndex,
+		repos,
+		allIssues,
+		streams,
+		context,
+	)
 	if streamName == "" {
 		return repoID, repoName, nil, ""
 	}
@@ -143,13 +187,23 @@ func matchRepoSelection(raw string, repoIndex int, repos []api.Repo) (int64, str
 	return id, selected.Label
 }
 
-func MatchStreamSelection(raw string, repoID int64, repoName string, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, string) {
+func MatchStreamSelection(
+	raw string,
+	repoID int64,
+	repoName string,
+	streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (int64, string) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return 0, ""
 	}
 	for _, stream := range streams {
-		if stream.RepoID == repoID && normalizeSelectorName(stream.Name) == normalizeSelectorName(raw) {
+		if stream.RepoID == repoID &&
+			normalizeSelectorName(stream.Name) == normalizeSelectorName(raw) {
 			return stream.ID, stream.Name
 		}
 	}
@@ -185,7 +239,14 @@ func SyncFocus(inputs []textinput.Model, focusIdx int) []textinput.Model {
 	return inputs
 }
 
-func DefaultIssueDialogLabels(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (string, string) {
+func DefaultIssueDialogLabels(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (string, string) {
 	repoOptions := DefaultRepoOptions(inputs, repos)
 	streamOptions := DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 	if len(repoOptions) == 0 {
@@ -197,7 +258,14 @@ func DefaultIssueDialogLabels(inputs []textinput.Model, repoIndex, streamIndex i
 	return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, streamOptions[minInt(streamIndex, len(streamOptions)-1)].Label
 }
 
-func DefaultIssueDialogNames(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (string, string) {
+func DefaultIssueDialogNames(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (string, string) {
 	repoOptions := DefaultRepoOptions(inputs, repos)
 	streamOptions := DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 	if len(repoOptions) == 0 || len(streamOptions) == 0 {

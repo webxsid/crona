@@ -108,8 +108,17 @@ func sortIssuesWithMeta(items []sharedtypes.IssueWithMeta, order sharedtypes.Iss
 			if compareStringsAsc(items[i].Title, items[j].Title, items[i].ID, items[j].ID) {
 				return true
 			}
-			if strings.EqualFold(strings.TrimSpace(items[i].Title), strings.TrimSpace(items[j].Title)) && items[i].ID == items[j].ID {
-				return compareStringsAsc(items[i].RepoName, items[j].RepoName, items[i].RepoID, items[j].RepoID)
+			if strings.EqualFold(
+				strings.TrimSpace(items[i].Title),
+				strings.TrimSpace(items[j].Title),
+			) &&
+				items[i].ID == items[j].ID {
+				return compareStringsAsc(
+					items[i].RepoName,
+					items[j].RepoName,
+					items[i].RepoID,
+					items[j].RepoID,
+				)
 			}
 			return false
 		})
@@ -118,8 +127,17 @@ func sortIssuesWithMeta(items []sharedtypes.IssueWithMeta, order sharedtypes.Iss
 			if compareStringsDesc(items[i].Title, items[j].Title, items[i].ID, items[j].ID) {
 				return true
 			}
-			if strings.EqualFold(strings.TrimSpace(items[i].Title), strings.TrimSpace(items[j].Title)) && items[i].ID == items[j].ID {
-				return compareStringsDesc(items[i].RepoName, items[j].RepoName, items[i].RepoID, items[j].RepoID)
+			if strings.EqualFold(
+				strings.TrimSpace(items[i].Title),
+				strings.TrimSpace(items[j].Title),
+			) &&
+				items[i].ID == items[j].ID {
+				return compareStringsDesc(
+					items[i].RepoName,
+					items[j].RepoName,
+					items[i].RepoID,
+					items[j].RepoID,
+				)
 			}
 			return false
 		})
@@ -295,11 +313,24 @@ func compareIssuePriority(left sharedtypes.Issue, right sharedtypes.Issue) bool 
 	return comparePriorityValues(left, right, "", "")
 }
 
-func compareIssuePriorityWithMeta(left sharedtypes.IssueWithMeta, right sharedtypes.IssueWithMeta) bool {
-	return comparePriorityValues(left.Issue, right.Issue, left.RepoName+" "+left.StreamName, right.RepoName+" "+right.StreamName)
+func compareIssuePriorityWithMeta(
+	left sharedtypes.IssueWithMeta,
+	right sharedtypes.IssueWithMeta,
+) bool {
+	return comparePriorityValues(
+		left.Issue,
+		right.Issue,
+		left.RepoName+" "+left.StreamName,
+		right.RepoName+" "+right.StreamName,
+	)
 }
 
-func comparePriorityValues(left sharedtypes.Issue, right sharedtypes.Issue, leftScope string, rightScope string) bool {
+func comparePriorityValues(
+	left sharedtypes.Issue,
+	right sharedtypes.Issue,
+	leftScope string,
+	rightScope string,
+) bool {
 	today := time.Now().Format("2006-01-02")
 	leftBucket, leftRank, leftDue := issuePriority(left, today)
 	rightBucket, rightRank, rightDue := issuePriority(right, today)
@@ -325,7 +356,8 @@ func comparePriorityValues(left sharedtypes.Issue, right sharedtypes.Issue, left
 }
 
 func issuePriority(issue sharedtypes.Issue, today string) (bucket int, statusRank int, due string) {
-	if issue.Status == sharedtypes.IssueStatusDone || issue.Status == sharedtypes.IssueStatusAbandoned {
+	if issue.Status == sharedtypes.IssueStatusDone ||
+		issue.Status == sharedtypes.IssueStatusAbandoned {
 		return 3, closedIssueRank(issue.Status), closedIssueSortDate(issue)
 	}
 	due = normalizedDueDateValue(issue.TodoForDate)

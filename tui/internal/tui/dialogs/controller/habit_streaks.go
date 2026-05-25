@@ -55,8 +55,11 @@ func updateHabitStreakManager(state State, msg tea.KeyMsg) (State, *Action, stri
 	case "d", "backspace", "delete":
 		if state.HabitStreakCursor < len(state.HabitStreakDefs) {
 			idx := state.HabitStreakCursor
-			state.HabitStreakDefs = append(state.HabitStreakDefs[:idx], state.HabitStreakDefs[idx+1:]...)
-			if state.HabitStreakCursor >= len(state.HabitStreakDefs) && state.HabitStreakCursor > 0 {
+			state.HabitStreakDefs = append(
+				state.HabitStreakDefs[:idx],
+				state.HabitStreakDefs[idx+1:]...)
+			if state.HabitStreakCursor >= len(state.HabitStreakDefs) &&
+				state.HabitStreakCursor > 0 {
 				state.HabitStreakCursor--
 			}
 		}
@@ -68,7 +71,11 @@ func updateHabitStreakManager(state State, msg tea.KeyMsg) (State, *Action, stri
 				RequiredCount: 1,
 			}), nil, ""
 		}
-		return openHabitStreakEditor(state, state.HabitStreakCursor, state.HabitStreakDefs[state.HabitStreakCursor]), nil, ""
+		return openHabitStreakEditor(
+			state,
+			state.HabitStreakCursor,
+			state.HabitStreakDefs[state.HabitStreakCursor],
+		), nil, ""
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
 			return Close(state), &Action{
@@ -142,7 +149,8 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 			return moveHabitStreakToHabitSelection(state)
 		}
 	}
-	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 && inputIdx < len(state.Inputs) {
+	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 &&
+		inputIdx < len(state.Inputs) {
 		var cmd tea.Cmd
 		state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
 		_ = cmd
@@ -164,7 +172,9 @@ func moveHabitStreakToHabitSelection(state State) (State, *Action, string) {
 	}
 	state.HabitStreakDraft.Name = name
 	state.HabitStreakDraft.RequiredCount = required
-	state.HabitStreakDraft.Period = sharedtypes.NormalizeHabitStreakPeriod(state.HabitStreakDraft.Period)
+	state.HabitStreakDraft.Period = sharedtypes.NormalizeHabitStreakPeriod(
+		state.HabitStreakDraft.Period,
+	)
 	state = habitStreakApplyPeriodRule(state)
 	state.HabitStreakStep = 2
 	state.HabitStreakCursor = 0
@@ -193,7 +203,10 @@ func updateHabitStreakHabits(state State, msg tea.KeyMsg) (State, *Action, strin
 		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, -1)
 	case " ", "x":
 		habitID := state.HabitItems[state.HabitStreakCursor].ID
-		state.HabitStreakDraft.HabitIDs = toggleHabitMembership(state.HabitStreakDraft.HabitIDs, habitID)
+		state.HabitStreakDraft.HabitIDs = toggleHabitMembership(
+			state.HabitStreakDraft.HabitIDs,
+			habitID,
+		)
 	case "a":
 		ids := make([]int64, 0, len(state.HabitItems))
 		for _, item := range state.HabitItems {
@@ -247,7 +260,10 @@ func habitStreakBackToManager(state State) State {
 	return state
 }
 
-func nextHabitStreakPeriod(current sharedtypes.HabitStreakPeriod, dir int) sharedtypes.HabitStreakPeriod {
+func nextHabitStreakPeriod(
+	current sharedtypes.HabitStreakPeriod,
+	dir int,
+) sharedtypes.HabitStreakPeriod {
 	options := []sharedtypes.HabitStreakPeriod{
 		sharedtypes.HabitStreakPeriodDay,
 		sharedtypes.HabitStreakPeriodWeek,
@@ -289,14 +305,17 @@ func habitStreakSetDetailFocus(state State, row habitStreakDetailRow) State {
 	for i := range state.Inputs {
 		state.Inputs[i].Blur()
 	}
-	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 && inputIdx < len(state.Inputs) {
+	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 &&
+		inputIdx < len(state.Inputs) {
 		state.Inputs[inputIdx].Focus()
 	}
 	return state
 }
 
 func habitStreakApplyPeriodRule(state State) State {
-	if sharedtypes.NormalizeHabitStreakPeriod(state.HabitStreakDraft.Period) == sharedtypes.HabitStreakPeriodDay {
+	if sharedtypes.NormalizeHabitStreakPeriod(
+		state.HabitStreakDraft.Period,
+	) == sharedtypes.HabitStreakPeriodDay {
 		state.HabitStreakDraft.RequiredCount = 1
 		if len(state.Inputs) > 1 {
 			state.Inputs[1].SetValue("1")

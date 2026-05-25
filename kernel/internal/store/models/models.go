@@ -237,18 +237,6 @@ type ActiveContextModel struct {
 	UpdatedAt string  `bun:"updated_at,notnull,type:text"`
 }
 
-type ScratchPadMetaModel struct {
-	bun.BaseModel `bun:"table:scratch_pad_meta"`
-
-	ID           string `bun:",pk,type:text"`
-	UserID       string `bun:"user_id,notnull,type:text"`
-	DeviceID     string `bun:"device_id,notnull,type:text"`
-	Name         string `bun:"name,notnull,type:text"`
-	Path         string `bun:"path,notnull,unique,type:text"`
-	LastOpenedAt string `bun:"last_opened_at,notnull,type:text"`
-	Pinned       bool   `bun:"pinned,notnull,type:integer"`
-}
-
 type DailyCheckInModel struct {
 	bun.BaseModel `bun:"table:daily_checkins"`
 

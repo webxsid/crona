@@ -83,7 +83,12 @@ func Run(args []string, deps Deps) error {
 		if jsonOut {
 			return output.PrintJSON(deps.Stdout, out)
 		}
-		return output.PrintKernelInfo(deps.Stdout, out, runtimepkg.KernelTransport(&out), runtimepkg.KernelEndpoint(&out))
+		return output.PrintKernelInfo(
+			deps.Stdout,
+			out,
+			runtimepkg.KernelTransport(&out),
+			runtimepkg.KernelEndpoint(&out),
+		)
 	default:
 		return fmt.Errorf("unknown kernel command: %s", args[0])
 	}

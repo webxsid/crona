@@ -190,14 +190,29 @@ func newTestCoreContext(t *testing.T, now func() string) (*core.Context, runtime
 	if err := store.InitSchema(context.Background(), db.DB()); err != nil {
 		t.Fatalf("init schema: %v", err)
 	}
-	coreCtx := core.NewContext(db, store.NewRegistry(db.DB()), "local", "test-device", paths.ScratchDir, now, events.NewBus())
+	coreCtx := core.NewContext(
+		db,
+		store.NewRegistry(db.DB()),
+		"local",
+		"test-device",
+		paths.ScratchDir,
+		now,
+		events.NewBus(),
+	)
 	if err := coreCtx.InitDefaults(context.Background()); err != nil {
 		t.Fatalf("init defaults: %v", err)
 	}
 	return coreCtx, paths
 }
 
-func mustCreateRepo(t *testing.T, ctx context.Context, repos *repositories.RepoRepository, userID, now string, id int64, name string) sharedtypes.Repo {
+func mustCreateRepo(
+	t *testing.T,
+	ctx context.Context,
+	repos *repositories.RepoRepository,
+	userID, now string,
+	id int64,
+	name string,
+) sharedtypes.Repo {
 	t.Helper()
 	repo, err := repos.Create(ctx, sharedtypes.Repo{ID: id, Name: name}, userID, now)
 	if err != nil {
@@ -206,18 +221,53 @@ func mustCreateRepo(t *testing.T, ctx context.Context, repos *repositories.RepoR
 	return repo
 }
 
-func mustCreateStream(t *testing.T, ctx context.Context, streams *repositories.StreamRepository, userID, now string, id, repoID int64, name string) sharedtypes.Stream {
+func mustCreateStream(
+	t *testing.T,
+	ctx context.Context,
+	streams *repositories.StreamRepository,
+	userID, now string,
+	id, repoID int64,
+	name string,
+) sharedtypes.Stream {
 	t.Helper()
-	stream, err := streams.Create(ctx, sharedtypes.Stream{ID: id, RepoID: repoID, Name: name, Visibility: sharedtypes.StreamVisibilityPersonal}, userID, now)
+	stream, err := streams.Create(
+		ctx,
+		sharedtypes.Stream{
+			ID:         id,
+			RepoID:     repoID,
+			Name:       name,
+			Visibility: sharedtypes.StreamVisibilityPersonal,
+		},
+		userID,
+		now,
+	)
 	if err != nil {
 		t.Fatalf("create stream: %v", err)
 	}
 	return stream
 }
 
-func mustCreateHabit(t *testing.T, ctx context.Context, habits *repositories.HabitRepository, userID, now string, id, streamID int64, name string) sharedtypes.Habit {
+func mustCreateHabit(
+	t *testing.T,
+	ctx context.Context,
+	habits *repositories.HabitRepository,
+	userID, now string,
+	id, streamID int64,
+	name string,
+) sharedtypes.Habit {
 	t.Helper()
-	habit, err := habits.Create(ctx, sharedtypes.Habit{ID: id, StreamID: streamID, Name: name, ScheduleType: sharedtypes.HabitScheduleDaily, Active: true}, userID, now)
+	habit, err := habits.Create(
+		ctx,
+		sharedtypes.Habit{
+			ID:           id,
+			StreamID:     streamID,
+			Name:         name,
+			ScheduleType: sharedtypes.HabitScheduleDaily,
+			Active:       true,
+		},
+		userID,
+		now,
+	)
 	if err != nil {
 		t.Fatalf("create habit: %v", err)
 	}
@@ -252,11 +302,29 @@ func TestExportReportsListIncludesKindScopeAndDateMetadata(t *testing.T) {
 		t.Fatalf("write variable docs: %v", err)
 	}
 
-	repoSpec := export.ReportWriteSpecForTesting(sharedtypes.ExportReportKindRepo, "Repo Report", "Work", "", "2026-03-17", "2026-03-23", sharedtypes.ExportFormatMarkdown, "repo-work")
+	repoSpec := export.ReportWriteSpecForTesting(
+		sharedtypes.ExportReportKindRepo,
+		"Repo Report",
+		"Work",
+		"",
+		"2026-03-17",
+		"2026-03-23",
+		sharedtypes.ExportFormatMarkdown,
+		"repo-work",
+	)
 	if _, err := export.WriteReport(paths, repoSpec, []byte("# Repo Report")); err != nil {
 		t.Fatalf("write repo report: %v", err)
 	}
-	csvSpec := export.ReportWriteSpecForTesting(sharedtypes.ExportReportKindCSV, "CSV Export", "", "", "2026-03-17", "2026-03-23", sharedtypes.ExportFormatCSV, "sessions")
+	csvSpec := export.ReportWriteSpecForTesting(
+		sharedtypes.ExportReportKindCSV,
+		"CSV Export",
+		"",
+		"",
+		"2026-03-17",
+		"2026-03-23",
+		sharedtypes.ExportFormatCSV,
+		"sessions",
+	)
 	if _, err := export.WriteReport(paths, csvSpec, []byte("h1,h2\nv1,v2")); err != nil {
 		t.Fatalf("write csv report: %v", err)
 	}
@@ -305,7 +373,16 @@ func TestCalendarICSFilesWriteOutsideReportsDirectory(t *testing.T) {
 	if err := os.MkdirAll(paths.ICSDir, 0o700); err != nil {
 		t.Fatalf("mkdir ics dir: %v", err)
 	}
-	spec := export.ReportWriteSpecForTesting(sharedtypes.ExportReportKindCalendar, "Calendar Export", "Work / app", "", "2026-03-17", "2026-03-23", sharedtypes.ExportFormatICS, "calendar-2026-03-17-to-2026-03-23")
+	spec := export.ReportWriteSpecForTesting(
+		sharedtypes.ExportReportKindCalendar,
+		"Calendar Export",
+		"Work / app",
+		"",
+		"2026-03-17",
+		"2026-03-23",
+		sharedtypes.ExportFormatICS,
+		"calendar-2026-03-17-to-2026-03-23",
+	)
 	filePath, err := export.WriteReport(paths, spec, []byte("BEGIN:VCALENDAR\r\nEND:VCALENDAR"))
 	if err != nil {
 		t.Fatalf("write calendar report: %v", err)
@@ -319,7 +396,10 @@ func TestCalendarICSFilesWriteOutsideReportsDirectory(t *testing.T) {
 		t.Fatalf("list reports: %v", err)
 	}
 	if len(reports) != 0 {
-		t.Fatalf("expected calendar exports excluded from reports list, got %d entries", len(reports))
+		t.Fatalf(
+			"expected calendar exports excluded from reports list, got %d entries",
+			len(reports),
+		)
 	}
 }
 
@@ -436,14 +516,25 @@ func TestGenerateCalendarExportWritesRepoScopedIssuesAndSessionsFiles(t *testing
 		t.Fatalf("stop personal session: %v", err)
 	}
 
-	result, err := export.GenerateCalendarExport(ctx, coreCtx, paths, shareddto.ExportCalendarRequest{RepoID: workRepo.ID})
+	result, err := export.GenerateCalendarExport(
+		ctx,
+		coreCtx,
+		paths,
+		shareddto.ExportCalendarRequest{RepoID: workRepo.ID},
+	)
 	if err != nil {
 		t.Fatalf("generate calendar export: %v", err)
 	}
-	if !strings.HasSuffix(result.IssuesFilePath, filepath.Join("calendar", "1-work", "issues.ics")) {
+	if !strings.HasSuffix(
+		result.IssuesFilePath,
+		filepath.Join("calendar", "1-work", "issues.ics"),
+	) {
 		t.Fatalf("unexpected issues path %q", result.IssuesFilePath)
 	}
-	if !strings.HasSuffix(result.SessionsFilePath, filepath.Join("calendar", "1-work", "sessions.ics")) {
+	if !strings.HasSuffix(
+		result.SessionsFilePath,
+		filepath.Join("calendar", "1-work", "sessions.ics"),
+	) {
 		t.Fatalf("unexpected sessions path %q", result.SessionsFilePath)
 	}
 
@@ -455,7 +546,8 @@ func TestGenerateCalendarExportWritesRepoScopedIssuesAndSessionsFiles(t *testing
 	if !strings.Contains(issuesText, "SUMMARY:Keyboard-first command palette") {
 		t.Fatalf("expected planned issue in issues calendar")
 	}
-	if !strings.Contains(issuesText, "DTSTART;VALUE=DATE:20260325") || !strings.Contains(issuesText, "DTEND;VALUE=DATE:20260326") {
+	if !strings.Contains(issuesText, "DTSTART;VALUE=DATE:20260325") ||
+		!strings.Contains(issuesText, "DTEND;VALUE=DATE:20260326") {
 		t.Fatalf("expected all-day issue event in issues calendar, got:\n%s", issuesText)
 	}
 	if strings.Contains(issuesText, backlogIssue.Title) {
@@ -473,7 +565,8 @@ func TestGenerateCalendarExportWritesRepoScopedIssuesAndSessionsFiles(t *testing
 	if !strings.Contains(sessionsText, "SUMMARY:Keyboard-first command palette") {
 		t.Fatalf("expected work session in sessions calendar")
 	}
-	if !strings.Contains(sessionsText, "DTSTART:20260320T100000Z") || !strings.Contains(sessionsText, "DTEND:20260320T113000Z") {
+	if !strings.Contains(sessionsText, "DTSTART:20260320T100000Z") ||
+		!strings.Contains(sessionsText, "DTEND:20260320T113000Z") {
 		t.Fatalf("expected timed session event in sessions calendar, got:\n%s", sessionsText)
 	}
 	if strings.Contains(sessionsText, otherRepoIssue.Title) {

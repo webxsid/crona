@@ -27,7 +27,10 @@ func IssueTableColumns(titleW, statusW, estimateW, spentW, repoW, streamW int) [
 	}
 }
 
-func IssueTableRow(cursor, issue, status, estimate, spent, repo, stream string, rowStyle lipgloss.Style) table.Row {
+func IssueTableRow(
+	cursor, issue, status, estimate, spent, repo, stream string,
+	rowStyle lipgloss.Style,
+) table.Row {
 	return table.NewRow(table.RowData{
 		issueTableKeyCursor:   cursor,
 		issueTableKeyIssue:    issue,

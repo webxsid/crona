@@ -39,7 +39,10 @@ func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {
 		},
 	}
 
-	release, err := service.fetchLatestRelease(context.Background(), sharedtypes.UpdateChannelStable)
+	release, err := service.fetchLatestRelease(
+		context.Background(),
+		sharedtypes.UpdateChannelStable,
+	)
 	if err != nil {
 		t.Fatalf("fetchLatestRelease returned error: %v", err)
 	}
@@ -60,9 +63,24 @@ func TestInstallUnavailableReason(t *testing.T) {
 		input latestRelease
 		want  string
 	}{
-		{name: "missing both", input: latestRelease{}, want: "Release is missing installer and checksums assets."},
-		{name: "missing installer", input: latestRelease{InstallAsset: "install-crona-tui.sh", ChecksumsURL: "https://example.com/checksums"}, want: "Release is missing the install-crona-tui.sh asset."},
-		{name: "missing checksums", input: latestRelease{InstallURL: "https://example.com/install"}, want: "Release is missing the checksums.txt asset."},
+		{
+			name:  "missing both",
+			input: latestRelease{},
+			want:  "Release is missing installer and checksums assets.",
+		},
+		{
+			name: "missing installer",
+			input: latestRelease{
+				InstallAsset: "install-crona-tui.sh",
+				ChecksumsURL: "https://example.com/checksums",
+			},
+			want: "Release is missing the install-crona-tui.sh asset.",
+		},
+		{
+			name:  "missing checksums",
+			input: latestRelease{InstallURL: "https://example.com/install"},
+			want:  "Release is missing the checksums.txt asset.",
+		},
 	}
 
 	for _, tc := range tests {
@@ -98,7 +116,10 @@ func TestFetchLatestReleaseSelectsWindowsInstallerAsset(t *testing.T) {
 		},
 	}
 
-	release, err := service.fetchLatestRelease(context.Background(), sharedtypes.UpdateChannelStable)
+	release, err := service.fetchLatestRelease(
+		context.Background(),
+		sharedtypes.UpdateChannelStable,
+	)
 	if err != nil {
 		t.Fatalf("fetchLatestRelease returned error: %v", err)
 	}

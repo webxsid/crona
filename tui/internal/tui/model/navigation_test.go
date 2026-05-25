@@ -41,7 +41,8 @@ func TestOpenSelectedViewDialogIncludesTimeSpent(t *testing.T) {
 	if !strings.Contains(next.dialogViewMeta, "Time Spent 1h15m") {
 		t.Fatalf("expected dialog meta to include time spent, got %q", next.dialogViewMeta)
 	}
-	if !strings.Contains(next.dialogViewBody, "Time Spent") || !strings.Contains(next.dialogViewBody, "1h15m") {
+	if !strings.Contains(next.dialogViewBody, "Time Spent") ||
+		!strings.Contains(next.dialogViewBody, "1h15m") {
 		t.Fatalf("expected dialog body to include time spent, got %q", next.dialogViewBody)
 	}
 }

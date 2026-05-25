@@ -157,7 +157,8 @@ func TestTimerStartFromContextUsesCheckedOutIssue(t *testing.T) {
 	if err != nil {
 		t.Fatalf("timer start --from-context: %v", err)
 	}
-	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet || gotMethods[1] != protocol.MethodTimerStart {
+	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet ||
+		gotMethods[1] != protocol.MethodTimerStart {
 		t.Fatalf("unexpected method order: %+v", gotMethods)
 	}
 }
@@ -206,7 +207,11 @@ func TestIssueStartFormatsStashConflictError(t *testing.T) {
 			if marshalErr != nil {
 				t.Fatalf("marshal conflict: %v", marshalErr)
 			}
-			return &protocol.RPCError{Code: protocol.ErrorCodeStashConflict, Message: "cannot start focus: 2 stashes exist for issue #91", Data: body}
+			return &protocol.RPCError{
+				Code:    protocol.ErrorCodeStashConflict,
+				Message: "cannot start focus: 2 stashes exist for issue #91",
+				Data:    body,
+			}
 		},
 	})
 	if err == nil || !strings.Contains(err.Error(), "2 stashes exist for issue #91") {
@@ -255,7 +260,8 @@ func TestExportRepoUsesContextRepoWhenMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("export repo: %v", err)
 	}
-	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet || gotMethods[1] != protocol.MethodExportRepo {
+	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet ||
+		gotMethods[1] != protocol.MethodExportRepo {
 		t.Fatalf("unexpected method order: %+v", gotMethods)
 	}
 	if !strings.Contains(out.String(), "\"filePath\": \"/tmp/repo-report.md\"") {

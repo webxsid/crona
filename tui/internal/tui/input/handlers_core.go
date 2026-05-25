@@ -95,7 +95,10 @@ func handleRescanExportAssets(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView != uistate.ViewConfig {
 		return s, nil, true
 	}
-	return s, tea.Batch(deps.SetStatus(&s, "Rescanning export tools...", false), deps.LoadExportAssets()), true
+	return s, tea.Batch(
+		deps.SetStatus(&s, "Rescanning export tools...", false),
+		deps.LoadExportAssets(),
+	), true
 }
 
 func handleCursor(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
@@ -113,8 +116,13 @@ func handleCursor(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleIssueStatus(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.Timer != nil && s.Timer.State != "idle" && (s.ActiveView == uistate.ViewSessionActive || s.ActiveView == uistate.ViewScratch) {
-		return s, deps.SetStatus(&s, "End or stash the active session before changing issue status", true), true
+	if s.Timer != nil && s.Timer.State != "idle" &&
+		s.ActiveView == uistate.ViewSessionActive {
+		return s, deps.SetStatus(
+			&s,
+			"End or stash the active session before changing issue status",
+			true,
+		), true
 	}
 	deps.OpenIssueStatusFromSelection(&s)
 	return s, nil, true
@@ -159,12 +167,17 @@ func handleAdjustOpsLimit(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bo
 
 func handleStartFilter(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	switch s.ActivePane {
-	case uistate.PaneOps, uistate.PaneIssues, uistate.PaneHabits, uistate.PaneRepos, uistate.PaneStreams, uistate.PaneScratchpads, uistate.PaneSessions, uistate.PaneConfig, uistate.PaneExportReports, uistate.PaneAlerts:
+	case uistate.PaneOps,
+		uistate.PaneIssues,
+		uistate.PaneHabits,
+		uistate.PaneRepos,
+		uistate.PaneStreams,
+		uistate.PaneSessions,
+		uistate.PaneConfig,
+		uistate.PaneExportReports,
+		uistate.PaneAlerts:
 	default:
 		return s, nil, false
-	}
-	if s.ActivePane == uistate.PaneScratchpads && s.ScratchpadOpen {
-		return s, nil, true
 	}
 	deps.StartFilterEdit(&s, s.ActivePane)
 	return s, nil, true
@@ -204,7 +217,6 @@ func shouldOpenContextDialog(view uistate.View) bool {
 		uistate.ViewWellbeing,
 		uistate.ViewReports,
 		uistate.ViewOps,
-		uistate.ViewScratch,
 		uistate.ViewSessionHistory,
 		uistate.ViewHabitHistory:
 		return true
@@ -233,7 +245,8 @@ func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
 	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
 		return false
 	}
-	return strings.TrimSpace(status.LatestVersion) != "" && strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
+	return strings.TrimSpace(status.LatestVersion) != "" &&
+		strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
 }
 
 func nextIndex[T comparable](current T, options []T, dir int) int {

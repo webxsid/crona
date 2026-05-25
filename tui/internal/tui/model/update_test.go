@@ -28,19 +28,36 @@ func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
 		t.Fatalf("expected stash conflict dialog, got %q", roundTripped.dialog)
 	}
 	if roundTripped.dialogDeleteID != "stash-1" {
-		t.Fatalf("expected stash id to survive dispatch bridge, got %q", roundTripped.dialogDeleteID)
+		t.Fatalf(
+			"expected stash id to survive dispatch bridge, got %q",
+			roundTripped.dialogDeleteID,
+		)
 	}
-	if roundTripped.dialogRepoID != 7 || roundTripped.dialogStreamID != 8 || roundTripped.dialogIssueID != 42 {
-		t.Fatalf("expected issue path to survive dispatch bridge, got repo=%d stream=%d issue=%d", roundTripped.dialogRepoID, roundTripped.dialogStreamID, roundTripped.dialogIssueID)
+	if roundTripped.dialogRepoID != 7 || roundTripped.dialogStreamID != 8 ||
+		roundTripped.dialogIssueID != 42 {
+		t.Fatalf(
+			"expected issue path to survive dispatch bridge, got repo=%d stream=%d issue=%d",
+			roundTripped.dialogRepoID,
+			roundTripped.dialogStreamID,
+			roundTripped.dialogIssueID,
+		)
 	}
-	if len(roundTripped.dialogChoiceValues) != 2 || roundTripped.dialogChoiceValues[0] != "resume" || roundTripped.dialogChoiceValues[1] != "continue" {
-		t.Fatalf("expected choice values to survive dispatch bridge, got %#v", roundTripped.dialogChoiceValues)
+	if len(roundTripped.dialogChoiceValues) != 2 ||
+		roundTripped.dialogChoiceValues[0] != "resume" ||
+		roundTripped.dialogChoiceValues[1] != "continue" {
+		t.Fatalf(
+			"expected choice values to survive dispatch bridge, got %#v",
+			roundTripped.dialogChoiceValues,
+		)
 	}
 }
 
 func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	now := time.Date(2026, 4, 11, 10, 0, 0, 0, time.UTC)
-	model := Model{client: api.NewClient("unix", "/tmp/missing.sock", ""), timer: &api.TimerState{State: "idle"}}
+	model := Model{
+		client: api.NewClient("unix", "/tmp/missing.sock"),
+		timer:  &api.TimerState{State: "idle"},
+	}
 	if cmd := model.timerActivityTouchCmd(now); cmd != nil {
 		t.Fatalf("expected no touch command while idle")
 	}
@@ -90,13 +107,27 @@ func TestAnchorWellbeingScrollUsesCurrentPaneHeight(t *testing.T) {
 		t.Fatal("expected anchor wellbeing scroll hook to be wired")
 	}
 	next := model.applyDispatchMessageState(state)
-	expected := wellbeingview.PaneLineCount(next.viewContentState(next.mainContentWidth(), next.contentHeight(), next.selectionSnapshot(), nil), string(uistate.PaneWellbeingTrends)) - 1
+	expected := wellbeingview.PaneLineCount(
+		next.viewContentState(
+			next.mainContentWidth(),
+			next.contentHeight(),
+			next.selectionSnapshot(),
+			nil,
+		),
+		string(uistate.PaneWellbeingTrends),
+	) - 1
 	deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
 	if state.Cursor[uistate.PaneWellbeingTrends] <= 0 {
-		t.Fatalf("expected trends cursor to anchor near bottom, got %d", state.Cursor[uistate.PaneWellbeingTrends])
+		t.Fatalf(
+			"expected trends cursor to anchor near bottom, got %d",
+			state.Cursor[uistate.PaneWellbeingTrends],
+		)
 	}
 	if state.Cursor[uistate.PaneWellbeingTrends] != expected {
-		t.Fatalf("expected cursor to anchor to bottom of rendered pane, got %d", state.Cursor[uistate.PaneWellbeingTrends])
+		t.Fatalf(
+			"expected cursor to anchor to bottom of rendered pane, got %d",
+			state.Cursor[uistate.PaneWellbeingTrends],
+		)
 	}
 }
 
@@ -121,7 +152,7 @@ func TestDialogModeQuitsOnQAndCtrlC(t *testing.T) {
 }
 
 func TestDialogRuntimeDepsWireTelemetryHooks(t *testing.T) {
-	model := Model{client: api.NewClient("unix", "/tmp/missing.sock", "")}
+	model := Model{client: api.NewClient("unix", "/tmp/missing.sock")}
 	deps := model.dialogRuntimeDeps()
 	if deps.PatchTelemetrySettings == nil {
 		t.Fatal("expected patch telemetry settings hook to be wired")

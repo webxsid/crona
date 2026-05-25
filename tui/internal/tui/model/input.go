@@ -24,32 +24,33 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Pane:                m.pane,
 		DefaultIssueSection: m.defaultIssueSection,
 		DailyTaskSection:    m.dailyTaskSection,
-		PreferActiveIssue:   m.timer != nil && m.timer.State != "idle" && (m.view == ViewSessionActive || m.view == ViewScratch),
-		DashboardDate:       m.currentDashboardDate(),
-		Cursors:             m.cursor,
-		Filters:             m.filters,
-		Context:             m.context,
-		Timer:               m.timer,
-		Repos:               m.repos,
-		Streams:             m.streams,
-		Issues:              m.dailyIssuesForSelection(),
-		Habits:              m.habits,
-		AllIssues:           m.allIssues,
-		DueHabits:           m.dueHabits,
-		HabitHistory:        m.habitHistory,
-		ExportReports:       m.exportReports,
-		Scratchpads:         m.scratchpads,
-		SessionHistory:      m.sessionHistory,
-		Ops:                 m.ops,
-		Settings:            m.settings,
-		AlertStatus:         m.alertStatus,
-		AlertReminders:      m.alertReminders,
-		ConfigItems:         m.configItemsForSnapshot(),
+		PreferActiveIssue: m.timer != nil && m.timer.State != "idle" &&
+			m.view == ViewSessionActive,
+		DashboardDate:  m.currentDashboardDate(),
+		Cursors:        m.cursor,
+		Filters:        m.filters,
+		Context:        m.context,
+		Timer:          m.timer,
+		Repos:          m.repos,
+		Streams:        m.streams,
+		Issues:         m.dailyIssuesForSelection(),
+		Habits:         m.habits,
+		AllIssues:      m.allIssues,
+		DueHabits:      m.dueHabits,
+		HabitHistory:   m.habitHistory,
+		ExportReports:  m.exportReports,
+		SessionHistory: m.sessionHistory,
+		Ops:            m.ops,
+		Settings:       m.settings,
+		AlertStatus:    m.alertStatus,
+		AlertReminders: m.alertReminders,
+		ConfigItems:    m.configItemsForSnapshot(),
 	})
 }
 
 func (m Model) configItemsForSnapshot() []configitems.Item {
-	if m.view != ViewConfig && m.pane != PaneConfig && (!m.filterEditing || m.filterPane != PaneConfig) {
+	if m.view != ViewConfig && m.pane != PaneConfig &&
+		(!m.filterEditing || m.filterPane != PaneConfig) {
 		return nil
 	}
 	return configitems.Build(m.exportAssets)
@@ -71,7 +72,8 @@ func (m Model) inputState() inputpkg.State {
 	activePane := m.pane
 	if nextProtected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
 		protected = true
-		if activeView != ViewReports && activeView != ViewSessionHistory && activeView != ViewHabitHistory {
+		if activeView != ViewReports && activeView != ViewSessionHistory &&
+			activeView != ViewHabitHistory {
 			activeView = ViewAway
 			activePane = uistate.DefaultPane(activeView)
 		}
@@ -96,7 +98,6 @@ func (m Model) inputState() inputpkg.State {
 		SessionDetailY:      m.sessionDetailY,
 		SessionContextOpen:  m.sessionContextOpen,
 		SessionContextY:     m.sessionContextY,
-		ScratchpadOpen:      m.scratchpadOpen,
 		OpsLimit:            m.opsLimit,
 		OpsLimitPinned:      m.opsLimitPinned,
 		Context:             m.context,
@@ -136,7 +137,6 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.sessionDetailY = state.SessionDetailY
 	m.sessionContextOpen = state.SessionContextOpen
 	m.sessionContextY = state.SessionContextY
-	m.scratchpadOpen = state.ScratchpadOpen
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned
 	m.context = state.Context
@@ -208,11 +208,14 @@ func (m Model) inputDeps() inputpkg.Deps {
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()
-			if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok && next.exportAssets != nil {
+			if item, ok := selectionpkg.SelectedConfigItem(snapshot); ok &&
+				next.exportAssets != nil {
 				switch {
 				case item.PresetStyle:
 					for _, asset := range next.exportAssets.TemplateAssets {
-						if asset.ReportKind != item.ReportKind || asset.AssetKind != item.AssetKind || len(asset.Presets) == 0 {
+						if asset.ReportKind != item.ReportKind ||
+							asset.AssetKind != item.AssetKind ||
+							len(asset.Presets) == 0 {
 							continue
 						}
 						currentID := ""
@@ -230,7 +233,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 							nextID = asset.Presets[0].ID
 						}
 						*state = next.inputState()
-						return commands.ApplyExportTemplatePreset(m.client, item.ReportKind, item.AssetKind, nextID)
+						return commands.ApplyExportTemplatePreset(
+							m.client,
+							item.ReportKind,
+							item.AssetKind,
+							nextID,
+						)
 					}
 				case item.Label == "Reports directory":
 					next = next.openExportReportsDirDialog(next.exportAssets.ReportsDir)
@@ -263,7 +271,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		InstallUpdate: func(state inputpkg.State) tea.Cmd {
 			next := m.applyInputState(state)
-			return commands.InstallUpdate(next.updateStatus, next.selfUpdateInstallAvailable(), next.selfUpdateUnsupportedReason())
+			return commands.InstallUpdate(
+				next.updateStatus,
+				next.selfUpdateInstallAvailable(),
+				next.selfUpdateUnsupportedReason(),
+			)
 		},
 		DismissUpdate: func() tea.Cmd { return commands.DismissUpdate(m.client) },
 		ResumeSession: func(state inputpkg.State) tea.Cmd { return commands.ResumeFocusSession(m.client, state.Timer) },
@@ -334,11 +346,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 				return nil
 			}
 			if next.timer != nil && next.timer.State != "idle" {
-				next = next.withDialogState(next.dialogSnapshot().OpenIssueSessionTransition(issue.ID, "abandoned"))
+				next = next.withDialogState(
+					next.dialogSnapshot().OpenIssueSessionTransition(issue.ID, "abandoned"),
+				)
 				*state = next.inputState()
 				return nil
 			}
-			next = next.withDialogState(next.dialogSnapshot().OpenIssueStatusNote("abandoned", "Abandon reason", true))
+			next = next.withDialogState(
+				next.dialogSnapshot().OpenIssueStatusNote("abandoned", "Abandon reason", true),
+			)
 			next.dialogIssueID = issue.ID
 			next.dialogStreamID = issue.StreamID
 			*state = next.inputState()
@@ -354,7 +370,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 				} else {
 					date = next.currentDashboardDate()
 				}
-				return commands.SetIssueTodoDate(m.client, issue.ID, date, issue.StreamID, next.currentDashboardDate())
+				return commands.SetIssueTodoDate(
+					m.client,
+					issue.ID,
+					date,
+					issue.StreamID,
+					next.currentDashboardDate(),
+				)
 			}
 			return nil
 		},
@@ -362,7 +384,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()
 			if issue, ok := selectionpkg.SelectedIssue(snapshot); ok {
-				return commands.ToggleIssuePinnedDaily(m.client, issue.ID, issue.PinnedDaily, issue.StreamID, next.currentDashboardDate())
+				return commands.ToggleIssuePinnedDaily(
+					m.client,
+					issue.ID,
+					issue.PinnedDaily,
+					issue.StreamID,
+					next.currentDashboardDate(),
+				)
 			}
 			return nil
 		},
@@ -370,7 +398,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()
 			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
-				next = next.withDialogState(next.dialogSnapshot().OpenDatePicker("", issue.ID, 0, issue.TodoForDate))
+				next = next.withDialogState(
+					next.dialogSnapshot().OpenDatePicker("", issue.ID, 0, issue.TodoForDate),
+				)
 			}
 			*state = next.inputState()
 			return true
@@ -399,7 +429,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			if !ok {
 				return nil, false
 			}
-			next = next.openHabitCompletionDialog(habit.ID, next.currentDashboardDate(), habit.TargetMinutes, nil)
+			next = next.openHabitCompletionDialog(
+				habit.ID,
+				next.currentDashboardDate(),
+				habit.TargetMinutes,
+				nil,
+			)
 			*state = next.inputState()
 			return nil, true
 		},
@@ -452,7 +487,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			if next.view == ViewDaily && next.pane == PaneHabits {
 				if habit, ok := next.selectedDailyHabitRecord(); ok {
-					next = next.openHabitCompletionDialog(habit.ID, next.currentDashboardDate(), habit.DurationMinutes, habit.Notes)
+					next = next.openHabitCompletionDialog(
+						habit.ID,
+						next.currentDashboardDate(),
+						habit.DurationMinutes,
+						habit.Notes,
+					)
 					*state = next.inputState()
 					return true
 				}
@@ -466,7 +506,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 					issueLabel = meta.Title
 					estimateMinutes = meta.EstimateMinutes
 				}
-				next = next.openManualSessionDialog(issue.ID, issueLabel, estimateMinutes, next.currentDashboardDate())
+				next = next.openManualSessionDialog(
+					issue.ID,
+					issueLabel,
+					estimateMinutes,
+					next.currentDashboardDate(),
+				)
 				*state = next.inputState()
 				return true
 			}
@@ -578,13 +623,23 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			next = next.openDatePickerDialog("rollup_start", 0, 0, dialogstate.ValueToPointer(next.currentRollupStartDate()))
+			next = next.openDatePickerDialog(
+				"rollup_start",
+				0,
+				0,
+				dialogstate.ValueToPointer(next.currentRollupStartDate()),
+			)
 			*state = next.inputState()
 			return true
 		},
 		OpenRollupEndDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			next = next.openDatePickerDialog("rollup_end", 0, 0, dialogstate.ValueToPointer(next.currentRollupEndDate()))
+			next = next.openDatePickerDialog(
+				"rollup_end",
+				0,
+				0,
+				dialogstate.ValueToPointer(next.currentRollupEndDate()),
+			)
 			*state = next.inputState()
 			return true
 		},

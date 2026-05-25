@@ -15,7 +15,11 @@ type templatePreset struct {
 	Body         string
 }
 
-func presetSelectionForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) *sharedtypes.ExportTemplatePresetSelection {
+func presetSelectionForAsset(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+	presetID string,
+) *sharedtypes.ExportTemplatePresetSelection {
 	if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
 		return nil
 	}
@@ -31,7 +35,10 @@ func presetSelectionForAsset(reportKind sharedtypes.ExportReportKind, assetKind 
 	return nil
 }
 
-func presetMetadataForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) []sharedtypes.ExportTemplatePreset {
+func presetMetadataForAsset(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+) []sharedtypes.ExportTemplatePreset {
 	if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
 		return nil
 	}
@@ -49,7 +56,11 @@ func presetMetadataForAsset(reportKind sharedtypes.ExportReportKind, assetKind s
 	return out
 }
 
-func presetTemplateBody(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) (string, bool) {
+func presetTemplateBody(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+	presetID string,
+) (string, bool) {
 	for _, preset := range presetsForAsset(reportKind, assetKind) {
 		if preset.ID == presetID {
 			return preset.Body, true
@@ -58,14 +69,21 @@ func presetTemplateBody(reportKind sharedtypes.ExportReportKind, assetKind share
 	return "", false
 }
 
-func defaultPresetIDForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) string {
+func defaultPresetIDForAsset(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+) string {
 	if len(presetsForAsset(reportKind, assetKind)) == 0 {
 		return ""
 	}
 	return "balanced"
 }
 
-func normalizePresetID(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind, presetID string) string {
+func normalizePresetID(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+	presetID string,
+) string {
 	presetID = strings.TrimSpace(presetID)
 	if presetID == "" {
 		return defaultPresetIDForAsset(reportKind, assetKind)
@@ -76,7 +94,10 @@ func normalizePresetID(reportKind sharedtypes.ExportReportKind, assetKind shared
 	return defaultPresetIDForAsset(reportKind, assetKind)
 }
 
-func presetsForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedtypes.ExportAssetKind) []templatePreset {
+func presetsForAsset(
+	reportKind sharedtypes.ExportReportKind,
+	assetKind sharedtypes.ExportAssetKind,
+) []templatePreset {
 	if assetKind != sharedtypes.ExportAssetKindTemplateMarkdown &&
 		assetKind != sharedtypes.ExportAssetKindTemplatePDF &&
 		assetKind != sharedtypes.ExportAssetKindTemplatePDFHTML &&
@@ -85,7 +106,8 @@ func presetsForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedty
 	}
 	switch reportKind {
 	case sharedtypes.ExportReportKindDaily:
-		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
 			return dailyPDFPresets()
 		}
 		if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
@@ -93,7 +115,8 @@ func presetsForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedty
 		}
 		return dailyMarkdownPresets()
 	case sharedtypes.ExportReportKindWeekly:
-		if assetKind == sharedtypes.ExportAssetKindTemplatePDF || assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
 			return weeklyPDFPresets()
 		}
 		if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
@@ -107,37 +130,149 @@ func presetsForAsset(reportKind sharedtypes.ExportReportKind, assetKind sharedty
 
 func dailyMarkdownPresets() []templatePreset {
 	return []templatePreset{
-		{ID: "brief", Label: "Brief", Description: "Short executive skim with only the strongest signals.", PreviewTitle: "Brief Daily", PreviewBody: "🧭 One screen summary\n\n• Today in 4-6 bullets\n• Short wins and watchouts\n• Tiny issue rollup", Body: dailyBriefMarkdownTemplate},
-		{ID: "balanced", Label: "Balanced", Description: "Readable default with highlights, metrics, and compact sections.", PreviewTitle: "Balanced Daily", PreviewBody: "✨ Summary first\n\n• Snapshot\n• Highlights / risks\n• Compact habits and issues", Body: fallbackDailyReportTemplate},
-		{ID: "visual", Label: "Visual", Description: "More badges, dividers, and emoji-led scannability.", PreviewTitle: "Visual Daily", PreviewBody: "📊 Card-like sections\n\n• Big top summary\n• Emoji headings\n• Compact visual lists", Body: dailyVisualMarkdownTemplate},
-		{ID: "deep", Label: "Deep", Description: "Fuller daily context without the old wall-of-text layout.", PreviewTitle: "Deep Daily", PreviewBody: "📝 Detailed but structured\n\n• Summary\n• Wellbeing\n• Plan accountability\n• Work breakdown", Body: dailyDeepMarkdownTemplate},
+		{
+			ID:           "brief",
+			Label:        "Brief",
+			Description:  "Short executive skim with only the strongest signals.",
+			PreviewTitle: "Brief Daily",
+			PreviewBody:  "🧭 One screen summary\n\n• Today in 4-6 bullets\n• Short wins and watchouts\n• Tiny issue rollup",
+			Body:         dailyBriefMarkdownTemplate,
+		},
+		{
+			ID:           "balanced",
+			Label:        "Balanced",
+			Description:  "Readable default with highlights, metrics, and compact sections.",
+			PreviewTitle: "Balanced Daily",
+			PreviewBody:  "✨ Summary first\n\n• Snapshot\n• Highlights / risks\n• Compact habits and issues",
+			Body:         fallbackDailyReportTemplate,
+		},
+		{
+			ID:           "visual",
+			Label:        "Visual",
+			Description:  "More badges, dividers, and emoji-led scannability.",
+			PreviewTitle: "Visual Daily",
+			PreviewBody:  "📊 Card-like sections\n\n• Big top summary\n• Emoji headings\n• Compact visual lists",
+			Body:         dailyVisualMarkdownTemplate,
+		},
+		{
+			ID:           "deep",
+			Label:        "Deep",
+			Description:  "Fuller daily context without the old wall-of-text layout.",
+			PreviewTitle: "Deep Daily",
+			PreviewBody:  "📝 Detailed but structured\n\n• Summary\n• Wellbeing\n• Plan accountability\n• Work breakdown",
+			Body:         dailyDeepMarkdownTemplate,
+		},
 	}
 }
 
 func dailyPDFPresets() []templatePreset {
 	return []templatePreset{
-		{ID: "brief", Label: "Brief", Description: "Short PDF summary with strong hierarchy.", PreviewTitle: "Brief Daily PDF", PreviewBody: "🗂 Tight top card + compact work lists", Body: dailyBriefPDFTemplate},
-		{ID: "balanced", Label: "Balanced", Description: "Default PDF summary with readable sections.", PreviewTitle: "Balanced Daily PDF", PreviewBody: "📄 Clean sectioned summary with highlights", Body: fallbackDailyReportPDFTemplate},
-		{ID: "visual", Label: "Visual", Description: "More section cards and visual markers for print/export.", PreviewTitle: "Visual Daily PDF", PreviewBody: "🎯 Metric blocks, callouts, and icon-led sections", Body: dailyVisualPDFTemplate},
-		{ID: "deep", Label: "Deep", Description: "Longer PDF with still-compact structured detail.", PreviewTitle: "Deep Daily PDF", PreviewBody: "📚 Detailed summary plus grouped work sections", Body: dailyDeepPDFTemplate},
+		{
+			ID:           "brief",
+			Label:        "Brief",
+			Description:  "Short PDF summary with strong hierarchy.",
+			PreviewTitle: "Brief Daily PDF",
+			PreviewBody:  "🗂 Tight top card + compact work lists",
+			Body:         dailyBriefPDFTemplate,
+		},
+		{
+			ID:           "balanced",
+			Label:        "Balanced",
+			Description:  "Default PDF summary with readable sections.",
+			PreviewTitle: "Balanced Daily PDF",
+			PreviewBody:  "📄 Clean sectioned summary with highlights",
+			Body:         fallbackDailyReportPDFTemplate,
+		},
+		{
+			ID:           "visual",
+			Label:        "Visual",
+			Description:  "More section cards and visual markers for print/export.",
+			PreviewTitle: "Visual Daily PDF",
+			PreviewBody:  "🎯 Metric blocks, callouts, and icon-led sections",
+			Body:         dailyVisualPDFTemplate,
+		},
+		{
+			ID:           "deep",
+			Label:        "Deep",
+			Description:  "Longer PDF with still-compact structured detail.",
+			PreviewTitle: "Deep Daily PDF",
+			PreviewBody:  "📚 Detailed summary plus grouped work sections",
+			Body:         dailyDeepPDFTemplate,
+		},
 	}
 }
 
 func weeklyMarkdownPresets() []templatePreset {
 	return []templatePreset{
-		{ID: "brief", Label: "Brief", Description: "Fast weekly skim with rollup and top days only.", PreviewTitle: "Brief Weekly", PreviewBody: "📅 Weekly rollup in a glance\n\n• Core metrics\n• Best / hardest days", Body: weeklyBriefMarkdownTemplate},
-		{ID: "balanced", Label: "Balanced", Description: "Default readable weekly narrative.", PreviewTitle: "Balanced Weekly", PreviewBody: "✨ Rollup + streaks + day snapshots", Body: fallbackWeeklyReportTemplate},
-		{ID: "visual", Label: "Visual", Description: "Weekly report with stronger signposting and lighter prose.", PreviewTitle: "Visual Weekly", PreviewBody: "📈 Strong metric framing and emoji-led day cards", Body: weeklyVisualMarkdownTemplate},
-		{ID: "deep", Label: "Deep", Description: "More complete weekly recap with compact daily detail.", PreviewTitle: "Deep Weekly", PreviewBody: "📝 Expanded weekly review without the old density", Body: weeklyDeepMarkdownTemplate},
+		{
+			ID:           "brief",
+			Label:        "Brief",
+			Description:  "Fast weekly skim with rollup and top days only.",
+			PreviewTitle: "Brief Weekly",
+			PreviewBody:  "📅 Weekly rollup in a glance\n\n• Core metrics\n• Best / hardest days",
+			Body:         weeklyBriefMarkdownTemplate,
+		},
+		{
+			ID:           "balanced",
+			Label:        "Balanced",
+			Description:  "Default readable weekly narrative.",
+			PreviewTitle: "Balanced Weekly",
+			PreviewBody:  "✨ Rollup + streaks + day snapshots",
+			Body:         fallbackWeeklyReportTemplate,
+		},
+		{
+			ID:           "visual",
+			Label:        "Visual",
+			Description:  "Weekly report with stronger signposting and lighter prose.",
+			PreviewTitle: "Visual Weekly",
+			PreviewBody:  "📈 Strong metric framing and emoji-led day cards",
+			Body:         weeklyVisualMarkdownTemplate,
+		},
+		{
+			ID:           "deep",
+			Label:        "Deep",
+			Description:  "More complete weekly recap with compact daily detail.",
+			PreviewTitle: "Deep Weekly",
+			PreviewBody:  "📝 Expanded weekly review without the old density",
+			Body:         weeklyDeepMarkdownTemplate,
+		},
 	}
 }
 
 func weeklyPDFPresets() []templatePreset {
 	return []templatePreset{
-		{ID: "brief", Label: "Brief", Description: "Compressed weekly PDF with strong rollup hierarchy.", PreviewTitle: "Brief Weekly PDF", PreviewBody: "📌 Core rollup and short day list", Body: weeklyBriefPDFTemplate},
-		{ID: "balanced", Label: "Balanced", Description: "Default weekly PDF summary.", PreviewTitle: "Balanced Weekly PDF", PreviewBody: "📄 Clear rollup and daily snapshots", Body: fallbackWeeklyReportPDFTemplate},
-		{ID: "visual", Label: "Visual", Description: "More visual structure and emphasis for PDF export.", PreviewTitle: "Visual Weekly PDF", PreviewBody: "🎨 Card-like rollup with stronger visual cues", Body: weeklyVisualPDFTemplate},
-		{ID: "deep", Label: "Deep", Description: "Most detailed weekly PDF while staying structured.", PreviewTitle: "Deep Weekly PDF", PreviewBody: "📚 More complete week review with compact daily sections", Body: weeklyDeepPDFTemplate},
+		{
+			ID:           "brief",
+			Label:        "Brief",
+			Description:  "Compressed weekly PDF with strong rollup hierarchy.",
+			PreviewTitle: "Brief Weekly PDF",
+			PreviewBody:  "📌 Core rollup and short day list",
+			Body:         weeklyBriefPDFTemplate,
+		},
+		{
+			ID:           "balanced",
+			Label:        "Balanced",
+			Description:  "Default weekly PDF summary.",
+			PreviewTitle: "Balanced Weekly PDF",
+			PreviewBody:  "📄 Clear rollup and daily snapshots",
+			Body:         fallbackWeeklyReportPDFTemplate,
+		},
+		{
+			ID:           "visual",
+			Label:        "Visual",
+			Description:  "More visual structure and emphasis for PDF export.",
+			PreviewTitle: "Visual Weekly PDF",
+			PreviewBody:  "🎨 Card-like rollup with stronger visual cues",
+			Body:         weeklyVisualPDFTemplate,
+		},
+		{
+			ID:           "deep",
+			Label:        "Deep",
+			Description:  "Most detailed weekly PDF while staying structured.",
+			PreviewTitle: "Deep Weekly PDF",
+			PreviewBody:  "📚 More complete week review with compact daily sections",
+			Body:         weeklyDeepPDFTemplate,
+		},
 	}
 }
 
@@ -491,8 +626,13 @@ const weeklyDeepPDFTemplate = `<!doctype html>
 </body></html>`
 
 const dailyBriefPDFStyles = `@page { margin: 18mm; } body { font-family: Inter, Arial, sans-serif; color: #142018; font-size: 11pt; } .hero { margin-bottom: 16px; } .eyebrow { color: #1d7a57; text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 24pt; } .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border: 1px solid #dbe9df; border-radius: 10px; padding: 10px 12px; background: #f8fbf8; } .metric-label { font-size: 8.5pt; color: #5c6b61; text-transform: uppercase; } .metric-value { font-size: 14pt; font-weight: 700; margin-top: 4px; } .section { margin-top: 16px; } h2 { font-size: 14pt; margin: 0 0 8px; } .bullet-list { padding-left: 18px; margin: 0; } .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #edf3ee; }`
+
 const dailyVisualPDFStyles = `@page { margin: 16mm; } body { font-family: "Avenir Next", Inter, sans-serif; color: #101418; font-size: 11pt; } .hero { margin-bottom: 16px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(135deg, #effaf5, #f7fbff); } .eyebrow { color: #0f7a60; text-transform: uppercase; letter-spacing: .14em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 24pt; } .subtle { color: #53616c; margin-top: 4px; } .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border-radius: 12px; padding: 12px 14px; background: #f6faf8; border: 1px solid #d9ebe1; } .metric-card.emphasis { background: #0f7a60; color: white; border-color: #0f7a60; } .metric-card.emphasis .metric-label { color: rgba(255,255,255,.78); } .metric-label { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .08em; color: #5a6660; } .metric-value { font-size: 15pt; font-weight: 700; margin-top: 4px; } .section { margin-top: 18px; } h2 { font-size: 14pt; margin: 0 0 8px; } .bullet-list { padding-left: 18px; margin: 0; }`
+
 const dailyDeepPDFStyles = `@page { margin: 18mm; } body { font-family: Georgia, "Times New Roman", serif; color: #1d1d1d; font-size: 11pt; line-height: 1.45; } .hero { margin-bottom: 18px; } .eyebrow { color: #5b6b63; text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 23pt; } .subtle { color: #69736f; margin-top: 4px; } .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border: 1px solid #e4e4e4; padding: 10px 12px; border-radius: 10px; } .metric-label { color: #626262; font-size: 8.5pt; text-transform: uppercase; } .metric-value { margin-top: 4px; font-size: 14pt; font-weight: 700; } .section { margin-top: 18px; } h2 { font-size: 14pt; border-bottom: 1px solid #ddd; padding-bottom: 4px; } h3 { margin: 12px 0 8px; } h4 { margin: 10px 0 6px; color: #3d4c45; } .bullet-list { padding-left: 18px; } .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #efefef; } .row-good { color: #1b6d45; } .row-warn { color: #8a5b00; }`
+
 const weeklyBriefPDFStyles = `@page { margin: 18mm; } body { font-family: Inter, Arial, sans-serif; color: #162018; font-size: 11pt; } .hero { margin-bottom: 16px; } .eyebrow { color: #2366c2; text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 22pt; } .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border: 1px solid #dde7f5; border-radius: 10px; padding: 10px 12px; background: #f8fbff; } .metric-label { font-size: 8.5pt; color: #5f6871; text-transform: uppercase; } .metric-value { font-size: 14pt; font-weight: 700; margin-top: 4px; } .section { margin-top: 16px; } .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #edf1f7; }`
+
 const weeklyVisualPDFStyles = `@page { margin: 16mm; } body { font-family: "Avenir Next", Inter, sans-serif; color: #122030; font-size: 11pt; } .hero { margin-bottom: 16px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(135deg, #f3f8ff, #f9fbff); } .eyebrow { color: #275ec0; text-transform: uppercase; letter-spacing: .14em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 23pt; } .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border-radius: 12px; padding: 12px 14px; background: #f7faff; border: 1px solid #dfe7f6; } .metric-card.emphasis { background: #275ec0; color: white; border-color: #275ec0; } .metric-card.emphasis .metric-label { color: rgba(255,255,255,.75); } .metric-label { font-size: 8.5pt; color: #5c6672; text-transform: uppercase; } .metric-value { font-size: 15pt; font-weight: 700; margin-top: 4px; } .section { margin-top: 18px; } .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #edf1f7; }`
+
 const weeklyDeepPDFStyles = `@page { margin: 18mm; } body { font-family: Georgia, "Times New Roman", serif; color: #202020; font-size: 11pt; line-height: 1.45; } .hero { margin-bottom: 18px; } .eyebrow { color: #4f5f80; text-transform: uppercase; letter-spacing: .12em; font-size: 9pt; } h1 { margin: 4px 0 0; font-size: 22pt; } .subtle { color: #6c7380; margin-top: 4px; } .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 16px 0; } .metric-card { border: 1px solid #e4e8ef; padding: 10px 12px; border-radius: 10px; } .metric-label { color: #666; font-size: 8.5pt; text-transform: uppercase; } .metric-value { margin-top: 4px; font-size: 14pt; font-weight: 700; } .section { margin-top: 18px; } .day-card { border: 1px solid #eceff4; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; break-inside: avoid; } .day-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; } h3 { margin: 0; font-size: 12pt; } .pill { background: #eef3fb; color: #345ea8; border-radius: 999px; padding: 3px 8px; font-size: 9pt; font-weight: 700; } .day-grid { display: grid; gap: 4px; }`

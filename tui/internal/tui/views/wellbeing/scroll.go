@@ -15,27 +15,50 @@ func PaneLineCount(state types.ContentState, pane string) int {
 		if state.Height < 30 {
 			return len(flattenLines(summaryBodyLines(types.Theme{}, state, state.Width, true)))
 		}
-		return len(flattenLines(summaryBodyLines(types.Theme{}, state, state.Width, state.Height < 37)))
+		return len(
+			flattenLines(summaryBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
+		)
 	case string(uistate.PaneWellbeingTrends):
 		if state.Height < 30 {
 			return len(flattenLines(trendsBodyLines(types.Theme{}, state, state.Width, true)))
 		}
 		if state.Width >= 96 {
-			return len(flattenLines(metricsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)))
+			return len(
+				flattenLines(
+					metricsBodyLines(types.Theme{}, state, state.Width, state.Height < 37),
+				),
+			)
 		}
-		return len(flattenLines(trendsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)))
+		return len(
+			flattenLines(trendsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
+		)
 	case string(uistate.PaneWellbeingStreaks):
-		return len(flattenLines(streaksBodyLines(types.Theme{}, state, state.Width, state.Height < 37)))
+		return len(
+			flattenLines(streaksBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
+		)
 	default:
 		return 0
 	}
 }
 
-func renderScrollablePane(theme types.Theme, active bool, width, height int, header []string, body []string, cursor int) string {
+func renderScrollablePane(
+	theme types.Theme,
+	active bool,
+	width, height int,
+	header []string,
+	body []string,
+	cursor int,
+) string {
 	lines := append([]string{}, header...)
 	bodyLines := flattenLines(body)
 	if len(bodyLines) == 0 {
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	start, end := visibleBodyWindow(cursor, len(bodyLines), inner)

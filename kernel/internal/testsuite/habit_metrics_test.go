@@ -64,12 +64,14 @@ func TestHabitMetricsCountDueCompletedAndFailedDays(t *testing.T) {
 			t.Fatalf("expected one due habit per day, got %+v", day)
 		}
 	}
-	if days[0].HabitCompletedCount != 1 || days[1].HabitCompletedCount != 1 || days[2].HabitFailedCount != 1 {
+	if days[0].HabitCompletedCount != 1 || days[1].HabitCompletedCount != 1 ||
+		days[2].HabitFailedCount != 1 {
 		t.Fatalf("unexpected habit counts: %+v %+v %+v", days[0], days[1], days[2])
 	}
 
 	rollup := corecommands.ComputeMetricsRollupFromDays("2026-04-01", "2026-04-03", days)
-	if rollup.HabitDueCount != 3 || rollup.HabitCompletedCount != 2 || rollup.HabitFailedCount != 1 {
+	if rollup.HabitDueCount != 3 || rollup.HabitCompletedCount != 2 ||
+		rollup.HabitFailedCount != 1 {
 		t.Fatalf("unexpected habit rollup counts: %+v", rollup)
 	}
 
@@ -198,18 +200,31 @@ func TestLifetimeStreaksUseHistoryBeforeWellbeingWindow(t *testing.T) {
 	}
 
 	for _, date := range []string{"2026-04-01", "2026-04-02", "2026-04-03", "2026-04-04", "2026-04-05", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10"} {
-		seedFocusDay(t, ctx, coreCtx, stream.ID, 5000+int64(len(date))+int64(date[len(date)-1]), date)
+		seedFocusDay(
+			t,
+			ctx,
+			coreCtx,
+			stream.ID,
+			5000+int64(len(date))+int64(date[len(date)-1]),
+			date,
+		)
 		seedCheckInDay(t, ctx, coreCtx, date)
 		if _, err := corecommands.CompleteHabit(ctx, coreCtx, habit.ID, date, sharedtypes.HabitCompletionStatusCompleted, nil, nil); err != nil {
 			t.Fatalf("complete habit %s: %v", date, err)
 		}
 	}
 
-	windowStreaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-04", "2026-04-10")
+	windowStreaks, err := corecommands.ComputeMetricsStreaks(
+		ctx,
+		coreCtx,
+		"2026-04-04",
+		"2026-04-10",
+	)
 	if err != nil {
 		t.Fatalf("compute window streaks: %v", err)
 	}
-	if windowStreaks.CurrentFocusDays != 7 || windowStreaks.CurrentCheckInDays != 7 || windowStreaks.CurrentHabitDays != 7 {
+	if windowStreaks.CurrentFocusDays != 7 || windowStreaks.CurrentCheckInDays != 7 ||
+		windowStreaks.CurrentHabitDays != 7 {
 		t.Fatalf("expected 7-day window streaks, got %+v", windowStreaks)
 	}
 
@@ -217,7 +232,8 @@ func TestLifetimeStreaksUseHistoryBeforeWellbeingWindow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("compute lifetime streaks: %v", err)
 	}
-	if lifetimeStreaks.CurrentFocusDays != 10 || lifetimeStreaks.CurrentCheckInDays != 10 || lifetimeStreaks.CurrentHabitDays != 10 {
+	if lifetimeStreaks.CurrentFocusDays != 10 || lifetimeStreaks.CurrentCheckInDays != 10 ||
+		lifetimeStreaks.CurrentHabitDays != 10 {
 		t.Fatalf("expected lifetime streaks to include all history, got %+v", lifetimeStreaks)
 	}
 }
@@ -265,14 +281,33 @@ func TestLifetimeCustomHabitStreaksUseHistoryBeforeWellbeingWindow(t *testing.T)
 		}
 	}
 	defs := []sharedtypes.HabitStreakDefinition{
-		{ID: "weekly", Name: "Weekly training", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 2, HabitIDs: []int64{habit.ID}},
-		{ID: "monthly", Name: "Monthly training", Enabled: true, Period: sharedtypes.HabitStreakPeriodMonth, RequiredCount: 3, HabitIDs: []int64{habit.ID}},
+		{
+			ID:            "weekly",
+			Name:          "Weekly training",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 2,
+			HabitIDs:      []int64{habit.ID},
+		},
+		{
+			ID:            "monthly",
+			Name:          "Monthly training",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodMonth,
+			RequiredCount: 3,
+			HabitIDs:      []int64{habit.ID},
+		},
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
 		t.Fatalf("set custom streak defs: %v", err)
 	}
 
-	windowStreaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-04", "2026-04-10")
+	windowStreaks, err := corecommands.ComputeMetricsStreaks(
+		ctx,
+		coreCtx,
+		"2026-04-04",
+		"2026-04-10",
+	)
 	if err != nil {
 		t.Fatalf("compute window streaks: %v", err)
 	}
@@ -281,16 +316,32 @@ func TestLifetimeCustomHabitStreaksUseHistoryBeforeWellbeingWindow(t *testing.T)
 		t.Fatalf("compute lifetime streaks: %v", err)
 	}
 	if len(windowStreaks.CustomHabitStreaks) != 2 || len(lifetimeStreaks.CustomHabitStreaks) != 2 {
-		t.Fatalf("expected two custom streaks, got window=%+v lifetime=%+v", windowStreaks.CustomHabitStreaks, lifetimeStreaks.CustomHabitStreaks)
+		t.Fatalf(
+			"expected two custom streaks, got window=%+v lifetime=%+v",
+			windowStreaks.CustomHabitStreaks,
+			lifetimeStreaks.CustomHabitStreaks,
+		)
 	}
-	if windowStreaks.CustomHabitStreaks[0].Current != 1 || windowStreaks.CustomHabitStreaks[1].Current != 0 {
-		t.Fatalf("expected 7-day custom streaks to miss older buckets, got %+v", windowStreaks.CustomHabitStreaks)
+	if windowStreaks.CustomHabitStreaks[0].Current != 1 ||
+		windowStreaks.CustomHabitStreaks[1].Current != 0 {
+		t.Fatalf(
+			"expected 7-day custom streaks to miss older buckets, got %+v",
+			windowStreaks.CustomHabitStreaks,
+		)
 	}
-	if lifetimeStreaks.CustomHabitStreaks[0].Current != 2 || lifetimeStreaks.CustomHabitStreaks[0].Longest != 2 {
-		t.Fatalf("unexpected lifetime weekly custom streak: %+v", lifetimeStreaks.CustomHabitStreaks[0])
+	if lifetimeStreaks.CustomHabitStreaks[0].Current != 2 ||
+		lifetimeStreaks.CustomHabitStreaks[0].Longest != 2 {
+		t.Fatalf(
+			"unexpected lifetime weekly custom streak: %+v",
+			lifetimeStreaks.CustomHabitStreaks[0],
+		)
 	}
-	if lifetimeStreaks.CustomHabitStreaks[1].Current != 3 || lifetimeStreaks.CustomHabitStreaks[1].Longest != 3 {
-		t.Fatalf("unexpected lifetime monthly custom streak: %+v", lifetimeStreaks.CustomHabitStreaks[1])
+	if lifetimeStreaks.CustomHabitStreaks[1].Current != 3 ||
+		lifetimeStreaks.CustomHabitStreaks[1].Longest != 3 {
+		t.Fatalf(
+			"unexpected lifetime monthly custom streak: %+v",
+			lifetimeStreaks.CustomHabitStreaks[1],
+		)
 	}
 }
 
@@ -356,8 +407,22 @@ func TestCustomWeeklyAndMonthlyStreaksSurviveIncompleteOpenBucket(t *testing.T) 
 		}
 	}
 	defs := []sharedtypes.HabitStreakDefinition{
-		{ID: "weekly", Name: "Weekly practice", Enabled: true, Period: sharedtypes.HabitStreakPeriodWeek, RequiredCount: 2, HabitIDs: []int64{weeklyHabit.ID}},
-		{ID: "monthly", Name: "Monthly practice", Enabled: true, Period: sharedtypes.HabitStreakPeriodMonth, RequiredCount: 3, HabitIDs: []int64{monthlyHabit.ID}},
+		{
+			ID:            "weekly",
+			Name:          "Weekly practice",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 2,
+			HabitIDs:      []int64{weeklyHabit.ID},
+		},
+		{
+			ID:            "monthly",
+			Name:          "Monthly practice",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodMonth,
+			RequiredCount: 3,
+			HabitIDs:      []int64{monthlyHabit.ID},
+		},
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
 		t.Fatalf("set custom streak defs: %v", err)
@@ -371,9 +436,15 @@ func TestCustomWeeklyAndMonthlyStreaksSurviveIncompleteOpenBucket(t *testing.T) 
 		t.Fatalf("expected two custom streaks, got %+v", streaks.CustomHabitStreaks)
 	}
 	if streaks.CustomHabitStreaks[0].Current != 2 || streaks.CustomHabitStreaks[0].Longest != 2 {
-		t.Fatalf("expected incomplete open week not to break weekly streak, got %+v", streaks.CustomHabitStreaks[0])
+		t.Fatalf(
+			"expected incomplete open week not to break weekly streak, got %+v",
+			streaks.CustomHabitStreaks[0],
+		)
 	}
 	if streaks.CustomHabitStreaks[1].Current != 2 || streaks.CustomHabitStreaks[1].Longest != 2 {
-		t.Fatalf("expected incomplete open month not to break monthly streak, got %+v", streaks.CustomHabitStreaks[1])
+		t.Fatalf(
+			"expected incomplete open month not to break monthly streak, got %+v",
+			streaks.CustomHabitStreaks[1],
+		)
 	}
 }

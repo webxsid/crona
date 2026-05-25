@@ -12,7 +12,6 @@ func ClearAllData(ctx context.Context, db *bun.DB) error {
 		"sessions",
 		"stash",
 		"ops",
-		"scratch_pad_meta",
 		"daily_plan_events",
 		"daily_plan_entries",
 		"daily_plans",

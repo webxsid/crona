@@ -24,7 +24,12 @@ func NextPublicID(ctx context.Context, db *bun.DB, table string) (int64, error) 
 }
 
 // ResolveRepoInternalID resolves a repo public_id to its internal id.
-func ResolveRepoInternalID(ctx context.Context, db *bun.DB, repoID int64, userID string) (string, error) {
+func ResolveRepoInternalID(
+	ctx context.Context,
+	db *bun.DB,
+	repoID int64,
+	userID string,
+) (string, error) {
 	var internalID string
 	err := db.NewSelect().
 		TableExpr("repos").
@@ -44,7 +49,12 @@ func ResolveRepoInternalID(ctx context.Context, db *bun.DB, repoID int64, userID
 }
 
 // ResolveStreamInternalID resolves a stream public_id to its internal id.
-func ResolveStreamInternalID(ctx context.Context, db *bun.DB, streamID int64, userID string) (string, error) {
+func ResolveStreamInternalID(
+	ctx context.Context,
+	db *bun.DB,
+	streamID int64,
+	userID string,
+) (string, error) {
 	var internalID string
 	err := db.NewSelect().
 		TableExpr("streams").
@@ -64,7 +74,12 @@ func ResolveStreamInternalID(ctx context.Context, db *bun.DB, streamID int64, us
 }
 
 // ResolveIssueInternalID resolves an issue public_id to its internal id.
-func ResolveIssueInternalID(ctx context.Context, db *bun.DB, issueID int64, userID string) (string, error) {
+func ResolveIssueInternalID(
+	ctx context.Context,
+	db *bun.DB,
+	issueID int64,
+	userID string,
+) (string, error) {
 	var internalID string
 	err := db.NewSelect().
 		TableExpr("issues").
@@ -84,7 +99,12 @@ func ResolveIssueInternalID(ctx context.Context, db *bun.DB, issueID int64, user
 }
 
 // ResolveHabitInternalID resolves a habit public_id to its internal id.
-func ResolveHabitInternalID(ctx context.Context, db *bun.DB, habitID int64, userID string) (string, error) {
+func ResolveHabitInternalID(
+	ctx context.Context,
+	db *bun.DB,
+	habitID int64,
+	userID string,
+) (string, error) {
 	var internalID string
 	err := db.NewSelect().
 		TableExpr("habits").

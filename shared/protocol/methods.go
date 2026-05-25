@@ -128,13 +128,6 @@ const (
 	MethodStashApply = "stash.apply"
 	MethodStashDrop  = "stash.drop"
 
-	MethodScratchpadList     = "scratchpad.list"
-	MethodScratchpadRegister = "scratchpad.register"
-	MethodScratchpadGetMeta  = "scratchpad.get_meta"
-	MethodScratchpadRead     = "scratchpad.read"
-	MethodScratchpadPin      = "scratchpad.pin"
-	MethodScratchpadDelete   = "scratchpad.delete"
-
 	MethodOpsList   = "ops.list"
 	MethodOpsLatest = "ops.latest"
 	MethodOpsSince  = "ops.since"

@@ -18,7 +18,18 @@ func reportItems(reports []api.ExportReportFile) []string {
 		if dateLabel == "" {
 			dateLabel = report.Date
 		}
-		items = append(items, fmt.Sprintf("[%s] %s    %s    [%s] %s    %d B", report.Kind, scope, dateLabel, report.Format, filepath.Base(report.Path), report.SizeBytes))
+		items = append(
+			items,
+			fmt.Sprintf(
+				"[%s] %s    %s    [%s] %s    %d B",
+				report.Kind,
+				scope,
+				dateLabel,
+				report.Format,
+				filepath.Base(report.Path),
+				report.SizeBytes,
+			),
+		)
 	}
 	return items
 }

@@ -87,16 +87,6 @@ If a user starts a focus session on an issue that already has a stash, the local
 
 The shared `{ repo -> stream -> issue }` selection across local clients.
 
-### Scratchpads
-
-Scratchpads are filesystem-backed notes rather than scoped database metadata.
-
-Example:
-
-```text
-notes/[[date]]-daily.md
-```
-
 ## Wellbeing Metrics
 
 The Wellbeing view combines a selected-day check-in with a rolling metrics window. Mood, energy, sleep, screen time, burnout, focus, and habit rollups are still shown for the recent 7-day window ending on the selected wellbeing date.

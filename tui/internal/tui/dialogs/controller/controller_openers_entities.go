@@ -66,7 +66,12 @@ func OpenCreateStream(state State, repoID int64, repoName string) State {
 	return state
 }
 
-func OpenEditStream(state State, streamID, repoID int64, streamName, repoName string, descriptionValue *string) State {
+func OpenEditStream(
+	state State,
+	streamID, repoID int64,
+	streamName, repoName string,
+	descriptionValue *string,
+) State {
 	input := textinput.New()
 	input.Placeholder = "Stream name"
 	input.SetValue(streamName)
@@ -125,7 +130,15 @@ func OpenCreateHabit(state State) State {
 	return SyncDialogFocus(state)
 }
 
-func OpenEditHabit(state State, habitID, streamID int64, name string, descriptionValue *string, scheduleRaw string, targetMinutes *int, active bool) State {
+func OpenEditHabit(
+	state State,
+	habitID, streamID int64,
+	name string,
+	descriptionValue *string,
+	scheduleRaw string,
+	targetMinutes *int,
+	active bool,
+) State {
 	nameInput := textinput.New()
 	nameInput.Placeholder = "Habit name"
 	nameInput.SetValue(name)
@@ -161,11 +174,32 @@ func OpenEditHabit(state State, habitID, streamID int64, name string, descriptio
 	return state
 }
 
-func OpenHabitCompletion(state State, habitID int64, date string, durationMinutes *int, notes *string) State {
-	return openHabitActivity(state, "complete_habit", "Habit Log", habitID, date, durationMinutes, notes)
+func OpenHabitCompletion(
+	state State,
+	habitID int64,
+	date string,
+	durationMinutes *int,
+	notes *string,
+) State {
+	return openHabitActivity(
+		state,
+		"complete_habit",
+		"Habit Log",
+		habitID,
+		date,
+		durationMinutes,
+		notes,
+	)
 }
 
-func openHabitActivity(state State, kind, title string, habitID int64, date string, durationMinutes *int, notes *string) State {
+func openHabitActivity(
+	state State,
+	kind, title string,
+	habitID int64,
+	date string,
+	durationMinutes *int,
+	notes *string,
+) State {
 	duration := textinput.New()
 	duration.Placeholder = "Duration (e.g. 30m, 1h15m)"
 	duration.Focus()
@@ -220,7 +254,14 @@ func OpenCreateIssueMeta(state State, streamID int64, streamName, repoName strin
 	return state
 }
 
-func OpenEditIssue(state State, issueID, streamID int64, title string, descriptionValue *string, estimateMinutes *int, todoForDate *string) State {
+func OpenEditIssue(
+	state State,
+	issueID, streamID int64,
+	title string,
+	descriptionValue *string,
+	estimateMinutes *int,
+	todoForDate *string,
+) State {
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Issue title"
 	titleInput.SetValue(title)
@@ -363,7 +404,12 @@ func OpenIssueStatus(state State, status string) State {
 	return state
 }
 
-func OpenIssueStatusNote(state State, issueID, streamID int64, status, label string, required bool) State {
+func OpenIssueStatusNote(
+	state State,
+	issueID, streamID int64,
+	status, label string,
+	required bool,
+) State {
 	input := textinput.New()
 	input.Placeholder = label
 	input.Focus()
@@ -434,7 +480,13 @@ func OpenAmendSession(state State, sessionID string, commit string) State {
 	return state
 }
 
-func OpenManualSession(state State, issueID int64, issueLabel string, estimateMinutes *int, date string) State {
+func OpenManualSession(
+	state State,
+	issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	date string,
+) State {
 	inputs := []textinput.Model{
 		newSessionDetailInput(state, "Summary (optional)"),
 		newSessionDetailInput(state, "YYYY-MM-DD"),
@@ -456,7 +508,14 @@ func OpenManualSession(state State, issueID int64, issueLabel string, estimateMi
 	return SyncDialogFocus(state)
 }
 
-func OpenDatePicker(state State, parentDialog string, issueID int64, inputIndex int, initial *string, currentDate string) State {
+func OpenDatePicker(
+	state State,
+	parentDialog string,
+	issueID int64,
+	inputIndex int,
+	initial *string,
+	currentDate string,
+) State {
 	selected := ResolveDialogDate(initial, currentDate)
 	monthStart := time.Date(selected.Year(), selected.Month(), 1, 0, 0, 0, 0, selected.Location())
 	state.Parent = parentDialog

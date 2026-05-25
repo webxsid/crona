@@ -17,9 +17,24 @@ func TestDefaultScopedIssues(t *testing.T) {
 	otherStreamID := int64(21)
 
 	model := app.NewDefaultScopeModel([]api.IssueWithMeta{
-		{Issue: api.Issue{ID: 1, StreamID: streamID, Title: "A"}, RepoID: repoID, RepoName: "Repo", StreamName: "main"},
-		{Issue: api.Issue{ID: 2, StreamID: otherStreamID, Title: "B"}, RepoID: otherRepoID, RepoName: "Other", StreamName: "dev"},
-		{Issue: api.Issue{ID: 3, StreamID: 22, Title: "C"}, RepoID: repoID, RepoName: "Repo", StreamName: "next"},
+		{
+			Issue:      api.Issue{ID: 1, StreamID: streamID, Title: "A"},
+			RepoID:     repoID,
+			RepoName:   "Repo",
+			StreamName: "main",
+		},
+		{
+			Issue:      api.Issue{ID: 2, StreamID: otherStreamID, Title: "B"},
+			RepoID:     otherRepoID,
+			RepoName:   "Other",
+			StreamName: "dev",
+		},
+		{
+			Issue:      api.Issue{ID: 3, StreamID: 22, Title: "C"},
+			RepoID:     repoID,
+			RepoName:   "Repo",
+			StreamName: "next",
+		},
 	}, nil)
 
 	if got := app.DefaultScopedIssuesForTest(model); len(got) != 3 {
@@ -27,11 +42,15 @@ func TestDefaultScopedIssues(t *testing.T) {
 	}
 
 	model = app.NewDefaultScopeModel(model.AllIssuesForTest(), &api.ActiveContext{RepoID: &repoID})
-	if got := app.DefaultScopedIssuesForTest(model); len(got) != 2 || got[0].RepoID != repoID || got[1].RepoID != repoID {
+	if got := app.DefaultScopedIssuesForTest(model); len(got) != 2 || got[0].RepoID != repoID ||
+		got[1].RepoID != repoID {
 		t.Fatalf("expected repo-scoped issues, got %+v", got)
 	}
 
-	model = app.NewDefaultScopeModel(model.AllIssuesForTest(), &api.ActiveContext{RepoID: &repoID, StreamID: &streamID})
+	model = app.NewDefaultScopeModel(
+		model.AllIssuesForTest(),
+		&api.ActiveContext{RepoID: &repoID, StreamID: &streamID},
+	)
 	if got := app.DefaultScopedIssuesForTest(model); len(got) != 1 || got[0].StreamID != streamID {
 		t.Fatalf("expected stream-scoped issues, got %+v", got)
 	}
@@ -58,7 +77,10 @@ func TestDefaultDialogsPrepopulateFromContext(t *testing.T) {
 		t.Fatalf("expected stream prefilled, got %q", issueDialog.DialogInputValue(1))
 	}
 	if issueDialog.DialogFocusIndex() != 2 {
-		t.Fatalf("expected title focus for stream-scoped issue dialog, got %d", issueDialog.DialogFocusIndex())
+		t.Fatalf(
+			"expected title focus for stream-scoped issue dialog, got %d",
+			issueDialog.DialogFocusIndex(),
+		)
 	}
 
 	checkoutDialog := app.OpenCheckoutContextDialogForTest(model)
@@ -74,7 +96,12 @@ func TestCheckoutDialogSelectionUsesResolvedRepoAndStream(t *testing.T) {
 	repos := []api.Repo{{ID: 10, Name: "Work"}}
 	streams := []api.Stream{{ID: 20, RepoID: 10, Name: "app"}}
 	allIssues := []api.IssueWithMeta{
-		{Issue: api.Issue{ID: 1, StreamID: 20, Title: "A"}, RepoID: 10, RepoName: "Work", StreamName: "app"},
+		{
+			Issue:      api.Issue{ID: 1, StreamID: 20, Title: "A"},
+			RepoID:     10,
+			RepoName:   "Work",
+			StreamName: "app",
+		},
 	}
 	repoInput := textinput.New()
 	repoInput.SetValue("Wo")

@@ -28,7 +28,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyMsg); ok {
-		logger.Infof("tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t scratchpad=%t filter_editing=%t", key.String(), m.view, m.pane, m.dialog, m.helpOpen, m.sessionDetailOpen, m.sessionContextOpen, m.scratchpadOpen, m.filterEditing)
+		logger.Infof(
+			"tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t filter_editing=%t",
+			key.String(),
+			m.view,
+			m.pane,
+			m.dialog,
+			m.helpOpen,
+			m.sessionDetailOpen,
+			m.sessionContextOpen,
+			m.filterEditing,
+		)
 		if key.String() == "q" || key.String() == "ctrl+c" {
 			logger.Infof("tui key route: quit")
 			m.stopEventStream()
@@ -39,7 +49,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			logger.Infof("tui key route: dialog")
 			next, cmd := m.updateDialog(key)
 			if model, ok := next.(Model); ok {
-				logger.Infof("tui key route result: dialog next_view=%s next_pane=%s next_dialog=%q", model.view, model.pane, model.dialog)
+				logger.Infof(
+					"tui key route result: dialog next_view=%s next_pane=%s next_dialog=%q",
+					model.view,
+					model.pane,
+					model.dialog,
+				)
 			}
 			return next, batchCmds(touch, cmd)
 		}
@@ -58,11 +73,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
 			return m.applyOverlayState(state), batchCmds(touch, cmd)
 		}
-		if m.pane == PaneScratchpads && m.scratchpadOpen {
-			logger.Infof("tui key route: scratchpad")
-			next, cmd := m.updateScratchpadPane(key)
-			return next, batchCmds(touch, cmd)
-		}
 		if m.filterEditing {
 			logger.Infof("tui key route: filter_editing")
 			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())
@@ -74,10 +84,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		logger.Infof("tui key route: input")
 		state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
-		logger.Infof("tui key route result: input next_view=%s next_pane=%s dialog=%q", state.ActiveView, state.ActivePane, state.Dialog)
+		logger.Infof(
+			"tui key route result: input next_view=%s next_pane=%s dialog=%q",
+			state.ActiveView,
+			state.ActivePane,
+			state.Dialog,
+		)
 		return m.applyInputState(state), batchCmds(touch, cmd)
 	}
-	state, cmd, handled := dispatchpkg.HandleMessage(m.dispatchMessageState(), msg, m.dispatchMessageDeps())
+	state, cmd, handled := dispatchpkg.HandleMessage(
+		m.dispatchMessageState(),
+		msg,
+		m.dispatchMessageDeps(),
+	)
 	if handled {
 		return m.applyDispatchMessageState(state), cmd
 	}
@@ -212,7 +231,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		SessionDetailY:          m.sessionDetailY,
 		SessionContextOpen:      m.sessionContextOpen,
 		SessionContextY:         m.sessionContextY,
-		Scratchpads:             m.scratchpads,
 		Stashes:                 m.stashes,
 		DialogStashCursor:       m.dialogStashCursor,
 		Ops:                     m.ops,
@@ -229,10 +247,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		KernelInfo:              m.kernelInfo,
 		Elapsed:                 m.elapsed,
 		TimerTickSeq:            m.timerTickSeq,
-		ScratchpadOpen:          m.scratchpadOpen,
-		ScratchpadMeta:          m.scratchpadMeta,
-		ScratchpadFilePath:      m.scratchpadFilePath,
-		ScratchpadRendered:      m.scratchpadRendered,
 		StatusMsg:               m.statusMsg,
 		StatusSeq:               m.statusSeq,
 		StatusErr:               m.statusErr,
@@ -304,7 +318,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.sessionDetailY = state.SessionDetailY
 	m.sessionContextOpen = state.SessionContextOpen
 	m.sessionContextY = state.SessionContextY
-	m.scratchpads = state.Scratchpads
 	m.stashes = state.Stashes
 	m.dialogStashCursor = state.DialogStashCursor
 	m.ops = state.Ops
@@ -321,10 +334,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.kernelInfo = state.KernelInfo
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
-	m.scratchpadOpen = state.ScratchpadOpen
-	m.scratchpadMeta = state.ScratchpadMeta
-	m.scratchpadFilePath = state.ScratchpadFilePath
-	m.scratchpadRendered = state.ScratchpadRendered
 	m.statusMsg = state.StatusMsg
 	m.statusSeq = state.StatusSeq
 	m.statusErr = state.StatusErr
@@ -371,24 +380,10 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next = next.applyFilterState(filterState)
 			*state = next.dispatchMessageState()
 		},
-		SyncScratchpadViewport: func(state *dispatchpkg.MessageState) {
-			next := m.applyDispatchMessageState(*state)
-			next.scratchpadViewport = helperpkg.SyncScratchpadViewport(next.scratchpadViewport, next.mainContentWidth(), next.contentHeight(), next.scratchpadRendered)
-			*state = next.dispatchMessageState()
-		},
-		ScratchpadTabIndexByID: func(state *dispatchpkg.MessageState, id string) int {
-			next := m.applyDispatchMessageState(*state)
-			return helperpkg.ScratchpadTabIndexByID(next.scratchpads, id)
-		},
 		FilteredCursorForRawIndex: func(state *dispatchpkg.MessageState, pane Pane, rawIdx int) int {
 			next := m.applyDispatchMessageState(*state)
 			snapshot := next.selectionSnapshot()
 			return selectionpkg.FilteredCursorForRawIndex(snapshot, pane, rawIdx)
-		},
-		SetActiveScratchpadByIndex: func(state *dispatchpkg.MessageState, idx int) {
-			next := m.applyDispatchMessageState(*state)
-			next.scratchpadMeta = helperpkg.ScratchpadMetaAt(next.scratchpads, idx)
-			*state = next.dispatchMessageState()
 		},
 		SetStatus: func(state *dispatchpkg.MessageState, message string, isErr bool) tea.Cmd {
 			next := m.applyDispatchMessageState(*state)
@@ -416,33 +411,18 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next = next.withDialogState(next.dialogSnapshot().OpenOnboarding())
 			*state = next.dispatchMessageState()
 		},
-		EnterScratchpadPane: func(state *dispatchpkg.MessageState, msg commands.OpenScratchpadMsg) {
-			next := m.applyDispatchMessageState(*state)
-			next.scratchpadOpen = true
-			next.scratchpadMeta = helperpkg.ScratchpadMetaAt([]api.ScratchPad{{
-				ID:           msg.Meta.ID,
-				Name:         msg.Meta.Name,
-				Path:         msg.Meta.Path,
-				Pinned:       msg.Meta.Pinned,
-				LastOpenedAt: msg.Meta.LastOpenedAt,
-			}}, 0)
-			next.scratchpadFilePath = msg.FilePath
-			next.scratchpadRendered = msg.Content
-			next.scratchpadViewport = helperpkg.SyncScratchpadViewport(next.scratchpadViewport, next.mainContentWidth(), next.contentHeight(), next.scratchpadRendered)
-			next.scratchpadViewport.GotoTop()
-			*state = next.dispatchMessageState()
-		},
-		SetScratchpadContent: func(state *dispatchpkg.MessageState, rendered, filePath string) {
-			next := m.applyDispatchMessageState(*state)
-			next.scratchpadFilePath = filePath
-			next.scratchpadRendered = rendered
-			next.scratchpadViewport.SetContent(rendered)
-			*state = next.dispatchMessageState()
-		},
 		AnchorWellbeingScroll: func(state *dispatchpkg.MessageState, pane Pane) {
 			next := m.applyDispatchMessageState(*state)
 			snapshot := next.selectionSnapshot()
-			count := wellbeingview.PaneLineCount(next.viewContentState(next.mainContentWidth(), next.contentHeight(), snapshot, selectionpkg.ActiveIssue(snapshot)), string(pane))
+			count := wellbeingview.PaneLineCount(
+				next.viewContentState(
+					next.mainContentWidth(),
+					next.contentHeight(),
+					snapshot,
+					selectionpkg.ActiveIssue(snapshot),
+				),
+				string(pane),
+			)
 			if count > 0 {
 				if current := next.cursor[pane]; current <= 0 {
 					next.cursor[pane] = count - 1
@@ -476,10 +456,13 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		LoadSessionHistoryFor200: func(state dispatchpkg.MessageState) tea.Cmd {
 			next := m.applyDispatchMessageState(state)
-			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(next.timer), 200)
+			return commands.LoadSessionHistory(
+				m.client,
+				helperpkg.SessionHistoryScopeIssueID(next.timer),
+				200,
+			)
 		},
 		LoadSessionDetail:  func(id string) tea.Cmd { return commands.LoadSessionDetail(m.client, id) },
-		LoadScratchpads:    func() tea.Cmd { return commands.LoadScratchpads(m.client) },
 		LoadStashes:        func() tea.Cmd { return commands.LoadStashes(m.client) },
 		LoadOps:            func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
 		LoadContext:        func() tea.Cmd { return commands.LoadContext(m.client) },

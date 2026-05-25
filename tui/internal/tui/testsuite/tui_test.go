@@ -75,7 +75,12 @@ func TestDailyViewStacksOnNarrowWidths(t *testing.T) {
 	rendered := support.RenderDaily(state)
 	for _, line := range strings.Split(rendered, "\n") {
 		if got := lipgloss.Width(line); got > state.Width {
-			t.Fatalf("daily view line width %d exceeds content width %d: %q", got, state.Width, line)
+			t.Fatalf(
+				"daily view line width %d exceeds content width %d: %q",
+				got,
+				state.Width,
+				line,
+			)
 		}
 	}
 }
@@ -121,17 +126,41 @@ func TestDailyViewReportedHeightRangeFitsAllocation(t *testing.T) {
 		DailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
 		},
 		AllIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate}, RepoName: "Work", StreamName: "app"},
+			{
+				Issue: api.Issue{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
+				RepoName:   "Work",
+				StreamName: "app",
+			},
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -199,7 +228,12 @@ func TestDailyViewDoesNotExceedTerminalHeightInReportedRange(t *testing.T) {
 	for height := 46; height <= 54; height++ {
 		model := support.NewDailyModel(92, height)
 		if got, want := model.BodyHeight(), model.ContentHeight(); got > want {
-			t.Fatalf("daily body height %d exceeds content height %d at terminal height %d", got, want, height)
+			t.Fatalf(
+				"daily body height %d exceeds content height %d at terminal height %d",
+				got,
+				want,
+				height,
+			)
 		}
 		rendered := model.RenderString()
 		if got := lipgloss.Height(rendered); got > height {
@@ -227,14 +261,29 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 		DailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -310,10 +359,26 @@ func TestRollupViewRendersExplicitRangeAndDailyStatuses(t *testing.T) {
 				{Date: "2026-04-01", Status: "carry_over"},
 			},
 		},
-		WeeklyFocusScore:    &api.FocusScoreSummary{Score: 79, Level: "strong", WorkedSeconds: 4200},
-		GoalProgress:        &api.GoalProgressSummary{TotalEstimateMinutes: 240, TotalActualSeconds: 7200, EstimatedItems: 2, AverageDeltaMinutes: 12, AverageDeltaPercent: 18, EstimateBias: "under", Rows: []api.GoalProgressRow{{Status: "on_track"}}},
-		RepoDistribution:    &api.TimeDistributionSummary{Rows: []api.TimeDistributionRow{{Label: "Work", Percent: 58, WorkedSeconds: 4200}}},
-		SegmentDistribution: &api.TimeDistributionSummary{Rows: []api.TimeDistributionRow{{Label: "Focus", Percent: 81, WorkedSeconds: 5400}}},
+		WeeklyFocusScore: &api.FocusScoreSummary{
+			Score:         79,
+			Level:         "strong",
+			WorkedSeconds: 4200,
+		},
+		GoalProgress: &api.GoalProgressSummary{
+			TotalEstimateMinutes: 240,
+			TotalActualSeconds:   7200,
+			EstimatedItems:       2,
+			AverageDeltaMinutes:  12,
+			AverageDeltaPercent:  18,
+			EstimateBias:         "under",
+			Rows:                 []api.GoalProgressRow{{Status: "on_track"}},
+		},
+		RepoDistribution: &api.TimeDistributionSummary{
+			Rows: []api.TimeDistributionRow{{Label: "Work", Percent: 58, WorkedSeconds: 4200}},
+		},
+		SegmentDistribution: &api.TimeDistributionSummary{
+			Rows: []api.TimeDistributionRow{{Label: "Focus", Percent: 81, WorkedSeconds: 5400}},
+		},
 	}
 
 	rendered := support.RenderRollup(state)
@@ -342,9 +407,41 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 		},
 		DefaultIssueSection: "completed",
 		DefaultIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, Title: "Open planned issue", Status: "planned", EstimateMinutes: &estimate1, TodoForDate: &due}, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 2, Title: "Completed shipped fix", Status: "done", EstimateMinutes: &estimate2, TodoForDate: &due, CompletedAt: &completedAt}, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 3, Title: "Abandoned old task", Status: "abandoned", EstimateMinutes: &estimate3, TodoForDate: &due, AbandonedAt: &abandonedAt}, RepoName: "Personal", StreamName: "home"},
+			{
+				Issue: api.Issue{
+					ID:              1,
+					Title:           "Open planned issue",
+					Status:          "planned",
+					EstimateMinutes: &estimate1,
+					TodoForDate:     &due,
+				},
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              2,
+					Title:           "Completed shipped fix",
+					Status:          "done",
+					EstimateMinutes: &estimate2,
+					TodoForDate:     &due,
+					CompletedAt:     &completedAt,
+				},
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              3,
+					Title:           "Abandoned old task",
+					Status:          "abandoned",
+					EstimateMinutes: &estimate3,
+					TodoForDate:     &due,
+					AbandonedAt:     &abandonedAt,
+				},
+				RepoName:   "Personal",
+				StreamName: "home",
+			},
 		},
 		Context: &api.ActiveContext{},
 	}
@@ -356,10 +453,12 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 	if !strings.Contains(rendered, "Abandoned old task  [on 2026-03-21]") {
 		t.Fatalf("expected abandoned issue to show resolution date, got %q", rendered)
 	}
-	if strings.Contains(rendered, "Completed shipped fix  [due ") || strings.Contains(rendered, "Completed shipped fix  [overdue ") {
+	if strings.Contains(rendered, "Completed shipped fix  [due ") ||
+		strings.Contains(rendered, "Completed shipped fix  [overdue ") {
 		t.Fatalf("completed issue should not show due or overdue label, got %q", rendered)
 	}
-	if strings.Contains(rendered, "Abandoned old task  [due ") || strings.Contains(rendered, "Abandoned old task  [overdue ") {
+	if strings.Contains(rendered, "Abandoned old task  [due ") ||
+		strings.Contains(rendered, "Abandoned old task  [overdue ") {
 		t.Fatalf("abandoned issue should not show due or overdue label, got %q", rendered)
 	}
 }
@@ -367,12 +466,23 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 	repos := []api.Repo{{ID: 1, Name: "Work"}, {ID: 2, Name: "OSS"}}
 	checkedRepoID := int64(2)
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", true, repos, &checkedRepoID, nil)
+	state := dialogs.OpenExportDaily(
+		dialogs.State{},
+		"2026-03-19",
+		true,
+		repos,
+		&checkedRepoID,
+		nil,
+	)
 	if state.Kind != "export_report_category" {
 		t.Fatalf("expected export_report_category dialog kind, got %q", state.Kind)
 	}
 	if state.RepoID != checkedRepoID || state.RepoName != "OSS" {
-		t.Fatalf("expected checked-out repo to be selected, got id=%d name=%q", state.RepoID, state.RepoName)
+		t.Fatalf(
+			"expected checked-out repo to be selected, got id=%d name=%q",
+			state.RepoID,
+			state.RepoName,
+		)
 	}
 	joined := strings.Join(state.ChoiceItems, "\n")
 	for _, want := range []string{
@@ -390,7 +500,12 @@ func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
 	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
 	if state.RepoID != 5 || state.RepoName != "Work" || state.RepoIndex != 0 {
-		t.Fatalf("expected first repo selected by default, got id=%d name=%q index=%d", state.RepoID, state.RepoName, state.RepoIndex)
+		t.Fatalf(
+			"expected first repo selected by default, got id=%d name=%q index=%d",
+			state.RepoID,
+			state.RepoName,
+			state.RepoIndex,
+		)
 	}
 }
 
@@ -403,7 +518,12 @@ func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 			break
 		}
 	}
-	state, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter})
+	state, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-03-19",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if status != "" {
 		t.Fatalf("unexpected category status: %s", status)
 	}
@@ -416,7 +536,12 @@ func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 			break
 		}
 	}
-	next, action, status := dialogs.Update(state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter})
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-03-19",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status: %s", status)
 	}
@@ -426,7 +551,8 @@ func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	if next.Kind != "export_calendar_repo" {
 		t.Fatalf("expected export_calendar_repo dialog, got %q", next.Kind)
 	}
-	if len(next.ChoiceItems) != 2 || next.ChoiceItems[0] != "Work" || next.ChoiceItems[1] != "Personal" {
+	if len(next.ChoiceItems) != 2 || next.ChoiceItems[0] != "Work" ||
+		next.ChoiceItems[1] != "Personal" {
 		t.Fatalf("unexpected repo picker options: %#v", next.ChoiceItems)
 	}
 }
@@ -574,7 +700,10 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 		}
 	}
 	if !strings.Contains(joined, "[c] context") {
-		t.Fatalf("expected deduped global actions to keep global-only context action, got %q", joined)
+		t.Fatalf(
+			"expected deduped global actions to keep global-only context action, got %q",
+			joined,
+		)
 	}
 }
 
@@ -810,13 +939,28 @@ func TestWellbeingViewShowsRecentActivityHeatmap(t *testing.T) {
 			AverageEnergy: &energy,
 		},
 		MetricsRange: []api.DailyMetricsDay{
-			{Date: "2026-03-13", CheckIn: &api.DailyCheckIn{Date: "2026-03-13"}, SessionCount: 1, WorkedSeconds: 1200},
+			{
+				Date:          "2026-03-13",
+				CheckIn:       &api.DailyCheckIn{Date: "2026-03-13"},
+				SessionCount:  1,
+				WorkedSeconds: 1200,
+			},
 			{Date: "2026-03-14", SessionCount: 2, WorkedSeconds: 3600},
-			{Date: "2026-03-15", CheckIn: &api.DailyCheckIn{Date: "2026-03-15"}, SessionCount: 3, WorkedSeconds: 5400},
+			{
+				Date:          "2026-03-15",
+				CheckIn:       &api.DailyCheckIn{Date: "2026-03-15"},
+				SessionCount:  3,
+				WorkedSeconds: 5400,
+			},
 			{Date: "2026-03-16"},
 			{Date: "2026-03-17", CheckIn: &api.DailyCheckIn{Date: "2026-03-17"}},
 			{Date: "2026-03-18", SessionCount: 1, WorkedSeconds: 2400},
-			{Date: "2026-03-19", CheckIn: &api.DailyCheckIn{Date: "2026-03-19"}, SessionCount: 4, WorkedSeconds: 7200},
+			{
+				Date:          "2026-03-19",
+				CheckIn:       &api.DailyCheckIn{Date: "2026-03-19"},
+				SessionCount:  4,
+				WorkedSeconds: 7200,
+			},
 		},
 	}
 
@@ -881,14 +1025,29 @@ func TestDailySummaryShowsBarsAtHeight55AndAbove(t *testing.T) {
 		DailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -921,14 +1080,29 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 		DailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -937,7 +1111,8 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 	}
 
 	rendered := support.RenderDaily(state)
-	if !strings.Contains(rendered, "Issues  0/1 resolved") || !strings.Contains(rendered, "Habits  0/1 completed") {
+	if !strings.Contains(rendered, "Issues  0/1 resolved") ||
+		!strings.Contains(rendered, "Habits  0/1 completed") {
 		t.Fatalf("expected ultra-compact rows for both issues and habits")
 	}
 	if strings.Contains(rendered, "planned 1") {
@@ -970,14 +1145,29 @@ func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
 		DailySummary: &api.DailyIssueSummary{
 			Date: "2026-03-19",
 			Issues: []api.Issue{
-				{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+				{
+					ID:              1,
+					Title:           "Add keyboard-first command palette",
+					Status:          "planned",
+					EstimateMinutes: &estimate,
+				},
 			},
 		},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -998,7 +1188,10 @@ func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
 		}
 	}
 	if strings.Contains(rendered, "Daily Dashboard  March 2026") {
-		t.Fatalf("expected calendar to sit beside the summary without collapsing the left header, got %q", rendered)
+		t.Fatalf(
+			"expected calendar to sit beside the summary without collapsing the left header, got %q",
+			rendered,
+		)
 	}
 	if !strings.Contains(rendered, "████████") {
 		t.Fatalf("expected wide-screen bars to remain visibly long")
@@ -1023,18 +1216,118 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 		},
 		DailySummary: &api.DailyIssueSummary{Date: "2026-04-30"},
 		DailyIssues: []api.Issue{
-			{ID: 1, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")},
-			{ID: 2, Title: "Today task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), CompletedAt: strPtr("2026-04-30T18:00:00Z")},
-			{ID: 4, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true},
-			{ID: 3, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true},
-			{ID: 5, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true},
+			{
+				ID:              1,
+				Title:           "Old task",
+				Status:          "done",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-04-28"),
+				CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+			},
+			{
+				ID:              2,
+				Title:           "Today task",
+				Status:          "done",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-04-30"),
+				CompletedAt:     strPtr("2026-04-30T18:00:00Z"),
+			},
+			{
+				ID:              4,
+				Title:           "Pinned today task",
+				Status:          "ready",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-04-30"),
+				PinnedDaily:     true,
+			},
+			{
+				ID:              3,
+				Title:           "Pinned future task",
+				Status:          "backlog",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-05-03"),
+				PinnedDaily:     true,
+			},
+			{
+				ID:              5,
+				Title:           "Pinned overdue task",
+				Status:          "ready",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-04-27"),
+				PinnedDaily:     true,
+			},
 		},
 		AllIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 2, StreamID: 10, Title: "Today task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), CompletedAt: strPtr("2026-04-30T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 4, StreamID: 10, Title: "Pinned today task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-30"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 3, StreamID: 10, Title: "Pinned future task", Status: "backlog", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-05-03"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
-			{Issue: api.Issue{ID: 5, StreamID: 10, Title: "Pinned overdue task", Status: "ready", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-27"), PinnedDaily: true}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+			{
+				Issue: api.Issue{
+					ID:              1,
+					StreamID:        10,
+					Title:           "Old task",
+					Status:          "done",
+					EstimateMinutes: &estimate,
+					TodoForDate:     strPtr("2026-04-28"),
+					CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              2,
+					StreamID:        10,
+					Title:           "Today task",
+					Status:          "done",
+					EstimateMinutes: &estimate,
+					TodoForDate:     strPtr("2026-04-30"),
+					CompletedAt:     strPtr("2026-04-30T18:00:00Z"),
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              4,
+					StreamID:        10,
+					Title:           "Pinned today task",
+					Status:          "ready",
+					EstimateMinutes: &estimate,
+					TodoForDate:     strPtr("2026-04-30"),
+					PinnedDaily:     true,
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              3,
+					StreamID:        10,
+					Title:           "Pinned future task",
+					Status:          "backlog",
+					EstimateMinutes: &estimate,
+					TodoForDate:     strPtr("2026-05-03"),
+					PinnedDaily:     true,
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
+			{
+				Issue: api.Issue{
+					ID:              5,
+					StreamID:        10,
+					Title:           "Pinned overdue task",
+					Status:          "ready",
+					EstimateMinutes: &estimate,
+					TodoForDate:     strPtr("2026-04-27"),
+					PinnedDaily:     true,
+				},
+				RepoID:     1,
+				RepoName:   "Work",
+				StreamName: "app",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -1064,15 +1357,38 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	past.DailyTaskSection = "planned"
 	past.DailySummary = &api.DailyIssueSummary{Date: "2026-04-28"}
 	past.DailyIssues = []api.Issue{
-		{ID: 1, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")},
+		{
+			ID:              1,
+			Title:           "Old task",
+			Status:          "done",
+			EstimateMinutes: &estimate,
+			TodoForDate:     strPtr("2026-04-28"),
+			CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+		},
 	}
 	past.AllIssues = []api.IssueWithMeta{
-		{Issue: api.Issue{ID: 1, StreamID: 10, Title: "Old task", Status: "done", EstimateMinutes: &estimate, TodoForDate: strPtr("2026-04-28"), CompletedAt: strPtr("2026-04-28T18:00:00Z")}, RepoID: 1, RepoName: "Work", StreamName: "app"},
+		{
+			Issue: api.Issue{
+				ID:              1,
+				StreamID:        10,
+				Title:           "Old task",
+				Status:          "done",
+				EstimateMinutes: &estimate,
+				TodoForDate:     strPtr("2026-04-28"),
+				CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+			},
+			RepoID:     1,
+			RepoName:   "Work",
+			StreamName: "app",
+		},
 	}
 	pastRendered := support.RenderDaily(past)
 	pastStripped := ansi.Strip(pastRendered)
 	if !strings.Contains(pastStripped, "Old task") {
-		t.Fatalf("expected past planned section to retain resolved older task, got %q", pastStripped)
+		t.Fatalf(
+			"expected past planned section to retain resolved older task, got %q",
+			pastStripped,
+		)
 	}
 
 	pinned := base
@@ -1114,20 +1430,41 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 
 func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 	theme := support.Theme()
-	defaultActions := strings.Join(viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "default", Pane: "issues"}), " ")
+	defaultActions := strings.Join(
+		viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "default", Pane: "issues"}),
+		" ",
+	)
 	if !strings.Contains(defaultActions, "[c]") || !strings.Contains(defaultActions, "[E]") {
-		t.Fatalf("expected default global actions to expose context and export, got %q", defaultActions)
+		t.Fatalf(
+			"expected default global actions to expose context and export, got %q",
+			defaultActions,
+		)
 	}
-	dailyIssueActions := strings.Join(viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: "daily", Pane: "issues"}), " ")
+	dailyIssueActions := strings.Join(
+		viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: "daily", Pane: "issues"}),
+		" ",
+	)
 	if strings.Contains(dailyIssueActions, "[c]") {
 		t.Fatalf("expected daily issue pane actions to omit context, got %q", dailyIssueActions)
 	}
 	if strings.Contains(dailyIssueActions, "[h/l]") {
-		t.Fatalf("expected daily issue pane actions to keep section switching out of the action line, got %q", dailyIssueActions)
+		t.Fatalf(
+			"expected daily issue pane actions to keep section switching out of the action line, got %q",
+			dailyIssueActions,
+		)
 	}
-	wellbeingActions := strings.Join(viewchrome.GlobalActions(theme, viewchrome.ActionsState{View: "wellbeing", Pane: "wellbeing_summary"}), " ")
+	wellbeingActions := strings.Join(
+		viewchrome.GlobalActions(
+			theme,
+			viewchrome.ActionsState{View: "wellbeing", Pane: "wellbeing_summary"},
+		),
+		" ",
+	)
 	if !strings.Contains(wellbeingActions, "[c]") || !strings.Contains(wellbeingActions, "[E]") {
-		t.Fatalf("expected wellbeing global actions to expose context and export, got %q", wellbeingActions)
+		t.Fatalf(
+			"expected wellbeing global actions to expose context and export, got %q",
+			wellbeingActions,
+		)
 	}
 }
 
@@ -1150,7 +1487,12 @@ func TestDailySummaryKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 			Date: "2026-04-30",
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -1188,7 +1530,12 @@ func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 			Date: "2026-04-30",
 		},
 		DueHabits: []api.HabitDailyItem{
-			{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+			{
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+				},
+				Status: "pending",
+			},
 		},
 		Context: &api.ActiveContext{
 			RepoName:   strPtr("Work"),
@@ -1297,7 +1644,11 @@ func TestAboveMinimumSizeRendersNormalUI(t *testing.T) {
 	}
 }
 
-func assertMinimumSizeWarning(t *testing.T, rendered string, currentWidth, currentHeight, minWidth, minHeight int) {
+func assertMinimumSizeWarning(
+	t *testing.T,
+	rendered string,
+	currentWidth, currentHeight, minWidth, minHeight int,
+) {
 	t.Helper()
 	if !strings.Contains(rendered, "Terminal Too Small") {
 		t.Fatalf("expected undersized warning, got %q", rendered)
@@ -1324,7 +1675,11 @@ func assertMinimumSizeWarning(t *testing.T, rendered string, currentWidth, curre
 
 func TestDailyHabitDeleteDialogUsesDailySelection(t *testing.T) {
 	model := support.NewDailyHabitDeleteModel([]api.HabitDailyItem{
-		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 42, StreamID: 7, Name: "Inbox Zero"}}},
+		{
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: 42, StreamID: 7, Name: "Inbox Zero"},
+			},
+		},
 	})
 
 	next, ok := support.OpenSelectedDeleteDialog(model)
@@ -1332,7 +1687,11 @@ func TestDailyHabitDeleteDialogUsesDailySelection(t *testing.T) {
 		t.Fatalf("expected delete dialog to open for daily habit")
 	}
 	if next.DialogDeleteKind() != "habit" || next.DialogDeleteID() != "42" {
-		t.Fatalf("expected habit delete dialog, got kind=%q id=%q", next.DialogDeleteKind(), next.DialogDeleteID())
+		t.Fatalf(
+			"expected habit delete dialog, got kind=%q id=%q",
+			next.DialogDeleteKind(),
+			next.DialogDeleteID(),
+		)
 	}
 	if next.DialogStreamID() != 7 {
 		t.Fatalf("expected dialog stream id 7, got %d", next.DialogStreamID())

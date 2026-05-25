@@ -26,7 +26,6 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.AlertReminderModel)(nil),
 		(*storemodels.SessionSegmentModel)(nil),
 		(*storemodels.ActiveContextModel)(nil),
-		(*storemodels.ScratchPadMetaModel)(nil),
 		(*storemodels.DailyCheckInModel)(nil),
 		(*storemodels.DailyPlanModel)(nil),
 		(*storemodels.DailyPlanEntryModel)(nil),
@@ -187,9 +186,6 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_session_segments_user_id ON session_segments (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_active_context_user_id ON active_context (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_active_context_device_id ON active_context (device_id)",
-		"CREATE INDEX IF NOT EXISTS idx_scratch_pad_meta_user_id ON scratch_pad_meta (user_id)",
-		"CREATE INDEX IF NOT EXISTS idx_scratch_pad_meta_device_id ON scratch_pad_meta (device_id)",
-		"CREATE INDEX IF NOT EXISTS idx_scratch_pad_meta_last_opened_at ON scratch_pad_meta (last_opened_at)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_checkins_device_id ON daily_checkins (device_id)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_checkins_updated_at ON daily_checkins (updated_at)",
 		"CREATE INDEX IF NOT EXISTS idx_alert_reminders_user_id ON alert_reminders (user_id)",
@@ -257,7 +253,10 @@ func ensureTextColumn(ctx context.Context, db *bun.DB, tableName string, columnN
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s text", tableName, columnName))
+	_, err = db.ExecContext(
+		ctx,
+		fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s text", tableName, columnName),
+	)
 	return err
 }
 
@@ -281,7 +280,13 @@ func backfillHabitCompletionKinds(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
-func ensureIntegerColumn(ctx context.Context, db *bun.DB, tableName string, columnName string, defaultValue int) error {
+func ensureIntegerColumn(
+	ctx context.Context,
+	db *bun.DB,
+	tableName string,
+	columnName string,
+	defaultValue int,
+) error {
 	rows, err := db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info('%s')", tableName))
 	if err != nil {
 		return err
@@ -310,11 +315,24 @@ func ensureIntegerColumn(ctx context.Context, db *bun.DB, tableName string, colu
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer NOT NULL DEFAULT %d", tableName, columnName, defaultValue))
+	_, err = db.ExecContext(
+		ctx,
+		fmt.Sprintf(
+			"ALTER TABLE %s ADD COLUMN %s integer NOT NULL DEFAULT %d",
+			tableName,
+			columnName,
+			defaultValue,
+		),
+	)
 	return err
 }
 
-func ensureNullableIntegerColumn(ctx context.Context, db *bun.DB, tableName string, columnName string) error {
+func ensureNullableIntegerColumn(
+	ctx context.Context,
+	db *bun.DB,
+	tableName string,
+	columnName string,
+) error {
 	rows, err := db.QueryContext(ctx, fmt.Sprintf("PRAGMA table_info('%s')", tableName))
 	if err != nil {
 		return err
@@ -343,11 +361,19 @@ func ensureNullableIntegerColumn(ctx context.Context, db *bun.DB, tableName stri
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer", tableName, columnName))
+	_, err = db.ExecContext(
+		ctx,
+		fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s integer", tableName, columnName),
+	)
 	return err
 }
 
-func ensureCoreSettingsColumn(ctx context.Context, db *bun.DB, columnName string, defaultValue string) error {
+func ensureCoreSettingsColumn(
+	ctx context.Context,
+	db *bun.DB,
+	columnName string,
+	defaultValue string,
+) error {
 	rows, err := db.QueryContext(ctx, "PRAGMA table_info('core_settings')")
 	if err != nil {
 		return err
@@ -376,11 +402,23 @@ func ensureCoreSettingsColumn(ctx context.Context, db *bun.DB, columnName string
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE core_settings ADD COLUMN %s text NOT NULL DEFAULT '%s'", columnName, defaultValue))
+	_, err = db.ExecContext(
+		ctx,
+		fmt.Sprintf(
+			"ALTER TABLE core_settings ADD COLUMN %s text NOT NULL DEFAULT '%s'",
+			columnName,
+			defaultValue,
+		),
+	)
 	return err
 }
 
-func ensureCoreSettingsBoolColumn(ctx context.Context, db *bun.DB, columnName string, defaultValue int) error {
+func ensureCoreSettingsBoolColumn(
+	ctx context.Context,
+	db *bun.DB,
+	columnName string,
+	defaultValue int,
+) error {
 	rows, err := db.QueryContext(ctx, "PRAGMA table_info('core_settings')")
 	if err != nil {
 		return err
@@ -409,7 +447,14 @@ func ensureCoreSettingsBoolColumn(ctx context.Context, db *bun.DB, columnName st
 		return err
 	}
 
-	_, err = db.ExecContext(ctx, fmt.Sprintf("ALTER TABLE core_settings ADD COLUMN %s integer NOT NULL DEFAULT %d", columnName, defaultValue))
+	_, err = db.ExecContext(
+		ctx,
+		fmt.Sprintf(
+			"ALTER TABLE core_settings ADD COLUMN %s integer NOT NULL DEFAULT %d",
+			columnName,
+			defaultValue,
+		),
+	)
 	return err
 }
 
@@ -446,13 +491,19 @@ func ensureHabitCompletionStatusColumn(ctx context.Context, db *bun.DB) error {
 	}
 
 	if found {
-		_, err := db.ExecContext(ctx, "UPDATE habit_completions SET status = 'completed' WHERE status IS NULL OR status = ''")
+		_, err := db.ExecContext(
+			ctx,
+			"UPDATE habit_completions SET status = 'completed' WHERE status IS NULL OR status = ''",
+		)
 		return err
 	}
 
 	if _, err := db.ExecContext(ctx, "ALTER TABLE habit_completions ADD COLUMN status text NOT NULL DEFAULT 'completed'"); err != nil {
 		return err
 	}
-	_, err = db.ExecContext(ctx, "UPDATE habit_completions SET status = 'completed' WHERE status IS NULL OR status = ''")
+	_, err = db.ExecContext(
+		ctx,
+		"UPDATE habit_completions SET status = 'completed' WHERE status IS NULL OR status = ''",
+	)
 	return err
 }

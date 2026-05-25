@@ -24,7 +24,12 @@ func (r *HabitCompletionRepository) NextID(ctx context.Context) (int64, error) {
 	return nextPublicID(ctx, r.db, "habit_completions")
 }
 
-func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion sharedtypes.HabitCompletion, userID string, now string) (sharedtypes.HabitCompletion, error) {
+func (r *HabitCompletionRepository) Upsert(
+	ctx context.Context,
+	completion sharedtypes.HabitCompletion,
+	userID string,
+	now string,
+) (sharedtypes.HabitCompletion, error) {
 	habitInternalID, err := resolveHabitInternalID(ctx, r.db, completion.HabitID, userID)
 	if err != nil {
 		return sharedtypes.HabitCompletion{}, err
@@ -70,7 +75,9 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 			return sharedtypes.HabitCompletion{}, errors.New("habit completion not found")
 		}
 		existing.Status = completion.Status
-		existing.Kind = sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion)
+		existing.Kind = sharedtypes.NormalizeHabitHistoryKind(
+			sharedtypes.HabitHistoryKindCompletion,
+		)
 		existing.StartedAt = nil
 		existing.EndedAt = nil
 		existing.DurationMinutes = completion.DurationMinutes
@@ -92,10 +99,12 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 		return sharedtypes.HabitCompletion{}, err
 	}
 	model := storemodels.HabitCompletionModel{
-		InternalID:      habitCompletionInternalID(completion.ID),
-		PublicID:        completion.ID,
-		HabitID:         habitInternalID,
-		Kind:            string(sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion)),
+		InternalID: habitCompletionInternalID(completion.ID),
+		PublicID:   completion.ID,
+		HabitID:    habitInternalID,
+		Kind: string(
+			sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKindCompletion),
+		),
 		Date:            completion.Date,
 		Status:          string(completion.Status),
 		StartedAt:       nil,
@@ -122,7 +131,11 @@ func (r *HabitCompletionRepository) Upsert(ctx context.Context, completion share
 	return completion, nil
 }
 
-func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habitID int64, date, userID string) (*sharedtypes.HabitCompletion, error) {
+func (r *HabitCompletionRepository) GetByHabitAndDate(
+	ctx context.Context,
+	habitID int64,
+	date, userID string,
+) (*sharedtypes.HabitCompletion, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
@@ -175,15 +188,21 @@ func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habit
 	}
 	var snapshotType *sharedtypes.HabitScheduleType
 	if item.SnapshotType != nil && *item.SnapshotType != "" {
-		value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(*item.SnapshotType))
+		value := sharedtypes.NormalizeHabitScheduleType(
+			sharedtypes.HabitScheduleType(*item.SnapshotType),
+		)
 		snapshotType = &value
 	}
 	return &sharedtypes.HabitCompletion{
-		ID:              item.PublicID,
-		HabitID:         item.HabitPublicID,
-		Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(item.Kind)),
-		Date:            item.Date,
-		Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(item.Status)),
+		ID:      item.PublicID,
+		HabitID: item.HabitPublicID,
+		Kind: sharedtypes.NormalizeHabitHistoryKind(
+			sharedtypes.HabitHistoryKind(item.Kind),
+		),
+		Date: item.Date,
+		Status: sharedtypes.NormalizeHabitCompletionStatus(
+			sharedtypes.HabitCompletionStatus(item.Status),
+		),
 		StartedAt:       item.StartedAt,
 		EndedAt:         item.EndedAt,
 		DurationMinutes: item.DurationMinutes,
@@ -198,7 +217,11 @@ func (r *HabitCompletionRepository) GetByHabitAndDate(ctx context.Context, habit
 	}, nil
 }
 
-func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int64, userID string) ([]sharedtypes.HabitCompletion, error) {
+func (r *HabitCompletionRepository) ListByHabit(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+) ([]sharedtypes.HabitCompletion, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
@@ -248,15 +271,21 @@ func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int
 	for _, row := range rows {
 		var snapshotType *sharedtypes.HabitScheduleType
 		if row.SnapshotType != nil && *row.SnapshotType != "" {
-			value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(*row.SnapshotType))
+			value := sharedtypes.NormalizeHabitScheduleType(
+				sharedtypes.HabitScheduleType(*row.SnapshotType),
+			)
 			snapshotType = &value
 		}
 		out = append(out, sharedtypes.HabitCompletion{
-			ID:              row.PublicID,
-			HabitID:         row.HabitPublicID,
-			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
-			Date:            row.Date,
-			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			ID:      row.PublicID,
+			HabitID: row.HabitPublicID,
+			Kind: sharedtypes.NormalizeHabitHistoryKind(
+				sharedtypes.HabitHistoryKind(row.Kind),
+			),
+			Date: row.Date,
+			Status: sharedtypes.NormalizeHabitCompletionStatus(
+				sharedtypes.HabitCompletionStatus(row.Status),
+			),
 			StartedAt:       row.StartedAt,
 			EndedAt:         row.EndedAt,
 			DurationMinutes: row.DurationMinutes,
@@ -273,7 +302,11 @@ func (r *HabitCompletionRepository) ListByHabit(ctx context.Context, habitID int
 	return out, nil
 }
 
-func (r *HabitCompletionRepository) ListHistory(ctx context.Context, userID string, repoID, streamID *int64) ([]sharedtypes.HabitCompletion, error) {
+func (r *HabitCompletionRepository) ListHistory(
+	ctx context.Context,
+	userID string,
+	repoID, streamID *int64,
+) ([]sharedtypes.HabitCompletion, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
@@ -336,18 +369,24 @@ func (r *HabitCompletionRepository) ListHistory(ctx context.Context, userID stri
 	for _, row := range rows {
 		var snapshotType *sharedtypes.HabitScheduleType
 		if row.SnapshotType != nil && *row.SnapshotType != "" {
-			value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(*row.SnapshotType))
+			value := sharedtypes.NormalizeHabitScheduleType(
+				sharedtypes.HabitScheduleType(*row.SnapshotType),
+			)
 			snapshotType = &value
 		}
 		out = append(out, sharedtypes.HabitCompletion{
-			ID:              row.PublicID,
-			HabitID:         row.HabitPublicID,
-			HabitName:       row.HabitName,
-			RepoName:        row.RepoName,
-			StreamName:      row.StreamName,
-			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
-			Date:            row.Date,
-			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			ID:         row.PublicID,
+			HabitID:    row.HabitPublicID,
+			HabitName:  row.HabitName,
+			RepoName:   row.RepoName,
+			StreamName: row.StreamName,
+			Kind: sharedtypes.NormalizeHabitHistoryKind(
+				sharedtypes.HabitHistoryKind(row.Kind),
+			),
+			Date: row.Date,
+			Status: sharedtypes.NormalizeHabitCompletionStatus(
+				sharedtypes.HabitCompletionStatus(row.Status),
+			),
 			StartedAt:       row.StartedAt,
 			EndedAt:         row.EndedAt,
 			DurationMinutes: row.DurationMinutes,
@@ -364,7 +403,11 @@ func (r *HabitCompletionRepository) ListHistory(ctx context.Context, userID stri
 	return out, nil
 }
 
-func (r *HabitCompletionRepository) EarliestDate(ctx context.Context, userID string, throughDate string) (*string, error) {
+func (r *HabitCompletionRepository) EarliestDate(
+	ctx context.Context,
+	userID string,
+	throughDate string,
+) (*string, error) {
 	type row struct {
 		Date string `bun:"date"`
 	}
@@ -390,7 +433,10 @@ func (r *HabitCompletionRepository) EarliestDate(ctx context.Context, userID str
 	return &item.Date, nil
 }
 
-func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userID string) ([]sharedtypes.HabitCompletion, error) {
+func (r *HabitCompletionRepository) ListForDate(
+	ctx context.Context,
+	date, userID string,
+) ([]sharedtypes.HabitCompletion, error) {
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		HabitPublicID   int64   `bun:"habit_public_id"`
@@ -439,15 +485,21 @@ func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userI
 	for _, row := range rows {
 		var snapshotType *sharedtypes.HabitScheduleType
 		if row.SnapshotType != nil && *row.SnapshotType != "" {
-			value := sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(*row.SnapshotType))
+			value := sharedtypes.NormalizeHabitScheduleType(
+				sharedtypes.HabitScheduleType(*row.SnapshotType),
+			)
 			snapshotType = &value
 		}
 		out = append(out, sharedtypes.HabitCompletion{
-			ID:              row.PublicID,
-			HabitID:         row.HabitPublicID,
-			Kind:            sharedtypes.NormalizeHabitHistoryKind(sharedtypes.HabitHistoryKind(row.Kind)),
-			Date:            row.Date,
-			Status:          sharedtypes.NormalizeHabitCompletionStatus(sharedtypes.HabitCompletionStatus(row.Status)),
+			ID:      row.PublicID,
+			HabitID: row.HabitPublicID,
+			Kind: sharedtypes.NormalizeHabitHistoryKind(
+				sharedtypes.HabitHistoryKind(row.Kind),
+			),
+			Date: row.Date,
+			Status: sharedtypes.NormalizeHabitCompletionStatus(
+				sharedtypes.HabitCompletionStatus(row.Status),
+			),
 			StartedAt:       row.StartedAt,
 			EndedAt:         row.EndedAt,
 			DurationMinutes: row.DurationMinutes,
@@ -464,7 +516,11 @@ func (r *HabitCompletionRepository) ListForDate(ctx context.Context, date, userI
 	return out, nil
 }
 
-func (r *HabitCompletionRepository) DeleteByHabitAndDate(ctx context.Context, habitID int64, date, userID, now string) error {
+func (r *HabitCompletionRepository) DeleteByHabitAndDate(
+	ctx context.Context,
+	habitID int64,
+	date, userID, now string,
+) error {
 	habitInternalID, err := resolveHabitInternalID(ctx, r.db, habitID, userID)
 	if err != nil {
 		return err

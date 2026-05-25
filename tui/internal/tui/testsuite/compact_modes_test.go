@@ -37,14 +37,29 @@ func TestTinyAndCompactModes(t *testing.T) {
 					DailySummary: &api.DailyIssueSummary{
 						Date: "2026-03-19",
 						Issues: []api.Issue{
-							{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+							{
+								ID:              1,
+								Title:           "Add keyboard-first command palette",
+								Status:          "planned",
+								EstimateMinutes: &estimate,
+							},
 						},
 					},
 					DailyIssues: []api.Issue{
-						{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+						{
+							ID:              1,
+							Title:           "Add keyboard-first command palette",
+							Status:          "planned",
+							EstimateMinutes: &estimate,
+						},
 					},
 					DueHabits: []api.HabitDailyItem{
-						{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+						{
+							HabitWithMeta: api.HabitWithMeta{
+								Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+							},
+							Status: "pending",
+						},
 					},
 					Context: &api.ActiveContext{
 						RepoName:   strPtr("Work"),
@@ -77,14 +92,29 @@ func TestTinyAndCompactModes(t *testing.T) {
 					DailySummary: &api.DailyIssueSummary{
 						Date: "2026-03-19",
 						Issues: []api.Issue{
-							{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+							{
+								ID:              1,
+								Title:           "Add keyboard-first command palette",
+								Status:          "planned",
+								EstimateMinutes: &estimate,
+							},
 						},
 					},
 					DailyIssues: []api.Issue{
-						{ID: 1, Title: "Add keyboard-first command palette", Status: "planned", EstimateMinutes: &estimate},
+						{
+							ID:              1,
+							Title:           "Add keyboard-first command palette",
+							Status:          "planned",
+							EstimateMinutes: &estimate,
+						},
 					},
 					DueHabits: []api.HabitDailyItem{
-						{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target}}, Status: "pending"},
+						{
+							HabitWithMeta: api.HabitWithMeta{
+								Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
+							},
+							Status: "pending",
+						},
 					},
 					Context: &api.ActiveContext{
 						RepoName:   strPtr("Work"),

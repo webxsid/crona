@@ -16,14 +16,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func UninstallCrona(c *api.Client, currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd {
+func UninstallCrona(
+	c *api.Client,
+	currentExecutablePath, kernelExecutablePath string,
+	kernelInfo *api.KernelInfo,
+) tea.Cmd {
 	return func() tea.Msg {
 		mode := ""
 		if kernelInfo != nil {
 			mode = kernelInfo.Env
 		}
 		if reason := appruntime.NonStandardRuntimeReason(currentExecutablePath, config.TUIBinaryNameForMode(mode)); reason != "" {
-			return ErrMsg{Err: fmt.Errorf("%s Uninstall manually from your install directory", reason)}
+			return ErrMsg{
+				Err: fmt.Errorf("%s Uninstall manually from your install directory", reason),
+			}
 		}
 
 		installDir := filepath.Dir(strings.TrimSpace(currentExecutablePath))
@@ -46,7 +52,9 @@ func UninstallCrona(c *api.Client, currentExecutablePath, kernelExecutablePath s
 	}
 }
 
-func uninstallTargets(installDir, currentExecutablePath, kernelExecutablePath, mode string) []string {
+func uninstallTargets(
+	installDir, currentExecutablePath, kernelExecutablePath, mode string,
+) []string {
 	candidates := []string{
 		strings.TrimSpace(currentExecutablePath),
 		strings.TrimSpace(kernelExecutablePath),
@@ -135,12 +143,25 @@ func startWindowsUninstallCleanup(targets []string, baseDir string) error {
 		"Start-Sleep -Seconds 2",
 	}
 	for _, target := range targets {
-		lines = append(lines, "Remove-Item -LiteralPath '"+powershellQuote(target)+"' -Force -ErrorAction SilentlyContinue")
+		lines = append(
+			lines,
+			"Remove-Item -LiteralPath '"+powershellQuote(
+				target,
+			)+"' -Force -ErrorAction SilentlyContinue",
+		)
 	}
 	if strings.TrimSpace(baseDir) != "" {
-		lines = append(lines, "Remove-Item -LiteralPath '"+powershellQuote(baseDir)+"' -Recurse -Force -ErrorAction SilentlyContinue")
+		lines = append(
+			lines,
+			"Remove-Item -LiteralPath '"+powershellQuote(
+				baseDir,
+			)+"' -Recurse -Force -ErrorAction SilentlyContinue",
+		)
 	}
-	lines = append(lines, "Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue")
+	lines = append(
+		lines,
+		"Remove-Item -LiteralPath $PSCommandPath -Force -ErrorAction SilentlyContinue",
+	)
 	if err := os.WriteFile(scriptPath, []byte(strings.Join(lines, "\n")+"\n"), 0o600); err != nil {
 		return err
 	}
@@ -148,7 +169,14 @@ func startWindowsUninstallCleanup(targets []string, baseDir string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.Command(powershellPath, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath)
+	cmd := exec.Command(
+		powershellPath,
+		"-NoProfile",
+		"-ExecutionPolicy",
+		"Bypass",
+		"-File",
+		scriptPath,
+	)
 	cmd.Stdin = nil
 	cmd.Stdout = nil
 	cmd.Stderr = nil

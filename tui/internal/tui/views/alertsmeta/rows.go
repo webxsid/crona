@@ -42,19 +42,71 @@ type VisibleRow struct {
 	Key          RowKey
 }
 
-func Rows(settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder) []Row {
+func Rows(
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+) []Row {
 	if settings == nil {
 		return nil
 	}
 	rows := []Row{
-		{Section: "Delivery", Key: RowNotifications, Label: "Notifications", Value: enabledDisabled(settings.BoundaryNotifications), Selectable: true},
-		{Section: "Delivery", Key: RowSound, Label: "Sound", Value: enabledDisabled(settings.BoundarySound), Selectable: true},
-		{Section: "Delivery", Key: RowSoundPreset, Label: "Sound Preset", Value: soundPresetLabel(settings.AlertSoundPreset), Selectable: true},
-		{Section: "Delivery", Key: RowUrgency, Label: "Urgency", Value: urgencyLabel(settings.AlertUrgency), Selectable: true},
-		{Section: "Delivery", Key: RowLogoIcon, Label: "Logo Icon", Value: enabledDisabled(settings.AlertIconEnabled), Selectable: true},
-		{Section: "Focus Inactivity", Key: RowInactivityAlerts, Label: "Inactivity Alerts", Value: enabledDisabled(settings.InactivityAlerts), Selectable: true},
-		{Section: "Focus Inactivity", Key: RowInactivityAfter, Label: "Alert After", Value: minutesLabel(settings.InactivityThreshold), Selectable: true},
-		{Section: "Focus Inactivity", Key: RowInactivityRepeat, Label: "Repeat Every", Value: minutesLabel(settings.InactivityRepeat), Selectable: true},
+		{
+			Section:    "Delivery",
+			Key:        RowNotifications,
+			Label:      "Notifications",
+			Value:      enabledDisabled(settings.BoundaryNotifications),
+			Selectable: true,
+		},
+		{
+			Section:    "Delivery",
+			Key:        RowSound,
+			Label:      "Sound",
+			Value:      enabledDisabled(settings.BoundarySound),
+			Selectable: true,
+		},
+		{
+			Section:    "Delivery",
+			Key:        RowSoundPreset,
+			Label:      "Sound Preset",
+			Value:      soundPresetLabel(settings.AlertSoundPreset),
+			Selectable: true,
+		},
+		{
+			Section:    "Delivery",
+			Key:        RowUrgency,
+			Label:      "Urgency",
+			Value:      urgencyLabel(settings.AlertUrgency),
+			Selectable: true,
+		},
+		{
+			Section:    "Delivery",
+			Key:        RowLogoIcon,
+			Label:      "Logo Icon",
+			Value:      enabledDisabled(settings.AlertIconEnabled),
+			Selectable: true,
+		},
+		{
+			Section:    "Focus Inactivity",
+			Key:        RowInactivityAlerts,
+			Label:      "Inactivity Alerts",
+			Value:      enabledDisabled(settings.InactivityAlerts),
+			Selectable: true,
+		},
+		{
+			Section:    "Focus Inactivity",
+			Key:        RowInactivityAfter,
+			Label:      "Alert After",
+			Value:      minutesLabel(settings.InactivityThreshold),
+			Selectable: true,
+		},
+		{
+			Section:    "Focus Inactivity",
+			Key:        RowInactivityRepeat,
+			Label:      "Repeat Every",
+			Value:      minutesLabel(settings.InactivityRepeat),
+			Selectable: true,
+		},
 	}
 	for _, reminder := range reminders {
 		rows = append(rows, Row{
@@ -68,24 +120,68 @@ func Rows(settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders
 		})
 	}
 	if status != nil {
-		rows = append(rows,
-			Row{Section: "Backend", Label: "Notification Backend", Value: backendLabel(status.NotificationsAvailable, status.NotificationBackend)},
-			Row{Section: "Backend", Label: "Sound Backend", Value: backendLabel(status.SoundAvailable, status.SoundBackend)},
-			Row{Section: "Backend", Label: "Subtitle", Value: supportedLabel(status.SubtitleSupported)},
-			Row{Section: "Backend", Label: "Urgency", Value: supportedLabel(status.UrgencySupported)},
+		rows = append(
+			rows,
+			Row{
+				Section: "Backend",
+				Label:   "Notification Backend",
+				Value:   backendLabel(status.NotificationsAvailable, status.NotificationBackend),
+			},
+			Row{
+				Section: "Backend",
+				Label:   "Sound Backend",
+				Value:   backendLabel(status.SoundAvailable, status.SoundBackend),
+			},
+			Row{
+				Section: "Backend",
+				Label:   "Subtitle",
+				Value:   supportedLabel(status.SubtitleSupported),
+			},
+			Row{
+				Section: "Backend",
+				Label:   "Urgency",
+				Value:   supportedLabel(status.UrgencySupported),
+			},
 			Row{Section: "Backend", Label: "Icon", Value: supportedLabel(status.IconSupported)},
-			Row{Section: "Backend", Label: "Bundled Sound", Value: supportedLabel(status.BundledSoundSupported)},
+			Row{
+				Section: "Backend",
+				Label:   "Bundled Sound",
+				Value:   supportedLabel(status.BundledSoundSupported),
+			},
 		)
 	}
-	rows = append(rows,
-		Row{Section: "Actions", Key: RowAddReminder, Label: "Add Check-In Reminder", Value: "Create a scheduled nightly reminder", Selectable: true},
-		Row{Section: "Actions", Key: RowTestNotification, Label: "Test Notification", Value: "Send sample alert", Selectable: true},
-		Row{Section: "Actions", Key: RowTestSound, Label: "Test Sound", Value: "Play selected preset", Selectable: true},
+	rows = append(
+		rows,
+		Row{
+			Section:    "Actions",
+			Key:        RowAddReminder,
+			Label:      "Add Check-In Reminder",
+			Value:      "Create a scheduled nightly reminder",
+			Selectable: true,
+		},
+		Row{
+			Section:    "Actions",
+			Key:        RowTestNotification,
+			Label:      "Test Notification",
+			Value:      "Send sample alert",
+			Selectable: true,
+		},
+		Row{
+			Section:    "Actions",
+			Key:        RowTestSound,
+			Label:      "Test Sound",
+			Value:      "Play selected preset",
+			Selectable: true,
+		},
 	)
 	return rows
 }
 
-func ItemLabels(settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder) []string {
+func ItemLabels(
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+) []string {
 	rows := Rows(settings, status, reminders)
 	labels := make([]string, 0, len(rows))
 	for _, row := range rows {
@@ -98,14 +194,24 @@ func ItemLabels(settings *sharedtypes.CoreSettings, status *api.AlertStatus, rem
 	return labels
 }
 
-func FilteredIndices(filter string, settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder) []int {
+func FilteredIndices(
+	filter string,
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+) []int {
 	if settings == nil {
 		return nil
 	}
 	return viewhelpers.FilteredStrings(ItemLabels(settings, status, reminders), filter)
 }
 
-func FilteredSelectableRows(filter string, settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder) []Row {
+func FilteredSelectableRows(
+	filter string,
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+) []Row {
 	rows := Rows(settings, status, reminders)
 	indices := FilteredIndices(filter, settings, status, reminders)
 	out := make([]Row, 0, len(indices))
@@ -117,11 +223,22 @@ func FilteredSelectableRows(filter string, settings *sharedtypes.CoreSettings, s
 	return out
 }
 
-func FilteredSelectableCount(filter string, settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder) int {
+func FilteredSelectableCount(
+	filter string,
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+) int {
 	return len(FilteredSelectableRows(filter, settings, status, reminders))
 }
 
-func SelectedRow(filter string, settings *sharedtypes.CoreSettings, status *api.AlertStatus, reminders []api.AlertReminder, cursor int) (Row, bool) {
+func SelectedRow(
+	filter string,
+	settings *sharedtypes.CoreSettings,
+	status *api.AlertStatus,
+	reminders []api.AlertReminder,
+	cursor int,
+) (Row, bool) {
 	rows := FilteredSelectableRows(filter, settings, status, reminders)
 	if cursor < 0 || cursor >= len(rows) {
 		return Row{}, false

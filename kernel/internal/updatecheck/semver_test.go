@@ -51,8 +51,10 @@ func TestClearReleaseLocked(t *testing.T) {
 
 	if service.status.LatestVersion != "" || service.status.ReleaseTag != "" || service.status.ReleaseName != "" ||
 		service.status.ReleaseNotes != "" || service.status.ReleaseURL != "" || service.status.InstallScriptURL != "" ||
-		service.status.ChecksumsURL != "" || service.status.PublishedAt != "" || service.status.UpdateAvailable ||
-		service.status.InstallAvailable || service.status.InstallUnavailableReason != "" {
+		service.status.ChecksumsURL != "" || service.status.PublishedAt != "" ||
+		service.status.UpdateAvailable ||
+		service.status.InstallAvailable ||
+		service.status.InstallUnavailableReason != "" {
 		t.Fatalf("expected release fields to be cleared, got %+v", service.status)
 	}
 }

@@ -61,7 +61,6 @@ type MessageState struct {
 	SessionDetailY          int
 	SessionContextOpen      bool
 	SessionContextY         int
-	Scratchpads             []api.ScratchPad
 	Stashes                 []api.Stash
 	DialogStashCursor       int
 	Ops                     []api.Op
@@ -78,10 +77,6 @@ type MessageState struct {
 	KernelInfo              *api.KernelInfo
 	Elapsed                 int
 	TimerTickSeq            int
-	ScratchpadOpen          bool
-	ScratchpadMeta          *api.ScratchPad
-	ScratchpadFilePath      string
-	ScratchpadRendered      string
 	StatusMsg               string
 	StatusSeq               int
 	StatusErr               bool
@@ -111,17 +106,12 @@ type MessageDeps struct {
 	DefaultOpsLimit            func(MessageState) int
 	CurrentOpsLimit            func(MessageState) int
 	ClampFiltered              func(*MessageState, uistate.Pane)
-	SyncScratchpadViewport     func(*MessageState)
-	ScratchpadTabIndexByID     func(*MessageState, string) int
 	FilteredCursorForRawIndex  func(*MessageState, uistate.Pane, int) int
-	SetActiveScratchpadByIndex func(*MessageState, int)
 	SetStatus                  func(*MessageState, string, bool) tea.Cmd
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
 	OpenStashConflictDialog    func(*MessageState, api.StashConflict, int64, int64, int64)
 	OpenOnboardingDialog       func(*MessageState)
-	EnterScratchpadPane        func(*MessageState, commands.OpenScratchpadMsg)
-	SetScratchpadContent       func(*MessageState, string, string)
 	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
 	CurrentDashboardDate       func(MessageState) string
 	CurrentWellbeingDate       func(MessageState) string
@@ -142,7 +132,6 @@ type MessageDeps struct {
 	LoadHabitHistory           func(*api.ActiveContext, *int64) tea.Cmd
 	LoadSessionHistoryFor200   func(MessageState) tea.Cmd
 	LoadSessionDetail          func(string) tea.Cmd
-	LoadScratchpads            func() tea.Cmd
 	LoadStashes                func() tea.Cmd
 	LoadOps                    func(int) tea.Cmd
 	LoadContext                func() tea.Cmd
@@ -162,7 +151,11 @@ type MessageDeps struct {
 	CloseEventStop             func()
 }
 
-func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageState, tea.Cmd, bool) {
+func HandleMessage(
+	state MessageState,
+	raw tea.Msg,
+	deps MessageDeps,
+) (MessageState, tea.Cmd, bool) {
 	switch msg := raw.(type) {
 	case tea.WindowSizeMsg:
 		state.Width = msg.Width
@@ -171,14 +164,8 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			nextLimit := deps.DefaultOpsLimit(state)
 			if nextLimit != state.OpsLimit {
 				state.OpsLimit = nextLimit
-				if state.ScratchpadOpen {
-					deps.SyncScratchpadViewport(&state)
-				}
 				return state, deps.LoadOps(deps.CurrentOpsLimit(state)), true
 			}
-		}
-		if state.ScratchpadOpen {
-			deps.SyncScratchpadViewport(&state)
 		}
 		return state, nil, true
 	case commands.ReposLoadedMsg:
@@ -334,23 +321,6 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.SessionDetailY = 0
 		logger.Errorf("session detail failed: %v", msg.Err)
 		return state, deps.SetStatus(&state, "Error: "+msg.Err.Error(), true), true
-	case commands.ScratchpadsLoadedMsg:
-		state.Scratchpads = msg.Pads
-		deps.ClampFiltered(&state, uistate.PaneScratchpads)
-		if state.ScratchpadMeta != nil {
-			if idx := deps.ScratchpadTabIndexByID(&state, state.ScratchpadMeta.ID); idx >= 0 {
-				if filteredCur := deps.FilteredCursorForRawIndex(&state, uistate.PaneScratchpads, idx); filteredCur >= 0 {
-					state.Cursor[uistate.PaneScratchpads] = filteredCur
-				}
-				deps.SetActiveScratchpadByIndex(&state, idx)
-			} else {
-				state.ScratchpadOpen = false
-				state.ScratchpadMeta = nil
-				state.ScratchpadFilePath = ""
-				state.ScratchpadRendered = ""
-			}
-		}
-		return state, nil, true
 	case commands.StashesLoadedMsg:
 		state.Stashes = msg.Stashes
 		if state.DialogStashCursor >= len(state.Stashes) {
@@ -386,7 +356,7 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		state.Elapsed = 0
 		state.TimerTickSeq++
 		if state.Timer != nil && state.Timer.State != "idle" {
-			if state.View != uistate.ViewScratch && state.View != uistate.ViewSessionHistory {
+			if state.View != uistate.ViewSessionHistory {
 				state.View = uistate.ViewSessionActive
 			}
 			state.Pane = uistate.DefaultPane(state.View)
@@ -586,15 +556,6 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 			deps.ReportHandledError(msg.Err, msg.Operation),
 			deps.SetStatus(&state, "Error: "+msg.Err.Error(), true),
 		), true
-	case commands.OpenScratchpadMsg:
-		deps.EnterScratchpadPane(&state, msg)
-		return state, nil, true
-	case commands.ScratchpadReloadedMsg:
-		deps.SetScratchpadContent(&state, msg.Rendered, msg.FilePath)
-		return state, nil, true
-	case commands.EditorDoneMsg:
-		cmds := []tea.Cmd{deps.LoadScratchpads(), deps.LoadExportAssets()}
-		return state, tea.Batch(cmds...), true
 	case commands.DailyReportGeneratedMsg:
 		state.ExportAssets = &msg.Result.Assets
 		if isExportDialog(state.Dialog) && state.DialogProcessing {
@@ -692,7 +653,11 @@ func restoreIssueCursorByID(state *MessageState, pane uistate.Pane, selectedIssu
 	return false
 }
 
-func restoreHabitHistoryCursorByID(state *MessageState, pane uistate.Pane, selectedHabitHistoryID *int64) bool {
+func restoreHabitHistoryCursorByID(
+	state *MessageState,
+	pane uistate.Pane,
+	selectedHabitHistoryID *int64,
+) bool {
 	if selectedHabitHistoryID == nil || *selectedHabitHistoryID == 0 {
 		return false
 	}
@@ -771,7 +736,6 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadWellbeing(deps.CurrentWellbeingDate(state), state.WellbeingWindowDays),
 		deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate),
 		deps.LoadSessionHistoryFor200(state),
-		deps.LoadScratchpads(),
 		deps.LoadStashes(),
 		deps.LoadOps(deps.CurrentOpsLimit(state)),
 		deps.LoadContext(),

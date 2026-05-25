@@ -24,7 +24,6 @@ type Context struct {
 	AlertReminders   *repositories.AlertReminderRepository
 	SessionSegments  *repositories.SessionSegmentRepository
 	ActiveContext    *repositories.ActiveContextRepository
-	ScratchPads      *repositories.ScratchPadRepository
 	DailyCheckIns    *repositories.DailyCheckInRepository
 	DailyPlans       *repositories.DailyPlanRepository
 
@@ -35,7 +34,15 @@ type Context struct {
 	Events     *events.Bus
 }
 
-func NewContext(db *store.Store, registry *store.Registry, userID string, deviceID string, scratchDir string, now func() string, bus *events.Bus) *Context {
+func NewContext(
+	db *store.Store,
+	registry *store.Registry,
+	userID string,
+	deviceID string,
+	scratchDir string,
+	now func() string,
+	bus *events.Bus,
+) *Context {
 	return &Context{
 		Store:            db,
 		Repos:            registry.Repos,
@@ -51,7 +58,6 @@ func NewContext(db *store.Store, registry *store.Registry, userID string, device
 		AlertReminders:   registry.AlertReminders,
 		SessionSegments:  registry.SessionSegments,
 		ActiveContext:    registry.ActiveContext,
-		ScratchPads:      registry.ScratchPads,
 		DailyCheckIns:    registry.DailyCheckIns,
 		DailyPlans:       registry.DailyPlans,
 		UserID:           userID,

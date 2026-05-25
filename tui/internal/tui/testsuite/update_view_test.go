@@ -65,7 +65,10 @@ func TestDismissedUpdatesViewFallsBackToDaily(t *testing.T) {
 		DismissedVersion: "0.3.0",
 	})
 	if updated.CurrentView() != app.ViewUpdates {
-		t.Fatalf("expected dismissed updates view to stay on updates, got %s", updated.CurrentView())
+		t.Fatalf(
+			"expected dismissed updates view to stay on updates, got %s",
+			updated.CurrentView(),
+		)
 	}
 }
 

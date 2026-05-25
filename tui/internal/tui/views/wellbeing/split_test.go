@@ -56,11 +56,23 @@ func TestCombinedMetricsBodyKeepsStreaksForNarrowFallback(t *testing.T) {
 func TestMomentumRowsRenderCadenceAndMeters(t *testing.T) {
 	state := splitTestState()
 	state.Streaks.CustomHabitStreaks = []sharedtypes.CustomHabitStreakSummary{
-		{Name: "Daily Reflection", Period: sharedtypes.HabitStreakPeriodDay, Current: 3, Longest: 5},
+		{
+			Name:    "Daily Reflection",
+			Period:  sharedtypes.HabitStreakPeriodDay,
+			Current: 3,
+			Longest: 5,
+		},
 		{Name: "Training Week", Period: sharedtypes.HabitStreakPeriodWeek, Current: 2, Longest: 6},
-		{Name: "Wellbeing Month", Period: sharedtypes.HabitStreakPeriodMonth, Current: 1, Longest: 4},
+		{
+			Name:    "Wellbeing Month",
+			Period:  sharedtypes.HabitStreakPeriodMonth,
+			Current: 1,
+			Longest: 4,
+		},
 	}
-	body := ansi.Strip(strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"))
+	body := ansi.Strip(
+		strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"),
+	)
 	for _, want := range []string{"Custom Momentum", "daily", "weekly", "monthly", "▰", "▱", "current ·", "3d current", "2w current", "1mo current", "5d best", "6w best", "4mo best"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected momentum rows to include %q, got %q", want, body)
@@ -82,7 +94,9 @@ func TestMomentumLadderHandlesZeroBest(t *testing.T) {
 	state.Streaks.CurrentCheckInDays = 0
 	state.Streaks.LongestCheckInDays = 0
 
-	body := ansi.Strip(strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"))
+	body := ansi.Strip(
+		strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"),
+	)
 	for _, want := range []string{"▱▱▱▱", "0d current", "0d best"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected empty momentum meter to include %q, got %q", want, body)
@@ -111,10 +125,26 @@ func TestMomentumTierCountsUseCadenceThresholds(t *testing.T) {
 
 func TestStreaksPaneLineCountSupportsIndependentScrolling(t *testing.T) {
 	state := splitTestState()
-	state.Streaks.CustomHabitStreaks = append(state.Streaks.CustomHabitStreaks,
-		sharedtypes.CustomHabitStreakSummary{Name: "Reading", Period: sharedtypes.HabitStreakPeriodDay, Current: 4, Longest: 8},
-		sharedtypes.CustomHabitStreakSummary{Name: "Mobility", Period: sharedtypes.HabitStreakPeriodWeek, Current: 3, Longest: 9},
-		sharedtypes.CustomHabitStreakSummary{Name: "Meditation", Period: sharedtypes.HabitStreakPeriodMonth, Current: 6, Longest: 12},
+	state.Streaks.CustomHabitStreaks = append(
+		state.Streaks.CustomHabitStreaks,
+		sharedtypes.CustomHabitStreakSummary{
+			Name:    "Reading",
+			Period:  sharedtypes.HabitStreakPeriodDay,
+			Current: 4,
+			Longest: 8,
+		},
+		sharedtypes.CustomHabitStreakSummary{
+			Name:    "Mobility",
+			Period:  sharedtypes.HabitStreakPeriodWeek,
+			Current: 3,
+			Longest: 9,
+		},
+		sharedtypes.CustomHabitStreakSummary{
+			Name:    "Meditation",
+			Period:  sharedtypes.HabitStreakPeriodMonth,
+			Current: 6,
+			Longest: 12,
+		},
 	)
 	count := PaneLineCount(state, string(uistate.PaneWellbeingStreaks))
 	if count < 12 {
@@ -126,11 +156,11 @@ func splitTestState() types.ContentState {
 	avgMood := 4.1
 	avgEnergy := 3.7
 	return types.ContentState{
-		View:          "wellbeing",
-		Pane:          string(uistate.PaneWellbeingTrends),
-		Width:         120,
-		Height:        40,
-		WellbeingDate: "2026-04-04",
+		View:                "wellbeing",
+		Pane:                string(uistate.PaneWellbeingTrends),
+		Width:               120,
+		Height:              40,
+		WellbeingDate:       "2026-04-04",
 		WellbeingWindowDays: 14,
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
@@ -156,7 +186,12 @@ func splitTestState() types.ContentState {
 			CurrentHabitDays:   4,
 			LongestHabitDays:   9,
 			CustomHabitStreaks: []sharedtypes.CustomHabitStreakSummary{
-				{Name: "Training", Period: sharedtypes.HabitStreakPeriodWeek, Current: 2, Longest: 6},
+				{
+					Name:    "Training",
+					Period:  sharedtypes.HabitStreakPeriodWeek,
+					Current: 2,
+					Longest: 6,
+				},
 			},
 		},
 	}
@@ -173,11 +208,11 @@ func makeWellbeingMetricsRange(days int) []api.DailyMetricsDay {
 		out = append(out, api.DailyMetricsDay{
 			Date: fmt.Sprintf("2026-04-%02d", i+1),
 			CheckIn: &api.DailyCheckIn{
-				Date:        fmt.Sprintf("2026-04-%02d", i+1),
-				Mood:        mood,
-				Energy:      energy,
-				SleepHours:  &sleep,
-				CreatedAt:   fmt.Sprintf("2026-04-%02dT09:00:00Z", i+1),
+				Date:       fmt.Sprintf("2026-04-%02d", i+1),
+				Mood:       mood,
+				Energy:     energy,
+				SleepHours: &sleep,
+				CreatedAt:  fmt.Sprintf("2026-04-%02dT09:00:00Z", i+1),
 			},
 			WorkedSeconds: work,
 			RestSeconds:   rest,

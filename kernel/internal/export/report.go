@@ -17,15 +17,51 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func GenerateDailyReport(ctx context.Context, c *core.Context, paths runtime.Paths, date string, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
-	return GenerateDailyReportWithFormat(ctx, c, paths, date, sharedtypes.ExportFormatMarkdown, mode)
+func GenerateDailyReport(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	date string,
+	mode sharedtypes.ExportOutputMode,
+) (*sharedtypes.DailyReportResult, error) {
+	return GenerateDailyReportWithFormat(
+		ctx,
+		c,
+		paths,
+		date,
+		sharedtypes.ExportFormatMarkdown,
+		mode,
+	)
 }
 
-func GenerateDailyReportWithFormat(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode) (*sharedtypes.DailyReportResult, error) {
-	return generateDailyReportWithKind(ctx, c, paths, normalizeReportDate(date), normalizeNarrativeFormat(format), mode, "")
+func GenerateDailyReportWithFormat(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	date string,
+	format sharedtypes.ExportFormat,
+	mode sharedtypes.ExportOutputMode,
+) (*sharedtypes.DailyReportResult, error) {
+	return generateDailyReportWithKind(
+		ctx,
+		c,
+		paths,
+		normalizeReportDate(date),
+		normalizeNarrativeFormat(format),
+		mode,
+		"",
+	)
 }
 
-func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths runtime.Paths, date string, format sharedtypes.ExportFormat, mode sharedtypes.ExportOutputMode, presetID string) (*sharedtypes.DailyReportResult, error) {
+func generateDailyReportWithKind(
+	ctx context.Context,
+	c *core.Context,
+	paths runtime.Paths,
+	date string,
+	format sharedtypes.ExportFormat,
+	mode sharedtypes.ExportOutputMode,
+	presetID string,
+) (*sharedtypes.DailyReportResult, error) {
 	if strings.TrimSpace(date) == "" {
 		date = time.Now().Format("2006-01-02")
 	}
@@ -48,7 +84,11 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 	}
 	switch format {
 	case sharedtypes.ExportFormatPDF:
-		htmlTemplate, cssTemplate, _, err := LoadNarrativePDFAssets(paths, sharedtypes.ExportReportKindDaily, presetID)
+		htmlTemplate, cssTemplate, _, err := LoadNarrativePDFAssets(
+			paths,
+			sharedtypes.ExportReportKindDaily,
+			presetID,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +120,12 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 			Format:   format,
 			BaseName: "daily-" + date,
 		}
-		templateBody, _, err := LoadReportTemplate(paths, sharedtypes.ExportReportKindDaily, format, presetID)
+		templateBody, _, err := LoadReportTemplate(
+			paths,
+			sharedtypes.ExportReportKindDaily,
+			format,
+			presetID,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -101,7 +146,11 @@ func generateDailyReportWithKind(ctx context.Context, c *core.Context, paths run
 	return result, nil
 }
 
-func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*sharedtypes.DailyReportData, error) {
+func BuildDailyReportData(
+	ctx context.Context,
+	c *core.Context,
+	date string,
+) (*sharedtypes.DailyReportData, error) {
 	summary, err := corecommands.ComputeDailyIssueSummaryForDate(ctx, c, date)
 	if err != nil {
 		return nil, err
@@ -208,7 +257,13 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 			includedIssueIDs[issue.ID] = struct{}{}
 		}
 	}
-	issues = appendWorkedPinnedFutureIssues(issues, allIssues, workedByIssue, includedIssueIDs, date)
+	issues = appendWorkedPinnedFutureIssues(
+		issues,
+		allIssues,
+		workedByIssue,
+		includedIssueIDs,
+		date,
+	)
 
 	habits, err := corecommands.ListHabitsDueForDate(ctx, c, date)
 	if err != nil {
@@ -233,7 +288,12 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	if err != nil {
 		return nil, err
 	}
-	streaks.CustomHabitStreaks = corecommands.ComputeCustomHabitStreaks(habitHistory, date, date, settings)
+	streaks.CustomHabitStreaks = corecommands.ComputeCustomHabitStreaks(
+		habitHistory,
+		date,
+		date,
+		settings,
+	)
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
 		copy := days[len(days)-1]
@@ -256,7 +316,13 @@ func BuildDailyReportData(ctx context.Context, c *core.Context, date string) (*s
 	}, nil
 }
 
-func appendWorkedPinnedFutureIssues(issues []sharedtypes.DailyReportIssue, allIssues []sharedtypes.IssueWithMeta, workedByIssue map[int64]int, included map[int64]struct{}, date string) []sharedtypes.DailyReportIssue {
+func appendWorkedPinnedFutureIssues(
+	issues []sharedtypes.DailyReportIssue,
+	allIssues []sharedtypes.IssueWithMeta,
+	workedByIssue map[int64]int,
+	included map[int64]struct{},
+	date string,
+) []sharedtypes.DailyReportIssue {
 	for _, meta := range allIssues {
 		if _, ok := included[meta.ID]; ok {
 			continue
@@ -447,8 +513,14 @@ func buildSummaryMap(data *sharedtypes.DailyReportData) map[string]any {
 	summary["issueAbandonedCount"] = issueAbandonedCount
 	summary["issueCompletion"] = formatRatio(issueDoneCount, data.Summary.TotalIssues)
 	summary["estimatedTime"] = formatDurationHMS(data.Summary.TotalEstimatedMinutes * 60)
-	summary["workedEstimate"] = formatWorkedEstimate(data.Summary.WorkedSeconds, intPtr(data.Summary.TotalEstimatedMinutes))
-	summary["varianceTime"] = formatVarianceTime(data.Summary.WorkedSeconds, data.Summary.TotalEstimatedMinutes)
+	summary["workedEstimate"] = formatWorkedEstimate(
+		data.Summary.WorkedSeconds,
+		intPtr(data.Summary.TotalEstimatedMinutes),
+	)
+	summary["varianceTime"] = formatVarianceTime(
+		data.Summary.WorkedSeconds,
+		data.Summary.TotalEstimatedMinutes,
+	)
 	summary["habitsDueCount"] = len(data.Habits)
 	summary["habitsCompletedCount"] = habitsCompletedCount
 	summary["habitsPendingCount"] = habitsPendingCount
@@ -702,7 +774,11 @@ func formatWorkedEstimate(workedSeconds int, estimateMinutes *int) string {
 	if estimateMinutes == nil {
 		return formatDurationHMS(workedSeconds)
 	}
-	return fmt.Sprintf("%s / %s", formatDurationHMS(workedSeconds), formatDurationMinutesHMS(estimateMinutes))
+	return fmt.Sprintf(
+		"%s / %s",
+		formatDurationHMS(workedSeconds),
+		formatDurationMinutesHMS(estimateMinutes),
+	)
 }
 
 func formatVarianceTime(workedSeconds int, estimateMinutes int) string {
@@ -743,18 +819,21 @@ func formatStatusLabel(value string, fallback string) string {
 func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
 	issue = sanitizeDailyReportIssue(issue)
 	return map[string]any{
-		"id":                       issue.ID,
-		"title":                    issue.Title,
-		"repoId":                   issue.RepoID,
-		"repoName":                 issue.RepoName,
-		"streamId":                 issue.StreamID,
-		"streamName":               issue.StreamName,
-		"status":                   formatStatusLabel(string(issue.Status), ""),
-		"estimateMinutes":          issue.EstimateMinutes,
-		"estimateTime":             formatDurationMinutesHMS(issue.EstimateMinutes),
-		"workedSeconds":            issue.WorkedSeconds,
-		"workedTime":               formatDurationHMS(issue.WorkedSeconds),
-		"workedEstimate":           formatWorkedEstimate(issue.WorkedSeconds, issue.EstimateMinutes),
+		"id":              issue.ID,
+		"title":           issue.Title,
+		"repoId":          issue.RepoID,
+		"repoName":        issue.RepoName,
+		"streamId":        issue.StreamID,
+		"streamName":      issue.StreamName,
+		"status":          formatStatusLabel(string(issue.Status), ""),
+		"estimateMinutes": issue.EstimateMinutes,
+		"estimateTime":    formatDurationMinutesHMS(issue.EstimateMinutes),
+		"workedSeconds":   issue.WorkedSeconds,
+		"workedTime":      formatDurationHMS(issue.WorkedSeconds),
+		"workedEstimate": formatWorkedEstimate(
+			issue.WorkedSeconds,
+			issue.EstimateMinutes,
+		),
 		"planStatus":               issue.PlanStatus,
 		"planCommittedAt":          issue.PlanCommittedAt,
 		"planResolvedAt":           issue.PlanResolvedAt,
@@ -822,17 +901,34 @@ func buildHighlights(data *sharedtypes.DailyReportData) []string {
 	highlights := make([]string, 0, 6)
 	completedIssues := collectIssueTitlesByStatus(data.Issues, sharedtypes.IssueStatusDone, 3)
 	if len(completedIssues) > 0 {
-		highlights = append(highlights, fmt.Sprintf("Completed issues: %s", strings.Join(completedIssues, ", ")))
+		highlights = append(
+			highlights,
+			fmt.Sprintf("Completed issues: %s", strings.Join(completedIssues, ", ")),
+		)
 	}
 	completedHabits := collectCompletedHabitNames(data.Habits, 3)
 	if len(completedHabits) > 0 {
-		highlights = append(highlights, fmt.Sprintf("Completed habits: %s", strings.Join(completedHabits, ", ")))
+		highlights = append(
+			highlights,
+			fmt.Sprintf("Completed habits: %s", strings.Join(completedHabits, ", ")),
+		)
 	}
 	if data.CheckIn != nil && data.CheckIn.Mood >= 4 && data.CheckIn.Energy >= 4 {
-		highlights = append(highlights, fmt.Sprintf("Strong check-in: mood %d/5, energy %d/5", data.CheckIn.Mood, data.CheckIn.Energy))
+		highlights = append(
+			highlights,
+			fmt.Sprintf(
+				"Strong check-in: mood %d/5, energy %d/5",
+				data.CheckIn.Mood,
+				data.CheckIn.Energy,
+			),
+		)
 	}
-	if data.Metrics != nil && data.Metrics.Burnout != nil && data.Metrics.Burnout.Level == sharedtypes.BurnoutLevelLow {
-		highlights = append(highlights, fmt.Sprintf("Burnout stayed low (%d)", data.Metrics.Burnout.Score))
+	if data.Metrics != nil && data.Metrics.Burnout != nil &&
+		data.Metrics.Burnout.Level == sharedtypes.BurnoutLevelLow {
+		highlights = append(
+			highlights,
+			fmt.Sprintf("Burnout stayed low (%d)", data.Metrics.Burnout.Score),
+		)
 	}
 	return highlights
 }
@@ -862,7 +958,13 @@ func buildRisks(data *sharedtypes.DailyReportData) []string {
 			risks = append(risks, fmt.Sprintf("Sleep was low: %.1fh", *data.CheckIn.SleepHours))
 		}
 		if data.CheckIn.ScreenTimeMinutes != nil && *data.CheckIn.ScreenTimeMinutes >= 360 {
-			risks = append(risks, fmt.Sprintf("High screen time: %s", formatDurationMinutesHMS(data.CheckIn.ScreenTimeMinutes)))
+			risks = append(
+				risks,
+				fmt.Sprintf(
+					"High screen time: %s",
+					formatDurationMinutesHMS(data.CheckIn.ScreenTimeMinutes),
+				),
+			)
 		}
 	}
 	if data.Metrics != nil && data.Metrics.Burnout != nil {
@@ -870,14 +972,22 @@ func buildRisks(data *sharedtypes.DailyReportData) []string {
 		case sharedtypes.BurnoutLevelHigh:
 			risks = append(risks, fmt.Sprintf("Burnout is high (%d)", data.Metrics.Burnout.Score))
 		case sharedtypes.BurnoutLevelGuarded:
-			risks = append(risks, fmt.Sprintf("Burnout is guarded (%d)", data.Metrics.Burnout.Score))
+			risks = append(
+				risks,
+				fmt.Sprintf("Burnout is guarded (%d)", data.Metrics.Burnout.Score),
+			)
 		}
 	}
 	return risks
 }
 
-func deriveDayHealth(data *sharedtypes.DailyReportData, summary map[string]any, risks []string) string {
-	if data.Metrics != nil && data.Metrics.Burnout != nil && data.Metrics.Burnout.Level == sharedtypes.BurnoutLevelHigh {
+func deriveDayHealth(
+	data *sharedtypes.DailyReportData,
+	summary map[string]any,
+	risks []string,
+) string {
+	if data.Metrics != nil && data.Metrics.Burnout != nil &&
+		data.Metrics.Burnout.Level == sharedtypes.BurnoutLevelHigh {
 		return "Overloaded"
 	}
 	if len(risks) >= 3 {
@@ -895,7 +1005,11 @@ func deriveDayHealth(data *sharedtypes.DailyReportData, summary map[string]any, 
 	return "Steady"
 }
 
-func collectIssueTitlesByStatus(issues []sharedtypes.DailyReportIssue, status sharedtypes.IssueStatus, limit int) []string {
+func collectIssueTitlesByStatus(
+	issues []sharedtypes.DailyReportIssue,
+	status sharedtypes.IssueStatus,
+	limit int,
+) []string {
 	items := make([]string, 0, limit)
 	for _, issue := range issues {
 		if issue.Status != status {

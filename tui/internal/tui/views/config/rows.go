@@ -25,7 +25,12 @@ func configItems(status *api.ExportAssetStatus) []string {
 	return items
 }
 
-func groupedConfigRows(indices []int, selected int, sectionByIndex map[int]string, items []string) ([]visibleRow, int) {
+func groupedConfigRows(
+	indices []int,
+	selected int,
+	sectionByIndex map[int]string,
+	items []string,
+) ([]visibleRow, int) {
 	rows := make([]visibleRow, 0, len(indices)+4)
 	lastSection := ""
 	selectedVisible := 0

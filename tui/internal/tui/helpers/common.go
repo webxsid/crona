@@ -28,7 +28,11 @@ func IssueScheduleLabel(issue api.Issue, settings *api.CoreSettings) string {
 	return "due " + FormatDisplayDate(date, settings)
 }
 
-func resolvedOnDate(status sharedtypes.IssueStatus, completedAt, abandonedAt *string, settings *api.CoreSettings) string {
+func resolvedOnDate(
+	status sharedtypes.IssueStatus,
+	completedAt, abandonedAt *string,
+	settings *api.CoreSettings,
+) string {
 	var raw string
 	switch status {
 	case sharedtypes.IssueStatusDone:
@@ -73,6 +77,13 @@ func Truncate(s string, max int) string {
 
 func Min(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func Max(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b

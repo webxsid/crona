@@ -68,11 +68,15 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("complete issueDone: %v", err)
 	}
 
-	window, err := corecommands.ComputeDashboardWindowSummary(ctx, coreCtx, shareddto.DashboardWindowQuery{
-		Start:    "2026-03-26",
-		End:      "2026-04-01",
-		StreamID: &stream.ID,
-	})
+	window, err := corecommands.ComputeDashboardWindowSummary(
+		ctx,
+		coreCtx,
+		shareddto.DashboardWindowQuery{
+			Start:    "2026-03-26",
+			End:      "2026-04-01",
+			StreamID: &stream.ID,
+		},
+	)
 	if err != nil {
 		t.Fatalf("window summary: %v", err)
 	}
@@ -86,10 +90,14 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("expected per-day accountability score, got %+v", window.Days)
 	}
 
-	focus, err := corecommands.ComputeFocusScoreSummary(ctx, coreCtx, shareddto.DashboardSummaryQuery{
-		Start: "2026-04-01",
-		End:   "2026-04-01",
-	})
+	focus, err := corecommands.ComputeFocusScoreSummary(
+		ctx,
+		coreCtx,
+		shareddto.DashboardSummaryQuery{
+			Start: "2026-04-01",
+			End:   "2026-04-01",
+		},
+	)
 	if err != nil {
 		t.Fatalf("focus summary: %v", err)
 	}
@@ -97,12 +105,16 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("expected positive focus score, got %+v", focus)
 	}
 
-	distribution, err := corecommands.ComputeTimeDistributionSummary(ctx, coreCtx, shareddto.DashboardSummaryQuery{
-		Start:    "2026-04-01",
-		End:      "2026-04-01",
-		GroupBy:  string(sharedtypes.DistributionGroupIssue),
-		StreamID: &stream.ID,
-	})
+	distribution, err := corecommands.ComputeTimeDistributionSummary(
+		ctx,
+		coreCtx,
+		shareddto.DashboardSummaryQuery{
+			Start:    "2026-04-01",
+			End:      "2026-04-01",
+			GroupBy:  string(sharedtypes.DistributionGroupIssue),
+			StreamID: &stream.ID,
+		},
+	)
 	if err != nil {
 		t.Fatalf("distribution summary: %v", err)
 	}
@@ -110,12 +122,16 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("expected issue distribution row for worked issue, got %+v", distribution.Rows)
 	}
 
-	progress, err := corecommands.ComputeGoalProgressSummary(ctx, coreCtx, shareddto.DashboardSummaryQuery{
-		Start:    "2026-04-01",
-		End:      "2026-04-01",
-		GroupBy:  string(sharedtypes.GoalProgressGroupIssue),
-		StreamID: &stream.ID,
-	})
+	progress, err := corecommands.ComputeGoalProgressSummary(
+		ctx,
+		coreCtx,
+		shareddto.DashboardSummaryQuery{
+			Start:    "2026-04-01",
+			End:      "2026-04-01",
+			GroupBy:  string(sharedtypes.GoalProgressGroupIssue),
+			StreamID: &stream.ID,
+		},
+	)
 	if err != nil {
 		t.Fatalf("goal progress summary: %v", err)
 	}

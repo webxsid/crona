@@ -48,12 +48,18 @@ func shiftInputISODate(date string, days int) string {
 
 func handleShiftDailyDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	s.DashboardDate = navigationutil.ShiftISODate(deps.CurrentDashboardDate(s), dir)
-	return s, tea.Batch(deps.LoadDailySummary(s.DashboardDate), deps.LoadDueHabits(s.DashboardDate)), true
+	return s, tea.Batch(
+		deps.LoadDailySummary(s.DashboardDate),
+		deps.LoadDueHabits(s.DashboardDate),
+	), true
 }
 
 func handleResetDailyDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	s.DashboardDate = ""
-	return s, tea.Batch(deps.LoadDailySummary(""), deps.LoadDueHabits(deps.CurrentDashboardDate(s))), true
+	return s, tea.Batch(
+		deps.LoadDailySummary(""),
+		deps.LoadDueHabits(deps.CurrentDashboardDate(s)),
+	), true
 }
 
 func handleShiftWellbeingDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {

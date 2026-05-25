@@ -26,7 +26,6 @@ type Registry struct {
 	AlertReminders   *repositories.AlertReminderRepository
 	SessionSegments  *repositories.SessionSegmentRepository
 	ActiveContext    *repositories.ActiveContextRepository
-	ScratchPads      *repositories.ScratchPadRepository
 	DailyCheckIns    *repositories.DailyCheckInRepository
 	DailyPlans       *repositories.DailyPlanRepository
 }
@@ -57,7 +56,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		AlertReminders:   repositories.NewAlertReminderRepository(db),
 		SessionSegments:  repositories.NewSessionSegmentRepository(db),
 		ActiveContext:    repositories.NewActiveContextRepository(db),
-		ScratchPads:      repositories.NewScratchPadRepository(db),
 		DailyCheckIns:    repositories.NewDailyCheckInRepository(db),
 		DailyPlans:       repositories.NewDailyPlanRepository(db),
 	}

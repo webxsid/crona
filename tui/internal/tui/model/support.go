@@ -26,7 +26,6 @@ func (m Model) supportDiagnosticsInput() helperpkg.SupportDiagnosticsInput {
 		DueHabitsCount:      len(m.dueHabits),
 		ReportsCount:        len(m.exportReports),
 		SessionHistoryCount: len(m.sessionHistory),
-		ScratchpadsCount:    len(m.scratchpads),
 		OpsCount:            len(m.ops),
 		Context:             m.context,
 		Timer:               m.timer,
@@ -41,7 +40,9 @@ func (m Model) supportDiagnosticsInput() helperpkg.SupportDiagnosticsInput {
 }
 
 func (m Model) openSupportIssueURL() tea.Cmd {
-	return commands.OpenExternalURL(helperpkg.SupportBugReportURL(m.supportDiagnosticsInput(), m.dialogSupportBundlePath))
+	return commands.OpenExternalURL(
+		helperpkg.SupportBugReportURL(m.supportDiagnosticsInput(), m.dialogSupportBundlePath),
+	)
 }
 
 func (m Model) openSupportDiscussionsURL() tea.Cmd {
@@ -64,5 +65,9 @@ func (m Model) copySupportDiagnosticsCmd(state inputpkg.State) tea.Cmd {
 
 func (m Model) generateSupportBundleCmd(state inputpkg.State) tea.Cmd {
 	next := m.applyInputState(state)
-	return commands.GenerateSupportBundle(m.client, next.supportDiagnosticsInput(), helperpkg.SupportRecentDiagnosticsWindow)
+	return commands.GenerateSupportBundle(
+		m.client,
+		next.supportDiagnosticsInput(),
+		helperpkg.SupportRecentDiagnosticsWindow,
+	)
 }

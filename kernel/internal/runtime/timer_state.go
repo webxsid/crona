@@ -44,7 +44,8 @@ func ReadPreparedTimerState() (*PreparedTimerState, error) {
 	if err := json.Unmarshal(body, &state); err != nil {
 		return nil, err
 	}
-	if strings.TrimSpace(state.SessionID) == "" || state.IssueID == 0 || strings.TrimSpace(string(state.SegmentType)) == "" {
+	if strings.TrimSpace(state.SessionID) == "" || state.IssueID == 0 ||
+		strings.TrimSpace(string(state.SegmentType)) == "" {
 		return nil, errors.New("invalid prepared timer state")
 	}
 	return &state, nil
@@ -62,7 +63,11 @@ func ClearPreparedTimerState() error {
 	return nil
 }
 
-func NewPreparedTimerState(sessionID string, issueID int64, segmentType sharedtypes.SessionSegmentType) PreparedTimerState {
+func NewPreparedTimerState(
+	sessionID string,
+	issueID int64,
+	segmentType sharedtypes.SessionSegmentType,
+) PreparedTimerState {
 	return PreparedTimerState{
 		SessionID:   strings.TrimSpace(sessionID),
 		IssueID:     issueID,

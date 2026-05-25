@@ -28,7 +28,11 @@ func SessionDetailContentLines(detail *api.SessionDetail) []string {
 		"",
 		fmt.Sprintf("Work: %s", FormatClockText(detail.WorkSummary.WorkSeconds)),
 		fmt.Sprintf("Rest: %s", FormatClockText(detail.WorkSummary.RestSeconds)),
-		fmt.Sprintf("Segments: %d work / %d rest", detail.WorkSummary.WorkSegments, detail.WorkSummary.RestSegments),
+		fmt.Sprintf(
+			"Segments: %d work / %d rest",
+			detail.WorkSummary.WorkSegments,
+			detail.WorkSummary.RestSegments,
+		),
 	}
 	if detail.Source == sharedtypes.SessionSourceManual {
 		lines = append(lines[:3], append([]string{"Source: manual"}, lines[3:]...)...)
@@ -62,13 +66,13 @@ func SessionDetailContentLines(detail *api.SessionDetail) []string {
 
 func SessionDetailViewportHeight(height int) int {
 	if height < 16 {
-		return maxInt(6, height-8)
+		return Max(6, height-8)
 	}
-	return minInt(18, height-8)
+	return Min(18, height-8)
 }
 
 func SessionDetailMaxOffset(width, height int, lines []string) int {
-	boxWidth := minInt(maxInt(52, width-10), 96)
+	boxWidth := Min(Max(52, width-10), 96)
 	innerWidth := boxWidth - 4
 	wrapped := make([]string, 0, len(lines))
 	for _, line := range lines {
@@ -78,7 +82,7 @@ func SessionDetailMaxOffset(width, height int, lines []string) int {
 		}
 		wrapped = append(wrapped, wrapText(line, innerWidth)...)
 	}
-	return maxInt(0, len(wrapped)-SessionDetailViewportHeight(height))
+	return Max(0, len(wrapped)-SessionDetailViewportHeight(height))
 }
 
 func wrapText(text string, width int) []string {

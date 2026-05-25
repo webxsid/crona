@@ -5,7 +5,6 @@ import (
 
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
-	dialogruntime "crona/tui/internal/tui/dialog_runtime"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	filteringpkg "crona/tui/internal/tui/filtering"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -22,11 +21,11 @@ func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
 	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
 		return false
 	}
-	return strings.TrimSpace(status.LatestVersion) != "" && strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
+	return strings.TrimSpace(status.LatestVersion) != "" &&
+		strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
 }
 
 func (m Model) overlayState() overlaypkg.State {
-	cursor := map[string]int{"scratchpads": m.cursor[PaneScratchpads]}
 	return overlaypkg.State{
 		HelpOpen:           m.helpOpen,
 		FilterEditing:      m.filterEditing,
@@ -34,13 +33,7 @@ func (m Model) overlayState() overlaypkg.State {
 		SessionDetailOpen:  m.sessionDetailOpen,
 		SessionDetailY:     m.sessionDetailY,
 		SessionDetail:      m.sessionDetail,
-		ScratchpadOpen:     m.scratchpadOpen,
-		ScratchpadMeta:     m.scratchpadMeta,
-		ScratchpadFilePath: m.scratchpadFilePath,
-		ScratchpadRendered: m.scratchpadRendered,
-		ScratchpadViewport: m.scratchpadViewport,
-		Scratchpads:        m.scratchpads,
-		Cursor:             cursor,
+		Cursor:             map[string]int{},
 		Timer:              m.timer,
 	}
 }
@@ -52,15 +45,6 @@ func (m Model) applyOverlayState(state overlaypkg.State) Model {
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
 	m.sessionDetail = state.SessionDetail
-	m.scratchpadOpen = state.ScratchpadOpen
-	m.scratchpadMeta = state.ScratchpadMeta
-	m.scratchpadFilePath = state.ScratchpadFilePath
-	m.scratchpadRendered = state.ScratchpadRendered
-	m.scratchpadViewport = state.ScratchpadViewport
-	m.scratchpads = state.Scratchpads
-	if state.Cursor != nil {
-		m.cursor[PaneScratchpads] = state.Cursor["scratchpads"]
-	}
 	m.timer = state.Timer
 	return m
 }
@@ -74,7 +58,11 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 		},
 		SessionDetailMaxOffset: func(state overlaypkg.State) int {
 			next := m.applyOverlayState(state)
-			return helperpkg.SessionDetailMaxOffset(next.width, next.height, helperpkg.SessionDetailContentLines(next.sessionDetail))
+			return helperpkg.SessionDetailMaxOffset(
+				next.width,
+				next.height,
+				helperpkg.SessionDetailContentLines(next.sessionDetail),
+			)
 		},
 		OpenAmendSessionDialog: func(state *overlaypkg.State, sessionID string, commit string) {
 			next := m.applyOverlayState(*state)
@@ -85,12 +73,6 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 			*state = next.overlayState()
 		},
 		SessionCommit: helperpkg.SessionCommit,
-		OpenEditor: func(filePath string) tea.Cmd {
-			return dialogruntime.OpenEditor(filePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
-		},
-		OpenDefaultViewer: func(filePath string) tea.Cmd {
-			return dialogruntime.OpenDefaultViewer(filePath, func(err error) tea.Msg { return commands.ErrMsg{Err: err} })
-		},
 		SetStatus: func(state *overlaypkg.State, message string, isErr bool) tea.Cmd {
 			next := m.applyOverlayState(*state)
 			cmd := next.setStatus(message, isErr)
@@ -115,38 +97,19 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 				return nil
 			}
 			if next.timer != nil && next.timer.State != "idle" {
-				next = next.withDialogState(next.dialogSnapshot().OpenIssueSessionTransition(issue.ID, "abandoned"))
+				next = next.withDialogState(
+					next.dialogSnapshot().OpenIssueSessionTransition(issue.ID, "abandoned"),
+				)
 				*state = next.overlayState()
 				return nil
 			}
-			next = next.withDialogState(next.dialogSnapshot().OpenIssueStatusNote("abandoned", "Abandon reason", true))
+			next = next.withDialogState(
+				next.dialogSnapshot().OpenIssueStatusNote("abandoned", "Abandon reason", true),
+			)
 			next.dialogIssueID = issue.ID
 			next.dialogStreamID = issue.StreamID
 			*state = next.overlayState()
 			return nil
-		},
-		FilteredIndexAtCursor: func(state overlaypkg.State, pane string) int {
-			next := m.applyOverlayState(state)
-			if pane == "scratchpads" {
-				snapshot := next.selectionSnapshot()
-				return selectionpkg.FilteredIndexAtCursor(snapshot, PaneScratchpads)
-			}
-			return -1
-		},
-		SetActiveScratchpadByIndex: func(state *overlaypkg.State, idx int) {
-			next := m.applyOverlayState(*state)
-			next.scratchpadMeta = helperpkg.ScratchpadMetaAt(next.scratchpads, idx)
-			*state = next.overlayState()
-		},
-		ListLen: func(state overlaypkg.State, pane string) int {
-			next := m.applyOverlayState(state)
-			if pane == "scratchpads" {
-				return (&next).listLen(PaneScratchpads)
-			}
-			return 0
-		},
-		OpenScratchpad: func(idx int) tea.Cmd {
-			return commands.OpenScratchpad(m.client, m.scratchpads, idx)
 		},
 	}
 }
@@ -164,7 +127,11 @@ func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 		return m, nil
 	case "j", "down":
 		snapshot := m.selectionSnapshot()
-		maxOffset := helperpkg.SessionContextMaxOffset(m.width, m.height, helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(snapshot)))
+		maxOffset := helperpkg.SessionContextMaxOffset(
+			m.width,
+			m.height,
+			helperpkg.SessionContextContentLines(selectionpkg.ActiveIssue(snapshot)),
+		)
 		if m.sessionContextY < maxOffset {
 			m.sessionContextY++
 		}
@@ -177,17 +144,6 @@ func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 	default:
 		return m, nil
 	}
-}
-
-func (m Model) updateScratchpadPane(msg tea.KeyMsg) (Model, tea.Cmd) {
-	state, cmd := overlaypkg.HandleScratchpad(m.overlayState(), msg, m.overlayDeps())
-	m = m.applyOverlayState(state)
-	if cmd != nil {
-		return m, cmd
-	}
-	var nextCmd tea.Cmd
-	m.scratchpadViewport, nextCmd = m.scratchpadViewport.Update(msg)
-	return m, nextCmd
 }
 
 func (m Model) dispatchEventState() dispatchpkg.EventState {
@@ -255,11 +211,16 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)
 		},
-		LoadWellbeing:       func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
+		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadWellbeingWindow(m.client, date, windowDays)
+		},
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
-		LoadScratchpads:     func() tea.Cmd { return commands.LoadScratchpads(m.client) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {
-			return commands.LoadSessionHistory(m.client, helperpkg.SessionHistoryScopeIssueID(m.timer), 200)
+			return commands.LoadSessionHistory(
+				m.client,
+				helperpkg.SessionHistoryScopeIssueID(m.timer),
+				200,
+			)
 		},
 		LoadStashes:      func() tea.Cmd { return commands.LoadStashes(m.client) },
 		LoadContext:      func() tea.Cmd { return commands.LoadContext(m.client) },

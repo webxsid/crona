@@ -29,46 +29,121 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 	}
 	return []Row{
 		{Section: "Focus Timer", Label: "Timer Mode", Value: string(settings.TimerMode)},
-		{Section: "Focus Timer", Label: "Work Duration", Value: fmt.Sprintf("%d min", settings.WorkDurationMinutes)},
+		{
+			Section: "Focus Timer",
+			Label:   "Work Duration",
+			Value:   fmt.Sprintf("%d min", settings.WorkDurationMinutes),
+		},
 		{Section: "Breaks", Label: "Breaks", Value: enabledDisabled(settings.BreaksEnabled)},
-		{Section: "Breaks", Label: "Short Break", Value: fmt.Sprintf("%d min", settings.ShortBreakMinutes)},
-		{Section: "Breaks", Label: "Long Break", Value: fmt.Sprintf("%d min", settings.LongBreakMinutes)},
-		{Section: "Breaks", Label: "Long Breaks", Value: enabledDisabled(settings.LongBreakEnabled)},
-		{Section: "Breaks", Label: "Cycles Before Long Break", Value: fmt.Sprintf("%d", settings.CyclesBeforeLongBreak)},
-		{Section: "Breaks", Label: "Auto-Start Breaks", Value: enabledDisabled(settings.AutoStartBreaks)},
-		{Section: "Breaks", Label: "Auto-Start Work", Value: enabledDisabled(settings.AutoStartWork)},
-		{Section: "Updates", Label: "Update Checks", Value: enabledDisabled(settings.UpdateChecksEnabled)},
-		{Section: "Updates", Label: "Update Prompt", Value: enabledDisabled(settings.UpdatePromptEnabled)},
-		{Section: "Updates", Label: "Update Channel", Value: UpdateChannelLabel(settings.UpdateChannel)},
+		{
+			Section: "Breaks",
+			Label:   "Short Break",
+			Value:   fmt.Sprintf("%d min", settings.ShortBreakMinutes),
+		},
+		{
+			Section: "Breaks",
+			Label:   "Long Break",
+			Value:   fmt.Sprintf("%d min", settings.LongBreakMinutes),
+		},
+		{
+			Section: "Breaks",
+			Label:   "Long Breaks",
+			Value:   enabledDisabled(settings.LongBreakEnabled),
+		},
+		{
+			Section: "Breaks",
+			Label:   "Cycles Before Long Break",
+			Value:   fmt.Sprintf("%d", settings.CyclesBeforeLongBreak),
+		},
+		{
+			Section: "Breaks",
+			Label:   "Auto-Start Breaks",
+			Value:   enabledDisabled(settings.AutoStartBreaks),
+		},
+		{
+			Section: "Breaks",
+			Label:   "Auto-Start Work",
+			Value:   enabledDisabled(settings.AutoStartWork),
+		},
+		{
+			Section: "Updates",
+			Label:   "Update Checks",
+			Value:   enabledDisabled(settings.UpdateChecksEnabled),
+		},
+		{
+			Section: "Updates",
+			Label:   "Update Prompt",
+			Value:   enabledDisabled(settings.UpdatePromptEnabled),
+		},
+		{
+			Section: "Updates",
+			Label:   "Update Channel",
+			Value:   UpdateChannelLabel(settings.UpdateChannel),
+		},
 		{Section: "Sorting", Label: "Repo Sort", Value: repoSortLabel(settings.RepoSort)},
 		{Section: "Sorting", Label: "Stream Sort", Value: streamSortLabel(settings.StreamSort)},
 		{Section: "Sorting", Label: "Issue Sort", Value: issueSortLabel(settings.IssueSort)},
 		{Section: "Sorting", Label: "Habit Sort", Value: habitSortLabel(settings.HabitSort)},
 		{Section: "Dates", Label: "Date Format", Value: dateDisplayPresetLabel(settings)},
 		{Section: "Dates", Label: "Custom Date Format", Value: customDateFormatLabel(settings)},
-		{Section: "Dates", Label: "Date Preview", Value: shareddatefmt.Preview(settings, time.Now())},
+		{
+			Section: "Dates",
+			Label:   "Date Preview",
+			Value:   shareddatefmt.Preview(settings, time.Now()),
+		},
 		{Section: "Dates", Label: "Prompt Glyphs", Value: promptGlyphModeLabel(settings)},
 		{Section: "Recovery", Label: "Habit Streaks", Value: habitStreakDefsLabel(settings)},
 		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
-		{Section: "Recovery", Label: "Rollback Window", Value: fmt.Sprintf("%d min", effectiveRollbackMinutes(settings.DailyPlanRollbackMins))},
-		{Section: "Recovery", Label: "Rest & Streak Protection", Value: restProtectionLabel(settings)},
-		{Section: "Privacy", Label: "Privacy & Diagnostics", Value: telemetrySettingsLabel(settings)},
+		{
+			Section: "Recovery",
+			Label:   "Rollback Window",
+			Value: fmt.Sprintf(
+				"%d min",
+				effectiveRollbackMinutes(settings.DailyPlanRollbackMins),
+			),
+		},
+		{
+			Section: "Recovery",
+			Label:   "Rest & Streak Protection",
+			Value:   restProtectionLabel(settings),
+		},
+		{
+			Section: "Privacy",
+			Label:   "Privacy & Diagnostics",
+			Value:   telemetrySettingsLabel(settings),
+		},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 		{Section: "Danger", Label: "Uninstall Crona", Value: "App + binaries"},
 	}
 }
 
-func GroupedVisibleRows(indices []int, selected int, sectionOf func(int) string, textOf func(int) string) ([]VisibleRow, int) {
+func GroupedVisibleRows(
+	indices []int,
+	selected int,
+	sectionOf func(int) string,
+	textOf func(int) string,
+) ([]VisibleRow, int) {
 	rows := make([]VisibleRow, 0, len(indices)+4)
 	lastSection := ""
 	selectedVisible := 0
 	for i, idx := range indices {
 		section := sectionOf(idx)
 		if section != "" && section != lastSection {
-			rows = append(rows, VisibleRow{Header: true, Text: section, SelectableAt: -1, Danger: section == "Danger"})
+			rows = append(
+				rows,
+				VisibleRow{
+					Header:       true,
+					Text:         section,
+					SelectableAt: -1,
+					Danger:       section == "Danger",
+				},
+			)
 			lastSection = section
 		}
-		rows = append(rows, VisibleRow{Text: textOf(idx), SelectableAt: i, Danger: section == "Danger"})
+		rows = append(
+			rows,
+			VisibleRow{Text: textOf(idx), SelectableAt: i, Danger: section == "Danger"},
+		)
 		if i == selected {
 			selectedVisible = len(rows) - 1
 		}
@@ -308,7 +383,8 @@ func restProtectionLabel(settings *sharedtypes.CoreSettings) string {
 	if settings.AwayModeEnabled {
 		parts = append(parts, "Away mode active")
 	}
-	if len(settings.FrozenStreakKinds) == 0 || len(settings.FrozenStreakKinds) == len(sharedtypes.AvailableStreakKinds()) {
+	if len(settings.FrozenStreakKinds) == 0 ||
+		len(settings.FrozenStreakKinds) == len(sharedtypes.AvailableStreakKinds()) {
 		parts = append(parts, "All streaks")
 	} else {
 		kinds := streakKindsLabel(settings.FrozenStreakKinds)

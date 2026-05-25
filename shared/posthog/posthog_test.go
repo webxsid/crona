@@ -172,7 +172,11 @@ func TestNewReusesExistingIdentity(t *testing.T) {
 		t.Fatal("expected non-empty distinct IDs")
 	}
 	if first.DistinctID() != second.DistinctID() {
-		t.Fatalf("expected stable distinct ID, got %q then %q", first.DistinctID(), second.DistinctID())
+		t.Fatalf(
+			"expected stable distinct ID, got %q then %q",
+			first.DistinctID(),
+			second.DistinctID(),
+		)
 	}
 }
 
@@ -255,7 +259,11 @@ func TestReportErrorWorksWhenUsageTelemetryIsDisabled(t *testing.T) {
 }
 
 func TestReportErrorSanitizesPathBearingMessages(t *testing.T) {
-	props := sanitizedErrorProperties("handled", errors.New("open /Users/test/secret.txt: permission denied"), Properties{"operation": "load_settings", "entrypoint": "tui"})
+	props := sanitizedErrorProperties(
+		"handled",
+		errors.New("open /Users/test/secret.txt: permission denied"),
+		Properties{"operation": "load_settings", "entrypoint": "tui"},
+	)
 	if got := props["message"]; got != "redacted path-bearing error" {
 		t.Fatalf("expected redacted path-bearing error, got %#v", got)
 	}
@@ -280,7 +288,8 @@ func TestDefaultEventPropertiesIncludeRuntimeChannel(t *testing.T) {
 	if got := props["env_mode"]; got != "Dev" {
 		t.Fatalf("expected env_mode property, got %#v", got)
 	}
-	if got, ok := props["running_channel"].(sharedtypes.UpdateChannel); !ok || got != sharedtypes.UpdateChannelBeta {
+	if got, ok := props["running_channel"].(sharedtypes.UpdateChannel); !ok ||
+		got != sharedtypes.UpdateChannelBeta {
 		t.Fatalf("expected beta running channel, got %#v", props["running_channel"])
 	}
 	if got := props["running_is_beta"]; got != true {
@@ -293,5 +302,10 @@ func TestDefaultEventPropertiesIncludeRuntimeChannel(t *testing.T) {
 
 func posthogLogPath(t *testing.T, runtimeDir string) string {
 	t.Helper()
-	return filepath.Join(runtimeDir, "logs", logDirName, time.Now().UTC().Format("2006-01-02")+".log")
+	return filepath.Join(
+		runtimeDir,
+		"logs",
+		logDirName,
+		time.Now().UTC().Format("2006-01-02")+".log",
+	)
 }

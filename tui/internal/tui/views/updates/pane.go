@@ -28,7 +28,13 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	if state.UpdateStatus == nil {
 		lines = append(lines, theme.StyleDim.Render("Loading update status..."))
-		return viewchrome.RenderPaneBox(theme, false, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			false,
+			state.Width,
+			state.Height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 
 	status := state.UpdateStatus
@@ -40,8 +46,18 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		}
 	}
 	lines = append(lines, theme.StyleHeader.Render(title))
-	lines = append(lines, theme.StyleDim.Render("Running channel: "+settingsmeta.UpdateChannelLabel(status.RunningChannel)))
-	lines = append(lines, theme.StyleDim.Render("Configured update channel: "+settingsmeta.UpdateChannelLabel(status.Channel)))
+	lines = append(
+		lines,
+		theme.StyleDim.Render(
+			"Running channel: "+settingsmeta.UpdateChannelLabel(status.RunningChannel),
+		),
+	)
+	lines = append(
+		lines,
+		theme.StyleDim.Render(
+			"Configured update channel: "+settingsmeta.UpdateChannelLabel(status.Channel),
+		),
+	)
 	if status.ReleaseIsPrerelease {
 		lines = append(lines, theme.StyleDim.Render("Release type: prerelease"))
 	}
@@ -54,22 +70,40 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 
 	if strings.TrimSpace(status.ReleaseTag) != "" {
-		lines = append(lines, theme.StyleDim.Render("Release tag: "+strings.TrimSpace(status.ReleaseTag)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Release tag: "+strings.TrimSpace(status.ReleaseTag)),
+		)
 	}
 	if strings.TrimSpace(status.PublishedAt) != "" {
-		lines = append(lines, theme.StyleDim.Render("Published: "+strings.TrimSpace(status.PublishedAt)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Published: "+strings.TrimSpace(status.PublishedAt)),
+		)
 	}
 	if strings.TrimSpace(status.CheckedAt) != "" {
-		lines = append(lines, theme.StyleDim.Render("Last checked: "+strings.TrimSpace(status.CheckedAt)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Last checked: "+strings.TrimSpace(status.CheckedAt)),
+		)
 	}
 	if strings.TrimSpace(status.ReleaseURL) != "" {
-		lines = append(lines, theme.StyleDim.Render("Release page: "+strings.TrimSpace(status.ReleaseURL)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Release page: "+strings.TrimSpace(status.ReleaseURL)),
+		)
 	}
 	if strings.TrimSpace(status.InstallScriptURL) != "" {
-		lines = append(lines, theme.StyleDim.Render("Installer: "+strings.TrimSpace(status.InstallScriptURL)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Installer: "+strings.TrimSpace(status.InstallScriptURL)),
+		)
 	}
 	if strings.TrimSpace(status.ChecksumsURL) != "" {
-		lines = append(lines, theme.StyleDim.Render("Checksums: "+strings.TrimSpace(status.ChecksumsURL)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Checksums: "+strings.TrimSpace(status.ChecksumsURL)),
+		)
 	}
 	if !state.UpdateInstallAvailable {
 		reason := strings.TrimSpace(state.UpdateManualReason)
@@ -81,23 +115,48 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		}
 		lines = append(lines, "", theme.StyleDim.Render("Install status: "+reason))
 		if strings.TrimSpace(state.TUIExecutablePath) != "" {
-			lines = append(lines, theme.StyleDim.Render("TUI path: "+strings.TrimSpace(state.TUIExecutablePath)))
+			lines = append(
+				lines,
+				theme.StyleDim.Render("TUI path: "+strings.TrimSpace(state.TUIExecutablePath)),
+			)
 		}
 		if strings.TrimSpace(state.KernelExecutablePath) != "" {
-			lines = append(lines, theme.StyleDim.Render("Engine path: "+strings.TrimSpace(state.KernelExecutablePath)))
+			lines = append(
+				lines,
+				theme.StyleDim.Render(
+					"Engine path: "+strings.TrimSpace(state.KernelExecutablePath),
+				),
+			)
 		}
 	}
 	if state.UpdateChecking {
-		lines = append(lines, "", viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates..."))
+		lines = append(
+			lines,
+			"",
+			viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates..."),
+		)
 	}
 	if state.UpdateInstalling {
-		lines = append(lines, "", viewchrome.LipStyle(theme, theme.ColorYellow).Render("Installing update and relaunching Crona..."))
+		lines = append(
+			lines,
+			"",
+			viewchrome.LipStyle(theme, theme.ColorYellow).
+				Render("Installing update and relaunching Crona..."),
+		)
 	}
 	if strings.TrimSpace(state.UpdateInstallError) != "" {
-		lines = append(lines, "", theme.StyleError.Render("Install error: "+strings.TrimSpace(state.UpdateInstallError)))
+		lines = append(
+			lines,
+			"",
+			theme.StyleError.Render("Install error: "+strings.TrimSpace(state.UpdateInstallError)),
+		)
 	}
 	if strings.TrimSpace(status.Error) != "" {
-		lines = append(lines, "", theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)))
+		lines = append(
+			lines,
+			"",
+			theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)),
+		)
 	}
 
 	lines = append(lines, "", theme.StyleDim.Render("Release notes:"))
@@ -106,5 +165,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		notes = "No release notes were published for this release."
 	}
 	lines = append(lines, viewruntime.WrapMultilineBlock(notes, state.Width-6)...)
-	return viewchrome.RenderPaneBox(theme, false, state.Width, state.Height, viewhelpers.StringsJoin(lines))
+	return viewchrome.RenderPaneBox(
+		theme,
+		false,
+		state.Width,
+		state.Height,
+		viewhelpers.StringsJoin(lines),
+	)
 }

@@ -10,7 +10,8 @@ import (
 )
 
 func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewUpdates || !viewsShouldShowUpdate(s.UpdateStatus) || s.UpdateInstalling {
+	if s.ActiveView != uistate.ViewUpdates || !viewsShouldShowUpdate(s.UpdateStatus) ||
+		s.UpdateInstalling {
 		return s, nil, false
 	}
 	if !deps.SelfUpdateInstallAvailable(s) {
@@ -36,7 +37,8 @@ func handleDismissUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handlePauseSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State != "running" || structuredTimerEnabled(s) {
+	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State != "running" ||
+		structuredTimerEnabled(s) {
 		return s, nil, false
 	}
 	return s, deps.PauseSession(), true
@@ -66,7 +68,9 @@ func handleStructuredManualPause(s State, deps Deps) (tea.Model, tea.Cmd, bool) 
 		return s, nil, false
 	}
 	switch *s.Timer.SegmentType {
-	case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
+	case sharedtypes.SessionSegmentWork,
+		sharedtypes.SessionSegmentShortBreak,
+		sharedtypes.SessionSegmentLongBreak:
 		return s, deps.PauseSession(), true
 	default:
 		return s, nil, false
@@ -90,5 +94,6 @@ func handleStashSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func structuredTimerEnabled(s State) bool {
-	return s.Settings != nil && s.Settings.TimerMode == sharedtypes.TimerModeStructured && s.Settings.BreaksEnabled
+	return s.Settings != nil && s.Settings.TimerMode == sharedtypes.TimerModeStructured &&
+		s.Settings.BreaksEnabled
 }

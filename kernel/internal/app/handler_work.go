@@ -11,7 +11,10 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
-func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (protocol.Response, bool) {
+func (h *Handler) handleWorkMethods(
+	ctx context.Context,
+	req protocol.Request,
+) (protocol.Response, bool) {
 	switch req.Method {
 	case protocol.MethodRepoList:
 		return h.handleNoParams(req, func() (any, error) {
@@ -298,11 +301,26 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 			if input.Status != nil {
 				status = *input.Status
 			}
-			return corecommands.CompleteHabit(ctx, h.core, input.HabitID, input.Date, status, input.DurationMinutes, input.Notes)
+			return corecommands.CompleteHabit(
+				ctx,
+				h.core,
+				input.HabitID,
+				input.Date,
+				status,
+				input.DurationMinutes,
+				input.Notes,
+			)
 		}), true
 	case protocol.MethodHabitUncomplete:
 		return handle(req, func(input shareddto.HabitCompletionUpsertRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.UncompleteHabit(ctx, h.core, input.HabitID, input.Date)
+			return shareddto.OKResponse{
+					OK: true,
+				}, corecommands.UncompleteHabit(
+					ctx,
+					h.core,
+					input.HabitID,
+					input.Date,
+				)
 		}), true
 	case protocol.MethodHabitHistory:
 		return handle(req, func(input shareddto.HabitHistoryQuery) (any, error) {
@@ -318,7 +336,13 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 		}), true
 	case protocol.MethodCheckInDelete:
 		return handle(req, func(input shareddto.DeleteByDateRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.DeleteDailyCheckIn(ctx, h.core, input.Date)
+			return shareddto.OKResponse{
+					OK: true,
+				}, corecommands.DeleteDailyCheckIn(
+					ctx,
+					h.core,
+					input.Date,
+				)
 		}), true
 	case protocol.MethodCheckInRange:
 		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
@@ -385,7 +409,12 @@ func (h *Handler) handleWorkMethods(ctx context.Context, req protocol.Request) (
 		}), true
 	case protocol.MethodExportTemplateApply:
 		return handle(req, func(input shareddto.ExportTemplatePresetApplyRequest) (any, error) {
-			return export.ApplyTemplatePreset(h.paths, input.ReportKind, input.AssetKind, input.PresetID)
+			return export.ApplyTemplatePreset(
+				h.paths,
+				input.ReportKind,
+				input.AssetKind,
+				input.PresetID,
+			)
 		}), true
 	case protocol.MethodExportDaily:
 		return handle(req, func(input shareddto.DailyReportRequest) (any, error) {

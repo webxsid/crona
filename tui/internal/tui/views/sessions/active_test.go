@@ -19,11 +19,11 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 		Width:  96,
 		Height: 36,
 		Timer: &api.TimerState{
-			State:          "running",
-			IssueID:        &issueID,
-			SegmentType:    segmentPtr(sharedtypes.SessionSegmentWork),
+			State:           "running",
+			IssueID:         &issueID,
+			SegmentType:     segmentPtr(sharedtypes.SessionSegmentWork),
 			NextSegmentType: segmentPtr(sharedtypes.SessionSegmentShortBreak),
-			ElapsedSeconds: 754,
+			ElapsedSeconds:  754,
 		},
 		AllIssues: []api.IssueWithMeta{{
 			Issue: api.Issue{ID: issueID, Title: "Timer sizing"},
@@ -52,7 +52,10 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 		t.Fatalf("expected structured active view to render a wide progress bar, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "mins until break") {
-		t.Fatalf("expected structured active view to show the next break indicator, got %q", rendered)
+		t.Fatalf(
+			"expected structured active view to show the next break indicator, got %q",
+			rendered,
+		)
 	}
 
 	narrow := state
@@ -65,8 +68,13 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if strings.Contains(rendered, "██ ██") {
 		t.Fatalf("expected narrow active view to avoid the large glyph clock, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Focus") || !strings.Contains(rendered, "Session") || !strings.Contains(rendered, "WORK") || !strings.Contains(rendered, "Active Issue") {
-		t.Fatalf("expected narrow active view to keep the title, metadata, and issue pane visible, got %q", rendered)
+	if !strings.Contains(rendered, "Focus") || !strings.Contains(rendered, "Session") ||
+		!strings.Contains(rendered, "WORK") ||
+		!strings.Contains(rendered, "Active Issue") {
+		t.Fatalf(
+			"expected narrow active view to keep the title, metadata, and issue pane visible, got %q",
+			rendered,
+		)
 	}
 
 	breakState := state

@@ -30,6 +30,9 @@ var (
 	StyleHeader          = lipgloss.NewStyle().Foreground(ColorCyan)
 	StyleError           = lipgloss.NewStyle().Foreground(ColorRed)
 	StyleSelected        = lipgloss.NewStyle().Foreground(ColorGreen)
-	StyleSelectedInverse = lipgloss.NewStyle().Background(ColorGreen).Foreground(ColorBlack).Padding(0, 1)
-	StyleNormal          = lipgloss.NewStyle()
+	StyleSelectedInverse = lipgloss.NewStyle().
+				Background(ColorGreen).
+				Foreground(ColorBlack).
+				Padding(0, 1)
+	StyleNormal = lipgloss.NewStyle()
 )

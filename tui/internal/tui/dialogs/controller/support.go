@@ -23,22 +23,86 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 	state.ViewTitle = "Jump To View"
 	state.ViewName = "Press a mnemonic key or use j/k then enter"
 	allChoices := []menuChoice{
-		{Key: "a", Label: "Away", Value: "away", Detail: "Protected-mode shell when away or rest mode is active."},
-		{Key: "d", Label: "Daily", Value: "daily", Detail: "Daily dashboard with planned issues and habits."},
-		{Key: "r", Label: "Rollup", Value: "rollup", Detail: "Range summaries and drill-down day details."},
-		{Key: "w", Label: "Wellbeing", Value: "wellbeing", Detail: "Check-ins, burnout signals, and trends."},
-		{Key: "p", Label: "Reports", Value: "reports", Detail: "Generated report and export browser."},
-		{Key: "c", Label: "Config", Value: "config", Detail: "Export assets, templates, and renderer tools."},
+		{
+			Key:    "a",
+			Label:  "Away",
+			Value:  "away",
+			Detail: "Protected-mode shell when away or rest mode is active.",
+		},
+		{
+			Key:    "d",
+			Label:  "Daily",
+			Value:  "daily",
+			Detail: "Daily dashboard with planned issues and habits.",
+		},
+		{
+			Key:    "r",
+			Label:  "Rollup",
+			Value:  "rollup",
+			Detail: "Range summaries and drill-down day details.",
+		},
+		{
+			Key:    "w",
+			Label:  "Wellbeing",
+			Value:  "wellbeing",
+			Detail: "Check-ins, burnout signals, and trends.",
+		},
+		{
+			Key:    "p",
+			Label:  "Reports",
+			Value:  "reports",
+			Detail: "Generated report and export browser.",
+		},
+		{
+			Key:    "c",
+			Label:  "Config",
+			Value:  "config",
+			Detail: "Export assets, templates, and renderer tools.",
+		},
 		{Key: "i", Label: "Issues", Value: "default", Detail: "Primary workspace issue list."},
-		{Key: "m", Label: "Meta", Value: "meta", Detail: "Repos, streams, issues, and habits by hierarchy."},
-		{Key: "x", Label: "Scratchpads", Value: "scratchpads", Detail: "Filesystem-backed notes and scratchpads."},
+		{
+			Key:    "m",
+			Label:  "Meta",
+			Value:  "meta",
+			Detail: "Repos, streams, issues, and habits by hierarchy.",
+		},
 		{Key: "o", Label: "Ops", Value: "ops", Detail: "Recent operation log."},
-		{Key: "s", Label: "Settings", Value: "settings", Detail: "Core settings and danger actions."},
-		{Key: "l", Label: "Alerts", Value: "alerts", Detail: "Notification, sound, and alert backend settings."},
-		{Key: "u", Label: "Updates", Value: "updates", Detail: "Release notes, update checks, and install status."},
-		{Key: "h", Label: "Support", Value: "support", Detail: "Bug reporting, bundles, and GitHub links."},
-		{Key: "y", Label: "History", Value: "session_history", Detail: "Session history and past focus work."},
-		{Key: "n", Label: "Session", Value: "session_active", Detail: "Active session view while a timer is running."},
+		{
+			Key:    "s",
+			Label:  "Settings",
+			Value:  "settings",
+			Detail: "Core settings and danger actions.",
+		},
+		{
+			Key:    "l",
+			Label:  "Alerts",
+			Value:  "alerts",
+			Detail: "Notification, sound, and alert backend settings.",
+		},
+		{
+			Key:    "u",
+			Label:  "Updates",
+			Value:  "updates",
+			Detail: "Release notes, update checks, and install status.",
+		},
+		{
+			Key:    "h",
+			Label:  "Support",
+			Value:  "support",
+			Detail: "Bug reporting, bundles, and GitHub links.",
+		},
+		{
+			Key:    "y",
+			Label:  "History",
+			Value:  "session_history",
+			Detail: "Session history and past focus work.",
+		},
+		{
+			Key:    "n",
+			Label:  "Session",
+			Value:  "session_active",
+			Detail: "Active session view while a timer is running.",
+		},
 	}
 	allowed := make(map[string]struct{}, len(availableViews))
 	for _, view := range availableViews {
@@ -60,12 +124,42 @@ func OpenBetaSupport(state State) State {
 	state.ViewTitle = "Beta Support"
 	state.ViewName = "Quick reporting and diagnostics for beta testers"
 	choices := []menuChoice{
-		{Key: "o", Label: "Report Bug", Value: "open_support_issue", Detail: "Open the prefilled GitHub issue flow."},
-		{Key: "d", Label: "Discussions", Value: "open_support_discussions", Detail: "Open GitHub Discussions for questions and ideas."},
-		{Key: "r", Label: "Releases", Value: "open_support_releases", Detail: "Open the GitHub releases feed."},
-		{Key: "g", Label: "Roadmap", Value: "open_support_roadmap", Detail: "Open the public roadmap document."},
-		{Key: "c", Label: "Copy Diagnostics", Value: "copy_support_diagnostics", Detail: "Copy the lightweight diagnostics summary."},
-		{Key: "b", Label: "Generate Bundle", Value: "generate_support_bundle", Detail: "Create a full redacted support bundle."},
+		{
+			Key:    "o",
+			Label:  "Report Bug",
+			Value:  "open_support_issue",
+			Detail: "Open the prefilled GitHub issue flow.",
+		},
+		{
+			Key:    "d",
+			Label:  "Discussions",
+			Value:  "open_support_discussions",
+			Detail: "Open GitHub Discussions for questions and ideas.",
+		},
+		{
+			Key:    "r",
+			Label:  "Releases",
+			Value:  "open_support_releases",
+			Detail: "Open the GitHub releases feed.",
+		},
+		{
+			Key:    "g",
+			Label:  "Roadmap",
+			Value:  "open_support_roadmap",
+			Detail: "Open the public roadmap document.",
+		},
+		{
+			Key:    "c",
+			Label:  "Copy Diagnostics",
+			Value:  "copy_support_diagnostics",
+			Detail: "Copy the lightweight diagnostics summary.",
+		},
+		{
+			Key:    "b",
+			Label:  "Generate Bundle",
+			Value:  "generate_support_bundle",
+			Detail: "Create a full redacted support bundle.",
+		},
 	}
 	state.ChoiceItems, state.ChoiceValues, state.ChoiceDetails = menuChoiceLists(choices)
 	return state
@@ -81,7 +175,11 @@ func OpenStashConflict(state State, conflict sharedtypes.StashConflict) State {
 	state = Close(state)
 	state.Kind = "stash_conflict_pick"
 	state.ViewTitle = "Existing Stash Found"
-	state.ViewName = fmt.Sprintf("Issue #%d already has %d stashes", conflict.IssueID, len(conflict.Stashes))
+	state.ViewName = fmt.Sprintf(
+		"Issue #%d already has %d stashes",
+		conflict.IssueID,
+		len(conflict.Stashes),
+	)
 	state.ViewMeta = "Choose a stash to resume, or inspect it before continuing fresh."
 	state.ChoiceItems = make([]string, 0, len(conflict.Stashes))
 	state.ChoiceValues = make([]string, 0, len(conflict.Stashes))
@@ -99,7 +197,14 @@ func OpenViewEntity(state State, title string, name string, meta string, body st
 	return OpenViewEntityWithPath(state, title, name, meta, body, "")
 }
 
-func OpenViewEntityWithPath(state State, title string, name string, meta string, body string, path string) State {
+func OpenViewEntityWithPath(
+	state State,
+	title string,
+	name string,
+	meta string,
+	body string,
+	path string,
+) State {
 	state = Close(state)
 	state.Kind = "view_entity"
 	state.ViewTitle = title
@@ -157,12 +262,22 @@ func updateSupportBundleResult(state State, msg tea.KeyMsg) (State, *Action, str
 		if strings.TrimSpace(state.SupportBundlePath) == "" {
 			return state, nil, "Bundle path is unavailable"
 		}
-		return clearDialogError(state), &Action{Kind: "open_support_bundle_folder", Path: state.SupportBundlePath}, ""
+		return clearDialogError(
+				state,
+			), &Action{
+				Kind: "open_support_bundle_folder",
+				Path: state.SupportBundlePath,
+			}, ""
 	case "c":
 		if strings.TrimSpace(state.SupportBundlePath) == "" {
 			return state, nil, "Bundle path is unavailable"
 		}
-		return clearDialogError(state), &Action{Kind: "copy_support_bundle_path", Path: state.SupportBundlePath}, ""
+		return clearDialogError(
+				state,
+			), &Action{
+				Kind: "copy_support_bundle_path",
+				Path: state.SupportBundlePath,
+			}, ""
 	case "g":
 		return clearDialogError(state), &Action{Kind: "open_support_issue"}, ""
 	default:
@@ -196,7 +311,10 @@ func updateStashConflictPick(state State, msg tea.KeyMsg) (State, *Action, strin
 		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
 			return clearDialogError(state), nil, ""
 		}
-		return openSingleStashConflictByID(state, strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor])), nil, ""
+		return openSingleStashConflictByID(
+			state,
+			strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor]),
+		), nil, ""
 	default:
 		return clearDialogError(state), nil, ""
 	}
@@ -222,20 +340,44 @@ func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
 		}
 		return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
 	case "c":
-		return Close(state), &Action{Kind: "continue_focus_fresh", RepoID: state.RepoID, StreamID: state.StreamID, IssueID: state.IssueID}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:     "continue_focus_fresh",
+				RepoID:   state.RepoID,
+				StreamID: state.StreamID,
+				IssueID:  state.IssueID,
+			}, ""
 	case "enter":
 		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
 			if strings.TrimSpace(state.DeleteID) == "" {
 				return clearDialogError(state), nil, "Stash is unavailable"
 			}
-			return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind: "apply_stash",
+					ID:   strings.TrimSpace(state.DeleteID),
+				}, ""
 		}
 		value := strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor])
 		switch value {
 		case "resume":
-			return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind: "apply_stash",
+					ID:   strings.TrimSpace(state.DeleteID),
+				}, ""
 		case "continue":
-			return Close(state), &Action{Kind: "continue_focus_fresh", RepoID: state.RepoID, StreamID: state.StreamID, IssueID: state.IssueID}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:     "continue_focus_fresh",
+					RepoID:   state.RepoID,
+					StreamID: state.StreamID,
+					IssueID:  state.IssueID,
+				}, ""
 		default:
 			return clearDialogError(state), nil, ""
 		}
@@ -313,7 +455,10 @@ func openSingleStashConflict(state State, conflict sharedtypes.StashConflict, id
 	if idx < 0 || idx >= len(conflict.Stashes) {
 		return Close(state)
 	}
-	return openSingleStashConflictByID(withStashConflictItems(state, conflict), conflict.Stashes[idx].ID)
+	return openSingleStashConflictByID(
+		withStashConflictItems(state, conflict),
+		conflict.Stashes[idx].ID,
+	)
 }
 
 func withStashConflictItems(state State, conflict sharedtypes.StashConflict) State {
@@ -321,7 +466,11 @@ func withStashConflictItems(state State, conflict sharedtypes.StashConflict) Sta
 	state.ViewTitle = "Existing Stash Found"
 	state.ViewName = fmt.Sprintf("Issue #%d already has a stashed session", conflict.IssueID)
 	if len(conflict.Stashes) > 1 {
-		state.ViewName = fmt.Sprintf("Issue #%d has %d stashes", conflict.IssueID, len(conflict.Stashes))
+		state.ViewName = fmt.Sprintf(
+			"Issue #%d has %d stashes",
+			conflict.IssueID,
+			len(conflict.Stashes),
+		)
 	}
 	state.ChoiceItems = make([]string, 0, len(conflict.Stashes))
 	state.ChoiceValues = make([]string, 0, len(conflict.Stashes))

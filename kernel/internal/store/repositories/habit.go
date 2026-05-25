@@ -26,7 +26,12 @@ func (r *HabitRepository) NextID(ctx context.Context) (int64, error) {
 	return nextPublicID(ctx, r.db, "habits")
 }
 
-func (r *HabitRepository) Create(ctx context.Context, habit sharedtypes.Habit, userID string, now string) (sharedtypes.Habit, error) {
+func (r *HabitRepository) Create(
+	ctx context.Context,
+	habit sharedtypes.Habit,
+	userID string,
+	now string,
+) (sharedtypes.Habit, error) {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, habit.StreamID, userID)
 	if err != nil {
 		return sharedtypes.Habit{}, err
@@ -58,7 +63,11 @@ func (r *HabitRepository) Create(ctx context.Context, habit sharedtypes.Habit, u
 	return habit, nil
 }
 
-func (r *HabitRepository) ListByStream(ctx context.Context, streamID int64, userID string) ([]sharedtypes.Habit, error) {
+func (r *HabitRepository) ListByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+) ([]sharedtypes.Habit, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`
 		StreamPublicID int64   `bun:"stream_public_id"`
@@ -92,11 +101,13 @@ func (r *HabitRepository) ListByStream(ctx context.Context, streamID int64, user
 	out := make([]sharedtypes.Habit, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, sharedtypes.Habit{
-			ID:            row.PublicID,
-			StreamID:      row.StreamPublicID,
-			Name:          row.Name,
-			Description:   row.Description,
-			ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(row.ScheduleType)),
+			ID:          row.PublicID,
+			StreamID:    row.StreamPublicID,
+			Name:        row.Name,
+			Description: row.Description,
+			ScheduleType: sharedtypes.NormalizeHabitScheduleType(
+				sharedtypes.HabitScheduleType(row.ScheduleType),
+			),
 			Weekdays:      parseWeekdays(row.Weekdays),
 			TargetMinutes: row.TargetMinutes,
 			Active:        row.Active,
@@ -105,7 +116,10 @@ func (r *HabitRepository) ListByStream(ctx context.Context, streamID int64, user
 	return out, nil
 }
 
-func (r *HabitRepository) ListAllWithMeta(ctx context.Context, userID string) ([]sharedtypes.HabitWithMeta, error) {
+func (r *HabitRepository) ListAllWithMeta(
+	ctx context.Context,
+	userID string,
+) ([]sharedtypes.HabitWithMeta, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`
 		StreamPublicID int64   `bun:"stream_public_id"`
@@ -147,11 +161,13 @@ func (r *HabitRepository) ListAllWithMeta(ctx context.Context, userID string) ([
 	for _, row := range rows {
 		out = append(out, sharedtypes.HabitWithMeta{
 			Habit: sharedtypes.Habit{
-				ID:            row.PublicID,
-				StreamID:      row.StreamPublicID,
-				Name:          row.Name,
-				Description:   row.Description,
-				ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(row.ScheduleType)),
+				ID:          row.PublicID,
+				StreamID:    row.StreamPublicID,
+				Name:        row.Name,
+				Description: row.Description,
+				ScheduleType: sharedtypes.NormalizeHabitScheduleType(
+					sharedtypes.HabitScheduleType(row.ScheduleType),
+				),
 				Weekdays:      parseWeekdays(row.Weekdays),
 				TargetMinutes: row.TargetMinutes,
 				Active:        row.Active,
@@ -164,7 +180,11 @@ func (r *HabitRepository) ListAllWithMeta(ctx context.Context, userID string) ([
 	return out, nil
 }
 
-func (r *HabitRepository) GetByID(ctx context.Context, habitID int64, userID string) (*sharedtypes.Habit, error) {
+func (r *HabitRepository) GetByID(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+) (*sharedtypes.Habit, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`
 		StreamPublicID int64   `bun:"stream_public_id"`
@@ -200,18 +220,24 @@ func (r *HabitRepository) GetByID(ctx context.Context, habitID int64, userID str
 		return nil, err
 	}
 	return &sharedtypes.Habit{
-		ID:            item.PublicID,
-		StreamID:      item.StreamPublicID,
-		Name:          item.Name,
-		Description:   item.Description,
-		ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(item.ScheduleType)),
+		ID:          item.PublicID,
+		StreamID:    item.StreamPublicID,
+		Name:        item.Name,
+		Description: item.Description,
+		ScheduleType: sharedtypes.NormalizeHabitScheduleType(
+			sharedtypes.HabitScheduleType(item.ScheduleType),
+		),
 		Weekdays:      parseWeekdays(item.Weekdays),
 		TargetMinutes: item.TargetMinutes,
 		Active:        item.Active,
 	}, nil
 }
 
-func (r *HabitRepository) GetWithMetaByID(ctx context.Context, habitID int64, userID string) (*sharedtypes.HabitWithMeta, error) {
+func (r *HabitRepository) GetWithMetaByID(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+) (*sharedtypes.HabitWithMeta, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`
 		StreamPublicID int64   `bun:"stream_public_id"`
@@ -253,11 +279,13 @@ func (r *HabitRepository) GetWithMetaByID(ctx context.Context, habitID int64, us
 	}
 	out := &sharedtypes.HabitWithMeta{
 		Habit: sharedtypes.Habit{
-			ID:            item.PublicID,
-			StreamID:      item.StreamPublicID,
-			Name:          item.Name,
-			Description:   item.Description,
-			ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(item.ScheduleType)),
+			ID:          item.PublicID,
+			StreamID:    item.StreamPublicID,
+			Name:        item.Name,
+			Description: item.Description,
+			ScheduleType: sharedtypes.NormalizeHabitScheduleType(
+				sharedtypes.HabitScheduleType(item.ScheduleType),
+			),
 			Weekdays:      parseWeekdays(item.Weekdays),
 			TargetMinutes: item.TargetMinutes,
 			Active:        item.Active,
@@ -269,7 +297,11 @@ func (r *HabitRepository) GetWithMetaByID(ctx context.Context, habitID int64, us
 	return out, nil
 }
 
-func (r *HabitRepository) ListDueWithMeta(ctx context.Context, date string, userID string) ([]sharedtypes.HabitWithMeta, error) {
+func (r *HabitRepository) ListDueWithMeta(
+	ctx context.Context,
+	date string,
+	userID string,
+) ([]sharedtypes.HabitWithMeta, error) {
 	type row struct {
 		PublicID       int64   `bun:"public_id"`
 		StreamPublicID int64   `bun:"stream_public_id"`
@@ -311,11 +343,13 @@ func (r *HabitRepository) ListDueWithMeta(ctx context.Context, date string, user
 	for _, row := range rows {
 		habit := sharedtypes.HabitWithMeta{
 			Habit: sharedtypes.Habit{
-				ID:            row.PublicID,
-				StreamID:      row.StreamPublicID,
-				Name:          row.Name,
-				Description:   row.Description,
-				ScheduleType:  sharedtypes.NormalizeHabitScheduleType(sharedtypes.HabitScheduleType(row.ScheduleType)),
+				ID:          row.PublicID,
+				StreamID:    row.StreamPublicID,
+				Name:        row.Name,
+				Description: row.Description,
+				ScheduleType: sharedtypes.NormalizeHabitScheduleType(
+					sharedtypes.HabitScheduleType(row.ScheduleType),
+				),
 				Weekdays:      parseWeekdays(row.Weekdays),
 				TargetMinutes: row.TargetMinutes,
 				Active:        row.Active,
@@ -331,15 +365,20 @@ func (r *HabitRepository) ListDueWithMeta(ctx context.Context, date string, user
 	return out, nil
 }
 
-func (r *HabitRepository) Update(ctx context.Context, habitID int64, userID string, now string, updates struct {
-	Name          Patch[string]
-	Description   Patch[string]
-	ScheduleType  Patch[string]
-	Weekdays      []int
-	WeekdaysSet   bool
-	TargetMinutes Patch[int]
-	Active        *bool
-},
+func (r *HabitRepository) Update(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+	now string,
+	updates struct {
+		Name          Patch[string]
+		Description   Patch[string]
+		ScheduleType  Patch[string]
+		Weekdays      []int
+		WeekdaysSet   bool
+		TargetMinutes Patch[int]
+		Active        *bool
+	},
 ) (*sharedtypes.Habit, error) {
 	q := r.db.NewUpdate().
 		Model((*storemodels.HabitModel)(nil)).
@@ -391,7 +430,12 @@ func (r *HabitRepository) Update(ctx context.Context, habitID int64, userID stri
 	return r.GetByID(ctx, habitID, userID)
 }
 
-func (r *HabitRepository) SoftDelete(ctx context.Context, habitID int64, userID string, now string) error {
+func (r *HabitRepository) SoftDelete(
+	ctx context.Context,
+	habitID int64,
+	userID string,
+	now string,
+) error {
 	res, err := r.db.NewUpdate().
 		Model((*storemodels.HabitModel)(nil)).
 		Where("public_id = ?", habitID).
@@ -409,7 +453,12 @@ func (r *HabitRepository) SoftDelete(ctx context.Context, habitID int64, userID 
 	return nil
 }
 
-func (r *HabitRepository) SoftDeleteByStream(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *HabitRepository) SoftDeleteByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
 	if err != nil || streamInternalID == "" {
 		return err
@@ -425,7 +474,12 @@ func (r *HabitRepository) SoftDeleteByStream(ctx context.Context, streamID int64
 	return err
 }
 
-func (r *HabitRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *HabitRepository) SoftDeleteByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err
@@ -441,7 +495,12 @@ func (r *HabitRepository) SoftDeleteByRepo(ctx context.Context, repoID int64, us
 	return err
 }
 
-func (r *HabitRepository) RestoreDeletedByStream(ctx context.Context, streamID int64, userID string, now string) error {
+func (r *HabitRepository) RestoreDeletedByStream(
+	ctx context.Context,
+	streamID int64,
+	userID string,
+	now string,
+) error {
 	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
 	if err != nil || streamInternalID == "" {
 		return err
@@ -457,7 +516,12 @@ func (r *HabitRepository) RestoreDeletedByStream(ctx context.Context, streamID i
 	return err
 }
 
-func (r *HabitRepository) RestoreDeletedByRepo(ctx context.Context, repoID int64, userID string, now string) error {
+func (r *HabitRepository) RestoreDeletedByRepo(
+	ctx context.Context,
+	repoID int64,
+	userID string,
+	now string,
+) error {
 	repoInternalID, err := resolveRepoInternalID(ctx, r.db, repoID, userID)
 	if err != nil || repoInternalID == "" {
 		return err

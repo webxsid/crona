@@ -71,7 +71,13 @@ func TestAwayModeOnlyFreezesSelectedStreakKinds(t *testing.T) {
 	}
 }
 
-func seedFocusDay(t *testing.T, ctx context.Context, coreCtx *core.Context, streamID, issueID int64, date string) {
+func seedFocusDay(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	streamID, issueID int64,
+	date string,
+) {
 	t.Helper()
 
 	issue, err := coreCtx.Issues.Create(ctx, sharedtypes.Issue{

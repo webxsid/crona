@@ -69,11 +69,26 @@ func DialogTheme() dialogs.Theme {
 
 func Render(state State) string {
 	if state.Width == 0 {
-		logger.Infof("layout.Render loading: width=0 height=%d view=%q pane=%q dialog_open=%t dialog_kind=%q", state.Height, state.View, state.Pane, state.DialogOpen, state.DialogState.Kind)
+		logger.Infof(
+			"layout.Render loading: width=0 height=%d view=%q pane=%q dialog_open=%t dialog_kind=%q",
+			state.Height,
+			state.View,
+			state.Pane,
+			state.DialogOpen,
+			state.DialogState.Kind,
+		)
 		return "Loading..."
 	}
 	if state.Width < MinWidth || state.Height < MinHeight {
-		logger.Infof("layout.Render minimum-size: width=%d height=%d view=%q pane=%q dialog_open=%t dialog_kind=%q", state.Width, state.Height, state.View, state.Pane, state.DialogOpen, state.DialogState.Kind)
+		logger.Infof(
+			"layout.Render minimum-size: width=%d height=%d view=%q pane=%q dialog_open=%t dialog_kind=%q",
+			state.Width,
+			state.Height,
+			state.View,
+			state.Pane,
+			state.DialogOpen,
+			state.DialogState.Kind,
+		)
 		return renderMinimumSizeWarning(state.Width, state.Height)
 	}
 
@@ -96,36 +111,127 @@ func Render(state State) string {
 
 	if state.DialogOpen {
 		dialogStr := dialogs.Render(DialogTheme(), state.DialogState)
-		result := clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
-		logger.Infof("layout.Render dialog overlay: view=%q pane=%q dialog_kind=%q base_len=%d dialog_len=%d result_len=%d width=%d height=%d", state.View, state.Pane, state.DialogState.Kind, len(base), len(dialogStr), len(result), state.Width, state.Height)
+		result := clipViewportString(
+			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
+			state.Width,
+			state.Height,
+		)
+		logger.Infof(
+			"layout.Render dialog overlay: view=%q pane=%q dialog_kind=%q base_len=%d dialog_len=%d result_len=%d width=%d height=%d",
+			state.View,
+			state.Pane,
+			state.DialogState.Kind,
+			len(base),
+			len(dialogStr),
+			len(result),
+			state.Width,
+			state.Height,
+		)
 		return result
 	}
 	if state.SessionDetailOpen {
 		dialogStr := renderSessionDetailOverlay(state)
-		result := clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
-		logger.Infof("layout.Render session-detail overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d", state.View, state.Pane, len(base), len(dialogStr), len(result), state.Width, state.Height)
+		result := clipViewportString(
+			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
+			state.Width,
+			state.Height,
+		)
+		logger.Infof(
+			"layout.Render session-detail overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
+			state.View,
+			state.Pane,
+			len(base),
+			len(dialogStr),
+			len(result),
+			state.Width,
+			state.Height,
+		)
 		return result
 	}
 	if state.SessionContextOpen {
 		dialogStr := renderSessionContextOverlay(state)
-		result := clipViewportString(lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr), state.Width, state.Height)
-		logger.Infof("layout.Render session-context overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d", state.View, state.Pane, len(base), len(dialogStr), len(result), state.Width, state.Height)
+		result := clipViewportString(
+			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
+			state.Width,
+			state.Height,
+		)
+		logger.Infof(
+			"layout.Render session-context overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
+			state.View,
+			state.Pane,
+			len(base),
+			len(dialogStr),
+			len(result),
+			state.Width,
+			state.Height,
+		)
 		return result
 	}
 	if state.HelpOpen {
 		overlay := renderHelpOverlay(state)
-		result := clipViewportString(renderOverlay(base, overlay, max(0, (state.Width-overlayWidth(overlay))/2), max(0, (state.Height-overlayHeight(overlay))/2), state.Width, state.Height), state.Width, state.Height)
-		logger.Infof("layout.Render help overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d", state.View, state.Pane, len(base), len(overlay), len(result), state.Width, state.Height)
+		result := clipViewportString(
+			renderOverlay(
+				base,
+				overlay,
+				max(0, (state.Width-overlayWidth(overlay))/2),
+				max(0, (state.Height-overlayHeight(overlay))/2),
+				state.Width,
+				state.Height,
+			),
+			state.Width,
+			state.Height,
+		)
+		logger.Infof(
+			"layout.Render help overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
+			state.View,
+			state.Pane,
+			len(base),
+			len(overlay),
+			len(result),
+			state.Width,
+			state.Height,
+		)
 		return result
 	}
 	if state.StatusMsg != "" {
 		overlay := renderStatusToast(state)
-		result := clipViewportString(renderOverlay(base, overlay, 1, max(0, state.Height-overlayHeight(overlay)-1), state.Width, state.Height), state.Width, state.Height)
-		logger.Infof("layout.Render status overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d", state.View, state.Pane, len(base), len(overlay), len(result), state.Width, state.Height)
+		result := clipViewportString(
+			renderOverlay(
+				base,
+				overlay,
+				1,
+				max(0, state.Height-overlayHeight(overlay)-1),
+				state.Width,
+				state.Height,
+			),
+			state.Width,
+			state.Height,
+		)
+		logger.Infof(
+			"layout.Render status overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
+			state.View,
+			state.Pane,
+			len(base),
+			len(overlay),
+			len(result),
+			state.Width,
+			state.Height,
+		)
 		return result
 	}
 	result := clipViewportString(base, state.Width, state.Height)
-	logger.Infof("layout.Render base: view=%q pane=%q base_len=%d result_len=%d width=%d height=%d dialog_open=%t help_open=%t status=%q", state.View, state.Pane, len(base), len(result), state.Width, state.Height, state.DialogOpen, state.HelpOpen, state.StatusMsg)
+	logger.Infof(
+		"layout.Render base: view=%q pane=%q base_len=%d result_len=%d width=%d height=%d dialog_open=%t help_open=%t status=%q",
+		state.View,
+		state.Pane,
+		len(base),
+		len(result),
+		state.Width,
+		state.Height,
+		state.DialogOpen,
+		state.HelpOpen,
+		state.StatusMsg,
+	)
 	return result
 }
 
@@ -142,7 +248,10 @@ func renderMinimumSizeWarning(width, height int) string {
 		"",
 		chrome.StyleDim.Render(instruction),
 	}
-	contentWidth := max(lipgloss.Width(title), max(lipgloss.Width(current), max(lipgloss.Width(required), lipgloss.Width(instruction))))
+	contentWidth := max(
+		lipgloss.Width(title),
+		max(lipgloss.Width(current), max(lipgloss.Width(required), lipgloss.Width(instruction))),
+	)
 	boxWidth := min(max(12, contentWidth+8), max(12, width-2))
 	box := lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
@@ -150,7 +259,11 @@ func renderMinimumSizeWarning(width, height int) string {
 		Padding(1, 2).
 		Width(boxWidth).
 		Render(strings.Join(body, "\n"))
-	return clipViewportString(lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, box), width, height)
+	return clipViewportString(
+		lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, box),
+		width,
+		height,
+	)
 }
 
 func renderHeader(state State) string {
@@ -159,15 +272,26 @@ func renderHeader(state State) string {
 		mode = "   " + chrome.StyleDim.Render("env:") + " " + chrome.StyleHeader.Render("Dev")
 	}
 	brand := chrome.StyleHeader.Render(viewchrome.LogoTiny())
-	contextLine := fmt.Sprintf("%s %s   %s %s%s",
-		chrome.StyleDim.Render("repo:"), chrome.StyleHeader.Render(helperpkg.Truncate(state.RepoName, max(16, state.Width/4))),
-		chrome.StyleDim.Render("stream:"), chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
+	contextLine := fmt.Sprintf(
+		"%s %s   %s %s%s",
+		chrome.StyleDim.Render(
+			"repo:",
+		),
+		chrome.StyleHeader.Render(helperpkg.Truncate(state.RepoName, max(16, state.Width/4))),
+		chrome.StyleDim.Render(
+			"stream:",
+		),
+		chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
 		mode,
 	)
 	if strings.TrimSpace(brand) != "" {
 		contextLine = brand + "  " + contextLine
 	}
-	versionLabel := chrome.StyleDim.Render("version:") + " " + chrome.StyleHeader.Render(versionpkg.Current())
+	versionLabel := chrome.StyleDim.Render(
+		"version:",
+	) + " " + chrome.StyleHeader.Render(
+		versionpkg.Current(),
+	)
 	contextWidth := ansi.StringWidth(contextLine)
 	versionWidth := ansi.StringWidth(versionLabel)
 	if contextWidth+versionWidth+3 <= state.Width {
@@ -210,7 +334,10 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
 			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
 		}
-		return chrome.StyleInactive.Width(width-4).Height(max(3, height-2)).Padding(1, 1).Render(strings.Join(lines, "\n"))
+		return chrome.StyleInactive.Width(width-4).
+			Height(max(3, height-2)).
+			Padding(1, 1).
+			Render(strings.Join(lines, "\n"))
 	}
 	if state.TimerActive {
 		lines = []string{
@@ -222,7 +349,6 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewSessionActive, "Session"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
 			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
-			renderSidebarItem(state, uistate.ViewScratch, "Scratchpads"),
 		}
 	} else {
 		lines = []string{
@@ -242,7 +368,6 @@ func renderSidebar(state State, width, height int) string {
 			chrome.StyleDim.Render("WORKSPACE"),
 			renderSidebarItem(state, uistate.ViewDefault, "Issues"),
 			renderSidebarItem(state, uistate.ViewMeta, "Meta"),
-			renderSidebarItem(state, uistate.ViewScratch, "Scratchpads"),
 			renderSidebarItem(state, uistate.ViewOps, "Ops"),
 			"",
 			chrome.StyleDim.Render("SYSTEM"),
@@ -256,12 +381,15 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
 		}
 	}
-	return chrome.StyleInactive.Width(width-4).Height(max(3, height-2)).Padding(1, 1).Render(strings.Join(lines, "\n"))
+	return chrome.StyleInactive.Width(width-4).
+		Height(max(3, height-2)).
+		Padding(1, 1).
+		Render(strings.Join(lines, "\n"))
 }
 
 func renderSidebarItem(state State, view uistate.View, label string) string {
 	if state.View == view {
-		return chrome.StyleCursor.Render("▶ " + label)
+		return chrome.StyleCursor.Render(chrome.SelectionCursor + " " + label)
 	}
 	return chrome.StyleNormal.Render("  " + label)
 }
@@ -334,7 +462,14 @@ func renderStatusToast(state State) string {
 		border = chrome.ColorRed
 		bodyStyle = chrome.StyleError.Bold(true)
 	}
-	return overlayBox(title, WrapText(state.StatusMsg, maxWidth-6), nil, maxWidth, border, bodyStyle)
+	return overlayBox(
+		title,
+		WrapText(state.StatusMsg, maxWidth-6),
+		nil,
+		maxWidth,
+		border,
+		bodyStyle,
+	)
 }
 
 func renderHelpOverlay(state State) string {
@@ -345,7 +480,14 @@ func renderHelpOverlay(state State) string {
 	}
 	bodyLines = append(bodyLines, state.PaneActions...)
 	boxWidth := min(max(42, state.Width-8), 88)
-	return overlayBox("Keys", bodyLines, []string{"[?] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)
+	return overlayBox(
+		"Keys",
+		bodyLines,
+		[]string{"[?] close"},
+		boxWidth,
+		chrome.ColorCyan,
+		chrome.StyleNormal,
+	)
 }
 
 func renderSessionDetailOverlay(state State) string {
@@ -381,7 +523,14 @@ func renderSessionDetailOverlay(state State) string {
 	if offset+visibleHeight < len(wrapped) {
 		visible = append(visible, "[more below]")
 	}
-	return overlayBox("Session Detail", visible, []string{"[j/k] scroll   [e] amend   [esc] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)
+	return overlayBox(
+		"Session Detail",
+		visible,
+		[]string{"[j/k] scroll   [e] amend   [esc] close"},
+		boxWidth,
+		chrome.ColorCyan,
+		chrome.StyleNormal,
+	)
 }
 
 func renderSessionContextOverlay(state State) string {
@@ -417,21 +566,38 @@ func renderSessionContextOverlay(state State) string {
 	if offset+visibleHeight < len(wrapped) {
 		visible = append(visible, "[more below]")
 	}
-	return overlayBox("Issue Context", visible, []string{"[j/k] scroll   [esc] close"}, boxWidth, chrome.ColorCyan, chrome.StyleNormal)
+	return overlayBox(
+		"Issue Context",
+		visible,
+		[]string{"[j/k] scroll   [esc] close"},
+		boxWidth,
+		chrome.ColorCyan,
+		chrome.StyleNormal,
+	)
 }
 
-func overlayBox(title string, body, footer []string, width int, border lipgloss.Color, bodyStyle lipgloss.Style) string {
+func overlayBox(
+	title string,
+	body, footer []string,
+	width int,
+	border lipgloss.Color,
+	bodyStyle lipgloss.Style,
+) string {
 	innerWidth := width - 6
 	if innerWidth < 12 {
 		innerWidth = 12
 		width = innerWidth + 6
 	}
-	lines := []string{chrome.StylePaneTitle.Foreground(border).Render(helperpkg.Truncate(title, innerWidth))}
+	lines := []string{
+		chrome.StylePaneTitle.Foreground(border).Render(helperpkg.Truncate(title, innerWidth)),
+	}
 	if bodyLines := renderOverlaySection(body, innerWidth, bodyStyle); len(bodyLines) > 0 {
 		lines = append(lines, "")
 		lines = append(lines, bodyLines...)
 	}
-	if footerLines := renderOverlaySection(footer, innerWidth, chrome.StyleDim); len(footerLines) > 0 {
+	if footerLines := renderOverlaySection(footer, innerWidth, chrome.StyleDim); len(
+		footerLines,
+	) > 0 {
 		lines = append(lines, "")
 		lines = append(lines, footerLines...)
 	}

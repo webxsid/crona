@@ -98,7 +98,11 @@ func CallKernel(deps Deps, method string, params, out any) error {
 		return err
 	}
 	if resp.Error != nil {
-		return &protocol.RPCError{Code: resp.Error.Code, Message: resp.Error.Message, Data: resp.Error.Data}
+		return &protocol.RPCError{
+			Code:    resp.Error.Code,
+			Message: resp.Error.Message,
+			Data:    resp.Error.Data,
+		}
 	}
 	if out == nil || len(resp.Result) == 0 {
 		return nil
@@ -218,7 +222,10 @@ func KernelLaunchCandidates(deps Deps) []LaunchCandidate {
 	candidates := make([]LaunchCandidate, 0, 3)
 	seen := make(map[string]struct{})
 	add := func(candidate LaunchCandidate) {
-		key := candidate.Cmd + "\x00" + strings.Join(candidate.Args, "\x00") + "\x00" + candidate.Dir
+		key := candidate.Cmd + "\x00" + strings.Join(
+			candidate.Args,
+			"\x00",
+		) + "\x00" + candidate.Dir
 		if _, ok := seen[key]; ok {
 			return
 		}
@@ -242,7 +249,14 @@ func KernelLaunchCandidates(deps Deps) []LaunchCandidate {
 		}
 		if _, err := deps.OSStat(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel")); err == nil {
 			if goCmd, lookErr := deps.ExecLookPath("go"); lookErr == nil {
-				add(LaunchCandidate{Name: "repo-local go run", Cmd: goCmd, Args: []string{"run", "./kernel/cmd/crona-kernel"}, Dir: repoRoot})
+				add(
+					LaunchCandidate{
+						Name: "repo-local go run",
+						Cmd:  goCmd,
+						Args: []string{"run", "./kernel/cmd/crona-kernel"},
+						Dir:  repoRoot,
+					},
+				)
 			}
 		}
 	}
@@ -270,7 +284,10 @@ func TUILaunchCandidates(deps Deps) []LaunchCandidate {
 	candidates := make([]LaunchCandidate, 0, 3)
 	seen := make(map[string]struct{})
 	add := func(candidate LaunchCandidate) {
-		key := candidate.Cmd + "\x00" + strings.Join(candidate.Args, "\x00") + "\x00" + candidate.Dir
+		key := candidate.Cmd + "\x00" + strings.Join(
+			candidate.Args,
+			"\x00",
+		) + "\x00" + candidate.Dir
 		if _, ok := seen[key]; ok {
 			return
 		}
@@ -294,7 +311,14 @@ func TUILaunchCandidates(deps Deps) []LaunchCandidate {
 		}
 		if _, err := deps.OSStat(filepath.Join(repoRoot, "tui")); err == nil {
 			if goCmd, lookErr := deps.ExecLookPath("go"); lookErr == nil {
-				add(LaunchCandidate{Name: "repo-local go run", Cmd: goCmd, Args: []string{"run", "./tui"}, Dir: repoRoot})
+				add(
+					LaunchCandidate{
+						Name: "repo-local go run",
+						Cmd:  goCmd,
+						Args: []string{"run", "./tui"},
+						Dir:  repoRoot,
+					},
+				)
 			}
 		}
 	}
@@ -318,7 +342,8 @@ func FindRepoRoot(deps Deps) (string, error) {
 				break
 			}
 			seen[dir] = struct{}{}
-			if FileExists(deps, filepath.Join(dir, "go.work")) && FileExists(deps, filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
+			if FileExists(deps, filepath.Join(dir, "go.work")) &&
+				FileExists(deps, filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
 				return dir, nil
 			}
 			parent := filepath.Dir(dir)

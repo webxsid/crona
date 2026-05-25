@@ -113,10 +113,12 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if settings == nil || !settings.AwayModeEnabled {
 		t.Fatalf("expected away mode enabled, got %+v", settings)
 	}
-	if len(settings.FrozenStreakKinds) != 1 || settings.FrozenStreakKinds[0] != sharedtypes.StreakKindCheckInDays {
+	if len(settings.FrozenStreakKinds) != 1 ||
+		settings.FrozenStreakKinds[0] != sharedtypes.StreakKindCheckInDays {
 		t.Fatalf("unexpected frozen streak kinds: %+v", settings.FrozenStreakKinds)
 	}
-	if len(settings.RestWeekdays) != 2 || settings.RestWeekdays[0] != 0 || settings.RestWeekdays[1] != 6 {
+	if len(settings.RestWeekdays) != 2 || settings.RestWeekdays[0] != 0 ||
+		settings.RestWeekdays[1] != 6 {
 		t.Fatalf("unexpected rest weekdays: %+v", settings.RestWeekdays)
 	}
 	if len(settings.RestSpecificDates) != 1 || settings.RestSpecificDates[0] != "2026-03-29" {
@@ -129,7 +131,11 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 		t.Fatalf("expected inactivity alerts disabled")
 	}
 	if settings.InactivityThreshold != 45 || settings.InactivityRepeat != 90 {
-		t.Fatalf("unexpected inactivity settings: threshold=%d repeat=%d", settings.InactivityThreshold, settings.InactivityRepeat)
+		t.Fatalf(
+			"unexpected inactivity settings: threshold=%d repeat=%d",
+			settings.InactivityThreshold,
+			settings.InactivityRepeat,
+		)
 	}
 	if settings.DateDisplayPreset != sharedtypes.DateDisplayPresetCustom {
 		t.Fatalf("expected custom date display preset, got %q", settings.DateDisplayPreset)
@@ -143,7 +149,9 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if len(settings.HabitStreakDefs) != 1 {
 		t.Fatalf("expected one custom habit streak, got %+v", settings.HabitStreakDefs)
 	}
-	if settings.HabitStreakDefs[0].Name != "Health streak" || settings.HabitStreakDefs[0].Period != sharedtypes.HabitStreakPeriodWeek || settings.HabitStreakDefs[0].RequiredCount != 2 {
+	if settings.HabitStreakDefs[0].Name != "Health streak" ||
+		settings.HabitStreakDefs[0].Period != sharedtypes.HabitStreakPeriodWeek ||
+		settings.HabitStreakDefs[0].RequiredCount != 2 {
 		t.Fatalf("unexpected habit streak definition: %+v", settings.HabitStreakDefs[0])
 	}
 }
@@ -176,6 +184,9 @@ func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
 		t.Fatalf("expected one habit streak, got %+v", settings.HabitStreakDefs)
 	}
 	if settings.HabitStreakDefs[0].RequiredCount != 1 {
-		t.Fatalf("expected daily streak count normalized to 1, got %+v", settings.HabitStreakDefs[0])
+		t.Fatalf(
+			"expected daily streak count normalized to 1, got %+v",
+			settings.HabitStreakDefs[0],
+		)
 	}
 }
