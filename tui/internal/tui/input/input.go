@@ -86,7 +86,7 @@ type Deps struct {
 	SelfUpdateUnsupportedReason     func(State) string
 	InstallUpdate                   func(State) tea.Cmd
 	DismissUpdate                   func() tea.Cmd
-	ResumeSession                   func() tea.Cmd
+	ResumeSession                   func(State) tea.Cmd
 	PauseSession                    func() tea.Cmd
 	OpenEndSessionDialog            func(*State) bool
 	OpenStashSessionDialog          func(*State) bool
@@ -526,6 +526,9 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
+	r.RegisterView(uistate.ViewSessionActive, "m", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleStructuredManualPause(s, deps)
+	})
 	keyregistry.RegisterScratch(r, uistate.ViewScratch,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.ActivePane = uistate.PaneScratchpads
@@ -563,11 +566,11 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(uistate.ViewSupport, "b", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return s, deps.GenerateSupportBundle(s), true
 	})
-		keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
-			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
-			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
-			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
-		)
+	keyregistry.RegisterWellbeing(r, uistate.ViewWellbeing,
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
+	)
 	r.RegisterView(uistate.ViewWellbeing, "+", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleShiftWellbeingWindow(s, deps, 1)
 	})

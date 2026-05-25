@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	viewruntime "crona/tui/internal/tui/views/runtime"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -133,6 +133,9 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		Pane:                   state.Pane,
 		ScratchpadOpen:         state.ScratchpadOpen,
 		TimerState:             timerStateFromContent(state),
+		TimerSegment:           timerSegmentFromContent(state),
+		TimerNextSegment:       timerNextSegmentFromContent(state),
+		StructuredTimer:        structuredTimerFromContent(state),
 		RestModeActive:         state.RestModeActive,
 		AwayModeActive:         state.AwayModeActive,
 		UpdateVisible:          viewruntime.ShouldShowUpdatesView(state.UpdateStatus),
@@ -145,6 +148,30 @@ func timerStateFromContent(state ContentState) string {
 		return ""
 	}
 	return state.Timer.State
+}
+
+func timerSegmentFromContent(state ContentState) string {
+	if state.Timer == nil || state.Timer.SegmentType == nil {
+		return ""
+	}
+	return string(*state.Timer.SegmentType)
+}
+
+func timerNextSegmentFromContent(state ContentState) string {
+	if state.Timer == nil {
+		return ""
+	}
+	if state.Timer.ReadySegmentType != nil {
+		return string(*state.Timer.ReadySegmentType)
+	}
+	if state.Timer.NextSegmentType != nil {
+		return string(*state.Timer.NextSegmentType)
+	}
+	return ""
+}
+
+func structuredTimerFromContent(state ContentState) bool {
+	return state.Settings != nil && state.Settings.TimerMode == "structured" && state.Settings.BreaksEnabled
 }
 
 func RenderPaneRowStyled(theme Theme, i, cur int, active bool, text string, contentStyle *lipgloss.Style, width int) string {

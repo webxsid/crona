@@ -12,10 +12,14 @@ import (
 
 func (m Model) terminalTitle() string {
 	if m.timer != nil && m.timer.State != "idle" {
+		total := m.timer.ElapsedSeconds + m.elapsed
+		if m.timer.State == "ready" {
+			total = 0
+		}
 		return strings.Join(compactTitleParts([]string{
 			"Crona",
 			m.terminalSessionTitle(),
-			fmt.Sprintf("%s %s", compactElapsed(m.timer.ElapsedSeconds+m.elapsed), terminalTimerState(m)),
+			fmt.Sprintf("%s %s", compactElapsed(total), terminalTimerState(m)),
 		}), " · ")
 	}
 	return strings.Join(compactTitleParts([]string{
@@ -53,6 +57,12 @@ func (m Model) terminalContextTitle() string {
 func terminalTimerState(m Model) string {
 	if m.timer == nil {
 		return ""
+	}
+	if m.timer.State == "ready" {
+		if m.timer.ReadySegmentType != nil && strings.TrimSpace(string(*m.timer.ReadySegmentType)) != "" {
+			return "READY " + strings.ToUpper(string(*m.timer.ReadySegmentType))
+		}
+		return "READY"
 	}
 	if m.timer.SegmentType != nil && strings.TrimSpace(string(*m.timer.SegmentType)) != "" && *m.timer.SegmentType != "work" {
 		return strings.ToUpper(string(*m.timer.SegmentType))

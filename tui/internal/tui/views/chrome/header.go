@@ -34,13 +34,21 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 	}
 
 	total := state.Timer.ElapsedSeconds + state.Elapsed
+	if state.Timer.State == "ready" {
+		total = 0
+	}
 	stateText := "WORK"
 	stateColor := theme.ColorGreen
-	if state.Timer.State == "paused" {
+	if state.Timer.State == "ready" {
+		stateText = "READY"
+		stateColor = theme.ColorYellow
+	} else if state.Timer.State == "paused" {
 		stateText = "PAUSED"
 		stateColor = theme.ColorYellow
 	}
-	if state.Timer.SegmentType != nil && *state.Timer.SegmentType != "" && *state.Timer.SegmentType != "work" {
+	if state.Timer.State == "ready" && state.Timer.ReadySegmentType != nil && *state.Timer.ReadySegmentType != "" {
+		stateText = "READY:" + strings.ToUpper(string(*state.Timer.ReadySegmentType))
+	} else if state.Timer.SegmentType != nil && *state.Timer.SegmentType != "" && *state.Timer.SegmentType != "work" {
 		stateText = strings.ToUpper(string(*state.Timer.SegmentType))
 		stateColor = theme.ColorYellow
 	}

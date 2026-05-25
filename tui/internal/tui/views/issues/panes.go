@@ -9,7 +9,11 @@ import (
 	contextmeta "crona/tui/internal/tui/views/contextmeta"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
+	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 )
 
 func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitle string, indices []int, offset int, showFilter bool, height int, emptyText string, sectionActive bool) string {
@@ -21,12 +25,11 @@ func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitl
 
 	repoW := max(10, width/8)
 	streamW := max(10, width/8)
-	statusW := 11
-	estimateW := 8
-	titleW := width - repoW - streamW - statusW - estimateW - 14
-	if titleW < 14 {
-		titleW = 14
-	}
+	statusW := 14
+	estimateW := 11
+	spentW := 11
+	titleW := width - repoW - streamW - statusW - estimateW - spentW - 18
+	titleW = max(14, titleW)
 
 	lines := []string{
 		theme.StylePaneTitle.Render(title),
@@ -40,8 +43,6 @@ func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitl
 	} else {
 		lines = append(lines, theme.StyleDim.Render(""))
 	}
-	header := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, "Issue", statusW, "Status", estimateW, "Estimate", repoW, "Repo", streamW, "Stream")
-	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, width-6)))
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 
 	if len(indices) == 0 {
@@ -56,18 +57,36 @@ func renderIssuePane(theme types.Theme, state types.ContentState, title, subtitl
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("   ↑ %d more", start)))
 	}
+	tableRows := make([]table.Row, 0, end-start)
 	for pos := start; pos < end; pos++ {
 		issue := state.DefaultIssues[indices[pos]]
 		estimate := "-"
 		if issue.EstimateMinutes != nil {
 			estimate = fmt.Sprintf("%dm", *issue.EstimateMinutes)
 		}
-		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
-		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, viewhelpers.Truncate(title, titleW), statusW, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, viewhelpers.Truncate(issue.RepoName, repoW), streamW, viewhelpers.Truncate(issue.StreamName, streamW))
-
+		spent := "-"
+		if issue.WorkedSeconds > 0 {
+			spent = viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds)
+		} else if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil && meta.WorkedSeconds > 0 {
+			spent = viewhelpers.FormatCompactDurationSeconds(meta.WorkedSeconds)
+		}
+		title := issue.Title
+		title += issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
 		selected := paneActive && pos == localCur
-		lines = append(lines, renderIssueRow(theme, row, width, selected, active, string(issue.Status)))
+		rowStyle := lipgloss.NewStyle()
+		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
+			rowStyle = *statusStyle
+		}
+		if selected {
+			rowStyle = rowStyle.Bold(true)
+		}
+		cursor := " "
+		if selected {
+			cursor = "▶"
+		}
+		tableRows = append(tableRows, issuecore.IssueTableRow(cursor, title, issuecore.PlainIssueStatus(string(issue.Status)), estimate, spent, issue.RepoName, issue.StreamName, rowStyle))
 	}
+	lines = append(lines, issuecore.IssueTableView(issuecore.IssueTableColumns(titleW, statusW, estimateW, spentW, repoW, streamW), tableRows, theme.StyleDim))
 	if remaining := len(indices) - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("   ↓ %d more", remaining)))
 	}
@@ -104,10 +123,14 @@ func renderCompactIssuePane(theme types.Theme, state types.ContentState, title, 
 }
 
 func renderCompactIssueRow(theme types.Theme, width int, selected, active bool, issue api.IssueWithMeta, settings *api.CoreSettings) string {
-	parts := []string{viewhelpers.Truncate(issue.Title+issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, settings), max(18, width/2))}
+	title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, settings)
+	parts := []string{viewhelpers.Truncate(title, max(18, width/2))}
 	parts = append(parts, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11))
 	if issue.EstimateMinutes != nil {
 		parts = append(parts, fmt.Sprintf("%dm", *issue.EstimateMinutes))
+	}
+	if issue.WorkedSeconds > 0 {
+		parts = append(parts, viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds))
 	}
 	row := strings.Join(parts, "  ")
 	contentStyle := issuecore.IssueStatusStyle(theme, string(issue.Status))
@@ -133,19 +156,4 @@ func renderCompactFooter(theme types.Theme, label string, indices []int, state t
 		lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(state.DefaultIssues[indices[0]].Title, state.Width-6)))
 	}
 	return viewchrome.RenderPaneBox(theme, false, state.Width, height, viewhelpers.StringsJoin(lines))
-}
-
-func renderIssueRow(theme types.Theme, row string, width int, selected, active bool, status string) string {
-	contentStyle := issuecore.IssueStatusStyle(theme, status)
-	line := viewhelpers.Truncate(strings.TrimPrefix(row, "  "), width-6)
-	if contentStyle != nil {
-		line = contentStyle.Render(line)
-	}
-	if selected && active {
-		return theme.StyleCursor.Render("▶ " + line)
-	}
-	if selected {
-		return theme.StyleSelected.Render("  " + line)
-	}
-	return theme.StyleNormal.Render("  " + line)
 }

@@ -15,6 +15,7 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 )
 
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
@@ -22,7 +23,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	cur := state.Cursors["issues"]
 	issues := make([]issuecore.APIIssue, 0, len(state.DailyIssues))
 	for _, issue := range filteredDailyIssues(state) {
-		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
+		issues = append(issues, issuecore.NewAPIIssue(issue.ID, issue.Title, issue.Status, issue.EstimateMinutes, issue.WorkedSeconds, issue.PinnedDaily, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt))
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
@@ -40,20 +41,20 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
 	}
-	statusW := 11
-	estimateW := 8
+	statusW := 14
+	estimateW := 11
 	repoW := max(10, width/7)
 	streamW := max(10, width/7)
-	titleW := width - statusW - estimateW - repoW - streamW - 16
+	spentW := 11
+	titleW := width - statusW - estimateW - spentW - repoW - streamW - 18
 	titleW = max(14, titleW)
-	header := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, "Issue", statusW, "Status", estimateW, "Estimate", repoW, "Repo", streamW, "Stream")
-	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, width-6)))
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	issueSlots := max(1, inner)
 	start, end := viewchrome.ListWindow(cur, total, issueSlots)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
+	tableRows := make([]table.Row, 0, end-start)
 	for _, rawIdx := range indices[start:end] {
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
@@ -66,10 +67,28 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		if issue.EstimateMinutes != nil {
 			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 		}
-		title := issue.Title + issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
-		row := fmt.Sprintf("%-2s %-*s %-*s %-*s %-*s %-*s", "", titleW, viewhelpers.Truncate(title, titleW), statusW, viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), statusW), estimateW, estimate, repoW, viewhelpers.Truncate(repoName, repoW), streamW, viewhelpers.Truncate(streamName, streamW))
-		lines = append(lines, viewchrome.RenderPaneRowStyled(theme, rawIdx, cur, active, row, issuecore.IssueStatusStyle(theme, string(issue.Status)), width))
+		spent := "-"
+		if issue.WorkedSeconds > 0 {
+			spent = viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds)
+		} else if meta != nil && meta.WorkedSeconds > 0 {
+			spent = viewhelpers.FormatCompactDurationSeconds(meta.WorkedSeconds)
+		}
+		title := issue.Title
+		title += issuecore.IssueDueSuffix(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
+		rowStyle := lipgloss.NewStyle()
+		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
+			rowStyle = *statusStyle
+		}
+		if rawIdx == cur && active {
+			rowStyle = rowStyle.Bold(true)
+		}
+		cursor := " "
+		if rawIdx == cur && active {
+			cursor = "▶"
+		}
+		tableRows = append(tableRows, issuecore.IssueTableRow(cursor, title, issuecore.PlainIssueStatus(string(issue.Status)), estimate, spent, repoName, streamName, rowStyle))
 	}
+	lines = append(lines, issuecore.IssueTableView(issuecore.IssueTableColumns(titleW, statusW, estimateW, spentW, repoW, streamW), tableRows, theme.StyleDim))
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}

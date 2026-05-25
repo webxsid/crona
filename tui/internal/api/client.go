@@ -767,6 +767,10 @@ func (c *Client) ResumeTimer() error {
 	return c.call(protocol.MethodTimerResume, nil, nil)
 }
 
+func (c *Client) AdvanceTimer() error {
+	return c.call(protocol.MethodTimerAdvance, nil, nil)
+}
+
 func (c *Client) EndTimer(input shareddto.EndSessionRequest) error {
 	return c.call(protocol.MethodTimerEnd, input, nil)
 }

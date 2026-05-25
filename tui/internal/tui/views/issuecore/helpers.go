@@ -21,14 +21,15 @@ type APIIssue struct {
 	Title           string
 	Status          sharedtypes.IssueStatus
 	EstimateMinutes *int
+	WorkedSeconds   int
 	PinnedDaily     bool
 	TodoForDate     *string
 	CompletedAt     *string
 	AbandonedAt     *string
 }
 
-func NewAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, pinnedDaily bool, todoForDate, completedAt, abandonedAt *string) APIIssue {
-	return APIIssue{ID: id, Title: title, Status: status, EstimateMinutes: estimateMinutes, PinnedDaily: pinnedDaily, TodoForDate: todoForDate, CompletedAt: completedAt, AbandonedAt: abandonedAt}
+func NewAPIIssue(id int64, title string, status sharedtypes.IssueStatus, estimateMinutes *int, workedSeconds int, pinnedDaily bool, todoForDate, completedAt, abandonedAt *string) APIIssue {
+	return APIIssue{ID: id, Title: title, Status: status, EstimateMinutes: estimateMinutes, WorkedSeconds: workedSeconds, PinnedDaily: pinnedDaily, TodoForDate: todoForDate, CompletedAt: completedAt, AbandonedAt: abandonedAt}
 }
 
 func PlainIssueStatus(status string) string {

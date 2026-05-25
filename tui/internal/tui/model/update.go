@@ -85,7 +85,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) timerActivityTouchCmd(now time.Time) tea.Cmd {
-	if m.client == nil || m.timer == nil || m.timer.State == "idle" {
+	if m.client == nil || m.timer == nil || m.timer.State == "idle" || m.timer.State == "ready" {
 		return nil
 	}
 	if !m.lastTimerActivityTouch.IsZero() && now.Sub(m.lastTimerActivityTouch) < time.Minute {

@@ -70,6 +70,7 @@ type StashEventPayload struct {
 type TimerBoundaryPayload struct {
 	From       SessionSegmentType `json:"from"`
 	To         SessionSegmentType `json:"to"`
+	Started    bool               `json:"started"`
 	Title      string             `json:"title"`
 	Message    string             `json:"message"`
 	RepoName   *string            `json:"repoName,omitempty"`

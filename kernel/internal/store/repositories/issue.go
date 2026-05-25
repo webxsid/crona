@@ -63,6 +63,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -80,6 +81,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -103,6 +105,7 @@ func (r *IssueRepository) ListByStream(ctx context.Context, streamID int64, user
 			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
+			WorkedSeconds:   row.WorkedSeconds,
 			Notes:           row.Notes,
 			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
@@ -121,6 +124,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -138,6 +142,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -162,6 +167,7 @@ func (r *IssueRepository) GetByID(ctx context.Context, issueID int64, userID str
 		Description:     item.Description,
 		Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(item.Status)),
 		EstimateMinutes: item.EstimateMinutes,
+		WorkedSeconds:   item.WorkedSeconds,
 		Notes:           item.Notes,
 		PinnedDaily:     item.PinnedDaily,
 		TodoForDate:     item.TodoForDate,
@@ -195,6 +201,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -215,6 +222,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -241,6 +249,7 @@ func (r *IssueRepository) ListAll(ctx context.Context, userID string) ([]sharedt
 				Description:     row.Description,
 				Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 				EstimateMinutes: row.EstimateMinutes,
+				WorkedSeconds:   row.WorkedSeconds,
 				Notes:           row.Notes,
 				PinnedDaily:     row.PinnedDaily,
 				TodoForDate:     row.TodoForDate,
@@ -263,6 +272,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -279,6 +289,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -300,6 +311,7 @@ func (r *IssueRepository) ListDeletedByStream(ctx context.Context, streamID int6
 			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
+			WorkedSeconds:   row.WorkedSeconds,
 			Notes:           row.Notes,
 			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
@@ -318,6 +330,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -334,6 +347,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -355,6 +369,7 @@ func (r *IssueRepository) ListByTodoForDate(ctx context.Context, todoForDate str
 			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
+			WorkedSeconds:   row.WorkedSeconds,
 			Notes:           row.Notes,
 			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,
@@ -373,6 +388,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
 		EstimateMinutes *int    `bun:"estimate_minutes"`
+		WorkedSeconds   int     `bun:"worked_seconds"`
 		Notes           *string `bun:"notes"`
 		PinnedDaily     bool    `bun:"pinned_daily"`
 		TodoForDate     *string `bun:"todo_for_date"`
@@ -389,6 +405,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
 		ColumnExpr("issues.estimate_minutes").
+		ColumnExpr("COALESCE((SELECT SUM(duration_seconds) FROM sessions WHERE sessions.issue_id = issues.id AND sessions.user_id = ? AND sessions.deleted_at IS NULL AND sessions.duration_seconds IS NOT NULL), 0) AS worked_seconds", userID).
 		ColumnExpr("issues.notes").
 		ColumnExpr("issues.pinned_daily").
 		ColumnExpr("issues.todo_for_date").
@@ -411,6 +428,7 @@ func (r *IssueRepository) ListByTodoDateRange(ctx context.Context, startDate str
 			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),
 			EstimateMinutes: row.EstimateMinutes,
+			WorkedSeconds:   row.WorkedSeconds,
 			Notes:           row.Notes,
 			PinnedDaily:     row.PinnedDaily,
 			TodoForDate:     row.TodoForDate,

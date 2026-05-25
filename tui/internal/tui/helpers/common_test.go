@@ -24,3 +24,12 @@ func TestSessionHistorySummaryPrefixesManualEntries(t *testing.T) {
 		t.Fatalf("unexpected summary %q", got)
 	}
 }
+
+func TestFormatCompactDurationSeconds(t *testing.T) {
+	if got := FormatCompactDurationSeconds(4500); got != "1h15m" {
+		t.Fatalf("expected 1h15m, got %q", got)
+	}
+	if got := FormatCompactDurationSeconds(1500); got != "25m" {
+		t.Fatalf("expected 25m, got %q", got)
+	}
+}

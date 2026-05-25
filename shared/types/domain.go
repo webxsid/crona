@@ -563,6 +563,7 @@ type Issue struct {
 	Description     *string     `json:"description,omitempty"`
 	Status          IssueStatus `json:"status"`
 	EstimateMinutes *int        `json:"estimateMinutes,omitempty"`
+	WorkedSeconds   int         `json:"workedSeconds"`
 	Notes           *string     `json:"notes,omitempty"`
 	PinnedDaily     bool        `json:"pinnedDaily"`
 	TodoForDate     *string     `json:"todoForDate,omitempty"`
@@ -984,11 +985,13 @@ type CoreSettings struct {
 }
 
 type TimerState struct {
-	State          string              `json:"state"`
-	SessionID      *string             `json:"sessionId,omitempty"`
-	IssueID        *int64              `json:"issueId,omitempty"`
-	SegmentType    *SessionSegmentType `json:"segmentType,omitempty"`
-	ElapsedSeconds int                 `json:"elapsedSeconds,omitempty"`
+	State            string              `json:"state"`
+	SessionID        *string             `json:"sessionId,omitempty"`
+	IssueID          *int64              `json:"issueId,omitempty"`
+	SegmentType      *SessionSegmentType `json:"segmentType,omitempty"`
+	ReadySegmentType *SessionSegmentType `json:"readySegmentType,omitempty"`
+	NextSegmentType  *SessionSegmentType `json:"nextSegmentType,omitempty"`
+	ElapsedSeconds   int                 `json:"elapsedSeconds,omitempty"`
 }
 
 type Stash struct {

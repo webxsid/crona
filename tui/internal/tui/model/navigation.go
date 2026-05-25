@@ -12,6 +12,7 @@ import (
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 )
@@ -268,13 +269,25 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			return m, false
 		}
 		repoName, streamName := "-", "-"
+		var issueMeta *api.IssueWithMeta
 		if meta := selectionpkg.IssueMetaByID(snapshot, issue.ID); meta != nil {
+			issueMeta = meta
 			repoName = meta.RepoName
 			streamName = meta.StreamName
+		}
+		spentSeconds := issue.WorkedSeconds
+		if issueMeta != nil && issueMeta.WorkedSeconds > spentSeconds {
+			spentSeconds = issueMeta.WorkedSeconds
 		}
 		estimate := "-"
 		if issue.EstimateMinutes != nil {
 			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
+		}
+		spent := viewhelpers.FormatClockText(spentSeconds)
+		if spentSeconds <= 0 {
+			spent = "-"
+		} else {
+			spent = helperpkg.FormatCompactDurationSeconds(spentSeconds)
 		}
 		due := "-"
 		if issue.TodoForDate != nil && strings.TrimSpace(*issue.TodoForDate) != "" {
@@ -285,6 +298,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			fmt.Sprintf("Stream %s", streamName),
 			fmt.Sprintf("Status %s", issue.Status),
 			fmt.Sprintf("Estimate %s", estimate),
+			fmt.Sprintf("Time Spent %s", spent),
 			fmt.Sprintf("Due %s", due),
 			fmt.Sprintf("ID %d", issue.ID),
 		}
@@ -295,6 +309,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
 			body = append(body, "", "Notes", strings.TrimSpace(*issue.Notes))
 		}
+		body = append(body, "", "Time Spent", spent)
 		return m.openViewEntityDialog("Issue", issue.Title, strings.Join(metaBits, "   "), strings.Join(body, "\n")), true
 	case PaneHabits:
 		if m.view == ViewMeta {

@@ -660,6 +660,38 @@ func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 	}
 }
 
+func TestStructuredSessionActionsShowNextSegmentAndManualPause(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View:             "session_active",
+		TimerState:       "running",
+		TimerSegment:     "work",
+		TimerNextSegment: "short_break",
+		StructuredTimer:  true,
+	})
+	joined := ansi.Strip(strings.Join(actions, " "))
+	for _, want := range []string{"[m] manual pause", "[r] start short break", "[x] end"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected structured session actions to contain %q, got %q", want, joined)
+		}
+	}
+	if strings.Contains(joined, "pause/resume") {
+		t.Fatalf("expected structured session actions to drop pause/resume, got %q", joined)
+	}
+}
+
+func TestReadySessionActionsShowPreparedSegment(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View:             "session_active",
+		TimerState:       "ready",
+		TimerNextSegment: "long_break",
+		StructuredTimer:  true,
+	})
+	joined := ansi.Strip(strings.Join(actions, " "))
+	if !strings.Contains(joined, "[r] start long break") {
+		t.Fatalf("expected ready session actions to show prepared segment, got %q", joined)
+	}
+}
+
 func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 	rendered := support.RenderUpdates(views.ContentState{
 		View:   "updates",

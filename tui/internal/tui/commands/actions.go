@@ -757,10 +757,26 @@ func PauseFocusSession(c *api.Client) tea.Cmd {
 	}
 }
 
-func ResumeFocusSession(c *api.Client) tea.Cmd {
+func ResumeFocusSession(c *api.Client, timer *api.TimerState) tea.Cmd {
 	return func() tea.Msg {
-		if err := c.ResumeTimer(); err != nil {
-			logger.Errorf("ResumeTimer: %v", err)
+		var err error
+		if timer != nil && timer.State == "ready" {
+			err = c.AdvanceTimer()
+			if err != nil {
+				logger.Errorf("AdvanceTimer: %v", err)
+			}
+		} else if timer != nil && timer.NextSegmentType != nil && timer.SegmentType != nil && *timer.SegmentType != sharedtypes.SessionSegmentRest {
+			err = c.AdvanceTimer()
+			if err != nil {
+				logger.Errorf("AdvanceTimer: %v", err)
+			}
+		} else {
+			err = c.ResumeTimer()
+			if err != nil {
+				logger.Errorf("ResumeTimer: %v", err)
+			}
+		}
+		if err != nil {
 			return ErrMsg{Err: err}
 		}
 		return FocusSessionChangedMsg{ReloadTimer: true}

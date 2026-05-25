@@ -201,7 +201,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 		CurrentRollupEndDate: func(state inputpkg.State) string {
 			return m.applyInputState(state).currentRollupEndDate()
 		},
-		LoadWellbeing:        func(date string, windowDays int) tea.Cmd { return commands.LoadWellbeingWindow(m.client, date, windowDays) },
+		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadWellbeingWindow(m.client, date, windowDays)
+		},
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
@@ -264,7 +266,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return commands.InstallUpdate(next.updateStatus, next.selfUpdateInstallAvailable(), next.selfUpdateUnsupportedReason())
 		},
 		DismissUpdate: func() tea.Cmd { return commands.DismissUpdate(m.client) },
-		ResumeSession: func() tea.Cmd { return commands.ResumeFocusSession(m.client) },
+		ResumeSession: func(state inputpkg.State) tea.Cmd { return commands.ResumeFocusSession(m.client, state.Timer) },
 		PauseSession:  func() tea.Cmd { return commands.PauseFocusSession(m.client) },
 		OpenEndSessionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

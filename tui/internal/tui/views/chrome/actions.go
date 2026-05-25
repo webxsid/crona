@@ -13,6 +13,9 @@ type ActionsState struct {
 	Pane                   string
 	ScratchpadOpen         bool
 	TimerState             string
+	TimerSegment           string
+	TimerNextSegment       string
+	StructuredTimer        bool
 	RestModeActive         bool
 	AwayModeActive         bool
 	IsDevMode              bool
@@ -64,6 +67,28 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
 				theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
 			}
+		}
+		if state.TimerState == "ready" {
+			return []string{
+				theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" start "+timerActionSegmentLabel(state.TimerNextSegment)),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
+			}
+		}
+		if state.StructuredTimer {
+			actions := []string{
+				theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" start "+timerActionSegmentLabel(state.TimerNextSegment)),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
+			}
+			if state.TimerSegment == "work" || state.TimerSegment == "short_break" || state.TimerSegment == "long_break" {
+				actions = append([]string{theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" manual pause")}, actions...)
+			}
+			return actions
 		}
 		return []string{
 			theme.StyleHeader.Render("[p/r]") + theme.StyleDim.Render(" pause/resume"),
@@ -253,6 +278,19 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	return nil
+}
+
+func timerActionSegmentLabel(segment string) string {
+	switch strings.TrimSpace(segment) {
+	case "short_break":
+		return "short break"
+	case "long_break":
+		return "long break"
+	case "work":
+		return "work"
+	default:
+		return "next"
+	}
 }
 
 func supportsGlobalCreate(view string) bool {

@@ -397,10 +397,16 @@ func HandleMessage(state MessageState, raw tea.Msg, deps MessageDeps) (MessageSt
 		historyCmd := deps.LoadSessionHistoryFor200(state)
 		if state.Timer != nil && state.Timer.IssueID != nil {
 			if state.Context == nil || state.Context.IssueID == nil || *state.Context.IssueID != *state.Timer.IssueID {
+				if state.Timer.State == "ready" {
+					return state, tea.Batch(deps.LoadIssueSessions(*state.Timer.IssueID), historyCmd), true
+				}
 				return state, tea.Batch(deps.LoadIssueSessions(*state.Timer.IssueID), historyCmd, deps.TickAfter(state.TimerTickSeq)), true
 			}
 		}
 		if state.Timer != nil && state.Timer.State != "idle" {
+			if state.Timer.State == "ready" {
+				return state, historyCmd, true
+			}
 			return state, tea.Batch(historyCmd, deps.TickAfter(state.TimerTickSeq)), true
 		}
 		return state, historyCmd, true

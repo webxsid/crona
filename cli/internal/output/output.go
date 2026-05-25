@@ -52,6 +52,8 @@ func PrintTimerStatus(w io.Writer, out sharedtypes.TimerState) error {
 	segment := "-"
 	if out.SegmentType != nil {
 		segment = string(*out.SegmentType)
+	} else if out.ReadySegmentType != nil {
+		segment = string(*out.ReadySegmentType)
 	}
 	issue := "-"
 	if out.IssueID != nil {

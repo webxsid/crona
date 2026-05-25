@@ -131,6 +131,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 					state.View = uistate.ViewSessionActive
 				}
 				state.Pane = uistate.DefaultPane(state.View)
+				if timer.State == "ready" {
+					return state, deps.LoadSessionHistoryFor200(state)
+				}
 				return state, tea.Batch(deps.TickAfter(state.TimerTickSeq), deps.LoadSessionHistoryFor200(state))
 			}
 			if state.View == uistate.ViewSessionActive {

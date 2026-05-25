@@ -19,7 +19,7 @@ type Deps struct {
 }
 
 func TimerUsage() string {
-	return "Usage: crona timer <status|start|pause|resume|end> ...\n"
+	return "Usage: crona timer <status|start|pause|resume|advance|end> ...\n"
 }
 
 func IssueUsage() string {
@@ -90,6 +90,16 @@ func RunTimer(args []string, deps Deps) error {
 			return outputpkg.PrintJSON(deps.Stdout, out)
 		}
 		return outputpkg.PrintTimerResult(deps.Stdout, out, "timer resumed")
+	case "advance":
+		jsonOut := flagspkg.HasJSON(args[1:])
+		var out sharedtypes.TimerState
+		if err := deps.CallKernel(protocol.MethodTimerAdvance, nil, &out); err != nil {
+			return err
+		}
+		if jsonOut {
+			return outputpkg.PrintJSON(deps.Stdout, out)
+		}
+		return outputpkg.PrintTimerResult(deps.Stdout, out, "timer advanced")
 	case "end":
 		fs := flagspkg.New("timer end")
 		jsonOut := fs.Bool("json", false, "")

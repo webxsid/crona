@@ -3,6 +3,7 @@ package input
 import (
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	tea "github.com/charmbracelet/bubbletea"
 
 	uistate "crona/tui/internal/tui/state"
@@ -35,17 +36,41 @@ func handleDismissUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handlePauseSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State != "running" {
+	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State != "running" || structuredTimerEnabled(s) {
 		return s, nil, false
 	}
 	return s, deps.PauseSession(), true
 }
 
 func handleResumeSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State != "paused" {
+	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil {
 		return s, nil, false
 	}
-	return s, deps.ResumeSession(), true
+	if s.Timer.State == "ready" {
+		return s, deps.ResumeSession(s), true
+	}
+	if s.Timer.NextSegmentType != nil {
+		return s, deps.ResumeSession(s), true
+	}
+	if s.Timer.State != "paused" {
+		return s, nil, false
+	}
+	return s, deps.ResumeSession(s), true
+}
+
+func handleStructuredManualPause(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || !structuredTimerEnabled(s) {
+		return s, nil, false
+	}
+	if s.Timer.SegmentType == nil {
+		return s, nil, false
+	}
+	switch *s.Timer.SegmentType {
+	case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
+		return s, deps.PauseSession(), true
+	default:
+		return s, nil, false
+	}
 }
 
 func handleEndSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
@@ -62,4 +87,8 @@ func handleStashSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	}
 	deps.OpenStashSessionDialog(&s)
 	return s, nil, true
+}
+
+func structuredTimerEnabled(s State) bool {
+	return s.Settings != nil && s.Settings.TimerMode == sharedtypes.TimerModeStructured && s.Settings.BreaksEnabled
 }

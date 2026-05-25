@@ -25,6 +25,9 @@ func (m Model) layoutState() layoutpkg.State {
 		Pane:                   string(m.pane),
 		ScratchpadOpen:         m.scratchpadOpen,
 		TimerState:             chromeState.TimerState,
+		TimerSegment:           chromeState.TimerSegment,
+		TimerNextSegment:       chromeState.TimerNextSegment,
+		StructuredTimer:        chromeState.StructuredTimer,
 		RestModeActive:         stateRestModeFromChrome(chromeState),
 		AwayModeActive:         stateAwayModeFromContent(m),
 		IsDevMode:              m.isDevMode(),
@@ -84,12 +87,15 @@ func stateAwayModeFromContent(m Model) bool {
 }
 
 type layoutChromeState struct {
-	ProtectedMode bool
-	RepoName      string
-	StreamName    string
-	TimerState    string
-	HeaderState   viewchrome.HeaderState
-	GlobalActions []string
+	ProtectedMode    bool
+	RepoName         string
+	StreamName       string
+	TimerState       string
+	TimerSegment     string
+	TimerNextSegment string
+	StructuredTimer  bool
+	HeaderState      viewchrome.HeaderState
+	GlobalActions    []string
 }
 
 func (m Model) layoutChromeState() layoutChromeState {
@@ -104,9 +110,20 @@ func (m Model) layoutChromeState() layoutChromeState {
 		}
 	}
 	timerState := ""
+	timerSegment := ""
+	timerNextSegment := ""
 	if m.timer != nil {
 		timerState = m.timer.State
+		if m.timer.SegmentType != nil {
+			timerSegment = string(*m.timer.SegmentType)
+		}
+		if m.timer.ReadySegmentType != nil {
+			timerNextSegment = string(*m.timer.ReadySegmentType)
+		} else if m.timer.NextSegmentType != nil {
+			timerNextSegment = string(*m.timer.NextSegmentType)
+		}
 	}
+	structuredTimer := m.settings != nil && m.settings.TimerMode == "structured" && m.settings.BreaksEnabled
 	protectedMode, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02"))
 	headerState := viewchrome.HeaderState{
 		Width:         m.width,
@@ -119,16 +136,22 @@ func (m Model) layoutChromeState() layoutChromeState {
 		UpdateStatus:  m.updateStatus,
 	}
 	return layoutChromeState{
-		ProtectedMode: protectedMode,
-		RepoName:      repo,
-		StreamName:    stream,
-		TimerState:    timerState,
-		HeaderState:   headerState,
+		ProtectedMode:    protectedMode,
+		RepoName:         repo,
+		StreamName:       stream,
+		TimerState:       timerState,
+		TimerSegment:     timerSegment,
+		TimerNextSegment: timerNextSegment,
+		StructuredTimer:  structuredTimer,
+		HeaderState:      headerState,
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
 			Pane:                   string(m.pane),
 			ScratchpadOpen:         m.scratchpadOpen,
 			TimerState:             timerState,
+			TimerSegment:           timerSegment,
+			TimerNextSegment:       timerNextSegment,
+			StructuredTimer:        structuredTimer,
 			IsDevMode:              m.isDevMode(),
 			IsBetaBuild:            m.isBetaBuild(),
 			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),

@@ -170,6 +170,10 @@ func (h *Handler) handleRuntimeMethods(ctx context.Context, req protocol.Request
 		return h.handleNoParams(req, func() (any, error) {
 			return h.timer.Resume(ctx)
 		}), true
+	case protocol.MethodTimerAdvance:
+		return h.handleNoParams(req, func() (any, error) {
+			return h.timer.Advance(ctx)
+		}), true
 	case protocol.MethodTimerEnd:
 		return handle(req, func(input shareddto.EndSessionRequest) (any, error) {
 			return h.timer.End(ctx, corecommands.SessionEndInput{

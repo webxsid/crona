@@ -155,6 +155,14 @@ func FormatCompactDurationHours(hours float64) string {
 	return FormatCompactDurationMinutes(totalMinutes)
 }
 
+func FormatCompactDurationSeconds(totalSeconds int) string {
+	if totalSeconds < 0 {
+		totalSeconds = 0
+	}
+	totalMinutes := int(math.Round(float64(totalSeconds) / 60.0))
+	return FormatCompactDurationMinutes(totalMinutes)
+}
+
 func FormatSessionDurationText(durationSeconds *int, start string, end *string) string {
 	if durationSeconds != nil {
 		return FormatClockText(*durationSeconds)

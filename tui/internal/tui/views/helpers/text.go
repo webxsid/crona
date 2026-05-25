@@ -3,6 +3,8 @@ package viewhelpers
 import (
 	"fmt"
 	"strings"
+
+	helperpkg "crona/tui/internal/tui/helpers"
 )
 
 func Truncate(s string, maxLen int) string {
@@ -28,6 +30,10 @@ func FormatClockText(totalSeconds int) string {
 	minutes := (totalSeconds % 3600) / 60
 	seconds := totalSeconds % 60
 	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+}
+
+func FormatCompactDurationSeconds(totalSeconds int) string {
+	return helperpkg.FormatCompactDurationSeconds(totalSeconds)
 }
 
 func StringsJoin(rows []string) string {
