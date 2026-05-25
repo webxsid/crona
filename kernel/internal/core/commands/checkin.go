@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -838,7 +839,7 @@ func isProtectedStreakDay(
 	if isRestWeekday(date, settings.RestWeekdays) {
 		return true
 	}
-	if containsString(settings.RestSpecificDates, date) {
+	if slices.Contains(settings.RestSpecificDates, date) {
 		return true
 	}
 	return false
@@ -868,15 +869,6 @@ func isRestWeekday(date string, weekdays []int) bool {
 	current := int(parsed.Weekday())
 	for _, weekday := range weekdays {
 		if weekday == current {
-			return true
-		}
-	}
-	return false
-}
-
-func containsString(items []string, target string) bool {
-	for _, item := range items {
-		if item == target {
 			return true
 		}
 	}
@@ -1097,7 +1089,7 @@ func moodEnergySignals(
 		trendDrag += energyTrend
 		baseRecovery += clamp01((energyAvg - 2.5) / 2.5)
 	}
-	scale := float64(maxInt(1, moodCountOnly(moodCount, energyCount)))
+	scale := float64(max(1, moodCountOnly(moodCount, energyCount)))
 	baseDrag /= scale
 	trendDrag /= scale
 	baseRecovery /= scale
@@ -1167,11 +1159,4 @@ func clamp01(value float64) float64 {
 		return 1
 	}
 	return value
-}
-
-func maxInt(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

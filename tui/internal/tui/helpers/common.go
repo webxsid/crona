@@ -75,20 +75,6 @@ func Truncate(s string, max int) string {
 	return string(runes[:max-3]) + "..."
 }
 
-func Min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func Max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func SessionHistorySummary(entry api.SessionHistoryEntry) string {
 	prefix := ""
 	if entry.Source == sharedtypes.SessionSourceManual {

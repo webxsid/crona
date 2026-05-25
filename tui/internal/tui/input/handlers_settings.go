@@ -38,7 +38,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 1:
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyWorkDurationMinutes,
-			clampMin(s.Settings.WorkDurationMinutes+dir*5, 5),
+			max(s.Settings.WorkDurationMinutes+dir*5, 5),
 			repoID,
 			streamID,
 			s.DashboardDate,
@@ -54,7 +54,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 3:
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyShortBreakMinutes,
-			clampMin(s.Settings.ShortBreakMinutes+dir, 1),
+			max(s.Settings.ShortBreakMinutes+dir, 1),
 			repoID,
 			streamID,
 			s.DashboardDate,
@@ -62,7 +62,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 4:
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyLongBreakMinutes,
-			clampMin(s.Settings.LongBreakMinutes+dir*5, 5),
+			max(s.Settings.LongBreakMinutes+dir*5, 5),
 			repoID,
 			streamID,
 			s.DashboardDate,
@@ -78,7 +78,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 6:
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak,
-			clampMin(s.Settings.CyclesBeforeLongBreak+dir, 1),
+			max(s.Settings.CyclesBeforeLongBreak+dir, 1),
 			repoID,
 			streamID,
 			s.DashboardDate,
@@ -188,7 +188,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	case 22:
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
-			clampMin(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1),
+			max(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1),
 			repoID,
 			streamID,
 			s.DashboardDate,
@@ -445,13 +445,6 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, date),
 		deps.SetStatus(&s, status, false),
 	), true
-}
-
-func clampMin(value, min int) int {
-	if value < min {
-		return min
-	}
-	return value
 }
 
 func currentRollbackMinutes(value int) int {

@@ -38,9 +38,9 @@ func SessionContextContentLines(issue *api.IssueWithMeta) []string {
 }
 
 func SessionContextMaxOffset(width, height int, lines []string) int {
-	boxWidth := Min(Max(50, width-10), 92)
+	boxWidth := min(max(50, width-10), 92)
 	innerWidth := boxWidth - 4
-	visibleHeight := Max(6, height-10)
+	visibleHeight := max(6, height-10)
 	wrapped := make([]string, 0, len(lines))
 	for _, line := range lines {
 		if line == "" {
@@ -49,5 +49,5 @@ func SessionContextMaxOffset(width, height int, lines []string) int {
 		}
 		wrapped = append(wrapped, wrapText(line, innerWidth)...)
 	}
-	return Max(0, len(wrapped)-visibleHeight)
+	return max(0, len(wrapped)-visibleHeight)
 }

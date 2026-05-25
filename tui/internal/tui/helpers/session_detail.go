@@ -66,13 +66,13 @@ func SessionDetailContentLines(detail *api.SessionDetail) []string {
 
 func SessionDetailViewportHeight(height int) int {
 	if height < 16 {
-		return Max(6, height-8)
+		return max(6, height-8)
 	}
-	return Min(18, height-8)
+	return min(18, height-8)
 }
 
 func SessionDetailMaxOffset(width, height int, lines []string) int {
-	boxWidth := Min(Max(52, width-10), 96)
+	boxWidth := min(max(52, width-10), 96)
 	innerWidth := boxWidth - 4
 	wrapped := make([]string, 0, len(lines))
 	for _, line := range lines {
@@ -82,7 +82,7 @@ func SessionDetailMaxOffset(width, height int, lines []string) int {
 		}
 		wrapped = append(wrapped, wrapText(line, innerWidth)...)
 	}
-	return Max(0, len(wrapped)-SessionDetailViewportHeight(height))
+	return max(0, len(wrapped)-SessionDetailViewportHeight(height))
 }
 
 func wrapText(text string, width int) []string {

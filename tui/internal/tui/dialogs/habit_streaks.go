@@ -2,6 +2,7 @@ package dialogs
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -94,7 +95,7 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 		}
 		for i, item := range state.HabitItems {
 			prefix := "[ ] "
-			if containsHabitID(state.HabitStreakDraft.HabitIDs, item.ID) {
+			if slices.Contains(state.HabitStreakDraft.HabitIDs, item.ID) {
 				prefix = "[x] "
 			}
 			line := fmt.Sprintf("%s%s  %s / %s", prefix, item.Name, item.RepoName, item.StreamName)
@@ -182,15 +183,6 @@ func habitStreakPeriodLabel(period sharedtypes.HabitStreakPeriod) string {
 	default:
 		return "Daily"
 	}
-}
-
-func containsHabitID(values []int64, habitID int64) bool {
-	for _, value := range values {
-		if value == habitID {
-			return true
-		}
-	}
-	return false
 }
 
 func habitStreakHabitSummary(ids []int64, habits []sharedtypes.HabitWithMeta) string {

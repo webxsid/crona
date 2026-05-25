@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"time"
 
 	"crona/kernel/internal/core"
@@ -310,7 +311,7 @@ func applyDailyPlanScore(entry *sharedtypes.DailyPlanEntry, settings *sharedtype
 		entry.MaxDelayedDays = entry.CurrentDelayedDays
 	}
 	delayScore := math.Log2(1 + float64(entry.CurrentDelayedDays))
-	frequencyScore := math.Log2(1 + float64(maxInt(0, entry.PostponeCount-1)))
+	frequencyScore := math.Log2(1 + float64(max(0, entry.PostponeCount-1)))
 	entry.FailScore = delayScore + (0.5 * frequencyScore)
 }
 
@@ -374,7 +375,7 @@ func isProtectedAccountabilityDay(date string, settings *sharedtypes.CoreSetting
 	if isRestWeekday(date, settings.RestWeekdays) {
 		return true
 	}
-	if containsString(settings.RestSpecificDates, date) {
+	if slices.Contains(settings.RestSpecificDates, date) {
 		return true
 	}
 	return false

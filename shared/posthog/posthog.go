@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -573,7 +573,7 @@ func (l *attemptLogger) log(fields map[string]string) {
 		}
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	parts := make([]string, 0, len(keys)+1)
 	parts = append(parts, fmt.Sprintf("ts=%s", time.Now().UTC().Format(time.RFC3339Nano)))
@@ -602,7 +602,7 @@ func propertyKeys(properties Properties) string {
 		}
 		keys = append(keys, key)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 	return strings.Join(keys, ",")
 }
 

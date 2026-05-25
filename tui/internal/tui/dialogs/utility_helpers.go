@@ -2,6 +2,7 @@ package dialogs
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -69,7 +70,7 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 		labels := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
 		for i, label := range labels {
 			prefix := "[ ] "
-			if containsInt(state.ProtectionWeekdays, i) {
+			if slices.Contains(state.ProtectionWeekdays, i) {
 				prefix = "[x] "
 			}
 			line := prefix + label
@@ -127,15 +128,6 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 }
 
 func hasStreakKind(values []sharedtypes.StreakKind, target sharedtypes.StreakKind) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
-}
-
-func containsInt(values []int, target int) bool {
 	for _, value := range values {
 		if value == target {
 			return true

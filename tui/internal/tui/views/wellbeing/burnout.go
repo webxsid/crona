@@ -1,9 +1,10 @@
 package wellbeing
 
 import (
+	"cmp"
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 
 	"crona/tui/internal/api"
@@ -54,8 +55,12 @@ func burnoutContributorLines(burnout *api.BurnoutIndicator) (risks []string, rec
 		}
 		negative = append(negative, factor{name: name, score: score})
 	}
-	sort.Slice(positive, func(i, j int) bool { return positive[i].score > positive[j].score })
-	sort.Slice(negative, func(i, j int) bool { return negative[i].score < negative[j].score })
+	slices.SortFunc(positive, func(left, right factor) int {
+		return cmp.Compare(right.score, left.score)
+	})
+	slices.SortFunc(negative, func(left, right factor) int {
+		return cmp.Compare(left.score, right.score)
+	})
 	riskLimit := min(3, len(positive))
 	recoveryLimit := min(2, len(negative))
 	risks = make([]string, 0, riskLimit)

@@ -3,6 +3,7 @@ package runtime
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"crona/shared/localipc"
@@ -97,23 +98,14 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 		"PATH crona-kernel.exe",
 		"repo bin crona-kernel.exe",
 	} {
-		if !contains(names, want) {
+		if !slices.Contains(names, want) {
 			t.Fatalf("expected candidate %q in %+v", want, names)
 		}
 	}
 
 	for _, want := range []string{sibling, pathCandidate, repoBin} {
-		if !contains(cmds, want) {
+		if !slices.Contains(cmds, want) {
 			t.Fatalf("expected command %q in %+v", want, cmds)
 		}
 	}
-}
-
-func contains(values []string, want string) bool {
-	for _, value := range values {
-		if value == want {
-			return true
-		}
-	}
-	return false
 }

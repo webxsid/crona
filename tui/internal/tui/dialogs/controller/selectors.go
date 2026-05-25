@@ -50,7 +50,7 @@ func DefaultStreamOptions(
 	if len(repoOptions) == 0 {
 		return optionsForNewStream(inputs[1].Value())
 	}
-	repoOpt := repoOptions[minInt(repoIndex, len(repoOptions)-1)]
+	repoOpt := repoOptions[min(repoIndex, len(repoOptions)-1)]
 	if repoOpt.ID == "__new__" {
 		return optionsForNewStream(inputs[1].Value())
 	}
@@ -116,9 +116,9 @@ func CheckoutDialogLabels(
 		return "Type to search", "Select a repo first"
 	}
 	if len(streamOptions) == 0 {
-		return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
+		return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
 	}
-	return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, streamOptions[minInt(streamIndex, len(streamOptions)-1)].Label
+	return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
 }
 
 func CheckoutDialogSelection(
@@ -176,7 +176,7 @@ func matchRepoSelection(raw string, repoIndex int, repos []api.Repo) (int64, str
 	if len(options) == 0 {
 		return 0, raw
 	}
-	selected := options[minInt(repoIndex, len(options)-1)]
+	selected := options[min(repoIndex, len(options)-1)]
 	if selected.ID == "__new__" {
 		return 0, raw
 	}
@@ -212,7 +212,7 @@ func MatchStreamSelection(
 	if len(options) == 0 {
 		return 0, raw
 	}
-	selected := options[minInt(streamIndex, len(options)-1)]
+	selected := options[min(streamIndex, len(options)-1)]
 	if selected.ID == "__new__" {
 		return 0, raw
 	}
@@ -253,9 +253,9 @@ func DefaultIssueDialogLabels(
 		return "Type to search or create", "Select a repo first"
 	}
 	if len(streamOptions) == 0 {
-		return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
+		return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
 	}
-	return repoOptions[minInt(repoIndex, len(repoOptions)-1)].Label, streamOptions[minInt(streamIndex, len(streamOptions)-1)].Label
+	return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
 }
 
 func DefaultIssueDialogNames(
@@ -271,8 +271,8 @@ func DefaultIssueDialogNames(
 	if len(repoOptions) == 0 || len(streamOptions) == 0 {
 		return "", ""
 	}
-	repo := repoOptions[minInt(repoIndex, len(repoOptions)-1)]
-	stream := streamOptions[minInt(streamIndex, len(streamOptions)-1)]
+	repo := repoOptions[min(repoIndex, len(repoOptions)-1)]
+	stream := streamOptions[min(streamIndex, len(streamOptions)-1)]
 	repoName := repo.Label
 	if repo.ID == "__new__" {
 		repoName = strings.TrimSpace(inputs[0].Value())
@@ -301,11 +301,4 @@ func optionsForNewStream(raw string) []SelectorOption {
 
 func normalizeSelectorName(value string) string {
 	return strings.ToLower(strings.Join(strings.Fields(value), " "))
-}
-
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
