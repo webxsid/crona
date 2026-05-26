@@ -41,6 +41,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 			RangeStart: state.RollupStartDate,
 			RangeEnd:   state.RollupEndDate,
 			MaxLines:   len(lines),
+			WeekStart:  state.WeekStart,
 		})
 		if len(calendarLines) > 0 {
 			lines = viewcalendar.MergeBeside(lines, calendarLines, summaryInnerW, 3)

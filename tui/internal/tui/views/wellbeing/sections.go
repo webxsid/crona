@@ -143,6 +143,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 			RangeStart: start,
 			RangeEnd:   state.WellbeingDate,
 			MaxLines:   max(4, min(len(body), height-len(header)-2)),
+			WeekStart:  state.WeekStart,
 		})
 		if len(calendarLines) > 0 {
 			body = viewcalendar.MergeBeside(body, calendarLines, innerWidth, 3)

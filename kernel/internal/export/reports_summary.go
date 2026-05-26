@@ -214,7 +214,11 @@ func generateWeeklyExport(
 	paths runtime.Paths,
 	input shareddto.ExportReportRequest,
 ) (*sharedtypes.ExportReportResult, error) {
-	start, end := normalizeRange(input.Start, input.End, input.Date)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	start, end := normalizeRange(input.Start, input.End, input.Date, settings.WeekStart)
 	format := normalizeNarrativeFormat(input.Format)
 
 	days, err := corecommands.ComputeMetricsRange(ctx, c, start, end)
@@ -222,10 +226,6 @@ func generateWeeklyExport(
 		return nil, err
 	}
 	rollup := corecommands.ComputeMetricsRollupFromDays(start, end, days)
-	settings, err := c.CoreSettings.Get(ctx, c.UserID)
-	if err != nil {
-		return nil, err
-	}
 	streaks := corecommands.ComputeMetricsStreaksFromDays(days, settings)
 	checkIns, err := corecommands.ListDailyCheckInsInRange(ctx, c, start, end)
 	if err != nil {
@@ -308,7 +308,11 @@ func generateRepoExport(
 	if repo == nil {
 		return nil, errors.New("repo not found")
 	}
-	start, end := normalizeRange(input.Start, input.End, input.Date)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	start, end := normalizeRange(input.Start, input.End, input.Date, settings.WeekStart)
 	format := normalizeNarrativeFormat(input.Format)
 	streams, err := corecommands.ListStreamsByRepo(ctx, c, repo.ID)
 	if err != nil {
@@ -345,7 +349,6 @@ func generateRepoExport(
 		return nil, err
 	}
 	issueGroups := buildIssueGroups(issues, sessions)
-	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
 		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
 		"startDate":        start,
@@ -398,7 +401,11 @@ func generateStreamExport(
 	if err != nil {
 		return nil, err
 	}
-	start, end := normalizeRange(input.Start, input.End, input.Date)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	start, end := normalizeRange(input.Start, input.End, input.Date, settings.WeekStart)
 	format := normalizeNarrativeFormat(input.Format)
 	issues, err := corecommands.ListIssuesByStream(ctx, c, stream.ID)
 	if err != nil {
@@ -433,7 +440,6 @@ func generateStreamExport(
 	if repo != nil {
 		scope.RepoName = &repo.Name
 	}
-	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
 		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
 		"startDate":        start,
@@ -479,7 +485,11 @@ func generateIssueRollupExport(
 	paths runtime.Paths,
 	input shareddto.ExportReportRequest,
 ) (*sharedtypes.ExportReportResult, error) {
-	start, end := normalizeRange(input.Start, input.End, input.Date)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	start, end := normalizeRange(input.Start, input.End, input.Date, settings.WeekStart)
 	format := normalizeNarrativeFormat(input.Format)
 	entries, err := corecommands.ListSessionHistory(ctx, c, struct {
 		RepoID   *int64
@@ -556,7 +566,6 @@ func generateIssueRollupExport(
 			Sessions: item.entries,
 		})
 	}
-	settings, _ := c.CoreSettings.Get(ctx, c.UserID)
 	data := map[string]any{
 		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
 		"startDate":        start,
@@ -589,7 +598,11 @@ func generateCSVExport(
 	paths runtime.Paths,
 	input shareddto.ExportReportRequest,
 ) (*sharedtypes.ExportReportResult, error) {
-	start, end := normalizeRange(input.Start, input.End, input.Date)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	start, end := normalizeRange(input.Start, input.End, input.Date, settings.WeekStart)
 	entries, err := corecommands.ListSessionHistory(ctx, c, struct {
 		RepoID   *int64
 		StreamID *int64
@@ -796,7 +809,7 @@ func normalizeReportDate(raw string) string {
 	return trimmed
 }
 
-func normalizeRange(start, end, date string) (string, string) {
+func normalizeRange(start, end, date string, weekStart sharedtypes.WeekStart) (string, string) {
 	trimmedStart := strings.TrimSpace(start)
 	trimmedEnd := strings.TrimSpace(end)
 	if trimmedStart != "" && trimmedEnd != "" {
@@ -807,12 +820,8 @@ func normalizeRange(start, end, date string) (string, string) {
 	if err != nil {
 		return anchor, anchor
 	}
-	weekday := int(t.Weekday())
-	if weekday == 0 {
-		weekday = 7
-	}
-	weekStart := t.AddDate(0, 0, -(weekday - 1))
-	return weekStart.Format("2006-01-02"), weekStart.AddDate(0, 0, 6).Format("2006-01-02")
+	startOfWeek := shareddatefmt.StartOfWeek(t, weekStart)
+	return startOfWeek.Format("2006-01-02"), startOfWeek.AddDate(0, 0, 6).Format("2006-01-02")
 }
 
 func normalizeNarrativeFormat(format sharedtypes.ExportFormat) sharedtypes.ExportFormat {

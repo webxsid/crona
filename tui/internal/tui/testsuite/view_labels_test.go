@@ -38,6 +38,7 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 		DateDisplayPreset:     sharedtypes.DateDisplayPresetCustom,
 		DateDisplayFormat:     "Do MMM YYYY",
 		PromptGlyphMode:       sharedtypes.PromptGlyphModeUnicode,
+		WeekStart:             sharedtypes.WeekStartSunday,
 	})
 
 	rowMap := map[string]string{}
@@ -53,6 +54,9 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 	}
 	if rowMap["Prompt Glyphs"] != "Unicode" {
 		t.Fatalf("expected Prompt Glyphs row to be Unicode, got %q", rowMap["Prompt Glyphs"])
+	}
+	if rowMap["Week Start"] != "Sunday" {
+		t.Fatalf("expected Week Start to be Sunday, got %q", rowMap["Week Start"])
 	}
 	if rowMap["Wipe Runtime Data"] != "Destructive" {
 		t.Fatalf("expected renamed wipe row, got %q", rowMap["Wipe Runtime Data"])

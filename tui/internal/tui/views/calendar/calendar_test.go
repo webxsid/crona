@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/tui/chrome"
 	viewtypes "crona/tui/internal/tui/views/types"
 
@@ -82,6 +83,24 @@ func TestRenderUsesStyledCellsWithoutBracketMarkers(t *testing.T) {
 				rendered,
 			)
 		}
+	}
+}
+
+func TestRenderSundayWeekStartUsesSundayHeaderAndBoundaries(t *testing.T) {
+	rendered := ansi.Strip(strings.Join(Render(testTheme(), Selection{
+		AnchorDate:   "2026-03-19",
+		SelectedDate: "2026-03-19",
+		Today:        "2026-05-14",
+		WeekStart:    sharedtypes.WeekStartSunday,
+	}), "\n"))
+
+	for _, want := range []string{"March 2026", "Week 12", "Today 14", "Wk 20", "Su Mo Tu We Th Fr Sa"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected sunday-start calendar to contain %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Wk  Mo Tu We Th Fr Sa Su") {
+		t.Fatalf("expected sunday-start header to change, got %q", rendered)
 	}
 }
 

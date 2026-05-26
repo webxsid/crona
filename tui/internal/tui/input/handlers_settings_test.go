@@ -18,7 +18,7 @@ func TestHandleAdjustSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeEmoji,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 10,
+			uistate.PaneSettings: 11,
 		},
 	}
 	deps := Deps{
@@ -49,7 +49,7 @@ func TestHandleActivateSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeUnicode,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 10,
+			uistate.PaneSettings: 11,
 		},
 	}
 	deps := Deps{
@@ -76,7 +76,7 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 			ErrorReportingEnabled: false,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 15,
+			uistate.PaneSettings: 16,
 		},
 	}
 	deps := Deps{
@@ -93,5 +93,37 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 	out := next.(State)
 	if out.Dialog != "edit_telemetry_settings" {
 		t.Fatalf("expected telemetry settings dialog to open, got %q", out.Dialog)
+	}
+}
+
+func TestHandleAdjustSelectedSettingUpdatesWeekStart(t *testing.T) {
+	var patchedKey sharedtypes.CoreSettingsKey
+	var patchedValue any
+	state := State{
+		ActiveView: uistate.ViewSettings,
+		Settings: &sharedtypes.CoreSettings{
+			WeekStart: sharedtypes.WeekStartMonday,
+		},
+		Cursor: map[uistate.Pane]int{
+			uistate.PaneSettings: 10,
+		},
+	}
+	deps := Deps{
+		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
+			patchedKey = key
+			patchedValue = value
+			return nil
+		},
+	}
+
+	_, _, handled := handleAdjustSelectedSetting(state, deps, 1)
+	if !handled {
+		t.Fatalf("expected week start row to be handled")
+	}
+	if patchedKey != sharedtypes.CoreSettingsKeyWeekStart {
+		t.Fatalf("expected week start patch, got %q", patchedKey)
+	}
+	if patchedValue != sharedtypes.WeekStartSunday {
+		t.Fatalf("expected next week start Sunday, got %#v", patchedValue)
 	}
 }

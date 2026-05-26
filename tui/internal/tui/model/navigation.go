@@ -569,6 +569,13 @@ func (m Model) currentWellbeingWindowDays() int {
 	return m.wellbeingWindowDays
 }
 
+func (m Model) currentWeekStart() sharedtypes.WeekStart {
+	if m.settings == nil {
+		return sharedtypes.WeekStartMonday
+	}
+	return sharedtypes.NormalizeWeekStart(m.settings.WeekStart)
+}
+
 func shiftISODate(date string, days int) string {
 	t, err := time.Parse("2006-01-02", date)
 	if err != nil {

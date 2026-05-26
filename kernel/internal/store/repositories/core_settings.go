@@ -132,6 +132,10 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "habit_sort",
 		queryKind: coreSettingQueryString,
 	},
+	sharedtypes.CoreSettingsKeyWeekStart: {
+		column:    "week_start",
+		queryKind: coreSettingQueryString,
+	},
 	sharedtypes.CoreSettingsKeyAwayModeEnabled: {
 		column:    "away_mode_enabled",
 		queryKind: coreSettingQueryBool,
@@ -349,6 +353,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		StreamSort:            sharedconstants.DefaultCoreSettings["streamSort"].(string),
 		IssueSort:             sharedconstants.DefaultCoreSettings["issueSort"].(string),
 		HabitSort:             sharedconstants.DefaultCoreSettings["habitSort"].(string),
+		WeekStart:             sharedconstants.DefaultCoreSettings["weekStart"].(string),
 		AwayModeEnabled:       sharedconstants.DefaultCoreSettings["awayModeEnabled"].(bool),
 		FrozenStreakKinds:     mustJSON(sharedconstants.DefaultCoreSettings["frozenStreakKinds"]),
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
@@ -387,6 +392,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))
+	case sharedtypes.CoreSettingsKeyWeekStart:
+		return sharedtypes.NormalizeWeekStart(sharedtypes.WeekStart(toString(value)))
 	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
 		return sharedtypes.NormalizeDateDisplayPreset(
 			sharedtypes.DateDisplayPreset(toString(value)),
@@ -433,6 +440,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return string(sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyHabitSort:
 		return string(sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(toString(value)))), nil
+	case sharedtypes.CoreSettingsKeyWeekStart:
+		return string(sharedtypes.NormalizeWeekStart(sharedtypes.WeekStart(toString(value)))), nil
 	case sharedtypes.CoreSettingsKeyDateDisplayPreset:
 		return string(
 			sharedtypes.NormalizeDateDisplayPreset(sharedtypes.DateDisplayPreset(toString(value))),
@@ -495,6 +504,7 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		),
 		IssueSort:             sharedtypes.NormalizeIssueSort(sharedtypes.IssueSort(row.IssueSort)),
 		HabitSort:             sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(row.HabitSort)),
+		WeekStart:             sharedtypes.NormalizeWeekStart(sharedtypes.WeekStart(row.WeekStart)),
 		AwayModeEnabled:       row.AwayModeEnabled,
 		FrozenStreakKinds:     parseStreakKinds(row.FrozenStreakKinds),
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),

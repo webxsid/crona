@@ -36,6 +36,7 @@ func (m Model) viewContentState(
 		RollupEndDate:       m.currentRollupEndDate(),
 		WellbeingDate:       m.currentWellbeingDate(),
 		WellbeingWindowDays: m.currentWellbeingWindowDays(),
+		WeekStart:           m.currentWeekStart(),
 		DefaultIssueSection: string(m.defaultIssueSection),
 		DailyTaskSection:    string(m.dailyTaskSection),
 		SessionHistoryTitle: helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue),

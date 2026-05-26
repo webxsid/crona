@@ -99,6 +99,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"stream_sort":              "chronological_asc",
 		"issue_sort":               "priority",
 		"habit_sort":               "schedule",
+		"week_start":               "monday",
 		"alert_sound_preset":       "chime",
 		"alert_urgency":            "normal",
 		"update_channel":           "stable",

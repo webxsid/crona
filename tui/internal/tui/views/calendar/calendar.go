@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	shareddatefmt "crona/shared/datefmt"
+	sharedtypes "crona/shared/types"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
@@ -19,6 +21,7 @@ type Selection struct {
 	RangeEnd     string
 	MaxLines     int
 	Today        string
+	WeekStart    sharedtypes.WeekStart
 }
 
 func Render(theme types.Theme, selection Selection) []string {
@@ -45,6 +48,7 @@ func Render(theme types.Theme, selection Selection) []string {
 	}
 
 	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
+	weekStart := sharedtypes.NormalizeWeekStart(selection.WeekStart)
 	lines := []string{
 		theme.StyleHeader.Render(monthStart.Format("January 2006")),
 		calendarMetaLine(
@@ -55,18 +59,18 @@ func Render(theme types.Theme, selection Selection) []string {
 			rangeEnd,
 			hasRangeStart && hasRangeEnd,
 			today,
+			weekStart,
 		),
-		theme.StyleDim.Render("Wk  Mo Tu We Th Fr Sa Su"),
+		theme.StyleDim.Render(weekHeader(weekStart)),
 	}
-	offset := (int(monthStart.Weekday()) + 6) % 7
-	gridStart := monthStart.AddDate(0, 0, -offset)
-	selectedWeek := 0
+	gridStart := shareddatefmt.StartOfWeek(monthStart, weekStart)
+	selectedWeek := time.Time{}
 	if hasSelected {
-		selectedWeek = ISOWeek(selected)
+		selectedWeek = shareddatefmt.StartOfWeek(selected, weekStart)
 	} else if hasRangeEnd {
-		selectedWeek = ISOWeek(rangeEnd)
+		selectedWeek = shareddatefmt.StartOfWeek(rangeEnd, weekStart)
 	}
-	currentWeek := ISOWeek(today)
+	currentWeek := shareddatefmt.StartOfWeek(today, weekStart)
 	selectedDateStyle := lipgloss.NewStyle().
 		Background(theme.ColorGreen).
 		Foreground(lipgloss.Color("0")).
@@ -82,12 +86,12 @@ func Render(theme types.Theme, selection Selection) []string {
 		Bold(true)
 	for week := range 6 {
 		rowStart := gridStart.AddDate(0, 0, week*7)
-		rowWeek := ISOWeek(rowStart)
+		rowWeek := WeekNumber(rowStart, weekStart)
 		weekLabel := fmt.Sprintf("%2d", rowWeek)
-		switch rowWeek {
-		case currentWeek:
+		switch {
+		case sameDay(rowStart, currentWeek):
 			weekLabel = currentWeekStyle.Render(weekLabel)
-		case selectedWeek:
+		case sameDay(rowStart, selectedWeek):
 			weekLabel = theme.StyleHeader.Render(weekLabel)
 		default:
 			weekLabel = theme.StyleDim.Render(weekLabel)
@@ -109,7 +113,7 @@ func Render(theme types.Theme, selection Selection) []string {
 				cell = rangeStyle.Render(cell)
 			case current.Month() != monthStart.Month():
 				cell = theme.StyleDim.Render(cell)
-			case rowWeek == selectedWeek && selectedWeek != 0:
+			case sameDay(rowStart, selectedWeek) && !selectedWeek.IsZero():
 				cell = theme.StyleHeader.Render(cell)
 			default:
 				cell = theme.StyleNormal.Render(cell)
@@ -118,10 +122,10 @@ func Render(theme types.Theme, selection Selection) []string {
 		}
 		lines = append(lines, weekLabel+"  "+strings.Join(cells, " "))
 	}
-	return Window(lines, anchor, selection.MaxLines)
+	return Window(lines, anchor, selection.MaxLines, weekStart)
 }
 
-func Window(lines []string, anchor time.Time, maxLines int) []string {
+func Window(lines []string, anchor time.Time, maxLines int, weekStart sharedtypes.WeekStart) []string {
 	if maxLines <= 0 || len(lines) <= maxLines {
 		return lines
 	}
@@ -135,7 +139,7 @@ func Window(lines []string, anchor time.Time, maxLines int) []string {
 		return lines
 	}
 	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
-	selectedWeek := weekIndexForDate(monthStart, anchor)
+	selectedWeek := weekIndexForDate(monthStart, anchor, weekStart)
 	start := selectedWeek - (visibleWeeks / 2)
 	start = max(0, start)
 	if start+visibleWeeks > len(weeks) {
@@ -220,6 +224,15 @@ func ISOWeek(value time.Time) int {
 	return week
 }
 
+func WeekNumber(value time.Time, weekStart sharedtypes.WeekStart) int {
+	switch sharedtypes.NormalizeWeekStart(weekStart) {
+	case sharedtypes.WeekStartSunday:
+		return sundayWeekNumber(value)
+	default:
+		return ISOWeek(value)
+	}
+}
+
 func ShiftDate(raw string, days int) string {
 	parsed, ok := parseISODate(raw)
 	if !ok {
@@ -235,20 +248,25 @@ func calendarMetaLine(
 	rangeStart, rangeEnd time.Time,
 	hasRange bool,
 	today time.Time,
+	weekStart sharedtypes.WeekStart,
 ) string {
 	parts := []string{}
 	if hasRange {
 		parts = append(
 			parts,
-			fmt.Sprintf("Range W%02d-W%02d", ISOWeek(rangeStart), ISOWeek(rangeEnd)),
+			fmt.Sprintf(
+				"Range W%02d-W%02d",
+				WeekNumber(rangeStart, weekStart),
+				WeekNumber(rangeEnd, weekStart),
+			),
 		)
 	} else if hasSelected {
-		parts = append(parts, fmt.Sprintf("Week %02d", ISOWeek(selected)))
+		parts = append(parts, fmt.Sprintf("Week %02d", WeekNumber(selected, weekStart)))
 	}
 	parts = append(
 		parts,
 		fmt.Sprintf("Today %02d", today.Day()),
-		fmt.Sprintf("Wk %02d", ISOWeek(today)),
+		fmt.Sprintf("Wk %02d", WeekNumber(today, weekStart)),
 	)
 	return theme.StyleDim.Render(viewhelpers.Truncate(strings.Join(parts, "   "), 44))
 }
@@ -274,14 +292,33 @@ func sameDay(a, b time.Time) bool {
 	return a.Year() == b.Year() && a.Month() == b.Month() && a.Day() == b.Day()
 }
 
-func weekIndexForDate(monthStart, selected time.Time) int {
-	offset := (int(monthStart.Weekday()) + 6) % 7
-	gridStart := monthStart.AddDate(0, 0, -offset)
+func weekIndexForDate(monthStart, selected time.Time, weekStart sharedtypes.WeekStart) int {
+	gridStart := shareddatefmt.StartOfWeek(monthStart, weekStart)
 	days := int(selected.Sub(gridStart).Hours() / 24)
 	if days < 0 {
 		return 0
 	}
 	return days / 7
+}
+
+func sundayWeekNumber(value time.Time) int {
+	yearStart := time.Date(value.Year(), 1, 1, 0, 0, 0, 0, value.Location())
+	weekStart := shareddatefmt.StartOfWeek(yearStart, sharedtypes.WeekStartSunday)
+	currentStart := shareddatefmt.StartOfWeek(value, sharedtypes.WeekStartSunday)
+	if currentStart.Before(weekStart) {
+		return 1
+	}
+	days := int(currentStart.Sub(weekStart).Hours() / 24)
+	return days/7 + 1
+}
+
+func weekHeader(weekStart sharedtypes.WeekStart) string {
+	switch sharedtypes.NormalizeWeekStart(weekStart) {
+	case sharedtypes.WeekStartSunday:
+		return "Wk  Su Mo Tu We Th Fr Sa"
+	default:
+		return "Wk  Mo Tu We Th Fr Sa Su"
+	}
 }
 
 func max(a, b int) int {

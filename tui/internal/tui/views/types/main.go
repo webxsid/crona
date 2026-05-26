@@ -1,6 +1,7 @@
 package viewtypes
 
 import (
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 
 	"github.com/charmbracelet/lipgloss"
@@ -42,6 +43,7 @@ type ContentState struct {
 	RollupEndDate       string
 	WellbeingDate       string
 	WellbeingWindowDays int
+	WeekStart           sharedtypes.WeekStart
 	DefaultIssueSection string
 	DailyTaskSection    string
 	SessionHistoryTitle string

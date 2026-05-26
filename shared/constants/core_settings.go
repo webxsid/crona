@@ -25,6 +25,7 @@ var DefaultCoreSettings = map[string]any{
 	"streamSort":                   string("chronological_asc"),
 	"issueSort":                    string("priority"),
 	"habitSort":                    string("schedule"),
+	"weekStart":                    string("monday"),
 	"awayModeEnabled":              false,
 	"frozenStreakKinds":            []string{"focus_days", "checkin_days", "habit_days"},
 	"restWeekdays":                 []int{},

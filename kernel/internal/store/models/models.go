@@ -195,6 +195,7 @@ type CoreSettingsModel struct {
 	StreamSort            string `bun:"stream_sort,notnull,type:text"`
 	IssueSort             string `bun:"issue_sort,notnull,type:text"`
 	HabitSort             string `bun:"habit_sort,notnull,type:text"`
+	WeekStart             string `bun:"week_start,notnull,type:text"`
 	AwayModeEnabled       bool   `bun:"away_mode_enabled,notnull,type:integer"`
 	FrozenStreakKinds     string `bun:"frozen_streak_kinds,notnull,type:text"`
 	RestWeekdays          string `bun:"rest_weekdays,notnull,type:text"`

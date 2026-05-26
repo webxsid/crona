@@ -54,6 +54,7 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 			Label:   "Date Preview",
 			Value:   shareddatefmt.Preview(settings, time.Now()),
 		},
+		{Section: "Dates", Label: "Week Start", Value: weekStartLabel(settings.WeekStart)},
 		{Section: "Dates", Label: "Prompt Glyphs", Value: promptGlyphModeLabel(settings)},
 		{Section: "Recovery", Label: "Habit Streaks", Value: habitStreakDefsLabel(settings)},
 		{Section: "Recovery", Label: "Away Mode", Value: enabledDisabled(settings.AwayModeEnabled)},
@@ -214,6 +215,15 @@ func habitSortLabel(value sharedtypes.HabitSort) string {
 		return "Newest first"
 	default:
 		return "Schedule"
+	}
+}
+
+func weekStartLabel(value sharedtypes.WeekStart) string {
+	switch sharedtypes.NormalizeWeekStart(value) {
+	case sharedtypes.WeekStartSunday:
+		return "Sunday"
+	default:
+		return "Monday"
 	}
 }
 

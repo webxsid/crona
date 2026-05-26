@@ -107,6 +107,14 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
+	case "Week Start":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyWeekStart,
+			nextWeekStart(s.Settings.WeekStart, dir),
+			repoID,
+			streamID,
+			s.DashboardDate,
+		), true
 	case "Away Mode":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyAwayModeEnabled,
@@ -453,6 +461,14 @@ func nextPromptGlyphMode(current sharedtypes.PromptGlyphMode, dir int) sharedtyp
 		sharedtypes.PromptGlyphModeASCII,
 	}
 	return options[nextIndex(sharedtypes.NormalizePromptGlyphMode(current), options, dir)]
+}
+
+func nextWeekStart(current sharedtypes.WeekStart, dir int) sharedtypes.WeekStart {
+	options := []sharedtypes.WeekStart{
+		sharedtypes.WeekStartMonday,
+		sharedtypes.WeekStartSunday,
+	}
+	return options[nextIndex(sharedtypes.NormalizeWeekStart(current), options, dir)]
 }
 
 func nextStreamSort(current sharedtypes.StreamSort, dir int) sharedtypes.StreamSort {

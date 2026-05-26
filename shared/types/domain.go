@@ -40,6 +40,22 @@ const (
 	TimerModeStructured TimerMode = "structured"
 )
 
+type WeekStart string
+
+const (
+	WeekStartMonday WeekStart = "monday"
+	WeekStartSunday WeekStart = "sunday"
+)
+
+func NormalizeWeekStart(value WeekStart) WeekStart {
+	switch value {
+	case WeekStartSunday:
+		return value
+	default:
+		return WeekStartMonday
+	}
+}
+
 type UpdateChannel string
 
 const (
@@ -286,6 +302,7 @@ const (
 	CoreSettingsKeyStreamSort            CoreSettingsKey = "streamSort"
 	CoreSettingsKeyIssueSort             CoreSettingsKey = "issueSort"
 	CoreSettingsKeyHabitSort             CoreSettingsKey = "habitSort"
+	CoreSettingsKeyWeekStart             CoreSettingsKey = "weekStart"
 	CoreSettingsKeyAwayModeEnabled       CoreSettingsKey = "awayModeEnabled"
 	CoreSettingsKeyFrozenStreakKinds     CoreSettingsKey = "frozenStreakKinds"
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
@@ -981,6 +998,7 @@ type CoreSettings struct {
 	StreamSort            StreamSort              `json:"streamSort"`
 	IssueSort             IssueSort               `json:"issueSort"`
 	HabitSort             HabitSort               `json:"habitSort"`
+	WeekStart             WeekStart               `json:"weekStart"`
 	AwayModeEnabled       bool                    `json:"awayModeEnabled"`
 	FrozenStreakKinds     []StreakKind            `json:"frozenStreakKinds,omitempty"`
 	RestWeekdays          []int                   `json:"restWeekdays,omitempty"`

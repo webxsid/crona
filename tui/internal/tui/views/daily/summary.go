@@ -57,7 +57,10 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	selectedDate, hasSelectedDate := viewcalendar.ParseDate(rawDate)
 	dateText := helperpkg.FormatDisplayDate(rawDate, state.Settings)
 	if hasSelectedDate && !displayPatternIncludesWeek(state.Settings) {
-		dateText += fmt.Sprintf(" - Week %02d", viewcalendar.ISOWeek(selectedDate))
+		dateText += fmt.Sprintf(
+			" - Week %02d",
+			viewcalendar.WeekNumber(selectedDate, state.WeekStart),
+		)
 	}
 	resolvedCount := completedCount + abandonedCount
 	scopeText := contextmeta.DefaultScopeLabel(state.Context)
@@ -100,6 +103,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 			AnchorDate:   rawDate,
 			SelectedDate: rawDate,
 			MaxLines:     len(lines),
+			WeekStart:    state.WeekStart,
 		})
 		leftWidth, _ = viewcalendar.ColumnWidths(
 			summaryInnerW,
@@ -130,6 +134,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 				AnchorDate:   rawDate,
 				SelectedDate: rawDate,
 				MaxLines:     len(lines),
+				WeekStart:    state.WeekStart,
 			})
 		}
 	}

@@ -562,7 +562,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 		View:   "settings",
 		Pane:   "settings",
 		Width:  70,
-		Height: 40,
+		Height: 44,
 		Cursors: map[string]int{
 			"settings": 0,
 		},
@@ -615,7 +615,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 14
+	state.Cursors["settings"] = 15
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
 		if !strings.Contains(rendered, want) {
@@ -623,7 +623,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 16
+	state.Cursors["settings"] = 17
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"DANGER", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {

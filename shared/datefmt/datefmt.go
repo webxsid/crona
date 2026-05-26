@@ -51,6 +51,28 @@ func DisplayPattern(settings *sharedtypes.CoreSettings) string {
 	return effectivePattern(settings)
 }
 
+func StartOfWeek(value time.Time, weekStart sharedtypes.WeekStart) time.Time {
+	normalized := sharedtypes.NormalizeWeekStart(weekStart)
+	offset := int(value.Weekday())
+	if normalized == sharedtypes.WeekStartMonday {
+		if offset == 0 {
+			offset = 6
+		} else {
+			offset--
+		}
+	}
+	return time.Date(
+		value.Year(),
+		value.Month(),
+		value.Day(),
+		0,
+		0,
+		0,
+		0,
+		value.Location(),
+	).AddDate(0, 0, -offset)
+}
+
 func PresetPattern(preset sharedtypes.DateDisplayPreset) string {
 	return presetPattern(preset)
 }
