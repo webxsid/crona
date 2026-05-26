@@ -82,9 +82,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if cur >= maxSelectable {
 		cur = maxSelectable - 1
 	}
-	if cur < 0 {
-		cur = 0
-	}
+	cur = max(cur, 0)
 	visibleRows, selectedVisible := alertsmeta.GroupedVisibleRows(indices, rows, cur)
 	inner := state.Height - 5
 	inner = max(inner, 1)

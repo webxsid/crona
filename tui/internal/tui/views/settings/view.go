@@ -8,7 +8,16 @@ import (
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 	types "crona/tui/internal/tui/views/types"
+	viewui "crona/tui/internal/tui/views/ui"
 )
+
+func newView() viewui.View {
+	return viewui.View{
+		Panes: []viewui.Pane{
+			viewui.NewRenderPane("settings", true, renderView),
+		},
+	}
+}
 
 func renderView(theme types.Theme, state types.ContentState) string {
 	active := state.Pane == "settings"
