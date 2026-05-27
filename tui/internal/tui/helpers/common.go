@@ -174,6 +174,115 @@ func FormatSessionDurationText(durationSeconds *int, start string, end *string) 
 	return "-"
 }
 
+func DerivedSegmentElapsedSeconds(
+	timer *api.TimerState,
+	localElapsed int,
+	now time.Time,
+) int {
+	if timer == nil {
+		return 0
+	}
+	if timer.State == "ready" {
+		return 0
+	}
+	if timer.SegmentStartTime != nil && strings.TrimSpace(*timer.SegmentStartTime) != "" {
+		if start, err := time.Parse(time.RFC3339, strings.TrimSpace(*timer.SegmentStartTime)); err == nil {
+			elapsed := max(0, int(now.Sub(start).Seconds()))
+			if timer.SegmentElapsedOffsetSeconds != nil {
+				elapsed += *timer.SegmentElapsedOffsetSeconds
+			}
+			return max(0, elapsed)
+		}
+	}
+	return max(0, timer.ElapsedSeconds+localElapsed)
+}
+
+func DerivedHardLimitRemainingSeconds(
+	timer *api.TimerState,
+	localElapsed int,
+	now time.Time,
+) int {
+	if timer == nil || !timer.HardLimitActive {
+		return 0
+	}
+	if timer.HardLimitExpired {
+		return 0
+	}
+	if timer.SessionStartTime != nil && strings.TrimSpace(*timer.SessionStartTime) != "" {
+		if start, err := time.Parse(time.RFC3339, strings.TrimSpace(*timer.SessionStartTime)); err == nil {
+			remaining := timer.HardLimitTotalSeconds - max(0, int(now.Sub(start).Seconds()))
+			if remaining < 0 {
+				return 0
+			}
+			return remaining
+		}
+	}
+	remaining := timer.HardLimitRemainingSeconds - localElapsed
+	if remaining < 0 {
+		return 0
+	}
+	return remaining
+}
+
+func DerivedHardLimitSegmentRemainingSeconds(
+	timer *api.TimerState,
+	localElapsed int,
+	now time.Time,
+) (int, *sharedtypes.SessionSegmentType, bool) {
+	if timer == nil || !timer.HardLimitActive {
+		return 0, nil, false
+	}
+	segment := timer.SegmentType
+	if timer.State == "ready" {
+		segment = timer.ReadySegmentType
+		if segment == nil {
+			segment = timer.NextSegmentType
+		}
+	}
+	if segment == nil {
+		return 0, nil, false
+	}
+	duration := 0
+	switch *segment {
+	case sharedtypes.SessionSegmentWork:
+		duration = timer.HardLimitWorkSeconds
+	case sharedtypes.SessionSegmentShortBreak:
+		duration = timer.HardLimitBreakSeconds
+	case sharedtypes.SessionSegmentLongBreak:
+		if timer.HardLimitLongBreakSeconds > 0 {
+			duration = timer.HardLimitLongBreakSeconds
+		} else {
+			duration = timer.HardLimitBreakSeconds
+		}
+	}
+	if duration <= 0 {
+		return 0, segment, false
+	}
+	elapsed := DerivedSegmentElapsedSeconds(timer, localElapsed, now)
+	elapsed = min(elapsed, duration)
+	remaining := duration - elapsed
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining, segment, true
+}
+
+func DerivedSessionElapsedSeconds(
+	timer *api.TimerState,
+	localElapsed int,
+	now time.Time,
+) int {
+	if timer == nil {
+		return 0
+	}
+	if timer.SessionStartTime != nil && strings.TrimSpace(*timer.SessionStartTime) != "" {
+		if start, err := time.Parse(time.RFC3339, strings.TrimSpace(*timer.SessionStartTime)); err == nil {
+			return max(0, int(now.Sub(start).Seconds()))
+		}
+	}
+	return max(0, timer.ElapsedSeconds+localElapsed)
+}
+
 func FormatDisplayDate(raw string, settings *api.CoreSettings) string {
 	return shareddatefmt.FormatISODate(raw, settings)
 }

@@ -19,7 +19,7 @@ func TestViewJumpDialogUsesMnemonicKeys(t *testing.T) {
 		state,
 		dialogs.UpdateContext{},
 		"2026-04-04",
-		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'u'}},
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}},
 	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
@@ -38,7 +38,7 @@ func TestViewJumpDialogHidesUnavailableViews(t *testing.T) {
 		[]uistate.View{uistate.ViewDaily, uistate.ViewSupport},
 	)
 	for _, item := range state.ChoiceItems {
-		if item == "[a] Away" || item == "[n] Session" || item == "[u] Updates" {
+		if item == "[a] Away" || item == "[n] Session" || item == "[t] Updates" {
 			t.Fatalf("unexpected unavailable item %q", item)
 		}
 	}

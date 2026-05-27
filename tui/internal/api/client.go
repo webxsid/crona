@@ -854,18 +854,7 @@ func (c *Client) WipeRuntimeData() error {
 	)
 }
 
-func (c *Client) StartTimer(repoID, streamID, issueID int64, ignoreExistingStashes bool) error {
-	req := shareddto.TimerStartRequest{}
-	if repoID != 0 {
-		req.RepoID = &repoID
-	}
-	if streamID != 0 {
-		req.StreamID = &streamID
-	}
-	if issueID != 0 {
-		req.IssueID = &issueID
-	}
-	req.IgnoreExistingStashes = ignoreExistingStashes
+func (c *Client) StartTimer(req shareddto.TimerStartRequest) error {
 	return c.call(protocol.MethodTimerStart, req, nil)
 }
 
@@ -883,6 +872,14 @@ func (c *Client) ResumeTimer() error {
 
 func (c *Client) AdvanceTimer() error {
 	return c.call(protocol.MethodTimerAdvance, nil, nil)
+}
+
+func (c *Client) ExtendTimer(additionalSeconds int) error {
+	return c.call(
+		protocol.MethodTimerExtend,
+		shareddto.TimerExtendRequest{AdditionalSeconds: additionalSeconds},
+		nil,
+	)
 }
 
 func (c *Client) EndTimer(input shareddto.EndSessionRequest) error {

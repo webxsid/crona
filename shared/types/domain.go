@@ -998,13 +998,24 @@ type CoreSettings struct {
 }
 
 type TimerState struct {
-	State            string              `json:"state"`
-	SessionID        *string             `json:"sessionId,omitempty"`
-	IssueID          *int64              `json:"issueId,omitempty"`
-	SegmentType      *SessionSegmentType `json:"segmentType,omitempty"`
-	ReadySegmentType *SessionSegmentType `json:"readySegmentType,omitempty"`
-	NextSegmentType  *SessionSegmentType `json:"nextSegmentType,omitempty"`
-	ElapsedSeconds   int                 `json:"elapsedSeconds,omitempty"`
+	State                          string              `json:"state"`
+	SessionID                      *string             `json:"sessionId,omitempty"`
+	SessionStartTime               *string             `json:"sessionStartTime,omitempty"`
+	IssueID                        *int64              `json:"issueId,omitempty"`
+	SegmentType                    *SessionSegmentType `json:"segmentType,omitempty"`
+	SegmentStartTime               *string             `json:"segmentStartTime,omitempty"`
+	SegmentElapsedOffsetSeconds    *int                `json:"segmentElapsedOffsetSeconds,omitempty"`
+	ReadySegmentType               *SessionSegmentType `json:"readySegmentType,omitempty"`
+	NextSegmentType                *SessionSegmentType `json:"nextSegmentType,omitempty"`
+	ElapsedSeconds                 int                 `json:"elapsedSeconds,omitempty"`
+	HardLimitActive                bool                `json:"hardLimitActive,omitempty"`
+	HardLimitExpired               bool                `json:"hardLimitExpired,omitempty"`
+	HardLimitTotalSeconds          int                 `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitRemainingSeconds      int                 `json:"hardLimitRemainingSeconds,omitempty"`
+	HardLimitWorkSeconds           int                 `json:"hardLimitWorkSeconds,omitempty"`
+	HardLimitBreakSeconds          int                 `json:"hardLimitBreakSeconds,omitempty"`
+	HardLimitLongBreakSeconds      int                 `json:"hardLimitLongBreakSeconds,omitempty"`
+	HardLimitCyclesBeforeLongBreak int                 `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }
 
 type Stash struct {

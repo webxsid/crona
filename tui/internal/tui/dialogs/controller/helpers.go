@@ -116,6 +116,27 @@ func ParseOptionalDurationMinutes(raw string, label string) (*int, error) {
 	return &value, nil
 }
 
+func ParsePositiveIntInput(raw string, required bool, label string) (int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		if required {
+			return 0, fmt.Errorf("%s is required", label)
+		}
+		return 0, nil
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be a whole number", label)
+	}
+	if value < 0 {
+		return 0, fmt.Errorf("%s must be non-negative", label)
+	}
+	if required && value == 0 {
+		return 0, fmt.Errorf("%s must be positive", label)
+	}
+	return value, nil
+}
+
 func ParseOptionalDurationHours(raw string, label string) (*float64, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
@@ -52,6 +53,163 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = appendDialogFooter(theme, state, rows, hint)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "timer_start_type":
+		rows := []string{theme.StylePaneTitle.Render("Start Timer")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render(line))
+			}
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] cancel")
+		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
+	case "pomodoro_focus_presets":
+		rows := []string{theme.StylePaneTitle.Render("Pomodoro Focus Presets")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render(line))
+			}
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] back")
+		return modal(theme, state.Width, 70, theme.ColorGreen, rows)
+	case "pomodoro_focus_custom":
+		rows := []string{
+			theme.StylePaneTitle.Render("Custom Focus Duration"),
+			"",
+			theme.StyleDim.Render("Focus duration"),
+			state.Inputs[0].View(),
+		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "continue")+"   [esc] back")
+		return modal(theme, state.Width, 64, theme.ColorGreen, rows)
+	case "pomodoro_break_presets":
+		rows := []string{theme.StylePaneTitle.Render("Pomodoro Break Presets")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render(line))
+			}
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] back")
+		return modal(theme, state.Width, 70, theme.ColorGreen, rows)
+	case "pomodoro_break_custom":
+		rows := []string{
+			theme.StylePaneTitle.Render("Custom Break Duration"),
+			"",
+			theme.StyleDim.Render("Break duration"),
+			state.Inputs[0].View(),
+		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "continue")+"   [esc] back")
+		return modal(theme, state.Width, 64, theme.ColorGreen, rows)
+	case "pomodoro_start":
+		rows := []string{theme.StylePaneTitle.Render("Pomodoro Session")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		if state.PomodoroFocusSeconds > 0 || state.PomodoroBreakSeconds > 0 {
+			rows = append(
+				rows,
+				"",
+				theme.StyleDim.Render(
+					fmt.Sprintf(
+						"Focus %s  ·  Break %s",
+						helperpkg.FormatCompactDurationSeconds(state.PomodoroFocusSeconds),
+						helperpkg.FormatCompactDurationSeconds(state.PomodoroBreakSeconds),
+					),
+				),
+			)
+		}
+		labels := []string{
+			"Total duration",
+			"Short breaks until long break",
+			"Long break duration",
+		}
+		for i := range state.Inputs {
+			rows = append(rows, "", theme.StyleDim.Render(labels[i]), state.Inputs[i].View())
+		}
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			"[tab] next   "+dialogSubmitHint(state, "start")+"   [esc] back",
+		)
+		return modal(theme, state.Width, 72, theme.ColorGreen, rows)
+	case "hard_limit_expired":
+		rows := []string{theme.StylePaneTitle.Render("Pomodoro Session Complete")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		rows = append(rows, "", theme.StyleDim.Render("Choose how to finish this pomodoro session."))
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render(line))
+			}
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select")
+		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
+	case "hard_limit_extend":
+		rows := []string{
+			theme.StylePaneTitle.Render("Extend Pomodoro Session"),
+			"",
+			theme.StyleDim.Render("Add more time to the active pomodoro session."),
+		}
+		for i, item := range state.ChoiceItems {
+			line := "  " + item
+			if i == state.ChoiceCursor {
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+			} else {
+				rows = append(rows, theme.StyleNormal.Render(line))
+			}
+		}
+		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		}
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] back")
+		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
+	case "hard_limit_extend_custom":
+		rows := []string{
+			theme.StylePaneTitle.Render("Custom Extension"),
+			"",
+			theme.StyleDim.Render("Extension duration"),
+			state.Inputs[0].View(),
+		}
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "extend")+"   [esc] back",
+		)
+		return modal(theme, state.Width, 64, theme.ColorCyan, rows)
 	case "amend_session":
 		rows := []string{
 			theme.StylePaneTitle.Render("Amend Session"),

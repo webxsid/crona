@@ -6,6 +6,7 @@ import (
 	sharedtypes "crona/shared/types"
 	uistate "crona/tui/internal/tui/state"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -21,21 +22,12 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	if s.Context != nil && s.Context.StreamID != nil {
 		streamID = *s.Context.StreamID
 	}
-	rawIdx := s.Cursor[uistate.PaneSettings]
-	switch rawIdx {
-	case 0:
-		next := sharedtypes.TimerModeStructured
-		if s.Settings.TimerMode == sharedtypes.TimerModeStructured {
-			next = sharedtypes.TimerModeStopwatch
-		}
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyTimerMode,
-			next,
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 1:
+	row, ok := selectedSettingsRow(s)
+	if !ok {
+		return s, nil, true
+	}
+	switch row.Label {
+	case "Work Duration":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyWorkDurationMinutes,
 			max(s.Settings.WorkDurationMinutes+dir*5, 5),
@@ -43,63 +35,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 2:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyBreaksEnabled,
-			!s.Settings.BreaksEnabled,
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 3:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyShortBreakMinutes,
-			max(s.Settings.ShortBreakMinutes+dir, 1),
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 4:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyLongBreakMinutes,
-			max(s.Settings.LongBreakMinutes+dir*5, 5),
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 5:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyLongBreakEnabled,
-			!s.Settings.LongBreakEnabled,
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 6:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyCyclesBeforeLongBreak,
-			max(s.Settings.CyclesBeforeLongBreak+dir, 1),
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 7:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyAutoStartBreaks,
-			!s.Settings.AutoStartBreaks,
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 8:
-		return s, deps.PatchSetting(
-			sharedtypes.CoreSettingsKeyAutoStartWork,
-			!s.Settings.AutoStartWork,
-			repoID,
-			streamID,
-			s.DashboardDate,
-		), true
-	case 9:
+	case "Update Checks":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyUpdateChecksEnabled,
 			!s.Settings.UpdateChecksEnabled,
@@ -107,7 +43,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 10:
+	case "Update Prompt":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyUpdatePromptEnabled,
 			!s.Settings.UpdatePromptEnabled,
@@ -115,7 +51,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 11:
+	case "Update Channel":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyUpdateChannel,
 			nextUpdateChannel(s.Settings.UpdateChannel, dir),
@@ -123,7 +59,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 12:
+	case "Repo Sort":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyRepoSort,
 			nextRepoSort(s.Settings.RepoSort, dir),
@@ -131,7 +67,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 13:
+	case "Stream Sort":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyStreamSort,
 			nextStreamSort(s.Settings.StreamSort, dir),
@@ -139,7 +75,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 14:
+	case "Issue Sort":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyIssueSort,
 			nextIssueSort(s.Settings.IssueSort, dir),
@@ -147,7 +83,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 15:
+	case "Habit Sort":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyHabitSort,
 			nextHabitSort(s.Settings.HabitSort, dir),
@@ -155,7 +91,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 16:
+	case "Date Format":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyDateDisplayPreset,
 			nextDateDisplayPreset(s.Settings.DateDisplayPreset, dir),
@@ -163,11 +99,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 17:
-		return s, nil, true
-	case 18:
-		return s, nil, true
-	case 19:
+	case "Prompt Glyphs":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyPromptGlyphMode,
 			nextPromptGlyphMode(s.Settings.PromptGlyphMode, dir),
@@ -175,9 +107,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 20:
-		return s, nil, true
-	case 21:
+	case "Away Mode":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyAwayModeEnabled,
 			!s.Settings.AwayModeEnabled,
@@ -185,7 +115,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 22:
+	case "Rollback Window":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
 			max(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1),
@@ -193,8 +123,6 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
-	case 23:
-		return s, nil, true
 	default:
 		return s, nil, true
 	}
@@ -204,29 +132,33 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 	if s.ActiveView != uistate.ViewSettings || s.Settings == nil {
 		return s, nil, true
 	}
-	switch s.Cursor[uistate.PaneSettings] {
-	case 17:
+	row, ok := selectedSettingsRow(s)
+	if !ok {
+		return s, nil, true
+	}
+	switch row.Label {
+	case "Custom Date Format":
 		if deps.OpenEditDateDisplayFormatDialog != nil {
 			deps.OpenEditDateDisplayFormatDialog(&s)
 		}
 		return s, nil, true
-	case 20:
+	case "Habit Streaks":
 		if deps.OpenEditHabitStreaksDialog != nil {
 			deps.OpenEditHabitStreaksDialog(&s)
 		}
 		return s, nil, true
-	case 23:
+	case "Rest & Streak Protection":
 		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true
-	case 24:
+	case "Privacy & Diagnostics":
 		if deps.OpenEditTelemetrySettingsDialog != nil {
 			deps.OpenEditTelemetrySettingsDialog(&s)
 		}
 		return s, nil, true
-	case 25:
+	case "Wipe Runtime Data":
 		deps.OpenConfirmWipeDataDialog(&s)
 		return s, nil, true
-	case 26:
+	case "Uninstall Crona":
 		deps.OpenConfirmUninstallDialog(&s)
 		return s, nil, true
 	default:
@@ -445,6 +377,23 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, date),
 		deps.SetStatus(&s, status, false),
 	), true
+}
+
+func selectedSettingsRow(s State) (settingsmeta.Row, bool) {
+	if s.Settings == nil {
+		return settingsmeta.Row{}, false
+	}
+	rows := settingsmeta.Rows(s.Settings)
+	indices := settingsmeta.FilteredIndices(s.FilterState(uistate.PaneSettings), s.Settings)
+	cursor := s.Cursor[uistate.PaneSettings]
+	if cursor < 0 || cursor >= len(indices) {
+		return settingsmeta.Row{}, false
+	}
+	rawIdx := indices[cursor]
+	if rawIdx < 0 || rawIdx >= len(rows) {
+		return settingsmeta.Row{}, false
+	}
+	return rows[rawIdx], true
 }
 
 func currentRollbackMinutes(value int) int {

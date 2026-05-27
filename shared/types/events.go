@@ -5,35 +5,36 @@ import "encoding/json"
 // Shared event payloads used across kernel, TUI, and future CLI clients.
 
 const (
-	EventTypeRepoCreated          = "repo.created"
-	EventTypeRepoUpdated          = "repo.updated"
-	EventTypeRepoDeleted          = "repo.deleted"
-	EventTypeStreamCreated        = "stream.created"
-	EventTypeStreamUpdated        = "stream.updated"
-	EventTypeStreamDeleted        = "stream.deleted"
-	EventTypeIssueCreated         = "issue.created"
-	EventTypeIssueUpdated         = "issue.updated"
-	EventTypeIssueDeleted         = "issue.deleted"
-	EventTypeHabitCreated         = "habit.created"
-	EventTypeHabitUpdated         = "habit.updated"
-	EventTypeHabitDeleted         = "habit.deleted"
-	EventTypeHabitCompleted       = "habit.completed"
-	EventTypeHabitUncompleted     = "habit.uncompleted"
-	EventTypeCheckInUpdated       = "checkin.updated"
-	EventTypeCheckInDeleted       = "checkin.deleted"
-	EventTypeSessionStarted       = "session.started"
-	EventTypeSessionStopped       = "session.stopped"
-	EventTypeTimerState           = "timer.state"
-	EventTypeContextRepoChanged   = "context.repo.changed"
-	EventTypeContextStreamChanged = "context.stream.changed"
-	EventTypeContextIssueChanged  = "context.issue.changed"
-	EventTypeContextCleared       = "context.cleared"
-	EventTypeStashCreated         = "stash.created"
-	EventTypeStashApplied         = "stash.applied"
-	EventTypeStashDropped         = "stash.dropped"
-	EventTypeTimerBoundary        = "timer.boundary"
-	EventTypeTimerTick            = "timer.tick"
-	EventTypeUpdateStatus         = "update.status"
+	EventTypeRepoCreated           = "repo.created"
+	EventTypeRepoUpdated           = "repo.updated"
+	EventTypeRepoDeleted           = "repo.deleted"
+	EventTypeStreamCreated         = "stream.created"
+	EventTypeStreamUpdated         = "stream.updated"
+	EventTypeStreamDeleted         = "stream.deleted"
+	EventTypeIssueCreated          = "issue.created"
+	EventTypeIssueUpdated          = "issue.updated"
+	EventTypeIssueDeleted          = "issue.deleted"
+	EventTypeHabitCreated          = "habit.created"
+	EventTypeHabitUpdated          = "habit.updated"
+	EventTypeHabitDeleted          = "habit.deleted"
+	EventTypeHabitCompleted        = "habit.completed"
+	EventTypeHabitUncompleted      = "habit.uncompleted"
+	EventTypeCheckInUpdated        = "checkin.updated"
+	EventTypeCheckInDeleted        = "checkin.deleted"
+	EventTypeSessionStarted        = "session.started"
+	EventTypeSessionStopped        = "session.stopped"
+	EventTypeTimerState            = "timer.state"
+	EventTypeContextRepoChanged    = "context.repo.changed"
+	EventTypeContextStreamChanged  = "context.stream.changed"
+	EventTypeContextIssueChanged   = "context.issue.changed"
+	EventTypeContextCleared        = "context.cleared"
+	EventTypeStashCreated          = "stash.created"
+	EventTypeStashApplied          = "stash.applied"
+	EventTypeStashDropped          = "stash.dropped"
+	EventTypeTimerBoundary         = "timer.boundary"
+	EventTypeTimerHardLimitReached = "timer.hard_limit_reached"
+	EventTypeTimerTick             = "timer.tick"
+	EventTypeUpdateStatus          = "update.status"
 )
 
 type KernelEvent struct {
@@ -78,4 +79,12 @@ type TimerBoundaryPayload struct {
 
 type TimerTickPayload struct {
 	RemainingSeconds int `json:"remainingSeconds"`
+}
+
+type TimerHardLimitReachedPayload struct {
+	SessionID             string              `json:"sessionId"`
+	IssueID               int64               `json:"issueId"`
+	SegmentType           *SessionSegmentType `json:"segmentType,omitempty"`
+	HardLimitTotalSeconds int                 `json:"hardLimitTotalSeconds"`
+	ElapsedSeconds        int                 `json:"elapsedSeconds"`
 }

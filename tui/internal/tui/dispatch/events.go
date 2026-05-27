@@ -159,6 +159,12 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 				}
 				state.Pane = uistate.DefaultPane(state.View)
 				if timer.State == "ready" {
+					if timer.HardLimitActive && !timer.HardLimitExpired {
+						return state, tea.Batch(
+							deps.TickAfter(state.TimerTickSeq),
+							deps.LoadSessionHistoryFor200(state),
+						)
+					}
 					return state, deps.LoadSessionHistoryFor200(state)
 				}
 				return state, tea.Batch(
@@ -174,6 +180,12 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, nil
 	case "timer.boundary":
+		state.Elapsed = 0
+		return state, tea.Batch(
+			deps.LoadTimer(),
+			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+		)
+	case "timer.hard_limit_reached":
 		state.Elapsed = 0
 		return state, tea.Batch(
 			deps.LoadTimer(),

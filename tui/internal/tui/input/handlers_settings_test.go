@@ -18,7 +18,7 @@ func TestHandleAdjustSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeEmoji,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 19,
+			uistate.PaneSettings: 10,
 		},
 	}
 	deps := Deps{
@@ -49,7 +49,7 @@ func TestHandleActivateSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeUnicode,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 19,
+			uistate.PaneSettings: 10,
 		},
 	}
 	deps := Deps{
@@ -76,7 +76,7 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 			ErrorReportingEnabled: false,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 24,
+			uistate.PaneSettings: 15,
 		},
 	}
 	deps := Deps{

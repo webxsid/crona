@@ -360,7 +360,11 @@ func LoadExportReports(c *api.Client) tea.Cmd {
 }
 
 func TickAfter(seq int) tea.Cmd {
-	return tea.Tick(time.Second, func(_ time.Time) tea.Msg {
+	delay := time.Until(time.Now().Truncate(time.Second).Add(time.Second))
+	if delay <= 0 {
+		delay = time.Second
+	}
+	return tea.Tick(delay, func(_ time.Time) tea.Msg {
 		return TimerTickMsg{Seq: seq}
 	})
 }

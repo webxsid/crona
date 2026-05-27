@@ -23,13 +23,13 @@ const (
 )
 
 const (
-	PaneRepos       = modelpkg.PaneRepos
-	PaneStreams     = modelpkg.PaneStreams
-	PaneIssues      = modelpkg.PaneIssues
-	PaneSessions    = modelpkg.PaneSessions
-	PaneOps         = modelpkg.PaneOps
-	PaneSettings    = modelpkg.PaneSettings
-	PaneAlerts      = modelpkg.PaneAlerts
+	PaneRepos    = modelpkg.PaneRepos
+	PaneStreams  = modelpkg.PaneStreams
+	PaneIssues   = modelpkg.PaneIssues
+	PaneSessions = modelpkg.PaneSessions
+	PaneOps      = modelpkg.PaneOps
+	PaneSettings = modelpkg.PaneSettings
+	PaneAlerts   = modelpkg.PaneAlerts
 )
 
 func SetEventChannel(ch <-chan api.KernelEvent) {

@@ -13,6 +13,7 @@ import (
 	"crona/kernel/internal/core"
 	runtimepkg "crona/kernel/internal/runtime"
 
+	shareddto "crona/shared/dto"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
@@ -46,14 +47,14 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 		return sharedtypes.TimerState{}, err
 	}
 	if activeSession == nil {
-		_ = runtimepkg.ClearPreparedTimerState()
+		_ = runtimepkg.ClearTimerRuntimeState()
 		return sharedtypes.TimerState{State: "idle"}, nil
 	}
 	settings, err := t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	prepared, err := t.preparedStateForSession(activeSession.ID)
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -66,38 +67,62 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	base := hardLimitTimerState(runtimeState, activeSession.StartTime, now)
 	if activeSegment == nil {
-		if prepared != nil {
+		if runtimeState != nil && runtimeState.HasPreparedSegment() {
 			sessionID := activeSession.ID
 			issueID := activeSession.IssueID
-			segmentType := prepared.SegmentType
+			segmentType := *runtimeState.PreparedSegmentType
 			return sharedtypes.TimerState{
-				State:            "ready",
-				SessionID:        &sessionID,
-				IssueID:          &issueID,
-				ReadySegmentType: &segmentType,
-				NextSegmentType:  &segmentType,
-				ElapsedSeconds:   0,
+				State:                          "ready",
+				SessionID:                      &sessionID,
+				SessionStartTime:               &activeSession.StartTime,
+				IssueID:                        &issueID,
+				ReadySegmentType:               &segmentType,
+				NextSegmentType:                &segmentType,
+				ElapsedSeconds:                 0,
+				HardLimitActive:                base.HardLimitActive,
+				HardLimitExpired:               base.HardLimitExpired,
+				HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
+				HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
+				HardLimitWorkSeconds:           base.HardLimitWorkSeconds,
+				HardLimitBreakSeconds:          base.HardLimitBreakSeconds,
+				HardLimitLongBreakSeconds:      base.HardLimitLongBreakSeconds,
+				HardLimitCyclesBeforeLongBreak: base.HardLimitCyclesBeforeLongBreak,
 			}, nil
 		}
 		segmentType := sharedtypes.SessionSegmentWork
 		return sharedtypes.TimerState{
-			State:          "running",
-			SessionID:      &activeSession.ID,
-			IssueID:        &activeSession.IssueID,
-			SegmentType:    &segmentType,
-			ElapsedSeconds: elapsedSeconds(activeSession.StartTime, now),
+			State:                          "running",
+			SessionID:                      &activeSession.ID,
+			SessionStartTime:               &activeSession.StartTime,
+			IssueID:                        &activeSession.IssueID,
+			SegmentType:                    &segmentType,
+			ElapsedSeconds:                 elapsedSeconds(activeSession.StartTime, now),
+			HardLimitActive:                base.HardLimitActive,
+			HardLimitExpired:               base.HardLimitExpired,
+			HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
+			HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
+			HardLimitWorkSeconds:           base.HardLimitWorkSeconds,
+			HardLimitBreakSeconds:          base.HardLimitBreakSeconds,
+			HardLimitLongBreakSeconds:      base.HardLimitLongBreakSeconds,
+			HardLimitCyclesBeforeLongBreak: base.HardLimitCyclesBeforeLongBreak,
 		}, nil
 	}
 	state := "running"
-	if activeSegment.SegmentType != sharedtypes.SessionSegmentWork {
+	if activeSegment.SegmentType != sharedtypes.SessionSegmentWork &&
+		(runtimeState == nil || !runtimeState.HasHardLimit()) {
 		state = "paused"
+	}
+	if runtimeState != nil && runtimeState.HardLimitExpired {
+		state = "expired"
 	}
 	nextSegment, err := t.nextSegmentForActiveState(
 		ctx,
 		activeSession.ID,
 		activeSegment.SegmentType,
 		settings,
+		runtimeState,
 	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -107,27 +132,40 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 		elapsed += *activeSegment.ElapsedOffsetSeconds
 	}
 	return sharedtypes.TimerState{
-		State:           state,
-		SessionID:       &activeSession.ID,
-		IssueID:         &activeSession.IssueID,
-		SegmentType:     &activeSegment.SegmentType,
-		NextSegmentType: nextSegment,
-		ElapsedSeconds:  elapsed,
+		State:                          state,
+		SessionID:                      &activeSession.ID,
+		SessionStartTime:               &activeSession.StartTime,
+		IssueID:                        &activeSession.IssueID,
+		SegmentType:                    &activeSegment.SegmentType,
+		SegmentStartTime:               &activeSegment.StartTime,
+		SegmentElapsedOffsetSeconds:    activeSegment.ElapsedOffsetSeconds,
+		NextSegmentType:                nextSegment,
+		ElapsedSeconds:                 elapsed,
+		HardLimitActive:                base.HardLimitActive,
+		HardLimitExpired:               base.HardLimitExpired,
+		HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
+		HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
+		HardLimitWorkSeconds:           base.HardLimitWorkSeconds,
+		HardLimitBreakSeconds:          base.HardLimitBreakSeconds,
+		HardLimitLongBreakSeconds:      base.HardLimitLongBreakSeconds,
+		HardLimitCyclesBeforeLongBreak: base.HardLimitCyclesBeforeLongBreak,
 	}, nil
 }
 
 func (t *TimerService) Start(
 	ctx context.Context,
 	repoID, streamID, issueID *int64,
+	hardLimit *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
-	return t.start(ctx, repoID, streamID, issueID, false)
+	return t.start(ctx, repoID, streamID, issueID, false, hardLimit)
 }
 
 func (t *TimerService) StartIgnoringExistingStashes(
 	ctx context.Context,
 	repoID, streamID, issueID *int64,
+	hardLimit *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
-	return t.start(ctx, repoID, streamID, issueID, true)
+	return t.start(ctx, repoID, streamID, issueID, true, hardLimit)
 }
 
 func (t *TimerService) start(
@@ -136,8 +174,9 @@ func (t *TimerService) start(
 	streamID,
 	issueID *int64,
 	ignoreExistingStashes bool,
+	input *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
-	if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	active, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
@@ -193,8 +232,31 @@ func (t *TimerService) start(
 			}
 		}
 	}
-	if _, err := StartSession(ctx, t.ctx, resolvedIssueID); err != nil {
+	session, err := StartSession(ctx, t.ctx, resolvedIssueID)
+	if err != nil {
 		return sharedtypes.TimerState{}, err
+	}
+	if input != nil && input.HardLimitTotalSeconds != nil && *input.HardLimitTotalSeconds > 0 {
+		workSeconds := derefInt(input.HardLimitWorkSeconds)
+		if workSeconds <= 0 {
+			workSeconds = *input.HardLimitTotalSeconds
+		}
+		breakSeconds := derefInt(input.HardLimitBreakSeconds)
+		longBreakSeconds := derefInt(input.HardLimitLongBreakSeconds)
+		cyclesBeforeLongBreak := derefInt(input.HardLimitCyclesBeforeLongBreak)
+		if err := runtimepkg.WriteTimerRuntimeState(
+			runtimepkg.NewHardLimitTimerRuntimeState(
+				session.ID,
+				resolvedIssueID,
+				*input.HardLimitTotalSeconds,
+				workSeconds,
+				breakSeconds,
+				longBreakSeconds,
+				cyclesBeforeLongBreak,
+			),
+		); err != nil {
+			return sharedtypes.TimerState{}, err
+		}
 	}
 	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(
 		issue.Status,
@@ -257,7 +319,14 @@ func (e StashConflictError) ProtocolErrorData() any {
 }
 
 func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error) {
-	if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+	runtimeState, err := t.activeRuntimeState(ctx)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState != nil && runtimeState.HasHardLimit() {
+		return sharedtypes.TimerState{}, errors.New("hard-limit sessions cannot be paused")
+	}
+	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if err := PauseSession(ctx, t.ctx, sharedtypes.SessionSegmentRest); err != nil {
@@ -275,7 +344,14 @@ func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error
 }
 
 func (t *TimerService) Resume(ctx context.Context) (sharedtypes.TimerState, error) {
-	if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+	runtimeState, err := t.activeRuntimeState(ctx)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState != nil && runtimeState.HasHardLimit() {
+		return sharedtypes.TimerState{}, errors.New("hard-limit sessions cannot be resumed")
+	}
+	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if err := ResumeSession(ctx, t.ctx); err != nil {
@@ -298,18 +374,24 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 		return sharedtypes.TimerState{}, err
 	}
 	if activeSession == nil {
-		_ = runtimepkg.ClearPreparedTimerState()
+		_ = runtimepkg.ClearTimerRuntimeState()
 		return sharedtypes.TimerState{State: "idle"}, nil
 	}
-	prepared, err := t.preparedStateForSession(activeSession.ID)
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if prepared != nil {
-		if _, err := t.ctx.SessionSegments.StartSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID, prepared.SegmentType); err != nil {
+	if runtimeState != nil && runtimeState.HardLimitExpired {
+		return sharedtypes.TimerState{}, errors.New(
+			"hard-limit session has expired and must be committed, stashed, or extended",
+		)
+	}
+	if runtimeState != nil && runtimeState.HasPreparedSegment() {
+		if _, err := t.ctx.SessionSegments.StartSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID, *runtimeState.PreparedSegmentType); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
-		if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+		runtimeState.PreparedSegmentType = nil
+		if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
 		if err := t.ScheduleNextBoundary(ctx); err != nil {
@@ -343,6 +425,7 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 		activeSession.ID,
 		activeSegment.SegmentType,
 		settings,
+		runtimeState,
 	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -356,7 +439,10 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if _, err := t.ctx.SessionSegments.StartSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID, *nextSegment); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+	if runtimeState != nil {
+		runtimeState.PreparedSegmentType = nil
+	}
+	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	state, err := t.GetState(ctx)
@@ -375,6 +461,44 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	return state, nil
 }
 
+func (t *TimerService) Extend(
+	ctx context.Context,
+	additionalSeconds int,
+) (sharedtypes.TimerState, error) {
+	if additionalSeconds <= 0 {
+		return sharedtypes.TimerState{}, errors.New("extension duration must be positive")
+	}
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSession == nil {
+		return sharedtypes.TimerState{State: "idle"}, nil
+	}
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState == nil || !runtimeState.HasHardLimit() {
+		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
+	}
+	runtimeState.HardLimitTotalSeconds += additionalSeconds
+	runtimeState.HardLimitExpired = false
+	runtimeState.HardLimitExpiredAt = ""
+	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if err := t.ScheduleNextBoundary(ctx); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	state, err := t.GetState(ctx)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
+	return state, nil
+}
+
 func (t *TimerService) End(
 	ctx context.Context,
 	input SessionEndInput,
@@ -382,7 +506,7 @@ func (t *TimerService) End(
 	if _, err := StopSession(ctx, t.ctx, input); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	_ = runtimepkg.ClearPreparedTimerState()
+	_ = runtimepkg.ClearTimerRuntimeState()
 	t.clearBoundary()
 	state, err := t.GetState(ctx)
 	if err != nil {
@@ -399,13 +523,13 @@ func (t *TimerService) RecoverBoundary(ctx context.Context) error {
 		return err
 	}
 	if activeSession == nil {
-		return runtimepkg.ClearPreparedTimerState()
+		return runtimepkg.ClearTimerRuntimeState()
 	}
-	prepared, err := t.preparedStateForSession(activeSession.ID)
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
 	if err != nil {
 		return err
 	}
-	if prepared != nil {
+	if runtimeState != nil && runtimeState.HasPreparedSegment() {
 		return nil
 	}
 	return t.ScheduleNextBoundary(ctx)
@@ -417,7 +541,7 @@ func (t *TimerService) RestoreFromStash(ctx context.Context, input struct {
 	ElapsedSeconds int
 },
 ) error {
-	if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
 		return err
 	}
 	session, err := StartSession(ctx, t.ctx, input.IssueID)
@@ -446,11 +570,11 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	if err != nil || activeSession == nil {
 		return err
 	}
-	prepared, err := t.preparedStateForSession(activeSession.ID)
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
 	if err != nil {
 		return err
 	}
-	if prepared != nil {
+	if runtimeState != nil && (runtimeState.HasPreparedSegment() || runtimeState.HardLimitExpired) {
 		return nil
 	}
 	activeSegment, err := t.ctx.SessionSegments.GetActive(
@@ -465,14 +589,23 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	if activeSegment.SegmentType == sharedtypes.SessionSegmentRest {
 		return nil
 	}
-	boundary, err := t.nextBoundary(ctx, activeSession.ID, activeSegment.SegmentType)
+	boundary, err := t.nextBoundary(ctx, activeSession.ID, activeSegment.SegmentType, runtimeState)
 	if err != nil {
 		return err
 	}
-	if boundary == nil {
+	delay, hardLimitFirst, ok := t.nextTimerDelay(activeSession.StartTime, boundary, runtimeState)
+	if !ok {
 		return nil
 	}
-	t.scheduleBoundary(time.Duration(boundary.AfterMinutes)*time.Minute, func() {
+	t.scheduleBoundary(delay, func() {
+		if hardLimitFirst {
+			_, _ = t.applyHardLimitExpiry(
+				context.Background(),
+				activeSession.ID,
+				activeSegment.SegmentType,
+			)
+			return
+		}
 		_, _ = t.applyBoundaryTransition(
 			context.Background(),
 			activeSession.ID,
@@ -501,24 +634,38 @@ func (t *TimerService) applyBoundaryTransition(
 		return sharedtypes.TimerState{}, err
 	}
 	if activeSession == nil || activeSession.ID != sessionID {
-		_ = runtimepkg.ClearPreparedTimerState()
+		_ = runtimepkg.ClearTimerRuntimeState()
 		return sharedtypes.TimerState{State: "idle"}, nil
 	}
 	settings, err := t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	runtimeState, err := t.runtimeStateForSession(sessionID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
 	autoStart := shouldAutoStart(boundary.NextSegment, settings)
+	if runtimeState != nil && runtimeState.HasHardLimit() {
+		autoStart = true
+		runtimeState.PreparedSegmentType = nil
+	}
 	if autoStart {
 		if boundary.NextSegment == sharedtypes.SessionSegmentWork {
-			if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+			if runtimeState != nil {
+				runtimeState.PreparedSegmentType = nil
+			}
+			if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 				return sharedtypes.TimerState{}, err
 			}
 			if err := ResumeSession(ctx, t.ctx); err != nil {
 				return sharedtypes.TimerState{}, err
 			}
 		} else {
-			if err := runtimepkg.ClearPreparedTimerState(); err != nil {
+			if runtimeState != nil {
+				runtimeState.PreparedSegmentType = nil
+			}
+			if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 				return sharedtypes.TimerState{}, err
 			}
 			if err := PauseSession(ctx, t.ctx, boundary.NextSegment); err != nil {
@@ -529,7 +676,13 @@ func (t *TimerService) applyBoundaryTransition(
 		if err := t.ctx.SessionSegments.EndActiveSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, sessionID); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
-		if err := runtimepkg.WritePreparedTimerState(runtimepkg.NewPreparedTimerState(sessionID, activeSession.IssueID, boundary.NextSegment)); err != nil {
+		if runtimeState == nil {
+			state := runtimepkg.NewPreparedTimerRuntimeState(sessionID, activeSession.IssueID, boundary.NextSegment)
+			runtimeState = &state
+		} else {
+			runtimeState.PreparedSegmentType = segmentPtr(boundary.NextSegment)
+		}
+		if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
 	}
@@ -548,6 +701,54 @@ func (t *TimerService) applyBoundaryTransition(
 			return sharedtypes.TimerState{}, err
 		}
 	}
+	return state, nil
+}
+
+func (t *TimerService) applyHardLimitExpiry(
+	ctx context.Context,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+) (sharedtypes.TimerState, error) {
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSession == nil || activeSession.ID != sessionID {
+		_ = runtimepkg.ClearTimerRuntimeState()
+		return sharedtypes.TimerState{State: "idle"}, nil
+	}
+	runtimeState, err := t.runtimeStateForSession(sessionID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState == nil || !runtimeState.HasHardLimit() || runtimeState.HardLimitExpired {
+		return t.GetState(ctx)
+	}
+	runtimeState.HardLimitExpired = true
+	runtimeState.HardLimitExpiredAt = t.ctx.Now()
+	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	t.clearBoundary()
+	state, err := t.GetState(ctx)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	emit(
+		t.ctx,
+		sharedtypes.EventTypeTimerHardLimitReached,
+		sharedtypes.TimerHardLimitReachedPayload{
+			SessionID:             sessionID,
+			IssueID:               activeSession.IssueID,
+			SegmentType:           segmentPtr(currentType),
+			HardLimitTotalSeconds: runtimeState.HardLimitTotalSeconds,
+			ElapsedSeconds: max(
+				0,
+				runtimeState.HardLimitTotalSeconds-state.HardLimitRemainingSeconds,
+			),
+		},
+	)
+	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
 }
 
@@ -654,14 +855,47 @@ func (t *TimerService) ClearBoundary() {
 
 type boundaryResult struct {
 	NextSegment  sharedtypes.SessionSegmentType
-	AfterMinutes int
+	AfterSeconds int
 }
 
 func computeNextBoundary(
 	current sharedtypes.SessionSegmentType,
 	settings *sharedtypes.CoreSettings,
 	completedWorkCycles int,
+	runtimeState *runtimepkg.TimerRuntimeState,
 ) *boundaryResult {
+	if runtimeState != nil && runtimeState.HasHardLimit() {
+		if current == sharedtypes.SessionSegmentWork {
+			duration := runtimeState.HardLimitWorkSeconds
+			if duration <= 0 {
+				return nil
+			}
+			next := sharedtypes.SessionSegmentShortBreak
+			if hardLimitShouldUseLongBreak(runtimeState, completedWorkCycles) {
+				next = sharedtypes.SessionSegmentLongBreak
+			}
+			return &boundaryResult{
+				NextSegment:  next,
+				AfterSeconds: duration,
+			}
+		}
+		if current == sharedtypes.SessionSegmentShortBreak ||
+			current == sharedtypes.SessionSegmentLongBreak {
+			duration := runtimeState.HardLimitBreakSeconds
+			if current == sharedtypes.SessionSegmentLongBreak &&
+				runtimeState.HardLimitLongBreakSeconds > 0 {
+				duration = runtimeState.HardLimitLongBreakSeconds
+			}
+			if duration <= 0 {
+				return nil
+			}
+			return &boundaryResult{
+				NextSegment:  sharedtypes.SessionSegmentWork,
+				AfterSeconds: duration,
+			}
+		}
+		return nil
+	}
 	if settings.TimerMode != "structured" || !settings.BreaksEnabled {
 		return nil
 	}
@@ -672,27 +906,44 @@ func computeNextBoundary(
 		if isLongBreak {
 			next = sharedtypes.SessionSegmentLongBreak
 		}
-		return &boundaryResult{NextSegment: next, AfterMinutes: settings.WorkDurationMinutes}
+		return &boundaryResult{NextSegment: next, AfterSeconds: settings.WorkDurationMinutes * 60}
 	}
 	if current == sharedtypes.SessionSegmentShortBreak {
 		return &boundaryResult{
 			NextSegment:  sharedtypes.SessionSegmentWork,
-			AfterMinutes: settings.ShortBreakMinutes,
+			AfterSeconds: settings.ShortBreakMinutes * 60,
 		}
 	}
 	if current == sharedtypes.SessionSegmentLongBreak {
 		return &boundaryResult{
 			NextSegment:  sharedtypes.SessionSegmentWork,
-			AfterMinutes: settings.LongBreakMinutes,
+			AfterSeconds: settings.LongBreakMinutes * 60,
 		}
 	}
 	return nil
+}
+
+func hardLimitShouldUseLongBreak(
+	state *runtimepkg.TimerRuntimeState,
+	completedWorkCycles int,
+) bool {
+	if state == nil || !state.HasHardLimit() {
+		return false
+	}
+	if state.HardLimitLongBreakSeconds <= 0 || state.HardLimitCyclesBeforeLongBreak <= 0 {
+		return false
+	}
+	if completedWorkCycles <= 0 {
+		return false
+	}
+	return completedWorkCycles%state.HardLimitCyclesBeforeLongBreak == 0
 }
 
 func (t *TimerService) nextBoundary(
 	ctx context.Context,
 	sessionID string,
 	current sharedtypes.SessionSegmentType,
+	runtimeState *runtimepkg.TimerRuntimeState,
 ) (*boundaryResult, error) {
 	settings, err := t.ctx.CoreSettings.Get(ctx, t.ctx.UserID)
 	if err != nil {
@@ -708,7 +959,7 @@ func (t *TimerService) nextBoundary(
 	if current == sharedtypes.SessionSegmentWork {
 		completedWorkCycles++
 	}
-	return computeNextBoundary(current, settings, completedWorkCycles), nil
+	return computeNextBoundary(current, settings, completedWorkCycles, runtimeState), nil
 }
 
 func (t *TimerService) nextSegmentForActiveState(
@@ -716,6 +967,7 @@ func (t *TimerService) nextSegmentForActiveState(
 	sessionID string,
 	current sharedtypes.SessionSegmentType,
 	settings *sharedtypes.CoreSettings,
+	runtimeState *runtimepkg.TimerRuntimeState,
 ) (*sharedtypes.SessionSegmentType, error) {
 	if settings == nil {
 		var err error
@@ -728,13 +980,17 @@ func (t *TimerService) nextSegmentForActiveState(
 		return nil, nil
 	}
 	if current == sharedtypes.SessionSegmentRest {
+		if runtimeState != nil && runtimeState.HasHardLimit() {
+			next := sharedtypes.SessionSegmentWork
+			return &next, nil
+		}
 		if settings.TimerMode == sharedtypes.TimerModeStructured && settings.BreaksEnabled {
 			next := sharedtypes.SessionSegmentWork
 			return &next, nil
 		}
 		return nil, nil
 	}
-	boundary, err := t.nextBoundary(ctx, sessionID, current)
+	boundary, err := t.nextBoundary(ctx, sessionID, current, runtimeState)
 	if err != nil || boundary == nil {
 		return nil, err
 	}
@@ -755,10 +1011,10 @@ func shouldAutoStart(
 	return settings.AutoStartBreaks
 }
 
-func (t *TimerService) preparedStateForSession(
+func (t *TimerService) runtimeStateForSession(
 	sessionID string,
-) (*runtimepkg.PreparedTimerState, error) {
-	prepared, err := runtimepkg.ReadPreparedTimerState()
+) (*runtimepkg.TimerRuntimeState, error) {
+	prepared, err := runtimepkg.ReadTimerRuntimeState()
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, nil
@@ -766,8 +1022,8 @@ func (t *TimerService) preparedStateForSession(
 		var syntaxErr *json.SyntaxError
 		var typeErr *json.UnmarshalTypeError
 		if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) ||
-			strings.Contains(err.Error(), "invalid prepared timer state") {
-			_ = runtimepkg.ClearPreparedTimerState()
+			strings.Contains(err.Error(), "invalid timer runtime state") {
+			_ = runtimepkg.ClearTimerRuntimeState()
 			return nil, nil
 		}
 		return nil, err
@@ -776,8 +1032,103 @@ func (t *TimerService) preparedStateForSession(
 		return nil, nil
 	}
 	if strings.TrimSpace(prepared.SessionID) != strings.TrimSpace(sessionID) {
-		_ = runtimepkg.ClearPreparedTimerState()
+		_ = runtimepkg.ClearTimerRuntimeState()
 		return nil, nil
 	}
 	return prepared, nil
+}
+
+func (t *TimerService) activeRuntimeState(
+	ctx context.Context,
+) (*runtimepkg.TimerRuntimeState, error) {
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil || activeSession == nil {
+		return nil, err
+	}
+	return t.runtimeStateForSession(activeSession.ID)
+}
+
+func (t *TimerService) writeOrClearRuntimeState(state *runtimepkg.TimerRuntimeState) error {
+	if state == nil || (!state.HasHardLimit() && !state.HasPreparedSegment()) {
+		return runtimepkg.ClearTimerRuntimeState()
+	}
+	state.RecordedAt = time.Now().UTC().Format(time.RFC3339)
+	return runtimepkg.WriteTimerRuntimeState(*state)
+}
+
+func (t *TimerService) nextTimerDelay(
+	sessionStart string,
+	boundary *boundaryResult,
+	runtimeState *runtimepkg.TimerRuntimeState,
+) (time.Duration, bool, bool) {
+	boundaryDelay := time.Duration(0)
+	if boundary != nil && boundary.AfterSeconds > 0 {
+		boundaryDelay = time.Duration(boundary.AfterSeconds) * time.Second
+	}
+	hardLimitDelay, hasHardLimit := hardLimitDelay(runtimeState, sessionStart, t.ctx.Now())
+	switch {
+	case hasHardLimit && boundaryDelay > 0:
+		if hardLimitDelay <= boundaryDelay {
+			return hardLimitDelay, true, true
+		}
+		return boundaryDelay, false, true
+	case hasHardLimit:
+		return hardLimitDelay, true, true
+	case boundaryDelay > 0:
+		return boundaryDelay, false, true
+	default:
+		return 0, false, false
+	}
+}
+
+func hardLimitTimerState(
+	state *runtimepkg.TimerRuntimeState,
+	sessionStart string,
+	now string,
+) sharedtypes.TimerState {
+	timerState := sharedtypes.TimerState{}
+	if state == nil || !state.HasHardLimit() {
+		return timerState
+	}
+	remaining, _ := hardLimitRemaining(state, sessionStart, now)
+	timerState.HardLimitActive = true
+	timerState.HardLimitExpired = state.HardLimitExpired
+	timerState.HardLimitTotalSeconds = state.HardLimitTotalSeconds
+	timerState.HardLimitRemainingSeconds = remaining
+	timerState.HardLimitWorkSeconds = state.HardLimitWorkSeconds
+	timerState.HardLimitBreakSeconds = state.HardLimitBreakSeconds
+	timerState.HardLimitLongBreakSeconds = state.HardLimitLongBreakSeconds
+	timerState.HardLimitCyclesBeforeLongBreak = state.HardLimitCyclesBeforeLongBreak
+	return timerState
+}
+
+func hardLimitRemaining(
+	state *runtimepkg.TimerRuntimeState,
+	sessionStart string,
+	now string,
+) (int, bool) {
+	if state == nil || !state.HasHardLimit() {
+		return 0, false
+	}
+	remaining := state.HardLimitTotalSeconds - elapsedSeconds(sessionStart, now)
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining, true
+}
+
+func hardLimitDelay(
+	state *runtimepkg.TimerRuntimeState,
+	sessionStart string,
+	now string,
+) (time.Duration, bool) {
+	remaining, ok := hardLimitRemaining(state, sessionStart, now)
+	if !ok {
+		return 0, false
+	}
+	return time.Duration(max(1, remaining)) * time.Second, true
+}
+
+func segmentPtr(segment sharedtypes.SessionSegmentType) *sharedtypes.SessionSegmentType {
+	return &segment
 }

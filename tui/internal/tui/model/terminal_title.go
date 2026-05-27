@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	helperpkg "crona/tui/internal/tui/helpers"
 	"crona/tui/internal/tui/terminaltitle"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,9 +13,12 @@ import (
 
 func (m Model) terminalTitle() string {
 	if m.timer != nil && m.timer.State != "idle" {
-		total := m.timer.ElapsedSeconds + m.elapsed
-		if m.timer.State == "ready" {
-			total = 0
+		now := time.Now()
+		total := helperpkg.DerivedSegmentElapsedSeconds(m.timer, m.elapsed, now)
+		if m.timer.HardLimitActive && !m.timer.HardLimitExpired {
+			total = helperpkg.DerivedHardLimitRemainingSeconds(m.timer, m.elapsed, now)
+		} else if m.timer.State == "paused" {
+			total = helperpkg.DerivedSegmentElapsedSeconds(m.timer, m.elapsed, now)
 		}
 		return strings.Join(compactTitleParts([]string{
 			"Crona",
@@ -58,6 +62,9 @@ func terminalTimerState(m Model) string {
 	if m.timer == nil {
 		return ""
 	}
+	if m.timer.HardLimitExpired || m.timer.HardLimitActive {
+		return "LIMIT"
+	}
 	if m.timer.State == "ready" {
 		if m.timer.ReadySegmentType != nil &&
 			strings.TrimSpace(string(*m.timer.ReadySegmentType)) != "" {
@@ -65,12 +72,12 @@ func terminalTimerState(m Model) string {
 		}
 		return "READY"
 	}
+	if m.timer.State == "paused" {
+		return "PAUSED"
+	}
 	if m.timer.SegmentType != nil && strings.TrimSpace(string(*m.timer.SegmentType)) != "" &&
 		*m.timer.SegmentType != "work" {
 		return strings.ToUpper(string(*m.timer.SegmentType))
-	}
-	if m.timer.State == "paused" {
-		return "PAUSED"
 	}
 	return "WORK"
 }

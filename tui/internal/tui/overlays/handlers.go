@@ -20,14 +20,14 @@ type State struct {
 }
 
 type Deps struct {
-	StopFilterEdit             func(*State)
-	SessionDetailMaxOffset     func(State) int
-	OpenAmendSessionDialog     func(*State, string, string)
-	SessionCommit              func(*api.SessionDetail) string
-	SetStatus                  func(*State, string, bool) tea.Cmd
-	AbandonSelectedIssue       func(*State) tea.Cmd
-	FilteredIndexAtCursor      func(State, string) int
-	ListLen                    func(State, string) int
+	StopFilterEdit         func(*State)
+	SessionDetailMaxOffset func(State) int
+	OpenAmendSessionDialog func(*State, string, string)
+	SessionCommit          func(*api.SessionDetail) string
+	SetStatus              func(*State, string, bool) tea.Cmd
+	AbandonSelectedIssue   func(*State) tea.Cmd
+	FilteredIndexAtCursor  func(State, string) int
+	ListLen                func(State, string) int
 }
 
 func HandleHelp(state State, key tea.KeyMsg) (State, tea.Cmd) {

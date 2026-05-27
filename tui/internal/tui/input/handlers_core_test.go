@@ -1,0 +1,112 @@
+package input
+
+import (
+	"testing"
+
+	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
+	uistate "crona/tui/internal/tui/state"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+func TestHandleOpenCheckInUsesDashboardDate(t *testing.T) {
+	called := false
+	state := State{
+		ActiveView:    uistate.ViewDaily,
+		DashboardDate: "2026-05-27",
+	}
+
+	_, _, handled := handleOpenCheckIn(state, Deps{
+		OpenCheckInDialog: func(s *State) bool {
+			called = true
+			if s.DashboardDate != "2026-05-27" {
+				t.Fatalf("expected daily check-in opener to preserve dashboard date, got %q", s.DashboardDate)
+			}
+			return true
+		},
+	})
+	if !handled {
+		t.Fatal("expected daily w to be handled")
+	}
+	if !called {
+		t.Fatal("expected daily w to open the check-in dialog")
+	}
+}
+
+func TestHandleOpenCheckInUsesWellbeingDate(t *testing.T) {
+	called := false
+	state := State{
+		ActiveView:    uistate.ViewWellbeing,
+		WellbeingDate: "2026-05-28",
+	}
+
+	_, _, handled := handleOpenCheckIn(state, Deps{
+		OpenCheckInDialog: func(s *State) bool {
+			called = true
+			if s.WellbeingDate != "2026-05-28" {
+				t.Fatalf("expected wellbeing check-in opener to preserve wellbeing date, got %q", s.WellbeingDate)
+			}
+			return true
+		},
+	})
+	if !handled {
+		t.Fatal("expected wellbeing w to be handled")
+	}
+	if !called {
+		t.Fatal("expected wellbeing w to open the check-in dialog")
+	}
+}
+
+func TestHandleOpenCheckInRejectsOtherViews(t *testing.T) {
+	called := false
+	_, _, handled := handleOpenCheckIn(State{ActiveView: uistate.ViewDefault}, Deps{
+		OpenCheckInDialog: func(*State) bool {
+			called = true
+			return true
+		},
+	})
+	if handled {
+		t.Fatal("expected non-daily check-in binding to fall through")
+	}
+	if called {
+		t.Fatal("did not expect check-in dialog to open outside daily or wellbeing views")
+	}
+}
+
+func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
+	checkInCalled := false
+	checkInState := State{
+		ActiveView:    uistate.ViewWellbeing,
+		WellbeingDate: "2026-05-28",
+	}
+
+	next, _ := Handle(checkInState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'w'}}, Deps{
+		OpenCheckInDialog: func(s *State) bool {
+			checkInCalled = true
+			if s.WellbeingDate != "2026-05-28" {
+				t.Fatalf("expected wellbeing w to preserve wellbeing date, got %q", s.WellbeingDate)
+			}
+			s.Dialog = "checkin"
+			return true
+		},
+	})
+	if !checkInCalled {
+		t.Fatal("expected wellbeing w to open the check-in dialog")
+	}
+	if next.Dialog != "checkin" {
+		t.Fatalf("expected wellbeing w to route to check-in, got dialog %q", next.Dialog)
+	}
+
+	awayState := State{
+		ActiveView: uistate.ViewWellbeing,
+		Settings:   &api.CoreSettings{AwayModeEnabled: false},
+	}
+	next, _ = Handle(awayState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'W'}}, Deps{
+		PatchSetting: func(sharedtypes.CoreSettingsKey, any, int64, int64, string) tea.Cmd { return nil },
+		SetStatus:    func(*State, string, bool) tea.Cmd { return nil },
+	})
+	if !next.Settings.AwayModeEnabled {
+		t.Fatal("expected wellbeing W to enable away mode")
+	}
+}

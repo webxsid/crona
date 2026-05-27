@@ -107,6 +107,7 @@ const (
 	MethodTimerPause    = "timer.pause"
 	MethodTimerResume   = "timer.resume"
 	MethodTimerAdvance  = "timer.advance"
+	MethodTimerExtend   = "timer.extend"
 	MethodTimerEnd      = "timer.end"
 
 	MethodContextGet          = "context.get"

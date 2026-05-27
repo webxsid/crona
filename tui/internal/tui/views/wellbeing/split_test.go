@@ -9,6 +9,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/chrome"
 	uistate "crona/tui/internal/tui/state"
+	viewmomentum "crona/tui/internal/tui/views/momentum"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -81,8 +82,8 @@ func TestMomentumRowsRenderCadenceAndMeters(t *testing.T) {
 }
 
 func TestMomentumLadderShowsAbsoluteLengthWhenBothAreBest(t *testing.T) {
-	short := ansi.Strip(momentumLadder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 2, 2))
-	long := ansi.Strip(momentumLadder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 40, 40))
+	short := ansi.Strip(viewmomentum.Ladder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 2, 2))
+	long := ansi.Strip(viewmomentum.Ladder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 40, 40))
 
 	if strings.Count(short, "▰") >= strings.Count(long, "▰") {
 		t.Fatalf("expected longer streak to fill more tiers, short %q long %q", short, long)
@@ -117,7 +118,7 @@ func TestMomentumTierCountsUseCadenceThresholds(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := momentumTierCount(tt.period, tt.current); got != tt.want {
+		if got := viewmomentum.TierCount(tt.period, tt.current); got != tt.want {
 			t.Fatalf("%s tier count = %d, want %d", tt.name, got, tt.want)
 		}
 	}

@@ -193,8 +193,7 @@ func timerNextSegmentFromContent(state ContentState) string {
 }
 
 func structuredTimerFromContent(state ContentState) bool {
-	return state.Settings != nil && state.Settings.TimerMode == "structured" &&
-		state.Settings.BreaksEnabled
+	return false
 }
 
 func RenderPaneRowStyled(

@@ -80,7 +80,7 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 			Detail: "Notification, sound, and alert backend settings.",
 		},
 		{
-			Key:    "u",
+			Key:    "t",
 			Label:  "Updates",
 			Value:  "updates",
 			Detail: "Release notes, update checks, and install status.",

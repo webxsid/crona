@@ -3,6 +3,7 @@ package sessions
 import (
 	"strings"
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -29,13 +30,17 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 			Issue: api.Issue{ID: issueID, Title: "Timer sizing"},
 		}},
 		Settings: &api.CoreSettings{
-			TimerMode:           sharedtypes.TimerModeStructured,
+			TimerMode:           sharedtypes.TimerModeStopwatch,
 			BreaksEnabled:       true,
 			WorkDurationMinutes: 25,
 			ShortBreakMinutes:   5,
 			LongBreakMinutes:    15,
 		},
 	}
+	sessionStart := time.Now().UTC().Add(-2 * time.Hour).Format(time.RFC3339)
+	segmentStart := time.Now().UTC().Add(-12*time.Minute - 34*time.Second).Format(time.RFC3339)
+	state.Timer.SessionStartTime = &sessionStart
+	state.Timer.SegmentStartTime = &segmentStart
 
 	rendered := renderActiveView(types.Theme{}, state)
 	titleAt := strings.Index(rendered, "Focus Session")
@@ -48,12 +53,9 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if titleAt >= clockAt || clockAt >= metricAt || metricAt >= issueAt {
 		t.Fatalf("expected title above clock above metadata above issue pane, got %q", rendered)
 	}
-	if !strings.Contains(rendered, strings.Repeat("█", 12)) {
-		t.Fatalf("expected structured active view to render a wide progress bar, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "mins until break") {
+	if strings.Contains(rendered, "mins until break") || strings.Contains(rendered, "mins left") {
 		t.Fatalf(
-			"expected structured active view to show the next break indicator, got %q",
+			"expected stopwatch active view to avoid session timing labels, got %q",
 			rendered,
 		)
 	}
@@ -81,8 +83,23 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	breakState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	breakState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
 	rendered = renderActiveView(types.Theme{}, breakState)
-	if !strings.Contains(rendered, "min left") {
-		t.Fatalf("expected active break to show the remaining time indicator, got %q", rendered)
+	if strings.Contains(rendered, "min left") || strings.Contains(rendered, "until break") {
+		t.Fatalf("expected stopwatch break state to avoid timing labels, got %q", rendered)
+	}
+
+	pausedState := state
+	pausedState.Timer.State = "paused"
+	pausedState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentRest)
+	pausedState.Timer.ElapsedSeconds = 754
+	pausedNow := time.Now().UTC().Format(time.RFC3339)
+	pausedState.Timer.SegmentStartTime = &pausedNow
+	rendered = renderActiveView(types.Theme{}, pausedState)
+	if !strings.Contains(rendered, "Paused For") {
+		t.Fatalf("expected paused stopwatch title, got %q", rendered)
+	}
+	if strings.Contains(rendered, "00:12:34") || strings.Contains(rendered, "12:34") ||
+		strings.Contains(rendered, "00:00:12") {
+		t.Fatalf("expected paused stopwatch to ignore prior elapsed time, got %q", rendered)
 	}
 
 	readyState := state
@@ -91,8 +108,79 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	readyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	readyState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	rendered = renderActiveView(types.Theme{}, readyState)
-	if !strings.Contains(rendered, "break ready") {
-		t.Fatalf("expected ready state to show the prepared segment indicator, got %q", rendered)
+	if strings.Contains(rendered, "mins until break") || strings.Contains(rendered, "mins left") {
+		t.Fatalf("expected stopwatch ready state to avoid session timing labels, got %q", rendered)
+	}
+
+	hardLimitState := state
+	hardLimitState.Timer.State = "running"
+	hardLimitState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	hardLimitState.Timer.ReadySegmentType = nil
+	hardLimitState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
+	hardLimitState.Timer.HardLimitActive = true
+	hardLimitState.Timer.HardLimitTotalSeconds = 5400
+	hardLimitState.Timer.HardLimitWorkSeconds = 1200
+	hardLimitState.Timer.HardLimitBreakSeconds = 420
+	staleRemaining := 1800
+	sessionStart = time.Now().UTC().Add(-85 * time.Minute).Format(time.RFC3339)
+	segmentStart = time.Now().UTC().Add(-12 * time.Minute).Format(time.RFC3339)
+	hardLimitState.Timer.HardLimitRemainingSeconds = staleRemaining
+	hardLimitState.Timer.SessionStartTime = &sessionStart
+	hardLimitState.Timer.SegmentStartTime = &segmentStart
+	rendered = renderActiveView(types.Theme{}, hardLimitState)
+	if !strings.Contains(rendered, "Pomodoro Session") {
+		t.Fatalf("expected hard-limit title, got %q", rendered)
+	}
+	if strings.Contains(rendered, "until long break") {
+		t.Fatalf("expected hard-limit work label to avoid long-break wording, got %q", rendered)
+	}
+	if strings.Contains(rendered, "left in cap") || strings.Contains(rendered, "Cap:") {
+		t.Fatalf("expected hard-limit view to avoid cap countdown text, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "[x] commit  [z] stash  [i] context") {
+		t.Fatalf("expected hard-limit action hints, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Ready For") {
+		t.Fatalf("expected hard-limit view to avoid ready-for semantics, got %q", rendered)
+	}
+
+	pomodoroState := hardLimitState
+	pomodoroState.Timer.HardLimitWorkSeconds = 120
+	pomodoroState.Timer.HardLimitBreakSeconds = 60
+	pomodoroState.Timer.HardLimitLongBreakSeconds = 120
+	pomodoroState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	pomodoroState.Timer.ReadySegmentType = nil
+	pomodoroState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
+	workStart := time.Now().UTC().Format(time.RFC3339)
+	pomodoroState.Timer.SegmentStartTime = &workStart
+	if got := sessionTimingLabel(pomodoroState, time.Now().UTC()); got != "2 mins until break" {
+		t.Fatalf("expected hard-limit work label to use the selected focus duration, got %q", got)
+	}
+
+	hardLimitReadyState := hardLimitState
+	hardLimitReadyState.Timer.State = "ready"
+	hardLimitReadyState.Timer.SegmentType = nil
+	hardLimitReadyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	rendered = renderActiveView(types.Theme{}, hardLimitReadyState)
+	if strings.Contains(rendered, "Ready For") {
+		t.Fatalf("expected hard-limit ready state to avoid ready-for title, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "Pomodoro Session") {
+		t.Fatalf("expected hard-limit ready state to keep the hard-limit title, got %q", rendered)
+	}
+
+	pomodoroReadyState := pomodoroState
+	pomodoroReadyState.Timer.State = "ready"
+	pomodoroReadyState.Timer.SegmentType = nil
+	pomodoroReadyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	if got := sessionTimingLabel(pomodoroReadyState, time.Now().UTC()); got != "2 mins until break" {
+		t.Fatalf("expected hard-limit ready label to use the selected focus duration, got %q", got)
+	}
+
+	hardLimitState.Timer.HardLimitExpired = true
+	rendered = renderActiveView(types.Theme{}, hardLimitState)
+	if !strings.Contains(rendered, "commit, stash, or extend") {
+		t.Fatalf("expected expired hard-limit prompt, got %q", rendered)
 	}
 }
 

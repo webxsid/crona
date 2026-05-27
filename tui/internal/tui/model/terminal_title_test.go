@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -11,12 +12,14 @@ import (
 func TestTerminalTitleActiveSessionUsesIssueTimerAndState(t *testing.T) {
 	issueID := int64(42)
 	segment := sharedtypes.SessionSegmentWork
+	segmentStart := time.Now().UTC().Add(-12 * time.Minute).Format(time.RFC3339)
 	model := Model{
 		timer: &api.TimerState{
-			State:          "running",
-			IssueID:        &issueID,
-			SegmentType:    &segment,
-			ElapsedSeconds: 35 * 60,
+			State:             "running",
+			IssueID:           &issueID,
+			SegmentType:       &segment,
+			ElapsedSeconds:    35 * 60,
+			SegmentStartTime:   &segmentStart,
 		},
 		elapsed: 7 * 60,
 		allIssues: []api.IssueWithMeta{{
@@ -24,25 +27,32 @@ func TestTerminalTitleActiveSessionUsesIssueTimerAndState(t *testing.T) {
 		}},
 	}
 
-	if got, want := model.terminalTitle(), "Crona · Fix checkout title handling · 00:42:00 WORK"; got != want {
+	if got, want := model.terminalTitle(), "Crona · Fix checkout title handling · 00:12:00 WORK"; got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
 
 func TestTerminalTitleActiveSessionFallsBackToIssueIDAndPausedState(t *testing.T) {
 	issueID := int64(42)
+	now := time.Now().UTC().Add(time.Hour).Format(time.RFC3339)
+	segment := sharedtypes.SessionSegmentRest
 	model := Model{
 		timer: &api.TimerState{
-			State:          "paused",
-			IssueID:        &issueID,
-			ElapsedSeconds: 65 * 60,
+			State:                       "paused",
+			IssueID:                     &issueID,
+			ElapsedSeconds:              65 * 60,
+			SegmentStartTime:            &now,
+			SegmentType:                 &segment,
+			SegmentElapsedOffsetSeconds:  intPtr(0),
 		},
 	}
 
-	if got, want := model.terminalTitle(), "Crona · Issue #42 · 01:05:00 PAUSED"; got != want {
+	if got, want := model.terminalTitle(), "Crona · Issue #42 · 00:00:00 PAUSED"; got != want {
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
+
+func intPtr(v int) *int { return &v }
 
 func TestTerminalTitleIdleUsesContextAndView(t *testing.T) {
 	repo := "Work"

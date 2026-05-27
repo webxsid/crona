@@ -10,12 +10,8 @@ func SplitVertical(total, topMin, bottomMin, topPreferred int) (int, int) {
 		return total - bottomMin, bottomMin
 	}
 	top := topPreferred
-	if top < topMin {
-		top = topMin
-	}
-	if top > total-bottomMin {
-		top = total - bottomMin
-	}
+	top = max(top, topMin)
+	top = min(top, total-bottomMin)
 	return top, total - top
 }
 
@@ -27,12 +23,8 @@ func SplitHorizontal(total, leftMin, rightMin, leftPreferred int) (int, int) {
 		return total - rightMin, rightMin
 	}
 	left := leftPreferred
-	if left < leftMin {
-		left = leftMin
-	}
-	if left > total-rightMin {
-		left = total - rightMin
-	}
+	left = max(left, leftMin)
+	left = min(left, total-rightMin)
 	return left, total - left
 }
 
@@ -40,9 +32,7 @@ func RenderedLineCount(lines []string) int {
 	total := 0
 	for _, line := range lines {
 		h := lipgloss.Height(line)
-		if h < 1 {
-			h = 1
-		}
+		h = max(h, 1)
 		total += h
 	}
 	return total

@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
+	"time"
 
 	contextcmd "crona/cli/internal/command/context"
 	flagspkg "crona/cli/internal/flags"
@@ -19,7 +22,7 @@ type Deps struct {
 }
 
 func TimerUsage() string {
-	return "Usage: crona timer <status|start|pause|resume|advance|end> ...\n"
+	return "Usage: crona timer <status|start|pause|resume|advance|extend|end> ...\n"
 }
 
 func IssueUsage() string {
@@ -47,6 +50,9 @@ func RunTimer(args []string, deps Deps) error {
 		fs := flagspkg.New("timer start")
 		issueID := fs.Int64("issue-id", 0, "")
 		fromContext := fs.Bool("from-context", false, "")
+		limit := fs.String("limit", "", "")
+		work := fs.String("work", "", "")
+		breakDuration := fs.String("break", "", "")
 		jsonOut := fs.Bool("json", false, "")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
@@ -61,6 +67,27 @@ func RunTimer(args []string, deps Deps) error {
 		req := shareddto.TimerStartRequest{}
 		if *issueID > 0 {
 			req.IssueID = issueID
+		}
+		if strings.TrimSpace(*limit) != "" {
+			seconds, err := parseDurationSeconds(*limit)
+			if err != nil {
+				return err
+			}
+			req.HardLimitTotalSeconds = &seconds
+		}
+		if strings.TrimSpace(*work) != "" {
+			seconds, err := parseDurationSeconds(*work)
+			if err != nil {
+				return err
+			}
+			req.HardLimitWorkSeconds = &seconds
+		}
+		if strings.TrimSpace(*breakDuration) != "" {
+			seconds, err := parseDurationSeconds(*breakDuration)
+			if err != nil {
+				return err
+			}
+			req.HardLimitBreakSeconds = &seconds
 		}
 		var out sharedtypes.TimerState
 		if err := deps.CallKernel(protocol.MethodTimerStart, req, &out); err != nil {
@@ -100,6 +127,29 @@ func RunTimer(args []string, deps Deps) error {
 			return outputpkg.PrintJSON(deps.Stdout, out)
 		}
 		return outputpkg.PrintTimerResult(deps.Stdout, out, "timer advanced")
+	case "extend":
+		fs := flagspkg.New("timer extend")
+		duration := fs.String("duration", "", "")
+		jsonOut := fs.Bool("json", false, "")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		seconds, err := parseDurationSeconds(*duration)
+		if err != nil {
+			return err
+		}
+		var out sharedtypes.TimerState
+		if err := deps.CallKernel(
+			protocol.MethodTimerExtend,
+			shareddto.TimerExtendRequest{AdditionalSeconds: seconds},
+			&out,
+		); err != nil {
+			return err
+		}
+		if *jsonOut {
+			return outputpkg.PrintJSON(deps.Stdout, out)
+		}
+		return outputpkg.PrintTimerResult(deps.Stdout, out, "timer extended")
 	case "end":
 		fs := flagspkg.New("timer end")
 		jsonOut := fs.Bool("json", false, "")
@@ -131,6 +181,28 @@ func RunTimer(args []string, deps Deps) error {
 	default:
 		return fmt.Errorf("unknown timer command: %s", args[0])
 	}
+}
+
+func parseDurationSeconds(raw string) (int, error) {
+	raw = strings.TrimSpace(strings.ToLower(raw))
+	if raw == "" {
+		return 0, fmt.Errorf("duration is required")
+	}
+	if minutes, err := strconv.Atoi(raw); err == nil {
+		if minutes <= 0 {
+			return 0, fmt.Errorf("duration must be positive")
+		}
+		return minutes * 60, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		return 0, fmt.Errorf("duration must be like 90, 90m, or 1h30m")
+	}
+	seconds := int(d.Seconds())
+	if seconds <= 0 {
+		return 0, fmt.Errorf("duration must be positive")
+	}
+	return seconds, nil
 }
 
 func RunIssue(args []string, deps Deps) error {

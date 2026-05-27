@@ -3,6 +3,7 @@ package model
 import (
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
@@ -27,14 +28,14 @@ func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
 
 func (m Model) overlayState() overlaypkg.State {
 	return overlaypkg.State{
-		HelpOpen:           m.helpOpen,
-		FilterEditing:      m.filterEditing,
-		DialogState:        m.dialogState(),
-		SessionDetailOpen:  m.sessionDetailOpen,
-		SessionDetailY:     m.sessionDetailY,
-		SessionDetail:      m.sessionDetail,
-		Cursor:             map[string]int{},
-		Timer:              m.timer,
+		HelpOpen:          m.helpOpen,
+		FilterEditing:     m.filterEditing,
+		DialogState:       m.dialogState(),
+		SessionDetailOpen: m.sessionDetailOpen,
+		SessionDetailY:    m.sessionDetailY,
+		SessionDetail:     m.sessionDetail,
+		Cursor:            map[string]int{},
+		Timer:             m.timer,
 	}
 }
 
@@ -230,5 +231,10 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadOps:          func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
 		TickAfter:        commands.TickAfter,
 	}, event)
-	return m.applyDispatchEventState(state), cmd
+	next := m.applyDispatchEventState(state)
+	if event.Type == sharedtypes.EventTypeTimerHardLimitReached && next.dialog == "" {
+		label := next.terminalSessionTitle()
+		next = next.openHardLimitExpiredDialog(label)
+	}
+	return next, cmd
 }

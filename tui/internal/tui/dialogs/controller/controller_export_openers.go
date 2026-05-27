@@ -10,7 +10,14 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
-func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo, checkedRepoID *int64, assets *api.ExportAssetStatus) State {
+func OpenExportDaily(
+	state State,
+	date string,
+	includePDF bool,
+	repos []api.Repo,
+	checkedRepoID *int64,
+	assets *api.ExportAssetStatus,
+) State {
 	state = Close(state)
 	state.Kind = "export_report_category"
 	state.CheckInDate = date
@@ -37,7 +44,9 @@ func OpenExportDaily(state State, date string, includePDF bool, repos []api.Repo
 	}
 	state.ChoiceCursor = 0
 	if assets != nil {
-		state.TemplateAssets = append([]sharedtypes.ExportTemplateAsset(nil), assets.TemplateAssets...)
+		state.TemplateAssets = append(
+			[]sharedtypes.ExportTemplateAsset(nil),
+			assets.TemplateAssets...)
 	}
 	return state
 }
@@ -103,7 +112,12 @@ func exportReportChoices(category string, includePDF bool) ([]string, []string) 
 	}
 }
 
-func OpenExportPreset(state State, reportKind sharedtypes.ExportReportKind, format sharedtypes.ExportFormat, outputMode sharedtypes.ExportOutputMode) State {
+func OpenExportPreset(
+	state State,
+	reportKind sharedtypes.ExportReportKind,
+	format sharedtypes.ExportFormat,
+	outputMode sharedtypes.ExportOutputMode,
+) State {
 	state.Parent = "export_report"
 	state.Kind = "export_preset"
 	state.ExportPresetKind = reportKind
@@ -215,13 +229,20 @@ func OpenEditDateDisplayFormat(state State, current string) State {
 	return state
 }
 
-func OpenEditRestProtection(state State, streaks []sharedtypes.StreakKind, weekdays []int, dates []string) State {
+func OpenEditRestProtection(
+	state State,
+	streaks []sharedtypes.StreakKind,
+	weekdays []int,
+	dates []string,
+) State {
 	state = Close(state)
 	state.Kind = "edit_rest_protection"
 	state.ProtectionStep = 0
 	state.ProtectionCursor = 0
 	if len(streaks) == 0 {
-		state.ProtectionStreaks = append([]sharedtypes.StreakKind(nil), sharedtypes.AvailableStreakKinds()...)
+		state.ProtectionStreaks = append(
+			[]sharedtypes.StreakKind(nil),
+			sharedtypes.AvailableStreakKinds()...)
 	} else {
 		state.ProtectionStreaks = append([]sharedtypes.StreakKind(nil), streaks...)
 	}

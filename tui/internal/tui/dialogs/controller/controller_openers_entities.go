@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -438,6 +439,210 @@ func OpenSessionMessage(state State, kind string) State {
 	input.Width = 48
 	state = Close(state)
 	state.Kind = kind
+	state.Inputs = []textinput.Model{input}
+	return state
+}
+
+func OpenSessionMessageWithParent(state State, kind string, parent string) State {
+	viewName := state.ViewName
+	state = OpenSessionMessage(state, kind)
+	state.Parent = parent
+	state.ViewName = viewName
+	return state
+}
+
+func OpenTimerStartType(state State, repoID, streamID, issueID int64, issueLabel string) State {
+	state = Close(state)
+	state.Kind = "timer_start_type"
+	state.ViewTitle = "Start Timer"
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ChoiceItems = []string{"Stopwatch", "Pomodoro"}
+	state.ChoiceValues = []string{"stopwatch", "pomodoro"}
+	state.ChoiceDetails = []string{
+		"Start an open-ended focus session.",
+		"Choose focus and break presets, then set the total pomodoro time.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenPomodoroFocusPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
+	state = Close(state)
+	state.Kind = "pomodoro_focus_presets"
+	state.ViewTitle = "Pomodoro Focus Presets"
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ChoiceItems = []string{
+		"25m focus",
+		"50m focus",
+		"90m focus",
+		"Custom",
+	}
+	state.ChoiceValues = []string{"25m", "50m", "90m", "custom"}
+	state.ChoiceDetails = []string{
+		"Quick focus block cadence.",
+		"Medium focus block cadence.",
+		"Long focus block cadence.",
+		"Enter a custom focus duration.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenPomodoroBreakPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
+	state = Close(state)
+	state.Kind = "pomodoro_break_presets"
+	state.ViewTitle = "Pomodoro Break Presets"
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ChoiceItems = []string{
+		"5m break",
+		"10m break",
+		"15m break",
+		"Custom",
+	}
+	state.ChoiceValues = []string{"5m", "10m", "15m", "custom"}
+	state.ChoiceDetails = []string{
+		"Short break cadence.",
+		"Medium break cadence.",
+		"Long break cadence.",
+		"Enter a custom break duration.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenPomodoroFocusCustom(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	input := newSessionDetailInput(state, "25m")
+	input.Focus()
+	state = Close(state)
+	state.Kind = "pomodoro_focus_custom"
+	state.Parent = "pomodoro_focus_presets"
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.Inputs = []textinput.Model{input}
+	return SyncDialogFocus(state)
+}
+
+func OpenPomodoroBreakCustom(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	input := newSessionDetailInput(state, "5m")
+	input.Focus()
+	state = Close(state)
+	state.Kind = "pomodoro_break_custom"
+	state.Parent = "pomodoro_break_presets"
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.Inputs = []textinput.Model{input}
+	return SyncDialogFocus(state)
+}
+
+func OpenPomodoroStart(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	totalMinutes, shortBreakCount, longBreakMinutes int,
+) State {
+	inputs := []textinput.Model{
+		newSessionDetailInput(state, "90m"),
+		newSessionDetailInput(state, "4"),
+		newSessionDetailInput(state, "15m"),
+	}
+	inputs[0].SetValue(FormatDurationMinutesInput(&totalMinutes))
+	inputs[1].SetValue(strconv.Itoa(shortBreakCount))
+	inputs[2].SetValue(FormatDurationMinutesInput(&longBreakMinutes))
+	inputs[0].Focus()
+	state = Close(state)
+	state.Kind = "pomodoro_start"
+	state.Parent = "pomodoro_break_presets"
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.Inputs = inputs
+	return SyncDialogFocus(state)
+}
+
+func OpenHardLimitStart(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	totalMinutes, workMinutes, breakMinutes int,
+) State {
+	state.PomodoroFocusSeconds = workMinutes * 60
+	state.PomodoroBreakSeconds = breakMinutes * 60
+	return OpenPomodoroStart(
+		state,
+		repoID,
+		streamID,
+		issueID,
+		issueLabel,
+		totalMinutes,
+		4,
+		15,
+	)
+}
+
+func OpenHardLimitPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
+	return OpenPomodoroFocusPreset(state, repoID, streamID, issueID, issueLabel)
+}
+
+func OpenHardLimitExpired(state State, issueLabel string) State {
+	state = Close(state)
+	state.Kind = "hard_limit_expired"
+	state.ViewTitle = "Pomodoro Session Complete"
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.ChoiceItems = []string{"[c] Commit", "[z] Stash", "[e] Extend"}
+	state.ChoiceValues = []string{"commit", "stash", "extend"}
+	state.ChoiceDetails = []string{
+		"Finish the session and capture what was completed.",
+		"End the session and preserve the context for later.",
+		"Add more time and keep the same focus session running.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenHardLimitExtend(state State) State {
+	state = Close(state)
+	state.Kind = "hard_limit_extend"
+	state.Parent = "hard_limit_expired"
+	state.ChoiceItems = []string{"[1] 10m", "[2] 15m", "[3] 25m", "[c] Custom"}
+	state.ChoiceValues = []string{"600", "900", "1500", "custom"}
+	state.ChoiceDetails = []string{
+		"Keep working for 10 more minutes.",
+		"Keep working for 15 more minutes.",
+		"Keep working for 25 more minutes.",
+		"Enter an exact extension duration.",
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
+func OpenHardLimitExtendCustom(state State) State {
+	input := newSessionDetailInput(state, "15m")
+	input.Focus()
+	state = Close(state)
+	state.Kind = "hard_limit_extend_custom"
+	state.Parent = "hard_limit_expired"
 	state.Inputs = []textinput.Model{input}
 	return state
 }

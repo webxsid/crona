@@ -77,6 +77,7 @@ type Deps struct {
 	CurrentRollupEndDate            func(State) string
 	LoadWellbeing                   func(string, int) tea.Cmd
 	CurrentWellbeingDate            func(State) string
+	OpenCheckInDialog               func(*State) bool
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
 	Checkout                        func(*State) tea.Cmd
@@ -236,20 +237,19 @@ func newRouter(deps Deps) *router {
 			return s, nil, false
 		},
 		"v":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
-		"u":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenUpdates(s) },
 		"R":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
 		"j":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
 		"down": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
 		"k":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"up":   func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"f": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
+			if !focusStartContext(s) {
 				return s, nil, false
 			}
 			return s, deps.StartFocusFromSelection(&s), true
 		},
 		"m": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
+			if s.ProtectedModeActive || timerIsActive(s) || !issueEditorContext(s) {
 				return s, nil, false
 			}
 			if deps.OpenManualSessionDialog(&s) {
@@ -313,6 +313,9 @@ func newRouter(deps Deps) *router {
 			return s, nil, true
 		},
 		"e": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive || timerIsActive(s) || !issueEditorContext(s) {
+				return s, nil, false
+			}
 			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled
 		},
@@ -382,7 +385,7 @@ func newRouter(deps Deps) *router {
 		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, nil, false },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
+			if s.ProtectedModeActive || timerIsActive(s) {
 				return s, nil, false
 			}
 			if deps.OpenHabitLogAction != nil {
@@ -407,8 +410,13 @@ func newRouter(deps Deps) *router {
 		},
 	)
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleToggleAwayMode(s, deps)
+		return handleOpenCheckIn(s, deps)
 	})
+	for _, view := range []uistate.View{uistate.ViewDaily, uistate.ViewAway} {
+		r.RegisterView(view, "W", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleToggleAwayMode(s, deps)
+		})
+	}
 	for _, view := range []uistate.View{
 		uistate.ViewDefault,
 		uistate.ViewMeta,
@@ -419,9 +427,6 @@ func newRouter(deps Deps) *router {
 			return handleOpenExportDaily(s, deps)
 		})
 	}
-	r.RegisterView(uistate.ViewAway, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleToggleAwayMode(s, deps)
-	})
 	keyregistry.RegisterMeta(
 		r,
 		uistate.ViewMeta,
@@ -696,6 +701,13 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(
 		uistate.ViewWellbeing,
 		"w",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleOpenCheckIn(s, deps)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewWellbeing,
+		"W",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return handleToggleAwayMode(s, deps)
 		},

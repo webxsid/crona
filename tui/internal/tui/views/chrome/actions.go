@@ -15,6 +15,7 @@ type ActionsState struct {
 	TimerSegment           string
 	TimerNextSegment       string
 	StructuredTimer        bool
+	HardLimitActive        bool
 	RestModeActive         bool
 	AwayModeActive         bool
 	IsDevMode              bool
@@ -49,10 +50,11 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"))
 	}
 	if state.View == "daily" || state.View == "wellbeing" {
-		actions = append(actions, theme.StyleHeader.Render("[w]")+theme.StyleDim.Render(" away"))
+		actions = append(actions, checkInAction(theme))
+		actions = append(actions, awayAction(theme, false))
 	}
-	if state.UpdateVisible {
-		actions = append(actions, theme.StyleHeader.Render("[u]")+theme.StyleDim.Render(" updates"))
+	if state.View == "away" && state.AwayModeActive {
+		actions = append(actions, awayAction(theme, true))
 	}
 	return actions
 }
@@ -61,7 +63,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.RestModeActive && state.View == "away" {
 		if state.AwayModeActive {
 			return []string{
-				theme.StyleHeader.Render("[w]") + theme.StyleDim.Render(" disable away"),
+				awayAction(theme, true),
 			}
 		}
 		return nil
@@ -69,8 +71,16 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "session_active" {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
-				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
+				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" start timer"),
 				theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
+			}
+		}
+		if state.HardLimitActive {
+			return []string{
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" commit"),
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
 			}
 		}
 		if state.TimerState == "ready" {
@@ -86,30 +96,8 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
 			}
 		}
-		if state.StructuredTimer {
-			actions := []string{
-				theme.StyleHeader.Render(
-					"[r]",
-				) + theme.StyleDim.Render(
-					" start "+timerActionSegmentLabel(state.TimerNextSegment),
-				),
-				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
-				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
-			}
-			if state.TimerSegment == "work" || state.TimerSegment == "short_break" ||
-				state.TimerSegment == "long_break" {
-				actions = append(
-					[]string{
-						theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" manual pause"),
-					},
-					actions...)
-			}
-			return actions
-		}
 		return []string{
-			theme.StyleHeader.Render("[p/r]") + theme.StyleDim.Render(" pause/resume"),
+			theme.StyleHeader.Render("[p]") + theme.StyleDim.Render(" pause"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
 			theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
 			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
@@ -124,7 +112,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
-			theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
 			theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
 		}
 	}
@@ -139,7 +126,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
 			theme.StyleHeader.Render("[+/-]") + theme.StyleDim.Render(" window"),
 			theme.StyleHeader.Render("[0]") + theme.StyleDim.Render(" reset window"),
-			theme.StyleHeader.Render("[a/e]") + theme.StyleDim.Render(" check-in"),
+			checkInAction(theme),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	}
@@ -224,37 +211,54 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	case "issues":
+		timerIdle := state.TimerState == "" || state.TimerState == "idle"
 		if state.View == "daily" {
-			return []string{
+			actions := []string{
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
-				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
 				theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
 			}
+			if timerIdle {
+				actions = append(
+					actions,
+					theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start timer"),
+					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"),
+					theme.StyleHeader.Render("[e]")+theme.StyleDim.Render(" edit"),
+				)
+			}
+			return actions
 		}
-		return []string{
+		actions := []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-			theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" focus"),
-			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
 			theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
-			theme.StyleHeader.Render("[e/d]") + theme.StyleDim.Render(" edit/delete"),
 		}
+		if timerIdle {
+			actions = append(
+				actions,
+				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start timer"),
+				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"),
+				theme.StyleHeader.Render("[e/d]")+theme.StyleDim.Render(" edit/delete"),
+			)
+		}
+		return actions
 	case "habits":
 		if state.View == "daily" {
-			return []string{
+			actions := []string{
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-				theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle"),
 				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" fail"),
 				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
+			if state.TimerState == "" || state.TimerState == "idle" {
+				actions = append(actions, theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"))
+			}
+			return actions
 		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
@@ -280,6 +284,17 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	return nil
+}
+
+func checkInAction(theme Theme) string {
+	return theme.StyleHeader.Render("[w]") + theme.StyleDim.Render(" check-in")
+}
+
+func awayAction(theme Theme, disabled bool) string {
+	if disabled {
+		return theme.StyleHeader.Render("[W]") + theme.StyleDim.Render(" disable away")
+	}
+	return theme.StyleHeader.Render("[W]") + theme.StyleDim.Render(" away")
 }
 
 func timerActionSegmentLabel(segment string) string {

@@ -77,6 +77,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	leftWidth := summaryInnerW
 	lines := buildSummaryLines(
 		theme,
+		state,
 		state.Height,
 		leftWidth,
 		dateText,
@@ -108,6 +109,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 		if leftWidth != summaryInnerW {
 			lines = buildSummaryLines(
 				theme,
+				state,
 				state.Height,
 				leftWidth,
 				dateText,
@@ -216,6 +218,7 @@ func wideSummaryBarWidth(totalWidth int) int {
 
 func buildSummaryLines(
 	theme types.Theme,
+	state types.ContentState,
 	paneHeight, width int,
 	dateText, scopeText string,
 	issueStatusCounts map[string]int,
@@ -246,6 +249,7 @@ func buildSummaryLines(
 			),
 		),
 	}
+	momentum := renderMomentumBlock(theme, state, width)
 	lines := []string{
 		theme.StylePaneTitle.Render("Daily Dashboard"),
 		theme.StyleHeader.Render(fmt.Sprintf("For %s", dateText)),
@@ -255,7 +259,7 @@ func buildSummaryLines(
 	}
 	switch {
 	case paneHeight < 37:
-		return []string{
+		out := []string{
 			renderCompactMetadataRow(width,
 				theme.StylePaneTitle.Render("Daily Dashboard"),
 				theme.StyleHeader.Render(dateText),
@@ -300,6 +304,10 @@ func buildSummaryLines(
 				tinySummaryBarWidth,
 			),
 		}
+		if len(momentum) > 0 {
+			out = append(out, momentum...)
+		}
+		return out
 	case paneHeight < 48:
 		lines = append(lines,
 			renderCompactSummaryRow(
@@ -336,6 +344,10 @@ func buildSummaryLines(
 				compactSummaryBarWidth,
 			),
 		)
+		if len(momentum) > 0 {
+			lines = append(lines, "")
+			lines = append(lines, momentum...)
+		}
 	case paneHeight < 55:
 		lines = append(
 			lines,
@@ -382,6 +394,10 @@ func buildSummaryLines(
 				),
 			),
 		)
+		if len(momentum) > 0 {
+			lines = append(lines, "")
+			lines = append(lines, momentum...)
+		}
 	default:
 		lines = append(lines,
 			issueSummary,
@@ -390,6 +406,10 @@ func buildSummaryLines(
 			"",
 		)
 		lines = append(lines, habitVisual...)
+		if len(momentum) > 0 {
+			lines = append(lines, "")
+			lines = append(lines, momentum...)
+		}
 	}
 	return lines
 }

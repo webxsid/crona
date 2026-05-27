@@ -205,6 +205,16 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},
 		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
+		OpenCheckInDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			date := next.currentDashboardDate()
+			if next.view == ViewWellbeing {
+				date = next.currentWellbeingDate()
+			}
+			next = next.openCheckInDialogForDate(date)
+			*state = next.inputState()
+			return true
+		},
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()

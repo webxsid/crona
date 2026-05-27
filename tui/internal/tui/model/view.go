@@ -119,8 +119,10 @@ func (m Model) layoutChromeState() layoutChromeState {
 	timerState := ""
 	timerSegment := ""
 	timerNextSegment := ""
+	hardLimitActive := false
 	if m.timer != nil {
 		timerState = m.timer.State
+		hardLimitActive = m.timer.HardLimitActive
 		if m.timer.SegmentType != nil {
 			timerSegment = string(*m.timer.SegmentType)
 		}
@@ -130,8 +132,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 			timerNextSegment = string(*m.timer.NextSegmentType)
 		}
 	}
-	structuredTimer := m.settings != nil && m.settings.TimerMode == "structured" &&
-		m.settings.BreaksEnabled
+	structuredTimer := false
 	protectedMode, _, _ := viewruntime.ProtectedRestMode(
 		m.settings,
 		time.Now().Format("2006-01-02"),
@@ -162,6 +163,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 			TimerSegment:           timerSegment,
 			TimerNextSegment:       timerNextSegment,
 			StructuredTimer:        structuredTimer,
+			HardLimitActive:        hardLimitActive,
 			IsDevMode:              m.isDevMode(),
 			IsBetaBuild:            m.isBetaBuild(),
 			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),

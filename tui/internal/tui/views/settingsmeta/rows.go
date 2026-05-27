@@ -28,43 +28,6 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 		return nil
 	}
 	return []Row{
-		{Section: "Focus Timer", Label: "Timer Mode", Value: string(settings.TimerMode)},
-		{
-			Section: "Focus Timer",
-			Label:   "Work Duration",
-			Value:   fmt.Sprintf("%d min", settings.WorkDurationMinutes),
-		},
-		{Section: "Breaks", Label: "Breaks", Value: enabledDisabled(settings.BreaksEnabled)},
-		{
-			Section: "Breaks",
-			Label:   "Short Break",
-			Value:   fmt.Sprintf("%d min", settings.ShortBreakMinutes),
-		},
-		{
-			Section: "Breaks",
-			Label:   "Long Break",
-			Value:   fmt.Sprintf("%d min", settings.LongBreakMinutes),
-		},
-		{
-			Section: "Breaks",
-			Label:   "Long Breaks",
-			Value:   enabledDisabled(settings.LongBreakEnabled),
-		},
-		{
-			Section: "Breaks",
-			Label:   "Cycles Before Long Break",
-			Value:   fmt.Sprintf("%d", settings.CyclesBeforeLongBreak),
-		},
-		{
-			Section: "Breaks",
-			Label:   "Auto-Start Breaks",
-			Value:   enabledDisabled(settings.AutoStartBreaks),
-		},
-		{
-			Section: "Breaks",
-			Label:   "Auto-Start Work",
-			Value:   enabledDisabled(settings.AutoStartWork),
-		},
 		{
 			Section: "Updates",
 			Label:   "Update Checks",

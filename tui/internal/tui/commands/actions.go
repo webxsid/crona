@@ -892,7 +892,11 @@ func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) te
 }
 
 func StartFocusSession(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
-	return startFocusSession(c, repoID, streamID, issueID, false)
+	return startFocusSession(c, shareddto.TimerStartRequest{
+		RepoID:   optionalInt64(repoID),
+		StreamID: optionalInt64(streamID),
+		IssueID:  optionalInt64(issueID),
+	})
 }
 
 func TouchTimerActivity(c *api.Client) tea.Cmd {
@@ -905,16 +909,27 @@ func TouchTimerActivity(c *api.Client) tea.Cmd {
 }
 
 func ContinueFocusSessionFresh(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
-	return startFocusSession(c, repoID, streamID, issueID, true)
+	return startFocusSession(c, shareddto.TimerStartRequest{
+		RepoID:                optionalInt64(repoID),
+		StreamID:              optionalInt64(streamID),
+		IssueID:               optionalInt64(issueID),
+		IgnoreExistingStashes: true,
+	})
 }
 
-func startFocusSession(
+func StartHardLimitFocusSession(
 	c *api.Client,
-	repoID, streamID, issueID int64,
-	ignoreExistingStashes bool,
+	req shareddto.TimerStartRequest,
 ) tea.Cmd {
+	return startFocusSession(c, req)
+}
+
+func startFocusSession(c *api.Client, req shareddto.TimerStartRequest) tea.Cmd {
 	return func() tea.Msg {
-		if err := c.StartTimer(repoID, streamID, issueID, ignoreExistingStashes); err != nil {
+		repoID := derefInt64(req.RepoID)
+		streamID := derefInt64(req.StreamID)
+		issueID := derefInt64(req.IssueID)
+		if err := c.StartTimer(req); err != nil {
 			var rpcErr *protocol.RPCError
 			if errors.As(err, &rpcErr) && rpcErr != nil &&
 				rpcErr.Code == protocol.ErrorCodeStashConflict {
@@ -972,6 +987,16 @@ func ResumeFocusSession(c *api.Client, timer *api.TimerState) tea.Cmd {
 	}
 }
 
+func ExtendFocusSession(c *api.Client, additionalSeconds int) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.ExtendTimer(additionalSeconds); err != nil {
+			logger.Errorf("ExtendTimer: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return FocusSessionChangedMsg{ReloadTimer: true}
+	}
+}
+
 func EndFocusSession(
 	c *api.Client,
 	streamID int64,
@@ -996,6 +1021,20 @@ func EndFocusSession(
 		}
 		return tea.Batch(cmds...)()
 	}
+}
+
+func optionalInt64(value int64) *int64 {
+	if value == 0 {
+		return nil
+	}
+	return &value
+}
+
+func derefInt64(value *int64) int64 {
+	if value == nil {
+		return 0
+	}
+	return *value
 }
 
 func StashFocusSession(c *api.Client, note string) tea.Cmd {

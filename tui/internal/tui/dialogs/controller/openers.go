@@ -169,6 +169,14 @@ func (s Snapshot) OpenEditCheckIn() State {
 	return OpenEditCheckIn(s.Dialog, s.DailyCheckIn, s.CurrentWellbeingDate)
 }
 
+func (s Snapshot) OpenCreateCheckInForDate(date string) State {
+	return OpenCreateCheckIn(s.Dialog, date)
+}
+
+func (s Snapshot) OpenEditCheckInForDate(date string) State {
+	return OpenEditCheckIn(s.Dialog, s.DailyCheckIn, date)
+}
+
 func (s Snapshot) OpenEditHabitStreaks() State {
 	return OpenEditHabitStreaks(s.Dialog, s.Settings, s.AllHabits)
 }
@@ -206,6 +214,10 @@ func (s Snapshot) OpenSessionMessage(kind string) State {
 	return OpenSessionMessage(s.Dialog, kind)
 }
 
+func (s Snapshot) OpenSessionMessageWithParent(kind string, parent string) State {
+	return OpenSessionMessageWithParent(s.Dialog, kind, parent)
+}
+
 func (s Snapshot) OpenIssueSessionTransition(issueID int64, status string) State {
 	return OpenIssueSessionTransition(s.Dialog, issueID, status)
 }
@@ -221,6 +233,69 @@ func (s Snapshot) OpenManualSession(
 	date string,
 ) State {
 	return OpenManualSession(s.Dialog, issueID, issueLabel, estimateMinutes, date)
+}
+
+func (s Snapshot) OpenPomodoroStart(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenPomodoroStart(
+		s.Dialog,
+		repoID,
+		streamID,
+		issueID,
+		issueLabel,
+		90,
+		4,
+		15,
+	)
+}
+
+func (s Snapshot) OpenTimerStartType(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenTimerStartType(s.Dialog, repoID, streamID, issueID, issueLabel)
+}
+
+func (s Snapshot) OpenPomodoroFocusPresets(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenPomodoroFocusPreset(s.Dialog, repoID, streamID, issueID, issueLabel)
+}
+
+func (s Snapshot) OpenPomodoroBreakPresets(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenPomodoroBreakPreset(s.Dialog, repoID, streamID, issueID, issueLabel)
+}
+
+func (s Snapshot) OpenPomodoroFocusCustom(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenPomodoroFocusCustom(s.Dialog, repoID, streamID, issueID, issueLabel)
+}
+
+func (s Snapshot) OpenPomodoroBreakCustom(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+) State {
+	return OpenPomodoroBreakCustom(s.Dialog, repoID, streamID, issueID, issueLabel)
+}
+
+func (s Snapshot) OpenHardLimitExpired(issueLabel string) State {
+	return OpenHardLimitExpired(s.Dialog, issueLabel)
+}
+
+func (s Snapshot) OpenHardLimitExtend() State {
+	return OpenHardLimitExtend(s.Dialog)
+}
+
+func (s Snapshot) OpenHardLimitExtendCustom() State {
+	return OpenHardLimitExtendCustom(s.Dialog)
 }
 
 func (s Snapshot) OpenDatePicker(

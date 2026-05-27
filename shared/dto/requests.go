@@ -350,8 +350,17 @@ type StashIDRequest struct {
 }
 
 type TimerStartRequest struct {
-	RepoID                *int64 `json:"repoId,omitempty"`
-	StreamID              *int64 `json:"streamId,omitempty"`
-	IssueID               *int64 `json:"issueId,omitempty"`
-	IgnoreExistingStashes bool   `json:"ignoreExistingStashes,omitempty"`
+	RepoID                         *int64 `json:"repoId,omitempty"`
+	StreamID                       *int64 `json:"streamId,omitempty"`
+	IssueID                        *int64 `json:"issueId,omitempty"`
+	IgnoreExistingStashes          bool   `json:"ignoreExistingStashes,omitempty"`
+	HardLimitTotalSeconds          *int   `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitWorkSeconds           *int   `json:"hardLimitWorkSeconds,omitempty"`
+	HardLimitBreakSeconds          *int   `json:"hardLimitBreakSeconds,omitempty"`
+	HardLimitLongBreakSeconds      *int   `json:"hardLimitLongBreakSeconds,omitempty"`
+	HardLimitCyclesBeforeLongBreak *int   `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
+}
+
+type TimerExtendRequest struct {
+	AdditionalSeconds int `json:"additionalSeconds"`
 }

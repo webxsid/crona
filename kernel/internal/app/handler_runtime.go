@@ -164,9 +164,10 @@ func (h *Handler) handleRuntimeMethods(
 					input.RepoID,
 					input.StreamID,
 					input.IssueID,
+					&input,
 				)
 			}
-			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID)
+			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID, &input)
 		}), true
 	case protocol.MethodTimerActivity:
 		return h.handleNoParams(req, func() (any, error) {
@@ -186,6 +187,10 @@ func (h *Handler) handleRuntimeMethods(
 	case protocol.MethodTimerAdvance:
 		return h.handleNoParams(req, func() (any, error) {
 			return h.timer.Advance(ctx)
+		}), true
+	case protocol.MethodTimerExtend:
+		return handle(req, func(input shareddto.TimerExtendRequest) (any, error) {
+			return h.timer.Extend(ctx, input.AdditionalSeconds)
 		}), true
 	case protocol.MethodTimerEnd:
 		return handle(req, func(input shareddto.EndSessionRequest) (any, error) {

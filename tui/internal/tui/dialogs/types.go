@@ -46,6 +46,15 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"stash_session",
 		"issue_session_transition",
 		"stash_list",
+		"timer_start_type",
+		"pomodoro_focus_presets",
+		"pomodoro_focus_custom",
+		"pomodoro_break_presets",
+		"pomodoro_break_custom",
+		"pomodoro_start",
+		"hard_limit_expired",
+		"hard_limit_extend",
+		"hard_limit_extend_custom",
 		"amend_session",
 		"manual_session":
 		matched = "session"

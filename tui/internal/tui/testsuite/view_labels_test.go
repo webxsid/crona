@@ -29,7 +29,7 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 		LongBreakMinutes:      15,
 		CyclesBeforeLongBreak: 4,
 		DailyPlanRollbackMins: 5,
-		TimerMode:             sharedtypes.TimerModeStructured,
+		TimerMode:             sharedtypes.TimerModeStopwatch,
 		UpdateChannel:         sharedtypes.UpdateChannelStable,
 		RepoSort:              sharedtypes.RepoSortAlphabeticalAsc,
 		StreamSort:            sharedtypes.StreamSortAlphabeticalAsc,
@@ -45,12 +45,6 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 		rowMap[row.Label] = row.Value
 	}
 
-	if rowMap["Breaks"] != "Enabled" {
-		t.Fatalf("expected Breaks to be Enabled, got %q", rowMap["Breaks"])
-	}
-	if rowMap["Long Breaks"] != "Disabled" {
-		t.Fatalf("expected Long Breaks to be Disabled, got %q", rowMap["Long Breaks"])
-	}
 	if rowMap["Date Format"] != "Custom" {
 		t.Fatalf("expected Date Format to be Custom, got %q", rowMap["Date Format"])
 	}
@@ -62,6 +56,21 @@ func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {
 	}
 	if rowMap["Wipe Runtime Data"] != "Destructive" {
 		t.Fatalf("expected renamed wipe row, got %q", rowMap["Wipe Runtime Data"])
+	}
+	for _, unwanted := range []string{
+		"Timer Mode",
+		"Work Duration",
+		"Breaks",
+		"Short Break",
+		"Long Break",
+		"Long Breaks",
+		"Cycles Before Long Break",
+		"Auto-Start Breaks",
+		"Auto-Start Work",
+	} {
+		if _, ok := rowMap[unwanted]; ok {
+			t.Fatalf("expected timer settings row %q to be hidden", unwanted)
+		}
 	}
 }
 

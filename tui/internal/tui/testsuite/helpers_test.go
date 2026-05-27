@@ -188,7 +188,7 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "Wellbeing") || !strings.Contains(plain, "2026-03-19") {
 		t.Fatalf("expected compact wellbeing header")
 	}
-	if !strings.Contains(plain, "[,/.]") && !strings.Contains(plain, "[a/e]") {
+	if !strings.Contains(plain, "[,/.]") && !strings.Contains(plain, "[w]") {
 		t.Fatalf("expected action hints in compact wellbeing view")
 	}
 	if !strings.Contains(plain, "No check-in recorded for this date") {

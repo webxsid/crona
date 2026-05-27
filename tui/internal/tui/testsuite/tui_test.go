@@ -187,7 +187,7 @@ func TestAwayViewShowsProtectedModeBlankState(t *testing.T) {
 	}
 
 	rendered := viewrenderer.RenderContent(support.Theme(), state)
-	for _, want := range []string{"Away", "Enjoy your break", "Away mode is active.", "[w]", "disable away"} {
+	for _, want := range []string{"Away", "Enjoy your break", "Away mode is active.", "[W]", "disable away"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected away view to contain %q, got %q", want, rendered)
 		}
@@ -570,7 +570,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 			"settings": "",
 		},
 		Settings: &api.CoreSettings{
-			TimerMode:             sharedtypes.TimerModeStructured,
+			TimerMode:             sharedtypes.TimerModeStopwatch,
 			BreaksEnabled:         true,
 			WorkDurationMinutes:   25,
 			ShortBreakMinutes:     5,
@@ -592,12 +592,12 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"FOCUS TIMER", "BREAKS", "UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
+	for _, want := range []string{"UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
 	}
-	for _, unwanted := range []string{"Boundary Notifications", "Boundary Sound", "Test Notification"} {
+	for _, unwanted := range []string{"FOCUS TIMER", "BREAKS", "Boundary Notifications", "Boundary Sound", "Test Notification"} {
 		if strings.Contains(rendered, unwanted) {
 			t.Fatalf("expected settings view not to contain %q, got %q", unwanted, rendered)
 		}
@@ -615,7 +615,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 18
+	state.Cursors["settings"] = 14
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"Rest & Streak Protection", "All streaks"} {
 		if !strings.Contains(rendered, want) {
@@ -623,7 +623,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 		}
 	}
 
-	state.Cursors["settings"] = 19
+	state.Cursors["settings"] = 16
 	rendered = support.RenderSettings(state)
 	for _, want := range []string{"DANGER", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {
@@ -663,16 +663,34 @@ func TestHabitsViewActionsExposeManualLogOnly(t *testing.T) {
 	}
 }
 
-func TestGlobalActionsExposeUpdatesShortcutWhenVisible(t *testing.T) {
+func TestGlobalActionsOmitUpdatesShortcut(t *testing.T) {
 	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
 		View:          "daily",
 		Pane:          "issues",
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[v]", "views", "[u]", "updates"} {
+	for _, want := range []string{"[v]", "views"} {
 		if !strings.Contains(joined, want) {
-			t.Fatalf("expected update actions to contain %q, got %q", want, joined)
+			t.Fatalf("expected global actions to contain %q, got %q", want, joined)
+		}
+	}
+	if strings.Contains(joined, "[u]") || strings.Contains(joined, "updates") {
+		t.Fatalf("expected global actions to omit updates shortcut, got %q", joined)
+	}
+}
+
+func TestDailyIssueActionsHideTimerShortcutsWhenTimerActive(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View:          "daily",
+		Pane:          "issues",
+		TimerState:    "running",
+		UpdateVisible: true,
+	})
+	joined := strings.Join(actions, " ")
+	for _, unwanted := range []string{"[f]", "[m]", "[e]", "start timer", "manual"} {
+		if strings.Contains(joined, unwanted) {
+			t.Fatalf("expected active daily issue actions to omit %q, got %q", unwanted, joined)
 		}
 	}
 }
@@ -771,8 +789,11 @@ func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
 	}
 
 	rendered := ansi.Strip(support.RenderDefault(state))
-	if got := strings.Count(rendered, "[f] focus"); got != 1 {
-		t.Fatalf("expected exactly one active-pane focus action, got %d in %q", got, rendered)
+	if got := strings.Count(rendered, "[f] start timer"); got != 1 {
+		t.Fatalf("expected exactly one active-pane timer action, got %d in %q", got, rendered)
+	}
+	if strings.Contains(rendered, "[F] hard limit") {
+		t.Fatalf("expected timer help to collapse to a single [f] entry, got %q", rendered)
 	}
 }
 
@@ -789,35 +810,40 @@ func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 	}
 }
 
-func TestStructuredSessionActionsShowNextSegmentAndManualPause(t *testing.T) {
+func TestHardLimitSessionActionsShowCommitAndStash(t *testing.T) {
 	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:             "session_active",
 		TimerState:       "running",
 		TimerSegment:     "work",
 		TimerNextSegment: "short_break",
-		StructuredTimer:  true,
+		HardLimitActive:  true,
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
-	for _, want := range []string{"[m] manual pause", "[r] start short break", "[x] end"} {
+	for _, want := range []string{"[x] commit", "[z] stash", "[i] context"} {
 		if !strings.Contains(joined, want) {
-			t.Fatalf("expected structured session actions to contain %q, got %q", want, joined)
+			t.Fatalf("expected hard-limit session actions to contain %q, got %q", want, joined)
 		}
 	}
-	if strings.Contains(joined, "pause/resume") {
-		t.Fatalf("expected structured session actions to drop pause/resume, got %q", joined)
+	if strings.Contains(joined, "pause/resume") || strings.Contains(joined, "manual pause") {
+		t.Fatalf("expected hard-limit session actions to drop pause/resume and manual pause, got %q", joined)
 	}
 }
 
-func TestReadySessionActionsShowPreparedSegment(t *testing.T) {
+func TestReadyHardLimitSessionActionsStayCommitBased(t *testing.T) {
 	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:             "session_active",
 		TimerState:       "ready",
 		TimerNextSegment: "long_break",
-		StructuredTimer:  true,
+		HardLimitActive:  true,
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
-	if !strings.Contains(joined, "[r] start long break") {
-		t.Fatalf("expected ready session actions to show prepared segment, got %q", joined)
+	if strings.Contains(joined, "[r] start long break") {
+		t.Fatalf("expected hard-limit ready state not to show prepared-segment actions, got %q", joined)
+	}
+	for _, want := range []string{"[x] commit", "[z] stash", "[i] context"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected hard-limit ready state to contain %q, got %q", want, joined)
+		}
 	}
 }
 

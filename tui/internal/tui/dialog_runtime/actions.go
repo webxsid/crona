@@ -57,6 +57,8 @@ type Deps struct {
 	ChangeIssueStatus              func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd
 	AmendSessionNote               func(id string, note string) tea.Cmd
 	LogManualSession               func(input shareddto.ManualSessionLogRequest) tea.Cmd
+	StartFocusSession              func(input shareddto.TimerStartRequest) tea.Cmd
+	ExtendHardLimit                func(additionalSeconds int) tea.Cmd
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	StashFocusSession              func(note string) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
@@ -254,6 +256,18 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			return deps.ErrorCmd(errors.New("manual session payload is missing"))
 		}
 		return deps.LogManualSession(*action.ManualSession)
+	})
+	r.Register("start_focus_session", func(action dialogstate.Action) tea.Cmd {
+		if action.TimerStart == nil {
+			return deps.ErrorCmd(errors.New("timer start payload is missing"))
+		}
+		return deps.StartFocusSession(*action.TimerStart)
+	})
+	r.Register("extend_hard_limit", func(action dialogstate.Action) tea.Cmd {
+		if action.AdditionalSeconds <= 0 {
+			return deps.ErrorCmd(errors.New("extension duration is missing"))
+		}
+		return deps.ExtendHardLimit(action.AdditionalSeconds)
 	})
 	r.Register("end_session", func(action dialogstate.Action) tea.Cmd {
 		return deps.EndFocusSession(action.StreamID, state.DashboardDate, action.Payload)

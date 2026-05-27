@@ -9,6 +9,7 @@ import (
 	"crona/kernel/internal/events"
 	"crona/kernel/internal/store"
 	"crona/shared/config"
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
 
@@ -314,6 +315,284 @@ func TestTimerRecoverBoundaryPreservesPreparedSegment(t *testing.T) {
 	}
 }
 
+func TestTimerHardLimitStartRecordsCapMetadata(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	state, err := service.Start(
+		ctx,
+		nil,
+		int64Ptr(issue.StreamID),
+		int64Ptr(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds: intPtr(3600),
+			HardLimitWorkSeconds:  intPtr(1500),
+			HardLimitBreakSeconds: intPtr(300),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	if !state.HardLimitActive {
+		t.Fatal("expected hard-limit session to be active")
+	}
+	if state.HardLimitExpired {
+		t.Fatal("expected fresh hard-limit session to not be expired")
+	}
+	if state.HardLimitTotalSeconds != 3600 {
+		t.Fatalf("expected total seconds 3600, got %d", state.HardLimitTotalSeconds)
+	}
+	if state.HardLimitRemainingSeconds != 3600 {
+		t.Fatalf("expected full remaining seconds, got %d", state.HardLimitRemainingSeconds)
+	}
+	if state.HardLimitWorkSeconds != 1500 {
+		t.Fatalf("expected work seconds 1500, got %d", state.HardLimitWorkSeconds)
+	}
+	if state.HardLimitBreakSeconds != 300 {
+		t.Fatalf("expected break seconds 300, got %d", state.HardLimitBreakSeconds)
+	}
+	if state.HardLimitLongBreakSeconds != 0 {
+		t.Fatalf("expected long break seconds to default to 0, got %d", state.HardLimitLongBreakSeconds)
+	}
+	if state.HardLimitCyclesBeforeLongBreak != 0 {
+		t.Fatalf(
+			"expected cycles before long break to default to 0, got %d",
+			state.HardLimitCyclesBeforeLongBreak,
+		)
+	}
+
+	runtimeState, err := service.activeRuntimeState(ctx)
+	if err != nil {
+		t.Fatalf("read runtime state: %v", err)
+	}
+	if runtimeState == nil || !runtimeState.HasHardLimit() {
+		t.Fatalf("expected runtime hard-limit state, got %+v", runtimeState)
+	}
+}
+
+func TestTimerHardLimitGetStateIncludesFullPomodoroMetadata(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	startState, err := service.Start(
+		ctx,
+		nil,
+		int64Ptr(issue.StreamID),
+		int64Ptr(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds:          intPtr(7200),
+			HardLimitWorkSeconds:           intPtr(3600),
+			HardLimitBreakSeconds:          intPtr(300),
+			HardLimitLongBreakSeconds:      intPtr(900),
+			HardLimitCyclesBeforeLongBreak: intPtr(4),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	if !startState.HardLimitActive {
+		t.Fatal("expected hard-limit timer to be active")
+	}
+	if startState.HardLimitLongBreakSeconds != 900 {
+		t.Fatalf(
+			"expected long break seconds 900 on start state, got %d",
+			startState.HardLimitLongBreakSeconds,
+		)
+	}
+	if startState.HardLimitCyclesBeforeLongBreak != 4 {
+		t.Fatalf(
+			"expected cycles before long break 4 on start state, got %d",
+			startState.HardLimitCyclesBeforeLongBreak,
+		)
+	}
+
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get timer state: %v", err)
+	}
+	if !state.HardLimitActive {
+		t.Fatal("expected hard-limit timer to remain active")
+	}
+	if state.HardLimitLongBreakSeconds != 900 {
+		t.Fatalf(
+			"expected long break seconds 900 on get state, got %d",
+			state.HardLimitLongBreakSeconds,
+		)
+	}
+	if state.HardLimitCyclesBeforeLongBreak != 4 {
+		t.Fatalf(
+			"expected cycles before long break 4 on get state, got %d",
+			state.HardLimitCyclesBeforeLongBreak,
+		)
+	}
+}
+
+func TestTimerHardLimitSchedulesWorkBoundaryFromFocusDuration(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	state, err := service.Start(
+		ctx,
+		nil,
+		int64Ptr(issue.StreamID),
+		int64Ptr(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds:          intPtr(180),
+			HardLimitWorkSeconds:           intPtr(60),
+			HardLimitBreakSeconds:          intPtr(30),
+			HardLimitLongBreakSeconds:      intPtr(120),
+			HardLimitCyclesBeforeLongBreak: intPtr(2),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	if state.State != "running" {
+		t.Fatalf("expected running hard-limit session, got %q", state.State)
+	}
+	runtimeState, err := service.activeRuntimeState(ctx)
+	if err != nil {
+		t.Fatalf("active runtime state: %v", err)
+	}
+	if state.SessionID == nil || *state.SessionID == "" {
+		t.Fatalf("expected session id, got %+v", state.SessionID)
+	}
+	boundary, err := service.nextBoundary(
+		ctx,
+		*state.SessionID,
+		sharedtypes.SessionSegmentWork,
+		runtimeState,
+	)
+	if err != nil {
+		t.Fatalf("next boundary: %v", err)
+	}
+	if boundary == nil {
+		t.Fatal("expected a work boundary for hard-limit session")
+	}
+	if boundary.AfterSeconds != 60 {
+		t.Fatalf("expected work boundary after 60s, got %d", boundary.AfterSeconds)
+	}
+	if boundary.NextSegment != sharedtypes.SessionSegmentShortBreak {
+		t.Fatalf("expected next segment short break, got %q", boundary.NextSegment)
+	}
+}
+
+func TestTimerHardLimitRejectsPauseAndResume(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	if _, err := service.Start(
+		ctx,
+		nil,
+		int64Ptr(issue.StreamID),
+		int64Ptr(issue.ID),
+		&shareddto.TimerStartRequest{HardLimitTotalSeconds: intPtr(1800)},
+	); err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	if _, err := service.Pause(ctx); err == nil {
+		t.Fatal("expected pause to be rejected for hard-limit sessions")
+	}
+	if _, err := service.Resume(ctx); err == nil {
+		t.Fatal("expected resume to be rejected for hard-limit sessions")
+	}
+}
+
+func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	var hardLimitEvents []sharedtypes.KernelEvent
+	unsubscribe := coreCtx.Events.Subscribe(func(event sharedtypes.KernelEvent) {
+		if event.Type == sharedtypes.EventTypeTimerHardLimitReached {
+			hardLimitEvents = append(hardLimitEvents, event)
+		}
+	})
+	defer unsubscribe()
+
+	startState, err := service.Start(
+		ctx,
+		nil,
+		int64Ptr(issue.StreamID),
+		int64Ptr(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds: intPtr(60),
+			HardLimitWorkSeconds:  intPtr(25),
+			HardLimitBreakSeconds: intPtr(5),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	if startState.State != "running" {
+		t.Fatalf("expected running hard-limit session, got %q", startState.State)
+	}
+	if startState.SessionID == nil || *startState.SessionID == "" {
+		t.Fatalf("expected timer start to return a session id, got %+v", startState.SessionID)
+	}
+
+	now = "2026-05-24T10:01:01Z"
+	expiredState, err := service.applyHardLimitExpiry(
+		ctx,
+		*startState.SessionID,
+		sharedtypes.SessionSegmentWork,
+	)
+	if err != nil {
+		t.Fatalf("apply hard-limit expiry: %v", err)
+	}
+	if expiredState.State != "expired" {
+		t.Fatalf("expected expired state after cap expiry, got %q", expiredState.State)
+	}
+	if !expiredState.HardLimitActive || !expiredState.HardLimitExpired {
+		t.Fatalf("expected hard-limit expired flags, got %+v", expiredState)
+	}
+	if expiredState.HardLimitRemainingSeconds != 0 {
+		t.Fatalf(
+			"expected no remaining hard-limit time, got %d",
+			expiredState.HardLimitRemainingSeconds,
+		)
+	}
+	if len(hardLimitEvents) != 1 {
+		t.Fatalf("expected exactly one hard-limit event, got %d", len(hardLimitEvents))
+	}
+
+	extendedState, err := service.Extend(ctx, 600)
+	if err != nil {
+		t.Fatalf("extend hard-limit session: %v", err)
+	}
+	if extendedState.State != "running" {
+		t.Fatalf("expected running state after extend, got %q", extendedState.State)
+	}
+	if !extendedState.HardLimitActive || extendedState.HardLimitExpired {
+		t.Fatalf(
+			"expected active non-expired hard-limit session after extend, got %+v",
+			extendedState,
+		)
+	}
+	if extendedState.HardLimitTotalSeconds != 660 {
+		t.Fatalf(
+			"expected total seconds 660 after extend, got %d",
+			extendedState.HardLimitTotalSeconds,
+		)
+	}
+	if extendedState.HardLimitRemainingSeconds <= 0 {
+		t.Fatalf(
+			"expected positive remaining hard-limit time after extend, got %d",
+			extendedState.HardLimitRemainingSeconds,
+		)
+	}
+}
+
 func newTimerTestContext(
 	t *testing.T,
 	now func() string,
@@ -405,4 +684,31 @@ func configureStructuredTimer(
 			t.Fatalf("set %s: %v", key, err)
 		}
 	}
+}
+
+func mustMakeIssuePlanned(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	issueID int64,
+) {
+	t.Helper()
+	if _, err := changeIssueStatus(
+		ctx,
+		coreCtx,
+		issueID,
+		sharedtypes.IssueStatusPlanned,
+		nil,
+		true,
+	); err != nil {
+		t.Fatalf("mark issue planned: %v", err)
+	}
+}
+
+func intPtr(value int) *int {
+	return &value
+}
+
+func int64Ptr(value int64) *int64 {
+	return &value
 }

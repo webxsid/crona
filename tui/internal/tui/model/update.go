@@ -6,6 +6,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	filteringpkg "crona/tui/internal/tui/filtering"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -39,14 +40,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.sessionContextOpen,
 			m.filterEditing,
 		)
-		if key.String() == "q" || key.String() == "ctrl+c" {
+		touch := m.timerActivityTouchCmd(time.Now())
+		if key.String() == "ctrl+c" {
 			logger.Infof("tui key route: quit")
 			m.stopEventStream()
 			return m, tea.Quit
 		}
-		touch := m.timerActivityTouchCmd(time.Now())
 		if m.dialog != "" {
 			logger.Infof("tui key route: dialog")
+			if key.String() == "q" {
+				return m.withDialogState(dialogstate.Close(m.dialogSnapshot().Dialog)), touch
+			}
 			next, cmd := m.updateDialog(key)
 			if model, ok := next.(Model); ok {
 				logger.Infof(
@@ -57,6 +61,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 			return next, batchCmds(touch, cmd)
+		}
+		if key.String() == "q" {
+			logger.Infof("tui key route: quit")
+			m.stopEventStream()
+			return m, tea.Quit
 		}
 		if m.sessionDetailOpen {
 			logger.Infof("tui key route: session_detail_overlay")

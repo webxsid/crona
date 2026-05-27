@@ -8,7 +8,7 @@ import (
 )
 
 func renderView(theme types.Theme, state types.ContentState) string {
-	summaryH, listH := viewhelpers.SplitVertical(state.Height, 10, 8, state.Height/3)
+	summaryH, listH := viewhelpers.SplitVertical(state.Height, 10, 8, state.Height*2/5)
 	sections := []string{}
 	if summaryH >= 3 {
 		sections = append(sections, renderSummary(theme, state, state.Width, summaryH))

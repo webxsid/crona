@@ -379,70 +379,58 @@ func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
+	return m.openStartTimerDialogFromSelection(), nil
+}
+
+func (m Model) openStartTimerDialogFromSelection() Model {
 	snapshot := m.selectionSnapshot()
 	if m.view == ViewSessionHistory && (m.timer == nil || m.timer.State == "idle") {
 		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneSessions)
 		if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
-			return m, nil
+			return m
 		}
 		issueID := m.sessionHistory[rawIdx].IssueID
 		meta := selectionpkg.IssueMetaByID(snapshot, issueID)
 		if meta == nil {
-			return m, m.setStatus("Issue metadata unavailable", true)
+			return m
 		}
-		return m, commands.StartFocusSession(m.client, meta.RepoID, meta.StreamID, issueID)
-	}
-	if m.view == ViewSessionActive {
-		if m.timer == nil || m.timer.State == "idle" {
-			if m.context == nil || m.context.RepoID == nil || m.context.StreamID == nil ||
-				m.context.IssueID == nil {
-				return m, m.setStatus("No active issue in context", true)
-			}
-			meta := selectionpkg.ActiveIssue(snapshot)
-			if meta == nil {
-				return m, m.setStatus("Active issue metadata unavailable", true)
-			}
-			return m, commands.StartFocusSession(
-				m.client,
-				*m.context.RepoID,
-				*m.context.StreamID,
-				*m.context.IssueID,
-			)
-		}
-		return m, nil
-	}
-	if m.pane != PaneIssues {
-		return m, nil
-	}
-	if m.view == ViewDefault {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
-		issues := selectionpkg.DefaultScopedIssues(snapshot)
-		if rawIdx < 0 || rawIdx >= len(issues) {
-			return m, nil
-		}
-		issue := issues[rawIdx]
-		return m, commands.StartFocusSession(m.client, issue.RepoID, issue.StreamID, issue.ID)
+		return m.openStartTimerDialog(meta.RepoID, meta.StreamID, issueID, meta.Title)
 	}
 	if m.view == ViewDaily {
 		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
 		issues := selectionpkg.DailyScopedIssues(snapshot)
 		if rawIdx < 0 || rawIdx >= len(issues) {
-			return m, nil
+			return m
 		}
 		issue := issues[rawIdx]
 		meta := selectionpkg.IssueMetaByID(snapshot, issue.ID)
 		if meta == nil {
-			return m, m.setStatus("Issue metadata unavailable", true)
+			return m
 		}
-		return m, commands.StartFocusSession(m.client, meta.RepoID, issue.StreamID, issue.ID)
+		return m.openStartTimerDialog(meta.RepoID, issue.StreamID, issue.ID, meta.Title)
+	}
+	if m.view == ViewDefault {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		issues := selectionpkg.DefaultScopedIssues(snapshot)
+		if rawIdx < 0 || rawIdx >= len(issues) {
+			return m
+		}
+		issue := issues[rawIdx]
+		return m.openStartTimerDialog(issue.RepoID, issue.StreamID, issue.ID, issue.Title)
+	}
+	if m.pane != PaneIssues || m.context == nil || m.context.RepoID == nil {
+		return m
 	}
 	rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
 	if rawIdx < 0 || rawIdx >= len(m.issues) {
-		return m, nil
-	}
-	if m.context == nil || m.context.RepoID == nil {
-		return m, m.setStatus("No repo in context for selected issue", true)
+		return m
 	}
 	issue := m.issues[rawIdx]
-	return m, commands.StartFocusSession(m.client, *m.context.RepoID, issue.StreamID, issue.ID)
+	return m.openStartTimerDialog(*m.context.RepoID, issue.StreamID, issue.ID, issue.Title)
+}
+
+func (m Model) openStartTimerDialog(repoID, streamID, issueID int64, issueLabel string) Model {
+	return m.withDialogState(
+		m.dialogSnapshot().OpenTimerStartType(repoID, streamID, issueID, issueLabel),
+	)
 }

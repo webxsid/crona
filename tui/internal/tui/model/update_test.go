@@ -131,15 +131,15 @@ func TestAnchorWellbeingScrollUsesCurrentPaneHeight(t *testing.T) {
 	}
 }
 
-func TestDialogModeQuitsOnQAndCtrlC(t *testing.T) {
+func TestDialogModeTreatsQAsCancelAndCtrlCAsQuit(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{Kind: "onboarding"})
 
 	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
-	if cmd == nil {
-		t.Fatalf("expected quit command for q")
+	if cmd != nil {
+		t.Fatalf("expected q to cancel the dialog, not quit")
 	}
-	if next.(Model).dialog != "onboarding" {
-		t.Fatalf("expected dialog state to remain unchanged, got %q", next.(Model).dialog)
+	if next.(Model).dialog != "" {
+		t.Fatalf("expected q to close the dialog, got %q", next.(Model).dialog)
 	}
 
 	next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
@@ -148,6 +148,36 @@ func TestDialogModeQuitsOnQAndCtrlC(t *testing.T) {
 	}
 	if next.(Model).dialog != "onboarding" {
 		t.Fatalf("expected dialog state to remain unchanged, got %q", next.(Model).dialog)
+	}
+}
+
+func TestDialogStatePreservesPomodoroFields(t *testing.T) {
+	model := Model{}.withDialogState(dialogstate.State{
+		Kind:                          "pomodoro_start",
+		PomodoroFocusSeconds:          60,
+		PomodoroBreakSeconds:          30,
+		PomodoroLongBreakSeconds:      120,
+		PomodoroCyclesBeforeLongBreak: 2,
+	})
+
+	state := model.dialogState()
+	if state.PomodoroFocusSeconds != 60 {
+		t.Fatalf("expected focus seconds to survive dialog round trip, got %d", state.PomodoroFocusSeconds)
+	}
+	if state.PomodoroBreakSeconds != 30 {
+		t.Fatalf("expected break seconds to survive dialog round trip, got %d", state.PomodoroBreakSeconds)
+	}
+	if state.PomodoroLongBreakSeconds != 120 {
+		t.Fatalf(
+			"expected long break seconds to survive dialog round trip, got %d",
+			state.PomodoroLongBreakSeconds,
+		)
+	}
+	if state.PomodoroCyclesBeforeLongBreak != 2 {
+		t.Fatalf(
+			"expected cycle count to survive dialog round trip, got %d",
+			state.PomodoroCyclesBeforeLongBreak,
+		)
 	}
 }
 

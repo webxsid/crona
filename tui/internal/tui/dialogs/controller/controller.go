@@ -71,6 +71,8 @@ type Action struct {
 	ScreenTimeMinutes *int
 	Payload           shareddto.EndSessionRequest
 	ManualSession     *shareddto.ManualSessionLogRequest
+	TimerStart        *shareddto.TimerStartRequest
+	AdditionalSeconds int
 }
 
 func Close(state State) State {
@@ -268,6 +270,24 @@ func Update(
 		return updateIssueStatusNote(state, currentDate, msg)
 	case "end_session", "stash_session":
 		return updateSessionMessage(state, ctx, currentDate, msg)
+	case "timer_start_type":
+		return updateTimerStartType(state, msg)
+	case "pomodoro_focus_presets":
+		return updatePomodoroFocusPresets(state, msg)
+	case "pomodoro_break_presets":
+		return updatePomodoroBreakPresets(state, msg)
+	case "pomodoro_focus_custom":
+		return updatePomodoroFocusCustom(state, msg)
+	case "pomodoro_break_custom":
+		return updatePomodoroBreakCustom(state, msg)
+	case "pomodoro_start":
+		return updatePomodoroStart(state, msg)
+	case "hard_limit_expired":
+		return updateHardLimitExpired(state, msg)
+	case "hard_limit_extend":
+		return updateHardLimitExtend(state, msg)
+	case "hard_limit_extend_custom":
+		return updateHardLimitExtendCustom(state, msg)
 	case "amend_session":
 		return updateAmendSession(state, msg)
 	case "manual_session":
@@ -506,6 +526,9 @@ func updateSessionMessage(
 ) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
+		if state.Parent == "hard_limit_expired" {
+			return OpenHardLimitExpired(state, state.ViewName), nil, ""
+		}
 		return Close(state), nil, ""
 	case "ctrl+e", "f2":
 		return ToggleEndSessionAdvanced(state), nil, ""
@@ -542,6 +565,446 @@ func updateSessionMessage(
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
+}
+
+func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "enter":
+		switch currentChoiceValue(state) {
+		case "stopwatch":
+			return Close(state), &Action{
+				Kind: "start_focus_session",
+				TimerStart: &shareddto.TimerStartRequest{
+					RepoID:   int64Ptr(state.RepoID),
+					StreamID: int64Ptr(state.StreamID),
+					IssueID:  int64Ptr(state.IssueID),
+				},
+			}, ""
+		case "pomodoro":
+			return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+		default:
+			return state, nil, "Choose a timer type"
+		}
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			switch currentChoiceValue(state) {
+			case "stopwatch":
+				return Close(state), &Action{
+					Kind: "start_focus_session",
+					TimerStart: &shareddto.TimerStartRequest{
+						RepoID:   int64Ptr(state.RepoID),
+						StreamID: int64Ptr(state.StreamID),
+						IssueID:  int64Ptr(state.IssueID),
+					},
+				}, ""
+			case "pomodoro":
+				return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			default:
+				return state, nil, "Choose a timer type"
+			}
+		}
+	}
+	return state, nil, ""
+}
+
+func updatePomodoroFocusPresets(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenTimerStartType(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "1", "2", "3":
+		idx := int(msg.String()[0] - '1')
+		return pomodoroFocusPresetAction(state, idx)
+	case "c":
+		return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	case "enter":
+		value := currentChoiceValue(state)
+		if value == "custom" {
+			return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+		}
+		focusSeconds, ok := pomodoroPresetSeconds(value)
+		if !ok {
+			return state, nil, "Choose a focus preset"
+		}
+		state.PomodoroFocusSeconds = focusSeconds
+		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			value := currentChoiceValue(state)
+			if value == "custom" {
+				return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			}
+			focusSeconds, ok := pomodoroPresetSeconds(value)
+			if !ok {
+				return state, nil, "Choose a focus preset"
+			}
+			state.PomodoroFocusSeconds = focusSeconds
+			return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+		}
+	}
+	return state, nil, ""
+}
+
+func updatePomodoroFocusCustom(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			focusSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Focus duration")
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			state.PomodoroFocusSeconds = focusSeconds
+			return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+		}
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func updatePomodoroBreakPresets(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "1", "2", "3":
+		idx := int(msg.String()[0] - '1')
+		return pomodoroBreakPresetAction(state, idx)
+	case "c":
+		return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	case "enter":
+		value := currentChoiceValue(state)
+		if value == "custom" {
+			return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+		}
+		breakSeconds, ok := pomodoroPresetSeconds(value)
+		if !ok {
+			return state, nil, "Choose a break preset"
+		}
+		state.PomodoroBreakSeconds = breakSeconds
+		return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			value := currentChoiceValue(state)
+			if value == "custom" {
+				return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			}
+			breakSeconds, ok := pomodoroPresetSeconds(value)
+			if !ok {
+				return state, nil, "Choose a break preset"
+			}
+			state.PomodoroBreakSeconds = breakSeconds
+			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
+		}
+	}
+	return state, nil, ""
+}
+
+func updatePomodoroBreakCustom(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			breakSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Break duration")
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			state.PomodoroBreakSeconds = breakSeconds
+			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
+		}
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+	case "tab", "shift+tab", "down", "up":
+		dir := 1
+		if msg.String() == "shift+tab" || msg.String() == "up" {
+			dir = -1
+		}
+		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
+		return SyncDialogFocus(clearDialogError(state)), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			totalSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Total duration")
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			if totalSeconds < state.PomodoroFocusSeconds {
+				return state, nil, "Total duration cannot be shorter than the focus duration"
+			}
+			shortBreakCount, err := ParsePositiveIntInput(
+				state.Inputs[1].Value(),
+				false,
+				"Short break count",
+			)
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			longBreakSeconds, err := ParseDurationInput(
+				state.Inputs[2].Value(),
+				false,
+				"Long break duration",
+			)
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			req := &shareddto.TimerStartRequest{
+				RepoID:                         int64Ptr(state.RepoID),
+				StreamID:                       int64Ptr(state.StreamID),
+				IssueID:                        int64Ptr(state.IssueID),
+				HardLimitTotalSeconds:          intPtr(totalSeconds),
+				HardLimitWorkSeconds:           intPtr(state.PomodoroFocusSeconds),
+				HardLimitBreakSeconds:          intPtr(state.PomodoroBreakSeconds),
+				HardLimitLongBreakSeconds:      intPtr(longBreakSeconds),
+				HardLimitCyclesBeforeLongBreak: intPtr(shortBreakCount),
+			}
+			return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+		}
+	}
+	var cmd tea.Cmd
+	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func pomodoroFocusPresetAction(state State, idx int) (State, *Action, string) {
+	switch idx {
+	case 0:
+		state.PomodoroFocusSeconds = 25 * 60
+	case 1:
+		state.PomodoroFocusSeconds = 50 * 60
+	case 2:
+		state.PomodoroFocusSeconds = 90 * 60
+	default:
+		return state, nil, ""
+	}
+	return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+}
+
+func pomodoroBreakPresetAction(state State, idx int) (State, *Action, string) {
+	switch idx {
+	case 0:
+		state.PomodoroBreakSeconds = 5 * 60
+	case 1:
+		state.PomodoroBreakSeconds = 10 * 60
+	case 2:
+		state.PomodoroBreakSeconds = 15 * 60
+	default:
+		return state, nil, ""
+	}
+	return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
+}
+
+func pomodoroPresetSeconds(value string) (int, bool) {
+	switch strings.TrimSpace(value) {
+	case "25m":
+		return 25 * 60, true
+	case "50m":
+		return 50 * 60, true
+	case "90m":
+		return 90 * 60, true
+	case "5m":
+		return 5 * 60, true
+	case "10m":
+		return 10 * 60, true
+	case "15m":
+		return 15 * 60, true
+	default:
+		return 0, false
+	}
+}
+
+func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "c":
+		return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
+	case "z":
+		return OpenSessionMessageWithParent(state, "stash_session", "hard_limit_expired"), nil, ""
+	case "e":
+		return OpenHardLimitExtend(state), nil, ""
+	case "enter":
+		switch currentChoiceValue(state) {
+		case "commit":
+			return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
+		case "stash":
+			return OpenSessionMessageWithParent(
+				state,
+				"stash_session",
+				"hard_limit_expired",
+			), nil, ""
+		default:
+			return OpenHardLimitExtend(state), nil, ""
+		}
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			switch currentChoiceValue(state) {
+			case "commit":
+				return OpenSessionMessageWithParent(
+					state,
+					"end_session",
+					"hard_limit_expired",
+				), nil, ""
+			case "stash":
+				return OpenSessionMessageWithParent(
+					state,
+					"stash_session",
+					"hard_limit_expired",
+				), nil, ""
+			default:
+				return OpenHardLimitExtend(state), nil, ""
+			}
+		}
+	}
+	return state, nil, ""
+}
+
+func updateHardLimitExtend(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenHardLimitExpired(state, state.ViewName), nil, ""
+	case "j", "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "k", "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "1", "2", "3":
+		idx := int(msg.String()[0] - '1')
+		if idx >= 0 && idx < len(state.ChoiceValues)-1 {
+			seconds := ParseNumericID(state.ChoiceValues[idx])
+			return Close(
+					state,
+				), &Action{
+					Kind:              "extend_hard_limit",
+					AdditionalSeconds: int(seconds),
+				}, ""
+		}
+	case "c":
+		return OpenHardLimitExtendCustom(state), nil, ""
+	case "enter":
+		value := currentChoiceValue(state)
+		if value == "custom" {
+			return OpenHardLimitExtendCustom(state), nil, ""
+		}
+		seconds := ParseNumericID(value)
+		if seconds <= 0 {
+			return state, nil, "Extension duration is required"
+		}
+		return Close(state), &Action{Kind: "extend_hard_limit", AdditionalSeconds: int(seconds)}, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			value := currentChoiceValue(state)
+			if value == "custom" {
+				return OpenHardLimitExtendCustom(state), nil, ""
+			}
+			seconds := ParseNumericID(value)
+			if seconds <= 0 {
+				return state, nil, "Extension duration is required"
+			}
+			return Close(
+					state,
+				), &Action{
+					Kind:              "extend_hard_limit",
+					AdditionalSeconds: int(seconds),
+				}, ""
+		}
+	}
+	return state, nil, ""
+}
+
+func updateHardLimitExtendCustom(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenHardLimitExtend(state), nil, ""
+	default:
+		if isDialogSubmitKey(state, msg.String()) {
+			seconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Extension")
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			return Close(state), &Action{Kind: "extend_hard_limit", AdditionalSeconds: seconds}, ""
+		}
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func currentChoiceValue(state State) string {
+	if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+		return ""
+	}
+	return strings.TrimSpace(state.ChoiceValues[state.ChoiceCursor])
+}
+
+func intPtr(value int) *int {
+	if value <= 0 {
+		return nil
+	}
+	return &value
+}
+
+func int64Ptr(value int64) *int64 {
+	if value == 0 {
+		return nil
+	}
+	return &value
 }
 
 func updateIssueSessionTransition(

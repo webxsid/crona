@@ -78,12 +78,6 @@ func handleCycleIssueSection(s State, deps Deps, dir int) (tea.Model, tea.Cmd, b
 	return s, nil, false
 }
 
-func handleOpenUpdates(s State) (tea.Model, tea.Cmd, bool) {
-	s.ActiveView = uistate.ViewUpdates
-	s.ActivePane = uistate.DefaultPane(s.ActiveView)
-	return s, nil, true
-}
-
 func handleOpenViewJump(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if deps.OpenViewJumpDialog(&s) {
 		return s, nil, true
@@ -206,6 +200,19 @@ func handleOpenExportDaily(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	}
 	deps.OpenExportDailyDialog(&s)
 	return s, nil, true
+}
+
+func handleOpenCheckIn(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing) || s.Dialog != "" {
+		return s, nil, false
+	}
+	if deps.OpenCheckInDialog == nil {
+		return s, nil, false
+	}
+	if deps.OpenCheckInDialog(&s) {
+		return s, nil, true
+	}
+	return s, nil, false
 }
 
 func shouldOpenContextDialog(view uistate.View) bool {

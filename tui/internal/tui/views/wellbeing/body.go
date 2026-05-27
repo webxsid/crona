@@ -2,14 +2,12 @@ package wellbeing
 
 import (
 	"fmt"
-	"strings"
 
 	sharedtypes "crona/shared/types"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewmomentum "crona/tui/internal/tui/views/momentum"
 	types "crona/tui/internal/tui/views/types"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 func summaryBodyLines(
@@ -275,7 +273,7 @@ func streaksBodyLines(
 	}
 	if compact {
 		lines := []string{
-			compactMomentumRow(
+			viewmomentum.CompactRow(
 				theme,
 				"Check-ins",
 				"",
@@ -284,7 +282,7 @@ func streaksBodyLines(
 				state.Streaks.LongestCheckInDays,
 				width,
 			),
-			compactMomentumRow(
+			viewmomentum.CompactRow(
 				theme,
 				"Focus",
 				"",
@@ -297,10 +295,10 @@ func streaksBodyLines(
 		for _, streak := range state.Streaks.CustomHabitStreaks {
 			lines = append(
 				lines,
-				compactMomentumRow(
+				viewmomentum.CompactRow(
 					theme,
 					streak.Name,
-					habitStreakCadenceLabel(streak.Period),
+					viewmomentum.CadenceLabel(streak.Period),
 					streak.Period,
 					streak.Current,
 					streak.Longest,
@@ -313,7 +311,7 @@ func streaksBodyLines(
 	lines := []string{}
 	lines = append(
 		lines,
-		momentumRow(
+		viewmomentum.Row(
 			theme,
 			"Check-ins",
 			"",
@@ -324,7 +322,7 @@ func streaksBodyLines(
 		)...)
 	lines = append(
 		lines,
-		momentumRow(
+		viewmomentum.Row(
 			theme,
 			"Focus",
 			"",
@@ -344,10 +342,10 @@ func streaksBodyLines(
 	for _, streak := range state.Streaks.CustomHabitStreaks {
 		lines = append(
 			lines,
-			momentumRow(
+			viewmomentum.Row(
 				theme,
 				streak.Name,
-				habitStreakCadenceLabel(streak.Period),
+				viewmomentum.CadenceLabel(streak.Period),
 				streak.Period,
 				streak.Current,
 				streak.Longest,
@@ -355,118 +353,4 @@ func streaksBodyLines(
 			)...)
 	}
 	return lines
-}
-
-func momentumRow(
-	theme types.Theme,
-	name, cadence string,
-	period sharedtypes.HabitStreakPeriod,
-	current, longest, width int,
-) []string {
-	label := viewhelpers.Truncate(name, max(8, width-10))
-	if cadence != "" {
-		label = fmt.Sprintf("%s  %s", label, theme.StyleDim.Render("["+cadence+"]"))
-	}
-	unit := momentumUnit(period)
-	return []string{
-		theme.StyleHeader.Render(label),
-		fmt.Sprintf(
-			"%s  %s current · %s best",
-			momentumLadder(theme, period, current, longest),
-			formatMomentumLength(current, unit),
-			formatMomentumLength(longest, unit),
-		),
-	}
-}
-
-func compactMomentumRow(
-	theme types.Theme,
-	name, cadence string,
-	period sharedtypes.HabitStreakPeriod,
-	current, longest, width int,
-) string {
-	label := name
-	if cadence != "" {
-		label = fmt.Sprintf("%s [%s]", label, cadence)
-	}
-	return viewhelpers.Truncate(
-		fmt.Sprintf(
-			"%s  %s  %s",
-			label,
-			momentumLadder(theme, period, current, longest),
-			formatMomentumLength(current, momentumUnit(period)),
-		),
-		max(12, width-6),
-	)
-}
-
-func momentumLadder(
-	theme types.Theme,
-	period sharedtypes.HabitStreakPeriod,
-	current, longest int,
-) string {
-	thresholds := momentumThresholds(period)
-	filled := momentumTierCount(period, current)
-	ladder := strings.Repeat("▰", filled) + strings.Repeat("▱", len(thresholds)-filled)
-	style := lipgloss.NewStyle().Foreground(theme.ColorDim)
-	switch {
-	case current > 0 && current == longest:
-		style = lipgloss.NewStyle().Foreground(theme.ColorCyan)
-	case filled >= 4:
-		style = lipgloss.NewStyle().Foreground(theme.ColorGreen)
-	case filled > 0:
-		style = lipgloss.NewStyle().Foreground(theme.ColorYellow)
-	}
-	return style.Render(ladder)
-}
-
-func momentumTierCount(period sharedtypes.HabitStreakPeriod, current int) int {
-	if current <= 0 {
-		return 0
-	}
-	filled := 0
-	for _, threshold := range momentumThresholds(period) {
-		if current < threshold {
-			break
-		}
-		filled++
-	}
-	return filled
-}
-
-func momentumThresholds(period sharedtypes.HabitStreakPeriod) []int {
-	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
-	case sharedtypes.HabitStreakPeriodWeek:
-		return []int{1, 2, 4, 8, 13, 26, 52}
-	case sharedtypes.HabitStreakPeriodMonth:
-		return []int{1, 2, 3, 6, 12, 24}
-	default:
-		return []int{1, 3, 7, 14, 30, 60, 100}
-	}
-}
-
-func momentumUnit(period sharedtypes.HabitStreakPeriod) string {
-	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
-	case sharedtypes.HabitStreakPeriodWeek:
-		return "w"
-	case sharedtypes.HabitStreakPeriodMonth:
-		return "mo"
-	default:
-		return "d"
-	}
-}
-
-func formatMomentumLength(value int, unit string) string {
-	return fmt.Sprintf("%d%s", value, unit)
-}
-
-func habitStreakCadenceLabel(period sharedtypes.HabitStreakPeriod) string {
-	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
-	case sharedtypes.HabitStreakPeriodWeek:
-		return "weekly"
-	case sharedtypes.HabitStreakPeriodMonth:
-		return "monthly"
-	default:
-		return "daily"
-	}
 }

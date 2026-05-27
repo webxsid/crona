@@ -3,8 +3,10 @@ package viewchrome
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
@@ -36,20 +38,36 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 		return ""
 	}
 
-	total := state.Timer.ElapsedSeconds + state.Elapsed
-	if state.Timer.State == "ready" {
-		total = 0
+	now := time.Now()
+	total := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
+	if state.Timer.HardLimitActive && !state.Timer.HardLimitExpired {
+		if remaining, _, ok := helperpkg.DerivedHardLimitSegmentRemainingSeconds(
+			state.Timer,
+			state.Elapsed,
+			now,
+		); ok {
+			total = remaining
+		}
+	} else if state.Timer.State == "paused" {
+		total = helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
 	}
 	stateText := "WORK"
 	stateColor := theme.ColorGreen
-	if state.Timer.State == "ready" {
+	if state.Timer.HardLimitExpired {
+		stateText = "LIMIT"
+		stateColor = theme.ColorYellow
+	} else if state.Timer.HardLimitActive {
+		stateText = "LIMIT"
+		stateColor = theme.ColorYellow
+	} else if state.Timer.State == "ready" {
 		stateText = "READY"
 		stateColor = theme.ColorYellow
 	} else if state.Timer.State == "paused" {
 		stateText = "PAUSED"
 		stateColor = theme.ColorYellow
 	}
-	if state.Timer.State == "ready" && state.Timer.ReadySegmentType != nil &&
+	if state.Timer.State == "ready" && !state.Timer.HardLimitActive &&
+		state.Timer.ReadySegmentType != nil &&
 		*state.Timer.ReadySegmentType != "" {
 		stateText = "READY:" + strings.ToUpper(string(*state.Timer.ReadySegmentType))
 	} else if state.Timer.SegmentType != nil && *state.Timer.SegmentType != "" && *state.Timer.SegmentType != "work" {
@@ -68,11 +86,12 @@ func headerSessionSummary(theme Theme, state HeaderState) string {
 	parts = append(parts, theme.StyleDim.Render(fmt.Sprintf("sessions:%d", completedSessions)))
 
 	if issue := activeIssueWithMeta(state); issue != nil && issue.EstimateMinutes != nil {
+		workElapsed := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
 		parts = append(
 			parts,
 			theme.StyleDim.Render(
 				sessionmeta.FormatEstimateProgress(
-					priorWorkedSeconds+total,
+					priorWorkedSeconds+workElapsed,
 					*issue.EstimateMinutes,
 				),
 			),

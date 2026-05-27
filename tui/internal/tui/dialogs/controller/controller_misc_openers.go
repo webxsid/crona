@@ -28,12 +28,18 @@ func OpenOnboarding(state State, usageEnabled, errorReportingEnabled bool) State
 	return state
 }
 
-func OpenEditHabitStreaks(state State, settings *api.CoreSettings, habits []api.HabitWithMeta) State {
+func OpenEditHabitStreaks(
+	state State,
+	settings *api.CoreSettings,
+	habits []api.HabitWithMeta,
+) State {
 	state = Close(state)
 	state.Kind = "edit_habit_streaks"
 	state.HabitItems = append([]sharedtypes.HabitWithMeta(nil), habits...)
 	if settings != nil {
-		state.HabitStreakDefs = append([]sharedtypes.HabitStreakDefinition(nil), settings.HabitStreakDefs...)
+		state.HabitStreakDefs = append(
+			[]sharedtypes.HabitStreakDefinition(nil),
+			settings.HabitStreakDefs...)
 	}
 	state.HabitStreakDefs = sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs)
 	state.HabitStreakStep = 0
