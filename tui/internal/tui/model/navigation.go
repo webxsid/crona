@@ -12,7 +12,6 @@ import (
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 )
@@ -324,7 +323,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if issue.EstimateMinutes != nil {
 			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
 		}
-		spent := viewhelpers.FormatClockText(spentSeconds)
+		var spent string
 		if spentSeconds <= 0 {
 			spent = "-"
 		} else {

@@ -97,7 +97,7 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 	if status != "" || action != nil {
 		t.Fatalf("unexpected down result status=%q action=%+v", status, action)
 	}
-	next, action, status = Update(
+	next, _, status = Update(
 		next,
 		UpdateContext{},
 		"2026-05-26",
@@ -259,7 +259,7 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 	if status != "" || action != nil {
 		t.Fatalf("unexpected down result status=%q action=%+v", status, action)
 	}
-	next, action, status = Update(
+	next, _, status = Update(
 		next,
 		UpdateContext{},
 		"2026-05-26",
@@ -291,7 +291,7 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 	if status != "" || action != nil {
 		t.Fatalf("unexpected down result status=%q action=%+v", status, action)
 	}
-	next, action, status = Update(
+	next, _, status = Update(
 		next,
 		UpdateContext{},
 		"2026-05-26",

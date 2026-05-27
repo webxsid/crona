@@ -293,9 +293,3 @@ func decodeOptionalBoolFromMap(raw map[string]json.RawMessage, key string) (*boo
 	}
 	return &out, true, nil
 }
-
-func ptrTo[T any](value T) *T {
-	ptr := new(T)
-	*ptr = value
-	return ptr
-}

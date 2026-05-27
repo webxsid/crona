@@ -283,10 +283,6 @@ func (m Model) openSessionMessageDialog(kind string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenSessionMessage(kind))
 }
 
-func (m Model) openSessionMessageDialogWithParent(kind string, parent string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenSessionMessageWithParent(kind, parent))
-}
-
 func (m Model) openHardLimitExpiredDialog(issueLabel string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenHardLimitExpired(issueLabel))
 }

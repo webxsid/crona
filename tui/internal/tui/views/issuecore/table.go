@@ -48,7 +48,7 @@ func IssueTableView(columns []table.Column, rows []table.Row, headerStyle lipglo
 		WithNoPagination().
 		WithFooterVisibility(false).
 		WithBaseStyle(lipgloss.NewStyle().Align(lipgloss.Left)).
-		HeaderStyle(headerStyle.Copy().Align(lipgloss.Left)).
+		HeaderStyle(headerStyle.Align(lipgloss.Left)).
 		Border(table.Border{}).
 		View()
 }
