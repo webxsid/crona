@@ -313,8 +313,8 @@ func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
 	if status != "" || action != nil {
 		t.Fatalf("unexpected tab result status=%q action=%+v", status, action)
 	}
-	if next.FocusIdx == pomodoroLongBreakCyclesIdx {
-		t.Fatalf("expected disabled cycles-before field to be skipped, got %+v", next)
+	if next.FocusIdx != pomodoroCyclesRowIdx {
+		t.Fatalf("expected disabled long break row to be skipped, got focus idx %d", next.FocusIdx)
 	}
 
 	next.Inputs[3].SetValue("2")
@@ -345,6 +345,81 @@ func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
 	}
 	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 2*(25*60+5*60) {
 		t.Fatalf("unexpected total seconds %+v", action.TimerStart)
+	}
+}
+
+func TestPomodoroShortBreakNoBreakDisablesCyclesAndStartsContinuousFocus(t *testing.T) {
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	var next State
+	var action *Action
+	var status string
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
+	}
+	state = next
+
+	for i := 0; i < 3; i++ {
+		next, action, status = Update(
+			state,
+			UpdateContext{},
+			"2026-05-26",
+			tea.KeyMsg{Type: tea.KeyRight},
+		)
+		if status != "" || action != nil {
+			t.Fatalf("unexpected right result status=%q action=%+v", status, action)
+		}
+		state = next
+	}
+	if state.PomodoroBreakChoice != pomodoroBreakNoBreakChoice {
+		t.Fatalf("expected no-break short break choice, got %d", state.PomodoroBreakChoice)
+	}
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyTab},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected tab result status=%q action=%+v", status, action)
+	}
+	if next.FocusIdx != pomodoroFocusRowIdx {
+		t.Fatalf("expected continuous mode to skip disabled rows back to focus, got %d", next.FocusIdx)
+	}
+
+	next, action, status = Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
+		t.Fatalf("unexpected action %+v", action)
+	}
+	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 25*60 {
+		t.Fatalf("expected continuous focus total to equal focus duration, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitBreakSeconds != nil {
+		t.Fatalf("expected short break to be omitted, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitLongBreakSeconds != nil {
+		t.Fatalf("expected long break to be omitted in continuous focus mode, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
+		t.Fatalf("expected cycles-before-long-break to be omitted, got %+v", action.TimerStart)
 	}
 }
 

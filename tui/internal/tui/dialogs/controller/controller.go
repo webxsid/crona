@@ -653,6 +653,10 @@ func pomodoroLongBreakDisabled(state State) bool {
 	return state.PomodoroLongBreakChoice == pomodoroLongBreakNoBreakChoice
 }
 
+func pomodoroBreakDisabled(state State) bool {
+	return state.PomodoroBreakChoice == pomodoroBreakNoBreakChoice
+}
+
 func pomodoroFocusIdxEnabled(state State, idx int) bool {
 	switch idx {
 	case pomodoroFocusCustomIdx:
@@ -661,8 +665,12 @@ func pomodoroFocusIdxEnabled(state State, idx int) bool {
 		return state.PomodoroBreakChoice == pomodoroBreakCustomChoice
 	case pomodoroLongBreakCustomIdx:
 		return state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice
+	case pomodoroLongBreakRowIdx:
+		return !pomodoroLongBreakDisabled(state) && !pomodoroBreakDisabled(state)
+	case pomodoroCyclesRowIdx:
+		return !pomodoroBreakDisabled(state)
 	case pomodoroLongBreakCyclesIdx:
-		return !pomodoroLongBreakDisabled(state)
+		return !pomodoroBreakDisabled(state) && !pomodoroLongBreakDisabled(state)
 	default:
 		return true
 	}
@@ -955,9 +963,23 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 				state.FocusIdx = pomodoroBreakCustomIdx
 				return SyncDialogFocus(clearDialogError(state)), nil, ""
 			}
+			if pomodoroBreakDisabled(state) {
+				return submitPomodoroStart(state)
+			}
+			if pomodoroLongBreakDisabled(state) {
+				state.FocusIdx = pomodoroCyclesRowIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
 			state.FocusIdx = pomodoroLongBreakRowIdx
 			return SyncDialogFocus(clearDialogError(state)), nil, ""
 		case pomodoroBreakCustomIdx:
+			if pomodoroLongBreakDisabled(state) {
+				if pomodoroBreakDisabled(state) {
+					return submitPomodoroStart(state)
+				}
+				state.FocusIdx = pomodoroCyclesRowIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
 			state.FocusIdx = pomodoroLongBreakRowIdx
 			return SyncDialogFocus(clearDialogError(state)), nil, ""
 		case pomodoroLongBreakRowIdx:
@@ -965,9 +987,15 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 				state.FocusIdx = pomodoroLongBreakCustomIdx
 				return SyncDialogFocus(clearDialogError(state)), nil, ""
 			}
+			if pomodoroBreakDisabled(state) {
+				return submitPomodoroStart(state)
+			}
 			state.FocusIdx = pomodoroCyclesRowIdx
 			return SyncDialogFocus(clearDialogError(state)), nil, ""
 		case pomodoroLongBreakCustomIdx:
+			if pomodoroBreakDisabled(state) {
+				return submitPomodoroStart(state)
+			}
 			state.FocusIdx = pomodoroCyclesRowIdx
 			return SyncDialogFocus(clearDialogError(state)), nil, ""
 		case pomodoroCyclesRowIdx:

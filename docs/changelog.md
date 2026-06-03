@@ -2,6 +2,20 @@
 
 All notable changes to **Crona** are documented here.
 
+## [Unreleased]
+
+### Added
+- The Pomodoro start dialog now uses a single consolidated form instead of a chained multi-dialog wizard.
+- Custom Pomodoro durations now enter edit mode immediately, and the selected row stays visibly emphasized while editing.
+
+### Changed
+- Pomodoro disabled states now render as compact key/value lines instead of bulky dimmed choice blocks.
+- The long-break row now clearly shows when it is auto-disabled because short break is set to `No Break`.
+- The cycles and long-break cycle helper copy now uses shorter, multi-line disabled hints for readability.
+- Pomodoro left/right navigation now persists selection state correctly across dialog updates.
+- `No Break` short-break mode now disables cycle-driven fields and collapses the session into a continuous focus timer.
+- The custom focus seed now defaults to `25m` instead of an invalid hour-based value.
+
 ## [1.4.0] - 2026-05-27
 
 This prerelease prepares the 1.4 line for broader validation with a denser Daily momentum summary, consistent check-in and away key handling, hard-limit timer state preservation, and configurable week-start settings.

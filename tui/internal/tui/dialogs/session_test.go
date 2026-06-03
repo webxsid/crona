@@ -30,3 +30,21 @@ func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
 		t.Fatalf("expected focus row marker while editing custom input, got %q", rendered)
 	}
 }
+
+func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T) {
+	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title")
+	state.PomodoroBreakChoice = 3
+	state.PomodoroBreakSeconds = 0
+	state.PomodoroLongBreakChoice = 0
+
+	rendered := renderSessionDialog(Theme{}, state)
+	if !strings.Contains(rendered, "Long Break: disabled") {
+		t.Fatalf("expected compact long-break disabled text, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "Cycles: disabled") {
+		t.Fatalf("expected compact cycles disabled text, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "Cycle before long break: disabled") {
+		t.Fatalf("expected compact long-break cycle disabled text, got %q", rendered)
+	}
+}

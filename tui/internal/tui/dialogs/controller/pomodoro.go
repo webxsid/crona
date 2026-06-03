@@ -24,36 +24,39 @@ const (
 )
 
 type PomodoroDialogViewModel struct {
-	FocusChoices            []string
-	BreakChoices            []string
-	LongBreakChoices        []string
-	FocusCustomChoice       int
-	BreakCustomChoice       int
-	LongBreakCustomChoice   int
-	FocusRowActive          bool
-	FocusCustomActive       bool
-	BreakRowActive          bool
-	BreakCustomActive       bool
-	LongBreakRowActive      bool
-	LongBreakCustomActive   bool
-	CyclesRowActive         bool
-	LongBreakCyclesActive   bool
-	LongBreakDisabled       bool
-	ShowSummary             bool
-	FocusDisplay            string
-	ShortBreakDisplay       string
-	LongBreakDisplay        string
-	CyclesSummary           string
-	EstimatedTotalDuration  string
+	FocusChoices           []string
+	BreakChoices           []string
+	LongBreakChoices       []string
+	FocusCustomChoice      int
+	BreakCustomChoice      int
+	LongBreakCustomChoice  int
+	LongBreakSelected      int
+	FocusRowActive         bool
+	FocusCustomActive      bool
+	BreakRowActive         bool
+	BreakCustomActive      bool
+	LongBreakRowActive     bool
+	LongBreakCustomActive  bool
+	CyclesRowActive        bool
+	LongBreakCyclesActive  bool
+	CyclesDisabled         bool
+	LongBreakForcedOff     bool
+	LongBreakDisabled      bool
+	ShowSummary            bool
+	FocusDisplay           string
+	ShortBreakDisplay      string
+	LongBreakDisplay       string
+	CyclesSummary          string
+	EstimatedTotalDuration string
 }
 
 type pomodoroValues struct {
-	FocusSeconds           int
-	BreakSeconds           int
-	LongBreakSeconds       int
-	Cycles                 int
-	CyclesBeforeLongBreak  int
-	TotalSeconds           int
+	FocusSeconds          int
+	BreakSeconds          int
+	LongBreakSeconds      int
+	Cycles                int
+	CyclesBeforeLongBreak int
+	TotalSeconds          int
 }
 
 func pomodoroFocusChoices() []string {
@@ -70,6 +73,11 @@ func pomodoroLongBreakChoices() []string {
 
 func BuildPomodoroDialogViewModel(state State) PomodoroDialogViewModel {
 	values, _ := pomodoroValuesFromState(state, false)
+	longBreakForcedOff := pomodoroBreakDisabled(state)
+	longBreakSelected := state.PomodoroLongBreakChoice
+	if longBreakForcedOff {
+		longBreakSelected = pomodoroLongBreakNoBreakChoice
+	}
 	return PomodoroDialogViewModel{
 		FocusChoices:           pomodoroFocusChoices(),
 		BreakChoices:           pomodoroBreakChoices(),
@@ -77,6 +85,7 @@ func BuildPomodoroDialogViewModel(state State) PomodoroDialogViewModel {
 		FocusCustomChoice:      pomodoroFocusCustomChoice,
 		BreakCustomChoice:      pomodoroBreakCustomChoice,
 		LongBreakCustomChoice:  pomodoroLongBreakCustomChoice,
+		LongBreakSelected:      longBreakSelected,
 		FocusRowActive:         state.FocusIdx == pomodoroFocusRowIdx,
 		FocusCustomActive:      state.FocusIdx == pomodoroFocusCustomIdx,
 		BreakRowActive:         state.FocusIdx == pomodoroBreakRowIdx,
@@ -85,11 +94,13 @@ func BuildPomodoroDialogViewModel(state State) PomodoroDialogViewModel {
 		LongBreakCustomActive:  state.FocusIdx == pomodoroLongBreakCustomIdx,
 		CyclesRowActive:        state.FocusIdx == pomodoroCyclesRowIdx,
 		LongBreakCyclesActive:  state.FocusIdx == pomodoroLongBreakCyclesIdx,
-		LongBreakDisabled:      pomodoroLongBreakDisabled(state),
+		CyclesDisabled:         pomodoroBreakDisabled(state),
+		LongBreakForcedOff:     longBreakForcedOff,
+		LongBreakDisabled:      pomodoroBreakDisabled(state) || pomodoroLongBreakDisabled(state),
 		ShowSummary:            values.FocusSeconds > 0 || values.BreakSeconds > 0,
 		FocusDisplay:           pomodoroDisplayDuration(state.PomodoroFocusChoice, pomodoroFocusCustomChoice, -1, state.Inputs[0].Value(), values.FocusSeconds),
 		ShortBreakDisplay:      pomodoroDisplayDuration(state.PomodoroBreakChoice, pomodoroBreakCustomChoice, pomodoroBreakNoBreakChoice, state.Inputs[1].Value(), values.BreakSeconds),
-		LongBreakDisplay:       pomodoroDisplayDuration(state.PomodoroLongBreakChoice, pomodoroLongBreakCustomChoice, pomodoroLongBreakNoBreakChoice, state.Inputs[2].Value(), values.LongBreakSeconds),
+		LongBreakDisplay:       pomodoroDisplayDuration(longBreakSelected, pomodoroLongBreakCustomChoice, pomodoroLongBreakNoBreakChoice, state.Inputs[2].Value(), values.LongBreakSeconds),
 		CyclesSummary:          pomodoroCyclesSummary(state, values),
 		EstimatedTotalDuration: pomodoroEstimatedTotalDuration(values),
 	}
@@ -108,6 +119,9 @@ func pomodoroDisplayDuration(choice int, customChoice int, noBreakChoice int, in
 }
 
 func pomodoroCyclesSummary(state State, values pomodoroValues) string {
+	if values.BreakSeconds <= 0 {
+		return "continuous"
+	}
 	cycles := strings.TrimSpace(state.Inputs[3].Value())
 	if cycles == "" && values.Cycles > 0 {
 		cycles = strconv.Itoa(values.Cycles)
@@ -163,6 +177,15 @@ func pomodoroValuesFromState(state State, validate bool) (pomodoroValues, error)
 		}
 	} else if state.PomodoroBreakChoice == pomodoroBreakNoBreakChoice {
 		values.BreakSeconds = 0
+	}
+	if values.BreakSeconds <= 0 {
+		values.Cycles = 1
+		values.LongBreakSeconds = 0
+		values.CyclesBeforeLongBreak = 0
+		if values.FocusSeconds > 0 {
+			values.TotalSeconds = values.FocusSeconds
+		}
+		return values, nil
 	}
 	if state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice {
 		parsed, err := ParseDurationInput(state.Inputs[2].Value(), validate, "Long break duration")

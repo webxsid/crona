@@ -114,22 +114,30 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			state.Inputs[1].View(),
 		))
 		rows = append(rows, "", pomodoroRowLabel(theme, "Long Break", vm.LongBreakRowActive || vm.LongBreakCustomActive))
-		rows = append(rows, pomodoroChoiceRow(
-			theme,
-			vm.LongBreakChoices,
-			state.PomodoroLongBreakChoice,
-			vm.LongBreakCustomChoice,
-			vm.LongBreakCustomActive,
-			state.Inputs[2].View(),
-		))
-		rows = append(rows, "", pomodoroRowLabel(theme, "Number of cycles (1 cycle = 1 focus + break)", vm.CyclesRowActive))
-		rows = append(rows, state.Inputs[3].View())
-		rows = append(rows, "", pomodoroRowLabel(theme, "Cycle before long break", vm.LongBreakCyclesActive))
-		cyclesBeforeLine := state.Inputs[4].View()
-		if vm.LongBreakDisabled {
-			cyclesBeforeLine = theme.StyleDim.Render(cyclesBeforeLine + "\n  (enable long break to edit)")
+		if vm.LongBreakForcedOff {
+			rows = append(rows, pomodoroDisabledValueRow(theme, "Long Break"))
+		} else {
+			rows = append(rows, pomodoroChoiceRow(
+				theme,
+				vm.LongBreakChoices,
+				vm.LongBreakSelected,
+				vm.LongBreakCustomChoice,
+				vm.LongBreakCustomActive,
+				state.Inputs[2].View(),
+			))
 		}
-		rows = append(rows, cyclesBeforeLine)
+		rows = append(rows, "", pomodoroRowLabel(theme, "Number of cycles (1 cycle = 1 focus + break)", vm.CyclesRowActive))
+		if vm.CyclesDisabled {
+			rows = append(rows, pomodoroDisabledValueRow(theme, "Cycles"))
+		} else {
+			rows = append(rows, state.Inputs[3].View())
+		}
+		rows = append(rows, "", pomodoroRowLabel(theme, "Cycle before long break", vm.LongBreakCyclesActive))
+		if vm.LongBreakDisabled {
+			rows = append(rows, pomodoroDisabledValueRow(theme, "Cycle before long break"))
+		} else {
+			rows = append(rows, state.Inputs[4].View())
+		}
 		rows = appendDialogFooter(
 			theme,
 			state,
@@ -291,6 +299,10 @@ func pomodoroRowLabel(theme Theme, label string, active bool) string {
 		return theme.StyleCursor.Render("> " + label)
 	}
 	return theme.StyleDim.Render("  " + label)
+}
+
+func pomodoroDisabledValueRow(theme Theme, label string) string {
+	return theme.StyleDim.Render("  " + label + ": disabled")
 }
 
 func itoa(v int64) string {
