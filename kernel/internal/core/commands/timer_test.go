@@ -7,6 +7,7 @@ import (
 
 	"crona/kernel/internal/core"
 	"crona/kernel/internal/events"
+	runtimepkg "crona/kernel/internal/runtime"
 	"crona/kernel/internal/store"
 	"crona/shared/config"
 	shareddto "crona/shared/dto"
@@ -480,6 +481,33 @@ func TestTimerHardLimitSchedulesWorkBoundaryFromFocusDuration(t *testing.T) {
 	}
 	if boundary.NextSegment != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected next segment short break, got %q", boundary.NextSegment)
+	}
+}
+
+func TestTimerHardLimitSkipsZeroLengthBreaks(t *testing.T) {
+	runtimeState := runtimepkg.NewHardLimitTimerRuntimeState(
+		"session-123",
+		42,
+		1800,
+		600,
+		0,
+		0,
+		4,
+	)
+	boundary := computeNextBoundary(
+		sharedtypes.SessionSegmentShortBreak,
+		nil,
+		0,
+		&runtimeState,
+	)
+	if boundary == nil {
+		t.Fatal("expected a work boundary for zero-length break")
+	}
+	if boundary.NextSegment != sharedtypes.SessionSegmentWork {
+		t.Fatalf("expected next segment work, got %q", boundary.NextSegment)
+	}
+	if boundary.AfterSeconds != 0 {
+		t.Fatalf("expected zero-second skip, got %d", boundary.AfterSeconds)
 	}
 }
 

@@ -463,121 +463,67 @@ func OpenTimerStartType(state State, repoID, streamID, issueID int64, issueLabel
 	state.ChoiceValues = []string{"stopwatch", "pomodoro"}
 	state.ChoiceDetails = []string{
 		"Start an open-ended focus session.",
-		"Choose focus and break presets, then set the total pomodoro time.",
+		"Configure focus, breaks, and cycles in a single pomodoro setup dialog.",
 	}
 	state.ChoiceCursor = 0
 	return state
-}
-
-func OpenPomodoroFocusPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
-	state = Close(state)
-	state.Kind = "pomodoro_focus_presets"
-	state.ViewTitle = "Pomodoro Focus Presets"
-	state.ViewName = strings.TrimSpace(issueLabel)
-	state.RepoID = repoID
-	state.StreamID = streamID
-	state.IssueID = issueID
-	state.ChoiceItems = []string{
-		"25m focus",
-		"50m focus",
-		"90m focus",
-		"Custom",
-	}
-	state.ChoiceValues = []string{"25m", "50m", "90m", "custom"}
-	state.ChoiceDetails = []string{
-		"Quick focus block cadence.",
-		"Medium focus block cadence.",
-		"Long focus block cadence.",
-		"Enter a custom focus duration.",
-	}
-	state.ChoiceCursor = 0
-	return state
-}
-
-func OpenPomodoroBreakPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
-	state = Close(state)
-	state.Kind = "pomodoro_break_presets"
-	state.ViewTitle = "Pomodoro Break Presets"
-	state.ViewName = strings.TrimSpace(issueLabel)
-	state.RepoID = repoID
-	state.StreamID = streamID
-	state.IssueID = issueID
-	state.ChoiceItems = []string{
-		"5m break",
-		"10m break",
-		"15m break",
-		"Custom",
-	}
-	state.ChoiceValues = []string{"5m", "10m", "15m", "custom"}
-	state.ChoiceDetails = []string{
-		"Short break cadence.",
-		"Medium break cadence.",
-		"Long break cadence.",
-		"Enter a custom break duration.",
-	}
-	state.ChoiceCursor = 0
-	return state
-}
-
-func OpenPomodoroFocusCustom(
-	state State,
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	input := newSessionDetailInput(state, "25m")
-	input.Focus()
-	state = Close(state)
-	state.Kind = "pomodoro_focus_custom"
-	state.Parent = "pomodoro_focus_presets"
-	state.RepoID = repoID
-	state.StreamID = streamID
-	state.IssueID = issueID
-	state.ViewName = strings.TrimSpace(issueLabel)
-	state.Inputs = []textinput.Model{input}
-	return SyncDialogFocus(state)
-}
-
-func OpenPomodoroBreakCustom(
-	state State,
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	input := newSessionDetailInput(state, "5m")
-	input.Focus()
-	state = Close(state)
-	state.Kind = "pomodoro_break_custom"
-	state.Parent = "pomodoro_break_presets"
-	state.RepoID = repoID
-	state.StreamID = streamID
-	state.IssueID = issueID
-	state.ViewName = strings.TrimSpace(issueLabel)
-	state.Inputs = []textinput.Model{input}
-	return SyncDialogFocus(state)
 }
 
 func OpenPomodoroStart(
 	state State,
 	repoID, streamID, issueID int64,
 	issueLabel string,
-	totalMinutes, shortBreakCount, longBreakMinutes int,
 ) State {
-	inputs := []textinput.Model{
-		newSessionDetailInput(state, "90m"),
-		newSessionDetailInput(state, "4"),
-		newSessionDetailInput(state, "15m"),
+	focusSeconds := state.PomodoroFocusSeconds
+	if focusSeconds <= 0 {
+		focusSeconds = 25 * 60
 	}
-	inputs[0].SetValue(FormatDurationMinutesInput(&totalMinutes))
-	inputs[1].SetValue(strconv.Itoa(shortBreakCount))
-	inputs[2].SetValue(FormatDurationMinutesInput(&longBreakMinutes))
-	inputs[0].Focus()
+	breakSeconds := state.PomodoroBreakSeconds
+	if breakSeconds <= 0 {
+		breakSeconds = 5 * 60
+	}
+	longBreakSeconds := state.PomodoroLongBreakSeconds
+	if longBreakSeconds <= 0 {
+		longBreakSeconds = 15 * 60
+	}
+	cyclesBeforeLongBreak := state.PomodoroCyclesBeforeLongBreak
+	if cyclesBeforeLongBreak <= 0 {
+		cyclesBeforeLongBreak = 4
+	}
+	cycles := state.PomodoroCycles
+	if cycles <= 0 {
+		cycles = 4
+	}
+	inputs := []textinput.Model{
+		newSessionDetailInput(state, "25m"),
+		newSessionDetailInput(state, "5m"),
+		newSessionDetailInput(state, "15m"),
+		newSessionDetailInput(state, "4"),
+		newSessionDetailInput(state, "4"),
+	}
+	inputs[0].SetValue(pomodoroSeedDurationInput(focusSeconds, 25*60))
+	inputs[1].SetValue(pomodoroSeedDurationInput(breakSeconds, 5*60))
+	inputs[2].SetValue(pomodoroSeedDurationInput(longBreakSeconds, 15*60))
+	inputs[3].SetValue(strconv.Itoa(cycles))
+	inputs[4].SetValue(strconv.Itoa(cyclesBeforeLongBreak))
 	state = Close(state)
 	state.Kind = "pomodoro_start"
-	state.Parent = "pomodoro_break_presets"
+	state.Parent = "timer_start_type"
+	state.ViewTitle = "Pomodoro Session"
 	state.RepoID = repoID
 	state.StreamID = streamID
 	state.IssueID = issueID
 	state.ViewName = strings.TrimSpace(issueLabel)
 	state.Inputs = inputs
+	state.PomodoroFocusSeconds = focusSeconds
+	state.PomodoroFocusChoice = pomodoroFocusChoiceForSeconds(focusSeconds)
+	state.PomodoroBreakSeconds = breakSeconds
+	state.PomodoroBreakChoice = pomodoroBreakChoiceForSeconds(breakSeconds)
+	state.PomodoroLongBreakSeconds = longBreakSeconds
+	state.PomodoroLongBreakChoice = pomodoroLongBreakChoiceForSeconds(longBreakSeconds)
+	state.PomodoroCyclesBeforeLongBreak = cyclesBeforeLongBreak
+	state.PomodoroCycles = cycles
+	state.FocusIdx = 0
 	return SyncDialogFocus(state)
 }
 
@@ -589,20 +535,12 @@ func OpenHardLimitStart(
 ) State {
 	state.PomodoroFocusSeconds = workMinutes * 60
 	state.PomodoroBreakSeconds = breakMinutes * 60
-	return OpenPomodoroStart(
-		state,
-		repoID,
-		streamID,
-		issueID,
-		issueLabel,
-		totalMinutes,
-		4,
-		15,
-	)
+	_ = totalMinutes
+	return OpenPomodoroStart(state, repoID, streamID, issueID, issueLabel)
 }
 
 func OpenHardLimitPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
-	return OpenPomodoroFocusPreset(state, repoID, streamID, issueID, issueLabel)
+	return OpenPomodoroStart(state, repoID, streamID, issueID, issueLabel)
 }
 
 func OpenHardLimitExpired(state State, issueLabel string) State {

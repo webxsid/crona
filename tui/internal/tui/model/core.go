@@ -227,9 +227,13 @@ type Model struct {
 	dialogTelemetryPrivacyCursor        int
 	dialogTelemetryReviewCursor         int
 	dialogPomodoroFocusSeconds          int
+	dialogPomodoroFocusChoice           int
 	dialogPomodoroBreakSeconds          int
+	dialogPomodoroBreakChoice           int
 	dialogPomodoroLongBreakSeconds      int
+	dialogPomodoroLongBreakChoice       int
 	dialogPomodoroCyclesBeforeLongBreak int
+	dialogPomodoroCycles                int
 
 	// status / error flash
 	statusMsg string

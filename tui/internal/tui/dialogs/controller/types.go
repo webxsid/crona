@@ -103,9 +103,13 @@ type State struct {
 	ExportCategory                string
 	PromptGlyphMode               sharedtypes.PromptGlyphMode
 	PomodoroFocusSeconds          int
+	PomodoroFocusChoice           int
 	PomodoroBreakSeconds          int
+	PomodoroBreakChoice           int
 	PomodoroLongBreakSeconds      int
+	PomodoroLongBreakChoice       int
 	PomodoroCyclesBeforeLongBreak int
+	PomodoroCycles                int
 }
 
 type StashItem struct {

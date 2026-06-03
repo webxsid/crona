@@ -239,16 +239,7 @@ func (s Snapshot) OpenPomodoroStart(
 	repoID, streamID, issueID int64,
 	issueLabel string,
 ) State {
-	return OpenPomodoroStart(
-		s.Dialog,
-		repoID,
-		streamID,
-		issueID,
-		issueLabel,
-		90,
-		4,
-		15,
-	)
+	return OpenPomodoroStart(s.Dialog, repoID, streamID, issueID, issueLabel)
 }
 
 func (s Snapshot) OpenTimerStartType(
@@ -256,34 +247,6 @@ func (s Snapshot) OpenTimerStartType(
 	issueLabel string,
 ) State {
 	return OpenTimerStartType(s.Dialog, repoID, streamID, issueID, issueLabel)
-}
-
-func (s Snapshot) OpenPomodoroFocusPresets(
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	return OpenPomodoroFocusPreset(s.Dialog, repoID, streamID, issueID, issueLabel)
-}
-
-func (s Snapshot) OpenPomodoroBreakPresets(
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	return OpenPomodoroBreakPreset(s.Dialog, repoID, streamID, issueID, issueLabel)
-}
-
-func (s Snapshot) OpenPomodoroFocusCustom(
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	return OpenPomodoroFocusCustom(s.Dialog, repoID, streamID, issueID, issueLabel)
-}
-
-func (s Snapshot) OpenPomodoroBreakCustom(
-	repoID, streamID, issueID int64,
-	issueLabel string,
-) State {
-	return OpenPomodoroBreakCustom(s.Dialog, repoID, streamID, issueID, issueLabel)
 }
 
 func (s Snapshot) OpenHardLimitExpired(issueLabel string) State {

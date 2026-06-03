@@ -155,17 +155,27 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{
 		Kind:                          "pomodoro_start",
 		PomodoroFocusSeconds:          60,
+		PomodoroFocusChoice:           2,
 		PomodoroBreakSeconds:          30,
+		PomodoroBreakChoice:           4,
 		PomodoroLongBreakSeconds:      120,
+		PomodoroLongBreakChoice:       3,
 		PomodoroCyclesBeforeLongBreak: 2,
+		PomodoroCycles:                5,
 	})
 
 	state := model.dialogState()
 	if state.PomodoroFocusSeconds != 60 {
 		t.Fatalf("expected focus seconds to survive dialog round trip, got %d", state.PomodoroFocusSeconds)
 	}
+	if state.PomodoroFocusChoice != 2 {
+		t.Fatalf("expected focus choice to survive dialog round trip, got %d", state.PomodoroFocusChoice)
+	}
 	if state.PomodoroBreakSeconds != 30 {
 		t.Fatalf("expected break seconds to survive dialog round trip, got %d", state.PomodoroBreakSeconds)
+	}
+	if state.PomodoroBreakChoice != 4 {
+		t.Fatalf("expected break choice to survive dialog round trip, got %d", state.PomodoroBreakChoice)
 	}
 	if state.PomodoroLongBreakSeconds != 120 {
 		t.Fatalf(
@@ -173,11 +183,50 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 			state.PomodoroLongBreakSeconds,
 		)
 	}
+	if state.PomodoroLongBreakChoice != 3 {
+		t.Fatalf(
+			"expected long break choice to survive dialog round trip, got %d",
+			state.PomodoroLongBreakChoice,
+		)
+	}
 	if state.PomodoroCyclesBeforeLongBreak != 2 {
 		t.Fatalf(
 			"expected cycle count to survive dialog round trip, got %d",
 			state.PomodoroCyclesBeforeLongBreak,
 		)
+	}
+	if state.PomodoroCycles != 5 {
+		t.Fatalf("expected cycles to survive dialog round trip, got %d", state.PomodoroCycles)
+	}
+}
+
+func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
+	model := Model{}.withDialogState(dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title"))
+
+	for i := 0; i < 3; i++ {
+		next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRight})
+		model = next.(Model)
+	}
+
+	state := model.dialogState()
+	if state.Kind != "pomodoro_start" {
+		t.Fatalf("expected pomodoro dialog to remain open, got %q", state.Kind)
+	}
+	if state.PomodoroFocusChoice != 3 {
+		t.Fatalf("expected focus choice to reach custom after three right keys, got %d", state.PomodoroFocusChoice)
+	}
+	if state.FocusIdx != 1 {
+		t.Fatalf("expected focus to move into custom input, got %d", state.FocusIdx)
+	}
+	if !state.Inputs[0].Focused() {
+		t.Fatal("expected custom focus input to be focused")
+	}
+
+	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyEnter})
+	model = next.(Model)
+	state = model.dialogState()
+	if state.FocusIdx != 2 {
+		t.Fatalf("expected enter from custom focus input to advance to short break row, got %d", state.FocusIdx)
 	}
 }
 

@@ -887,7 +887,10 @@ func computeNextBoundary(
 				duration = runtimeState.HardLimitLongBreakSeconds
 			}
 			if duration <= 0 {
-				return nil
+				return &boundaryResult{
+					NextSegment:  sharedtypes.SessionSegmentWork,
+					AfterSeconds: 0,
+				}
 			}
 			return &boundaryResult{
 				NextSegment:  sharedtypes.SessionSegmentWork,

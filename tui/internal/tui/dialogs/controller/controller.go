@@ -126,6 +126,14 @@ func Close(state State) State {
 	state.ExportPresetFormat = ""
 	state.ExportPresetOutput = ""
 	state.ExportIncludePDF = false
+	state.PomodoroFocusSeconds = 0
+	state.PomodoroFocusChoice = 0
+	state.PomodoroBreakSeconds = 0
+	state.PomodoroBreakChoice = 0
+	state.PomodoroLongBreakSeconds = 0
+	state.PomodoroLongBreakChoice = 0
+	state.PomodoroCyclesBeforeLongBreak = 0
+	state.PomodoroCycles = 0
 	return state
 }
 
@@ -135,6 +143,12 @@ func SyncDialogFocus(state State) State {
 	}
 	if state.DescriptionEnabled {
 		state.Description.Blur()
+	}
+	if state.Kind == "pomodoro_start" {
+		if inputIdx, ok := pomodoroDialogInputIndex(state, state.FocusIdx); ok {
+			state.Inputs[inputIdx].Focus()
+		}
+		return state
 	}
 	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
 		state.Description.Focus()
@@ -166,6 +180,30 @@ func dialogInputIndex(state State, focusIdx int) (int, bool) {
 		return 0, false
 	}
 	return inputIdx, true
+}
+
+func pomodoroDialogInputIndex(state State, focusIdx int) (int, bool) {
+	switch focusIdx {
+	case 1:
+		if state.PomodoroFocusChoice == pomodoroFocusCustomChoice {
+			return 0, true
+		}
+	case 3:
+		if state.PomodoroBreakChoice == pomodoroBreakCustomChoice {
+			return 1, true
+		}
+	case 5:
+		if state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice {
+			return 2, true
+		}
+	case 6:
+		return 3, true
+	case 7:
+		if !pomodoroLongBreakDisabled(state) {
+			return 4, true
+		}
+	}
+	return 0, false
 }
 
 func ToggleEndSessionAdvanced(state State) State {
@@ -272,14 +310,6 @@ func Update(
 		return updateSessionMessage(state, ctx, currentDate, msg)
 	case "timer_start_type":
 		return updateTimerStartType(state, msg)
-	case "pomodoro_focus_presets":
-		return updatePomodoroFocusPresets(state, msg)
-	case "pomodoro_break_presets":
-		return updatePomodoroBreakPresets(state, msg)
-	case "pomodoro_focus_custom":
-		return updatePomodoroFocusCustom(state, msg)
-	case "pomodoro_break_custom":
-		return updatePomodoroBreakCustom(state, msg)
 	case "pomodoro_start":
 		return updatePomodoroStart(state, msg)
 	case "hard_limit_expired":
@@ -593,7 +623,7 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 				},
 			}, ""
 		case "pomodoro":
-			return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
 		default:
 			return state, nil, "Choose a timer type"
 		}
@@ -610,7 +640,7 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 					},
 				}, ""
 			case "pomodoro":
-				return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+				return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
 			default:
 				return state, nil, "Choose a timer type"
 			}
@@ -619,240 +649,349 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 	return state, nil, ""
 }
 
-func updatePomodoroFocusPresets(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return OpenTimerStartType(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	case "j", "down":
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-		return clearDialogError(state), nil, ""
-	case "k", "up":
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-		return clearDialogError(state), nil, ""
-	case "1", "2", "3":
-		idx := int(msg.String()[0] - '1')
-		return pomodoroFocusPresetAction(state, idx)
-	case "c":
-		return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	case "enter":
-		value := currentChoiceValue(state)
-		if value == "custom" {
-			return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-		}
-		focusSeconds, ok := pomodoroPresetSeconds(value)
-		if !ok {
-			return state, nil, "Choose a focus preset"
-		}
-		state.PomodoroFocusSeconds = focusSeconds
-		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			value := currentChoiceValue(state)
-			if value == "custom" {
-				return OpenPomodoroFocusCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-			}
-			focusSeconds, ok := pomodoroPresetSeconds(value)
-			if !ok {
-				return state, nil, "Choose a focus preset"
-			}
-			state.PomodoroFocusSeconds = focusSeconds
-			return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-		}
-	}
-	return state, nil, ""
+func pomodoroLongBreakDisabled(state State) bool {
+	return state.PomodoroLongBreakChoice == pomodoroLongBreakNoBreakChoice
 }
 
-func updatePomodoroFocusCustom(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+func pomodoroFocusIdxEnabled(state State, idx int) bool {
+	switch idx {
+	case pomodoroFocusCustomIdx:
+		return state.PomodoroFocusChoice == pomodoroFocusCustomChoice
+	case pomodoroBreakCustomIdx:
+		return state.PomodoroBreakChoice == pomodoroBreakCustomChoice
+	case pomodoroLongBreakCustomIdx:
+		return state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice
+	case pomodoroLongBreakCyclesIdx:
+		return !pomodoroLongBreakDisabled(state)
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			focusSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Focus duration")
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			state.PomodoroFocusSeconds = focusSeconds
-			return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-		}
+		return true
 	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
 }
 
-func updatePomodoroBreakPresets(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return OpenPomodoroFocusPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	case "j", "down":
-		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
-			state.ChoiceCursor++
-		}
-		return clearDialogError(state), nil, ""
-	case "k", "up":
-		if state.ChoiceCursor > 0 {
-			state.ChoiceCursor--
-		}
-		return clearDialogError(state), nil, ""
-	case "1", "2", "3":
-		idx := int(msg.String()[0] - '1')
-		return pomodoroBreakPresetAction(state, idx)
-	case "c":
-		return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	case "enter":
-		value := currentChoiceValue(state)
-		if value == "custom" {
-			return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-		}
-		breakSeconds, ok := pomodoroPresetSeconds(value)
-		if !ok {
-			return state, nil, "Choose a break preset"
-		}
-		state.PomodoroBreakSeconds = breakSeconds
-		return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
-	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			value := currentChoiceValue(state)
-			if value == "custom" {
-				return OpenPomodoroBreakCustom(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-			}
-			breakSeconds, ok := pomodoroPresetSeconds(value)
-			if !ok {
-				return state, nil, "Choose a break preset"
-			}
-			state.PomodoroBreakSeconds = breakSeconds
-			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
-		}
+func pomodoroNextFocusIdx(state State, idx int, dir int) int {
+	if dir == 0 {
+		return idx
 	}
-	return state, nil, ""
+	for i := 0; i < 8; i++ {
+		idx = (idx + dir + 8) % 8
+		if !pomodoroFocusIdxEnabled(state, idx) {
+			continue
+		}
+		return idx
+	}
+	return idx
 }
 
-func updatePomodoroBreakCustom(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+func pomodoroFocusChoiceForSeconds(seconds int) int {
+	switch seconds {
+	case 25 * 60:
+		return 0
+	case 50 * 60:
+		return 1
+	case 90 * 60:
+		return 2
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			breakSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Break duration")
-			if err != nil {
-				return state, nil, err.Error()
+		return pomodoroFocusCustomChoice
+	}
+}
+
+func pomodoroBreakChoiceForSeconds(seconds int) int {
+	switch seconds {
+	case 5 * 60:
+		return 0
+	case 10 * 60:
+		return 1
+	case 15 * 60:
+		return 2
+	case 0:
+		return pomodoroBreakNoBreakChoice
+	default:
+		return pomodoroBreakCustomChoice
+	}
+}
+
+func pomodoroLongBreakChoiceForSeconds(seconds int) int {
+	switch seconds {
+	case 15 * 60:
+		return 0
+	case 20 * 60:
+		return 1
+	case 30 * 60:
+		return 2
+	case 0:
+		return pomodoroLongBreakNoBreakChoice
+	default:
+		return pomodoroLongBreakCustomChoice
+	}
+}
+
+func pomodoroSeedDurationInput(seconds int, fallbackSeconds int) string {
+	if seconds <= 0 {
+		seconds = fallbackSeconds
+	}
+	minutes := seconds / 60
+	return FormatDurationMinutesInput(&minutes)
+}
+
+func submitPomodoroStart(state State) (State, *Action, string) {
+	values, err := pomodoroValuesFromState(state, true)
+	if err != nil {
+		return state, nil, err.Error()
+	}
+	if values.TotalSeconds <= 0 {
+		return state, nil, "Total duration must be positive"
+	}
+	req := &shareddto.TimerStartRequest{
+		RepoID:                         int64Ptr(state.RepoID),
+		StreamID:                       int64Ptr(state.StreamID),
+		IssueID:                        int64Ptr(state.IssueID),
+		HardLimitTotalSeconds:          intPtr(values.TotalSeconds),
+		HardLimitWorkSeconds:           intPtr(values.FocusSeconds),
+		HardLimitBreakSeconds:          intPtr(values.BreakSeconds),
+		HardLimitLongBreakSeconds:      intPtr(values.LongBreakSeconds),
+		HardLimitCyclesBeforeLongBreak: intPtr(values.CyclesBeforeLongBreak),
+	}
+	return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+}
+
+func refreshPomodoroPreviewFields(state State, inputIdx int) State {
+	switch inputIdx {
+	case 0:
+		if state.PomodoroFocusChoice == pomodoroFocusCustomChoice {
+			values, err := pomodoroValuesFromState(state, false)
+			if err == nil {
+				state.PomodoroFocusSeconds = values.FocusSeconds
 			}
-			state.PomodoroBreakSeconds = breakSeconds
-			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
+		}
+	case 1:
+		if state.PomodoroBreakChoice == pomodoroBreakCustomChoice {
+			values, err := pomodoroValuesFromState(state, false)
+			if err == nil {
+				state.PomodoroBreakSeconds = values.BreakSeconds
+			}
+		}
+	case 2:
+		if state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice {
+			values, err := pomodoroValuesFromState(state, false)
+			if err == nil {
+				state.PomodoroLongBreakSeconds = values.LongBreakSeconds
+			}
+		}
+	case 3:
+		values, err := pomodoroValuesFromState(state, false)
+		if err == nil {
+			state.PomodoroCycles = values.Cycles
+		}
+	case 4:
+		values, err := pomodoroValuesFromState(state, false)
+		if err == nil {
+			state.PomodoroCyclesBeforeLongBreak = values.CyclesBeforeLongBreak
 		}
 	}
-	var cmd tea.Cmd
-	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
-	_ = cmd
-	return clearDialogError(state), nil, ""
+	return state
 }
 
 func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
+	if msg.String() == "left" {
+		switch state.FocusIdx {
+		case pomodoroFocusCustomIdx:
+			if state.Inputs[0].Position() == 0 {
+				state.FocusIdx = pomodoroFocusRowIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+		case pomodoroBreakCustomIdx:
+			if state.Inputs[1].Position() == 0 {
+				state.FocusIdx = pomodoroBreakRowIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+		case pomodoroLongBreakCustomIdx:
+			if state.Inputs[2].Position() == 0 {
+				state.FocusIdx = pomodoroLongBreakRowIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+		}
+	}
 	switch msg.String() {
 	case "esc":
-		return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
-			dir = -1
+		switch state.FocusIdx {
+		case pomodoroFocusCustomIdx:
+			state.FocusIdx = pomodoroFocusRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroBreakCustomIdx:
+			state.FocusIdx = pomodoroBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroLongBreakCustomIdx:
+			state.FocusIdx = pomodoroLongBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		default:
+			return OpenTimerStartType(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
 		}
-		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
+	case "tab", "down":
+		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, 1)
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
+	case "shift+tab", "up":
+		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, -1)
+		return SyncDialogFocus(clearDialogError(state)), nil, ""
+	case "left":
+		switch state.FocusIdx {
+		case pomodoroFocusRowIdx:
+			if state.PomodoroFocusChoice > 0 {
+				state.PomodoroFocusChoice--
+			}
+			state.PomodoroFocusSeconds = []int{25 * 60, 50 * 60, 90 * 60, state.PomodoroFocusSeconds}[state.PomodoroFocusChoice]
+			return clearDialogError(state), nil, ""
+		case pomodoroBreakRowIdx:
+			if state.PomodoroBreakChoice > 0 {
+				state.PomodoroBreakChoice--
+			}
+			switch state.PomodoroBreakChoice {
+			case 0:
+				state.PomodoroBreakSeconds = 5 * 60
+			case 1:
+				state.PomodoroBreakSeconds = 10 * 60
+			case 2:
+				state.PomodoroBreakSeconds = 15 * 60
+			case pomodoroBreakNoBreakChoice:
+				state.PomodoroBreakSeconds = 0
+			}
+			return clearDialogError(state), nil, ""
+		case pomodoroLongBreakRowIdx:
+			if state.PomodoroLongBreakChoice > 0 {
+				state.PomodoroLongBreakChoice--
+			}
+			switch state.PomodoroLongBreakChoice {
+			case 0:
+				state.PomodoroLongBreakSeconds = 15 * 60
+			case 1:
+				state.PomodoroLongBreakSeconds = 20 * 60
+			case 2:
+				state.PomodoroLongBreakSeconds = 30 * 60
+			case pomodoroLongBreakNoBreakChoice:
+				state.PomodoroLongBreakSeconds = 0
+			}
+			if pomodoroLongBreakDisabled(state) && state.FocusIdx == pomodoroLongBreakCyclesIdx {
+				state.FocusIdx = pomodoroLongBreakRowIdx
+			}
+			return clearDialogError(state), nil, ""
+		}
+	case "right":
+		switch state.FocusIdx {
+		case pomodoroFocusRowIdx:
+			if state.PomodoroFocusChoice < pomodoroFocusCustomChoice {
+				state.PomodoroFocusChoice++
+			}
+			switch state.PomodoroFocusChoice {
+			case 0:
+				state.PomodoroFocusSeconds = 25 * 60
+			case 1:
+				state.PomodoroFocusSeconds = 50 * 60
+			case 2:
+				state.PomodoroFocusSeconds = 90 * 60
+			case pomodoroFocusCustomChoice:
+				state.Inputs[pomodoroFocusCustomIdx].SetValue(
+					pomodoroSeedDurationInput(state.PomodoroFocusSeconds, 25*60),
+				)
+				state.FocusIdx = pomodoroFocusCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			return clearDialogError(state), nil, ""
+		case pomodoroBreakRowIdx:
+			if state.PomodoroBreakChoice < pomodoroBreakCustomChoice {
+				state.PomodoroBreakChoice++
+			}
+			switch state.PomodoroBreakChoice {
+			case 0:
+				state.PomodoroBreakSeconds = 5 * 60
+			case 1:
+				state.PomodoroBreakSeconds = 10 * 60
+			case 2:
+				state.PomodoroBreakSeconds = 15 * 60
+			case pomodoroBreakNoBreakChoice:
+				state.PomodoroBreakSeconds = 0
+			case pomodoroBreakCustomChoice:
+				state.Inputs[1].SetValue(
+					pomodoroSeedDurationInput(state.PomodoroBreakSeconds, 5*60),
+				)
+				state.FocusIdx = pomodoroBreakCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			return clearDialogError(state), nil, ""
+		case pomodoroLongBreakRowIdx:
+			if state.PomodoroLongBreakChoice < pomodoroLongBreakCustomChoice {
+				state.PomodoroLongBreakChoice++
+			}
+			switch state.PomodoroLongBreakChoice {
+			case 0:
+				state.PomodoroLongBreakSeconds = 15 * 60
+			case 1:
+				state.PomodoroLongBreakSeconds = 20 * 60
+			case 2:
+				state.PomodoroLongBreakSeconds = 30 * 60
+			case pomodoroLongBreakNoBreakChoice:
+				state.PomodoroLongBreakSeconds = 0
+			case pomodoroLongBreakCustomChoice:
+				state.Inputs[2].SetValue(
+					pomodoroSeedDurationInput(state.PomodoroLongBreakSeconds, 15*60),
+				)
+				state.FocusIdx = pomodoroLongBreakCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			return clearDialogError(state), nil, ""
+		}
+	case "enter":
+		switch state.FocusIdx {
+		case pomodoroFocusRowIdx:
+			if state.PomodoroFocusChoice == pomodoroFocusCustomChoice {
+				state.FocusIdx = pomodoroFocusCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			state.FocusIdx = pomodoroBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroFocusCustomIdx:
+			state.FocusIdx = pomodoroBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroBreakRowIdx:
+			if state.PomodoroBreakChoice == pomodoroBreakCustomChoice {
+				state.FocusIdx = pomodoroBreakCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			state.FocusIdx = pomodoroLongBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroBreakCustomIdx:
+			state.FocusIdx = pomodoroLongBreakRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroLongBreakRowIdx:
+			if state.PomodoroLongBreakChoice == pomodoroLongBreakCustomChoice {
+				state.FocusIdx = pomodoroLongBreakCustomIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			state.FocusIdx = pomodoroCyclesRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroLongBreakCustomIdx:
+			state.FocusIdx = pomodoroCyclesRowIdx
+			return SyncDialogFocus(clearDialogError(state)), nil, ""
+		case pomodoroCyclesRowIdx:
+			if !pomodoroLongBreakDisabled(state) {
+				state.FocusIdx = pomodoroLongBreakCyclesIdx
+				return SyncDialogFocus(clearDialogError(state)), nil, ""
+			}
+			return submitPomodoroStart(state)
+		case pomodoroLongBreakCyclesIdx:
+			return submitPomodoroStart(state)
+		}
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
-			totalSeconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Total duration")
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			if totalSeconds < state.PomodoroFocusSeconds {
-				return state, nil, "Total duration cannot be shorter than the focus duration"
-			}
-			shortBreakCount, err := ParsePositiveIntInput(
-				state.Inputs[1].Value(),
-				false,
-				"Short break count",
-			)
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			longBreakSeconds, err := ParseDurationInput(
-				state.Inputs[2].Value(),
-				false,
-				"Long break duration",
-			)
-			if err != nil {
-				return state, nil, err.Error()
-			}
-			req := &shareddto.TimerStartRequest{
-				RepoID:                         int64Ptr(state.RepoID),
-				StreamID:                       int64Ptr(state.StreamID),
-				IssueID:                        int64Ptr(state.IssueID),
-				HardLimitTotalSeconds:          intPtr(totalSeconds),
-				HardLimitWorkSeconds:           intPtr(state.PomodoroFocusSeconds),
-				HardLimitBreakSeconds:          intPtr(state.PomodoroBreakSeconds),
-				HardLimitLongBreakSeconds:      intPtr(longBreakSeconds),
-				HardLimitCyclesBeforeLongBreak: intPtr(shortBreakCount),
-			}
-			return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+			return submitPomodoroStart(state)
 		}
 	}
 	var cmd tea.Cmd
-	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
-	_ = cmd
+	if inputIdx, ok := pomodoroDialogInputIndex(state, state.FocusIdx); ok {
+		state.Inputs[inputIdx], cmd = state.Inputs[inputIdx].Update(msg)
+		_ = cmd
+		state = refreshPomodoroPreviewFields(state, inputIdx)
+		return clearDialogError(state), nil, ""
+	}
 	return clearDialogError(state), nil, ""
-}
-
-func pomodoroFocusPresetAction(state State, idx int) (State, *Action, string) {
-	switch idx {
-	case 0:
-		state.PomodoroFocusSeconds = 25 * 60
-	case 1:
-		state.PomodoroFocusSeconds = 50 * 60
-	case 2:
-		state.PomodoroFocusSeconds = 90 * 60
-	default:
-		return state, nil, ""
-	}
-	return OpenPomodoroBreakPreset(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
-}
-
-func pomodoroBreakPresetAction(state State, idx int) (State, *Action, string) {
-	switch idx {
-	case 0:
-		state.PomodoroBreakSeconds = 5 * 60
-	case 1:
-		state.PomodoroBreakSeconds = 10 * 60
-	case 2:
-		state.PomodoroBreakSeconds = 15 * 60
-	default:
-		return state, nil, ""
-	}
-	return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName, 90, 4, 15), nil, ""
-}
-
-func pomodoroPresetSeconds(value string) (int, bool) {
-	switch strings.TrimSpace(value) {
-	case "25m":
-		return 25 * 60, true
-	case "50m":
-		return 50 * 60, true
-	case "90m":
-		return 90 * 60, true
-	case "5m":
-		return 5 * 60, true
-	case "10m":
-		return 10 * 60, true
-	case "15m":
-		return 15 * 60, true
-	default:
-		return 0, false
-	}
 }
 
 func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string) {

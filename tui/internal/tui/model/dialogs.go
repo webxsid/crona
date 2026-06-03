@@ -468,9 +468,13 @@ func (m Model) dialogState() dialogstate.State {
 		TelemetryPrivacyCursor:        m.dialogTelemetryPrivacyCursor,
 		TelemetryReviewCursor:         m.dialogTelemetryReviewCursor,
 		PomodoroFocusSeconds:          m.dialogPomodoroFocusSeconds,
+		PomodoroFocusChoice:           m.dialogPomodoroFocusChoice,
 		PomodoroBreakSeconds:          m.dialogPomodoroBreakSeconds,
+		PomodoroBreakChoice:           m.dialogPomodoroBreakChoice,
 		PomodoroLongBreakSeconds:      m.dialogPomodoroLongBreakSeconds,
+		PomodoroLongBreakChoice:       m.dialogPomodoroLongBreakChoice,
 		PomodoroCyclesBeforeLongBreak: m.dialogPomodoroCyclesBeforeLongBreak,
+		PomodoroCycles:                m.dialogPomodoroCycles,
 	}
 }
 
@@ -554,9 +558,13 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogTelemetryPrivacyCursor = state.TelemetryPrivacyCursor
 	m.dialogTelemetryReviewCursor = state.TelemetryReviewCursor
 	m.dialogPomodoroFocusSeconds = state.PomodoroFocusSeconds
+	m.dialogPomodoroFocusChoice = state.PomodoroFocusChoice
 	m.dialogPomodoroBreakSeconds = state.PomodoroBreakSeconds
+	m.dialogPomodoroBreakChoice = state.PomodoroBreakChoice
 	m.dialogPomodoroLongBreakSeconds = state.PomodoroLongBreakSeconds
+	m.dialogPomodoroLongBreakChoice = state.PomodoroLongBreakChoice
 	m.dialogPomodoroCyclesBeforeLongBreak = state.PomodoroCyclesBeforeLongBreak
+	m.dialogPomodoroCycles = state.PomodoroCycles
 	return m
 }
 

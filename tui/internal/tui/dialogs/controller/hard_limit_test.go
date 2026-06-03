@@ -9,11 +9,9 @@ import (
 )
 
 func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", 90, 4, 15)
-	state.PomodoroFocusSeconds = 25 * 60
-	state.PomodoroBreakSeconds = 5 * 60
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
 
-	next, _, status := Update(
+	next, action, status := Update(
 		state,
 		UpdateContext{},
 		"2026-05-26",
@@ -23,17 +21,7 @@ func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
 		t.Fatalf("unexpected status %q", status)
 	}
 	if next.Kind != "" {
-		t.Fatalf("expected pomodoro setup dialog to close, got %q", next.Kind)
-	}
-
-	_, action, status := Update(
-		state,
-		UpdateContext{},
-		"2026-05-26",
-		tea.KeyMsg{Type: tea.KeyCtrlS},
-	)
-	if status != "" {
-		t.Fatalf("unexpected status %q", status)
+		t.Fatalf("expected pomodoro dialog to close, got %q", next.Kind)
 	}
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
@@ -43,7 +31,7 @@ func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
 		RepoID:                         int64Ptr(11),
 		StreamID:                       int64Ptr(22),
 		IssueID:                        int64Ptr(33),
-		HardLimitTotalSeconds:          intPtr(5400),
+		HardLimitTotalSeconds:          intPtr(7800),
 		HardLimitWorkSeconds:           intPtr(1500),
 		HardLimitBreakSeconds:          intPtr(300),
 		HardLimitLongBreakSeconds:      intPtr(900),
@@ -106,103 +94,59 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
-	if next.Kind != "pomodoro_focus_presets" {
-		t.Fatalf("expected pomodoro choice to open focus presets, got %q", next.Kind)
-	}
-}
-
-func TestPomodoroPresetDialogsRouteThroughFocusBreakAndCustom(t *testing.T) {
-	focus := OpenPomodoroFocusPreset(State{}, 11, 22, 33, "Issue title")
-	next, action, status := Update(
-		focus,
-		UpdateContext{},
-		"2026-05-26",
-		tea.KeyMsg{Type: tea.KeyEnter},
-	)
-	if status != "" || action != nil {
-		t.Fatalf("unexpected focus preset result status=%q action=%+v", status, action)
-	}
-	if next.Kind != "pomodoro_break_presets" {
-		t.Fatalf("expected focus preset to open break presets, got %q", next.Kind)
-	}
-
-	focus = OpenPomodoroFocusPreset(State{}, 11, 22, 33, "Issue title")
-	for i := 0; i < 3; i++ {
-		next, action, status = Update(
-			focus,
-			UpdateContext{},
-			"2026-05-26",
-			tea.KeyMsg{Type: tea.KeyDown},
-		)
-		if status != "" || action != nil {
-			t.Fatalf("unexpected down result status=%q action=%+v", status, action)
-		}
-		focus = next
-	}
-	next, action, status = Update(
-		focus,
-		UpdateContext{},
-		"2026-05-26",
-		tea.KeyMsg{Type: tea.KeyEnter},
-	)
-	if status != "" || action != nil {
-		t.Fatalf("unexpected custom focus result status=%q action=%+v", status, action)
-	}
-	if next.Kind != "pomodoro_focus_custom" {
-		t.Fatalf("expected custom focus path, got %q", next.Kind)
-	}
-
-	breaks := OpenPomodoroBreakPreset(State{}, 11, 22, 33, "Issue title")
-	next, action, status = Update(
-		breaks,
-		UpdateContext{},
-		"2026-05-26",
-		tea.KeyMsg{Type: tea.KeyEnter},
-	)
-	if status != "" || action != nil {
-		t.Fatalf("unexpected break preset result status=%q action=%+v", status, action)
-	}
 	if next.Kind != "pomodoro_start" {
-		t.Fatalf("expected break preset to open setup dialog, got %q", next.Kind)
+		t.Fatalf("expected pomodoro choice to open unified pomodoro dialog, got %q", next.Kind)
 	}
+}
 
-	breaks = OpenPomodoroBreakPreset(State{}, 11, 22, 33, "Issue title")
+func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	var next State
+	var action *Action
+	var status string
+
 	for i := 0; i < 3; i++ {
 		next, action, status = Update(
-			breaks,
+			state,
 			UpdateContext{},
 			"2026-05-26",
-			tea.KeyMsg{Type: tea.KeyDown},
+			tea.KeyMsg{Type: tea.KeyRight},
 		)
 		if status != "" || action != nil {
-			t.Fatalf("unexpected down result status=%q action=%+v", status, action)
+			t.Fatalf("unexpected right result status=%q action=%+v", status, action)
 		}
-		breaks = next
+		state = next
 	}
+	if state.PomodoroFocusChoice != pomodoroFocusCustomChoice {
+		t.Fatalf("expected custom focus choice, got %d", state.PomodoroFocusChoice)
+	}
+	if state.FocusIdx != pomodoroFocusCustomIdx {
+		t.Fatalf("expected right onto custom focus to enter inline input, got focus %d", state.FocusIdx)
+	}
+	if !state.Inputs[0].Focused() {
+		t.Fatalf("expected custom focus input to be focused immediately")
+	}
+
 	next, action, status = Update(
-		breaks,
+		state,
 		UpdateContext{},
 		"2026-05-26",
 		tea.KeyMsg{Type: tea.KeyEnter},
 	)
 	if status != "" || action != nil {
-		t.Fatalf("unexpected break custom result status=%q action=%+v", status, action)
+		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
 	}
-	if next.Kind != "pomodoro_break_custom" {
-		t.Fatalf("expected custom break path, got %q", next.Kind)
+	if next.Kind != "pomodoro_start" || next.FocusIdx != pomodoroBreakRowIdx {
+		t.Fatalf("expected enter from active custom focus input to advance to short break row, got %+v", next)
 	}
-}
 
-func TestPomodoroSetupCustomFieldsRouteToTimerStartRequest(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", 90, 4, 15)
-	state.PomodoroFocusSeconds = 25 * 60
-	state.PomodoroBreakSeconds = 5 * 60
-	state.Inputs[0].SetValue("2h")
-	state.Inputs[1].SetValue("6")
-	state.Inputs[2].SetValue("20m")
+	next.FocusIdx = pomodoroFocusCustomIdx
+	next.Inputs[0].SetValue("45m")
+	next.Inputs[3].SetValue("4")
+	next.Inputs[4].SetValue("4")
 
-	next, action, status := Update(
-		state,
+	next, action, status = Update(
+		next,
 		UpdateContext{},
 		"2026-05-26",
 		tea.KeyMsg{Type: tea.KeyCtrlS},
@@ -211,29 +155,206 @@ func TestPomodoroSetupCustomFieldsRouteToTimerStartRequest(t *testing.T) {
 		t.Fatalf("unexpected status %q", status)
 	}
 	if next.Kind != "" {
-		t.Fatalf("expected setup dialog to close, got %q", next.Kind)
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
 	}
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.TimerStart.HardLimitTotalSeconds == nil ||
-		*action.TimerStart.HardLimitTotalSeconds != 2*60*60 ||
-		action.TimerStart.HardLimitWorkSeconds == nil ||
-		*action.TimerStart.HardLimitWorkSeconds != 25*60 ||
-		action.TimerStart.HardLimitBreakSeconds == nil ||
-		*action.TimerStart.HardLimitBreakSeconds != 5*60 ||
-		action.TimerStart.HardLimitLongBreakSeconds == nil ||
-		*action.TimerStart.HardLimitLongBreakSeconds != 20*60 ||
-		action.TimerStart.HardLimitCyclesBeforeLongBreak == nil ||
-		*action.TimerStart.HardLimitCyclesBeforeLongBreak != 6 {
-		t.Fatalf("unexpected setup timer start payload %+v", action.TimerStart)
+	if action.TimerStart.HardLimitWorkSeconds == nil || *action.TimerStart.HardLimitWorkSeconds != 45*60 {
+		t.Fatalf("expected custom focus seconds, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 12600 {
+		t.Fatalf("unexpected total seconds %+v", action.TimerStart)
+	}
+}
+
+func TestPomodoroRowNavigationBlursCustomInputFocus(t *testing.T) {
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	var next State
+	var action *Action
+	var status string
+
+	for i := 0; i < 3; i++ {
+		next, action, status = Update(
+			state,
+			UpdateContext{},
+			"2026-05-26",
+			tea.KeyMsg{Type: tea.KeyRight},
+		)
+		if status != "" || action != nil {
+			t.Fatalf("unexpected right result status=%q action=%+v", status, action)
+		}
+		state = next
+	}
+	if !state.Inputs[0].Focused() {
+		t.Fatalf("expected custom focus input to be focused")
+	}
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
+	}
+	if next.FocusIdx != pomodoroBreakRowIdx {
+		t.Fatalf("expected focus to advance to short break row, got %d", next.FocusIdx)
+	}
+	if next.Inputs[0].Focused() {
+		t.Fatalf("expected custom focus input to be blurred after leaving the row")
+	}
+
+	next, action, status = Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRight},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected right result status=%q action=%+v", status, action)
+	}
+	if next.PomodoroBreakChoice != 1 {
+		t.Fatalf("expected right to change short break choice, got %d", next.PomodoroBreakChoice)
+	}
+}
+
+func TestPomodoroLeftAtCustomInputStartReturnsToPresetRow(t *testing.T) {
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	var next State
+	var action *Action
+	var status string
+
+	for i := 0; i < 3; i++ {
+		next, action, status = Update(
+			state,
+			UpdateContext{},
+			"2026-05-26",
+			tea.KeyMsg{Type: tea.KeyRight},
+		)
+		if status != "" || action != nil {
+			t.Fatalf("unexpected right result status=%q action=%+v", status, action)
+		}
+		state = next
+	}
+	if state.FocusIdx != pomodoroFocusCustomIdx {
+		t.Fatalf("expected focus custom input, got %d", state.FocusIdx)
+	}
+
+	state.Inputs[0].CursorStart()
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyLeft},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected left result status=%q action=%+v", status, action)
+	}
+	if next.FocusIdx != pomodoroFocusRowIdx {
+		t.Fatalf("expected left at cursor start to return to focus preset row, got %d", next.FocusIdx)
+	}
+	if next.Inputs[0].Focused() {
+		t.Fatal("expected custom input to blur when returning to preset row")
+	}
+}
+
+func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	var next State
+	var action *Action
+	var status string
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
+	}
+	state = next
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
+	}
+	state = next
+
+	for i := 0; i < 3; i++ {
+		next, action, status = Update(
+			state,
+			UpdateContext{},
+			"2026-05-26",
+			tea.KeyMsg{Type: tea.KeyRight},
+		)
+		if status != "" || action != nil {
+			t.Fatalf("unexpected right result status=%q action=%+v", status, action)
+		}
+		state = next
+	}
+	if state.PomodoroLongBreakChoice != pomodoroLongBreakNoBreakChoice {
+		t.Fatalf("expected no-break long break choice, got %d", state.PomodoroLongBreakChoice)
+	}
+
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyTab},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected tab result status=%q action=%+v", status, action)
+	}
+	if next.FocusIdx == pomodoroLongBreakCyclesIdx {
+		t.Fatalf("expected disabled cycles-before field to be skipped, got %+v", next)
+	}
+
+	next.Inputs[3].SetValue("2")
+
+	next, action, status = Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
+		t.Fatalf("unexpected action %+v", action)
+	}
+	if action.TimerStart.HardLimitBreakSeconds == nil || *action.TimerStart.HardLimitBreakSeconds != 5*60 {
+		t.Fatalf("expected default short break, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitLongBreakSeconds != nil {
+		t.Fatalf("expected disabled long break to be omitted, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
+		t.Fatalf("expected disabled cycles-before-long-break to be omitted, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 2*(25*60+5*60) {
+		t.Fatalf("unexpected total seconds %+v", action.TimerStart)
 	}
 }
 
 func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 	state := OpenHardLimitExpired(State{}, "Issue title")
+	var next State
+	var action *Action
+	var status string
 
-	next, action, status := Update(
+	next, action, status = Update(
 		state,
 		UpdateContext{},
 		"2026-05-26",
