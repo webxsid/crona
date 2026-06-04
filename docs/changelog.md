@@ -7,6 +7,8 @@ All notable changes to **Crona** are documented here.
 ### Added
 - The Pomodoro start dialog now uses a single consolidated form instead of a chained multi-dialog wizard.
 - Custom Pomodoro durations now enter edit mode immediately, and the selected row stays visibly emphasized while editing.
+- Stashes can now be committed without popping them, with the TUI, client, and server wired through a shared `stash.commit` flow.
+- Daily streaks are now loaded into the TUI so the Daily summary and streak displays stay current.
 
 ### Changed
 - Pomodoro disabled states now render as compact key/value lines instead of bulky dimmed choice blocks.
@@ -15,6 +17,8 @@ All notable changes to **Crona** are documented here.
 - Pomodoro left/right navigation now persists selection state correctly across dialog updates.
 - `No Break` short-break mode now disables cycle-driven fields and collapses the session into a continuous focus timer.
 - The custom focus seed now defaults to `25m` instead of an invalid hour-based value.
+- The issue table now emphasizes worked, estimated, context, and effort columns, with related labels and tests updated.
+- Settings remain accessible during protected rest, `W` no longer toggles away mode on date-based rest, and the protected-rest message has been updated.
 
 ## [1.4.0] - 2026-05-27
 
