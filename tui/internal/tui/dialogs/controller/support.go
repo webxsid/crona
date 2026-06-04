@@ -340,14 +340,40 @@ func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
 		}
 		return Close(state), &Action{Kind: "apply_stash", ID: strings.TrimSpace(state.DeleteID)}, ""
 	case "c":
-		return Close(
-				state,
-			), &Action{
-				Kind:     "continue_focus_fresh",
-				RepoID:   state.RepoID,
-				StreamID: state.StreamID,
-				IssueID:  state.IssueID,
-			}, ""
+		if strings.TrimSpace(state.Parent) == "manual_session" {
+			return clearDialogError(state), nil, ""
+		}
+		return Close(state), &Action{
+			Kind:     "continue_focus_fresh",
+			RepoID:   state.RepoID,
+			StreamID: state.StreamID,
+			IssueID:  state.IssueID,
+		}, ""
+	case "m":
+		if strings.TrimSpace(state.Parent) != "manual_session" {
+			return clearDialogError(state), nil, ""
+		}
+		return Close(state), &Action{
+			Kind:     "open_manual_session_dialog",
+			RepoID:   state.RepoID,
+			StreamID: state.StreamID,
+			IssueID:  state.IssueID,
+		}, ""
+	case "x":
+		if strings.TrimSpace(state.DeleteID) == "" {
+			return clearDialogError(state), nil, "Stash is unavailable"
+		}
+		kind := "commit_stash_and_continue_focus"
+		if strings.TrimSpace(state.Parent) == "manual_session" {
+			kind = "commit_stash_and_continue_manual"
+		}
+		return Close(state), &Action{
+			Kind:     kind,
+			ID:       strings.TrimSpace(state.DeleteID),
+			RepoID:   state.RepoID,
+			StreamID: state.StreamID,
+			IssueID:  state.IssueID,
+		}, ""
 	case "enter":
 		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
 			if strings.TrimSpace(state.DeleteID) == "" {
@@ -370,14 +396,31 @@ func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
 					ID:   strings.TrimSpace(state.DeleteID),
 				}, ""
 		case "continue":
-			return Close(
-					state,
-				), &Action{
-					Kind:     "continue_focus_fresh",
-					RepoID:   state.RepoID,
-					StreamID: state.StreamID,
-					IssueID:  state.IssueID,
-				}, ""
+			return Close(state), &Action{
+				Kind:     "continue_focus_fresh",
+				RepoID:   state.RepoID,
+				StreamID: state.StreamID,
+				IssueID:  state.IssueID,
+			}, ""
+		case "manual":
+			return Close(state), &Action{
+				Kind:     "open_manual_session_dialog",
+				RepoID:   state.RepoID,
+				StreamID: state.StreamID,
+				IssueID:  state.IssueID,
+			}, ""
+		case "commit":
+			kind := "commit_stash_and_continue_focus"
+			if strings.TrimSpace(state.Parent) == "manual_session" {
+				kind = "commit_stash_and_continue_manual"
+			}
+			return Close(state), &Action{
+				Kind:     kind,
+				ID:       strings.TrimSpace(state.DeleteID),
+				RepoID:   state.RepoID,
+				StreamID: state.StreamID,
+				IssueID:  state.IssueID,
+			}, ""
 		default:
 			return clearDialogError(state), nil, ""
 		}
@@ -462,7 +505,9 @@ func openSingleStashConflict(state State, conflict sharedtypes.StashConflict, id
 }
 
 func withStashConflictItems(state State, conflict sharedtypes.StashConflict) State {
+	parent := strings.TrimSpace(state.Parent)
 	state = Close(state)
+	state.Parent = parent
 	state.ViewTitle = "Existing Stash Found"
 	state.ViewName = fmt.Sprintf("Issue #%d already has a stashed session", conflict.IssueID)
 	if len(conflict.Stashes) > 1 {
@@ -501,11 +546,22 @@ func openSingleStashConflictByID(state State, stashID string) State {
 	if selectedIdx >= 0 && selectedIdx < len(state.ChoiceDetails) {
 		state.ViewBody = state.ChoiceDetails[selectedIdx]
 	}
-	state.ChoiceItems = []string{"[r] Resume stash", "[c] Continue fresh"}
-	state.ChoiceValues = []string{"resume", "continue"}
-	state.ChoiceDetails = []string{
-		"Apply this stash and continue the paused session instead of starting a new one.",
-		"Start a fresh focus session on this issue and keep the stash for later.",
+	if strings.TrimSpace(state.Parent) == "manual_session" {
+		state.ChoiceItems = []string{"[r] Resume stash", "[m] Log manual session", "[x] Commit stash"}
+		state.ChoiceValues = []string{"resume", "manual", "commit"}
+		state.ChoiceDetails = []string{
+			"Apply this stash and continue the paused session instead of logging manual time separately.",
+			"Open the manual session flow without consuming this stash.",
+			"Consume this stash first, then continue with manual logging.",
+		}
+	} else {
+		state.ChoiceItems = []string{"[r] Resume stash", "[c] Continue fresh", "[x] Commit stash"}
+		state.ChoiceValues = []string{"resume", "continue", "commit"}
+		state.ChoiceDetails = []string{
+			"Apply this stash and continue the paused session instead of starting a new one.",
+			"Start a fresh focus session on this issue and keep the stash for later.",
+			"Consume this stash first, then continue with focus.",
+		}
 	}
 	state.ChoiceCursor = 0
 	return state

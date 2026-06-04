@@ -75,9 +75,9 @@ func TestHandleStructuredManualPauseBlocksManualLogDuringActiveSession(t *testin
 	}
 
 	_, _, handled := handleStructuredManualPause(state, Deps{
-		OpenManualSessionDialog: func(*State) bool {
+		OpenManualSessionDialog: func(*State) (tea.Cmd, bool) {
 			t.Fatal("did not expect manual session dialog to open")
-			return false
+			return nil, false
 		},
 	})
 	if !handled {
@@ -92,8 +92,8 @@ func TestHandleStructuredManualPauseAllowsManualLogWhenIdle(t *testing.T) {
 	}
 
 	_, _, handled := handleStructuredManualPause(state, Deps{
-		OpenManualSessionDialog: func(*State) bool {
-			return true
+		OpenManualSessionDialog: func(*State) (tea.Cmd, bool) {
+			return nil, true
 		},
 	})
 	if handled {

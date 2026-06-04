@@ -133,4 +133,30 @@ type FocusSessionStashConflictMsg struct {
 	IssueID  int64
 }
 
+type IssueActionMode string
+
+const (
+	IssueActionModeFocus  IssueActionMode = "focus"
+	IssueActionModeManual IssueActionMode = "manual"
+)
+
+type IssueActionTarget struct {
+	RepoID          int64
+	StreamID        int64
+	IssueID         int64
+	Title           string
+	EstimateMinutes *int
+}
+
+type IssueActionPreflightClearMsg struct {
+	Mode   IssueActionMode
+	Target IssueActionTarget
+}
+
+type IssueActionPreflightConflictMsg struct {
+	Mode     IssueActionMode
+	Target   IssueActionTarget
+	Conflict api.StashConflict
+}
+
 type EditorDoneMsg struct{}

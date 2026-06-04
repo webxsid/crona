@@ -891,6 +891,33 @@ func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) te
 	}
 }
 
+func PreflightIssueAction(c *api.Client, mode IssueActionMode, target IssueActionTarget) tea.Cmd {
+	return func() tea.Msg {
+		stashes, err := c.ListStashes()
+		if err != nil {
+			logger.Errorf("PreflightIssueAction(%s,%d): %v", mode, target.IssueID, err)
+			return ErrMsg{Err: err}
+		}
+		conflict := api.StashConflict{IssueID: target.IssueID}
+		for _, stash := range stashes {
+			if stash.IssueID != nil && *stash.IssueID == target.IssueID {
+				conflict.Stashes = append(conflict.Stashes, stash)
+			}
+		}
+		if len(conflict.Stashes) > 0 {
+			return IssueActionPreflightConflictMsg{
+				Mode:     mode,
+				Target:   target,
+				Conflict: conflict,
+			}
+		}
+		return IssueActionPreflightClearMsg{
+			Mode:   mode,
+			Target: target,
+		}
+	}
+}
+
 func StartFocusSession(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
 	return startFocusSession(c, shareddto.TimerStartRequest{
 		RepoID:   optionalInt64(repoID),
@@ -1059,6 +1086,16 @@ func ApplyStash(c *api.Client, id string) tea.Cmd {
 			LoadTimer(c),
 			LoadSessionHistory(c, nil, 200),
 		)()
+	}
+}
+
+func CommitStashWithoutPop(c *api.Client, id string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.CommitStash(id); err != nil {
+			logger.Errorf("CommitStash(%s): %v", id, err)
+			return ErrMsg{Err: err}
+		}
+		return LoadStashes(c)()
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	commands "crona/tui/internal/tui/commands"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	uistate "crona/tui/internal/tui/state"
@@ -21,7 +22,7 @@ func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
 			ID:        "stash-1",
 			CreatedAt: "2026-04-10T09:00:00Z",
 		}},
-	}, 7, 8, 42)
+	}, 7, 8, 42, "")
 
 	roundTripped := model.applyDispatchMessageState(model.dispatchMessageState())
 	if roundTripped.dialog != "stash_conflict" {
@@ -42,14 +43,214 @@ func TestDispatchMessageStatePreservesStashConflictDialogPayload(t *testing.T) {
 			roundTripped.dialogIssueID,
 		)
 	}
-	if len(roundTripped.dialogChoiceValues) != 2 ||
+	if len(roundTripped.dialogChoiceValues) != 3 ||
 		roundTripped.dialogChoiceValues[0] != "resume" ||
-		roundTripped.dialogChoiceValues[1] != "continue" {
+		roundTripped.dialogChoiceValues[1] != "continue" ||
+		roundTripped.dialogChoiceValues[2] != "commit" {
 		t.Fatalf(
 			"expected choice values to survive dispatch bridge, got %#v",
 			roundTripped.dialogChoiceValues,
 		)
 	}
+}
+
+func TestIssuePanePreflightMessagesOpenStashConflictForFocusAndManual(t *testing.T) {
+	tests := []struct {
+		name         string
+		view         View
+		allIssues    []api.IssueWithMeta
+		dailySummary *api.DailyIssueSummary
+		issues       []api.Issue
+		context      *api.ActiveContext
+	}{
+		{
+			name: "daily",
+			view: ViewDaily,
+			allIssues: []api.IssueWithMeta{{
+				Issue:      sharedtypes.Issue{ID: 42, StreamID: 8, TodoForDate: stringPtr("2026-04-10")},
+				RepoID:     7,
+				RepoName:   "Work",
+				StreamName: "app",
+			}},
+			dailySummary: &api.DailyIssueSummary{
+				Issues: []sharedtypes.Issue{
+					{ID: 42, StreamID: 8, Title: "Daily issue", TodoForDate: stringPtr("2026-04-10")},
+				},
+			},
+		},
+		{
+			name: "default",
+			view: ViewDefault,
+			allIssues: []api.IssueWithMeta{{
+				Issue:      sharedtypes.Issue{ID: 42, StreamID: 8, Title: "Default issue"},
+				RepoID:     7,
+				RepoName:   "Work",
+				StreamName: "app",
+			}},
+		},
+		{
+			name: "meta",
+			view: ViewMeta,
+			allIssues: []api.IssueWithMeta{{
+				Issue:      sharedtypes.Issue{ID: 42, StreamID: 8, Title: "Meta issue"},
+				RepoID:     7,
+				RepoName:   "Work",
+				StreamName: "app",
+			}},
+			issues: []api.Issue{{ID: 42, StreamID: 8, Title: "Meta issue"}},
+			context: &api.ActiveContext{
+				RepoID:     int64Ptr(7),
+				RepoName:   stringPtr("Work"),
+				StreamID:   int64Ptr(8),
+				StreamName: stringPtr("app"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := Model{
+				view: View(tt.view),
+				pane: PaneIssues,
+				cursor: map[Pane]int{
+					PaneIssues: 0,
+				},
+				allIssues:    tt.allIssues,
+				dailySummary: tt.dailySummary,
+				issues:       tt.issues,
+				context:      tt.context,
+				dashboardDate: "2026-04-10",
+			}
+
+			nextModel, cmd := model.handleInputStartFocusFromSelection()
+			next := nextModel.(Model)
+			if cmd == nil {
+				t.Fatal("expected focus preflight command")
+			}
+			if next.dialog != "" {
+				t.Fatalf("expected focus preflight to defer dialog open, got %q", next.dialog)
+			}
+			nextAny, _ := next.update(commands.IssueActionPreflightConflictMsg{
+				Mode: commands.IssueActionModeFocus,
+				Target: commands.IssueActionTarget{
+					RepoID:   7,
+					StreamID: 8,
+					IssueID:  42,
+				},
+				Conflict: sharedtypes.StashConflict{
+					IssueID: 42,
+					Stashes: []sharedtypes.Stash{{
+						ID:        "stash-1",
+						CreatedAt: "2026-04-10T09:00:00Z",
+					}},
+				},
+			})
+			next = nextAny.(Model)
+			if next.dialog != "stash_conflict" {
+				t.Fatalf("expected stash conflict dialog for focus, got %q", next.dialog)
+			}
+			if next.dialogParent != "" {
+				t.Fatalf("expected focus stash conflict parent to be empty, got %q", next.dialogParent)
+			}
+			if len(next.dialogChoiceValues) != 3 || next.dialogChoiceValues[2] != "commit" {
+				t.Fatalf("expected focus stash conflict actions, got %+v", next.dialogChoiceValues)
+			}
+
+			inputState := model.inputState()
+			cmd, handled := model.inputDeps().OpenManualSessionDialog(&inputState)
+			if !handled {
+				t.Fatal("expected manual preflight to be handled")
+			}
+			if cmd == nil {
+				t.Fatal("expected manual preflight command")
+			}
+			next = model.applyInputState(inputState)
+			if next.dialog != "" {
+				t.Fatalf("expected manual preflight to defer dialog open, got %q", next.dialog)
+			}
+			nextAny, _ = next.update(commands.IssueActionPreflightConflictMsg{
+				Mode: commands.IssueActionModeManual,
+				Target: commands.IssueActionTarget{
+					RepoID:          7,
+					StreamID:        8,
+					IssueID:         42,
+					EstimateMinutes: nil,
+				},
+				Conflict: sharedtypes.StashConflict{
+					IssueID: 42,
+					Stashes: []sharedtypes.Stash{{
+						ID:        "stash-1",
+						CreatedAt: "2026-04-10T09:00:00Z",
+					}},
+				},
+			})
+			next = nextAny.(Model)
+			if next.dialog != "stash_conflict" {
+				t.Fatalf("expected stash conflict dialog for manual, got %q", next.dialog)
+			}
+			if next.dialogParent != "manual_session" {
+				t.Fatalf("expected manual stash conflict parent, got %q", next.dialogParent)
+			}
+			if len(next.dialogChoiceValues) != 3 ||
+				next.dialogChoiceValues[1] != "manual" ||
+				next.dialogChoiceValues[2] != "commit" {
+				t.Fatalf("expected manual stash conflict actions, got %+v", next.dialogChoiceValues)
+			}
+		})
+	}
+}
+
+func TestIssuePanePreflightClearMessagesOpenRequestedDialog(t *testing.T) {
+	model := Model{
+		view: ViewDefault,
+		pane: PaneIssues,
+		cursor: map[Pane]int{
+			PaneIssues: 0,
+		},
+		allIssues: []api.IssueWithMeta{{
+			Issue:      sharedtypes.Issue{ID: 42, StreamID: 8, Title: "Default issue"},
+			RepoID:     7,
+			RepoName:   "Work",
+			StreamName: "app",
+		}},
+		dashboardDate: "2026-04-10",
+	}
+
+	nextAny, _ := model.update(commands.IssueActionPreflightClearMsg{
+		Mode: commands.IssueActionModeFocus,
+		Target: commands.IssueActionTarget{
+			RepoID:   7,
+			StreamID: 8,
+			IssueID:  42,
+			Title:    "Default issue",
+		},
+	})
+	next := nextAny.(Model)
+	if next.dialog != "timer_start_type" {
+		t.Fatalf("expected timer selector for clear focus path, got %q", next.dialog)
+	}
+
+	nextAny, _ = model.update(commands.IssueActionPreflightClearMsg{
+		Mode: commands.IssueActionModeManual,
+		Target: commands.IssueActionTarget{
+			RepoID:   7,
+			StreamID: 8,
+			IssueID:  42,
+			Title:    "Default issue",
+		},
+	})
+	next = nextAny.(Model)
+	if next.dialog != "manual_session" {
+		t.Fatalf("expected manual dialog for clear manual path, got %q", next.dialog)
+	}
+}
+
+func int64Ptr(v int64) *int64 {
+	return &v
+}
+
+func stringPtr(v string) *string {
+	return &v
 }
 
 func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {

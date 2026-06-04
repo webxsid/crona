@@ -140,6 +140,36 @@ func StashPop(ctx context.Context, c *core.Context, timer *TimerService, stashID
 	return nil
 }
 
+func CommitStashWithoutPop(ctx context.Context, c *core.Context, stashID string) error {
+	stash, err := c.Stash.Get(ctx, stashID, c.UserID)
+	if err != nil {
+		return err
+	}
+	if stash == nil {
+		return errors.New("stash not found")
+	}
+	if err := c.Stash.Delete(ctx, stashID, c.UserID); err != nil {
+		return err
+	}
+	if err := c.Ops.Append(ctx, sharedtypes.Op{
+		ID:        uuid.NewString(),
+		Entity:    sharedtypes.OpEntityStash,
+		EntityID:  stashID,
+		Action:    sharedtypes.OpActionDelete,
+		Payload:   map[string]any{},
+		Timestamp: c.Now(),
+		UserID:    c.UserID,
+		DeviceID:  c.DeviceID,
+	}); err != nil {
+		return err
+	}
+	emit(c, sharedtypes.EventTypeStashDropped, sharedtypes.StashEventPayload{
+		ID:       stashID,
+		DeviceID: c.DeviceID,
+	})
+	return nil
+}
+
 func StashDrop(ctx context.Context, c *core.Context, stashID string) error {
 	if err := c.Stash.Delete(ctx, stashID, c.UserID); err != nil {
 		return err

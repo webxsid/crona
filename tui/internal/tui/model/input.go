@@ -491,10 +491,10 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = model.(Model).inputState()
 			return cmd
 		},
-		OpenManualSessionDialog: func(state *inputpkg.State) bool {
+		OpenManualSessionDialog: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)
 			if next.dialog != "" {
-				return false
+				return nil, false
 			}
 			if next.view == ViewDaily && next.pane == PaneHabits {
 				if habit, ok := next.selectedDailyHabitRecord(); ok {
@@ -505,28 +505,16 @@ func (m Model) inputDeps() inputpkg.Deps {
 						habit.Notes,
 					)
 					*state = next.inputState()
-					return true
+					return nil, true
 				}
-				return false
+				return nil, false
 			}
-			snapshot := next.selectionSnapshot()
-			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
-				issueLabel := ""
-				var estimateMinutes *int
-				if meta := selectionpkg.IssueMetaByID(snapshot, issue.ID); meta != nil {
-					issueLabel = meta.Title
-					estimateMinutes = meta.EstimateMinutes
-				}
-				next = next.openManualSessionDialog(
-					issue.ID,
-					issueLabel,
-					estimateMinutes,
-					next.currentDashboardDate(),
-				)
-				*state = next.inputState()
-				return true
+			cmd := next.preflightIssueActionFromSelection(commands.IssueActionModeManual)
+			if cmd == nil {
+				return nil, false
 			}
-			return false
+			*state = next.inputState()
+			return cmd, true
 		},
 		OpenSessionContextOverlay: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

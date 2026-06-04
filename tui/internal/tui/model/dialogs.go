@@ -100,12 +100,22 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		next.pane = uistate.DefaultPane(target)
 		return next, nil
 	case "continue_focus_fresh":
-		return next, commands.ContinueFocusSessionFresh(
-			next.client,
-			action.RepoID,
-			action.StreamID,
-			action.IssueID,
-		)
+		return next.openFocusSessionFromIssue(action.RepoID, action.StreamID, action.IssueID), nil
+	case "manual_session":
+		if action.ManualSession == nil {
+			return next, next.setStatus("Manual session input is unavailable", true)
+		}
+		return next, commands.LogManualSession(next.client, *action.ManualSession)
+	case "open_manual_session_dialog":
+		return next.openManualSessionFromIssue(action.RepoID, action.StreamID, action.IssueID), nil
+	case "commit_stash_and_continue_focus":
+		next = next.openFocusSessionFromIssue(action.RepoID, action.StreamID, action.IssueID)
+		return next, commands.CommitStashWithoutPop(next.client, action.ID)
+	case "commit_stash_and_continue_manual":
+		next = next.openManualSessionFromIssue(action.RepoID, action.StreamID, action.IssueID)
+		return next, commands.CommitStashWithoutPop(next.client, action.ID)
+	case "commit_stash_without_pop":
+		return next, commands.CommitStashWithoutPop(next.client, action.ID)
 	case "copy_support_diagnostics":
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
@@ -155,12 +165,175 @@ func (m Model) openBetaSupportDialog() Model {
 func (m Model) openStashConflictDialog(
 	conflict api.StashConflict,
 	repoID, streamID, issueID int64,
+	parent string,
 ) Model {
-	state := m.dialogSnapshot().OpenStashConflict(conflict)
+	snapshot := m.dialogSnapshot()
+	snapshot.Dialog.Parent = strings.TrimSpace(parent)
+	state := snapshot.OpenStashConflict(conflict)
 	state.RepoID = repoID
 	state.StreamID = streamID
 	state.IssueID = issueID
+	state.Parent = strings.TrimSpace(parent)
 	return m.withDialogState(state)
+}
+
+func (m Model) issueMetaByID(issueID int64) (*api.IssueWithMeta, bool) {
+	for i := range m.allIssues {
+		if m.allIssues[i].ID == issueID {
+			return &m.allIssues[i], true
+		}
+	}
+	return nil, false
+}
+
+type issueActionTarget struct {
+	repoID          int64
+	streamID        int64
+	issueID         int64
+	title           string
+	estimateMinutes *int
+}
+
+func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
+	snapshot := m.selectionSnapshot()
+	if m.view == ViewSessionHistory && (m.timer == nil || m.timer.State == "idle") {
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneSessions)
+		if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
+			return nil, false
+		}
+		issueID := m.sessionHistory[rawIdx].IssueID
+		meta := selectionpkg.IssueMetaByID(snapshot, issueID)
+		if meta == nil {
+			return nil, false
+		}
+		return &issueActionTarget{
+			repoID:          meta.RepoID,
+			streamID:        meta.StreamID,
+			issueID:         issueID,
+			title:           meta.Title,
+			estimateMinutes: meta.EstimateMinutes,
+		}, true
+	}
+	if m.pane != PaneIssues {
+		return nil, false
+	}
+	switch m.view {
+	case ViewDaily:
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		issues := selectionpkg.DailyScopedIssues(snapshot)
+		if rawIdx < 0 || rawIdx >= len(issues) {
+			return nil, false
+		}
+		issue := issues[rawIdx]
+		meta := selectionpkg.IssueMetaByID(snapshot, issue.ID)
+		if meta == nil {
+			return nil, false
+		}
+		return &issueActionTarget{
+			repoID:          meta.RepoID,
+			streamID:        issue.StreamID,
+			issueID:         issue.ID,
+			title:           meta.Title,
+			estimateMinutes: meta.EstimateMinutes,
+		}, true
+	case ViewDefault:
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		issues := selectionpkg.DefaultScopedIssues(snapshot)
+		if rawIdx < 0 || rawIdx >= len(issues) {
+			return nil, false
+		}
+		issue := issues[rawIdx]
+		return &issueActionTarget{
+			repoID:          issue.RepoID,
+			streamID:        issue.StreamID,
+			issueID:         issue.ID,
+			title:           issue.Title,
+			estimateMinutes: issue.EstimateMinutes,
+		}, true
+	default:
+		if m.context == nil || m.context.RepoID == nil {
+			return nil, false
+		}
+		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
+		if rawIdx < 0 || rawIdx >= len(m.issues) {
+			return nil, false
+		}
+		issue := m.issues[rawIdx]
+		estimateMinutes := issue.EstimateMinutes
+		if meta := selectionpkg.IssueMetaByID(snapshot, issue.ID); meta != nil {
+			return &issueActionTarget{
+				repoID:          *m.context.RepoID,
+				streamID:        issue.StreamID,
+				issueID:         issue.ID,
+				title:           meta.Title,
+				estimateMinutes: meta.EstimateMinutes,
+			}, true
+		}
+		return &issueActionTarget{
+			repoID:          *m.context.RepoID,
+			streamID:        issue.StreamID,
+			issueID:         issue.ID,
+			title:           issue.Title,
+			estimateMinutes: estimateMinutes,
+		}, true
+	}
+}
+
+func (m Model) selectedIssueActionPreflightTarget() (commands.IssueActionTarget, bool) {
+	target, ok := m.selectedIssueActionTarget()
+	if !ok {
+		return commands.IssueActionTarget{}, false
+	}
+	return commands.IssueActionTarget{
+		RepoID:          target.repoID,
+		StreamID:        target.streamID,
+		IssueID:         target.issueID,
+		Title:           target.title,
+		EstimateMinutes: target.estimateMinutes,
+	}, true
+}
+
+func (m Model) openFocusSessionFromIssue(repoID, streamID, issueID int64) Model {
+	if target, ok := m.selectedIssueActionTarget(); ok && target.issueID == issueID {
+		return m.openStartTimerDialog(repoID, streamID, issueID, target.title)
+	}
+	meta, ok := m.issueMetaByID(issueID)
+	if !ok {
+		return m
+	}
+	return m.openStartTimerDialog(repoID, streamID, issueID, meta.Title)
+}
+
+func (m Model) openManualSessionFromIssue(repoID, streamID, issueID int64) Model {
+	if target, ok := m.selectedIssueActionTarget(); ok && target.issueID == issueID {
+		return m.openManualSessionDialog(
+			issueID,
+			target.title,
+			target.estimateMinutes,
+			m.currentDashboardDate(),
+		)
+	}
+	meta, ok := m.issueMetaByID(issueID)
+	issueLabel := ""
+	var estimateMinutes *int
+	if ok {
+		issueLabel = meta.Title
+		estimateMinutes = meta.EstimateMinutes
+	}
+	return m.openManualSessionDialog(
+		issueID,
+		issueLabel,
+		estimateMinutes,
+		m.currentDashboardDate(),
+	)
+}
+
+func (m Model) preflightIssueActionFromSelection(mode commands.IssueActionMode) tea.Cmd {
+	target, ok := m.selectedIssueActionPreflightTarget()
+	if !ok {
+		return nil
+	}
+	return commands.PreflightIssueAction(m.client, mode, target)
 }
 
 func (m Model) openCreateRepoDialog() Model {

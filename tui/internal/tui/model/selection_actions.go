@@ -379,54 +379,14 @@ func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
-	return m.openStartTimerDialogFromSelection(), nil
+	return m, m.preflightIssueActionFromSelection(commands.IssueActionModeFocus)
 }
 
 func (m Model) openStartTimerDialogFromSelection() Model {
-	snapshot := m.selectionSnapshot()
-	if m.view == ViewSessionHistory && (m.timer == nil || m.timer.State == "idle") {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneSessions)
-		if rawIdx < 0 || rawIdx >= len(m.sessionHistory) {
-			return m
-		}
-		issueID := m.sessionHistory[rawIdx].IssueID
-		meta := selectionpkg.IssueMetaByID(snapshot, issueID)
-		if meta == nil {
-			return m
-		}
-		return m.openStartTimerDialog(meta.RepoID, meta.StreamID, issueID, meta.Title)
+	if target, ok := m.selectedIssueActionTarget(); ok {
+		return m.openStartTimerDialog(target.repoID, target.streamID, target.issueID, target.title)
 	}
-	if m.view == ViewDaily {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
-		issues := selectionpkg.DailyScopedIssues(snapshot)
-		if rawIdx < 0 || rawIdx >= len(issues) {
-			return m
-		}
-		issue := issues[rawIdx]
-		meta := selectionpkg.IssueMetaByID(snapshot, issue.ID)
-		if meta == nil {
-			return m
-		}
-		return m.openStartTimerDialog(meta.RepoID, issue.StreamID, issue.ID, meta.Title)
-	}
-	if m.view == ViewDefault {
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
-		issues := selectionpkg.DefaultScopedIssues(snapshot)
-		if rawIdx < 0 || rawIdx >= len(issues) {
-			return m
-		}
-		issue := issues[rawIdx]
-		return m.openStartTimerDialog(issue.RepoID, issue.StreamID, issue.ID, issue.Title)
-	}
-	if m.pane != PaneIssues || m.context == nil || m.context.RepoID == nil {
-		return m
-	}
-	rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
-	if rawIdx < 0 || rawIdx >= len(m.issues) {
-		return m
-	}
-	issue := m.issues[rawIdx]
-	return m.openStartTimerDialog(*m.context.RepoID, issue.StreamID, issue.ID, issue.Title)
+	return m
 }
 
 func (m Model) openStartTimerDialog(repoID, streamID, issueID int64, issueLabel string) Model {

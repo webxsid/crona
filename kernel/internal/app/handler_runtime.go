@@ -230,6 +230,10 @@ func (h *Handler) handleRuntimeMethods(
 		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
 			return shareddto.OKResponse{OK: true}, corecommands.StashDrop(ctx, h.core, input.ID)
 		}), true
+	case protocol.MethodStashCommit:
+		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.CommitStashWithoutPop(ctx, h.core, input.ID)
+		}), true
 	case protocol.MethodSettingsGetAll:
 		return h.handleNoParams(req, func() (any, error) {
 			return h.core.CoreSettings.GetAllSettings(ctx)

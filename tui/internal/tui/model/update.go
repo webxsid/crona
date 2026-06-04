@@ -101,6 +101,35 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		)
 		return m.applyInputState(state), batchCmds(touch, cmd)
 	}
+	switch msg := msg.(type) {
+	case commands.IssueActionPreflightConflictMsg:
+		parent := ""
+		if msg.Mode == commands.IssueActionModeManual {
+			parent = "manual_session"
+		}
+		return m.openStashConflictDialog(
+			msg.Conflict,
+			msg.Target.RepoID,
+			msg.Target.StreamID,
+			msg.Target.IssueID,
+			parent,
+		), nil
+	case commands.IssueActionPreflightClearMsg:
+		switch msg.Mode {
+		case commands.IssueActionModeManual:
+			return m.openManualSessionFromIssue(
+				msg.Target.RepoID,
+				msg.Target.StreamID,
+				msg.Target.IssueID,
+			), nil
+		default:
+			return m.openFocusSessionFromIssue(
+				msg.Target.RepoID,
+				msg.Target.StreamID,
+				msg.Target.IssueID,
+			), nil
+		}
+	}
 	state, cmd, handled := dispatchpkg.HandleMessage(
 		m.dispatchMessageState(),
 		msg,
@@ -409,7 +438,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		OpenStashConflictDialog: func(state *dispatchpkg.MessageState, conflict api.StashConflict, repoID, streamID, issueID int64) {
 			next := m.applyDispatchMessageState(*state)
-			next = next.openStashConflictDialog(conflict, repoID, streamID, issueID)
+			next = next.openStashConflictDialog(conflict, repoID, streamID, issueID, "")
 			*state = next.dispatchMessageState()
 		},
 		OpenSupportBundleDialog: func(state *dispatchpkg.MessageState, path string, sizeBytes int64, windowLabel string) {
@@ -455,7 +484,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
 		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadDailyStreaks:   func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
+		LoadDailyStreaks:    func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},

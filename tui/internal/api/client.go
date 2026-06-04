@@ -903,6 +903,10 @@ func (c *Client) ApplyStash(id string) error {
 	return c.mustOK(protocol.MethodStashApply, shareddto.StashIDRequest{ID: id})
 }
 
+func (c *Client) CommitStash(id string) error {
+	return c.mustOK(protocol.MethodStashCommit, shareddto.StashIDRequest{ID: id})
+}
+
 func (c *Client) DropStash(id string) error {
 	return c.mustOK(protocol.MethodStashDrop, shareddto.StashIDRequest{ID: id})
 }

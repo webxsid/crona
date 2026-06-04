@@ -114,7 +114,7 @@ type Deps struct {
 	ToggleHabitCompletedAction      func(*State) (tea.Cmd, bool)
 	SetHabitFailedAction            func(*State) (tea.Cmd, bool)
 	StartFocusFromSelection         func(*State) tea.Cmd
-	OpenManualSessionDialog         func(*State) bool
+	OpenManualSessionDialog         func(*State) (tea.Cmd, bool)
 	OpenSessionContextOverlay       func(*State) bool
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
@@ -253,8 +253,8 @@ func newRouter(deps Deps) *router {
 			if s.ProtectedModeActive || timerIsActive(s) || !issueEditorContext(s) {
 				return s, nil, false
 			}
-			if deps.OpenManualSessionDialog(&s) {
-				return s, nil, true
+			if cmd, handled := deps.OpenManualSessionDialog(&s); handled {
+				return s, cmd, true
 			}
 			return s, nil, false
 		},
@@ -395,8 +395,8 @@ func newRouter(deps Deps) *router {
 					return s, cmd, true
 				}
 			}
-			if deps.OpenManualSessionDialog(&s) {
-				return s, nil, true
+			if cmd, handled := deps.OpenManualSessionDialog(&s); handled {
+				return s, cmd, true
 			}
 			return s, nil, false
 		},

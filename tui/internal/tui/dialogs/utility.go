@@ -286,7 +286,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [r] resume   [c] continue fresh   [esc] cancel",
+			stashConflictFooter(state),
 		)
 		return modal(theme, state.Width, 74, theme.ColorYellow, rows)
 	case "edit_export_reports_dir":
@@ -628,6 +628,14 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 		)
 	}
 	return modal(theme, state.Width, 82, theme.ColorCyan, rows)
+}
+
+func stashConflictFooter(state controllerpkg.State) string {
+	footer := "[j/k] move   [r] resume   [c] continue fresh   [x] commit stash   [esc] cancel"
+	if strings.TrimSpace(state.Parent) == "manual_session" {
+		footer = "[j/k] move   [r] resume   [m] log manual session   [x] commit stash   [esc] cancel"
+	}
+	return footer
 }
 
 func toggleLabel(enabled bool, label string) string {

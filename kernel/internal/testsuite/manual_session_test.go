@@ -99,3 +99,78 @@ func TestManualSessionLoggingAppliesFocusStatusRules(t *testing.T) {
 		t.Fatalf("expected issue moved to in_progress, got %+v", updated)
 	}
 }
+
+func TestCommitStashWithoutPopDeletesStashWithoutCreatingSession(t *testing.T) {
+	ctx := context.Background()
+	nowValue := "2026-03-30T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return nowValue })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Keep stash"})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+
+	stashID := "stash-1"
+	if err := coreCtx.Stash.Save(ctx, sharedtypes.Stash{
+		ID:        stashID,
+		UserID:    coreCtx.UserID,
+		DeviceID:  coreCtx.DeviceID,
+		IssueID:   &issue.ID,
+		CreatedAt: nowValue,
+		UpdatedAt: nowValue,
+	}); err != nil {
+		t.Fatalf("save stash: %v", err)
+	}
+
+	before, err := coreCtx.Sessions.ListByIssue(ctx, issue.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list sessions before: %v", err)
+	}
+	if len(before) != 0 {
+		t.Fatalf("expected no sessions before commit, got %+v", before)
+	}
+
+	if err := corecommands.CommitStashWithoutPop(ctx, coreCtx, stashID); err != nil {
+		t.Fatalf("commit stash: %v", err)
+	}
+
+	stashes, err := coreCtx.Stash.ListByIssue(ctx, issue.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list stashes after: %v", err)
+	}
+	if len(stashes) != 0 {
+		t.Fatalf("expected stash to be deleted, got %+v", stashes)
+	}
+
+	after, err := coreCtx.Sessions.ListByIssue(ctx, issue.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list sessions after: %v", err)
+	}
+	if len(after) != 0 {
+		t.Fatalf("expected commit not to create sessions, got %+v", after)
+	}
+}

@@ -261,6 +261,115 @@ func TestStashConflictDialogOffersResumeAndContinue(t *testing.T) {
 		action.IssueID != 42 {
 		t.Fatalf("unexpected continue action %+v", action)
 	}
+
+	state = dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
+		IssueID: 42,
+		Stashes: []sharedtypes.Stash{{
+			ID:        "stash-1",
+			CreatedAt: "2026-04-10T09:00:00Z",
+		}},
+	})
+	state.RepoID = 7
+	state.StreamID = 8
+	state.IssueID = 42
+	next, action, status = dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "commit_stash_and_continue_focus" || action.ID != "stash-1" ||
+		action.RepoID != 7 || action.StreamID != 8 || action.IssueID != 42 {
+		t.Fatalf("unexpected commit action %+v", action)
+	}
+}
+
+func TestManualSessionStashConflictOffersCommitShortcut(t *testing.T) {
+	state := dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
+		IssueID: 42,
+		Stashes: []sharedtypes.Stash{{
+			ID:        "stash-1",
+			CreatedAt: "2026-04-10T09:00:00Z",
+		}},
+	})
+	state.Parent = "manual_session"
+	state.RepoID = 7
+	state.StreamID = 8
+	state.IssueID = 42
+	next, action, status := dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "commit_stash_and_continue_manual" || action.ID != "stash-1" ||
+		action.RepoID != 7 || action.StreamID != 8 || action.IssueID != 42 {
+		t.Fatalf("unexpected commit action %+v", action)
+	}
+
+	state = dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
+		IssueID: 42,
+		Stashes: []sharedtypes.Stash{{
+			ID:        "stash-1",
+			CreatedAt: "2026-04-10T09:00:00Z",
+		}},
+	})
+	state.Parent = "manual_session"
+	state.RepoID = 7
+	state.StreamID = 8
+	state.IssueID = 42
+	next, action, status = dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'c'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "stash_conflict" {
+		t.Fatalf("expected dialog to remain open, got %q", next.Kind)
+	}
+	if action != nil {
+		t.Fatalf("expected no action for focus shortcut in manual mode, got %+v", action)
+	}
+
+	state = dialogs.OpenStashConflict(dialogs.State{}, sharedtypes.StashConflict{
+		IssueID: 42,
+		Stashes: []sharedtypes.Stash{{
+			ID:        "stash-1",
+			CreatedAt: "2026-04-10T09:00:00Z",
+		}},
+	})
+	state.Parent = "manual_session"
+	state.RepoID = 7
+	state.StreamID = 8
+	state.IssueID = 42
+	next, action, status = dialogs.Update(
+		state,
+		dialogs.UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'m'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action == nil || action.Kind != "open_manual_session_dialog" || action.RepoID != 7 ||
+		action.StreamID != 8 || action.IssueID != 42 {
+		t.Fatalf("unexpected manual shortcut action %+v", action)
+	}
 }
 
 func TestStashConflictPickDialogOpensSelectedStash(t *testing.T) {
