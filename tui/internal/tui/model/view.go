@@ -66,7 +66,8 @@ func (m Model) layoutState() layoutpkg.State {
 		activeIssue,
 	)
 	if state.ContentState.RestModeActive {
-		if m.view != ViewReports && m.view != ViewSessionHistory && m.view != ViewHabitHistory {
+		if m.view != ViewReports && m.view != ViewSessionHistory &&
+			m.view != ViewHabitHistory && m.view != ViewSettings {
 			state.View = ViewAway
 			state.ContentState.View = "away"
 			state.ContentState.Pane = ""

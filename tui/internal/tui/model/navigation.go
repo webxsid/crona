@@ -18,7 +18,7 @@ import (
 
 func (m Model) availableViews() []View {
 	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
-		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory}
+		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory, ViewSettings}
 	}
 	ordered := uistate.ViewOrder()
 	views := make([]View, 0, len(ordered))
@@ -31,7 +31,7 @@ func (m Model) availableViews() []View {
 
 func (m Model) jumpAvailableViews() []View {
 	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); protected {
-		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory}
+		return []View{ViewAway, ViewReports, ViewSessionHistory, ViewHabitHistory, ViewSettings}
 	}
 	if m.timer != nil && m.timer.State != "idle" {
 		return []View{ViewSessionActive, ViewSessionHistory}

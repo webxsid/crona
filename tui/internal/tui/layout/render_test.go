@@ -36,3 +36,33 @@ func TestRenderSidebarIncludesHabitHistoryView(t *testing.T) {
 		t.Fatalf("expected sidebar to include Habit History, got %q", rendered)
 	}
 }
+
+func TestRenderProtectedSidebarIncludesSettingsView(t *testing.T) {
+	rendered := Render(State{
+		Width:         140,
+		Height:        44,
+		View:          uistate.ViewSettings,
+		Pane:          uistate.PaneIssues,
+		ProtectedMode: true,
+		ContentState: viewtypes.ContentState{
+			View:   string(uistate.ViewSettings),
+			Pane:   string(uistate.PaneIssues),
+			Width:  118,
+			Height: 44,
+			Cursors: map[string]int{
+				string(uistate.PaneIssues):       0,
+				string(uistate.PaneHabits):       0,
+				string(uistate.PaneHabitHistory): 0,
+			},
+			Filters: map[string]string{
+				string(uistate.PaneIssues):       "",
+				string(uistate.PaneHabits):       "",
+				string(uistate.PaneHabitHistory): "",
+			},
+		},
+	})
+
+	if !strings.Contains(rendered, "Settings") {
+		t.Fatalf("expected protected sidebar to include Settings, got %q", rendered)
+	}
+}

@@ -20,14 +20,14 @@ func ProtectedRestMode(settings *api.CoreSettings, date string) (bool, bool, str
 		day = time.Now().Format("2006-01-02")
 	}
 	if slices.Contains(settings.RestSpecificDates, day) {
-		return true, false, "This is one of your configured rest days."
+		return true, false, "This is one of your configured rest days. Open Settings to change it."
 	}
 	parsed, err := time.Parse("2006-01-02", day)
 	if err != nil {
 		return false, false, ""
 	}
 	if slices.Contains(settings.RestWeekdays, int(parsed.Weekday())) {
-		return true, false, "This is one of your configured rest days."
+		return true, false, "This is one of your configured rest days. Open Settings to change it."
 	}
 	return false, false, ""
 }

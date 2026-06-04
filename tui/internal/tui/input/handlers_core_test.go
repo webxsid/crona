@@ -2,6 +2,7 @@ package input
 
 import (
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -108,5 +109,40 @@ func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
 	})
 	if !next.Settings.AwayModeEnabled {
 		t.Fatal("expected wellbeing W to enable away mode")
+	}
+}
+
+func TestRouterIgnoresWDuringConfiguredRestButStillAllowsManualAwayToggle(t *testing.T) {
+	restDate := time.Now().Format("2006-01-02")
+	restState := State{
+		ActiveView:    uistate.ViewDaily,
+		DashboardDate: restDate,
+		Settings: &api.CoreSettings{
+			AwayModeEnabled:   false,
+			RestSpecificDates: []string{restDate},
+		},
+	}
+	next, _ := Handle(restState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'W'}}, Deps{
+		PatchSetting: func(sharedtypes.CoreSettingsKey, any, int64, int64, string) tea.Cmd { return nil },
+		SetStatus:    func(*State, string, bool) tea.Cmd { return nil },
+	})
+	if next.Settings.AwayModeEnabled {
+		t.Fatal("expected W to no-op during configured rest")
+	}
+
+	manualAwayState := State{
+		ActiveView:    uistate.ViewDaily,
+		DashboardDate: restDate,
+		Settings: &api.CoreSettings{
+			AwayModeEnabled:   true,
+			RestSpecificDates: []string{restDate},
+		},
+	}
+	next, _ = Handle(manualAwayState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'W'}}, Deps{
+		PatchSetting: func(sharedtypes.CoreSettingsKey, any, int64, int64, string) tea.Cmd { return nil },
+		SetStatus:    func(*State, string, bool) tea.Cmd { return nil },
+	})
+	if next.Settings.AwayModeEnabled {
+		t.Fatal("expected W to disable manual away mode even during protected rest")
 	}
 }

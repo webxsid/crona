@@ -333,6 +333,7 @@ func renderSidebar(state State, width, height int) string {
 			renderSidebarItem(state, uistate.ViewReports, "Reports"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
 			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
+			renderSidebarItem(state, uistate.ViewSettings, "Settings"),
 		}
 		return chrome.StyleInactive.Width(width-4).
 			Height(max(3, height-2)).

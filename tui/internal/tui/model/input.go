@@ -73,7 +73,7 @@ func (m Model) inputState() inputpkg.State {
 	if nextProtected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
 		protected = true
 		if activeView != ViewReports && activeView != ViewSessionHistory &&
-			activeView != ViewHabitHistory {
+			activeView != ViewHabitHistory && activeView != ViewSettings {
 			activeView = ViewAway
 			activePane = uistate.DefaultPane(activeView)
 		}

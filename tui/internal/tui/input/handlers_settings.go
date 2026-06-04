@@ -2,10 +2,12 @@ package input
 
 import (
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	uistate "crona/tui/internal/tui/state"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -356,6 +358,10 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing && s.ActiveView != uistate.ViewAway) ||
 		s.Settings == nil {
 		return s, nil, false
+	}
+	protected, awayMode, _ := viewruntime.ProtectedRestMode(s.Settings, time.Now().Format("2006-01-02"))
+	if protected && !awayMode {
+		return s, nil, true
 	}
 	repoID := int64(0)
 	if s.Context != nil && s.Context.RepoID != nil {
