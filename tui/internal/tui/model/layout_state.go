@@ -91,6 +91,7 @@ func (m Model) viewContentState(
 		MetricsRange:           m.metricsRange,
 		MetricsRollup:          m.metricsRollup,
 		Streaks:                m.streaks,
+		DailyStreaks:           m.dailyStreaks,
 		DashboardWindow:        m.dashboardWindow,
 		DailyFocusScore:        m.dailyFocusScore,
 		WeeklyFocusScore:       m.weeklyFocusScore,

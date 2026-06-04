@@ -10,7 +10,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
+func TestRenderIssuesShowsWorkedSuffix(t *testing.T) {
 	state := types.ContentState{
 		Pane:   "issues",
 		Width:  120,
@@ -20,18 +20,19 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 		},
 		DailyIssues: []api.Issue{
 			{
-				ID:            1,
-				Title:         "Investigate timer display",
-				Status:        "in_progress",
-				WorkedSeconds: 4500,
+				ID:              1,
+				Title:           "Investigate timer display",
+				Status:          "in_progress",
+				WorkedSeconds:   4500,
+				EstimateMinutes: ptrInt(25),
 			},
 		},
 	}
 
 	rendered := renderIssues(types.Theme{}, state, 120, 20)
 	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Spent") {
-		t.Fatalf("expected spent column header to render, got %q", rendered)
+	if !strings.Contains(plain, "Worked") {
+		t.Fatalf("expected worked column header to render, got %q", rendered)
 	}
 	if !strings.Contains(plain, "1h15m") {
 		t.Fatalf("expected worked seconds to render in the spent column, got %q", rendered)
@@ -39,8 +40,8 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 	lines := strings.Split(plain, "\n")
 	var headerLine, rowLine string
 	for _, line := range lines {
-		if strings.Contains(line, "Status") && strings.Contains(line, "Estimate") &&
-			strings.Contains(line, "Spent") {
+		if strings.Contains(line, "Status") && strings.Contains(line, "Est.") &&
+			strings.Contains(line, "Worked") {
 			headerLine = line
 		}
 		if strings.Contains(line, "in progress") {
@@ -59,12 +60,47 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 			rowLine,
 		)
 	}
-	if strings.Index(headerLine, "Spent") != strings.Index(rowLine, "1h15m") {
+	if strings.Index(headerLine, "Worked") != strings.Index(rowLine, "1h15m") {
 		t.Fatalf(
-			"expected spent header and value to align, got header %q row %q",
+			"expected worked header and value to align, got header %q row %q",
 			headerLine,
 			rowLine,
 		)
+	}
+}
+
+func TestRenderIssuesUsesCompactContextAndEffortColumns(t *testing.T) {
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  84,
+		Height: 20,
+		DailyIssues: []api.Issue{
+			{
+				ID:              1,
+				Title:           "Investigate timer display",
+				Status:          "in_progress",
+				WorkedSeconds:   4500,
+				EstimateMinutes: ptrInt(25),
+			},
+		},
+		AllIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{
+				ID:     1,
+				Title:  "Investigate timer display",
+				Status: "in_progress",
+			},
+			RepoName:   "Core",
+			StreamName: "TUI",
+		}},
+		Filters: map[string]string{"issues": ""},
+	}
+
+	rendered := renderIssues(types.Theme{}, state, 84, 20)
+	plain := ansi.Strip(rendered)
+	for _, want := range []string{"Context", "Effort", "Core > TUI", "1h15m / 25m"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected compact daily issue table to contain %q, got %q", want, rendered)
+		}
 	}
 }
 

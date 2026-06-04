@@ -2,6 +2,7 @@ package daily
 
 import (
 	"fmt"
+	"strings"
 
 	sharedtypes "crona/shared/types"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -10,10 +11,12 @@ import (
 	types "crona/tui/internal/tui/views/types"
 )
 
-func renderMomentumBlock(theme types.Theme, state types.ContentState, width int) []string {
+func renderMomentumBlock(theme types.Theme, state types.ContentState, width, height int) []string {
 	sections := make([][]string, 0, 2)
-	if signals := renderSignalsBlock(theme, state, width); len(signals) > 0 {
-		sections = append(sections, signals)
+	if height >= 57 {
+		if signals := renderSignalsBlock(theme, state, width); len(signals) > 0 {
+			sections = append(sections, signals)
+		}
 	}
 	if momentums := renderMomentumsBlock(theme, state, width); len(momentums) > 0 {
 		sections = append(sections, momentums)
@@ -44,7 +47,7 @@ func renderSignalsBlock(theme types.Theme, state types.ContentState, width int) 
 }
 
 func renderMomentumsBlock(theme types.Theme, state types.ContentState, width int) []string {
-	if state.Streaks == nil {
+	if state.DailyStreaks == nil {
 		return nil
 	}
 
@@ -53,12 +56,12 @@ func renderMomentumsBlock(theme types.Theme, state types.ContentState, width int
 		theme,
 		"Check-ins",
 		sharedtypes.HabitStreakPeriodDay,
-		state.Streaks.CurrentCheckInDays,
-		state.Streaks.LongestCheckInDays,
+		state.DailyStreaks.CurrentCheckInDays,
+		state.DailyStreaks.LongestCheckInDays,
 		"Focus",
 		sharedtypes.HabitStreakPeriodDay,
-		state.Streaks.CurrentFocusDays,
-		state.Streaks.LongestFocusDays,
+		state.DailyStreaks.CurrentFocusDays,
+		state.DailyStreaks.LongestFocusDays,
 		width,
 	))
 	return lines
@@ -72,6 +75,8 @@ func pairSignalRows(rows []string, width int) []string {
 		return []string{rows[0]}
 	case 2:
 		return []string{renderInlinePairRow(rows[0], rows[1], width)}
+	case 3:
+		return []string{renderInlineMultiRow(rows, width)}
 	default:
 		lines := []string{renderInlinePairRow(rows[0], rows[1], width)}
 		if len(rows) > 3 {
@@ -88,17 +93,7 @@ func renderInlinePairRow(left, right string, width int) string {
 }
 
 func signalRows(theme types.Theme, state types.ContentState) []string {
-	rows := make([]string, 0, 4)
-	if work := signalWorkValue(state); work != "" {
-		rows = append(
-			rows,
-			fmt.Sprintf(
-				"%s  %s",
-				theme.StyleHeader.Render("Work"),
-				theme.StyleNormal.Render(work),
-			),
-		)
-	}
+	rows := make([]string, 0, 3)
 	if energy := signalEnergyValue(state); energy != "" {
 		rows = append(
 			rows,
@@ -132,11 +127,8 @@ func signalRows(theme types.Theme, state types.ContentState) []string {
 	return rows
 }
 
-func signalWorkValue(state types.ContentState) string {
-	if state.MetricsRollup == nil {
-		return ""
-	}
-	return helperpkg.FormatCompactDurationSeconds(state.MetricsRollup.WorkedSeconds)
+func renderInlineMultiRow(rows []string, width int) string {
+	return viewhelpers.Truncate(strings.Join(rows, "  |  "), width)
 }
 
 func signalMoodValue(state types.ContentState) string {

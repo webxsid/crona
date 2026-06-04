@@ -117,6 +117,7 @@ type Model struct {
 	metricsRange           []api.DailyMetricsDay
 	metricsRollup          *api.MetricsRollup
 	streaks                *api.StreakSummary
+	dailyStreaks           *api.StreakSummary
 	dashboardWindow        *api.DashboardWindowSummary
 	dailyFocusScore        *api.FocusScoreSummary
 	weeklyFocusScore       *api.FocusScoreSummary
@@ -339,6 +340,7 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
+		commands.LoadDailyStreaks(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadWellbeingWindow(
 			m.client,
 			time.Now().Format("2006-01-02"),

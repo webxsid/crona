@@ -12,8 +12,8 @@ import (
 
 func renderView(theme types.Theme, state types.ContentState) string {
 	actions := []string{
-		theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check now"),
-		theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release"),
+		theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check for updates"),
+		theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release page"),
 		theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
 	}
 	if state.UpdateInstallAvailable {

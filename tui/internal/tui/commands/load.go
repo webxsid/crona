@@ -395,6 +395,17 @@ func LoadWellbeing(c *api.Client, date string) tea.Cmd {
 	return LoadWellbeingWindow(c, date, 7)
 }
 
+func LoadDailyStreaks(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		streaks, err := c.GetMetricsLifetimeStreaks(date)
+		if err != nil {
+			logger.Errorf("loadDailyStreaks: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return DailyStreaksLoadedMsg{Streaks: streaks}
+	}
+}
+
 func LoadWellbeingWindow(c *api.Client, date string, windowDays int) tea.Cmd {
 	if windowDays < 1 {
 		windowDays = 7

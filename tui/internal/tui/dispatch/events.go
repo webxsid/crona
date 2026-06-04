@@ -43,6 +43,7 @@ type EventDeps struct {
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
+	LoadDailyStreaks         func(date string) tea.Cmd
 	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
 	LoadWellbeing            func(date string, windowDays int) tea.Cmd
 	LoadRollupSummaries      func(start, end string) tea.Cmd
@@ -91,6 +92,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		cmds := []tea.Cmd{
 			deps.LoadDueHabits(state.CurrentDash),
 			deps.LoadDailySummary(state.CurrentDash),
+			deps.LoadDailyStreaks(state.CurrentDash),
 			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 			deps.LoadAllHabits(),
@@ -104,6 +106,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":
 		return state, tea.Batch(
+			deps.LoadDailyStreaks(state.CurrentDash),
 			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
@@ -112,6 +115,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadContext(),
 			deps.LoadSessionHistoryFor200(state),
+			deps.LoadDailyStreaks(state.CurrentDash),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
 	case "stash.created", "stash.applied", "stash.dropped":

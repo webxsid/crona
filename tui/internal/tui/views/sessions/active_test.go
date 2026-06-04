@@ -137,7 +137,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if strings.Contains(rendered, "left in cap") || strings.Contains(rendered, "Cap:") {
 		t.Fatalf("expected hard-limit view to avoid cap countdown text, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "[x] commit  [z] stash  [i] context") {
+	if !strings.Contains(rendered, "[x] commit issue  [z] stash session  [i] change context") {
 		t.Fatalf("expected hard-limit action hints, got %q", rendered)
 	}
 	if strings.Contains(rendered, "Ready For") {

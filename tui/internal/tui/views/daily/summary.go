@@ -71,7 +71,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	if habitTargetMinutes > 0 {
 		habitMeta = theme.StyleDim.Render(
 			fmt.Sprintf(
-				"logged %s / target %s",
+				"%s / %s",
 				helperpkg.FormatCompactDurationMinutes(habitMinutes),
 				helperpkg.FormatCompactDurationMinutes(habitTargetMinutes),
 			),
@@ -230,11 +230,15 @@ func buildSummaryLines(
 	resolvedCount, totalIssues, totalEstimate, completedHabits, totalHabits, failedHabits, habitMinutes, habitTargetMinutes int,
 	habitMeta string,
 ) []string {
+	dailyWorkedSeconds := 0
+	if state.DailySummary != nil {
+		dailyWorkedSeconds = state.DailySummary.WorkedSeconds
+	}
 	issueSummary := fmt.Sprintf(
 		"%s  %s  %s",
 		theme.StyleHeader.Render("Issues"),
 		theme.StyleNormal.Render(fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues)),
-		theme.StyleDim.Render("estimate "+helperpkg.FormatCompactDurationMinutes(totalEstimate)),
+		theme.StyleDim.Render(issueProgressText(dailyWorkedSeconds, totalEstimate, false)),
 	)
 	habitSummary := fmt.Sprintf(
 		"%s  %s",
@@ -254,7 +258,7 @@ func buildSummaryLines(
 			),
 		),
 	}
-	momentum := renderMomentumBlock(theme, state, width)
+	momentum := renderMomentumBlock(theme, state, width, paneHeight)
 	lines := []string{
 		theme.StylePaneTitle.Render("Daily Dashboard"),
 		theme.StyleHeader.Render(fmt.Sprintf("For %s", dateText)),
@@ -278,7 +282,7 @@ func buildSummaryLines(
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d", resolvedCount, totalIssues)),
-					theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(totalEstimate)),
+					theme.StyleDim.Render(issueProgressText(dailyWorkedSeconds, totalEstimate, true)),
 					theme.StyleDim.Render(compactIssueLegend(issueStatusCounts)),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },
@@ -323,7 +327,7 @@ func buildSummaryLines(
 						fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues),
 					),
 					theme.StyleDim.Render(
-						"estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate),
+						issueProgressText(dailyWorkedSeconds, totalEstimate, true),
 					),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },
@@ -364,7 +368,7 @@ func buildSummaryLines(
 						fmt.Sprintf("%d/%d resolved", resolvedCount, totalIssues),
 					),
 					theme.StyleDim.Render(
-						"estimate " + helperpkg.FormatCompactDurationMinutes(totalEstimate),
+						issueProgressText(dailyWorkedSeconds, totalEstimate, true),
 					),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },
@@ -468,4 +472,19 @@ func compactHabitProgress(loggedMinutes, targetMinutes int) string {
 		)
 	}
 	return helperpkg.FormatCompactDurationMinutes(loggedMinutes)
+}
+
+func issueProgressText(workedSeconds, estimateMinutes int, compact bool) string {
+	worked := helperpkg.FormatCompactDurationSeconds(workedSeconds)
+	estimate := helperpkg.FormatCompactDurationMinutes(estimateMinutes)
+	if compact {
+		if estimateMinutes > 0 {
+			return fmt.Sprintf("%s/%s", worked, estimate)
+		}
+		return worked
+	}
+	if estimateMinutes > 0 {
+		return fmt.Sprintf("worked %s / est. %s", worked, estimate)
+	}
+	return "worked " + worked
 }

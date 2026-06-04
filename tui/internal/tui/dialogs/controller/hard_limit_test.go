@@ -80,6 +80,23 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 		state,
 		UpdateContext{},
 		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
+		t.Fatalf("unexpected action %+v", action)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected stopwatch shortcut to close dialog, got %q", next.Kind)
+	}
+
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
 		tea.KeyMsg{Type: tea.KeyDown},
 	)
 	if status != "" || action != nil {
@@ -96,6 +113,23 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 	}
 	if next.Kind != "pomodoro_start" {
 		t.Fatalf("expected pomodoro choice to open unified pomodoro dialog, got %q", next.Kind)
+	}
+
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected pomodoro shortcut to open dialog, got action %+v", action)
+	}
+	if next.Kind != "pomodoro_start" {
+		t.Fatalf("expected pomodoro shortcut to open unified pomodoro dialog, got %q", next.Kind)
 	}
 }
 

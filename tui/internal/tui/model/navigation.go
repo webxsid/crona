@@ -319,16 +319,6 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if issueMeta != nil && issueMeta.WorkedSeconds > spentSeconds {
 			spentSeconds = issueMeta.WorkedSeconds
 		}
-		estimate := "-"
-		if issue.EstimateMinutes != nil {
-			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
-		}
-		var spent string
-		if spentSeconds <= 0 {
-			spent = "-"
-		} else {
-			spent = helperpkg.FormatCompactDurationSeconds(spentSeconds)
-		}
 		due := "-"
 		if issue.TodoForDate != nil && strings.TrimSpace(*issue.TodoForDate) != "" {
 			due = strings.TrimSpace(*issue.TodoForDate)
@@ -337,8 +327,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			fmt.Sprintf("Repo %s", repoName),
 			fmt.Sprintf("Stream %s", streamName),
 			fmt.Sprintf("Status %s", issue.Status),
-			fmt.Sprintf("Estimate %s", estimate),
-			fmt.Sprintf("Time Spent %s", spent),
+			issuecore.IssueWorkedEstimateSummary(spentSeconds, issue.EstimateMinutes),
 			fmt.Sprintf("Due %s", due),
 			fmt.Sprintf("ID %d", issue.ID),
 		}
@@ -349,7 +338,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
 			body = append(body, "", "Notes", strings.TrimSpace(*issue.Notes))
 		}
-		body = append(body, "", "Time Spent", spent)
+		body = append(body, "", "Worked / est.", issuecore.IssueWorkedEstimateLabel(spentSeconds, issue.EstimateMinutes))
 		return m.openViewEntityDialog(
 			"Issue",
 			issue.Title,

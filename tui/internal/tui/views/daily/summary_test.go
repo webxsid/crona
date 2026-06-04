@@ -13,13 +13,13 @@ import (
 
 func TestRenderSummaryShowsMomentumBlock(t *testing.T) {
 	state := dailySummaryTestState()
+	state.Height = 60
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 	lines := strings.Split(rendered, "\n")
 
 	for _, want := range []string{
 		"Signals",
 		"Momentums",
-		"Work",
 		"Energy",
 		"Mood",
 		"Sleep",
@@ -34,7 +34,7 @@ func TestRenderSummaryShowsMomentumBlock(t *testing.T) {
 			t.Fatalf("expected daily summary to contain %q, got %q", want, rendered)
 		}
 	}
-	assertContainsLine(t, lines, "Work", "Energy")
+	assertContainsLine(t, lines, "Energy", "Mood")
 	assertContainsLine(t, lines, "Mood", "Sleep")
 	assertContainsLine(t, lines, "Check-ins", "Focus")
 	for _, unwanted := range []string{"Custom Momentum"} {
@@ -44,9 +44,23 @@ func TestRenderSummaryShowsMomentumBlock(t *testing.T) {
 	}
 }
 
-func TestRenderSummaryUsesCompactMomentumBlockAtShortHeight(t *testing.T) {
+func TestRenderSummaryOmitsSignalsBelowThreshold(t *testing.T) {
 	state := dailySummaryTestState()
-	lines := renderMomentumBlock(testTheme(), state, 120)
+	lines := renderMomentumBlock(testTheme(), state, 120, 56)
+	rendered := ansi.Strip(strings.Join(lines, "\n"))
+	for _, want := range []string{"Momentums", "Check-ins", "Focus"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected compact momentum block to contain %q, got %#v", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Signals") || strings.Contains(rendered, "Energy") {
+		t.Fatalf("expected short momentum block to omit signals, got %#v", rendered)
+	}
+}
+
+func TestRenderSummaryUsesCompactMomentumBlockAtThreshold(t *testing.T) {
+	state := dailySummaryTestState()
+	lines := renderMomentumBlock(testTheme(), state, 120, 60)
 	rendered := ansi.Strip(strings.Join(lines, "\n"))
 	for _, want := range []string{"Signals", "Momentums", "Check-ins", "Focus", "|"} {
 		if !strings.Contains(rendered, want) {
@@ -56,7 +70,7 @@ func TestRenderSummaryUsesCompactMomentumBlockAtShortHeight(t *testing.T) {
 	if !strings.Contains(rendered, "today 4/5") || !strings.Contains(rendered, "today 3/5") {
 		t.Fatalf("expected compact momentum block to keep check-in values, got %#v", rendered)
 	}
-	assertContainsLine(t, strings.Split(rendered, "\n"), "Work", "Energy")
+	assertContainsLine(t, strings.Split(rendered, "\n"), "Energy", "Mood")
 	assertContainsLine(t, strings.Split(rendered, "\n"), "Mood", "Sleep")
 	assertContainsLine(t, strings.Split(rendered, "\n"), "Check-ins", "Focus")
 }
@@ -64,6 +78,7 @@ func TestRenderSummaryUsesCompactMomentumBlockAtShortHeight(t *testing.T) {
 func TestRenderSummaryUsesAverageSignalsWhenCheckInMissing(t *testing.T) {
 	state := dailySummaryTestState()
 	state.DailyCheckIn = nil
+	state.Height = 60
 
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 
@@ -77,11 +92,25 @@ func TestRenderSummaryUsesAverageSignalsWhenCheckInMissing(t *testing.T) {
 	}
 }
 
+func TestRenderSummaryUsesDailySummaryWorkInsteadOfRollupWork(t *testing.T) {
+	state := dailySummaryTestState()
+	state.DailySummary.WorkedSeconds = 5400
+	state.MetricsRollup.WorkedSeconds = 7200
+	state.Height = 60
+
+	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
+
+	if !strings.Contains(rendered, "worked 1h30m / est. 55m") {
+		t.Fatalf("expected daily summary to use the selected day's worked seconds, got %q", rendered)
+	}
+}
+
 func TestRenderSummaryOmitsMomentumWhenNoSignalData(t *testing.T) {
 	state := dailySummaryTestState()
+	state.DailySummary = nil
 	state.DailyCheckIn = nil
 	state.MetricsRollup = nil
-	state.Streaks = nil
+	state.DailyStreaks = nil
 
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 
@@ -107,13 +136,17 @@ func dailySummaryTestState() types.ContentState {
 		Height:        32,
 		DashboardDate: "2026-05-27",
 		DailySummary: &api.DailyIssueSummary{
-			Date: "2026-05-27",
+			Date:            "2026-05-27",
+			WorkedSeconds:   7200,
+			TotalIssues:     1,
+			CompletedIssues: 1,
 		},
 		DailyIssues: []api.Issue{
 			{
-				ID:     1,
-				Title:  "Ship momentum block",
-				Status: "done",
+				ID:              1,
+				Title:           "Ship momentum block",
+				Status:          "done",
+				EstimateMinutes: ptrInt(55),
 			},
 		},
 		DueHabits: []api.HabitDailyItem{
@@ -146,7 +179,19 @@ func dailySummaryTestState() types.ContentState {
 			CurrentHabitDays:   4,
 			LongestHabitDays:   9,
 		},
+		DailyStreaks: &api.StreakSummary{
+			CurrentCheckInDays: 2,
+			LongestCheckInDays: 5,
+			CurrentFocusDays:   1,
+			LongestFocusDays:   3,
+			CurrentHabitDays:   4,
+			LongestHabitDays:   9,
+		},
 	}
+}
+
+func ptrInt(value int) *int {
+	return &value
 }
 
 func testTheme() types.Theme {

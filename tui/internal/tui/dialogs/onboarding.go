@@ -31,7 +31,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			rows,
 			centerLine(
 				theme.StyleDim.Render(
-					"Your work stays on this machine, and you can change these choices later.",
+					"Your work stays on this machine. You can change these choices later.",
 				),
 				contentWidth,
 			),
@@ -61,13 +61,13 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			rows,
 			centerLine(theme.StyleHeader.Render("Your workspace"), contentWidth),
 			centerLine(
-				theme.StyleDim.Render("A few things become easier from here."),
+				theme.StyleDim.Render("Pick the workspace Crona should use."),
 				contentWidth,
 			),
 			"",
 			centerLine(
 				theme.StyleNormal.Render(
-					"Daily work, focus sessions, habits, and reports all stay connected.",
+					"Daily work, focus sessions, habits, and reports stay connected.",
 				),
 				contentWidth,
 			),
@@ -150,7 +150,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			),
 			"",
 			centerLine(theme.StyleError.Render("Changes take effect after restart."), contentWidth),
-			centerLine(theme.StyleDim.Render("Choose how you want to finish."), contentWidth),
+			centerLine(theme.StyleDim.Render("Choose how to finish setup."), contentWidth),
 			"",
 			centerLine(startLabel, contentWidth),
 			centerLine(restartLabel, contentWidth),

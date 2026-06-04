@@ -132,7 +132,7 @@ func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
 }
 
 func checkoutHint() string {
-	return "[type] filter   [left/right] choose   [up/down/tab] move   [enter] checkout/create   [c] clear   [esc] cancel"
+	return "[type] filter   [left/right] choose   [up/down/tab] move   [enter] set checkout context   [c] clear   [esc] cancel"
 }
 
 func habitDialogHint(state controllerpkg.State, submitLabel string) string {

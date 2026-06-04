@@ -69,6 +69,7 @@ type ContentState struct {
 	MetricsRange           []api.DailyMetricsDay
 	MetricsRollup          *api.MetricsRollup
 	Streaks                *api.StreakSummary
+	DailyStreaks           *api.StreakSummary
 	DashboardWindow        *api.DashboardWindowSummary
 	DailyFocusScore        *api.FocusScoreSummary
 	WeeklyFocusScore       *api.FocusScoreSummary

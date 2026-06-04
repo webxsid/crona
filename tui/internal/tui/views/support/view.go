@@ -33,16 +33,16 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		),
 		"",
 		theme.StyleHeader.Render(
-			"File bugs, open discussions, follow releases, or generate a support bundle.",
+			"Report bugs, open discussions, check releases, or generate a support bundle.",
 		),
 		theme.StyleDim.Render(
-			"Copy diagnostics is lightweight. Bundle is the full redacted artifact for bug reports.",
+			"Copy diagnostics is the quick clipboard version. Bundle is the full redacted ZIP for bug reports.",
 		),
 		theme.StyleDim.Render(
-			"Beta builds expose [f9] for quick support actions. Use [v] plus a mnemonic to jump to views.",
+			"Beta builds expose [f9] support actions. Use [v] plus a mnemonic to jump to views.",
 		),
 		theme.StyleDim.Render(
-			"Watch GitHub releases or discussions for updates; roadmap details live in docs/roadmap.md.",
+			"Releases and discussions track updates; roadmap details live in docs/roadmap.md.",
 		),
 		"",
 		theme.StyleDim.Render("Bug reports"),

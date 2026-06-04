@@ -193,6 +193,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		LoadDailySummary:     func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadDueHabits:        func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailyStreaks:     func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
 		LoadRollupSummaries:  func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		CurrentRollupStartDate: func(state inputpkg.State) string {

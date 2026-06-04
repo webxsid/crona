@@ -9,6 +9,7 @@ import (
 	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewtypes "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -143,6 +144,55 @@ func resolvedOnDate(
 		return ""
 	}
 	return shareddatefmt.FormatRFC3339Date(raw, settings)
+}
+
+func IssueContextLabel(repo, stream string) string {
+	repo = strings.TrimSpace(repo)
+	stream = strings.TrimSpace(stream)
+	switch {
+	case repo != "" && stream != "":
+		return repo + " > " + stream
+	case repo != "":
+		return repo
+	case stream != "":
+		return stream
+	default:
+		return "-"
+	}
+}
+
+func IssueWorkedLabel(workedSeconds int) string {
+	if workedSeconds <= 0 {
+		return "-"
+	}
+	return helperpkg.FormatCompactDurationSeconds(workedSeconds)
+}
+
+func IssueEstimateLabel(estimateMinutes *int) string {
+	if estimateMinutes == nil || *estimateMinutes <= 0 {
+		return "-"
+	}
+	return helperpkg.FormatCompactDurationMinutes(*estimateMinutes)
+}
+
+func IssueWorkedEstimateLabel(workedSeconds int, estimateMinutes *int) string {
+	return fmt.Sprintf("%s / est. %s", IssueWorkedLabel(workedSeconds), IssueEstimateLabel(estimateMinutes))
+}
+
+func IssueWorkedEstimateCompactLabel(workedSeconds int, estimateMinutes *int) string {
+	if workedSeconds <= 0 {
+		return "-"
+	}
+	worked := IssueWorkedLabel(workedSeconds)
+	estimate := IssueEstimateLabel(estimateMinutes)
+	if estimate == "-" {
+		return worked
+	}
+	return worked + " / " + estimate
+}
+
+func IssueWorkedEstimateSummary(workedSeconds int, estimateMinutes *int) string {
+	return "worked " + IssueWorkedEstimateLabel(workedSeconds, estimateMinutes)
 }
 
 func FilteredIssueIndices(issues []APIIssue, filter string) []int {

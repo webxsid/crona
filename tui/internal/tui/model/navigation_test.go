@@ -7,7 +7,7 @@ import (
 	"crona/tui/internal/api"
 )
 
-func TestOpenSelectedViewDialogIncludesTimeSpent(t *testing.T) {
+func TestOpenSelectedViewDialogIncludesWorkedEstimate(t *testing.T) {
 	issue := api.Issue{
 		ID:            1,
 		Title:         "Investigate timer display",
@@ -38,11 +38,11 @@ func TestOpenSelectedViewDialogIncludesTimeSpent(t *testing.T) {
 	if next.dialog != "view_entity" {
 		t.Fatalf("expected view entity dialog, got %q", next.dialog)
 	}
-	if !strings.Contains(next.dialogViewMeta, "Time Spent 1h15m") {
-		t.Fatalf("expected dialog meta to include time spent, got %q", next.dialogViewMeta)
+	if !strings.Contains(next.dialogViewMeta, "worked 1h15m / est. -") {
+		t.Fatalf("expected dialog meta to include worked/estimate summary, got %q", next.dialogViewMeta)
 	}
-	if !strings.Contains(next.dialogViewBody, "Time Spent") ||
-		!strings.Contains(next.dialogViewBody, "1h15m") {
-		t.Fatalf("expected dialog body to include time spent, got %q", next.dialogViewBody)
+	if !strings.Contains(next.dialogViewBody, "Worked / est.") ||
+		!strings.Contains(next.dialogViewBody, "1h15m / est. -") {
+		t.Fatalf("expected dialog body to include worked/estimate summary, got %q", next.dialogViewBody)
 	}
 }

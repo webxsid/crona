@@ -33,7 +33,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
 	case "end_session", "stash_session":
 		title := "End Session"
-		hint := dialogSubmitHint(state, "confirm") + "   [ctrl+e] details   [esc] cancel"
+		hint := dialogSubmitHint(state, "confirm") + "   [ctrl+e] open details dialog   [esc] cancel"
 		labels := []string{
 			"Commit message",
 			"Worked on",
@@ -59,17 +59,17 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
 		for i, item := range state.ChoiceItems {
-			line := "  " + item
+			line := timerStartChoiceLabel(i, item)
 			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
+				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
 			} else {
-				rows = append(rows, theme.StyleNormal.Render(line))
+				rows = append(rows, theme.StyleNormal.Render("  "+line))
 			}
 		}
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] cancel")
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] cancel")
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	case "pomodoro_start":
 		vm := controllerpkg.BuildPomodoroDialogViewModel(state)
@@ -77,25 +77,27 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ViewName != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
+		if totalPreview := vm.EstimatedTotalDuration; totalPreview != "" {
+			rows = append(rows, "", theme.StyleSelected.Render(totalPreview))
+		}
 		if vm.ShowSummary {
 			rows = append(
 				rows,
 				"",
 				theme.StyleDim.Render(
 					fmt.Sprintf(
-						"Focus %s  ·  Short %s  ·  Long %s  ·  Cycles %s",
+						"%s  ·  %s  ·  %s",
 						vm.FocusDisplay,
 						vm.ShortBreakDisplay,
 						vm.LongBreakDisplay,
-						vm.CyclesSummary,
 					),
 				),
 			)
+			rows = append(rows, theme.StyleDim.Render(
+				vm.CyclesSummary,
+			))
 		}
-		if totalPreview := vm.EstimatedTotalDuration; totalPreview != "" {
-			rows = append(rows, theme.StyleSelected.Render(totalPreview))
-		}
-		rows = append(rows, "", pomodoroRowLabel(theme, "Focus Time", vm.FocusRowActive || vm.FocusCustomActive))
+		rows = append(rows, "", pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive))
 		rows = append(rows, pomodoroChoiceRow(
 			theme,
 			vm.FocusChoices,
@@ -113,10 +115,10 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			vm.BreakCustomActive,
 			state.Inputs[1].View(),
 		))
-		rows = append(rows, "", pomodoroRowLabel(theme, "Long Break", vm.LongBreakRowActive || vm.LongBreakCustomActive))
 		if vm.LongBreakForcedOff {
-			rows = append(rows, pomodoroDisabledValueRow(theme, "Long Break"))
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Long Break"))
 		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Long Break", vm.LongBreakRowActive || vm.LongBreakCustomActive))
 			rows = append(rows, pomodoroChoiceRow(
 				theme,
 				vm.LongBreakChoices,
@@ -126,23 +128,23 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 				state.Inputs[2].View(),
 			))
 		}
-		rows = append(rows, "", pomodoroRowLabel(theme, "Number of cycles (1 cycle = 1 focus + break)", vm.CyclesRowActive))
 		if vm.CyclesDisabled {
-			rows = append(rows, pomodoroDisabledValueRow(theme, "Cycles"))
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Cycles"))
 		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Cycles", vm.CyclesRowActive))
 			rows = append(rows, state.Inputs[3].View())
 		}
-		rows = append(rows, "", pomodoroRowLabel(theme, "Cycle before long break", vm.LongBreakCyclesActive))
 		if vm.LongBreakDisabled {
-			rows = append(rows, pomodoroDisabledValueRow(theme, "Cycle before long break"))
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Long Break"))
 		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Long Break After", vm.LongBreakCyclesActive))
 			rows = append(rows, state.Inputs[4].View())
 		}
 		rows = appendDialogFooter(
 			theme,
 			state,
 			rows,
-			"[left/right] choose   [enter/tab] next   "+dialogSubmitHint(state, "start")+"   [esc] back",
+			"[←/→] choose   [↑/↓] move   "+dialogSubmitHint(state, "start")+"   [esc] back",
 		)
 		return modal(theme, state.Width, 72, theme.ColorGreen, rows)
 	case "hard_limit_expired":
@@ -162,7 +164,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select")
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose")
 		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
 	case "hard_limit_extend":
 		rows := []string{
@@ -181,7 +183,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] select   [esc] back")
+		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] back")
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "hard_limit_extend_custom":
 		rows := []string{
@@ -268,6 +270,17 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	}
 }
 
+func timerStartChoiceLabel(idx int, item string) string {
+	switch idx {
+	case 0:
+		return "[s] " + item
+	case 1:
+		return "[p] " + item
+	default:
+		return item
+	}
+}
+
 func pomodoroChoiceRow(
 	theme Theme,
 	choices []string,
@@ -302,7 +315,7 @@ func pomodoroRowLabel(theme Theme, label string, active bool) string {
 }
 
 func pomodoroDisabledValueRow(theme Theme, label string) string {
-	return theme.StyleDim.Render("  " + label + ": disabled")
+	return theme.StyleDim.Render(label + ": disabled")
 }
 
 func itoa(v int64) string {

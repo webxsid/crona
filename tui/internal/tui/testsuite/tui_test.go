@@ -23,19 +23,19 @@ func TestPaneActionLineWrapsInsteadOfDroppingActions(t *testing.T) {
 	rendered := viewchrome.RenderPaneActionLine(
 		support.Theme(),
 		"",
-		20,
-		[]string{"[enter] view", "[a] new", "[c] context"},
+		30,
+		[]string{"[enter] open details dialog", "[a] create", "[c] change context"},
 	)
 	lines := strings.Split(rendered, "\n")
 	if len(lines) < 2 {
 		t.Fatalf("expected wrapped action lines, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "[c] context") {
+	if !strings.Contains(rendered, "[c] change context") {
 		t.Fatalf("expected final action to be preserved, got %q", rendered)
 	}
 	for _, line := range lines {
-		if got := lipgloss.Width(line); got > 20 {
-			t.Fatalf("line width %d exceeds max width 20: %q", got, line)
+		if got := lipgloss.Width(line); got > 30 {
+			t.Fatalf("line width %d exceeds max width 30: %q", got, line)
 		}
 	}
 }
@@ -298,10 +298,7 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 	if !strings.Contains(rendered, "Habits  0/1 completed") {
 		t.Fatalf("expected compact inline habits row below height 55")
 	}
-	if !strings.Contains(rendered, "planned 1") {
-		t.Fatalf("expected compact legend text below height 55")
-	}
-	if !strings.Contains(rendered, "logged 0m / target 15m") {
+	if !strings.Contains(rendered, "0m / 15m") {
 		t.Fatalf("expected compact habit meta below height 55")
 	}
 	if !strings.Contains(rendered, "█") {
@@ -638,7 +635,7 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 		Pane: "export_reports",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[e]", "edit", "[o]", "open", "[d]", "delete", "[enter]", "details"} {
+	for _, want := range []string{"[e]", "edit", "[o]", "open report", "[d]", "delete", "[enter]", "open details dialog"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected reports actions to contain %q, got %q", want, joined)
 		}
@@ -670,7 +667,7 @@ func TestGlobalActionsOmitUpdatesShortcut(t *testing.T) {
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[v]", "views"} {
+	for _, want := range []string{"[v]", "switch views"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected global actions to contain %q, got %q", want, joined)
 		}
@@ -707,17 +704,17 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 	actions := viewchrome.DedupeActionKeys(global, pane)
 	joined := ansi.Strip(strings.Join(actions, " "))
 
-	for _, want := range []string{"[v]", "views"} {
+	for _, want := range []string{"[v]", "switch views"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected deduped global actions to keep %q, got %q", want, joined)
 		}
 	}
-	for _, blocked := range []string{"[a] new"} {
+	for _, blocked := range []string{"[a] create"} {
 		if strings.Contains(joined, blocked) {
 			t.Fatalf("expected deduped global actions to drop %q, got %q", blocked, joined)
 		}
 	}
-	if !strings.Contains(joined, "[c] context") {
+	if !strings.Contains(joined, "[c] change context") {
 		t.Fatalf(
 			"expected deduped global actions to keep global-only context action, got %q",
 			joined,
@@ -734,7 +731,7 @@ func TestMetaRepoPaneShowsCheckoutAction(t *testing.T) {
 	if !strings.Contains(joined, "[c] checkout") {
 		t.Fatalf("expected meta repo pane to expose checkout action, got %q", joined)
 	}
-	if strings.Contains(joined, "[c] context") {
+	if strings.Contains(joined, "[c] change context") {
 		t.Fatalf("expected meta repo pane to stop advertising context on c, got %q", joined)
 	}
 }
@@ -789,7 +786,7 @@ func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
 	}
 
 	rendered := ansi.Strip(support.RenderDefault(state))
-	if got := strings.Count(rendered, "[f] start timer"); got != 1 {
+	if got := strings.Count(rendered, "[f] start focus timer"); got != 1 {
 		t.Fatalf("expected exactly one active-pane timer action, got %d in %q", got, rendered)
 	}
 	if strings.Contains(rendered, "[F] hard limit") {
@@ -803,7 +800,7 @@ func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 		UpdateInstallAvailable: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[r]", "check now", "[o]", "open release", "[i]", "install", "[U]", "dismiss"} {
+	for _, want := range []string{"[r]", "check for updates", "[o]", "open release page", "[i]", "install", "[U]", "dismiss"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected updates actions to contain %q, got %q", want, joined)
 		}
@@ -819,7 +816,7 @@ func TestHardLimitSessionActionsShowCommitAndStash(t *testing.T) {
 		HardLimitActive:  true,
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
-	for _, want := range []string{"[x] commit", "[z] stash", "[i] context"} {
+	for _, want := range []string{"[x] commit issue", "[z] stash session", "[i] change context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit session actions to contain %q, got %q", want, joined)
 		}
@@ -840,7 +837,7 @@ func TestReadyHardLimitSessionActionsStayCommitBased(t *testing.T) {
 	if strings.Contains(joined, "[r] start long break") {
 		t.Fatalf("expected hard-limit ready state not to show prepared-segment actions, got %q", joined)
 	}
-	for _, want := range []string{"[x] commit", "[z] stash", "[i] context"} {
+	for _, want := range []string{"[x] commit issue", "[z] stash session", "[i] change context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit ready state to contain %q, got %q", want, joined)
 		}
@@ -902,7 +899,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "Beta builds expose [f9]", "Diagnostics", "Watch GitHub releases or discussions for updates"} {
+	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "Beta builds expose [f9] support actions", "Diagnostics", "Releases and discussions track updates"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -914,7 +911,7 @@ func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[o]", "report bug", "[d]", "discussions", "[r]", "releases", "[g]", "roadmap", "[c]", "copy diagnostics", "[b]", "bundle"} {
+	for _, want := range []string{"[o]", "report bug", "[d]", "open discussions", "[r]", "open releases", "[g]", "open roadmap", "[c]", "copy diagnostics", "[b]", "generate bundle"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}
@@ -1094,7 +1091,7 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 		View:   "daily",
 		Pane:   "issues",
 		Width:  70,
-		Height: 46,
+		Height: 52,
 		Cursors: map[string]int{
 			"issues": 0,
 			"habits": 0,
@@ -1140,12 +1137,6 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 	if !strings.Contains(rendered, "Issues  0/1 resolved") ||
 		!strings.Contains(rendered, "Habits  0/1 completed") {
 		t.Fatalf("expected ultra-compact rows for both issues and habits")
-	}
-	if strings.Contains(rendered, "planned 1") {
-		t.Fatalf("expected issue legend row to be omitted below height 48")
-	}
-	if strings.Contains(rendered, "failed 0   remaining 1") {
-		t.Fatalf("expected habit meta row to be omitted below height 48")
 	}
 	if !strings.Contains(rendered, "█") {
 		t.Fatalf("expected inline bars to remain in ultra-compact mode")

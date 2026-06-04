@@ -36,6 +36,7 @@ type DailyCheckInLoadedMsg struct{ CheckIn *api.DailyCheckIn }
 type MetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
 type MetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }
 type StreaksLoadedMsg struct{ Streaks *api.StreakSummary }
+type DailyStreaksLoadedMsg struct{ Streaks *api.StreakSummary }
 type DashboardWindowLoadedMsg struct{ Summary *api.DashboardWindowSummary }
 type FocusScoreLoadedMsg struct {
 	WindowDays int

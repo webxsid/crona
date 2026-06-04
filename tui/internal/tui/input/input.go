@@ -70,6 +70,7 @@ type Deps struct {
 	LoadExportAssets                func() tea.Cmd
 	SetStatus                       func(*State, string, bool) tea.Cmd
 	LoadDailySummary                func(string) tea.Cmd
+	LoadDailyStreaks                func(string) tea.Cmd
 	LoadDueHabits                   func(string) tea.Cmd
 	CurrentDashboardDate            func(State) string
 	LoadRollupSummaries             func(string, string) tea.Cmd

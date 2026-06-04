@@ -40,6 +40,7 @@ type MessageState struct {
 	MetricsRange            []api.DailyMetricsDay
 	MetricsRollup           *api.MetricsRollup
 	Streaks                 *api.StreakSummary
+	DailyStreaks            *api.StreakSummary
 	DashboardWindow         *api.DashboardWindowSummary
 	DailyFocusScore         *api.FocusScoreSummary
 	WeeklyFocusScore        *api.FocusScoreSummary
@@ -123,6 +124,7 @@ type MessageDeps struct {
 	LoadAllHabits             func() tea.Cmd
 	LoadDueHabits             func(string) tea.Cmd
 	LoadDailySummary          func(string) tea.Cmd
+	LoadDailyStreaks          func(string) tea.Cmd
 	LoadWellbeing             func(string, int) tea.Cmd
 	LoadRollupSummaries       func(string, string) tea.Cmd
 	LoadDailyPlan             func(string) tea.Cmd
@@ -250,6 +252,9 @@ func HandleMessage(
 		if deps.AnchorWellbeingScroll != nil {
 			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingStreaks)
 		}
+		return state, nil, true
+	case commands.DailyStreaksLoadedMsg:
+		state.DailyStreaks = msg.Streaks
 		return state, nil, true
 	case commands.DashboardWindowLoadedMsg:
 		state.DashboardWindow = msg.Summary
@@ -503,6 +508,7 @@ func HandleMessage(
 		}
 		if deps.CurrentDashboardDate(state) == strings.TrimSpace(msg.Date) {
 			cmds = append(cmds, deps.LoadDailySummary(msg.Date))
+			cmds = append(cmds, deps.LoadDailyStreaks(msg.Date))
 		}
 		if deps.CurrentWellbeingDate(state) == strings.TrimSpace(msg.Date) {
 			cmds = append(cmds, deps.LoadWellbeing(msg.Date, state.WellbeingWindowDays))
@@ -739,6 +745,7 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadAllIssues(),
 		deps.LoadDueHabits(deps.CurrentDashboardDate(state)),
 		deps.LoadDailySummary(state.DashboardDate),
+		deps.LoadDailyStreaks(deps.CurrentDashboardDate(state)),
 		deps.LoadWellbeing(deps.CurrentWellbeingDate(state), state.WellbeingWindowDays),
 		deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate),
 		deps.LoadSessionHistoryFor200(state),

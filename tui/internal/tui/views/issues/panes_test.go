@@ -10,17 +10,18 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestRenderIssuePaneShowsSpentSuffix(t *testing.T) {
+func TestRenderIssuePaneShowsWorkedSuffix(t *testing.T) {
 	state := types.ContentState{
 		Pane:   "issues",
 		Width:  120,
 		Height: 20,
 		DefaultIssues: []api.IssueWithMeta{{
 			Issue: api.Issue{
-				ID:            1,
-				Title:         "Investigate timer display",
-				Status:        "in_progress",
-				WorkedSeconds: 4500,
+				ID:              1,
+				Title:           "Investigate timer display",
+				Status:          "in_progress",
+				WorkedSeconds:   4500,
+				EstimateMinutes: ptrInt(25),
 			},
 			RepoName:   "Core",
 			StreamName: "TUI",
@@ -40,8 +41,8 @@ func TestRenderIssuePaneShowsSpentSuffix(t *testing.T) {
 		true,
 	)
 	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Spent") {
-		t.Fatalf("expected spent column header to render, got %q", rendered)
+	if !strings.Contains(plain, "Worked") {
+		t.Fatalf("expected worked column header to render, got %q", rendered)
 	}
 	if !strings.Contains(plain, "1h15m") {
 		t.Fatalf("expected worked seconds to render in the spent column, got %q", rendered)
@@ -49,8 +50,8 @@ func TestRenderIssuePaneShowsSpentSuffix(t *testing.T) {
 	lines := strings.Split(plain, "\n")
 	var headerLine, rowLine string
 	for _, line := range lines {
-		if strings.Contains(line, "Status") && strings.Contains(line, "Estimate") &&
-			strings.Contains(line, "Spent") {
+		if strings.Contains(line, "Status") && strings.Contains(line, "Est.") &&
+			strings.Contains(line, "Worked") {
 			headerLine = line
 		}
 		if strings.Contains(line, "in progress") {
@@ -69,12 +70,87 @@ func TestRenderIssuePaneShowsSpentSuffix(t *testing.T) {
 			rowLine,
 		)
 	}
-	if strings.Index(headerLine, "Spent") != strings.Index(rowLine, "1h15m") {
+	if strings.Index(headerLine, "Worked") != strings.Index(rowLine, "1h15m") {
 		t.Fatalf(
-			"expected spent header and value to align, got header %q row %q",
+			"expected worked header and value to align, got header %q row %q",
 			headerLine,
 			rowLine,
 		)
+	}
+}
+
+func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  84,
+		Height: 20,
+		DefaultIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{
+				ID:              1,
+				Title:           "Investigate timer display",
+				Status:          "in_progress",
+				WorkedSeconds:   4500,
+				EstimateMinutes: ptrInt(25),
+			},
+			RepoName:   "Core",
+			StreamName: "TUI",
+		}},
+	}
+
+	rendered := renderIssuePane(
+		types.Theme{},
+		state,
+		"Active Issues [1]",
+		"Due work and open issues",
+		[]int{0},
+		0,
+		true,
+		20,
+		"No open issues match the current filter",
+		true,
+	)
+	plain := ansi.Strip(rendered)
+	for _, want := range []string{"Context", "Effort", "Core > TUI", "1h15m / 25m"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected compact issue table to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestRenderIssuePaneCollapsesEmptyWorkedEffort(t *testing.T) {
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  84,
+		Height: 20,
+		DefaultIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{
+				ID:              1,
+				Title:           "Investigate timer display",
+				Status:          "in_progress",
+				WorkedSeconds:   0,
+				EstimateMinutes: ptrInt(25),
+			},
+			RepoName:   "Core",
+			StreamName: "TUI",
+		}},
+		Filters: map[string]string{"issues": ""},
+	}
+
+	rendered := renderIssuePane(
+		types.Theme{},
+		state,
+		"Active Issues [1]",
+		"Due work and open issues",
+		[]int{0},
+		0,
+		true,
+		20,
+		"No open issues match the current filter",
+		true,
+	)
+	plain := ansi.Strip(rendered)
+	if !strings.Contains(plain, "Effort") || !strings.Contains(plain, "-") {
+		t.Fatalf("expected compact issue table to collapse empty effort to a dash, got %q", rendered)
 	}
 }
 
@@ -84,4 +160,8 @@ func normalizeTableLine(line string) string {
 	line = strings.TrimPrefix(line, "  ")
 	line = strings.TrimLeft(line, " ")
 	return line
+}
+
+func ptrInt(value int) *int {
+	return &value
 }

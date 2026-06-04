@@ -601,6 +601,12 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
+	case "s":
+		state.ChoiceCursor = 0
+		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
+	case "p":
+		state.ChoiceCursor = 1
+		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
 	case "j", "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++

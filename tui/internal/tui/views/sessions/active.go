@@ -43,13 +43,13 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		seg = string(*state.Timer.ReadySegmentType)
 	}
 	timerTitle := "Focus Session"
-	timerHint := "[p] pause  [x] end  [z] stash  [i] context"
+	timerHint := "[p] pause  [x] end session  [z] stash session  [i] change context"
 	structured := false
 	nextLabel := sessionActionSegmentLabel(state.Timer)
 	stateColor := activeTimerColor(theme, state.Timer)
 	if hardLimit {
 		timerTitle = "Pomodoro Session"
-		timerHint = "[x] commit  [z] stash  [i] context"
+		timerHint = "[x] commit issue  [z] stash session  [i] change context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint
 			if state.Timer.ReadySegmentType != nil {
@@ -60,9 +60,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		}
 	} else if state.Timer.State == "ready" && !hardLimit {
 		timerTitle = "Ready For"
-		timerHint = "[r] start " + nextLabel + "  [x] end  [z] stash  [i] context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [z] stash session  [i] change context"
 	} else if structured {
-		timerHint = "[r] start " + nextLabel + "  [x] end  [z] stash  [i] context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [z] stash session  [i] change context"
 		if state.Timer.SegmentType != nil {
 			switch *state.Timer.SegmentType {
 			case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
@@ -72,7 +72,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	} else if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
-		timerHint = "[r] resume  [x] end  [z] stash  [i] context"
+		timerHint = "[r] resume  [x] end session  [z] stash session  [i] change context"
 		seg = "paused"
 	}
 	leftW := state.Width - 4

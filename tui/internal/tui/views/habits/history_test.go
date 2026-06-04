@@ -78,7 +78,7 @@ func TestRenderHabitHistoryShowsSelectedHabitAndCompletionDetails(t *testing.T) 
 		"failed",
 		"30m",
 		"kept the stre...",
-		"[enter] details",
+		"[enter] open details dialog",
 	} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected habit history render to contain %q, got %q", want, rendered)

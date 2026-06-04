@@ -61,13 +61,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return base.Render(theme, viewhelpers.StringsJoin(lines))
 	}
-	statusW := 14
-	estimateW := 11
-	repoW := max(10, width/7)
-	streamW := max(10, width/7)
-	spentW := 11
-	titleW := width - statusW - estimateW - spentW - repoW - streamW - 18
-	titleW = max(14, titleW)
+	layout := issuecore.IssueTableLayoutForWidth(width)
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	issueSlots := max(1, inner)
 	start, end := viewchrome.ListWindow(cur, total, issueSlots)
@@ -79,19 +73,13 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
 		repoName, streamName := "-", "-"
+		workedSeconds := issue.WorkedSeconds
 		if meta != nil {
 			repoName = meta.RepoName
 			streamName = meta.StreamName
-		}
-		estimate := "-"
-		if issue.EstimateMinutes != nil {
-			estimate = helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
-		}
-		spent := "-"
-		if issue.WorkedSeconds > 0 {
-			spent = viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds)
-		} else if meta != nil && meta.WorkedSeconds > 0 {
-			spent = viewhelpers.FormatCompactDurationSeconds(meta.WorkedSeconds)
+			if workedSeconds <= 0 && meta.WorkedSeconds > 0 {
+				workedSeconds = meta.WorkedSeconds
+			}
 		}
 		title := issue.Title
 		title += issuecore.IssueDueSuffix(
@@ -114,27 +102,20 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		}
 		tableRows = append(
 			tableRows,
-			issuecore.IssueTableRow(
-				cursor,
-				title,
-				issuecore.PlainIssueStatus(string(issue.Status)),
-				estimate,
-				spent,
-				repoName,
-				streamName,
-				rowStyle,
-			),
+			issuecore.IssueTableRow(cursor, issuecore.IssueTableData{
+				Issue:    title,
+				Status:   issuecore.PlainIssueStatus(string(issue.Status)),
+				Estimate: issuecore.IssueEstimateLabel(issue.EstimateMinutes),
+				Worked:   issuecore.IssueWorkedLabel(workedSeconds),
+				Repo:     repoName,
+				Stream:   streamName,
+				Context:  issuecore.IssueContextLabel(repoName, streamName),
+				Effort:   issuecore.IssueWorkedEstimateCompactLabel(workedSeconds, issue.EstimateMinutes),
+			}, rowStyle),
 		)
 	}
 	tablePane := viewui.TablePane{
-		Columns: issuecore.IssueTableColumns(
-			titleW,
-			statusW,
-			estimateW,
-			spentW,
-			repoW,
-			streamW,
-		),
+		Columns:     issuecore.IssueTableColumns(layout),
 		Rows:        tableRows,
 		HeaderStyle: theme.StyleDim,
 	}

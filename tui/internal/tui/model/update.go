@@ -219,6 +219,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		MetricsRange:            m.metricsRange,
 		MetricsRollup:           m.metricsRollup,
 		Streaks:                 m.streaks,
+		DailyStreaks:            m.dailyStreaks,
 		DashboardWindow:         m.dashboardWindow,
 		DailyFocusScore:         m.dailyFocusScore,
 		WeeklyFocusScore:        m.weeklyFocusScore,
@@ -307,6 +308,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup
 	m.streaks = state.Streaks
+	m.dailyStreaks = state.DailyStreaks
 	m.dashboardWindow = state.DashboardWindow
 	m.dailyFocusScore = state.DailyFocusScore
 	m.weeklyFocusScore = state.WeeklyFocusScore
@@ -453,6 +455,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
 		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDailyStreaks:   func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},

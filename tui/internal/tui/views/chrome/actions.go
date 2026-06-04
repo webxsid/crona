@@ -26,7 +26,7 @@ type ActionsState struct {
 
 func GlobalActions(theme Theme, state ActionsState) []string {
 	actions := []string{
-		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" views"),
+		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" switch views"),
 	}
 	if state.IsBetaBuild {
 		actions = append(
@@ -41,13 +41,13 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		)
 	}
 	if supportsGlobalCreate(state.View) {
-		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" new"))
+		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" create"))
 	}
 	if supportsGlobalContext(state.View) {
-		actions = append(actions, theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" context"))
+		actions = append(actions, theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" change context"))
 	}
 	if supportsGlobalExport(state.View) {
-		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"))
+		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export data"))
 	}
 	if state.View == "daily" || state.View == "wellbeing" {
 		actions = append(actions, checkInAction(theme))
@@ -71,16 +71,16 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "session_active" {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
-				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" start timer"),
-				theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
+				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" start focus timer"),
+				theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" saved stashes"),
 			}
 		}
 		if state.HardLimitActive {
 			return []string{
-				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" commit"),
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
-				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" commit issue"),
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 			}
 		}
 		if state.TimerState == "ready" {
@@ -90,34 +90,34 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				) + theme.StyleDim.Render(
 					" start "+timerActionSegmentLabel(state.TimerNextSegment),
 				),
-				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
-				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 			}
 		}
 		return []string{
 			theme.StyleHeader.Render("[p]") + theme.StyleDim.Render(" pause"),
-			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end"),
-			theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash"),
-			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" issue"),
+			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
+			theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
+			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
+			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 		}
 	}
 	if state.View == "session_history" {
 		if state.RestModeActive {
 			return []string{
-				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
+				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 			}
 		}
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
-			theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" stashes"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
+			theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" saved stashes"),
 		}
 	}
 	if state.View == "habit_history" {
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 		}
 	}
 	if state.View == "wellbeing" {
@@ -132,18 +132,18 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "rollup" {
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" day details"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open day details"),
 			theme.StyleHeader.Render("[S/E]") + theme.StyleDim.Render(" calendar"),
-			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" start"),
-			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" end"),
+			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change start"),
+			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" change end"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" weekly"),
 		}
 	}
 	if state.View == "config" {
 		actions := []string{
-			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit/open"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
-			theme.StyleHeader.Render("[c/space]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit or open"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
+			theme.StyleHeader.Render("[c/space]") + theme.StyleDim.Render(" change option"),
 			theme.StyleHeader.Render("[R]") + theme.StyleDim.Render(" rescan tools"),
 		}
 		if state.TimerState == "" || state.TimerState == "idle" {
@@ -157,15 +157,15 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "reports" {
 		return []string{
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open report"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" details"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 		}
 	}
 	if state.View == "updates" {
 		actions := []string{
-			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check now"),
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release"),
+			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check for updates"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release page"),
 			theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
 		}
 		if state.UpdateInstallAvailable {
@@ -181,18 +181,18 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "support" {
 		return []string{
 			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" report bug"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" discussions"),
-			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" releases"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" roadmap"),
+			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" open discussions"),
+			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" open releases"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open roadmap"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
-			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" bundle"),
+			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" generate bundle"),
 		}
 	}
 	if state.View == "alerts" {
 		return []string{
 			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[space]") + theme.StyleDim.Render(" toggle"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/run"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit or run"),
 			theme.StyleHeader.Render("[d/x]") + theme.StyleDim.Render(" delete"),
 		}
 	}
@@ -201,12 +201,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "repos", "streams":
 		contextLabel := " checkout"
 		if state.View != "meta" {
-			contextLabel = " context"
+			contextLabel = " change context"
 		}
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(contextLabel),
-			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
+			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
@@ -214,33 +214,33 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		timerIdle := state.TimerState == "" || state.TimerState == "idle"
 		if state.View == "daily" {
 			actions := []string{
-				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
-				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
-				theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
+				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open issue details"),
+				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create issue"),
+				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" set status"),
+				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" set due date"),
+				theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin to daily"),
 			}
 			if timerIdle {
 				actions = append(
 					actions,
-					theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start timer"),
-					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"),
-					theme.StyleHeader.Render("[e]")+theme.StyleDim.Render(" edit"),
+					theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
+					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
+					theme.StyleHeader.Render("[e]")+theme.StyleDim.Render(" edit issue"),
 				)
 			}
 			return actions
 		}
 		actions := []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" status"),
-			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" due date"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open issue details"),
+			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" set status"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" set due date"),
 			theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
 		}
 		if timerIdle {
 			actions = append(
 				actions,
-				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start timer"),
-				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"),
+				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
+				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
 				theme.StyleHeader.Render("[e/d]")+theme.StyleDim.Render(" edit/delete"),
 			)
 		}
@@ -248,23 +248,23 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "habits":
 		if state.View == "daily" {
 			actions := []string{
-				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle"),
-				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" fail"),
-				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
+				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open habit details"),
+				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create habit"),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle completion"),
+				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" mark failed"),
+				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
 				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
 			if state.TimerState == "" || state.TimerState == "idle" {
-				actions = append(actions, theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log"))
+				actions = append(actions, theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"))
 			}
 			return actions
 		}
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" view"),
-			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" new"),
-			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
-			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open habit details"),
+			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create habit"),
+			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
+			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log completion"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	case "ops":
@@ -275,12 +275,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "settings":
 		return []string{
 			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit/toggle/confirm"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit, toggle, or confirm"),
 		}
 	case "alerts":
 		return []string{
 			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" toggle/test"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" toggle or test"),
 		}
 	}
 	return nil
