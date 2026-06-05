@@ -152,6 +152,9 @@ func CreateHabit(ctx context.Context, c *core.Context, input struct {
 	}); err != nil {
 		return sharedtypes.Habit{}, err
 	}
+	if err := InvalidateCustomHabitMomentumSnapshotsFrom(ctx, c, extractISODate(now)); err != nil {
+		return sharedtypes.Habit{}, err
+	}
 	emit(c, sharedtypes.EventTypeHabitCreated, created)
 	return created, nil
 }
@@ -241,6 +244,9 @@ func UpdateHabit(ctx context.Context, c *core.Context, habitID int64, updates st
 	}); err != nil {
 		return nil, err
 	}
+	if err := InvalidateCustomHabitMomentumSnapshotsFrom(ctx, c, extractISODate(now)); err != nil {
+		return nil, err
+	}
 	if updated != nil {
 		emit(c, sharedtypes.EventTypeHabitUpdated, updated)
 	}
@@ -262,6 +268,9 @@ func DeleteHabit(ctx context.Context, c *core.Context, habitID int64) error {
 		UserID:    c.UserID,
 		DeviceID:  c.DeviceID,
 	}); err != nil {
+		return err
+	}
+	if err := InvalidateCustomHabitMomentumSnapshotsFrom(ctx, c, extractISODate(now)); err != nil {
 		return err
 	}
 	emit(c, sharedtypes.EventTypeHabitDeleted, sharedtypes.IDEventPayload{ID: habitID})
@@ -327,6 +336,9 @@ func CompleteHabit(
 	}); err != nil {
 		return nil, err
 	}
+	if err := InvalidateCustomHabitMomentumSnapshotsFrom(ctx, c, date); err != nil {
+		return nil, err
+	}
 	emit(c, sharedtypes.EventTypeHabitCompleted, completion)
 	return &completion, nil
 }
@@ -349,6 +361,9 @@ func UncompleteHabit(ctx context.Context, c *core.Context, habitID int64, date s
 		UserID:    c.UserID,
 		DeviceID:  c.DeviceID,
 	}); err != nil {
+		return err
+	}
+	if err := InvalidateCustomHabitMomentumSnapshotsFrom(ctx, c, date); err != nil {
 		return err
 	}
 	emit(c, sharedtypes.EventTypeHabitUncompleted, map[string]any{"habitId": habitID, "date": date})

@@ -342,7 +342,15 @@ func ComputeMetricsLifetimeStreaks(
 	if err != nil {
 		return nil, err
 	}
-	return ComputeMetricsStreaks(ctx, c, start, throughDate)
+	streaks, err := ComputeMetricsStreaks(ctx, c, start, throughDate)
+	if err != nil {
+		return nil, err
+	}
+	streaks.CustomHabitStreaks, err = ComputeCustomHabitStreakSnapshot(ctx, c, throughDate)
+	if err != nil {
+		return nil, err
+	}
+	return streaks, nil
 }
 
 func earliestMetricsHistoryDate(

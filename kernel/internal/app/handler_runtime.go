@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"strings"
 
 	corecommands "crona/kernel/internal/core/commands"
 	shareddto "crona/shared/dto"
@@ -247,16 +248,38 @@ func (h *Handler) handleRuntimeMethods(
 			if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, input.Key, input.Value); err != nil {
 				return nil, err
 			}
+			if input.Key == sharedtypes.CoreSettingsKeyHabitStreakDefs {
+				if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(
+					ctx,
+					h.core,
+					currentKernelISODate(h.core.Now()),
+				); err != nil {
+					return nil, err
+				}
+			}
 			return shareddto.OKResponse{OK: true}, nil
 		}), true
 	case protocol.MethodSettingsPut:
 		return handle(req, func(input shareddto.PutCoreSettingsRequest) (any, error) {
 			updated := map[string]any{}
+			invalidatedHabitMomentum := false
 			for key, value := range input {
 				if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, key, value); err != nil {
 					return nil, err
 				}
 				updated[string(key)] = value
+				if key == sharedtypes.CoreSettingsKeyHabitStreakDefs {
+					invalidatedHabitMomentum = true
+				}
+			}
+			if invalidatedHabitMomentum {
+				if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(
+					ctx,
+					h.core,
+					currentKernelISODate(h.core.Now()),
+				); err != nil {
+					return nil, err
+				}
 			}
 			return updated, nil
 		}), true
@@ -286,4 +309,11 @@ func (h *Handler) handleRuntimeMethods(
 	default:
 		return protocol.Response{}, false
 	}
+}
+
+func currentKernelISODate(now string) string {
+	if idx := strings.Index(now, "T"); idx >= 0 {
+		return now[:idx]
+	}
+	return now
 }

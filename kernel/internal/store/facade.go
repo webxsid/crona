@@ -14,20 +14,21 @@ import (
 type Store = storedb.Store
 
 type Registry struct {
-	Repos            *repositories.RepoRepository
-	Streams          *repositories.StreamRepository
-	Issues           *repositories.IssueRepository
-	Habits           *repositories.HabitRepository
-	HabitCompletions *repositories.HabitCompletionRepository
-	Sessions         *repositories.SessionRepository
-	Stash            *repositories.StashRepository
-	Ops              *repositories.OpRepository
-	CoreSettings     *repositories.CoreSettingsRepository
-	AlertReminders   *repositories.AlertReminderRepository
-	SessionSegments  *repositories.SessionSegmentRepository
-	ActiveContext    *repositories.ActiveContextRepository
-	DailyCheckIns    *repositories.DailyCheckInRepository
-	DailyPlans       *repositories.DailyPlanRepository
+	Repos                        *repositories.RepoRepository
+	Streams                      *repositories.StreamRepository
+	Issues                       *repositories.IssueRepository
+	Habits                       *repositories.HabitRepository
+	HabitCompletions             *repositories.HabitCompletionRepository
+	Sessions                     *repositories.SessionRepository
+	Stash                        *repositories.StashRepository
+	Ops                          *repositories.OpRepository
+	CoreSettings                 *repositories.CoreSettingsRepository
+	AlertReminders               *repositories.AlertReminderRepository
+	SessionSegments              *repositories.SessionSegmentRepository
+	ActiveContext                *repositories.ActiveContextRepository
+	DailyCheckIns                *repositories.DailyCheckInRepository
+	DailyPlans                   *repositories.DailyPlanRepository
+	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 }
 
 func Open(dbPath string) (*Store, error) {
@@ -44,19 +45,20 @@ func ClearAllData(ctx context.Context, db *bun.DB) error {
 
 func NewRegistry(db *bun.DB) *Registry {
 	return &Registry{
-		Repos:            repositories.NewRepoRepository(db),
-		Streams:          repositories.NewStreamRepository(db),
-		Issues:           repositories.NewIssueRepository(db),
-		Habits:           repositories.NewHabitRepository(db),
-		HabitCompletions: repositories.NewHabitCompletionRepository(db),
-		Sessions:         repositories.NewSessionRepository(db),
-		Stash:            repositories.NewStashRepository(db),
-		Ops:              repositories.NewOpRepository(db),
-		CoreSettings:     repositories.NewCoreSettingsRepository(db),
-		AlertReminders:   repositories.NewAlertReminderRepository(db),
-		SessionSegments:  repositories.NewSessionSegmentRepository(db),
-		ActiveContext:    repositories.NewActiveContextRepository(db),
-		DailyCheckIns:    repositories.NewDailyCheckInRepository(db),
-		DailyPlans:       repositories.NewDailyPlanRepository(db),
+		Repos:                        repositories.NewRepoRepository(db),
+		Streams:                      repositories.NewStreamRepository(db),
+		Issues:                       repositories.NewIssueRepository(db),
+		Habits:                       repositories.NewHabitRepository(db),
+		HabitCompletions:             repositories.NewHabitCompletionRepository(db),
+		Sessions:                     repositories.NewSessionRepository(db),
+		Stash:                        repositories.NewStashRepository(db),
+		Ops:                          repositories.NewOpRepository(db),
+		CoreSettings:                 repositories.NewCoreSettingsRepository(db),
+		AlertReminders:               repositories.NewAlertReminderRepository(db),
+		SessionSegments:              repositories.NewSessionSegmentRepository(db),
+		ActiveContext:                repositories.NewActiveContextRepository(db),
+		DailyCheckIns:                repositories.NewDailyCheckInRepository(db),
+		DailyPlans:                   repositories.NewDailyPlanRepository(db),
+		CustomHabitMomentumSnapshots: repositories.NewCustomHabitMomentumSnapshotRepository(db),
 	}
 }

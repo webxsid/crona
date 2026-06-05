@@ -284,16 +284,10 @@ func BuildDailyReportData(
 		return nil, err
 	}
 	streaks := corecommands.ComputeMetricsStreaksFromDays(days, settings)
-	habitHistory, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
+	streaks.CustomHabitStreaks, err = corecommands.ComputeCustomHabitStreakSnapshot(ctx, c, date)
 	if err != nil {
 		return nil, err
 	}
-	streaks.CustomHabitStreaks = corecommands.ComputeCustomHabitStreaks(
-		habitHistory,
-		date,
-		date,
-		settings,
-	)
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
 		copy := days[len(days)-1]

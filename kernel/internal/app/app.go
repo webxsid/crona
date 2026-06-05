@@ -75,6 +75,9 @@ func Run(ctx context.Context) (runErr error) {
 	if err := commandCtx.InitDefaults(runCtx); err != nil {
 		return fmt.Errorf("init command defaults: %w", err)
 	}
+	if err := corecommands.SeedCustomHabitMomentumSnapshot(runCtx, commandCtx); err != nil {
+		return fmt.Errorf("seed custom habit momentum snapshot: %w", err)
+	}
 	telemetryConfig := sharedposthog.LoadConfig("kernel")
 	telemetryConfig.Version = versionpkg.Current()
 	telemetryConfig.Mode = appEnv.Mode

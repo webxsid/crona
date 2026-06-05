@@ -312,3 +312,15 @@ type DailyPlanEventModel struct {
 	Payload       string  `bun:"payload,notnull,type:text"`
 	Timestamp     string  `bun:"timestamp,notnull,type:text"`
 }
+
+type CustomHabitMomentumSnapshotModel struct {
+	bun.BaseModel `bun:"table:custom_habit_momentum_snapshots"`
+
+	ID          string `bun:"id,pk,type:text"`
+	UserID      string `bun:"user_id,notnull,type:text"`
+	Date        string `bun:"date,notnull,type:text"`
+	SummaryJSON string `bun:"summary_json,notnull,type:text"`
+	StateJSON   string `bun:"state_json,notnull,type:text"`
+	CreatedAt   string `bun:"created_at,notnull,type:text"`
+	UpdatedAt   string `bun:"updated_at,notnull,type:text"`
+}

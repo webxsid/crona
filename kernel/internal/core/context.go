@@ -10,22 +10,23 @@ import (
 )
 
 type Context struct {
-	Store            *store.Store
-	Repos            *repositories.RepoRepository
-	Streams          *repositories.StreamRepository
-	Issues           *repositories.IssueRepository
-	Habits           *repositories.HabitRepository
-	HabitCompletions *repositories.HabitCompletionRepository
-	Sessions         *repositories.SessionRepository
-	Stash            *repositories.StashRepository
-	Ops              *repositories.OpRepository
-	Health           *health.Service
-	CoreSettings     *repositories.CoreSettingsRepository
-	AlertReminders   *repositories.AlertReminderRepository
-	SessionSegments  *repositories.SessionSegmentRepository
-	ActiveContext    *repositories.ActiveContextRepository
-	DailyCheckIns    *repositories.DailyCheckInRepository
-	DailyPlans       *repositories.DailyPlanRepository
+	Store                        *store.Store
+	Repos                        *repositories.RepoRepository
+	Streams                      *repositories.StreamRepository
+	Issues                       *repositories.IssueRepository
+	Habits                       *repositories.HabitRepository
+	HabitCompletions             *repositories.HabitCompletionRepository
+	Sessions                     *repositories.SessionRepository
+	Stash                        *repositories.StashRepository
+	Ops                          *repositories.OpRepository
+	Health                       *health.Service
+	CoreSettings                 *repositories.CoreSettingsRepository
+	AlertReminders               *repositories.AlertReminderRepository
+	SessionSegments              *repositories.SessionSegmentRepository
+	ActiveContext                *repositories.ActiveContextRepository
+	DailyCheckIns                *repositories.DailyCheckInRepository
+	DailyPlans                   *repositories.DailyPlanRepository
+	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 
 	UserID     string
 	DeviceID   string
@@ -44,27 +45,28 @@ func NewContext(
 	bus *events.Bus,
 ) *Context {
 	return &Context{
-		Store:            db,
-		Repos:            registry.Repos,
-		Streams:          registry.Streams,
-		Issues:           registry.Issues,
-		Habits:           registry.Habits,
-		HabitCompletions: registry.HabitCompletions,
-		Sessions:         registry.Sessions,
-		Stash:            registry.Stash,
-		Ops:              registry.Ops,
-		Health:           health.NewService(db.Ping),
-		CoreSettings:     registry.CoreSettings,
-		AlertReminders:   registry.AlertReminders,
-		SessionSegments:  registry.SessionSegments,
-		ActiveContext:    registry.ActiveContext,
-		DailyCheckIns:    registry.DailyCheckIns,
-		DailyPlans:       registry.DailyPlans,
-		UserID:           userID,
-		DeviceID:         deviceID,
-		ScratchDir:       scratchDir,
-		Now:              now,
-		Events:           bus,
+		Store:                        db,
+		Repos:                        registry.Repos,
+		Streams:                      registry.Streams,
+		Issues:                       registry.Issues,
+		Habits:                       registry.Habits,
+		HabitCompletions:             registry.HabitCompletions,
+		Sessions:                     registry.Sessions,
+		Stash:                        registry.Stash,
+		Ops:                          registry.Ops,
+		Health:                       health.NewService(db.Ping),
+		CoreSettings:                 registry.CoreSettings,
+		AlertReminders:               registry.AlertReminders,
+		SessionSegments:              registry.SessionSegments,
+		ActiveContext:                registry.ActiveContext,
+		DailyCheckIns:                registry.DailyCheckIns,
+		DailyPlans:                   registry.DailyPlans,
+		CustomHabitMomentumSnapshots: registry.CustomHabitMomentumSnapshots,
+		UserID:                       userID,
+		DeviceID:                     deviceID,
+		ScratchDir:                   scratchDir,
+		Now:                          now,
+		Events:                       bus,
 	}
 }
 

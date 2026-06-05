@@ -30,6 +30,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.DailyPlanModel)(nil),
 		(*storemodels.DailyPlanEntryModel)(nil),
 		(*storemodels.DailyPlanEventModel)(nil),
+		(*storemodels.CustomHabitMomentumSnapshotModel)(nil),
 	}
 
 	for _, model := range models {
@@ -197,6 +198,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_plan_entries_plan_issue ON daily_plan_entries (plan_id, issue_id)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_entry_id ON daily_plan_events (plan_entry_id)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_user_id ON daily_plan_events (user_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_habit_momentum_snapshots_user_date ON custom_habit_momentum_snapshots (user_id, date)",
 	}
 
 	for _, stmt := range indexes {
