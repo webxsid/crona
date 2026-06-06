@@ -152,10 +152,6 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 			deps.OpenEditDateDisplayFormatDialog(&s)
 		}
 		return s, nil, true
-	case "Habit Streaks":
-		s.ActiveView = uistate.ViewMomentum
-		s.ActivePane = uistate.DefaultPane(uistate.ViewMomentum)
-		return s, nil, true
 	case "Rest & Streak Protection":
 		deps.OpenEditRestProtectionDialog(&s)
 		return s, nil, true

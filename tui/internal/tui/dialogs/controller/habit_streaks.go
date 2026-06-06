@@ -6,7 +6,6 @@ import (
 
 	sharedtypes "crona/shared/types"
 
-	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -20,21 +19,6 @@ const (
 	habitStreakDetailRowCount
 )
 
-func updateHabitStreaks(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch state.HabitStreakStep {
-	case 0:
-		return updateHabitStreakManager(state, msg)
-	case 1:
-		return updateHabitStreakDetails(state, msg)
-	case 2:
-		return updateHabitStreakHabits(state, msg)
-	case 3:
-		return updateHabitStreakReview(state, msg)
-	default:
-		return state, nil, ""
-	}
-}
-
 func isMomentumDialogKind(kind string) bool {
 	switch kind {
 	case "create_momentum", "edit_momentum":
@@ -44,59 +28,17 @@ func isMomentumDialogKind(kind string) bool {
 	}
 }
 
-func updateHabitStreakManager(state State, msg tea.KeyMsg) (State, *Action, string) {
-	total := len(state.HabitStreakDefs) + 1
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "j", "down":
-		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, 1)
-	case "k", "up":
-		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, -1)
-	case "n", "a":
-		return openHabitStreakEditor(state, -1, sharedtypes.HabitStreakDefinition{
-			Enabled:       true,
-			Period:        sharedtypes.HabitStreakPeriodDay,
-			RequiredCount: 1,
-		}), nil, ""
-	case "x", " ":
-		if state.HabitStreakCursor < len(state.HabitStreakDefs) {
-			state.HabitStreakDefs[state.HabitStreakCursor].Enabled = !state.HabitStreakDefs[state.HabitStreakCursor].Enabled
-		}
-	case "d", "backspace", "delete":
-		if state.HabitStreakCursor < len(state.HabitStreakDefs) {
-			idx := state.HabitStreakCursor
-			state.HabitStreakDefs = append(
-				state.HabitStreakDefs[:idx],
-				state.HabitStreakDefs[idx+1:]...)
-			if state.HabitStreakCursor >= len(state.HabitStreakDefs) &&
-				state.HabitStreakCursor > 0 {
-				state.HabitStreakCursor--
-			}
-		}
-	case "enter":
-		if state.HabitStreakCursor >= len(state.HabitStreakDefs) {
-			return openHabitStreakEditor(state, -1, sharedtypes.HabitStreakDefinition{
-				Enabled:       true,
-				Period:        sharedtypes.HabitStreakPeriodDay,
-				RequiredCount: 1,
-			}), nil, ""
-		}
-		return openHabitStreakEditor(
-			state,
-			state.HabitStreakCursor,
-			state.HabitStreakDefs[state.HabitStreakCursor],
-		), nil, ""
+func updateHabitStreaks(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch state.HabitStreakStep {
+	case 1:
+		return updateHabitStreakDetails(state, msg)
+	case 2:
+		return updateHabitStreakHabits(state, msg)
+	case 3:
+		return updateHabitStreakReview(state, msg)
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
-			return Close(state), &Action{
-				Kind:                    "sync_habit_streaks",
-				PreviousHabitStreakDefs: append([]sharedtypes.HabitStreakDefinition(nil), state.HabitStreakOriginalDefs...),
-				HabitStreakDefs:         sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs),
-			}, ""
-		}
+		return state, nil, ""
 	}
-	return clearDialogError(state), nil, ""
 }
 
 func openHabitStreakEditor(state State, idx int, def sharedtypes.HabitStreakDefinition) State {
@@ -127,7 +69,7 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 	row := habitStreakDetailRowForFocus(momentumMode, state.FocusIdx)
 	switch msg.String() {
 	case "esc":
-		return habitStreakBackToManager(state), nil, ""
+		return Close(state), nil, ""
 	case "tab":
 		if row == habitStreakDetailRowCount {
 			return moveHabitStreakToHabitSelection(state)
@@ -212,7 +154,9 @@ func updateHabitStreakHabits(state State, msg tea.KeyMsg) (State, *Action, strin
 	if total == 0 {
 		switch msg.String() {
 		case "esc":
-			return habitStreakBackToManager(state), nil, ""
+			state.HabitStreakStep = 1
+			state = habitStreakSetDetailFocus(state, habitStreakDetailRowCount)
+			return state, nil, ""
 		case "enter", "tab":
 			state.HabitStreakStep = 3
 			return state, nil, ""
@@ -221,7 +165,9 @@ func updateHabitStreakHabits(state State, msg tea.KeyMsg) (State, *Action, strin
 	}
 	switch msg.String() {
 	case "esc":
-		return habitStreakBackToManager(state), nil, ""
+		state.HabitStreakStep = 1
+		state = habitStreakSetDetailFocus(state, habitStreakDetailRowCount)
+		return state, nil, ""
 	case "j", "down":
 		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, 1)
 	case "k", "up":
@@ -250,7 +196,9 @@ func updateHabitStreakHabits(state State, msg tea.KeyMsg) (State, *Action, strin
 func updateHabitStreakReview(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
-		return habitStreakBackToManager(state), nil, ""
+		state.HabitStreakStep = 2
+		state.HabitStreakCursor = 0
+		return state, nil, ""
 	case "shift+tab", "left", "h":
 		state.HabitStreakStep = 2
 		return state, nil, ""
@@ -267,35 +215,10 @@ func updateHabitStreakReview(state State, msg tea.KeyMsg) (State, *Action, strin
 					HabitStreakDefs: []sharedtypes.HabitStreakDefinition{draft},
 				}, ""
 			}
-			defs := append([]sharedtypes.HabitStreakDefinition(nil), state.HabitStreakDefs...)
-			if state.HabitStreakEditIdx >= 0 && state.HabitStreakEditIdx < len(defs) {
-				defs[state.HabitStreakEditIdx] = draft
-			} else {
-				defs = append(defs, draft)
-			}
-			state.HabitStreakDefs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
-			state.HabitStreakStep = 0
-			state.HabitStreakCursor = 0
-			state.HabitStreakEditIdx = -1
-			state.Inputs = nil
-			state.FocusIdx = 0
-			return clearDialogError(state), nil, ""
+			return Close(state), nil, ""
 		}
 	}
 	return clearDialogError(state), nil, ""
-}
-
-func habitStreakBackToManager(state State) State {
-	state.HabitStreakStep = 0
-	state.HabitStreakCursor = 0
-	state.HabitStreakEditIdx = -1
-	state.Inputs = nil
-	state.Description = textarea.Model{}
-	state.DescriptionEnabled = false
-	state.DescriptionIndex = 0
-	state.FocusIdx = 0
-	state.ErrorMessage = ""
-	return state
 }
 
 func nextHabitStreakPeriod(

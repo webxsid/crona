@@ -558,10 +558,6 @@ func (m Model) openEditTelemetrySettingsDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditTelemetrySettings())
 }
 
-func (m Model) openEditHabitStreaksDialog() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenEditHabitStreaks())
-}
-
 func (m Model) openCreateMomentumDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenCreateMomentumDirect())
 }
@@ -894,16 +890,6 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.DeleteMomentumDefinition(
 				m.client,
 				id,
-				dashboardDate,
-				momentumDate,
-				momentumWindowDays,
-			)
-		},
-		SyncHabitStreakDefinitions: func(previous, current []sharedtypes.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
-			return commands.SyncHabitStreakDefinitions(
-				m.client,
-				previous,
-				current,
 				dashboardDate,
 				momentumDate,
 				momentumWindowDays,

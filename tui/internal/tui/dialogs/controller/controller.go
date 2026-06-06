@@ -27,53 +27,52 @@ type UpdateContext struct {
 }
 
 type Action struct {
-	Kind                    string
-	TargetView              string
-	ReportKind              sharedtypes.ExportReportKind
-	ReportFormat            sharedtypes.ExportFormat
-	OutputMode              sharedtypes.ExportOutputMode
-	PresetID                string
-	ID                      string
-	RepoID                  int64
-	StreamID                int64
-	IssueID                 int64
-	HabitID                 int64
-	Name                    string
-	Path                    string
-	CheckInDate             string
-	RepoName                string
-	StreamName              string
-	Title                   string
-	Description             *string
-	Status                  string
-	Weekdays                []int
-	Active                  bool
-	Estimate                *int
-	DueDate                 *string
-	Note                    *string
-	ReminderKind            sharedtypes.AlertReminderKind
-	ReminderSchedule        sharedtypes.AlertReminderScheduleType
-	ReminderTimeHHMM        string
-	SettingKey              sharedtypes.CoreSettingsKey
-	StringList              []string
-	IntList                 []int
-	StreakKinds             []string
-	PreviousHabitStreakDefs []sharedtypes.HabitStreakDefinition
-	HabitStreakDefs         []sharedtypes.HabitStreakDefinition
-	RestDates               []string
-	UsageTelemetry          bool
-	ErrorReporting          bool
-	RestartAfterSave        bool
-	OnboardingDone          bool
-	Mood                    int
-	Energy                  int
-	SleepHours              *float64
-	SleepScore              *int
-	ScreenTimeMinutes       *int
-	Payload                 shareddto.EndSessionRequest
-	ManualSession           *shareddto.ManualSessionLogRequest
-	TimerStart              *shareddto.TimerStartRequest
-	AdditionalSeconds       int
+	Kind              string
+	TargetView        string
+	ReportKind        sharedtypes.ExportReportKind
+	ReportFormat      sharedtypes.ExportFormat
+	OutputMode        sharedtypes.ExportOutputMode
+	PresetID          string
+	ID                string
+	RepoID            int64
+	StreamID          int64
+	IssueID           int64
+	HabitID           int64
+	Name              string
+	Path              string
+	CheckInDate       string
+	RepoName          string
+	StreamName        string
+	Title             string
+	Description       *string
+	Status            string
+	Weekdays          []int
+	Active            bool
+	Estimate          *int
+	DueDate           *string
+	Note              *string
+	ReminderKind      sharedtypes.AlertReminderKind
+	ReminderSchedule  sharedtypes.AlertReminderScheduleType
+	ReminderTimeHHMM  string
+	SettingKey        sharedtypes.CoreSettingsKey
+	StringList        []string
+	IntList           []int
+	StreakKinds       []string
+	HabitStreakDefs   []sharedtypes.HabitStreakDefinition
+	RestDates         []string
+	UsageTelemetry    bool
+	ErrorReporting    bool
+	RestartAfterSave  bool
+	OnboardingDone    bool
+	Mood              int
+	Energy            int
+	SleepHours        *float64
+	SleepScore        *int
+	ScreenTimeMinutes *int
+	Payload           shareddto.EndSessionRequest
+	ManualSession     *shareddto.ManualSessionLogRequest
+	TimerStart        *shareddto.TimerStartRequest
+	AdditionalSeconds int
 }
 
 func Close(state State) State {
@@ -379,7 +378,7 @@ func Update(
 		})
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
-	case "edit_habit_streaks", "edit_habit_streak_single", "create_momentum", "edit_momentum":
+	case "create_momentum", "edit_momentum":
 		return updateHabitStreaks(state, msg)
 	case "edit_telemetry_settings":
 		return updateTelemetrySettings(state, msg)

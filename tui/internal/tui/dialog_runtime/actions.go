@@ -47,7 +47,6 @@ type Deps struct {
 	CreateMomentumDefinition       func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
 	UpdateMomentumDefinition       func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
 	DeleteMomentumDefinition       func(id string, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
-	SyncHabitStreakDefinitions     func(previous, current []sharedtypes.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
 	PatchTelemetrySettings         func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
 	CompleteOnboarding             func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
 	CreateAlertReminder            func(input shareddto.AlertReminderCreateRequest) tea.Cmd
@@ -218,18 +217,6 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		}
 		return deps.UpdateMomentumDefinition(
 			api.HabitStreakDefinition(action.HabitStreakDefs[0]),
-			state.DashboardDate,
-			state.MomentumDate,
-			state.MomentumWindowDays,
-		)
-	})
-	r.Register("sync_habit_streaks", func(action dialogstate.Action) tea.Cmd {
-		if deps.SyncHabitStreakDefinitions == nil {
-			return missingRuntimeHookCmd("sync_habit_streaks")
-		}
-		return deps.SyncHabitStreakDefinitions(
-			action.PreviousHabitStreakDefs,
-			action.HabitStreakDefs,
 			state.DashboardDate,
 			state.MomentumDate,
 			state.MomentumWindowDays,

@@ -125,7 +125,7 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	}
 
 	rendered := Render(testTheme(), state)
-	if !strings.Contains(rendered, "Disabled") {
+	if !strings.Contains(rendered, "Inactive") {
 		t.Fatalf("expected disabled badge in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "paused") {
@@ -142,7 +142,7 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	}
 }
 
-func TestRenderUsesHeatmapForDailyCadence(t *testing.T) {
+func TestRenderUsesSquareGridForDailyCadence(t *testing.T) {
 	state := types.ContentState{
 		View:   "momentum",
 		Pane:   "momentum_cards",
@@ -226,9 +226,9 @@ func TestMomentumBucketBarUsesTargetWidthUntilOverflow(t *testing.T) {
 	}
 }
 
-func TestMomentumDailyHeatmapUsesCompactHeaderWhenNarrow(t *testing.T) {
+func TestMomentumDailySquaresStayCompactWhenNarrow(t *testing.T) {
 	series := dailyMomentumSeries(time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 0, 1, 1}, 1)
-	rendered := renderMomentumDailyHeatmap(testTheme(), series, 20, true)
+	rendered := renderMomentumDailySquares(testTheme(), series, 20, true)
 	if strings.Contains(rendered, "Scale") || strings.Contains(rendered, "Mon Tue") {
 		t.Fatalf("did not expect calendar headers or scale in daily square render, got %q", rendered)
 	}

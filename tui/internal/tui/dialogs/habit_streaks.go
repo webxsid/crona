@@ -12,12 +12,8 @@ import (
 
 func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 	momentumMode := isMomentumDialogKind(state.Kind)
-	steps := []string{"Manage", "Details", "Habits", "Review"}
-	activeStep := state.HabitStreakStep
-	if momentumMode {
-		steps = []string{"Details", "Habits", "Review"}
-		activeStep = max(0, state.HabitStreakStep-1)
-	}
+	steps := []string{"Details", "Habits", "Review"}
+	activeStep := max(0, state.HabitStreakStep-1)
 	progress := make([]string, 0, len(steps))
 	for i, step := range steps {
 		label := fmt.Sprintf("%d.%s", i+1, step)
@@ -34,49 +30,6 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 		"",
 	}
 	switch state.HabitStreakStep {
-	case 0:
-		rows = append(rows, theme.StyleDim.Render("Create and manage named habit streaks"))
-		if len(state.HabitStreakDefs) == 0 {
-			rows = append(rows, theme.StyleDim.Render("No custom streaks configured"))
-		}
-		for i, def := range state.HabitStreakDefs {
-			prefix := "  "
-			if i == state.HabitStreakCursor {
-				prefix = viewchrome.SelectionCursor + " "
-			}
-			status := "off"
-			if def.Enabled {
-				status = "on"
-			}
-			line := fmt.Sprintf(
-				"%s%s  %s  %s  %d/%s  %d habits",
-				prefix,
-				fallback(def.Name, "(unnamed)"),
-				status,
-				habitStreakPeriodLabel(def.Period),
-				max(1, def.RequiredCount),
-				strings.ToLower(habitStreakPeriodLabel(def.Period)),
-				len(def.HabitIDs),
-			)
-			if i == state.HabitStreakCursor {
-				rows = append(rows, theme.StyleCursor.Render(line))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render(line))
-			}
-		}
-		createLine := "  + Create new streak"
-		if state.HabitStreakCursor == len(state.HabitStreakDefs) {
-			createLine = viewchrome.SelectionCursor + " + Create new streak"
-			rows = append(rows, theme.StyleCursor.Render(createLine))
-		} else {
-			rows = append(rows, theme.StyleNormal.Render(createLine))
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			dialogSubmitHint(state, "save")+"   [enter] edit   [n] new   [x] toggle   [d] delete",
-		)
 	case 1:
 		nameLabel := "Name"
 		if momentumMode {

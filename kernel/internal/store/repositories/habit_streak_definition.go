@@ -17,6 +17,16 @@ type HabitStreakDefinitionRepository struct {
 	db *bun.DB
 }
 
+type habitStreakDefinitionRow struct {
+	ID            string  `bun:"id"`
+	Name          string  `bun:"name"`
+	Description   *string `bun:"description"`
+	Enabled       bool    `bun:"enabled"`
+	Period        string  `bun:"period"`
+	RequiredCount int     `bun:"required_count"`
+	HabitID       *int64  `bun:"habit_id"`
+}
+
 func NewHabitStreakDefinitionRepository(db *bun.DB) *HabitStreakDefinitionRepository {
 	return &HabitStreakDefinitionRepository{db: db}
 }
@@ -25,17 +35,36 @@ func (r *HabitStreakDefinitionRepository) List(
 	ctx context.Context,
 	userID string,
 ) ([]sharedtypes.HabitStreakDefinition, error) {
-	type row struct {
-		ID            string  `bun:"id"`
-		Name          string  `bun:"name"`
-		Description   *string `bun:"description"`
-		Enabled       bool    `bun:"enabled"`
-		Period        string  `bun:"period"`
-		RequiredCount int     `bun:"required_count"`
-		HabitID       *int64  `bun:"habit_id"`
+	rows, err := r.selectDefinitionRows(ctx, userID, "")
+	if err != nil {
+		return nil, err
 	}
-	var rows []row
-	if err := r.db.NewSelect().
+	return assembleHabitStreakDefinitions(rows), nil
+}
+
+func (r *HabitStreakDefinitionRepository) GetByID(
+	ctx context.Context,
+	userID string,
+	id string,
+) (*sharedtypes.HabitStreakDefinition, error) {
+	rows, err := r.selectDefinitionRows(ctx, userID, id)
+	if err != nil {
+		return nil, err
+	}
+	defs := assembleHabitStreakDefinitions(rows)
+	if len(defs) == 0 {
+		return nil, nil
+	}
+	return &defs[0], nil
+}
+
+func (r *HabitStreakDefinitionRepository) selectDefinitionRows(
+	ctx context.Context,
+	userID string,
+	id string,
+) ([]habitStreakDefinitionRow, error) {
+	var rows []habitStreakDefinitionRow
+	query := r.db.NewSelect().
 		TableExpr("momentums AS m").
 		ColumnExpr("m.id").
 		ColumnExpr("m.name").
@@ -46,14 +75,21 @@ func (r *HabitStreakDefinitionRepository) List(
 		ColumnExpr("mh.habit_id").
 		Join("LEFT JOIN momentum_habits AS mh ON mh.momentum_id = m.id AND mh.user_id = m.user_id").
 		Where("m.user_id = ?", userID).
-		Where("m.deleted_at IS NULL").
-		OrderExpr("m.created_at ASC, mh.habit_id ASC").
-		Scan(ctx, &rows); err != nil {
+		Where("m.deleted_at IS NULL")
+	if strings.TrimSpace(id) != "" {
+		query = query.Where("m.id = ?", id).OrderExpr("mh.habit_id ASC")
+	} else {
+		query = query.OrderExpr("m.created_at ASC, mh.habit_id ASC")
+	}
+	if err := query.Scan(ctx, &rows); err != nil {
 		return nil, err
 	}
+	return rows, nil
+}
 
-	defsByID := map[string]*sharedtypes.HabitStreakDefinition{}
-	order := make([]string, 0)
+func assembleHabitStreakDefinitions(rows []habitStreakDefinitionRow) []sharedtypes.HabitStreakDefinition {
+	defsByID := make(map[string]*sharedtypes.HabitStreakDefinition, len(rows))
+	order := make([]string, 0, len(rows))
 	for _, row := range rows {
 		def, ok := defsByID[row.ID]
 		if !ok {
@@ -73,30 +109,11 @@ func (r *HabitStreakDefinitionRepository) List(
 			def.HabitIDs = append(def.HabitIDs, *row.HabitID)
 		}
 	}
-
-	out := make([]sharedtypes.HabitStreakDefinition, 0, len(order))
-	for _, id := range order {
-		out = append(out, sharedtypes.NormalizeHabitStreakDefinition(*defsByID[id]))
+	defs := make([]sharedtypes.HabitStreakDefinition, 0, len(order))
+	for _, rowID := range order {
+		defs = append(defs, sharedtypes.NormalizeHabitStreakDefinition(*defsByID[rowID]))
 	}
-	return sharedtypes.NormalizeHabitStreakDefinitions(out), nil
-}
-
-func (r *HabitStreakDefinitionRepository) GetByID(
-	ctx context.Context,
-	userID string,
-	id string,
-) (*sharedtypes.HabitStreakDefinition, error) {
-	defs, err := r.List(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	for _, def := range defs {
-		if def.ID == id {
-			item := def
-			return &item, nil
-		}
-	}
-	return nil, nil
+	return sharedtypes.NormalizeHabitStreakDefinitions(defs)
 }
 
 func (r *HabitStreakDefinitionRepository) Create(

@@ -30,7 +30,7 @@ func ComputeCustomHabitStreakSnapshot(
 	c *core.Context,
 	throughDate string,
 ) ([]sharedtypes.CustomHabitStreakSummary, error) {
-	snapshot, err := ensureCustomHabitMomentumSnapshot(ctx, c, throughDate)
+	snapshot, err := ensureCustomHabitMomentumSnapshot(ctx, c, throughDate, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func SeedCustomHabitMomentumSnapshot(ctx context.Context, c *core.Context) error
 	if err != nil {
 		return err
 	}
-	_, err = ensureCustomHabitMomentumSnapshot(ctx, c, yesterday)
+	_, err = ensureCustomHabitMomentumSnapshot(ctx, c, yesterday, nil, nil)
 	return err
 }
 
@@ -84,13 +84,18 @@ func ensureCustomHabitMomentumSnapshot(
 	ctx context.Context,
 	c *core.Context,
 	throughDate string,
+	defs []sharedtypes.HabitStreakDefinition,
+	countsByDate map[string]map[string]int,
 ) (*customHabitMomentumSnapshot, error) {
 	if !isISODate(throughDate) {
 		return nil, errors.New("date must be YYYY-MM-DD")
 	}
-	defs, err := c.HabitStreakDefinitions.List(ctx, c.UserID)
-	if err != nil {
-		return nil, err
+	var err error
+	if defs == nil {
+		defs, err = c.HabitStreakDefinitions.List(ctx, c.UserID)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(defs) == 0 {
 		return &customHabitMomentumSnapshot{summaries: nil, state: customHabitMomentumSnapshotState{}}, nil
@@ -135,12 +140,12 @@ func ensureCustomHabitMomentumSnapshot(
 		startDate = throughDate
 	}
 	persistEveryDay := prev != nil
-
-	history, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
-	if err != nil {
-		return nil, err
+	if countsByDate == nil {
+		countsByDate, err = loadCustomHabitMomentumCountsByDate(ctx, c, defs, throughDate)
+		if err != nil {
+			return nil, err
+		}
 	}
-	countsByDate := buildCustomHabitCounts(history, defs, throughDate)
 	state := baseState
 	for day := startDate; day <= throughDate; day = nextISODate(day) {
 		state = advanceCustomHabitMomentumSnapshotState(state, day, countsByDate, defs)
@@ -155,6 +160,19 @@ func ensureCustomHabitMomentumSnapshot(
 		}
 	}
 	return nil, errors.New("failed to compute custom habit momentum snapshot")
+}
+
+func loadCustomHabitMomentumCountsByDate(
+	ctx context.Context,
+	c *core.Context,
+	defs []sharedtypes.HabitStreakDefinition,
+	throughDate string,
+) (map[string]map[string]int, error) {
+	history, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return buildCustomHabitCounts(history, defs, throughDate), nil
 }
 
 func decodeCustomHabitMomentumSnapshot(

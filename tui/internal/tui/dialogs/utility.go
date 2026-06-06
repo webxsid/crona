@@ -343,8 +343,6 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderTelemetrySettingsDialog(theme, state)
 	case "onboarding":
 		return renderOnboardingScreen(theme, state)
-	case "edit_habit_streaks":
-		return renderHabitStreakDialog(theme, state)
 	case "create_alert_reminder", "edit_alert_reminder":
 		title := "Add Check-In Reminder"
 		border := theme.ColorCyan

@@ -55,9 +55,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"manual_session":
 		matched = "session"
 		rendered = renderSessionDialog(theme, state)
-	case "edit_habit_streaks",
-		"edit_habit_streak_single",
-		"create_momentum",
+	case "create_momentum",
 		"edit_momentum":
 		matched = "habit_streaks"
 		rendered = renderHabitStreakDialog(theme, state)

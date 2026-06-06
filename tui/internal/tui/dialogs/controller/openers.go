@@ -178,18 +178,6 @@ func (s Snapshot) OpenEditCheckInForDate(date string) State {
 	return OpenEditCheckIn(s.Dialog, s.DailyCheckIn, date)
 }
 
-func (s Snapshot) OpenEditHabitStreaks() State {
-	return OpenEditHabitStreaks(s.Dialog, s.HabitStreakDefs, s.AllHabits)
-}
-
-func (s Snapshot) OpenCreateHabitStreakDirect() State {
-	return OpenCreateHabitStreakDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits)
-}
-
-func (s Snapshot) OpenEditHabitStreakDirect(def sharedtypes.HabitStreakDefinition) State {
-	return OpenEditHabitStreakDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits, def)
-}
-
 func (s Snapshot) OpenCreateMomentumDirect() State {
 	return OpenCreateMomentumDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits)
 }

@@ -36,10 +36,16 @@ func ListMomentumCards(
 	}
 	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
 
-	summaries, err := ComputeCustomHabitStreakSnapshot(ctx, c, endDate)
+	countsByDate, err := loadCustomHabitMomentumCountsByDate(ctx, c, defs, endDate)
 	if err != nil {
 		return nil, err
 	}
+
+	snapshot, err := ensureCustomHabitMomentumSnapshot(ctx, c, endDate, defs, countsByDate)
+	if err != nil {
+		return nil, err
+	}
+	summaries := snapshot.summaries
 	summaryByID := make(map[string]sharedtypes.CustomHabitStreakSummary, len(summaries))
 	for _, summary := range summaries {
 		summaryByID[summary.ID] = summary
@@ -53,12 +59,6 @@ func ListMomentumCards(
 	for _, habit := range habits {
 		habitNamesByID[habit.ID] = habit.Name
 	}
-
-	history, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
-	if err != nil {
-		return nil, err
-	}
-	countsByDate := buildCustomHabitCounts(history, defs, endDate)
 	startDate := shiftMomentumISODate(endDate, -(windowDays - 1))
 
 	out := make([]sharedtypes.MomentumCard, 0, len(defs))

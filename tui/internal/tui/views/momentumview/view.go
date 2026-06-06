@@ -16,32 +16,74 @@ import (
 
 func Render(theme types.Theme, state types.ContentState) string {
 	active := state.Pane == "momentum_cards"
-	topSection := []string{theme.StylePaneTitle.Render(momentumHeader(state))}
-	if state.Height >= 24 {
-		topSection = append(
-			topSection,
-			viewchrome.RenderActionLine(
-				theme,
-				state.Width-6,
-				viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane}),
-			),
-			"",
-		)
-	}
+	topSection := renderMomentumTopSection(theme, state)
 	if len(state.MomentumCards) == 0 {
-		lines := append([]string{}, topSection...)
-		lines = append(
-			lines,
-			theme.StyleHeader.Render("No momentum definitions"),
-			theme.StyleDim.Render("Press [a] to create your first momentum."),
-		)
-		return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
+		return renderMomentumEmptyState(theme, state, active, topSection)
 	}
+	lines := renderMomentumCards(theme, state, active, topSection)
+	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
+}
 
+func momentumHeader(state types.ContentState) string {
+	return fmt.Sprintf("Momentum  %s  %dd window", state.MomentumDate, max(1, state.MomentumWindowDays))
+}
+
+func renderMomentumTopSection(theme types.Theme, state types.ContentState) []string {
+	topSection := []string{theme.StylePaneTitle.Render(momentumHeader(state))}
+	if state.Height < 24 {
+		return topSection
+	}
+	return append(
+		topSection,
+		viewchrome.RenderActionLine(
+			theme,
+			state.Width-6,
+			viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane}),
+		),
+		"",
+	)
+}
+
+func renderMomentumEmptyState(
+	theme types.Theme,
+	state types.ContentState,
+	active bool,
+	topSection []string,
+) string {
+	lines := append([]string{}, topSection...)
+	lines = append(
+		lines,
+		theme.StyleHeader.Render("No momentum definitions"),
+		theme.StyleDim.Render("Press [a] to create your first momentum."),
+	)
+	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
+}
+
+func renderMomentumCards(
+	theme types.Theme,
+	state types.ContentState,
+	active bool,
+	topSection []string,
+) []string {
 	cursor := state.Cursors["momentum_cards"]
 	lines := append([]string{}, topSection...)
 	availableCardLines := viewchrome.RemainingPaneHeight(state.Height, lines)
 	mode := chooseMomentumCardMode(theme, state, cursor, active, availableCardLines)
+	cardBodies, cardHeights := renderMomentumCardBodies(theme, state, cursor, active, mode)
+	if len(cardBodies) == 0 {
+		return lines
+	}
+	windowStart, windowEnd := momentumCardWindow(cursor, cardHeights, availableCardLines, len(cardBodies))
+	return appendMomentumCardWindow(lines, theme, cardBodies, windowStart, windowEnd)
+}
+
+func renderMomentumCardBodies(
+	theme types.Theme,
+	state types.ContentState,
+	cursor int,
+	active bool,
+	mode momentumCardMode,
+) ([]string, []int) {
 	cardBodies := make([]string, 0, len(state.MomentumCards))
 	cardHeights := make([]int, 0, len(state.MomentumCards))
 	for idx, card := range state.MomentumCards {
@@ -49,21 +91,20 @@ func Render(theme types.Theme, state types.ContentState) string {
 		cardBodies = append(cardBodies, rendered)
 		cardHeights = append(cardHeights, lipgloss.Height(rendered))
 	}
-	if len(cardBodies) == 0 {
-		return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
-	}
+	return cardBodies, cardHeights
+}
 
+func momentumCardWindow(cursor int, cardHeights []int, availableCardLines int, totalCards int) (int, int) {
 	windowStart, windowEnd := 0, 0
 	overflowHints := 0
 	for range 4 {
-		inner := availableCardLines - overflowHints
-		inner = max(inner, 1)
+		inner := max(availableCardLines-overflowHints, 1)
 		windowStart, windowEnd = visibleMomentumCardWindow(cursor, cardHeights, inner)
 		nextOverflowHints := 0
 		if windowStart > 0 {
 			nextOverflowHints++
 		}
-		if windowEnd < len(cardBodies) {
+		if windowEnd < totalCards {
 			nextOverflowHints++
 		}
 		if nextOverflowHints == overflowHints {
@@ -71,6 +112,16 @@ func Render(theme types.Theme, state types.ContentState) string {
 		}
 		overflowHints = nextOverflowHints
 	}
+	return windowStart, windowEnd
+}
+
+func appendMomentumCardWindow(
+	lines []string,
+	theme types.Theme,
+	cardBodies []string,
+	windowStart int,
+	windowEnd int,
+) []string {
 	if windowStart > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", windowStart)))
 	}
@@ -83,11 +134,7 @@ func Render(theme types.Theme, state types.ContentState) string {
 	if remaining := len(cardBodies) - windowEnd; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
-}
-
-func momentumHeader(state types.ContentState) string {
-	return fmt.Sprintf("Momentum  %s  %dd window", state.MomentumDate, max(1, state.MomentumWindowDays))
+	return lines
 }
 
 func renderCard(
@@ -99,35 +146,67 @@ func renderCard(
 	mode momentumCardMode,
 ) string {
 	def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
-	cardWidth := max(28, state.Width-8)
+	cardWidth, graphWidth := momentumCardWidths(state.Width)
+	body := renderCardBody(
+		theme,
+		def,
+		card,
+		renderMomentumCardTitle(theme, def, selected, graphWidth, mode),
+		graphWidth,
+		mode,
+	)
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(momentumCardBorderColor(theme, selected, active)).
+		Padding(1, 2).
+		Width(cardWidth).
+		Render(body)
+}
+
+func momentumCardWidths(totalWidth int) (int, int) {
+	cardWidth := max(28, totalWidth-8)
 	innerWidth := max(24, cardWidth-4)
-	graphWidth := max(20, innerWidth-2)
+	return cardWidth, max(20, innerWidth-2)
+}
+
+func renderMomentumCardTitle(
+	theme types.Theme,
+	def sharedtypes.HabitStreakDefinition,
+	selected bool,
+	graphWidth int,
+	mode momentumCardMode,
+) string {
 	prefix := "  "
 	if selected {
 		prefix = viewchrome.SelectionCursor + " "
 	}
-	status := theme.StyleDim.Render("Inactive")
-	if def.Enabled {
-		status = lipgloss.NewStyle().Foreground(theme.ColorGreen).Render("Active")
+	title := theme.StyleHeader.Render(viewhelpers.Truncate(prefix+def.Name, graphWidth))
+	if mode != momentumCardModeNormal {
+		return title
 	}
-	titleRow := theme.StyleHeader.Render(viewhelpers.Truncate(prefix+def.Name, innerWidth))
-	if mode == momentumCardModeNormal {
-		titleRow = lipgloss.JoinHorizontal(lipgloss.Left, titleRow, "  ", status)
-	}
-	body := renderCardBody(theme, def, card, titleRow, graphWidth, mode)
+	return lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		title,
+		"  ",
+		momentumCardStatus(theme, def.Enabled),
+	)
+}
 
-	border := theme.ColorDim
-	if selected && active {
-		border = theme.ColorCyan
-	} else if selected {
-		border = theme.ColorSubtle
+func momentumCardStatus(theme types.Theme, enabled bool) string {
+	if enabled {
+		return lipgloss.NewStyle().Foreground(theme.ColorGreen).Render("Active")
 	}
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(border).
-		Padding(1, 2).
-		Width(cardWidth).
-		Render(body)
+	return theme.StyleDim.Render("Inactive")
+}
+
+func momentumCardBorderColor(theme types.Theme, selected bool, active bool) lipgloss.Color {
+	if selected && active {
+		return theme.ColorCyan
+	}
+	if selected {
+		return theme.ColorSubtle
+	}
+	return theme.ColorDim
 }
 
 type momentumCardMode int
@@ -176,11 +255,28 @@ func renderCardBody(
 	graphWidth int,
 	mode momentumCardMode,
 ) string {
-	description := ""
-	if def.Description != nil {
-		description = strings.TrimSpace(*def.Description)
-	}
-	meta := theme.StyleNormal.Render(
+	meta := renderMomentumCardMeta(theme, def, card, graphWidth)
+	habits := renderMomentumCardHabits(theme, card.HabitNames, graphWidth)
+	timeline := renderMomentumSeries(theme, def.Period, card.Series, graphWidth, def.Enabled)
+	footnote := theme.StyleDim.Render(viewhelpers.Truncate(momentumSeriesFootnote(card.Series, def.Enabled), graphWidth))
+	return renderMomentumCardLayout(
+		titleRow,
+		renderMomentumCardDescription(theme, def.Description, graphWidth),
+		meta,
+		habits,
+		timeline,
+		footnote,
+		mode,
+	)
+}
+
+func renderMomentumCardMeta(
+	theme types.Theme,
+	def sharedtypes.HabitStreakDefinition,
+	card sharedtypes.MomentumCard,
+	graphWidth int,
+) string {
+	return theme.StyleNormal.Render(
 		viewhelpers.Truncate(
 			fmt.Sprintf(
 				"%s · target %d/%s · current streak %s · best %s",
@@ -193,14 +289,34 @@ func renderCardBody(
 			graphWidth,
 		),
 	)
-	habits := theme.StyleDim.Render(viewhelpers.Truncate("Habits: "+momentumHabitSummary(card.HabitNames), graphWidth))
-	timeline := renderMomentumSeries(theme, def.Period, card.Series, graphWidth, def.Enabled)
-	footnote := theme.StyleDim.Render(viewhelpers.Truncate(momentumSeriesFootnote(card.Series, def.Enabled), graphWidth))
-	descriptionRow := ""
-	if description != "" {
-		descriptionRow = theme.StyleDim.Render(viewhelpers.Truncate(description, graphWidth))
-	}
+}
 
+func renderMomentumCardDescription(theme types.Theme, description *string, graphWidth int) string {
+	if description == nil {
+		return ""
+	}
+	text := strings.TrimSpace(*description)
+	if text == "" {
+		return ""
+	}
+	return theme.StyleDim.Render(viewhelpers.Truncate(text, graphWidth))
+}
+
+func renderMomentumCardHabits(theme types.Theme, habitNames []string, graphWidth int) string {
+	return theme.StyleDim.Render(
+		viewhelpers.Truncate("Habits: "+momentumHabitSummary(habitNames), graphWidth),
+	)
+}
+
+func renderMomentumCardLayout(
+	titleRow string,
+	descriptionRow string,
+	meta string,
+	habits string,
+	timeline string,
+	footnote string,
+	mode momentumCardMode,
+) string {
 	switch mode {
 	case momentumCardModeCompact:
 		rows := []string{titleRow}
@@ -210,12 +326,7 @@ func renderCardBody(
 		rows = append(rows, meta, habits, timeline, footnote)
 		return strings.Join(rows, "\n")
 	case momentumCardModeUltraCompact:
-		return strings.Join([]string{
-			titleRow,
-			meta,
-			timeline,
-			footnote,
-		}, "\n")
+		return strings.Join([]string{titleRow, meta, timeline, footnote}, "\n")
 	default:
 		rows := []string{titleRow}
 		if descriptionRow != "" {
@@ -236,7 +347,7 @@ func renderMomentumSeries(
 	enabled bool,
 ) string {
 	if sharedtypes.NormalizeHabitStreakPeriod(period) == sharedtypes.HabitStreakPeriodDay {
-		return renderMomentumDailyHeatmap(theme, series, width, enabled)
+		return renderMomentumDailySquares(theme, series, width, enabled)
 	}
 	return renderMomentumBucketTimeline(theme, series, width, enabled)
 }
@@ -342,7 +453,7 @@ func renderMomentumBucketTimeline(
 	return strings.Join(rows, "\n")
 }
 
-func renderMomentumDailyHeatmap(
+func renderMomentumDailySquares(
 	theme types.Theme,
 	series []sharedtypes.MomentumSeriesPoint,
 	width int,
