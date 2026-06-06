@@ -103,7 +103,7 @@ func trendsBodyLines(
 	width int,
 	compact bool,
 ) []string {
-	return trendsBodyLinesWithStreaks(theme, state, width, compact, true)
+	return trendsBodyLinesWithStreaks(theme, state, width, compact, false)
 }
 
 func metricsBodyLines(

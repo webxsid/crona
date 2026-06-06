@@ -19,7 +19,7 @@ func TestRenderSummaryShowsMomentumBlock(t *testing.T) {
 
 	for _, want := range []string{
 		"Signals",
-		"Momentums",
+		"Streaks",
 		"Energy",
 		"Mood",
 		"Sleep",
@@ -48,7 +48,7 @@ func TestRenderSummaryOmitsSignalsBelowThreshold(t *testing.T) {
 	state := dailySummaryTestState()
 	lines := renderMomentumBlock(testTheme(), state, 120, 56)
 	rendered := ansi.Strip(strings.Join(lines, "\n"))
-	for _, want := range []string{"Momentums", "Check-ins", "Focus"} {
+	for _, want := range []string{"Streaks", "Check-ins", "Focus"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected compact momentum block to contain %q, got %#v", want, rendered)
 		}
@@ -62,7 +62,7 @@ func TestRenderSummaryUsesCompactMomentumBlockAtThreshold(t *testing.T) {
 	state := dailySummaryTestState()
 	lines := renderMomentumBlock(testTheme(), state, 120, 60)
 	rendered := ansi.Strip(strings.Join(lines, "\n"))
-	for _, want := range []string{"Signals", "Momentums", "Check-ins", "Focus", "|"} {
+	for _, want := range []string{"Signals", "Streaks", "Check-ins", "Focus", "|"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected compact momentum block to contain %q, got %#v", want, rendered)
 		}
@@ -82,7 +82,7 @@ func TestRenderSummaryUsesAverageSignalsWhenCheckInMissing(t *testing.T) {
 
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 
-	for _, want := range []string{"Signals", "Momentums", "avg 3.1/5", "avg 3.8/5", "avg 6h15m", "2h"} {
+	for _, want := range []string{"Signals", "Streaks", "avg 3.1/5", "avg 3.8/5", "avg 6h15m", "2h"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected daily summary to fall back to averages for %q, got %q", want, rendered)
 		}
@@ -114,7 +114,7 @@ func TestRenderSummaryOmitsMomentumWhenNoSignalData(t *testing.T) {
 
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 
-	for _, unwanted := range []string{"Signals", "Momentums"} {
+	for _, unwanted := range []string{"Signals", "Streaks"} {
 		if strings.Contains(rendered, unwanted) {
 			t.Fatalf("expected daily summary to omit %q when no signal data is present, got %q", unwanted, rendered)
 		}

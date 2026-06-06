@@ -18,12 +18,17 @@ import (
 func TestWideWellbeingSplitsMetricsAndStreaks(t *testing.T) {
 	state := splitTestState()
 	state.Height = 60
-	state.Pane = string(uistate.PaneWellbeingStreaks)
+	state.Pane = string(uistate.PaneWellbeingTrends)
 
 	rendered := ansi.Strip(Render(splitTestTheme(), state))
-	for _, want := range []string{"Metrics Window", "Momentum", "Signals (14d)", "Mood", "Energy", "Work", "Recovery", "Training", "▰"} {
+	for _, want := range []string{"Metrics Window", "Signals (14d)", "Mood", "Energy", "Work", "Recovery"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected wide wellbeing split to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"Momentum", "Custom Momentum"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected wide wellbeing split to omit %q, got %q", unwanted, rendered)
 		}
 	}
 	if !strings.ContainsFunc(rendered, func(r rune) bool { return r >= 0x2800 && r <= 0x28ff }) {
@@ -44,13 +49,15 @@ func TestMetricsBodyExcludesStreaksInSplitMode(t *testing.T) {
 func TestCombinedMetricsBodyKeepsStreaksForNarrowFallback(t *testing.T) {
 	state := splitTestState()
 	body := strings.Join(flattenLines(trendsBodyLines(splitTestTheme(), state, 92, false)), "\n")
-	for _, want := range []string{"Check-ins", "Focus", "Custom Momentum", "Training", "weekly", "current ·", "3d", "2w"} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("expected combined metrics fallback to include %q, got %q", want, body)
+	for _, unwanted := range []string{"Custom Momentum", "Training", "current ·", "Habit Streak"} {
+		if strings.Contains(body, unwanted) {
+			t.Fatalf("expected trends body to omit %q, got %q", unwanted, body)
 		}
 	}
-	if strings.Contains(body, "\nHabit Streak") {
-		t.Fatalf("expected generic habit streak row to be removed, got %q", body)
+	for _, want := range []string{"Signals (14d)", "Mood", "Energy"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected trends body to include %q, got %q", want, body)
+		}
 	}
 }
 
@@ -147,9 +154,9 @@ func TestStreaksPaneLineCountSupportsIndependentScrolling(t *testing.T) {
 			Longest: 12,
 		},
 	)
-	count := PaneLineCount(state, string(uistate.PaneWellbeingStreaks))
-	if count < 12 {
-		t.Fatalf("expected streaks pane line count to include custom streak rows, got %d", count)
+	count := PaneLineCount(state, "wellbeing_streaks")
+	if count != 0 {
+		t.Fatalf("expected removed streaks pane line count to be 0, got %d", count)
 	}
 }
 
@@ -166,7 +173,6 @@ func splitTestState() types.ContentState {
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
 			string(uistate.PaneWellbeingTrends):  0,
-			string(uistate.PaneWellbeingStreaks): 0,
 		},
 		MetricsRollup: &api.MetricsRollup{
 			Days:          14,

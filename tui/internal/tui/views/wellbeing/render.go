@@ -1,7 +1,6 @@
 package wellbeing
 
 import (
-	uistate "crona/tui/internal/tui/state"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 	viewui "crona/tui/internal/tui/views/ui"
@@ -19,9 +18,6 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	if state.Width >= 96 {
 		return renderSplit(theme, state)
-	}
-	if state.Pane == string(uistate.PaneWellbeingStreaks) {
-		return renderStreaks(theme, state, state.Width, state.Height, state.Height < 37)
 	}
 	if state.Height < 37 {
 		return renderCompact(theme, state)

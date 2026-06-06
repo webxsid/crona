@@ -149,9 +149,7 @@ func TestCustomHabitStreaksUseCalendarBucketsAndThresholds(t *testing.T) {
 		RequiredCount: 2,
 		HabitIDs:      []int64{walk.ID, journal.ID},
 	}}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set custom streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 
 	streaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-01", "2026-04-12")
 	if err != nil {
@@ -298,9 +296,7 @@ func TestLifetimeCustomHabitStreaksUseHistoryBeforeWellbeingWindow(t *testing.T)
 			HabitIDs:      []int64{habit.ID},
 		},
 	}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set custom streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 
 	windowStreaks, err := corecommands.ComputeMetricsStreaks(
 		ctx,
@@ -424,9 +420,7 @@ func TestCustomWeeklyAndMonthlyStreaksSurviveIncompleteOpenBucket(t *testing.T) 
 			HabitIDs:      []int64{monthlyHabit.ID},
 		},
 	}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set custom streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 
 	streaks, err := corecommands.ComputeMetricsLifetimeStreaks(ctx, coreCtx, "2026-03-10")
 	if err != nil {

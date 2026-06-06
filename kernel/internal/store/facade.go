@@ -29,6 +29,7 @@ type Registry struct {
 	DailyCheckIns                *repositories.DailyCheckInRepository
 	DailyPlans                   *repositories.DailyPlanRepository
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
+	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
 }
 
 func Open(dbPath string) (*Store, error) {
@@ -60,5 +61,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		DailyCheckIns:                repositories.NewDailyCheckInRepository(db),
 		DailyPlans:                   repositories.NewDailyPlanRepository(db),
 		CustomHabitMomentumSnapshots: repositories.NewCustomHabitMomentumSnapshotRepository(db),
+		HabitStreakDefinitions:       repositories.NewHabitStreakDefinitionRepository(db),
 	}
 }

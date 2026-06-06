@@ -51,7 +51,7 @@ func renderMomentumsBlock(theme types.Theme, state types.ContentState, width int
 		return nil
 	}
 
-	lines := []string{theme.StyleHeader.Render("Momentums")}
+	lines := []string{theme.StyleHeader.Render("Streaks")}
 	lines = append(lines, viewmomentum.CompactComparison(
 		theme,
 		"Check-ins",

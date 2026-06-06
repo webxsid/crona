@@ -6,6 +6,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -14,6 +15,7 @@ type habitStreakDetailRow int
 
 const (
 	habitStreakDetailRowName habitStreakDetailRow = iota
+	habitStreakDetailRowDescription
 	habitStreakDetailRowPeriod
 	habitStreakDetailRowCount
 )
@@ -30,6 +32,15 @@ func updateHabitStreaks(state State, msg tea.KeyMsg) (State, *Action, string) {
 		return updateHabitStreakReview(state, msg)
 	default:
 		return state, nil, ""
+	}
+}
+
+func isMomentumDialogKind(kind string) bool {
+	switch kind {
+	case "create_momentum", "edit_momentum":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -79,9 +90,9 @@ func updateHabitStreakManager(state State, msg tea.KeyMsg) (State, *Action, stri
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
 			return Close(state), &Action{
-				Kind:            "patch_setting",
-				SettingKey:      sharedtypes.CoreSettingsKeyHabitStreakDefs,
-				HabitStreakDefs: sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs),
+				Kind:                    "sync_habit_streaks",
+				PreviousHabitStreakDefs: append([]sharedtypes.HabitStreakDefinition(nil), state.HabitStreakOriginalDefs...),
+				HabitStreakDefs:         sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs),
 			}, ""
 		}
 	}
@@ -112,7 +123,8 @@ func openHabitStreakEditor(state State, idx int, def sharedtypes.HabitStreakDefi
 }
 
 func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, string) {
-	row := habitStreakDetailRow(state.FocusIdx)
+	momentumMode := isMomentumDialogKind(state.Kind)
+	row := habitStreakDetailRowForFocus(momentumMode, state.FocusIdx)
 	switch msg.String() {
 	case "esc":
 		return habitStreakBackToManager(state), nil, ""
@@ -120,10 +132,10 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 		if row == habitStreakDetailRowCount {
 			return moveHabitStreakToHabitSelection(state)
 		}
-		state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(row, 1))
+		state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(momentumMode, row, 1))
 		return state, nil, ""
 	case "shift+tab":
-		state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(row, -1))
+		state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(momentumMode, row, -1))
 		return state, nil, ""
 	case "left", "h":
 		if row == habitStreakDetailRowPeriod {
@@ -140,14 +152,23 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 	case "enter":
 		switch row {
 		case habitStreakDetailRowName:
-			state = habitStreakSetDetailFocus(state, habitStreakDetailRowPeriod)
+			state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(momentumMode, row, 1))
+			return state, nil, ""
+		case habitStreakDetailRowDescription:
+			state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(momentumMode, row, 1))
 			return state, nil, ""
 		case habitStreakDetailRowPeriod:
-			state = habitStreakSetDetailFocus(state, habitStreakDetailRowCount)
+			state = habitStreakSetDetailFocus(state, habitStreakDetailRowNext(momentumMode, row, 1))
 			return state, nil, ""
 		default:
 			return moveHabitStreakToHabitSelection(state)
 		}
+	}
+	if momentumMode && row == habitStreakDetailRowDescription {
+		var cmd tea.Cmd
+		state.Description, cmd = state.Description.Update(msg)
+		_ = cmd
+		return clearDialogError(state), nil, ""
 	}
 	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 &&
 		inputIdx < len(state.Inputs) {
@@ -160,6 +181,7 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 }
 
 func moveHabitStreakToHabitSelection(state State) (State, *Action, string) {
+	momentumMode := isMomentumDialogKind(state.Kind)
 	name := strings.TrimSpace(state.Inputs[0].Value())
 	if name == "" {
 		state.ErrorMessage = "Streak name is required"
@@ -171,6 +193,9 @@ func moveHabitStreakToHabitSelection(state State) (State, *Action, string) {
 		return state, nil, ""
 	}
 	state.HabitStreakDraft.Name = name
+	if momentumMode {
+		state.HabitStreakDraft.Description = ValueToPointer(strings.TrimSpace(state.Description.Value()))
+	}
 	state.HabitStreakDraft.RequiredCount = required
 	state.HabitStreakDraft.Period = sharedtypes.NormalizeHabitStreakPeriod(
 		state.HabitStreakDraft.Period,
@@ -231,8 +256,18 @@ func updateHabitStreakReview(state State, msg tea.KeyMsg) (State, *Action, strin
 		return state, nil, ""
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
-			defs := append([]sharedtypes.HabitStreakDefinition(nil), state.HabitStreakDefs...)
 			draft := sharedtypes.NormalizeHabitStreakDefinition(state.HabitStreakDraft)
+			if state.Kind == "create_momentum" || state.Kind == "edit_momentum" {
+				kind := "update_momentum"
+				if state.Kind == "create_momentum" {
+					kind = "create_momentum"
+				}
+				return Close(state), &Action{
+					Kind:            kind,
+					HabitStreakDefs: []sharedtypes.HabitStreakDefinition{draft},
+				}, ""
+			}
+			defs := append([]sharedtypes.HabitStreakDefinition(nil), state.HabitStreakDefs...)
 			if state.HabitStreakEditIdx >= 0 && state.HabitStreakEditIdx < len(defs) {
 				defs[state.HabitStreakEditIdx] = draft
 			} else {
@@ -255,6 +290,9 @@ func habitStreakBackToManager(state State) State {
 	state.HabitStreakCursor = 0
 	state.HabitStreakEditIdx = -1
 	state.Inputs = nil
+	state.Description = textarea.Model{}
+	state.DescriptionEnabled = false
+	state.DescriptionIndex = 0
 	state.FocusIdx = 0
 	state.ErrorMessage = ""
 	return state
@@ -291,19 +329,25 @@ func nextIndex[T comparable](current T, options []T, dir int) int {
 	return next
 }
 
-func habitStreakDetailRowNext(row habitStreakDetailRow, dir int) habitStreakDetailRow {
-	rows := []habitStreakDetailRow{
-		habitStreakDetailRowName,
-		habitStreakDetailRowPeriod,
-		habitStreakDetailRowCount,
-	}
+func habitStreakDetailRowNext(
+	momentumMode bool,
+	row habitStreakDetailRow,
+	dir int,
+) habitStreakDetailRow {
+	rows := habitStreakDetailRows(momentumMode)
 	return rows[nextIndex(row, rows, dir)]
 }
 
 func habitStreakSetDetailFocus(state State, row habitStreakDetailRow) State {
-	state.FocusIdx = int(row)
+	momentumMode := isMomentumDialogKind(state.Kind)
+	state.FocusIdx = habitStreakFocusForRow(momentumMode, row)
 	for i := range state.Inputs {
 		state.Inputs[i].Blur()
+	}
+	state.Description.Blur()
+	if momentumMode && row == habitStreakDetailRowDescription && state.DescriptionEnabled {
+		state.Description.Focus()
+		return state
 	}
 	if inputIdx, ok := habitStreakInputIndex(row); ok && inputIdx >= 0 &&
 		inputIdx < len(state.Inputs) {
@@ -333,6 +377,43 @@ func habitStreakInputIndex(row habitStreakDetailRow) (int, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func habitStreakDetailRows(momentumMode bool) []habitStreakDetailRow {
+	if momentumMode {
+		return []habitStreakDetailRow{
+			habitStreakDetailRowName,
+			habitStreakDetailRowDescription,
+			habitStreakDetailRowPeriod,
+			habitStreakDetailRowCount,
+		}
+	}
+	return []habitStreakDetailRow{
+		habitStreakDetailRowName,
+		habitStreakDetailRowPeriod,
+		habitStreakDetailRowCount,
+	}
+}
+
+func habitStreakDetailRowForFocus(momentumMode bool, focusIdx int) habitStreakDetailRow {
+	rows := habitStreakDetailRows(momentumMode)
+	if focusIdx < 0 {
+		focusIdx = 0
+	}
+	if focusIdx >= len(rows) {
+		focusIdx = len(rows) - 1
+	}
+	return rows[focusIdx]
+}
+
+func habitStreakFocusForRow(momentumMode bool, row habitStreakDetailRow) int {
+	rows := habitStreakDetailRows(momentumMode)
+	for i, candidate := range rows {
+		if candidate == row {
+			return i
+		}
+	}
+	return 0
 }
 
 func toggleHabitMembership(values []int64, habitID int64) []int64 {

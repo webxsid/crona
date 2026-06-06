@@ -93,6 +93,7 @@ type State struct {
 	HabitItems                    []sharedtypes.HabitWithMeta
 	HabitStreakStep               int
 	HabitStreakCursor             int
+	HabitStreakOriginalDefs       []sharedtypes.HabitStreakDefinition
 	HabitStreakDefs               []sharedtypes.HabitStreakDefinition
 	HabitStreakDraft              sharedtypes.HabitStreakDefinition
 	HabitStreakEditIdx            int

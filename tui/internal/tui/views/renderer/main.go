@@ -8,6 +8,7 @@ import (
 	habits "crona/tui/internal/tui/views/habits"
 	issues "crona/tui/internal/tui/views/issues"
 	meta "crona/tui/internal/tui/views/meta"
+	momentumview "crona/tui/internal/tui/views/momentumview"
 	ops "crona/tui/internal/tui/views/ops"
 	reports "crona/tui/internal/tui/views/reports"
 	rollup "crona/tui/internal/tui/views/rollup"
@@ -29,6 +30,8 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return daily.Render(theme, state)
 	case "rollup":
 		return rollup.Render(theme, state)
+	case "momentum":
+		return momentumview.Render(theme, state)
 	case "meta":
 		return meta.Render(theme, state)
 	case "session_history", "session_active":

@@ -3,9 +3,12 @@ package migrations
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strings"
 
 	storemodels "crona/kernel/internal/store/models"
+	storerepositories "crona/kernel/internal/store/repositories"
 	sharedtypes "crona/shared/types"
 
 	"github.com/uptrace/bun"
@@ -31,6 +34,8 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.DailyPlanEntryModel)(nil),
 		(*storemodels.DailyPlanEventModel)(nil),
 		(*storemodels.CustomHabitMomentumSnapshotModel)(nil),
+		(*storemodels.HabitStreakDefinitionModel)(nil),
+		(*storemodels.HabitStreakHabitModel)(nil),
 	}
 
 	for _, model := range models {
@@ -70,6 +75,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "habit_focus_sessions", column: "snapshot_description"},
 		{table: "habit_focus_sessions", column: "snapshot_schedule_type"},
 		{table: "habit_focus_sessions", column: "snapshot_weekdays"},
+		{table: "momentums", column: "description"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
@@ -155,6 +161,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	if err := migrateLegacyIssueStatuses(ctx, db); err != nil {
 		return err
 	}
+	if err := backfillHabitStreakDefinitions(ctx, db); err != nil {
+		return err
+	}
 
 	indexes := []string{
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_repos_public_id ON repos (public_id)",
@@ -199,6 +208,11 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_entry_id ON daily_plan_events (plan_entry_id)",
 		"CREATE INDEX IF NOT EXISTS idx_daily_plan_events_user_id ON daily_plan_events (user_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_custom_habit_momentum_snapshots_user_date ON custom_habit_momentum_snapshots (user_id, date)",
+		"CREATE INDEX IF NOT EXISTS idx_momentums_user_id ON momentums (user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_momentums_user_deleted_at ON momentums (user_id, deleted_at)",
+		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_momentum_id ON momentum_habits (momentum_id)",
+		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_habit_id ON momentum_habits (habit_id)",
+		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_user_id ON momentum_habits (user_id)",
 	}
 
 	for _, stmt := range indexes {
@@ -208,6 +222,77 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	}
 
 	return nil
+}
+
+func backfillHabitStreakDefinitions(ctx context.Context, db *bun.DB) error {
+	type row struct {
+		UserID          string `bun:"user_id"`
+		HabitStreakDefs string `bun:"habit_streak_definitions"`
+		CreatedAt       string `bun:"created_at"`
+		UpdatedAt       string `bun:"updated_at"`
+	}
+	var rows []row
+	if err := db.NewSelect().
+		TableExpr("core_settings").
+		ColumnExpr("user_id").
+		ColumnExpr("habit_streak_definitions").
+		ColumnExpr("created_at").
+		ColumnExpr("updated_at").
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		exists, err := storerepositories.HasHabitStreakDefinitions(ctx, db, row.UserID)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		defs := parseLegacyHabitStreakDefinitions(row.HabitStreakDefs)
+		if len(defs) == 0 {
+			continue
+		}
+		now := strings.TrimSpace(row.UpdatedAt)
+		if now == "" {
+			now = strings.TrimSpace(row.CreatedAt)
+		}
+		if now == "" {
+			now = "0"
+		}
+		repo := storerepositories.NewHabitStreakDefinitionRepository(db)
+		if err := repo.ReplaceAll(ctx, row.UserID, now, defs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func parseLegacyHabitStreakDefinitions(raw string) []sharedtypes.HabitStreakDefinition {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	var defs []sharedtypes.HabitStreakDefinition
+	if err := json.Unmarshal([]byte(raw), &defs); err != nil {
+		return nil
+	}
+	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
+	seen := make(map[string]struct{}, len(defs))
+	for i, def := range defs {
+		if strings.TrimSpace(def.ID) == "" {
+			def.ID = fmt.Sprintf("habit-streak-%d", i+1)
+		}
+		for {
+			if _, ok := seen[def.ID]; !ok {
+				break
+			}
+			def.ID = def.ID + "-migrated"
+		}
+		seen[def.ID] = struct{}{}
+		defs[i] = def
+	}
+	return defs
 }
 
 func migrateLegacyIssueStatuses(ctx context.Context, db *bun.DB) error {

@@ -171,6 +171,10 @@ func (m Model) selectedHabitHistoryEntry() (*api.HabitCompletion, bool) {
 	return selectionpkg.SelectedHabitHistoryEntry(m.selectionSnapshot())
 }
 
+func (m Model) selectedMomentumCard() (*api.MomentumCard, bool) {
+	return selectionpkg.SelectedMomentumCard(m.selectionSnapshot())
+}
+
 func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
 	if m.view != ViewRollup || m.pane != PaneRollupDays || m.dashboardWindow == nil {
 		return nil, false
@@ -548,6 +552,20 @@ func (m Model) currentWellbeingDate() string {
 		return m.wellbeingDate
 	}
 	return time.Now().Format("2006-01-02")
+}
+
+func (m Model) currentMomentumDate() string {
+	if m.momentumDate != "" {
+		return m.momentumDate
+	}
+	return time.Now().Format("2006-01-02")
+}
+
+func (m Model) currentMomentumWindowDays() int {
+	if m.momentumWindowDays < 1 {
+		return 30
+	}
+	return m.momentumWindowDays
 }
 
 func (m Model) currentWellbeingWindowDays() int {

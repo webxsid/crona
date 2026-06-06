@@ -205,6 +205,23 @@ func newTestCoreContext(t *testing.T, now func() string) (*core.Context, runtime
 	return coreCtx, paths
 }
 
+func mustReplaceHabitStreakDefinitions(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	defs []sharedtypes.HabitStreakDefinition,
+) {
+	t.Helper()
+	if err := coreCtx.HabitStreakDefinitions.ReplaceAll(
+		ctx,
+		coreCtx.UserID,
+		coreCtx.Now(),
+		defs,
+	); err != nil {
+		t.Fatalf("replace habit streak definitions: %v", err)
+	}
+}
+
 func mustCreateRepo(
 	t *testing.T,
 	ctx context.Context,

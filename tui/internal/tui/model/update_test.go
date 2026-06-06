@@ -115,10 +115,10 @@ func TestIssuePanePreflightMessagesOpenStashConflictForFocusAndManual(t *testing
 				cursor: map[Pane]int{
 					PaneIssues: 0,
 				},
-				allIssues:    tt.allIssues,
-				dailySummary: tt.dailySummary,
-				issues:       tt.issues,
-				context:      tt.context,
+				allIssues:     tt.allIssues,
+				dailySummary:  tt.dailySummary,
+				issues:        tt.issues,
+				context:       tt.context,
 				dashboardDate: "2026-04-10",
 			}
 
@@ -286,7 +286,7 @@ func TestAnchorWellbeingScrollUsesCurrentPaneHeight(t *testing.T) {
 		Cursor: map[uistate.Pane]int{
 			uistate.PaneWellbeingSummary: 0,
 			uistate.PaneWellbeingTrends:  0,
-			uistate.PaneWellbeingStreaks: 0,
+			"wellbeing_streaks":          0,
 		},
 		MetricsRange: makeWellbeingRangeForAnchorTest(14),
 		MetricsRollup: &api.MetricsRollup{

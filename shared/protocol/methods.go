@@ -60,6 +60,12 @@ const (
 	MethodHabitUncomplete = "habit.uncomplete"
 	MethodHabitHistory    = "habit.history"
 
+	MethodMomentumList   = "momentum.list"
+	MethodMomentumCreate = "momentum.create"
+	MethodMomentumUpdate = "momentum.update"
+	MethodMomentumDelete = "momentum.delete"
+	MethodMomentumRange  = "momentum.range"
+
 	MethodCheckInGet    = "checkin.get"
 	MethodCheckInUpsert = "checkin.upsert"
 	MethodCheckInDelete = "checkin.delete"

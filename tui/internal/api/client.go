@@ -170,6 +170,14 @@ func (c *Client) ListDueHabits(date string) ([]HabitDailyItem, error) {
 	)
 }
 
+func (c *Client) GetMomentumRange(endDate string, windowDays int) ([]MomentumCard, error) {
+	var out []MomentumCard
+	return out, c.call(protocol.MethodMomentumRange, shareddto.MomentumRangeRequest{
+		EndDate:    strings.TrimSpace(endDate),
+		WindowDays: windowDays,
+	}, &out)
+}
+
 func (c *Client) CreateHabit(
 	streamID int64,
 	name string,
@@ -760,6 +768,40 @@ func (c *Client) PatchSetting(key sharedtypes.CoreSettingsKey, value any) error 
 		Key:   key,
 		Value: value,
 	}, nil)
+}
+
+func (c *Client) ListHabitStreakDefinitions() ([]HabitStreakDefinition, error) {
+	var out []HabitStreakDefinition
+	return out, c.call(protocol.MethodMomentumList, nil, &out)
+}
+
+func (c *Client) CreateHabitStreakDefinition(
+	definition sharedtypes.HabitStreakDefinition,
+) (*HabitStreakDefinition, error) {
+	var out HabitStreakDefinition
+	return &out, c.call(
+		protocol.MethodMomentumCreate,
+		shareddto.HabitStreakDefinitionRequest{Definition: definition},
+		&out,
+	)
+}
+
+func (c *Client) UpdateHabitStreakDefinition(
+	definition sharedtypes.HabitStreakDefinition,
+) (*HabitStreakDefinition, error) {
+	var out HabitStreakDefinition
+	return &out, c.call(
+		protocol.MethodMomentumUpdate,
+		shareddto.HabitStreakDefinitionRequest{Definition: definition},
+		&out,
+	)
+}
+
+func (c *Client) DeleteHabitStreakDefinition(id string) error {
+	return c.mustOK(
+		protocol.MethodMomentumDelete,
+		shareddto.HabitStreakDefinitionDeleteRequest{ID: id},
+	)
 }
 
 func (c *Client) TestAlertNotification() error {

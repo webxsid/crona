@@ -9,6 +9,7 @@ const (
 	ViewDefault        View = "default"
 	ViewDaily          View = "daily"
 	ViewRollup         View = "rollup"
+	ViewMomentum       View = "momentum"
 	ViewMeta           View = "meta"
 	ViewSessionHistory View = "session_history"
 	ViewHabitHistory   View = "habit_history"
@@ -33,6 +34,7 @@ const (
 	PaneRollupDays       Pane = "rollup_days"
 	PaneSessions         Pane = "sessions"
 	PaneHabitHistory     Pane = "habit_history"
+	PaneMomentumCards    Pane = "momentum_cards"
 	PaneOps              Pane = "ops"
 	PaneExportReports    Pane = "export_reports"
 	PaneConfig           Pane = "config"
@@ -40,7 +42,6 @@ const (
 	PaneAlerts           Pane = "alerts"
 	PaneWellbeingSummary Pane = "wellbeing_summary"
 	PaneWellbeingTrends  Pane = "wellbeing_trends"
-	PaneWellbeingStreaks Pane = "wellbeing_streaks"
 )
 
 type DefaultIssueSection string
@@ -63,6 +64,7 @@ var viewOrder = []View{
 	ViewHabitHistory,
 	ViewDaily,
 	ViewRollup,
+	ViewMomentum,
 	ViewWellbeing,
 	ViewReports,
 	ViewConfig,
@@ -80,12 +82,13 @@ var viewPanes = map[View][]Pane{
 	ViewDefault:        {PaneIssues},
 	ViewDaily:          {PaneIssues, PaneHabits},
 	ViewRollup:         {PaneRollupDays},
+	ViewMomentum:       {PaneMomentumCards},
 	ViewMeta:           {PaneRepos, PaneStreams, PaneIssues, PaneHabits},
 	ViewSessionHistory: {PaneSessions},
 	ViewHabitHistory:   {PaneHabitHistory},
 	ViewSessionActive:  {},
 	ViewOps:            {PaneOps},
-	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends, PaneWellbeingStreaks},
+	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends},
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
@@ -99,6 +102,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewDefault:        PaneIssues,
 	ViewDaily:          PaneIssues,
 	ViewRollup:         PaneRollupDays,
+	ViewMomentum:       PaneMomentumCards,
 	ViewMeta:           PaneRepos,
 	ViewSessionHistory: PaneSessions,
 	ViewHabitHistory:   PaneHabitHistory,

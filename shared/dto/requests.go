@@ -308,6 +308,19 @@ type GetCoreSettingRequest struct {
 
 type PutCoreSettingsRequest map[types.CoreSettingsKey]any
 
+type HabitStreakDefinitionRequest struct {
+	Definition types.HabitStreakDefinition `json:"definition"`
+}
+
+type HabitStreakDefinitionDeleteRequest struct {
+	ID string `json:"id"`
+}
+
+type MomentumRangeRequest struct {
+	EndDate    string `json:"endDate"`
+	WindowDays int    `json:"windowDays"`
+}
+
 type ConfirmDangerousActionRequest struct {
 	Confirm bool `json:"confirm"`
 }

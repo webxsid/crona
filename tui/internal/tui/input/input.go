@@ -23,6 +23,8 @@ type State struct {
 	DashboardDate       string
 	RollupStartDate     string
 	RollupEndDate       string
+	MomentumDate        string
+	MomentumWindowDays  int
 	WellbeingDate       string
 	WellbeingWindowDays int
 	Dialog              string
@@ -74,6 +76,11 @@ type Deps struct {
 	LoadDueHabits                   func(string) tea.Cmd
 	CurrentDashboardDate            func(State) string
 	LoadRollupSummaries             func(string, string) tea.Cmd
+	LoadMomentumRange               func(string, int) tea.Cmd
+	CurrentMomentumDate             func(State) string
+	CreateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
+	UpdateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
+	DeleteMomentumDefinition        func(string, string, string, int) tea.Cmd
 	CurrentRollupStartDate          func(State) string
 	CurrentRollupEndDate            func(State) string
 	LoadWellbeing                   func(string, int) tea.Cmd
@@ -109,6 +116,7 @@ type Deps struct {
 	DeleteSelectionAction           func(*State) (tea.Cmd, bool)
 	OpenSelectionAction             func(*State) (tea.Cmd, bool)
 	EnterAction                     func(*State) (tea.Cmd, bool)
+	ToggleMomentumAction            func(*State) (tea.Cmd, bool)
 	OpenHabitLogAction              func(*State) (tea.Cmd, bool)
 	EnterHabitHistoryView           func(*State) (tea.Cmd, bool)
 	ToggleHabitCompletedAction      func(*State) (tea.Cmd, bool)
@@ -127,7 +135,6 @@ type Deps struct {
 	OpenCreateAlertReminderDialog   func(*State) bool
 	OpenEditAlertReminderDialog     func(*State, string) bool
 	OpenEditDateDisplayFormatDialog func(*State) bool
-	OpenEditHabitStreaksDialog      func(*State) bool
 	OpenEditRestProtectionDialog    func(*State) bool
 	OpenEditTelemetrySettingsDialog func(*State) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
@@ -331,7 +338,8 @@ func newRouter(deps Deps) *router {
 			if s.ActiveView == uistate.ViewAlerts {
 				return handleDeleteSelectedAlertReminder(s, deps)
 			}
-			return s, nil, false
+			cmd, handled := deps.ToggleMomentumAction(&s)
+			return s, cmd, handled
 		},
 		"o": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenSelectionAction(&s)
@@ -656,6 +664,34 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
+	)
+	r.RegisterView(
+		uistate.ViewMomentum,
+		"+",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleShiftMomentumWindow(s, deps, 1)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewMomentum,
+		"-",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleShiftMomentumWindow(s, deps, -1)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewMomentum,
+		"0",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleResetMomentumWindow(s, deps)
+		},
+	)
+	keyregistry.RegisterWellbeing(
+		r,
+		uistate.ViewMomentum,
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftMomentumDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftMomentumDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetMomentumDate(s, deps) },
 	)
 	r.RegisterView(
 		uistate.ViewWellbeing,

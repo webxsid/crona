@@ -30,17 +30,17 @@ func OpenOnboarding(state State, usageEnabled, errorReportingEnabled bool) State
 
 func OpenEditHabitStreaks(
 	state State,
-	settings *api.CoreSettings,
+	defs []api.HabitStreakDefinition,
 	habits []api.HabitWithMeta,
 ) State {
 	state = Close(state)
 	state.Kind = "edit_habit_streaks"
 	state.HabitItems = append([]sharedtypes.HabitWithMeta(nil), habits...)
-	if settings != nil {
-		state.HabitStreakDefs = append(
-			[]sharedtypes.HabitStreakDefinition(nil),
-			settings.HabitStreakDefs...)
-	}
+	state.HabitStreakOriginalDefs = append([]sharedtypes.HabitStreakDefinition(nil), defs...)
+	state.HabitStreakDefs = append([]sharedtypes.HabitStreakDefinition(nil), defs...)
+	state.HabitStreakOriginalDefs = sharedtypes.NormalizeHabitStreakDefinitions(
+		state.HabitStreakOriginalDefs,
+	)
 	state.HabitStreakDefs = sharedtypes.NormalizeHabitStreakDefinitions(state.HabitStreakDefs)
 	state.HabitStreakStep = 0
 	state.HabitStreakCursor = 0
@@ -50,6 +50,83 @@ func OpenEditHabitStreaks(
 		Period:        sharedtypes.HabitStreakPeriodDay,
 		RequiredCount: 1,
 	}
+	return state
+}
+
+func OpenCreateHabitStreakDirect(
+	state State,
+	defs []api.HabitStreakDefinition,
+	habits []api.HabitWithMeta,
+) State {
+	state = OpenEditHabitStreaks(state, defs, habits)
+	state.Kind = "edit_habit_streak_single"
+	return openHabitStreakEditor(state, -1, sharedtypes.HabitStreakDefinition{
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodDay,
+		RequiredCount: 1,
+	})
+}
+
+func OpenEditHabitStreakDirect(
+	state State,
+	defs []api.HabitStreakDefinition,
+	habits []api.HabitWithMeta,
+	def sharedtypes.HabitStreakDefinition,
+) State {
+	state = OpenEditHabitStreaks(state, defs, habits)
+	state.Kind = "edit_habit_streak_single"
+	idx := -1
+	for i, item := range state.HabitStreakDefs {
+		if item.ID == def.ID {
+			idx = i
+			break
+		}
+	}
+	return openHabitStreakEditor(state, idx, def)
+}
+
+func OpenCreateMomentumDirect(
+	state State,
+	defs []api.HabitStreakDefinition,
+	habits []api.HabitWithMeta,
+) State {
+	state = OpenEditHabitStreaks(state, defs, habits)
+	state.Kind = "create_momentum"
+	return openMomentumEditor(state, -1, sharedtypes.HabitStreakDefinition{
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodDay,
+		RequiredCount: 1,
+	})
+}
+
+func OpenEditMomentumDirect(
+	state State,
+	defs []api.HabitStreakDefinition,
+	habits []api.HabitWithMeta,
+	def sharedtypes.HabitStreakDefinition,
+) State {
+	state = OpenEditHabitStreaks(state, defs, habits)
+	state.Kind = "edit_momentum"
+	idx := -1
+	for i, item := range state.HabitStreakDefs {
+		if item.ID == def.ID {
+			idx = i
+			break
+		}
+	}
+	return openMomentumEditor(state, idx, def)
+}
+
+func openMomentumEditor(state State, idx int, def sharedtypes.HabitStreakDefinition) State {
+	state = openHabitStreakEditor(state, idx, def)
+	state.Inputs[0].Placeholder = "Momentum name"
+	state.Description = newDescriptionInput(36, 4)
+	if def.Description != nil {
+		state.Description.SetValue(strings.TrimSpace(*def.Description))
+	}
+	state.DescriptionEnabled = true
+	state.DescriptionIndex = 1
+	state = SyncDialogFocus(state)
 	return state
 }
 

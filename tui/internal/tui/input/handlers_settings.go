@@ -153,9 +153,8 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 		}
 		return s, nil, true
 	case "Habit Streaks":
-		if deps.OpenEditHabitStreaksDialog != nil {
-			deps.OpenEditHabitStreaksDialog(&s)
-		}
+		s.ActiveView = uistate.ViewMomentum
+		s.ActivePane = uistate.DefaultPane(uistate.ViewMomentum)
 		return s, nil, true
 	case "Rest & Streak Protection":
 		deps.OpenEditRestProtectionDialog(&s)

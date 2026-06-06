@@ -43,6 +43,28 @@ func LoadAllHabits(c *api.Client) tea.Cmd {
 	}
 }
 
+func LoadHabitStreakDefinitions(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		defs, err := c.ListHabitStreakDefinitions()
+		if err != nil {
+			logger.Errorf("loadHabitStreakDefinitions: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return HabitStreakDefinitionsLoadedMsg{Definitions: defs}
+	}
+}
+
+func LoadMomentumRange(c *api.Client, endDate string, windowDays int) tea.Cmd {
+	return func() tea.Msg {
+		cards, err := c.GetMomentumRange(endDate, windowDays)
+		if err != nil {
+			logger.Errorf("loadMomentumRange(%s,%d): %v", endDate, windowDays, err)
+			return ErrMsg{Err: err}
+		}
+		return MomentumRangeLoadedMsg{Cards: cards}
+	}
+}
+
 func LoadIssues(c *api.Client, streamID int64) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := c.ListIssues(streamID)

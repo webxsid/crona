@@ -33,6 +33,9 @@ func (m Model) checkout() (Model, tea.Cmd) {
 }
 
 func (m Model) handleInputCreateAction() Model {
+	if m.view == ViewMomentum {
+		return m.openCreateMomentumDialog()
+	}
 	if m.view == ViewDefault && m.pane == PaneIssues {
 		return m.openCreateIssueDefaultDialog()
 	}
@@ -120,6 +123,12 @@ func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
+	if m.view == ViewMomentum {
+		if card, ok := m.selectedMomentumCard(); ok {
+			return m.openEditMomentumDialog(card.Definition), nil, true
+		}
+		return m.openCreateMomentumDialog(), nil, true
+	}
 	if m.view == ViewWellbeing {
 		if m.dailyCheckIn == nil {
 			m = m.openCreateCheckInDialog()
@@ -150,7 +159,13 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 	}
 	if habit, ok := m.selectedDailyHabitRecord(); ok {
 		if habit.Status == sharedtypes.HabitCompletionStatusFailed {
-			return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
+			return commands.UncompleteHabit(
+				m.client,
+				habit.ID,
+				m.currentDashboardDate(),
+				m.currentMomentumDate(),
+				m.currentMomentumWindowDays(),
+			), true
 		}
 		return commands.SetHabitStatus(
 			m.client,
@@ -159,6 +174,8 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 			sharedtypes.HabitCompletionStatusFailed,
 			habit.DurationMinutes,
 			habit.Notes,
+			m.currentMomentumDate(),
+			m.currentMomentumWindowDays(),
 		), true
 	}
 	return nil, true
@@ -171,6 +188,13 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 			return m, m.setStatus("No check-in to delete for this date", true), true
 		}
 		m = m.openConfirmDeleteEntity("checkin", m.currentWellbeingDate(), "this check-in")
+		return m, nil, true
+	}
+	if m.view == ViewMomentum {
+		if card, ok := m.selectedMomentumCard(); ok {
+			m = m.openConfirmDeleteEntity("momentum", card.Definition.ID, card.Definition.Name)
+			return m, nil, true
+		}
 		return m, nil, true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {
@@ -258,6 +282,12 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
+	if m.view == ViewMomentum {
+		if card, ok := m.selectedMomentumCard(); ok {
+			return m.openEditMomentumDialog(card.Definition), nil, true
+		}
+		return m.openCreateMomentumDialog(), nil, true
+	}
 	if m.view == ViewHabitHistory && m.pane == PaneHabitHistory {
 		if entry, ok := m.selectedHabitHistoryEntry(); ok {
 			durationText := formatHabitCompletionDuration(entry.DurationMinutes)
@@ -319,6 +349,25 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 	return m, nil, false
 }
 
+func (m Model) handleInputToggleMomentum() (tea.Cmd, bool) {
+	if m.view != ViewMomentum {
+		return nil, false
+	}
+	card, ok := m.selectedMomentumCard()
+	if !ok {
+		return nil, true
+	}
+	updated := card.Definition
+	updated.Enabled = !updated.Enabled
+	return commands.UpdateMomentumDefinition(
+		m.client,
+		updated,
+		m.currentDashboardDate(),
+		m.currentMomentumDate(),
+		m.currentMomentumWindowDays(),
+	), true
+}
+
 func formatHabitCompletionDuration(value *int) string {
 	if value == nil {
 		return "-"
@@ -344,7 +393,13 @@ func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
 	if m.view == ViewDaily && m.pane == PaneHabits {
 		if habit, ok := m.selectedDailyHabitRecord(); ok {
 			if habit.Status == sharedtypes.HabitCompletionStatusCompleted {
-				return commands.UncompleteHabit(m.client, habit.ID, m.currentDashboardDate()), true
+				return commands.UncompleteHabit(
+					m.client,
+					habit.ID,
+					m.currentDashboardDate(),
+					m.currentMomentumDate(),
+					m.currentMomentumWindowDays(),
+				), true
 			}
 			return commands.SetHabitStatus(
 				m.client,
@@ -353,6 +408,8 @@ func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
 				sharedtypes.HabitCompletionStatusCompleted,
 				nil,
 				nil,
+				m.currentMomentumDate(),
+				m.currentMomentumWindowDays(),
 			), true
 		}
 	}

@@ -54,9 +54,7 @@ func TestCustomMomentumSnapshotSeedsYesterdayWhenEmpty(t *testing.T) {
 		RequiredCount: 2,
 		HabitIDs:      []int64{habit.ID},
 	}}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 	if err := corecommands.SeedCustomHabitMomentumSnapshot(ctx, coreCtx); err != nil {
 		t.Fatalf("seed custom momentum snapshot: %v", err)
 	}
@@ -132,9 +130,7 @@ func TestCustomMomentumSnapshotCarriesForwardAcrossDefinitionChange(t *testing.T
 			HabitIDs:      []int64{habit.ID},
 		},
 	}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 	if err := corecommands.SeedCustomHabitMomentumSnapshot(ctx, coreCtx); err != nil {
 		t.Fatalf("seed custom momentum snapshot: %v", err)
 	}
@@ -151,9 +147,7 @@ func TestCustomMomentumSnapshotCarriesForwardAcrossDefinitionChange(t *testing.T
 	}
 
 	defs[0].RequiredCount = 3
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("update streak defs: %v", err)
-	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
 	if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, coreCtx, "2026-04-10"); err != nil {
 		t.Fatalf("invalidate snapshots from today: %v", err)
 	}

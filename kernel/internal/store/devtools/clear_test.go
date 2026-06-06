@@ -44,3 +44,39 @@ func TestClearAllDataRemovesDailyPlanTables(t *testing.T) {
 		}
 	}
 }
+
+func TestClearAllDataRemovesMomentumTables(t *testing.T) {
+	ctx := context.Background()
+	db, err := store.Open(filepath.Join(t.TempDir(), "crona.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	if err := store.InitSchema(ctx, db.DB()); err != nil {
+		t.Fatalf("init schema: %v", err)
+	}
+
+	if _, err := db.DB().ExecContext(ctx, "INSERT INTO momentums (id, user_id, name, enabled, period, required_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", "momentum-1", "local", "Focus", 1, "day", 1, "2026-04-01T00:00:00Z", "2026-04-01T00:00:00Z"); err != nil {
+		t.Fatalf("insert momentum: %v", err)
+	}
+	if _, err := db.DB().ExecContext(ctx, "INSERT INTO momentum_habits (momentum_id, habit_id, user_id, created_at) VALUES (?, ?, ?, ?)", "momentum-1", 101, "local", "2026-04-01T00:00:00Z"); err != nil {
+		t.Fatalf("insert momentum habit: %v", err)
+	}
+	if _, err := db.DB().ExecContext(ctx, "INSERT INTO custom_habit_momentum_snapshots (id, user_id, date, summary_json, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)", "snapshot-1", "local", "2026-04-01", "{}", "{}", "2026-04-01T00:00:00Z", "2026-04-01T00:00:00Z"); err != nil {
+		t.Fatalf("insert momentum snapshot: %v", err)
+	}
+
+	if err := devtools.ClearAllData(ctx, db.DB()); err != nil {
+		t.Fatalf("clear all data: %v", err)
+	}
+
+	for _, table := range []string{"momentums", "momentum_habits", "custom_habit_momentum_snapshots"} {
+		var count int
+		if err := db.DB().NewSelect().Table(table).ColumnExpr("COUNT(*)").Scan(ctx, &count); err != nil {
+			t.Fatalf("count %s: %v", table, err)
+		}
+		if count != 0 {
+			t.Fatalf("expected %s to be empty after clear, got %d rows", table, count)
+		}
+	}
+}

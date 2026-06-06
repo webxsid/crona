@@ -37,6 +37,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Habits:         m.habits,
 		AllIssues:      m.allIssues,
 		DueHabits:      m.dueHabits,
+		MomentumCards:  m.momentumCards,
 		HabitHistory:   m.habitHistory,
 		ExportReports:  m.exportReports,
 		SessionHistory: m.sessionHistory,
@@ -89,6 +90,8 @@ func (m Model) inputState() inputpkg.State {
 		DashboardDate:       m.dashboardDate,
 		RollupStartDate:     m.rollupStartDate,
 		RollupEndDate:       m.rollupEndDate,
+		MomentumDate:        m.momentumDate,
+		MomentumWindowDays:  m.currentMomentumWindowDays(),
 		WellbeingDate:       m.wellbeingDate,
 		WellbeingWindowDays: m.currentWellbeingWindowDays(),
 		Dialog:              m.dialog,
@@ -126,6 +129,8 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.dashboardDate = state.DashboardDate
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
+	m.momentumDate = state.MomentumDate
+	m.momentumWindowDays = state.MomentumWindowDays
 	m.wellbeingDate = state.WellbeingDate
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m = m.withDialogState(state.DialogState)
@@ -196,6 +201,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 		LoadDailyStreaks:     func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
 		LoadRollupSummaries:  func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadMomentumRange(m.client, date, windowDays)
+		},
+		CurrentMomentumDate: func(state inputpkg.State) string {
+			return m.applyInputState(state).currentMomentumDate()
+		},
 		CurrentRollupStartDate: func(state inputpkg.State) string {
 			return m.applyInputState(state).currentRollupStartDate()
 		},
@@ -473,6 +484,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return cmd, handled
 		},
+		ToggleMomentumAction: func(state *inputpkg.State) (tea.Cmd, bool) {
+			next := m.applyInputState(*state)
+			cmd, handled := next.handleInputToggleMomentum()
+			*state = next.inputState()
+			return cmd, handled
+		},
 		ToggleHabitCompletedAction: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)
 			cmd, handled := next.handleInputToggleHabitCompleted()
@@ -539,6 +556,33 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
+		CreateMomentumDefinition: func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.CreateMomentumDefinition(
+				m.client,
+				def,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
+		UpdateMomentumDefinition: func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.UpdateMomentumDefinition(
+				m.client,
+				def,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
+		DeleteMomentumDefinition: func(id string, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.DeleteMomentumDefinition(
+				m.client,
+				id,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
 		TestAlertNotification: func() tea.Cmd { return commands.TestAlertNotification(m.client) },
 		TestAlertSound:        func() tea.Cmd { return commands.TestAlertSound(m.client) },
 		CreateAlertReminder: func(input shareddto.AlertReminderCreateRequest) tea.Cmd {
@@ -568,12 +612,6 @@ func (m Model) inputDeps() inputpkg.Deps {
 		OpenEditDateDisplayFormatDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openEditDateDisplayFormatDialog()
-			*state = next.inputState()
-			return true
-		},
-		OpenEditHabitStreaksDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openEditHabitStreaksDialog()
 			*state = next.inputState()
 			return true
 		},

@@ -236,12 +236,16 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		Issues:                  m.issues,
 		Habits:                  m.habits,
 		AllHabits:               m.allHabits,
+		HabitStreakDefs:         m.habitStreakDefs,
+		MomentumCards:           m.momentumCards,
 		AllIssues:               m.allIssues,
 		DueHabits:               m.dueHabits,
 		DailySummary:            m.dailySummary,
 		DailyPlan:               m.dailyPlan,
 		RollupStartDate:         m.currentRollupStartDate(),
 		RollupEndDate:           m.currentRollupEndDate(),
+		MomentumDate:            m.currentMomentumDate(),
+		MomentumWindowDays:      m.currentMomentumWindowDays(),
 		WellbeingDate:           m.wellbeingDate,
 		WellbeingWindowDays:     m.currentWellbeingWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
@@ -324,6 +328,8 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.issues = state.Issues
 	m.habits = state.Habits
 	m.allHabits = state.AllHabits
+	m.habitStreakDefs = state.HabitStreakDefs
+	m.momentumCards = state.MomentumCards
 	m.allIssues = state.AllIssues
 	m.dueHabits = state.DueHabits
 	m.dailySummary = state.DailySummary
@@ -331,6 +337,8 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dashboardDate = state.DashboardDate
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
+	m.momentumDate = state.MomentumDate
+	m.momentumWindowDays = state.MomentumWindowDays
 	m.wellbeingDate = state.WellbeingDate
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m.dailyCheckIn = state.DailyCheckIn
@@ -473,18 +481,27 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		CurrentDashboardDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentDashboardDate()
 		},
+		CurrentMomentumDate: func(state dispatchpkg.MessageState) string {
+			return m.applyDispatchMessageState(state).currentMomentumDate()
+		},
 		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentWellbeingDate()
 		},
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
-		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadAllIssues:       func() tea.Cmd { return commands.LoadAllIssues(m.client) },
-		LoadStreams:         func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
-		LoadIssues:          func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
-		LoadHabits:          func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
-		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
-		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadDailyStreaks:    func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
+		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadMomentumRange(m.client, date, windowDays)
+		},
+		LoadRepos:     func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadStreams:   func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
+		LoadIssues:    func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
+		LoadHabits:    func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
+		LoadHabitStreakDefinitions: func() tea.Cmd {
+			return commands.LoadHabitStreakDefinitions(m.client)
+		},
+		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},

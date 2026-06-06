@@ -41,6 +41,8 @@ type ContentState struct {
 	DashboardDate       string
 	RollupStartDate     string
 	RollupEndDate       string
+	MomentumDate        string
+	MomentumWindowDays  int
 	WellbeingDate       string
 	WellbeingWindowDays int
 	WeekStart           sharedtypes.WeekStart
@@ -63,6 +65,7 @@ type ContentState struct {
 	AllIssues              []api.IssueWithMeta
 	DefaultIssues          []api.IssueWithMeta
 	DueHabits              []api.HabitDailyItem
+	MomentumCards          []api.MomentumCard
 	DailySummary           *api.DailyIssueSummary
 	DailyPlan              *api.DailyPlan
 	DailyCheckIn           *api.DailyCheckIn

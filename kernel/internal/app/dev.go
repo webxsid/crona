@@ -518,7 +518,12 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID, workoutHabit.ID},
 		},
 	}
-	if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, sharedtypes.CoreSettingsKeyHabitStreakDefs, habitStreakDefs); err != nil {
+	if err := h.core.HabitStreakDefinitions.ReplaceAll(
+		ctx,
+		h.core.UserID,
+		h.core.Now(),
+		habitStreakDefs,
+	); err != nil {
 		return err
 	}
 

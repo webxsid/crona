@@ -48,6 +48,12 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 			Detail: "Check-ins, burnout signals, and trends.",
 		},
 		{
+			Key:    "u",
+			Label:  "Momentum",
+			Value:  "momentum",
+			Detail: "Custom momentum cards with bucket progress graphs.",
+		},
+		{
 			Key:    "p",
 			Label:  "Reports",
 			Value:  "reports",

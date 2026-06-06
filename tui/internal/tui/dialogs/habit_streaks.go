@@ -11,18 +11,24 @@ import (
 )
 
 func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
+	momentumMode := isMomentumDialogKind(state.Kind)
 	steps := []string{"Manage", "Details", "Habits", "Review"}
+	activeStep := state.HabitStreakStep
+	if momentumMode {
+		steps = []string{"Details", "Habits", "Review"}
+		activeStep = max(0, state.HabitStreakStep-1)
+	}
 	progress := make([]string, 0, len(steps))
 	for i, step := range steps {
 		label := fmt.Sprintf("%d.%s", i+1, step)
-		if i == state.HabitStreakStep {
+		if i == activeStep {
 			progress = append(progress, theme.StyleCursor.Render(label))
 		} else {
 			progress = append(progress, theme.StyleDim.Render(label))
 		}
 	}
 	rows := []string{
-		theme.StylePaneTitle.Render("Habit Streaks"),
+		theme.StylePaneTitle.Render(habitStreakDialogTitle(momentumMode)),
 		"",
 		strings.Join(progress, "   "),
 		"",
@@ -72,14 +78,35 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 			dialogSubmitHint(state, "save")+"   [enter] edit   [n] new   [x] toggle   [d] delete",
 		)
 	case 1:
+		nameLabel := "Name"
+		if momentumMode {
+			nameLabel = "Momentum name"
+		}
+		periodRowIdx := 1
+		countRowIdx := 2
+		if momentumMode {
+			periodRowIdx = 2
+			countRowIdx = 3
+		}
 		rows = append(rows,
-			habitStreakRowLabel(theme, state, 0, "Name"),
+			habitStreakRowLabel(theme, state, 0, nameLabel),
 			dialogInputView(state, 0),
+		)
+		if momentumMode {
+			rows = append(
+				rows,
+				"",
+				habitStreakRowLabel(theme, state, 1, "Description (Optional)"),
+				state.Description.View(),
+			)
+		}
+		rows = append(
+			rows,
 			"",
-			habitStreakRowLabel(theme, state, 1, "Period"),
+			habitStreakRowLabel(theme, state, periodRowIdx, "Period"),
 			renderHabitStreakPeriodChoice(theme, state),
 			"",
-			habitStreakRowLabel(theme, state, 2, "Required completions per bucket (daily = 1)"),
+			habitStreakRowLabel(theme, state, countRowIdx, "Required completions per bucket (daily = 1)"),
 			dialogInputView(state, 1),
 		)
 		rows = appendDialogFooter(
@@ -112,10 +139,25 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 			"[space] toggle   [a] all   [c] none   [tab] review",
 		)
 	case 3:
+		description := ""
+		if state.HabitStreakDraft.Description != nil {
+			description = strings.TrimSpace(*state.HabitStreakDraft.Description)
+		}
 		rows = append(
 			rows,
 			theme.StyleDim.Render("Name"),
 			theme.StyleHeader.Render(fallback(state.HabitStreakDraft.Name, "-")),
+		)
+		if description != "" {
+			rows = append(
+				rows,
+				"",
+				theme.StyleDim.Render("Description"),
+				theme.StyleHeader.Render(description),
+			)
+		}
+		rows = append(
+			rows,
 			"",
 			theme.StyleDim.Render("Rule"),
 			theme.StyleHeader.Render(
@@ -131,14 +173,34 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 				habitStreakHabitSummary(state.HabitStreakDraft.HabitIDs, state.HabitItems),
 			),
 		)
+		submitLabel := "save streak"
+		if momentumMode {
+			submitLabel = "save momentum"
+		}
 		rows = appendDialogFooter(
 			theme,
 			state,
 			rows,
-			dialogSubmitHint(state, "save streak")+"   [shift+tab] back   [esc] cancel",
+			dialogSubmitHint(state, submitLabel)+"   [shift+tab] back   [esc] cancel",
 		)
 	}
 	return modal(theme, state.Width, 88, theme.ColorCyan, rows)
+}
+
+func isMomentumDialogKind(kind string) bool {
+	switch kind {
+	case "create_momentum", "edit_momentum":
+		return true
+	default:
+		return false
+	}
+}
+
+func habitStreakDialogTitle(momentumMode bool) string {
+	if momentumMode {
+		return "Momentum"
+	}
+	return "Habit Streaks"
 }
 
 func renderHabitStreakPeriodChoice(theme Theme, state controllerpkg.State) string {
@@ -149,10 +211,14 @@ func renderHabitStreakPeriodChoice(theme Theme, state controllerpkg.State) strin
 	}
 	parts := make([]string, 0, len(options))
 	current := sharedtypes.NormalizeHabitStreakPeriod(state.HabitStreakDraft.Period)
+	periodFocused := state.FocusIdx == 1
+	if isMomentumDialogKind(state.Kind) {
+		periodFocused = state.FocusIdx == 2
+	}
 	for _, option := range options {
 		label := habitStreakPeriodLabel(option)
 		if option == current {
-			if state.FocusIdx == 1 {
+			if periodFocused {
 				parts = append(
 					parts,
 					theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+label),

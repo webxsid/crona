@@ -96,6 +96,30 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 	}
 }
 
+func TestHandleActivateSelectedSettingNavigatesToMomentumView(t *testing.T) {
+	state := State{
+		ActiveView: uistate.ViewSettings,
+		Settings: &sharedtypes.CoreSettings{
+			HabitStreakDefs: []sharedtypes.HabitStreakDefinition{{Name: "Focus"}},
+		},
+		Cursor: map[uistate.Pane]int{
+			uistate.PaneSettings: 12,
+		},
+	}
+
+	next, _, handled := handleActivateSelectedSetting(state, Deps{})
+	if !handled {
+		t.Fatalf("expected habit streaks row activation to be handled")
+	}
+	out := next.(State)
+	if out.ActiveView != uistate.ViewMomentum {
+		t.Fatalf("expected settings row to navigate to momentum view, got %q", out.ActiveView)
+	}
+	if out.ActivePane != uistate.PaneMomentumCards {
+		t.Fatalf("expected momentum pane to be selected, got %q", out.ActivePane)
+	}
+}
+
 func TestHandleAdjustSelectedSettingUpdatesWeekStart(t *testing.T) {
 	var patchedKey sharedtypes.CoreSettingsKey
 	var patchedValue any

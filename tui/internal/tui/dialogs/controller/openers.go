@@ -20,6 +20,7 @@ type Snapshot struct {
 	UpdateStatus         *api.UpdateStatus
 	ExportAssets         *api.ExportAssetStatus
 	Settings             *api.CoreSettings
+	HabitStreakDefs      []api.HabitStreakDefinition
 	AlertReminders       []api.AlertReminder
 	CurrentDashboardDate string
 	CurrentWellbeingDate string
@@ -178,7 +179,23 @@ func (s Snapshot) OpenEditCheckInForDate(date string) State {
 }
 
 func (s Snapshot) OpenEditHabitStreaks() State {
-	return OpenEditHabitStreaks(s.Dialog, s.Settings, s.AllHabits)
+	return OpenEditHabitStreaks(s.Dialog, s.HabitStreakDefs, s.AllHabits)
+}
+
+func (s Snapshot) OpenCreateHabitStreakDirect() State {
+	return OpenCreateHabitStreakDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits)
+}
+
+func (s Snapshot) OpenEditHabitStreakDirect(def sharedtypes.HabitStreakDefinition) State {
+	return OpenEditHabitStreakDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits, def)
+}
+
+func (s Snapshot) OpenCreateMomentumDirect() State {
+	return OpenCreateMomentumDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits)
+}
+
+func (s Snapshot) OpenEditMomentumDirect(def sharedtypes.HabitStreakDefinition) State {
+	return OpenEditMomentumDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits, def)
 }
 
 func (s Snapshot) OpenConfirmDeleteEntity(kind, id, label string) State {

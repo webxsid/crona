@@ -58,6 +58,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	store := openTestStore(t)
 
 	repo := repositories.NewCoreSettingsRepository(store.DB())
+	habitStreaks := repositories.NewHabitStreakDefinitionRepository(store.DB())
 	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
 		t.Fatalf("initialize defaults: %v", err)
 	}
@@ -97,13 +98,14 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	defs := []sharedtypes.HabitStreakDefinition{{
 		ID:            "health",
 		Name:          "Health streak",
+		Description:   ptrString("Track the basics."),
 		Enabled:       true,
 		Period:        sharedtypes.HabitStreakPeriodWeek,
 		RequiredCount: 2,
 		HabitIDs:      []int64{11, 12},
 	}}
-	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set habit streak definitions: %v", err)
+	if err := habitStreaks.ReplaceAll(ctx, "local", "1", defs); err != nil {
+		t.Fatalf("replace habit streak definitions: %v", err)
 	}
 
 	settings, err := repo.Get(ctx, "local")
@@ -150,6 +152,8 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 		t.Fatalf("expected one custom habit streak, got %+v", settings.HabitStreakDefs)
 	}
 	if settings.HabitStreakDefs[0].Name != "Health streak" ||
+		settings.HabitStreakDefs[0].Description == nil ||
+		*settings.HabitStreakDefs[0].Description != "Track the basics." ||
 		settings.HabitStreakDefs[0].Period != sharedtypes.HabitStreakPeriodWeek ||
 		settings.HabitStreakDefs[0].RequiredCount != 2 {
 		t.Fatalf("unexpected habit streak definition: %+v", settings.HabitStreakDefs[0])
@@ -161,6 +165,7 @@ func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
 	store := openTestStore(t)
 
 	repo := repositories.NewCoreSettingsRepository(store.DB())
+	habitStreaks := repositories.NewHabitStreakDefinitionRepository(store.DB())
 	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
 		t.Fatalf("initialize defaults: %v", err)
 	}
@@ -172,8 +177,8 @@ func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
 		RequiredCount: 4,
 		HabitIDs:      []int64{11},
 	}}
-	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyHabitStreakDefs, defs); err != nil {
-		t.Fatalf("set habit streak definitions: %v", err)
+	if err := habitStreaks.ReplaceAll(ctx, "local", "1", defs); err != nil {
+		t.Fatalf("replace habit streak definitions: %v", err)
 	}
 
 	settings, err := repo.Get(ctx, "local")
@@ -189,4 +194,63 @@ func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
 			settings.HabitStreakDefs[0],
 		)
 	}
+}
+
+func TestHabitStreakRepositoryRoundTripsDescription(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+
+	repo := repositories.NewHabitStreakDefinitionRepository(store.DB())
+	created, err := repo.Create(ctx, "local", "1", sharedtypes.HabitStreakDefinition{
+		ID:            "momentum-1",
+		Name:          "Momentum One",
+		Description:   ptrString("  Track the steady stuff.  "),
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 2,
+	})
+	if err != nil {
+		t.Fatalf("create momentum definition: %v", err)
+	}
+	if created.Description == nil || *created.Description != "Track the steady stuff." {
+		t.Fatalf("expected normalized description on create, got %+v", created.Description)
+	}
+
+	listed, err := repo.List(ctx, "local")
+	if err != nil {
+		t.Fatalf("list momentum definitions: %v", err)
+	}
+	if len(listed) != 1 {
+		t.Fatalf("expected one listed momentum definition, got %+v", listed)
+	}
+	if listed[0].Description == nil || *listed[0].Description != "Track the steady stuff." {
+		t.Fatalf("expected description to round-trip through list, got %+v", listed[0].Description)
+	}
+
+	updated, err := repo.Update(ctx, "local", "2", sharedtypes.HabitStreakDefinition{
+		ID:            "momentum-1",
+		Name:          "Momentum One",
+		Description:   nil,
+		Enabled:       true,
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 3,
+	})
+	if err != nil {
+		t.Fatalf("update momentum definition: %v", err)
+	}
+	if updated.Description != nil {
+		t.Fatalf("expected description to clear on update, got %+v", updated.Description)
+	}
+
+	listed, err = repo.List(ctx, "local")
+	if err != nil {
+		t.Fatalf("re-list momentum definitions: %v", err)
+	}
+	if listed[0].Description != nil {
+		t.Fatalf("expected description to clear through list, got %+v", listed[0].Description)
+	}
+}
+
+func ptrString(value string) *string {
+	return &value
 }

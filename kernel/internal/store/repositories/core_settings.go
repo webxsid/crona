@@ -19,7 +19,8 @@ import (
 )
 
 type CoreSettingsRepository struct {
-	db *bun.DB
+	db               *bun.DB
+	habitStreaksRepo *HabitStreakDefinitionRepository
 }
 
 type coreSettingQueryKind int
@@ -180,14 +181,13 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "error_reporting_enabled",
 		queryKind: coreSettingQueryBool,
 	},
-	sharedtypes.CoreSettingsKeyHabitStreakDefs: {
-		column:    "habit_streak_definitions",
-		queryKind: coreSettingQueryString,
-	},
 }
 
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
-	return &CoreSettingsRepository{db: db}
+	return &CoreSettingsRepository{
+		db:               db,
+		habitStreaksRepo: NewHabitStreakDefinitionRepository(db),
+	}
 }
 
 func (r *CoreSettingsRepository) Get(
@@ -206,7 +206,10 @@ func (r *CoreSettingsRepository) Get(
 		}
 		return nil, err
 	}
-	settings := coreSettingsFromModel(model)
+	settings, err := r.hydrateCoreSettings(ctx, model)
+	if err != nil {
+		return nil, err
+	}
 	return &settings, nil
 }
 
@@ -215,6 +218,9 @@ func (r *CoreSettingsRepository) GetSetting(
 	userID string,
 	key sharedtypes.CoreSettingsKey,
 ) (any, error) {
+	if key == sharedtypes.CoreSettingsKeyHabitStreakDefs {
+		return r.habitStreaksRepo.List(ctx, userID)
+	}
 	meta, ok := coreSettingMetas[key]
 	if !ok {
 		return nil, nil
@@ -274,6 +280,9 @@ func (r *CoreSettingsRepository) SetSetting(
 	key sharedtypes.CoreSettingsKey,
 	value any,
 ) error {
+	if key == sharedtypes.CoreSettingsKeyHabitStreakDefs {
+		return errors.New("habit streak definitions must be managed via momentum APIs")
+	}
 	q := r.db.NewUpdate().
 		Model((*storemodels.CoreSettingsModel)(nil)).
 		Where("user_id = ?", userID).
@@ -296,7 +305,11 @@ func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string
 	}
 	result := map[string]any{}
 	for _, row := range rows {
-		result[row.UserID] = coreSettingsFromModel(row)
+		settings, err := r.hydrateCoreSettings(ctx, row)
+		if err != nil {
+			return nil, err
+		}
+		result[row.UserID] = settings
 	}
 	return result, nil
 }
@@ -468,8 +481,11 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 	}
 }
 
-func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSettings {
-	return sharedtypes.CoreSettings{
+func (r *CoreSettingsRepository) hydrateCoreSettings(
+	ctx context.Context,
+	row storemodels.CoreSettingsModel,
+) (sharedtypes.CoreSettings, error) {
+	settings := sharedtypes.CoreSettings{
 		UserID:                row.UserID,
 		DeviceID:              row.DeviceID,
 		TimerMode:             sharedtypes.TimerMode(row.TimerMode),
@@ -520,10 +536,15 @@ func coreSettingsFromModel(row storemodels.CoreSettingsModel) sharedtypes.CoreSe
 		OnboardingCompleted:   row.OnboardingCompleted,
 		UsageTelemetryEnabled: row.UsageTelemetryEnabled,
 		ErrorReportingEnabled: row.ErrorReportingEnabled,
-		HabitStreakDefs:       parseHabitStreakDefinitions(row.HabitStreakDefs),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}
+	defs, err := r.habitStreaksRepo.List(ctx, row.UserID)
+	if err != nil {
+		return sharedtypes.CoreSettings{}, err
+	}
+	settings.HabitStreakDefs = defs
+	return settings, nil
 }
 
 func parseHabitStreakDefinitions(raw string) []sharedtypes.HabitStreakDefinition {
@@ -538,11 +559,10 @@ func parseHabitStreakDefinitions(raw string) []sharedtypes.HabitStreakDefinition
 	return sharedtypes.NormalizeHabitStreakDefinitions(out)
 }
 
-func habitStreakDefinitionsJSON(value any) (string, error) {
+func parseHabitStreakDefinitionsValue(value any) ([]sharedtypes.HabitStreakDefinition, error) {
 	switch typed := value.(type) {
 	case []sharedtypes.HabitStreakDefinition:
-		b, err := json.Marshal(sharedtypes.NormalizeHabitStreakDefinitions(typed))
-		return string(b), err
+		return sharedtypes.NormalizeHabitStreakDefinitions(typed), nil
 	case []*sharedtypes.HabitStreakDefinition:
 		flat := make([]sharedtypes.HabitStreakDefinition, 0, len(typed))
 		for _, item := range typed {
@@ -551,21 +571,27 @@ func habitStreakDefinitionsJSON(value any) (string, error) {
 			}
 			flat = append(flat, *item)
 		}
-		b, err := json.Marshal(sharedtypes.NormalizeHabitStreakDefinitions(flat))
-		return string(b), err
+		return sharedtypes.NormalizeHabitStreakDefinitions(flat), nil
 	default:
 		b, err := json.Marshal(value)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		var out []sharedtypes.HabitStreakDefinition
 		if err := json.Unmarshal(b, &out); err != nil {
-			return "", err
+			return nil, err
 		}
-		normalized := sharedtypes.NormalizeHabitStreakDefinitions(out)
-		b, err = json.Marshal(normalized)
-		return string(b), err
+		return sharedtypes.NormalizeHabitStreakDefinitions(out), nil
 	}
+}
+
+func habitStreakDefinitionsJSON(value any) (string, error) {
+	normalized, err := parseHabitStreakDefinitionsValue(value)
+	if err != nil {
+		return "", err
+	}
+	b, err := json.Marshal(normalized)
+	return string(b), err
 }
 
 func clampInactivityMinutes(value any) int {

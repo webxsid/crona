@@ -324,3 +324,27 @@ type CustomHabitMomentumSnapshotModel struct {
 	CreatedAt   string `bun:"created_at,notnull,type:text"`
 	UpdatedAt   string `bun:"updated_at,notnull,type:text"`
 }
+
+type HabitStreakDefinitionModel struct {
+	bun.BaseModel `bun:"table:momentums"`
+
+	ID            string  `bun:"id,pk,type:text"`
+	UserID        string  `bun:"user_id,notnull,type:text"`
+	Name          string  `bun:"name,notnull,type:text"`
+	Description   *string `bun:"description,type:text,nullzero"`
+	Enabled       bool    `bun:"enabled,notnull,type:integer"`
+	Period        string  `bun:"period,notnull,type:text"`
+	RequiredCount int     `bun:"required_count,notnull,type:integer"`
+	CreatedAt     string  `bun:"created_at,notnull,type:text"`
+	UpdatedAt     string  `bun:"updated_at,notnull,type:text"`
+	DeletedAt     *string `bun:"deleted_at,type:text,nullzero"`
+}
+
+type HabitStreakHabitModel struct {
+	bun.BaseModel `bun:"table:momentum_habits"`
+
+	MomentumID string `bun:"momentum_id,pk,type:text"`
+	HabitID    int64  `bun:"habit_id,pk,type:integer"`
+	UserID     string `bun:"user_id,notnull,type:text"`
+	CreatedAt  string `bun:"created_at,notnull,type:text"`
+}

@@ -28,12 +28,16 @@ type MessageState struct {
 	Issues                  []api.Issue
 	Habits                  []api.Habit
 	AllHabits               []api.HabitWithMeta
+	HabitStreakDefs         []api.HabitStreakDefinition
+	MomentumCards           []api.MomentumCard
 	AllIssues               []api.IssueWithMeta
 	DueHabits               []api.HabitDailyItem
 	DailySummary            *api.DailyIssueSummary
 	DailyPlan               *api.DailyPlan
 	RollupStartDate         string
 	RollupEndDate           string
+	MomentumDate            string
+	MomentumWindowDays      int
 	WellbeingDate           string
 	WellbeingWindowDays     int
 	DailyCheckIn            *api.DailyCheckIn
@@ -104,53 +108,56 @@ type MessageState struct {
 }
 
 type MessageDeps struct {
-	DefaultOpsLimit           func(MessageState) int
-	CurrentOpsLimit           func(MessageState) int
-	ClampFiltered             func(*MessageState, uistate.Pane)
-	FilteredCursorForRawIndex func(*MessageState, uistate.Pane, int) int
-	SetStatus                 func(*MessageState, string, bool) tea.Cmd
-	OpenViewEntityDialog      func(*MessageState, string, string, string, string)
-	OpenSupportBundleDialog   func(*MessageState, string, int64, string)
-	OpenStashConflictDialog   func(*MessageState, api.StashConflict, int64, int64, int64)
-	OpenOnboardingDialog      func(*MessageState)
-	AnchorWellbeingScroll     func(*MessageState, uistate.Pane)
-	CurrentDashboardDate      func(MessageState) string
-	CurrentWellbeingDate      func(MessageState) string
-	LoadRepos                 func() tea.Cmd
-	LoadAllIssues             func() tea.Cmd
-	LoadStreams               func(int64) tea.Cmd
-	LoadIssues                func(int64) tea.Cmd
-	LoadHabits                func(int64) tea.Cmd
-	LoadAllHabits             func() tea.Cmd
-	LoadDueHabits             func(string) tea.Cmd
-	LoadDailySummary          func(string) tea.Cmd
-	LoadDailyStreaks          func(string) tea.Cmd
-	LoadWellbeing             func(string, int) tea.Cmd
-	LoadRollupSummaries       func(string, string) tea.Cmd
-	LoadDailyPlan             func(string) tea.Cmd
-	LoadExportAssets          func() tea.Cmd
-	LoadExportReports         func() tea.Cmd
-	LoadIssueSessions         func(int64) tea.Cmd
-	LoadHabitHistory          func(*api.ActiveContext, *int64) tea.Cmd
-	LoadSessionHistoryFor200  func(MessageState) tea.Cmd
-	LoadSessionDetail         func(string) tea.Cmd
-	LoadStashes               func() tea.Cmd
-	LoadOps                   func(int) tea.Cmd
-	LoadContext               func() tea.Cmd
-	LoadTimer                 func() tea.Cmd
-	LoadHealth                func() tea.Cmd
-	LoadAlertStatus           func() tea.Cmd
-	LoadAlertReminders        func() tea.Cmd
-	LoadUpdateStatus          func() tea.Cmd
-	LoadSettings              func() tea.Cmd
-	LoadKernelInfo            func() tea.Cmd
-	NotifyAlert               func(sharedtypes.AlertRequest) tea.Cmd
-	ReportHandledError        func(error, string) tea.Cmd
-	HealthTickAfter           func() tea.Cmd
-	TickAfter                 func(int) tea.Cmd
-	WaitForEvent              func() tea.Cmd
-	HandleKernelEvent         func(MessageState, api.KernelEvent) (MessageState, tea.Cmd)
-	CloseEventStop            func()
+	DefaultOpsLimit            func(MessageState) int
+	CurrentOpsLimit            func(MessageState) int
+	ClampFiltered              func(*MessageState, uistate.Pane)
+	FilteredCursorForRawIndex  func(*MessageState, uistate.Pane, int) int
+	SetStatus                  func(*MessageState, string, bool) tea.Cmd
+	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
+	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
+	OpenStashConflictDialog    func(*MessageState, api.StashConflict, int64, int64, int64)
+	OpenOnboardingDialog       func(*MessageState)
+	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
+	CurrentDashboardDate       func(MessageState) string
+	CurrentMomentumDate        func(MessageState) string
+	CurrentWellbeingDate       func(MessageState) string
+	LoadRepos                  func() tea.Cmd
+	LoadAllIssues              func() tea.Cmd
+	LoadStreams                func(int64) tea.Cmd
+	LoadIssues                 func(int64) tea.Cmd
+	LoadHabits                 func(int64) tea.Cmd
+	LoadAllHabits              func() tea.Cmd
+	LoadHabitStreakDefinitions func() tea.Cmd
+	LoadMomentumRange          func(string, int) tea.Cmd
+	LoadDueHabits              func(string) tea.Cmd
+	LoadDailySummary           func(string) tea.Cmd
+	LoadDailyStreaks           func(string) tea.Cmd
+	LoadWellbeing              func(string, int) tea.Cmd
+	LoadRollupSummaries        func(string, string) tea.Cmd
+	LoadDailyPlan              func(string) tea.Cmd
+	LoadExportAssets           func() tea.Cmd
+	LoadExportReports          func() tea.Cmd
+	LoadIssueSessions          func(int64) tea.Cmd
+	LoadHabitHistory           func(*api.ActiveContext, *int64) tea.Cmd
+	LoadSessionHistoryFor200   func(MessageState) tea.Cmd
+	LoadSessionDetail          func(string) tea.Cmd
+	LoadStashes                func() tea.Cmd
+	LoadOps                    func(int) tea.Cmd
+	LoadContext                func() tea.Cmd
+	LoadTimer                  func() tea.Cmd
+	LoadHealth                 func() tea.Cmd
+	LoadAlertStatus            func() tea.Cmd
+	LoadAlertReminders         func() tea.Cmd
+	LoadUpdateStatus           func() tea.Cmd
+	LoadSettings               func() tea.Cmd
+	LoadKernelInfo             func() tea.Cmd
+	NotifyAlert                func(sharedtypes.AlertRequest) tea.Cmd
+	ReportHandledError         func(error, string) tea.Cmd
+	HealthTickAfter            func() tea.Cmd
+	TickAfter                  func(int) tea.Cmd
+	WaitForEvent               func() tea.Cmd
+	HandleKernelEvent          func(MessageState, api.KernelEvent) (MessageState, tea.Cmd)
+	CloseEventStop             func()
 }
 
 func HandleMessage(
@@ -180,6 +187,13 @@ func HandleMessage(
 		return state, nil, true
 	case commands.AllHabitsLoadedMsg:
 		state.AllHabits = msg.Habits
+		return state, nil, true
+	case commands.HabitStreakDefinitionsLoadedMsg:
+		state.HabitStreakDefs = msg.Definitions
+		return state, nil, true
+	case commands.MomentumRangeLoadedMsg:
+		state.MomentumCards = msg.Cards
+		deps.ClampFiltered(&state, uistate.PaneMomentumCards)
 		return state, nil, true
 	case commands.IssuesLoadedMsg:
 		state.Issues = msg.Issues
@@ -249,9 +263,6 @@ func HandleMessage(
 		return state, nil, true
 	case commands.StreaksLoadedMsg:
 		state.Streaks = msg.Streaks
-		if deps.AnchorWellbeingScroll != nil {
-			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingStreaks)
-		}
 		return state, nil, true
 	case commands.DailyStreaksLoadedMsg:
 		state.DailyStreaks = msg.Streaks
@@ -737,11 +748,13 @@ func shouldSuppressUpdateInstallError(state MessageState, err error) bool {
 }
 
 func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.Cmd {
-	cmds := make([]tea.Cmd, 0, len(extra)+19)
+	cmds := make([]tea.Cmd, 0, len(extra)+20)
 	cmds = append(cmds, extra...)
 	cmds = append(cmds,
 		deps.LoadKernelInfo(),
 		deps.LoadRepos(),
+		deps.LoadHabitStreakDefinitions(),
+		deps.LoadMomentumRange(deps.CurrentMomentumDate(state), state.MomentumWindowDays),
 		deps.LoadAllIssues(),
 		deps.LoadDueHabits(deps.CurrentDashboardDate(state)),
 		deps.LoadDailySummary(state.DashboardDate),

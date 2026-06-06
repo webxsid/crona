@@ -41,11 +41,11 @@ func ComputeCustomHabitStreakSnapshot(
 }
 
 func SeedCustomHabitMomentumSnapshot(ctx context.Context, c *core.Context) error {
-	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	defs, err := c.HabitStreakDefinitions.List(ctx, c.UserID)
 	if err != nil {
 		return err
 	}
-	if settings == nil || len(settings.HabitStreakDefs) == 0 {
+	if len(defs) == 0 {
 		return nil
 	}
 	empty, err := c.CustomHabitMomentumSnapshots.IsEmpty(ctx, c.UserID)
@@ -88,14 +88,14 @@ func ensureCustomHabitMomentumSnapshot(
 	if !isISODate(throughDate) {
 		return nil, errors.New("date must be YYYY-MM-DD")
 	}
-	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	defs, err := c.HabitStreakDefinitions.List(ctx, c.UserID)
 	if err != nil {
 		return nil, err
 	}
-	if settings == nil || len(settings.HabitStreakDefs) == 0 {
+	if len(defs) == 0 {
 		return &customHabitMomentumSnapshot{summaries: nil, state: customHabitMomentumSnapshotState{}}, nil
 	}
-	settings.HabitStreakDefs = sharedtypes.NormalizeHabitStreakDefinitions(settings.HabitStreakDefs)
+	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
 	existing, err := c.CustomHabitMomentumSnapshots.GetByDate(ctx, c.UserID, throughDate)
 	if err != nil {
 		return nil, err
@@ -140,11 +140,11 @@ func ensureCustomHabitMomentumSnapshot(
 	if err != nil {
 		return nil, err
 	}
-	countsByDate := buildCustomHabitCounts(history, settings.HabitStreakDefs, throughDate)
+	countsByDate := buildCustomHabitCounts(history, defs, throughDate)
 	state := baseState
 	for day := startDate; day <= throughDate; day = nextISODate(day) {
-		state = advanceCustomHabitMomentumSnapshotState(state, day, countsByDate, settings.HabitStreakDefs)
-		summaries := customHabitMomentumSummariesFromState(state, settings.HabitStreakDefs)
+		state = advanceCustomHabitMomentumSnapshotState(state, day, countsByDate, defs)
+		summaries := customHabitMomentumSummariesFromState(state, defs)
 		if persistEveryDay || day == throughDate {
 			if err := persistCustomHabitMomentumSnapshot(ctx, c, day, summaries, state); err != nil {
 				return nil, err

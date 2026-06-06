@@ -27,6 +27,7 @@ type Context struct {
 	DailyCheckIns                *repositories.DailyCheckInRepository
 	DailyPlans                   *repositories.DailyPlanRepository
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
+	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
 
 	UserID     string
 	DeviceID   string
@@ -62,6 +63,7 @@ func NewContext(
 		DailyCheckIns:                registry.DailyCheckIns,
 		DailyPlans:                   registry.DailyPlans,
 		CustomHabitMomentumSnapshots: registry.CustomHabitMomentumSnapshots,
+		HabitStreakDefinitions:       registry.HabitStreakDefinitions,
 		UserID:                       userID,
 		DeviceID:                     deviceID,
 		ScratchDir:                   scratchDir,

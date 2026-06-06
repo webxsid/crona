@@ -32,10 +32,6 @@ func PaneLineCount(state types.ContentState, pane string) int {
 		return len(
 			flattenLines(trendsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
 		)
-	case string(uistate.PaneWellbeingStreaks):
-		return len(
-			flattenLines(streaksBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
-		)
 	default:
 		return 0
 	}

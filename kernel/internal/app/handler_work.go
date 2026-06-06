@@ -326,6 +326,26 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.HabitHistoryQuery) (any, error) {
 			return corecommands.ListHabitHistory(ctx, h.core, input.RepoID, input.StreamID)
 		}), true
+	case protocol.MethodMomentumList:
+		return h.handleNoParams(req, func() (any, error) {
+			return corecommands.ListHabitStreakDefinitions(ctx, h.core)
+		}), true
+	case protocol.MethodMomentumCreate:
+		return handle(req, func(input shareddto.HabitStreakDefinitionRequest) (any, error) {
+			return corecommands.CreateHabitStreakDefinition(ctx, h.core, input.Definition)
+		}), true
+	case protocol.MethodMomentumUpdate:
+		return handle(req, func(input shareddto.HabitStreakDefinitionRequest) (any, error) {
+			return corecommands.UpdateHabitStreakDefinition(ctx, h.core, input.Definition)
+		}), true
+	case protocol.MethodMomentumDelete:
+		return handle(req, func(input shareddto.HabitStreakDefinitionDeleteRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.DeleteHabitStreakDefinition(ctx, h.core, input.ID)
+		}), true
+	case protocol.MethodMomentumRange:
+		return handle(req, func(input shareddto.MomentumRangeRequest) (any, error) {
+			return corecommands.ListMomentumCards(ctx, h.core, input.EndDate, input.WindowDays)
+		}), true
 	case protocol.MethodCheckInGet:
 		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {
 			return corecommands.GetDailyCheckIn(ctx, h.core, input.Date)

@@ -130,6 +130,17 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 		}
 	}
+	if state.View == "momentum" {
+		return []string{
+			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),
+			theme.StyleHeader.Render("[enter/e]") + theme.StyleDim.Render(" edit"),
+			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle enabled"),
+			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
+			theme.StyleHeader.Render("[+/-/0]") + theme.StyleDim.Render(" window"),
+		}
+	}
 	if state.View == "rollup" {
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open day details"),
@@ -311,7 +322,7 @@ func timerActionSegmentLabel(segment string) string {
 }
 
 func supportsGlobalCreate(view string) bool {
-	return view == "default" || view == "daily"
+	return view == "default" || view == "daily" || view == "momentum"
 }
 
 func supportsGlobalContext(view string) bool {

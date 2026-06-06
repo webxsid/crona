@@ -8,6 +8,8 @@ import (
 type ReposLoadedMsg struct{ Repos []api.Repo }
 type StreamsLoadedMsg struct{ Streams []api.Stream }
 type AllHabitsLoadedMsg struct{ Habits []api.HabitWithMeta }
+type HabitStreakDefinitionsLoadedMsg struct{ Definitions []api.HabitStreakDefinition }
+type MomentumRangeLoadedMsg struct{ Cards []api.MomentumCard }
 
 type IssuesLoadedMsg struct {
 	StreamID        int64

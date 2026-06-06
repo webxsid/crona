@@ -16,6 +16,7 @@ import (
 	shareddto "crona/shared/dto"
 	"crona/shared/localipc"
 	"crona/shared/protocol"
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 )
 
@@ -307,6 +308,63 @@ drained:
 	)
 }
 
+func TestSetHabitStatusReloadsDueHabitsAndMomentumRange(t *testing.T) {
+	got := runHabitCompletionReloadTest(t, func(endpoint string) tea.Cmd {
+		client := api.NewClient(localipc.DefaultTransport(), endpoint)
+		return SetHabitStatus(
+			client,
+			42,
+			"2026-04-10",
+			sharedtypes.HabitCompletionStatusCompleted,
+			nil,
+			nil,
+			"2026-04-11",
+			14,
+		)
+	})
+	if len(got[protocol.MethodHabitComplete]) == 0 {
+		t.Fatalf("expected habit.complete request")
+	}
+	if len(got[protocol.MethodHabitListDue]) == 0 {
+		t.Fatalf("expected habit.list_due refresh request")
+	}
+	req := firstRequest(got, protocol.MethodMomentumRange)
+	if req.Method == "" {
+		t.Fatalf("expected momentum.range refresh request")
+	}
+	var query shareddto.MomentumRangeRequest
+	if err := json.Unmarshal(req.Params, &query); err != nil {
+		t.Fatalf("unmarshal momentum range query: %v", err)
+	}
+	if query.EndDate != "2026-04-11" || query.WindowDays != 14 {
+		t.Fatalf("expected momentum range 2026-04-11/14, got %+v", query)
+	}
+}
+
+func TestUncompleteHabitReloadsDueHabitsAndMomentumRange(t *testing.T) {
+	got := runHabitCompletionReloadTest(t, func(endpoint string) tea.Cmd {
+		client := api.NewClient(localipc.DefaultTransport(), endpoint)
+		return UncompleteHabit(client, 42, "2026-04-10", "2026-04-11", 14)
+	})
+	if len(got[protocol.MethodHabitUncomplete]) == 0 {
+		t.Fatalf("expected habit.uncomplete request")
+	}
+	if len(got[protocol.MethodHabitListDue]) == 0 {
+		t.Fatalf("expected habit.list_due refresh request")
+	}
+	req := firstRequest(got, protocol.MethodMomentumRange)
+	if req.Method == "" {
+		t.Fatalf("expected momentum.range refresh request")
+	}
+	var query shareddto.MomentumRangeRequest
+	if err := json.Unmarshal(req.Params, &query); err != nil {
+		t.Fatalf("unmarshal momentum range query: %v", err)
+	}
+	if query.EndDate != "2026-04-11" || query.WindowDays != 14 {
+		t.Fatalf("expected momentum range 2026-04-11/14, got %+v", query)
+	}
+}
+
 func runBatchCommands(batch tea.BatchMsg) {
 	var cmdWG sync.WaitGroup
 	for _, cmd := range batch {
@@ -322,6 +380,73 @@ func runBatchCommands(batch tea.BatchMsg) {
 		}(cmd)
 	}
 	cmdWG.Wait()
+}
+
+func runHabitCompletionReloadTest(t *testing.T, buildCmd func(endpoint string) tea.Cmd) map[string][]protocol.Request {
+	t.Helper()
+	endpoint := testCommandEndpoint()
+	ln, err := localipc.Listen(endpoint)
+	if err != nil {
+		if runtime.GOOS != "windows" && strings.Contains(err.Error(), "operation not permitted") {
+			t.Skipf("local ipc listen unavailable in this environment: %v", err)
+		}
+		t.Fatalf("listen: %v", err)
+	}
+	defer func() { _ = ln.Close() }()
+
+	requests := make(chan protocol.Request, 16)
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func(conn net.Conn) {
+				defer func() { _ = conn.Close() }()
+				var req protocol.Request
+				if err := json.NewDecoder(bufio.NewReader(conn)).Decode(&req); err != nil {
+					return
+				}
+				requests <- req
+				body, _ := json.Marshal(resultForHabitCompletionReloadMethod(req.Method))
+				_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: body})
+			}(conn)
+		}
+	}()
+
+	cmd := buildCmd(endpoint)
+	done := make(chan struct{})
+	go func() {
+		if batch, ok := cmd().(tea.BatchMsg); ok {
+			runBatchCommands(batch)
+		}
+		close(done)
+	}()
+
+	got := map[string][]protocol.Request{}
+	deadline := time.After(3 * time.Second)
+	collecting := true
+	for collecting {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		case <-done:
+			collecting = false
+		case <-deadline:
+			t.Fatalf(
+				"timed out waiting for habit completion reload requests, got methods %+v",
+				methodKeys(got),
+			)
+		}
+	}
+	for {
+		select {
+		case req := <-requests:
+			got[req.Method] = append(got[req.Method], req)
+		default:
+			return got
+		}
+	}
 }
 
 func testCommandEndpoint() string {
@@ -353,6 +478,21 @@ func resultForWellbeingLoadMethod(method string) any {
 		return map[string]any{}
 	default:
 		return map[string]any{}
+	}
+}
+
+func resultForHabitCompletionReloadMethod(method string) any {
+	switch method {
+	case protocol.MethodHabitComplete:
+		return map[string]any{}
+	case protocol.MethodHabitUncomplete:
+		return shareddto.OKResponse{OK: true}
+	case protocol.MethodHabitListDue:
+		return []any{}
+	case protocol.MethodMomentumRange:
+		return []any{}
+	default:
+		return shareddto.OKResponse{OK: true}
 	}
 }
 

@@ -64,6 +64,62 @@ func handleResetDailyDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	), true
 }
 
+func handleShiftMomentumDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.MomentumDate = navigationutil.ShiftISODate(deps.CurrentMomentumDate(s), dir)
+	return s, deps.LoadMomentumRange(s.MomentumDate, s.MomentumWindowDays), true
+}
+
+func handleResetMomentumDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.MomentumDate = ""
+	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
+}
+
+var momentumWindowDaysPresets = []int{7, 14, 30, 90}
+
+func handleShiftMomentumWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.MomentumWindowDays = shiftMomentumWindowDays(s.MomentumWindowDays, dir)
+	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
+}
+
+func handleResetMomentumWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.MomentumWindowDays = 30
+	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
+}
+
+func shiftMomentumWindowDays(current, dir int) int {
+	if current < 1 {
+		current = 30
+	}
+	if current > momentumWindowDaysPresets[len(momentumWindowDaysPresets)-1] {
+		current = momentumWindowDaysPresets[len(momentumWindowDaysPresets)-1]
+	}
+	idx := -1
+	for i, days := range momentumWindowDaysPresets {
+		if days == current {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		idx = 0
+		for i, days := range momentumWindowDaysPresets {
+			if current < days {
+				idx = i
+				break
+			}
+			idx = i
+		}
+	}
+	idx += dir
+	if idx < 0 {
+		idx = 0
+	}
+	if idx >= len(momentumWindowDaysPresets) {
+		idx = len(momentumWindowDaysPresets) - 1
+	}
+	return momentumWindowDaysPresets[idx]
+}
+
 func handleShiftWellbeingDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	s.WellbeingDate = navigationutil.ShiftISODate(deps.CurrentWellbeingDate(s), dir)
 	return s, deps.LoadWellbeing(s.WellbeingDate, s.WellbeingWindowDays), true

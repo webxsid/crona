@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"os/exec"
+	"reflect"
 	"strings"
 	"time"
 
@@ -70,8 +71,7 @@ func PatchSetting(
 			sharedtypes.CoreSettingsKeyFrozenStreakKinds,
 			sharedtypes.CoreSettingsKeyRestWeekdays,
 			sharedtypes.CoreSettingsKeyRestSpecificDates,
-			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
-			sharedtypes.CoreSettingsKeyHabitStreakDefs:
+			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 			cmds = append(
 				cmds,
 				LoadWellbeing(c, dashboardDate),
@@ -79,6 +79,131 @@ func PatchSetting(
 			)
 		}
 		return tea.Batch(cmds...)()
+	}
+}
+
+func SyncHabitStreakDefinitions(
+	c *api.Client,
+	previous []api.HabitStreakDefinition,
+	current []api.HabitStreakDefinition,
+	dashboardDate string,
+	momentumDate string,
+	momentumWindowDays int,
+) tea.Cmd {
+	return func() tea.Msg {
+		prevByID := make(map[string]api.HabitStreakDefinition, len(previous))
+		for _, def := range previous {
+			prevByID[def.ID] = sharedtypes.NormalizeHabitStreakDefinition(def)
+		}
+		currentByID := make(map[string]api.HabitStreakDefinition, len(current))
+		for _, def := range current {
+			normalized := sharedtypes.NormalizeHabitStreakDefinition(def)
+			currentByID[normalized.ID] = normalized
+		}
+		for _, def := range current {
+			normalized := sharedtypes.NormalizeHabitStreakDefinition(def)
+			prev, ok := prevByID[normalized.ID]
+			if !ok {
+				if _, err := c.CreateHabitStreakDefinition(normalized); err != nil {
+					logger.Errorf("CreateHabitStreakDefinition(%s): %v", normalized.ID, err)
+					return ErrMsg{Err: err}
+				}
+				continue
+			}
+			if reflect.DeepEqual(prev, normalized) {
+				continue
+			}
+			if _, err := c.UpdateHabitStreakDefinition(normalized); err != nil {
+				logger.Errorf("UpdateHabitStreakDefinition(%s): %v", normalized.ID, err)
+				return ErrMsg{Err: err}
+			}
+		}
+		for _, def := range previous {
+			if _, ok := currentByID[def.ID]; ok {
+				continue
+			}
+			if err := c.DeleteHabitStreakDefinition(def.ID); err != nil {
+				logger.Errorf("DeleteHabitStreakDefinition(%s): %v", def.ID, err)
+				return ErrMsg{Err: err}
+			}
+		}
+		return tea.Batch(
+			LoadHabitStreakDefinitions(c),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+			LoadSettings(c),
+			LoadDailyStreaks(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		)()
+	}
+}
+
+func CreateMomentumDefinition(
+	c *api.Client,
+	def api.HabitStreakDefinition,
+	dashboardDate string,
+	momentumDate string,
+	momentumWindowDays int,
+) tea.Cmd {
+	return func() tea.Msg {
+		if _, err := c.CreateHabitStreakDefinition(def); err != nil {
+			logger.Errorf("CreateHabitStreakDefinition(%s): %v", def.ID, err)
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(
+			LoadHabitStreakDefinitions(c),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+			LoadSettings(c),
+			LoadDailyStreaks(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		)()
+	}
+}
+
+func UpdateMomentumDefinition(
+	c *api.Client,
+	def api.HabitStreakDefinition,
+	dashboardDate string,
+	momentumDate string,
+	momentumWindowDays int,
+) tea.Cmd {
+	return func() tea.Msg {
+		if _, err := c.UpdateHabitStreakDefinition(def); err != nil {
+			logger.Errorf("UpdateHabitStreakDefinition(%s): %v", def.ID, err)
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(
+			LoadHabitStreakDefinitions(c),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+			LoadSettings(c),
+			LoadDailyStreaks(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		)()
+	}
+}
+
+func DeleteMomentumDefinition(
+	c *api.Client,
+	id string,
+	dashboardDate string,
+	momentumDate string,
+	momentumWindowDays int,
+) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.DeleteHabitStreakDefinition(id); err != nil {
+			logger.Errorf("DeleteHabitStreakDefinition(%s): %v", id, err)
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(
+			LoadHabitStreakDefinitions(c),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+			LoadSettings(c),
+			LoadDailyStreaks(c, dashboardDate),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		)()
 	}
 }
 
@@ -399,23 +524,31 @@ func SetHabitStatus(
 	status sharedtypes.HabitCompletionStatus,
 	durationMinutes *int,
 	notes *string,
+	momentumDate string,
+	momentumWindowDays int,
 ) tea.Cmd {
 	return func() tea.Msg {
 		if _, err := c.CompleteHabit(habitID, date, status, durationMinutes, notes); err != nil {
 			logger.Errorf("CompleteHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return LoadDueHabits(c, date)()
+		return tea.Batch(
+			LoadDueHabits(c, date),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+		)()
 	}
 }
 
-func UncompleteHabit(c *api.Client, habitID int64, date string) tea.Cmd {
+func UncompleteHabit(c *api.Client, habitID int64, date string, momentumDate string, momentumWindowDays int) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.UncompleteHabit(habitID, date); err != nil {
 			logger.Errorf("UncompleteHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return LoadDueHabits(c, date)()
+		return tea.Batch(
+			LoadDueHabits(c, date),
+			LoadMomentumRange(c, momentumDate, momentumWindowDays),
+		)()
 	}
 }
 

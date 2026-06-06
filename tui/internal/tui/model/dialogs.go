@@ -39,6 +39,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		UpdateStatus:         m.updateStatus,
 		ExportAssets:         m.exportAssets,
 		Settings:             m.settings,
+		HabitStreakDefs:      m.habitStreakDefs,
 		AlertReminders:       m.alertReminders,
 		CurrentDashboardDate: m.currentDashboardDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
@@ -561,6 +562,14 @@ func (m Model) openEditHabitStreaksDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditHabitStreaks())
 }
 
+func (m Model) openCreateMomentumDialog() Model {
+	return m.withDialogState(m.dialogSnapshot().OpenCreateMomentumDirect())
+}
+
+func (m Model) openEditMomentumDialog(def sharedtypes.HabitStreakDefinition) Model {
+	return m.withDialogState(m.dialogSnapshot().OpenEditMomentumDirect(def))
+}
+
 func (m Model) openConfirmWipeDataDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenConfirmWipeData())
 }
@@ -627,6 +636,7 @@ func (m Model) dialogState() dialogstate.State {
 		HabitItems:                    m.allHabits,
 		HabitStreakStep:               m.dialogHabitStreakStep,
 		HabitStreakCursor:             m.dialogHabitStreakCursor,
+		HabitStreakOriginalDefs:       m.dialogHabitStreakOriginalDefs,
 		HabitStreakDefs:               m.dialogHabitStreakDefs,
 		HabitStreakDraft:              m.dialogHabitStreakDraft,
 		HabitStreakEditIdx:            m.dialogHabitStreakEditIdx,
@@ -717,6 +727,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogProtectionDates = state.ProtectionDates
 	m.dialogHabitStreakStep = state.HabitStreakStep
 	m.dialogHabitStreakCursor = state.HabitStreakCursor
+	m.dialogHabitStreakOriginalDefs = state.HabitStreakOriginalDefs
 	m.dialogHabitStreakDefs = state.HabitStreakDefs
 	m.dialogHabitStreakDraft = state.HabitStreakDraft
 	m.dialogHabitStreakEditIdx = state.HabitStreakEditIdx
@@ -746,6 +757,8 @@ func (m Model) dialogRuntimeState() dialogruntime.State {
 		Context:               m.context,
 		Repos:                 m.repos,
 		DashboardDate:         m.currentDashboardDate(),
+		MomentumDate:          m.currentMomentumDate(),
+		MomentumWindowDays:    m.currentMomentumWindowDays(),
 		RollupStartDate:       m.currentRollupStartDate(),
 		RollupEndDate:         m.currentRollupEndDate(),
 		CurrentExecutablePath: m.currentExecutablePath,
@@ -837,8 +850,17 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dashboardDate,
 			)
 		},
-		SetHabitStatus: func(habitID int64, date string, status sharedtypes.HabitCompletionStatus, estimateMinutes *int, note *string) tea.Cmd {
-			return commands.SetHabitStatus(m.client, habitID, date, status, estimateMinutes, note)
+		SetHabitStatus: func(habitID int64, date string, status sharedtypes.HabitCompletionStatus, estimateMinutes *int, note *string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.SetHabitStatus(
+				m.client,
+				habitID,
+				date,
+				status,
+				estimateMinutes,
+				note,
+				momentumDate,
+				momentumWindowDays,
+			)
 		},
 		CopyDailyReport: func(date string) tea.Cmd { return commands.CopyDailyReport(m.client, date) },
 		GenerateCalendarExport: func(req shareddto.ExportCalendarRequest) tea.Cmd {
@@ -849,6 +871,43 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		SetExportICSDir:     func(path string) tea.Cmd { return commands.SetExportICSDir(m.client, path) },
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
+		},
+		CreateMomentumDefinition: func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.CreateMomentumDefinition(
+				m.client,
+				def,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
+		UpdateMomentumDefinition: func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.UpdateMomentumDefinition(
+				m.client,
+				def,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
+		DeleteMomentumDefinition: func(id string, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.DeleteMomentumDefinition(
+				m.client,
+				id,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
+		},
+		SyncHabitStreakDefinitions: func(previous, current []sharedtypes.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
+			return commands.SyncHabitStreakDefinitions(
+				m.client,
+				previous,
+				current,
+				dashboardDate,
+				momentumDate,
+				momentumWindowDays,
+			)
 		},
 		PatchTelemetrySettings: func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd {
 			return commands.PatchTelemetrySettings(

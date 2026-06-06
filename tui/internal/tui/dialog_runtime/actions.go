@@ -16,6 +16,8 @@ type State struct {
 	Context               *api.ActiveContext
 	Repos                 []api.Repo
 	DashboardDate         string
+	MomentumDate          string
+	MomentumWindowDays    int
 	RollupStartDate       string
 	RollupEndDate         string
 	CurrentExecutablePath string
@@ -35,13 +37,17 @@ type Deps struct {
 	CheckoutContext                func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd
 	UpsertDailyCheckIn             func(req shareddto.DailyCheckInUpsertRequest, refreshDate string) tea.Cmd
 	UpdateIssue                    func(issueID, streamID int64, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
-	SetHabitStatus                 func(habitID int64, date string, status sharedtypes.HabitCompletionStatus, estimateMinutes *int, note *string) tea.Cmd
+	SetHabitStatus                 func(habitID int64, date string, status sharedtypes.HabitCompletionStatus, estimateMinutes *int, note *string, momentumDate string, momentumWindowDays int) tea.Cmd
 	CopyDailyReport                func(date string) tea.Cmd
 	GenerateCalendarExport         func(req shareddto.ExportCalendarRequest) tea.Cmd
 	GenerateReport                 func(req shareddto.ExportReportRequest) tea.Cmd
 	SetExportReportsDir            func(path string) tea.Cmd
 	SetExportICSDir                func(path string) tea.Cmd
 	PatchSetting                   func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
+	CreateMomentumDefinition       func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
+	UpdateMomentumDefinition       func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
+	DeleteMomentumDefinition       func(id string, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
+	SyncHabitStreakDefinitions     func(previous, current []sharedtypes.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd
 	PatchTelemetrySettings         func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
 	CompleteOnboarding             func(usageEnabled, errorReportingEnabled bool, restartNow bool) tea.Cmd
 	CreateAlertReminder            func(input shareddto.AlertReminderCreateRequest) tea.Cmd
@@ -169,6 +175,8 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			sharedtypes.HabitCompletionStatusCompleted,
 			action.Estimate,
 			action.Note,
+			state.MomentumDate,
+			state.MomentumWindowDays,
 		)
 	})
 	r.Register(
@@ -187,6 +195,46 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		"patch_setting",
 		func(action dialogstate.Action) tea.Cmd { return patchSettingCmd(action, state, deps) },
 	)
+	r.Register("create_momentum", func(action dialogstate.Action) tea.Cmd {
+		if deps.CreateMomentumDefinition == nil {
+			return missingRuntimeHookCmd("create_momentum")
+		}
+		if len(action.HabitStreakDefs) == 0 {
+			return missingRuntimeHookCmd("create_momentum")
+		}
+		return deps.CreateMomentumDefinition(
+			api.HabitStreakDefinition(action.HabitStreakDefs[0]),
+			state.DashboardDate,
+			state.MomentumDate,
+			state.MomentumWindowDays,
+		)
+	})
+	r.Register("update_momentum", func(action dialogstate.Action) tea.Cmd {
+		if deps.UpdateMomentumDefinition == nil {
+			return missingRuntimeHookCmd("update_momentum")
+		}
+		if len(action.HabitStreakDefs) == 0 {
+			return missingRuntimeHookCmd("update_momentum")
+		}
+		return deps.UpdateMomentumDefinition(
+			api.HabitStreakDefinition(action.HabitStreakDefs[0]),
+			state.DashboardDate,
+			state.MomentumDate,
+			state.MomentumWindowDays,
+		)
+	})
+	r.Register("sync_habit_streaks", func(action dialogstate.Action) tea.Cmd {
+		if deps.SyncHabitStreakDefinitions == nil {
+			return missingRuntimeHookCmd("sync_habit_streaks")
+		}
+		return deps.SyncHabitStreakDefinitions(
+			action.PreviousHabitStreakDefs,
+			action.HabitStreakDefs,
+			state.DashboardDate,
+			state.MomentumDate,
+			state.MomentumWindowDays,
+		)
+	})
 	r.Register("patch_telemetry_settings", func(action dialogstate.Action) tea.Cmd {
 		if deps.PatchTelemetrySettings == nil {
 			return missingRuntimeHookCmd("patch_telemetry_settings")
@@ -452,6 +500,14 @@ func deleteCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			dialogstate.ParseNumericID(action.ID),
 			action.StreamID,
 			state.DashboardDate,
+		)
+	})
+	r.Register("momentum", func(action dialogstate.Action) tea.Cmd {
+		return deps.DeleteMomentumDefinition(
+			action.ID,
+			state.DashboardDate,
+			state.MomentumDate,
+			state.MomentumWindowDays,
 		)
 	})
 	r.Register(

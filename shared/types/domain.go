@@ -376,15 +376,42 @@ func NormalizeHabitStreakPeriod(value HabitStreakPeriod) HabitStreakPeriod {
 type HabitStreakDefinition struct {
 	ID            string            `json:"id"`
 	Name          string            `json:"name"`
+	Description   *string           `json:"description,omitempty"`
 	Enabled       bool              `json:"enabled"`
 	Period        HabitStreakPeriod `json:"period"`
 	RequiredCount int               `json:"requiredCount"`
 	HabitIDs      []int64           `json:"habitIds,omitempty"`
 }
 
+type MomentumSeriesPoint struct {
+	BucketKey string `json:"bucketKey"`
+	Label     string `json:"label"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+	Count     int    `json:"count"`
+	Target    int    `json:"target"`
+	MetTarget bool   `json:"metTarget"`
+}
+
+type MomentumCard struct {
+	Definition HabitStreakDefinition `json:"definition"`
+	Current    int                   `json:"current"`
+	Longest    int                   `json:"longest"`
+	HabitNames []string              `json:"habitNames,omitempty"`
+	Series     []MomentumSeriesPoint `json:"series,omitempty"`
+}
+
 func NormalizeHabitStreakDefinition(value HabitStreakDefinition) HabitStreakDefinition {
 	value.ID = strings.TrimSpace(value.ID)
 	value.Name = strings.TrimSpace(value.Name)
+	if value.Description != nil {
+		trimmed := strings.TrimSpace(*value.Description)
+		if trimmed == "" {
+			value.Description = nil
+		} else {
+			value.Description = &trimmed
+		}
+	}
 	value.Period = NormalizeHabitStreakPeriod(value.Period)
 	if value.Period == HabitStreakPeriodDay {
 		value.RequiredCount = 1

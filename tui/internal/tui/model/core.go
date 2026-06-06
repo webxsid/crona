@@ -28,6 +28,7 @@ const (
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
 	ViewRollup         = uistate.ViewRollup
+	ViewMomentum       = uistate.ViewMomentum
 	ViewMeta           = uistate.ViewMeta
 	ViewSessionHistory = uistate.ViewSessionHistory
 	ViewHabitHistory   = uistate.ViewHabitHistory
@@ -52,6 +53,7 @@ const (
 	PaneRollupDays       = uistate.PaneRollupDays
 	PaneSessions         = uistate.PaneSessions
 	PaneHabitHistory     = uistate.PaneHabitHistory
+	PaneMomentumCards    = uistate.PaneMomentumCards
 	PaneOps              = uistate.PaneOps
 	PaneExportReports    = uistate.PaneExportReports
 	PaneConfig           = uistate.PaneConfig
@@ -59,7 +61,6 @@ const (
 	PaneAlerts           = uistate.PaneAlerts
 	PaneWellbeingSummary = uistate.PaneWellbeingSummary
 	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
-	PaneWellbeingStreaks = uistate.PaneWellbeingStreaks
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
@@ -111,6 +112,8 @@ type Model struct {
 	dashboardDate          string
 	rollupStartDate        string
 	rollupEndDate          string
+	momentumDate           string
+	momentumWindowDays     int
 	wellbeingDate          string
 	wellbeingWindowDays    int
 	dailyCheckIn           *api.DailyCheckIn
@@ -148,6 +151,8 @@ type Model struct {
 	updateInstallError     string
 	currentExecutablePath  string
 	settings               *api.CoreSettings
+	habitStreakDefs        []api.HabitStreakDefinition
+	momentumCards          []api.MomentumCard
 	kernelInfo             *api.KernelInfo
 	elapsed                int // local seconds since last timer.state event
 	timerTickSeq           int
@@ -214,6 +219,7 @@ type Model struct {
 	dialogProtectionDates               []string
 	dialogHabitStreakStep               int
 	dialogHabitStreakCursor             int
+	dialogHabitStreakOriginalDefs       []sharedtypes.HabitStreakDefinition
 	dialogHabitStreakDefs               []sharedtypes.HabitStreakDefinition
 	dialogHabitStreakDraft              sharedtypes.HabitStreakDefinition
 	dialogHabitStreakEditIdx            int
@@ -277,6 +283,7 @@ func New(
 			PaneRollupDays:       0,
 			PaneSessions:         0,
 			PaneHabitHistory:     0,
+			PaneMomentumCards:    0,
 			PaneOps:              0,
 			PaneExportReports:    0,
 			PaneConfig:           0,
@@ -284,7 +291,6 @@ func New(
 			PaneAlerts:           0,
 			PaneWellbeingSummary: 0,
 			PaneWellbeingTrends:  0,
-			PaneWellbeingStreaks: 0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:            "",
@@ -294,6 +300,7 @@ func New(
 			PaneRollupDays:       "",
 			PaneSessions:         "",
 			PaneHabitHistory:     "",
+			PaneMomentumCards:    "",
 			PaneOps:              "",
 			PaneExportReports:    "",
 			PaneConfig:           "",
@@ -301,11 +308,11 @@ func New(
 			PaneAlerts:           "",
 			PaneWellbeingSummary: "",
 			PaneWellbeingTrends:  "",
-			PaneWellbeingStreaks: "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
 		terminalTitleEnabled:  true,
+		momentumWindowDays:    30,
 		wellbeingWindowDays:   7,
 	}
 	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
@@ -337,6 +344,12 @@ func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
 		commands.LoadAllHabits(m.client),
+		commands.LoadHabitStreakDefinitions(m.client),
+		commands.LoadMomentumRange(
+			m.client,
+			time.Now().Format("2006-01-02"),
+			m.currentMomentumWindowDays(),
+		),
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
@@ -391,11 +404,15 @@ func (m *Model) listLen(p Pane) int {
 		}
 		return len(m.dashboardWindow.Days)
 	}
-	if p == PaneWellbeingSummary || p == PaneWellbeingTrends || p == PaneWellbeingStreaks {
+	if p == PaneWellbeingSummary || p == PaneWellbeingTrends {
 		snapshot := m.selectionSnapshot()
 		activeIssue := selectionpkg.ActiveIssue(snapshot)
 		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
 		return wellbeingview.PaneLineCount(state, string(p))
+	}
+	if p == PaneMomentumCards {
+		snapshot := m.selectionSnapshot()
+		return len(selectionpkg.FilteredIndices(snapshot, p))
 	}
 	if p == PaneHabitHistory {
 		return len(m.habitHistory)

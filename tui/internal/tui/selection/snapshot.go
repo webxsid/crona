@@ -29,6 +29,7 @@ type Snapshot struct {
 	Streams             []api.Stream
 	Issues              []api.Issue
 	Habits              []api.Habit
+	MomentumCards       []api.MomentumCard
 	AllIssues           []api.IssueWithMeta
 	DueHabits           []api.HabitDailyItem
 	ExportReports       []api.ExportReportFile
@@ -242,6 +243,11 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 		for _, habit := range s.Habits {
 			items = append(items, habit.Name)
 		}
+	case uistate.PaneMomentumCards:
+		items = make([]string, 0, len(s.MomentumCards))
+		for _, card := range s.MomentumCards {
+			items = append(items, card.Definition.Name)
+		}
 	case uistate.PaneConfig:
 		items = make([]string, 0, len(s.ConfigItems))
 		for _, item := range s.ConfigItems {
@@ -367,6 +373,18 @@ func SelectedMetaRepo(s Snapshot) (int64, string, bool) {
 		return *s.Context.RepoID, helperpkg.FirstNonEmpty(s.Context.RepoName, nil), true
 	}
 	return 0, "", false
+}
+
+func SelectedMomentumCard(s Snapshot) (*api.MomentumCard, bool) {
+	if s.View != uistate.ViewMomentum || s.Pane != uistate.PaneMomentumCards {
+		return nil, false
+	}
+	rawIdx := FilteredIndexAtCursor(s, uistate.PaneMomentumCards)
+	if rawIdx < 0 || rawIdx >= len(s.MomentumCards) {
+		return nil, false
+	}
+	card := s.MomentumCards[rawIdx]
+	return &card, true
 }
 
 func SelectedMetaStream(s Snapshot) (int64, string, string, bool) {
