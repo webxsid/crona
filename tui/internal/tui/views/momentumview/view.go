@@ -38,7 +38,13 @@ func renderMomentumTopSection(theme types.Theme, state types.ContentState) []str
 		viewchrome.RenderActionLine(
 			theme,
 			state.Width-6,
-			viewchrome.ContextualActions(theme, viewchrome.ActionsState{View: state.View, Pane: state.Pane}),
+			viewchrome.ContextualActions(
+				theme,
+				viewchrome.ActionsState{
+					View: state.View,
+					Pane: state.Pane,
+				},
+			),
 		),
 		"",
 	)
@@ -56,7 +62,13 @@ func renderMomentumEmptyState(
 		theme.StyleHeader.Render("No momentum definitions"),
 		theme.StyleDim.Render("Press [a] to create your first momentum."),
 	)
-	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
+	return viewchrome.RenderPaneBox(
+		theme,
+		active,
+		state.Width,
+		state.Height,
+		strings.Join(lines, "\n"),
+	)
 }
 
 func renderMomentumCards(
@@ -87,7 +99,14 @@ func renderMomentumCardBodies(
 	cardBodies := make([]string, 0, len(state.MomentumCards))
 	cardHeights := make([]int, 0, len(state.MomentumCards))
 	for idx, card := range state.MomentumCards {
-		rendered := renderCard(theme, state, card, idx == cursor, active, mode)
+		rendered := renderCard(
+			theme,
+			state,
+			card,
+			idx == cursor,
+			active,
+			mode,
+		)
 		cardBodies = append(cardBodies, rendered)
 		cardHeights = append(cardHeights, lipgloss.Height(rendered))
 	}
@@ -227,19 +246,23 @@ func chooseMomentumCardMode(
 	if len(state.MomentumCards) == 0 {
 		return momentumCardModeNormal
 	}
-	if cursor < 0 {
-		cursor = 0
-	}
-	if cursor >= len(state.MomentumCards) {
-		cursor = len(state.MomentumCards) - 1
-	}
+
+	cursor = max(0, min(cursor, len(state.MomentumCards)-1))
+
 	selectedCard := state.MomentumCards[cursor]
 	for _, mode := range []momentumCardMode{
 		momentumCardModeNormal,
 		momentumCardModeCompact,
 		momentumCardModeUltraCompact,
 	} {
-		rendered := renderCard(theme, state, selectedCard, true, active, mode)
+		rendered := renderCard(
+			theme,
+			state,
+			selectedCard,
+			true,
+			active,
+			mode,
+		)
 		if lipgloss.Height(rendered) <= availableLines {
 			return mode
 		}
@@ -357,15 +380,10 @@ func visibleMomentumCardWindow(cursor int, heights []int, inner int) (int, int) 
 	if total == 0 {
 		return 0, 0
 	}
-	if inner < 1 {
-		inner = 1
-	}
-	if cursor < 0 {
-		cursor = 0
-	}
-	if cursor >= total {
-		cursor = total - 1
-	}
+
+	inner = max(1, inner)
+	cursor = max(0, min(cursor, total-1))
+
 	start := cursor
 	end := cursor + 1
 	used := max(1, heights[cursor])
@@ -439,16 +457,24 @@ func renderMomentumBucketTimeline(
 		barWidth = max(4, width-ratioWidth-statusWidth-spacerWidth-6)
 		labelWidth = max(6, width-ratioWidth-statusWidth-spacerWidth-barWidth)
 	}
-	if labelWidth < 6 {
-		labelWidth = 6
-	}
-	if barWidth < 4 {
-		barWidth = 4
-	}
+
+	labelWidth = max(6, labelWidth)
+	barWidth = max(4, barWidth)
 
 	rows := make([]string, 0, len(series))
 	for _, point := range series {
-		rows = append(rows, renderMomentumBucketRow(theme, point, labelWidth, ratioWidth, statusWidth, barWidth, enabled))
+		rows = append(
+			rows,
+			renderMomentumBucketRow(
+				theme,
+				point,
+				labelWidth,
+				ratioWidth,
+				statusWidth,
+				barWidth,
+				enabled,
+			),
+		)
 	}
 	return strings.Join(rows, "\n")
 }
@@ -554,15 +580,11 @@ func momentumWeekNumber(bucketKey string) (int, int, error) {
 }
 
 func momentumBucketBar(theme types.Theme, point sharedtypes.MomentumSeriesPoint, width int, enabled bool) string {
-	if width < 1 {
-		width = 1
-	}
+	width = max(1, width)
 	target := max(point.Target, 1)
 	status := momentumStatusForPoint(point, enabled)
 	naturalWidth := target
-	if point.Count > target {
-		naturalWidth = point.Count
-	}
+	naturalWidth = max(target, point.Count)
 	renderWidth := min(width, max(1, naturalWidth))
 	filled := min(point.Count, renderWidth)
 	markerPos := 0
@@ -578,7 +600,7 @@ func momentumBucketBar(theme types.Theme, point sharedtypes.MomentumSeriesPoint,
 	if !enabled {
 		markerStyle = theme.StyleDim
 	}
-	for idx := 0; idx < renderWidth; idx++ {
+	for idx := range renderWidth {
 		switch {
 		case idx == markerPos && point.Target > 0:
 			builder.WriteString(markerStyle.Render("┆"))
