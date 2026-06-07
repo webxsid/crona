@@ -234,7 +234,7 @@ func OpenSupportBundleResult(state State, name, meta, body, path string) State {
 
 func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "enter", "q":
+	case "esc", "enter", "q", "?":
 		return Close(state), nil, ""
 	case "e":
 		if strings.TrimSpace(state.ViewPath) != "" {

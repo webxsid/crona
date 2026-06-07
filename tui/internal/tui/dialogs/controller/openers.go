@@ -159,6 +159,12 @@ func (s Snapshot) OpenCheckoutContext() State {
 		next.Inputs[1].SetValue(*s.Context.StreamName)
 		next.StreamIndex = 0
 	}
+	if strings.TrimSpace(next.Inputs[0].Value()) == "" {
+		next.RepoIndex = -1
+	}
+	if strings.TrimSpace(next.Inputs[1].Value()) == "" {
+		next.StreamIndex = -1
+	}
 	return next
 }
 

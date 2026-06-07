@@ -239,6 +239,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenHelpDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openHelpDialog()
+			*state = next.inputState()
+			return true
+		},
 		ConfigChangeSelected: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()

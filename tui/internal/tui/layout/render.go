@@ -167,32 +167,6 @@ func Render(state State) string {
 		)
 		return result
 	}
-	if state.HelpOpen {
-		overlay := renderHelpOverlay(state)
-		result := clipViewportString(
-			renderOverlay(
-				base,
-				overlay,
-				max(0, (state.Width-overlayWidth(overlay))/2),
-				max(0, (state.Height-overlayHeight(overlay))/2),
-				state.Width,
-				state.Height,
-			),
-			state.Width,
-			state.Height,
-		)
-		logger.Infof(
-			"layout.Render help overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
-			state.View,
-			state.Pane,
-			len(base),
-			len(overlay),
-			len(result),
-			state.Width,
-			state.Height,
-		)
-		return result
-	}
 	if state.StatusMsg != "" {
 		overlay := renderStatusToast(state)
 		result := clipViewportString(

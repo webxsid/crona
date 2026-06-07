@@ -47,10 +47,10 @@ func DefaultStreamOptions(
 	_ = context
 	query := normalizeSelectorName(inputs[1].Value())
 	repoOptions := DefaultRepoOptions(inputs, repos)
-	if len(repoOptions) == 0 {
-		return optionsForNewStream(inputs[1].Value())
+	repoOpt, ok := selectedOption(repoOptions, repoIndex)
+	if !ok {
+		return []SelectorOption{}
 	}
-	repoOpt := repoOptions[min(repoIndex, len(repoOptions)-1)]
 	if repoOpt.ID == "__new__" {
 		return optionsForNewStream(inputs[1].Value())
 	}
@@ -110,15 +110,12 @@ func CheckoutDialogLabels(
 	streams []api.Stream,
 	context *api.ActiveContext,
 ) (string, string) {
+	repoRaw := strings.TrimSpace(inputs[0].Value())
+	streamRaw := strings.TrimSpace(inputs[1].Value())
 	repoOptions := CheckoutRepoOptions(inputs, repos)
 	streamOptions := CheckoutStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
-	if len(repoOptions) == 0 {
-		return "Type to search", "Select a repo first"
-	}
-	if len(streamOptions) == 0 {
-		return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
-	}
-	return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
+	return labelOrPlaceholder(repoRaw, repoOptions, repoIndex, "Select a repo"),
+		labelOrPlaceholder(streamRaw, streamOptions, streamIndex, "Select a stream")
 }
 
 func CheckoutDialogSelection(
@@ -131,16 +128,43 @@ func CheckoutDialogSelection(
 ) (int64, string, *int64, string) {
 	repoRaw := strings.TrimSpace(inputs[0].Value())
 	streamRaw := strings.TrimSpace(inputs[1].Value())
-	if repoRaw == "" && streamRaw == "" {
-		return 0, "", nil, ""
-	}
-
-	repoID, repoName := matchRepoSelection(repoRaw, repoIndex, repos)
-	if repoName == "" {
-		return 0, "", nil, ""
+	repoOptions := CheckoutRepoOptions(inputs, repos)
+	var repoID int64
+	var repoName string
+	if repoRaw == "" {
+		option, ok := selectedOption(repoOptions, repoIndex)
+		if !ok {
+			return 0, "", nil, ""
+		}
+		if option.ID == "__new__" {
+			return 0, "", nil, ""
+		}
+		id, err := strconv.ParseInt(option.ID, 10, 64)
+		if err != nil {
+			return 0, "", nil, ""
+		}
+		repoID = id
+		repoName = option.Label
+	} else {
+		repoID, repoName = matchRepoSelection(repoRaw, repoIndex, repos)
+		if repoName == "" {
+			return 0, "", nil, ""
+		}
 	}
 	if streamRaw == "" {
-		return repoID, repoName, nil, ""
+		streamOptions := CheckoutStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+		option, ok := selectedOption(streamOptions, streamIndex)
+		if !ok {
+			return repoID, repoName, nil, ""
+		}
+		if option.ID == "__new__" {
+			return repoID, repoName, nil, option.Label
+		}
+		id, err := strconv.ParseInt(option.ID, 10, 64)
+		if err != nil {
+			return repoID, repoName, nil, option.Label
+		}
+		return repoID, repoName, &id, option.Label
 	}
 
 	streamID, streamName := MatchStreamSelection(
@@ -288,7 +312,34 @@ func ShiftSelection(current, total, dir int) int {
 	if total == 0 {
 		return current
 	}
+	if current < 0 {
+		if dir < 0 {
+			return total - 1
+		}
+		return 0
+	}
 	return (current + dir + total) % total
+}
+
+func selectedOption(options []SelectorOption, index int) (SelectorOption, bool) {
+	if len(options) == 0 || index < 0 {
+		return SelectorOption{}, false
+	}
+	if index >= len(options) {
+		index = len(options) - 1
+	}
+	return options[index], true
+}
+
+func labelOrPlaceholder(raw string, options []SelectorOption, index int, placeholder string) string {
+	if strings.TrimSpace(raw) == "" && index < 0 {
+		return placeholder
+	}
+	option, ok := selectedOption(options, index)
+	if !ok {
+		return placeholder
+	}
+	return option.Label
 }
 
 func optionsForNewStream(raw string) []SelectorOption {

@@ -8,6 +8,7 @@ import (
 	app "crona/tui/internal/tui/model"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestDefaultScopedIssues(t *testing.T) {
@@ -122,5 +123,170 @@ func TestCheckoutDialogSelectionUsesResolvedRepoAndStream(t *testing.T) {
 	}
 	if streamID == nil || *streamID != 20 || streamName != "app" {
 		t.Fatalf("expected stream app, got %v %q", streamID, streamName)
+	}
+}
+
+func TestCheckoutContextArrowCyclesBlankSelections(t *testing.T) {
+	state := dialogs.OpenCheckoutContext(dialogs.State{})
+	ctx := dialogs.UpdateContext{
+		Repos: []api.Repo{
+			{ID: 10, Name: "Work"},
+			{ID: 11, Name: "Personal"},
+		},
+		Streams: []api.Stream{
+			{ID: 20, RepoID: 10, Name: "main"},
+			{ID: 21, RepoID: 10, Name: "dev"},
+		},
+	}
+
+	next, action, status := dialogs.Update(
+		state,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRight},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected repo cycling to stay in dialog, got %+v", action)
+	}
+	if next.RepoIndex != 0 {
+		t.Fatalf("expected right from blank repo to select first option, got %d", next.RepoIndex)
+	}
+
+	repoLabel, streamLabel := dialogs.CheckoutDialogLabels(
+		next.Inputs,
+		next.RepoIndex,
+		next.StreamIndex,
+		ctx.Repos,
+		ctx.AllIssues,
+		ctx.Streams,
+		ctx.Context,
+	)
+	if repoLabel != "Work" {
+		t.Fatalf("expected highlighted repo label, got %q", repoLabel)
+	}
+	if streamLabel != "Select a stream" {
+		t.Fatalf("expected empty stream placeholder, got %q", streamLabel)
+	}
+
+	next, action, status = dialogs.Update(
+		next,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyTab},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected tab to stay in dialog, got %+v", action)
+	}
+	next, action, status = dialogs.Update(
+		next,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyRight},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected stream cycling to stay in dialog, got %+v", action)
+	}
+	if next.StreamIndex != 0 {
+		t.Fatalf("expected right from blank stream to select first option, got %d", next.StreamIndex)
+	}
+
+	repoLabel, streamLabel = dialogs.CheckoutDialogLabels(
+		next.Inputs,
+		next.RepoIndex,
+		next.StreamIndex,
+		ctx.Repos,
+		ctx.AllIssues,
+		ctx.Streams,
+		ctx.Context,
+	)
+	if repoLabel != "Work" {
+		t.Fatalf("expected repo label to remain selected, got %q", repoLabel)
+	}
+	if streamLabel != "main" {
+		t.Fatalf("expected highlighted stream label, got %q", streamLabel)
+	}
+
+	next, action, status = dialogs.Update(
+		next,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close after enter, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "checkout_context" || action.RepoID != 10 ||
+		action.RepoName != "Work" || action.StreamID != 20 || action.StreamName != "main" {
+		t.Fatalf("unexpected checkout action %+v", action)
+	}
+}
+
+func TestCheckoutContextLeftCyclesBlankRepoSelection(t *testing.T) {
+	state := dialogs.OpenCheckoutContext(dialogs.State{})
+	ctx := dialogs.UpdateContext{
+		Repos: []api.Repo{
+			{ID: 10, Name: "Work"},
+			{ID: 11, Name: "Personal"},
+		},
+	}
+
+	next, action, status := dialogs.Update(
+		state,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyLeft},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected repo cycling to stay in dialog, got %+v", action)
+	}
+	if next.RepoIndex != 1 {
+		t.Fatalf("expected left from blank repo to select last option, got %d", next.RepoIndex)
+	}
+	repoLabel, streamLabel := dialogs.CheckoutDialogLabels(
+		next.Inputs,
+		next.RepoIndex,
+		next.StreamIndex,
+		ctx.Repos,
+		ctx.AllIssues,
+		ctx.Streams,
+		ctx.Context,
+	)
+	if repoLabel != "Personal" {
+		t.Fatalf("expected highlighted repo label, got %q", repoLabel)
+	}
+	if streamLabel != "Select a stream" {
+		t.Fatalf("expected empty stream placeholder, got %q", streamLabel)
+	}
+
+	next, action, status = dialogs.Update(
+		next,
+		ctx,
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close after enter, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "checkout_context" || action.RepoID != 11 ||
+		action.RepoName != "Personal" || action.StreamID != 0 || action.StreamName != "" {
+		t.Fatalf("unexpected checkout action %+v", action)
 	}
 }

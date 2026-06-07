@@ -28,6 +28,7 @@ type ActionsState struct {
 func GlobalActions(theme Theme, state ActionsState) []string {
 	actions := []string{
 		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" switch views"),
+		theme.StyleHeader.Render("[?]") + theme.StyleDim.Render(" keys"),
 	}
 	if state.IsBetaBuild {
 		actions = append(

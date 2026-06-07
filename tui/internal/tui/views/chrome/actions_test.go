@@ -7,6 +7,9 @@ import (
 
 func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 	daily := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
+	if !strings.Contains(daily, "[?]") || !strings.Contains(daily, "keys") {
+		t.Fatalf("expected global actions to advertise the help dialog, got %q", daily)
+	}
 	if !strings.Contains(daily, "[w]") || !strings.Contains(daily, "check-in") {
 		t.Fatalf("expected daily global actions to advertise check-in, got %q", daily)
 	}
@@ -35,9 +38,9 @@ func TestContextualActionsUseCheckInAndAwayLabels(t *testing.T) {
 	}
 
 	away := strings.Join(ContextualActions(Theme{}, ActionsState{
-		View:            "away",
-		RestModeActive:  true,
-		AwayModeActive:  true,
+		View:           "away",
+		RestModeActive: true,
+		AwayModeActive: true,
 	}), "\n")
 	if !strings.Contains(away, "[W]") || !strings.Contains(away, "disable away") {
 		t.Fatalf("expected away contextual actions to advertise disable away on W, got %q", away)

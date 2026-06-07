@@ -4,6 +4,26 @@ All notable changes to **Crona** are documented here.
 
 ## [Unreleased]
 
+### Fixed
+- Checkout context selection now behaves like a real selector on empty input, including arrow-key cycling and direct commit of the highlighted repo or stream.
+- The checkout dialog now shows blank-state prompts when repo or stream text is empty, instead of implying an already-selected value.
+- The `?` help dialog now opens as a proper modal and no longer distorts the underlying TUI layout.
+
+### Changed
+- The Rollup focus visualization now fits its pane height more predictably, and the breakdown pane can be focused and scrolled independently on small screens.
+- Wellbeing now uses a three-pane layout that separates the snapshot, metrics window, and detail-heavy context more cleanly.
+- Momentum cards and dialog flows were further simplified so the dedicated momentum surface stays focused on custom momentum management.
+
+## [1.5.0] - 2026-06-07
+
+Crona v1.5.0 expands the TUI with a clearer Rollup focus surface, a more structured Wellbeing layout, and a custom-momentum workflow that is easier to read, edit, and maintain. It also folds in Pomodoro, stash, and settings refinements so the overall shell feels less modal and more coherent.
+
+### Highlights
+- Rollup now shows a proper focus visualization beside the calendar, with a scrollable breakdown pane that keeps the right-hand detail surface usable on small screens.
+- Momentum now centers on custom momentum cards and dedicated momentum CRUD dialogs, with clearer cadence labels, descriptions, and weekly label prefixes.
+- Wellbeing now separates the dense snapshot, metrics window, and detail-heavy context into distinct panes so the summary is easier to scan.
+- Pomodoro, stash commit, and protected-rest flows were tightened so the TUI keeps state and actions consistent across dialog updates.
+
 ### Added
 - The Pomodoro start dialog now uses a single consolidated form instead of a chained multi-dialog wizard.
 - Custom Pomodoro durations now enter edit mode immediately, and the selected row stays visibly emphasized while editing.
@@ -19,6 +39,13 @@ All notable changes to **Crona** are documented here.
 - The custom focus seed now defaults to `25m` instead of an invalid hour-based value.
 - The issue table now emphasizes worked, estimated, context, and effort columns, with related labels and tests updated.
 - Settings remain accessible during protected rest, `W` no longer toggles away mode on date-based rest, and the protected-rest message has been updated.
+
+### Fixed
+- Rollup focus rendering now budgets its top pane before drawing so the graph and calendar stop bleeding out of the pane.
+- Disabled momentum cards now read as paused history instead of failed current momentum.
+- Weekly momentum labels now include the week-number prefix in the rendered bucket labels.
+- The Wellbeing summary now stays snapshot-focused, with accountability and risk details moved into a dedicated pane.
+- Legacy momentum and wellbeing dialog paths that no longer backed a visible surface were removed, and the underlying repository helpers were trimmed.
 
 ## [1.4.0] - 2026-05-27
 

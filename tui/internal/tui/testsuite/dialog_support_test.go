@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	dialogs "crona/tui/internal/tui/dialogs/controller"
 	uistate "crona/tui/internal/tui/state"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -71,6 +73,26 @@ func TestViewJumpDialogRestrictsChoicesDuringActiveSession(t *testing.T) {
 		default:
 			t.Fatalf("unexpected item %q in active-session jump menu", item)
 		}
+	}
+}
+
+func TestCheckoutDialogLabelsShowPlaceholdersWhenInputsAreEmpty(t *testing.T) {
+	repoInput := textinput.New()
+	streamInput := textinput.New()
+	repoLabel, streamLabel := dialogs.CheckoutDialogLabels(
+		[]textinput.Model{repoInput, streamInput},
+		-1,
+		-1,
+		[]api.Repo{{ID: 1, Name: "Work"}},
+		nil,
+		[]api.Stream{{ID: 2, RepoID: 1, Name: "main"}},
+		nil,
+	)
+	if repoLabel != "Select a repo" {
+		t.Fatalf("expected empty repo input to show placeholder, got %q", repoLabel)
+	}
+	if streamLabel != "Select a stream" {
+		t.Fatalf("expected empty stream input to show placeholder, got %q", streamLabel)
 	}
 }
 

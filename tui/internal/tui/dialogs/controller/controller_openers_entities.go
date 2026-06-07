@@ -352,6 +352,8 @@ func OpenCheckoutContext(state State) State {
 	state = Close(state)
 	state.Kind = "checkout_context"
 	state.Inputs = []textinput.Model{repoFilter, streamFilter}
+	state.RepoIndex = -1
+	state.StreamIndex = -1
 	return state
 }
 

@@ -229,7 +229,9 @@ func updateCheckoutContext(
 				len(CheckoutRepoOptions(state.Inputs, ctx.Repos)),
 				-1,
 			)
-			state.StreamIndex = 0
+			if strings.TrimSpace(state.Inputs[1].Value()) == "" {
+				state.StreamIndex = -1
+			}
 			return state, nil, ""
 		}
 		if state.FocusIdx == 1 {
@@ -256,7 +258,9 @@ func updateCheckoutContext(
 				len(CheckoutRepoOptions(state.Inputs, ctx.Repos)),
 				1,
 			)
-			state.StreamIndex = 0
+			if strings.TrimSpace(state.Inputs[1].Value()) == "" {
+				state.StreamIndex = -1
+			}
 			return state, nil, ""
 		}
 		if state.FocusIdx == 1 {
@@ -326,11 +330,20 @@ func updateCheckoutContext(
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
 	_ = cmd
 	if state.FocusIdx == 0 {
-		state.RepoIndex = 0
-		state.StreamIndex = 0
+		if strings.TrimSpace(state.Inputs[0].Value()) == "" {
+			state.RepoIndex = -1
+			state.StreamIndex = -1
+		} else {
+			state.RepoIndex = 0
+			state.StreamIndex = 0
+		}
 	}
 	if state.FocusIdx == 1 {
-		state.StreamIndex = 0
+		if strings.TrimSpace(state.Inputs[1].Value()) == "" {
+			state.StreamIndex = -1
+		} else {
+			state.StreamIndex = 0
+		}
 	}
 	return clearDialogError(state), nil, ""
 }

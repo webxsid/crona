@@ -12,8 +12,10 @@ import (
 	dialogruntime "crona/tui/internal/tui/dialog_runtime"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
+	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -556,6 +558,40 @@ func (m Model) openEditRestProtectionDialog() Model {
 
 func (m Model) openEditTelemetrySettingsDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditTelemetrySettings())
+}
+
+func (m Model) openHelpDialog() Model {
+	theme := layoutpkg.ViewTheme()
+	chromeState := m.layoutChromeState()
+	paneActions := viewchrome.ContextualActions(theme, viewchrome.ActionsState{
+		View:                   string(m.view),
+		Pane:                   string(m.pane),
+		MomentumTab:            string(m.currentMomentumTab()),
+		TimerState:             chromeState.TimerState,
+		TimerSegment:           chromeState.TimerSegment,
+		TimerNextSegment:       chromeState.TimerNextSegment,
+		StructuredTimer:        chromeState.StructuredTimer,
+		RestModeActive:         stateRestModeFromChrome(chromeState),
+		AwayModeActive:         stateAwayModeFromContent(m),
+		IsDevMode:              m.isDevMode(),
+		IsBetaBuild:            m.isBetaBuild(),
+		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+	})
+	globalActions := viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions)
+	rows := []string{
+		"Global",
+	}
+	rows = append(rows, globalActions...)
+	if len(paneActions) > 0 {
+		rows = append(rows, "", "Current View")
+		rows = append(rows, paneActions...)
+	}
+	meta := "Hint Press ? or esc to close"
+	body := strings.Join(rows, "\n")
+	return m.withDialogState(
+		m.dialogSnapshot().OpenViewEntity("Keys", "Keyboard Shortcuts", meta, body),
+	)
 }
 
 func (m Model) openCreateMomentumDialog() Model {

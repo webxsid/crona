@@ -88,6 +88,7 @@ type Deps struct {
 	LoadWellbeing                   func(string, int) tea.Cmd
 	CurrentWellbeingDate            func(State) string
 	OpenCheckInDialog               func(*State) bool
+	OpenHelpDialog                  func(*State) bool
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
 	Checkout                        func(*State) tea.Cmd
@@ -314,7 +315,15 @@ func newRouter(deps Deps) *router {
 		"=": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		"-": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
 		"/": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleStartFilter(s, deps) },
-		"?": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { s.HelpOpen = true; return s, nil, true },
+		"?": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenHelpDialog == nil {
+				return s, nil, false
+			}
+			if deps.OpenHelpDialog(&s) {
+				return s, nil, true
+			}
+			return s, nil, false
+		},
 		"a": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false

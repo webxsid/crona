@@ -77,11 +77,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			next, cmd := m.updateSessionContextOverlay(key)
 			return next, batchCmds(touch, cmd)
 		}
-		if m.helpOpen {
-			logger.Infof("tui key route: help_overlay")
-			state, cmd := overlaypkg.HandleHelp(m.overlayState(), key)
-			return m.applyOverlayState(state), batchCmds(touch, cmd)
-		}
 		if m.filterEditing {
 			logger.Infof("tui key route: filter_editing")
 			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())

@@ -59,6 +59,50 @@ func TestHandleOpenCheckInUsesWellbeingDate(t *testing.T) {
 	}
 }
 
+func TestHandleQuestionOpensHelpDialog(t *testing.T) {
+	called := false
+	state := State{
+		ActiveView: uistate.ViewDaily,
+	}
+	next, _ := Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'?'}}, Deps{
+		OpenHelpDialog: func(s *State) bool {
+			called = true
+			if s.Dialog != "" {
+				t.Fatalf("expected help opener to receive a clean state, got dialog %q", s.Dialog)
+			}
+			s.Dialog = "view_entity"
+			return true
+		},
+	})
+	if !called {
+		t.Fatal("expected help dialog opener to be called")
+	}
+	if next.Dialog != "view_entity" {
+		t.Fatalf("expected help dialog to set view_entity, got %q", next.Dialog)
+	}
+}
+
+func TestHandleStartFilterAllowsMomentumCards(t *testing.T) {
+	called := false
+	state := State{
+		ActivePane: uistate.PaneMomentumCards,
+	}
+	_, _, handled := handleStartFilter(state, Deps{
+		StartFilterEdit: func(s *State, pane uistate.Pane) {
+			called = true
+			if pane != uistate.PaneMomentumCards {
+				t.Fatalf("expected momentum cards filter pane, got %q", pane)
+			}
+		},
+	})
+	if !handled {
+		t.Fatal("expected / to start filtering momentum cards")
+	}
+	if !called {
+		t.Fatal("expected filter editor to be started for momentum cards")
+	}
+}
+
 func TestHandleOpenCheckInRejectsOtherViews(t *testing.T) {
 	called := false
 	_, _, handled := handleOpenCheckIn(State{ActiveView: uistate.ViewDefault}, Deps{
