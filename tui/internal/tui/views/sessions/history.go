@@ -46,9 +46,8 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	}
 	dateW, durW := 16, 10
 	issueW := state.Width - dateW - durW - 12
-	if issueW < 18 {
-		issueW = 18
-	}
+
+	issueW = max(issueW, 18)
 	header := fmt.Sprintf("%-2s %-*s %-*s %s", "", dateW, "Ended", durW, "Duration", "Notes")
 	lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(header, state.Width-6)))
 	inner := viewchrome.RemainingPaneHeight(state.Height, lines)

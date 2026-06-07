@@ -10,6 +10,10 @@ type StreamsLoadedMsg struct{ Streams []api.Stream }
 type AllHabitsLoadedMsg struct{ Habits []api.HabitWithMeta }
 type HabitStreakDefinitionsLoadedMsg struct{ Definitions []api.HabitStreakDefinition }
 type MomentumRangeLoadedMsg struct{ Cards []api.MomentumCard }
+type MomentumMetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
+type MomentumMetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }
+type RollupMetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
+type RollupMetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }
 
 type IssuesLoadedMsg struct {
 	StreamID        int64

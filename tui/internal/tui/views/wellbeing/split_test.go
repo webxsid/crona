@@ -5,164 +5,72 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/chrome"
 	uistate "crona/tui/internal/tui/state"
-	viewmomentum "crona/tui/internal/tui/views/momentum"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestWideWellbeingSplitsMetricsAndStreaks(t *testing.T) {
+func TestWideWellbeingRendersThreePaneLayout(t *testing.T) {
 	state := splitTestState()
 	state.Height = 60
-	state.Pane = string(uistate.PaneWellbeingTrends)
+	state.Pane = string(uistate.PaneWellbeingDetails)
 
 	rendered := ansi.Strip(Render(splitTestTheme(), state))
-	for _, want := range []string{"Metrics Window", "Signals (14d)", "Mood", "Energy", "Work", "Recovery"} {
+	for _, want := range []string{"Wellbeing", "Metrics Window", "Details", "Recent Activity", "Check-in", "Accountability", "Risk Snapshot"} {
 		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected wide wellbeing split to contain %q, got %q", want, rendered)
+			t.Fatalf("expected wide wellbeing layout to contain %q, got %q", want, rendered)
 		}
 	}
-	for _, unwanted := range []string{"Momentum", "Custom Momentum"} {
+	for _, unwanted := range []string{"Custom Momentum", "Training"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected wide wellbeing split to omit %q, got %q", unwanted, rendered)
+			t.Fatalf("expected wide wellbeing layout to omit %q, got %q", unwanted, rendered)
 		}
-	}
-	if !strings.ContainsFunc(rendered, func(r rune) bool { return r >= 0x2800 && r <= 0x28ff }) {
-		t.Fatalf("expected wide wellbeing split to contain braille graph output, got %q", rendered)
 	}
 }
 
-func TestMetricsBodyExcludesStreaksInSplitMode(t *testing.T) {
+func TestSummaryBodyStaysSnapshotFocused(t *testing.T) {
 	state := splitTestState()
-	body := strings.Join(flattenLines(metricsBodyLines(splitTestTheme(), state, 70, false)), "\n")
-	for _, unwanted := range []string{"Training", "Custom Momentum", "current ·"} {
+	body := strings.Join(flattenLines(summaryBodyLines(splitTestTheme(), state, 90, false)), "\n")
+	for _, want := range []string{"Recent Activity", "Today", "Check-in"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected summary body to include %q, got %q", want, body)
+		}
+	}
+	for _, unwanted := range []string{"Accountability", "Risk Snapshot", "Top Risk Drivers", "Notes"} {
 		if strings.Contains(body, unwanted) {
-			t.Fatalf("expected metrics-only body to omit %q, got %q", unwanted, body)
+			t.Fatalf("expected summary body to omit %q, got %q", unwanted, body)
 		}
 	}
 }
 
-func TestCombinedMetricsBodyKeepsStreaksForNarrowFallback(t *testing.T) {
+func TestDetailsBodyCarriesMovedSections(t *testing.T) {
 	state := splitTestState()
-	body := strings.Join(flattenLines(trendsBodyLines(splitTestTheme(), state, 92, false)), "\n")
-	for _, unwanted := range []string{"Custom Momentum", "Training", "current ·", "Habit Streak"} {
-		if strings.Contains(body, unwanted) {
-			t.Fatalf("expected trends body to omit %q, got %q", unwanted, body)
-		}
-	}
-	for _, want := range []string{"Signals (14d)", "Mood", "Energy"} {
+	body := strings.Join(flattenLines(detailsBodyLines(splitTestTheme(), state, 48, false)), "\n")
+	for _, want := range []string{"Check-in", "Mood", "Energy", "Notes", "Accountability", "Risk Snapshot", "Top Risk Drivers"} {
 		if !strings.Contains(body, want) {
-			t.Fatalf("expected trends body to include %q, got %q", want, body)
+			t.Fatalf("expected details body to include %q, got %q", want, body)
 		}
 	}
 }
 
-func TestMomentumRowsRenderCadenceAndMeters(t *testing.T) {
+func TestDetailsPaneLineCountSupportsScrolling(t *testing.T) {
 	state := splitTestState()
-	state.Streaks.CustomHabitStreaks = []sharedtypes.CustomHabitStreakSummary{
-		{
-			Name:    "Daily Reflection",
-			Period:  sharedtypes.HabitStreakPeriodDay,
-			Current: 3,
-			Longest: 5,
-		},
-		{Name: "Training Week", Period: sharedtypes.HabitStreakPeriodWeek, Current: 2, Longest: 6},
-		{
-			Name:    "Wellbeing Month",
-			Period:  sharedtypes.HabitStreakPeriodMonth,
-			Current: 1,
-			Longest: 4,
-		},
-	}
-	body := ansi.Strip(
-		strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"),
-	)
-	for _, want := range []string{"Custom Momentum", "daily", "weekly", "monthly", "▰", "▱", "current ·", "3d current", "2w current", "1mo current", "5d best", "6w best", "4mo best"} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("expected momentum rows to include %q, got %q", want, body)
-		}
-	}
-}
-
-func TestMomentumLadderShowsAbsoluteLengthWhenBothAreBest(t *testing.T) {
-	short := ansi.Strip(viewmomentum.Ladder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 2, 2))
-	long := ansi.Strip(viewmomentum.Ladder(splitTestTheme(), sharedtypes.HabitStreakPeriodDay, 40, 40))
-
-	if strings.Count(short, "▰") >= strings.Count(long, "▰") {
-		t.Fatalf("expected longer streak to fill more tiers, short %q long %q", short, long)
-	}
-}
-
-func TestMomentumLadderHandlesZeroBest(t *testing.T) {
-	state := splitTestState()
-	state.Streaks.CurrentCheckInDays = 0
-	state.Streaks.LongestCheckInDays = 0
-
-	body := ansi.Strip(
-		strings.Join(flattenLines(streaksBodyLines(splitTestTheme(), state, 76, false)), "\n"),
-	)
-	for _, want := range []string{"▱▱▱▱", "0d current", "0d best"} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("expected empty momentum meter to include %q, got %q", want, body)
-		}
-	}
-}
-
-func TestMomentumTierCountsUseCadenceThresholds(t *testing.T) {
-	tests := []struct {
-		name    string
-		period  sharedtypes.HabitStreakPeriod
-		current int
-		want    int
-	}{
-		{name: "daily", period: sharedtypes.HabitStreakPeriodDay, current: 14, want: 4},
-		{name: "weekly", period: sharedtypes.HabitStreakPeriodWeek, current: 4, want: 3},
-		{name: "monthly", period: sharedtypes.HabitStreakPeriodMonth, current: 3, want: 3},
-	}
-
-	for _, tt := range tests {
-		if got := viewmomentum.TierCount(tt.period, tt.current); got != tt.want {
-			t.Fatalf("%s tier count = %d, want %d", tt.name, got, tt.want)
-		}
-	}
-}
-
-func TestStreaksPaneLineCountSupportsIndependentScrolling(t *testing.T) {
-	state := splitTestState()
-	state.Streaks.CustomHabitStreaks = append(
-		state.Streaks.CustomHabitStreaks,
-		sharedtypes.CustomHabitStreakSummary{
-			Name:    "Reading",
-			Period:  sharedtypes.HabitStreakPeriodDay,
-			Current: 4,
-			Longest: 8,
-		},
-		sharedtypes.CustomHabitStreakSummary{
-			Name:    "Mobility",
-			Period:  sharedtypes.HabitStreakPeriodWeek,
-			Current: 3,
-			Longest: 9,
-		},
-		sharedtypes.CustomHabitStreakSummary{
-			Name:    "Meditation",
-			Period:  sharedtypes.HabitStreakPeriodMonth,
-			Current: 6,
-			Longest: 12,
-		},
-	)
-	count := PaneLineCount(state, "wellbeing_streaks")
-	if count != 0 {
-		t.Fatalf("expected removed streaks pane line count to be 0, got %d", count)
+	count := PaneLineCount(state, string(uistate.PaneWellbeingDetails))
+	if count <= 0 {
+		t.Fatalf("expected details pane line count to be positive, got %d", count)
 	}
 }
 
 func splitTestState() types.ContentState {
 	avgMood := 4.1
 	avgEnergy := 3.7
+	sleepHours := 7.5
+	sleepScore := 84
+	screenTime := 95
+	notes := "Slept better, but backlog pressure still feels high."
 	return types.ContentState{
 		View:                "wellbeing",
 		Pane:                string(uistate.PaneWellbeingTrends),
@@ -173,32 +81,53 @@ func splitTestState() types.ContentState {
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
 			string(uistate.PaneWellbeingTrends):  0,
+			string(uistate.PaneWellbeingDetails): 0,
 		},
 		MetricsRollup: &api.MetricsRollup{
-			Days:          14,
-			CheckInDays:   5,
-			FocusDays:     4,
-			WorkedSeconds: 7200,
-			RestSeconds:   900,
-			SessionCount:  6,
-			AverageMood:   &avgMood,
-			AverageEnergy: &avgEnergy,
+			Days:                14,
+			CheckInDays:         5,
+			FocusDays:           4,
+			WorkedSeconds:       7200,
+			RestSeconds:         900,
+			SessionCount:        6,
+			AverageMood:         &avgMood,
+			AverageEnergy:       &avgEnergy,
+			HabitDueCount:      9,
+			HabitCompletedCount: 6,
+			HabitFailedCount:    2,
+			LatestBurnout: &api.BurnoutIndicator{
+				Score: 61,
+				Level: "guarded",
+				Factors: map[string]float64{
+					"workloadPressure":    0.42,
+					"breakDebt":           0.28,
+					"sleepDebt":           0.19,
+					"recoveryConsistency": -0.15,
+				},
+			},
 		},
 		MetricsRange: makeWellbeingMetricsRange(14),
-		Streaks: &api.StreakSummary{
-			CurrentCheckInDays: 3,
-			LongestCheckInDays: 7,
-			CurrentFocusDays:   2,
-			LongestFocusDays:   5,
-			CurrentHabitDays:   4,
-			LongestHabitDays:   9,
-			CustomHabitStreaks: []sharedtypes.CustomHabitStreakSummary{
-				{
-					Name:    "Training",
-					Period:  sharedtypes.HabitStreakPeriodWeek,
-					Current: 2,
-					Longest: 6,
-				},
+		DailyCheckIn: &api.DailyCheckIn{
+			Date:              "2026-04-04",
+			Mood:              4,
+			Energy:            3,
+			SleepHours:        &sleepHours,
+			SleepScore:        &sleepScore,
+			ScreenTimeMinutes: &screenTime,
+			Notes:             &notes,
+			CreatedAt:         "2026-04-04T20:00:00Z",
+		},
+		DailyPlan: &api.DailyPlan{
+			Summary: api.DailyPlanAccountabilitySummary{
+				PlannedCount:         5,
+				CompletedCount:       3,
+				FailedCount:          1,
+				AbandonedCount:       1,
+				PendingRollbackCount: 1,
+				AccountabilityScore:  62.5,
+				BacklogPressure:      3.1,
+				DelayedIssueCount:    2,
+				HighRiskIssueCount:   1,
 			},
 		},
 	}

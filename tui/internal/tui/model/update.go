@@ -246,11 +246,17 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		RollupEndDate:           m.currentRollupEndDate(),
 		MomentumDate:            m.currentMomentumDate(),
 		MomentumWindowDays:      m.currentMomentumWindowDays(),
+		MomentumTab:             string(m.currentMomentumTab()),
+		MomentumHistoryY:        m.momentumHistoryCursor,
 		WellbeingDate:           m.wellbeingDate,
 		WellbeingWindowDays:     m.currentWellbeingWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
 		MetricsRollup:           m.metricsRollup,
+		RollupMetricsRange:      m.rollupMetricsRange,
+		RollupMetricsRollup:     m.rollupMetricsRollup,
+		MomentumMetricsRange:    m.momentumMetricsRange,
+		MomentumMetricsRollup:   m.momentumMetricsRollup,
 		Streaks:                 m.streaks,
 		DailyStreaks:            m.dailyStreaks,
 		DashboardWindow:         m.dashboardWindow,
@@ -322,6 +328,9 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.view = state.View
 	m.pane = state.Pane
 	m.cursor = state.Cursor
+	if m.cursor == nil {
+		m.cursor = map[Pane]int{}
+	}
 	m.filters = state.Filters
 	m.repos = state.Repos
 	m.streams = state.Streams
@@ -339,11 +348,17 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.rollupEndDate = state.RollupEndDate
 	m.momentumDate = state.MomentumDate
 	m.momentumWindowDays = state.MomentumWindowDays
+	m.momentumTab = MomentumTab(state.MomentumTab)
+	m.momentumHistoryCursor = state.MomentumHistoryY
 	m.wellbeingDate = state.WellbeingDate
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup
+	m.rollupMetricsRange = state.RollupMetricsRange
+	m.rollupMetricsRollup = state.RollupMetricsRollup
+	m.momentumMetricsRange = state.MomentumMetricsRange
+	m.momentumMetricsRollup = state.MomentumMetricsRollup
 	m.streaks = state.Streaks
 	m.dailyStreaks = state.DailyStreaks
 	m.dashboardWindow = state.DashboardWindow
@@ -490,6 +505,9 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)
+		},
+		LoadMomentumFocus: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadMomentumFocusWindow(m.client, date, windowDays)
 		},
 		LoadRepos:     func() tea.Cmd { return commands.LoadRepos(m.client) },
 		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },

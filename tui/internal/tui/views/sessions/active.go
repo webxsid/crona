@@ -260,9 +260,7 @@ func formatRemainingMinutes(seconds int) string {
 	if seconds%60 != 0 {
 		minutes++
 	}
-	if minutes < 1 {
-		minutes = 1
-	}
+	minutes = max(1, minutes)
 	if minutes == 1 {
 		return "1 min"
 	}

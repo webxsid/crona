@@ -65,6 +65,34 @@ func LoadMomentumRange(c *api.Client, endDate string, windowDays int) tea.Cmd {
 	}
 }
 
+func LoadMomentumFocusWindow(c *api.Client, date string, windowDays int) tea.Cmd {
+	if windowDays < 1 {
+		windowDays = 30
+	}
+	if windowDays > 30 {
+		windowDays = 30
+	}
+	start := shiftISODate(date, -(windowDays - 1))
+	return tea.Batch(
+		func() tea.Msg {
+			days, err := c.GetMetricsRange(start, date)
+			if err != nil {
+				logger.Errorf("loadMomentumFocusRange: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return MomentumMetricsRangeLoadedMsg{Days: days}
+		},
+		func() tea.Msg {
+			rollup, err := c.GetMetricsRollup(start, date)
+			if err != nil {
+				logger.Errorf("loadMomentumFocusRollup: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return MomentumMetricsRollupLoadedMsg{Rollup: rollup}
+		},
+	)
+}
+
 func LoadIssues(c *api.Client, streamID int64) tea.Cmd {
 	return func() tea.Msg {
 		issues, err := c.ListIssues(streamID)
@@ -464,11 +492,33 @@ func LoadRollupSummaries(c *api.Client, start, end string) tea.Cmd {
 	return tea.Batch(
 		LoadDashboardWindow(c, start, end),
 		LoadFocusScore(c, start, end, 7),
+		LoadRollupFocusWindow(c, start, end),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupRepo)),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupStream)),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupIssue)),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupSegmentType)),
 		LoadGoalProgress(c, start, end),
+	)
+}
+
+func LoadRollupFocusWindow(c *api.Client, start, end string) tea.Cmd {
+	return tea.Batch(
+		func() tea.Msg {
+			days, err := c.GetMetricsRange(start, end)
+			if err != nil {
+				logger.Errorf("loadRollupFocusRange: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return RollupMetricsRangeLoadedMsg{Days: days}
+		},
+		func() tea.Msg {
+			rollup, err := c.GetMetricsRollup(start, end)
+			if err != nil {
+				logger.Errorf("loadRollupFocusRollup: %v", err)
+				return ErrMsg{Err: err}
+			}
+			return RollupMetricsRollupLoadedMsg{Rollup: rollup}
+		},
 	)
 }
 

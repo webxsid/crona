@@ -32,6 +32,10 @@ func PaneLineCount(state types.ContentState, pane string) int {
 		return len(
 			flattenLines(trendsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
 		)
+	case string(uistate.PaneWellbeingDetails):
+		return len(
+			flattenLines(detailsBodyLines(types.Theme{}, state, state.Width, state.Height < 37)),
+		)
 	default:
 		return 0
 	}
@@ -80,9 +84,8 @@ func visibleBodyWindow(cursor, total, inner int) (int, int) {
 	if total <= 0 {
 		return 0, 0
 	}
-	if inner < 1 {
-		inner = 1
-	}
+
+	inner = max(0, inner)
 	start, end := viewchrome.ListWindow(cursor, total, inner)
 	for {
 		used := end - start

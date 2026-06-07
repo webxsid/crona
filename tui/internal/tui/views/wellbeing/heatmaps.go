@@ -85,11 +85,9 @@ func heatmapGlyph(glyphs string, day api.DailyMetricsDay) byte {
 	if day.WorkedSeconds >= 1800 {
 		score += 1
 	}
-	if score < 0 {
-		score = 0
-	}
-	if score >= len(glyphs) {
-		score = len(glyphs) - 1
-	}
+
+	score = max(0, score)
+	score = min(score, len(glyphs)-1)
+
 	return glyphs[score]
 }

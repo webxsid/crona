@@ -988,7 +988,7 @@ func TestWellbeingViewShowsRecentActivityHeatmap(t *testing.T) {
 	}
 
 	rendered := support.RenderWellbeing(state)
-	for _, want := range []string{"Recent Activity", "Scale", "Mood", "Worked"} {
+	for _, want := range []string{"Activity", "low .:-=+*# high", "Mood", "Worked"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected wellbeing view to contain %q, got %q", want, rendered)
 		}

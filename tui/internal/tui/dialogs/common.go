@@ -41,10 +41,7 @@ func renderSelector(theme Theme, state controllerpkg.State, label string, active
 func renderInputColumns(width, maxWidth int, left string, right string) string {
 	contentWidth := min(width-8, maxWidth) - 8
 	contentWidth = max(28, contentWidth)
-	colWidth := (contentWidth - 2) / 2
-	if colWidth < 12 {
-		colWidth = 12
-	}
+	colWidth := max((contentWidth-2)/2, 12)
 	leftCol := lipgloss.NewStyle().Width(colWidth).Render(left)
 	rightCol := lipgloss.NewStyle().Width(colWidth).Render(right)
 	return lipgloss.JoinHorizontal(lipgloss.Top, leftCol, "  ", rightCol)

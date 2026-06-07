@@ -18,6 +18,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	startDateText := helperpkg.FormatDisplayDate(state.RollupStartDate, state.Settings)
 	endDateText := helperpkg.FormatDisplayDate(state.RollupEndDate, state.Settings)
 	summaryInnerW := max(24, width-8)
+	maxSummaryLines := max(1, height-4)
 
 	lines := []string{
 		theme.StylePaneTitle.Render("Rollup Dashboard"),
@@ -29,24 +30,27 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 		),
 		theme.StyleDim.Render("[S/E] calendar   [h/l] start   [,/.] end   [g] weekly"),
 		"",
-		renderWindowLine(theme, state),
-		renderFocusLine(theme, state),
-		renderProgressLine(theme, state),
-		renderEstimateBiasLine(theme, state),
 	}
-	lines = viewchrome.ClipSummaryLines(theme, lines, height)
+	visualHeight := max(1, maxSummaryLines-len(lines))
+	focusWidth := summaryInnerW
+	if viewcalendar.ShouldRender(summaryInnerW) {
+		focusWidth = max(28, (summaryInnerW*3)/5)
+	}
+	focusLines := renderFocusVisual(theme, state, focusWidth, visualHeight)
 	if viewcalendar.ShouldRender(summaryInnerW) {
 		calendarLines := viewcalendar.Render(theme, viewcalendar.Selection{
 			AnchorDate: state.RollupEndDate,
 			RangeStart: state.RollupStartDate,
 			RangeEnd:   state.RollupEndDate,
-			MaxLines:   len(lines),
+			MaxLines:   visualHeight,
 			WeekStart:  state.WeekStart,
 		})
 		if len(calendarLines) > 0 {
-			lines = viewcalendar.MergeBeside(lines, calendarLines, summaryInnerW, 3)
+			focusLines = viewcalendar.MergeBeside(focusLines, calendarLines, summaryInnerW, 3)
 		}
 	}
+	lines = append(lines, focusLines...)
+	lines = viewchrome.ClipSummaryLines(theme, lines, height)
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(theme.ColorDim).

@@ -568,6 +568,17 @@ func (m Model) currentMomentumWindowDays() int {
 	return m.momentumWindowDays
 }
 
+func (m Model) currentMomentumTab() MomentumTab {
+	return MomentumTabCustom
+}
+
+func (m Model) momentumCursorForView() int {
+	if m.currentMomentumTab() == MomentumTabFocus {
+		return m.momentumHistoryCursor
+	}
+	return m.cursor[PaneMomentumCards]
+}
+
 func (m Model) currentWellbeingWindowDays() int {
 	if m.wellbeingWindowDays < 1 {
 		return 7

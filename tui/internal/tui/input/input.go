@@ -25,6 +25,8 @@ type State struct {
 	RollupEndDate       string
 	MomentumDate        string
 	MomentumWindowDays  int
+	MomentumTab         string
+	MomentumHistoryY    int
 	WellbeingDate       string
 	WellbeingWindowDays int
 	Dialog              string

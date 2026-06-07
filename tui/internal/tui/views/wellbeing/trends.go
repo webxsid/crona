@@ -221,25 +221,20 @@ func renderBrailleCanvas(values []float64, minValue, maxValue float64, width, he
 	}
 	prevX := -1
 	prevY := -1
-	for x := 0; x < pixelWidth; x++ {
+	for x := range pixelWidth {
 		idx := 0
 		if len(values) > 1 {
 			idx = int(math.Round(float64(x) * float64(len(values)-1) / float64(pixelWidth-1)))
 		}
-		if idx < 0 {
-			idx = 0
-		}
+
+		idx = max(0, min(idx, len(values)-1))
+
 		if idx >= len(values) {
 			idx = len(values) - 1
 		}
 		norm := clamp01((values[idx] - minValue) / span)
 		y := int(math.Round((1 - norm) * float64(pixelHeight-1)))
-		if y < 0 {
-			y = 0
-		}
-		if y >= pixelHeight {
-			y = pixelHeight - 1
-		}
+		y = max(0, min(y, pixelHeight-1))
 		if prevX >= 0 {
 			drawBrailleLine(pixels, prevX, prevY, x, y)
 		}
@@ -248,9 +243,9 @@ func renderBrailleCanvas(values []float64, minValue, maxValue float64, width, he
 		prevY = y
 	}
 	lines := make([]string, height)
-	for cellY := 0; cellY < height; cellY++ {
+	for cellY := range height {
 		var b strings.Builder
-		for cellX := 0; cellX < width; cellX++ {
+		for cellX := range width {
 			bits := brailleBitsForCell(pixels, cellX, cellY)
 			if bits == 0 {
 				b.WriteRune(' ')
@@ -371,12 +366,9 @@ func sparkline(values []float64, minValue, maxValue float64) string {
 	for _, value := range values {
 		norm := clamp01((value - minValue) / span)
 		idx := int(math.Round(norm * float64(len(glyphs)-1)))
-		if idx < 0 {
-			idx = 0
-		}
-		if idx >= len(glyphs) {
-			idx = len(glyphs) - 1
-		}
+
+		idx = max(0, min(idx, len(glyphs)-1))
+
 		out = append(out, glyphs[idx])
 	}
 	return string(out)

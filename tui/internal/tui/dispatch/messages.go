@@ -38,11 +38,17 @@ type MessageState struct {
 	RollupEndDate           string
 	MomentumDate            string
 	MomentumWindowDays      int
+	MomentumTab             string
+	MomentumHistoryY        int
 	WellbeingDate           string
 	WellbeingWindowDays     int
 	DailyCheckIn            *api.DailyCheckIn
 	MetricsRange            []api.DailyMetricsDay
 	MetricsRollup           *api.MetricsRollup
+	RollupMetricsRange      []api.DailyMetricsDay
+	RollupMetricsRollup     *api.MetricsRollup
+	MomentumMetricsRange    []api.DailyMetricsDay
+	MomentumMetricsRollup   *api.MetricsRollup
 	Streaks                 *api.StreakSummary
 	DailyStreaks            *api.StreakSummary
 	DashboardWindow         *api.DashboardWindowSummary
@@ -129,6 +135,7 @@ type MessageDeps struct {
 	LoadAllHabits              func() tea.Cmd
 	LoadHabitStreakDefinitions func() tea.Cmd
 	LoadMomentumRange          func(string, int) tea.Cmd
+	LoadMomentumFocus          func(string, int) tea.Cmd
 	LoadDueHabits              func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
 	LoadDailyStreaks           func(string) tea.Cmd
@@ -255,11 +262,33 @@ func HandleMessage(
 			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
 		}
 		return state, nil, true
+	case commands.RollupMetricsRangeLoadedMsg:
+		state.RollupMetricsRange = msg.Days
+		return state, nil, true
+	case commands.MomentumMetricsRangeLoadedMsg:
+		state.MomentumMetricsRange = msg.Days
+		if state.MomentumTab == "focus" {
+			if state.MomentumHistoryY < 0 {
+				state.MomentumHistoryY = 0
+			}
+			if len(msg.Days) == 0 {
+				state.MomentumHistoryY = 0
+			} else if state.MomentumHistoryY >= len(msg.Days) {
+				state.MomentumHistoryY = len(msg.Days) - 1
+			}
+		}
+		return state, nil, true
 	case commands.MetricsRollupLoadedMsg:
 		state.MetricsRollup = msg.Rollup
 		if deps.AnchorWellbeingScroll != nil {
 			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
 		}
+		return state, nil, true
+	case commands.RollupMetricsRollupLoadedMsg:
+		state.RollupMetricsRollup = msg.Rollup
+		return state, nil, true
+	case commands.MomentumMetricsRollupLoadedMsg:
+		state.MomentumMetricsRollup = msg.Rollup
 		return state, nil, true
 	case commands.StreaksLoadedMsg:
 		state.Streaks = msg.Streaks

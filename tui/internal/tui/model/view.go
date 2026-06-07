@@ -23,6 +23,7 @@ func (m Model) layoutState() layoutpkg.State {
 	paneActions := viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
+		MomentumTab:            string(m.currentMomentumTab()),
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
 		TimerNextSegment:       chromeState.TimerNextSegment,
@@ -160,6 +161,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
 			Pane:                   string(m.pane),
+			MomentumTab:            string(m.currentMomentumTab()),
 			TimerState:             timerState,
 			TimerSegment:           timerSegment,
 			TimerNextSegment:       timerNextSegment,

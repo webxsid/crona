@@ -174,6 +174,8 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		CurrentRollupEnd:       m.currentRollupEndDate(),
 		CurrentWell:            m.currentWellbeingDate(),
 		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
+		CurrentMomentum:        m.currentMomentumDate(),
+		MomentumWindowDays:     m.currentMomentumWindowDays(),
 		CurrentOpsLim:          m.currentOpsLimit(),
 	}
 }

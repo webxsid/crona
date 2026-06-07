@@ -12,6 +12,7 @@ import (
 	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/terminaltitle"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
+	rollupview "crona/tui/internal/tui/views/rollup"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -51,6 +52,7 @@ const (
 	PaneIssues           = uistate.PaneIssues
 	PaneHabits           = uistate.PaneHabits
 	PaneRollupDays       = uistate.PaneRollupDays
+	PaneRollupBreakdown  = uistate.PaneRollupBreakdown
 	PaneSessions         = uistate.PaneSessions
 	PaneHabitHistory     = uistate.PaneHabitHistory
 	PaneMomentumCards    = uistate.PaneMomentumCards
@@ -61,10 +63,19 @@ const (
 	PaneAlerts           = uistate.PaneAlerts
 	PaneWellbeingSummary = uistate.PaneWellbeingSummary
 	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
+	PaneWellbeingDetails = uistate.PaneWellbeingDetails
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
 type DailyTaskSection = uistate.DailyTaskSection
+
+type MomentumTab string
+
+const (
+	MomentumTabFocus     MomentumTab = "focus"
+	MomentumTabWellbeing MomentumTab = "wellbeing"
+	MomentumTabCustom    MomentumTab = "custom"
+)
 
 const (
 	DefaultIssueSectionOpen      = uistate.DefaultIssueSectionOpen
@@ -114,11 +125,17 @@ type Model struct {
 	rollupEndDate          string
 	momentumDate           string
 	momentumWindowDays     int
+	momentumTab            MomentumTab
+	momentumHistoryCursor  int
 	wellbeingDate          string
 	wellbeingWindowDays    int
 	dailyCheckIn           *api.DailyCheckIn
 	metricsRange           []api.DailyMetricsDay
 	metricsRollup          *api.MetricsRollup
+	rollupMetricsRange     []api.DailyMetricsDay
+	rollupMetricsRollup    *api.MetricsRollup
+	momentumMetricsRange   []api.DailyMetricsDay
+	momentumMetricsRollup  *api.MetricsRollup
 	streaks                *api.StreakSummary
 	dailyStreaks           *api.StreakSummary
 	dashboardWindow        *api.DashboardWindowSummary
@@ -275,12 +292,14 @@ func New(
 		pane:                PaneIssues,
 		defaultIssueSection: DefaultIssueSectionOpen,
 		dailyTaskSection:    DailyTaskSectionPlanned,
+		momentumTab:         MomentumTabCustom,
 		cursor: map[Pane]int{
 			PaneRepos:            0,
 			PaneStreams:          0,
 			PaneIssues:           0,
 			PaneHabits:           0,
 			PaneRollupDays:       0,
+			PaneRollupBreakdown:  0,
 			PaneSessions:         0,
 			PaneHabitHistory:     0,
 			PaneMomentumCards:    0,
@@ -291,6 +310,7 @@ func New(
 			PaneAlerts:           0,
 			PaneWellbeingSummary: 0,
 			PaneWellbeingTrends:  0,
+			PaneWellbeingDetails: 0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:            "",
@@ -298,6 +318,7 @@ func New(
 			PaneIssues:           "",
 			PaneHabits:           "",
 			PaneRollupDays:       "",
+			PaneRollupBreakdown:  "",
 			PaneSessions:         "",
 			PaneHabitHistory:     "",
 			PaneMomentumCards:    "",
@@ -308,6 +329,7 @@ func New(
 			PaneAlerts:           "",
 			PaneWellbeingSummary: "",
 			PaneWellbeingTrends:  "",
+			PaneWellbeingDetails: "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
@@ -404,13 +426,25 @@ func (m *Model) listLen(p Pane) int {
 		}
 		return len(m.dashboardWindow.Days)
 	}
-	if p == PaneWellbeingSummary || p == PaneWellbeingTrends {
+	if p == PaneRollupBreakdown {
+		snapshot := m.selectionSnapshot()
+		activeIssue := selectionpkg.ActiveIssue(snapshot)
+		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
+		return rollupview.PaneLineCount(state, string(p))
+	}
+	if p == PaneWellbeingSummary || p == PaneWellbeingTrends || p == PaneWellbeingDetails {
 		snapshot := m.selectionSnapshot()
 		activeIssue := selectionpkg.ActiveIssue(snapshot)
 		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
 		return wellbeingview.PaneLineCount(state, string(p))
 	}
 	if p == PaneMomentumCards {
+		if m.currentMomentumTab() == MomentumTabFocus {
+			return len(m.momentumMetricsRange)
+		}
+		if m.currentMomentumTab() == MomentumTabWellbeing {
+			return 0
+		}
 		snapshot := m.selectionSnapshot()
 		return len(selectionpkg.FilteredIndices(snapshot, p))
 	}

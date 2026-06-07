@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"strings"
 
@@ -367,34 +366,4 @@ func replaceHabitStreakHabitLinks(
 	}
 	_, err := db.NewInsert().Model(&rows).Exec(ctx)
 	return err
-}
-
-func loadHabitStreakDefinitionsForSettings(
-	ctx context.Context,
-	db *bun.DB,
-	userID string,
-) ([]sharedtypes.HabitStreakDefinition, error) {
-	return NewHabitStreakDefinitionRepository(db).List(ctx, userID)
-}
-
-func fetchHabitStreakDefinitionsRaw(
-	ctx context.Context,
-	db bun.IDB,
-	userID string,
-	id string,
-) (*storemodels.HabitStreakDefinitionModel, error) {
-	var model storemodels.HabitStreakDefinitionModel
-	err := db.NewSelect().
-		Model(&model).
-		Where("id = ?", id).
-		Where("user_id = ?", userID).
-		Limit(1).
-		Scan(ctx)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &model, nil
 }

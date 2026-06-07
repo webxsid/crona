@@ -65,7 +65,7 @@ func burnoutContributorLines(burnout *api.BurnoutIndicator) (risks []string, rec
 	recoveryLimit := min(2, len(negative))
 	risks = make([]string, 0, riskLimit)
 	recoveries = make([]string, 0, recoveryLimit)
-	for i := 0; i < riskLimit; i++ {
+	for i := range riskLimit {
 		risks = append(
 			risks,
 			fmt.Sprintf(
@@ -75,7 +75,7 @@ func burnoutContributorLines(burnout *api.BurnoutIndicator) (risks []string, rec
 			),
 		)
 	}
-	for i := 0; i < recoveryLimit; i++ {
+	for i := range recoveryLimit {
 		recoveries = append(
 			recoveries,
 			fmt.Sprintf(

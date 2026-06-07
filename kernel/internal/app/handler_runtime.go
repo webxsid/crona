@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"strings"
 
 	corecommands "crona/kernel/internal/core/commands"
 	shareddto "crona/shared/dto"
@@ -287,11 +286,4 @@ func (h *Handler) handleRuntimeMethods(
 	default:
 		return protocol.Response{}, false
 	}
-}
-
-func currentKernelISODate(now string) string {
-	if idx := strings.Index(now, "T"); idx >= 0 {
-		return now[:idx]
-	}
-	return now
 }

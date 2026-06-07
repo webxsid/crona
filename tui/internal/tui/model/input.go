@@ -1,6 +1,7 @@
 package model
 
 import (
+	"maps"
 	"time"
 
 	shareddto "crona/shared/dto"
@@ -71,6 +72,10 @@ func (m Model) inputState() inputpkg.State {
 	protected := false
 	activeView := m.view
 	activePane := m.pane
+	cursor := maps.Clone(m.cursor)
+	if cursor == nil {
+		cursor = map[Pane]int{}
+	}
 	if nextProtected, _, _ := viewruntime.ProtectedRestMode(m.settings, time.Now().Format("2006-01-02")); nextProtected {
 		protected = true
 		if activeView != ViewReports && activeView != ViewSessionHistory &&
@@ -83,7 +88,7 @@ func (m Model) inputState() inputpkg.State {
 		ActiveView:          activeView,
 		ActivePane:          activePane,
 		ProtectedModeActive: protected,
-		Cursor:              m.cursor,
+		Cursor:              cursor,
 		Filters:             m.filters,
 		DefaultIssueSection: m.defaultIssueSection,
 		DailyTaskSection:    m.dailyTaskSection,
@@ -92,6 +97,8 @@ func (m Model) inputState() inputpkg.State {
 		RollupEndDate:       m.rollupEndDate,
 		MomentumDate:        m.momentumDate,
 		MomentumWindowDays:  m.currentMomentumWindowDays(),
+		MomentumTab:         string(m.currentMomentumTab()),
+		MomentumHistoryY:    m.momentumHistoryCursor,
 		WellbeingDate:       m.wellbeingDate,
 		WellbeingWindowDays: m.currentWellbeingWindowDays(),
 		Dialog:              m.dialog,
@@ -122,7 +129,12 @@ func (m Model) inputState() inputpkg.State {
 func (m Model) applyInputState(state inputpkg.State) Model {
 	m.view = state.ActiveView
 	m.pane = state.ActivePane
-	m.cursor = state.Cursor
+	m.cursor = maps.Clone(state.Cursor)
+	if MomentumTab(state.MomentumTab) == MomentumTabFocus {
+		m.momentumHistoryCursor = state.Cursor[PaneMomentumCards]
+	} else if state.Cursor != nil {
+		m.cursor[PaneMomentumCards] = state.Cursor[PaneMomentumCards]
+	}
 	m.filters = state.Filters
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dailyTaskSection = state.DailyTaskSection

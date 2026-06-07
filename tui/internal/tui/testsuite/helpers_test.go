@@ -194,15 +194,8 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "No check-in recorded for this date") {
 		t.Fatalf("expected current day summary in compact wellbeing view")
 	}
-	if !strings.Contains(plain, "Burnout") || !strings.Contains(plain, "31 LOW") {
-		t.Fatalf("expected burnout summary in compact wellbeing view")
-	}
-	if !strings.Contains(plain, "Metrics Window") || !strings.Contains(plain, "Days  7") {
-		t.Fatalf("expected compact metrics block in wellbeing view")
-	}
-	if !strings.Contains(plain, "Accountability") ||
-		!strings.Contains(plain, "Planned 3  Completed 1  Failed 1  Pending 1") {
-		t.Fatalf("expected compact accountability summary in wellbeing view")
+	if strings.Contains(plain, "Metrics Window") || strings.Contains(plain, "Details") {
+		t.Fatalf("expected compact wellbeing to use single-pane tab rendering")
 	}
 	if got := lipgloss.Height(rendered); got > height {
 		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)

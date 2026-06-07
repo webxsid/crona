@@ -14,10 +14,11 @@ import (
 
 func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  140,
-		Height: 50,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       140,
+		Height:      50,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -49,6 +50,11 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	rendered := Render(testTheme(), state)
 	if !strings.Contains(rendered, "Signal Quality") {
 		t.Fatalf("expected card title in render, got %q", rendered)
+	}
+	for _, unwanted := range []string{"1 Focus", "2 Wellbeing", "3 Custom", "Focus Momentum"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("did not expect momentum tab chrome in render, got %q", rendered)
+		}
 	}
 	if !strings.Contains(rendered, "Keep the signal steady and visible.") {
 		t.Fatalf("expected card description in render, got %q", rendered)
@@ -100,10 +106,11 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 
 func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  120,
-		Height: 34,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       120,
+		Height:      34,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -144,10 +151,11 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 
 func TestRenderUsesSquareGridForDailyCadence(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  120,
-		Height: 34,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       120,
+		Height:      34,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -239,10 +247,11 @@ func TestMomentumDailySquaresStayCompactWhenNarrow(t *testing.T) {
 
 func TestRenderKeepsFocusedCardFullyVisibleOnShortViewport(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  92,
-		Height: 13,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       92,
+		Height:      13,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -287,10 +296,11 @@ func TestRenderKeepsFocusedCardFullyVisibleOnShortViewport(t *testing.T) {
 
 func TestRenderShowsBottomOverflowHintWhenCardsContinueBelow(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  96,
-		Height: 18,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       96,
+		Height:      18,
 		MomentumCards: []sharedtypes.MomentumCard{
 			momentumTestCard("Alpha Momentum", "A1", "A2", "A3"),
 			momentumTestCard("Beta Momentum", "B1", "B2", "B3"),
@@ -319,10 +329,11 @@ func TestRenderShowsBottomOverflowHintWhenCardsContinueBelow(t *testing.T) {
 
 func TestRenderShowsTopOverflowHintWhenCardsContinueAbove(t *testing.T) {
 	state := types.ContentState{
-		View:   "momentum",
-		Pane:   "momentum_cards",
-		Width:  96,
-		Height: 18,
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       96,
+		Height:      18,
 		MomentumCards: []sharedtypes.MomentumCard{
 			momentumTestCard("Alpha Momentum", "A1", "A2", "A3"),
 			momentumTestCard("Beta Momentum", "B1", "B2", "B3"),

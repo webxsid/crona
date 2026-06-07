@@ -43,6 +43,8 @@ type ContentState struct {
 	RollupEndDate       string
 	MomentumDate        string
 	MomentumWindowDays  int
+	MomentumTab         string
+	MomentumHistoryY    int
 	WellbeingDate       string
 	WellbeingWindowDays int
 	WeekStart           sharedtypes.WeekStart
@@ -71,6 +73,10 @@ type ContentState struct {
 	DailyCheckIn           *api.DailyCheckIn
 	MetricsRange           []api.DailyMetricsDay
 	MetricsRollup          *api.MetricsRollup
+	RollupMetricsRange     []api.DailyMetricsDay
+	RollupMetricsRollup    *api.MetricsRollup
+	MomentumMetricsRange   []api.DailyMetricsDay
+	MomentumMetricsRollup  *api.MetricsRollup
 	Streaks                *api.StreakSummary
 	DailyStreaks           *api.StreakSummary
 	DashboardWindow        *api.DashboardWindowSummary

@@ -1,11 +1,8 @@
 package wellbeing
 
 import (
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 	viewui "crona/tui/internal/tui/views/ui"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 func Render(theme types.Theme, state types.ContentState) string {
@@ -19,13 +16,5 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if state.Width >= 96 {
 		return renderSplit(theme, state)
 	}
-	if state.Height < 37 {
-		return renderCompact(theme, state)
-	}
-	topH, bottomH := viewhelpers.SplitVertical(state.Height, 11, 8, state.Height/2)
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		renderSummary(theme, state, state.Width, topH),
-		renderTrends(theme, state, state.Width, bottomH),
-	)
+	return renderCompact(theme, state)
 }

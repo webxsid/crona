@@ -36,6 +36,7 @@ func renderSmallScreen(theme types.Theme, state types.ContentState) string {
 			}),
 		),
 	}
+
 	switch activePane {
 	case string(uistate.PaneWellbeingTrends):
 		return renderScrollablePane(
@@ -44,8 +45,18 @@ func renderSmallScreen(theme types.Theme, state types.ContentState) string {
 			state.Width,
 			state.Height,
 			header,
-			trendsBodyLines(theme, state, state.Width, true),
+			metricsBodyLines(theme, state, state.Width, true),
 			state.Cursors[string(uistate.PaneWellbeingTrends)],
+		)
+	case string(uistate.PaneWellbeingDetails):
+		return renderScrollablePane(
+			theme,
+			true,
+			state.Width,
+			state.Height,
+			header,
+			detailsBodyLines(theme, state, state.Width, true),
+			state.Cursors[string(uistate.PaneWellbeingDetails)],
 		)
 	default:
 		return renderScrollablePane(
@@ -61,130 +72,58 @@ func renderSmallScreen(theme types.Theme, state types.ContentState) string {
 }
 
 func renderCompact(theme types.Theme, state types.ContentState) string {
-	topH := max(10, state.Height*11/20)
-	topH = min(topH, state.Height-6)
-	bottomH := max(6, state.Height-topH)
-	return lipglossJoinCompact(theme, state, topH, bottomH)
-}
-
-func lipglossJoinCompact(theme types.Theme, state types.ContentState, topH, bottomH int) string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		renderCompactSummary(theme, state, state.Width, topH),
-		renderCompactTrends(theme, state, state.Width, bottomH),
-	)
+	return renderSmallScreen(theme, state)
 }
 
 func renderSplit(theme types.Theme, state types.ContentState) string {
 	topH, bottomH := splitWellbeingHeights(state.Height)
-	summary := renderSummary(theme, state, state.Width, topH)
-	if state.Height < 37 {
-		summary = renderCompactSummary(theme, state, state.Width, topH)
-	}
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		summary,
-		renderMetrics(theme, state, state.Width, bottomH, state.Height < 37),
+	bottomLeftW, bottomRightW := wellbeingBottomWidths(state.Width)
+	compact := state.Height < 37
+
+	summary := renderSummary(theme, state, state.Width, topH, compact)
+	bottom := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		renderMetrics(theme, state, bottomLeftW, bottomH, compact),
+		renderDetails(theme, state, bottomRightW, bottomH, compact),
 	)
+
+	return lipgloss.JoinVertical(lipgloss.Left, summary, bottom)
 }
 
 func splitWellbeingHeights(height int) (int, int) {
 	if height < 37 {
 		topH := max(10, height*11/20)
-		if topH > height-6 {
-			topH = height - 6
-		}
+		topH = min(topH, height-6)
 		return topH, max(6, height-topH)
 	}
 	return viewhelpers.SplitVertical(height, 11, 8, height/2)
 }
 
-func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
-	active := state.Pane == string(uistate.PaneWellbeingSummary)
-	displayDate := helperpkg.FormatDisplayDate(state.WellbeingDate, state.Settings)
-	actionLine := ""
-	if active {
-		actionLine = viewchrome.RenderActionLine(
-			theme,
-			width-6,
-			viewchrome.ContextualActions(theme, viewchrome.ActionsState{
-				View:           state.View,
-				Pane:           state.Pane,
-				RestModeActive: state.RestModeActive,
-				AwayModeActive: state.AwayModeActive,
-			}),
-		)
-	}
-	header := []string{
-		theme.StylePaneTitle.Render("Wellbeing"),
-		theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", displayDate)),
-		actionLine,
-		"",
-	}
-	body := summaryBodyLines(theme, state, width, false)
-	innerWidth := max(24, width-8)
-	if viewcalendar.ShouldRender(innerWidth) {
-		start := viewcalendar.ShiftDate(state.WellbeingDate, -6)
-		calendarLines := viewcalendar.Render(theme, viewcalendar.Selection{
-			AnchorDate: state.WellbeingDate,
-			RangeStart: start,
-			RangeEnd:   state.WellbeingDate,
-			MaxLines:   max(4, min(len(body), height-len(header)-2)),
-			WeekStart:  state.WeekStart,
-		})
-		if len(calendarLines) > 0 {
-			body = viewcalendar.MergeBeside(body, calendarLines, innerWidth, 3)
-		}
-	}
-	return renderScrollablePane(
-		theme,
-		active,
-		width,
-		height,
-		header,
-		body,
-		state.Cursors[string(uistate.PaneWellbeingSummary)],
-	)
+func wellbeingBottomWidths(width int) (int, int) {
+	left := max(36, width*3/5)
+	left = min(left, width-28)
+	right := max(24, width-left)
+	return left, right
 }
 
-func renderCompactSummary(theme types.Theme, state types.ContentState, width, height int) string {
+func renderSummary(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	compact bool,
+) string {
 	active := state.Pane == string(uistate.PaneWellbeingSummary)
 	displayDate := helperpkg.FormatDisplayDate(state.WellbeingDate, state.Settings)
-	actionLine := ""
-	if active {
-		actionLine = viewchrome.RenderActionLine(
-			theme,
-			width-6,
-			viewchrome.ContextualActions(theme, viewchrome.ActionsState{
-				View:           state.View,
-				Pane:           state.Pane,
-				RestModeActive: state.RestModeActive,
-				AwayModeActive: state.AwayModeActive,
-			}),
-		)
-	}
-	header := []string{
-		fmt.Sprintf(
+	header := []string{theme.StylePaneTitle.Render("Wellbeing")}
+	if compact {
+		header[0] = fmt.Sprintf(
 			"%s  %s",
 			theme.StylePaneTitle.Render("Wellbeing"),
 			theme.StyleHeader.Render(displayDate),
-		),
-		actionLine,
+		)
+	} else {
+		header = append(header, theme.StylePaneTitle.Render(fmt.Sprintf("date: %s", displayDate)))
 	}
-	return renderScrollablePane(
-		theme,
-		active,
-		width,
-		height,
-		header,
-		summaryBodyLines(theme, state, width, true),
-		state.Cursors[string(uistate.PaneWellbeingSummary)],
-	)
-}
-
-func renderTrends(theme types.Theme, state types.ContentState, width, height int) string {
-	active := state.Pane == string(uistate.PaneWellbeingTrends)
-	header := []string{theme.StylePaneTitle.Render("Metrics Window")}
 	if active {
 		header = append(
 			header,
@@ -200,14 +139,34 @@ func renderTrends(theme types.Theme, state types.ContentState, width, height int
 			),
 		)
 	}
+	if !compact {
+		header = append(header, "")
+	}
+
+	body := summaryBodyLines(theme, state, width, compact)
+	innerWidth := max(24, width-8)
+	if viewcalendar.ShouldRender(innerWidth) {
+		start := viewcalendar.ShiftDate(state.WellbeingDate, -6)
+		calendarLines := viewcalendar.Render(theme, viewcalendar.Selection{
+			AnchorDate: state.WellbeingDate,
+			RangeStart: start,
+			RangeEnd:   state.WellbeingDate,
+			MaxLines:   max(4, min(len(body), height-len(header)-2)),
+			WeekStart:  state.WeekStart,
+		})
+		if len(calendarLines) > 0 {
+			body = viewcalendar.MergeBeside(body, calendarLines, innerWidth, 3)
+		}
+	}
+
 	return renderScrollablePane(
 		theme,
 		active,
 		width,
 		height,
 		header,
-		trendsBodyLines(theme, state, width, false),
-		state.Cursors[string(uistate.PaneWellbeingTrends)],
+		body,
+		state.Cursors[string(uistate.PaneWellbeingSummary)],
 	)
 }
 
@@ -245,9 +204,14 @@ func renderMetrics(
 	)
 }
 
-func renderCompactTrends(theme types.Theme, state types.ContentState, width, height int) string {
-	active := state.Pane == string(uistate.PaneWellbeingTrends)
-	header := []string{theme.StylePaneTitle.Render("Metrics Window")}
+func renderDetails(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	compact bool,
+) string {
+	active := state.Pane == string(uistate.PaneWellbeingDetails)
+	header := []string{theme.StylePaneTitle.Render("Details")}
 	if active {
 		header = append(
 			header,
@@ -269,8 +233,8 @@ func renderCompactTrends(theme types.Theme, state types.ContentState, width, hei
 		width,
 		height,
 		header,
-		trendsBodyLines(theme, state, width, true),
-		state.Cursors[string(uistate.PaneWellbeingTrends)],
+		detailsBodyLines(theme, state, width, compact),
+		state.Cursors[string(uistate.PaneWellbeingDetails)],
 	)
 }
 
@@ -278,6 +242,8 @@ func smallScreenTitle(pane string) string {
 	switch pane {
 	case string(uistate.PaneWellbeingTrends):
 		return "Metrics Window"
+	case string(uistate.PaneWellbeingDetails):
+		return "Details"
 	default:
 		return "Wellbeing"
 	}

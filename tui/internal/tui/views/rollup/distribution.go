@@ -21,7 +21,7 @@ func renderDistributionSection(
 		return append(lines, theme.StyleDim.Render("  No data"))
 	}
 	limit := min(3, len(summary.Rows))
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		row := summary.Rows[i]
 		lines = append(
 			lines,

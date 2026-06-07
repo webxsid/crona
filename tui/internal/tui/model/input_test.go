@@ -85,8 +85,9 @@ func TestInputDepsOpenCheckInDialogUsesEditForExistingCheckIn(t *testing.T) {
 
 func TestInputDepsOpenCreateActionUsesMomentumCreateDialog(t *testing.T) {
 	model := Model{
-		view: ViewMomentum,
-		pane: PaneMomentumCards,
+		view:        ViewMomentum,
+		pane:        PaneMomentumCards,
+		momentumTab: MomentumTabCustom,
 	}
 
 	next := model.handleInputCreateAction()
@@ -100,8 +101,9 @@ func TestInputDepsOpenCreateActionUsesMomentumCreateDialog(t *testing.T) {
 
 func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 	model := Model{
-		view: ViewMomentum,
-		pane: PaneMomentumCards,
+		view:        ViewMomentum,
+		pane:        PaneMomentumCards,
+		momentumTab: MomentumTabCustom,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
 		},
@@ -128,8 +130,9 @@ func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 
 func TestMomentumDeleteSelectionOpensConfirmDialog(t *testing.T) {
 	model := Model{
-		view: ViewMomentum,
-		pane: PaneMomentumCards,
+		view:        ViewMomentum,
+		pane:        PaneMomentumCards,
+		momentumTab: MomentumTabCustom,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
 		},

@@ -292,9 +292,7 @@ func (s clockTileSpec) paintColon(canvas [][]bool, xOff int) {
 
 func (s clockTileSpec) paintBitmap(canvas [][]bool, xOff int, rows []string) {
 	scale := s.scale
-	if scale < 1 {
-		scale = 1
-	}
+	scale = max(scale, 1)
 	for y, row := range rows {
 		for x, cell := range row {
 			if cell != '#' {

@@ -18,8 +18,8 @@ const (
 	LabelTypeStreak LabelTypes = "streak"
 )
 
-func label(label_type LabelTypes, state types.ContentState) string {
-	switch label_type {
+func label(labelType LabelTypes, state types.ContentState) string {
+	switch labelType {
 	case LabelTypeMood:
 		return wellbeingMoodLabel(state)
 	case LabelTypeEnergy:

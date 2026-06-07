@@ -33,7 +33,7 @@ func (m Model) checkout() (Model, tea.Cmd) {
 }
 
 func (m Model) handleInputCreateAction() Model {
-	if m.view == ViewMomentum {
+	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
 		return m.openCreateMomentumDialog()
 	}
 	if m.view == ViewDefault && m.pane == PaneIssues {
@@ -123,7 +123,7 @@ func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
-	if m.view == ViewMomentum {
+	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
 		if card, ok := m.selectedMomentumCard(); ok {
 			return m.openEditMomentumDialog(card.Definition), nil, true
 		}
@@ -190,7 +190,7 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 		m = m.openConfirmDeleteEntity("checkin", m.currentWellbeingDate(), "this check-in")
 		return m, nil, true
 	}
-	if m.view == ViewMomentum {
+	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
 		if card, ok := m.selectedMomentumCard(); ok {
 			m = m.openConfirmDeleteEntity("momentum", card.Definition.ID, card.Definition.Name)
 			return m, nil, true
@@ -282,7 +282,7 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
-	if m.view == ViewMomentum {
+	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
 		if card, ok := m.selectedMomentumCard(); ok {
 			return m.openEditMomentumDialog(card.Definition), nil, true
 		}
@@ -350,7 +350,7 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 }
 
 func (m Model) handleInputToggleMomentum() (tea.Cmd, bool) {
-	if m.view != ViewMomentum {
+	if m.view != ViewMomentum || m.currentMomentumTab() != MomentumTabCustom {
 		return nil, false
 	}
 	card, ok := m.selectedMomentumCard()

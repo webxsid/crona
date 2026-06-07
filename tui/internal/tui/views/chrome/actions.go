@@ -22,6 +22,7 @@ type ActionsState struct {
 	IsBetaBuild            bool
 	UpdateVisible          bool
 	UpdateInstallAvailable bool
+	MomentumTab            string
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
@@ -133,7 +134,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "momentum" {
 		return []string{
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),
-			theme.StyleHeader.Render("[enter/e]") + theme.StyleDim.Render(" edit"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle enabled"),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),

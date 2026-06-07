@@ -149,6 +149,7 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
 			string(uistate.PaneWellbeingTrends):  0,
+			string(uistate.PaneWellbeingDetails): 0,
 		},
 		DailyCheckIn: &api.DailyCheckIn{
 			Date:              "2026-04-04",
@@ -197,17 +198,72 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 	}
 
 	rendered := support.RenderWellbeing(state)
-	if !strings.Contains(rendered, "↓ more") {
-		t.Fatalf("expected summary pane to show downward scroll indicator, got %q", rendered)
+	if !strings.Contains(rendered, "Today") || !strings.Contains(rendered, "Check-in  recorded  backfilled") {
+		t.Fatalf("expected wellbeing summary pane to render the snapshot row, got %q", rendered)
+	}
+}
+
+func TestWellbeingDetailsPaneSupportsScrolling(t *testing.T) {
+	sleep := 7.5
+	screen := 140
+	sleepScore := 82
+	backfilledAt := "2026-04-05T11:30:00Z"
+	state := views.ContentState{
+		View:          "wellbeing",
+		Pane:          string(uistate.PaneWellbeingDetails),
+		Width:         100,
+		Height:        40,
+		WellbeingDate: "2026-04-04",
+		Cursors: map[string]int{
+			string(uistate.PaneWellbeingSummary): 0,
+			string(uistate.PaneWellbeingTrends):  0,
+			string(uistate.PaneWellbeingDetails): 0,
+		},
+		DailyCheckIn: &api.DailyCheckIn{
+			Date:              "2026-04-04",
+			Mood:              4,
+			Energy:            3,
+			SleepHours:        &sleep,
+			SleepScore:        &sleepScore,
+			ScreenTimeMinutes: &screen,
+			CreatedAt:         backfilledAt,
+		},
+		DailyPlan: &api.DailyPlan{
+			Date: "2026-04-04",
+			Summary: api.DailyPlanAccountabilitySummary{
+				PlannedCount:         5,
+				CompletedCount:       2,
+				FailedCount:          2,
+				PendingRollbackCount: 1,
+				AccountabilityScore:  2.2,
+				BacklogPressure:      1.8,
+				DelayedIssueCount:    3,
+				HighRiskIssueCount:   2,
+			},
+			Entries: []api.DailyPlanEntry{
+				{ID: "1", IssueID: 1, Status: "failed", FailureReason: dailyPlanFailureReasonPtr("missed")},
+				{ID: "2", IssueID: 2, Status: "failed", FailureReason: dailyPlanFailureReasonPtr("moved")},
+			},
+		},
+		MetricsRange: makeMetricsRange(21),
+		MetricsRollup: &api.MetricsRollup{
+			Days:              21,
+			CheckInDays:       15,
+			FocusDays:         11,
+			WorkedSeconds:     7200,
+			AverageSleepHours: &sleep,
+		},
 	}
 
-	state.Cursors[string(uistate.PaneWellbeingSummary)] = 16
+	rendered := support.RenderWellbeing(state)
+	if !strings.Contains(rendered, "↓ more") {
+		t.Fatalf("expected details pane to show downward scroll indicator, got %q", rendered)
+	}
+
+	state.Cursors[string(uistate.PaneWellbeingDetails)] = 16
 	rendered = support.RenderWellbeing(state)
 	if !strings.Contains(rendered, "↑ more") {
-		t.Fatalf(
-			"expected summary pane to show upward scroll indicator after scrolling, got %q",
-			rendered,
-		)
+		t.Fatalf("expected details pane to show upward scroll indicator after scrolling, got %q", rendered)
 	}
 }
 
@@ -223,6 +279,7 @@ func TestWellbeingTrendsPaneSupportsScrolling(t *testing.T) {
 		Cursors: map[string]int{
 			string(uistate.PaneWellbeingSummary): 0,
 			string(uistate.PaneWellbeingTrends):  0,
+			string(uistate.PaneWellbeingDetails): 0,
 		},
 		MetricsRange: makeMetricsRange(14),
 		MetricsRollup: &api.MetricsRollup{

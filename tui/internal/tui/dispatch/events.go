@@ -29,6 +29,8 @@ type EventState struct {
 	CurrentRollupEnd       string
 	CurrentWell            string
 	WellbeingWindowDays    int
+	CurrentMomentum        string
+	MomentumWindowDays     int
 	CurrentOpsLim          int
 }
 
