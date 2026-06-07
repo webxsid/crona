@@ -86,19 +86,6 @@ func renderWindowLine(theme types.Theme, state types.ContentState) string {
 	)
 }
 
-func renderFocusLine(theme types.Theme, state types.ContentState) string {
-	if state.WeeklyFocusScore == nil {
-		return "Focus  score -  status -  worked -"
-	}
-	level := strings.ToLower(string(state.WeeklyFocusScore.Level))
-	return fmt.Sprintf("%s  score %s  status %s  worked %s",
-		theme.StyleHeader.Render("Focus"),
-		levelStyle(theme, level).Render(fmt.Sprintf("%d/100", state.WeeklyFocusScore.Score)),
-		levelStyle(theme, level).Render(level),
-		theme.StyleNormal.Render(viewhelpers.FormatClockText(state.WeeklyFocusScore.WorkedSeconds)),
-	)
-}
-
 func renderProgressLine(theme types.Theme, state types.ContentState) string {
 	if state.GoalProgress == nil {
 		return "Progress  estimated -  worked -  status -"

@@ -53,19 +53,6 @@ func statusStyle(theme types.Theme, status string) lipgloss.Style {
 	}
 }
 
-func levelStyle(theme types.Theme, level string) lipgloss.Style {
-	switch level {
-	case "strong":
-		return lipgloss.NewStyle().Foreground(theme.ColorGreen)
-	case "steady":
-		return lipgloss.NewStyle().Foreground(theme.ColorCyan)
-	case "overextended":
-		return lipgloss.NewStyle().Foreground(theme.ColorRed)
-	default:
-		return lipgloss.NewStyle().Foreground(theme.ColorYellow)
-	}
-}
-
 func biasStyle(theme types.Theme, bias string) lipgloss.Style {
 	switch bias {
 	case "under":

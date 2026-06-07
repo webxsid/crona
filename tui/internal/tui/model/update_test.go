@@ -110,7 +110,7 @@ func TestIssuePanePreflightMessagesOpenStashConflictForFocusAndManual(t *testing
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model := Model{
-				view: View(tt.view),
+				view: tt.view,
 				pane: PaneIssues,
 				cursor: map[Pane]int{
 					PaneIssues: 0,

@@ -448,24 +448,6 @@ func renderStatusToast(state State) string {
 	)
 }
 
-func renderHelpOverlay(state State) string {
-	bodyLines := []string{"Press ? or esc to close", ""}
-	bodyLines = append(bodyLines, state.GlobalActions...)
-	if len(state.GlobalActions) > 0 && len(state.PaneActions) > 0 {
-		bodyLines = append(bodyLines, "")
-	}
-	bodyLines = append(bodyLines, state.PaneActions...)
-	boxWidth := min(max(42, state.Width-8), 88)
-	return overlayBox(
-		"Keys",
-		bodyLines,
-		[]string{"[?] close"},
-		boxWidth,
-		chrome.ColorCyan,
-		chrome.StyleNormal,
-	)
-}
-
 func renderSessionDetailOverlay(state State) string {
 	boxWidth := min(max(52, state.Width-10), 96)
 	innerWidth := boxWidth - 4
@@ -676,16 +658,6 @@ func WrapText(text string, width int) []string {
 		return []string{text}
 	}
 	return lines
-}
-
-func overlayWidth(overlay string) int {
-	width := 0
-	for _, line := range strings.Split(overlay, "\n") {
-		if w := len([]rune(line)); w > width {
-			width = w
-		}
-	}
-	return width
 }
 
 func overlayHeight(overlay string) int {

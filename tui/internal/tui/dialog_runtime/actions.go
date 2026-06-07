@@ -202,7 +202,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			return missingRuntimeHookCmd("create_momentum")
 		}
 		return deps.CreateMomentumDefinition(
-			api.HabitStreakDefinition(action.HabitStreakDefs[0]),
+			action.HabitStreakDefs[0],
 			state.DashboardDate,
 			state.MomentumDate,
 			state.MomentumWindowDays,
@@ -216,7 +216,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			return missingRuntimeHookCmd("update_momentum")
 		}
 		return deps.UpdateMomentumDefinition(
-			api.HabitStreakDefinition(action.HabitStreakDefs[0]),
+			action.HabitStreakDefs[0],
 			state.DashboardDate,
 			state.MomentumDate,
 			state.MomentumWindowDays,

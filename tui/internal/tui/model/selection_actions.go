@@ -439,13 +439,6 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 	return m, m.preflightIssueActionFromSelection(commands.IssueActionModeFocus)
 }
 
-func (m Model) openStartTimerDialogFromSelection() Model {
-	if target, ok := m.selectedIssueActionTarget(); ok {
-		return m.openStartTimerDialog(target.repoID, target.streamID, target.issueID, target.title)
-	}
-	return m
-}
-
 func (m Model) openStartTimerDialog(repoID, streamID, issueID int64, issueLabel string) Model {
 	return m.withDialogState(
 		m.dialogSnapshot().OpenTimerStartType(repoID, streamID, issueID, issueLabel),
