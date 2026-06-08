@@ -471,7 +471,7 @@ func (m Model) hydrateHardLimitDialogStateFromTimer(state dialogstate.State) dia
 	if m.timer == nil {
 		return state
 	}
-	if !(m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
+	if !m.timer.HardLimitActive && !m.timer.HardLimitExpired && m.timer.HardLimitTotalSeconds <= 0 {
 		return state
 	}
 	state.HardLimitTotalSeconds = m.timer.HardLimitTotalSeconds

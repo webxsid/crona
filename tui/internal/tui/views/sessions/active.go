@@ -210,13 +210,6 @@ func sessionTimingLabel(state types.ContentState, now time.Time) string {
 	return remainingLabel + " left"
 }
 
-func timerNextSegment(timer *api.TimerState) *sharedtypes.SessionSegmentType {
-	if timer == nil || timer.NextSegmentType == nil {
-		return nil
-	}
-	return timer.NextSegmentType
-}
-
 func segmentReadyLabel(segment sharedtypes.SessionSegmentType) string {
 	switch segment {
 	case sharedtypes.SessionSegmentWork:

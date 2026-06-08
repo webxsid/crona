@@ -106,7 +106,3 @@ func handleEndSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	deps.OpenEndSessionDialog(&s)
 	return s, nil, true
 }
-
-func handleStashSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	return s, nil, false
-}

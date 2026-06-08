@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
@@ -289,20 +288,6 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	default:
 		return ""
 	}
-}
-
-func formatHardLimitDuration(seconds int) string {
-	if seconds <= 0 {
-		return "disabled"
-	}
-	return helperpkg.FormatCompactDurationSeconds(seconds)
-}
-
-func formatHardLimitCycles(cycles int) string {
-	if cycles <= 0 {
-		return "disabled"
-	}
-	return fmt.Sprintf("%d", cycles)
 }
 
 func timerStartChoiceLabel(idx int, item string) string {

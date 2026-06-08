@@ -235,7 +235,7 @@ func pomodoroExtendRequestFromState(state State) (*shareddto.TimerExtendRequest,
 	}
 	additionalSeconds := pomodoroExtendAddedSeconds(config, sessions)
 	if additionalSeconds <= 0 {
-		return nil, fmt.Errorf("Added duration must be positive")
+		return nil, fmt.Errorf("added duration must be positive")
 	}
 	totalPerSession := config.FocusSeconds + config.BreakSeconds
 	if totalPerSession <= 0 {
@@ -316,7 +316,7 @@ func pomodoroExtendConfigFromState(state State, validate bool) (pomodoroValues, 
 		return values, 0, err
 	}
 	if sessions <= 0 {
-		return values, 0, fmt.Errorf("Cycles must be positive")
+		return values, 0, fmt.Errorf("cycles must be positive")
 	}
 	return values, sessions, nil
 }

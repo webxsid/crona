@@ -179,7 +179,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 
 	hardLimitState.Timer.HardLimitExpired = true
 	rendered = renderActiveView(types.Theme{}, hardLimitState)
-	if !strings.Contains(rendered, "commit, stash, or extend") {
+	if !strings.Contains(rendered, "commit or extend") {
 		t.Fatalf("expected expired hard-limit prompt, got %q", rendered)
 	}
 }
