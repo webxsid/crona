@@ -1085,9 +1085,9 @@ func ResumeFocusSession(c *api.Client, timer *api.TimerState) tea.Cmd {
 	}
 }
 
-func ExtendFocusSession(c *api.Client, additionalSeconds int) tea.Cmd {
+func ExtendFocusSession(c *api.Client, req shareddto.TimerExtendRequest) tea.Cmd {
 	return func() tea.Msg {
-		if err := c.ExtendTimer(additionalSeconds); err != nil {
+		if err := c.ExtendTimer(req); err != nil {
 			logger.Errorf("ExtendTimer: %v", err)
 			return ErrMsg{Err: err}
 		}

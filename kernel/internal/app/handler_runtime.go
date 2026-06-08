@@ -190,6 +190,14 @@ func (h *Handler) handleRuntimeMethods(
 		}), true
 	case protocol.MethodTimerExtend:
 		return handle(req, func(input shareddto.TimerExtendRequest) (any, error) {
+			if input.HardLimitWorkSeconds != nil || input.HardLimitBreakSeconds != nil ||
+				input.HardLimitLongBreakSeconds != nil || input.HardLimitCyclesBeforeLongBreak != nil ||
+				input.HardLimitTotalSeconds != nil {
+				return h.timer.ExtendConfigured(ctx, input)
+			}
+			if input.AdditionalSessions > 0 {
+				return h.timer.ExtendBySessions(ctx, input.AdditionalSessions)
+			}
 			return h.timer.Extend(ctx, input.AdditionalSeconds)
 		}), true
 	case protocol.MethodTimerEnd:

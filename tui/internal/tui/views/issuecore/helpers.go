@@ -180,15 +180,18 @@ func IssueWorkedEstimateLabel(workedSeconds int, estimateMinutes *int) string {
 }
 
 func IssueWorkedEstimateCompactLabel(workedSeconds int, estimateMinutes *int) string {
+	label := ""
 	if workedSeconds <= 0 {
-		return "-"
+		label = "-"
+	} else {
+		label += IssueWorkedLabel(workedSeconds)
 	}
-	worked := IssueWorkedLabel(workedSeconds)
+
 	estimate := IssueEstimateLabel(estimateMinutes)
 	if estimate == "-" {
-		return worked
+		return label
 	}
-	return worked + " / " + estimate
+	return label + " / " + estimate
 }
 
 func IssueWorkedEstimateSummary(workedSeconds int, estimateMinutes *int) string {

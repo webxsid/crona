@@ -173,6 +173,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 					}
 					return state, deps.LoadSessionHistoryFor200(state)
 				}
+				if timer.State == "expired" {
+					return state, deps.LoadSessionHistoryFor200(state)
+				}
 				return state, tea.Batch(
 					deps.TickAfter(state.TimerTickSeq),
 					deps.LoadSessionHistoryFor200(state),
@@ -193,6 +196,27 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		)
 	case "timer.hard_limit_reached":
 		state.Elapsed = 0
+		var payload sharedtypes.TimerHardLimitReachedPayload
+		if err := json.Unmarshal(event.Payload, &payload); err == nil {
+			if state.Timer == nil {
+				state.Timer = &api.TimerState{}
+			}
+			state.Timer.State = "expired"
+			state.Timer.HardLimitActive = true
+			state.Timer.HardLimitExpired = true
+			state.Timer.HardLimitTotalSeconds = payload.HardLimitTotalSeconds
+			state.Timer.HardLimitRemainingSeconds = 0
+			state.Timer.HardLimitWorkSeconds = payload.HardLimitWorkSeconds
+			state.Timer.HardLimitBreakSeconds = payload.HardLimitBreakSeconds
+			state.Timer.HardLimitLongBreakSeconds = payload.HardLimitLongBreakSeconds
+			state.Timer.HardLimitCyclesBeforeLongBreak = payload.HardLimitCyclesBeforeLongBreak
+			state.Timer.SegmentType = nil
+			state.Timer.SegmentStartTime = nil
+			state.Timer.SegmentElapsedOffsetSeconds = nil
+			state.Timer.ReadySegmentType = payload.SegmentType
+			state.Timer.NextSegmentType = payload.SegmentType
+			state.Timer.ElapsedSeconds = 0
+		}
 		return state, tea.Batch(
 			deps.LoadTimer(),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),

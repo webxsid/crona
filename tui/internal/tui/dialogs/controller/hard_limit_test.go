@@ -537,6 +537,9 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 
 func TestPomodoroExtendDialogReturnsExtensionAction(t *testing.T) {
 	state := OpenHardLimitExtend(State{})
+	state.Inputs[3].SetValue("2")
+	state.FocusIdx = pomodoroCyclesRowIdx
+	state = SyncDialogFocus(state)
 
 	next, action, status := Update(
 		state,
@@ -553,7 +556,172 @@ func TestPomodoroExtendDialogReturnsExtensionAction(t *testing.T) {
 	if action == nil || action.Kind != "extend_hard_limit" {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.AdditionalSeconds != 600 {
-		t.Fatalf("expected 10-minute extension, got %d", action.AdditionalSeconds)
+	if action.AdditionalSessions != 2 {
+		t.Fatalf("expected two-session extension, got %d", action.AdditionalSessions)
+	}
+}
+
+func TestPomodoroExtendDialogMatchesPomodoroStartInputChrome(t *testing.T) {
+	start := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	extend := OpenHardLimitExtend(State{
+		ViewName:                       "Issue title",
+		HardLimitTotalSeconds:          7800,
+		HardLimitFocusSeconds:          25 * 60,
+		HardLimitBreakSeconds:          5 * 60,
+		HardLimitLongBreakSeconds:      15 * 60,
+		HardLimitCyclesBeforeLongBreak: 4,
+	})
+
+	if len(start.Inputs) != len(extend.Inputs) {
+		t.Fatalf("expected same number of inputs, got %d and %d", len(start.Inputs), len(extend.Inputs))
+	}
+	for i := range start.Inputs {
+		if got, want := extend.Inputs[i].View(), start.Inputs[i].View(); got != want {
+			t.Fatalf("expected input %d to match pomodoro start chrome, got %q want %q", i, got, want)
+		}
+	}
+}
+
+func TestPomodoroExtendDialogPreservesCustomValuesAcrossPresetRoundTrip(t *testing.T) {
+	base := State{
+		ViewName:                       "Issue title",
+		HardLimitTotalSeconds:          7800,
+		HardLimitFocusSeconds:          25 * 60,
+		HardLimitBreakSeconds:          5 * 60,
+		HardLimitLongBreakSeconds:      15 * 60,
+		HardLimitCyclesBeforeLongBreak: 4,
+	}
+
+	press := func(state State, key tea.KeyMsg) State {
+		next, action, status := Update(state, UpdateContext{}, "2026-05-26", key)
+		if status != "" {
+			t.Fatalf("unexpected status %q", status)
+		}
+		if action != nil {
+			t.Fatalf("unexpected action %+v", action)
+		}
+		return next
+	}
+
+	type roundTripCase struct {
+		name         string
+		inputIdx     int
+		customValue  string
+		setup        func(State) State
+		preset       func(State) State
+		returnToCust func(State) State
+	}
+
+	cases := []roundTripCase{
+		{
+			name:        "focus",
+			inputIdx:    0,
+			customValue: "47m",
+			setup: func(state State) State {
+				for i := 0; i < 3; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				return state
+			},
+			preset: func(state State) State {
+				return press(state, tea.KeyMsg{Type: tea.KeyLeft})
+			},
+			returnToCust: func(state State) State {
+				return press(state, tea.KeyMsg{Type: tea.KeyRight})
+			},
+		},
+		{
+			name:        "break",
+			inputIdx:    1,
+			customValue: "11m",
+			setup: func(state State) State {
+				for i := 0; i < 3; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				state = press(state, tea.KeyMsg{Type: tea.KeyEnter})
+				for i := 0; i < 4; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				return state
+			},
+			preset: func(state State) State {
+				for i := 0; i < 2; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyLeft})
+				}
+				return state
+			},
+			returnToCust: func(state State) State {
+				for i := 0; i < 2; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				return state
+			},
+		},
+		{
+			name:        "long break",
+			inputIdx:    2,
+			customValue: "22m",
+			setup: func(state State) State {
+				for i := 0; i < 3; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				state = press(state, tea.KeyMsg{Type: tea.KeyEnter})
+				state = press(state, tea.KeyMsg{Type: tea.KeyEnter})
+				for i := 0; i < 4; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				return state
+			},
+			preset: func(state State) State {
+				for i := 0; i < 2; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyLeft})
+				}
+				return state
+			},
+			returnToCust: func(state State) State {
+				for i := 0; i < 2; i++ {
+					state = press(state, tea.KeyMsg{Type: tea.KeyRight})
+				}
+				return state
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			state := OpenHardLimitExtend(base)
+			state = tc.setup(state)
+			state.Inputs[tc.inputIdx].SetValue(tc.customValue)
+			state.Inputs[tc.inputIdx].CursorStart()
+
+			state = press(state, tea.KeyMsg{Type: tea.KeyLeft})
+			state = tc.preset(state)
+			state = tc.returnToCust(state)
+
+			if got := state.Inputs[tc.inputIdx].Value(); got != tc.customValue {
+				t.Fatalf("expected custom value to survive round-trip, got %q want %q", got, tc.customValue)
+			}
+		})
+	}
+}
+
+func TestPomodoroExtendDialogDisablesCyclesWhenBreakDisabled(t *testing.T) {
+	state := OpenHardLimitExtend(State{
+		ViewName:                       "Issue title",
+		HardLimitTotalSeconds:          25 * 60,
+		HardLimitFocusSeconds:          25 * 60,
+		HardLimitBreakSeconds:          0,
+		HardLimitLongBreakSeconds:      0,
+		HardLimitCyclesBeforeLongBreak: 0,
+	})
+	vm := BuildPomodoroDialogViewModel(state)
+	if !vm.CyclesDisabled {
+		t.Fatalf("expected cycles to be disabled when short break is disabled")
+	}
+	if pomodoroFocusIdxEnabled(state, pomodoroCyclesRowIdx) {
+		t.Fatalf("expected cycles row to be skipped when short break is disabled")
+	}
+	if got := vm.CyclesSummary; got != "Uninterrupted focus" {
+		t.Fatalf("expected uninterrupted-focus summary, got %q", got)
 	}
 }

@@ -49,6 +49,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.dialog != "" {
 			logger.Infof("tui key route: dialog")
 			if key.String() == "q" {
+				if m.dialog == "hard_limit_expired" {
+					return m, touch
+				}
 				return m.withDialogState(dialogstate.Close(m.dialogSnapshot().Dialog)), touch
 			}
 			next, cmd := m.updateDialog(key)
@@ -137,7 +140,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) timerActivityTouchCmd(now time.Time) tea.Cmd {
-	if m.client == nil || m.timer == nil || m.timer.State == "idle" || m.timer.State == "ready" {
+	if m.client == nil ||
+		m.timer == nil ||
+		m.timer.State == "idle" ||
+		m.timer.State == "ready" ||
+		m.timer.State == "expired" {
 		return nil
 	}
 	if !m.lastTimerActivityTouch.IsZero() && now.Sub(m.lastTimerActivityTouch) < time.Minute {
@@ -413,6 +420,9 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dialogViewBody = state.DialogViewBody
 	m.dialogViewPath = state.DialogViewPath
 	m.dialogSupportBundlePath = state.DialogSupportBundlePath
+	if m.dialog == "hard_limit_expired" || m.dialog == "hard_limit_extend" {
+		m = m.withDialogState(m.hydrateHardLimitDialogStateFromTimer(m.dialogState()))
+	}
 	m.opsLimit = state.OpsLimit
 	m.opsLimitPinned = state.OpsLimitPinned
 	return m

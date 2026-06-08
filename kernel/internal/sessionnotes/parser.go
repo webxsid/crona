@@ -118,7 +118,7 @@ func ComputeWorkSummary(segments []sharedtypes.SessionSegment) sharedtypes.Sessi
 		if segment.EndTime == nil {
 			continue
 		}
-		duration := elapsedSeconds(segment.StartTime, *segment.EndTime)
+		duration := SegmentDurationSeconds(segment)
 		if segment.SegmentType == sharedtypes.SessionSegmentWork {
 			summary.WorkSeconds += duration
 			summary.WorkSegments++
@@ -129,6 +129,28 @@ func ComputeWorkSummary(segments []sharedtypes.SessionSegment) sharedtypes.Sessi
 	}
 	summary.TotalSeconds = summary.WorkSeconds + summary.RestSeconds
 	return summary
+}
+
+func TotalSegmentDurationSeconds(segments []sharedtypes.SessionSegment) int {
+	total := 0
+	for _, segment := range segments {
+		total += SegmentDurationSeconds(segment)
+	}
+	return total
+}
+
+func SegmentDurationSeconds(segment sharedtypes.SessionSegment) int {
+	if segment.EndTime == nil {
+		return 0
+	}
+	duration := elapsedSeconds(segment.StartTime, *segment.EndTime)
+	if segment.ElapsedOffsetSeconds != nil {
+		duration += *segment.ElapsedOffsetSeconds
+	}
+	if duration < 0 {
+		return 0
+	}
+	return duration
 }
 
 func FormatWorkSummary(summary sharedtypes.SessionWorkSummary) []string {

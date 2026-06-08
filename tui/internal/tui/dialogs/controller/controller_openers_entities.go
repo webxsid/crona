@@ -496,18 +496,6 @@ func OpenPomodoroStart(
 	if cycles <= 0 {
 		cycles = 4
 	}
-	inputs := []textinput.Model{
-		newSessionDetailInput(state, "25m"),
-		newSessionDetailInput(state, "5m"),
-		newSessionDetailInput(state, "15m"),
-		newSessionDetailInput(state, "4"),
-		newSessionDetailInput(state, "4"),
-	}
-	inputs[0].SetValue(pomodoroSeedDurationInput(focusSeconds, 25*60))
-	inputs[1].SetValue(pomodoroSeedDurationInput(breakSeconds, 5*60))
-	inputs[2].SetValue(pomodoroSeedDurationInput(longBreakSeconds, 15*60))
-	inputs[3].SetValue(strconv.Itoa(cycles))
-	inputs[4].SetValue(strconv.Itoa(cyclesBeforeLongBreak))
 	state = Close(state)
 	state.Kind = "pomodoro_start"
 	state.Parent = "timer_start_type"
@@ -516,7 +504,7 @@ func OpenPomodoroStart(
 	state.StreamID = streamID
 	state.IssueID = issueID
 	state.ViewName = strings.TrimSpace(issueLabel)
-	state.Inputs = inputs
+	state.Inputs = newPomodoroDialogInputs(state, focusSeconds, breakSeconds, longBreakSeconds, cycles, cyclesBeforeLongBreak)
 	state.PomodoroFocusSeconds = focusSeconds
 	state.PomodoroFocusChoice = pomodoroFocusChoiceForSeconds(focusSeconds)
 	state.PomodoroBreakSeconds = breakSeconds
@@ -555,36 +543,88 @@ func OpenHardLimitExpired(state State, issueLabel string) State {
 	state.ChoiceDetails = []string{
 		"Finish the session and capture what was completed.",
 		"End the session and preserve the context for later.",
-		"Add more time and keep the same focus session running.",
+		"Add more Pomodoro sessions and keep the same cadence running.",
 	}
 	state.ChoiceCursor = 0
 	return state
 }
 
 func OpenHardLimitExtend(state State) State {
+	viewName := state.ViewName
+	totalSeconds := state.HardLimitTotalSeconds
+	focusSeconds := state.HardLimitFocusSeconds
+	breakSeconds := state.HardLimitBreakSeconds
+	longBreakSeconds := state.HardLimitLongBreakSeconds
+	cyclesBeforeLongBreak := state.HardLimitCyclesBeforeLongBreak
 	state = Close(state)
 	state.Kind = "hard_limit_extend"
 	state.Parent = "hard_limit_expired"
-	state.ChoiceItems = []string{"[1] 10m", "[2] 15m", "[3] 25m", "[c] Custom"}
-	state.ChoiceValues = []string{"600", "900", "1500", "custom"}
-	state.ChoiceDetails = []string{
-		"Keep working for 10 more minutes.",
-		"Keep working for 15 more minutes.",
-		"Keep working for 25 more minutes.",
-		"Enter an exact extension duration.",
+	state.ViewName = viewName
+	if focusSeconds <= 0 {
+		focusSeconds = 25 * 60
 	}
-	state.ChoiceCursor = 0
-	return state
+	state.HardLimitFocusSeconds = focusSeconds
+	state.HardLimitBreakSeconds = breakSeconds
+	state.HardLimitLongBreakSeconds = longBreakSeconds
+	state.HardLimitCyclesBeforeLongBreak = cyclesBeforeLongBreak
+	state.PomodoroFocusSeconds = focusSeconds
+	state.PomodoroFocusChoice = pomodoroFocusChoiceForSeconds(focusSeconds)
+	state.PomodoroBreakSeconds = breakSeconds
+	state.PomodoroBreakChoice = pomodoroBreakChoiceForSeconds(breakSeconds)
+	state.PomodoroLongBreakSeconds = longBreakSeconds
+	state.PomodoroLongBreakChoice = pomodoroLongBreakChoiceForSeconds(longBreakSeconds)
+	state.PomodoroCyclesBeforeLongBreak = cyclesBeforeLongBreak
+	if state.PomodoroCyclesBeforeLongBreak < 0 {
+		state.PomodoroCyclesBeforeLongBreak = 4
+	}
+	if state.PomodoroBreakSeconds <= 0 {
+		state.PomodoroCycles = 1
+		state.PomodoroLongBreakSeconds = 0
+		state.PomodoroLongBreakChoice = pomodoroLongBreakNoBreakChoice
+		state.PomodoroCyclesBeforeLongBreak = 0
+	} else {
+		state.PomodoroCycles = inferPomodoroCycles(
+			totalSeconds,
+			state.PomodoroFocusSeconds,
+			state.PomodoroBreakSeconds,
+			state.PomodoroLongBreakSeconds,
+			state.PomodoroCyclesBeforeLongBreak,
+		)
+		if state.PomodoroLongBreakSeconds > 0 && state.PomodoroCyclesBeforeLongBreak <= 0 {
+			state.PomodoroCyclesBeforeLongBreak = 4
+		}
+	}
+	state.Inputs = newPomodoroDialogInputs(
+		state,
+		focusSeconds,
+		breakSeconds,
+		longBreakSeconds,
+		max(1, state.PomodoroCycles),
+		state.PomodoroCyclesBeforeLongBreak,
+	)
+	state.FocusIdx = pomodoroFocusRowIdx
+	return SyncDialogFocus(state)
 }
 
-func OpenHardLimitExtendCustom(state State) State {
-	input := newSessionDetailInput(state, "15m")
-	input.Focus()
-	state = Close(state)
-	state.Kind = "hard_limit_extend_custom"
-	state.Parent = "hard_limit_expired"
-	state.Inputs = []textinput.Model{input}
-	return state
+func newPomodoroDialogInputs(
+	state State,
+	focusSeconds, breakSeconds, longBreakSeconds, cycles, cyclesBeforeLongBreak int,
+) []textinput.Model {
+	inputs := []textinput.Model{
+		newSessionDetailInput(state, "25m"),
+		newSessionDetailInput(state, "5m"),
+		newSessionDetailInput(state, "15m"),
+		newSessionDetailInput(state, "4"),
+		newSessionDetailInput(state, "4"),
+	}
+	inputs[0].SetValue(pomodoroSeedDurationInput(focusSeconds, 25*60))
+	inputs[1].SetValue(pomodoroSeedDurationInput(breakSeconds, 5*60))
+	inputs[2].SetValue(pomodoroSeedDurationInput(longBreakSeconds, 15*60))
+	inputs[3].SetValue(strconv.Itoa(max(1, cycles)))
+	if cyclesBeforeLongBreak > 0 {
+		inputs[4].SetValue(strconv.Itoa(cyclesBeforeLongBreak))
+	}
+	return inputs
 }
 
 func OpenIssueSessionTransition(state State, issueID int64, status string) State {

@@ -579,7 +579,7 @@ func HandleMessage(
 		if msg.Seq != state.TimerTickSeq {
 			return state, nil, true
 		}
-		if state.Timer != nil && state.Timer.State != "idle" {
+		if state.Timer != nil && state.Timer.State != "idle" && state.Timer.State != "expired" {
 			return state, deps.TickAfter(state.TimerTickSeq), true
 		}
 		return state, nil, true

@@ -268,10 +268,6 @@ func (s Snapshot) OpenHardLimitExtend() State {
 	return OpenHardLimitExtend(s.Dialog)
 }
 
-func (s Snapshot) OpenHardLimitExtendCustom() State {
-	return OpenHardLimitExtendCustom(s.Dialog)
-}
-
 func (s Snapshot) OpenDatePicker(
 	parentDialog string,
 	issueID int64,

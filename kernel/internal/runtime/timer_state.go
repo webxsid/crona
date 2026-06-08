@@ -17,6 +17,8 @@ type TimerRuntimeState struct {
 	IssueID                        int64                           `json:"issueId"`
 	PreparedSegmentType            *sharedtypes.SessionSegmentType `json:"preparedSegmentType,omitempty"`
 	HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
+	HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
 	HardLimitWorkSeconds           int                             `json:"hardLimitWorkSeconds,omitempty"`
 	HardLimitBreakSeconds          int                             `json:"hardLimitBreakSeconds,omitempty"`
 	HardLimitLongBreakSeconds      int                             `json:"hardLimitLongBreakSeconds,omitempty"`
@@ -33,6 +35,8 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 		PreparedSegmentType            *sharedtypes.SessionSegmentType `json:"preparedSegmentType,omitempty"`
 		LegacyPreparedSegmentType      *sharedtypes.SessionSegmentType `json:"segmentType,omitempty"`
 		HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
+		HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
+		HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
 		HardLimitWorkSeconds           int                             `json:"hardLimitWorkSeconds,omitempty"`
 		HardLimitBreakSeconds          int                             `json:"hardLimitBreakSeconds,omitempty"`
 		HardLimitLongBreakSeconds      int                             `json:"hardLimitLongBreakSeconds,omitempty"`
@@ -52,6 +56,8 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 		s.PreparedSegmentType = decoded.LegacyPreparedSegmentType
 	}
 	s.HardLimitTotalSeconds = decoded.HardLimitTotalSeconds
+	s.HardLimitElapsedOffsetSeconds = decoded.HardLimitElapsedOffsetSeconds
+	s.HardLimitElapsedStartedAt = decoded.HardLimitElapsedStartedAt
 	s.HardLimitWorkSeconds = decoded.HardLimitWorkSeconds
 	s.HardLimitBreakSeconds = decoded.HardLimitBreakSeconds
 	s.HardLimitLongBreakSeconds = decoded.HardLimitLongBreakSeconds
@@ -142,6 +148,8 @@ func NewHardLimitTimerRuntimeState(
 		SessionID:                      strings.TrimSpace(sessionID),
 		IssueID:                        issueID,
 		HardLimitTotalSeconds:          totalSeconds,
+		HardLimitElapsedOffsetSeconds:  0,
+		HardLimitElapsedStartedAt:      "",
 		HardLimitWorkSeconds:           workSeconds,
 		HardLimitBreakSeconds:          breakSeconds,
 		HardLimitLongBreakSeconds:      longBreakSeconds,

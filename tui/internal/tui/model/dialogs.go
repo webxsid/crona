@@ -460,7 +460,26 @@ func (m Model) openSessionMessageDialog(kind string) Model {
 }
 
 func (m Model) openHardLimitExpiredDialog(issueLabel string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenHardLimitExpired(issueLabel))
+	state := m.dialogSnapshot().OpenHardLimitExpired(issueLabel)
+	if m.timer != nil && (m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
+		state = m.hydrateHardLimitDialogStateFromTimer(state)
+	}
+	return m.withDialogState(state)
+}
+
+func (m Model) hydrateHardLimitDialogStateFromTimer(state dialogstate.State) dialogstate.State {
+	if m.timer == nil {
+		return state
+	}
+	if !(m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
+		return state
+	}
+	state.HardLimitTotalSeconds = m.timer.HardLimitTotalSeconds
+	state.HardLimitFocusSeconds = m.timer.HardLimitWorkSeconds
+	state.HardLimitBreakSeconds = m.timer.HardLimitBreakSeconds
+	state.HardLimitLongBreakSeconds = m.timer.HardLimitLongBreakSeconds
+	state.HardLimitCyclesBeforeLongBreak = m.timer.HardLimitCyclesBeforeLongBreak
+	return state
 }
 
 func (m Model) openAmendSessionDialog(sessionID string, commit string) Model {
@@ -612,84 +631,89 @@ func (m Model) openConfirmUninstallDialog() Model {
 
 func (m Model) dialogState() dialogstate.State {
 	return dialogstate.State{
-		Kind:                          m.dialog,
-		Width:                         m.width,
-		Inputs:                        m.dialogInputs,
-		Description:                   m.dialogDescription,
-		DescriptionEnabled:            m.dialogDescriptionOn,
-		DescriptionIndex:              m.dialogDescriptionIdx,
-		FocusIdx:                      m.dialogFocusIdx,
-		ErrorMessage:                  m.dialogErrorMessage,
-		DeleteID:                      m.dialogDeleteID,
-		DeleteKind:                    m.dialogDeleteKind,
-		DeleteLabel:                   m.dialogDeleteLabel,
-		SessionID:                     m.dialogSessionID,
-		IssueID:                       m.dialogIssueID,
-		HabitID:                       m.dialogHabitID,
-		IssueStatus:                   m.dialogIssueStatus,
-		CheckInDate:                   m.dialogCheckInDate,
-		RepoID:                        m.dialogRepoID,
-		RepoName:                      m.dialogRepoName,
-		RepoItems:                     m.dialogRepoItems,
-		RepoItemIDs:                   m.dialogRepoItemIDs,
-		StreamID:                      m.dialogStreamID,
-		StreamName:                    m.dialogStreamName,
-		RepoIndex:                     m.dialogRepoIndex,
-		StreamIndex:                   m.dialogStreamIndex,
-		Parent:                        m.dialogParent,
-		DateMonthValue:                m.dialogDateMonth,
-		DateCursorValue:               m.dialogDateCursor,
-		StashCursor:                   m.dialogStashCursor,
-		StatusItems:                   m.dialogStatusItems,
-		StatusCursor:                  m.dialogStatusCursor,
-		ChoiceItems:                   m.dialogChoiceItems,
-		ChoiceValues:                  m.dialogChoiceValues,
-		ChoiceDetails:                 m.dialogChoiceDetails,
-		TemplateAssets:                m.dialogTemplateAssets,
-		ChoiceCursor:                  m.dialogChoiceCursor,
-		Processing:                    m.dialogProcessing,
-		ProcessingLabel:               m.dialogProcessingLabel,
-		StatusLabel:                   m.dialogStatusLabel,
-		StatusRequired:                m.dialogStatusRequired,
-		ViewTitle:                     m.dialogViewTitle,
-		ViewName:                      m.dialogViewName,
-		IssueEstimateMins:             m.dialogIssueEstimateMins,
-		ReminderID:                    m.dialogReminderID,
-		ReminderKind:                  m.dialogReminderKind,
-		ViewMeta:                      m.dialogViewMeta,
-		ViewBody:                      m.dialogViewBody,
-		ViewPath:                      m.dialogViewPath,
-		SupportBundlePath:             m.dialogSupportBundlePath,
-		ProtectionStep:                m.dialogProtectionStep,
-		ProtectionCursor:              m.dialogProtectionCursor,
-		ProtectionStreaks:             m.dialogProtectionStreaks,
-		ProtectionWeekdays:            m.dialogProtectionWeekdays,
-		ProtectionDates:               m.dialogProtectionDates,
-		HabitItems:                    m.allHabits,
-		HabitStreakStep:               m.dialogHabitStreakStep,
-		HabitStreakCursor:             m.dialogHabitStreakCursor,
-		HabitStreakOriginalDefs:       m.dialogHabitStreakOriginalDefs,
-		HabitStreakDefs:               m.dialogHabitStreakDefs,
-		HabitStreakDraft:              m.dialogHabitStreakDraft,
-		HabitStreakEditIdx:            m.dialogHabitStreakEditIdx,
-		ExportPresetKind:              m.dialogExportPresetKind,
-		ExportPresetFormat:            m.dialogExportPresetFormat,
-		ExportPresetOutput:            m.dialogExportPresetOutput,
-		ExportIncludePDF:              m.dialogExportIncludePDF,
-		PromptGlyphMode:               m.dialogPromptGlyphMode,
-		TelemetryStep:                 m.dialogTelemetryStep,
-		TelemetryUsage:                m.dialogTelemetryUsage,
-		TelemetryErrors:               m.dialogTelemetryErrors,
-		TelemetryPrivacyCursor:        m.dialogTelemetryPrivacyCursor,
-		TelemetryReviewCursor:         m.dialogTelemetryReviewCursor,
-		PomodoroFocusSeconds:          m.dialogPomodoroFocusSeconds,
-		PomodoroFocusChoice:           m.dialogPomodoroFocusChoice,
-		PomodoroBreakSeconds:          m.dialogPomodoroBreakSeconds,
-		PomodoroBreakChoice:           m.dialogPomodoroBreakChoice,
-		PomodoroLongBreakSeconds:      m.dialogPomodoroLongBreakSeconds,
-		PomodoroLongBreakChoice:       m.dialogPomodoroLongBreakChoice,
-		PomodoroCyclesBeforeLongBreak: m.dialogPomodoroCyclesBeforeLongBreak,
-		PomodoroCycles:                m.dialogPomodoroCycles,
+		Kind:                           m.dialog,
+		Width:                          m.width,
+		Inputs:                         m.dialogInputs,
+		Description:                    m.dialogDescription,
+		DescriptionEnabled:             m.dialogDescriptionOn,
+		DescriptionIndex:               m.dialogDescriptionIdx,
+		FocusIdx:                       m.dialogFocusIdx,
+		ErrorMessage:                   m.dialogErrorMessage,
+		DeleteID:                       m.dialogDeleteID,
+		DeleteKind:                     m.dialogDeleteKind,
+		DeleteLabel:                    m.dialogDeleteLabel,
+		SessionID:                      m.dialogSessionID,
+		IssueID:                        m.dialogIssueID,
+		HabitID:                        m.dialogHabitID,
+		IssueStatus:                    m.dialogIssueStatus,
+		CheckInDate:                    m.dialogCheckInDate,
+		RepoID:                         m.dialogRepoID,
+		RepoName:                       m.dialogRepoName,
+		RepoItems:                      m.dialogRepoItems,
+		RepoItemIDs:                    m.dialogRepoItemIDs,
+		StreamID:                       m.dialogStreamID,
+		StreamName:                     m.dialogStreamName,
+		RepoIndex:                      m.dialogRepoIndex,
+		StreamIndex:                    m.dialogStreamIndex,
+		Parent:                         m.dialogParent,
+		DateMonthValue:                 m.dialogDateMonth,
+		DateCursorValue:                m.dialogDateCursor,
+		StashCursor:                    m.dialogStashCursor,
+		StatusItems:                    m.dialogStatusItems,
+		StatusCursor:                   m.dialogStatusCursor,
+		ChoiceItems:                    m.dialogChoiceItems,
+		ChoiceValues:                   m.dialogChoiceValues,
+		ChoiceDetails:                  m.dialogChoiceDetails,
+		TemplateAssets:                 m.dialogTemplateAssets,
+		ChoiceCursor:                   m.dialogChoiceCursor,
+		Processing:                     m.dialogProcessing,
+		ProcessingLabel:                m.dialogProcessingLabel,
+		StatusLabel:                    m.dialogStatusLabel,
+		StatusRequired:                 m.dialogStatusRequired,
+		ViewTitle:                      m.dialogViewTitle,
+		ViewName:                       m.dialogViewName,
+		IssueEstimateMins:              m.dialogIssueEstimateMins,
+		ReminderID:                     m.dialogReminderID,
+		ReminderKind:                   m.dialogReminderKind,
+		ViewMeta:                       m.dialogViewMeta,
+		ViewBody:                       m.dialogViewBody,
+		ViewPath:                       m.dialogViewPath,
+		SupportBundlePath:              m.dialogSupportBundlePath,
+		ProtectionStep:                 m.dialogProtectionStep,
+		ProtectionCursor:               m.dialogProtectionCursor,
+		ProtectionStreaks:              m.dialogProtectionStreaks,
+		ProtectionWeekdays:             m.dialogProtectionWeekdays,
+		ProtectionDates:                m.dialogProtectionDates,
+		HabitItems:                     m.allHabits,
+		HabitStreakStep:                m.dialogHabitStreakStep,
+		HabitStreakCursor:              m.dialogHabitStreakCursor,
+		HabitStreakOriginalDefs:        m.dialogHabitStreakOriginalDefs,
+		HabitStreakDefs:                m.dialogHabitStreakDefs,
+		HabitStreakDraft:               m.dialogHabitStreakDraft,
+		HabitStreakEditIdx:             m.dialogHabitStreakEditIdx,
+		ExportPresetKind:               m.dialogExportPresetKind,
+		ExportPresetFormat:             m.dialogExportPresetFormat,
+		ExportPresetOutput:             m.dialogExportPresetOutput,
+		ExportIncludePDF:               m.dialogExportIncludePDF,
+		PromptGlyphMode:                m.dialogPromptGlyphMode,
+		TelemetryStep:                  m.dialogTelemetryStep,
+		TelemetryUsage:                 m.dialogTelemetryUsage,
+		TelemetryErrors:                m.dialogTelemetryErrors,
+		TelemetryPrivacyCursor:         m.dialogTelemetryPrivacyCursor,
+		TelemetryReviewCursor:          m.dialogTelemetryReviewCursor,
+		PomodoroFocusSeconds:           m.dialogPomodoroFocusSeconds,
+		PomodoroFocusChoice:            m.dialogPomodoroFocusChoice,
+		PomodoroBreakSeconds:           m.dialogPomodoroBreakSeconds,
+		PomodoroBreakChoice:            m.dialogPomodoroBreakChoice,
+		PomodoroLongBreakSeconds:       m.dialogPomodoroLongBreakSeconds,
+		PomodoroLongBreakChoice:        m.dialogPomodoroLongBreakChoice,
+		PomodoroCyclesBeforeLongBreak:  m.dialogPomodoroCyclesBeforeLongBreak,
+		PomodoroCycles:                 m.dialogPomodoroCycles,
+		HardLimitTotalSeconds:          m.dialogHardLimitTotalSeconds,
+		HardLimitFocusSeconds:          m.dialogHardLimitFocusSeconds,
+		HardLimitBreakSeconds:          m.dialogHardLimitBreakSeconds,
+		HardLimitLongBreakSeconds:      m.dialogHardLimitLongBreakSeconds,
+		HardLimitCyclesBeforeLongBreak: m.dialogHardLimitCyclesBeforeLongBreak,
 	}
 }
 
@@ -781,6 +805,11 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogPomodoroLongBreakChoice = state.PomodoroLongBreakChoice
 	m.dialogPomodoroCyclesBeforeLongBreak = state.PomodoroCyclesBeforeLongBreak
 	m.dialogPomodoroCycles = state.PomodoroCycles
+	m.dialogHardLimitTotalSeconds = state.HardLimitTotalSeconds
+	m.dialogHardLimitFocusSeconds = state.HardLimitFocusSeconds
+	m.dialogHardLimitBreakSeconds = state.HardLimitBreakSeconds
+	m.dialogHardLimitLongBreakSeconds = state.HardLimitLongBreakSeconds
+	m.dialogHardLimitCyclesBeforeLongBreak = state.HardLimitCyclesBeforeLongBreak
 	return m
 }
 
@@ -982,8 +1011,8 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		StartFocusSession: func(input shareddto.TimerStartRequest) tea.Cmd {
 			return commands.StartHardLimitFocusSession(m.client, input)
 		},
-		ExtendHardLimit: func(additionalSeconds int) tea.Cmd {
-			return commands.ExtendFocusSession(m.client, additionalSeconds)
+		ExtendHardLimit: func(req shareddto.TimerExtendRequest) tea.Cmd {
+			return commands.ExtendFocusSession(m.client, req)
 		},
 		EndFocusSession: func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd {
 			return commands.EndFocusSession(m.client, streamID, dashboardDate, payload)

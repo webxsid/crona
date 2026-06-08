@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	shareddto "crona/shared/dto"
 	helperpkg "crona/tui/internal/tui/helpers"
 )
 
@@ -186,6 +187,152 @@ func pomodoroEstimatedTotalDuration(values pomodoroValues) string {
 		return ""
 	}
 	return "Total Duration " + helperpkg.FormatCompactDurationSeconds(values.TotalSeconds)
+}
+
+func inferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int) int {
+	if totalSeconds <= 0 || focusSeconds <= 0 {
+		return 1
+	}
+	if breakSeconds <= 0 {
+		return 1
+	}
+	perCycle := focusSeconds + breakSeconds
+	if perCycle <= 0 {
+		return 1
+	}
+	for cycles := 1; cycles <= 24; cycles++ {
+		candidate := cycles * perCycle
+		if longBreakSeconds > 0 && cyclesBeforeLongBreak > 0 {
+			candidate += (cycles / cyclesBeforeLongBreak) * (longBreakSeconds - breakSeconds)
+		}
+		if candidate == totalSeconds {
+			return cycles
+		}
+	}
+	return max(1, totalSeconds/perCycle)
+}
+
+func pomodoroExtendEstimatedTotalDuration(state State) string {
+	config, sessions, err := pomodoroExtendConfigFromState(state, false)
+	if err != nil || sessions <= 0 {
+		return ""
+	}
+	addedSeconds := pomodoroExtendAddedSeconds(config, sessions)
+	if addedSeconds <= 0 {
+		return ""
+	}
+	return "Added Duration " + helperpkg.FormatCompactDurationSeconds(addedSeconds)
+}
+
+func PreviewPomodoroExtendDuration(state State) string {
+	return pomodoroExtendEstimatedTotalDuration(state)
+}
+
+func pomodoroExtendRequestFromState(state State) (*shareddto.TimerExtendRequest, error) {
+	config, sessions, err := pomodoroExtendConfigFromState(state, true)
+	if err != nil {
+		return nil, err
+	}
+	additionalSeconds := pomodoroExtendAddedSeconds(config, sessions)
+	if additionalSeconds <= 0 {
+		return nil, fmt.Errorf("Added duration must be positive")
+	}
+	totalPerSession := config.FocusSeconds + config.BreakSeconds
+	if totalPerSession <= 0 {
+		totalPerSession = config.FocusSeconds
+	}
+	return &shareddto.TimerExtendRequest{
+		AdditionalSeconds:              additionalSeconds,
+		AdditionalSessions:             sessions,
+		HardLimitTotalSeconds:          intPtr(totalPerSession),
+		HardLimitWorkSeconds:           intPtr(config.FocusSeconds),
+		HardLimitBreakSeconds:          intPtr(config.BreakSeconds),
+		HardLimitLongBreakSeconds:      intPtr(config.LongBreakSeconds),
+		HardLimitCyclesBeforeLongBreak: intPtr(config.CyclesBeforeLongBreak),
+	}, nil
+}
+
+func pomodoroExtendConfigFromState(state State, validate bool) (pomodoroValues, int, error) {
+	values := pomodoroValues{
+		FocusSeconds:          state.PomodoroFocusSeconds,
+		BreakSeconds:          state.PomodoroBreakSeconds,
+		LongBreakSeconds:      state.PomodoroLongBreakSeconds,
+		CyclesBeforeLongBreak: state.PomodoroCyclesBeforeLongBreak,
+	}
+
+	if state.PomodoroFocusChoice == pomodoroFocusCustomChoice {
+		parsed, err := ParseDurationInput(state.Inputs[0].Value(), validate, "Focus duration")
+		if err != nil {
+			return values, 0, err
+		}
+		if parsed > 0 {
+			values.FocusSeconds = parsed
+		}
+	}
+
+	switch state.PomodoroBreakChoice {
+	case pomodoroBreakCustomChoice:
+		parsed, err := ParseDurationInput(state.Inputs[1].Value(), validate, "Short break duration")
+		if err != nil {
+			return values, 0, err
+		}
+		if parsed > 0 {
+			values.BreakSeconds = parsed
+		}
+	case pomodoroBreakNoBreakChoice:
+		values.BreakSeconds = 0
+	}
+
+	switch state.PomodoroLongBreakChoice {
+	case pomodoroLongBreakCustomChoice:
+		parsed, err := ParseDurationInput(state.Inputs[2].Value(), validate, "Long break duration")
+		if err != nil {
+			return values, 0, err
+		}
+		if parsed > 0 {
+			values.LongBreakSeconds = parsed
+		}
+	case pomodoroLongBreakNoBreakChoice:
+		values.LongBreakSeconds = 0
+	}
+
+	if values.BreakSeconds <= 0 {
+		values.LongBreakSeconds = 0
+		values.CyclesBeforeLongBreak = 0
+	}
+	if values.LongBreakSeconds <= 0 {
+		values.CyclesBeforeLongBreak = 0
+	} else {
+		parsed, err := ParsePositiveIntInput(state.Inputs[4].Value(), validate, "Long Break")
+		if err != nil {
+			return values, 0, err
+		}
+		if parsed > 0 {
+			values.CyclesBeforeLongBreak = parsed
+		}
+	}
+	sessions, err := ParsePositiveIntInput(state.Inputs[3].Value(), validate, "Cycles")
+	if err != nil {
+		return values, 0, err
+	}
+	if sessions <= 0 {
+		return values, 0, fmt.Errorf("Cycles must be positive")
+	}
+	return values, sessions, nil
+}
+
+func pomodoroExtendAddedSeconds(config pomodoroValues, sessions int) int {
+	if sessions <= 0 || config.FocusSeconds <= 0 {
+		return 0
+	}
+	if config.BreakSeconds <= 0 {
+		return config.FocusSeconds * sessions
+	}
+	addedSeconds := sessions * (config.FocusSeconds + config.BreakSeconds)
+	if config.LongBreakSeconds > 0 && config.CyclesBeforeLongBreak > 0 {
+		addedSeconds += (sessions / config.CyclesBeforeLongBreak) * (config.LongBreakSeconds - config.BreakSeconds)
+	}
+	return addedSeconds
 }
 
 func pomodoroValuesFromState(state State, validate bool) (pomodoroValues, error) {

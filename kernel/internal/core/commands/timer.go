@@ -73,8 +73,12 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 			sessionID := activeSession.ID
 			issueID := activeSession.IssueID
 			segmentType := *runtimeState.PreparedSegmentType
+			state := "ready"
+			if runtimeState.HardLimitExpired {
+				state = "expired"
+			}
 			return sharedtypes.TimerState{
-				State:                          "ready",
+				State:                          state,
 				SessionID:                      &sessionID,
 				SessionStartTime:               &activeSession.StartTime,
 				IssueID:                        &issueID,
@@ -245,15 +249,19 @@ func (t *TimerService) start(
 		longBreakSeconds := derefInt(input.HardLimitLongBreakSeconds)
 		cyclesBeforeLongBreak := derefInt(input.HardLimitCyclesBeforeLongBreak)
 		if err := runtimepkg.WriteTimerRuntimeState(
-			runtimepkg.NewHardLimitTimerRuntimeState(
-				session.ID,
-				resolvedIssueID,
-				*input.HardLimitTotalSeconds,
-				workSeconds,
-				breakSeconds,
-				longBreakSeconds,
-				cyclesBeforeLongBreak,
-			),
+			func() runtimepkg.TimerRuntimeState {
+				state := runtimepkg.NewHardLimitTimerRuntimeState(
+					session.ID,
+					resolvedIssueID,
+					*input.HardLimitTotalSeconds,
+					workSeconds,
+					breakSeconds,
+					longBreakSeconds,
+					cyclesBeforeLongBreak,
+				)
+				state.HardLimitElapsedStartedAt = session.StartTime
+				return state
+			}(),
 		); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
@@ -479,12 +487,132 @@ func (t *TimerService) Extend(
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	return t.extendHardLimit(ctx, activeSession, runtimeState, additionalSeconds)
+}
+
+func (t *TimerService) ExtendBySessions(
+	ctx context.Context,
+	additionalSessions int,
+) (sharedtypes.TimerState, error) {
+	if additionalSessions <= 0 {
+		return sharedtypes.TimerState{}, errors.New("sessions to add must be positive")
+	}
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSession == nil {
+		_ = runtimepkg.ClearTimerRuntimeState()
+		return sharedtypes.TimerState{State: "idle"}, nil
+	}
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
 	if runtimeState == nil || !runtimeState.HasHardLimit() {
 		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
 	}
+	additionalSeconds, err := t.hardLimitExtensionSecondsForSessions(ctx, activeSession.ID, additionalSessions, runtimeState)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	return t.extendHardLimit(ctx, activeSession, runtimeState, additionalSeconds)
+}
+
+func (t *TimerService) ExtendConfigured(
+	ctx context.Context,
+	input shareddto.TimerExtendRequest,
+) (sharedtypes.TimerState, error) {
+	if input.AdditionalSessions <= 0 {
+		return sharedtypes.TimerState{}, errors.New("sessions to add must be positive")
+	}
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSession == nil {
+		_ = runtimepkg.ClearTimerRuntimeState()
+		return sharedtypes.TimerState{State: "idle"}, nil
+	}
+	runtimeState, err := t.runtimeStateForSession(activeSession.ID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState == nil || !runtimeState.HasHardLimit() {
+		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
+	}
+	workSeconds := runtimeState.HardLimitWorkSeconds
+	if input.HardLimitWorkSeconds != nil && *input.HardLimitWorkSeconds > 0 {
+		workSeconds = *input.HardLimitWorkSeconds
+	}
+	breakSeconds := runtimeState.HardLimitBreakSeconds
+	if input.HardLimitBreakSeconds != nil {
+		breakSeconds = max(0, *input.HardLimitBreakSeconds)
+	}
+	longBreakSeconds := runtimeState.HardLimitLongBreakSeconds
+	if input.HardLimitLongBreakSeconds != nil {
+		longBreakSeconds = max(0, *input.HardLimitLongBreakSeconds)
+	}
+	cyclesBeforeLongBreak := runtimeState.HardLimitCyclesBeforeLongBreak
+	if input.HardLimitCyclesBeforeLongBreak != nil {
+		cyclesBeforeLongBreak = max(0, *input.HardLimitCyclesBeforeLongBreak)
+	}
+	totalPerSession := 0
+	if input.HardLimitTotalSeconds != nil {
+		totalPerSession = max(0, *input.HardLimitTotalSeconds)
+	}
+	if totalPerSession <= 0 {
+		totalPerSession = workSeconds
+	}
+	additionalSeconds := input.AdditionalSeconds
+	if additionalSeconds <= 0 {
+		additionalSeconds = totalPerSession * input.AdditionalSessions
+	}
+	runtimeState.HardLimitWorkSeconds = workSeconds
+	runtimeState.HardLimitBreakSeconds = breakSeconds
+	runtimeState.HardLimitLongBreakSeconds = longBreakSeconds
+	runtimeState.HardLimitCyclesBeforeLongBreak = cyclesBeforeLongBreak
+	return t.extendHardLimit(ctx, activeSession, runtimeState, additionalSeconds)
+}
+
+func (t *TimerService) extendHardLimit(
+	ctx context.Context,
+	activeSession *sharedtypes.Session,
+	runtimeState *runtimepkg.TimerRuntimeState,
+	additionalSeconds int,
+) (sharedtypes.TimerState, error) {
+	if runtimeState == nil || !runtimeState.HasHardLimit() {
+		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
+	}
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		activeSession.ID,
+	)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	segmentToStart := sharedtypes.SessionSegmentWork
+	if activeSegment != nil {
+		segmentToStart = activeSegment.SegmentType
+	} else if runtimeState.HasPreparedSegment() {
+		segmentToStart = *runtimeState.PreparedSegmentType
+	}
+	if _, err := t.ctx.SessionSegments.StartSegment(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		activeSession.ID,
+		segmentToStart,
+	); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	runtimeState.PreparedSegmentType = nil
 	runtimeState.HardLimitTotalSeconds += additionalSeconds
 	runtimeState.HardLimitExpired = false
 	runtimeState.HardLimitExpiredAt = ""
+	runtimeState.HardLimitElapsedStartedAt = t.ctx.Now()
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -497,6 +625,71 @@ func (t *TimerService) Extend(
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
+}
+
+func (t *TimerService) hardLimitExtensionSecondsForSessions(
+	ctx context.Context,
+	sessionID string,
+	additionalSessions int,
+	runtimeState *runtimepkg.TimerRuntimeState,
+) (int, error) {
+	if additionalSessions <= 0 {
+		return 0, errors.New("sessions to add must be positive")
+	}
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		sessionID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	currentSegment := sharedtypes.SessionSegmentWork
+	if activeSegment != nil {
+		currentSegment = activeSegment.SegmentType
+	} else if runtimeState != nil && runtimeState.HasPreparedSegment() {
+		currentSegment = *runtimeState.PreparedSegmentType
+	}
+	completedWorkCycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, sessionID)
+	if err != nil {
+		return 0, err
+	}
+	if currentSegment == sharedtypes.SessionSegmentWork &&
+		(activeSegment != nil || runtimeState == nil || !runtimeState.HardLimitExpired) {
+		completedWorkCycles++
+	}
+	total := 0
+	seg := currentSegment
+	cycles := completedWorkCycles
+	for added := 0; added < additionalSessions; {
+		if seg != sharedtypes.SessionSegmentWork {
+			boundary := computeNextBoundary(seg, nil, cycles, runtimeState)
+			if boundary == nil {
+				return total, nil
+			}
+			total += boundary.AfterSeconds
+			seg = boundary.NextSegment
+			continue
+		}
+		boundary := computeNextBoundary(seg, nil, cycles, runtimeState)
+		if boundary == nil {
+			return total, nil
+		}
+		total += boundary.AfterSeconds
+		seg = boundary.NextSegment
+		cycles++
+		if seg != sharedtypes.SessionSegmentWork {
+			boundary = computeNextBoundary(seg, nil, cycles, runtimeState)
+			if boundary == nil {
+				return total, nil
+			}
+			total += boundary.AfterSeconds
+			seg = boundary.NextSegment
+		}
+		added++
+	}
+	return total, nil
 }
 
 func (t *TimerService) End(
@@ -724,6 +917,21 @@ func (t *TimerService) applyHardLimitExpiry(
 	if runtimeState == nil || !runtimeState.HasHardLimit() || runtimeState.HardLimitExpired {
 		return t.GetState(ctx)
 	}
+	runtimeState.HardLimitElapsedOffsetSeconds = hardLimitConsumedSeconds(
+		runtimeState,
+		activeSession.StartTime,
+		t.ctx.Now(),
+	)
+	runtimeState.HardLimitElapsedStartedAt = ""
+	if err := t.ctx.SessionSegments.EndActiveSegment(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		sessionID,
+	); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	runtimeState.PreparedSegmentType = segmentPtr(currentType)
 	runtimeState.HardLimitExpired = true
 	runtimeState.HardLimitExpiredAt = t.ctx.Now()
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
@@ -738,10 +946,14 @@ func (t *TimerService) applyHardLimitExpiry(
 		t.ctx,
 		sharedtypes.EventTypeTimerHardLimitReached,
 		sharedtypes.TimerHardLimitReachedPayload{
-			SessionID:             sessionID,
-			IssueID:               activeSession.IssueID,
-			SegmentType:           segmentPtr(currentType),
-			HardLimitTotalSeconds: runtimeState.HardLimitTotalSeconds,
+			SessionID:                      sessionID,
+			IssueID:                        activeSession.IssueID,
+			SegmentType:                    segmentPtr(currentType),
+			HardLimitTotalSeconds:          runtimeState.HardLimitTotalSeconds,
+			HardLimitWorkSeconds:           runtimeState.HardLimitWorkSeconds,
+			HardLimitBreakSeconds:          runtimeState.HardLimitBreakSeconds,
+			HardLimitLongBreakSeconds:      runtimeState.HardLimitLongBreakSeconds,
+			HardLimitCyclesBeforeLongBreak: runtimeState.HardLimitCyclesBeforeLongBreak,
 			ElapsedSeconds: max(
 				0,
 				runtimeState.HardLimitTotalSeconds-state.HardLimitRemainingSeconds,
@@ -1113,11 +1325,36 @@ func hardLimitRemaining(
 	if state == nil || !state.HasHardLimit() {
 		return 0, false
 	}
-	remaining := state.HardLimitTotalSeconds - elapsedSeconds(sessionStart, now)
+	remaining := state.HardLimitTotalSeconds - hardLimitConsumedSeconds(state, sessionStart, now)
 	if remaining < 0 {
 		remaining = 0
 	}
 	return remaining, true
+}
+
+func hardLimitConsumedSeconds(
+	state *runtimepkg.TimerRuntimeState,
+	sessionStart string,
+	now string,
+) int {
+	if state == nil || !state.HasHardLimit() {
+		return 0
+	}
+	consumed := state.HardLimitElapsedOffsetSeconds
+	if !state.HardLimitExpired {
+		startRef := state.HardLimitElapsedStartedAt
+		if strings.TrimSpace(startRef) == "" {
+			startRef = sessionStart
+		}
+		consumed += elapsedSeconds(startRef, now)
+	}
+	if consumed < 0 {
+		return 0
+	}
+	if consumed > state.HardLimitTotalSeconds {
+		return state.HardLimitTotalSeconds
+	}
+	return consumed
 }
 
 func hardLimitDelay(

@@ -82,9 +82,13 @@ type TimerTickPayload struct {
 }
 
 type TimerHardLimitReachedPayload struct {
-	SessionID             string              `json:"sessionId"`
-	IssueID               int64               `json:"issueId"`
-	SegmentType           *SessionSegmentType `json:"segmentType,omitempty"`
-	HardLimitTotalSeconds int                 `json:"hardLimitTotalSeconds"`
-	ElapsedSeconds        int                 `json:"elapsedSeconds"`
+	SessionID                      string              `json:"sessionId"`
+	IssueID                        int64               `json:"issueId"`
+	SegmentType                    *SessionSegmentType `json:"segmentType,omitempty"`
+	HardLimitTotalSeconds          int                 `json:"hardLimitTotalSeconds"`
+	HardLimitWorkSeconds           int                 `json:"hardLimitWorkSeconds"`
+	HardLimitBreakSeconds          int                 `json:"hardLimitBreakSeconds"`
+	HardLimitLongBreakSeconds      int                 `json:"hardLimitLongBreakSeconds"`
+	HardLimitCyclesBeforeLongBreak int                 `json:"hardLimitCyclesBeforeLongBreak"`
+	ElapsedSeconds                 int                 `json:"elapsedSeconds"`
 }

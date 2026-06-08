@@ -1,6 +1,7 @@
 package issues
 
 import (
+	"regexp"
 	"strings"
 	"testing"
 
@@ -79,6 +80,46 @@ func TestRenderIssuePaneShowsWorkedSuffix(t *testing.T) {
 	}
 }
 
+func TestRenderIssuePaneKeepsWideGuttersAfterTruncation(t *testing.T) {
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  182,
+		Height: 20,
+		DefaultIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{
+				ID:            1,
+				Title:         "Investigate timer display spacing after truncation in the wide issue table layout and keep the gutter visible even when the title has to truncate hard",
+				Status:        "in_progress",
+				WorkedSeconds: 4500,
+			},
+			RepoName:   "Core",
+			StreamName: "TUI",
+		}},
+	}
+
+	rendered := renderIssuePane(
+		types.Theme{},
+		state,
+		"Active Issues [1]",
+		"Due work and open issues",
+		[]int{0},
+		0,
+		true,
+		20,
+		"No open issues match the current filter",
+		true,
+	)
+	plain := ansi.Strip(rendered)
+	for _, want := range []string{"Worked", "Repo", "Stream", "in progress"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected wide issue table to contain %q, got %q", want, rendered)
+		}
+	}
+	if !regexp.MustCompile(`…\s+in progress`).MatchString(plain) {
+		t.Fatalf("expected wide issue title and status to keep a gutter after truncation, got %q", rendered)
+	}
+}
+
 func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
 	state := types.ContentState{
 		Pane:   "issues",
@@ -113,6 +154,14 @@ func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
 	for _, want := range []string{"Context", "Effort", "Core > TUI", "1h15m / 25m"} {
 		if !strings.Contains(plain, want) {
 			t.Fatalf("expected compact issue table to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, want := range []string{
+		`in progress\s+Core > TUI`,
+		`Core > TUI\s+1h15m / 25m`,
+	} {
+		if !regexp.MustCompile(want).MatchString(plain) {
+			t.Fatalf("expected compact issue table to keep spacing around %q, got %q", want, rendered)
 		}
 	}
 }

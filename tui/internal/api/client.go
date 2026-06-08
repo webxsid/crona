@@ -916,12 +916,8 @@ func (c *Client) AdvanceTimer() error {
 	return c.call(protocol.MethodTimerAdvance, nil, nil)
 }
 
-func (c *Client) ExtendTimer(additionalSeconds int) error {
-	return c.call(
-		protocol.MethodTimerExtend,
-		shareddto.TimerExtendRequest{AdditionalSeconds: additionalSeconds},
-		nil,
-	)
+func (c *Client) ExtendTimer(req shareddto.TimerExtendRequest) error {
+	return c.call(protocol.MethodTimerExtend, req, nil)
 }
 
 func (c *Client) EndTimer(input shareddto.EndSessionRequest) error {

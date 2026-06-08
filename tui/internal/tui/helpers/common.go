@@ -182,7 +182,7 @@ func DerivedSegmentElapsedSeconds(
 	if timer == nil {
 		return 0
 	}
-	if timer.State == "ready" {
+	if timer.State == "ready" || timer.State == "expired" {
 		return 0
 	}
 	if timer.SegmentStartTime != nil && strings.TrimSpace(*timer.SegmentStartTime) != "" {

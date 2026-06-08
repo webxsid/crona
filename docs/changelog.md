@@ -1,18 +1,19 @@
 # Changelog
 
 All notable changes to **Crona** are documented here.
+## [1.5.1] - 2026-06-08
 
-## [Unreleased]
-
-### Fixed
-- Checkout context selection now behaves like a real selector on empty input, including arrow-key cycling and direct commit of the highlighted repo or stream.
-- The checkout dialog now shows blank-state prompts when repo or stream text is empty, instead of implying an already-selected value.
-- The `?` help dialog now opens as a proper modal and no longer distorts the underlying TUI layout.
+Crona v1.5.1 tightens the hard-limit pomodoro flow, preserves custom duration edits in the extend dialog, and makes issue and session-note output easier to read.
 
 ### Changed
-- The Rollup focus visualization now fits its pane height more predictably, and the breakdown pane can be focused and scrolled independently on small screens.
-- Wellbeing now uses a three-pane layout that separates the snapshot, metrics window, and detail-heavy context more cleanly.
-- Momentum cards and dialog flows were further simplified so the dedicated momentum surface stays focused on custom momentum management.
+- Pomodoro hard-limit start and extend dialogs now share the same form behavior, including restored custom values when toggling between presets and custom input.
+- Extend mode now disables cycles the same way the Pomodoro start dialog does when short break is set to `No Break`.
+- Session notes now serialize structured commit, context, work, and notes sections consistently.
+
+### Fixed
+- Pomodoro hard-limit expiry now stops background accumulation, keeps the expired dialog seeded from live timer config, and preserves session and summary totals based on ended segments rather than idle expired time.
+- Shared issue tables now reserve explicit gutters in the wide layout, preventing truncated title, status, context, and effort values from running into the next column.
+- Narrow issue-table rows now keep a readable gap between truncated values as well.
 
 ## [1.5.0] - 2026-06-07
 

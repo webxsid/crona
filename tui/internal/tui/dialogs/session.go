@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
@@ -167,38 +168,58 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose")
 		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
 	case "hard_limit_extend":
-		rows := []string{
-			theme.StylePaneTitle.Render("Extend Pomodoro Session"),
-			"",
-			theme.StyleDim.Render("Add more time to the active pomodoro session."),
+		vm := controllerpkg.BuildPomodoroDialogViewModel(state)
+		rows := []string{theme.StylePaneTitle.Render("Extend Pomodoro Session")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
-		for i, item := range state.ChoiceItems {
-			line := "  " + item
-			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render(line))
-			}
+		if totalPreview := controllerpkg.PreviewPomodoroExtendDuration(state); totalPreview != "" {
+			rows = append(rows, "", theme.StyleSelected.Render(totalPreview))
 		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
-			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
+		if vm.ShowSummary {
+			rows = append(
+				rows,
+				"",
+				theme.StyleDim.Render(
+					fmt.Sprintf(
+						"%s  ·  %s  ·  %s",
+						vm.FocusDisplay,
+						vm.ShortBreakDisplay,
+						vm.LongBreakDisplay,
+					),
+				),
+			)
+			rows = append(rows, theme.StyleDim.Render(vm.CyclesSummary))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] back")
-		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
-	case "hard_limit_extend_custom":
-		rows := []string{
-			theme.StylePaneTitle.Render("Custom Extension"),
-			"",
-			theme.StyleDim.Render("Extension duration"),
-			state.Inputs[0].View(),
+		rows = append(rows, "", pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive))
+		rows = append(rows, pomodoroChoiceRow(theme, vm.FocusChoices, state.PomodoroFocusChoice, vm.FocusCustomChoice, vm.FocusCustomActive, state.Inputs[0].View()))
+		rows = append(rows, "", pomodoroRowLabel(theme, "Short Break", vm.BreakRowActive || vm.BreakCustomActive))
+		rows = append(rows, pomodoroChoiceRow(theme, vm.BreakChoices, state.PomodoroBreakChoice, vm.BreakCustomChoice, vm.BreakCustomActive, state.Inputs[1].View()))
+		if vm.LongBreakForcedOff {
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Long Break"))
+		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Long Break", vm.LongBreakRowActive || vm.LongBreakCustomActive))
+			rows = append(rows, pomodoroChoiceRow(theme, vm.LongBreakChoices, vm.LongBreakSelected, vm.LongBreakCustomChoice, vm.LongBreakCustomActive, state.Inputs[2].View()))
+		}
+		if vm.CyclesDisabled {
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Cycles"))
+		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Cycles", vm.CyclesRowActive))
+			rows = append(rows, state.Inputs[3].View())
+		}
+		if vm.LongBreakDisabled {
+			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Long Break"))
+		} else {
+			rows = append(rows, "", pomodoroRowLabel(theme, "Long Break After", vm.LongBreakCyclesActive))
+			rows = append(rows, state.Inputs[4].View())
 		}
 		rows = appendDialogFooter(
 			theme,
 			state,
 			rows,
-			dialogSubmitHint(state, "extend")+"   [esc] back",
+			"[←/→] choose   [↑/↓] move   [enter] extend   [esc] back",
 		)
-		return modal(theme, state.Width, 64, theme.ColorCyan, rows)
+		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "amend_session":
 		rows := []string{
 			theme.StylePaneTitle.Render("Amend Session"),
@@ -268,6 +289,20 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	default:
 		return ""
 	}
+}
+
+func formatHardLimitDuration(seconds int) string {
+	if seconds <= 0 {
+		return "disabled"
+	}
+	return helperpkg.FormatCompactDurationSeconds(seconds)
+}
+
+func formatHardLimitCycles(cycles int) string {
+	if cycles <= 0 {
+		return "disabled"
+	}
+	return fmt.Sprintf("%d", cycles)
 }
 
 func timerStartChoiceLabel(idx int, item string) string {

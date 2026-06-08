@@ -50,7 +50,6 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"pomodoro_start",
 		"hard_limit_expired",
 		"hard_limit_extend",
-		"hard_limit_extend_custom",
 		"amend_session",
 		"manual_session":
 		matched = "session"

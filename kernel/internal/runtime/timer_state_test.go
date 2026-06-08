@@ -42,4 +42,7 @@ func TestReadTimerRuntimeStateAcceptsLegacyPreparedSegmentJSON(t *testing.T) {
 	if *state.PreparedSegmentType != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected short break segment, got %q", *state.PreparedSegmentType)
 	}
+	if state.HardLimitElapsedOffsetSeconds != 0 {
+		t.Fatalf("expected zero hard-limit offset by default, got %d", state.HardLimitElapsedOffsetSeconds)
+	}
 }

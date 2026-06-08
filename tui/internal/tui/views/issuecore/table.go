@@ -9,6 +9,11 @@ const (
 	issueTableKeyCursor   = "cursor"
 	issueTableKeyIssue    = "issue"
 	issueTableKeyStatus   = "status"
+	issueTableKeyGap1     = "gap1"
+	issueTableKeyGap2     = "gap2"
+	issueTableKeyGap3     = "gap3"
+	issueTableKeyGap4     = "gap4"
+	issueTableKeyGap5     = "gap5"
 	issueTableKeyEstimate = "estimate"
 	issueTableKeyWorked   = "worked"
 	issueTableKeyRepo     = "repo"
@@ -37,7 +42,7 @@ func IssueTableLayoutForWidth(width int) IssueTableLayout {
 		statusW := 14
 		contextW := max(18, width/4)
 		effortW := max(18, width/4)
-		titleW := width - statusW - contextW - effortW - 16
+		titleW := width - statusW - contextW - effortW - 19
 		titleW = max(14, titleW)
 		return IssueTableLayout{
 			Compact:  true,
@@ -52,7 +57,7 @@ func IssueTableLayoutForWidth(width int) IssueTableLayout {
 	workedW := 11
 	repoW := max(10, width/8)
 	streamW := max(10, width/8)
-	titleW := width - repoW - streamW - statusW - estimateW - workedW - 20
+	titleW := width - repoW - streamW - statusW - estimateW - workedW - 25
 	titleW = max(14, titleW)
 	return IssueTableLayout{
 		TitleW:    titleW,
@@ -68,20 +73,28 @@ func IssueTableColumns(layout IssueTableLayout) []table.Column {
 	if layout.Compact {
 		return []table.Column{
 			table.NewColumn(issueTableKeyCursor, "", 2),
-			table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle()),
-			table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle()),
-			table.NewColumn(issueTableKeyContext, "Context", layout.ContextW).WithStyle(issueColumnStyle()),
-			table.NewColumn(issueTableKeyEffort, "Effort", layout.EffortW).WithStyle(issueColumnStyle()),
+			table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyGap1, "", 1),
+			table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyGap2, "", 1),
+			table.NewColumn(issueTableKeyContext, "Context", layout.ContextW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyGap3, "", 1),
+			table.NewColumn(issueTableKeyEffort, "Effort", layout.EffortW).WithStyle(issueColumnStyle(true)),
 		}
 	}
 	return []table.Column{
 		table.NewColumn(issueTableKeyCursor, "", 2),
-		table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle()),
-		table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle()),
-		table.NewColumn(issueTableKeyEstimate, "Est.", layout.EstimateW).WithStyle(issueColumnStyle()),
-		table.NewColumn(issueTableKeyWorked, "Worked", layout.WorkedW).WithStyle(issueColumnStyle()),
-		table.NewColumn(issueTableKeyRepo, "Repo", layout.RepoW).WithStyle(issueColumnStyle()),
-		table.NewColumn(issueTableKeyStream, "Stream", layout.StreamW).WithStyle(issueColumnStyle()),
+		table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyGap1, "", 1),
+		table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyGap2, "", 1),
+		table.NewColumn(issueTableKeyEstimate, "Est.", layout.EstimateW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyGap3, "", 1),
+		table.NewColumn(issueTableKeyWorked, "Worked", layout.WorkedW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyGap4, "", 1),
+		table.NewColumn(issueTableKeyRepo, "Repo", layout.RepoW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyGap5, "", 1),
+		table.NewColumn(issueTableKeyStream, "Stream", layout.StreamW).WithStyle(issueColumnStyle(false)),
 	}
 }
 
@@ -93,10 +106,15 @@ func IssueTableRow(
 	return table.NewRow(table.RowData{
 		issueTableKeyCursor:   cursor,
 		issueTableKeyIssue:    data.Issue,
+		issueTableKeyGap1:     "",
 		issueTableKeyStatus:   data.Status,
+		issueTableKeyGap2:     "",
 		issueTableKeyEstimate: data.Estimate,
+		issueTableKeyGap3:     "",
 		issueTableKeyWorked:   data.Worked,
+		issueTableKeyGap4:     "",
 		issueTableKeyRepo:     data.Repo,
+		issueTableKeyGap5:     "",
 		issueTableKeyStream:   data.Stream,
 		issueTableKeyContext:  data.Context,
 		issueTableKeyEffort:   data.Effort,
@@ -125,6 +143,9 @@ type IssueTableData struct {
 	Effort   string
 }
 
-func issueColumnStyle() lipgloss.Style {
+func issueColumnStyle(compact bool) lipgloss.Style {
+	if compact {
+		return lipgloss.NewStyle().Padding(0, 2)
+	}
 	return lipgloss.NewStyle().Padding(0, 1)
 }

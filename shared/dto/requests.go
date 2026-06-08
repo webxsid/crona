@@ -375,5 +375,11 @@ type TimerStartRequest struct {
 }
 
 type TimerExtendRequest struct {
-	AdditionalSeconds int `json:"additionalSeconds"`
+	AdditionalSeconds               int  `json:"additionalSeconds,omitempty"`
+	AdditionalSessions              int  `json:"additionalSessions,omitempty"`
+	HardLimitTotalSeconds           *int `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitWorkSeconds            *int `json:"hardLimitWorkSeconds,omitempty"`
+	HardLimitBreakSeconds           *int `json:"hardLimitBreakSeconds,omitempty"`
+	HardLimitLongBreakSeconds       *int `json:"hardLimitLongBreakSeconds,omitempty"`
+	HardLimitCyclesBeforeLongBreak  *int `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }

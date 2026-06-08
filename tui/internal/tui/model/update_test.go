@@ -352,6 +352,18 @@ func TestDialogModeTreatsQAsCancelAndCtrlCAsQuit(t *testing.T) {
 	}
 }
 
+func TestHardLimitExpiredDialogIgnoresQ(t *testing.T) {
+	model := Model{}.withDialogState(dialogstate.State{Kind: "hard_limit_expired"})
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd != nil {
+		t.Fatalf("expected q to be ignored for hard-limit expired dialog")
+	}
+	if next.(Model).dialog != "hard_limit_expired" {
+		t.Fatalf("expected hard-limit expired dialog to stay open, got %q", next.(Model).dialog)
+	}
+}
+
 func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{
 		Kind:                          "pomodoro_start",
@@ -439,6 +451,77 @@ func TestDialogRuntimeDepsWireTelemetryHooks(t *testing.T) {
 	}
 	if deps.CompleteOnboarding == nil {
 		t.Fatal("expected complete onboarding hook to be wired")
+	}
+}
+
+func TestHardLimitExpiredDialogSeedsLivePomodoroConfig(t *testing.T) {
+	model := Model{
+		timer: &api.TimerState{
+			State:                          "expired",
+			HardLimitActive:                true,
+			HardLimitExpired:               true,
+			HardLimitWorkSeconds:           60,
+			HardLimitBreakSeconds:          0,
+			HardLimitLongBreakSeconds:      120,
+			HardLimitCyclesBeforeLongBreak: 3,
+		},
+	}
+
+	next := model.openHardLimitExpiredDialog("Issue title")
+	if next.dialog != "hard_limit_expired" {
+		t.Fatalf("expected hard-limit expired dialog, got %q", next.dialog)
+	}
+	if next.dialogHardLimitFocusSeconds != 60 {
+		t.Fatalf("expected focus seconds to be seeded, got %d", next.dialogHardLimitFocusSeconds)
+	}
+	if next.dialogHardLimitBreakSeconds != 0 {
+		t.Fatalf("expected short break seconds to remain disabled, got %d", next.dialogHardLimitBreakSeconds)
+	}
+	if next.dialogHardLimitLongBreakSeconds != 120 {
+		t.Fatalf("expected long break seconds to be seeded, got %d", next.dialogHardLimitLongBreakSeconds)
+	}
+	if next.dialogHardLimitCyclesBeforeLongBreak != 3 {
+		t.Fatalf(
+			"expected cycles before long break to be seeded, got %d",
+			next.dialogHardLimitCyclesBeforeLongBreak,
+		)
+	}
+}
+
+func TestHardLimitDialogRefreshesFromTimerSnapshot(t *testing.T) {
+	model := Model{
+		dialog:                               "hard_limit_extend",
+		dialogHardLimitFocusSeconds:          25 * 60,
+		dialogHardLimitBreakSeconds:          5 * 60,
+		dialogHardLimitLongBreakSeconds:      15 * 60,
+		dialogHardLimitCyclesBeforeLongBreak: 4,
+		timer: &api.TimerState{
+			State:                          "running",
+			HardLimitActive:                true,
+			HardLimitTotalSeconds:          120,
+			HardLimitRemainingSeconds:      60,
+			HardLimitWorkSeconds:           60,
+			HardLimitBreakSeconds:          0,
+			HardLimitLongBreakSeconds:      0,
+			HardLimitCyclesBeforeLongBreak: 0,
+		},
+	}
+
+	next := model.applyDispatchMessageState(model.dispatchMessageState())
+	if next.dialogHardLimitFocusSeconds != 60 {
+		t.Fatalf("expected focus seconds to refresh from timer, got %d", next.dialogHardLimitFocusSeconds)
+	}
+	if next.dialogHardLimitBreakSeconds != 0 {
+		t.Fatalf("expected short break seconds to refresh from timer, got %d", next.dialogHardLimitBreakSeconds)
+	}
+	if next.dialogHardLimitLongBreakSeconds != 0 {
+		t.Fatalf("expected long break seconds to refresh from timer, got %d", next.dialogHardLimitLongBreakSeconds)
+	}
+	if next.dialogHardLimitCyclesBeforeLongBreak != 0 {
+		t.Fatalf(
+			"expected cycles-before-long-break to refresh from timer, got %d",
+			next.dialogHardLimitCyclesBeforeLongBreak,
+		)
 	}
 }
 

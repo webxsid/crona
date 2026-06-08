@@ -152,12 +152,7 @@ func StopSession(
 		return nil, err
 	}
 
-	offsetSeconds := 0
-	for _, segment := range segments {
-		if segment.ElapsedOffsetSeconds != nil {
-			offsetSeconds += *segment.ElapsedOffsetSeconds
-		}
-	}
+	durationSeconds := sessionnotes.TotalSegmentDurationSeconds(segments)
 
 	stopped, err := c.Sessions.Stop(ctx, active.ID, struct {
 		EndTime         string
@@ -165,7 +160,7 @@ func StopSession(
 		Notes           *string
 	}{
 		EndTime:         now,
-		DurationSeconds: elapsedSeconds(active.StartTime, now) + offsetSeconds,
+		DurationSeconds: durationSeconds,
 		Notes:           notesPtr,
 	}, c.UserID, c.DeviceID, now)
 	if err != nil {

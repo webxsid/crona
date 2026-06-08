@@ -180,6 +180,7 @@ func renderCompactIssueRow(
 	issue api.IssueWithMeta,
 	settings *api.CoreSettings,
 ) string {
+	const compactIssueRowGap = "   "
 	title := issue.Title + issuecore.IssueDueSuffix(
 		issue.Status,
 		issue.TodoForDate,
@@ -188,17 +189,17 @@ func renderCompactIssueRow(
 		settings,
 	)
 	parts := []string{
-		viewhelpers.Truncate(title, max(18, width/2)),
+		viewhelpers.Truncate(title, max(18, width/2-1)),
 		viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11),
-		viewhelpers.Truncate(issuecore.IssueContextLabel(issue.RepoName, issue.StreamName), max(14, width/4)),
-		viewhelpers.Truncate(issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes), max(14, width/4)),
+		viewhelpers.Truncate(issuecore.IssueContextLabel(issue.RepoName, issue.StreamName), max(14, width/4-1)),
+		viewhelpers.Truncate(issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes), max(14, width/4-1)),
 	}
-	row := strings.Join(parts, "  ")
+	row := strings.Join(parts, compactIssueRowGap)
 	contentStyle := issuecore.IssueStatusStyle(theme, string(issue.Status))
 	if contentStyle != nil {
 		row = contentStyle.Render(row)
 	}
-	row = viewhelpers.Truncate(row, width-6)
+	row = viewhelpers.Truncate(row, width-4)
 	if selected && active {
 		return theme.StyleCursor.Render(viewchrome.SelectionCursor + " " + row)
 	}

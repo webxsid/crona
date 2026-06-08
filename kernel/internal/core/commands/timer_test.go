@@ -590,6 +590,32 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 			expiredState.HardLimitRemainingSeconds,
 		)
 	}
+	activeSegmentAfterExpiry, err := service.ctx.SessionSegments.GetActive(
+		ctx,
+		service.ctx.UserID,
+		service.ctx.DeviceID,
+		*startState.SessionID,
+	)
+	if err != nil {
+		t.Fatalf("load active segment after expiry: %v", err)
+	}
+	if activeSegmentAfterExpiry != nil {
+		t.Fatalf("expected expiry to end the active segment, got %+v", activeSegmentAfterExpiry)
+	}
+	now = "2026-05-24T10:05:00Z"
+	frozenState, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get frozen expired state: %v", err)
+	}
+	if frozenState.State != "expired" {
+		t.Fatalf("expected expired state to stay expired, got %q", frozenState.State)
+	}
+	if frozenState.ElapsedSeconds != 0 {
+		t.Fatalf("expected expired state to stop accumulating elapsed time, got %d", frozenState.ElapsedSeconds)
+	}
+	if frozenState.HardLimitRemainingSeconds != 0 {
+		t.Fatalf("expected hard-limit remaining time to stay frozen at 0, got %d", frozenState.HardLimitRemainingSeconds)
+	}
 	if len(hardLimitEvents) != 1 {
 		t.Fatalf("expected exactly one hard-limit event, got %d", len(hardLimitEvents))
 	}
@@ -618,6 +644,64 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 			"expected positive remaining hard-limit time after extend, got %d",
 			extendedState.HardLimitRemainingSeconds,
 		)
+	}
+	if extendedState.HardLimitRemainingSeconds != 600 {
+		t.Fatalf(
+			"expected extend to rebase remaining hard-limit time to 600s, got %d",
+			extendedState.HardLimitRemainingSeconds,
+		)
+	}
+	afterExtendSegment, err := service.ctx.SessionSegments.GetActive(
+		ctx,
+		service.ctx.UserID,
+		service.ctx.DeviceID,
+		*startState.SessionID,
+	)
+	if err != nil {
+		t.Fatalf("load active segment after extend: %v", err)
+	}
+	if afterExtendSegment == nil {
+		t.Fatal("expected active segment after extend")
+	}
+	if afterExtendSegment.SegmentType != sharedtypes.SessionSegmentWork {
+		t.Fatalf("expected extend to restart the expired work segment, got %q", afterExtendSegment.SegmentType)
+	}
+	boundaryAfterExtend, err := service.nextBoundary(
+		ctx,
+		*startState.SessionID,
+		sharedtypes.SessionSegmentWork,
+		func() *runtimepkg.TimerRuntimeState {
+			state, stateErr := service.activeRuntimeState(ctx)
+			if stateErr != nil {
+				t.Fatalf("active runtime state after extend: %v", stateErr)
+			}
+			return state
+		}(),
+	)
+	if err != nil {
+		t.Fatalf("next boundary after extend: %v", err)
+	}
+	if boundaryAfterExtend == nil || boundaryAfterExtend.AfterSeconds != 25 {
+		t.Fatalf("expected restarted work segment boundary after 25s, got %+v", boundaryAfterExtend)
+	}
+
+	now = "2026-05-24T10:10:00Z"
+	endedState, err := service.End(ctx, SessionEndInput{})
+	if err != nil {
+		t.Fatalf("end extended hard-limit session: %v", err)
+	}
+	if endedState.State != "idle" {
+		t.Fatalf("expected idle state after end, got %q", endedState.State)
+	}
+	lastSession, err := service.ctx.Sessions.GetLastSessionForUser(ctx, service.ctx.UserID)
+	if err != nil {
+		t.Fatalf("load last session: %v", err)
+	}
+	if lastSession == nil || lastSession.DurationSeconds == nil {
+		t.Fatalf("expected ended session with duration, got %+v", lastSession)
+	}
+	if *lastSession.DurationSeconds < 0 {
+		t.Fatalf("expected non-negative duration, got %d", *lastSession.DurationSeconds)
 	}
 }
 

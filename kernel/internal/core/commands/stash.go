@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"crona/kernel/internal/core"
+	"crona/kernel/internal/sessionnotes"
 
 	"github.com/google/uuid"
 
@@ -31,6 +32,7 @@ func StashPush(ctx context.Context, c *core.Context, stashNote *string) (sharedt
 	var elapsed *int
 
 	if activeSession != nil {
+		var endedSegments []sharedtypes.SessionSegment
 		activeSegment, err := c.SessionSegments.GetActive(
 			ctx,
 			c.UserID,
@@ -49,13 +51,17 @@ func StashPush(ctx context.Context, c *core.Context, stashNote *string) (sharedt
 				return sharedtypes.Stash{}, err
 			}
 		}
+		endedSegments, err = c.SessionSegments.ListBySession(ctx, activeSession.ID)
+		if err != nil {
+			return sharedtypes.Stash{}, err
+		}
 		if _, err := c.Sessions.Stop(ctx, activeSession.ID, struct {
 			EndTime         string
 			DurationSeconds int
 			Notes           *string
 		}{
 			EndTime:         now,
-			DurationSeconds: elapsedSeconds(activeSession.StartTime, now),
+			DurationSeconds: sessionnotes.TotalSegmentDurationSeconds(endedSegments),
 		}, c.UserID, c.DeviceID, now); err != nil {
 			return sharedtypes.Stash{}, err
 		}
