@@ -261,9 +261,7 @@ func DerivedHardLimitSegmentRemainingSeconds(
 	elapsed := DerivedSegmentElapsedSeconds(timer, localElapsed, now)
 	elapsed = min(elapsed, duration)
 	remaining := duration - elapsed
-	if remaining < 0 {
-		remaining = 0
-	}
+	remaining = max(0, remaining)
 	return remaining, segment, true
 }
 

@@ -364,6 +364,22 @@ func TestHardLimitExpiredDialogIgnoresQ(t *testing.T) {
 	}
 }
 
+func TestInputDialogIgnoresQAsCancel(t *testing.T) {
+	model := Model{}.withDialogState(dialogstate.OpenSessionMessageWithParent(
+		dialogstate.State{},
+		"end_session",
+		"hard_limit_expired",
+	))
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd != nil {
+		t.Fatalf("expected q to stay inside the input dialog, not emit a command")
+	}
+	if next.(Model).dialog != "end_session" {
+		t.Fatalf("expected input dialog to remain open, got %q", next.(Model).dialog)
+	}
+}
+
 func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{
 		Kind:                          "pomodoro_start",
@@ -485,6 +501,75 @@ func TestHardLimitExpiredDialogSeedsLivePomodoroConfig(t *testing.T) {
 			"expected cycles before long break to be seeded, got %d",
 			next.dialogHardLimitCyclesBeforeLongBreak,
 		)
+	}
+}
+
+func TestExpiredTimerStateReopensHardLimitExpiredDialog(t *testing.T) {
+	model := Model{
+		view: ViewDaily,
+		allIssues: []api.IssueWithMeta{{
+			Issue: sharedtypes.Issue{
+				ID:    42,
+				Title: "Fix checkout title handling",
+			},
+		}},
+	}
+
+	next := model.applyDispatchMessageState(dispatchpkg.MessageState{
+		View: ViewSessionActive,
+		Timer: &api.TimerState{
+			State:                          "expired",
+			HardLimitActive:                true,
+			HardLimitExpired:               true,
+			HardLimitTotalSeconds:          90,
+			HardLimitWorkSeconds:           60,
+			HardLimitBreakSeconds:          0,
+			HardLimitLongBreakSeconds:      120,
+			HardLimitCyclesBeforeLongBreak: 3,
+			IssueID:                        int64Ptr(42),
+		},
+	})
+
+	if next.dialog != "hard_limit_expired" {
+		t.Fatalf("expected hard-limit expired dialog to reopen, got %q", next.dialog)
+	}
+	if next.view != ViewSessionActive {
+		t.Fatalf("expected session active view to remain behind the dialog, got %q", next.view)
+	}
+	if next.dialogHardLimitTotalSeconds != 90 {
+		t.Fatalf("expected total seconds to be seeded from the expired timer, got %d", next.dialogHardLimitTotalSeconds)
+	}
+}
+
+func TestExpiredTimerStateDoesNotReopenAfterDialogWasAlreadyExpired(t *testing.T) {
+	model := Model{
+		timer: &api.TimerState{
+			State:                          "expired",
+			HardLimitActive:                true,
+			HardLimitExpired:               true,
+			HardLimitTotalSeconds:          90,
+			HardLimitWorkSeconds:           60,
+			HardLimitBreakSeconds:          0,
+			HardLimitLongBreakSeconds:      120,
+			HardLimitCyclesBeforeLongBreak: 3,
+		},
+	}
+
+	next := model.applyDispatchMessageState(dispatchpkg.MessageState{
+		Timer: &api.TimerState{
+			State:                          "expired",
+			HardLimitActive:                true,
+			HardLimitExpired:               true,
+			HardLimitTotalSeconds:          90,
+			HardLimitWorkSeconds:           60,
+			HardLimitBreakSeconds:          0,
+			HardLimitLongBreakSeconds:      120,
+			HardLimitCyclesBeforeLongBreak: 3,
+		},
+	})
+
+	if next.dialog != "" {
+		t.Fatalf("expected no dialog reopen on repeated expired state, got %q", next.dialog)
 	}
 }
 

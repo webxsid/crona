@@ -53,7 +53,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if titleAt >= clockAt || clockAt >= metricAt || metricAt >= issueAt {
 		t.Fatalf("expected title above clock above metadata above issue pane, got %q", rendered)
 	}
-	if strings.Contains(rendered, "mins until break") || strings.Contains(rendered, "mins left") {
+	if strings.Contains(rendered, "mins left") {
 		t.Fatalf(
 			"expected stopwatch active view to avoid session timing labels, got %q",
 			rendered,
@@ -83,7 +83,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	breakState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	breakState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
 	rendered = renderActiveView(types.Theme{}, breakState)
-	if strings.Contains(rendered, "min left") || strings.Contains(rendered, "until break") {
+	if strings.Contains(rendered, "min left") {
 		t.Fatalf("expected stopwatch break state to avoid timing labels, got %q", rendered)
 	}
 
@@ -108,7 +108,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	readyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	readyState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	rendered = renderActiveView(types.Theme{}, readyState)
-	if strings.Contains(rendered, "mins until break") || strings.Contains(rendered, "mins left") {
+	if strings.Contains(rendered, "mins left") {
 		t.Fatalf("expected stopwatch ready state to avoid session timing labels, got %q", rendered)
 	}
 
@@ -137,7 +137,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if strings.Contains(rendered, "left in cap") || strings.Contains(rendered, "Cap:") {
 		t.Fatalf("expected hard-limit view to avoid cap countdown text, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "[x] commit issue  [z] stash session  [i] change context") {
+	if !strings.Contains(rendered, "[x] commit issue  [i] change context") {
 		t.Fatalf("expected hard-limit action hints, got %q", rendered)
 	}
 	if strings.Contains(rendered, "Ready For") {
@@ -153,7 +153,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	pomodoroState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
 	workStart := time.Now().UTC().Format(time.RFC3339)
 	pomodoroState.Timer.SegmentStartTime = &workStart
-	if got := sessionTimingLabel(pomodoroState, time.Now().UTC()); got != "2 mins until break" {
+	if got := sessionTimingLabel(pomodoroState, time.Now().UTC()); got != "2 mins left" {
 		t.Fatalf("expected hard-limit work label to use the selected focus duration, got %q", got)
 	}
 
@@ -173,7 +173,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	pomodoroReadyState.Timer.State = "ready"
 	pomodoroReadyState.Timer.SegmentType = nil
 	pomodoroReadyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
-	if got := sessionTimingLabel(pomodoroReadyState, time.Now().UTC()); got != "2 mins until break" {
+	if got := sessionTimingLabel(pomodoroReadyState, time.Now().UTC()); got != "2 mins left" {
 		t.Fatalf("expected hard-limit ready label to use the selected focus duration, got %q", got)
 	}
 

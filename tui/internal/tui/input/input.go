@@ -589,7 +589,7 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handlePauseSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResumeSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleEndSession(s, deps) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleStashSession(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, nil, false },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if deps.OpenSessionContextOverlay(&s) {
 				return s, nil, true

@@ -457,7 +457,7 @@ func TestPomodoroShortBreakNoBreakDisablesCyclesAndStartsContinuousFocus(t *test
 	}
 }
 
-func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
+func TestPomodoroExpiredDialogRoutesToCommitAndExtend(t *testing.T) {
 	state := OpenHardLimitExpired(State{}, "Issue title")
 	var next State
 	var action *Action
@@ -498,8 +498,8 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
-	if next.Kind != "stash_session" || next.Parent != "hard_limit_expired" {
-		t.Fatalf("expected stash path to open stash_session with parent, got %+v", next)
+	if next.Kind != "hard_limit_extend" || next.Parent != "hard_limit_expired" {
+		t.Fatalf("expected extend path to open hard_limit_extend, got %+v", next)
 	}
 
 	state = OpenHardLimitExpired(State{}, "Issue title")
@@ -516,10 +516,13 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 		next,
 		UpdateContext{},
 		"2026-05-26",
-		tea.KeyMsg{Type: tea.KeyDown},
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}},
 	)
 	if status != "" || action != nil {
-		t.Fatalf("unexpected down result status=%q action=%+v", status, action)
+		t.Fatalf("unexpected z result status=%q action=%+v", status, action)
+	}
+	if next.Kind != "hard_limit_expired" {
+		t.Fatalf("expected z key to keep the expired dialog open, got %+v", next)
 	}
 	next, _, status = Update(
 		next,
@@ -532,6 +535,25 @@ func TestPomodoroExpiredDialogRoutesToCommitStashAndExtend(t *testing.T) {
 	}
 	if next.Kind != "hard_limit_extend" || next.Parent != "hard_limit_expired" {
 		t.Fatalf("expected extend path to open hard_limit_extend, got %+v", next)
+	}
+}
+
+func TestPomodoroExpiredDialogIgnoresZKey(t *testing.T) {
+	state := OpenHardLimitExpired(State{}, "Issue title")
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected no action for z key, got %+v", action)
+	}
+	if next.Kind != "hard_limit_expired" {
+		t.Fatalf("expected z key to be a no-op, got %+v", next)
 	}
 }
 

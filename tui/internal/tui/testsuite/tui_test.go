@@ -807,7 +807,7 @@ func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 	}
 }
 
-func TestHardLimitSessionActionsShowCommitAndStash(t *testing.T) {
+func TestHardLimitSessionActionsShowCommitOnly(t *testing.T) {
 	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:             "session_active",
 		TimerState:       "running",
@@ -816,7 +816,7 @@ func TestHardLimitSessionActionsShowCommitAndStash(t *testing.T) {
 		HardLimitActive:  true,
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
-	for _, want := range []string{"[x] commit issue", "[z] stash session", "[i] change context"} {
+	for _, want := range []string{"[x] commit issue", "[i] change context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit session actions to contain %q, got %q", want, joined)
 		}
@@ -837,7 +837,7 @@ func TestReadyHardLimitSessionActionsStayCommitBased(t *testing.T) {
 	if strings.Contains(joined, "[r] start long break") {
 		t.Fatalf("expected hard-limit ready state not to show prepared-segment actions, got %q", joined)
 	}
-	for _, want := range []string{"[x] commit issue", "[z] stash session", "[i] change context"} {
+	for _, want := range []string{"[x] commit issue", "[i] change context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit ready state to contain %q, got %q", want, joined)
 		}

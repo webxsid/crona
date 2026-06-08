@@ -8,10 +8,12 @@ Crona v1.5.1 tightens the hard-limit pomodoro flow, preserves custom duration ed
 ### Changed
 - Pomodoro hard-limit start and extend dialogs now share the same form behavior, including restored custom values when toggling between presets and custom input.
 - Extend mode now disables cycles the same way the Pomodoro start dialog does when short break is set to `No Break`.
+- Input-based dialogs now ignore `q` instead of treating it as cancel, so commit and note entry dialogs keep keyboard focus until submitted or escaped.
 - Session notes now serialize structured commit, context, work, and notes sections consistently.
 
 ### Fixed
 - Pomodoro hard-limit expiry now stops background accumulation, keeps the expired dialog seeded from live timer config, and preserves session and summary totals based on ended segments rather than idle expired time.
+- Reopening the TUI while a pomodoro is already expired now reopens the expire dialog instead of dropping back to the active session view.
 - Shared issue tables now reserve explicit gutters in the wide layout, preventing truncated title, status, context, and effort values from running into the next column.
 - Narrow issue-table rows now keep a readable gap between truncated values as well.
 

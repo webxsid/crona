@@ -74,13 +74,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
 				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" start focus timer"),
-				theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" saved stashes"),
 			}
 		}
 		if state.HardLimitActive {
 			return []string{
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" commit issue"),
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
 				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 			}
@@ -93,7 +91,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 					" start "+timerActionSegmentLabel(state.TimerNextSegment),
 				),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
 				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 			}
@@ -101,7 +98,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[p]") + theme.StyleDim.Render(" pause"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
-			theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" stash session"),
 			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
 			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
 		}

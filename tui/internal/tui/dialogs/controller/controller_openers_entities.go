@@ -517,32 +517,15 @@ func OpenPomodoroStart(
 	return SyncDialogFocus(state)
 }
 
-func OpenHardLimitStart(
-	state State,
-	repoID, streamID, issueID int64,
-	issueLabel string,
-	totalMinutes, workMinutes, breakMinutes int,
-) State {
-	state.PomodoroFocusSeconds = workMinutes * 60
-	state.PomodoroBreakSeconds = breakMinutes * 60
-	_ = totalMinutes
-	return OpenPomodoroStart(state, repoID, streamID, issueID, issueLabel)
-}
-
-func OpenHardLimitPreset(state State, repoID, streamID, issueID int64, issueLabel string) State {
-	return OpenPomodoroStart(state, repoID, streamID, issueID, issueLabel)
-}
-
 func OpenHardLimitExpired(state State, issueLabel string) State {
 	state = Close(state)
 	state.Kind = "hard_limit_expired"
 	state.ViewTitle = "Pomodoro Session Complete"
 	state.ViewName = strings.TrimSpace(issueLabel)
-	state.ChoiceItems = []string{"[c] Commit", "[z] Stash", "[e] Extend"}
-	state.ChoiceValues = []string{"commit", "stash", "extend"}
+	state.ChoiceItems = []string{"[c] Commit", "[e] Extend"}
+	state.ChoiceValues = []string{"commit", "extend"}
 	state.ChoiceDetails = []string{
 		"Finish the session and capture what was completed.",
-		"End the session and preserve the context for later.",
 		"Add more Pomodoro sessions and keep the same cadence running.",
 	}
 	state.ChoiceCursor = 0

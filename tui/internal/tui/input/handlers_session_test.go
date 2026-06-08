@@ -101,4 +101,26 @@ func TestHandleStructuredManualPauseAllowsManualLogWhenIdle(t *testing.T) {
 	}
 }
 
+func TestHandleStashShortcutIsNoOpInSessionActiveView(t *testing.T) {
+	state := State{
+		ActiveView: uistate.ViewSessionActive,
+		Timer: &api.TimerState{
+			State: "running",
+		},
+	}
+
+	next, cmd := Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'z'}}, Deps{
+		OpenStashSessionDialog: func(*State) bool {
+			t.Fatal("did not expect stash dialog to open")
+			return true
+		},
+	})
+	if cmd != nil {
+		t.Fatalf("expected no command for stash shortcut, got %+v", cmd)
+	}
+	if next.Dialog != "" {
+		t.Fatalf("expected no dialog change for stash shortcut, got %+v", next)
+	}
+}
+
 func int64Ptr(v int64) *int64 { return &v }

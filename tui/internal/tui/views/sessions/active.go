@@ -43,13 +43,13 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		seg = string(*state.Timer.ReadySegmentType)
 	}
 	timerTitle := "Focus Session"
-	timerHint := "[p] pause  [x] end session  [z] stash session  [i] change context"
+	timerHint := "[p] pause  [x] end session  [i] change context"
 	structured := false
 	nextLabel := sessionActionSegmentLabel(state.Timer)
 	stateColor := activeTimerColor(theme, state.Timer)
 	if hardLimit {
 		timerTitle = "Pomodoro Session"
-		timerHint = "[x] commit issue  [z] stash session  [i] change context"
+		timerHint = "[x] commit issue  [i] change context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint
 			if state.Timer.ReadySegmentType != nil {
@@ -60,9 +60,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		}
 	} else if state.Timer.State == "ready" && !hardLimit {
 		timerTitle = "Ready For"
-		timerHint = "[r] start " + nextLabel + "  [x] end session  [z] stash session  [i] change context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] change context"
 	} else if structured {
-		timerHint = "[r] start " + nextLabel + "  [x] end session  [z] stash session  [i] change context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] change context"
 		if state.Timer.SegmentType != nil {
 			switch *state.Timer.SegmentType {
 			case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
@@ -72,7 +72,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	} else if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
-		timerHint = "[r] resume  [x] end session  [z] stash session  [i] change context"
+		timerHint = "[r] resume  [x] end session  [i] change context"
 		seg = "paused"
 	}
 	leftW := state.Width - 4
@@ -162,22 +162,20 @@ func sessionTimingLabel(state types.ContentState, now time.Time) string {
 	}
 	if state.Timer.HardLimitActive {
 		if state.Timer.HardLimitExpired {
-			return "commit, stash, or extend"
+			return "commit or extend"
 		}
-		remaining, segment, ok := helperpkg.DerivedHardLimitSegmentRemainingSeconds(
+		remaining, _, ok := helperpkg.DerivedHardLimitSegmentRemainingSeconds(
 			state.Timer,
 			state.Elapsed,
 			now,
 		)
+
 		if !ok {
 			return ""
 		}
 		remainingLabel := formatRemainingMinutes(remaining)
 		if remainingLabel == "" {
 			return ""
-		}
-		if *segment == sharedtypes.SessionSegmentWork {
-			return remainingLabel + " until break"
 		}
 		return remainingLabel + " left"
 	}
@@ -208,9 +206,6 @@ func sessionTimingLabel(state types.ContentState, now time.Time) string {
 	remainingLabel := formatRemainingMinutes(remaining)
 	if remainingLabel == "" {
 		return ""
-	}
-	if *segment == sharedtypes.SessionSegmentWork && timerNextSegment(state.Timer) != nil {
-		return remainingLabel + " until break"
 	}
 	return remainingLabel + " left"
 }

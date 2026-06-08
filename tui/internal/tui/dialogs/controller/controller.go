@@ -1039,19 +1039,13 @@ func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string
 	case "c":
 		return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
 	case "z":
-		return OpenSessionMessageWithParent(state, "stash_session", "hard_limit_expired"), nil, ""
+		return state, nil, ""
 	case "e":
 		return OpenHardLimitExtend(state), nil, ""
 	case "enter":
 		switch currentChoiceValue(state) {
 		case "commit":
 			return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
-		case "stash":
-			return OpenSessionMessageWithParent(
-				state,
-				"stash_session",
-				"hard_limit_expired",
-			), nil, ""
 		default:
 			return OpenHardLimitExtend(state), nil, ""
 		}
@@ -1062,12 +1056,6 @@ func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string
 				return OpenSessionMessageWithParent(
 					state,
 					"end_session",
-					"hard_limit_expired",
-				), nil, ""
-			case "stash":
-				return OpenSessionMessageWithParent(
-					state,
-					"stash_session",
 					"hard_limit_expired",
 				), nil, ""
 			default:

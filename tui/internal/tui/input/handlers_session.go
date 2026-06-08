@@ -108,9 +108,5 @@ func handleEndSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleStashSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil || s.Timer.State == "idle" {
-		return s, nil, false
-	}
-	deps.OpenStashSessionDialog(&s)
-	return s, nil, true
+	return s, nil, false
 }
