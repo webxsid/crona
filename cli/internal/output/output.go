@@ -179,6 +179,30 @@ func PrintUpdateStatus(w io.Writer, status sharedtypes.UpdateStatus) error {
 			return err
 		}
 	}
+	if strings.TrimSpace(string(status.InstallSource)) != "" {
+		if _, err := fmt.Fprintf(w, "install-source: %s\n", status.InstallSource); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(status.BrewFormula) != "" {
+		if _, err := fmt.Fprintf(w, "brew-formula: %s\n", strings.TrimSpace(status.BrewFormula)); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(status.UpdateCommand) != "" {
+		if _, err := fmt.Fprintf(w, "update-command: %s\n", status.UpdateCommand); err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(status.InstallUnavailableReason) != "" {
+		if _, err := fmt.Fprintf(
+			w,
+			"install-unavailable: %s\n",
+			strings.TrimSpace(status.InstallUnavailableReason),
+		); err != nil {
+			return err
+		}
+	}
 	if status.UpdateAvailable {
 		if _, err := fmt.Fprintln(w, "update: available"); err != nil {
 			return err

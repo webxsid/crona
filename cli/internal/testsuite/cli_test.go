@@ -286,3 +286,31 @@ func TestUpdateDismissTextHandlesEmptyDismissedVersion(t *testing.T) {
 		t.Fatalf("unexpected output: %s", out.String())
 	}
 }
+
+func TestUpdateStatusTextIncludesInstallSourceAndCommand(t *testing.T) {
+	var out bytes.Buffer
+	err := updatecmd.Run([]string{"status"}, updatecmd.Deps{
+		Stdout: &out,
+		CallKernel: func(method string, params, target any) error {
+			status := target.(*sharedtypes.UpdateStatus)
+			status.CurrentVersion = "1.5.1"
+			status.LatestVersion = "1.6.0"
+			status.InstallSource = sharedtypes.InstallSourceBrew
+			status.BrewFormula = "crona-beta"
+			status.UpdateCommand = "brew upgrade crona-beta"
+			status.InstallUnavailableReason = "managed by Homebrew"
+			status.UpdateAvailable = true
+			status.Enabled = true
+			status.PromptEnabled = true
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("update status: %v", err)
+	}
+	for _, want := range []string{"current: 1.5.1", "latest: 1.6.0", "install-source: brew", "brew-formula: crona-beta", "update-command: brew upgrade crona-beta", "install-unavailable: managed by Homebrew"} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("expected output to contain %q, got:\n%s", want, out.String())
+		}
+	}
+}

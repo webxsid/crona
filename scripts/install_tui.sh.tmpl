@@ -168,6 +168,16 @@ verify_nonempty() {
   fi
 }
 
+resolve_binary_path() {
+  legacy_path="$1"
+  plain_path="$2"
+  if [ -e "${legacy_path}" ]; then
+    printf '%s\n' "${legacy_path}"
+  else
+    printf '%s\n' "${plain_path}"
+  fi
+}
+
 is_interactive() {
   [ -t 1 ] || [ -t 2 ]
 }
@@ -267,13 +277,16 @@ verify_nonempty "${CHECKSUMS_FILE}"
 verify_nonempty "${BUNDLE_FILE}"
 verify_nonempty "${ASSETS_FILE}"
 echo "Verifying checksums..."
-verify_checksums "${BUNDLE_NAME}" "${ASSETS_NAME}"
+verify_checksums "${BUNDLE_NAME}"
 
 mkdir -p "${BUNDLE_DIR}"
 unzip -q "${BUNDLE_FILE}" -d "${BUNDLE_DIR}"
 CLI_FILE="${BUNDLE_DIR}/crona-${VERSION}-${OS}-${ARCH}"
 KERNEL_FILE="${BUNDLE_DIR}/crona-kernel-${VERSION}-${OS}-${ARCH}"
 TUI_FILE="${BUNDLE_DIR}/crona-tui-${VERSION}-${OS}-${ARCH}"
+CLI_FILE="$(resolve_binary_path "${CLI_FILE}" "${BUNDLE_DIR}/crona")"
+KERNEL_FILE="$(resolve_binary_path "${KERNEL_FILE}" "${BUNDLE_DIR}/crona-kernel")"
+TUI_FILE="$(resolve_binary_path "${TUI_FILE}" "${BUNDLE_DIR}/crona-tui")"
 verify_nonempty "${CLI_FILE}"
 verify_nonempty "${KERNEL_FILE}"
 verify_nonempty "${TUI_FILE}"
@@ -286,6 +299,11 @@ rm -rf "${ASSETS_DIR}/export"
 echo "Extracting bundled assets..."
 tar -xzf "${ASSETS_FILE}" -C "${ASSETS_DIR}"
 printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
+cat > "${CRONA_HOME}/install.json" <<'EOF'
+{
+  "installSource": "script"
+}
+EOF
 
 echo
 echo "Installed:"

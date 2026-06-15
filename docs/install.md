@@ -5,6 +5,7 @@
 End users do not need Go installed.
 
 Installed binaries:
+
 - `crona`
 - `crona-tui`
 - `crona-kernel`
@@ -12,13 +13,51 @@ Installed binaries:
 `crona-kernel` is the internal binary name for Crona's background local engine. Most user-facing docs call it the local engine because it owns storage, timers, reminders, update checks, and local IPC.
 
 Release assets ship as:
+
 - one platform bundle zip containing all three binaries
 - one shared `crona-assets-<version>.tar.gz` archive for report/export assets
 - installer scripts for Unix-like systems and Windows
 
 ## macOS And Linux
 
-Install a specific release:
+Prefer Homebrew:
+
+```bash
+brew tap webxsid/tap
+brew install crona
+```
+
+or:
+
+```bash
+brew install webxsid/tap/crona
+```
+
+Prerelease beta tags publish a separate opt-in formula:
+
+```bash
+brew install webxsid/tap/crona-beta
+```
+
+Homebrew users update with:
+
+```bash
+brew upgrade crona
+```
+
+Beta users update with:
+
+```bash
+brew upgrade crona-beta
+```
+
+Fallback install script:
+
+```bash
+curl -fsSL https://crona.work/install.sh | sh
+```
+
+Install a specific release directly from GitHub:
 
 ```bash
 curl -fsSL https://github.com/webxsid/crona/releases/download/<version>/install-crona-tui.sh | sh
@@ -94,6 +133,12 @@ Users can switch release tracks from the TUI settings.
 The default track follows normal releases, and testers can opt into upcoming builds.
 
 Use the in-app `Updates` view to check, read notes, and install supported updates.
+
+- Homebrew installs never self-update from inside Crona.
+- The TUI shows the source-aware update command for the current install type.
+- Script installs rerun the install script.
+- Source installs show the `go install` command.
+- Manual installs and unknown installs are directed to the GitHub release page.
 
 ## Notifications And Alerts
 

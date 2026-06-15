@@ -21,13 +21,14 @@ import (
 const checkInterval = 24 * time.Hour
 
 type Service struct {
-	core      *core.Context
-	bus       *events.Bus
-	logger    *runtimepkg.Logger
-	cachePath string
-	envMode   string
-	goos      string
-	client    *http.Client
+	core        *core.Context
+	bus         *events.Bus
+	logger      *runtimepkg.Logger
+	cachePath   string
+	installPath string
+	envMode     string
+	goos        string
+	client      *http.Client
 
 	mu               sync.RWMutex
 	status           sharedtypes.UpdateStatus
@@ -45,12 +46,13 @@ func Start(
 	envMode string,
 ) *Service {
 	service := &Service{
-		core:      coreCtx,
-		bus:       bus,
-		logger:    logger,
-		cachePath: paths.UpdateFile,
-		envMode:   envMode,
-		goos:      runtime.GOOS,
+		core:        coreCtx,
+		bus:         bus,
+		logger:      logger,
+		cachePath:   paths.UpdateFile,
+		installPath: paths.InstallFile,
+		envMode:     envMode,
+		goos:        runtime.GOOS,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -229,6 +231,11 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.UpdateAvailable = isNewerVersion(s.status.CurrentVersion, release.Version)
 	s.status.InstallAvailable = release.InstallURL != "" && release.ChecksumsURL != ""
 	s.status.InstallUnavailableReason = release.installUnavailableReason()
+	s.status.InstallSource, s.status.BrewFormula = s.resolveInstallMetadataLocked(localOverrideActive)
+	s.status.UpdateCommand = updateCommandForStatus(s.status)
+	if reason := brewMigrationReason(s.status); reason != "" {
+		s.status.InstallUnavailableReason = reason
+	}
 	if s.status.DismissedVersion != "" && s.status.DismissedVersion != s.status.LatestVersion {
 		s.status.DismissedVersion = ""
 	}

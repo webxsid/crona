@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	commands "crona/tui/internal/tui/commands"
 	uistate "crona/tui/internal/tui/state"
 )
 
@@ -14,6 +15,12 @@ func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		return s, nil, false
 	}
 	if !deps.SelfUpdateInstallAvailable(s) {
+		if s.UpdateStatus != nil && strings.TrimSpace(s.UpdateStatus.UpdateCommand) != "" {
+			return s, commands.CopyTextToClipboard(
+				strings.TrimSpace(s.UpdateStatus.UpdateCommand),
+				"Update command copied",
+			), true
+		}
 		reason := strings.TrimSpace(deps.SelfUpdateUnsupportedReason(s))
 		if reason == "" && s.UpdateStatus != nil {
 			reason = strings.TrimSpace(s.UpdateStatus.InstallUnavailableReason)

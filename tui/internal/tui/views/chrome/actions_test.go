@@ -46,3 +46,18 @@ func TestContextualActionsUseCheckInAndAwayLabels(t *testing.T) {
 		t.Fatalf("expected away contextual actions to advertise disable away on W, got %q", away)
 	}
 }
+
+func TestUpdateActionsLabelMigrationCommands(t *testing.T) {
+	actions := strings.Join(ContextualActions(Theme{}, ActionsState{
+		View:                   "updates",
+		UpdateCommand:          "brew uninstall crona-beta && brew install webxsid/tap/crona",
+		UpdateVisible:          true,
+		UpdateInstallAvailable: false,
+	}), "\n")
+	if !strings.Contains(actions, "copy migration command") {
+		t.Fatalf("expected migration command label, got %q", actions)
+	}
+	if !IsMigrationCommand("brew uninstall crona-beta && brew install webxsid/tap/crona") {
+		t.Fatalf("expected migration command helper to detect uninstall/install flow")
+	}
+}

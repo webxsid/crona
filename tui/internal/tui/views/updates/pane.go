@@ -16,10 +16,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release page"),
 		theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
 	}
+	installLabel := installActionLabel(state.UpdateStatus, state.UpdateInstallAvailable)
 	if state.UpdateInstallAvailable {
-		actions = append(actions, theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" install"))
+		actions = append(actions, theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" "+installLabel))
 	} else {
-		actions = append(actions, theme.StyleDim.Render("[i] install unavailable"))
+		actions = append(actions, theme.StyleDim.Render("[i] "+installLabel))
 	}
 	lines := []string{
 		theme.StylePaneTitle.Render("Updates"),
@@ -46,6 +47,16 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		}
 	}
 	lines = append(lines, theme.StyleHeader.Render(title))
+	lines = append(
+		lines,
+		theme.StyleDim.Render("Current version: "+strings.TrimSpace(status.CurrentVersion)),
+	)
+	if strings.TrimSpace(status.LatestVersion) != "" {
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Latest version: "+strings.TrimSpace(status.LatestVersion)),
+		)
+	}
 	lines = append(
 		lines,
 		theme.StyleDim.Render(
@@ -93,10 +104,28 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			theme.StyleDim.Render("Release page: "+strings.TrimSpace(status.ReleaseURL)),
 		)
 	}
+	if strings.TrimSpace(string(status.InstallSource)) != "" {
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Install source: "+strings.TrimSpace(string(status.InstallSource))),
+		)
+	}
+	if strings.TrimSpace(status.BrewFormula) != "" {
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Homebrew formula: "+strings.TrimSpace(status.BrewFormula)),
+		)
+	}
 	if strings.TrimSpace(status.InstallScriptURL) != "" {
 		lines = append(
 			lines,
 			theme.StyleDim.Render("Installer: "+strings.TrimSpace(status.InstallScriptURL)),
+		)
+	}
+	if strings.TrimSpace(status.UpdateCommand) != "" {
+		lines = append(
+			lines,
+			theme.StyleDim.Render("Update command: "+strings.TrimSpace(status.UpdateCommand)),
 		)
 	}
 	if strings.TrimSpace(status.ChecksumsURL) != "" {

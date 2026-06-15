@@ -2,31 +2,21 @@ name: Release
 
 on:
   push:
-    branches:
-      - "release/**"
     tags:
       - "v*"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version tag to build, for example v1.2.0"
-        required: true
-      prerelease:
-        description: "Publish the GitHub release as a prerelease"
-        required: false
-        default: true
-        type: boolean
 
 permissions:
   contents: write
 
 jobs:
-  artifacts:
-    name: Build Release Artifacts
+  release:
+    name: Build and Publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -37,55 +27,47 @@ jobs:
             shared/go.sum
             kernel/go.sum
             tui/go.sum
+            cli/go.sum
 
-      - name: Resolve release version
-        id: version
-        shell: bash
+      - name: Run tests
+        run: make test-unit
+
+      - name: Set up GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          install-only: true
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean
+
+      - name: Publish installer assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          prerelease=true
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ inputs.version }}"
-            prerelease="${{ inputs.prerelease }}"
-          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            version="${GITHUB_REF_NAME}"
-          elif [[ "${GITHUB_REF_TYPE}" == "branch" && "${GITHUB_REF_NAME}" == "main" ]]; then
-            version="v$(awk '/^PROJECT_VERSION := / { print $3 }' Makefile)"
-          elif [[ "${GITHUB_REF_NAME}" == release/* ]]; then
-            version="${GITHUB_REF_NAME#release/}"
-          else
-            echo "Unsupported release ref: ${GITHUB_REF_NAME}" >&2
-            exit 1
-          fi
-          if [[ ! "${version}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-\.][A-Za-z0-9]+)*$ ]]; then
-            echo "Invalid release version: ${version}" >&2
-            exit 1
-          fi
-          echo "version=${version}" >> "${GITHUB_OUTPUT}"
-          echo "prerelease=${prerelease}" >> "${GITHUB_OUTPUT}"
+          sh ./scripts/build_release.sh "${GITHUB_REF_NAME}"
+          gh release upload "${GITHUB_REF_NAME}" \
+            "release/${GITHUB_REF_NAME}/install-crona-tui.sh" \
+            "release/${GITHUB_REF_NAME}/install-crona-tui.ps1" \
+            "release/${GITHUB_REF_NAME}/crona-assets-${GITHUB_REF_NAME}.tar.gz" \
+            --clobber
 
-      - name: Check metadata
-        run: make release-check
-
-      - name: Build artifacts
-        run: make release VERSION="${{ steps.version.outputs.version }}"
-
-      - name: Prepare release notes
+      - name: Normalize GitHub release state
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          mkdir -p release-notes
-          sh ./scripts/release_notes.sh "${{ steps.version.outputs.version }}" > release-notes/body.md
+          set -euo pipefail
+          if printf '%s' "${GITHUB_REF_NAME}" | grep -Eq -- '-beta'; then
+            gh release edit "${GITHUB_REF_NAME}" --prerelease --latest=false
+          else
+            gh release edit "${GITHUB_REF_NAME}" --latest
+          fi
 
-      - name: Upload workflow artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: crona-${{ steps.version.outputs.version }}
-          path: release/${{ steps.version.outputs.version }}/*
-          if-no-files-found: error
-
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.version }}
-          prerelease: ${{ steps.version.outputs.prerelease }}
-          body_path: release-notes/body.md
-          files: release/${{ steps.version.outputs.version }}/*
+      - name: Publish Homebrew formula
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: sh ./scripts/publish_homebrew_formula.sh "${GITHUB_REF_NAME}" "release/${GITHUB_REF_NAME}"

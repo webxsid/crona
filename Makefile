@@ -1,6 +1,6 @@
 PROJECT_NAME := crona
 PROJECT_REPO := webxsid/crona
-PROJECT_VERSION := 1.5.1
+PROJECT_VERSION := 1.6.0-beta.1
 PROJECT_DESCRIPTION := Local-first work kernel, TUI, and shared contracts
 GO ?= go
 GOCACHE ?= /tmp/crona-go-cache
@@ -15,7 +15,7 @@ CLI_BINARY := $(PROJECT_NAME)$(BIN_SUFFIX)
 KERNEL_BINARY := $(PROJECT_NAME)-kernel$(BIN_SUFFIX)
 TUI_BINARY := $(PROJECT_NAME)-tui$(BIN_SUFFIX)
 
-.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release
+.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release brew-test brew-generate brew-clean brew-upgrade-test
 
 help:
 	@printf "%s %s\n" "$(PROJECT_NAME)" "$(PROJECT_VERSION)"
@@ -44,6 +44,10 @@ help:
 	@printf "  make install-cli     Build %s into ./bin\n" "$(CLI_BINARY)"
 	@printf "  make seed-dev        Seed dev data through the kernel\n"
 	@printf "  make clear-dev       Clear dev data through the kernel\n"
+	@printf "  make brew-test       Run isolated Homebrew validation against dist/\n"
+	@printf "  make brew-generate   Generate isolated Homebrew tap and formula only\n"
+	@printf "  make brew-upgrade-test  Simulate isolated Homebrew upgrade flow\n"
+	@printf "  make brew-clean      Remove isolated Homebrew test artifacts\n"
 	@printf "  make release VERSION=<tag>  Build release binaries and installer\n"
 	@printf "  make meta            Print project metadata\n"
 
@@ -138,3 +142,15 @@ clear-dev:
 release:
 	@if [ -z "$(VERSION)" ]; then echo "VERSION is required, e.g. make release VERSION=v1.0.0"; exit 1; fi
 	sh ./scripts/build_release.sh "$(VERSION)"
+
+brew-test:
+	sh ./scripts/test_homebrew.sh test
+
+brew-generate:
+	sh ./scripts/test_homebrew.sh generate-only
+
+brew-upgrade-test:
+	sh ./scripts/test_homebrew.sh upgrade-test
+
+brew-clean:
+	sh ./scripts/test_homebrew.sh clean

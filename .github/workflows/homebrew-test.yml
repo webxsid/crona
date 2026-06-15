@@ -1,0 +1,35 @@
+name: Homebrew Test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  brew-test:
+    name: Isolated Homebrew Validation
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+          - os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.work
+          cache: true
+          cache-dependency-path: |
+            shared/go.sum
+            kernel/go.sum
+            tui/go.sum
+            cli/go.sum
+
+      - name: Run isolated Homebrew workflow
+        run: make brew-test

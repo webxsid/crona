@@ -1,6 +1,23 @@
 # Changelog
 
 All notable changes to **Crona** are documented here.
+## [1.6.0-beta.1] - 2026-06-15
+
+Crona v1.6.0-beta.1 adds explicit beta/stable Homebrew channel reconciliation, source-aware update commands, and a tag-driven release workflow that marks beta tags as prereleases while keeping stable tags latest.
+
+### Added
+- Homebrew installs now record formula identity so Crona can tell whether the current install is `crona` or `crona-beta`.
+- The update view now shows the Homebrew formula, the install-unavailable reason, and the correct migration command when beta/stable channels do not match.
+- The CLI update status output and support diagnostics now include the Homebrew formula and migration state.
+
+### Changed
+- The release workflow now branches on tag shape again: `-beta` tags publish prereleases and stable tags publish latest releases.
+- Homebrew publish automation now follows the same beta/stable split without reintroducing `-beta` release tags for stable users.
+
+### Fixed
+- Homebrew installs no longer fall back to GitHub release update behavior when the installed formula and running release channel differ.
+- The update action now copies a migration command for beta/stable channel switches instead of a generic update command.
+
 ## [1.5.1] - 2026-06-08
 
 Crona v1.5.1 tightens the hard-limit pomodoro flow, preserves custom duration edits in the extend dialog, and makes issue and session-note output easier to read.

@@ -888,10 +888,12 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 			RunningIsBeta:  true,
 		},
 		UpdateStatus: &api.UpdateStatus{
-			CurrentVersion: "0.4.0-beta.2",
-			RunningChannel: sharedtypes.UpdateChannelBeta,
-			RunningIsBeta:  true,
-			Channel:        sharedtypes.UpdateChannelBeta,
+			CurrentVersion:           "0.4.0-beta.2",
+			RunningChannel:           sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:            true,
+			Channel:                  sharedtypes.UpdateChannelBeta,
+			BrewFormula:              "crona-beta",
+			InstallUnavailableReason: "Homebrew formula mismatch: installed via crona-beta while this build expects crona. Run brew uninstall crona-beta && brew install webxsid/tap/crona.",
 		},
 		ExportAssets: &api.ExportAssetStatus{
 			ReportsDir: "/tmp/reports",
@@ -899,7 +901,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "Beta builds expose [f9] support actions", "Diagnostics", "Releases and discussions track updates"} {
+	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable: Homebrew formula mismatch:", "Beta builds expose [f9] support actions", "Diagnostics", "Releases and discussions track updates"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}

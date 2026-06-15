@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/dialogs"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
@@ -129,6 +131,7 @@ func (m Model) viewContentState(
 		UpdateInstalling:       m.updateInstalling,
 		UpdateInstallError:     m.updateInstallError,
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+		UpdateCommand:          updateCommand(m.updateStatus, m.currentExecutablePath, kernelExecutablePath(m.kernelInfo)),
 		UpdateManualReason:     m.selfUpdateUnsupportedReason(),
 		TUIExecutablePath:      m.currentExecutablePath,
 		KernelExecutablePath:   kernelExecutablePath(m.kernelInfo),
@@ -221,4 +224,33 @@ func dialogControllerTheme(theme dialogs.Theme) dialogstate.Theme {
 		StyleSelected:  theme.StyleSelected,
 		StyleNormal:    theme.StyleNormal,
 	}
+}
+
+func updateCommand(status *api.UpdateStatus, currentExecutablePath, kernelExecutablePath string) string {
+	if status == nil {
+		return ""
+	}
+	if command := strings.TrimSpace(status.UpdateCommand); command != "" {
+		return command
+	}
+	switch installSourceFromPath(currentExecutablePath) {
+	case sharedtypes.InstallSourceBrew:
+		return "brew upgrade " + currentBrewFormula()
+	case sharedtypes.InstallSourceGo:
+		return "go install github.com/webxsid/crona/...@latest"
+	}
+	switch installSourceFromPath(kernelExecutablePath) {
+	case sharedtypes.InstallSourceBrew:
+		return "brew upgrade " + currentBrewFormula()
+	case sharedtypes.InstallSourceGo:
+		return "go install github.com/webxsid/crona/...@latest"
+	}
+	return ""
+}
+
+func currentBrewFormula() string {
+	if versionpkg.IsBetaRelease() {
+		return "crona-beta"
+	}
+	return "crona"
 }

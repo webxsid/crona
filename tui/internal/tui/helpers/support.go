@@ -39,6 +39,14 @@ func SupportDiagnosticsSummary(
 				"Update channel: %s",
 				fallbackSupport(strings.TrimSpace(string(update.Channel)), "stable"),
 			),
+			fmt.Sprintf(
+				"brew_formula: %s",
+				fallbackSupport(strings.TrimSpace(update.BrewFormula), "-"),
+			),
+			fmt.Sprintf(
+				"install unavailable: %s",
+				fallbackSupport(strings.TrimSpace(update.InstallUnavailableReason), "-"),
+			),
 		)
 	}
 	if info != nil {
@@ -172,6 +180,10 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 				fallbackSupport(strings.TrimSpace(string(input.UpdateStatus.Channel)), "stable"),
 			),
 			fmt.Sprintf(
+				"brew_formula=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.BrewFormula), "-"),
+			),
+			fmt.Sprintf(
 				"latest_version=%s",
 				fallbackSupport(strings.TrimSpace(input.UpdateStatus.LatestVersion), "-"),
 			),
@@ -187,6 +199,10 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 			),
 			fmt.Sprintf("update_available=%t", input.UpdateStatus.UpdateAvailable),
 			fmt.Sprintf("install_available=%t", input.UpdateStatus.InstallAvailable),
+			fmt.Sprintf(
+				"install_unavailable_reason=%s",
+				fallbackSupport(strings.TrimSpace(input.UpdateStatus.InstallUnavailableReason), "-"),
+			),
 			fmt.Sprintf(
 				"update_error=%s",
 				fallbackSupport(strings.TrimSpace(input.UpdateStatus.Error), "-"),

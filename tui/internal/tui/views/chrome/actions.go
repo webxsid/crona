@@ -22,6 +22,7 @@ type ActionsState struct {
 	IsBetaBuild            bool
 	UpdateVisible          bool
 	UpdateInstallAvailable bool
+	UpdateCommand          string
 	MomentumTab            string
 }
 
@@ -177,13 +178,25 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release page"),
 			theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
 		}
+		installLabel := "install"
+		if !state.UpdateInstallAvailable {
+			if strings.TrimSpace(state.UpdateCommand) != "" {
+				if IsMigrationCommand(state.UpdateCommand) {
+					installLabel = "copy migration command"
+				} else {
+					installLabel = "copy update command"
+				}
+			} else {
+				installLabel = "install unavailable"
+			}
+		}
 		if state.UpdateInstallAvailable {
 			actions = append(
 				actions,
-				theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" install"),
+				theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" "+installLabel),
 			)
 		} else {
-			actions = append(actions, theme.StyleDim.Render("[i] install unavailable"))
+			actions = append(actions, theme.StyleDim.Render("[i] "+installLabel))
 		}
 		return actions
 	}
@@ -293,6 +306,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	return nil
+}
+
+func IsMigrationCommand(command string) bool {
+	return strings.HasPrefix(strings.TrimSpace(command), "brew uninstall ")
 }
 
 func checkInAction(theme Theme) string {

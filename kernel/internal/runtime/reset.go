@@ -21,6 +21,7 @@ func ResetManagedData(paths Paths) error {
 	}
 	for _, path := range []string{
 		paths.UpdateFile,
+		paths.InstallFile,
 	} {
 		if path == "" {
 			continue

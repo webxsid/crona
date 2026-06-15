@@ -103,6 +103,7 @@ type ContentState struct {
 	UpdateInstalling       bool
 	UpdateInstallError     string
 	UpdateInstallAvailable bool
+	UpdateCommand          string
 	UpdateManualReason     string
 	TUIExecutablePath      string
 	KernelExecutablePath   string

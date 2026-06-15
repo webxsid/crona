@@ -1163,6 +1163,9 @@ type UpdateStatus struct {
 	ReleaseURL               string        `json:"releaseUrl,omitempty"`
 	InstallScriptURL         string        `json:"installScriptUrl,omitempty"`
 	ChecksumsURL             string        `json:"checksumsUrl,omitempty"`
+	InstallSource            InstallSource `json:"installSource,omitempty"`
+	BrewFormula              string        `json:"brewFormula,omitempty"`
+	UpdateCommand            string        `json:"updateCommand,omitempty"`
 	PublishedAt              string        `json:"publishedAt,omitempty"`
 	CheckedAt                string        `json:"checkedAt,omitempty"`
 	UpdateAvailable          bool          `json:"updateAvailable"`

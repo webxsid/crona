@@ -26,6 +26,10 @@ func (s *Service) loadCache() {
 	cached.RunningChannel = version.RunningChannel()
 	cached.RunningIsBeta = version.IsBetaRelease()
 	s.status = cached
+	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
+		s.status.InstallSource = sharedtypes.NormalizeInstallSource(file.InstallSource)
+		s.status.BrewFormula = strings.TrimSpace(file.BrewFormula)
+	}
 }
 
 func (s *Service) persistLocked() error {
@@ -33,7 +37,10 @@ func (s *Service) persistLocked() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(s.cachePath, body, runtimepkg.FilePerm())
+	if err := os.WriteFile(s.cachePath, body, runtimepkg.FilePerm()); err != nil {
+		return err
+	}
+	return runtimepkg.WriteInstallSourceDetails(s.installPath, s.status.InstallSource, s.status.BrewFormula)
 }
 
 func (s *Service) persistAndEmitIfChangedLocked(prev sharedtypes.UpdateStatus) error {
@@ -61,6 +68,7 @@ func (s *Service) clearReleaseLocked() {
 	s.status.UpdateAvailable = false
 	s.status.InstallAvailable = false
 	s.status.InstallUnavailableReason = ""
+	s.status.UpdateCommand = ""
 }
 
 func (s *Service) emitLocked() {

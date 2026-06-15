@@ -34,6 +34,7 @@ func (m Model) layoutState() layoutpkg.State {
 		IsBetaBuild:            m.isBetaBuild(),
 		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+		UpdateCommand:          updateCommand(m.updateStatus, m.currentExecutablePath, kernelExecutablePath(m.kernelInfo)),
 	})
 	state := layoutpkg.State{
 		Width:               m.width,
@@ -171,6 +172,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 			IsBetaBuild:            m.isBetaBuild(),
 			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
 			UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
+			UpdateCommand:          updateCommand(m.updateStatus, m.currentExecutablePath, kernelExecutablePath(m.kernelInfo)),
 		}),
 	}
 }

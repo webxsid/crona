@@ -1,0 +1,77 @@
+version: 2
+
+project_name: crona
+
+builds:
+  - id: crona
+    main: ./cli/cmd/crona
+    binary: crona
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X crona/shared/version.Version={{.Version}}
+  - id: crona-kernel
+    main: ./kernel/cmd/crona-kernel
+    binary: crona-kernel
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X crona/shared/version.Version={{.Version}}
+  - id: crona-tui
+    main: ./tui
+    binary: crona-tui
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X crona/shared/version.Version={{.Version}}
+
+archives:
+  - id: crona-bundle
+    ids:
+      - crona
+      - crona-kernel
+      - crona-tui
+    formats:
+      - zip
+    wrap_in_directory: false
+    name_template: >-
+      crona-bundle-{{ .Version }}-{{ .Os }}-{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: git
+  sort: asc
+  abbrev: -1
+
+release:
+  github:
+    owner: webxsid
+    name: crona
+  draft: false
+  prerelease: auto

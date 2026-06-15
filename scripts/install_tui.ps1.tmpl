@@ -116,6 +116,13 @@ function Get-ExpectedChecksum([string]$ChecksumsPath, [string]$AssetName) {
     throw "checksums.txt is missing $AssetName"
 }
 
+function Resolve-BinaryPath([string]$LegacyPath, [string]$PlainPath) {
+    if (Test-Path $LegacyPath) {
+        return $LegacyPath
+    }
+    return $PlainPath
+}
+
 function Format-ByteSize([long]$Bytes) {
     if ($Bytes -lt 0) {
         return "0 B"
@@ -209,12 +216,11 @@ try {
 
     Write-Host "Verifying checksums..."
     Verify-Checksum $bundlePath (Get-ExpectedChecksum $checksumsPath $bundleName)
-    Verify-Checksum $assetsPath (Get-ExpectedChecksum $checksumsPath $assetsName)
 
     Expand-Archive -Path $bundlePath -DestinationPath $bundleDir -Force
-    $cliPath = Join-Path $bundleDir "crona-$Version-windows-$archSuffix.exe"
-    $kernelPath = Join-Path $bundleDir "crona-kernel-$Version-windows-$archSuffix.exe"
-    $tuiPath = Join-Path $bundleDir "crona-tui-$Version-windows-$archSuffix.exe"
+    $cliPath = Resolve-BinaryPath (Join-Path $bundleDir "crona-$Version-windows-$archSuffix.exe") (Join-Path $bundleDir "crona.exe")
+    $kernelPath = Resolve-BinaryPath (Join-Path $bundleDir "crona-kernel-$Version-windows-$archSuffix.exe") (Join-Path $bundleDir "crona-kernel.exe")
+    $tuiPath = Resolve-BinaryPath (Join-Path $bundleDir "crona-tui-$Version-windows-$archSuffix.exe") (Join-Path $bundleDir "crona-tui.exe")
 
     Write-Host "Installing binaries..."
     Move-Item -Force $cliPath (Join-Path $installDir "crona.exe")
@@ -229,6 +235,11 @@ try {
     Write-Host "Extracting bundled assets..."
     tar -xzf $assetsPath -C $assetsDir
     Add-InstallDirToUserPath $installDir
+    Set-Content -Path (Join-Path $runtimeDir "install.json") -Value (@"
+{
+  "installSource": "script"
+}
+"@) -NoNewline
 
     Write-Host ""
     Write-Host "Installed:"

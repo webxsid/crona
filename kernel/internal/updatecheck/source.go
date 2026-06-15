@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 
+	runtimepkg "crona/kernel/internal/runtime"
 	"crona/shared/config"
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
@@ -207,6 +209,154 @@ func (s *Service) targetGOOS() string {
 		return s.goos
 	}
 	return runtime.GOOS
+}
+
+func (s *Service) resolveInstallMetadataLocked(localReleaseActive bool) (sharedtypes.InstallSource, string) {
+	if source, formula := s.persistedInstallMetadataLocked(); source != sharedtypes.InstallSourceUnknown {
+		return source, formula
+	}
+	if source := sourceFromEnv(); source != sharedtypes.InstallSourceUnknown {
+		_ = runtimepkg.WriteInstallSource(s.installPath, source)
+		return source, defaultBrewFormula(source)
+	}
+	if source := sourceFromExecutablePath(s.executablePathLocked()); source != sharedtypes.InstallSourceUnknown {
+		_ = runtimepkg.WriteInstallSource(s.installPath, source)
+		return source, defaultBrewFormula(source)
+	}
+	if localReleaseActive {
+		_ = runtimepkg.WriteInstallSource(s.installPath, sharedtypes.InstallSourceScript)
+		return sharedtypes.InstallSourceScript, ""
+	}
+	return sharedtypes.InstallSourceUnknown, ""
+}
+
+func (s *Service) persistedInstallMetadataLocked() (sharedtypes.InstallSource, string) {
+	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
+		return sharedtypes.NormalizeInstallSource(file.InstallSource), strings.TrimSpace(file.BrewFormula)
+	}
+	return sharedtypes.NormalizeInstallSource(s.status.InstallSource), strings.TrimSpace(s.status.BrewFormula)
+}
+
+func (s *Service) executablePathLocked() string {
+	path, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return path
+}
+
+func sourceFromEnv() sharedtypes.InstallSource {
+	if source := sharedtypes.ParseInstallSource(versionpkg.InstallSource); source != sharedtypes.InstallSourceUnknown {
+		return source
+	}
+	return sharedtypes.ParseInstallSource(strings.TrimSpace(os.Getenv(config.EnvVarInstallSource)))
+}
+
+func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
+	normalized := strings.ToLower(strings.TrimSpace(path))
+	if normalized == "" {
+		return sharedtypes.InstallSourceUnknown
+	}
+	if strings.Contains(normalized, "/opt/homebrew/") ||
+		strings.Contains(normalized, "/usr/local/cellar/") ||
+		strings.Contains(normalized, "/home/linuxbrew/.linuxbrew/") ||
+		strings.Contains(normalized, "/homebrew/") {
+		return sharedtypes.InstallSourceBrew
+	}
+	if strings.Contains(normalized, string(os.PathSeparator)+"go"+string(os.PathSeparator)+"bin"+string(os.PathSeparator)) ||
+		strings.Contains(normalized, "/gobin/") {
+		return sharedtypes.InstallSourceGo
+	}
+	return sharedtypes.InstallSourceUnknown
+}
+
+func defaultBrewFormula(source sharedtypes.InstallSource) string {
+	switch sharedtypes.NormalizeInstallSource(source) {
+	case sharedtypes.InstallSourceBrew:
+		return currentBrewFormula()
+	default:
+		return ""
+	}
+}
+
+func updateCommandForStatus(status sharedtypes.UpdateStatus) string {
+	switch sharedtypes.NormalizeInstallSource(status.InstallSource) {
+	case sharedtypes.InstallSourceBrew:
+		return brewCommandForStatus(status)
+	case sharedtypes.InstallSourceScript:
+		return "curl -fsSL https://crona.work/install.sh | sh"
+	case sharedtypes.InstallSourceGo:
+		return "go install github.com/webxsid/crona/...@latest"
+	default:
+		if strings.TrimSpace(status.ReleaseURL) != "" {
+			return strings.TrimSpace(status.ReleaseURL)
+		}
+		return "Open GitHub release page"
+	}
+}
+
+func currentBrewFormula() string {
+	if versionpkg.IsBetaRelease() {
+		return "crona-beta"
+	}
+	return "crona"
+}
+
+func previousBrewFormula() string {
+	if versionpkg.IsBetaRelease() {
+		return "crona"
+	}
+	return "crona-beta"
+}
+
+func brewFormulaMismatch(status sharedtypes.UpdateStatus) bool {
+	if sharedtypes.NormalizeInstallSource(status.InstallSource) != sharedtypes.InstallSourceBrew {
+		return false
+	}
+	recorded := strings.TrimSpace(status.BrewFormula)
+	if recorded == "" {
+		return false
+	}
+	return !strings.EqualFold(recorded, currentBrewFormula())
+}
+
+func brewMigrationCommand(status sharedtypes.UpdateStatus) string {
+	if sharedtypes.NormalizeInstallSource(status.InstallSource) != sharedtypes.InstallSourceBrew {
+		return ""
+	}
+	installed := strings.TrimSpace(status.BrewFormula)
+	if installed == "" {
+		installed = previousBrewFormula()
+	}
+	target := currentBrewFormula()
+	return fmt.Sprintf("brew uninstall %s && brew install webxsid/tap/%s", installed, target)
+}
+
+func brewMigrationReason(status sharedtypes.UpdateStatus) string {
+	if !brewFormulaMismatch(status) {
+		return ""
+	}
+	installed := strings.TrimSpace(status.BrewFormula)
+	if installed == "" {
+		installed = previousBrewFormula()
+	}
+	return fmt.Sprintf(
+		"Homebrew formula mismatch: installed via %s while this build expects %s. Run %s.",
+		installed,
+		currentBrewFormula(),
+		brewMigrationCommand(status),
+	)
+}
+
+func brewCommandForStatus(status sharedtypes.UpdateStatus) string {
+	if brewFormulaMismatch(status) {
+		return brewMigrationCommand(status)
+	}
+	formula := strings.TrimSpace(status.BrewFormula)
+	if formula == "" {
+		formula = currentBrewFormula()
+	}
+	return "brew upgrade " + formula
 }
 
 func (s *Service) hasLocalRelease() bool {

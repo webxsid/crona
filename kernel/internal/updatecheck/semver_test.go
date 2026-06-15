@@ -40,6 +40,8 @@ func TestClearReleaseLocked(t *testing.T) {
 			ReleaseURL:               "https://example.com/release",
 			InstallScriptURL:         "https://example.com/install",
 			ChecksumsURL:             "https://example.com/checksums",
+			InstallSource:            sharedtypes.InstallSourceBrew,
+			UpdateCommand:            "brew upgrade crona",
 			PublishedAt:              "2026-03-25T00:00:00Z",
 			UpdateAvailable:          true,
 			InstallAvailable:         true,
@@ -53,10 +55,14 @@ func TestClearReleaseLocked(t *testing.T) {
 		service.status.ReleaseNotes != "" || service.status.ReleaseURL != "" ||
 		service.status.InstallScriptURL != "" ||
 		service.status.ChecksumsURL != "" ||
+		service.status.UpdateCommand != "" ||
 		service.status.PublishedAt != "" ||
 		service.status.UpdateAvailable ||
 		service.status.InstallAvailable ||
 		service.status.InstallUnavailableReason != "" {
 		t.Fatalf("expected release fields to be cleared, got %+v", service.status)
+	}
+	if service.status.InstallSource != sharedtypes.InstallSourceBrew {
+		t.Fatalf("expected install source to be preserved, got %s", service.status.InstallSource)
 	}
 }

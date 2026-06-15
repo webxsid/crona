@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 )
 
 func firstUpdateSummary(status *api.UpdateStatus) string {
@@ -20,4 +21,17 @@ func firstUpdateSummary(status *api.UpdateStatus) string {
 		}
 	}
 	return ""
+}
+
+func installActionLabel(status *api.UpdateStatus, installAvailable bool) string {
+	if status != nil && strings.TrimSpace(status.UpdateCommand) != "" && !installAvailable {
+		if viewchrome.IsMigrationCommand(status.UpdateCommand) {
+			return "copy migration command"
+		}
+		return "copy update command"
+	}
+	if installAvailable {
+		return "install"
+	}
+	return "install unavailable"
 }
