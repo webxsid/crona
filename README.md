@@ -6,6 +6,13 @@
 
 Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local engine into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
 
+Managed package installers are the preferred distribution path:
+- Homebrew on macOS and Linux
+- winget on Windows
+- GitHub Releases as the canonical binary source
+
+Use [docs/install.md](docs/install.md) for installation and [docs/migration.md](docs/migration.md) when you need to switch install methods or release channels.
+
 The repository is a Go monorepo with four main modules:
 - `kernel`: background local engine, SQLite store, timer, IPC, update checks
 - `tui`: Bubble Tea terminal UI
@@ -23,6 +30,8 @@ The repository is a Go monorepo with four main modules:
 ## Quick Start
 
 See the full installation guide in [docs/install.md](docs/install.md).
+
+If you are migrating from the install script, another package manager, or a beta channel, use [docs/migration.md](docs/migration.md) before reinstalling.
 
 Runtime notes:
 - local alerts are emitted by the background engine, not the TUI process
@@ -60,6 +69,7 @@ crona completion fish
 - [Docs Index](docs/README.md)
 - [Concepts](docs/concepts.md)
 - [Install](docs/install.md)
+- [Migration](docs/migration.md)
 - [Development](docs/development.md)
 - [Contributing](docs/contributing.md)
 - [Release Process](docs/release.md)

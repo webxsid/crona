@@ -18,6 +18,11 @@ Release assets ship as:
 - one shared `crona-assets-<version>.tar.gz` archive for report/export assets
 - installer scripts for Unix-like systems and Windows
 
+> [!IMPORTANT]
+> Crona 1.6.x shows an install-script deprecation banner in the Updates view.
+> GitHub install scripts are legacy fallback and will stop being exposed in-app moving forward.
+> Prefer a managed package installer when possible, and use [migration.md](migration.md) if you need to switch install methods or release channels.
+
 ## macOS And Linux
 
 Prefer Homebrew:
@@ -51,11 +56,13 @@ Beta users update with:
 brew upgrade crona-beta
 ```
 
-Fallback install script:
+Legacy install script fallback:
 
 ```bash
 curl -fsSL https://crona.work/install.sh | sh
 ```
+
+This script is legacy fallback, not the preferred path. Crona 1.6.x warns about it in the Updates view, and later releases stop exposing it there.
 
 If you need to switch install methods or release channels, use the migration guide:
 
@@ -65,7 +72,7 @@ https://crona.work/migration
 
 The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
 
-Install a specific release directly from GitHub:
+Legacy direct GitHub install:
 
 ```bash
 curl -fsSL https://github.com/webxsid/crona/releases/download/<version>/install-crona-tui.sh | sh
@@ -100,13 +107,15 @@ Winget users update with:
 winget upgrade --id Webxsid.Crona -e
 ```
 
-Fallback install from PowerShell:
+Legacy install script fallback:
 
 ```powershell
 $version = "<version>"
 Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
+
+This is also a legacy fallback path. For managed installs, winget owns the update command and Crona only shows it in the Updates view.
 
 By default, Windows installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to the user `PATH`, and stores runtime data under `%LocalAppData%\Crona`.
 
@@ -160,6 +169,7 @@ Use the in-app `Updates` view to check, read notes, and install supported update
 - Winget installs never self-update from inside Crona.
 - The TUI shows the source-aware update command for the current install type.
 - When Crona asks you to migrate, back up with `crona backup`, reinstall with your preferred method, then restore with `crona restore <path>`.
+- The migration guide at [docs/migration.md](migration.md) is the canonical handoff for switching install methods or release channels.
 - Script installs rerun the install script.
 - Winget installs use `winget upgrade --id Webxsid.Crona -e`.
 - Source installs show the `go install` command.

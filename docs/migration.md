@@ -2,6 +2,8 @@
 
 Use this guide when switching Crona install methods or release channels.
 
+This is the canonical handoff for moving between Homebrew, winget, the legacy install script, or the `crona-beta`/stable channels. Crona's Updates view points here once the migration banner appears.
+
 The safe flow is:
 
 1. Create a backup of your database.
@@ -9,6 +11,12 @@ The safe flow is:
 3. Remove the old runtime directory if you want a clean switch.
 4. Install Crona again with the method you want to keep.
 5. Restore the database into the fresh runtime directory.
+
+After migration, the package manager owns updates:
+
+- Homebrew: `brew upgrade crona` or `brew upgrade crona-beta`
+- Winget: `winget upgrade --id Webxsid.Crona -e`
+- Source installs: rerun the `go install` command
 
 ## 1. Back Up
 
@@ -44,6 +52,7 @@ Use the package manager or installer you are migrating away from:
   ```
 - Script/manual installs:
   remove the installed binaries from your `PATH`, or rerun your package manager install after cleanup.
+  If you came from the legacy install script, move to a managed package installer after cleanup.
 
 ## 3. Remove The Old Runtime Dir
 
@@ -94,4 +103,3 @@ If Crona already has a `crona.db` at the target runtime dir, the command asks be
   - Homebrew: `brew upgrade crona`
   - Homebrew beta: `brew upgrade crona-beta`
   - Winget: `winget upgrade --id Webxsid.Crona -e`
-

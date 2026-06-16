@@ -12,45 +12,6 @@ import (
 	viewtypes "crona/tui/internal/tui/views/types"
 )
 
-func firstUpdateSummary(status *api.UpdateStatus) string {
-	if status == nil {
-		return ""
-	}
-	if title := strings.TrimSpace(status.ReleaseName); title != "" {
-		return title
-	}
-	for _, line := range strings.Split(status.ReleaseNotes, "\n") {
-		line = strings.TrimSpace(strings.TrimPrefix(line, "#"))
-		if line != "" {
-			return line
-		}
-	}
-	return ""
-}
-
-func installActionLabel(status *api.UpdateStatus, installAvailable bool) string {
-	if versionpkg.InstallScriptDeprecationEnabled() || (status != nil && status.InstallScriptDeprecated) {
-		return "open migration guide"
-	}
-	if status != nil && strings.TrimSpace(status.UpdateCommand) != "" && !installAvailable {
-		if viewchrome.IsMigrationCommand(status.UpdateCommand) {
-			return "copy migration command"
-		}
-		return "copy update command"
-	}
-	if installAvailable {
-		return "install"
-	}
-	return "install unavailable"
-}
-
-func updateOpenActionLabel(status *api.UpdateStatus) string {
-	if versionpkg.InstallScriptDeprecationEnabled() || (status != nil && status.InstallScriptDeprecated) {
-		return "open migration guide"
-	}
-	return "open release page"
-}
-
 func installScriptDeprecationBanner(theme viewtypes.Theme, status *api.UpdateStatus) []string {
 	if !versionpkg.InstallScriptDeprecationEnabled() && (status == nil || !status.InstallScriptDeprecated) {
 		return nil

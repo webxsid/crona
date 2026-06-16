@@ -37,6 +37,8 @@ The release version must stay consistent across:
 
 The release workflow runs tests, invokes GoReleaser, publishes GitHub Releases, uploads the legacy installer scripts plus shared assets tarball, then normalizes the GitHub release state based on tag shape before pushing the Homebrew tap update to `webxsid/homebrew-tap` and the stable winget manifest update to the configured winget-pkgs fork. Stable tags become latest releases and publish `Formula/crona.rb`; `-beta` tags become prereleases and publish `Formula/crona-beta.rb`. The canonical binary source remains GitHub Releases, and the TUI and CLI keep using the release body and source-aware update command.
 
+End-user migration guidance lives in [migration.md](migration.md). If the install or update story changes, update the install and migration docs together so the app banner, release notes, and website docs stay aligned.
+
 The isolated Homebrew validation workflow runs in CI on both macOS and Linux so formula and archive issues are caught before tagging.
 
 For local release validation and tap testing, see [distribution.md](distribution.md).

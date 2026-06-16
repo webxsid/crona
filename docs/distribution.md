@@ -2,6 +2,8 @@
 
 This page covers local validation of Crona's GoReleaser release flow, the isolated Homebrew workflow on macOS and Linux, and the winget publishing path for Windows.
 
+This page is for maintainers. End users should start with [install.md](install.md) and [migration.md](migration.md); do not send them here for day-to-day install instructions.
+
 For end-user channel switches, see [migration.md](migration.md). That guide uses `crona backup` and `crona restore <path>` so users can keep their `crona.db` while they reinstall with a different package manager.
 
 The shared Homebrew formula generator reads `CRONA_HOMEBREW_BASE_URL` when it needs to emit release URLs. The publish script sets that automatically for GitHub Releases; local validation can set it to a `file://` path against generated artifacts.
