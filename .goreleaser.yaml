@@ -82,7 +82,7 @@ release:
 
 before:
   hooks:
-    - CRONA_RELEASE_ASSETS_ONLY=1 sh ./scripts/build_release.sh {{ .Tag }}
+    - sh -c 'CRONA_RELEASE_ASSETS_ONLY=1 sh ./scripts/build_release.sh {{ .Tag }}'
 
 winget:
   - name: crona
