@@ -102,7 +102,7 @@ winget:
       token: "{{ .Env.WINGET_PKGS_GITHUB_TOKEN }}"
       branch: "crona-{{ .Tag }}"
       pull_request:
-        enabled: true
+        enabled: false
         draft: false
         base:
           owner: microsoft
