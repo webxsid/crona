@@ -18,9 +18,9 @@ builds:
     ldflags:
       - -s -w
       - -X crona/shared/version.Version={{.Version}}
-  - id: crona-kernel
+  - id: crona-daemon
     main: ./kernel/cmd/crona-kernel
-    binary: crona-kernel
+    binary: crona-daemon
     env:
       - CGO_ENABLED=0
     goos:
@@ -53,7 +53,7 @@ archives:
   - id: crona-bundle
     ids:
       - crona
-      - crona-kernel
+      - crona-daemon
       - crona-tui
     formats:
       - zip
