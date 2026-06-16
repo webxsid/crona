@@ -520,6 +520,7 @@ func nextAlertSoundPreset(
 	options := []sharedtypes.AlertSoundPreset{
 		sharedtypes.AlertSoundPresetChime,
 		sharedtypes.AlertSoundPresetSoftBell,
+		sharedtypes.AlertSoundPresetNotificationPing,
 		sharedtypes.AlertSoundPresetFocusGong,
 		sharedtypes.AlertSoundPresetMinimalClick,
 	}

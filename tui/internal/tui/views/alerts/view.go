@@ -84,7 +84,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	cur = max(cur, 0)
 	visibleRows, selectedVisible := alertsmeta.GroupedVisibleRows(indices, rows, cur)
-	inner := state.Height - 5
+	inner := state.Height - 7
 	inner = max(inner, 1)
 	start, end := viewchrome.ListWindow(selectedVisible, len(visibleRows), inner)
 	if start > 0 {
@@ -108,6 +108,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if remaining := len(visibleRows) - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
+	lines = append(lines, "", soundCreditLine(theme))
 	return viewchrome.RenderPaneBox(
 		theme,
 		active,
@@ -115,4 +116,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		state.Height,
 		viewhelpers.StringsJoin(lines),
 	)
+}
+
+func soundCreditLine(theme types.Theme) string {
+	return theme.StyleDim.Render("Sound Effect by ") +
+		theme.StyleHeader.Render("Universfield") +
+		theme.StyleDim.Render(" from ") +
+		theme.StyleHeader.Render("Pixabay")
 }

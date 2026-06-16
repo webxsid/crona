@@ -367,6 +367,8 @@ func soundPresetLabel(value sharedtypes.AlertSoundPreset) string {
 	switch sharedtypes.NormalizeAlertSoundPreset(value) {
 	case sharedtypes.AlertSoundPresetSoftBell:
 		return "Soft Bell"
+	case sharedtypes.AlertSoundPresetNotificationPing:
+		return "Notification Ping"
 	case sharedtypes.AlertSoundPresetFocusGong:
 		return "Focus Gong"
 	case sharedtypes.AlertSoundPresetMinimalClick:

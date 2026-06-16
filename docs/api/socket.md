@@ -74,8 +74,8 @@ Use these files as the canonical contract:
 
 - The local engine IPC surface is shared across Crona clients.
 - It is intentionally documented because the project is open source.
-- Before `1.0.0`, consumers should expect the shared Go types and method constants to be the source of truth over any prose doc.
-- GUI compatibility should be checked against `kernel.info.get -> protocolVersion`.
+- Before `1.0.0`, use the shared Go types and method constants as the source of truth over any prose doc.
+- Check GUI compatibility against `kernel.info.get -> protocolVersion`.
 - `protocolVersion` is independent from the Crona release version and only changes when the local IPC contract or its client-visible semantics change.
 
 `kernel.info.get` is the expected GUI handshake:
@@ -265,7 +265,7 @@ Timer start behavior notes:
 - If `issueId` is omitted, the local engine resolves the current active context issue.
 - If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
 - `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
-- Clients should offer an explicit resume-vs-continue choice. Resuming should call `stash.apply`; continuing fresh should retry `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.
+- Clients expose an explicit resume-vs-continue choice. Resuming calls `stash.apply`; continuing fresh retries `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.
 - Inactivity alerts use core settings for enablement, first-alert threshold, and repeat interval. The default is enabled, 60 minutes to first alert, and 60 minutes between repeats.
 
 ### Context

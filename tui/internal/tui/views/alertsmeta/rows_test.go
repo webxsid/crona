@@ -32,4 +32,7 @@ func TestRowsIncludeInactivityControls(t *testing.T) {
 	if seen[RowInactivityRepeat] != "90m" {
 		t.Fatalf("expected inactivity repeat row, got %q", seen[RowInactivityRepeat])
 	}
+	if got := soundPresetLabel(sharedtypes.AlertSoundPresetNotificationPing); got != "Notification Ping" {
+		t.Fatalf("expected notification ping label, got %q", got)
+	}
 }

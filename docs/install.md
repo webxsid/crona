@@ -15,7 +15,7 @@ Installed binaries:
 Release assets ship as:
 
 - one platform bundle zip containing all three binaries
-- one shared `crona-assets-<version>.tar.gz` archive for report/export assets
+- one shared `crona-assets-<version>.tar.gz` archive for legacy script installers and release compatibility
 - installer scripts for Unix-like systems and Windows
 
 > [!IMPORTANT]
@@ -62,7 +62,7 @@ Legacy install script fallback:
 curl -fsSL https://crona.work/install.sh | sh
 ```
 
-This script is legacy fallback, not the preferred path. Crona 1.6.x warns about it in the Updates view, and later releases stop exposing it there.
+This script is a legacy fallback, not the preferred path. Crona 1.6.x warns about it in the Updates view, and later releases stop exposing it there.
 
 If you need to switch install methods or release channels, use the migration guide:
 
@@ -117,7 +117,7 @@ Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/i
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
 
-This is also a legacy fallback path. For managed installs, winget owns the update command and Crona only shows it in the Updates view.
+For managed installs, winget owns the update command, and Crona only surfaces it in the Updates view.
 
 By default, Windows installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to the user `PATH`, and stores runtime data under `%LocalAppData%\Crona`.
 
@@ -130,7 +130,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui
 
 ## Manual Installation
 
-Download your platform bundle zip from the release page, extract `crona`, `crona-tui`, and `crona-kernel`, and keep the shared assets archive from the same release if you want the bundled report templates and export assets.
+Download your platform bundle zip from the release page and extract `crona`, `crona-tui`, and `crona-kernel`. The embedded templates and alert assets ship inside the binaries, so the shared assets archive is only needed for the legacy script installers.
 
 The TUI starts the local engine automatically when needed. `crona-tui` remains available as a compatibility entrypoint.
 
@@ -202,6 +202,10 @@ Supported notification helpers by OS:
   - sound playback: PowerShell `SoundPlayer`
 
 The `Alerts` view shows the active backend and whether subtitle, urgency, icon, and bundled sound support are currently available on the running machine.
+
+Bundled alert sounds include royalty-free effects by Universfield on Pixabay:
+
+> Sound Effect by [Universfield](https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248)
 
 ## PDF Rendering
 

@@ -2,6 +2,12 @@
 
 All notable changes to **Crona** are documented here.
 
+## [Unreleased]
+
+### Changed
+- Refined installation, migration, API, and release documentation to remove draft-like phrasing and keep the public docs consistent.
+- Updated bundled alert documentation to reflect the new MP3 asset set and attribution requirements.
+
 ## [1.6.0-beta.3] - 2026-06-16
 
 Crona v1.6.0-beta.3 trims dead code from the release/update path, removes obsolete local-update scaffolding, and fixes GitHub release publication so the public release body is sourced from `docs/release-notes/<tag>.md`.

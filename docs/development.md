@@ -182,7 +182,7 @@ go test ./kernel/internal/export
 go test ./kernel/internal/... ./shared/... ./tui/internal/api
 ```
 
-If renderer tooling is missing, markdown export should still work and the runtime asset status should mark PDF rendering as unavailable.
+If renderer tooling is missing, markdown export still works and the runtime asset status marks PDF rendering as unavailable.
 
 ## Repository Layout
 

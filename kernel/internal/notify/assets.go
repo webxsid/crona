@@ -5,19 +5,27 @@ import (
 	"os"
 	"path/filepath"
 
+	assetbundle "crona.local/assets"
 	runtimepkg "crona/kernel/internal/runtime"
 	sharedtypes "crona/shared/types"
 )
 
 var alertSoundFiles = map[sharedtypes.AlertSoundPreset]string{
-	sharedtypes.AlertSoundPresetChime:        "sounds/chime.wav",
-	sharedtypes.AlertSoundPresetSoftBell:     "sounds/soft-bell.wav",
-	sharedtypes.AlertSoundPresetFocusGong:    "sounds/focus-gong.wav",
-	sharedtypes.AlertSoundPresetMinimalClick: "sounds/minimal-click.wav",
+	sharedtypes.AlertSoundPresetChime:            "sounds/chime.mp3",
+	sharedtypes.AlertSoundPresetSoftBell:         "sounds/soft-bell.mp3",
+	sharedtypes.AlertSoundPresetNotificationPing: "sounds/notification-ping.mp3",
+	sharedtypes.AlertSoundPresetFocusGong:        "sounds/focus-gong.mp3",
+	sharedtypes.AlertSoundPresetMinimalClick:     "sounds/minimal-click.mp3",
 }
 
 func alertIconPath(paths runtimepkg.Paths) string {
 	for _, candidate := range alertAssetCandidates(paths, "logo.svg") {
+		if fileExists(candidate) {
+			return candidate
+		}
+	}
+	if err := assetbundle.Ensure(paths.BundledAssetsDir, filepath.Join("alerts", "logo.svg")); err == nil {
+		candidate := filepath.Join(paths.BundledAssetsDir, "alerts", "logo.svg")
 		if fileExists(candidate) {
 			return candidate
 		}
@@ -31,6 +39,12 @@ func alertSoundPath(paths runtimepkg.Paths, preset sharedtypes.AlertSoundPreset)
 		name = alertSoundFiles[sharedtypes.AlertSoundPresetChime]
 	}
 	for _, candidate := range alertAssetCandidates(paths, name) {
+		if fileExists(candidate) {
+			return candidate, nil
+		}
+	}
+	if err := assetbundle.Ensure(paths.BundledAssetsDir, filepath.Join("alerts", name)); err == nil {
+		candidate := filepath.Join(paths.BundledAssetsDir, "alerts", name)
 		if fileExists(candidate) {
 			return candidate, nil
 		}

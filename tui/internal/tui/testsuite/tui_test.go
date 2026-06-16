@@ -611,6 +611,11 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 			t.Fatalf("expected alerts view to contain %q, got %q", want, rendered)
 		}
 	}
+	for _, want := range []string{"Sound Effect by", "Universfield", "Pixabay"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected alerts footer to contain %q, got %q", want, rendered)
+		}
+	}
 
 	state.Cursors["settings"] = 15
 	rendered = support.RenderSettings(state)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	assetbundle "crona.local/assets"
 	"crona/kernel/internal/runtime"
 )
 
@@ -37,6 +38,9 @@ func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte
 			return []byte(body), "preset:" + presetID, nil
 		}
 	}
+	embeddedCandidates := []string{
+		filepath.Join("export", descriptor.bundledPath),
+	}
 	candidates := []string{
 		filepath.Join(paths.BundledAssetsDir, "export", descriptor.bundledPath),
 		filepath.Join("assets", "export", descriptor.bundledPath),
@@ -50,12 +54,27 @@ func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte
 			filepath.Join("..", "assets", "export", descriptor.legacyBundledPath),
 			filepath.Join("..", "..", "assets", "export", descriptor.legacyBundledPath),
 		)
+		embeddedCandidates = append(embeddedCandidates, filepath.Join("export", descriptor.legacyBundledPath))
 	}
 	for _, candidate := range candidates {
 		body, err := os.ReadFile(candidate)
 		if err == nil {
 			return body, candidate, nil
 		}
+	}
+	for _, embeddedCandidate := range embeddedCandidates {
+		body, ok, err := assetbundle.Read(embeddedCandidate)
+		if err != nil {
+			return nil, "", err
+		}
+		if !ok {
+			continue
+		}
+		if err := assetbundle.Ensure(paths.BundledAssetsDir, embeddedCandidate); err != nil {
+			return nil, "", err
+		}
+		bundledPath := filepath.Join(paths.BundledAssetsDir, embeddedCandidate)
+		return body, bundledPath, nil
 	}
 	return []byte(
 			descriptor.fallback,

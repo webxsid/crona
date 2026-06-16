@@ -37,6 +37,9 @@ func Run(ctx context.Context) (runErr error) {
 	if err := runtime.EnsurePaths(paths); err != nil {
 		return fmt.Errorf("ensure runtime paths: %w", err)
 	}
+	if err := runtime.EnsureBundledAssets(paths); err != nil {
+		return fmt.Errorf("ensure bundled assets: %w", err)
+	}
 
 	logger := runtime.NewLogger(paths)
 	startedAt := time.Now().UTC().Format(time.RFC3339)

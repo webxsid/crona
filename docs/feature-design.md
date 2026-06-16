@@ -23,9 +23,9 @@ Every mutation in Crona already produces an immutable `Op` record:
 { id, user_id, device_id, entity, entity_id, action, payload, timestamp }
 ```
 
-This is an append-only log of all state changes, ordered by timestamp, tagged by device. Syncing Crona across devices reduces to: share the op log, replay it on each device, derive consistent state.
+The op log is append-only, ordered by timestamp, and tagged by device. Syncing Crona across devices reduces to sharing the op log, replaying it on each device, and deriving consistent state.
 
-This is structurally similar to how distributed databases, CRDTs, and event-sourced systems handle sync. No central authority is required.
+The model is structurally similar to how distributed databases, CRDTs, and event-sourced systems handle sync. No central authority is required.
 
 ### Proposed Solution: Layered Sync
 
@@ -91,5 +91,5 @@ Since ops are immutable and timestamped, conflicts are resolved deterministicall
 
 - Op replay must be idempotent.
 - Minor clock skew is acceptable for last-write-wins.
-- The local DB should remain derivable from the op log.
+- The local DB remains derivable from the op log.
 - Every mutation must produce an op.

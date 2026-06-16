@@ -92,15 +92,19 @@ func NormalizeAlertUrgency(value AlertUrgency) AlertUrgency {
 type AlertSoundPreset string
 
 const (
-	AlertSoundPresetChime        AlertSoundPreset = "chime"
-	AlertSoundPresetSoftBell     AlertSoundPreset = "soft_bell"
-	AlertSoundPresetFocusGong    AlertSoundPreset = "focus_gong"
-	AlertSoundPresetMinimalClick AlertSoundPreset = "minimal_click"
+	AlertSoundPresetChime            AlertSoundPreset = "chime"
+	AlertSoundPresetSoftBell         AlertSoundPreset = "soft_bell"
+	AlertSoundPresetNotificationPing AlertSoundPreset = "notification_ping"
+	AlertSoundPresetFocusGong        AlertSoundPreset = "focus_gong"
+	AlertSoundPresetMinimalClick     AlertSoundPreset = "minimal_click"
 )
 
 func NormalizeAlertSoundPreset(value AlertSoundPreset) AlertSoundPreset {
 	switch value {
-	case AlertSoundPresetSoftBell, AlertSoundPresetFocusGong, AlertSoundPresetMinimalClick:
+	case AlertSoundPresetSoftBell,
+		AlertSoundPresetNotificationPing,
+		AlertSoundPresetFocusGong,
+		AlertSoundPresetMinimalClick:
 		return value
 	default:
 		return AlertSoundPresetChime
@@ -111,6 +115,7 @@ func AvailableAlertSoundPresets() []AlertSoundPreset {
 	return []AlertSoundPreset{
 		AlertSoundPresetChime,
 		AlertSoundPresetSoftBell,
+		AlertSoundPresetNotificationPing,
 		AlertSoundPresetFocusGong,
 		AlertSoundPresetMinimalClick,
 	}

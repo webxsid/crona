@@ -3,6 +3,7 @@ module crona/kernel
 go 1.26.1
 
 require (
+	crona.local/assets v0.0.0
 	github.com/google/uuid v1.6.0
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/sqlitedialect v1.2.15
@@ -27,3 +28,5 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.38.0 // indirect
 )
+
+replace crona.local/assets => ../assets

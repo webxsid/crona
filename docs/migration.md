@@ -2,7 +2,7 @@
 
 Use this guide when switching Crona install methods or release channels.
 
-This is the canonical handoff for moving between Homebrew, winget, the legacy install script, or the `crona-beta`/stable channels. Crona's Updates view points here once the migration banner appears.
+Use this guide when moving between Homebrew, winget, the legacy install script, or the `crona-beta`/stable channels. Crona's Updates view points here once the migration banner appears.
 
 The safe flow is:
 
