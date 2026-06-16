@@ -55,7 +55,7 @@ stop_running_kernel_at() {
 
   kernel_cmd="$(ps -p "${kernel_pid}" -o command= 2>/dev/null || true)"
   case "${kernel_cmd}" in
-    *crona-kernel*)
+    *crona-daemon*)
       ;;
     *)
       echo "Refusing to stop pid ${kernel_pid}; kernel.json does not point at a Crona kernel process." >&2
@@ -255,7 +255,7 @@ if [ -f "${VERSION_FILE}" ]; then
   INSTALLED_VERSION="$(tr -d '\n' < "${VERSION_FILE}")"
 fi
 
-if [ -x "${INSTALL_DIR}/crona" ] || [ -x "${INSTALL_DIR}/crona-kernel" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; then
+if [ -x "${INSTALL_DIR}/crona" ] || [ -x "${INSTALL_DIR}/crona-daemon" ] || [ -x "${INSTALL_DIR}/crona-tui" ]; then
   prompt_replace "${INSTALLED_VERSION}"
 fi
 
@@ -283,10 +283,10 @@ verify_checksums "${BUNDLE_NAME}"
 mkdir -p "${BUNDLE_DIR}"
 unzip -q "${BUNDLE_FILE}" -d "${BUNDLE_DIR}"
 CLI_FILE="${BUNDLE_DIR}/crona-${VERSION}-${OS}-${ARCH}"
-KERNEL_FILE="${BUNDLE_DIR}/crona-kernel-${VERSION}-${OS}-${ARCH}"
+KERNEL_FILE="${BUNDLE_DIR}/crona-daemon-${VERSION}-${OS}-${ARCH}"
 TUI_FILE="${BUNDLE_DIR}/crona-tui-${VERSION}-${OS}-${ARCH}"
 CLI_FILE="$(resolve_binary_path "${CLI_FILE}" "${BUNDLE_DIR}/crona")"
-KERNEL_FILE="$(resolve_binary_path "${KERNEL_FILE}" "${BUNDLE_DIR}/crona-kernel")"
+KERNEL_FILE="$(resolve_binary_path "${KERNEL_FILE}" "${BUNDLE_DIR}/crona-daemon")"
 TUI_FILE="$(resolve_binary_path "${TUI_FILE}" "${BUNDLE_DIR}/crona-tui")"
 verify_nonempty "${CLI_FILE}"
 verify_nonempty "${KERNEL_FILE}"
@@ -294,7 +294,7 @@ verify_nonempty "${TUI_FILE}"
 chmod +x "${CLI_FILE}" "${KERNEL_FILE}" "${TUI_FILE}"
 echo "Installing binaries..."
 mv "${CLI_FILE}" "${INSTALL_DIR}/crona"
-mv "${KERNEL_FILE}" "${INSTALL_DIR}/crona-kernel"
+mv "${KERNEL_FILE}" "${INSTALL_DIR}/crona-daemon"
 mv "${TUI_FILE}" "${INSTALL_DIR}/crona-tui"
 rm -rf "${ASSETS_DIR}/export"
 echo "Extracting bundled assets..."
@@ -309,7 +309,7 @@ EOF
 echo
 echo "Installed:"
 echo "  ${INSTALL_DIR}/crona"
-echo "  ${INSTALL_DIR}/crona-kernel"
+echo "  ${INSTALL_DIR}/crona-daemon"
 echo "  ${INSTALL_DIR}/crona-tui"
 echo "  runtime data: ${CRONA_HOME}"
 echo "  ${ASSETS_DIR}/export"

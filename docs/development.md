@@ -12,17 +12,17 @@ make help
 make build
 make test
 make lint
-make install-kernel
+make install-daemon
 make install-tui
 make install-cli
 ```
 
-Development docs use `kernel` when referring to the Go module, binary, command namespace, or IPC method names. For product copy, the same process is the local engine or background engine.
+Development docs use `kernel` when referring to the Go module, source tree, or IPC method names. For product copy, the shipped engine binary is `crona-daemon`, and the same process is usually called the daemon or local engine.
 
 Manual builds from the repo root:
 
 ```bash
-cd kernel && go build -o ../bin/crona-kernel ./cmd/crona-kernel
+cd kernel && go build -o ../bin/crona-daemon ./cmd/crona-kernel
 cd tui && go build -o ../bin/crona-tui .
 cd cli && go build -o ../bin/crona ./cmd/crona
 ```
@@ -40,12 +40,12 @@ Set `CRONA_ENV=Dev` to enable developer helpers and `-dev` binary names.
 In dev mode, install targets become:
 
 ```bash
-CRONA_ENV=Dev make install-kernel install-tui install-cli
+CRONA_ENV=Dev make install-daemon install-tui install-cli
 ```
 
 This produces:
 
-- `bin/crona-kernel-dev`
+- `bin/crona-daemon-dev`
 - `bin/crona-tui-dev`
 - `bin/crona-dev`
 
@@ -63,7 +63,7 @@ The dev seed data is intentionally shaped for dashboard validation. It creates r
 Run the local engine:
 
 ```bash
-make run-kernel
+make run-daemon
 ```
 
 Run the TUI:
@@ -82,7 +82,7 @@ Use PowerShell from the repo root:
 
 ```powershell
 $env:CRONA_ENV = "Dev"
-go build -o .\bin\crona-kernel-dev.exe .\kernel\cmd\crona-kernel
+go build -o .\bin\crona-daemon-dev.exe .\kernel\cmd\crona-kernel
 go build -o .\bin\crona-tui-dev.exe .\tui
 $env:PATH = "$PWD\bin;$env:PATH"
 .\bin\crona-dev.exe

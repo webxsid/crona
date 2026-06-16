@@ -20,7 +20,7 @@ type Deps struct {
 }
 
 func Usage() string {
-	return "Usage: crona kernel <attach|detach|restart|wipe-data|info|status> [--json]\n"
+	return "Usage: crona daemon <attach|detach|restart|wipe-data|info|status> [--json]\n"
 }
 
 func Run(args []string, deps Deps) error {
@@ -58,14 +58,14 @@ func Run(args []string, deps Deps) error {
 		_, err := fmt.Fprintln(deps.Stdout, "kernel restart requested")
 		return err
 	case "wipe-data":
-		fs := flags.New("kernel wipe-data")
+		fs := flags.New("daemon wipe-data")
 		force := fs.Bool("force", false, "")
 		jsonFlag := fs.Bool("json", false, "")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
 		if !*force {
-			return errors.New("kernel wipe-data requires --force")
+			return errors.New("daemon wipe-data requires --force")
 		}
 		if err := deps.CallKernel(protocol.MethodKernelWipeData, shareddto.ConfirmDangerousActionRequest{Confirm: true}, nil); err != nil {
 			return err
@@ -90,6 +90,6 @@ func Run(args []string, deps Deps) error {
 			runtimepkg.KernelEndpoint(&out),
 		)
 	default:
-		return fmt.Errorf("unknown kernel command: %s", args[0])
+		return fmt.Errorf("unknown daemon command: %s", args[0])
 	}
 }

@@ -128,7 +128,7 @@ func ShutdownKernel(deps Deps) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("kernel did not stop within 5s")
+	return fmt.Errorf("daemon did not stop within 5s")
 }
 
 func EnsureKernel(deps Deps) (*sharedtypes.KernelInfo, error) {
@@ -137,7 +137,7 @@ func EnsureKernel(deps Deps) (*sharedtypes.KernelInfo, error) {
 		return info, nil
 	}
 	if err := LaunchKernel(deps); err != nil {
-		return nil, fmt.Errorf("launch kernel: %w", err)
+		return nil, fmt.Errorf("launch daemon: %w", err)
 	}
 	for i := 0; i < 20; i++ {
 		deps.TimeSleep(250 * time.Millisecond)
@@ -145,7 +145,7 @@ func EnsureKernel(deps Deps) (*sharedtypes.KernelInfo, error) {
 			return info, nil
 		}
 	}
-	return nil, fmt.Errorf("kernel failed to start within 5s")
+	return nil, fmt.Errorf("daemon failed to start within 5s")
 }
 
 func ReadKernelInfo(deps Deps) (*sharedtypes.KernelInfo, error) {
@@ -225,7 +225,7 @@ func KernelTransport(info *sharedtypes.KernelInfo) string {
 func LaunchKernel(deps Deps) error {
 	candidates := KernelLaunchCandidates(deps)
 	if len(candidates) == 0 {
-		return errors.New("no kernel launcher candidates found")
+		return errors.New("no daemon launcher candidates found")
 	}
 	failures := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {

@@ -13,7 +13,7 @@ import (
 func TestNormalizeKernelInfoPreservesWindowsNamedPipeFields(t *testing.T) {
 	info := &sharedtypes.KernelInfo{
 		Transport:  localipc.TransportWindowsNamedPipe,
-		Endpoint:   `\\.\pipe\crona-kernel`,
+		Endpoint:   `\\.\pipe\crona-daemon`,
 		SocketPath: "",
 	}
 
@@ -22,7 +22,7 @@ func TestNormalizeKernelInfoPreservesWindowsNamedPipeFields(t *testing.T) {
 	if info.Transport != localipc.TransportWindowsNamedPipe {
 		t.Fatalf("expected windows transport, got %q", info.Transport)
 	}
-	if info.Endpoint != `\\.\pipe\crona-kernel` {
+	if info.Endpoint != `\\.\pipe\crona-daemon` {
 		t.Fatalf("expected endpoint to be preserved, got %q", info.Endpoint)
 	}
 	if info.SocketPath != "" {
@@ -54,12 +54,12 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 		t.Fatalf("write go.work: %v", err)
 	}
 	if err := os.WriteFile(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel"), []byte("stub"), 0o644); err != nil {
-		t.Fatalf("write repo kernel marker: %v", err)
+		t.Fatalf("write repo daemon marker: %v", err)
 	}
 
-	sibling := filepath.Join(exeDir, "crona-kernel.exe")
-	pathCandidate := filepath.Join(pathDir, "crona-kernel.exe")
-	repoBin := filepath.Join(repoRoot, "bin", "crona-kernel.exe")
+	sibling := filepath.Join(exeDir, "crona-daemon.exe")
+	pathCandidate := filepath.Join(pathDir, "crona-daemon.exe")
+	repoBin := filepath.Join(repoRoot, "bin", "crona-daemon.exe")
 	for _, file := range []string{sibling, pathCandidate, repoBin} {
 		if err := os.WriteFile(file, []byte("stub"), 0o755); err != nil {
 			t.Fatalf("write candidate %s: %v", file, err)
@@ -67,12 +67,12 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 	}
 
 	got := KernelLaunchCandidates(Deps{
-		KernelBinary: func() string { return "crona-kernel.exe" },
+		KernelBinary: func() string { return "crona-daemon.exe" },
 		OSExecutable: func() (string, error) { return filepath.Join(exeDir, "crona.exe"), nil },
 		OSGetwd:      func() (string, error) { return repoRoot, nil },
 		ExecLookPath: func(file string) (string, error) {
 			switch file {
-			case "crona-kernel.exe":
+			case "crona-daemon.exe":
 				return pathCandidate, nil
 			case "go":
 				return filepath.Join(pathDir, "go"), nil
@@ -94,9 +94,9 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 	}
 
 	for _, want := range []string{
-		"sibling crona-kernel.exe",
-		"PATH crona-kernel.exe",
-		"repo bin crona-kernel.exe",
+		"sibling crona-daemon.exe",
+		"PATH crona-daemon.exe",
+		"repo bin crona-daemon.exe",
 	} {
 		if !slices.Contains(names, want) {
 			t.Fatalf("expected candidate %q in %+v", want, names)

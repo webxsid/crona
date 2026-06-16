@@ -61,7 +61,7 @@ func (m Model) selfUpdateUnsupportedReason() string {
 	if m.kernelInfo == nil {
 		return "Kernel info is unavailable. Please update manually."
 	}
-	if reason := appruntime.NonStandardRuntimeReason(m.kernelInfo.ExecutablePath, config.KernelBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {
+	if reason := appruntime.NonStandardRuntimeReason(m.kernelInfo.ExecutablePath, config.DaemonBinaryNameForMode(kernelEnvMode(m.kernelInfo))); reason != "" {
 		return reason
 	}
 	return ""

@@ -66,7 +66,7 @@ archive_name() {
 emit_install_lines() {
   indent="$1"
   printf '%sbin.install "crona"\n' "$indent"
-  printf '%sbin.install "crona-kernel"\n' "$indent"
+  printf '%sbin.install "crona-daemon"\n' "$indent"
   printf '%sbin.install "crona-tui"\n' "$indent"
 }
 
@@ -195,6 +195,7 @@ emit_install_dispatch >> "$output_path"
 cat <<'EOF' >> "$output_path"
   test do
     system "#{bin}/crona", "--version"
+    system "#{bin}/crona-daemon", "--version"
   end
 end
 EOF

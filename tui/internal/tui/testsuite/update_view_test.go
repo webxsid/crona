@@ -69,7 +69,7 @@ func TestSelfUpdateDisabledForNonStandardRuntimeLocation(t *testing.T) {
 		InstallAvailable: true,
 	}, "/Users/sm2101/Projects/crona-node/bin/crona-tui", &api.KernelInfo{
 		Env:            "prod",
-		ExecutablePath: filepath.Join("/tmp/crona-install", config.KernelBinaryNameForMode("prod")),
+		ExecutablePath: filepath.Join("/tmp/crona-install", config.DaemonBinaryNameForMode("prod")),
 	})
 
 	if got := model.SelfUpdateUnsupportedReasonForTest(); got == "" {
@@ -275,7 +275,7 @@ func TestUpdatesViewExpandedDiagnosticsRevealInternalFields(t *testing.T) {
 		},
 		UpdateManualReason:   "managed by Homebrew",
 		TUIExecutablePath:    "/opt/homebrew/bin/crona-tui",
-		KernelExecutablePath: "/opt/homebrew/bin/crona-kernel",
+		KernelExecutablePath: "/opt/homebrew/bin/crona-daemon",
 	})
 	for _, want := range []string{
 		"Diagnostics",

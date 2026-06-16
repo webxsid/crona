@@ -14,7 +14,7 @@ Managed package installers are the preferred distribution path:
 Use [docs/install.md](docs/install.md) for installation and [docs/migration.md](docs/migration.md) when you need to switch install methods or release channels.
 
 The repository is a Go monorepo with four main modules:
-- `kernel`: background local engine, SQLite store, timer, IPC, update checks
+- `kernel`: internal source tree for the background daemon, SQLite store, timer, IPC, and update checks
 - `tui`: Bubble Tea terminal UI
 - `cli`: scriptable commands and local engine control flows
 - `shared`: shared types, config, protocol, and utilities
@@ -45,15 +45,15 @@ Launch the TUI:
 crona
 ```
 
-Inspect the local engine from the CLI:
+Inspect the daemon from the CLI:
 
 ```bash
-crona kernel attach --json
-crona kernel status --json
-crona kernel info --json
+crona daemon attach --json
+crona daemon status --json
+crona daemon info --json
 ```
 
-The command group is named `kernel` because it controls the internal engine process. User-facing docs generally call it the local engine or background engine.
+The command group is named `daemon` because it controls the internal engine process. User-facing docs generally call it the daemon or local engine.
 
 Generate shell completions:
 

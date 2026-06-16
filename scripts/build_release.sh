@@ -161,16 +161,16 @@ if [ "${ASSETS_ONLY}" != "1" ]; then
 
     echo "Building ${GOOS}/${GOARCH}"
     cli_output="$(binary_name "crona-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
-    kernel_output="$(binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+    daemon_output="$(binary_name "crona-daemon-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
     tui_output="$(binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
     bundle_output="$(bundle_name "${VERSION}" "${GOOS}" "${GOARCH}")"
     build_release_binary "${RELEASE_DIR}/${cli_output}" ./cli/cmd/crona "${GOOS}" "${GOARCH}"
-    build_release_binary "${RELEASE_DIR}/${kernel_output}" ./kernel/cmd/crona-kernel "${GOOS}" "${GOARCH}"
+    build_release_binary "${RELEASE_DIR}/${daemon_output}" ./kernel/cmd/crona-kernel "${GOOS}" "${GOARCH}"
     build_release_binary "${RELEASE_DIR}/${tui_output}" ./tui "${GOOS}" "${GOARCH}"
-    archive_target_bundle "${bundle_output}" "${cli_output}" "${kernel_output}" "${tui_output}"
+    archive_target_bundle "${bundle_output}" "${cli_output}" "${daemon_output}" "${tui_output}"
     report_target_sizes "${GOOS}" "${GOARCH}" "${RELEASE_DIR}/${bundle_output}" \
-      "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
-    rm -f "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
+      "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${daemon_output}" "${RELEASE_DIR}/${tui_output}"
+    rm -f "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${daemon_output}" "${RELEASE_DIR}/${tui_output}"
   done
 fi
 

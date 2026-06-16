@@ -46,7 +46,7 @@ func zsh(name string) string {
 	return fmt.Sprintf(`#compdef %s
 _%s() {
   local -a commands
-  commands=('backup:Back up data' 'restore:Restore data' 'kernel:Kernel commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'export:Export commands' 'dev:Dev-only commands')
+  commands=('backup:Back up data' 'restore:Restore data' 'daemon:Daemon commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'export:Export commands' 'dev:Dev-only commands')
   if (( CURRENT == 2 )); then
     _describe 'command' commands
     return
@@ -54,7 +54,7 @@ _%s() {
   case "${words[2]}" in
     backup) ;;
     restore) ;;
-    kernel) _values 'kernel command' attach detach restart wipe-data info status ;;
+    daemon) _values 'daemon command' attach detach restart wipe-data info status ;;
     completion) _values 'shell' zsh bash fish ;;
     context) _values 'context command' get set clear clear-issue switch-repo switch-stream switch-issue ;;
     timer) _values 'timer command' status start pause resume end ;;
@@ -74,13 +74,13 @@ func bash(name string) string {
   local cur prev words cword
   _init_completion || return
   if [[ ${cword} -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "backup restore kernel completion context timer issue update export dev" -- "$cur") )
+    COMPREPLY=( $(compgen -W "backup restore daemon completion context timer issue update export dev" -- "$cur") )
     return
   fi
   case "${words[1]}" in
     backup) ;;
     restore) ;;
-    kernel) COMPREPLY=( $(compgen -W "attach detach restart wipe-data info status" -- "$cur") ) ;;
+    daemon) COMPREPLY=( $(compgen -W "attach detach restart wipe-data info status" -- "$cur") ) ;;
     completion) COMPREPLY=( $(compgen -W "zsh bash fish" -- "$cur") ) ;;
     context) COMPREPLY=( $(compgen -W "get set clear clear-issue switch-repo switch-stream switch-issue" -- "$cur") ) ;;
     timer) COMPREPLY=( $(compgen -W "status start pause resume end" -- "$cur") ) ;;
@@ -96,10 +96,10 @@ complete -F _%s %s
 
 func fish(name string) string {
 	return fmt.Sprintf(
-		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore kernel completion context timer issue update export dev"
+		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore daemon completion context timer issue update export dev"
 complete -c %s -f -n "__fish_seen_subcommand_from backup" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from restore" -a ""
-complete -c %s -f -n "__fish_seen_subcommand_from kernel" -a "attach detach restart wipe-data info status"
+complete -c %s -f -n "__fish_seen_subcommand_from daemon" -a "attach detach restart wipe-data info status"
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
 complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
 complete -c %s -f -n "__fish_seen_subcommand_from timer" -a "status start pause resume end"

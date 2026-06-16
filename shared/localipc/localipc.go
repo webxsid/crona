@@ -49,7 +49,7 @@ func Label(transport, endpoint string) string {
 }
 
 func windowsPipeEndpoint(mode string) string {
-	name := "crona-kernel"
+	name := "crona-daemon"
 	if strings.EqualFold(strings.TrimSpace(mode), "dev") {
 		name += "-dev"
 	}

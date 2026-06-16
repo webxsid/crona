@@ -7,10 +7,10 @@ End users do not need Go installed.
 Installed binaries:
 
 - `crona`
+- `crona-daemon`
 - `crona-tui`
-- `crona-kernel`
 
-`crona-kernel` is the internal binary name for Crona's background local engine. Most user-facing docs call it the local engine because it owns storage, timers, reminders, update checks, and local IPC.
+`crona-daemon` is the background local engine binary. Most user-facing docs call it the daemon or local engine because it owns storage, timers, reminders, update checks, and local IPC.
 
 Release assets ship as:
 
@@ -71,7 +71,7 @@ https://crona.work/migration
 ```
 
 The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
-When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona kernel wipe-data --force` before uninstalling.
+When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona daemon wipe-data --force` before uninstalling.
 If you want a fully clean switch after uninstalling, remove the runtime directory manually using the paths listed in the migration guide.
 
 Legacy direct GitHub install:
@@ -101,7 +101,7 @@ Prefer winget:
 winget install --id Webxsid.Crona -e
 ```
 
-The winget package installs the Crona bundle and exposes `crona`, `crona-kernel`, and `crona-tui`.
+The winget package installs the Crona bundle and exposes `crona`, `crona-daemon`, and `crona-tui`.
 
 Winget users update with:
 
@@ -130,7 +130,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui
 
 ## Manual Installation
 
-Download your platform bundle zip from the release page and extract `crona`, `crona-tui`, and `crona-kernel`. The embedded templates and alert assets ship inside the binaries, so the shared assets archive is only needed for the legacy script installers.
+Download your platform bundle zip from the release page and extract `crona`, `crona-daemon`, and `crona-tui`. The embedded templates and alert assets ship inside the binaries, so the shared assets archive is only needed for the legacy script installers.
 
 The TUI starts the local engine automatically when needed. `crona-tui` remains available as a compatibility entrypoint.
 

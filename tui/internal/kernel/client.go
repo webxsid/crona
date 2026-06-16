@@ -30,27 +30,27 @@ func Ensure() (*Info, error) {
 
 	if info, err := readInfo(infoPath); err == nil {
 		if isHealthy(info) {
-			logger.Infof("Kernel already running at %s (pid %d)", EndpointLabel(info), info.PID)
+	logger.Infof("Daemon already running at %s (pid %d)", EndpointLabel(info), info.PID)
 			return info, nil
 		}
 	}
 
-	logger.Info("Spawning kernel...")
+	logger.Info("Spawning daemon...")
 	if err := launch(); err != nil {
-		return nil, fmt.Errorf("launch kernel: %w", err)
+		return nil, fmt.Errorf("launch daemon: %w", err)
 	}
 
 	for i := 0; i < 20; i++ {
 		time.Sleep(250 * time.Millisecond)
 		if info, err := readInfo(infoPath); err == nil {
 			if isHealthy(info) {
-				logger.Infof("Kernel ready at %s", EndpointLabel(info))
+				logger.Infof("Daemon ready at %s", EndpointLabel(info))
 				return info, nil
 			}
 		}
 	}
 
-	return nil, fmt.Errorf("kernel failed to start within 5s")
+	return nil, fmt.Errorf("daemon failed to start within 5s")
 }
 
 func readInfo(path string) (*Info, error) {
@@ -143,12 +143,12 @@ type launchCandidate struct {
 func launch() error {
 	candidates := kernelLaunchCandidates()
 	if len(candidates) == 0 {
-		return errors.New("no kernel launcher candidates found")
+		return errors.New("no daemon launcher candidates found")
 	}
 
 	failures := make([]string, 0, len(candidates))
 	for _, candidate := range candidates {
-		logger.Infof("Trying kernel launcher: %s", candidate.name)
+		logger.Infof("Trying daemon launcher: %s", candidate.name)
 		if err := startKernel(candidate); err == nil {
 			return nil
 		} else {
@@ -176,28 +176,28 @@ func kernelLaunchCandidates() []launchCandidate {
 	}
 
 	if exe, err := os.Executable(); err == nil {
-		kernelName := config.KernelBinaryName()
-		sibling := filepath.Join(filepath.Dir(exe), kernelName)
+		daemonName := config.DaemonBinaryName()
+		sibling := filepath.Join(filepath.Dir(exe), daemonName)
 		if info, err := os.Stat(sibling); err == nil && !info.IsDir() {
 			add(launchCandidate{
-				name: "sibling " + kernelName,
+				name: "sibling " + daemonName,
 				cmd:  sibling,
 			})
 		}
 	}
 
-	if pathCmd, err := exec.LookPath(config.KernelBinaryName()); err == nil {
+	if pathCmd, err := exec.LookPath(config.DaemonBinaryName()); err == nil {
 		add(launchCandidate{
-			name: "PATH " + config.KernelBinaryName(),
+			name: "PATH " + config.DaemonBinaryName(),
 			cmd:  pathCmd,
 		})
 	}
 
 	if repoRoot, err := findRepoRoot(); err == nil {
-		repoBin := filepath.Join(repoRoot, "bin", config.KernelBinaryName())
+		repoBin := filepath.Join(repoRoot, "bin", config.DaemonBinaryName())
 		if info, err := os.Stat(repoBin); err == nil && !info.IsDir() {
 			add(launchCandidate{
-				name: "repo bin " + config.KernelBinaryName(),
+				name: "repo bin " + config.DaemonBinaryName(),
 				cmd:  repoBin,
 			})
 		}

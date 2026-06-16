@@ -7,6 +7,7 @@ All notable changes to **Crona** are documented here.
 ### Changed
 - Refined installation, migration, API, and release documentation to remove draft-like phrasing and keep the public docs consistent.
 - Updated bundled alert documentation to reflect the new MP3 asset set and attribution requirements.
+- Renamed the shipped engine binary and CLI command group from `kernel` to `daemon` in the current distribution surface.
 
 ## [1.6.0-beta.3] - 2026-06-16
 

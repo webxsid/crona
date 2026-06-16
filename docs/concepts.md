@@ -4,7 +4,7 @@ Crona is a local-first work tracker for developers. A background local engine ow
 
 ## Terminology
 
-The codebase and socket API still use the term `kernel` for the internal engine process and its command namespace. In user-facing docs, this is usually called the local engine or background engine because it is the small local service that owns storage, timers, reminders, update checks, and IPC.
+The codebase and socket API still use the term `kernel` for the internal engine process and IPC method names. In user-facing docs, this is usually called the daemon or local engine because it is the small local service that owns storage, timers, reminders, update checks, and IPC.
 
 ## Core Ideas
 
@@ -18,7 +18,7 @@ The codebase and socket API still use the term `kernel` for the internal engine 
 
 Crona has three main runtime pieces:
 
-- `crona-kernel`: the background local engine that owns storage, timers, updates, and IPC.
+- `crona-daemon`: the background local engine that owns storage, timers, updates, and IPC.
 - `crona-tui`: the interactive terminal UI.
 - `crona`: the scriptable CLI and default launcher.
 

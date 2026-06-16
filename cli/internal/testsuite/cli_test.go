@@ -27,7 +27,7 @@ func TestKernelAttachJSONUsesEnsureKernel(t *testing.T) {
 	want := &sharedtypes.KernelInfo{
 		PID:        42,
 		Transport:  localipc.TransportWindowsNamedPipe,
-		Endpoint:   `\\.\pipe\crona-kernel`,
+		Endpoint:   `\\.\pipe\crona-daemon`,
 		Env:        "Prod",
 		ScratchDir: `C:\Users\alice\AppData\Local\Crona\scratch`,
 	}
@@ -60,7 +60,7 @@ func TestKernelStatusTextIncludesWindowsTransportAndEndpoint(t *testing.T) {
 			*info = sharedtypes.KernelInfo{
 				PID:        7,
 				Transport:  localipc.TransportWindowsNamedPipe,
-				Endpoint:   `\\.\pipe\crona-kernel-dev`,
+		Endpoint:   `\\.\pipe\crona-daemon-dev`,
 				Env:        "Dev",
 				StartedAt:  "2026-03-27T00:00:00Z",
 				ScratchDir: `C:\Users\alice\AppData\Local\Crona Dev\scratch`,
@@ -74,7 +74,7 @@ func TestKernelStatusTextIncludesWindowsTransportAndEndpoint(t *testing.T) {
 
 	for _, want := range []string{
 		"transport: windows_named_pipe",
-		`endpoint: \\.\pipe\crona-kernel-dev`,
+		`endpoint: \\.\pipe\crona-daemon-dev`,
 		"env: Dev",
 	} {
 		if !strings.Contains(out.String(), want) {

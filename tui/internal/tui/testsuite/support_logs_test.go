@@ -48,7 +48,7 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 		KernelInfo: &api.KernelInfo{
 			Endpoint:       filepath.Join(baseDir, "socket", "crona.sock"),
 			ScratchDir:     filepath.Join(baseDir, "scratch"),
-			ExecutablePath: filepath.Join(baseDir, "bin", "crona-kernel"),
+			ExecutablePath: filepath.Join(baseDir, "bin", "crona-daemon"),
 		},
 		ExportAssets: &api.ExportAssetStatus{
 			ReportsDir:           filepath.Join(baseDir, "reports"),
@@ -58,7 +58,7 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 			PDFRendererAvailable: true,
 		},
 		TUIPath:    filepath.Join(baseDir, "bin", "crona-tui"),
-		KernelPath: filepath.Join(baseDir, "bin", "crona-kernel"),
+		KernelPath: filepath.Join(baseDir, "bin", "crona-daemon"),
 	}
 
 	ops := []api.Op{{

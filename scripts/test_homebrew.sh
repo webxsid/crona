@@ -166,7 +166,7 @@ run_brew_validation() {
   brew_cmd install "${TAP_NAME}/crona"
 
   PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona --version | grep -F "${version}" >/dev/null
-  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-kernel --version | grep -F "${version}" >/dev/null
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-daemon --version | grep -F "${version}" >/dev/null
   PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-tui --version | grep -F "${version}" >/dev/null
 
   run_status_checks "${version}"
@@ -178,8 +178,8 @@ run_brew_validation() {
     echo "crona still exists after uninstall" >&2
     exit 1
   fi
-  if PATH="${PREFIX_ROOT}/bin" command -v crona-kernel >/dev/null 2>&1; then
-    echo "crona-kernel still exists after uninstall" >&2
+  if PATH="${PREFIX_ROOT}/bin" command -v crona-daemon >/dev/null 2>&1; then
+    echo "crona-daemon still exists after uninstall" >&2
     exit 1
   fi
   if PATH="${PREFIX_ROOT}/bin" command -v crona-tui >/dev/null 2>&1; then
@@ -196,25 +196,25 @@ build_fake_release_dir() {
   mkdir -p "${out_dir}"
 
   cli_bin="${out_dir}/crona"
-  kernel_bin="${out_dir}/crona-kernel"
+  daemon_bin="${out_dir}/crona-daemon"
   tui_bin="${out_dir}/crona-tui"
 
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
     "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${cli_bin}" ./cli/cmd/crona
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
-    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${kernel_bin}" ./kernel/cmd/crona-kernel
+    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${daemon_bin}" ./kernel/cmd/crona-kernel
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
     "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${tui_bin}" ./tui
 
   archive_file="${out_dir}/$(archive_name "${version}" "${goos}" "${goarch}")"
   (
     cd "${out_dir}"
-    zip -q "$(basename "${archive_file}")" "$(basename "${cli_bin}")" "$(basename "${kernel_bin}")" "$(basename "${tui_bin}")"
+    zip -q "$(basename "${archive_file}")" "$(basename "${cli_bin}")" "$(basename "${daemon_bin}")" "$(basename "${tui_bin}")"
   )
   {
     printf '%s  %s\n' "$(sha256_file "${archive_file}")" "$(basename "${archive_file}")"
   } > "${out_dir}/checksums.txt"
-  rm -f "${cli_bin}" "${kernel_bin}" "${tui_bin}"
+  rm -f "${cli_bin}" "${daemon_bin}" "${tui_bin}"
 }
 
 run_upgrade_validation() {

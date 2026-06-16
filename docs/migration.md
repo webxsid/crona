@@ -60,7 +60,7 @@ If you want to delete the runtime data as well, choose one of these options:
 
 - While Crona is still installed, use the in-app Settings action or the CLI:
   ```bash
-  crona kernel wipe-data --force
+  crona daemon wipe-data --force
   ```
 - If you already uninstalled Crona, delete the runtime directory manually:
   - macOS prod: `~/Library/Application Support/Crona`

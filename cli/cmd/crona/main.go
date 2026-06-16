@@ -104,7 +104,7 @@ func run(args []string) error {
 	case "help":
 		fmt.Print(rootUsage())
 		return nil
-	case "kernel":
+	case "daemon":
 		return kernelcmd.Run(args[1:], kernelcmd.Deps{
 			Stdout:       os.Stdout,
 			CallKernel:   callKernelFn,
@@ -179,10 +179,10 @@ func rootUsage() string {
 
 Run without a command to open the TUI.
 
-Commands:
+	Commands:
 	help
   backup      Backup your Crona database before migrating
-  kernel      Attach, detach, and inspect the local kernel
+  daemon      Attach, detach, restart, or inspect the local daemon
   completion  Generate shell completions
   context     Inspect or update checked-out context
   timer       Control the active timer/session

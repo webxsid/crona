@@ -139,8 +139,8 @@ func CLIBinaryNameForMode(mode string) string {
 	return binaryName("crona" + BinarySuffixForMode(mode))
 }
 
-func KernelBinaryNameForMode(mode string) string {
-	return binaryName("crona-kernel" + BinarySuffixForMode(mode))
+func DaemonBinaryNameForMode(mode string) string {
+	return binaryName("crona-daemon" + BinarySuffixForMode(mode))
 }
 
 func TUIBinaryNameForMode(mode string) string {
@@ -151,8 +151,13 @@ func CLIBinaryName() string {
 	return CLIBinaryNameForMode(Load().Mode)
 }
 
+func DaemonBinaryName() string {
+	return DaemonBinaryNameForMode(Load().Mode)
+}
+
+// KernelBinaryName remains as a compatibility alias for internal callers.
 func KernelBinaryName() string {
-	return KernelBinaryNameForMode(Load().Mode)
+	return DaemonBinaryName()
 }
 
 func TUIBinaryName() string {

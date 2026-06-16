@@ -12,22 +12,22 @@ BIN_SUFFIX :=
 endif
 
 CLI_BINARY := $(PROJECT_NAME)$(BIN_SUFFIX)
-KERNEL_BINARY := $(PROJECT_NAME)-kernel$(BIN_SUFFIX)
+DAEMON_BINARY := $(PROJECT_NAME)-daemon$(BIN_SUFFIX)
 TUI_BINARY := $(PROJECT_NAME)-tui$(BIN_SUFFIX)
 
-.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-kernel test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-kernel run-tui install-kernel install-tui install-cli seed-dev clear-dev release brew-test brew-generate brew-clean brew-upgrade-test
+.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-daemon test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-daemon run-tui install-daemon install-tui install-cli seed-dev clear-dev release brew-test brew-generate brew-clean brew-upgrade-test
 
 help:
 	@printf "%s %s\n" "$(PROJECT_NAME)" "$(PROJECT_VERSION)"
 	@printf "%s\n" "$(PROJECT_DESCRIPTION)"
 	@printf "\nTargets:\n"
-	@printf "  make build           Build shared, kernel, tui, and cli\n"
-	@printf "  make test            Run shared, kernel, tui, and cli tests\n"
+	@printf "  make build           Build shared, daemon, tui, and cli\n"
+	@printf "  make test            Run shared, daemon, tui, and cli tests\n"
 	@printf "  make test-unit       Run non-e2e module tests\n"
-	@printf "  make test-e2e        Run kernel IPC e2e tests\n"
+	@printf "  make test-e2e        Run daemon IPC e2e tests\n"
 	@printf "  make test-coverage   Generate module coverage summaries\n"
 	@printf "  make test-shared     Run shared tests\n"
-	@printf "  make test-kernel     Run kernel tests\n"
+	@printf "  make test-daemon     Run daemon tests\n"
 	@printf "  make test-tui        Run tui tests\n"
 	@printf "  make test-cli        Run cli tests\n"
 	@printf "  make fmt             Format the Go workspace with gofmt and golines\n"
@@ -37,13 +37,13 @@ help:
 	@printf "  make release-check   Validate version and prerelease metadata consistency\n"
 	@printf "  make install-lint    Install golangci-lint into GOPATH/bin\n"
 	@printf "  make install-fmt     Install golines into GOPATH/bin\n"
-	@printf "  make run-kernel      Run the kernel daemon\n"
+	@printf "  make run-daemon      Run the daemon\n"
 	@printf "  make run-tui         Run the terminal UI\n"
-	@printf "  make install-kernel  Build %s into ./bin\n" "$(KERNEL_BINARY)"
+	@printf "  make install-daemon  Build %s into ./bin\n" "$(DAEMON_BINARY)"
 	@printf "  make install-tui     Build %s into ./bin\n" "$(TUI_BINARY)"
 	@printf "  make install-cli     Build %s into ./bin\n" "$(CLI_BINARY)"
-	@printf "  make seed-dev        Seed dev data through the kernel\n"
-	@printf "  make clear-dev       Clear dev data through the kernel\n"
+	@printf "  make seed-dev        Seed dev data through the daemon\n"
+	@printf "  make clear-dev       Clear dev data through the daemon\n"
 	@printf "  make brew-test       Run isolated Homebrew validation against dist/\n"
 	@printf "  make brew-generate   Generate isolated Homebrew tap and formula only\n"
 	@printf "  make brew-upgrade-test  Simulate isolated Homebrew upgrade flow\n"
@@ -78,7 +78,7 @@ test-coverage:
 test-shared:
 	cd shared && GOCACHE=$(GOCACHE) $(GO) test ./...
 
-test-kernel:
+test-daemon:
 	cd kernel && GOCACHE=$(GOCACHE) $(GO) test ./...
 
 test-tui:
@@ -115,15 +115,15 @@ install-lint:
 install-fmt:
 	GOCACHE=$(GOCACHE) $(GO) install github.com/segmentio/golines@v0.13.0
 
-run-kernel:
+run-daemon:
 	cd kernel && GOCACHE=$(GOCACHE) $(GO) run ./cmd/crona-kernel
 
 run-tui:
 	cd tui && PATH="$(CURDIR)/bin:$$PATH" GOCACHE=$(GOCACHE) $(GO) run .
 
-install-kernel:
+install-daemon:
 	mkdir -p bin
-	cd kernel && GOCACHE=$(GOCACHE) $(GO) build -o ../bin/$(KERNEL_BINARY) ./cmd/crona-kernel
+	cd kernel && GOCACHE=$(GOCACHE) $(GO) build -o ../bin/$(DAEMON_BINARY) ./cmd/crona-kernel
 
 install-tui:
 	mkdir -p bin

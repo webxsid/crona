@@ -897,7 +897,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		Width:                100,
 		Height:               32,
 		TUIExecutablePath:    "/tmp/crona",
-		KernelExecutablePath: "/tmp/crona-kernel",
+		KernelExecutablePath: "/tmp/crona-daemon",
 		KernelInfo: &api.KernelInfo{
 			Env:            "prod",
 			Transport:      "unix",
