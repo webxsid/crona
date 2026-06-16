@@ -57,10 +57,12 @@ func Start(
 			Timeout: 10 * time.Second,
 		},
 		status: sharedtypes.UpdateStatus{
-			CurrentVersion: versionpkg.Current(),
-			Channel:        sharedtypes.UpdateChannelStable,
-			RunningChannel: versionpkg.RunningChannel(),
-			RunningIsBeta:  versionpkg.IsBetaRelease(),
+			CurrentVersion:          versionpkg.Current(),
+			Channel:                 sharedtypes.UpdateChannelStable,
+			RunningChannel:          versionpkg.RunningChannel(),
+			RunningIsBeta:           versionpkg.IsBetaRelease(),
+			InstallScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled(),
+			MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 		},
 	}
 	service.loadCache()
@@ -169,6 +171,8 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.RunningChannel = versionpkg.RunningChannel()
 	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
+	s.status.InstallScriptDeprecated = versionpkg.InstallScriptDeprecationEnabled()
+	s.status.MigrationGuideURL = versionpkg.InstallScriptMigrationURL
 	s.status.Enabled = enabled &&
 		(!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) &&
 		(!versionpkg.IsDevBuild() || localOverrideActive)
@@ -201,6 +205,8 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.CurrentVersion = versionpkg.Current()
 	s.status.RunningChannel = versionpkg.RunningChannel()
 	s.status.RunningIsBeta = versionpkg.IsBetaRelease()
+	s.status.InstallScriptDeprecated = versionpkg.InstallScriptDeprecationEnabled()
+	s.status.MigrationGuideURL = versionpkg.InstallScriptMigrationURL
 	s.status.Enabled = enabled &&
 		(!strings.EqualFold(s.envMode, config.ModeDev) || localOverrideActive) &&
 		(!versionpkg.IsDevBuild() || localOverrideActive)

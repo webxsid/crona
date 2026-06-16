@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	versionpkg "crona/shared/version"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	"github.com/charmbracelet/lipgloss"
@@ -152,16 +153,19 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		return nil
 	}
 	return ContextualActions(theme, ActionsState{
-		View:                   state.View,
-		Pane:                   state.Pane,
-		TimerState:             timerStateFromContent(state),
-		TimerSegment:           timerSegmentFromContent(state),
-		TimerNextSegment:       timerNextSegmentFromContent(state),
-		StructuredTimer:        structuredTimerFromContent(state),
-		RestModeActive:         state.RestModeActive,
-		AwayModeActive:         state.AwayModeActive,
-		UpdateVisible:          viewruntime.ShouldShowUpdatesView(state.UpdateStatus),
-		UpdateInstallAvailable: state.UpdateInstallAvailable,
+		View:                      state.View,
+		Pane:                      state.Pane,
+		TimerState:                timerStateFromContent(state),
+		TimerSegment:              timerSegmentFromContent(state),
+		TimerNextSegment:          timerNextSegmentFromContent(state),
+		StructuredTimer:           structuredTimerFromContent(state),
+		RestModeActive:            state.RestModeActive,
+		AwayModeActive:            state.AwayModeActive,
+		UpdateVisible:             viewruntime.ShouldShowUpdatesView(state.UpdateStatus),
+		UpdateInstallAvailable:    state.UpdateInstallAvailable,
+		UpdateDiagnosticsExpanded: state.UpdateDiagnosticsExpanded,
+		UpdateScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled() ||
+			(state.UpdateStatus != nil && state.UpdateStatus.InstallScriptDeprecated),
 	})
 }
 

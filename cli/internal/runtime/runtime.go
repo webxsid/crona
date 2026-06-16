@@ -110,6 +110,27 @@ func CallKernel(deps Deps, method string, params, out any) error {
 	return json.Unmarshal(resp.Result, out)
 }
 
+func ShutdownKernel(deps Deps) error {
+	deps = deps.withDefaults()
+	info, err := ReadKernelInfo(deps)
+	if err != nil {
+		return nil
+	}
+	if !IsHealthy(info) {
+		return nil
+	}
+	if err := CallKernel(deps, protocol.MethodKernelShutdown, nil, nil); err != nil {
+		return err
+	}
+	for i := 0; i < 20; i++ {
+		deps.TimeSleep(250 * time.Millisecond)
+		if info, err := ReadKernelInfo(deps); err != nil || !IsHealthy(info) {
+			return nil
+		}
+	}
+	return fmt.Errorf("kernel did not stop within 5s")
+}
+
 func EnsureKernel(deps Deps) (*sharedtypes.KernelInfo, error) {
 	deps = deps.withDefaults()
 	if info, err := ReadKernelInfo(deps); err == nil && IsHealthy(info) {

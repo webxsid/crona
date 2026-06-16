@@ -9,21 +9,23 @@ import (
 import uistate "crona/tui/internal/tui/state"
 
 type ActionsState struct {
-	View                   string
-	Pane                   string
-	TimerState             string
-	TimerSegment           string
-	TimerNextSegment       string
-	StructuredTimer        bool
-	HardLimitActive        bool
-	RestModeActive         bool
-	AwayModeActive         bool
-	IsDevMode              bool
-	IsBetaBuild            bool
-	UpdateVisible          bool
-	UpdateInstallAvailable bool
-	UpdateCommand          string
-	MomentumTab            string
+	View                      string
+	Pane                      string
+	TimerState                string
+	TimerSegment              string
+	TimerNextSegment          string
+	StructuredTimer           bool
+	HardLimitActive           bool
+	RestModeActive            bool
+	AwayModeActive            bool
+	IsDevMode                 bool
+	IsBetaBuild               bool
+	UpdateVisible             bool
+	UpdateInstallAvailable    bool
+	UpdateDiagnosticsExpanded bool
+	UpdateScriptDeprecated    bool
+	UpdateCommand             string
+	MomentumTab               string
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
@@ -174,30 +176,38 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "updates" {
 		actions := []string{
-			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check for updates"),
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open release page"),
-			theme.StyleHeader.Render("[U]") + theme.StyleDim.Render(" dismiss"),
+			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" refresh"),
 		}
-		installLabel := "install"
-		if !state.UpdateInstallAvailable {
-			if strings.TrimSpace(state.UpdateCommand) != "" {
-				if IsMigrationCommand(state.UpdateCommand) {
-					installLabel = "copy migration command"
-				} else {
-					installLabel = "copy update command"
-				}
-			} else {
-				installLabel = "install unavailable"
+		openLabel := ""
+		copyLabel := ""
+		if state.UpdateScriptDeprecated {
+			openLabel = "open migration guide"
+		} else if state.UpdateVisible {
+			openLabel = "open release notes"
+		}
+		if strings.TrimSpace(state.UpdateCommand) != "" {
+			copyLabel = "copy command"
+			if IsMigrationCommand(state.UpdateCommand) {
+				copyLabel = "copy migration command"
 			}
 		}
-		if state.UpdateInstallAvailable {
+		if openLabel != "" {
 			actions = append(
 				actions,
-				theme.StyleHeader.Render("[i]")+theme.StyleDim.Render(" "+installLabel),
+				theme.StyleHeader.Render("[o]")+theme.StyleDim.Render(" "+openLabel),
 			)
-		} else {
-			actions = append(actions, theme.StyleDim.Render("[i] "+installLabel))
 		}
+		if copyLabel != "" {
+			actions = append(
+				actions,
+				theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" "+copyLabel),
+			)
+		}
+		actions = append(
+			actions,
+			theme.StyleHeader.Render("[d]")+
+				theme.StyleDim.Render(" "+diagnosticsActionLabel(state.UpdateDiagnosticsExpanded)),
+		)
 		return actions
 	}
 	if state.View == "support" {
@@ -368,6 +378,13 @@ func supportsGlobalExport(view string) bool {
 
 func PaneActions(theme Theme, state ActionsState) []string {
 	return ContextualActions(theme, state)
+}
+
+func diagnosticsActionLabel(expanded bool) string {
+	if expanded {
+		return "hide diagnostics"
+	}
+	return "show diagnostics"
 }
 
 func DedupeActionKeys(actions []string, suppress []string) []string {

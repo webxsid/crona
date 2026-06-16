@@ -23,6 +23,11 @@ func TestSourceFromExecutablePath(t *testing.T) {
 			want: sharedtypes.InstallSourceGo,
 		},
 		{
+			name: "winget",
+			path: `C:\Users\alice\AppData\Local\Microsoft\WinGet\Links\crona.exe`,
+			want: sharedtypes.InstallSourceWinget,
+		},
+		{
 			name: "unknown",
 			path: "/tmp/crona",
 			want: sharedtypes.InstallSourceUnknown,
@@ -51,6 +56,13 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			want: "brew upgrade crona-beta",
 		},
 		{
+			name: "winget",
+			status: sharedtypes.UpdateStatus{
+				InstallSource: sharedtypes.InstallSourceWinget,
+			},
+			want: "winget upgrade --id Webxsid.Crona -e",
+		},
+		{
 			name: "brew migration",
 			status: sharedtypes.UpdateStatus{
 				InstallSource: sharedtypes.InstallSourceBrew,
@@ -63,7 +75,7 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			status: sharedtypes.UpdateStatus{
 				InstallSource: sharedtypes.InstallSourceScript,
 			},
-			want: "curl -fsSL https://crona.work/install.sh | sh",
+			want: "https://crona.work/migration",
 		},
 		{
 			name: "go",

@@ -3,6 +3,7 @@ package input
 import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
@@ -13,44 +14,45 @@ import (
 )
 
 type State struct {
-	ActiveView          uistate.View
-	ActivePane          uistate.Pane
-	ProtectedModeActive bool
-	Cursor              map[uistate.Pane]int
-	Filters             map[uistate.Pane]string
-	DefaultIssueSection uistate.DefaultIssueSection
-	DailyTaskSection    uistate.DailyTaskSection
-	DashboardDate       string
-	RollupStartDate     string
-	RollupEndDate       string
-	MomentumDate        string
-	MomentumWindowDays  int
-	MomentumTab         string
-	MomentumHistoryY    int
-	WellbeingDate       string
-	WellbeingWindowDays int
-	Dialog              string
-	DialogState         dialogstate.State
-	HelpOpen            bool
-	SessionDetailOpen   bool
-	SessionDetailY      int
-	SessionContextOpen  bool
-	SessionContextY     int
-	OpsLimit            int
-	OpsLimitPinned      bool
-	Context             *api.ActiveContext
-	Timer               *api.TimerState
-	UpdateStatus        *api.UpdateStatus
-	UpdateChecking      bool
-	UpdateInstalling    bool
-	UpdateInstallError  string
-	CurrentExecutable   string
-	RunningIsBeta       bool
-	Settings            *api.CoreSettings
-	AlertStatus         *api.AlertStatus
-	AlertReminders      []api.AlertReminder
-	ExportAssets        *api.ExportAssetStatus
-	DailyCheckIn        *api.DailyCheckIn
+	ActiveView                uistate.View
+	ActivePane                uistate.Pane
+	ProtectedModeActive       bool
+	Cursor                    map[uistate.Pane]int
+	Filters                   map[uistate.Pane]string
+	DefaultIssueSection       uistate.DefaultIssueSection
+	DailyTaskSection          uistate.DailyTaskSection
+	DashboardDate             string
+	RollupStartDate           string
+	RollupEndDate             string
+	MomentumDate              string
+	MomentumWindowDays        int
+	MomentumTab               string
+	MomentumHistoryY          int
+	WellbeingDate             string
+	WellbeingWindowDays       int
+	Dialog                    string
+	DialogState               dialogstate.State
+	HelpOpen                  bool
+	SessionDetailOpen         bool
+	SessionDetailY            int
+	SessionContextOpen        bool
+	SessionContextY           int
+	OpsLimit                  int
+	OpsLimitPinned            bool
+	Context                   *api.ActiveContext
+	Timer                     *api.TimerState
+	UpdateStatus              *api.UpdateStatus
+	UpdateChecking            bool
+	UpdateInstalling          bool
+	UpdateInstallError        string
+	UpdateDiagnosticsExpanded bool
+	CurrentExecutable         string
+	RunningIsBeta             bool
+	Settings                  *api.CoreSettings
+	AlertStatus               *api.AlertStatus
+	AlertReminders            []api.AlertReminder
+	ExportAssets              *api.ExportAssetStatus
+	DailyCheckIn              *api.DailyCheckIn
 }
 
 func (s State) Init() tea.Cmd                           { return nil }
@@ -620,11 +622,25 @@ func newRouter(deps Deps) *router {
 			s.UpdateInstallError = ""
 			return s, deps.CheckUpdateNow(), true
 		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleInstallUpdate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if versionpkg.InstallScriptDeprecationEnabled() ||
+				(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
+				return s, nil, true
+			}
+			return handleInstallUpdate(s, deps)
+		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleDismissUpdate(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenSelectionAction(&s)
 			return s, cmd, handled
+		},
+	)
+	r.RegisterView(
+		uistate.ViewUpdates,
+		"d",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			s.UpdateDiagnosticsExpanded = !s.UpdateDiagnosticsExpanded
+			return s, nil, true
 		},
 	)
 	r.RegisterView(

@@ -77,10 +77,12 @@ func (h *Handler) handleKernelMethods(
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
 				return sharedtypes.UpdateStatus{
-					CurrentVersion: "unknown",
-					Enabled:        false,
-					RunningChannel: versionpkg.RunningChannel(),
-					RunningIsBeta:  versionpkg.IsBetaRelease(),
+					CurrentVersion:          "unknown",
+					Enabled:                 false,
+					RunningChannel:          versionpkg.RunningChannel(),
+					RunningIsBeta:           versionpkg.IsBetaRelease(),
+					InstallScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled(),
+					MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 				}, nil
 			}
 			return h.updater.Status(), nil
@@ -89,10 +91,12 @@ func (h *Handler) handleKernelMethods(
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
 				return sharedtypes.UpdateStatus{
-					CurrentVersion: "unknown",
-					Enabled:        false,
-					RunningChannel: versionpkg.RunningChannel(),
-					RunningIsBeta:  versionpkg.IsBetaRelease(),
+					CurrentVersion:          "unknown",
+					Enabled:                 false,
+					RunningChannel:          versionpkg.RunningChannel(),
+					RunningIsBeta:           versionpkg.IsBetaRelease(),
+					InstallScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled(),
+					MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 				}, nil
 			}
 			return h.updater.CheckNow(ctx)
@@ -101,10 +105,12 @@ func (h *Handler) handleKernelMethods(
 		return h.handleNoParams(req, func() (any, error) {
 			if h.updater == nil {
 				return sharedtypes.UpdateStatus{
-					CurrentVersion: "unknown",
-					Enabled:        false,
-					RunningChannel: versionpkg.RunningChannel(),
-					RunningIsBeta:  versionpkg.IsBetaRelease(),
+					CurrentVersion:          "unknown",
+					Enabled:                 false,
+					RunningChannel:          versionpkg.RunningChannel(),
+					RunningIsBeta:           versionpkg.IsBetaRelease(),
+					InstallScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled(),
+					MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 				}, nil
 			}
 			return h.updater.DismissLatest()

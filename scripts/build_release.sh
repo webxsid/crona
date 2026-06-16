@@ -38,7 +38,8 @@ bundle_name() {
   version="$1"
   goos="$2"
   goarch="$3"
-  printf 'crona-bundle-%s-%s-%s.zip\n' "${version}" "${goos}" "${goarch}"
+  normalized_version="${version#v}"
+  printf 'crona-bundle-%s-%s-%s.zip\n' "${normalized_version}" "${goos}" "${goarch}"
 }
 
 file_size_bytes() {

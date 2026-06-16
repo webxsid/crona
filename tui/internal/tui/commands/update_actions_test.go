@@ -105,7 +105,7 @@ func TestPrepareInstallCommandWithLocalReleaseBundle(t *testing.T) {
 		t.Fatalf("WriteFile installer: %v", err)
 	}
 
-	bundleName := "crona-bundle-" + version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".zip"
+	bundleName := "crona-bundle-" + strings.TrimPrefix(version, "v") + "-" + runtime.GOOS + "-" + runtime.GOARCH + ".zip"
 	assetsName := "crona-assets-" + version + ".tar.gz"
 	if err := writeLocalBundle(filepath.Join(releaseDir, bundleName), version); err != nil {
 		t.Fatalf("writeLocalBundle: %v", err)

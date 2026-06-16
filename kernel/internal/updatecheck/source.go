@@ -254,6 +254,7 @@ func sourceFromEnv() sharedtypes.InstallSource {
 
 func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
 	normalized := strings.ToLower(strings.TrimSpace(path))
+	normalized = strings.ReplaceAll(normalized, "\\", "/")
 	if normalized == "" {
 		return sharedtypes.InstallSourceUnknown
 	}
@@ -263,7 +264,11 @@ func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
 		strings.Contains(normalized, "/homebrew/") {
 		return sharedtypes.InstallSourceBrew
 	}
-	if strings.Contains(normalized, string(os.PathSeparator)+"go"+string(os.PathSeparator)+"bin"+string(os.PathSeparator)) ||
+	if strings.Contains(normalized, "/microsoft/winget/") ||
+		strings.Contains(normalized, "/winget/") {
+		return sharedtypes.InstallSourceWinget
+	}
+	if strings.Contains(normalized, "/go/bin/") ||
 		strings.Contains(normalized, "/gobin/") {
 		return sharedtypes.InstallSourceGo
 	}
@@ -283,7 +288,12 @@ func updateCommandForStatus(status sharedtypes.UpdateStatus) string {
 	switch sharedtypes.NormalizeInstallSource(status.InstallSource) {
 	case sharedtypes.InstallSourceBrew:
 		return brewCommandForStatus(status)
+	case sharedtypes.InstallSourceWinget:
+		return wingetUpgradeCommand()
 	case sharedtypes.InstallSourceScript:
+		if versionpkg.InstallScriptDeprecationEnabled() {
+			return versionpkg.InstallScriptMigrationURL
+		}
 		return "curl -fsSL https://crona.work/install.sh | sh"
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
@@ -357,6 +367,10 @@ func brewCommandForStatus(status sharedtypes.UpdateStatus) string {
 		formula = currentBrewFormula()
 	}
 	return "brew upgrade " + formula
+}
+
+func wingetUpgradeCommand() string {
+	return "winget upgrade --id Webxsid.Crona -e"
 }
 
 func (s *Service) hasLocalRelease() bool {

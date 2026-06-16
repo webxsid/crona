@@ -10,8 +10,9 @@ var Version = "1.6.0-beta.1"
 var InstallSource = ""
 
 const (
-	RepoOwner = "webxsid"
-	RepoName  = "crona"
+	RepoOwner                 = "webxsid"
+	RepoName                  = "crona"
+	InstallScriptMigrationURL = "https://crona.work/migration"
 )
 
 func Current() string {
@@ -30,6 +31,20 @@ func IsBetaVersion(value string) bool {
 
 func IsBetaRelease() bool {
 	return IsBetaVersion(Current())
+}
+
+func IsInstallScriptDeprecationVersion(value string) bool {
+	value = strings.ToLower(strings.TrimSpace(value))
+	value = strings.TrimPrefix(value, "v")
+	return strings.HasPrefix(value, "1.6.")
+}
+
+func InstallScriptDeprecationEnabled() bool {
+	return IsInstallScriptDeprecationVersion(Current())
+}
+
+func InstallScriptDeprecationMessage() string {
+	return "Moving forward, Crona will stop exposing the GitHub install script. Migrate to a managed package installer."
 }
 
 func RunningChannel() sharedtypes.UpdateChannel {

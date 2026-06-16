@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	versionpkg "crona/shared/version"
 	commands "crona/tui/internal/tui/commands"
 	uistate "crona/tui/internal/tui/state"
 )
@@ -13,6 +14,10 @@ func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView != uistate.ViewUpdates || !viewsShouldShowUpdate(s.UpdateStatus) ||
 		s.UpdateInstalling {
 		return s, nil, false
+	}
+	if versionpkg.InstallScriptDeprecationEnabled() ||
+		(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
+		return s, nil, true
 	}
 	if !deps.SelfUpdateInstallAvailable(s) {
 		if s.UpdateStatus != nil && strings.TrimSpace(s.UpdateStatus.UpdateCommand) != "" {
@@ -37,6 +42,10 @@ func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 
 func handleDismissUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if !viewsShouldShowUpdate(s.UpdateStatus) {
+		return s, nil, false
+	}
+	if versionpkg.InstallScriptDeprecationEnabled() ||
+		(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
 		return s, nil, false
 	}
 	return s, deps.DismissUpdate(), true

@@ -46,12 +46,14 @@ func zsh(name string) string {
 	return fmt.Sprintf(`#compdef %s
 _%s() {
   local -a commands
-  commands=('kernel:Kernel commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'export:Export commands' 'dev:Dev-only commands')
+  commands=('backup:Back up data' 'restore:Restore data' 'kernel:Kernel commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'export:Export commands' 'dev:Dev-only commands')
   if (( CURRENT == 2 )); then
     _describe 'command' commands
     return
   fi
   case "${words[2]}" in
+    backup) ;;
+    restore) ;;
     kernel) _values 'kernel command' attach detach restart wipe-data info status ;;
     completion) _values 'shell' zsh bash fish ;;
     context) _values 'context command' get set clear clear-issue switch-repo switch-stream switch-issue ;;
@@ -72,10 +74,12 @@ func bash(name string) string {
   local cur prev words cword
   _init_completion || return
   if [[ ${cword} -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "kernel completion context timer issue update export dev" -- "$cur") )
+    COMPREPLY=( $(compgen -W "backup restore kernel completion context timer issue update export dev" -- "$cur") )
     return
   fi
   case "${words[1]}" in
+    backup) ;;
+    restore) ;;
     kernel) COMPREPLY=( $(compgen -W "attach detach restart wipe-data info status" -- "$cur") ) ;;
     completion) COMPREPLY=( $(compgen -W "zsh bash fish" -- "$cur") ) ;;
     context) COMPREPLY=( $(compgen -W "get set clear clear-issue switch-repo switch-stream switch-issue" -- "$cur") ) ;;
@@ -92,7 +96,9 @@ complete -F _%s %s
 
 func fish(name string) string {
 	return fmt.Sprintf(
-		`complete -c %s -f -n "__fish_use_subcommand" -a "kernel completion context timer issue update export dev"
+		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore kernel completion context timer issue update export dev"
+complete -c %s -f -n "__fish_seen_subcommand_from backup" -a ""
+complete -c %s -f -n "__fish_seen_subcommand_from restore" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from kernel" -a "attach detach restart wipe-data info status"
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
 complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
@@ -102,6 +108,8 @@ complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismi
 complete -c %s -f -n "__fish_seen_subcommand_from export" -a "daily weekly repo stream issue-rollup csv calendar reports"
 complete -c %s -f -n "__fish_seen_subcommand_from dev" -a "seed clear"
 `,
+		name,
+		name,
 		name,
 		name,
 		name,

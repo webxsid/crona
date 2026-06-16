@@ -1,6 +1,12 @@
 # Distribution
 
-This page covers local validation of Crona's GoReleaser release flow and the isolated Homebrew workflow on macOS and Linux.
+This page covers local validation of Crona's GoReleaser release flow, the isolated Homebrew workflow on macOS and Linux, and the winget publishing path for Windows.
+
+For end-user channel switches, see [migration.md](migration.md). That guide uses `crona backup` and `crona restore <path>` so users can keep their `crona.db` while they reinstall with a different package manager.
+
+The shared Homebrew formula generator reads `CRONA_HOMEBREW_BASE_URL` when it needs to emit release URLs. The publish script sets that automatically for GitHub Releases; local validation can set it to a `file://` path against generated artifacts.
+
+GoReleaser also publishes the winget manifest when `WINGET_PKGS_GITHUB_TOKEN` is set. Beta tags skip that publish path.
 
 ## A. GoReleaser Build-Only Test
 
@@ -47,6 +53,8 @@ What it does:
   - `update-command: brew upgrade crona`
 - uninstalls and untaps the disposable tap
 - removes `/tmp/crona-homebrew-test` on exit
+
+For winget releases, the stable release workflow uses the same GitHub release assets and opens or updates a PR in the configured winget-pkgs fork. No extra local winget test target exists yet; validation is done through GoReleaser config checks and the release workflow on a stable tag.
 
 Generate-only mode is also available:
 

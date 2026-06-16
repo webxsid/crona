@@ -41,6 +41,9 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WINGET_PKGS_GITHUB_TOKEN: ${{ secrets.WINGET_PKGS_GITHUB_TOKEN }}
+          WINGET_PKGS_REPO_OWNER: webxsid
+          WINGET_PKGS_REPO_NAME: winget-pkgs
         run: goreleaser release --clean
 
       - name: Publish installer assets

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/tui/commands"
 	dialogruntime "crona/tui/internal/tui/dialog_runtime"
 	helperpkg "crona/tui/internal/tui/helpers"
@@ -215,6 +216,15 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 func (m Model) handleInputOpenSelection() (tea.Cmd, bool) {
 	snapshot := m.selectionSnapshot()
 	if m.view == ViewUpdates && m.updateStatus != nil {
+		if versionpkg.InstallScriptDeprecationEnabled() || m.updateStatus.InstallScriptDeprecated {
+			url := strings.TrimSpace(m.updateStatus.MigrationGuideURL)
+			if url == "" {
+				url = versionpkg.InstallScriptMigrationURL
+			}
+			if url != "" {
+				return commands.OpenExternalURL(url), true
+			}
+		}
 		return commands.OpenExternalURL(m.updateStatus.ReleaseURL), true
 	}
 	if m.view == ViewReports && m.pane == PaneExportReports {

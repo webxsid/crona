@@ -29,7 +29,7 @@ case "${VERSION}" in
 esac
 FORMULA_PATH="${TAP_DIR}/Formula/${FORMULA_NAME}.rb"
 
-BASE_URL="https://github.com/${PROJECT_REPO}/releases/download/${VERSION}" \
+CRONA_HOMEBREW_BASE_URL="https://github.com/${PROJECT_REPO}/releases/download/${VERSION}" \
   sh "${0%/*}/generate_homebrew_formula.sh" "${VERSION}" "${RELEASE_DIR}" "${RELEASE_DIR}/checksums.txt" "${FORMULA_PATH}" "${FORMULA_NAME}"
 
 git clone --branch "${TAP_BRANCH}" --single-branch \

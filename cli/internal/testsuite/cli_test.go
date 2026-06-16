@@ -3,12 +3,17 @@ package testsuite
 import (
 	"bytes"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	completioncmd "crona/cli/internal/command/completion"
 	contextcmd "crona/cli/internal/command/context"
 	exportcmd "crona/cli/internal/command/export"
 	kernelcmd "crona/cli/internal/command/kernel"
+	migrationcmd "crona/cli/internal/command/migration"
 	sessioncmd "crona/cli/internal/command/session"
 	updatecmd "crona/cli/internal/command/update"
 	shareddto "crona/shared/dto"
@@ -295,10 +300,9 @@ func TestUpdateStatusTextIncludesInstallSourceAndCommand(t *testing.T) {
 			status := target.(*sharedtypes.UpdateStatus)
 			status.CurrentVersion = "1.5.1"
 			status.LatestVersion = "1.6.0"
-			status.InstallSource = sharedtypes.InstallSourceBrew
-			status.BrewFormula = "crona-beta"
-			status.UpdateCommand = "brew upgrade crona-beta"
-			status.InstallUnavailableReason = "managed by Homebrew"
+			status.InstallSource = sharedtypes.InstallSourceWinget
+			status.UpdateCommand = "winget upgrade --id Webxsid.Crona -e"
+			status.InstallUnavailableReason = "managed by winget"
 			status.UpdateAvailable = true
 			status.Enabled = true
 			status.PromptEnabled = true
@@ -308,9 +312,111 @@ func TestUpdateStatusTextIncludesInstallSourceAndCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("update status: %v", err)
 	}
-	for _, want := range []string{"current: 1.5.1", "latest: 1.6.0", "install-source: brew", "brew-formula: crona-beta", "update-command: brew upgrade crona-beta", "install-unavailable: managed by Homebrew"} {
+	for _, want := range []string{"current: 1.5.1", "latest: 1.6.0", "install-source: winget", "update-command: winget upgrade --id Webxsid.Crona -e", "install-unavailable: managed by winget"} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, out.String())
 		}
+	}
+}
+
+func TestCompletionIncludesMigrationCommands(t *testing.T) {
+	var out bytes.Buffer
+	if err := completioncmd.Run([]string{"zsh"}, "crona", &out); err != nil {
+		t.Fatalf("completion command: %v", err)
+	}
+	rendered := out.String()
+	for _, want := range []string{"backup:Back up data", "restore:Restore data", "backup) ;;", "restore) ;;"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected completion output to contain %q, got:\n%s", want, rendered)
+		}
+	}
+}
+
+func TestBackupCommandWritesBackupFile(t *testing.T) {
+	runtimeDir := t.TempDir()
+	backupDir := t.TempDir()
+	source := filepath.Join(runtimeDir, "crona.db")
+	if err := os.WriteFile(source, []byte("database-bytes"), 0o600); err != nil {
+		t.Fatalf("write source db: %v", err)
+	}
+
+	var out bytes.Buffer
+	var shutdownCalls int
+	err := migrationcmd.RunBackup([]string{}, migrationcmd.Deps{
+		Stdout: &out,
+		ShutdownKernel: func() error {
+			shutdownCalls++
+			return nil
+		},
+		RuntimeBaseDir: func() (string, error) { return runtimeDir, nil },
+		BackupBaseDir:  func() (string, error) { return backupDir, nil },
+		Now: func() time.Time {
+			return time.Date(2026, 6, 16, 6, 20, 10, 0, time.UTC)
+		},
+	})
+	if err != nil {
+		t.Fatalf("backup command: %v", err)
+	}
+	if shutdownCalls != 1 {
+		t.Fatalf("expected shutdown to be attempted once, got %d", shutdownCalls)
+	}
+	rendered := out.String()
+	if !strings.Contains(rendered, "backup file:") {
+		t.Fatalf("expected backup output to include file path, got %q", rendered)
+	}
+	lines := strings.Split(strings.TrimSpace(rendered), "\n")
+	path := strings.TrimSpace(strings.TrimPrefix(lines[len(lines)-1], "backup file:"))
+	if path == "" {
+		t.Fatalf("expected backup path in output, got %q", rendered)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read backup file: %v", err)
+	}
+	if string(body) != "database-bytes" {
+		t.Fatalf("unexpected backup contents: %q", string(body))
+	}
+}
+
+func TestRestoreCommandPromptsAndWritesDatabase(t *testing.T) {
+	runtimeDir := t.TempDir()
+	backupDir := t.TempDir()
+	target := filepath.Join(runtimeDir, "crona.db")
+	if err := os.WriteFile(target, []byte("old-data"), 0o600); err != nil {
+		t.Fatalf("write current db: %v", err)
+	}
+	source := filepath.Join(backupDir, "crona-db-20260616-062010.db")
+	if err := os.WriteFile(source, []byte("restored-data"), 0o600); err != nil {
+		t.Fatalf("write backup db: %v", err)
+	}
+
+	var out bytes.Buffer
+	var shutdownCalls int
+	err := migrationcmd.RunRestore([]string{source}, migrationcmd.Deps{
+		Stdout: &out,
+		Stdin:  strings.NewReader("y\n"),
+		ShutdownKernel: func() error {
+			shutdownCalls++
+			return nil
+		},
+		RuntimeBaseDir: func() (string, error) { return runtimeDir, nil },
+		BackupBaseDir:  func() (string, error) { return backupDir, nil },
+		IsInteractive:  func() bool { return true },
+	})
+	if err != nil {
+		t.Fatalf("restore command: %v", err)
+	}
+	if shutdownCalls != 1 {
+		t.Fatalf("expected shutdown to be attempted once, got %d", shutdownCalls)
+	}
+	body, err := os.ReadFile(target)
+	if err != nil {
+		t.Fatalf("read restored db: %v", err)
+	}
+	if string(body) != "restored-data" {
+		t.Fatalf("unexpected restored contents: %q", string(body))
+	}
+	if !strings.Contains(out.String(), "restored database:") {
+		t.Fatalf("expected restore output to include destination path, got %q", out.String())
 	}
 }

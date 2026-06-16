@@ -797,13 +797,20 @@ func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
 func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:                   "updates",
+		UpdateScriptDeprecated: true,
 		UpdateInstallAvailable: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[r]", "check for updates", "[o]", "open release page", "[i]", "install", "[U]", "dismiss"} {
+	for _, want := range []string{"[r]", "refresh", "[o]", "open migration guide", "[d]", "show diagnostics"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected updates actions to contain %q, got %q", want, joined)
 		}
+	}
+	if strings.Contains(joined, "[i]") {
+		t.Fatalf("expected updates actions to hide the install action, got %q", joined)
+	}
+	if strings.Contains(joined, "[U]") {
+		t.Fatalf("expected updates actions to hide dismiss action, got %q", joined)
 	}
 }
 
@@ -849,7 +856,7 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 		View:   "updates",
 		Pane:   "issues",
 		Width:  100,
-		Height: 24,
+		Height: 40,
 		UpdateStatus: &api.UpdateStatus{
 			Enabled:                  true,
 			PromptEnabled:            true,
@@ -862,12 +869,22 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 			LatestVersion:            "0.3.0",
 			InstallAvailable:         false,
 			InstallUnavailableReason: "Release is missing the checksums.txt asset.",
+			InstallScriptDeprecated:  true,
+			MigrationGuideURL:        "https://crona.work/migration",
 		},
 	})
-	for _, want := range []string{"[i] install unavailable", "Running channel: Beta", "Configured update channel: Beta", "Latest release kind: prerelease release", "Release type: prerelease", "Release is missing the checksums.txt asset."} {
+	for _, want := range []string{"Important", "Install script deprecation", "Migration guide: https://crona.work/migration", "Migration steps", "crona backup", "crona restore <backup-path>", "↑ Update Available", "Latest Version", "Diagnostics (hidden)", "[d] show diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
+	}
+	for _, unwanted := range []string{"Running channel:", "Configured Channel", "Release Kind", "Release Tag", "Install Status", "Release URL", "Checksums"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected updates view to keep %q out of the default layout, got %q", unwanted, rendered)
+		}
+	}
+	if strings.Contains(rendered, "[i]") {
+		t.Fatalf("expected install action to be hidden, got %q", rendered)
 	}
 }
 

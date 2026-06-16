@@ -2,12 +2,12 @@ package model
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 
 	"crona/shared/config"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
 	appruntime "crona/tui/internal/tui/runtime"
@@ -15,6 +15,7 @@ import (
 
 func (m Model) selfUpdateInstallAvailable() bool {
 	return m.updateStatus != nil && m.updateStatus.InstallAvailable &&
+		!m.installScriptDeprecated() &&
 		m.selfUpdateUnsupportedReason() == ""
 }
 
@@ -25,6 +26,10 @@ func (m Model) selfUpdateUnsupportedReason() string {
 		return ""
 	}
 	if m.updateStatus != nil {
+		if m.installScriptDeprecated() &&
+			m.effectiveInstallSource() == sharedtypes.InstallSourceScript {
+			return versionpkg.InstallScriptDeprecationMessage()
+		}
 		if reason := strings.TrimSpace(m.updateStatus.InstallUnavailableReason); reason != "" {
 			return reason
 		}
@@ -41,6 +46,8 @@ func (m Model) selfUpdateUnsupportedReason() string {
 			}
 		}
 		return fmt.Sprintf("Installed via Homebrew. Use brew upgrade %s.", currentBrewFormula())
+	case sharedtypes.InstallSourceWinget:
+		return "Installed via winget. Use winget upgrade --id Webxsid.Crona -e."
 	case sharedtypes.InstallSourceGo:
 		return "Installed via go install. Use go install github.com/webxsid/crona/...@latest."
 	case sharedtypes.InstallSourceManual, sharedtypes.InstallSourceUnknown:
@@ -66,6 +73,13 @@ func (m Model) selfUpdateUnsupportedReason() string {
 	return ""
 }
 
+func (m Model) installScriptDeprecated() bool {
+	if versionpkg.InstallScriptDeprecationEnabled() {
+		return true
+	}
+	return m.updateStatus != nil && m.updateStatus.InstallScriptDeprecated
+}
+
 func (m Model) effectiveInstallSource() sharedtypes.InstallSource {
 	if m.updateStatus != nil {
 		if source := sharedtypes.NormalizeInstallSource(m.updateStatus.InstallSource); source != sharedtypes.InstallSourceUnknown {
@@ -83,6 +97,7 @@ func (m Model) effectiveInstallSource() sharedtypes.InstallSource {
 
 func installSourceFromPath(path string) sharedtypes.InstallSource {
 	normalized := strings.ToLower(strings.TrimSpace(path))
+	normalized = strings.ReplaceAll(normalized, "\\", "/")
 	if normalized == "" {
 		return sharedtypes.InstallSourceUnknown
 	}
@@ -92,7 +107,11 @@ func installSourceFromPath(path string) sharedtypes.InstallSource {
 		strings.Contains(normalized, "/homebrew/") {
 		return sharedtypes.InstallSourceBrew
 	}
-	if strings.Contains(normalized, string(filepath.Separator)+"go"+string(filepath.Separator)+"bin"+string(filepath.Separator)) ||
+	if strings.Contains(normalized, "/microsoft/winget/") ||
+		strings.Contains(normalized, "/winget/") {
+		return sharedtypes.InstallSourceWinget
+	}
+	if strings.Contains(normalized, "/go/bin/") ||
 		strings.Contains(normalized, "/gobin/") {
 		return sharedtypes.InstallSourceGo
 	}

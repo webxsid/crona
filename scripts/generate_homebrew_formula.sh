@@ -14,6 +14,7 @@ CHECKSUMS_FILE="$3"
 OUTPUT_PATH="$4"
 FORMULA_NAME="${5:-crona}"
 BASE_URL="${CRONA_HOMEBREW_BASE_URL:-}"
+VERSION_NO_V="${VERSION#v}"
 
 abs_path() {
   path="$1"
@@ -59,23 +60,14 @@ fi
 archive_name() {
   goos="$1"
   goarch="$2"
-  printf 'crona-bundle-%s-%s-%s.zip\n' "${VERSION}" "${goos}" "${goarch}"
-}
-
-member_name() {
-  binary="$1"
-  goos="$2"
-  goarch="$3"
-  printf '%s-v%s-%s-%s\n' "${binary}" "${VERSION#v}" "${goos}" "${goarch}"
+  printf 'crona-bundle-%s-%s-%s.zip\n' "${VERSION_NO_V}" "${goos}" "${goarch}"
 }
 
 emit_install_lines() {
   indent="$1"
-  goos="$2"
-  goarch="$3"
-  printf '%sbin.install "%s" => "crona"\n' "$indent" "$(member_name crona "$goos" "$goarch")"
-  printf '%sbin.install "%s" => "crona-kernel"\n' "$indent" "$(member_name crona-kernel "$goos" "$goarch")"
-  printf '%sbin.install "%s" => "crona-tui"\n' "$indent" "$(member_name crona-tui "$goos" "$goarch")"
+  printf '%sbin.install "crona"\n' "$indent"
+  printf '%sbin.install "crona-kernel"\n' "$indent"
+  printf '%sbin.install "crona-tui"\n' "$indent"
 }
 
 emit_install_dispatch() {

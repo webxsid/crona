@@ -57,6 +57,14 @@ Fallback install script:
 curl -fsSL https://crona.work/install.sh | sh
 ```
 
+If you need to switch install methods or release channels, use the migration guide:
+
+```bash
+https://crona.work/migration
+```
+
+The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
+
 Install a specific release directly from GitHub:
 
 ```bash
@@ -78,7 +86,21 @@ sh /tmp/install-crona-tui.sh
 
 ## Windows
 
-Install from PowerShell:
+Prefer winget:
+
+```powershell
+winget install --id Webxsid.Crona -e
+```
+
+The winget package installs the Crona bundle and exposes `crona`, `crona-kernel`, and `crona-tui`.
+
+Winget users update with:
+
+```powershell
+winget upgrade --id Webxsid.Crona -e
+```
+
+Fallback install from PowerShell:
 
 ```powershell
 $version = "<version>"
@@ -135,8 +157,11 @@ The default track follows normal releases, and testers can opt into upcoming bui
 Use the in-app `Updates` view to check, read notes, and install supported updates.
 
 - Homebrew installs never self-update from inside Crona.
+- Winget installs never self-update from inside Crona.
 - The TUI shows the source-aware update command for the current install type.
+- When Crona asks you to migrate, back up with `crona backup`, reinstall with your preferred method, then restore with `crona restore <path>`.
 - Script installs rerun the install script.
+- Winget installs use `winget upgrade --id Webxsid.Crona -e`.
 - Source installs show the `go install` command.
 - Manual installs and unknown installs are directed to the GitHub release page.
 

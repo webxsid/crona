@@ -87,7 +87,8 @@ archive_name() {
   version="$1"
   goos="$2"
   goarch="$3"
-  printf 'crona-bundle-%s-%s-%s.zip\n' "${version}" "${goos}" "${goarch}"
+  normalized_version="${version#v}"
+  printf 'crona-bundle-%s-%s-%s.zip\n' "${normalized_version}" "${goos}" "${goarch}"
 }
 
 expected_archive() {
@@ -104,7 +105,7 @@ current_platform_archive() {
 
 version_from_archive() {
   archive="$1"
-  basename "$archive" | sed -E 's/^crona-bundle-(.*)-(darwin|linux|windows)-(amd64|arm64)\.zip$/\1/'
+  basename "$archive" | sed -E 's/^crona-bundle-(.*)-(darwin|linux|windows)-(amd64|arm64)\.zip$/v\1/'
 }
 
 snapshot_version_from_dist() {

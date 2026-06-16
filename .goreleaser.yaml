@@ -75,3 +75,29 @@ release:
     name: crona
   draft: false
   prerelease: auto
+
+winget:
+  - name: crona
+    package_identifier: Webxsid.Crona
+    package_name: Crona
+    publisher: Webxsid
+    short_description: local-first work tracker for developers
+    description: local-first work tracker for developers
+    homepage: https://crona.work
+    license: MIT
+    path: manifests
+    ids:
+      - crona-bundle
+    repository:
+      owner: "{{ .Env.WINGET_PKGS_REPO_OWNER }}"
+      name: "{{ .Env.WINGET_PKGS_REPO_NAME }}"
+      token: "{{ .Env.WINGET_PKGS_GITHUB_TOKEN }}"
+      branch: "crona-{{ .Tag }}"
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+    skip_upload: '{{ if or (contains .Tag "-beta") (eq .Env.WINGET_PKGS_GITHUB_TOKEN "") (eq .Env.WINGET_PKGS_REPO_OWNER "") (eq .Env.WINGET_PKGS_REPO_NAME "") }}true{{ else }}false{{ end }}'

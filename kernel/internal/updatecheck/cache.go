@@ -25,6 +25,8 @@ func (s *Service) loadCache() {
 	cached.Channel = sharedtypes.NormalizeUpdateChannel(cached.Channel)
 	cached.RunningChannel = version.RunningChannel()
 	cached.RunningIsBeta = version.IsBetaRelease()
+	cached.InstallScriptDeprecated = version.InstallScriptDeprecationEnabled()
+	cached.MigrationGuideURL = version.InstallScriptMigrationURL
 	s.status = cached
 	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
 		s.status.InstallSource = sharedtypes.NormalizeInstallSource(file.InstallSource)

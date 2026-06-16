@@ -13,6 +13,7 @@ import (
 	devcmd "crona/cli/internal/command/dev"
 	exportcmd "crona/cli/internal/command/export"
 	kernelcmd "crona/cli/internal/command/kernel"
+	migrationcmd "crona/cli/internal/command/migration"
 	sessioncmd "crona/cli/internal/command/session"
 	updatecmd "crona/cli/internal/command/update"
 	flagspkg "crona/cli/internal/flags"
@@ -44,6 +45,9 @@ var (
 	}
 	launchTUIFn = func() error {
 		return runtimepkg.LaunchTUI(runtimeDeps())
+	}
+	shutdownKernelFn = func() error {
+		return runtimepkg.ShutdownKernel(runtimeDeps())
 	}
 )
 
@@ -123,6 +127,18 @@ func run(args []string) error {
 			Stdout:     os.Stdout,
 			CallKernel: callKernelFn,
 		})
+	case "backup":
+		return migrationcmd.RunBackup(args[1:], migrationcmd.Deps{
+			Stdout:         os.Stdout,
+			Stdin:          os.Stdin,
+			ShutdownKernel: shutdownKernelFn,
+		})
+	case "restore":
+		return migrationcmd.RunRestore(args[1:], migrationcmd.Deps{
+			Stdout:         os.Stdout,
+			Stdin:          os.Stdin,
+			ShutdownKernel: shutdownKernelFn,
+		})
 	case "update":
 		return updatecmd.Run(args[1:], updatecmd.Deps{
 			Stdout:     os.Stdout,
@@ -164,12 +180,14 @@ func rootUsage() string {
 Run without a command to open the TUI.
 
 Commands:
-  help
+	help
+  backup      Backup your Crona database before migrating
   kernel      Attach, detach, and inspect the local kernel
   completion  Generate shell completions
   context     Inspect or update checked-out context
   timer       Control the active timer/session
   issue       Start issue focus
+  restore     Restore a backup database into the current runtime dir
   update      Inspect release updates and release notes
   export      Export automation artifacts such as calendar ICS files
   dev         Seed or clear dev data
