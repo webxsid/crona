@@ -6,6 +6,7 @@ All notable changes to **Crona** are documented here.
 
 ### Changed
 - Added destination-specific migration guides for legacy installs moving to Homebrew, Go source installs, and Winget.
+- Stable Homebrew releases now refresh both `crona.rb` and `crona-beta.rb` so beta users can move to the stable build without a manual reinstall.
 
 ## [1.6.0] - 2026-06-16
 

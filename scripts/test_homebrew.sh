@@ -246,6 +246,7 @@ run_snapshot_validation() {
   snapshot_version="$(snapshot_version_from_dist)"
   verify_snapshot_artifacts "${snapshot_version}"
   generate_formula "${snapshot_version}" "${DIST_DIR}" "${DIST_DIR}/checksums.txt" "${TAP_DIR}/Formula/crona.rb"
+  generate_formula "${snapshot_version}" "${DIST_DIR}" "${DIST_DIR}/checksums.txt" "${TAP_DIR}/Formula/crona-beta.rb" "crona-beta"
 
   if [ "${ACTION}" = "generate" ] || [ "${ACTION}" = "generate-only" ]; then
     printf 'Generated local formula at %s\n' "${TAP_DIR}/Formula/crona.rb"
