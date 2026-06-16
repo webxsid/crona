@@ -2,6 +2,13 @@
 
 Use this guide when you are moving off the legacy install script and want to keep Crona managed by winget on Windows.
 
+This path follows the same migration pattern as the other guides: stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, install Winget, and restore the backup.
+
+Estimated time: 20-30 minutes, mainly because the Windows install and restore steps can take a little longer to complete.
+
+Use this guide when the final install should be managed by Winget rather than the legacy script.
+The main difference from the other guides is the Windows-only package manager step at the end.
+
 ## Before You Start
 
 Stop every running Crona process before you touch the install.
@@ -74,3 +81,10 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 - Winget owns install, update, and uninstall.
 - Updates use `winget upgrade --id Webxsid.Crona -e`.
 - `crona backup` and `crona restore` only move `crona.db`.
+
+## Contact Me If Stuck
+
+If you hit a Windows-specific install problem, contact me directly:
+
+- Email: `me@webxsid.com`
+- WhatsApp: `+91-6375728437`

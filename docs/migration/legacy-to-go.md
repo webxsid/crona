@@ -2,6 +2,13 @@
 
 Use this guide when you are moving off the legacy install script and want to keep Crona installed from source with `go install`.
 
+This path is the source-install version of the same migration flow: stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, install from Go, and restore the backup.
+
+Estimated time: 15-25 minutes, depending on whether Go dependencies are already cached locally.
+
+Keep the backup path handy before you remove anything so the restore step stays straightforward.
+If you already use `go install`, this guide helps you move from the legacy script to the supported source-install flow without changing the overall migration sequence.
+
 ## Before You Start
 
 Stop every running Crona process before you touch the install.
@@ -80,3 +87,10 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 - Source installs now own their update path through `go install github.com/webxsid/crona/...@latest`.
 - `crona backup` and `crona restore` only move `crona.db`.
 - Keep the same `go install` command handy for future reinstalls or upgrades.
+
+## Contact Me If Stuck
+
+If the source-install path gets confusing, contact me directly:
+
+- Email: `me@webxsid.com`
+- WhatsApp: `+91-6375728437`

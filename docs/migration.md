@@ -4,6 +4,13 @@ Use this guide when switching Crona install methods or release channels.
 
 Use this guide when moving between Homebrew, winget, the legacy install script, or the `crona-beta`/stable channels. Crona's Updates view points here once the migration banner appears.
 
+Estimated time: 20-30 minutes, depending on how much old state needs to be backed up and cleaned up.
+
+The migration flow is intentionally the same everywhere: stop Crona, back up the database, clear the old runtime, remove the old binaries, install the new target, and restore from the saved backup.
+Use the destination-specific guides below if you want exact commands for Homebrew, Go source installs, or Winget.
+The top-level pages keep the process consistent, while the destination pages fill in the platform-specific details and paths.
+If you are moving from a legacy install script, start with the beta release installer before switching package managers.
+
 The detailed guides live here:
 
 - [Legacy to Homebrew](migration/legacy-to-brew.md)
@@ -26,3 +33,10 @@ If you are not sure which destination to choose, start with the package manager 
 - Homebrew on macOS and Linux
 - Go source installs when you want to keep using `go install`
 - Winget on Windows
+
+## Contact Me If Stuck
+
+If the migration gets messy, contact me directly:
+
+- Email: `me@webxsid.com`
+- WhatsApp: `+91-6375728437`

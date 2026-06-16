@@ -7,6 +7,24 @@ All notable changes to **Crona** are documented here.
 ### Changed
 - Added destination-specific migration guides for legacy installs moving to Homebrew, Go source installs, and Winget.
 
+## [1.6.0] - 2026-06-16
+
+Crona v1.6.0 is the stable release that brings the 1.6 line out of beta for users upgrading from 1.5.1. It folds in the managed-install work, migration guides, daemon rename, bundled assets, and release workflow updates introduced across the beta series.
+
+### Added
+- `crona backup` and `crona restore <path>` are now available for moving databases between installs.
+- Dedicated migration guides now cover legacy installs moving to Homebrew, Go source installs, and Winget.
+- Bundled alert sounds now ship as MP3 assets with attribution for the included Pixabay effects.
+
+### Changed
+- The shipped engine binary now installs and ships as `crona-daemon`.
+- The CLI command surface now uses `crona daemon ...` and matching completion entries.
+- Release bundles, package-manager validation, and installer templates now reference the daemon binary name.
+- Homebrew and Winget now read as managed-install paths in the install and update flow.
+- Legacy install scripts are now documented as fallback paths, and the install guide points users to the migration pages.
+- The release workflow now overwrites GitHub release notes from `docs/release-notes/<tag>.md` after GoReleaser publishes the assets.
+- Release metadata, docs, and updater guidance now treat the 1.6 line as a managed distribution story instead of a script-first one.
+
 ## [1.6.0-beta.4] - 2026-06-16
 
 Crona v1.6.0-beta.4 renames the shipped engine binary and CLI command surface to daemon, updates the release and installer tooling to match, and cleans up the public docs so the new distribution story reads consistently.

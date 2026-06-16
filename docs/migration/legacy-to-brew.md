@@ -4,6 +4,12 @@ Use this guide when you are moving off the legacy install script and want to kee
 
 If you are on a beta build and want to stay on the beta track, install `crona-beta` instead of `crona`. The migration flow is the same either way.
 
+Estimated time: 15-20 minutes, plus any extra time needed to finish backup and restore on a large dataset.
+
+This path keeps the process simple: stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, and switch to Homebrew.
+Follow the steps in order so you do not lose the backup path or leave an old runtime behind.
+If you are moving between stable and beta Homebrew tracks, the install command changes but the migration flow does not.
+
 ## Before You Start
 
 Stop every running Crona process before you touch the install.
@@ -92,3 +98,10 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 - Stable updates use `brew upgrade crona`.
 - Beta updates use `brew upgrade crona-beta`.
 - `crona backup` and `crona restore` only move `crona.db`.
+
+## Contact Me If Stuck
+
+If something is unclear or the install does not line up with these steps, contact me directly:
+
+- Email: `me@webxsid.com`
+- WhatsApp: `+91-6375728437`
