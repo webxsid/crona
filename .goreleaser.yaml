@@ -97,8 +97,8 @@ winget:
     ids:
       - crona-bundle
     repository:
-      owner: "{{ .Env.WINGET_PKGS_REPO_OWNER }}"
-      name: "{{ .Env.WINGET_PKGS_REPO_NAME }}"
+      owner: "webxsid"
+      name: "winget-pkgs"
       token: "{{ .Env.WINGET_PKGS_GITHUB_TOKEN }}"
       branch: "crona-{{ .Tag }}"
       pull_request:
@@ -108,4 +108,4 @@ winget:
           owner: microsoft
           name: winget-pkgs
           branch: master
-    skip_upload: '{{ if or (contains .Tag "-beta") (eq .Env.WINGET_PKGS_GITHUB_TOKEN "") (eq .Env.WINGET_PKGS_REPO_OWNER "") (eq .Env.WINGET_PKGS_REPO_NAME "") }}true{{ else }}false{{ end }}'
+    skip_upload: '{{ if or (contains .Tag "-beta") (eq .Env.WINGET_PKGS_GITHUB_TOKEN "") }}true{{ else }}false{{ end }}'
