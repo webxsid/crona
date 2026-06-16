@@ -5,7 +5,7 @@ All notable changes to **Crona** are documented here.
 ## [Unreleased]
 
 ### Changed
-- Future changes will be listed here.
+- Added destination-specific migration guides for legacy installs moving to Homebrew, Go source installs, and Winget.
 
 ## [1.6.0-beta.4] - 2026-06-16
 

@@ -12,6 +12,7 @@ Managed package installers are the preferred distribution path:
 - GitHub Releases as the canonical binary source
 
 Use [docs/install.md](docs/install.md) for installation and [docs/migration.md](docs/migration.md) when you need to switch install methods or release channels.
+Destination-specific migration guides live in the migration section of the docs.
 
 The repository is a Go monorepo with four main modules:
 - `kernel`: internal source tree for the background daemon, SQLite store, timer, IPC, and update checks

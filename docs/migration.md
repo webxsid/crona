@@ -4,114 +4,25 @@ Use this guide when switching Crona install methods or release channels.
 
 Use this guide when moving between Homebrew, winget, the legacy install script, or the `crona-beta`/stable channels. Crona's Updates view points here once the migration banner appears.
 
-The safe flow is:
+The detailed guides live here:
 
-1. Create a backup of your database.
-2. Remove the old install with your package manager.
-3. Optionally remove the old runtime directory if you want a fully clean switch.
-4. Install Crona again with the method you want to keep.
-5. Restore the database into the fresh runtime directory.
+- [Legacy to Homebrew](migration/legacy-to-brew.md)
+- [Legacy to Go](migration/legacy-to-go.md)
+- [Legacy to Winget](migration/legacy-to-winget.md)
 
-After migration, the package manager owns install, update, and uninstall:
+The shared migration flow is the same in every destination guide:
 
-- Homebrew: `brew upgrade crona` or `brew upgrade crona-beta`
-- Winget: `winget upgrade --id Webxsid.Crona -e`
-- Source installs: rerun the `go install` command
+1. Stop every running Crona process.
+2. Download the latest beta release installer script from GitHub Releases.
+3. Make the installer executable and run it, then choose to overwrite the existing install.
+4. Run `crona backup`.
+5. Remove the runtime directory.
+6. Remove the installed binaries.
+7. Install the destination package manager version.
+8. Run `crona restore <path-to-backup>`.
 
-## 1. Back Up
+If you are not sure which destination to choose, start with the package manager you want to keep long term:
 
-Run:
-
-```bash
-crona backup
-```
-
-The command prints the absolute backup path, for example:
-
-```text
-backup file: /Users/alice/Library/Application Support/Crona Backups/crona-db-20260616-062010.db
-```
-
-Keep that file. It is stored outside Crona's runtime directory, so uninstalling Crona will not delete it.
-
-## 2. Remove The Old Install
-
-Remove the old install with the package manager or installer you are migrating away from:
-
-- Homebrew stable:
-  ```bash
-  brew uninstall crona
-  ```
-- Homebrew beta:
-  ```bash
-  brew uninstall crona-beta
-  ```
-- Winget:
-  ```powershell
-  winget uninstall --id Webxsid.Crona -e
-  ```
-- Script/manual installs:
-  remove the installed binaries from your `PATH`, or rerun your package manager install after cleanup.
-  If you came from the legacy install script, move to a managed package installer after cleanup.
-
-Package-manager uninstall removes the Crona binaries, but it does not remove your runtime data.
-If you want to keep the data for later restore, stop here and keep the backup from step 1.
-If you want to delete the runtime data as well, choose one of these options:
-
-- While Crona is still installed, use the in-app Settings action or the CLI:
-  ```bash
-  crona daemon wipe-data --force
-  ```
-- If you already uninstalled Crona, delete the runtime directory manually:
-  - macOS prod: `~/Library/Application Support/Crona`
-  - macOS dev: `~/Library/Application Support/Crona Dev`
-  - Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
-  - Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
-  - Windows prod: `%LocalAppData%\Crona`
-  - Windows dev: `%LocalAppData%\Crona Dev`
-
-Only remove the runtime directory if you really want a clean reset. Leave it in place if you plan to restore the backup after reinstalling.
-
-## 3. Remove The Old Runtime Dir
-
-If you want a fully clean switch, remove the runtime directory after backing up the database.
-If you already deleted it in step 2, you can skip this step.
-
-If you keep the runtime directory in place, `crona restore` still only restores `crona.db`, but a full clean switch usually starts from a blank runtime dir.
-
-## 4. Reinstall
-
-Use the preferred managed installer:
-
-- Homebrew stable:
-  ```bash
-  brew install webxsid/tap/crona
-  ```
-- Homebrew beta:
-  ```bash
-  brew install webxsid/tap/crona-beta
-  ```
-- Winget:
-  ```powershell
-  winget install --id Webxsid.Crona -e
-  ```
-
-## 5. Restore
-
-Run:
-
-```bash
-crona restore <path-to-backup>
-```
-
-If Crona already has a `crona.db` at the target runtime dir, the command asks before overwriting it.
-
-## Notes
-
-- `crona backup` only copies `crona.db`.
-- `crona restore` only restores `crona.db`.
-- Diagnostics, runtime state, and install metadata are intentionally left alone.
-- If you are switching between package managers, use the new installer-specific update command after the reinstall:
-  - Homebrew: `brew upgrade crona`
-  - Homebrew beta: `brew upgrade crona-beta`
-  - Winget: `winget upgrade --id Webxsid.Crona -e`
+- Homebrew on macOS and Linux
+- Go source installs when you want to keep using `go install`
+- Winget on Windows

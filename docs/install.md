@@ -70,6 +70,12 @@ If you need to switch install methods or release channels, use the migration gui
 https://crona.work/migration
 ```
 
+For step-by-step destination-specific migration flows, see:
+
+- [Legacy to Homebrew](migration/legacy-to-brew.md)
+- [Legacy to Go](migration/legacy-to-go.md)
+- [Legacy to Winget](migration/legacy-to-winget.md)
+
 The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
 When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona daemon wipe-data --force` before uninstalling.
 If you want a fully clean switch after uninstalling, remove the runtime directory manually using the paths listed in the migration guide.
