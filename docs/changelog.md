@@ -5,9 +5,20 @@ All notable changes to **Crona** are documented here.
 ## [Unreleased]
 
 ### Changed
-- Refined installation, migration, API, and release documentation to remove draft-like phrasing and keep the public docs consistent.
-- Updated bundled alert documentation to reflect the new MP3 asset set and attribution requirements.
-- Renamed the shipped engine binary and CLI command group from `kernel` to `daemon` in the current distribution surface.
+- Future changes will be listed here.
+
+## [1.6.0-beta.4] - 2026-06-16
+
+Crona v1.6.0-beta.4 renames the shipped engine binary and CLI command surface to daemon, updates the release and installer tooling to match, and cleans up the public docs so the new distribution story reads consistently.
+
+### Changed
+- The shipped engine binary now installs and ships as `crona-daemon`.
+- The CLI command surface now uses `crona daemon ...` and matching completion entries.
+- Release bundles, package-manager validation, and installer templates now reference the daemon binary name.
+- Install, migration, development, and concept docs now use the daemon name and updated command examples.
+
+### Fixed
+- Windows named pipe and runtime discovery paths now follow the daemon naming used by the shipped executable.
 
 ## [1.6.0-beta.3] - 2026-06-16
 
