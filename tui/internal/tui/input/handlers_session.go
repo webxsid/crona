@@ -1,55 +1,10 @@
 package input
 
 import (
-	"strings"
-
 	tea "github.com/charmbracelet/bubbletea"
 
-	versionpkg "crona/shared/version"
-	commands "crona/tui/internal/tui/commands"
 	uistate "crona/tui/internal/tui/state"
 )
-
-func handleInstallUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView != uistate.ViewUpdates || !viewsShouldShowUpdate(s.UpdateStatus) ||
-		s.UpdateInstalling {
-		return s, nil, false
-	}
-	if versionpkg.InstallScriptDeprecationEnabled() ||
-		(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
-		return s, nil, true
-	}
-	if !deps.SelfUpdateInstallAvailable(s) {
-		if s.UpdateStatus != nil && strings.TrimSpace(s.UpdateStatus.UpdateCommand) != "" {
-			return s, commands.CopyTextToClipboard(
-				strings.TrimSpace(s.UpdateStatus.UpdateCommand),
-				"Update command copied",
-			), true
-		}
-		reason := strings.TrimSpace(deps.SelfUpdateUnsupportedReason(s))
-		if reason == "" && s.UpdateStatus != nil {
-			reason = strings.TrimSpace(s.UpdateStatus.InstallUnavailableReason)
-		}
-		if reason == "" {
-			reason = "Please update manually."
-		}
-		return s, deps.SetStatus(&s, reason, true), true
-	}
-	s.UpdateInstalling = true
-	s.UpdateInstallError = ""
-	return s, deps.InstallUpdate(s), true
-}
-
-func handleDismissUpdate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if !viewsShouldShowUpdate(s.UpdateStatus) {
-		return s, nil, false
-	}
-	if versionpkg.InstallScriptDeprecationEnabled() ||
-		(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
-		return s, nil, false
-	}
-	return s, deps.DismissUpdate(), true
-}
 
 func timerIsActive(s State) bool {
 	return s.Timer != nil && s.Timer.State != "idle"

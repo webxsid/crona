@@ -114,8 +114,6 @@ func (m Model) inputState() inputpkg.State {
 		Timer:                     m.timer,
 		UpdateStatus:              m.updateStatus,
 		UpdateChecking:            m.updateChecking,
-		UpdateInstalling:          m.updateInstalling,
-		UpdateInstallError:        m.updateInstallError,
 		UpdateDiagnosticsExpanded: m.updateDiagnosticsExpanded,
 		CurrentExecutable:         m.currentExecutablePath,
 		RunningIsBeta:             m.isBetaBuild(),
@@ -161,8 +159,6 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.timer = state.Timer
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
-	m.updateInstalling = state.UpdateInstalling
-	m.updateInstallError = state.UpdateInstallError
 	m.updateDiagnosticsExpanded = state.UpdateDiagnosticsExpanded
 	m.currentExecutablePath = state.CurrentExecutable
 	m.settings = state.Settings
@@ -175,12 +171,11 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 
 func (m Model) inputDeps() inputpkg.Deps {
 	return inputpkg.Deps{
-		CloseEventStop:     func() { m.stopEventStream() },
-		ShutdownKernel:     func() tea.Cmd { return commands.ShutdownKernel(m.client) },
-		SeedDevData:        func() tea.Cmd { return commands.SeedDevData(m.client) },
-		ClearDevData:       func() tea.Cmd { return commands.ClearDevData(m.client) },
-		PrepareLocalUpdate: func() tea.Cmd { return commands.PrepareLocalUpdate(m.client) },
-		IsDevMode:          func(state inputpkg.State) bool { return m.applyInputState(state).isDevMode() },
+		CloseEventStop: func() { m.stopEventStream() },
+		ShutdownKernel: func() tea.Cmd { return commands.ShutdownKernel(m.client) },
+		SeedDevData:    func() tea.Cmd { return commands.SeedDevData(m.client) },
+		ClearDevData:   func() tea.Cmd { return commands.ClearDevData(m.client) },
+		IsDevMode:      func(state inputpkg.State) bool { return m.applyInputState(state).isDevMode() },
 		NextActiveSessionView: func(state inputpkg.State, dir int) uistate.View {
 			return m.applyInputState(state).nextActiveSessionView(dir)
 		},
@@ -306,22 +301,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = model.inputState()
 			return cmd
 		},
-		CheckUpdateNow:             func() tea.Cmd { return commands.CheckUpdateNow(m.client) },
-		SelfUpdateInstallAvailable: func(state inputpkg.State) bool { return m.applyInputState(state).selfUpdateInstallAvailable() },
-		SelfUpdateUnsupportedReason: func(state inputpkg.State) string {
-			return m.applyInputState(state).selfUpdateUnsupportedReason()
-		},
-		InstallUpdate: func(state inputpkg.State) tea.Cmd {
-			next := m.applyInputState(state)
-			return commands.InstallUpdate(
-				next.updateStatus,
-				next.selfUpdateInstallAvailable(),
-				next.selfUpdateUnsupportedReason(),
-			)
-		},
-		DismissUpdate: func() tea.Cmd { return commands.DismissUpdate(m.client) },
-		ResumeSession: func(state inputpkg.State) tea.Cmd { return commands.ResumeFocusSession(m.client, state.Timer) },
-		PauseSession:  func() tea.Cmd { return commands.PauseFocusSession(m.client) },
+		CheckUpdateNow: func() tea.Cmd { return commands.CheckUpdateNow(m.client) },
+		ResumeSession:  func(state inputpkg.State) tea.Cmd { return commands.ResumeFocusSession(m.client, state.Timer) },
+		PauseSession:   func() tea.Cmd { return commands.PauseFocusSession(m.client) },
 		OpenEndSessionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openSessionMessageDialog("end_session")
@@ -650,12 +632,6 @@ func (m Model) inputDeps() inputpkg.Deps {
 		OpenConfirmWipeDataDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openConfirmWipeDataDialog()
-			*state = next.inputState()
-			return true
-		},
-		OpenConfirmUninstallDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openConfirmUninstallDialog()
 			*state = next.inputState()
 			return true
 		},

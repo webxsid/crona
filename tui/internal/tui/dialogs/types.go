@@ -60,7 +60,6 @@ func Render(theme Theme, state controllerpkg.State) string {
 		rendered = renderHabitStreakDialog(theme, state)
 	case "confirm_delete",
 		"confirm_wipe",
-		"confirm_uninstall",
 		"pick_date",
 		"create_checkin",
 		"edit_checkin",

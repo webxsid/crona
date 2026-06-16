@@ -2,7 +2,6 @@ package commands
 
 import (
 	"crona/tui/internal/api"
-	"os/exec"
 )
 
 type ReposLoadedMsg struct{ Repos []api.Repo }
@@ -98,13 +97,6 @@ type AlertRemindersLoadedMsg struct{ Reminders []api.AlertReminder }
 type UpdateStatusLoadedMsg struct{ Status *api.UpdateStatus }
 type AlertTestedMsg struct{ Label string }
 type AlertReminderChangedMsg struct{ Label string }
-type UpdateDismissedMsg struct{ Status *api.UpdateStatus }
-type UpdateInstallPreparedMsg struct {
-	Cmd *exec.Cmd
-}
-type UpdateInstallFinishedMsg struct {
-	Err error
-}
 type SettingsLoadedMsg struct{ Settings *api.CoreSettings }
 type KernelInfoLoadedMsg struct{ Info *api.KernelInfo }
 type KernelEventMsg struct{ Event api.KernelEvent }
@@ -113,10 +105,6 @@ type KernelRestartedMsg struct{}
 type TelemetrySettingsSavedMsg struct{}
 type DevSeededMsg struct{}
 type DevClearedMsg struct{}
-type LocalUpdatePreparedMsg struct {
-	Prepared *api.LocalUpdatePrepared
-	Status   *api.UpdateStatus
-}
 type RuntimeDataWipedMsg struct{}
 type UninstallStartedMsg struct{}
 type TimerTickMsg struct{ Seq int }

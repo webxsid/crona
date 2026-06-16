@@ -794,7 +794,7 @@ func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
 	}
 }
 
-func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
+func TestUpdatesViewActionsExposeCheckOpenDiagnostics(t *testing.T) {
 	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
 		View:                   "updates",
 		UpdateScriptDeprecated: true,
@@ -808,9 +808,6 @@ func TestUpdatesViewActionsExposeCheckOpenInstallDismiss(t *testing.T) {
 	}
 	if strings.Contains(joined, "[i]") {
 		t.Fatalf("expected updates actions to hide the install action, got %q", joined)
-	}
-	if strings.Contains(joined, "[U]") {
-		t.Fatalf("expected updates actions to hide dismiss action, got %q", joined)
 	}
 }
 

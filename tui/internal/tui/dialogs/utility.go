@@ -42,23 +42,6 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			Padding(1, 3).
 			Width(min(state.Width-8, 68)).
 			Render(strings.Join(rows, "\n"))
-	case "confirm_uninstall":
-		rows := []string{
-			theme.StylePaneTitle.Render("Uninstall Crona"),
-			"",
-			theme.StyleError.Render("This removes all Crona runtime data and installed binaries."),
-			theme.StyleDim.Render(
-				"The CLI, TUI, and local engine binaries in the install directory will be deleted.",
-			),
-			theme.StyleDim.Render("This action closes the app immediately after uninstall starts."),
-		}
-		rows = appendDialogFooter(theme, state, rows, "[enter] uninstall   [esc] cancel")
-		return lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(theme.ColorRed).
-			Padding(1, 3).
-			Width(min(state.Width-8, 74)).
-			Render(strings.Join(rows, "\n"))
 	case "pick_date":
 		rows := []string{
 			theme.StylePaneTitle.Render(state.DateTitle),

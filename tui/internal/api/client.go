@@ -733,11 +733,6 @@ func (c *Client) CheckUpdateNow() (*UpdateStatus, error) {
 	return &out, c.call(protocol.MethodUpdateCheck, nil, &out)
 }
 
-func (c *Client) DismissUpdate() (*UpdateStatus, error) {
-	var out UpdateStatus
-	return &out, c.call(protocol.MethodUpdateDismiss, nil, &out)
-}
-
 func (c *Client) GetSettings() (*CoreSettings, error) {
 	var raw json.RawMessage
 	if err := c.call(protocol.MethodSettingsGetAll, nil, &raw); err != nil {
@@ -847,10 +842,6 @@ func (c *Client) ShutdownKernel() error {
 	return c.mustOK(protocol.MethodKernelShutdown, nil)
 }
 
-func (c *Client) RestartKernel() error {
-	return c.mustOK(protocol.MethodKernelRestart, nil)
-}
-
 func (c *Client) ShutdownKernelAndWait(timeout time.Duration) error {
 	if err := c.ShutdownKernel(); err != nil {
 		return err
@@ -882,11 +873,6 @@ func (c *Client) SeedDevData() error {
 
 func (c *Client) ClearDevData() error {
 	return c.mustOK(protocol.MethodKernelClearDev, nil)
-}
-
-func (c *Client) PrepareLocalUpdate() (*LocalUpdatePrepared, error) {
-	var out LocalUpdatePrepared
-	return &out, c.call(protocol.MethodKernelPrepareLocalUpdate, nil, &out)
 }
 
 func (c *Client) WipeRuntimeData() error {

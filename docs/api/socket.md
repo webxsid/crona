@@ -104,7 +104,6 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local engine. |
 | `kernel.dev.seed` | `dto.Empty` | `dto.OKResponse` | Dev-only sample data seed. |
 | `kernel.dev.clear` | `dto.Empty` | `dto.OKResponse` | Dev-only local data clear. |
-| `kernel.dev.prepare_local_update` | `dto.Empty` | `dto.LocalUpdatePreparedResponse` | Dev-only local updater simulation setup. |
 | `kernel.data.wipe` | `dto.ConfirmDangerousActionRequest` | `dto.OKResponse` | Wipes runtime data after explicit confirmation. |
 
 ### Updates
@@ -113,7 +112,6 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | --- | --- | --- | --- |
 | `update.status.get` | `dto.Empty` | update status object | Current version, channel, availability, notes metadata. |
 | `update.check` | `dto.Empty` | update status object | Performs a refresh against the configured source. |
-| `update.dismiss` | `dto.Empty` | update status object | Dismisses the current update prompt. |
 
 ### Alerts
 

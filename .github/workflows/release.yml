@@ -64,6 +64,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          RELEASE_NOTES_FILE="$(mktemp)"
+          trap 'rm -f "${RELEASE_NOTES_FILE}"' EXIT
+          sh ./scripts/release_notes.sh "${GITHUB_REF_NAME}" > "${RELEASE_NOTES_FILE}"
+          gh release edit "${GITHUB_REF_NAME}" --notes-file "${RELEASE_NOTES_FILE}"
           if printf '%s' "${GITHUB_REF_NAME}" | grep -Eq -- '-beta'; then
             gh release edit "${GITHUB_REF_NAME}" --prerelease --latest=false
           else

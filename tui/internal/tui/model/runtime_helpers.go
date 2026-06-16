@@ -9,7 +9,6 @@ import (
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
-	commands "crona/tui/internal/tui/commands"
 	appruntime "crona/tui/internal/tui/runtime"
 )
 
@@ -20,11 +19,6 @@ func (m Model) selfUpdateInstallAvailable() bool {
 }
 
 func (m Model) selfUpdateUnsupportedReason() string {
-	if m.updateStatus != nil &&
-		commands.IsLocalLoopbackUpdateURL(m.updateStatus.InstallScriptURL) &&
-		m.isDevMode() {
-		return ""
-	}
 	if m.updateStatus != nil {
 		if m.installScriptDeprecated() &&
 			m.effectiveInstallSource() == sharedtypes.InstallSourceScript {

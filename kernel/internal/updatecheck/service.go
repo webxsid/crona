@@ -2,7 +2,6 @@ package updatecheck
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"runtime"
 	"strings"
@@ -13,7 +12,6 @@ import (
 	"crona/kernel/internal/events"
 	runtimepkg "crona/kernel/internal/runtime"
 	"crona/shared/config"
-	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 )
@@ -24,7 +22,6 @@ type Service struct {
 	core        *core.Context
 	bus         *events.Bus
 	logger      *runtimepkg.Logger
-	cachePath   string
 	installPath string
 	envMode     string
 	goos        string
@@ -49,7 +46,6 @@ func Start(
 		core:        coreCtx,
 		bus:         bus,
 		logger:      logger,
-		cachePath:   paths.UpdateFile,
 		installPath: paths.InstallFile,
 		envMode:     envMode,
 		goos:        runtime.GOOS,
@@ -65,7 +61,6 @@ func Start(
 			MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 		},
 	}
-	service.loadCache()
 	go func() {
 		<-ctx.Done()
 		service.stopLocalReleaseServer()
@@ -82,50 +77,6 @@ func (s *Service) Status() sharedtypes.UpdateStatus {
 
 func (s *Service) CheckNow(ctx context.Context) (sharedtypes.UpdateStatus, error) {
 	return s.refresh(ctx, true)
-}
-
-func (s *Service) PrepareLocalRelease(
-	ctx context.Context,
-) (shareddto.LocalUpdatePreparedResponse, error) {
-	if !strings.EqualFold(strings.TrimSpace(s.envMode), config.ModeDev) {
-		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf(
-			"local update simulation is only available in Dev mode",
-		)
-	}
-	release, releaseDir, baseURL, err := s.prepareLocalReleaseSource(ctx)
-	if err != nil {
-		return shareddto.LocalUpdatePreparedResponse{}, err
-	}
-	status, err := s.refresh(ctx, true)
-	if err != nil {
-		return shareddto.LocalUpdatePreparedResponse{}, err
-	}
-	if !status.InstallAvailable {
-		return shareddto.LocalUpdatePreparedResponse{}, fmt.Errorf(
-			"local release %s is missing required installer assets",
-			release.Version,
-		)
-	}
-	return shareddto.LocalUpdatePreparedResponse{
-		Version:    release.Version,
-		Tag:        release.Tag,
-		ReleaseDir: releaseDir,
-		BaseURL:    baseURL,
-	}, nil
-}
-
-func (s *Service) DismissLatest() (sharedtypes.UpdateStatus, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	prev := s.status
-	if strings.TrimSpace(s.status.LatestVersion) != "" {
-		s.status.DismissedVersion = s.status.LatestVersion
-	}
-	if err := s.persistAndEmitIfChangedLocked(prev); err != nil {
-		return s.status, err
-	}
-	return s.status, nil
 }
 
 func (s *Service) run(ctx context.Context) {
@@ -182,14 +133,14 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	if !s.status.Enabled {
 		s.clearReleaseLocked()
 		s.status.Error = ""
-		err := s.persistAndEmitIfChangedLocked(prev)
+		err := s.emitIfChangedLocked(prev)
 		status := s.status
 		s.mu.Unlock()
 		return status, err
 	}
 
 	if !force && isFresh(s.status.CheckedAt, checkInterval) {
-		err := s.persistAndEmitIfChangedLocked(prev)
+		err := s.emitIfChangedLocked(prev)
 		status := s.status
 		s.mu.Unlock()
 		return status, err
@@ -217,7 +168,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	if err != nil {
 		s.clearReleaseLocked()
 		s.status.Error = err.Error()
-		if persistErr := s.persistAndEmitIfChangedLocked(prev); persistErr != nil {
+		if persistErr := s.emitIfChangedLocked(prev); persistErr != nil {
 			return s.status, persistErr
 		}
 		return s.status, err
@@ -246,7 +197,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 		s.status.DismissedVersion = ""
 	}
 
-	if err := s.persistAndEmitIfChangedLocked(prev); err != nil {
+	if err := s.emitIfChangedLocked(prev); err != nil {
 		return s.status, err
 	}
 	return s.status, nil

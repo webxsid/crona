@@ -24,33 +24,6 @@ func IsDevMode(mode string) bool {
 	return strings.EqualFold(strings.TrimSpace(mode), ModeDev)
 }
 
-func RuntimeBaseDirNameForMode(mode string) string {
-	if override := RuntimeBaseDirOverride(); override != "" {
-		return filepath.Base(override)
-	}
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return runtimeBaseDirName(runtime.GOOS, mode)
-	}
-
-	path, err := DefaultRuntimeBaseDirForModeOnOS(
-		mode,
-		runtime.GOOS,
-		home,
-		os.Getenv("XDG_DATA_HOME"),
-		os.Getenv("LocalAppData"),
-	)
-	if err != nil {
-		return runtimeBaseDirName(runtime.GOOS, mode)
-	}
-	return filepath.Base(path)
-}
-
-func RuntimeBaseDirName() string {
-	return RuntimeBaseDirNameForMode(Load().Mode)
-}
-
 func RuntimeBaseDir() (string, error) {
 	return RuntimeBaseDirForMode(Load().Mode)
 }

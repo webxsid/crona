@@ -2,6 +2,22 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.6.0-beta.3] - 2026-06-16
+
+Crona v1.6.0-beta.3 trims dead code from the release/update path, removes obsolete local-update scaffolding, and fixes GitHub release publication so the public release body is sourced from `docs/release-notes/<tag>.md`.
+
+### Added
+- GitHub release bodies now come from the matching file in `docs/release-notes`.
+
+### Changed
+- The update surface now keeps only the supported status, refresh, and diagnostics actions.
+- The release workflow now overwrites the GitHub release body from the public release-notes file after GoReleaser publishes the assets.
+- The release metadata checks still require the matching release-notes file, and now the publish path uses the same source.
+
+### Fixed
+- Public release notes are no longer pulled from git changelog history when a `docs/release-notes/<tag>.md` file exists.
+- The release/update code no longer carries dormant local-update and dismiss flows that were not part of the supported user experience.
+
 ## [1.6.0-beta.2] - 2026-06-16
 
 Crona v1.6.0-beta.2 sharpens the distribution story across the app and docs. This beta adds first-class migration commands, extends managed-install support to Windows winget users, and makes the install-script deprecation path visible and actionable before the `1.6.x` line moves fully to managed installers.

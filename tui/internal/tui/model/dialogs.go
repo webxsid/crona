@@ -625,10 +625,6 @@ func (m Model) openConfirmWipeDataDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenConfirmWipeData())
 }
 
-func (m Model) openConfirmUninstallDialog() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenConfirmUninstall())
-}
-
 func (m Model) dialogState() dialogstate.State {
 	return dialogstate.State{
 		Kind:                           m.dialog,
@@ -1044,15 +1040,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			}
 			return commands.SetRollupRange(currentStart, date)
 		},
-		WipeRuntimeData: func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
-		UninstallCrona: func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd {
-			return commands.UninstallCrona(
-				m.client,
-				currentExecutablePath,
-				kernelExecutablePath,
-				kernelInfo,
-			)
-		},
+		WipeRuntimeData:           func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
 		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
 		OpenSupportReleasesURL:    func() tea.Cmd { return m.openSupportReleasesURL() },

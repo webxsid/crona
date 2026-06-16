@@ -241,21 +241,6 @@ func ApplyTemplatePreset(
 	return EnsureAssets(paths)
 }
 
-func LoadActiveTemplate(
-	paths runtime.Paths,
-	format sharedtypes.ExportFormat,
-) ([]byte, sharedtypes.ExportAssetStatus, error) {
-	return LoadActiveReportTemplate(paths, sharedtypes.ExportReportKindDaily, format)
-}
-
-func LoadActiveReportTemplate(
-	paths runtime.Paths,
-	reportKind sharedtypes.ExportReportKind,
-	format sharedtypes.ExportFormat,
-) ([]byte, sharedtypes.ExportAssetStatus, error) {
-	return LoadReportTemplate(paths, reportKind, format, "")
-}
-
 func LoadReportTemplate(
 	paths runtime.Paths,
 	reportKind sharedtypes.ExportReportKind,
@@ -347,21 +332,6 @@ func LoadNarrativePDFAssets(
 		return nil, nil, sharedtypes.ExportAssetStatus{}, err
 	}
 	return htmlBody, cssBody, status, nil
-}
-
-func WriteDailyReport(
-	paths runtime.Paths,
-	date string,
-	format sharedtypes.ExportFormat,
-	body []byte,
-) (string, error) {
-	return WriteReport(paths, reportWriteSpec{
-		Kind:     sharedtypes.ExportReportKindDaily,
-		Label:    "Daily Report",
-		Date:     date,
-		Format:   format,
-		BaseName: "daily-" + date,
-	}, body)
 }
 
 func WriteReport(paths runtime.Paths, spec reportWriteSpec, body []byte) (string, error) {
@@ -539,16 +509,6 @@ func DeleteReport(paths runtime.Paths, rawPath string) error {
 		return err
 	}
 	return nil
-}
-
-func RenderPDF(paths runtime.Paths, date string, markdown string) (string, string, error) {
-	return RenderPDFReport(paths, reportWriteSpec{
-		Kind:     sharedtypes.ExportReportKindDaily,
-		Label:    "Daily Report",
-		Date:     date,
-		Format:   sharedtypes.ExportFormatPDF,
-		BaseName: "daily-" + date,
-	}, markdown)
 }
 
 func RenderPDFReport(

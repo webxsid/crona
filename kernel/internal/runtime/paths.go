@@ -24,7 +24,6 @@ type Paths struct {
 	ICSDir           string
 	LogsDir          string
 	InfoFile         string
-	UpdateFile       string
 	InstallFile      string
 	Transport        string
 	Endpoint         string
@@ -57,7 +56,6 @@ func ResolvePaths() (Paths, error) {
 		ICSDir:           filepath.Join(base, "calendar"),
 		LogsDir:          logs,
 		InfoFile:         filepath.Join(base, "kernel.json"),
-		UpdateFile:       filepath.Join(base, "update.json"),
 		InstallFile:      filepath.Join(base, "install.json"),
 		Transport:        transport,
 		Endpoint:         endpoint,

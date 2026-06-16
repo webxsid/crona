@@ -373,7 +373,7 @@ func renderSidebarItem(state State, view uistate.View, label string) string {
 func renderHelpBar(state State) string {
 	devRightAction := ""
 	if state.IsDevMode {
-		devRightAction = "[f6] seed dev data   [f7] clear dev data   [f8] local update   "
+		devRightAction = "[f6] seed dev data   [f7] clear dev data   "
 	}
 	leftActions := append([]string(nil), state.GlobalActions...)
 	rightText := devRightAction + "[K] stop engine   [q] quit"

@@ -292,8 +292,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		AlertReminders:          m.alertReminders,
 		UpdateStatus:            m.updateStatus,
 		UpdateChecking:          m.updateChecking,
-		UpdateInstalling:        m.updateInstalling,
-		UpdateInstallError:      m.updateInstallError,
 		Settings:                m.settings,
 		KernelInfo:              m.kernelInfo,
 		Elapsed:                 m.elapsed,
@@ -394,8 +392,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.alertReminders = state.AlertReminders
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
-	m.updateInstalling = state.UpdateInstalling
-	m.updateInstallError = state.UpdateInstallError
 	m.settings = state.Settings
 	m.kernelInfo = state.KernelInfo
 	m.elapsed = state.Elapsed

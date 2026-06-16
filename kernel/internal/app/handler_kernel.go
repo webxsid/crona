@@ -54,18 +54,6 @@ func (h *Handler) handleKernelMethods(
 			}
 			return shareddto.OKResponse{OK: true}, h.clearDevData(ctx)
 		}), true
-	case protocol.MethodKernelPrepareLocalUpdate:
-		return h.handleNoParams(req, func() (any, error) {
-			if !strings.EqualFold(h.envMode, config.ModeDev) {
-				return nil, errors.New(
-					"kernel.dev.prepare_local_update is only available in Dev mode",
-				)
-			}
-			if h.updater == nil {
-				return nil, errors.New("update service is unavailable")
-			}
-			return h.updater.PrepareLocalRelease(ctx)
-		}), true
 	case protocol.MethodKernelWipeData:
 		return handle(req, func(input shareddto.ConfirmDangerousActionRequest) (any, error) {
 			if !input.Confirm {
@@ -100,20 +88,6 @@ func (h *Handler) handleKernelMethods(
 				}, nil
 			}
 			return h.updater.CheckNow(ctx)
-		}), true
-	case protocol.MethodUpdateDismiss:
-		return h.handleNoParams(req, func() (any, error) {
-			if h.updater == nil {
-				return sharedtypes.UpdateStatus{
-					CurrentVersion:          "unknown",
-					Enabled:                 false,
-					RunningChannel:          versionpkg.RunningChannel(),
-					RunningIsBeta:           versionpkg.IsBetaRelease(),
-					InstallScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled(),
-					MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
-				}, nil
-			}
-			return h.updater.DismissLatest()
 		}), true
 	case protocol.MethodAlertsStatusGet:
 		return h.handleNoParams(req, func() (any, error) {

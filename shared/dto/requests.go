@@ -54,8 +54,6 @@ type ListHabitsQuery struct {
 	StreamID int64 `json:"streamId"`
 }
 
-type ListAllHabitsQuery struct{}
-
 type ListHabitsDueQuery struct {
 	Date string `json:"date"`
 }
@@ -323,13 +321,6 @@ type MomentumRangeRequest struct {
 
 type ConfirmDangerousActionRequest struct {
 	Confirm bool `json:"confirm"`
-}
-
-type LocalUpdatePreparedResponse struct {
-	Version    string `json:"version"`
-	Tag        string `json:"tag"`
-	ReleaseDir string `json:"releaseDir"`
-	BaseURL    string `json:"baseUrl"`
 }
 
 type UpdateContextRequest struct {

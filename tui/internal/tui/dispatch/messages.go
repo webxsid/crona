@@ -82,8 +82,6 @@ type MessageState struct {
 	AlertReminders          []api.AlertReminder
 	UpdateStatus            *api.UpdateStatus
 	UpdateChecking          bool
-	UpdateInstalling        bool
-	UpdateInstallError      string
 	Settings                *api.CoreSettings
 	KernelInfo              *api.KernelInfo
 	Elapsed                 int
@@ -451,32 +449,6 @@ func HandleMessage(
 		return state, deps.SetStatus(&state, msg.Label, false), true
 	case commands.AlertReminderChangedMsg:
 		return state, tea.Batch(deps.SetStatus(&state, msg.Label, false), deps.LoadAlertReminders()), true
-	case commands.UpdateDismissedMsg:
-		state.UpdateStatus = msg.Status
-		state.UpdateChecking = false
-		if strings.TrimSpace(msg.Status.DismissedVersion) == "" {
-			return state, deps.SetStatus(&state, "No update prompt dismissed", false), true
-		}
-		return state, deps.SetStatus(&state, "Update prompt dismissed for v"+msg.Status.DismissedVersion, false), true
-	case commands.UpdateInstallPreparedMsg:
-		state.View = uistate.ViewUpdates
-		state.Pane = uistate.DefaultPane(state.View)
-		state.UpdateInstalling = true
-		state.UpdateInstallError = ""
-		deps.CloseEventStop()
-		return state, tea.ExecProcess(msg.Cmd, func(err error) tea.Msg {
-			return commands.UpdateInstallFinishedMsg{Err: err}
-		}), true
-	case commands.UpdateInstallFinishedMsg:
-		state.UpdateInstalling = false
-		if msg.Err != nil {
-			state.View = uistate.ViewUpdates
-			state.Pane = uistate.DefaultPane(state.View)
-			state.UpdateInstallError = msg.Err.Error()
-			return state, deps.SetStatus(&state, "Update failed: "+msg.Err.Error(), true), true
-		}
-		deps.CloseEventStop()
-		return state, tea.Quit, true
 	case commands.SettingsLoadedMsg:
 		state.Settings = msg.Settings
 		deps.ClampFiltered(&state, uistate.PaneSettings)
@@ -490,9 +462,6 @@ func HandleMessage(
 		state.KernelInfo = msg.Info
 		return state, nil, true
 	case commands.HealthTickMsg:
-		if state.UpdateInstalling {
-			return state, nil, true
-		}
 		return state, tea.Batch(deps.LoadHealth(), deps.HealthTickAfter()), true
 	case commands.ClearStatusMsg:
 		if msg.Seq != state.StatusSeq {
@@ -519,17 +488,6 @@ func HandleMessage(
 		state.View = uistate.ViewDaily
 		state.Pane = uistate.DefaultPane(state.View)
 		return state, fullReloadCmd(state, deps, cmd), true
-	case commands.LocalUpdatePreparedMsg:
-		state.View = uistate.ViewUpdates
-		state.Pane = uistate.DefaultPane(state.View)
-		state.UpdateChecking = false
-		state.UpdateInstallError = ""
-		state.UpdateStatus = msg.Status
-		label := "Local update ready"
-		if msg.Prepared != nil && strings.TrimSpace(msg.Prepared.Tag) != "" {
-			label = "Local update ready: " + strings.TrimSpace(msg.Prepared.Tag)
-		}
-		return state, deps.SetStatus(&state, label, false), true
 	case commands.RuntimeDataWipedMsg:
 		cmd := deps.SetStatus(&state, "All runtime data wiped", false)
 		state.View = uistate.ViewDaily
@@ -584,16 +542,9 @@ func HandleMessage(
 		}
 		return state, nil, true
 	case commands.KernelEventMsg:
-		if state.UpdateInstalling {
-			return state, nil, true
-		}
 		updated, cmd := deps.HandleKernelEvent(state, msg.Event)
 		return updated, tea.Batch(cmd, deps.WaitForEvent()), true
 	case commands.ErrMsg:
-		if shouldSuppressUpdateInstallError(state, msg.Err) {
-			logger.Infof("suppressing expected update handoff error: %v", msg.Err)
-			return state, nil, true
-		}
 		if state.Dialog != "" {
 			if isExportDialog(state.Dialog) && state.DialogProcessing {
 				state.DialogProcessing = false
@@ -769,13 +720,6 @@ func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot
 	})
 }
 
-func shouldSuppressUpdateInstallError(state MessageState, err error) bool {
-	if !state.UpdateInstalling || err == nil {
-		return false
-	}
-	return isExpectedUpdateTransportError(err.Error())
-}
-
 func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.Cmd {
 	cmds := make([]tea.Cmd, 0, len(extra)+20)
 	cmds = append(cmds, extra...)
@@ -803,27 +747,6 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadExportReports(),
 	)
 	return tea.Batch(cmds...)
-}
-
-func isExpectedUpdateTransportError(raw string) bool {
-	value := strings.ToLower(strings.TrimSpace(raw))
-	if value == "" {
-		return false
-	}
-	for _, fragment := range []string{
-		"dial unix",
-		"connect: connection refused",
-		"no such file or directory",
-		"broken pipe",
-		"socket",
-		"deadline exceeded",
-		"eof",
-	} {
-		if strings.Contains(value, fragment) {
-			return true
-		}
-	}
-	return false
 }
 
 func isExportDialog(kind string) bool {

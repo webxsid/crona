@@ -33,11 +33,6 @@ func OptionalText(value *string, fallback string) string {
 	return strings.TrimSpace(*value)
 }
 
-func PrintOK(w io.Writer) error {
-	_, err := fmt.Fprintln(w, "ok")
-	return err
-}
-
 func PrintContext(w io.Writer, out sharedtypes.ActiveContext) error {
 	_, err := fmt.Fprintf(
 		w,

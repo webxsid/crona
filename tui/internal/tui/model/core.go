@@ -164,8 +164,6 @@ type Model struct {
 	alertReminders            []api.AlertReminder
 	updateStatus              *api.UpdateStatus
 	updateChecking            bool
-	updateInstalling          bool
-	updateInstallError        string
 	updateDiagnosticsExpanded bool
 	currentExecutablePath     string
 	settings                  *api.CoreSettings

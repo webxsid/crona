@@ -26,25 +26,6 @@ func BackupBaseDir() (string, error) {
 	)
 }
 
-func BackupBaseDirForMode(mode string) (string, error) {
-	if override := BackupBaseDirOverride(); override != "" {
-		return override, nil
-	}
-
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	return DefaultBackupBaseDirForModeOnOS(
-		mode,
-		runtime.GOOS,
-		home,
-		os.Getenv("XDG_DATA_HOME"),
-		os.Getenv("LocalAppData"),
-	)
-}
-
 func BackupBaseDirOverride() string {
 	return strings.TrimSpace(os.Getenv("CRONA_BACKUP_DIR"))
 }

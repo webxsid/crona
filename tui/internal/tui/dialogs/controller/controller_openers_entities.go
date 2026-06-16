@@ -375,13 +375,6 @@ func OpenConfirmWipeData(state State) State {
 	return state
 }
 
-func OpenConfirmUninstall(state State) State {
-	state = Close(state)
-	state.Kind = "confirm_uninstall"
-	state.DeleteLabel = "the installed Crona binaries and runtime data"
-	return state
-}
-
 func newDescriptionInput(width, height int) textarea.Model {
 	input := textarea.New()
 	input.Placeholder = "Description (optional)"

@@ -128,8 +128,6 @@ func (m Model) viewContentState(
 		AlertReminders:            m.alertReminders,
 		UpdateStatus:              m.updateStatus,
 		UpdateChecking:            m.updateChecking,
-		UpdateInstalling:          m.updateInstalling,
-		UpdateInstallError:        m.updateInstallError,
 		UpdateInstallAvailable:    m.selfUpdateInstallAvailable(),
 		UpdateDiagnosticsExpanded: m.updateDiagnosticsExpanded,
 		UpdateCommand:             updateCommand(m.updateStatus, m.currentExecutablePath, kernelExecutablePath(m.kernelInfo)),

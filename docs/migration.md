@@ -7,12 +7,12 @@ This is the canonical handoff for moving between Homebrew, winget, the legacy in
 The safe flow is:
 
 1. Create a backup of your database.
-2. Remove the old install.
-3. Remove the old runtime directory if you want a clean switch.
+2. Remove the old install with your package manager.
+3. Optionally remove the old runtime directory if you want a fully clean switch.
 4. Install Crona again with the method you want to keep.
 5. Restore the database into the fresh runtime directory.
 
-After migration, the package manager owns updates:
+After migration, the package manager owns install, update, and uninstall:
 
 - Homebrew: `brew upgrade crona` or `brew upgrade crona-beta`
 - Winget: `winget upgrade --id Webxsid.Crona -e`
@@ -36,7 +36,7 @@ Keep that file. It is stored outside Crona's runtime directory, so uninstalling 
 
 ## 2. Remove The Old Install
 
-Use the package manager or installer you are migrating away from:
+Remove the old install with the package manager or installer you are migrating away from:
 
 - Homebrew stable:
   ```bash
@@ -54,16 +54,28 @@ Use the package manager or installer you are migrating away from:
   remove the installed binaries from your `PATH`, or rerun your package manager install after cleanup.
   If you came from the legacy install script, move to a managed package installer after cleanup.
 
+Package-manager uninstall removes the Crona binaries, but it does not remove your runtime data.
+If you want to keep the data for later restore, stop here and keep the backup from step 1.
+If you want to delete the runtime data as well, choose one of these options:
+
+- While Crona is still installed, use the in-app Settings action or the CLI:
+  ```bash
+  crona kernel wipe-data --force
+  ```
+- If you already uninstalled Crona, delete the runtime directory manually:
+  - macOS prod: `~/Library/Application Support/Crona`
+  - macOS dev: `~/Library/Application Support/Crona Dev`
+  - Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
+  - Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
+  - Windows prod: `%LocalAppData%\Crona`
+  - Windows dev: `%LocalAppData%\Crona Dev`
+
+Only remove the runtime directory if you really want a clean reset. Leave it in place if you plan to restore the backup after reinstalling.
+
 ## 3. Remove The Old Runtime Dir
 
-If you want a clean reinstall, remove the runtime directory after backing up the database:
-
-- macOS prod: `~/Library/Application Support/Crona`
-- macOS dev: `~/Library/Application Support/Crona Dev`
-- Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
-- Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
-- Windows prod: `%LocalAppData%\Crona`
-- Windows dev: `%LocalAppData%\Crona Dev`
+If you want a fully clean switch, remove the runtime directory after backing up the database.
+If you already deleted it in step 2, you can skip this step.
 
 If you keep the runtime directory in place, `crona restore` still only restores `crona.db`, but a full clean switch usually starts from a blank runtime dir.
 

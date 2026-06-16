@@ -10,6 +10,7 @@ fi
 
 VERSION="$1"
 RELEASE_DIR="$2"
+DIST_DIR="${CRONA_GORELEASER_DIST_DIR:-${PWD}/dist}"
 TAP_REPO="webxsid/homebrew-tap"
 TAP_BRANCH="main"
 TAP_DIR="$(mktemp -d)"
@@ -29,8 +30,13 @@ case "${VERSION}" in
 esac
 FORMULA_PATH="${TAP_DIR}/Formula/${FORMULA_NAME}.rb"
 
+if [ ! -f "${DIST_DIR}/checksums.txt" ]; then
+  echo "missing GoReleaser checksums file: ${DIST_DIR}/checksums.txt" >&2
+  exit 1
+fi
+
 CRONA_HOMEBREW_BASE_URL="https://github.com/${PROJECT_REPO}/releases/download/${VERSION}" \
-  sh "${0%/*}/generate_homebrew_formula.sh" "${VERSION}" "${RELEASE_DIR}" "${RELEASE_DIR}/checksums.txt" "${FORMULA_PATH}" "${FORMULA_NAME}"
+  sh "${0%/*}/generate_homebrew_formula.sh" "${VERSION}" "${DIST_DIR}" "${DIST_DIR}/checksums.txt" "${FORMULA_PATH}" "${FORMULA_NAME}"
 
 git clone --branch "${TAP_BRANCH}" --single-branch \
   "https://x-access-token:${HOMEBREW_TAP_GITHUB_TOKEN}@github.com/${TAP_REPO}.git" \

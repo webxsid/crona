@@ -76,7 +76,6 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 			Value:   telemetrySettingsLabel(settings),
 		},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
-		{Section: "Danger", Label: "Uninstall Crona", Value: "App + binaries"},
 	}
 }
 

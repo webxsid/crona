@@ -62,20 +62,6 @@ func TestUpdateStatusLoadedLeavesCurrentStatusToastAlone(t *testing.T) {
 	}
 }
 
-func TestDismissedUpdatesViewFallsBackToDaily(t *testing.T) {
-	model := app.NewUpdateViewModel(app.ViewUpdates, app.PaneIssues, "", nil, "", nil)
-
-	updated, _ := app.ApplyUpdateDismissedForTest(model, &api.UpdateStatus{
-		DismissedVersion: "0.3.0",
-	})
-	if updated.CurrentView() != app.ViewUpdates {
-		t.Fatalf(
-			"expected dismissed updates view to stay on updates, got %s",
-			updated.CurrentView(),
-		)
-	}
-}
-
 func TestSelfUpdateDisabledForNonStandardRuntimeLocation(t *testing.T) {
 	t.Setenv("CRONA_INSTALL_DIR", "/tmp/crona-install")
 
@@ -256,9 +242,6 @@ func TestHomebrewFormulaMismatchShowsMigrationCommand(t *testing.T) {
 	if strings.Contains(rendered, "[i]") {
 		t.Fatalf("expected migration view to hide install action, got %q", rendered)
 	}
-	if strings.Contains(rendered, "[U]") {
-		t.Fatalf("expected migration view to hide dismiss action, got %q", rendered)
-	}
 }
 
 func TestUpdatesViewExpandedDiagnosticsRevealInternalFields(t *testing.T) {
@@ -280,8 +263,6 @@ func TestUpdatesViewExpandedDiagnosticsRevealInternalFields(t *testing.T) {
 			ReleaseTag:               "v1.6.0",
 			ReleaseURL:               "https://github.com/webxsid/crona/releases/tag/v1.6.0",
 			ReleaseNotes:             "## Improvements\n- Faster startup\n",
-			ChecksumsURL:             "https://example.com/checksums.txt",
-			InstallScriptURL:         "https://example.com/install.sh",
 			InstallUnavailableReason: "managed by Homebrew",
 			InstallScriptDeprecated:  true,
 			MigrationGuideURL:        "https://crona.work/migration",
@@ -302,13 +283,10 @@ func TestUpdatesViewExpandedDiagnosticsRevealInternalFields(t *testing.T) {
 		"Release Tag",
 		"v1.6.0",
 		"Release Page",
-		"Checksums",
 		"Configured Channel",
 		"Install Source",
 		"Brew Formula",
 		"Last Checked",
-		"Install Status",
-		"Installer",
 		"Update Command",
 		"TUI Path",
 		"Engine Path",

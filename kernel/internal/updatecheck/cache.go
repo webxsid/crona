@@ -2,55 +2,15 @@ package updatecheck
 
 import (
 	"encoding/json"
-	"os"
 	"strings"
 	"time"
 
-	runtimepkg "crona/kernel/internal/runtime"
 	sharedtypes "crona/shared/types"
-	"crona/shared/version"
 )
 
-func (s *Service) loadCache() {
-	body, err := os.ReadFile(s.cachePath)
-	if err != nil {
-		return
-	}
-	var cached sharedtypes.UpdateStatus
-	if err := json.Unmarshal(body, &cached); err != nil {
-		s.logger.Error("decode update cache", err)
-		return
-	}
-	cached.CurrentVersion = version.Current()
-	cached.Channel = sharedtypes.NormalizeUpdateChannel(cached.Channel)
-	cached.RunningChannel = version.RunningChannel()
-	cached.RunningIsBeta = version.IsBetaRelease()
-	cached.InstallScriptDeprecated = version.InstallScriptDeprecationEnabled()
-	cached.MigrationGuideURL = version.InstallScriptMigrationURL
-	s.status = cached
-	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
-		s.status.InstallSource = sharedtypes.NormalizeInstallSource(file.InstallSource)
-		s.status.BrewFormula = strings.TrimSpace(file.BrewFormula)
-	}
-}
-
-func (s *Service) persistLocked() error {
-	body, err := json.MarshalIndent(s.status, "", "  ")
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(s.cachePath, body, runtimepkg.FilePerm()); err != nil {
-		return err
-	}
-	return runtimepkg.WriteInstallSourceDetails(s.installPath, s.status.InstallSource, s.status.BrewFormula)
-}
-
-func (s *Service) persistAndEmitIfChangedLocked(prev sharedtypes.UpdateStatus) error {
+func (s *Service) emitIfChangedLocked(prev sharedtypes.UpdateStatus) error {
 	if s.status == prev {
 		return nil
-	}
-	if err := s.persistLocked(); err != nil {
-		return err
 	}
 	s.emitLocked()
 	return nil

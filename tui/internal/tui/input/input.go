@@ -3,7 +3,6 @@ package input
 import (
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
@@ -43,8 +42,6 @@ type State struct {
 	Timer                     *api.TimerState
 	UpdateStatus              *api.UpdateStatus
 	UpdateChecking            bool
-	UpdateInstalling          bool
-	UpdateInstallError        string
 	UpdateDiagnosticsExpanded bool
 	CurrentExecutable         string
 	RunningIsBeta             bool
@@ -64,7 +61,6 @@ type Deps struct {
 	ShutdownKernel                  func() tea.Cmd
 	SeedDevData                     func() tea.Cmd
 	ClearDevData                    func() tea.Cmd
-	PrepareLocalUpdate              func() tea.Cmd
 	IsDevMode                       func(State) bool
 	NextActiveSessionView           func(State, int) uistate.View
 	NextWorkspaceView               func(State, int) uistate.View
@@ -95,10 +91,6 @@ type Deps struct {
 	OpenCheckoutContextDialog       func(*State) bool
 	Checkout                        func(*State) tea.Cmd
 	CheckUpdateNow                  func() tea.Cmd
-	SelfUpdateInstallAvailable      func(State) bool
-	SelfUpdateUnsupportedReason     func(State) string
-	InstallUpdate                   func(State) tea.Cmd
-	DismissUpdate                   func() tea.Cmd
 	ResumeSession                   func(State) tea.Cmd
 	PauseSession                    func() tea.Cmd
 	OpenEndSessionDialog            func(*State) bool
@@ -143,7 +135,6 @@ type Deps struct {
 	OpenEditRestProtectionDialog    func(*State) bool
 	OpenEditTelemetrySettingsDialog func(*State) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
-	OpenConfirmUninstallDialog      func(*State) bool
 	WipeRuntimeData                 func() tea.Cmd
 	OpenRollupStartDateDialog       func(*State) bool
 	OpenRollupEndDateDialog         func(*State) bool
@@ -203,16 +194,6 @@ func newRouter(deps Deps) *router {
 		},
 		"f7": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return handleDevCmd(s, deps.IsDevMode, deps.ClearDevData)
-		},
-		"f8": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if !deps.IsDevMode(s) {
-				return s, nil, false
-			}
-			s.ActiveView = uistate.ViewUpdates
-			s.ActivePane = uistate.DefaultPane(s.ActiveView)
-			s.UpdateChecking = true
-			s.UpdateInstallError = ""
-			return s, deps.PrepareLocalUpdate(), true
 		},
 		"f9": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if !s.RunningIsBeta {
@@ -619,17 +600,8 @@ func newRouter(deps Deps) *router {
 		uistate.ViewUpdates,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			s.UpdateChecking = true
-			s.UpdateInstallError = ""
 			return s, deps.CheckUpdateNow(), true
 		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if versionpkg.InstallScriptDeprecationEnabled() ||
-				(s.UpdateStatus != nil && s.UpdateStatus.InstallScriptDeprecated) {
-				return s, nil, true
-			}
-			return handleInstallUpdate(s, deps)
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleDismissUpdate(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenSelectionAction(&s)
 			return s, cmd, handled

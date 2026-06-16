@@ -3,7 +3,6 @@ package update
 import (
 	"fmt"
 	"io"
-	"strings"
 
 	flagspkg "crona/cli/internal/flags"
 	outputpkg "crona/cli/internal/output"
@@ -17,7 +16,7 @@ type Deps struct {
 }
 
 func Usage() string {
-	return "Usage: crona update <status|check|dismiss|notes> [--json]\n"
+	return "Usage: crona update <status|check|notes> [--json]\n"
 }
 
 func Run(args []string, deps Deps) error {
@@ -45,24 +44,6 @@ func Run(args []string, deps Deps) error {
 			return outputpkg.PrintJSON(deps.Stdout, out)
 		}
 		return outputpkg.PrintUpdateStatus(deps.Stdout, out)
-	case "dismiss":
-		var out sharedtypes.UpdateStatus
-		if err := deps.CallKernel(protocol.MethodUpdateDismiss, nil, &out); err != nil {
-			return err
-		}
-		if jsonOut {
-			return outputpkg.PrintJSON(deps.Stdout, out)
-		}
-		if strings.TrimSpace(out.DismissedVersion) == "" {
-			_, err := fmt.Fprintln(deps.Stdout, "no update dismissed")
-			return err
-		}
-		_, err := fmt.Fprintf(
-			deps.Stdout,
-			"dismissed update prompt for v%s\n",
-			out.DismissedVersion,
-		)
-		return err
 	case "notes":
 		var out sharedtypes.UpdateStatus
 		if err := deps.CallKernel(protocol.MethodUpdateStatusGet, nil, &out); err != nil {

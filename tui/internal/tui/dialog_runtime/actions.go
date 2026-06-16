@@ -71,7 +71,6 @@ type Deps struct {
 	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
 	SetRollupEndDate               func(currentStart, date string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
-	UninstallCrona                 func(currentExecutablePath, kernelExecutablePath string, kernelInfo *api.KernelInfo) tea.Cmd
 	OpenSupportIssueURL            func() tea.Cmd
 	OpenSupportDiscussionsURL      func() tea.Cmd
 	OpenSupportReleasesURL         func() tea.Cmd
@@ -345,13 +344,6 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		"wipe_runtime_data",
 		func(action dialogstate.Action) tea.Cmd { return deps.WipeRuntimeData() },
 	)
-	r.Register("uninstall_crona", func(action dialogstate.Action) tea.Cmd {
-		return deps.UninstallCrona(
-			state.CurrentExecutablePath,
-			state.KernelExecutablePath,
-			state.KernelInfo,
-		)
-	})
 	r.Register(
 		"open_support_issue",
 		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportIssueURL() },

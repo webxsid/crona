@@ -274,21 +274,16 @@ func TestExportRepoUsesContextRepoWhenMissing(t *testing.T) {
 	}
 }
 
-func TestUpdateDismissTextHandlesEmptyDismissedVersion(t *testing.T) {
+func TestUpdateRejectsDismissCommand(t *testing.T) {
 	var out bytes.Buffer
 	err := updatecmd.Run([]string{"dismiss"}, updatecmd.Deps{
 		Stdout: &out,
-		CallKernel: func(method string, params, target any) error {
-			status := target.(*sharedtypes.UpdateStatus)
-			status.CurrentVersion = "0.4.0"
-			return nil
-		},
 	})
-	if err != nil {
-		t.Fatalf("update dismiss: %v", err)
+	if err == nil {
+		t.Fatalf("expected dismiss command to be rejected")
 	}
-	if !strings.Contains(out.String(), "no update dismissed") {
-		t.Fatalf("unexpected output: %s", out.String())
+	if !strings.Contains(err.Error(), "unknown update command") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 

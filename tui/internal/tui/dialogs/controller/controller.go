@@ -304,8 +304,6 @@ func Update(
 		return updateConfirmDelete(state, msg)
 	case "confirm_wipe":
 		return updateConfirmWipe(state, msg)
-	case "confirm_uninstall":
-		return updateConfirmUninstall(state, msg)
 	case "stash_list":
 		return updateStashList(state, ctx, msg)
 	case "issue_status":

@@ -163,9 +163,6 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 	case "Wipe Runtime Data":
 		deps.OpenConfirmWipeDataDialog(&s)
 		return s, nil, true
-	case "Uninstall Crona":
-		deps.OpenConfirmUninstallDialog(&s)
-		return s, nil, true
 	default:
 		return handleAdjustSelectedSetting(s, deps, 1)
 	}

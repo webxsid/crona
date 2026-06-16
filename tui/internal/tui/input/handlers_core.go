@@ -1,9 +1,6 @@
 package input
 
 import (
-	"strings"
-
-	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -244,17 +241,6 @@ func supportsGlobalExport(view uistate.View) bool {
 	default:
 		return false
 	}
-}
-
-func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
-	if status == nil {
-		return false
-	}
-	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
-		return false
-	}
-	return strings.TrimSpace(status.LatestVersion) != "" &&
-		strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
 }
 
 func nextIndex[T comparable](current T, options []T, dir int) int {

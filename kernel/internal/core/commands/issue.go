@@ -297,23 +297,6 @@ func DeleteIssue(ctx context.Context, c *core.Context, issueID int64) error {
 	return nil
 }
 
-func RestoreIssue(ctx context.Context, c *core.Context, issueID int64) error {
-	now := c.Now()
-	if err := c.Issues.RestoreDeletedByID(ctx, issueID, c.UserID, now); err != nil {
-		return err
-	}
-	return c.Ops.Append(ctx, sharedtypes.Op{
-		ID:        uuid.NewString(),
-		Entity:    sharedtypes.OpEntityIssue,
-		EntityID:  fmt.Sprintf("%d", issueID),
-		Action:    sharedtypes.OpActionRestore,
-		Payload:   nil,
-		Timestamp: now,
-		UserID:    c.UserID,
-		DeviceID:  c.DeviceID,
-	})
-}
-
 func ListIssuesByStream(
 	ctx context.Context,
 	c *core.Context,
@@ -495,23 +478,6 @@ func ClearIssueTodoForDate(
 		emit(c, sharedtypes.EventTypeIssueUpdated, updated)
 	}
 	return updated, nil
-}
-
-func ClearTodayTodos(ctx context.Context, c *core.Context) error {
-	today := strings.Split(c.Now(), "T")[0]
-	if today == "" {
-		return errors.New("invalid date")
-	}
-	issues, err := c.Issues.ListByTodoForDate(ctx, today, c.UserID)
-	if err != nil {
-		return err
-	}
-	for _, issue := range issues {
-		if _, err := ClearIssueTodoForDate(ctx, c, issue.ID); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func ComputeDailyIssueSummaryForDate(

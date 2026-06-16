@@ -100,8 +100,6 @@ type ContentState struct {
 	AlertReminders            []api.AlertReminder
 	UpdateStatus              *api.UpdateStatus
 	UpdateChecking            bool
-	UpdateInstalling          bool
-	UpdateInstallError        string
 	UpdateInstallAvailable    bool
 	UpdateDiagnosticsExpanded bool
 	UpdateCommand             string

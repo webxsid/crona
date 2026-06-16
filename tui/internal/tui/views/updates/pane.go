@@ -52,21 +52,6 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates..."),
 		)
 	}
-	if state.UpdateInstalling {
-		lines = append(
-			lines,
-			"",
-			viewchrome.LipStyle(theme, theme.ColorYellow).
-				Render("Installing update and relaunching Crona..."),
-		)
-	}
-	if strings.TrimSpace(state.UpdateInstallError) != "" {
-		lines = append(
-			lines,
-			"",
-			theme.StyleError.Render("Install error: "+strings.TrimSpace(state.UpdateInstallError)),
-		)
-	}
 	if strings.TrimSpace(status.Error) != "" {
 		lines = append(
 			lines,
@@ -222,17 +207,10 @@ func diagnosticsSectionLines(theme types.Theme, state types.ContentState) []stri
 		addField("Release Kind", "stable")
 	}
 	addField("Release Page", status.ReleaseURL)
-	addField("Checksums", status.ChecksumsURL)
 	addField("Configured Channel", string(status.Channel))
 	addField("Install Source", string(status.InstallSource))
 	addField("Brew Formula", status.BrewFormula)
 	addField("Last Checked", strings.TrimSpace(status.CheckedAt))
-	reason := strings.TrimSpace(state.UpdateManualReason)
-	if reason == "" {
-		reason = strings.TrimSpace(status.InstallUnavailableReason)
-	}
-	addField("Install Status", reason)
-	addField("Installer", status.InstallScriptURL)
 	addField("Update Command", status.UpdateCommand)
 	if strings.TrimSpace(state.TUIExecutablePath) != "" {
 		addField("TUI Path", state.TUIExecutablePath)

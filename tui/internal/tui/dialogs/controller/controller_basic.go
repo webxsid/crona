@@ -103,13 +103,3 @@ func updateConfirmWipe(state State, msg tea.KeyMsg) (State, *Action, string) {
 	}
 	return state, nil, ""
 }
-
-func updateConfirmUninstall(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "enter":
-		return Close(state), &Action{Kind: "uninstall_crona"}, ""
-	}
-	return state, nil, ""
-}

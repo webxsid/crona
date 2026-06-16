@@ -73,10 +73,6 @@ func StartOfWeek(value time.Time, weekStart sharedtypes.WeekStart) time.Time {
 	).AddDate(0, 0, -offset)
 }
 
-func PresetPattern(preset sharedtypes.DateDisplayPreset) string {
-	return presetPattern(preset)
-}
-
 func effectivePattern(settings *sharedtypes.CoreSettings) string {
 	preset := sharedtypes.DateDisplayPresetISO
 	custom := ""

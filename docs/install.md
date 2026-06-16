@@ -71,6 +71,8 @@ https://crona.work/migration
 ```
 
 The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
+When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona kernel wipe-data --force` before uninstalling.
+If you want a fully clean switch after uninstalling, remove the runtime directory manually using the paths listed in the migration guide.
 
 Legacy direct GitHub install:
 
@@ -163,12 +165,12 @@ Override the binary install directory with `CRONA_INSTALL_DIR`.
 Users can switch release tracks from the TUI settings.
 The default track follows normal releases, and testers can opt into upcoming builds.
 
-Use the in-app `Updates` view to check, read notes, and install supported updates.
+Use the in-app `Updates` view to check release status, read notes, and get the right migration or package-manager command.
 
 - Homebrew installs never self-update from inside Crona.
 - Winget installs never self-update from inside Crona.
-- The TUI shows the source-aware update command for the current install type.
-- When Crona asks you to migrate, back up with `crona backup`, reinstall with your preferred method, then restore with `crona restore <path>`.
+- The TUI shows the source-aware update command for the current install type, but does not execute it.
+- When Crona asks you to migrate, back up with `crona backup`, uninstall with your package manager, remove runtime data if you want a clean reset, then reinstall and restore with `crona restore <path>`.
 - The migration guide at [docs/migration.md](migration.md) is the canonical handoff for switching install methods or release channels.
 - Script installs rerun the install script.
 - Winget installs use `winget upgrade --id Webxsid.Crona -e`.

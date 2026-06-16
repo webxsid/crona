@@ -200,10 +200,6 @@ func (s Snapshot) OpenConfirmWipeData() State {
 	return OpenConfirmWipeData(s.Dialog)
 }
 
-func (s Snapshot) OpenConfirmUninstall() State {
-	return OpenConfirmUninstall(s.Dialog)
-}
-
 func (s Snapshot) OpenStashList() State { return OpenStashList(s.Dialog) }
 
 func (s Snapshot) OpenIssueStatus(status string) State {

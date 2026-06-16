@@ -156,11 +156,6 @@ func ApplyUpdateStatusLoadedForTest(m Model, status *api.UpdateStatus) (Model, t
 	return next.(Model), cmd
 }
 
-func ApplyUpdateDismissedForTest(m Model, status *api.UpdateStatus) (Model, tea.Cmd) {
-	next, cmd := m.Update(appcmd.UpdateDismissedMsg{Status: status})
-	return next.(Model), cmd
-}
-
 func (m Model) StatusMessage() string { return m.statusMsg }
 func (m Model) CurrentView() View     { return m.view }
 func (m Model) SelfUpdateUnsupportedReasonForTest() string {

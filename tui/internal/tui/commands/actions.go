@@ -244,17 +244,6 @@ func CompleteOnboarding(
 	}
 }
 
-func DismissUpdate(c *api.Client) tea.Cmd {
-	return func() tea.Msg {
-		status, err := c.DismissUpdate()
-		if err != nil {
-			logger.Errorf("DismissUpdate: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return UpdateDismissedMsg{Status: status}
-	}
-}
-
 func SeedDevData(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.SeedDevData(); err != nil {
@@ -272,25 +261,6 @@ func ClearDevData(c *api.Client) tea.Cmd {
 			return ErrMsg{Err: err}
 		}
 		return DevClearedMsg{}
-	}
-}
-
-func PrepareLocalUpdate(c *api.Client) tea.Cmd {
-	return func() tea.Msg {
-		prepared, err := c.PrepareLocalUpdate()
-		if err != nil {
-			logger.Errorf("PrepareLocalUpdate: %v", err)
-			return ErrMsg{Err: err}
-		}
-		status, err := c.CheckUpdateNow()
-		if err != nil {
-			logger.Errorf("PrepareLocalUpdate CheckUpdateNow: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return LocalUpdatePreparedMsg{
-			Prepared: prepared,
-			Status:   status,
-		}
 	}
 }
 
