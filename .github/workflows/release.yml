@@ -46,19 +46,6 @@ jobs:
           WINGET_PKGS_REPO_NAME: winget-pkgs
         run: goreleaser release --clean
 
-      - name: Publish installer assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          sh ./scripts/build_release.sh "${GITHUB_REF_NAME}"
-          gh release upload "${GITHUB_REF_NAME}" \
-            "release/${GITHUB_REF_NAME}/install-crona-tui.sh" \
-            "release/${GITHUB_REF_NAME}/install-crona-tui.ps1" \
-            "release/${GITHUB_REF_NAME}/crona-assets-${GITHUB_REF_NAME}.tar.gz" \
-            --clobber
-
       - name: Normalize GitHub release state
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

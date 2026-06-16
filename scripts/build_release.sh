@@ -12,6 +12,7 @@ VERSION="$1"
 ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
 RELEASE_DIR="${ROOT_DIR}/release/${VERSION}"
 GOCACHE_DIR="${GOCACHE:-/tmp/crona-go-release-cache}"
+ASSETS_ONLY="${CRONA_RELEASE_ASSETS_ONLY:-0}"
 
 TARGETS="
 darwin arm64
@@ -117,59 +118,61 @@ rm -rf "${RELEASE_DIR}"
 mkdir -p "${RELEASE_DIR}"
 : > "${SIZE_REPORT}"
 
-expected_files() {
-  echo "install-crona-tui.sh"
-  echo "install-crona-tui.ps1"
-  echo "crona-assets-${VERSION}.tar.gz"
-  echo "sizes.txt"
-  printf '%s\n' "${TARGETS}" | while read -r GOOS GOARCH; do
-    [ -n "${GOOS}" ] || continue
-    bundle_name "${VERSION}" "${GOOS}" "${GOARCH}"
-  done
-}
-
-verify_release_artifacts() {
-  if [ ! -f "${RELEASE_DIR}/checksums.txt" ]; then
-    echo "Missing required release artifact: checksums.txt" >&2
-    exit 1
-  fi
-  for file in $(expected_files); do
-    if [ ! -f "${RELEASE_DIR}/${file}" ]; then
-      echo "Missing required release artifact: ${file}" >&2
-      exit 1
-    fi
-    if ! grep "  ${file}\$" "${RELEASE_DIR}/checksums.txt" >/dev/null 2>&1; then
-      echo "checksums.txt is missing ${file}" >&2
-      exit 1
-    fi
-  done
-}
-
-for target in ${TARGETS}; do
-  :
-done
-
 if ! command -v zip >/dev/null 2>&1; then
   echo "zip is required to create Windows release bundles" >&2
   exit 1
 fi
 
-echo "${TARGETS}" | while read -r GOOS GOARCH; do
-  [ -n "${GOOS}" ] || continue
+if [ "${ASSETS_ONLY}" != "1" ]; then
+  expected_files() {
+    echo "install-crona-tui.sh"
+    echo "install-crona-tui.ps1"
+    echo "crona-assets-${VERSION}.tar.gz"
+    echo "sizes.txt"
+    printf '%s\n' "${TARGETS}" | while read -r GOOS GOARCH; do
+      [ -n "${GOOS}" ] || continue
+      bundle_name "${VERSION}" "${GOOS}" "${GOARCH}"
+    done
+  }
 
-  echo "Building ${GOOS}/${GOARCH}"
-  cli_output="$(binary_name "crona-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
-  kernel_output="$(binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
-  tui_output="$(binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
-  bundle_output="$(bundle_name "${VERSION}" "${GOOS}" "${GOARCH}")"
-  build_release_binary "${RELEASE_DIR}/${cli_output}" ./cli/cmd/crona "${GOOS}" "${GOARCH}"
-  build_release_binary "${RELEASE_DIR}/${kernel_output}" ./kernel/cmd/crona-kernel "${GOOS}" "${GOARCH}"
-  build_release_binary "${RELEASE_DIR}/${tui_output}" ./tui "${GOOS}" "${GOARCH}"
-  archive_target_bundle "${bundle_output}" "${cli_output}" "${kernel_output}" "${tui_output}"
-  report_target_sizes "${GOOS}" "${GOARCH}" "${RELEASE_DIR}/${bundle_output}" \
-    "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
-  rm -f "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
-done
+  verify_release_artifacts() {
+    if [ ! -f "${RELEASE_DIR}/checksums.txt" ]; then
+      echo "Missing required release artifact: checksums.txt" >&2
+      exit 1
+    fi
+    for file in $(expected_files); do
+      if [ ! -f "${RELEASE_DIR}/${file}" ]; then
+        echo "Missing required release artifact: ${file}" >&2
+        exit 1
+      fi
+      if ! grep "  ${file}\$" "${RELEASE_DIR}/checksums.txt" >/dev/null 2>&1; then
+        echo "checksums.txt is missing ${file}" >&2
+        exit 1
+      fi
+    done
+  }
+
+  for target in ${TARGETS}; do
+    :
+  done
+
+  echo "${TARGETS}" | while read -r GOOS GOARCH; do
+    [ -n "${GOOS}" ] || continue
+
+    echo "Building ${GOOS}/${GOARCH}"
+    cli_output="$(binary_name "crona-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+    kernel_output="$(binary_name "crona-kernel-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+    tui_output="$(binary_name "crona-tui-${VERSION}-${GOOS}-${GOARCH}" "${GOOS}")"
+    bundle_output="$(bundle_name "${VERSION}" "${GOOS}" "${GOARCH}")"
+    build_release_binary "${RELEASE_DIR}/${cli_output}" ./cli/cmd/crona "${GOOS}" "${GOARCH}"
+    build_release_binary "${RELEASE_DIR}/${kernel_output}" ./kernel/cmd/crona-kernel "${GOOS}" "${GOARCH}"
+    build_release_binary "${RELEASE_DIR}/${tui_output}" ./tui "${GOOS}" "${GOARCH}"
+    archive_target_bundle "${bundle_output}" "${cli_output}" "${kernel_output}" "${tui_output}"
+    report_target_sizes "${GOOS}" "${GOARCH}" "${RELEASE_DIR}/${bundle_output}" \
+      "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
+    rm -f "${RELEASE_DIR}/${cli_output}" "${RELEASE_DIR}/${kernel_output}" "${RELEASE_DIR}/${tui_output}"
+  done
+fi
 
 sed \
   -e "s#__VERSION__#${VERSION}#g" \
@@ -200,10 +203,12 @@ rm -rf "${RELEASE_DIR}/assets"
   done
 )
 
-verify_release_artifacts
+if [ "${ASSETS_ONLY}" != "1" ]; then
+  verify_release_artifacts
 
-echo
-echo "Artifact size summary"
-cat "${SIZE_REPORT}"
+  echo
+  echo "Artifact size summary"
+  cat "${SIZE_REPORT}"
+fi
 
 echo "Release artifacts written to ${RELEASE_DIR}"

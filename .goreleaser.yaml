@@ -75,6 +75,14 @@ release:
     name: crona
   draft: false
   prerelease: auto
+  extra_files:
+    - glob: release/{{ .Tag }}/install-crona-tui.sh
+    - glob: release/{{ .Tag }}/install-crona-tui.ps1
+    - glob: release/{{ .Tag }}/crona-assets-{{ .Tag }}.tar.gz
+
+before:
+  hooks:
+    - CRONA_RELEASE_ASSETS_ONLY=1 sh ./scripts/build_release.sh {{ .Tag }}
 
 winget:
   - name: crona
