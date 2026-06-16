@@ -93,7 +93,6 @@ winget:
     description: local-first work tracker for developers
     homepage: https://crona.work
     license: MIT
-    path: manifests
     ids:
       - crona-bundle
     repository:
@@ -103,9 +102,4 @@ winget:
       branch: "crona-{{ .Tag }}"
       pull_request:
         enabled: false
-        draft: false
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
     skip_upload: '{{ if or (contains .Tag "-beta") (eq .Env.WINGET_PKGS_GITHUB_TOKEN "") }}true{{ else }}false{{ end }}'

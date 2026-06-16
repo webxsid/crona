@@ -45,6 +45,7 @@ jobs:
         run: goreleaser release --clean
 
       - name: Normalize GitHub release state
+        if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
