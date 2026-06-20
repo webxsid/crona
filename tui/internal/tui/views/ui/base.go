@@ -46,17 +46,16 @@ func (p PaneBase) HeaderLines(titleLine, contextLine, subtitle string) []string 
 
 func (p PaneBase) ControlLine(
 	theme viewtypes.Theme,
-	filter string,
 	width int,
 	active bool,
 	actions []string,
 	showFilter bool,
 ) string {
 	if active {
-		return viewchrome.RenderPaneActionLine(theme, filter, width, actions)
+		return viewchrome.RenderPaneActionLine(theme, actions, width)
 	}
 	if showFilter {
-		return viewchrome.RenderFilterLine(theme, filter, width)
+		return ""
 	}
 	return theme.StyleDim.Render("")
 }

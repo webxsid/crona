@@ -56,7 +56,7 @@ func TestClearAllDataRemovesMomentumTables(t *testing.T) {
 		t.Fatalf("init schema: %v", err)
 	}
 
-	if _, err := db.DB().ExecContext(ctx, "INSERT INTO momentums (id, user_id, name, enabled, period, required_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", "momentum-1", "local", "Focus", 1, "day", 1, "2026-04-01T00:00:00Z", "2026-04-01T00:00:00Z"); err != nil {
+	if _, err := db.DB().ExecContext(ctx, "INSERT INTO momentums (id, user_id, name, enabled, target_kind, match_mode, contexts, period, required_count, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", "momentum-1", "local", "Focus", 1, "habit", "any", "[]", "day", 1, "2026-04-01T00:00:00Z", "2026-04-01T00:00:00Z"); err != nil {
 		t.Fatalf("insert momentum: %v", err)
 	}
 	if _, err := db.DB().ExecContext(ctx, "INSERT INTO momentum_habits (momentum_id, habit_id, user_id, created_at) VALUES (?, ?, ?, ?)", "momentum-1", 101, "local", "2026-04-01T00:00:00Z"); err != nil {

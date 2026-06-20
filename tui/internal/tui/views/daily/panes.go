@@ -43,12 +43,12 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
-	actionLine := base.ControlLine(theme, state.Filters["issues"], width-6, active, actions, true)
+	actionLine := base.ControlLine(theme, width-6, active, actions, true)
 	titleLine := dailyTaskTitle(theme, state.DailyTaskSection)
 
-	// append [h/l] to the title line
+	// append [←/→] to the title line
 	titleLine += viewhelpers.StringsJoin([]string{
-		theme.StyleDim.Render("  [h/l]"),
+		theme.StyleDim.Render("  [←/→]"),
 	})
 
 	lines := base.HeaderLines(
@@ -211,7 +211,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	)
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
-	actionLine := viewchrome.RenderPaneActionLine(theme, state.Filters["habits"], width-6, actions)
+	actionLine := viewchrome.RenderPaneActionLine(theme, actions, width-6)
 	lines := []string{
 		theme.StylePaneTitle.Render("Habits Due [2]"),
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
@@ -378,13 +378,17 @@ func renderHabitBar(theme types.Theme, completed, failed, total, width int) stri
 		failedWidth = max(0, width-completedWidth)
 	}
 	remainingWidth := width - completedWidth - failedWidth
-	return lipgloss.NewStyle().
-		Foreground(theme.ColorGreen).
-		Render(strings.Repeat("█", completedWidth)) +
-		lipgloss.NewStyle().
-			Foreground(theme.ColorRed).
-			Render(strings.Repeat("█", failedWidth)) +
-		theme.StyleDim.Render(
-			strings.Repeat("█", remainingWidth),
-		)
+	return viewhelpers.RenderGradientBar(completedWidth, completedWidth, viewhelpers.GradientBarPalette{
+		Start: theme.ColorDullGreen,
+		End:   theme.ColorCyan,
+		Track: theme.ColorDim,
+	}) + viewhelpers.RenderGradientBar(failedWidth, failedWidth, viewhelpers.GradientBarPalette{
+		Start: theme.ColorDullRed,
+		End:   theme.ColorOrange,
+		Track: theme.ColorDim,
+	}) + viewhelpers.RenderGradientBar(remainingWidth, 0, viewhelpers.GradientBarPalette{
+		Start: theme.ColorDim,
+		End:   theme.ColorDim,
+		Track: theme.ColorDim,
+	})
 }

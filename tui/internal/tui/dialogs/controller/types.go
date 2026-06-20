@@ -2,6 +2,7 @@ package controller
 
 import (
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -50,6 +51,8 @@ type State struct {
 	ChoiceDetails                  []string
 	TemplateAssets                 []sharedtypes.ExportTemplateAsset
 	ChoiceCursor                   int
+	MomentumRepoInput              textinput.Model
+	MomentumStreamInput            textinput.Model
 	Processing                     bool
 	ProcessingLabel                string
 	StatusLabel                    string
@@ -91,6 +94,9 @@ type State struct {
 	TelemetryPrivacyCursor         int
 	TelemetryReviewCursor          int
 	HabitItems                     []sharedtypes.HabitWithMeta
+	MomentumRepos                  []api.Repo
+	MomentumStreams                []api.Stream
+	MomentumAllIssues              []api.IssueWithMeta
 	HabitStreakStep                int
 	HabitStreakCursor              int
 	HabitStreakOriginalDefs        []sharedtypes.HabitStreakDefinition

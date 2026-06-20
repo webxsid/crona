@@ -7,7 +7,6 @@ import (
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
-	"github.com/uptrace/bun/driver/sqliteshim"
 )
 
 type Store struct {
@@ -17,7 +16,7 @@ type Store struct {
 
 func Open(dbPath string) (*Store, error) {
 	sqlDB, err := sql.Open(
-		sqliteshim.ShimName,
+		driverName(),
 		fmt.Sprintf("file:%s?_busy_timeout=5000&_journal_mode=WAL", dbPath),
 	)
 	if err != nil {

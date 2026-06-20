@@ -76,6 +76,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "habit_focus_sessions", column: "snapshot_schedule_type"},
 		{table: "habit_focus_sessions", column: "snapshot_weekdays"},
 		{table: "momentums", column: "description"},
+		{table: "momentums", column: "target_kind"},
+		{table: "momentums", column: "match_mode"},
+		{table: "momentums", column: "contexts"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
@@ -99,6 +102,12 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		return err
 	}
 	if err := ensureNullableIntegerColumn(ctx, db, "habit_focus_sessions", "snapshot_target_minutes"); err != nil {
+		return err
+	}
+	if err := ensureNullableIntegerColumn(ctx, db, "momentums", "repo_id"); err != nil {
+		return err
+	}
+	if err := ensureNullableIntegerColumn(ctx, db, "momentums", "stream_id"); err != nil {
 		return err
 	}
 	for columnName, defaultValue := range map[string]string{
@@ -162,6 +171,15 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		return err
 	}
 	if err := backfillHabitStreakDefinitions(ctx, db); err != nil {
+		return err
+	}
+	if err := backfillMomentumMatchMode(ctx, db); err != nil {
+		return err
+	}
+	if err := backfillMomentumTargetKind(ctx, db); err != nil {
+		return err
+	}
+	if err := backfillMomentumContexts(ctx, db); err != nil {
 		return err
 	}
 
@@ -262,6 +280,56 @@ func backfillHabitStreakDefinitions(ctx context.Context, db *bun.DB) error {
 		}
 		repo := storerepositories.NewHabitStreakDefinitionRepository(db)
 		if err := repo.ReplaceAll(ctx, row.UserID, now, defs); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func backfillMomentumTargetKind(ctx context.Context, db *bun.DB) error {
+	if _, err := db.ExecContext(ctx, "UPDATE momentums SET target_kind = ? WHERE target_kind IS NULL OR TRIM(target_kind) = ''", string(sharedtypes.MomentumTargetKindHabit)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func backfillMomentumMatchMode(ctx context.Context, db *bun.DB) error {
+	if _, err := db.ExecContext(ctx, "UPDATE momentums SET match_mode = ? WHERE match_mode IS NULL OR TRIM(match_mode) = ''", string(sharedtypes.MomentumMatchModeAny)); err != nil {
+		return err
+	}
+	return nil
+}
+
+func backfillMomentumContexts(ctx context.Context, db *bun.DB) error {
+	type row struct {
+		ID       string `bun:"id"`
+		RepoID   *int64 `bun:"repo_id"`
+		StreamID *int64 `bun:"stream_id"`
+		Contexts string `bun:"contexts"`
+	}
+	var rows []row
+	if err := db.NewSelect().
+		TableExpr("momentums").
+		ColumnExpr("id").
+		ColumnExpr("repo_id").
+		ColumnExpr("stream_id").
+		ColumnExpr("contexts").
+		Scan(ctx, &rows); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		if strings.TrimSpace(row.Contexts) != "" {
+			continue
+		}
+		if row.RepoID == nil || row.StreamID == nil {
+			continue
+		}
+		streamID := *row.StreamID
+		payload, err := json.Marshal([]sharedtypes.MomentumContext{{RepoID: *row.RepoID, StreamID: &streamID}})
+		if err != nil {
+			return err
+		}
+		if _, err := db.ExecContext(ctx, "UPDATE momentums SET contexts = ? WHERE id = ?", string(payload), row.ID); err != nil {
 			return err
 		}
 	}

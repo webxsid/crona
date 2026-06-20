@@ -41,15 +41,14 @@ func renderIssuePane(
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
 		theme.StyleDim.Render(subtitle),
 	)
-	lines = append(
-		lines,
-		base.ControlLine(
-			theme,
-			state.Filters["issues"],
-			width-6,
-			paneActive,
-			viewchrome.PaneActionsForState(theme, state, paneActive),
-			showFilter,
+		lines = append(
+			lines,
+			base.ControlLine(
+				theme,
+				width-6,
+				paneActive,
+				viewchrome.PaneActionsForState(theme, state, paneActive),
+				showFilter,
 		),
 	)
 	inner := viewchrome.RemainingPaneHeight(height, lines)
@@ -137,15 +136,14 @@ func renderCompactIssuePane(
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
 		theme.StyleDim.Render(subtitle),
 	)
-	lines = append(
-		lines,
-		base.ControlLine(
-			theme,
-			state.Filters["issues"],
-			state.Width-6,
-			paneActive,
-			viewchrome.PaneActionsForState(theme, state, paneActive),
-			true,
+		lines = append(
+			lines,
+			base.ControlLine(
+				theme,
+				state.Width-6,
+				paneActive,
+				viewchrome.PaneActionsForState(theme, state, paneActive),
+				true,
 		),
 	)
 	inner := viewchrome.RemainingPaneHeight(height, lines)

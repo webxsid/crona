@@ -27,12 +27,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		theme.StylePaneTitle.Render("Reports"),
 		viewchrome.RenderPaneActionLine(
 			theme,
-			state.Filters["export_reports"],
-			state.Width-6,
 			viewchrome.ContextualActions(
 				theme,
 				viewchrome.ActionsState{View: state.View, Pane: state.Pane},
 			),
+			state.Width-6,
 		),
 	}
 	if state.ExportAssets == nil {

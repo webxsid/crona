@@ -322,11 +322,10 @@ func ComputeMetricsStreaks(
 		return nil, err
 	}
 	streaks := ComputeMetricsStreaksFromDays(days, settings)
-	history, err := c.HabitCompletions.ListHistory(ctx, c.UserID, nil, nil)
+	streaks.CustomHabitStreaks, err = ComputeCustomHabitStreaksForRange(ctx, c, start, end, settings)
 	if err != nil {
 		return nil, err
 	}
-	streaks.CustomHabitStreaks = ComputeCustomHabitStreaks(history, start, end, settings)
 	return streaks, nil
 }
 
@@ -502,64 +501,169 @@ func ComputeCustomHabitStreaks(
 	if settings == nil || len(settings.HabitStreakDefs) == 0 {
 		return nil
 	}
-	bucketsByDef := make([]map[string]int, len(settings.HabitStreakDefs))
-	for i, def := range settings.HabitStreakDefs {
-		bucketsByDef[i] = map[string]int{}
-		if !def.Enabled || len(def.HabitIDs) == 0 {
-			continue
-		}
-		habitSet := make(map[int64]struct{}, len(def.HabitIDs))
-		for _, id := range def.HabitIDs {
-			habitSet[id] = struct{}{}
-		}
-		for _, entry := range history {
-			if entry.Date < start || entry.Date > end {
-				continue
-			}
-			if entry.Status != sharedtypes.HabitCompletionStatusCompleted {
-				continue
-			}
-			if _, ok := habitSet[entry.HabitID]; !ok {
-				continue
-			}
-			bucket := customHabitBucketKey(entry.Date, def.Period)
-			if bucket == "" {
-				continue
-			}
-			bucketsByDef[i][bucket]++
-		}
-	}
 	results := make([]sharedtypes.CustomHabitStreakSummary, 0, len(settings.HabitStreakDefs))
-	for i, rawDef := range settings.HabitStreakDefs {
+	for _, rawDef := range settings.HabitStreakDefs {
 		def := sharedtypes.NormalizeHabitStreakDefinition(rawDef)
 		summary := sharedtypes.CustomHabitStreakSummary{
 			ID:            def.ID,
 			Name:          def.Name,
 			Enabled:       def.Enabled,
+			TargetKind:    def.TargetKind,
+			MatchMode:     def.MatchMode,
+			Contexts:      def.Contexts,
 			Period:        def.Period,
 			RequiredCount: def.RequiredCount,
 		}
-		if def.Enabled && len(def.HabitIDs) > 0 {
-			buckets := customHabitRangeBuckets(start, end, def.Period)
-			current := 0
-			for bucketIdx, bucket := range buckets {
-				if bucketsByDef[i][bucket] >= def.RequiredCount {
-					current++
-					if current > summary.Longest {
-						summary.Longest = current
-					}
-				} else {
-					if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
-						continue
-					}
-					current = 0
-				}
-			}
-			summary.Current = current
+		if def.Enabled {
+			summary.Current, summary.Longest = computeCustomMomentumStreak(def, history, start, end)
 		}
 		results = append(results, summary)
 	}
 	return results
+}
+
+func ComputeCustomHabitStreaksForRange(
+	ctx context.Context,
+	c *core.Context,
+	start string,
+	end string,
+	settings *sharedtypes.CoreSettings,
+) ([]sharedtypes.CustomHabitStreakSummary, error) {
+	if settings == nil || len(settings.HabitStreakDefs) == 0 {
+		return nil, nil
+	}
+	defs := sharedtypes.NormalizeHabitStreakDefinitions(settings.HabitStreakDefs)
+	countsByDate, err := buildCustomMomentumCounts(ctx, c, defs, end)
+	if err != nil {
+		return nil, err
+	}
+	results := make([]sharedtypes.CustomHabitStreakSummary, 0, len(defs))
+	for _, rawDef := range defs {
+		def := sharedtypes.NormalizeHabitStreakDefinition(rawDef)
+		summary := sharedtypes.CustomHabitStreakSummary{
+			ID:            def.ID,
+			Name:          def.Name,
+			Enabled:       def.Enabled,
+			TargetKind:    def.TargetKind,
+			MatchMode:     def.MatchMode,
+			Contexts:      def.Contexts,
+			Period:        def.Period,
+			RequiredCount: def.RequiredCount,
+		}
+		if def.Enabled {
+			summary.Current, summary.Longest = computeMomentumSummaryFromCounts(def, countsByDate, start, end)
+		}
+		results = append(results, summary)
+	}
+	return results, nil
+}
+
+func computeMomentumSummaryFromCounts(
+	def sharedtypes.HabitStreakDefinition,
+	countsByDate map[string]map[string]int,
+	start string,
+	end string,
+) (int, int) {
+	buckets := customHabitRangeBuckets(start, end, def.Period)
+	if len(buckets) == 0 {
+		return 0, 0
+	}
+	countsByBucket := make(map[string]int, len(buckets))
+	dayKeys := make([]string, 0, len(countsByDate))
+	for day := range countsByDate {
+		dayKeys = append(dayKeys, day)
+	}
+	slices.Sort(dayKeys)
+	for _, day := range dayKeys {
+		dayCounts := countsByDate[day]
+		if dayCounts == nil {
+			continue
+		}
+		bucket := customHabitBucketKey(day, def.Period)
+		if bucket == "" {
+			continue
+		}
+		countsByBucket[bucket] += dayCounts[def.ID]
+	}
+	required := momentumRequiredUnits(def)
+	current := 0
+	longest := 0
+	for bucketIdx, bucket := range buckets {
+		if countsByBucket[bucket] >= required {
+			if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+				continue
+			}
+			current++
+			if current > longest {
+				longest = current
+			}
+			continue
+		}
+		if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+			continue
+		}
+		current = 0
+	}
+	return current, longest
+}
+
+func computeCustomMomentumStreak(
+	def sharedtypes.HabitStreakDefinition,
+	history []sharedtypes.HabitCompletion,
+	start string,
+	end string,
+) (int, int) {
+	if !def.Enabled || sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+		return 0, 0
+	}
+	dayCountsByDate := map[string]map[int64]int{}
+	for _, entry := range history {
+		if entry.Date < start || entry.Date > end {
+			continue
+		}
+		if entry.Status != sharedtypes.HabitCompletionStatusCompleted {
+			continue
+		}
+		if !slices.Contains(def.HabitIDs, entry.HabitID) {
+			continue
+		}
+		counts := dayCountsByDate[entry.Date]
+		if counts == nil {
+			counts = map[int64]int{}
+			dayCountsByDate[entry.Date] = counts
+		}
+		counts[entry.HabitID]++
+	}
+	buckets := map[string]int{}
+	dayKeys := make([]string, 0, len(dayCountsByDate))
+	for day := range dayCountsByDate {
+		dayKeys = append(dayKeys, day)
+	}
+	slices.Sort(dayKeys)
+	for _, day := range dayKeys {
+		bucket := customHabitBucketKey(day, def.Period)
+		if bucket == "" {
+			continue
+		}
+		buckets[bucket] += momentumDailyCount(dayCountsByDate[day], def.HabitIDs, def.MatchMode)
+	}
+	current := 0
+	longest := 0
+	required := momentumRequiredUnits(def)
+	for _, bucket := range customHabitRangeBuckets(start, end, def.Period) {
+		if buckets[bucket] >= required {
+			current++
+			if current > longest {
+				longest = current
+			}
+			continue
+		}
+		if customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+			continue
+		}
+		current = 0
+	}
+	return current, longest
 }
 
 func customHabitTrailingIncompleteBucketIsOpen(

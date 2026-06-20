@@ -99,9 +99,14 @@ Custom habit momentum follows the habit streak definitions configured in Setting
 - weekly definitions count weeks that meet their configured completion threshold
 - monthly definitions count months that meet their configured completion threshold
 
+Momentum definitions can now target either habits or contexts. Habit targets use the selected habit IDs, while context targets use repo and stream selections from the workspace. The matching mode controls how selected targets contribute:
+
+- `any` treats the selected targets as alternatives and counts whichever selected target contributes
+- `all` requires the selected targets to contribute together before the threshold is met
+
 For weekly and monthly custom momentum, the current in-progress bucket does not break an existing streak just because it has not reached its threshold yet. It only extends the streak once the threshold is met.
 
-The Momentum pane visualizes current streak length with a cadence-specific ladder. Filled blocks are milestones reached by the current streak; empty blocks are future milestones.
+The Momentum pane visualizes current streak length with a cadence-specific ladder and the corresponding target summary. Filled blocks are milestones reached by the current streak; empty blocks are future milestones. The detail view adds the current bucket metadata and contributor list so you can see which completions or sessions produced the active streak.
 
 ```text
 Daily/check-in/focus: 1d, 3d, 7d, 14d, 30d, 60d, 100d

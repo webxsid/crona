@@ -134,7 +134,8 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "momentum" {
 		return []string{
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit"),
+			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle enabled"),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
@@ -146,7 +147,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open day details"),
 			theme.StyleHeader.Render("[S/E]") + theme.StyleDim.Render(" calendar"),
-			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change start"),
+			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change start"),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" change end"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" weekly"),
 		}
@@ -222,7 +223,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "alerts" {
 		return []string{
-			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[space]") + theme.StyleDim.Render(" toggle"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit or run"),
 			theme.StyleHeader.Render("[d/x]") + theme.StyleDim.Render(" delete"),
@@ -306,12 +307,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	case "settings":
 		return []string{
-			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit, toggle, or confirm"),
 		}
 	case "alerts":
 		return []string{
-			theme.StyleHeader.Render("[h/l]") + theme.StyleDim.Render(" change"),
+			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" toggle or test"),
 		}
 	}

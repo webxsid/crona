@@ -7,7 +7,6 @@ import (
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
-	filteringpkg "crona/tui/internal/tui/filtering"
 	helperpkg "crona/tui/internal/tui/helpers"
 	overlaypkg "crona/tui/internal/tui/overlays"
 	selectionpkg "crona/tui/internal/tui/selection"
@@ -29,7 +28,6 @@ func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
 func (m Model) overlayState() overlaypkg.State {
 	return overlaypkg.State{
 		HelpOpen:          m.helpOpen,
-		FilterEditing:     m.filterEditing,
 		DialogState:       m.dialogState(),
 		SessionDetailOpen: m.sessionDetailOpen,
 		SessionDetailY:    m.sessionDetailY,
@@ -41,7 +39,6 @@ func (m Model) overlayState() overlaypkg.State {
 
 func (m Model) applyOverlayState(state overlaypkg.State) Model {
 	m.helpOpen = state.HelpOpen
-	m.filterEditing = state.FilterEditing
 	m = m.withDialogState(state.DialogState)
 	m.sessionDetailOpen = state.SessionDetailOpen
 	m.sessionDetailY = state.SessionDetailY
@@ -52,11 +49,6 @@ func (m Model) applyOverlayState(state overlaypkg.State) Model {
 
 func (m Model) overlayDeps() overlaypkg.Deps {
 	return overlaypkg.Deps{
-		StopFilterEdit: func(state *overlaypkg.State) {
-			next := m.applyOverlayState(*state)
-			next = next.applyFilterState(filteringpkg.Stop(next.filterState()))
-			*state = next.overlayState()
-		},
 		SessionDetailMaxOffset: func(state overlaypkg.State) int {
 			next := m.applyOverlayState(state)
 			return helperpkg.SessionDetailMaxOffset(
@@ -122,11 +114,11 @@ func (m Model) updateSessionDetailOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "esc", "enter", "q":
+	case "esc", "enter":
 		m.sessionContextOpen = false
 		m.sessionContextY = 0
 		return m, nil
-	case "j", "down":
+	case "down":
 		snapshot := m.selectionSnapshot()
 		maxOffset := helperpkg.SessionContextMaxOffset(
 			m.width,
@@ -137,7 +129,7 @@ func (m Model) updateSessionContextOverlay(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m.sessionContextY++
 		}
 		return m, nil
-	case "k", "up":
+	case "up":
 		if m.sessionContextY > 0 {
 			m.sessionContextY--
 		}

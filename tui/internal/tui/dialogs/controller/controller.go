@@ -123,6 +123,11 @@ func Close(state State) State {
 	state.ViewMeta = ""
 	state.ViewBody = ""
 	state.ViewPath = ""
+	state.MomentumRepos = nil
+	state.MomentumStreams = nil
+	state.MomentumAllIssues = nil
+	state.MomentumRepoInput = textinput.Model{}
+	state.MomentumStreamInput = textinput.Model{}
 	state.ExportPresetKind = ""
 	state.ExportPresetFormat = ""
 	state.ExportPresetOutput = ""
@@ -390,6 +395,8 @@ func Update(
 		return updateAlertReminder(state, msg)
 	case "view_entity":
 		return updateViewEntity(state, msg)
+	case "view_momentum_detail":
+		return updateMomentumDetail(state, msg)
 	case "support_bundle_result":
 		return updateSupportBundleResult(state, msg)
 	case "view_jump":
@@ -421,13 +428,13 @@ func newSessionDetailInput(state State, placeholder string) textinput.Model {
 
 func updateStashList(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.StashCursor < len(ctx.Stashes)-1 {
 			state.StashCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.StashCursor > 0 {
 			state.StashCursor--
 		}
@@ -452,13 +459,13 @@ func updateIssueStatus(
 	msg tea.KeyMsg,
 ) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.StatusCursor < len(state.StatusItems)-1 {
 			state.StatusCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.StatusCursor > 0 {
 			state.StatusCursor--
 		}
@@ -562,7 +569,7 @@ func updateSessionMessage(
 			return OpenHardLimitExpired(state, state.ViewName), nil, ""
 		}
 		return Close(state), nil, ""
-	case "ctrl+e", "f2":
+	case "ctrl+e":
 		return ToggleEndSessionAdvanced(state), nil, ""
 	case "tab", "shift+tab", "down", "up":
 		if len(state.Inputs) == 1 {
@@ -609,12 +616,12 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 	case "p":
 		state.ChoiceCursor = 1
 		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
 		return clearDialogError(state), nil, ""
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}
@@ -1024,12 +1031,12 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
 		return clearDialogError(state), nil, ""
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}

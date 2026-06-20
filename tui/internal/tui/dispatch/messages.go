@@ -184,11 +184,15 @@ func HandleMessage(
 		return state, nil, true
 	case commands.ReposLoadedMsg:
 		state.Repos = msg.Repos
-		deps.ClampFiltered(&state, uistate.PaneRepos)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneRepos)
+		}
 		return state, nil, true
 	case commands.StreamsLoadedMsg:
 		state.Streams = msg.Streams
-		deps.ClampFiltered(&state, uistate.PaneStreams)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneStreams)
+		}
 		return state, nil, true
 	case commands.AllHabitsLoadedMsg:
 		state.AllHabits = msg.Habits
@@ -198,19 +202,25 @@ func HandleMessage(
 		return state, nil, true
 	case commands.MomentumRangeLoadedMsg:
 		state.MomentumCards = msg.Cards
-		deps.ClampFiltered(&state, uistate.PaneMomentumCards)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneMomentumCards)
+		}
 		return state, nil, true
 	case commands.IssuesLoadedMsg:
 		state.Issues = msg.Issues
 		if state.View == uistate.ViewDaily || state.View == uistate.ViewMeta {
 			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
-				deps.ClampFiltered(&state, uistate.PaneIssues)
+				if deps.ClampFiltered != nil {
+					deps.ClampFiltered(&state, uistate.PaneIssues)
+				}
 			}
 		}
 		return state, nil, true
 	case commands.HabitsLoadedMsg:
 		state.Habits = msg.Habits
-		deps.ClampFiltered(&state, uistate.PaneHabits)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneHabits)
+		}
 		return state, nil, true
 	case commands.HabitHistoryLoadedMsg:
 		state.HabitHistory = msg.Completions
@@ -218,7 +228,9 @@ func HandleMessage(
 		state.HabitHistoryMeta = habitHistoryScopeLabel(msg.Scope)
 		if state.View == uistate.ViewHabitHistory {
 			if !restoreHabitHistoryCursorByID(&state, uistate.PaneHabitHistory, msg.SelectedHabitHistoryID) {
-				deps.ClampFiltered(&state, uistate.PaneHabitHistory)
+				if deps.ClampFiltered != nil {
+					deps.ClampFiltered(&state, uistate.PaneHabitHistory)
+				}
 			}
 		}
 		return state, nil, true
@@ -226,14 +238,18 @@ func HandleMessage(
 		state.AllIssues = msg.Issues
 		if state.View == uistate.ViewDefault || state.View == uistate.ViewDaily {
 			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
-				deps.ClampFiltered(&state, uistate.PaneIssues)
+				if deps.ClampFiltered != nil {
+					deps.ClampFiltered(&state, uistate.PaneIssues)
+				}
 			}
 		}
 		return state, nil, true
 	case commands.DueHabitsLoadedMsg:
 		state.DueHabits = msg.Habits
 		if state.View == uistate.ViewDaily {
-			deps.ClampFiltered(&state, uistate.PaneHabits)
+			if deps.ClampFiltered != nil {
+				deps.ClampFiltered(&state, uistate.PaneHabits)
+			}
 		}
 		return state, nil, true
 	case commands.DailySummaryLoadedMsg:
@@ -327,11 +343,15 @@ func HandleMessage(
 		return state, deps.LoadRollupSummaries(msg.Start, msg.End), true
 	case commands.ExportAssetsLoadedMsg:
 		state.ExportAssets = msg.Assets
-		deps.ClampFiltered(&state, uistate.PaneConfig)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneConfig)
+		}
 		return state, deps.LoadExportReports(), true
 	case commands.ExportReportsLoadedMsg:
 		state.ExportReports = msg.Reports
-		deps.ClampFiltered(&state, uistate.PaneExportReports)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneExportReports)
+		}
 		return state, nil, true
 	case commands.ExportReportDeletedMsg:
 		return state, tea.Batch(deps.SetStatus(&state, "Deleted report "+msg.Name, false), deps.LoadExportReports()), true
@@ -348,7 +368,9 @@ func HandleMessage(
 		return state, nil, true
 	case commands.SessionHistoryLoadedMsg:
 		state.SessionHistory = msg.Sessions
-		deps.ClampFiltered(&state, uistate.PaneSessions)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneSessions)
+		}
 		return state, nil, true
 	case commands.SessionDetailLoadedMsg:
 		state.SessionDetail = msg.Detail
@@ -376,13 +398,17 @@ func HandleMessage(
 		return state, nil, true
 	case commands.OpsLoadedMsg:
 		state.Ops = msg.Ops
-		deps.ClampFiltered(&state, uistate.PaneOps)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneOps)
+		}
 		return state, nil, true
 	case commands.ContextLoadedMsg:
 		state.Context = msg.Ctx
 		if state.View == uistate.ViewDefault || state.View == uistate.ViewDaily {
-			deps.ClampFiltered(&state, uistate.PaneIssues)
-			deps.ClampFiltered(&state, uistate.PaneHabits)
+			if deps.ClampFiltered != nil {
+				deps.ClampFiltered(&state, uistate.PaneIssues)
+				deps.ClampFiltered(&state, uistate.PaneHabits)
+			}
 		}
 		cmds := []tea.Cmd{deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate)}
 		if state.View == uistate.ViewHabitHistory {
@@ -435,11 +461,15 @@ func HandleMessage(
 		return state, nil, true
 	case commands.AlertStatusLoadedMsg:
 		state.AlertStatus = msg.Status
-		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneAlerts)
+		}
 		return state, nil, true
 	case commands.AlertRemindersLoadedMsg:
 		state.AlertReminders = msg.Reminders
-		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneAlerts)
+		}
 		return state, nil, true
 	case commands.UpdateStatusLoadedMsg:
 		state.UpdateChecking = false
@@ -451,8 +481,10 @@ func HandleMessage(
 		return state, tea.Batch(deps.SetStatus(&state, msg.Label, false), deps.LoadAlertReminders()), true
 	case commands.SettingsLoadedMsg:
 		state.Settings = msg.Settings
-		deps.ClampFiltered(&state, uistate.PaneSettings)
-		deps.ClampFiltered(&state, uistate.PaneAlerts)
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneSettings)
+			deps.ClampFiltered(&state, uistate.PaneAlerts)
+		}
 		if msg.Settings != nil && !msg.Settings.OnboardingCompleted && state.Dialog == "" && deps.OpenOnboardingDialog != nil {
 			logger.Infof("tui settings loaded: opening onboarding dialog onboarding_completed=%t usage=%t errors=%t dialog=%q", msg.Settings.OnboardingCompleted, msg.Settings.UsageTelemetryEnabled, msg.Settings.ErrorReportingEnabled, state.Dialog)
 			deps.OpenOnboardingDialog(&state)

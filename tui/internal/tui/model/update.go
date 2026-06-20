@@ -6,17 +6,23 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
-	filteringpkg "crona/tui/internal/tui/filtering"
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
-	overlaypkg "crona/tui/internal/tui/overlays"
 	selectionpkg "crona/tui/internal/tui/selection"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+)
+
+type inputScope int
+
+const (
+	scopeShell inputScope = iota
+	scopeDialog
+	scopeSessionDetailOverlay
+	scopeSessionContextOverlay
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -30,7 +36,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if key, ok := msg.(tea.KeyMsg); ok {
 		logger.Infof(
-			"tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t filter_editing=%t",
+			"tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t",
 			key.String(),
 			m.view,
 			m.pane,
@@ -38,7 +44,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.helpOpen,
 			m.sessionDetailOpen,
 			m.sessionContextOpen,
-			m.filterEditing,
 		)
 		touch := m.timerActivityTouchCmd(time.Now())
 		if key.String() == "ctrl+c" {
@@ -46,14 +51,9 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.stopEventStream()
 			return m, tea.Quit
 		}
-		if m.dialog != "" {
+		switch m.activeInputScope() {
+		case scopeDialog:
 			logger.Infof("tui key route: dialog")
-			if key.String() == "q" {
-				if m.dialog == "hard_limit_expired" || len(m.dialogInputs) > 0 || m.dialogDescriptionOn {
-					return m, touch
-				}
-				return m.withDialogState(dialogstate.Close(m.dialogSnapshot().Dialog)), touch
-			}
 			next, cmd := m.updateDialog(key)
 			if model, ok := next.(Model); ok {
 				logger.Infof(
@@ -64,40 +64,25 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				)
 			}
 			return next, batchCmds(touch, cmd)
-		}
-		if key.String() == "q" {
-			logger.Infof("tui key route: quit")
-			m.stopEventStream()
-			return m, tea.Quit
-		}
-		if m.sessionDetailOpen {
+		case scopeSessionDetailOverlay:
 			logger.Infof("tui key route: session_detail_overlay")
 			next, cmd := m.updateSessionDetailOverlay(key)
 			return next, batchCmds(touch, cmd)
-		}
-		if m.sessionContextOpen {
+		case scopeSessionContextOverlay:
 			logger.Infof("tui key route: session_context_overlay")
 			next, cmd := m.updateSessionContextOverlay(key)
 			return next, batchCmds(touch, cmd)
+		case scopeShell:
+			logger.Infof("tui key route: input")
+			state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
+			logger.Infof(
+				"tui key route result: input next_view=%s next_pane=%s dialog=%q",
+				state.ActiveView,
+				state.ActivePane,
+				state.Dialog,
+			)
+			return m.applyInputState(state), batchCmds(touch, cmd)
 		}
-		if m.filterEditing {
-			logger.Infof("tui key route: filter_editing")
-			state, cmd := overlaypkg.HandleFilter(m.overlayState(), key, m.overlayDeps())
-			if cmd != nil || state.FilterEditing != m.filterEditing {
-				return m.applyOverlayState(state), batchCmds(touch, cmd)
-			}
-			next, cmd := filteringpkg.Update(m.filterState(), key, m.filterDeps())
-			return m.applyFilterState(next), batchCmds(touch, cmd)
-		}
-		logger.Infof("tui key route: input")
-		state, cmd := inputpkg.Handle(m.inputState(), key, m.inputDeps())
-		logger.Infof(
-			"tui key route result: input next_view=%s next_pane=%s dialog=%q",
-			state.ActiveView,
-			state.ActivePane,
-			state.Dialog,
-		)
-		return m.applyInputState(state), batchCmds(touch, cmd)
 	}
 	switch msg := msg.(type) {
 	case commands.IssueActionPreflightConflictMsg:
@@ -127,6 +112,13 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				msg.Target.IssueID,
 			), nil
 		}
+	case commands.MomentumDetailLoadedMsg:
+		if msg.Detail == nil {
+			return m, nil
+		}
+		return m.openMomentumDetailDialog(*msg.Detail), nil
+	case commands.MomentumDetailFailedMsg:
+		return m, m.setStatus(msg.Err.Error(), true)
 	}
 	state, cmd, handled := dispatchpkg.HandleMessage(
 		m.dispatchMessageState(),
@@ -137,6 +129,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.applyDispatchMessageState(state), cmd
 	}
 	return m, nil
+}
+
+func (m Model) activeInputScope() inputScope {
+	switch {
+	case m.dialog != "":
+		return scopeDialog
+	case m.sessionDetailOpen:
+		return scopeSessionDetailOverlay
+	case m.sessionContextOpen:
+		return scopeSessionContextOverlay
+	default:
+		return scopeShell
+	}
 }
 
 func (m *Model) timerActivityTouchCmd(now time.Time) tea.Cmd {
@@ -179,44 +184,6 @@ func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return next, nil
 	}
 	return next.handleDialogAction(next, *action)
-}
-
-func (m Model) filterState() filteringpkg.State {
-	return filteringpkg.State{
-		Filters:       m.filters,
-		Cursor:        m.cursor,
-		FilterEditing: m.filterEditing,
-		FilterPane:    m.filterPane,
-		FilterInput:   m.filterInput,
-	}
-}
-
-func (m Model) applyFilterState(state filteringpkg.State) Model {
-	m.filters = state.Filters
-	m.cursor = state.Cursor
-	m.filterEditing = state.FilterEditing
-	m.filterPane = state.FilterPane
-	m.filterInput = state.FilterInput
-	return m
-}
-
-func (m Model) filterDeps() filteringpkg.Deps {
-	return filteringpkg.Deps{
-		ItemCount: func(state filteringpkg.State, pane Pane) int {
-			next := m.applyFilterState(state)
-			snapshot := next.selectionSnapshot()
-			return len(selectionpkg.FilteredIndices(snapshot, pane))
-		},
-		Clamp: func(cursor map[Pane]int, pane Pane, max int) {
-			if max == 0 {
-				cursor[pane] = 0
-				return
-			}
-			if cursor[pane] >= max {
-				cursor[pane] = max - 1
-			}
-		},
-	}
 }
 
 func (m Model) dispatchMessageState() dispatchpkg.MessageState {
@@ -440,12 +407,13 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		ClampFiltered: func(state *dispatchpkg.MessageState, pane Pane) {
 			next := m.applyDispatchMessageState(*state)
-			filterState := next.filterState()
-			deps := next.filterDeps()
-			if deps.Clamp != nil && deps.ItemCount != nil {
-				deps.Clamp(filterState.Cursor, pane, deps.ItemCount(filterState, pane))
+			snapshot := next.selectionSnapshot()
+			max := len(selectionpkg.FilteredIndices(snapshot, pane))
+			if max == 0 {
+				next.cursor[pane] = 0
+			} else if next.cursor[pane] >= max {
+				next.cursor[pane] = max - 1
 			}
-			next = next.applyFilterState(filterState)
 			*state = next.dispatchMessageState()
 		},
 		FilteredCursorForRawIndex: func(state *dispatchpkg.MessageState, pane Pane, rawIdx int) int {

@@ -32,11 +32,16 @@ func OpenCreateMomentumDirect(
 	state State,
 	defs []api.HabitStreakDefinition,
 	habits []api.HabitWithMeta,
+	repos []api.Repo,
+	streams []api.Stream,
+	allIssues []api.IssueWithMeta,
 ) State {
-	state = closeAndPrimeMomentumState(state, defs, habits)
+	state = closeAndPrimeMomentumState(state, defs, habits, repos, streams, allIssues)
 	state.Kind = "create_momentum"
 	return openMomentumEditor(state, -1, sharedtypes.HabitStreakDefinition{
 		Enabled:       true,
+		TargetKind:    sharedtypes.MomentumTargetKindHabit,
+		MatchMode:     sharedtypes.MomentumMatchModeAny,
 		Period:        sharedtypes.HabitStreakPeriodDay,
 		RequiredCount: 1,
 	})
@@ -46,9 +51,12 @@ func OpenEditMomentumDirect(
 	state State,
 	defs []api.HabitStreakDefinition,
 	habits []api.HabitWithMeta,
+	repos []api.Repo,
+	streams []api.Stream,
+	allIssues []api.IssueWithMeta,
 	def sharedtypes.HabitStreakDefinition,
 ) State {
-	state = closeAndPrimeMomentumState(state, defs, habits)
+	state = closeAndPrimeMomentumState(state, defs, habits, repos, streams, allIssues)
 	state.Kind = "edit_momentum"
 	idx := -1
 	for i, item := range state.HabitStreakDefs {
@@ -64,12 +72,44 @@ func openMomentumEditor(state State, idx int, def sharedtypes.HabitStreakDefinit
 	state = openHabitStreakEditor(state, idx, def)
 	state.Inputs[0].Placeholder = "Momentum name"
 	state.Description = newDescriptionInput(36, 4)
+	state.MomentumRepoInput = textinput.New()
+	state.MomentumRepoInput.Placeholder = "Search repo"
+	state.MomentumRepoInput.CharLimit = 80
+	state.MomentumRepoInput.Width = 36
+	state.MomentumRepoInput = withSearchPrompt(state, state.MomentumRepoInput)
+	state.MomentumStreamInput = textinput.New()
+	state.MomentumStreamInput.Placeholder = "Search stream (optional)"
+	state.MomentumStreamInput.CharLimit = 80
+	state.MomentumStreamInput.Width = 36
+	state.MomentumStreamInput = withSearchPrompt(state, state.MomentumStreamInput)
 	if def.Description != nil {
 		state.Description.SetValue(strings.TrimSpace(*def.Description))
 	}
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = 1
-	state = SyncDialogFocus(state)
+	if state.Kind == "create_momentum" {
+		state.ChoiceItems = []string{"Habits", "Contexts"}
+		state.ChoiceValues = []string{
+			string(sharedtypes.MomentumTargetKindHabit),
+			string(sharedtypes.MomentumTargetKindContext),
+		}
+		state.ChoiceDetails = []string{
+			"Select habits to count completions against",
+			"Select repo/stream contexts to count work hours against",
+		}
+		switch sharedtypes.NormalizeMomentumTargetKind(state.HabitStreakDraft.TargetKind) {
+		case sharedtypes.MomentumTargetKindContext:
+			state.ChoiceCursor = 1
+		default:
+			state.ChoiceCursor = 0
+		}
+	} else {
+		state.ChoiceItems = nil
+		state.ChoiceValues = nil
+		state.ChoiceDetails = nil
+		state.ChoiceCursor = 0
+	}
+	state = syncMomentumStepFocus(state)
 	return state
 }
 
@@ -77,9 +117,15 @@ func closeAndPrimeMomentumState(
 	state State,
 	defs []api.HabitStreakDefinition,
 	habits []api.HabitWithMeta,
+	repos []api.Repo,
+	streams []api.Stream,
+	allIssues []api.IssueWithMeta,
 ) State {
 	state = Close(state)
 	state.HabitItems = append([]sharedtypes.HabitWithMeta(nil), habits...)
+	state.MomentumRepos = append([]api.Repo(nil), repos...)
+	state.MomentumStreams = append([]api.Stream(nil), streams...)
+	state.MomentumAllIssues = append([]api.IssueWithMeta(nil), allIssues...)
 	state.HabitStreakOriginalDefs = append([]sharedtypes.HabitStreakDefinition(nil), defs...)
 	state.HabitStreakDefs = append([]sharedtypes.HabitStreakDefinition(nil), defs...)
 	state.HabitStreakOriginalDefs = sharedtypes.NormalizeHabitStreakDefinitions(
@@ -91,6 +137,8 @@ func closeAndPrimeMomentumState(
 	state.HabitStreakEditIdx = -1
 	state.HabitStreakDraft = sharedtypes.HabitStreakDefinition{
 		Enabled:       true,
+		TargetKind:    sharedtypes.MomentumTargetKindHabit,
+		MatchMode:     sharedtypes.MomentumMatchModeAny,
 		Period:        sharedtypes.HabitStreakPeriodDay,
 		RequiredCount: 1,
 	}

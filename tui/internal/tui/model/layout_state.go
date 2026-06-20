@@ -15,6 +15,8 @@ import (
 	selectionpkg "crona/tui/internal/tui/selection"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	viewtypes "crona/tui/internal/tui/views/types"
+
+	"github.com/charmbracelet/bubbles/textinput"
 )
 
 func (m Model) viewContentState(
@@ -153,6 +155,17 @@ func (m Model) dialogRenderState() dialogstate.State {
 	if m.dialog == "create_issue_default" || m.dialog == "create_habit" {
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.DefaultIssueDialogLabels(
 			m.dialogInputs,
+			m.dialogRepoIndex,
+			m.dialogStreamIndex,
+			m.repos,
+			m.allIssues,
+			m.streams,
+			m.context,
+		)
+	}
+	if m.dialog == "create_momentum" || m.dialog == "edit_momentum" {
+		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.MomentumDialogLabels(
+			[]textinput.Model{m.dialogMomentumRepoInput, m.dialogMomentumStreamInput},
 			m.dialogRepoIndex,
 			m.dialogStreamIndex,
 			m.repos,

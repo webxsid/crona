@@ -53,8 +53,8 @@ type State struct {
 
 func ViewTheme() viewtypes.Theme {
 	return viewtypes.Theme{
-		ColorBlue: chrome.ColorBlue, ColorCyan: chrome.ColorCyan, ColorGreen: chrome.ColorGreen, ColorMagenta: chrome.ColorMagenta,
-		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
+		ColorBlue: chrome.ColorBlue, ColorCyan: chrome.ColorCyan, ColorGreen: chrome.ColorGreen, ColorDullGreen: chrome.ColorDullGreen, ColorMagenta: chrome.ColorMagenta,
+		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDullRed: chrome.ColorDullRed, ColorOrange: chrome.ColorOrange, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
 		StyleActive: chrome.StyleActive, StyleInactive: chrome.StyleInactive, StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim,
 		StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleSelectedInverse: chrome.StyleSelectedInverse, StyleNormal: chrome.StyleNormal,
 	}
@@ -62,7 +62,7 @@ func ViewTheme() viewtypes.Theme {
 
 func DialogTheme() dialogs.Theme {
 	return dialogs.Theme{
-		ColorCyan: chrome.ColorCyan, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorGreen: chrome.ColorGreen,
+		ColorCyan: chrome.ColorCyan, ColorYellow: chrome.ColorYellow, ColorOrange: chrome.ColorOrange, ColorRed: chrome.ColorRed, ColorGreen: chrome.ColorGreen,
 		StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim, StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleNormal: chrome.StyleNormal,
 	}
 }
@@ -396,9 +396,7 @@ func renderHelpBar(state State) string {
 	left := strings.Join(leftActions, "   ")
 	right := chrome.StyleDim.Render(rightText)
 	gap := state.Width - lipgloss.Width(left) - lipgloss.Width(right)
-	if gap < 1 {
-		gap = 1
-	}
+	gap = max(gap, 1)
 	return " " + left + strings.Repeat(" ", gap-1) + right
 }
 
@@ -465,12 +463,9 @@ func renderSessionDetailOverlay(state State) string {
 	}
 	maxOffset := max(0, len(wrapped)-visibleHeight)
 	offset := state.SessionDetailY
-	if offset > maxOffset {
-		offset = maxOffset
-	}
-	if offset < 0 {
-		offset = 0
-	}
+
+	offset = max(0, min(offset, maxOffset))
+
 	visible := wrapped[offset:]
 	if len(visible) > visibleHeight {
 		visible = visible[:visibleHeight]
@@ -484,7 +479,7 @@ func renderSessionDetailOverlay(state State) string {
 	return overlayBox(
 		"Session Detail",
 		visible,
-		[]string{"[j/k] scroll   [e] amend   [esc] close"},
+		[]string{"[↑/↓] scroll   [e] amend   [esc] close"},
 		boxWidth,
 		chrome.ColorCyan,
 		chrome.StyleNormal,
@@ -508,12 +503,9 @@ func renderSessionContextOverlay(state State) string {
 	}
 	maxOffset := max(0, len(wrapped)-visibleHeight)
 	offset := state.SessionContextY
-	if offset > maxOffset {
-		offset = maxOffset
-	}
-	if offset < 0 {
-		offset = 0
-	}
+
+	offset = max(0, min(offset, maxOffset))
+
 	visible := wrapped[offset:]
 	if len(visible) > visibleHeight {
 		visible = visible[:visibleHeight]
@@ -527,7 +519,7 @@ func renderSessionContextOverlay(state State) string {
 	return overlayBox(
 		"Issue Context",
 		visible,
-		[]string{"[j/k] scroll   [esc] close"},
+		[]string{"[↑/↓] scroll   [esc] close"},
 		boxWidth,
 		chrome.ColorCyan,
 		chrome.StyleNormal,

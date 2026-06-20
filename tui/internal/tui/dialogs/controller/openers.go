@@ -185,11 +185,26 @@ func (s Snapshot) OpenEditCheckInForDate(date string) State {
 }
 
 func (s Snapshot) OpenCreateMomentumDirect() State {
-	return OpenCreateMomentumDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits)
+	return OpenCreateMomentumDirect(
+		s.Dialog,
+		s.HabitStreakDefs,
+		s.AllHabits,
+		s.Repos,
+		s.Streams,
+		s.AllIssues,
+	)
 }
 
 func (s Snapshot) OpenEditMomentumDirect(def sharedtypes.HabitStreakDefinition) State {
-	return OpenEditMomentumDirect(s.Dialog, s.HabitStreakDefs, s.AllHabits, def)
+	return OpenEditMomentumDirect(
+		s.Dialog,
+		s.HabitStreakDefs,
+		s.AllHabits,
+		s.Repos,
+		s.Streams,
+		s.AllIssues,
+		def,
+	)
 }
 
 func (s Snapshot) OpenConfirmDeleteEntity(kind, id, label string) State {
@@ -286,6 +301,10 @@ func (s Snapshot) OpenViewEntity(title, name, meta, body string) State {
 
 func (s Snapshot) OpenViewEntityWithPath(title, name, meta, body, path string) State {
 	return OpenViewEntityWithPath(s.Dialog, title, name, meta, body, path)
+}
+
+func (s Snapshot) OpenMomentumDetail(detail api.MomentumDetail) State {
+	return OpenMomentumDetail(s.Dialog, detail)
 }
 
 func (s Snapshot) OpenViewJump() State {

@@ -8,6 +8,19 @@ All notable changes to **Crona** are documented here.
 - Added destination-specific migration guides for legacy installs moving to Homebrew, Go source installs, and Winget.
 - Stable Homebrew releases now refresh both `crona.rb` and `crona-beta.rb` so beta users can move to the stable build without a manual reinstall.
 
+### Added
+- Momentum now supports a richer detail view for custom streaks, including contributor breakdowns, current-bucket metadata, and context-aware targets.
+- Habit streak definitions now support habit-based or context-based targets, `any`/`all` matching, and the related validation paths that keep those selections consistent.
+- The Wellbeing momentum surface now renders the expanded target and timeline model instead of only the older habit-only summary.
+
+### Changed
+- The TUI now standardizes calendar and date-picker shortcuts on `ctrl+e`/`ctrl+y`.
+- Momentum and habit streak dialogs now use the new target-selection and detail flows, including context selection, target summaries, and match-mode labels.
+- Dev seed data and the surrounding test coverage now exercise the expanded momentum and habit validation paths.
+
+### Fixed
+- The public socket contract now includes the new momentum detail method and the expanded momentum model types used by the TUI and kernel.
+
 ## [1.6.0] - 2026-06-16
 
 Crona v1.6.0 is the stable release that brings the 1.6 line out of beta for users upgrading from 1.5.1. It folds in the managed-install work, migration guides, daemon rename, bundled assets, and release workflow updates introduced across the beta series.
@@ -222,7 +235,7 @@ This prerelease rolls up the current post-`1.0.2` TUI and reporting improvements
 - Issue selection now stays on the same issue across create, status, and pin refreshes instead of drifting by row index.
 
 ### Fixed
-- Issue create/edit due-date fields now open the calendar reliably across terminals that emit `f2`, `ctrl+y`, or `ctrl+e` for that shortcut.
+- Issue create/edit due-date fields now open the calendar reliably across terminals that emit `ctrl+y` or `ctrl+e` for that shortcut.
 - Active accountability reporting no longer counts delayed high-risk issues after those issues have been resolved or abandoned.
 - Report issue rows no longer show stale delay and fail-score accountability detail for resolved or abandoned issues.
 - The new prompt glyph setting now responds correctly to `space`, `enter`, `h/l`, and left/right in the Settings view.
@@ -244,7 +257,7 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 - Accountability metrics shown in reports are now rounded for readability instead of rendering long raw float precision.
 
 ### Fixed
-- Issue create/edit due-date fields now open the calendar reliably across terminals that emit `f2`, `ctrl+y`, or `ctrl+e` for that shortcut.
+- Issue create/edit due-date fields now open the calendar reliably across terminals that emit `ctrl+y` or `ctrl+e` for that shortcut.
 - Active accountability reporting no longer counts delayed high-risk issues after those issues have been resolved or abandoned.
 - Report issue rows no longer show stale delay and fail-score accountability detail for resolved or abandoned issues.
 - The new prompt glyph setting now responds correctly to `space`, `enter`, `h/l`, and left/right in the Settings view.

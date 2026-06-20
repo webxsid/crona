@@ -10,7 +10,6 @@ import (
 	commands "crona/tui/internal/tui/commands"
 	configitems "crona/tui/internal/tui/configitems"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	filteringpkg "crona/tui/internal/tui/filtering"
 	inputpkg "crona/tui/internal/tui/input"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
@@ -51,8 +50,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 }
 
 func (m Model) configItemsForSnapshot() []configitems.Item {
-	if m.view != ViewConfig && m.pane != PaneConfig &&
-		(!m.filterEditing || m.filterPane != PaneConfig) {
+	if m.view != ViewConfig && m.pane != PaneConfig {
 		return nil
 	}
 	return configitems.Build(m.exportAssets)
@@ -329,11 +327,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 		LoadStashes: func() tea.Cmd { return commands.LoadStashes(m.client) },
 		ClampFiltered: func(state *inputpkg.State, pane uistate.Pane) {
 			next := m.applyInputState(*state)
-			filterState := next.filterState()
-			if deps := next.filterDeps(); deps.Clamp != nil && deps.ItemCount != nil {
-				deps.Clamp(filterState.Cursor, pane, deps.ItemCount(filterState, pane))
+			snapshot := next.selectionSnapshot()
+			max := len(selectionpkg.FilteredIndices(snapshot, pane))
+			if max == 0 {
+				next.cursor[pane] = 0
+			} else if next.cursor[pane] >= max {
+				next.cursor[pane] = max - 1
 			}
-			next = next.applyFilterState(filterState)
 			*state = next.inputState()
 		},
 		CurrentOpsLimit: func(state inputpkg.State) int {
@@ -341,11 +341,6 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return (&next).currentOpsLimit()
 		},
 		LoadOps: func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
-		StartFilterEdit: func(state *inputpkg.State, pane uistate.Pane) {
-			next := m.applyInputState(*state)
-			next = next.applyFilterState(filteringpkg.Start(next.filterState(), pane))
-			*state = next.inputState()
-		},
 		OpenIssueStatusFromSelection: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()

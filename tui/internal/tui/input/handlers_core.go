@@ -156,25 +156,6 @@ func handleAdjustOpsLimit(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bo
 	return s, deps.LoadOps(deps.CurrentOpsLimit(s)), true
 }
 
-func handleStartFilter(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	switch s.ActivePane {
-	case uistate.PaneOps,
-		uistate.PaneIssues,
-		uistate.PaneHabits,
-		uistate.PaneMomentumCards,
-		uistate.PaneRepos,
-		uistate.PaneStreams,
-		uistate.PaneSessions,
-		uistate.PaneConfig,
-		uistate.PaneExportReports,
-		uistate.PaneAlerts:
-	default:
-		return s, nil, false
-	}
-	deps.StartFilterEdit(&s, s.ActivePane)
-	return s, nil, true
-}
-
 func handleSpace(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView == uistate.ViewSettings {
 		return handleActivateSelectedSetting(s, deps)

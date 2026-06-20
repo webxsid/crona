@@ -59,6 +59,24 @@ func ListMomentumCards(
 	for _, habit := range habits {
 		habitNamesByID[habit.ID] = habit.Name
 	}
+	repos, err := c.Repos.List(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	repoNamesByID := make(map[int64]string, len(repos))
+	for _, repo := range repos {
+		repoNamesByID[repo.ID] = repo.Name
+	}
+	streamNamesByID := make(map[int64]string, len(habits))
+	for _, repo := range repos {
+		streams, err := c.Streams.ListByRepo(ctx, repo.ID, c.UserID)
+		if err != nil {
+			return nil, err
+		}
+		for _, stream := range streams {
+			streamNamesByID[stream.ID] = stream.Name
+		}
+	}
 	startDate := shiftMomentumISODate(endDate, -(windowDays - 1))
 
 	out := make([]sharedtypes.MomentumCard, 0, len(defs))
@@ -66,11 +84,12 @@ func ListMomentumCards(
 		def := sharedtypes.NormalizeHabitStreakDefinition(rawDef)
 		summary := summaryByID[def.ID]
 		card := sharedtypes.MomentumCard{
-			Definition: def,
-			Current:    summary.Current,
-			Longest:    summary.Longest,
-			HabitNames: momentumHabitNames(def.HabitIDs, habitNamesByID),
-			Series:     buildMomentumSeries(def, startDate, endDate, countsByDate),
+			Definition:  def,
+			Current:     summary.Current,
+			Longest:     summary.Longest,
+			HabitNames:  momentumHabitNames(def.HabitIDs, habitNamesByID),
+			TargetNames: momentumTargetNames(def, habitNamesByID, repoNamesByID, streamNamesByID),
+			Series:      buildMomentumSeries(def, startDate, endDate, countsByDate),
 		}
 		out = append(out, card)
 	}
@@ -112,8 +131,8 @@ func buildMomentumSeries(
 			StartDate: bucketStart,
 			EndDate:   bucketEnd,
 			Count:     count,
-			Target:    def.RequiredCount,
-			MetTarget: count >= def.RequiredCount,
+			Target:    momentumRequiredUnits(def),
+			MetTarget: count >= momentumRequiredUnits(def),
 		})
 	}
 	return series
@@ -133,6 +152,46 @@ func momentumHabitNames(ids []int64, namesByID map[int64]string) []string {
 	}
 	slices.Sort(names)
 	return names
+}
+
+func momentumTargetNames(
+	def sharedtypes.HabitStreakDefinition,
+	habitNamesByID map[int64]string,
+	repoNamesByID map[int64]string,
+	streamNamesByID map[int64]string,
+) []string {
+	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
+	case sharedtypes.MomentumTargetKindContext:
+		if len(def.Contexts) == 0 {
+			return nil
+		}
+		names := make([]string, 0, len(def.Contexts))
+		for _, contextItem := range def.Contexts {
+			repoName := repoNamesByID[contextItem.RepoID]
+			streamName := ""
+			if contextItem.StreamID != nil {
+				streamName = streamNamesByID[*contextItem.StreamID]
+			}
+			if repoName == "" && streamName == "" {
+				continue
+			}
+			switch {
+			case repoName != "" && streamName != "":
+				names = append(names, repoName+"/"+streamName)
+			case repoName != "":
+				names = append(names, repoName)
+			default:
+				names = append(names, streamName)
+			}
+		}
+		if len(names) > 0 {
+			slices.Sort(names)
+			return names
+		}
+	default:
+		return momentumHabitNames(def.HabitIDs, habitNamesByID)
+	}
+	return nil
 }
 
 func momentumBucketBounds(key string, period sharedtypes.HabitStreakPeriod) (string, string) {

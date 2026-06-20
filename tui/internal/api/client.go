@@ -178,6 +178,15 @@ func (c *Client) GetMomentumRange(endDate string, windowDays int) ([]MomentumCar
 	}, &out)
 }
 
+func (c *Client) GetMomentumDetail(id, endDate string, windowDays int) (*MomentumDetail, error) {
+	var out MomentumDetail
+	return &out, c.call(protocol.MethodMomentumDetail, shareddto.MomentumDetailRequest{
+		ID:         strings.TrimSpace(id),
+		EndDate:    strings.TrimSpace(endDate),
+		WindowDays: windowDays,
+	}, &out)
+}
+
 func (c *Client) CreateHabit(
 	streamID int64,
 	name string,

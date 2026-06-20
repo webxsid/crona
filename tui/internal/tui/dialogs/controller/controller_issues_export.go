@@ -61,7 +61,7 @@ func updateCreateIssueDefault(
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "f2", "ctrl+e", "ctrl+y":
+	case "ctrl+e", "ctrl+y":
 		if state.FocusIdx == 5 {
 			return OpenDatePicker(
 				state,
@@ -428,21 +428,21 @@ func updateMultiInputIssue(
 }
 
 func isDatePickerShortcut(key string) bool {
-	return key == "f2" || key == "ctrl+e" || key == "ctrl+y"
+	return key == "ctrl+e" || key == "ctrl+y"
 }
 
 func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		if state.Processing {
 			return state, nil, ""
 		}
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}
@@ -457,7 +457,7 @@ func updateExportCategory(state State, msg tea.KeyMsg) (State, *Action, string) 
 
 func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		if state.Processing {
 			return state, nil, ""
 		}
@@ -470,14 +470,14 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 		state.ChoiceDetails = details
 		state.ChoiceCursor = 0
 		return clearDialogError(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.Processing {
 			return state, nil, ""
 		}
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.Processing {
 			return state, nil, ""
 		}
@@ -563,7 +563,7 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		state.Kind = "export_report"
 		state.Parent = ""
 		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(
@@ -576,11 +576,11 @@ func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 		state.ExportPresetOutput = ""
 		state.ChoiceCursor = 0
 		return clearDialogError(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}
@@ -619,7 +619,7 @@ func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		state.Kind = "export_report"
 		state.Parent = ""
 		state.ChoiceItems, state.ChoiceDetails = exportReportChoices(
@@ -629,11 +629,11 @@ func updateExportCalendarRepo(state State, msg tea.KeyMsg) (State, *Action, stri
 		state.ChoiceValues = nil
 		state.ChoiceCursor = 0
 		return clearDialogError(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}

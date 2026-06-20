@@ -82,27 +82,6 @@ func TestHandleQuestionOpensHelpDialog(t *testing.T) {
 	}
 }
 
-func TestHandleStartFilterAllowsMomentumCards(t *testing.T) {
-	called := false
-	state := State{
-		ActivePane: uistate.PaneMomentumCards,
-	}
-	_, _, handled := handleStartFilter(state, Deps{
-		StartFilterEdit: func(s *State, pane uistate.Pane) {
-			called = true
-			if pane != uistate.PaneMomentumCards {
-				t.Fatalf("expected momentum cards filter pane, got %q", pane)
-			}
-		},
-	})
-	if !handled {
-		t.Fatal("expected / to start filtering momentum cards")
-	}
-	if !called {
-		t.Fatal("expected filter editor to be started for momentum cards")
-	}
-}
-
 func TestHandleOpenCheckInRejectsOtherViews(t *testing.T) {
 	called := false
 	_, _, handled := handleOpenCheckIn(State{ActiveView: uistate.ViewDefault}, Deps{

@@ -128,7 +128,7 @@ func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 		if card, ok := m.selectedMomentumCard(); ok {
 			return m.openEditMomentumDialog(card.Definition), nil, true
 		}
-		return m.openCreateMomentumDialog(), nil, true
+		return m, nil, true
 	}
 	if m.view == ViewWellbeing {
 		if m.dailyCheckIn == nil {
@@ -294,9 +294,14 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 	}
 	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
 		if card, ok := m.selectedMomentumCard(); ok {
-			return m.openEditMomentumDialog(card.Definition), nil, true
+			return m, commands.LoadMomentumDetail(
+				m.client,
+				card.Definition.ID,
+				m.currentMomentumDate(),
+				m.currentMomentumWindowDays(),
+			), true
 		}
-		return m.openCreateMomentumDialog(), nil, true
+		return m, nil, true
 	}
 	if m.view == ViewHabitHistory && m.pane == PaneHabitHistory {
 		if entry, ok := m.selectedHabitHistoryEntry(); ok {

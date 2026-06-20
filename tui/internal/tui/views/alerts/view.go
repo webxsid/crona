@@ -30,15 +30,15 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	)
 	lines := []string{
 		theme.StylePaneTitle.Render("Alerts"),
-		viewchrome.RenderActionLine(
+		viewchrome.RenderPaneActionLine(
 			theme,
-			state.Width-6,
 			viewchrome.ContextualActions(
 				theme,
 				viewchrome.ActionsState{View: state.View, Pane: state.Pane},
 			),
+			state.Width-6,
 		),
-		"",
+	"",
 	}
 	if state.Settings == nil {
 		lines = append(lines, theme.StyleDim.Render("Loading alert settings..."))

@@ -63,7 +63,7 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [space] toggle   [a] all   [c] none   [tab] next",
+			"[↑/↓] move   [space] toggle   [a] all   [c] none   [tab] next",
 		)
 	case 1:
 		rows = append(rows, theme.StyleDim.Render("Select default rest weekdays"))
@@ -84,7 +84,7 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [space] toggle   [c] clear   [tab] next",
+			"[↑/↓] move   [space] toggle   [c] clear   [tab] next",
 		)
 	case 2:
 		rows = append(rows, theme.StyleDim.Render("Manage one-off rest dates"))

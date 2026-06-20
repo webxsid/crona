@@ -132,14 +132,14 @@ func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
 }
 
 func checkoutHint() string {
-	return "[type] filter   [left/right] choose   [up/down/tab] move   [enter] set checkout context   [c] clear   [esc] cancel"
+	return "[type] filter   [←/→] choose   [↑/↓/tab] move   [enter] set checkout context   [c] clear   [esc] cancel"
 }
 
 func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 	if state.Kind == "create_habit" {
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"

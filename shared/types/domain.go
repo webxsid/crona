@@ -1,6 +1,9 @@
 package types
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Shared domain and wire types used across the Go workspace.
 
@@ -378,14 +381,83 @@ func NormalizeHabitStreakPeriod(value HabitStreakPeriod) HabitStreakPeriod {
 	}
 }
 
+type MomentumMatchMode string
+
+const (
+	MomentumMatchModeAny MomentumMatchMode = "any"
+	MomentumMatchModeAll MomentumMatchMode = "all"
+)
+
+func NormalizeMomentumMatchMode(value MomentumMatchMode) MomentumMatchMode {
+	switch value {
+	case MomentumMatchModeAll:
+		return value
+	default:
+		return MomentumMatchModeAny
+	}
+}
+
+func MomentumMatchModeLabel(value MomentumMatchMode) string {
+	switch NormalizeMomentumMatchMode(value) {
+	case MomentumMatchModeAll:
+		return "all"
+	default:
+		return "any"
+	}
+}
+
+type MomentumTargetKind string
+
+const (
+	MomentumTargetKindHabit   MomentumTargetKind = "habit"
+	MomentumTargetKindContext MomentumTargetKind = "context"
+	MomentumTargetKindRepo    MomentumTargetKind = "repo"
+	MomentumTargetKindStream  MomentumTargetKind = "stream"
+)
+
+func NormalizeMomentumTargetKind(value MomentumTargetKind) MomentumTargetKind {
+	switch value {
+	case MomentumTargetKindContext, MomentumTargetKindRepo, MomentumTargetKindStream:
+		return value
+	default:
+		return MomentumTargetKindHabit
+	}
+}
+
+func MomentumTargetKindLabel(value MomentumTargetKind) string {
+	switch NormalizeMomentumTargetKind(value) {
+	case MomentumTargetKindContext:
+		return "context"
+	case MomentumTargetKindRepo:
+		return "repo"
+	case MomentumTargetKindStream:
+		return "stream"
+	default:
+		return "habit"
+	}
+}
+
 type HabitStreakDefinition struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Description   *string           `json:"description,omitempty"`
-	Enabled       bool              `json:"enabled"`
-	Period        HabitStreakPeriod `json:"period"`
-	RequiredCount int               `json:"requiredCount"`
-	HabitIDs      []int64           `json:"habitIds,omitempty"`
+	ID            string             `json:"id"`
+	Name          string             `json:"name"`
+	Description   *string            `json:"description,omitempty"`
+	Enabled       bool               `json:"enabled"`
+	TargetKind    MomentumTargetKind `json:"targetKind,omitempty"`
+	MatchMode     MomentumMatchMode  `json:"matchMode,omitempty"`
+	Contexts      []MomentumContext  `json:"contexts,omitempty"`
+	Period        HabitStreakPeriod  `json:"period"`
+	RequiredCount int                `json:"requiredCount"`
+	HabitIDs      []int64            `json:"habitIds,omitempty"`
+}
+
+type MomentumContext struct {
+	RepoID   int64  `json:"repoId"`
+	StreamID *int64 `json:"streamId,omitempty"`
+}
+
+type MomentumContextRedundancy struct {
+	RepoWideContext   MomentumContext   `json:"repoWideContext"`
+	RedundantContexts []MomentumContext `json:"redundantContexts,omitempty"`
 }
 
 type MomentumSeriesPoint struct {
@@ -399,11 +471,47 @@ type MomentumSeriesPoint struct {
 }
 
 type MomentumCard struct {
-	Definition HabitStreakDefinition `json:"definition"`
-	Current    int                   `json:"current"`
-	Longest    int                   `json:"longest"`
-	HabitNames []string              `json:"habitNames,omitempty"`
-	Series     []MomentumSeriesPoint `json:"series,omitempty"`
+	Definition  HabitStreakDefinition `json:"definition"`
+	Current     int                   `json:"current"`
+	Longest     int                   `json:"longest"`
+	HabitNames  []string              `json:"habitNames,omitempty"`
+	TargetNames []string              `json:"targetNames,omitempty"`
+	Series      []MomentumSeriesPoint `json:"series,omitempty"`
+}
+
+type MomentumContributorKind string
+
+const (
+	MomentumContributorKindHabitCompletion MomentumContributorKind = "habit_completion"
+	MomentumContributorKindSession         MomentumContributorKind = "session"
+)
+
+type MomentumBucketDetail struct {
+	Label     string `json:"label"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
+	Count     int    `json:"count"`
+	Target    int    `json:"target"`
+	MetTarget bool   `json:"metTarget"`
+}
+
+type MomentumContributor struct {
+	Kind        MomentumContributorKind `json:"kind"`
+	Title       string                  `json:"title"`
+	Context     string                  `json:"context,omitempty"`
+	Date        string                  `json:"date"`
+	AmountLabel string                  `json:"amountLabel,omitempty"`
+	Meta        string                  `json:"meta,omitempty"`
+	HabitID     *int64                  `json:"habitId,omitempty"`
+	SessionID   *string                 `json:"sessionId,omitempty"`
+}
+
+type MomentumDetail struct {
+	Definition    HabitStreakDefinition `json:"definition"`
+	HabitNames    []string              `json:"habitNames,omitempty"`
+	TargetNames   []string              `json:"targetNames,omitempty"`
+	CurrentBucket MomentumBucketDetail  `json:"currentBucket"`
+	Contributors  []MomentumContributor `json:"contributors,omitempty"`
 }
 
 func NormalizeHabitStreakDefinition(value HabitStreakDefinition) HabitStreakDefinition {
@@ -417,13 +525,38 @@ func NormalizeHabitStreakDefinition(value HabitStreakDefinition) HabitStreakDefi
 			value.Description = &trimmed
 		}
 	}
-	value.Period = NormalizeHabitStreakPeriod(value.Period)
-	if value.Period == HabitStreakPeriodDay {
-		value.RequiredCount = 1
-	} else if value.RequiredCount <= 0 {
-		value.RequiredCount = 1
+	value.Contexts = normalizeMomentumContexts(value.Contexts)
+	hasHabitIDs := len(value.HabitIDs) > 0
+	inferredKind := NormalizeMomentumTargetKind(value.TargetKind)
+	if len(value.Contexts) > 0 {
+		inferredKind = MomentumTargetKindContext
+	} else if inferredKind == MomentumTargetKindHabit && !hasHabitIDs {
+		inferredKind = MomentumTargetKindHabit
 	}
-	if len(value.HabitIDs) > 0 {
+	value.MatchMode = NormalizeMomentumMatchMode(value.MatchMode)
+	value.Period = NormalizeHabitStreakPeriod(value.Period)
+	switch inferredKind {
+	case MomentumTargetKindContext:
+		if value.RequiredCount <= 0 {
+			value.RequiredCount = 3600
+		}
+	default:
+		if value.RequiredCount <= 0 {
+			value.RequiredCount = 1
+		}
+	}
+	switch inferredKind {
+	case MomentumTargetKindContext:
+		value.HabitIDs = nil
+		value.Contexts = normalizeMomentumContexts(value.Contexts)
+	default:
+		if !hasHabitIDs {
+			value.TargetKind = MomentumTargetKindHabit
+		}
+		value.Contexts = nil
+	}
+	value.TargetKind = inferredKind
+	if value.TargetKind == MomentumTargetKindHabit && hasHabitIDs {
 		seen := make(map[int64]struct{}, len(value.HabitIDs))
 		ids := make([]int64, 0, len(value.HabitIDs))
 		for _, id := range value.HabitIDs {
@@ -809,13 +942,76 @@ type StreakSummary struct {
 }
 
 type CustomHabitStreakSummary struct {
-	ID            string            `json:"id"`
-	Name          string            `json:"name"`
-	Enabled       bool              `json:"enabled"`
-	Period        HabitStreakPeriod `json:"period"`
-	RequiredCount int               `json:"requiredCount"`
-	Current       int               `json:"current"`
-	Longest       int               `json:"longest"`
+	ID            string             `json:"id"`
+	Name          string             `json:"name"`
+	Enabled       bool               `json:"enabled"`
+	TargetKind    MomentumTargetKind `json:"targetKind,omitempty"`
+	MatchMode     MomentumMatchMode  `json:"matchMode,omitempty"`
+	Contexts      []MomentumContext  `json:"contexts,omitempty"`
+	Period        HabitStreakPeriod  `json:"period"`
+	RequiredCount int                `json:"requiredCount"`
+	Current       int                `json:"current"`
+	Longest       int                `json:"longest"`
+}
+
+func normalizeMomentumContexts(values []MomentumContext) []MomentumContext {
+	if len(values) == 0 {
+		return nil
+	}
+	out := make([]MomentumContext, 0, len(values))
+	seen := make(map[MomentumContext]struct{}, len(values))
+	for _, value := range values {
+		if value.RepoID <= 0 {
+			continue
+		}
+		if value.StreamID != nil && *value.StreamID <= 0 {
+			value.StreamID = nil
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func MomentumContextRedundancies(values []MomentumContext) []MomentumContextRedundancy {
+	values = normalizeMomentumContexts(values)
+	if len(values) == 0 {
+		return nil
+	}
+	repoWide := make(map[int64]MomentumContext)
+	repoStreams := make(map[int64][]MomentumContext)
+	for _, value := range values {
+		if value.StreamID == nil {
+			repoWide[value.RepoID] = value
+			continue
+		}
+		repoStreams[value.RepoID] = append(repoStreams[value.RepoID], value)
+	}
+	out := make([]MomentumContextRedundancy, 0, len(repoWide))
+	for repoID, wide := range repoWide {
+		streams := repoStreams[repoID]
+		if len(streams) == 0 {
+			continue
+		}
+		out = append(out, MomentumContextRedundancy{
+			RepoWideContext:   wide,
+			RedundantContexts: streams,
+		})
+	}
+	slices.SortFunc(out, func(left, right MomentumContextRedundancy) int {
+		switch {
+		case left.RepoWideContext.RepoID < right.RepoWideContext.RepoID:
+			return -1
+		case left.RepoWideContext.RepoID > right.RepoWideContext.RepoID:
+			return 1
+		default:
+			return 0
+		}
+	})
+	return out
 }
 
 type DashboardWindowDayStatus string

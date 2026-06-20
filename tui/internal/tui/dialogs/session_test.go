@@ -9,23 +9,51 @@ import (
 )
 
 func TestMomentumDialogUsesMomentumTitle(t *testing.T) {
-	state := controllerpkg.OpenCreateMomentumDirect(controllerpkg.State{}, nil, nil)
+	state := controllerpkg.OpenCreateMomentumDirect(controllerpkg.State{}, nil, nil, nil, nil, nil)
 	rendered := renderHabitStreakDialog(Theme{}, state)
 	if !strings.Contains(rendered, "Momentum") {
 		t.Fatalf("expected momentum dialog title, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Description") {
-		t.Fatalf("expected momentum dialog to include description field, got %q", rendered)
+	if !strings.Contains(rendered, "Choose momentum kind") {
+		t.Fatalf("expected create momentum dialog to start with kind selection, got %q", rendered)
 	}
 	if strings.Contains(rendered, "Habit Streaks") {
 		t.Fatalf("expected momentum dialog to avoid the settings title, got %q", rendered)
 	}
 }
 
-func TestEditMomentumDialogShowsDescription(t *testing.T) {
+func TestEditMomentumDialogStartsWithTargetsSelection(t *testing.T) {
+	state := controllerpkg.OpenEditMomentumDirect(
+		controllerpkg.State{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		sharedtypes.HabitStreakDefinition{
+			ID:            "momentum-1",
+			Name:          "Recovery Mix",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 2,
+		},
+	)
+	rendered := renderHabitStreakDialog(Theme{}, state)
+	if !strings.Contains(rendered, "Select contributing habits") {
+		t.Fatalf("expected edit momentum dialog to start with target selection, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Choose momentum kind") {
+		t.Fatalf("expected edit momentum dialog to skip kind selection, got %q", rendered)
+	}
+}
+
+func TestEditMomentumDialogShowsDescriptionOnDetailsStep(t *testing.T) {
 	desc := "Keep the mix steady."
 	state := controllerpkg.OpenEditMomentumDirect(
 		controllerpkg.State{},
+		nil,
+		nil,
+		nil,
 		nil,
 		nil,
 		sharedtypes.HabitStreakDefinition{
@@ -37,6 +65,7 @@ func TestEditMomentumDialogShowsDescription(t *testing.T) {
 			RequiredCount: 2,
 		},
 	)
+	state.HabitStreakStep = 2
 	rendered := renderHabitStreakDialog(Theme{}, state)
 	if !strings.Contains(rendered, desc) {
 		t.Fatalf("expected momentum edit dialog to show description, got %q", rendered)

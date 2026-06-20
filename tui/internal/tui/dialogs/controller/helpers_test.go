@@ -73,6 +73,25 @@ func TestFormatDurationInputsUseCompactDurations(t *testing.T) {
 	}
 }
 
+func TestFormatDurationSecondsInputUsesCompactDurations(t *testing.T) {
+	if got := FormatDurationSecondsInput(5663); got != "1h34m23s" {
+		t.Fatalf("expected 1h34m23s, got %q", got)
+	}
+	if got := FormatDurationSecondsInput(3600); got != "1h" {
+		t.Fatalf("expected 1h, got %q", got)
+	}
+}
+
+func TestParseDurationSecondsInputAcceptsFullPrecision(t *testing.T) {
+	got, err := ParseDurationSecondsInput("1h34m23s", true, "Required work")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != 5663 {
+		t.Fatalf("expected 5663 seconds, got %d", got)
+	}
+}
+
 func TestParseHabitScheduleAcceptsCommonWeekdayAliases(t *testing.T) {
 	tests := []struct {
 		name string

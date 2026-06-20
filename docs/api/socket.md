@@ -181,6 +181,24 @@ Alert behavior notes:
 | `habit.uncomplete` | `dto.HabitCompletionUpsertRequest` | completion object | Removes completion status. |
 | `habit.history` | `dto.HabitHistoryQuery` | history list | Habit completion history. |
 
+### Momentum
+
+| Method | Request | Result | Notes |
+| --- | --- | --- | --- |
+| `momentum.list` | `dto.Empty` | habit streak definition list | Lists the configured custom momentum definitions. |
+| `momentum.create` | `dto.HabitStreakDefinitionRequest` | habit streak definition object | Creates a new custom momentum definition. |
+| `momentum.update` | `dto.HabitStreakDefinitionRequest` | habit streak definition object | Updates one custom momentum definition. |
+| `momentum.delete` | `dto.HabitStreakDefinitionDeleteRequest` | `dto.OKResponse` | Deletes one custom momentum definition. |
+| `momentum.range` | `dto.MomentumRangeRequest` | momentum card list | Returns momentum cards with the current series window. |
+| `momentum.detail` | `dto.MomentumDetailRequest` | momentum detail object | Returns the selected definition, current bucket, and contributor breakdown. |
+
+Momentum behavior notes:
+
+- Habit targets count habit-completion history against the selected habit set.
+- Context targets count ended sessions that fall within the selected repo, stream, or repo-wide context set.
+- `any` mode treats the selected targets as alternatives, while `all` mode requires all selected targets to contribute to the threshold.
+- `momentum.detail` uses the same normalization and series logic as the card surface, but expands the result with current-bucket metadata and contributor rows.
+
 ### Check-Ins And Metrics
 
 | Method | Request | Result | Notes |

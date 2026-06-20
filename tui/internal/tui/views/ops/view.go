@@ -30,12 +30,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		theme.StyleDim.Render(fmt.Sprintf("limit: %d", currentOpsLimit(state))),
 		viewchrome.RenderPaneActionLine(
 			theme,
-			state.Filters["ops"],
-			state.Width-6,
 			viewchrome.ContextualActions(
 				theme,
 				viewchrome.ActionsState{View: state.View, Pane: state.Pane},
 			),
+			state.Width-6,
 		),
 	}
 	if total == 0 {

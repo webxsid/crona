@@ -319,6 +319,12 @@ type MomentumRangeRequest struct {
 	WindowDays int    `json:"windowDays"`
 }
 
+type MomentumDetailRequest struct {
+	ID         string `json:"id"`
+	EndDate    string `json:"endDate"`
+	WindowDays int    `json:"windowDays"`
+}
+
 type ConfirmDangerousActionRequest struct {
 	Confirm bool `json:"confirm"`
 }

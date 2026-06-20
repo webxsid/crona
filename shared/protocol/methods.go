@@ -63,6 +63,7 @@ const (
 	MethodMomentumUpdate = "momentum.update"
 	MethodMomentumDelete = "momentum.delete"
 	MethodMomentumRange  = "momentum.range"
+	MethodMomentumDetail = "momentum.detail"
 
 	MethodCheckInGet    = "checkin.get"
 	MethodCheckInUpsert = "checkin.upsert"

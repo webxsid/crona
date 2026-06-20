@@ -160,7 +160,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 }
 
-func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
+func TestHabitStreakDailyPeriodPreservesCount(t *testing.T) {
 	ctx := context.Background()
 	store := openTestStore(t)
 
@@ -188,9 +188,9 @@ func TestHabitStreakDailyPeriodNormalizesCountToOne(t *testing.T) {
 	if len(settings.HabitStreakDefs) != 1 {
 		t.Fatalf("expected one habit streak, got %+v", settings.HabitStreakDefs)
 	}
-	if settings.HabitStreakDefs[0].RequiredCount != 1 {
+	if settings.HabitStreakDefs[0].RequiredCount != 4 {
 		t.Fatalf(
-			"expected daily streak count normalized to 1, got %+v",
+			"expected daily streak count to preserve the entered value, got %+v",
 			settings.HabitStreakDefs[0],
 		)
 	}

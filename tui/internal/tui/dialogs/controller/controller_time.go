@@ -11,19 +11,19 @@ import (
 )
 
 func updateCheckIn(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
-			dir = -1
+	case dialogActionFocusNext, dialogActionFocusPrev, dialogActionMoveDown, dialogActionMoveUp:
+		dir := dialogFocusMoveDir(action)
+		if dir == 0 {
+			dir = dialogVerticalMoveDir(action)
 		}
 		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
+		if action == dialogActionPrimary {
 			mood, err := strconv.Atoi(strings.TrimSpace(state.Inputs[0].Value()))
 			if err != nil || mood < 1 || mood > 5 {
 				return state, nil, "Mood must be between 1 and 5"
@@ -80,11 +80,11 @@ func parseOptionalIntRange(raw string, min int, max int, message string) (*int, 
 }
 
 func updateAmendSession(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
 		return Close(state), nil, ""
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
+		if action == dialogActionPrimary {
 			note := strings.TrimSpace(state.Inputs[0].Value())
 			if note == "" {
 				return state, nil, "Commit message is required"
@@ -105,10 +105,13 @@ func updateAmendSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 }
 
 func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
+	action := dialogActionForKey(state, msg.String())
+	switch action {
+	case dialogActionCancel:
 		return Close(state), nil, ""
-	case "f2", "ctrl+y":
+	}
+	switch msg.String() {
+	case "ctrl+e", "ctrl+y":
 		if state.FocusIdx == 1 {
 			return OpenDatePicker(
 				state,
@@ -124,14 +127,20 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 			state.Inputs[1].SetValue(time.Now().Format("2006-01-02"))
 			return state, nil, ""
 		}
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + len(state.Inputs)) % len(
+	}
+	switch action {
+	case dialogActionFocusNext, dialogActionFocusPrev, dialogActionMoveDown, dialogActionMoveUp:
+		dir := dialogFocusMoveDir(action)
+		if dir == 0 {
+			dir = dialogVerticalMoveDir(action)
+		}
+		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(
 			state.Inputs,
 		)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
+		if action == dialogActionPrimary {
 			date := strings.TrimSpace(state.Inputs[1].Value())
 			if _, err := time.Parse("2006-01-02", date); err != nil {
 				return state, nil, "Date must be YYYY-MM-DD"
@@ -182,15 +191,19 @@ func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 }
 
 func updateHabitCompletion(state State, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 2) % 2
+	case dialogActionFocusNext, dialogActionFocusPrev, dialogActionMoveDown, dialogActionMoveUp:
+		dir := dialogFocusMoveDir(action)
+		if dir == 0 {
+			dir = dialogVerticalMoveDir(action)
+		}
+		state.FocusIdx = (state.FocusIdx + dir + 2) % 2
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	}
-	if isDialogSubmitKey(state, msg.String()) {
+	if dialogActionForKey(state, msg.String()) == dialogActionPrimary {
 		duration, err := ParseOptionalDurationMinutes(state.Inputs[0].Value(), "Duration")
 		if err != nil {
 			return state, nil, err.Error()

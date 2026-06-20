@@ -33,9 +33,8 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 		theme.StyleDim.Render(subtitle),
 		viewchrome.RenderPaneActionLine(
 			theme,
-			state.Filters["habit_history"],
-			state.Width-6,
 			viewchrome.PaneActionsForState(theme, state, active),
+			state.Width-6,
 		),
 	}
 	if total == 0 {

@@ -103,10 +103,6 @@ type Model struct {
 	defaultIssueSection DefaultIssueSection
 	dailyTaskSection    DailyTaskSection
 
-	// pane-local search/filter input
-	filterEditing  bool
-	filterPane     Pane
-	filterInput    textinput.Model
 	opsLimit       int
 	opsLimitPinned bool
 
@@ -215,6 +211,8 @@ type Model struct {
 	dialogChoiceDetails                  []string
 	dialogTemplateAssets                 []sharedtypes.ExportTemplateAsset
 	dialogChoiceCursor                   int
+	dialogMomentumRepoInput              textinput.Model
+	dialogMomentumStreamInput            textinput.Model
 	dialogProcessing                     bool
 	dialogProcessingLabel                string
 	dialogStatusLabel                    string

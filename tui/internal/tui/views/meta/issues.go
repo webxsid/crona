@@ -38,12 +38,12 @@ func renderIssues(
 	total := len(indices)
 	lines := []string{
 		theme.StylePaneTitle.Render("Issues [3]"),
-		viewchrome.RenderPaneActionLine(theme, state.Filters["issues"], width-6, func() []string {
+		viewchrome.RenderPaneActionLine(theme, func() []string {
 			if !active {
 				return nil
 			}
 			return paneActions(theme, state, "issues")
-		}()),
+		}(), width-6),
 	}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render(emptyText))

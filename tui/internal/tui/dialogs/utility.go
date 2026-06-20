@@ -134,7 +134,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 				"",
 			)
 		} else {
-			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] back")
+			rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] choose   [esc] back")
 		}
 		return modal(theme, state.Width, 64, theme.ColorGreen, rows)
 	case "export_report_category":
@@ -160,7 +160,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [enter] choose category   [esc] cancel",
+			"[↑/↓] move   [enter] choose category   [esc] cancel",
 		)
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "export_preset":
@@ -187,7 +187,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 				renderViewEntityBody(theme, state.ChoiceDetails[state.ChoiceCursor]),
 			)
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] use style   [esc] back")
+		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] use style   [esc] back")
 		return modal(theme, state.Width, 74, theme.ColorGreen, rows)
 	case "export_calendar_repo":
 		rows := []string{
@@ -211,7 +211,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			}
 			rows = append(rows, theme.StyleNormal.Render(line))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] export   [esc] back")
+		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] export   [esc] back")
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
 	case "stash_conflict_pick":
 		rows := []string{
@@ -238,7 +238,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [enter] inspect stash   [esc] cancel",
+			"[↑/↓] move   [enter] inspect stash   [esc] cancel",
 		)
 		return modal(theme, state.Width, 72, theme.ColorYellow, rows)
 	case "stash_conflict":
@@ -433,6 +433,42 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = appendDialogFooter(theme, state, rows, footer)
 		return modal(theme, state.Width, 76, theme.ColorCyan, rows)
+	case "view_momentum_detail":
+		rows := []string{
+			theme.StylePaneTitle.Render(state.ViewTitle),
+			"",
+			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
+		}
+		if state.ViewMeta != "" {
+			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
+		}
+		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
+		rows = append(rows, "", theme.StyleDim.Render("Contributors"))
+		if len(state.ChoiceItems) == 0 {
+			rows = append(rows, theme.StyleDim.Render("No contributing entries in the current bucket"))
+		} else {
+			inner := 8
+			start, end := viewchrome.ListWindow(state.ChoiceCursor, len(state.ChoiceItems), inner)
+			if start > 0 {
+				rows = append(rows, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
+			}
+			for i := start; i < end; i++ {
+				line := state.ChoiceItems[i]
+				if i == state.ChoiceCursor {
+					rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
+				} else {
+					rows = append(rows, theme.StyleNormal.Render("  "+line))
+				}
+				if i < len(state.ChoiceDetails) && strings.TrimSpace(state.ChoiceDetails[i]) != "" {
+					rows = append(rows, theme.StyleDim.Render("    "+state.ChoiceDetails[i]))
+				}
+			}
+			if remaining := len(state.ChoiceItems) - end; remaining > 0 {
+				rows = append(rows, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
+			}
+		}
+		rows = appendDialogFooter(theme, state, rows, "[↑/↓] scroll   [e] edit   [enter/esc] close")
+		return modal(theme, state.Width, 88, theme.ColorCyan, rows)
 	case "support_bundle_result":
 		rows := []string{
 			theme.StylePaneTitle.Render(state.ViewTitle),
@@ -471,9 +507,9 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		var footer string
 		if state.Kind == "view_jump" {
-			footer = "[key] jump   [j/k] move   [enter] jump   [esc] cancel"
+			footer = "[key] jump   [↑/↓] move   [enter] jump   [esc] cancel"
 		} else {
-			footer = "[key] run   [j/k] move   [enter] run   [esc] cancel"
+			footer = "[key] run   [↑/↓] move   [enter] run   [esc] cancel"
 		}
 		rows = appendDialogFooter(theme, state, rows, footer)
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
@@ -605,16 +641,16 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 			theme,
 			state,
 			rows,
-			"[j/k] move   [enter] choose   [shift+tab] back   [esc] cancel",
+			"[↑/↓] move   [enter] choose   [shift+tab] back   [esc] cancel",
 		)
 	}
 	return modal(theme, state.Width, 82, theme.ColorCyan, rows)
 }
 
 func stashConflictFooter(state controllerpkg.State) string {
-	footer := "[j/k] move   [r] resume   [c] continue fresh   [x] commit stash   [esc] cancel"
+	footer := "[↑/↓] move   [r] resume   [c] continue fresh   [x] commit stash   [esc] cancel"
 	if strings.TrimSpace(state.Parent) == "manual_session" {
-		footer = "[j/k] move   [r] resume   [m] log manual session   [x] commit stash   [esc] cancel"
+		footer = "[↑/↓] move   [r] resume   [m] log manual session   [x] commit stash   [esc] cancel"
 	}
 	return footer
 }

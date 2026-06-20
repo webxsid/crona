@@ -48,10 +48,10 @@ func TestViewDelegatesToFocusedPane(t *testing.T) {
 	}
 
 	_, _ = view.HandleKey(
-		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("j")},
+		tea.KeyMsg{Type: tea.KeyDown},
 		viewtypes.ContentState{},
 	)
-	if pane.keySeen != "j" {
+	if pane.keySeen != "down" {
 		t.Fatalf("expected focused pane to receive key, got %q", pane.keySeen)
 	}
 	view.SetFocusedIndex(0)
@@ -66,12 +66,12 @@ func TestViewDelegatesToFocusedPane(t *testing.T) {
 
 func TestPaneBaseControlLineSwitchesModes(t *testing.T) {
 	base := PaneBase{}
-	active := base.ControlLine(viewtypes.Theme{}, "bugs", 40, true, []string{"[x] close"}, false)
+	active := base.ControlLine(viewtypes.Theme{}, 40, true, []string{"[x] close"}, false)
 	if !strings.Contains(active, "[x] close") {
 		t.Fatalf("expected active control line to render actions, got %q", active)
 	}
-	inactive := base.ControlLine(viewtypes.Theme{}, "bugs", 40, false, []string{"[x] close"}, true)
-	if !strings.Contains(inactive, "/ bugs") {
-		t.Fatalf("expected inactive control line to render filter, got %q", inactive)
+	inactive := base.ControlLine(viewtypes.Theme{}, 40, false, []string{"[x] close"}, true)
+	if inactive != "" {
+		t.Fatalf("expected inactive control line to be empty, got %q", inactive)
 	}
 }

@@ -80,13 +80,13 @@ func updateDatePicker(
 				StreamID: ctx.ActiveIssueStream,
 				DueDate:  ValueToPointer(""),
 			}, ""
-	case "left", "h":
+	case "left":
 		return shiftDatePicker(state, 0, 0, -1), nil, ""
-	case "right", "l":
+	case "right":
 		return shiftDatePicker(state, 0, 0, 1), nil, ""
-	case "up", "k":
+	case "up":
 		return shiftDatePicker(state, 0, 0, -7), nil, ""
-	case "down", "j":
+	case "down":
 		return shiftDatePicker(state, 0, 0, 7), nil, ""
 	case ",":
 		return shiftDatePicker(state, 0, -1, 0), nil, ""
@@ -150,11 +150,11 @@ func updateRestProtection(
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "tab", "right", "l":
+	case "tab", "right":
 		state.ProtectionStep = (state.ProtectionStep + 1) % 4
 		state.ProtectionCursor = 0
 		return state, nil, ""
-	case "shift+tab", "left", "h":
+	case "shift+tab", "left":
 		state.ProtectionStep = (state.ProtectionStep + 3) % 4
 		state.ProtectionCursor = 0
 		return state, nil, ""
@@ -184,9 +184,9 @@ func updateRestProtection(
 func updateRestProtectionStreaks(state State, msg tea.KeyMsg) (State, *Action, string) {
 	total := len(sharedtypes.AvailableStreakKinds())
 	switch msg.String() {
-	case "j", "down":
+	case "down":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, total, 1)
-	case "k", "up":
+	case "up":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, total, -1)
 	case " ", "x":
 		current := sharedtypes.AvailableStreakKinds()[state.ProtectionCursor]
@@ -206,9 +206,9 @@ func updateRestProtectionStreaks(state State, msg tea.KeyMsg) (State, *Action, s
 
 func updateRestProtectionWeekdays(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "j", "down":
+	case "down":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, 7, 1)
-	case "k", "up":
+	case "up":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, 7, -1)
 	case " ", "x":
 		state.ProtectionWeekdays = toggleWeekday(state.ProtectionWeekdays, state.ProtectionCursor)
@@ -231,9 +231,9 @@ func updateRestProtectionDates(
 		totalDates = 1
 	}
 	switch msg.String() {
-	case "j", "down":
+	case "down":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, totalDates, 1)
-	case "k", "up":
+	case "up":
 		state.ProtectionCursor = ShiftSelection(state.ProtectionCursor, totalDates, -1)
 	case "a":
 		initial := currentDate

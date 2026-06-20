@@ -346,6 +346,10 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.MomentumRangeRequest) (any, error) {
 			return corecommands.ListMomentumCards(ctx, h.core, input.EndDate, input.WindowDays)
 		}), true
+	case protocol.MethodMomentumDetail:
+		return handle(req, func(input shareddto.MomentumDetailRequest) (any, error) {
+			return corecommands.GetMomentumDetail(ctx, h.core, input.ID, input.EndDate, input.WindowDays)
+		}), true
 	case protocol.MethodCheckInGet:
 		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {
 			return corecommands.GetDailyCheckIn(ctx, h.core, input.Date)

@@ -21,6 +21,9 @@ func TestHabitMetricsCountDueCompletedAndFailedDays(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create repo: %v", err)
 	}
+	if repo.ID <= 0 {
+		t.Fatalf("expected positive repo id, got %+v", repo)
+	}
 	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
 		RepoID      int64
 		Name        string
@@ -29,6 +32,9 @@ func TestHabitMetricsCountDueCompletedAndFailedDays(t *testing.T) {
 	}{RepoID: repo.ID, Name: "app"})
 	if err != nil {
 		t.Fatalf("create stream: %v", err)
+	}
+	if stream.ID <= 0 {
+		t.Fatalf("expected positive stream id, got %+v", stream)
 	}
 	habit, err := corecommands.CreateHabit(ctx, coreCtx, struct {
 		StreamID      int64
@@ -160,6 +166,121 @@ func TestCustomHabitStreaksUseCalendarBucketsAndThresholds(t *testing.T) {
 	}
 	if streaks.CustomHabitStreaks[0].Current != 2 || streaks.CustomHabitStreaks[0].Longest != 2 {
 		t.Fatalf("unexpected custom streak summary: %+v", streaks.CustomHabitStreaks[0])
+	}
+}
+
+func TestCustomMomentumStreaksCountRepoAndStreamWork(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-04-15T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Build momentum", EstimateMinutes: ptrTo(120), TodoForDate: ptrTo("2026-04-01")})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+
+	for _, date := range []string{"2026-04-01", "2026-04-02"} {
+		if _, err := corecommands.LogManualSession(ctx, coreCtx, corecommands.ManualSessionInput{
+			IssueID:              issue.ID,
+			Date:                 date,
+			WorkDurationSeconds:  7200,
+			BreakDurationSeconds: 0,
+			CommitMessage:        ptrTo("manual session"),
+		}); err != nil {
+			t.Fatalf("log manual session %s: %v", date, err)
+		}
+	}
+
+	defs := []sharedtypes.HabitStreakDefinition{
+		{
+			ID:            "repo-work",
+			Name:          "Repo work",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Contexts:      []sharedtypes.MomentumContext{{RepoID: repo.ID, StreamID: ptrTo(stream.ID)}},
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 2,
+		},
+		{
+			ID:            "stream-work",
+			Name:          "Stream work",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Contexts:      []sharedtypes.MomentumContext{{RepoID: repo.ID, StreamID: ptrTo(stream.ID)}},
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+		},
+	}
+	mustReplaceHabitStreakDefinitions(t, ctx, coreCtx, defs)
+
+	type momentumRow struct {
+		TargetKind string `bun:"target_kind"`
+		Contexts   string `bun:"contexts"`
+	}
+	var rawRows []momentumRow
+	if err := coreCtx.Store.DB().NewSelect().
+		Table("momentums").
+		ColumnExpr("target_kind").
+		ColumnExpr("contexts").
+		Where("user_id = ?", coreCtx.UserID).
+		OrderExpr("created_at ASC").
+		Scan(ctx, &rawRows); err != nil {
+		t.Fatalf("raw momentum rows: %v", err)
+	}
+	if len(rawRows) != 2 {
+		t.Fatalf("expected two raw momentum rows, got %+v", rawRows)
+	}
+	storedDefs, err := coreCtx.HabitStreakDefinitions.List(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list momentum definitions: %v", err)
+	}
+	if len(storedDefs) != 2 {
+		t.Fatalf("expected two stored momentum definitions, got %+v", storedDefs)
+	}
+	if sharedtypes.NormalizeMomentumTargetKind(storedDefs[0].TargetKind) != sharedtypes.MomentumTargetKindContext ||
+		len(storedDefs[0].Contexts) == 0 {
+		t.Fatalf("expected first stored momentum definition to carry contexts, got %+v", storedDefs[0])
+	}
+	if sharedtypes.NormalizeMomentumTargetKind(storedDefs[1].TargetKind) != sharedtypes.MomentumTargetKindContext ||
+		len(storedDefs[1].Contexts) == 0 {
+		t.Fatalf("expected second stored momentum definition to carry contexts, got %+v", storedDefs[1])
+	}
+
+	streaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-01", "2026-04-02")
+	if err != nil {
+		t.Fatalf("compute streaks: %v", err)
+	}
+	if len(streaks.CustomHabitStreaks) != 2 {
+		t.Fatalf("expected two custom momentum streaks, got %+v", streaks.CustomHabitStreaks)
+	}
+	for _, streak := range streaks.CustomHabitStreaks {
+		if streak.Current != 2 || streak.Longest != 2 {
+			t.Fatalf("expected work streak to track both days, got %+v", streak)
+		}
 	}
 }
 

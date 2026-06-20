@@ -53,7 +53,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			),
 			"",
 			"",
-			centerLine(theme.StyleDim.Render("[h/l] navigate"), contentWidth),
+			centerLine(theme.StyleDim.Render("[←/→] navigate"), contentWidth),
 		)
 
 	case 1:
@@ -83,7 +83,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			),
 			"",
 			"",
-			centerLine(theme.StyleDim.Render("[h/l] navigate"), contentWidth),
+			centerLine(theme.StyleDim.Render("[←/→] navigate"), contentWidth),
 		)
 	case 2:
 		usageLine := toggleLine(
@@ -120,7 +120,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			"",
 			"",
 			centerLine(
-				theme.StyleDim.Render("[space] toggle	[j/k] choose   [h/l] navigate"),
+				theme.StyleDim.Render("[space] toggle   [↑/↓] choose   [←/→] navigate"),
 				contentWidth,
 			),
 			"",
@@ -158,7 +158,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			"",
 			"",
 			centerLine(
-				theme.StyleDim.Render("[enter] confirm	[j/k] choose   [h/l] navigate"),
+				theme.StyleDim.Render("[enter] confirm   [↑/↓] choose   [←/→] navigate"),
 				contentWidth,
 			),
 		)

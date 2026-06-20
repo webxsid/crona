@@ -93,6 +93,34 @@ func ParseDurationInput(raw string, required bool, label string) (int, error) {
 	return seconds, nil
 }
 
+func ParseDurationSecondsInput(raw string, required bool, label string) (int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		if required {
+			return 0, fmt.Errorf("%s is required", label)
+		}
+		return 0, nil
+	}
+	if seconds, err := strconv.Atoi(raw); err == nil {
+		if seconds < 0 {
+			return 0, fmt.Errorf("%s must be non-negative", label)
+		}
+		return seconds * 60, nil
+	}
+	d, err := time.ParseDuration(raw)
+	if err != nil {
+		return 0, fmt.Errorf("%s must be like 90, 90m, 1h30m, or 1h34m23s", label)
+	}
+	seconds := int(math.Round(d.Seconds()))
+	if seconds < 0 {
+		return 0, fmt.Errorf("%s must be non-negative", label)
+	}
+	if required && seconds == 0 {
+		return 0, fmt.Errorf("%s must be positive", label)
+	}
+	return seconds, nil
+}
+
 func ParseClockInput(raw string) (*string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -161,6 +189,32 @@ func FormatDurationHoursInput(hours *float64) string {
 		return ""
 	}
 	return formatFlexibleDurationHours(*hours)
+}
+
+func FormatDurationSecondsInput(seconds int) string {
+	if seconds <= 0 {
+		return "0s"
+	}
+	duration := time.Duration(seconds) * time.Second
+	hours := int(duration / time.Hour)
+	minutes := int(duration%time.Hour) / int(time.Minute)
+	secondsPart := int(duration%time.Minute) / int(time.Second)
+	switch {
+	case hours > 0 && minutes > 0 && secondsPart > 0:
+		return fmt.Sprintf("%dh%02dm%02ds", hours, minutes, secondsPart)
+	case hours > 0 && minutes > 0:
+		return fmt.Sprintf("%dh%02dm", hours, minutes)
+	case hours > 0 && secondsPart > 0:
+		return fmt.Sprintf("%dh%02ds", hours, secondsPart)
+	case hours > 0:
+		return fmt.Sprintf("%dh", hours)
+	case minutes > 0 && secondsPart > 0:
+		return fmt.Sprintf("%dm%02ds", minutes, secondsPart)
+	case minutes > 0:
+		return fmt.Sprintf("%dm", minutes)
+	default:
+		return fmt.Sprintf("%ds", secondsPart)
+	}
 }
 
 func parseFlexibleDurationMinutes(raw string) (int, error) {

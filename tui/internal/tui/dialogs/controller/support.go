@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
 
 	uistate "crona/tui/internal/tui/state"
@@ -232,9 +233,69 @@ func OpenSupportBundleResult(state State, name, meta, body, path string) State {
 	return state
 }
 
+func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
+	state = Close(state)
+	detail.Definition = sharedtypes.NormalizeHabitStreakDefinition(detail.Definition)
+	state.Kind = "view_momentum_detail"
+	state.ViewTitle = "Momentum Detail"
+	state.ViewName = strings.TrimSpace(detail.Definition.Name)
+	state.HabitStreakDraft = detail.Definition
+	targetLabel := "Habits"
+	targetSummary := "-"
+	if sharedtypes.NormalizeMomentumTargetKind(detail.Definition.TargetKind) == sharedtypes.MomentumTargetKindContext {
+		targetLabel = "Contexts"
+	}
+	if len(detail.TargetNames) > 0 {
+		targetSummary = strings.Join(detail.TargetNames, ", ")
+	} else if len(detail.HabitNames) > 0 {
+		targetSummary = strings.Join(detail.HabitNames, ", ")
+	}
+	state.ViewMeta = strings.Join([]string{
+		fmt.Sprintf("Kind %s", strings.Title(sharedtypes.MomentumTargetKindLabel(detail.Definition.TargetKind))),
+		fmt.Sprintf("Match %s", strings.Title(sharedtypes.MomentumMatchModeLabel(detail.Definition.MatchMode))),
+		fmt.Sprintf("Bucket %s", strings.TrimSpace(detail.CurrentBucket.Label)),
+		fmt.Sprintf("Range %s to %s", detail.CurrentBucket.StartDate, detail.CurrentBucket.EndDate),
+		fmt.Sprintf("Progress %d/%d", detail.CurrentBucket.Count, detail.CurrentBucket.Target),
+	}, "   ")
+	bodyParts := []string{
+		"Current Bucket",
+		fmt.Sprintf("Status %s", momentumBucketStatusLabel(detail.CurrentBucket.MetTarget)),
+		"",
+		targetLabel,
+		targetSummary,
+	}
+	if detail.Definition.Description != nil && strings.TrimSpace(*detail.Definition.Description) != "" {
+		bodyParts = append(bodyParts, "", "Description", strings.TrimSpace(*detail.Definition.Description))
+	}
+	state.ViewBody = strings.Join(bodyParts, "\n")
+	state.ChoiceItems = make([]string, 0, len(detail.Contributors))
+	state.ChoiceDetails = make([]string, 0, len(detail.Contributors))
+	state.ChoiceValues = make([]string, 0, len(detail.Contributors))
+	for _, contributor := range detail.Contributors {
+		state.ChoiceItems = append(
+			state.ChoiceItems,
+			fmt.Sprintf("%s  %s", contributor.Date, strings.TrimSpace(contributor.Title)),
+		)
+		detailParts := make([]string, 0, 3)
+		if strings.TrimSpace(contributor.Context) != "" {
+			detailParts = append(detailParts, strings.TrimSpace(contributor.Context))
+		}
+		if strings.TrimSpace(contributor.AmountLabel) != "" {
+			detailParts = append(detailParts, strings.TrimSpace(contributor.AmountLabel))
+		}
+		if strings.TrimSpace(contributor.Meta) != "" {
+			detailParts = append(detailParts, strings.TrimSpace(contributor.Meta))
+		}
+		state.ChoiceDetails = append(state.ChoiceDetails, strings.Join(detailParts, "   "))
+		state.ChoiceValues = append(state.ChoiceValues, string(contributor.Kind))
+	}
+	state.ChoiceCursor = 0
+	return state
+}
+
 func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "enter", "q", "?":
+	case "esc", "enter", "?":
 		return Close(state), nil, ""
 	case "e":
 		if strings.TrimSpace(state.ViewPath) != "" {
@@ -260,9 +321,40 @@ func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return clearDialogError(state), nil, ""
 }
 
+func updateMomentumDetail(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc", "enter":
+		return Close(state), nil, ""
+	case "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "e":
+		return Close(state), &Action{
+			Kind:            "open_momentum_editor",
+			HabitStreakDefs: []sharedtypes.HabitStreakDefinition{state.HabitStreakDraft},
+		}, ""
+	default:
+		return clearDialogError(state), nil, ""
+	}
+}
+
+func momentumBucketStatusLabel(met bool) string {
+	if met {
+		return "Met"
+	}
+	return "Missed"
+}
+
 func updateSupportBundleResult(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "enter", "q":
+	case "esc", "enter":
 		return Close(state), nil, ""
 	case "o":
 		if strings.TrimSpace(state.SupportBundlePath) == "" {
@@ -301,14 +393,14 @@ func updateBetaSupport(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateStashConflictPick(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
 		return clearDialogError(state), nil, ""
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}
@@ -328,14 +420,14 @@ func updateStashConflictPick(state State, msg tea.KeyMsg) (State, *Action, strin
 
 func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
 		return clearDialogError(state), nil, ""
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}
@@ -437,14 +529,14 @@ func updateStashConflict(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 func updateChoiceMenu(state State, msg tea.KeyMsg, jumpMenu bool) (State, *Action, string) {
 	switch msg.String() {
-	case "esc", "q":
+	case "esc":
 		return Close(state), nil, ""
-	case "j", "down":
+	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
 			state.ChoiceCursor++
 		}
 		return clearDialogError(state), nil, ""
-	case "k", "up":
+	case "up":
 		if state.ChoiceCursor > 0 {
 			state.ChoiceCursor--
 		}

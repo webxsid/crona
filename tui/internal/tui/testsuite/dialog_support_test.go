@@ -409,7 +409,7 @@ func TestStashConflictPickDialogOpensSelectedStash(t *testing.T) {
 		state,
 		dialogs.UpdateContext{},
 		"2026-04-10",
-		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'j'}},
+		tea.KeyMsg{Type: tea.KeyDown},
 	)
 	if status != "" || action != nil {
 		t.Fatalf("unexpected move result action=%+v status=%q", action, status)

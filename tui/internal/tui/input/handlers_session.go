@@ -14,6 +14,8 @@ func issueEditorContext(s State) bool {
 	switch s.ActiveView {
 	case uistate.ViewDefault, uistate.ViewDaily, uistate.ViewMeta:
 		return s.ActivePane == uistate.PaneIssues
+	case uistate.ViewMomentum:
+		return s.MomentumTab == "custom"
 	default:
 		return false
 	}

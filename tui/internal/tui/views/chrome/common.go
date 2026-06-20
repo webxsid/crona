@@ -48,7 +48,7 @@ func RenderSimplePaneWithActions(
 	if !active {
 		actions = nil
 	}
-	actionLine := RenderPaneActionLine(theme, filter, width-6, actions)
+	actionLine := RenderPaneActionLine(theme, actions, width-6)
 	lines := []string{theme.StylePaneTitle.Render(title), actionLine}
 	inner := RemainingPaneHeight(height, lines)
 	if total == 0 {
@@ -68,25 +68,12 @@ func RenderSimplePaneWithActions(
 	return RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
 }
 
-func RenderFilterLine(theme Theme, filter string, width int) string {
-	return RenderPaneActionLine(theme, filter, width, nil)
-}
-
-func RenderPaneActionLine(theme Theme, filter string, width int, actions []string) string {
-	segments := []string{filterToken(theme, filter)}
-	segments = append(segments, actions...)
-	return joinActionSegments(segments, width)
+func RenderPaneActionLine(theme Theme, actions []string, width int) string {
+	return joinActionSegments(actions, width)
 }
 
 func RenderActionLine(theme Theme, width int, actions []string) string {
 	return joinActionSegments(actions, width)
-}
-
-func filterToken(theme Theme, filter string) string {
-	if strings.TrimSpace(filter) == "" {
-		return theme.StyleDim.Render("[/] filter")
-	}
-	return theme.StyleHeader.Render("/ " + filter)
 }
 
 func joinActionSegments(segments []string, width int) string {

@@ -28,7 +28,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[j/k] move   [enter] pop   [x] drop   [esc] cancel",
+			"[↑/↓] move   [enter] pop   [x] drop   [esc] cancel",
 		)
 		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
 	case "end_session", "stash_session":
@@ -69,7 +69,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose   [esc] cancel")
+		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] choose   [esc] cancel")
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	case "pomodoro_start":
 		vm := controllerpkg.BuildPomodoroDialogViewModel(state)
@@ -164,7 +164,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
 			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
 		}
-		rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] choose")
+		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] choose")
 		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
 	case "hard_limit_extend":
 		vm := controllerpkg.BuildPomodoroDialogViewModel(state)
@@ -345,7 +345,7 @@ func itoa(v int64) string {
 func manualSessionHint(state controllerpkg.State) string {
 	switch state.FocusIdx {
 	case 1:
-		return "[f2] pick date   [g] today   [tab] next   " + dialogSubmitHint(
+		return "[ctrl+e] pick date   [g] today   [tab] next   " + dialogSubmitHint(
 			state,
 			"save",
 		) + "   [esc] cancel"

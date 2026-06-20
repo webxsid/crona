@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	corecommands "crona/kernel/internal/core/commands"
@@ -221,18 +222,79 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			return err
 		})
 	}
+	seedSessionNotes := func(input corecommands.SessionEndInput) *string {
+		lines := []string{}
+		appendLine := func(label string, value *string) {
+			if value == nil || strings.TrimSpace(*value) == "" {
+				return
+			}
+			lines = append(lines, fmt.Sprintf("%s: %s", label, strings.TrimSpace(*value)))
+		}
+		appendLine("Worked on", input.WorkedOn)
+		appendLine("Outcome", input.Outcome)
+		appendLine("Next step", input.NextStep)
+		appendLine("Blockers", input.Blockers)
+		appendLine("Links", input.Links)
+		if len(lines) == 0 {
+			return nil
+		}
+		joined := strings.Join(lines, "\n")
+		return &joined
+	}
 	seedSession := func(dayOffset int, issueID int64, startHour, startMinute, durationMinutes int, input corecommands.SessionEndInput) error {
 		start := time.Date(baseNow.Year(), baseNow.Month(), baseNow.Day(), startHour, startMinute, 0, 0, time.UTC).
 			AddDate(0, 0, dayOffset)
-		if err := withSeedNow(start, func() error {
-			_, err := corecommands.StartSession(ctx, h.core, issueID)
-			return err
-		}); err != nil {
+		end := start.Add(time.Duration(durationMinutes) * time.Minute)
+		issue, err := h.core.Issues.GetByID(ctx, issueID, h.core.UserID)
+		if err != nil {
 			return err
 		}
-		return withSeedNow(start.Add(time.Duration(durationMinutes)*time.Minute), func() error {
-			_, err := corecommands.StopSession(ctx, h.core, input)
-			return err
+		if issue == nil {
+			return fmt.Errorf("seed session issue not found: %d", issueID)
+		}
+		originalStatus := sharedtypes.NormalizeIssueStatus(issue.Status)
+		restorationStatus := originalStatus
+		needsRestore := !sharedtypes.CanStartFocus(originalStatus)
+		if needsRestore && originalStatus != sharedtypes.IssueStatusPlanned {
+			if _, err := corecommands.ChangeIssueStatus(ctx, h.core, issueID, sharedtypes.IssueStatusPlanned, nil); err != nil {
+				return err
+			}
+		}
+		return withSeedNow(end, func() error {
+			_, err := corecommands.LogManualSession(ctx, h.core, corecommands.ManualSessionInput{
+				IssueID:             issueID,
+				Date:                start.Format("2006-01-02"),
+				StartTime:           devStringPtr(fmt.Sprintf("%02d:%02d", startHour, startMinute)),
+				WorkDurationSeconds: durationMinutes * 60,
+				CommitMessage:       input.CommitMessage,
+				Notes:               seedSessionNotes(input),
+			})
+			if err != nil {
+				return err
+			}
+			if !needsRestore {
+				return nil
+			}
+			switch restorationStatus {
+			case sharedtypes.IssueStatusBacklog:
+				if _, err := corecommands.ChangeIssueStatus(ctx, h.core, issueID, sharedtypes.IssueStatusPlanned, nil); err != nil {
+					return err
+				}
+				if _, err := corecommands.ChangeIssueStatus(ctx, h.core, issueID, sharedtypes.IssueStatusBacklog, nil); err != nil {
+					return err
+				}
+			case sharedtypes.IssueStatusPlanned,
+				sharedtypes.IssueStatusReady,
+				sharedtypes.IssueStatusInProgress,
+				sharedtypes.IssueStatusBlocked,
+				sharedtypes.IssueStatusInReview,
+				sharedtypes.IssueStatusDone,
+				sharedtypes.IssueStatusAbandoned:
+				if _, err := corecommands.ChangeIssueStatus(ctx, h.core, issueID, restorationStatus, nil); err != nil {
+					return err
+				}
+			}
+			return nil
 		})
 	}
 
@@ -494,28 +556,83 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			HabitIDs:      []int64{journalHabit.ID},
 		},
 		{
-			ID:            "training-week",
-			Name:          "Training Week",
+			ID:            "daily-habits-any",
+			Name:          "Daily Habits Any",
 			Enabled:       true,
-			Period:        sharedtypes.HabitStreakPeriodWeek,
-			RequiredCount: 2,
-			HabitIDs:      []int64{workoutHabit.ID},
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 1,
+			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID, inboxHabit.ID},
 		},
 		{
-			ID:            "recovery-mix",
-			Name:          "Recovery Mix",
+			ID:            "daily-context-any",
+			Name:          "Daily Context Any",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 3600,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: workRepo.ID, StreamID: &appStream.ID},
+				{RepoID: workRepo.ID, StreamID: &infraStream.ID},
+			},
+		},
+		{
+			ID:            "daily-context-all",
+			Name:          "Daily Context All",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			MatchMode:     sharedtypes.MomentumMatchModeAll,
+			RequiredCount: 3600,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: workRepo.ID, StreamID: &appStream.ID},
+				{RepoID: workRepo.ID, StreamID: &infraStream.ID},
+			},
+		},
+		{
+			ID:            "recovery-any",
+			Name:          "Recovery Any",
 			Enabled:       true,
 			Period:        sharedtypes.HabitStreakPeriodWeek,
-			RequiredCount: 10,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 2,
 			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID},
 		},
 		{
-			ID:            "wellbeing-month",
-			Name:          "Wellbeing Month",
+			ID:            "wellbeing-all",
+			Name:          "Wellbeing All",
 			Enabled:       true,
 			Period:        sharedtypes.HabitStreakPeriodMonth,
-			RequiredCount: 24,
+			MatchMode:     sharedtypes.MomentumMatchModeAll,
+			RequiredCount: 1,
 			HabitIDs:      []int64{walkHabit.ID, journalHabit.ID, workoutHabit.ID},
+		},
+		{
+			ID:            "work-context-any",
+			Name:          "Work Context Any",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 7200,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: workRepo.ID},
+				{RepoID: ossRepo.ID, StreamID: &cliStream.ID},
+			},
+		},
+		{
+			ID:            "delivery-context-all",
+			Name:          "Delivery Context All",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			MatchMode:     sharedtypes.MomentumMatchModeAll,
+			RequiredCount: 3600,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: workRepo.ID, StreamID: &appStream.ID},
+				{RepoID: workRepo.ID, StreamID: &infraStream.ID},
+			},
 		},
 	}
 	if err := h.core.HabitStreakDefinitions.ReplaceAll(
@@ -578,6 +695,86 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Inbox sweep missed during a heavy day.")); err != nil {
 				return err
 			}
+		}
+	}
+	olderSessionPatterns := []struct {
+		issueID         int64
+		startHour       int
+		startMinute     int
+		durationMinutes int
+		input           corecommands.SessionEndInput
+	}{
+		{
+			focusIssue.ID,
+			9,
+			15,
+			42,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("refactor: bootstrap kernel repos"),
+				WorkedOn:      devStringPtr("repo and stream initialization"),
+				Outcome:       devStringPtr("baseline workspace created"),
+			},
+		},
+		{
+			inProgressIssue.ID,
+			9,
+			40,
+			72,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("chore: verify packaging outputs"),
+				WorkedOn:      devStringPtr("artifact checks and hashes"),
+				Outcome:       devStringPtr("release checks mostly wired"),
+			},
+		},
+		{
+			readyIssue.ID,
+			10,
+			0,
+			38,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("docs: shape rollout checklist"),
+				WorkedOn:      devStringPtr("deploy sequencing and rollback notes"),
+				Outcome:       devStringPtr("carry-over item clarified"),
+			},
+		},
+		{
+			underEstimateIssue.ID,
+			9,
+			30,
+			84,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("feat: add command palette navigation"),
+				WorkedOn:      devStringPtr("palette actions and filtering"),
+				Outcome:       devStringPtr("underestimate case seeded"),
+			},
+		},
+		{
+			overEstimateIssue.ID,
+			14,
+			10,
+			27,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("fix: polish command palette hints"),
+				WorkedOn:      devStringPtr("labels and keyboard copy"),
+				Outcome:       devStringPtr("issue should exceed estimate cleanly"),
+			},
+		},
+		{
+			focusIssue.ID,
+			13,
+			30,
+			31,
+			corecommands.SessionEndInput{
+				CommitMessage: devStringPtr("chore: finish rollout checklist"),
+				WorkedOn:      devStringPtr("go/no-go notes"),
+				Outcome:       devStringPtr("carried item completed"),
+			},
+		},
+	}
+	for dayOffset := -29; dayOffset <= -7; dayOffset++ {
+		pattern := olderSessionPatterns[(dayOffset+29)%len(olderSessionPatterns)]
+		if err := seedSession(dayOffset, pattern.issueID, pattern.startHour, pattern.startMinute, pattern.durationMinutes, pattern.input); err != nil {
+			return err
 		}
 	}
 	workoutDate, workoutOffset := mostRecentMatchingWeekday(baseNow, []int{1, 3, 5})

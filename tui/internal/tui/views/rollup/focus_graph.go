@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"crona/tui/internal/api"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -87,7 +88,7 @@ func renderFocusGraph(
 
 	tickRows, tickLabels := focusTicks(maxAxis, chartHeight)
 	lines := make([]string, 0, chartHeight+2)
-	barStyle := lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true)
+	barRamp := viewhelpers.GradientRamp(theme.ColorDullGreen, theme.ColorCyan, chartHeight)
 	lineStyle := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true)
 	axisStyle := lipgloss.NewStyle().Foreground(theme.ColorDim)
 
@@ -105,7 +106,11 @@ func renderFocusGraph(
 			case cell.line:
 				b.WriteString(lineStyle.Render("╌"))
 			case cell.bar:
-				b.WriteString(barStyle.Render("█"))
+				b.WriteString(
+					lipgloss.NewStyle().
+						Foreground(viewhelpers.GradientColorAt(barRamp, row)).
+						Render("█"),
+				)
 			case tickRows[row]:
 				b.WriteString(axisStyle.Render("┈"))
 			default:

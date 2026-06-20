@@ -40,6 +40,25 @@ func TestDevSeedAndClearOverIPC(t *testing.T) {
 		t.Fatalf("expected seeded issues across lifecycle states, got %d", len(issues))
 	}
 
+	var cards []sharedtypes.MomentumCard
+	kernel.call(t, protocol.MethodMomentumRange, shareddto.MomentumRangeRequest{WindowDays: 30}, &cards)
+	if len(cards) < 6 {
+		t.Fatalf("expected seeded momentum cards, got %d", len(cards))
+	}
+	wantMomentumIDs := []string{"daily-reflection", "daily-habits-any", "daily-context-any", "daily-context-all"}
+	for _, want := range wantMomentumIDs {
+		found := false
+		for _, card := range cards {
+			if card.Definition.ID == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected seeded momentum card %q, got %+v", want, cards)
+		}
+	}
+
 	statusCounts := map[sharedtypes.IssueStatus]int{}
 	for _, issue := range issues {
 		statusCounts[issue.Status]++

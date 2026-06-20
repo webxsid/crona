@@ -22,9 +22,8 @@ import (
 func TestPaneActionLineWrapsInsteadOfDroppingActions(t *testing.T) {
 	rendered := viewchrome.RenderPaneActionLine(
 		support.Theme(),
-		"",
-		30,
 		[]string{"[enter] open details dialog", "[a] create", "[c] change context"},
+		30,
 	)
 	lines := strings.Split(rendered, "\n")
 	if len(lines) < 2 {
@@ -644,6 +643,22 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected reports actions to contain %q, got %q", want, joined)
 		}
+	}
+}
+
+func TestMomentumViewActionsExposeEditAndDetailsSeparately(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View: "momentum",
+		Pane: "momentum_cards",
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[a]", "create momentum", "[e]", "edit", "[enter]", "open details dialog"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected momentum actions to contain %q, got %q", want, joined)
+		}
+	}
+	if strings.Contains(joined, "[enter] edit") {
+		t.Fatalf("expected enter to stop advertising edit, got %q", joined)
 	}
 }
 
@@ -1485,7 +1500,7 @@ func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 	if strings.Contains(dailyIssueActions, "[c]") {
 		t.Fatalf("expected daily issue pane actions to omit context, got %q", dailyIssueActions)
 	}
-	if strings.Contains(dailyIssueActions, "[h/l]") {
+	if strings.Contains(dailyIssueActions, "[h/l]") || strings.Contains(dailyIssueActions, "[←/→]") {
 		t.Fatalf(
 			"expected daily issue pane actions to keep section switching out of the action line, got %q",
 			dailyIssueActions,

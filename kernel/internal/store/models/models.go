@@ -333,6 +333,9 @@ type HabitStreakDefinitionModel struct {
 	Name          string  `bun:"name,notnull,type:text"`
 	Description   *string `bun:"description,type:text,nullzero"`
 	Enabled       bool    `bun:"enabled,notnull,type:integer"`
+	TargetKind    string  `bun:"target_kind,notnull,type:text"`
+	MatchMode     string  `bun:"match_mode,notnull,type:text"`
+	Contexts      string  `bun:"contexts,notnull,type:text"`
 	Period        string  `bun:"period,notnull,type:text"`
 	RequiredCount int     `bun:"required_count,notnull,type:integer"`
 	CreatedAt     string  `bun:"created_at,notnull,type:text"`

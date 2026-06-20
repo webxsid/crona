@@ -7,6 +7,7 @@ import (
 	"crona/tui/internal/api"
 	inputpkg "crona/tui/internal/tui/input"
 	uistate "crona/tui/internal/tui/state"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func TestInputDepsOpenCheckInDialogUsesCreateForMissingCheckIn(t *testing.T) {
@@ -125,6 +126,64 @@ func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 	next := nextModel
 	if next.dialog != "edit_momentum" {
 		t.Fatalf("expected edit momentum dialog, got %q", next.dialog)
+	}
+}
+
+func TestMomentumEditKeyUsesEditDialog(t *testing.T) {
+	model := Model{
+		view:        ViewMomentum,
+		pane:        PaneMomentumCards,
+		momentumTab: MomentumTabCustom,
+		cursor: map[Pane]int{
+			PaneMomentumCards: 0,
+		},
+		momentumCards: []api.MomentumCard{
+			{
+				Definition: sharedtypes.HabitStreakDefinition{
+					ID:   "momentum-1",
+					Name: "Focus",
+				},
+			},
+		},
+	}
+
+	nextModel, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}})
+	next := nextModel.(Model)
+	if next.dialog != "edit_momentum" {
+		t.Fatalf("expected e to open edit momentum dialog, got %q", next.dialog)
+	}
+}
+
+func TestMomentumEnterUsesDetailsInsteadOfEdit(t *testing.T) {
+	model := Model{
+		view:        ViewMomentum,
+		pane:        PaneMomentumCards,
+		momentumTab: MomentumTabCustom,
+		momentumDate: "2026-06-19",
+		momentumWindowDays: 30,
+		cursor: map[Pane]int{
+			PaneMomentumCards: 0,
+		},
+		momentumCards: []api.MomentumCard{
+			{
+				Definition: sharedtypes.HabitStreakDefinition{
+					ID:     "momentum-1",
+					Name:   "Focus",
+					Period: sharedtypes.HabitStreakPeriodDay,
+				},
+			},
+		},
+	}
+
+	next, cmd, handled := model.handleInputEnter()
+	if !handled {
+		t.Fatal("expected momentum enter to be handled")
+	}
+	if cmd == nil {
+		t.Fatal("expected momentum enter to load details")
+	}
+	if next.dialog == "edit_momentum" {
+		t.Fatalf("expected enter to avoid edit dialog, got %q", next.dialog)
 	}
 }
 

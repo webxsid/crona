@@ -8,15 +8,18 @@ import (
 )
 
 type Theme struct {
-	ColorBlue    lipgloss.Color
-	ColorCyan    lipgloss.Color
-	ColorGreen   lipgloss.Color
-	ColorMagenta lipgloss.Color
-	ColorSubtle  lipgloss.Color
-	ColorYellow  lipgloss.Color
-	ColorRed     lipgloss.Color
-	ColorDim     lipgloss.Color
-	ColorWhite   lipgloss.Color
+	ColorBlue      lipgloss.Color
+	ColorCyan      lipgloss.Color
+	ColorGreen     lipgloss.Color
+	ColorDullGreen lipgloss.Color
+	ColorMagenta   lipgloss.Color
+	ColorSubtle    lipgloss.Color
+	ColorYellow    lipgloss.Color
+	ColorRed       lipgloss.Color
+	ColorDullRed   lipgloss.Color
+	ColorOrange    lipgloss.Color
+	ColorDim       lipgloss.Color
+	ColorWhite     lipgloss.Color
 
 	StyleActive          lipgloss.Style
 	StyleInactive        lipgloss.Style

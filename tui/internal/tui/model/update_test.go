@@ -11,6 +11,7 @@ import (
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	uistate "crona/tui/internal/tui/state"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -332,15 +333,15 @@ func TestAnchorWellbeingScrollUsesCurrentPaneHeight(t *testing.T) {
 	}
 }
 
-func TestDialogModeTreatsQAsCancelAndCtrlCAsQuit(t *testing.T) {
+func TestDialogModeIgnoresQAndCtrlCStillQuits(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{Kind: "onboarding"})
 
 	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
 	if cmd != nil {
-		t.Fatalf("expected q to cancel the dialog, not quit")
+		t.Fatalf("expected q to stay inside the dialog, not emit a command")
 	}
-	if next.(Model).dialog != "" {
-		t.Fatalf("expected q to close the dialog, got %q", next.(Model).dialog)
+	if next.(Model).dialog != "onboarding" {
+		t.Fatalf("expected q to leave the dialog open, got %q", next.(Model).dialog)
 	}
 
 	next, cmd = model.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
@@ -378,6 +379,89 @@ func TestInputDialogIgnoresQAsCancel(t *testing.T) {
 	if next.(Model).dialog != "end_session" {
 		t.Fatalf("expected input dialog to remain open, got %q", next.(Model).dialog)
 	}
+}
+
+func TestSessionDetailOverlayIgnoresQ(t *testing.T) {
+	model := Model{
+		sessionDetailOpen: true,
+		sessionDetail: &api.SessionDetail{SessionHistoryEntry: sharedtypes.SessionHistoryEntry{
+			Session: sharedtypes.Session{ID: "session-1"},
+		}},
+	}
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd != nil {
+		t.Fatalf("expected q to stay inside the session detail overlay")
+	}
+	if !next.(Model).sessionDetailOpen {
+		t.Fatal("expected session detail overlay to remain open")
+	}
+}
+
+func TestSessionContextOverlayIgnoresQ(t *testing.T) {
+	model := Model{sessionContextOpen: true}
+
+	next, cmd := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'q'}})
+	if cmd != nil {
+		t.Fatalf("expected q to stay inside the session context overlay")
+	}
+	if !next.(Model).sessionContextOpen {
+		t.Fatal("expected session context overlay to remain open")
+	}
+}
+
+func TestMomentumDialogStatePreservesSearchInputs(t *testing.T) {
+	model := Model{}
+	state := dialogstate.State{
+		Kind:                "create_momentum",
+		MomentumRepoInput:   textinput.New(),
+		MomentumStreamInput: textinput.New(),
+		HabitStreakStep:     2,
+		HabitStreakDraft:    sharedtypes.HabitStreakDefinition{TargetKind: sharedtypes.MomentumTargetKindContext},
+		ChoiceCursor:        1,
+		FocusIdx:            0,
+	}
+	model = model.withDialogState(state)
+	model.dialogMomentumRepoInput.SetValue("Work")
+	model.dialogMomentumStreamInput.SetValue("Mobile")
+
+	roundTripped := model.withDialogState(model.dialogState())
+	if roundTripped.dialogMomentumRepoInput.Value() != "Work" {
+		t.Fatalf("expected repo search value to survive round-trip, got %q", roundTripped.dialogMomentumRepoInput.Value())
+	}
+	if roundTripped.dialogMomentumStreamInput.Value() != "Mobile" {
+		t.Fatalf("expected stream search value to survive round-trip, got %q", roundTripped.dialogMomentumStreamInput.Value())
+	}
+}
+
+func TestMomentumDialogStateCarriesRepoAndStreamData(t *testing.T) {
+	model := Model{
+		repos: []api.Repo{{ID: 7, Name: "Work"}, {ID: 8, Name: "Personal"}},
+		streams: []api.Stream{
+			{ID: 9, RepoID: 7, Name: "App"},
+			{ID: 10, RepoID: 8, Name: "Side"},
+		},
+		allIssues: []api.IssueWithMeta{
+			{
+				Issue:      sharedtypes.Issue{ID: 1, StreamID: 9, Title: "A"},
+				RepoID:     7,
+				RepoName:   "Work",
+				StreamName: "App",
+			},
+		},
+	}
+	state := dialogstate.State{Kind: "create_momentum"}
+	roundTripped := model.dialogState()
+	if len(roundTripped.MomentumRepos) != 2 {
+		t.Fatalf("expected repos to be carried into dialog state, got %+v", roundTripped.MomentumRepos)
+	}
+	if len(roundTripped.MomentumStreams) != 2 {
+		t.Fatalf("expected streams to be carried into dialog state, got %+v", roundTripped.MomentumStreams)
+	}
+	if len(roundTripped.MomentumAllIssues) != 1 {
+		t.Fatalf("expected issues to be carried into dialog state, got %+v", roundTripped.MomentumAllIssues)
+	}
+	_ = state
 }
 
 func TestDialogStatePreservesPomodoroFields(t *testing.T) {

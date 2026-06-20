@@ -101,7 +101,6 @@ type Deps struct {
 	ClampFiltered                   func(*State, uistate.Pane)
 	CurrentOpsLimit                 func(State) int
 	LoadOps                         func(int) tea.Cmd
-	StartFilterEdit                 func(*State, uistate.Pane)
 	OpenIssueStatusFromSelection    func(*State) bool
 	AbandonSelectedIssue            func(*State) tea.Cmd
 	ToggleSelectedIssueToday        func(*State) tea.Cmd
@@ -180,10 +179,6 @@ func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 func newRouter(deps Deps) *router {
 	r := keyregistry.New[State, uistate.View, uistate.Pane]()
 	keyregistry.RegisterGlobal(r, map[string]handler{
-		"q": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			deps.CloseEventStop()
-			return s, tea.Quit, true
-		},
 		"ctrl+c": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			deps.CloseEventStop()
 			return s, tea.Quit, true
@@ -206,21 +201,9 @@ func newRouter(deps Deps) *router {
 		"[":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, -1) },
 		"tab":       func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, 1) },
 		"shift+tab": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, -1) },
-		"h": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCycleIssueSection(s, deps, -1)
-			}
-			return s, nil, false
-		},
 		"left": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, -1)
-			}
-			return s, nil, false
-		},
-		"l": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-				return handleCycleIssueSection(s, deps, 1)
 			}
 			return s, nil, false
 		},
@@ -232,9 +215,7 @@ func newRouter(deps Deps) *router {
 		},
 		"v":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenViewJump(s, deps) },
 		"R":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
-		"j":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
 		"down": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, 1) },
-		"k":    func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"up":   func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCursor(s, deps, -1) },
 		"f": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if !focusStartContext(s) {
@@ -297,7 +278,6 @@ func newRouter(deps Deps) *router {
 		"+": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		"=": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, 10) },
 		"-": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
-		"/": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleStartFilter(s, deps) },
 		"?": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if deps.OpenHelpDialog == nil {
 				return s, nil, false

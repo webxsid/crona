@@ -282,6 +282,41 @@ func DefaultIssueDialogLabels(
 	return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
 }
 
+func MomentumDialogLabels(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (string, string) {
+	repoRaw := ""
+	if len(inputs) > 0 {
+		repoRaw = strings.TrimSpace(inputs[0].Value())
+	}
+	streamRaw := ""
+	if len(inputs) > 1 {
+		streamRaw = strings.TrimSpace(inputs[1].Value())
+	}
+	repoOptions := stripCreateOptions(DefaultRepoOptions(inputs, repos))
+	streamOptions := momentumStreamOptionsForLabels(inputs, repoIndex, repos, allIssues, streams, context)
+	return labelOrPlaceholder(repoRaw, repoOptions, repoIndex, "Type to search"),
+		momentumStreamLabel(streamRaw, streamOptions, streamIndex)
+}
+
+func momentumStreamOptionsForLabels(
+	inputs []textinput.Model,
+	repoIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) []SelectorOption {
+	options := []SelectorOption{{ID: "__any__", Label: "Any Stream"}}
+	options = append(options, DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)...)
+	return stripCreateOptions(options)
+}
+
 func DefaultIssueDialogNames(
 	inputs []textinput.Model,
 	repoIndex, streamIndex int,
@@ -340,6 +375,28 @@ func labelOrPlaceholder(raw string, options []SelectorOption, index int, placeho
 		return placeholder
 	}
 	return option.Label
+}
+
+func momentumStreamLabel(raw string, options []SelectorOption, index int) string {
+	if strings.TrimSpace(raw) == "" && index < 0 {
+		if len(options) > 0 {
+			return options[0].Label
+		}
+		return "Any Stream"
+	}
+	if index < 0 {
+		if len(options) > 0 {
+			return options[0].Label
+		}
+		return "Any Stream"
+	}
+	if index+1 < len(options) {
+		return options[index+1].Label
+	}
+	if len(options) > 0 {
+		return options[len(options)-1].Label
+	}
+	return "Any Stream"
 }
 
 func optionsForNewStream(raw string) []SelectorOption {

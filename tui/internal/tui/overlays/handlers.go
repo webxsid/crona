@@ -9,7 +9,6 @@ import (
 
 type State struct {
 	HelpOpen          bool
-	FilterEditing     bool
 	DialogState       dialogstate.State
 	SessionDetailOpen bool
 	SessionDetailY    int
@@ -20,7 +19,6 @@ type State struct {
 }
 
 type Deps struct {
-	StopFilterEdit         func(*State)
 	SessionDetailMaxOffset func(State) int
 	OpenAmendSessionDialog func(*State, string, string)
 	SessionCommit          func(*api.SessionDetail) string
@@ -32,18 +30,8 @@ type Deps struct {
 
 func HandleHelp(state State, key tea.KeyMsg) (State, tea.Cmd) {
 	switch key.String() {
-	case "?", "esc", "q":
+	case "?", "esc":
 		state.HelpOpen = false
-		return state, nil
-	default:
-		return state, nil
-	}
-}
-
-func HandleFilter(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
-	switch key.String() {
-	case "esc", "enter":
-		deps.StopFilterEdit(&state)
 		return state, nil
 	default:
 		return state, nil
@@ -52,17 +40,17 @@ func HandleFilter(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 
 func HandleSessionDetail(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 	switch key.String() {
-	case "esc", "q", "o", "enter":
+	case "esc", "o", "enter":
 		state.SessionDetailOpen = false
 		state.SessionDetail = nil
 		state.SessionDetailY = 0
 		return state, nil
-	case "j", "down":
+	case "down":
 		if state.SessionDetailY < deps.SessionDetailMaxOffset(state) {
 			state.SessionDetailY++
 		}
 		return state, nil
-	case "k", "up":
+	case "up":
 		if state.SessionDetailY > 0 {
 			state.SessionDetailY--
 		}

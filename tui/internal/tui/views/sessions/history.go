@@ -25,9 +25,8 @@ func renderHistoryView(theme types.Theme, state types.ContentState) string {
 	}
 	actionLine := viewchrome.RenderPaneActionLine(
 		theme,
-		state.Filters["sessions"],
-		state.Width-6,
 		viewchrome.PaneActionsForState(theme, state, active),
+		state.Width-6,
 	)
 	lines := []string{
 		theme.StylePaneTitle.Render(title),

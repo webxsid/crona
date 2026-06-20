@@ -6,6 +6,22 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
+type dialogInputAction int
+
+const (
+	dialogActionNone dialogInputAction = iota
+	dialogActionCancel
+	dialogActionPrimary
+	dialogActionFocusNext
+	dialogActionFocusPrev
+	dialogActionToggle
+	dialogActionActivate
+	dialogActionMoveUp
+	dialogActionMoveDown
+	dialogActionMoveLeft
+	dialogActionMoveRight
+)
+
 const (
 	dialogSearchPromptEmoji   = "🔎 "
 	dialogTimePromptEmoji     = "🕒 "
@@ -41,6 +57,78 @@ func isDialogSubmitKey(state State, key string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func dialogActionForKey(state State, key string) dialogInputAction {
+	switch key {
+	case "esc":
+		return dialogActionCancel
+	case "ctrl+s":
+		return dialogActionPrimary
+	case "tab":
+		return dialogActionFocusNext
+	case "shift+tab":
+		return dialogActionFocusPrev
+	case " ":
+		return dialogActionToggle
+	case "enter":
+		return dialogActionActivate
+	case "down":
+		return dialogActionMoveDown
+	case "up":
+		return dialogActionMoveUp
+	case "left":
+		return dialogActionMoveLeft
+	case "right":
+		return dialogActionMoveRight
+	default:
+		return dialogActionNone
+	}
+}
+
+func isDialogVerticalMoveAction(action dialogInputAction) bool {
+	return action == dialogActionMoveDown || action == dialogActionMoveUp
+}
+
+func dialogVerticalMoveDir(action dialogInputAction) int {
+	switch action {
+	case dialogActionMoveDown:
+		return 1
+	case dialogActionMoveUp:
+		return -1
+	default:
+		return 0
+	}
+}
+
+func isDialogHorizontalMoveAction(action dialogInputAction) bool {
+	return action == dialogActionMoveLeft || action == dialogActionMoveRight
+}
+
+func dialogHorizontalMoveDir(action dialogInputAction) int {
+	switch action {
+	case dialogActionMoveRight:
+		return 1
+	case dialogActionMoveLeft:
+		return -1
+	default:
+		return 0
+	}
+}
+
+func isDialogFocusMoveAction(action dialogInputAction) bool {
+	return action == dialogActionFocusNext || action == dialogActionFocusPrev
+}
+
+func dialogFocusMoveDir(action dialogInputAction) int {
+	switch action {
+	case dialogActionFocusNext:
+		return 1
+	case dialogActionFocusPrev:
+		return -1
+	default:
+		return 0
 	}
 }
 
@@ -99,7 +187,7 @@ func issueDialogHint(state State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"
@@ -109,7 +197,7 @@ func issueDialogHint(state State, submitLabel string) string {
 				submitLabel,
 			) + "   [esc] cancel"
 		case 5:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"
@@ -124,7 +212,7 @@ func issueDialogHint(state State, submitLabel string) string {
 				submitLabel,
 			) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"

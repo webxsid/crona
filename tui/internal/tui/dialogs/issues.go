@@ -97,7 +97,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 					rows = append(rows, "  "+label)
 				}
 			}
-			rows = appendDialogFooter(theme, state, rows, "[j/k] move   [enter] set   [esc] cancel")
+			rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] set   [esc] cancel")
 		}
 		return modal(theme, state.Width, 48, theme.ColorYellow, rows)
 	case "issue_status_note":
@@ -128,7 +128,7 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [left/right] choose   [up/down/tab] move   " + dialogSubmitHint(
+			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"
@@ -138,7 +138,7 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 				submitLabel,
 			) + "   [esc] cancel"
 		case 5:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"
@@ -153,7 +153,7 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 				submitLabel,
 			) + "   [esc] cancel"
 		case 3:
-			return "[f2] calendar   [g] today   [tab] next   " + dialogSubmitHint(
+			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"

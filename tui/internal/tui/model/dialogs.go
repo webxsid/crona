@@ -132,6 +132,11 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 			path,
 			func(err error) tea.Msg { return commands.ErrMsg{Err: err} },
 		)
+	case "open_momentum_editor":
+		if len(action.HabitStreakDefs) == 0 {
+			return next, nil
+		}
+		return next.openEditMomentumDialog(action.HabitStreakDefs[0]), nil
 	case "open_export_reports_dir_dialog":
 		if next.exportAssets == nil {
 			return next, nil
@@ -524,6 +529,10 @@ func (m Model) openViewEntityDialogWithPath(
 	)
 }
 
+func (m Model) openMomentumDetailDialog(detail api.MomentumDetail) Model {
+	return m.withDialogState(m.dialogSnapshot().OpenMomentumDetail(detail))
+}
+
 func (m Model) openSupportBundleDialog(path string, sizeBytes int64, windowLabel string) Model {
 	meta := strings.Join([]string{
 		"Size " + helperpkg.HumanizeSupportBytes(sizeBytes),
@@ -662,6 +671,11 @@ func (m Model) dialogState() dialogstate.State {
 		ChoiceDetails:                  m.dialogChoiceDetails,
 		TemplateAssets:                 m.dialogTemplateAssets,
 		ChoiceCursor:                   m.dialogChoiceCursor,
+		MomentumRepoInput:              m.dialogMomentumRepoInput,
+		MomentumStreamInput:            m.dialogMomentumStreamInput,
+		MomentumRepos:                  m.repos,
+		MomentumStreams:                m.streams,
+		MomentumAllIssues:              m.allIssues,
 		Processing:                     m.dialogProcessing,
 		ProcessingLabel:                m.dialogProcessingLabel,
 		StatusLabel:                    m.dialogStatusLabel,
@@ -759,6 +773,8 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogChoiceDetails = state.ChoiceDetails
 	m.dialogTemplateAssets = state.TemplateAssets
 	m.dialogChoiceCursor = state.ChoiceCursor
+	m.dialogMomentumRepoInput = state.MomentumRepoInput
+	m.dialogMomentumStreamInput = state.MomentumStreamInput
 	m.dialogProcessing = state.Processing
 	m.dialogProcessingLabel = state.ProcessingLabel
 	m.dialogStatusLabel = state.StatusLabel

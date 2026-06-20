@@ -65,6 +65,17 @@ func LoadMomentumRange(c *api.Client, endDate string, windowDays int) tea.Cmd {
 	}
 }
 
+func LoadMomentumDetail(c *api.Client, id, endDate string, windowDays int) tea.Cmd {
+	return func() tea.Msg {
+		detail, err := c.GetMomentumDetail(id, endDate, windowDays)
+		if err != nil {
+			logger.Errorf("loadMomentumDetail(%s,%s,%d): %v", id, endDate, windowDays, err)
+			return MomentumDetailFailedMsg{Err: err}
+		}
+		return MomentumDetailLoadedMsg{Detail: detail}
+	}
+}
+
 func LoadMomentumFocusWindow(c *api.Client, date string, windowDays int) tea.Cmd {
 	if windowDays < 1 {
 		windowDays = 30

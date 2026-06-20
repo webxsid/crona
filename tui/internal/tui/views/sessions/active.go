@@ -281,17 +281,11 @@ func hardLimitProgressBar(
 	done := durationSeconds - remaining
 	done = max(0, done)
 	filled := min(barWidth, (done*barWidth)/durationSeconds)
+	palette := sessionProgressPalette(theme, state.Timer, color)
 	return lipgloss.NewStyle().
 		Width(width).
 		AlignHorizontal(lipgloss.Center).
-		Render(
-			lipgloss.NewStyle().
-				Foreground(color).
-				Render(strings.Repeat("█", filled)) +
-				lipgloss.NewStyle().
-					Foreground(theme.ColorDim).
-					Render(strings.Repeat("░", max(0, barWidth-filled))),
-		)
+		Render(viewhelpers.RenderGradientBar(barWidth, filled, palette))
 }
 
 func sessionActionSegmentLabel(timer *api.TimerState) string {
@@ -401,9 +395,34 @@ func structuredProgressBar(
 	}
 	filled = min(filled, width)
 	color := activeTimerColor(theme, state.Timer)
-	bar := lipgloss.NewStyle().Foreground(color).Render(strings.Repeat("█", filled)) +
-		theme.StyleDim.Render(strings.Repeat("█", width-filled))
-	return lipgloss.NewStyle().Width(width).Render(bar)
+	return lipgloss.NewStyle().
+		Width(width).
+		Render(viewhelpers.RenderGradientBar(width, filled, sessionProgressPalette(theme, state.Timer, color)))
+}
+
+func sessionProgressPalette(theme types.Theme, timer *api.TimerState, color lipgloss.Color) viewhelpers.GradientBarPalette {
+	palette := viewhelpers.GradientBarPalette{
+		Start: theme.ColorDullGreen,
+		End:   color,
+		Track: theme.ColorDim,
+	}
+	if timer == nil || timer.SegmentType == nil {
+		return palette
+	}
+	switch *timer.SegmentType {
+	case sharedtypes.SessionSegmentShortBreak:
+		palette.Start = theme.ColorBlue
+		palette.End = theme.ColorCyan
+	case sharedtypes.SessionSegmentLongBreak:
+		palette.Start = theme.ColorMagenta
+		palette.End = theme.ColorCyan
+	case sharedtypes.SessionSegmentRest:
+		palette.Start = theme.ColorYellow
+		palette.End = theme.ColorOrange
+	default:
+		palette.End = color
+	}
+	return palette
 }
 
 func hardLimitSegmentDurationSeconds(
