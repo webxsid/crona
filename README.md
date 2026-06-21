@@ -4,7 +4,7 @@
   <img src="docs/logo/Logo%20Extended%20Dark.png" alt="Crona" width="480" />
 </p>
 
-Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local engine into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
+Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local daemon into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
 
 Managed package installers are the preferred distribution path:
 - Homebrew on macOS and Linux
@@ -17,7 +17,7 @@ Destination-specific migration guides live in the migration section of the docs.
 The repository is a Go monorepo with four main modules:
 - `kernel`: internal source tree for the background daemon, SQLite store, timer, IPC, and update checks
 - `tui`: Bubble Tea terminal UI
-- `cli`: scriptable commands and local engine control flows
+- `cli`: scriptable commands and local daemon control flows
 - `shared`: shared types, config, protocol, and utilities
 
 ## Screenshots
@@ -35,8 +35,8 @@ See the full installation guide in [docs/install.md](docs/install.md).
 If you are migrating from the install script, another package manager, or a beta channel, use [docs/migration.md](docs/migration.md) before reinstalling.
 
 Runtime notes:
-- local alerts are emitted by the background engine, not the TUI process
-- scheduled reminders only fire while the background engine is running
+- local alerts are emitted by the background daemon, not the TUI process
+- scheduled reminders only fire while the background daemon is running
 - the TUI owns the terminal tab title while it is running and shows active session context when focused
 - PDF export depends on local renderer tooling; see [docs/install.md](docs/install.md)
 
@@ -54,7 +54,7 @@ crona daemon status --json
 crona daemon info --json
 ```
 
-The command group is named `daemon` because it controls the internal engine process. User-facing docs generally call it the daemon or local engine.
+The command group is named `daemon` because it controls the internal daemon process. User-facing docs generally call it the daemon or local daemon.
 
 Generate shell completions:
 

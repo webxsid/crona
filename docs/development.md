@@ -17,7 +17,7 @@ make install-tui
 make install-cli
 ```
 
-Development docs use `kernel` when referring to the Go module, source tree, or IPC method names. For product copy, the shipped engine binary is `crona-daemon`, and the same process is usually called the daemon or local engine.
+Development docs use `kernel` when referring to the Go module, source tree, or IPC method names. For product copy, the shipped daemon binary is `crona-daemon`.
 
 Manual builds from the repo root:
 
@@ -60,7 +60,7 @@ The dev seed data is intentionally shaped for dashboard validation. It creates r
 
 ### macOS And Linux
 
-Run the local engine:
+Run the local daemon:
 
 ```bash
 make run-daemon
@@ -109,7 +109,7 @@ Run the same non-publishing checks used by CI:
 make ci
 ```
 
-Run local engine IPC e2e tests explicitly:
+Run local daemon IPC e2e tests explicitly:
 
 ```bash
 make test-e2e
@@ -151,7 +151,7 @@ make release-check
 
 ## Notifications And Alerts In Development
 
-The local engine owns alert delivery. Running the TUI alone is not enough for scheduled reminders; the local engine must stay up.
+The local daemon owns alert delivery. Running the TUI alone is not enough for scheduled reminders; the local daemon must stay up.
 
 Current backend expectations by OS:
 
@@ -166,7 +166,7 @@ The TUI `Alerts` view is the easiest smoke-test surface:
 - adjust focus inactivity alert threshold/repeat controls
 - create a check-in reminder for a near-future time
 
-Focus inactivity alerts are local-engine-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the local engine sends a review-session alert and repeats on the configured interval.
+Focus inactivity alerts are local-daemon-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the local daemon sends a review-session alert and repeats on the configured interval.
 
 ## PDF Rendering In Development
 

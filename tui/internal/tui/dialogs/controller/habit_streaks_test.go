@@ -248,7 +248,7 @@ func TestMomentumContextTargetsLetPrintableHTypeIntoDurationInput(t *testing.T) 
 	state = habitStreakSetDetailFocus(state, habitStreakDetailRowCount)
 	state.Inputs[1].SetValue("")
 
-	for _, r := range []rune("1h34m23s") {
+	for _, r := range "1h34m23s" {
 		next, action, status := Update(
 			state,
 			UpdateContext{},

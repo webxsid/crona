@@ -1,14 +1,14 @@
 # Socket API
 
-This document describes Crona's local engine IPC surface.
+This document describes Crona's local daemon IPC surface.
 
-The protocol and method names still use `kernel` for the internal engine process. Product docs usually call the same process the local engine or background engine.
+The protocol and method names still use `kernel` for the internal daemon process. Product docs usually call the same process the local daemon or background daemon.
 
 It is an open-source reference for contributors and advanced users, not a promise of long-term network API stability before `1.0.0`.
 
 ## Transport
 
-Crona uses a local request/response transport between clients and the local engine.
+Crona uses a local request/response transport between clients and the local daemon.
 
 - Unix-domain sockets on Unix-like platforms
 - named pipes on Windows
@@ -72,7 +72,7 @@ Use these files as the canonical contract:
 
 ## Compatibility Note
 
-- The local engine IPC surface is shared across Crona clients.
+- The local daemon IPC surface is shared across Crona clients.
 - It is intentionally documented because the project is open source.
 - Before `1.0.0`, use the shared Go types and method constants as the source of truth over any prose doc.
 - Check GUI compatibility against `kernel.info.get -> protocolVersion`.
@@ -86,7 +86,7 @@ Use these files as the canonical contract:
 
 ## RPC Methods
 
-Request DTO names below refer to types in [`shared/dto/requests.go`](../../shared/dto/requests.go). Result payloads are returned as JSON objects or arrays matching the shared domain/DTO types used by the local engine handlers.
+Request DTO names below refer to types in [`shared/dto/requests.go`](../../shared/dto/requests.go). Result payloads are returned as JSON objects or arrays matching the shared domain/DTO types used by the local daemon handlers.
 
 ### Event Subscription
 
@@ -101,7 +101,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `health.get` | `dto.Empty` | health status object | Kernel health and readiness. |
 | `kernel.info.get` | `dto.Empty` | kernel info object | Runtime metadata, transport, endpoint, install metadata, and `protocolVersion`. |
 | `kernel.shutdown` | `dto.Empty` | `dto.OKResponse` | Graceful local shutdown. |
-| `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local engine. |
+| `kernel.restart` | `dto.Empty` | `dto.OKResponse` | Restarts the local daemon. |
 | `kernel.dev.seed` | `dto.Empty` | `dto.OKResponse` | Dev-only sample data seed. |
 | `kernel.dev.clear` | `dto.Empty` | `dto.OKResponse` | Dev-only local data clear. |
 | `kernel.data.wipe` | `dto.ConfirmDangerousActionRequest` | `dto.OKResponse` | Wipes runtime data after explicit confirmation. |
@@ -120,7 +120,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `alerts.status.get` | `dto.Empty` | alert status object | Active backend, capability flags, and runtime support for alerts/sound. |
 | `alerts.test_notification` | `dto.Empty` | `dto.OKResponse` | Sends a sample alert through the current backend. |
 | `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
-| `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local engine alerts layer. |
+| `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local daemon alerts layer. |
 | `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
 | `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
 | `alerts.reminders.update` | `dto.AlertReminderUpdateRequest` | reminder object | Updates one scheduled reminder rule. |
@@ -129,10 +129,10 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 
 Alert behavior notes:
 
-- the local engine, not the TUI, decides when alerts fire
-- scheduled reminders are local-only and only fire while the local engine is running
-- focus inactivity alerts are local-engine-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
-- `AlertStatus` reflects the current OS helper/backend that the local engine detected at runtime
+- the local daemon, not the TUI, decides when alerts fire
+- scheduled reminders are local-only and only fire while the local daemon is running
+- focus inactivity alerts are local-daemon-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
+- `AlertStatus` reflects the current OS helper/backend that the local daemon detected at runtime
 
 ### Repositories
 
@@ -252,7 +252,7 @@ Export behavior notes:
 
 - markdown export does not require extra renderer tooling
 - daily and weekly PDF export require `weasyprint`
-- repo, stream, and issue-rollup PDF export require `pandoc` plus a supported engine
+- repo, stream, and issue-rollup PDF export require `pandoc` plus a supported daemon
 - `export.assets.get` is the runtime capability/status surface for renderer availability, active template paths, and reports directories
 
 ### Sessions And Timer
@@ -280,7 +280,7 @@ Export behavior notes:
 Timer start behavior notes:
 
 - `TimerStartRequest` can carry `repoId`, `streamId`, and `issueId` so clients can start focus from a selected issue without first mutating the shared active context.
-- If `issueId` is omitted, the local engine resolves the current active context issue.
+- If `issueId` is omitted, the local daemon resolves the current active context issue.
 - If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
 - `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
 - Clients expose an explicit resume-vs-continue choice. Resuming calls `stash.apply`; continuing fresh retries `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.

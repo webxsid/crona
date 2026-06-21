@@ -24,4 +24,4 @@ Suggested order:
 2. Read [install.md](install.md) if you want to use the app.
 3. Read [migration.md](migration.md) if you are switching install methods or release channels.
 4. Read [development.md](development.md), [contributing.md](contributing.md), and [release.md](release.md) if you want to work on the codebase.
-5. Use [api/socket.md](api/socket.md) if you need the local engine IPC surface.
+5. Use [api/socket.md](api/socket.md) if you need the local daemon IPC surface.

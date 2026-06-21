@@ -16,7 +16,7 @@ goreleaser release --snapshot --clean --skip=publish
 make brew-test
 ```
 
-`make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the local engine IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
+`make ci` runs release metadata checks, unit tests, vet, lint, and coverage generation. `make test-e2e` runs the local daemon IPC e2e suite and requires an environment that permits local Unix sockets or Windows named pipes.
 
 ## Version Metadata
 

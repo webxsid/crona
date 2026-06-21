@@ -376,22 +376,22 @@ func renderHelpBar(state State) string {
 		devRightAction = "[f6] seed dev data   [f7] clear dev data   "
 	}
 	leftActions := append([]string(nil), state.GlobalActions...)
-	rightText := devRightAction + "[K] stop engine   [q] quit"
+	rightText := devRightAction + "[K] stop daemon   [ctl+c] quit"
 	if state.Width < 200 && len(leftActions) > 5 {
 		leftActions = leftActions[:5]
-		rightText = "[?] more   [q] quit"
+		rightText = "[?] more   [ctrl+c] quit"
 	}
 	if state.Width < 120 && len(leftActions) > 4 {
 		leftActions = leftActions[:4]
-		rightText = "[?] more   [q] quit"
+		rightText = "[?] more   [ctlr+c] quit"
 	}
 	if state.Width < 96 && len(leftActions) > 3 {
 		leftActions = leftActions[:3]
-		rightText = "[?] more   [q] quit"
+		rightText = "[?] more   [ctrl+c] quit"
 	}
 	if state.Width < 76 && len(leftActions) > 2 {
 		leftActions = leftActions[:2]
-		rightText = "[q] quit"
+		rightText = "[ctrl+c] quit"
 	}
 	left := strings.Join(leftActions, "   ")
 	right := chrome.StyleDim.Render(rightText)

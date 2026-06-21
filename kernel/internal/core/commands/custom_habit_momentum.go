@@ -579,13 +579,6 @@ func momentumAllGroupCount[T comparable](cumulativeCounts map[T]int, targets []T
 	return minCount
 }
 
-func momentumAllContextGroupCount(
-	cumulativeCounts map[sharedtypes.MomentumContext]int,
-	targets []sharedtypes.MomentumContext,
-) int {
-	return momentumAllGroupCount(cumulativeCounts, targets)
-}
-
 func nextISODate(value string) string {
 	parsed, err := time.Parse("2006-01-02", value)
 	if err != nil {

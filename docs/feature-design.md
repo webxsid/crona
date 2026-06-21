@@ -5,11 +5,11 @@
 This document is about future sync architecture only.
 
 Current local architecture:
-- the local engine is a Go background process
+- the local daemon is a Go background process
 - local clients talk to it over a Unix socket
 - this document does not change that local IPC model
 
-Future sync is a separate concern layered on top of the local engine.
+Future sync is a separate concern layered on top of the local daemon.
 
 ### Problem
 

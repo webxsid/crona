@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
@@ -250,9 +253,10 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 	} else if len(detail.HabitNames) > 0 {
 		targetSummary = strings.Join(detail.HabitNames, ", ")
 	}
+	targetCase := cases.Title(language.Und)
 	state.ViewMeta = strings.Join([]string{
-		fmt.Sprintf("Kind %s", strings.Title(sharedtypes.MomentumTargetKindLabel(detail.Definition.TargetKind))),
-		fmt.Sprintf("Match %s", strings.Title(sharedtypes.MomentumMatchModeLabel(detail.Definition.MatchMode))),
+		fmt.Sprintf("Kind %s", targetCase.String(sharedtypes.MomentumTargetKindLabel(detail.Definition.TargetKind))),
+		fmt.Sprintf("Match %s", targetCase.String(sharedtypes.MomentumMatchModeLabel(detail.Definition.MatchMode))),
 		fmt.Sprintf("Bucket %s", strings.TrimSpace(detail.CurrentBucket.Label)),
 		fmt.Sprintf("Range %s to %s", detail.CurrentBucket.StartDate, detail.CurrentBucket.EndDate),
 		fmt.Sprintf("Progress %d/%d", detail.CurrentBucket.Count, detail.CurrentBucket.Target),

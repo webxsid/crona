@@ -2,11 +2,12 @@
 
 All notable changes to **Crona** are documented here.
 
-## [Unreleased]
+## [1.6.1-beta.1] - 2026-06-21
 
 ### Changed
 - Added destination-specific migration guides for legacy installs moving to Homebrew, Go source installs, and Winget.
 - Stable Homebrew releases now refresh both `crona.rb` and `crona-beta.rb` so beta users can move to the stable build without a manual reinstall.
+- User-facing docs now consistently call the local background process the daemon.
 
 ### Added
 - Momentum now supports a richer detail view for custom streaks, including contributor breakdowns, current-bucket metadata, and context-aware targets.
@@ -31,7 +32,7 @@ Crona v1.6.0 is the stable release that brings the 1.6 line out of beta for user
 - Bundled alert sounds now ship as MP3 assets with attribution for the included Pixabay effects.
 
 ### Changed
-- The shipped engine binary now installs and ships as `crona-daemon`.
+- The shipped daemon binary now installs and ships as `crona-daemon`.
 - The CLI command surface now uses `crona daemon ...` and matching completion entries.
 - Release bundles, package-manager validation, and installer templates now reference the daemon binary name.
 - Homebrew and Winget now read as managed-install paths in the install and update flow.
@@ -41,10 +42,10 @@ Crona v1.6.0 is the stable release that brings the 1.6 line out of beta for user
 
 ## [1.6.0-beta.4] - 2026-06-16
 
-Crona v1.6.0-beta.4 renames the shipped engine binary and CLI command surface to daemon, updates the release and installer tooling to match, and cleans up the public docs so the new distribution story reads consistently.
+Crona v1.6.0-beta.4 renames the shipped daemon binary and CLI command surface to daemon, updates the release and installer tooling to match, and cleans up the public docs so the new distribution story reads consistently.
 
 ### Changed
-- The shipped engine binary now installs and ships as `crona-daemon`.
+- The shipped daemon binary now installs and ships as `crona-daemon`.
 - The CLI command surface now uses `crona daemon ...` and matching completion entries.
 - Release bundles, package-manager validation, and installer templates now reference the daemon binary name.
 - Install, migration, development, and concept docs now use the daemon name and updated command examples.

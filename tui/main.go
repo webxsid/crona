@@ -21,8 +21,8 @@ func main() {
 	var telemetry sharedposthog.Client
 	info, err := kernel.Ensure()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to start local engine: %v\n", err)
-		logger.Errorf("Local engine start failed: %v", err)
+		fmt.Fprintf(os.Stderr, "Failed to start daemon: %v\n", err)
+		logger.Errorf("Daemon start failed: %v", err)
 		os.Exit(1)
 	}
 
@@ -65,7 +65,7 @@ func main() {
 	}
 
 	logger.Info("Crona TUI starting")
-	logger.Infof("Connected to local engine at %s", kernel.EndpointLabel(info))
+	logger.Infof("Connected to daemon at %s", kernel.EndpointLabel(info))
 	_ = terminaltitle.Write(os.Stdout, "Crona")
 	defer func() { _ = terminaltitle.Reset(os.Stdout) }()
 

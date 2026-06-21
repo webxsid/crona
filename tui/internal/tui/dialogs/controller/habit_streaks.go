@@ -294,6 +294,15 @@ func updateMomentumHabitTargets(state State, msg tea.KeyMsg) (State, *Action, st
 				habitID,
 			)
 		}
+	case dialogActionFocusNext, dialogActionActivate, dialogActionPrimary:
+		if action == dialogActionPrimary || state.FocusIdx == int(habitTargetFocusMatchMode) {
+			state.HabitStreakStep = detailsStepForState(state)
+			state.HabitStreakCursor = 0
+			state.FocusIdx = 0
+			return syncMomentumStepFocus(clearDialogError(state)), nil, ""
+		}
+		state.FocusIdx = int(habitTargetFocusMatchMode)
+		return syncMomentumStepFocus(clearDialogError(state)), nil, ""
 	default:
 		switch msg.String() {
 		case "a":
@@ -309,15 +318,6 @@ func updateMomentumHabitTargets(state State, msg tea.KeyMsg) (State, *Action, st
 				state.HabitStreakDraft.HabitIDs = nil
 			}
 		}
-	case dialogActionFocusNext, dialogActionActivate, dialogActionPrimary:
-		if action == dialogActionPrimary || state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakStep = detailsStepForState(state)
-			state.HabitStreakCursor = 0
-			state.FocusIdx = 0
-			return syncMomentumStepFocus(clearDialogError(state)), nil, ""
-		}
-		state.FocusIdx = int(habitTargetFocusMatchMode)
-		return syncMomentumStepFocus(clearDialogError(state)), nil, ""
 	}
 	return clearDialogError(state), nil, ""
 }

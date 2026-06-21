@@ -87,10 +87,6 @@ func dialogActionForKey(state State, key string) dialogInputAction {
 	}
 }
 
-func isDialogVerticalMoveAction(action dialogInputAction) bool {
-	return action == dialogActionMoveDown || action == dialogActionMoveUp
-}
-
 func dialogVerticalMoveDir(action dialogInputAction) int {
 	switch action {
 	case dialogActionMoveDown:
@@ -100,25 +96,6 @@ func dialogVerticalMoveDir(action dialogInputAction) int {
 	default:
 		return 0
 	}
-}
-
-func isDialogHorizontalMoveAction(action dialogInputAction) bool {
-	return action == dialogActionMoveLeft || action == dialogActionMoveRight
-}
-
-func dialogHorizontalMoveDir(action dialogInputAction) int {
-	switch action {
-	case dialogActionMoveRight:
-		return 1
-	case dialogActionMoveLeft:
-		return -1
-	default:
-		return 0
-	}
-}
-
-func isDialogFocusMoveAction(action dialogInputAction) bool {
-	return action == dialogActionFocusNext || action == dialogActionFocusPrev
 }
 
 func dialogFocusMoveDir(action dialogInputAction) int {

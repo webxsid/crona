@@ -13,6 +13,8 @@ import (
 	viewchrome "crona/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
@@ -493,7 +495,7 @@ func habitStreakPeriodUnitLabel(period sharedtypes.HabitStreakPeriod) string {
 }
 
 func habitStreakTargetSummary(def sharedtypes.HabitStreakDefinition) string {
-	mode := strings.Title(sharedtypes.MomentumMatchModeLabel(def.MatchMode))
+	mode := cases.Title(language.Und).String(sharedtypes.MomentumMatchModeLabel(def.MatchMode))
 	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
 	case sharedtypes.MomentumTargetKindContext:
 		if sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) == sharedtypes.MomentumMatchModeAll {
@@ -531,7 +533,6 @@ func habitStreakTargetSelectionSummary(
 	default:
 		return habitStreakHabitSummary(def.HabitIDs, habits)
 	}
-	return "None"
 }
 
 func targetSelectionFooter(state controllerpkg.State) string {
@@ -556,7 +557,7 @@ func renderMomentumMatchMode(
 		renderSelector(
 			theme,
 			state,
-			strings.Title(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode)),
+			cases.Title(language.Und).String(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode)),
 			active,
 		)
 }
