@@ -310,17 +310,6 @@ func LoadSessionDetail(c *api.Client, id string) tea.Cmd {
 	}
 }
 
-func LoadStashes(c *api.Client) tea.Cmd {
-	return func() tea.Msg {
-		stashes, err := c.ListStashes()
-		if err != nil {
-			logger.Errorf("loadStashes: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return StashesLoadedMsg{Stashes: stashes}
-	}
-}
-
 func LoadOps(c *api.Client, limit int) tea.Cmd {
 	return func() tea.Msg {
 		ops, err := c.ListOps(limit)

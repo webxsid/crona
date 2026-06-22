@@ -57,15 +57,12 @@ type Deps struct {
 	DeleteHabit                    func(habitID, streamID int64, dashboardDate string) tea.Cmd
 	DeleteDailyCheckIn             func(id string) tea.Cmd
 	DeleteExportReport             func(report api.ExportReportFile) tea.Cmd
-	ApplyStash                     func(id string) tea.Cmd
-	DropStash                      func(id string) tea.Cmd
 	ChangeIssueStatus              func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd
 	AmendSessionNote               func(id string, note string) tea.Cmd
 	LogManualSession               func(input shareddto.ManualSessionLogRequest) tea.Cmd
 	StartFocusSession              func(input shareddto.TimerStartRequest) tea.Cmd
 	ExtendHardLimit                func(req shareddto.TimerExtendRequest) tea.Cmd
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
-	StashFocusSession              func(note string) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
 	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
@@ -265,14 +262,6 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		"delete",
 		func(action dialogstate.Action) tea.Cmd { return deleteCmd(action, state, deps) },
 	)
-	r.Register(
-		"apply_stash",
-		func(action dialogstate.Action) tea.Cmd { return deps.ApplyStash(action.ID) },
-	)
-	r.Register(
-		"drop_stash",
-		func(action dialogstate.Action) tea.Cmd { return deps.DropStash(action.ID) },
-	)
 	r.Register("change_issue_status", func(action dialogstate.Action) tea.Cmd {
 		return deps.ChangeIssueStatus(
 			action.IssueID,
@@ -305,9 +294,6 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	})
 	r.Register("end_session", func(action dialogstate.Action) tea.Cmd {
 		return deps.EndFocusSession(action.StreamID, state.DashboardDate, action.Payload)
-	})
-	r.Register("stash_session", func(action dialogstate.Action) tea.Cmd {
-		return deps.StashFocusSession(dialogstate.ValueOrEmpty(action.Note))
 	})
 	r.Register("change_issue_status_and_end_session", func(action dialogstate.Action) tea.Cmd {
 		return deps.ChangeIssueStatusAndEndSession(

@@ -347,23 +347,14 @@ type SwitchIssueRequest struct {
 	IssueID int64 `json:"issueId"`
 }
 
-type CreateStashRequest struct {
-	StashNote *string `json:"stashNote,omitempty"`
-}
-
 type NumericIDRequest struct {
 	ID int64 `json:"id"`
-}
-
-type StashIDRequest struct {
-	ID string `json:"id"`
 }
 
 type TimerStartRequest struct {
 	RepoID                         *int64 `json:"repoId,omitempty"`
 	StreamID                       *int64 `json:"streamId,omitempty"`
 	IssueID                        *int64 `json:"issueId,omitempty"`
-	IgnoreExistingStashes          bool   `json:"ignoreExistingStashes,omitempty"`
 	HardLimitTotalSeconds          *int   `json:"hardLimitTotalSeconds,omitempty"`
 	HardLimitWorkSeconds           *int   `json:"hardLimitWorkSeconds,omitempty"`
 	HardLimitBreakSeconds          *int   `json:"hardLimitBreakSeconds,omitempty"`

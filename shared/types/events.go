@@ -28,9 +28,6 @@ const (
 	EventTypeContextStreamChanged  = "context.stream.changed"
 	EventTypeContextIssueChanged   = "context.issue.changed"
 	EventTypeContextCleared        = "context.cleared"
-	EventTypeStashCreated          = "stash.created"
-	EventTypeStashApplied          = "stash.applied"
-	EventTypeStashDropped          = "stash.dropped"
 	EventTypeTimerBoundary         = "timer.boundary"
 	EventTypeTimerHardLimitReached = "timer.hard_limit_reached"
 	EventTypeTimerTick             = "timer.tick"
@@ -55,14 +52,6 @@ type ContextChangedPayload struct {
 
 type ContextClearedPayload struct {
 	DeviceID string `json:"deviceId"`
-}
-
-type StashEventPayload struct {
-	ID       string `json:"id"`
-	DeviceID string `json:"deviceId"`
-	RepoID   *int64 `json:"repoId,omitempty"`
-	StreamID *int64 `json:"streamId,omitempty"`
-	IssueID  *int64 `json:"issueId,omitempty"`
 }
 
 type TimerBoundaryPayload struct {

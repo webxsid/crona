@@ -2,6 +2,7 @@ package notify
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 	"time"
@@ -96,12 +97,16 @@ func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {
 				core:   coreCtx,
 				logger: testLogger(t),
 			}
-			if err := service.deliver(ctx, sharedtypes.AlertRequest{
-				Kind:      sharedtypes.AlertEventTimerBreakComplete,
-				Title:     "Break done",
-				Body:      "Back to work",
-				PlaySound: true,
-			}, true); err != nil {
+			if err := service.deliver(ctx, hardLimitReachedAlert(sharedtypes.TimerHardLimitReachedPayload{
+				SessionID:                      "session-1",
+				IssueID:                        1,
+				HardLimitTotalSeconds:          60,
+				HardLimitWorkSeconds:           25,
+				HardLimitBreakSeconds:          5,
+				HardLimitLongBreakSeconds:      15,
+				HardLimitCyclesBeforeLongBreak: 4,
+				ElapsedSeconds:                 60,
+			}), true); err != nil {
 				t.Fatalf("deliver alert: %v", err)
 			}
 
@@ -116,6 +121,89 @@ func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {
 				t.Fatalf("expected %d sound calls, got %d", tc.wantSounds, soundCalls)
 			}
 		})
+	}
+}
+
+func TestHardLimitReachedEventEnqueuesNotificationWithSound(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	coreCtx := testFullCoreContext(t, func() string { return "2026-04-11T10:00:00Z" })
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyBoundaryNotifications, true); err != nil {
+		t.Fatalf("set boundary notifications: %v", err)
+	}
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyBoundarySound, true); err != nil {
+		t.Fatalf("set boundary sound: %v", err)
+	}
+
+	delivered := make(chan sharedtypes.AlertRequest, 1)
+	soundDelivered := make(chan struct{}, 1)
+	alertStatusFn = func(paths runtimepkg.Paths) sharedtypes.AlertStatus {
+		return sharedtypes.AlertStatus{
+			NotificationsAvailable: true,
+			SoundAvailable:         true,
+		}
+	}
+	alertSoundPathFn = func(paths runtimepkg.Paths, preset sharedtypes.AlertSoundPreset) (string, error) {
+		return filepath.Join(t.TempDir(), "sound.wav"), nil
+	}
+	sendAlertNotificationFn = func(status sharedtypes.AlertStatus, req sharedtypes.AlertRequest) error {
+		delivered <- req
+		return nil
+	}
+	playAlertSoundFn = func(status sharedtypes.AlertStatus, soundPath string) error {
+		soundDelivered <- struct{}{}
+		return nil
+	}
+	defer func() {
+		alertStatusFn = detectAlertStatus
+		alertSoundPathFn = alertSoundPath
+		sendAlertNotificationFn = sendAlertNotification
+		playAlertSoundFn = playAlertSound
+	}()
+
+	_ = Start(ctx, coreCtx, coreCtx.Events, testLogger(t), runtimepkg.Paths{CurrentLogDir: t.TempDir()})
+
+	payload, err := json.Marshal(sharedtypes.TimerHardLimitReachedPayload{
+		SessionID:                      "session-1",
+		IssueID:                        1,
+		SegmentType:                    func() *sharedtypes.SessionSegmentType { v := sharedtypes.SessionSegmentWork; return &v }(),
+		HardLimitTotalSeconds:          60,
+		HardLimitWorkSeconds:           25,
+		HardLimitBreakSeconds:          5,
+		HardLimitLongBreakSeconds:      15,
+		HardLimitCyclesBeforeLongBreak: 4,
+		ElapsedSeconds:                 60,
+	})
+	if err != nil {
+		t.Fatalf("marshal hard-limit payload: %v", err)
+	}
+	coreCtx.Events.Emit(sharedtypes.KernelEvent{
+		Type:    sharedtypes.EventTypeTimerHardLimitReached,
+		Payload: payload,
+	})
+
+	select {
+	case req := <-delivered:
+		if req.Kind != sharedtypes.AlertEventTimerWorkComplete {
+			t.Fatalf("expected work-complete alert, got %q", req.Kind)
+		}
+		if !req.PlaySound {
+			t.Fatal("expected hard-limit alert to play sound")
+		}
+		if req.SoundPreset != sharedtypes.AlertSoundPresetFocusGong {
+			t.Fatalf("expected focus gong sound preset, got %q", req.SoundPreset)
+		}
+		if req.Urgency != sharedtypes.AlertUrgencyHigh {
+			t.Fatalf("expected high urgency, got %q", req.Urgency)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected hard-limit notification to be delivered")
+	}
+
+	select {
+	case <-soundDelivered:
+	case <-time.After(time.Second):
+		t.Fatal("expected hard-limit sound to be delivered")
 	}
 }
 

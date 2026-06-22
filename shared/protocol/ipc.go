@@ -30,8 +30,6 @@ type Error struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 }
 
-const ErrorCodeStashConflict = "stash_conflict"
-
 type RPCError struct {
 	Code    string
 	Message string

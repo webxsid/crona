@@ -40,8 +40,6 @@ type State struct {
 	IssueID                        int64
 	HabitID                        int64
 	TargetView                     string
-	StashCursor                    int
-	Stashes                        []StashItem
 	RepoID                         int64
 	StreamID                       int64
 	StatusItems                    []sharedtypes.IssueStatus
@@ -122,9 +120,4 @@ type State struct {
 	HardLimitBreakSeconds          int
 	HardLimitLongBreakSeconds      int
 	HardLimitCyclesBeforeLongBreak int
-}
-
-type StashItem struct {
-	Label string
-	Meta  string
 }

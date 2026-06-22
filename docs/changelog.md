@@ -125,18 +125,17 @@ Crona v1.5.1 tightens the hard-limit pomodoro flow, preserves custom duration ed
 
 ## [1.5.0] - 2026-06-07
 
-Crona v1.5.0 expands the TUI with a clearer Rollup focus surface, a more structured Wellbeing layout, and a custom-momentum workflow that is easier to read, edit, and maintain. It also folds in Pomodoro, stash, and settings refinements so the overall shell feels less modal and more coherent.
+Crona v1.5.0 expands the TUI with a clearer Rollup focus surface, a more structured Wellbeing layout, and a custom-momentum workflow that is easier to read, edit, and maintain. It also folds in Pomodoro and settings refinements so the overall shell feels less modal and more coherent.
 
 ### Highlights
 - Rollup now shows a proper focus visualization beside the calendar, with a scrollable breakdown pane that keeps the right-hand detail surface usable on small screens.
 - Momentum now centers on custom momentum cards and dedicated momentum CRUD dialogs, with clearer cadence labels, descriptions, and weekly label prefixes.
 - Wellbeing now separates the dense snapshot, metrics window, and detail-heavy context into distinct panes so the summary is easier to scan.
-- Pomodoro, stash commit, and protected-rest flows were tightened so the TUI keeps state and actions consistent across dialog updates.
+- Pomodoro and protected-rest flows were tightened so the TUI keeps state and actions consistent across dialog updates.
 
 ### Added
 - The Pomodoro start dialog now uses a single consolidated form instead of a chained multi-dialog wizard.
 - Custom Pomodoro durations now enter edit mode immediately, and the selected row stays visibly emphasized while editing.
-- Stashes can now be committed without popping them, with the TUI, client, and server wired through a shared `stash.commit` flow.
 - Daily streaks are now loaded into the TUI so the Daily summary and streak displays stay current.
 
 ### Changed
@@ -292,13 +291,9 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 - Kernel IPC e2e tests are now build-tagged and run through `make test-e2e` instead of default module test sweeps, avoiding false failures in restricted environments.
 - Coverage generation now has a dedicated script and summary output under the ignored `coverage/` directory.
 - The TUI now owns the terminal tab/window title while running, showing active session context when focused and repo/stream plus view context when idle.
-- Starting focus from an issue with existing stashes now uses a structured kernel conflict and a TUI resume-or-continue dialog instead of silently starting another session.
-- `timer.start` now accepts an explicit repo/stream/issue path and a stash-conflict override flag so clients can start selected issues without first mutating active context.
 
 ### Fixed
 - View-jump choices now stay context-aware while a session is active, hiding views that cannot be entered in that state.
-- The stash-conflict dialog now preserves its stash ID, issue path, and choice payload across TUI dispatch, so `[r]`, `[c]`, and `[enter]` work correctly.
-- CLI focus starts now render stash conflicts as actionable errors instead of exposing raw IPC failure text.
 - Repeated TUI full-reload command batches after dev seed, dev clear, and runtime wipe now use one shared reload plan.
 
 ## [1.0.0-beta.3] - 2026-04-08
@@ -536,7 +531,6 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 ### Added
 - Go monorepo workspace with `kernel`, `tui`, `cli`, and `shared`.
 - Go TUI workspace with Default, Meta, Session History, Active Session, Scratchpads, Ops, Settings, and Daily Dashboard views.
-- Session-focused workflow from issue panes with auto-context checkout, session lock, stash/end prompts, and scratchpad access during active sessions.
 - Session detail overlay in Session History, with richer kernel-backed session context and amend entrypoint.
 - Daily Dashboard with date navigation, planned-task list, worked-vs-estimate stats, and resolved-task progress.
 - UI-local filtering across repos, streams, issues, scratchpads, and ops.
@@ -544,7 +538,6 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 - Optional due date on issue creation, with a calendar picker in the Go TUI dialogs.
 - Issue due-date picker action from issue tables/lists, backed by a date-aware todo API.
 - Kernel shutdown hotkey from the Go TUI.
-- Idle-only stash dialog in the TUI with stash pop/apply.
 - Root `.env`-driven runtime mode plus dev-only seed / clear workflows.
 - Root `Makefile` and helper scripts for workspace tasks and dev data management.
 - Release builder and TUI installer flow for shipping standalone `crona-tui` and `crona-kernel` binaries.
@@ -578,8 +571,6 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 - Daily and Settings panes no longer overflow unpredictably on small terminals because row-height and list-window calculations now match the rendered layout.
 - Session detail and help overlays now match the rest of the pane styling, and session-detail actions stay visible in a fixed footer.
 - Dev seed data now follows the current issue lifecycle rules.
-- Stash restore no longer intermittently fails with `SQLITE_BUSY` under overlapping local kernel activity.
-- Stash apply now fails cleanly while another focus session is active, without mutating context or consuming the stash.
 - Focus-session auto-transition to `in_progress` now bypasses the active-session status guard used for manual changes.
 - Structured timer boundaries are now recovered when the kernel restarts with an active session still persisted.
 - Session timer acceleration caused by overlapping local tick loops.
@@ -596,10 +587,9 @@ This beta prerelease rolls up the current post-`1.0.2` TUI and reporting improve
 - Added shared Go contracts for domain types, DTOs, and Unix socket IPC envelopes.
 - Added daily summary by arbitrary date in the kernel issue summary flow.
 - Added kernel shutdown IPC support for TUI-triggered shutdown.
-- Added session history and stash IPC consumption in the Go TUI.
 - Added kernel session-detail IPC for the Session History overlay.
 - Added `kernel.dev.seed` and `kernel.dev.clear` dev-only IPC methods guarded by `CRONA_ENV=Dev`.
-- Migrated kernel storage, commands, timer, stash, scratchpad, and settings flows from TypeScript to Go.
+- Migrated kernel storage, commands, timer, scratchpad, and settings flows from TypeScript to Go.
 - Switched the TUI from HTTP/SSE to Unix socket IPC.
 
 ### Verification

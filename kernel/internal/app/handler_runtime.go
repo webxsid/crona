@@ -158,15 +158,6 @@ func (h *Handler) handleRuntimeMethods(
 		}), true
 	case protocol.MethodTimerStart:
 		return handle(req, func(input shareddto.TimerStartRequest) (any, error) {
-			if input.IgnoreExistingStashes {
-				return h.timer.StartIgnoringExistingStashes(
-					ctx,
-					input.RepoID,
-					input.StreamID,
-					input.IssueID,
-					&input,
-				)
-			}
 			return h.timer.Start(ctx, input.RepoID, input.StreamID, input.IssueID, &input)
 		}), true
 	case protocol.MethodTimerActivity:
@@ -210,37 +201,6 @@ func (h *Handler) handleRuntimeMethods(
 				Blockers:      input.Blockers,
 				Links:         input.Links,
 			})
-		}), true
-	case protocol.MethodStashList:
-		return h.handleNoParams(req, func() (any, error) {
-			return corecommands.ListStashes(ctx, h.core)
-		}), true
-	case protocol.MethodStashGet:
-		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
-			return corecommands.GetStash(ctx, h.core, input.ID)
-		}), true
-	case protocol.MethodStashPush:
-		return handle(req, func(input shareddto.CreateStashRequest) (any, error) {
-			return corecommands.StashPush(ctx, h.core, input.StashNote)
-		}), true
-	case protocol.MethodStashApply:
-		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
-			return shareddto.OKResponse{
-					OK: true,
-				}, corecommands.StashPop(
-					ctx,
-					h.core,
-					h.timer,
-					input.ID,
-				)
-		}), true
-	case protocol.MethodStashDrop:
-		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.StashDrop(ctx, h.core, input.ID)
-		}), true
-	case protocol.MethodStashCommit:
-		return handle(req, func(input shareddto.StashIDRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.CommitStashWithoutPop(ctx, h.core, input.ID)
 		}), true
 	case protocol.MethodSettingsGetAll:
 		return h.handleNoParams(req, func() (any, error) {

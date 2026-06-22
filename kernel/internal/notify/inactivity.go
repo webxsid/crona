@@ -81,7 +81,7 @@ func (s *Service) inactivityAlert(ctx context.Context, issueID int64) sharedtype
 	req := sharedtypes.AlertRequest{
 		Kind:        sharedtypes.AlertEventFocusInactivity,
 		Title:       "Focus session still running",
-		Body:        "Review the session and pause, stash, or end it if you stepped away.",
+		Body:        "Review the session and pause or end it if you stepped away.",
 		Urgency:     sharedtypes.AlertUrgencyNormal,
 		IconEnabled: true,
 		PlaySound:   false,

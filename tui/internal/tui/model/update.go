@@ -85,18 +85,6 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch msg := msg.(type) {
-	case commands.IssueActionPreflightConflictMsg:
-		parent := ""
-		if msg.Mode == commands.IssueActionModeManual {
-			parent = "manual_session"
-		}
-		return m.openStashConflictDialog(
-			msg.Conflict,
-			msg.Target.RepoID,
-			msg.Target.StreamID,
-			msg.Target.IssueID,
-			parent,
-		), nil
 	case commands.IssueActionPreflightClearMsg:
 		switch msg.Mode {
 		case commands.IssueActionModeManual:
@@ -249,8 +237,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		SessionDetailY:          m.sessionDetailY,
 		SessionContextOpen:      m.sessionContextOpen,
 		SessionContextY:         m.sessionContextY,
-		Stashes:                 m.stashes,
-		DialogStashCursor:       m.dialogStashCursor,
 		Ops:                     m.ops,
 		Context:                 m.context,
 		Timer:                   m.timer,
@@ -349,8 +335,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.sessionDetailY = state.SessionDetailY
 	m.sessionContextOpen = state.SessionContextOpen
 	m.sessionContextY = state.SessionContextY
-	m.stashes = state.Stashes
-	m.dialogStashCursor = state.DialogStashCursor
 	m.ops = state.Ops
 	m.context = state.Context
 	m.timer = state.Timer
@@ -432,11 +416,6 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next = next.openViewEntityDialog(title, name, meta, body)
 			*state = next.dispatchMessageState()
 		},
-		OpenStashConflictDialog: func(state *dispatchpkg.MessageState, conflict api.StashConflict, repoID, streamID, issueID int64) {
-			next := m.applyDispatchMessageState(*state)
-			next = next.openStashConflictDialog(conflict, repoID, streamID, issueID, "")
-			*state = next.dispatchMessageState()
-		},
 		OpenSupportBundleDialog: func(state *dispatchpkg.MessageState, path string, sizeBytes int64, windowLabel string) {
 			next := m.applyDispatchMessageState(*state)
 			next = next.openSupportBundleDialog(path, sizeBytes, windowLabel)
@@ -512,7 +491,6 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			)
 		},
 		LoadSessionDetail:  func(id string) tea.Cmd { return commands.LoadSessionDetail(m.client, id) },
-		LoadStashes:        func() tea.Cmd { return commands.LoadStashes(m.client) },
 		LoadOps:            func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
 		LoadContext:        func() tea.Cmd { return commands.LoadContext(m.client) },
 		LoadTimer:          func() tea.Cmd { return commands.LoadTimer(m.client) },

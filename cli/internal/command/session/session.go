@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -91,7 +90,7 @@ func RunTimer(args []string, deps Deps) error {
 		}
 		var out sharedtypes.TimerState
 		if err := deps.CallKernel(protocol.MethodTimerStart, req, &out); err != nil {
-			return formatStartFocusError(err)
+			return err
 		}
 		if *jsonOut {
 			return outputpkg.PrintJSON(deps.Stdout, out)
@@ -233,7 +232,7 @@ func RunIssue(args []string, deps Deps) error {
 		}
 		var out sharedtypes.TimerState
 		if err := deps.CallKernel(protocol.MethodTimerStart, shareddto.TimerStartRequest{IssueID: id}, &out); err != nil {
-			return formatStartFocusError(err)
+			return err
 		}
 		if *jsonOut {
 			return outputpkg.PrintJSON(deps.Stdout, out)
@@ -242,27 +241,4 @@ func RunIssue(args []string, deps Deps) error {
 	default:
 		return fmt.Errorf("unknown issue command: %s", args[0])
 	}
-}
-
-func formatStartFocusError(err error) error {
-	var rpcErr *protocol.RPCError
-	if !errors.As(err, &rpcErr) || rpcErr == nil || rpcErr.Code != protocol.ErrorCodeStashConflict {
-		return err
-	}
-	var conflict sharedtypes.StashConflict
-	if decodeErr := rpcErr.DecodeData(&conflict); decodeErr != nil || conflict.IssueID == 0 {
-		return err
-	}
-	count := len(conflict.Stashes)
-	if count == 1 {
-		return fmt.Errorf(
-			"cannot start focus: 1 stash exists for issue #%d; resume or drop the stash before starting a new session",
-			conflict.IssueID,
-		)
-	}
-	return fmt.Errorf(
-		"cannot start focus: %d stashes exist for issue #%d; resume or drop a stash before starting a new session",
-		count,
-		conflict.IssueID,
-	)
 }

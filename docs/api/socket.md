@@ -281,9 +281,6 @@ Timer start behavior notes:
 
 - `TimerStartRequest` can carry `repoId`, `streamId`, and `issueId` so clients can start focus from a selected issue without first mutating the shared active context.
 - If `issueId` is omitted, the local daemon resolves the current active context issue.
-- If the target issue already has saved stashes, `timer.start` fails with `error.code = "stash_conflict"` unless `ignoreExistingStashes` is true.
-- `stash_conflict` responses include `error.data` shaped as `types.StashConflict`, with the target issue ID and matching stash list.
-- Clients expose an explicit resume-vs-continue choice. Resuming calls `stash.apply`; continuing fresh retries `timer.start` with the same repo/stream/issue path and `ignoreExistingStashes = true`.
 - Inactivity alerts use core settings for enablement, first-alert threshold, and repeat interval. The default is enabled, 60 minutes to first alert, and 60 minutes between repeats.
 
 ### Context
@@ -306,16 +303,6 @@ Timer start behavior notes:
 | `settings.get` | `dto.GetCoreSettingRequest` | single setting result | Gets one core setting. |
 | `settings.patch` | `dto.PatchCoreSettingRequest` | settings object | Patches one setting. |
 | `settings.put` | `dto.PutCoreSettingsRequest` | settings object | Replaces multiple settings at once. |
-
-### Stash
-
-| Method | Request | Result | Notes |
-| --- | --- | --- | --- |
-| `stash.list` | `dto.Empty` | stash list | Lists saved stashes. |
-| `stash.get` | `dto.StashIDRequest` | stash object | Gets one stash. |
-| `stash.push` | `dto.CreateStashRequest` | stash object | Creates a stash from current context. |
-| `stash.apply` | `dto.StashIDRequest` | active context object | Applies a stash. |
-| `stash.drop` | `dto.StashIDRequest` | `dto.OKResponse` | Deletes a stash. |
 
 ### Operations Log
 
@@ -364,20 +351,16 @@ Payload notes:
 - `timer.tick` uses `types.TimerTickPayload`
 - `timer.state` carries the current timer/session state snapshot
 
-### Context And Stash Events
+### Context Events
 
 - `context.repo.changed`
 - `context.stream.changed`
 - `context.issue.changed`
 - `context.cleared`
-- `stash.created`
-- `stash.applied`
-- `stash.dropped`
 
 Payload notes:
 - context change events use `types.ContextChangedPayload`
 - `context.cleared` uses `types.ContextClearedPayload`
-- stash events use `types.StashEventPayload`
 
 ### Update Events
 

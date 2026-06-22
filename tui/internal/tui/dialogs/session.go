@@ -10,28 +10,7 @@ import (
 
 func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
-	case "stash_list":
-		rows := []string{theme.StylePaneTitle.Render("Stashes"), ""}
-		if len(state.Stashes) == 0 {
-			rows = append(rows, theme.StyleDim.Render("No stashes available"))
-		} else {
-			for i, stash := range state.Stashes {
-				if i == state.StashCursor {
-					rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+stash.Label))
-				} else {
-					rows = append(rows, theme.StyleNormal.Render("  "+stash.Label))
-				}
-				rows = append(rows, theme.StyleDim.Render("  "+stash.Meta))
-			}
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[↑/↓] move   [enter] pop   [x] drop   [esc] cancel",
-		)
-		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
-	case "end_session", "stash_session":
+	case "end_session":
 		title := "End Session"
 		hint := dialogSubmitHint(state, "confirm") + "   [ctrl+e] open details dialog   [esc] cancel"
 		labels := []string{
@@ -41,11 +20,6 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			"Next step",
 			"Blockers",
 			"Links",
-		}
-		if state.Kind == "stash_session" {
-			title = "Stash Session"
-			hint = dialogSubmitHint(state, "confirm") + "   [esc] cancel"
-			labels = []string{"Stash note"}
 		}
 		rows := []string{theme.StylePaneTitle.Render(title)}
 		for i := range state.Inputs {

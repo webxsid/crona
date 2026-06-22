@@ -15,7 +15,6 @@ type Snapshot struct {
 	AllHabits            []api.HabitWithMeta
 	AllIssues            []api.IssueWithMeta
 	Context              *api.ActiveContext
-	Stashes              []api.Stash
 	DailyCheckIn         *api.DailyCheckIn
 	UpdateStatus         *api.UpdateStatus
 	ExportAssets         *api.ExportAssetStatus
@@ -215,8 +214,6 @@ func (s Snapshot) OpenConfirmWipeData() State {
 	return OpenConfirmWipeData(s.Dialog)
 }
 
-func (s Snapshot) OpenStashList() State { return OpenStashList(s.Dialog) }
-
 func (s Snapshot) OpenIssueStatus(status string) State {
 	return OpenIssueStatus(s.Dialog, status)
 }
@@ -313,10 +310,6 @@ func (s Snapshot) OpenViewJump() State {
 
 func (s Snapshot) OpenBetaSupport() State {
 	return OpenBetaSupport(s.Dialog)
-}
-
-func (s Snapshot) OpenStashConflict(conflict sharedtypes.StashConflict) State {
-	return OpenStashConflict(s.Dialog, conflict)
 }
 
 func (s Snapshot) OpenSupportBundleResult(name, meta, body, path string) State {

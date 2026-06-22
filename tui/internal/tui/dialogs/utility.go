@@ -213,65 +213,6 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] export   [esc] back")
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
-	case "stash_conflict_pick":
-		rows := []string{
-			theme.StylePaneTitle.Render(state.ViewTitle),
-			"",
-			theme.StyleHeader.Render(state.ViewName),
-		}
-		if strings.TrimSpace(state.ViewMeta) != "" {
-			rows = append(rows, theme.StyleDim.Render(state.ViewMeta))
-		}
-		rows = append(rows, "")
-		for i, item := range state.ChoiceItems {
-			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render("  "+item))
-			}
-		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
-			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[↑/↓] move   [enter] inspect stash   [esc] cancel",
-		)
-		return modal(theme, state.Width, 72, theme.ColorYellow, rows)
-	case "stash_conflict":
-		rows := []string{
-			theme.StylePaneTitle.Render(state.ViewTitle),
-			"",
-			theme.StyleHeader.Render(state.ViewName),
-		}
-		if strings.TrimSpace(state.ViewMeta) != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ViewMeta))
-		}
-		if strings.TrimSpace(state.ViewBody) != "" {
-			rows = append(rows, theme.StyleDim.Render(state.ViewBody))
-		}
-		rows = append(rows, "")
-		for i, item := range state.ChoiceItems {
-			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render("  "+item))
-			}
-		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
-			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			stashConflictFooter(state),
-		)
-		return modal(theme, state.Width, 74, theme.ColorYellow, rows)
 	case "edit_export_reports_dir":
 		rows := []string{
 			theme.StylePaneTitle.Render("Export Reports Directory"),
@@ -645,14 +586,6 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 		)
 	}
 	return modal(theme, state.Width, 82, theme.ColorCyan, rows)
-}
-
-func stashConflictFooter(state controllerpkg.State) string {
-	footer := "[↑/↓] move   [r] resume   [c] continue fresh   [x] commit stash   [esc] cancel"
-	if strings.TrimSpace(state.Parent) == "manual_session" {
-		footer = "[↑/↓] move   [r] resume   [m] log manual session   [x] commit stash   [esc] cancel"
-	}
-	return footer
 }
 
 func toggleLabel(enabled bool, label string) string {

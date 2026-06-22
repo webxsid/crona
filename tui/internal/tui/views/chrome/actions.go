@@ -113,7 +113,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
-			theme.StyleHeader.Render("[Z]") + theme.StyleDim.Render(" saved stashes"),
 		}
 	}
 	if state.View == "habit_history" {

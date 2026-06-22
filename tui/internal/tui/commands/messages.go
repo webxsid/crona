@@ -89,7 +89,6 @@ type IssuePinnedDailyChangedMsg struct {
 	Pinned  bool
 }
 type SessionAmendedMsg struct{ ID string }
-type StashesLoadedMsg struct{ Stashes []api.Stash }
 type OpsLoadedMsg struct{ Ops []api.Op }
 type ContextLoadedMsg struct{ Ctx *api.ActiveContext }
 type TimerLoadedMsg struct{ Timer *api.TimerState }
@@ -122,13 +121,6 @@ type FocusSessionChangedMsg struct {
 	ReloadTimer   bool
 }
 
-type FocusSessionStashConflictMsg struct {
-	Conflict api.StashConflict
-	RepoID   int64
-	StreamID int64
-	IssueID  int64
-}
-
 type IssueActionMode string
 
 const (
@@ -147,12 +139,6 @@ type IssueActionTarget struct {
 type IssueActionPreflightClearMsg struct {
 	Mode   IssueActionMode
 	Target IssueActionTarget
-}
-
-type IssueActionPreflightConflictMsg struct {
-	Mode     IssueActionMode
-	Target   IssueActionTarget
-	Conflict api.StashConflict
 }
 
 type EditorDoneMsg struct{}

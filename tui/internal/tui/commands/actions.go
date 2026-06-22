@@ -8,7 +8,6 @@ import (
 	"time"
 
 	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/kernel"
@@ -932,33 +931,6 @@ func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) te
 	}
 }
 
-func PreflightIssueAction(c *api.Client, mode IssueActionMode, target IssueActionTarget) tea.Cmd {
-	return func() tea.Msg {
-		stashes, err := c.ListStashes()
-		if err != nil {
-			logger.Errorf("PreflightIssueAction(%s,%d): %v", mode, target.IssueID, err)
-			return ErrMsg{Err: err}
-		}
-		conflict := api.StashConflict{IssueID: target.IssueID}
-		for _, stash := range stashes {
-			if stash.IssueID != nil && *stash.IssueID == target.IssueID {
-				conflict.Stashes = append(conflict.Stashes, stash)
-			}
-		}
-		if len(conflict.Stashes) > 0 {
-			return IssueActionPreflightConflictMsg{
-				Mode:     mode,
-				Target:   target,
-				Conflict: conflict,
-			}
-		}
-		return IssueActionPreflightClearMsg{
-			Mode:   mode,
-			Target: target,
-		}
-	}
-}
-
 func StartFocusSession(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
 	return startFocusSession(c, shareddto.TimerStartRequest{
 		RepoID:   optionalInt64(repoID),
@@ -978,10 +950,9 @@ func TouchTimerActivity(c *api.Client) tea.Cmd {
 
 func ContinueFocusSessionFresh(c *api.Client, repoID, streamID, issueID int64) tea.Cmd {
 	return startFocusSession(c, shareddto.TimerStartRequest{
-		RepoID:                optionalInt64(repoID),
-		StreamID:              optionalInt64(streamID),
-		IssueID:               optionalInt64(issueID),
-		IgnoreExistingStashes: true,
+		RepoID:   optionalInt64(repoID),
+		StreamID: optionalInt64(streamID),
+		IssueID:  optionalInt64(issueID),
 	})
 }
 
@@ -994,24 +965,7 @@ func StartHardLimitFocusSession(
 
 func startFocusSession(c *api.Client, req shareddto.TimerStartRequest) tea.Cmd {
 	return func() tea.Msg {
-		repoID := derefInt64(req.RepoID)
-		streamID := derefInt64(req.StreamID)
-		issueID := derefInt64(req.IssueID)
 		if err := c.StartTimer(req); err != nil {
-			var rpcErr *protocol.RPCError
-			if errors.As(err, &rpcErr) && rpcErr != nil &&
-				rpcErr.Code == protocol.ErrorCodeStashConflict {
-				var conflict api.StashConflict
-				if decodeErr := rpcErr.DecodeData(&conflict); decodeErr == nil &&
-					conflict.IssueID != 0 {
-					return FocusSessionStashConflictMsg{
-						Conflict: conflict,
-						RepoID:   repoID,
-						StreamID: streamID,
-						IssueID:  issueID,
-					}
-				}
-			}
 			logger.Errorf("StartTimer: %v", err)
 			return ErrMsg{Err: err}
 		}
@@ -1103,51 +1057,6 @@ func derefInt64(value *int64) int64 {
 		return 0
 	}
 	return *value
-}
-
-func StashFocusSession(c *api.Client, note string) tea.Cmd {
-	return func() tea.Msg {
-		if err := c.StashPush(note); err != nil {
-			logger.Errorf("StashPush: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return FocusSessionChangedMsg{ReloadContext: true, ReloadTimer: true}
-	}
-}
-
-func ApplyStash(c *api.Client, id string) tea.Cmd {
-	return func() tea.Msg {
-		if err := c.ApplyStash(id); err != nil {
-			logger.Errorf("ApplyStash: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return tea.Batch(
-			LoadStashes(c),
-			LoadContext(c),
-			LoadTimer(c),
-			LoadSessionHistory(c, nil, 200),
-		)()
-	}
-}
-
-func CommitStashWithoutPop(c *api.Client, id string) tea.Cmd {
-	return func() tea.Msg {
-		if err := c.CommitStash(id); err != nil {
-			logger.Errorf("CommitStash(%s): %v", id, err)
-			return ErrMsg{Err: err}
-		}
-		return LoadStashes(c)()
-	}
-}
-
-func DropStash(c *api.Client, id string) tea.Cmd {
-	return func() tea.Msg {
-		if err := c.DropStash(id); err != nil {
-			logger.Errorf("DropStash: %v", err)
-			return ErrMsg{Err: err}
-		}
-		return LoadStashes(c)()
-	}
 }
 
 func GenerateReport(c *api.Client, input shareddto.ExportReportRequest) tea.Cmd {

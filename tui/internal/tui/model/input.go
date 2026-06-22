@@ -308,23 +308,6 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
-		OpenStashSessionDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openSessionMessageDialog("stash_session")
-			*state = next.inputState()
-			return true
-		},
-		CanOpenStashList: func(state inputpkg.State) bool {
-			next := m.applyInputState(state)
-			return (next.timer == nil || next.timer.State == "idle") && next.dialog == ""
-		},
-		OpenStashListDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openStashListDialog()
-			*state = next.inputState()
-			return true
-		},
-		LoadStashes: func() tea.Cmd { return commands.LoadStashes(m.client) },
 		ClampFiltered: func(state *inputpkg.State, pane uistate.Pane) {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()
@@ -523,12 +506,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 				}
 				return nil, false
 			}
-			cmd := next.preflightIssueActionFromSelection(commands.IssueActionModeManual)
-			if cmd == nil {
+			target, ok := next.selectedIssueActionTarget()
+			if !ok {
 				return nil, false
 			}
+			next = next.openManualSessionFromIssue(target.repoID, target.streamID, target.issueID)
 			*state = next.inputState()
-			return cmd, true
+			return nil, true
 		},
 		OpenSessionContextOverlay: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

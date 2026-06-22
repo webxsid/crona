@@ -61,6 +61,13 @@ func Start(
 				return
 			}
 			service.enqueue(timerBoundaryAlert(payload))
+		case sharedtypes.EventTypeTimerHardLimitReached:
+			var payload sharedtypes.TimerHardLimitReachedPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				logger.Error("decode timer hard limit payload", err)
+				return
+			}
+			service.enqueue(hardLimitReachedAlert(payload))
 		case sharedtypes.EventTypeUpdateStatus:
 			var status sharedtypes.UpdateStatus
 			if err := json.Unmarshal(event.Payload, &status); err != nil {
@@ -197,6 +204,20 @@ func timerBoundaryAlert(payload sharedtypes.TimerBoundaryPayload) sharedtypes.Al
 		req.SoundPreset = sharedtypes.AlertSoundPresetSoftBell
 	default:
 		req.Kind = sharedtypes.AlertEventTimerWorkComplete
+	}
+	return req
+}
+
+func hardLimitReachedAlert(payload sharedtypes.TimerHardLimitReachedPayload) sharedtypes.AlertRequest {
+	req := sharedtypes.AlertRequest{
+		Kind:        sharedtypes.AlertEventTimerWorkComplete,
+		Title:       "Pomodoro session complete",
+		Subtitle:    "Commit or extend to continue",
+		Body:        "The pomodoro session has reached its hard limit. Commit to finish it or extend to keep working.",
+		Urgency:     sharedtypes.AlertUrgencyHigh,
+		SoundPreset: sharedtypes.AlertSoundPresetFocusGong,
+		PlaySound:   true,
+		IconEnabled: true,
 	}
 	return req
 }

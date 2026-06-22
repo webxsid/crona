@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -87,8 +88,8 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 				Color       *string
 			}{
 				Name:        name,
-				Description: devStringPtr(description),
-				Color:       devStringPtr(color),
+				Description: new(description),
+				Color:       new(color),
 			})
 			if err != nil {
 				return err
@@ -109,7 +110,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			}{
 				RepoID:      repoID,
 				Name:        name,
-				Description: devStringPtr(description),
+				Description: new(description),
 			})
 			if err != nil {
 				return err
@@ -124,7 +125,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		err := seedAt(dayOffset, 9, 0, func() error {
 			var notePtr *string
 			if len(notes) > 0 && notes[0] != "" {
-				notePtr = devStringPtr(notes[0])
+				notePtr = new(notes[0])
 			}
 			created, err := corecommands.CreateIssue(ctx, h.core, struct {
 				StreamID        int64
@@ -136,8 +137,8 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			}{
 				StreamID:        streamID,
 				Title:           title,
-				Description:     devStringPtr(description),
-				EstimateMinutes: devIntPtr(estimate),
+				Description:     new(description),
+				EstimateMinutes: new(estimate),
 				Notes:           notePtr,
 				TodoForDate:     due,
 			})
@@ -177,7 +178,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			}{
 				StreamID:      streamID,
 				Name:          name,
-				Description:   devStringPtr(description),
+				Description:   new(description),
 				ScheduleType:  schedule,
 				Weekdays:      weekdays,
 				TargetMinutes: targetMinutes,
@@ -213,10 +214,10 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 					Date:              date,
 					Mood:              mood,
 					Energy:            energy,
-					SleepHours:        devFloatPtr(sleepHours),
-					SleepScore:        devIntPtr(sleepScore),
-					ScreenTimeMinutes: devIntPtr(screenMinutes),
-					Notes:             devStringPtr(notes),
+					SleepHours:        new(sleepHours),
+					SleepScore:        new(sleepScore),
+					ScreenTimeMinutes: new(screenMinutes),
+					Notes:             new(notes),
 				},
 			)
 			return err
@@ -264,7 +265,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			_, err := corecommands.LogManualSession(ctx, h.core, corecommands.ManualSessionInput{
 				IssueID:             issueID,
 				Date:                start.Format("2006-01-02"),
-				StartTime:           devStringPtr(fmt.Sprintf("%02d:%02d", startHour, startMinute)),
+				StartTime:           new(fmt.Sprintf("%02d:%02d", startHour, startMinute)),
 				WorkDurationSeconds: durationMinutes * 60,
 				CommitMessage:       input.CommitMessage,
 				Notes:               seedSessionNotes(input),
@@ -366,7 +367,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Port dev tooling to Go",
 		"Validate the IPC-first workflow and replace the remaining shell scripts.",
 		90,
-		devDatePtr(dateAt(-1)),
+		new(dateAt(-1)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress},
 		"Drive the migration end-to-end and keep dev experience tight.",
 	)
@@ -379,7 +380,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Add keyboard-first command palette",
 		"Speed up common view and dialog actions from one launcher.",
 		35,
-		devDatePtr(dateAt(-3)),
+		new(dateAt(-3)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress},
 		"Intentionally underestimated for seed accuracy drift.",
 	)
@@ -392,7 +393,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Review lifecycle UX copy",
 		"Tighten action labels and empty-state wording across the dashboard.",
 		95,
-		devDatePtr(dateAt(-2)),
+		new(dateAt(-2)),
 		[]sharedtypes.IssueStatus{
 			sharedtypes.IssueStatusInProgress,
 			sharedtypes.IssueStatusInReview,
@@ -408,7 +409,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Prepare rollout checklist",
 		"Capture deploy sequencing, smoke tests, and rollback checkpoints.",
 		45,
-		devDatePtr(dateAt(-4)),
+		new(dateAt(-4)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady},
 		"Waiting only on final go/no-go review.",
 	)
@@ -421,7 +422,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Wire release packaging checks",
 		"Verify built artifacts, checksums, and update install docs.",
 		75,
-		devDatePtr(dateAt(-5)),
+		new(dateAt(-5)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress},
 		"Partially implemented; needs artifact verification.",
 	)
@@ -434,20 +435,20 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Provision CI signing secrets",
 		"Unblock package signing in CI and production release automation.",
 		30,
-		devDatePtr(dateAt(-4)),
+		new(dateAt(-4)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusBlocked},
 		"Awaiting access to the signing account.",
 	)
 	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-4, infraStream.ID, "Review release support copy", "Check updater and support wording before the tester build.", 20, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Held in review so dev data covers the full lifecycle."); err != nil {
+	if _, err := createIssue(-4, infraStream.ID, "Review release support copy", "Check updater and support wording before the tester build.", 20, new(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview}, "Held in review so dev data covers the full lifecycle."); err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, platformStream.ID, "Backfill metrics range tests", "Cover streaks, burnout rollups, and historical summaries.", 55, devDatePtr(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusDone}); err != nil {
+	if _, err := createIssue(-6, platformStream.ID, "Backfill metrics range tests", "Cover streaks, burnout rollups, and historical summaries.", 55, new(dateAt(-2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusDone}); err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, platformStream.ID, "Reduce websocket reconnect churn", "Stabilize event fanout under network flaps.", 50, devDatePtr(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Superseded by the unix socket migration."); err != nil {
+	if _, err := createIssue(-6, platformStream.ID, "Reduce websocket reconnect churn", "Stabilize event fanout under network flaps.", 50, new(dateAt(-1)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Superseded by the unix socket migration."); err != nil {
 		return err
 	}
 	docsIssue, err := createIssue(
@@ -456,26 +457,26 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Improve install docs for Linux",
 		"Add shell completion, troubleshooting, and verification notes.",
 		35,
-		devDatePtr(dateAt(1)),
+		new(dateAt(1)),
 		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady},
 		"Future planned work to keep the window from being all closed.",
 	)
 	if err != nil {
 		return err
 	}
-	if _, err := createIssue(-3, cliStream.ID, "Publish example config bundle", "Ship realistic examples for repo, stream, and timer setup.", 25, devDatePtr(dateAt(0)), nil); err != nil {
+	if _, err := createIssue(-3, cliStream.ID, "Publish example config bundle", "Ship realistic examples for repo, stream, and timer setup.", 25, new(dateAt(0)), nil); err != nil {
 		return err
 	}
-	if _, err := createIssue(-2, homeStream.ID, "Plan weekend errands", "Group shopping, laundry, and pickup tasks into one route.", 30, devDatePtr(dateAt(0)), nil); err != nil {
+	if _, err := createIssue(-2, homeStream.ID, "Plan weekend errands", "Group shopping, laundry, and pickup tasks into one route.", 30, new(dateAt(0)), nil); err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, homeStream.ID, "Research standing desk options", "Compare dimensions and price points for the office nook.", 25, devDatePtr(dateAt(2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Deferred until the room reorganization is done."); err != nil {
+	if _, err := createIssue(-6, homeStream.ID, "Research standing desk options", "Compare dimensions and price points for the office nook.", 25, new(dateAt(2)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusAbandoned}, "Deferred until the room reorganization is done."); err != nil {
 		return err
 	}
-	if _, err := createIssue(-6, platformStream.ID, "Audit event replay gaps", "Investigate dropped events and stale refresh paths.", 50, devDatePtr(dateAt(-6)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left incomplete on purpose so the oldest day shows planned-only work."); err != nil {
+	if _, err := createIssue(-6, platformStream.ID, "Audit event replay gaps", "Investigate dropped events and stale refresh paths.", 50, new(dateAt(-6)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left incomplete on purpose so the oldest day shows planned-only work."); err != nil {
 		return err
 	}
-	if _, err := createIssue(-5, platformStream.ID, "Reconcile update relaunch UX", "Smooth out install handoff and watchdog reporting.", 40, devDatePtr(dateAt(-5)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left untouched so one day can register as missed."); err != nil {
+	if _, err := createIssue(-5, platformStream.ID, "Reconcile update relaunch UX", "Smooth out install handoff and watchdog reporting.", 40, new(dateAt(-5)), []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}, "Left untouched so one day can register as missed."); err != nil {
 		return err
 	}
 	if err := seedAt(-3, 17, 0, func() error {
@@ -498,7 +499,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Three lifting sessions each week with basic progression.",
 		"weekly",
 		[]int{1, 3, 5},
-		devIntPtr(60),
+		new(60),
 	)
 	if err != nil {
 		return err
@@ -510,7 +511,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Get outside before work for a short walk.",
 		"daily",
 		nil,
-		devIntPtr(25),
+		new(25),
 	)
 	if err != nil {
 		return err
@@ -522,7 +523,7 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Capture a quick end-of-day reflection.",
 		"daily",
 		nil,
-		devIntPtr(10),
+		new(10),
 	)
 	if err != nil {
 		return err
@@ -534,15 +535,15 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		"Clear triage inboxes before the afternoon block.",
 		"weekdays",
 		nil,
-		devIntPtr(15),
+		new(15),
 	)
 	if err != nil {
 		return err
 	}
-	if _, err := createHabit(-29, homeStream.ID, "Laundry Reset", "Run and fold one load every Sunday.", "weekly", []int{0}, devIntPtr(45)); err != nil {
+	if _, err := createHabit(-29, homeStream.ID, "Laundry Reset", "Run and fold one load every Sunday.", "weekly", []int{0}, new(45)); err != nil {
 		return err
 	}
-	if _, err := createHabit(-29, cliStream.ID, "Read Release Notes", "Scan upstream release notes for dependency changes.", "weekly", []int{2, 4}, devIntPtr(20)); err != nil {
+	if _, err := createHabit(-29, cliStream.ID, "Read Release Notes", "Scan upstream release notes for dependency changes.", "weekly", []int{2, 4}, new(20)); err != nil {
 		return err
 	}
 
@@ -666,33 +667,33 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		}
 		weekday := int(baseNow.AddDate(0, 0, -i).Weekday())
 		if i == 0 {
-			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Weather broke the morning routine.")); err != nil {
+			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, new("Weather broke the morning routine.")); err != nil {
 				return err
 			}
 		} else if i%9 != 0 {
-			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(22+(i%6)), devStringPtr("Morning walk logged for the 30-day seed window.")); err != nil {
+			if err := seedHabitStatus(-i, walkHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, new(22+(i%6)), new("Morning walk logged for the 30-day seed window.")); err != nil {
 				return err
 			}
 		}
 		if i%11 != 0 {
-			if err := seedHabitStatus(-i, journalHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(8+(i%5)), devStringPtr("Short reflection for streak testing.")); err != nil {
+			if err := seedHabitStatus(-i, journalHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, new(8+(i%5)), new("Short reflection for streak testing.")); err != nil {
 				return err
 			}
 		}
 		if weekday == 1 || weekday == 3 || weekday == 5 {
 			if i%13 != 0 {
-				if err := seedHabitStatus(-i, workoutHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(48+(i%5)*4), devStringPtr("Strength session for weekly streak cadence.")); err != nil {
+				if err := seedHabitStatus(-i, workoutHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, new(48+(i%5)*4), new("Strength session for weekly streak cadence.")); err != nil {
 					return err
 				}
 			}
 		}
 		if weekday >= 1 && weekday <= 5 && i%10 != 0 {
-			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(10+(i%4)), devStringPtr("Inbox and notifications cleared.")); err != nil {
+			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, new(10+(i%4)), new("Inbox and notifications cleared.")); err != nil {
 				return err
 			}
 		}
 		if weekday >= 1 && weekday <= 5 && i%17 == 0 {
-			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, devStringPtr("Inbox sweep missed during a heavy day.")); err != nil {
+			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, new("Inbox sweep missed during a heavy day.")); err != nil {
 				return err
 			}
 		}
@@ -710,9 +711,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			15,
 			42,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("refactor: bootstrap kernel repos"),
-				WorkedOn:      devStringPtr("repo and stream initialization"),
-				Outcome:       devStringPtr("baseline workspace created"),
+				CommitMessage: new("refactor: bootstrap kernel repos"),
+				WorkedOn:      new("repo and stream initialization"),
+				Outcome:       new("baseline workspace created"),
 			},
 		},
 		{
@@ -721,9 +722,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			40,
 			72,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("chore: verify packaging outputs"),
-				WorkedOn:      devStringPtr("artifact checks and hashes"),
-				Outcome:       devStringPtr("release checks mostly wired"),
+				CommitMessage: new("chore: verify packaging outputs"),
+				WorkedOn:      new("artifact checks and hashes"),
+				Outcome:       new("release checks mostly wired"),
 			},
 		},
 		{
@@ -732,9 +733,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			0,
 			38,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("docs: shape rollout checklist"),
-				WorkedOn:      devStringPtr("deploy sequencing and rollback notes"),
-				Outcome:       devStringPtr("carry-over item clarified"),
+				CommitMessage: new("docs: shape rollout checklist"),
+				WorkedOn:      new("deploy sequencing and rollback notes"),
+				Outcome:       new("carry-over item clarified"),
 			},
 		},
 		{
@@ -743,9 +744,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			30,
 			84,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("feat: add command palette navigation"),
-				WorkedOn:      devStringPtr("palette actions and filtering"),
-				Outcome:       devStringPtr("underestimate case seeded"),
+				CommitMessage: new("feat: add command palette navigation"),
+				WorkedOn:      new("palette actions and filtering"),
+				Outcome:       new("underestimate case seeded"),
 			},
 		},
 		{
@@ -754,9 +755,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			10,
 			27,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("fix: polish command palette hints"),
-				WorkedOn:      devStringPtr("labels and keyboard copy"),
-				Outcome:       devStringPtr("issue should exceed estimate cleanly"),
+				CommitMessage: new("fix: polish command palette hints"),
+				WorkedOn:      new("labels and keyboard copy"),
+				Outcome:       new("issue should exceed estimate cleanly"),
 			},
 		},
 		{
@@ -765,9 +766,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			30,
 			31,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("chore: finish rollout checklist"),
-				WorkedOn:      devStringPtr("go/no-go notes"),
-				Outcome:       devStringPtr("carried item completed"),
+				CommitMessage: new("chore: finish rollout checklist"),
+				WorkedOn:      new("go/no-go notes"),
+				Outcome:       new("carried item completed"),
 			},
 		},
 	}
@@ -778,11 +779,11 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		}
 	}
 	workoutDate, workoutOffset := mostRecentMatchingWeekday(baseNow, []int{1, 3, 5})
-	if err := seedHabitStatus(workoutOffset, workoutHabit.ID, workoutDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(58), devStringPtr("Main lifts plus accessory work.")); err != nil {
+	if err := seedHabitStatus(workoutOffset, workoutHabit.ID, workoutDate, sharedtypes.HabitCompletionStatusCompleted, new(58), new("Main lifts plus accessory work.")); err != nil {
 		return err
 	}
 	inboxDate, inboxOffset := mostRecentMatchingWeekday(baseNow, []int{1, 2, 3, 4, 5})
-	if err := seedHabitStatus(inboxOffset, inboxHabit.ID, inboxDate, sharedtypes.HabitCompletionStatusCompleted, devIntPtr(12), devStringPtr("Inbox and notifications cleared before lunch.")); err != nil {
+	if err := seedHabitStatus(inboxOffset, inboxHabit.ID, inboxDate, sharedtypes.HabitCompletionStatusCompleted, new(12), new("Inbox and notifications cleared before lunch.")); err != nil {
 		return err
 	}
 
@@ -801,9 +802,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			15,
 			42,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("refactor: bootstrap kernel repos"),
-				WorkedOn:      devStringPtr("repo and stream initialization"),
-				Outcome:       devStringPtr("baseline workspace created"),
+				CommitMessage: new("refactor: bootstrap kernel repos"),
+				WorkedOn:      new("repo and stream initialization"),
+				Outcome:       new("baseline workspace created"),
 			},
 		},
 		{
@@ -813,9 +814,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			40,
 			72,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("chore: verify packaging outputs"),
-				WorkedOn:      devStringPtr("artifact checks and hashes"),
-				Outcome:       devStringPtr("release checks mostly wired"),
+				CommitMessage: new("chore: verify packaging outputs"),
+				WorkedOn:      new("artifact checks and hashes"),
+				Outcome:       new("release checks mostly wired"),
 			},
 		},
 		{
@@ -825,9 +826,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			0,
 			38,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("docs: shape rollout checklist"),
-				WorkedOn:      devStringPtr("deploy sequencing and rollback notes"),
-				Outcome:       devStringPtr("carry-over item clarified"),
+				CommitMessage: new("docs: shape rollout checklist"),
+				WorkedOn:      new("deploy sequencing and rollback notes"),
+				Outcome:       new("carry-over item clarified"),
 			},
 		},
 		{
@@ -837,9 +838,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			30,
 			84,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("feat: add command palette navigation"),
-				WorkedOn:      devStringPtr("palette actions and filtering"),
-				Outcome:       devStringPtr("underestimate case seeded"),
+				CommitMessage: new("feat: add command palette navigation"),
+				WorkedOn:      new("palette actions and filtering"),
+				Outcome:       new("underestimate case seeded"),
 			},
 		},
 		{
@@ -849,9 +850,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			10,
 			27,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("fix: polish command palette hints"),
-				WorkedOn:      devStringPtr("labels and keyboard copy"),
-				Outcome:       devStringPtr("issue should exceed estimate cleanly"),
+				CommitMessage: new("fix: polish command palette hints"),
+				WorkedOn:      new("labels and keyboard copy"),
+				Outcome:       new("issue should exceed estimate cleanly"),
 			},
 		},
 		{
@@ -861,9 +862,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			30,
 			31,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("chore: finish rollout checklist"),
-				WorkedOn:      devStringPtr("go/no-go notes"),
-				Outcome:       devStringPtr("carried item completed"),
+				CommitMessage: new("chore: finish rollout checklist"),
+				WorkedOn:      new("go/no-go notes"),
+				Outcome:       new("carried item completed"),
 			},
 		},
 		{
@@ -873,9 +874,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			15,
 			24,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("copy: revise lifecycle prompts"),
-				WorkedOn:      devStringPtr("short UX copy pass"),
-				Outcome:       devStringPtr("overestimate case remains under target"),
+				CommitMessage: new("copy: revise lifecycle prompts"),
+				WorkedOn:      new("short UX copy pass"),
+				Outcome:       new("overestimate case remains under target"),
 			},
 		},
 		{
@@ -885,9 +886,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			45,
 			58,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("feat: refresh rollup dashboard"),
-				WorkedOn:      devStringPtr("range summaries and details"),
-				Outcome:       devStringPtr("focus issue moved forward"),
+				CommitMessage: new("feat: refresh rollup dashboard"),
+				WorkedOn:      new("range summaries and details"),
+				Outcome:       new("focus issue moved forward"),
 			},
 		},
 		{
@@ -897,9 +898,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			55,
 			22,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("fix: small-screen rollup layout"),
-				WorkedOn:      devStringPtr("compact dashboard polish"),
-				Outcome:       devStringPtr("session mix for a strong recent day"),
+				CommitMessage: new("fix: small-screen rollup layout"),
+				WorkedOn:      new("compact dashboard polish"),
+				Outcome:       new("session mix for a strong recent day"),
 			},
 		},
 		{
@@ -909,9 +910,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			0,
 			19,
 			corecommands.SessionEndInput{
-				CommitMessage: devStringPtr("docs: note linux install caveat"),
-				WorkedOn:      devStringPtr("shell completion docs"),
-				Outcome:       devStringPtr("future work has early progress"),
+				CommitMessage: new("docs: note linux install caveat"),
+				WorkedOn:      new("shell completion docs"),
+				Outcome:       new("future work has early progress"),
 			},
 		},
 	}
@@ -921,13 +922,13 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		}
 	}
 	if err := seedAt(-3, 18, 0, func() error {
-		_, err := corecommands.ChangeIssueStatus(ctx, h.core, underEstimateIssue.ID, sharedtypes.IssueStatusDone, devStringPtr("Completed after running long relative to the estimate."))
+		_, err := corecommands.ChangeIssueStatus(ctx, h.core, underEstimateIssue.ID, sharedtypes.IssueStatusDone, new("Completed after running long relative to the estimate."))
 		return err
 	}); err != nil {
 		return err
 	}
 	if err := seedAt(-2, 18, 15, func() error {
-		_, err := corecommands.ChangeIssueStatus(ctx, h.core, overEstimateIssue.ID, sharedtypes.IssueStatusDone, devStringPtr("Wrapped quickly; estimate was padded."))
+		_, err := corecommands.ChangeIssueStatus(ctx, h.core, overEstimateIssue.ID, sharedtypes.IssueStatusDone, new("Wrapped quickly; estimate was padded."))
 		return err
 	}); err != nil {
 		return err
@@ -947,31 +948,15 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	return nil
 }
 
-func devStringPtr(value string) *string {
-	return &value
-}
-
-func devIntPtr(value int) *int {
-	return &value
-}
-
-func devFloatPtr(value float64) *float64 {
-	return &value
-}
-
-func devDatePtr(value string) *string {
-	return &value
-}
-
 func mostRecentMatchingWeekday(base time.Time, weekdays []int) (string, int) {
 	for offset := 0; offset >= -6; offset-- {
 		candidate := base.AddDate(0, 0, offset)
 		weekday := int(candidate.Weekday())
-		for _, day := range weekdays {
-			if day == weekday {
-				return candidate.Format("2006-01-02"), offset
-			}
+
+		if slices.Contains(weekdays, weekday) {
+			return candidate.Format("2006-01-02"), offset
 		}
+
 	}
 	return base.Format("2006-01-02"), 0
 }

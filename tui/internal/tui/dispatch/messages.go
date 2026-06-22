@@ -72,8 +72,6 @@ type MessageState struct {
 	SessionDetailY          int
 	SessionContextOpen      bool
 	SessionContextY         int
-	Stashes                 []api.Stash
-	DialogStashCursor       int
 	Ops                     []api.Op
 	Context                 *api.ActiveContext
 	Timer                   *api.TimerState
@@ -119,7 +117,6 @@ type MessageDeps struct {
 	SetStatus                  func(*MessageState, string, bool) tea.Cmd
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
-	OpenStashConflictDialog    func(*MessageState, api.StashConflict, int64, int64, int64)
 	OpenOnboardingDialog       func(*MessageState)
 	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
 	CurrentDashboardDate       func(MessageState) string
@@ -146,7 +143,6 @@ type MessageDeps struct {
 	LoadHabitHistory           func(*api.ActiveContext, *int64) tea.Cmd
 	LoadSessionHistoryFor200   func(MessageState) tea.Cmd
 	LoadSessionDetail          func(string) tea.Cmd
-	LoadStashes                func() tea.Cmd
 	LoadOps                    func(int) tea.Cmd
 	LoadContext                func() tea.Cmd
 	LoadTimer                  func() tea.Cmd
@@ -386,16 +382,6 @@ func HandleMessage(
 		state.SessionDetailY = 0
 		logger.Errorf("session detail failed: %v", msg.Err)
 		return state, deps.SetStatus(&state, "Error: "+msg.Err.Error(), true), true
-	case commands.StashesLoadedMsg:
-		state.Stashes = msg.Stashes
-		if state.DialogStashCursor >= len(state.Stashes) {
-			if len(state.Stashes) == 0 {
-				state.DialogStashCursor = 0
-			} else {
-				state.DialogStashCursor = len(state.Stashes) - 1
-			}
-		}
-		return state, nil, true
 	case commands.OpsLoadedMsg:
 		state.Ops = msg.Ops
 		if deps.ClampFiltered != nil {
@@ -562,9 +548,6 @@ func HandleMessage(
 			return state, nil, true
 		}
 		return state, tea.Batch(cmds...), true
-	case commands.FocusSessionStashConflictMsg:
-		deps.OpenStashConflictDialog(&state, msg.Conflict, msg.RepoID, msg.StreamID, msg.IssueID)
-		return state, nil, true
 	case commands.TimerTickMsg:
 		if msg.Seq != state.TimerTickSeq {
 			return state, nil, true
@@ -767,7 +750,6 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadWellbeing(deps.CurrentWellbeingDate(state), state.WellbeingWindowDays),
 		deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate),
 		deps.LoadSessionHistoryFor200(state),
-		deps.LoadStashes(),
 		deps.LoadOps(deps.CurrentOpsLimit(state)),
 		deps.LoadContext(),
 		deps.LoadTimer(),

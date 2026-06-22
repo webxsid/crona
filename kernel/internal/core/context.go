@@ -17,7 +17,6 @@ type Context struct {
 	Habits                       *repositories.HabitRepository
 	HabitCompletions             *repositories.HabitCompletionRepository
 	Sessions                     *repositories.SessionRepository
-	Stash                        *repositories.StashRepository
 	Ops                          *repositories.OpRepository
 	Health                       *health.Service
 	CoreSettings                 *repositories.CoreSettingsRepository
@@ -53,7 +52,6 @@ func NewContext(
 		Habits:                       registry.Habits,
 		HabitCompletions:             registry.HabitCompletions,
 		Sessions:                     registry.Sessions,
-		Stash:                        registry.Stash,
 		Ops:                          registry.Ops,
 		Health:                       health.NewService(db.Ping),
 		CoreSettings:                 registry.CoreSettings,

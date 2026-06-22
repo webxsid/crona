@@ -77,12 +77,6 @@ It:
 - enforces structured boundaries
 - emits events for subscribed clients
 
-### Stash
-
-A stash suspends the current context and can preserve timer state.
-
-If a user starts a focus session on an issue that already has a stash, the local daemon blocks the fresh start and returns a structured conflict. Clients display the matching stash or stashes and let the user either resume one or explicitly continue with a fresh session. Continuing fresh keeps the existing stash for later.
-
 ### Active Context
 
 The shared `{ repo -> stream -> issue }` selection across local clients.
@@ -128,7 +122,7 @@ Calendar surfaces use terminal background styling for selected dates, date range
 
 Crona can trigger local OS notifications and bundled alert sounds from the local daemon itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain local-daemon-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
 
-Focus inactivity alerts are also local-daemon-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, stash, or end the session.
+Focus inactivity alerts are also local-daemon-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, or end the session.
 
 ### Calendar Export
 

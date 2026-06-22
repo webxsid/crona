@@ -451,7 +451,11 @@ func (m Model) handleInputConfigReset() (tea.Cmd, bool) {
 }
 
 func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
-	return m, m.preflightIssueActionFromSelection(commands.IssueActionModeFocus)
+	target, ok := m.selectedIssueActionTarget()
+	if !ok {
+		return m, nil
+	}
+	return m.openStartTimerDialog(target.repoID, target.streamID, target.issueID, target.title), nil
 }
 
 func (m Model) openStartTimerDialog(repoID, streamID, issueID int64, issueLabel string) Model {

@@ -78,7 +78,6 @@ Since ops are immutable and timestamped, conflicts are resolved deterministicall
 | Issue status transitions | Ordered by timestamp | State-machine style updates |
 | Active context | Per device, never merged | Context is device-local |
 | Sessions | Device-scoped, no merge needed | Sessions are owned by one device |
-| Stash | Namespaced by device | Stashes are device-local |
 | Deletes | Soft-delete wins | `deleted_at` is terminal |
 
 ### What Does Not Sync

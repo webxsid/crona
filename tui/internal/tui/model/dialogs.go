@@ -36,7 +36,6 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		AllHabits:            m.allHabits,
 		AllIssues:            m.allIssues,
 		Context:              m.context,
-		Stashes:              m.stashes,
 		DailyCheckIn:         m.dailyCheckIn,
 		UpdateStatus:         m.updateStatus,
 		ExportAssets:         m.exportAssets,
@@ -111,14 +110,6 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		return next, commands.LogManualSession(next.client, *action.ManualSession)
 	case "open_manual_session_dialog":
 		return next.openManualSessionFromIssue(action.RepoID, action.StreamID, action.IssueID), nil
-	case "commit_stash_and_continue_focus":
-		next = next.openFocusSessionFromIssue(action.RepoID, action.StreamID, action.IssueID)
-		return next, commands.CommitStashWithoutPop(next.client, action.ID)
-	case "commit_stash_and_continue_manual":
-		next = next.openManualSessionFromIssue(action.RepoID, action.StreamID, action.IssueID)
-		return next, commands.CommitStashWithoutPop(next.client, action.ID)
-	case "commit_stash_without_pop":
-		return next, commands.CommitStashWithoutPop(next.client, action.ID)
 	case "copy_support_diagnostics":
 		return next, next.copySupportDiagnosticsCmd(next.inputState())
 	case "generate_support_bundle":
@@ -168,21 +159,6 @@ func (m Model) openViewJumpDialog() Model {
 
 func (m Model) openBetaSupportDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenBetaSupport())
-}
-
-func (m Model) openStashConflictDialog(
-	conflict api.StashConflict,
-	repoID, streamID, issueID int64,
-	parent string,
-) Model {
-	snapshot := m.dialogSnapshot()
-	snapshot.Dialog.Parent = strings.TrimSpace(parent)
-	state := snapshot.OpenStashConflict(conflict)
-	state.RepoID = repoID
-	state.StreamID = streamID
-	state.IssueID = issueID
-	state.Parent = strings.TrimSpace(parent)
-	return m.withDialogState(state)
 }
 
 func (m Model) issueMetaByID(issueID int64) (*api.IssueWithMeta, bool) {
@@ -287,20 +263,6 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 	}
 }
 
-func (m Model) selectedIssueActionPreflightTarget() (commands.IssueActionTarget, bool) {
-	target, ok := m.selectedIssueActionTarget()
-	if !ok {
-		return commands.IssueActionTarget{}, false
-	}
-	return commands.IssueActionTarget{
-		RepoID:          target.repoID,
-		StreamID:        target.streamID,
-		IssueID:         target.issueID,
-		Title:           target.title,
-		EstimateMinutes: target.estimateMinutes,
-	}, true
-}
-
 func (m Model) openFocusSessionFromIssue(repoID, streamID, issueID int64) Model {
 	if target, ok := m.selectedIssueActionTarget(); ok && target.issueID == issueID {
 		return m.openStartTimerDialog(repoID, streamID, issueID, target.title)
@@ -334,14 +296,6 @@ func (m Model) openManualSessionFromIssue(repoID, streamID, issueID int64) Model
 		estimateMinutes,
 		m.currentDashboardDate(),
 	)
-}
-
-func (m Model) preflightIssueActionFromSelection(mode commands.IssueActionMode) tea.Cmd {
-	target, ok := m.selectedIssueActionPreflightTarget()
-	if !ok {
-		return nil
-	}
-	return commands.PreflightIssueAction(m.client, mode, target)
 }
 
 func (m Model) openCreateRepoDialog() Model {
@@ -454,10 +408,6 @@ func (m Model) openCheckInDialogForDate(date string) Model {
 
 func (m Model) openConfirmDeleteEntity(kind, id, label string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenConfirmDeleteEntity(kind, id, label))
-}
-
-func (m Model) openStashListDialog() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenStashList())
 }
 
 func (m Model) openSessionMessageDialog(kind string) Model {
@@ -663,7 +613,6 @@ func (m Model) dialogState() dialogstate.State {
 		Parent:                         m.dialogParent,
 		DateMonthValue:                 m.dialogDateMonth,
 		DateCursorValue:                m.dialogDateCursor,
-		StashCursor:                    m.dialogStashCursor,
 		StatusItems:                    m.dialogStatusItems,
 		StatusCursor:                   m.dialogStatusCursor,
 		ChoiceItems:                    m.dialogChoiceItems,
@@ -765,7 +714,6 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogParent = state.Parent
 	m.dialogDateMonth = state.DateMonthValue
 	m.dialogDateCursor = state.DateCursorValue
-	m.dialogStashCursor = state.StashCursor
 	m.dialogStatusItems = state.StatusItems
 	m.dialogStatusCursor = state.StatusCursor
 	m.dialogChoiceItems = state.ChoiceItems
@@ -1004,8 +952,6 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		DeleteDailyCheckIn: func(id string) tea.Cmd { return commands.DeleteDailyCheckIn(m.client, id) },
 		DeleteExportReport: func(report api.ExportReportFile) tea.Cmd { return commands.DeleteExportReport(m.client, report) },
-		ApplyStash:         func(id string) tea.Cmd { return commands.ApplyStash(m.client, id) },
-		DropStash:          func(id string) tea.Cmd { return commands.DropStash(m.client, id) },
 		ChangeIssueStatus: func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.ChangeIssueStatus(
 				m.client,
@@ -1029,7 +975,6 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		EndFocusSession: func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd {
 			return commands.EndFocusSession(m.client, streamID, dashboardDate, payload)
 		},
-		StashFocusSession: func(note string) tea.Cmd { return commands.StashFocusSession(m.client, note) },
 		ChangeIssueStatusAndEndSession: func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd {
 			return commands.ChangeIssueStatusAndEndSession(
 				m.client,

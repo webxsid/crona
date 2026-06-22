@@ -387,12 +387,6 @@ func newDescriptionInput(width, height int) textarea.Model {
 	return input
 }
 
-func OpenStashList(state State) State {
-	state = Close(state)
-	state.Kind = "stash_list"
-	return state
-}
-
 func OpenIssueStatus(state State, status string) State {
 	state = Close(state)
 	state.Kind = "issue_status"
@@ -426,8 +420,6 @@ func OpenSessionMessage(state State, kind string) State {
 	input := textinput.New()
 	if kind == "end_session" {
 		input.Placeholder = "Commit message"
-	} else {
-		input.Placeholder = "Stash note"
 	}
 	input.Focus()
 	input.CharLimit = 200

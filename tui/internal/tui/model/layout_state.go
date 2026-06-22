@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -190,33 +189,6 @@ func (m Model) dialogRenderState() dialogstate.State {
 			dialogControllerTheme(layoutpkg.DialogTheme()),
 			state,
 			m.currentDashboardDate(),
-		)
-	}
-	for _, stash := range m.stashes {
-		label := stash.CreatedAt
-		if stash.Note != nil && strings.TrimSpace(*stash.Note) != "" {
-			label = *stash.Note
-		}
-		contextBits := []string{}
-		if stash.RepoID != nil {
-			contextBits = append(contextBits, fmt.Sprintf("repo:%d", *stash.RepoID))
-		}
-		if stash.StreamID != nil {
-			contextBits = append(contextBits, fmt.Sprintf("stream:%d", *stash.StreamID))
-		}
-		if stash.IssueID != nil {
-			contextBits = append(contextBits, fmt.Sprintf("issue:%d", *stash.IssueID))
-		}
-		meta := stash.CreatedAt
-		if len(contextBits) > 0 {
-			meta += "  " + strings.Join(contextBits, "  ")
-		}
-		state.Stashes = append(
-			state.Stashes,
-			dialogstate.StashItem{
-				Label: helperpkg.Truncate(label, 42),
-				Meta:  helperpkg.Truncate(meta, 48),
-			},
 		)
 	}
 	return state

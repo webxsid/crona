@@ -218,7 +218,6 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 				200,
 			)
 		},
-		LoadStashes:      func() tea.Cmd { return commands.LoadStashes(m.client) },
 		LoadContext:      func() tea.Cmd { return commands.LoadContext(m.client) },
 		LoadTimer:        func() tea.Cmd { return commands.LoadTimer(m.client) },
 		LoadAlertStatus:  func() tea.Cmd { return commands.LoadAlertStatus(m.client) },

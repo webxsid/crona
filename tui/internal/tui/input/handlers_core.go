@@ -111,7 +111,7 @@ func handleIssueStatus(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		s.ActiveView == uistate.ViewSessionActive {
 		return s, deps.SetStatus(
 			&s,
-			"End or stash the active session before changing issue status",
+			"End the active session before changing issue status",
 			true,
 		), true
 	}
@@ -131,14 +131,6 @@ func handleContextCheckout(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		return s, nil, true
 	}
 	return s, deps.Checkout(&s), true
-}
-
-func handleOpenStashList(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if !deps.CanOpenStashList(s) {
-		return s, nil, false
-	}
-	deps.OpenStashListDialog(&s)
-	return s, deps.LoadStashes(), true
 }
 
 func handleAdjustOpsLimit(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {

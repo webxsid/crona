@@ -134,25 +134,6 @@ type SessionModel struct {
 	DeletedAt       *string `bun:"deleted_at,type:text,nullzero"`
 }
 
-type StashModel struct {
-	bun.BaseModel `bun:"table:stash"`
-
-	ID               string  `bun:",pk,type:text"`
-	RepoID           *string `bun:"repo_id,type:text,nullzero"`
-	StreamID         *string `bun:"stream_id,type:text,nullzero"`
-	IssueID          *string `bun:"issue_id,type:text,nullzero"`
-	SessionID        *string `bun:"session_id,type:text,nullzero"`
-	SegmentType      *string `bun:"segment_type,type:text,nullzero"`
-	SegmentStartedAt *string `bun:"segment_started_at,type:text,nullzero"`
-	ElapsedSeconds   *int    `bun:"elapsed_seconds,type:integer,nullzero"`
-	Note             *string `bun:"note,type:text,nullzero"`
-	UserID           string  `bun:"user_id,notnull,type:text"`
-	DeviceID         string  `bun:"device_id,notnull,type:text"`
-	CreatedAt        string  `bun:"created_at,notnull,type:text"`
-	UpdatedAt        string  `bun:"updated_at,notnull,type:text"`
-	DeletedAt        *string `bun:"deleted_at,type:text,nullzero"`
-}
-
 type OpModel struct {
 	bun.BaseModel `bun:"table:ops"`
 

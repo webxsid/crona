@@ -50,7 +50,6 @@ type EventDeps struct {
 	LoadWellbeing            func(date string, windowDays int) tea.Cmd
 	LoadRollupSummaries      func(start, end string) tea.Cmd
 	LoadSessionHistoryFor200 func(EventState) tea.Cmd
-	LoadStashes              func() tea.Cmd
 	LoadContext              func() tea.Cmd
 	LoadTimer                func() tea.Cmd
 	LoadAlertStatus          func() tea.Cmd
@@ -120,8 +119,6 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadDailyStreaks(state.CurrentDash),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
-	case "stash.created", "stash.applied", "stash.dropped":
-		return state, tea.Batch(deps.LoadStashes(), deps.LoadContext(), deps.LoadTimer())
 	case "context.repo.changed",
 		"context.stream.changed",
 		"context.issue.changed",

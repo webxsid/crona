@@ -271,7 +271,6 @@ const (
 	OpEntitySession         OpEntity = "session"
 	OpEntitySessionSegment  OpEntity = "session_segment"
 	OpEntityActiveContext   OpEntity = "active_context"
-	OpEntityStash           OpEntity = "stash"
 )
 
 type OpAction string
@@ -1262,26 +1261,6 @@ type TimerState struct {
 	HardLimitBreakSeconds          int                 `json:"hardLimitBreakSeconds,omitempty"`
 	HardLimitLongBreakSeconds      int                 `json:"hardLimitLongBreakSeconds,omitempty"`
 	HardLimitCyclesBeforeLongBreak int                 `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
-}
-
-type Stash struct {
-	ID                string              `json:"id"`
-	UserID            string              `json:"userId"`
-	DeviceID          string              `json:"deviceId"`
-	RepoID            *int64              `json:"repoId,omitempty"`
-	StreamID          *int64              `json:"streamId,omitempty"`
-	IssueID           *int64              `json:"issueId,omitempty"`
-	SessionID         *string             `json:"sessionId,omitempty"`
-	PausedSegmentType *SessionSegmentType `json:"pausedSegmentType,omitempty"`
-	ElapsedSeconds    *int                `json:"elapsedSeconds,omitempty"`
-	Note              *string             `json:"note,omitempty"`
-	CreatedAt         string              `json:"createdAt"`
-	UpdatedAt         string              `json:"updatedAt"`
-}
-
-type StashConflict struct {
-	IssueID int64   `json:"issueId"`
-	Stashes []Stash `json:"stashes"`
 }
 
 type Op struct {

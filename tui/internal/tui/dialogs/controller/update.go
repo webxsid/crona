@@ -19,7 +19,6 @@ func snapshotUpdateContext(snapshot Snapshot) UpdateContext {
 		Streams:   snapshot.Streams,
 		AllIssues: snapshot.AllIssues,
 		Context:   snapshot.Context,
-		Stashes:   snapshot.Stashes,
 	}
 	if snapshot.HasSelectedIssue {
 		ctx.SelectedIssueID = snapshot.SelectedIssueID

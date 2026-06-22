@@ -151,7 +151,6 @@ type Model struct {
 	habitHistoryTitle         string
 	habitHistoryMeta          string
 	sessionDetail             *api.SessionDetail
-	stashes                   []api.Stash
 	ops                       []api.Op
 	context                   *api.ActiveContext
 	timer                     *api.TimerState
@@ -177,7 +176,7 @@ type Model struct {
 	height int
 
 	// dialog state
-	dialog                               string // "" | "confirm_delete" | "stash_list"
+	dialog                               string // "" | "confirm_delete"
 	dialogInputs                         []textinput.Model
 	dialogDescription                    textarea.Model
 	dialogDescriptionOn                  bool
@@ -203,7 +202,6 @@ type Model struct {
 	dialogParent                         string
 	dialogDateMonth                      string
 	dialogDateCursor                     string
-	dialogStashCursor                    int
 	dialogStatusItems                    []sharedtypes.IssueStatus
 	dialogStatusCursor                   int
 	dialogChoiceItems                    []string

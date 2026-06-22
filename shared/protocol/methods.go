@@ -128,13 +128,6 @@ const (
 	MethodSettingsPatch  = "settings.patch"
 	MethodSettingsPut    = "settings.put"
 
-	MethodStashList   = "stash.list"
-	MethodStashGet    = "stash.get"
-	MethodStashPush   = "stash.push"
-	MethodStashApply  = "stash.apply"
-	MethodStashCommit = "stash.commit"
-	MethodStashDrop   = "stash.drop"
-
 	MethodOpsList   = "ops.list"
 	MethodOpsLatest = "ops.latest"
 	MethodOpsSince  = "ops.since"

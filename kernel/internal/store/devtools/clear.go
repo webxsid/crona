@@ -10,7 +10,6 @@ func ClearAllData(ctx context.Context, db *bun.DB) error {
 	tables := []string{
 		"session_segments",
 		"sessions",
-		"stash",
 		"ops",
 		"momentum_habits",
 		"momentums",

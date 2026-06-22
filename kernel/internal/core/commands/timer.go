@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -14,7 +13,6 @@ import (
 	runtimepkg "crona/kernel/internal/runtime"
 
 	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
 )
 
@@ -161,15 +159,7 @@ func (t *TimerService) Start(
 	repoID, streamID, issueID *int64,
 	hardLimit *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
-	return t.start(ctx, repoID, streamID, issueID, false, hardLimit)
-}
-
-func (t *TimerService) StartIgnoringExistingStashes(
-	ctx context.Context,
-	repoID, streamID, issueID *int64,
-	hardLimit *shareddto.TimerStartRequest,
-) (sharedtypes.TimerState, error) {
-	return t.start(ctx, repoID, streamID, issueID, true, hardLimit)
+	return t.start(ctx, repoID, streamID, issueID, hardLimit)
 }
 
 func (t *TimerService) start(
@@ -177,7 +167,6 @@ func (t *TimerService) start(
 	repoID,
 	streamID,
 	issueID *int64,
-	ignoreExistingStashes bool,
 	input *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
 	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
@@ -222,32 +211,30 @@ func (t *TimerService) start(
 			"focus sessions cannot be started for the current issue status",
 		)
 	}
-	if !ignoreExistingStashes {
-		stashes, err := t.ctx.Stash.ListByIssue(ctx, resolvedIssueID, t.ctx.UserID)
-		if err != nil {
-			return sharedtypes.TimerState{}, err
-		}
-		if len(stashes) > 0 {
-			return sharedtypes.TimerState{}, StashConflictError{
-				Conflict: sharedtypes.StashConflict{
-					IssueID: resolvedIssueID,
-					Stashes: stashes,
-				},
-			}
-		}
-	}
 	session, err := StartSession(ctx, t.ctx, resolvedIssueID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if input != nil && input.HardLimitTotalSeconds != nil && *input.HardLimitTotalSeconds > 0 {
-		workSeconds := derefInt(input.HardLimitWorkSeconds)
+		workSeconds := 0
+		if input.HardLimitWorkSeconds != nil {
+			workSeconds = *input.HardLimitWorkSeconds
+		}
 		if workSeconds <= 0 {
 			workSeconds = *input.HardLimitTotalSeconds
 		}
-		breakSeconds := derefInt(input.HardLimitBreakSeconds)
-		longBreakSeconds := derefInt(input.HardLimitLongBreakSeconds)
-		cyclesBeforeLongBreak := derefInt(input.HardLimitCyclesBeforeLongBreak)
+		breakSeconds := 0
+		if input.HardLimitBreakSeconds != nil {
+			breakSeconds = *input.HardLimitBreakSeconds
+		}
+		longBreakSeconds := 0
+		if input.HardLimitLongBreakSeconds != nil {
+			longBreakSeconds = *input.HardLimitLongBreakSeconds
+		}
+		cyclesBeforeLongBreak := 0
+		if input.HardLimitCyclesBeforeLongBreak != nil {
+			cyclesBeforeLongBreak = *input.HardLimitCyclesBeforeLongBreak
+		}
 		if err := runtimepkg.WriteTimerRuntimeState(
 			func() runtimepkg.TimerRuntimeState {
 				state := runtimepkg.NewHardLimitTimerRuntimeState(
@@ -300,30 +287,6 @@ func (t *TimerService) start(
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
-}
-
-type StashConflictError struct {
-	Conflict sharedtypes.StashConflict
-}
-
-func (e StashConflictError) Error() string {
-	count := len(e.Conflict.Stashes)
-	if count == 1 {
-		return fmt.Sprintf("cannot start focus: 1 stash exists for issue #%d", e.Conflict.IssueID)
-	}
-	return fmt.Sprintf(
-		"cannot start focus: %d stashes exist for issue #%d",
-		count,
-		e.Conflict.IssueID,
-	)
-}
-
-func (e StashConflictError) ProtocolErrorCode() string {
-	return protocol.ErrorCodeStashConflict
-}
-
-func (e StashConflictError) ProtocolErrorData() any {
-	return e.Conflict
 }
 
 func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error) {
@@ -391,7 +354,7 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	}
 	if runtimeState != nil && runtimeState.HardLimitExpired {
 		return sharedtypes.TimerState{}, errors.New(
-			"hard-limit session has expired and must be committed, stashed, or extended",
+			"hard-limit session has expired and must be committed or extended",
 		)
 	}
 	if runtimeState != nil && runtimeState.HasPreparedSegment() {
@@ -726,36 +689,6 @@ func (t *TimerService) RecoverBoundary(ctx context.Context) error {
 		return nil
 	}
 	return t.ScheduleNextBoundary(ctx)
-}
-
-func (t *TimerService) RestoreFromStash(ctx context.Context, input struct {
-	IssueID        int64
-	SegmentType    sharedtypes.SessionSegmentType
-	ElapsedSeconds int
-},
-) error {
-	if err := runtimepkg.ClearTimerRuntimeState(); err != nil {
-		return err
-	}
-	session, err := StartSession(ctx, t.ctx, input.IssueID)
-	if err != nil {
-		return err
-	}
-	if _, err := t.ctx.SessionSegments.StartSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, session.ID, input.SegmentType); err != nil {
-		return err
-	}
-	if err := t.ctx.SessionSegments.ApplyElapsedOffset(ctx, session.ID, input.ElapsedSeconds); err != nil {
-		return err
-	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
-		return err
-	}
-	state, err := t.GetState(ctx)
-	if err != nil {
-		return err
-	}
-	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
-	return nil
 }
 
 func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {

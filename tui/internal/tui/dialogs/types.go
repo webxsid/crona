@@ -44,9 +44,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		matched = "issues"
 		rendered = renderIssueDialog(theme, state)
 	case "end_session",
-		"stash_session",
 		"issue_session_transition",
-		"stash_list",
 		"timer_start_type",
 		"pomodoro_start",
 		"hard_limit_expired",
@@ -79,9 +77,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"support_bundle_result",
 		"complete_habit",
 		"view_jump",
-		"beta_support",
-		"stash_conflict_pick",
-		"stash_conflict":
+		"beta_support":
 		matched = "utility"
 		rendered = renderUtilityDialog(theme, state)
 	case "edit_telemetry_settings", "onboarding":

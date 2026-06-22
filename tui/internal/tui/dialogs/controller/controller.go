@@ -18,7 +18,6 @@ type UpdateContext struct {
 	Streams           []api.Stream
 	AllIssues         []api.IssueWithMeta
 	Context           *api.ActiveContext
-	Stashes           []api.Stash
 	SelectedIssueID   int64
 	SelectedStreamID  int64
 	HasSelectedIssue  bool
@@ -103,7 +102,6 @@ func Close(state State) State {
 	state.Parent = ""
 	state.DateMonthValue = ""
 	state.DateCursorValue = ""
-	state.StashCursor = 0
 	state.StatusItems = nil
 	state.StatusCursor = 0
 	state.ChoiceItems = nil
@@ -309,13 +307,11 @@ func Update(
 		return updateConfirmDelete(state, msg)
 	case "confirm_wipe":
 		return updateConfirmWipe(state, msg)
-	case "stash_list":
-		return updateStashList(state, ctx, msg)
 	case "issue_status":
 		return updateIssueStatus(state, ctx, currentDate, msg)
 	case "issue_status_note":
 		return updateIssueStatusNote(state, currentDate, msg)
-	case "end_session", "stash_session":
+	case "end_session":
 		return updateSessionMessage(state, ctx, currentDate, msg)
 	case "timer_start_type":
 		return updateTimerStartType(state, msg)
@@ -403,10 +399,6 @@ func Update(
 		return updateViewJump(state, msg)
 	case "beta_support":
 		return updateBetaSupport(state, msg)
-	case "stash_conflict_pick":
-		return updateStashConflictPick(state, msg)
-	case "stash_conflict":
-		return updateStashConflict(state, msg)
 	default:
 		return state, nil, ""
 	}
@@ -424,32 +416,6 @@ func newSessionDetailInput(state State, placeholder string) textinput.Model {
 		input = withTimePrompt(state, input)
 	}
 	return input
-}
-
-func updateStashList(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
-	switch msg.String() {
-	case "esc":
-		return Close(state), nil, ""
-	case "down":
-		if state.StashCursor < len(ctx.Stashes)-1 {
-			state.StashCursor++
-		}
-	case "up":
-		if state.StashCursor > 0 {
-			state.StashCursor--
-		}
-	case "enter":
-		if len(ctx.Stashes) == 0 || state.StashCursor < 0 || state.StashCursor >= len(ctx.Stashes) {
-			return state, nil, ""
-		}
-		return Close(state), &Action{Kind: "apply_stash", ID: ctx.Stashes[state.StashCursor].ID}, ""
-	case "x":
-		if len(ctx.Stashes) == 0 || state.StashCursor < 0 || state.StashCursor >= len(ctx.Stashes) {
-			return state, nil, ""
-		}
-		return Close(state), &Action{Kind: "drop_stash", ID: ctx.Stashes[state.StashCursor].ID}, ""
-	}
-	return state, nil, ""
 }
 
 func updateIssueStatus(
@@ -587,18 +553,18 @@ func updateSessionMessage(
 			payload := EndSessionRequest(state.Inputs)
 			kind := state.Kind
 			state = Close(state)
-			if kind == "end_session" {
-				if !ctx.HasActiveIssue {
-					return state, nil, "Active issue metadata unavailable"
-				}
-				return state, &Action{
-					Kind:     "end_session",
-					StreamID: ctx.ActiveIssueStream,
-					Payload:  payload,
-				}, ""
+		if kind == "end_session" {
+			if !ctx.HasActiveIssue {
+				return state, nil, "Active issue metadata unavailable"
 			}
-			return state, &Action{Kind: "stash_session", Note: payload.CommitMessage}, ""
+			return state, &Action{
+				Kind:     "end_session",
+				StreamID: ctx.ActiveIssueStream,
+				Payload:  payload,
+			}, ""
 		}
+		return state, nil, ""
+	}
 	}
 	var cmd tea.Cmd
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)

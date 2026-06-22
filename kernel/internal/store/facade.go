@@ -20,7 +20,6 @@ type Registry struct {
 	Habits                       *repositories.HabitRepository
 	HabitCompletions             *repositories.HabitCompletionRepository
 	Sessions                     *repositories.SessionRepository
-	Stash                        *repositories.StashRepository
 	Ops                          *repositories.OpRepository
 	CoreSettings                 *repositories.CoreSettingsRepository
 	AlertReminders               *repositories.AlertReminderRepository
@@ -52,7 +51,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		Habits:                       repositories.NewHabitRepository(db),
 		HabitCompletions:             repositories.NewHabitCompletionRepository(db),
 		Sessions:                     repositories.NewSessionRepository(db),
-		Stash:                        repositories.NewStashRepository(db),
 		Ops:                          repositories.NewOpRepository(db),
 		CoreSettings:                 repositories.NewCoreSettingsRepository(db),
 		AlertReminders:               repositories.NewAlertReminderRepository(db),
