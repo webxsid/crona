@@ -449,3 +449,145 @@ func actionTokens(action string) []string {
 	}
 	return out
 }
+
+func compactActionSegments(theme Theme, actions []string) []string {
+	out := make([]string, 0, len(actions))
+	for _, action := range actions {
+		key, label, ok := actionSegmentParts(action)
+		if !ok {
+			out = append(out, action)
+			continue
+		}
+		if compact := compactActionLabel(key, label); compact != "" && compact != label {
+			out = append(
+				out,
+				theme.StyleHeader.Render(key)+theme.StyleDim.Render(" "+compact),
+			)
+			continue
+		}
+		out = append(out, action)
+	}
+	return out
+}
+
+func actionSegmentParts(action string) (key, label string, ok bool) {
+	plain := strings.TrimSpace(ansi.Strip(action))
+	if plain == "" || !strings.HasPrefix(plain, "[") {
+		return "", "", false
+	}
+	end := strings.IndexByte(plain, ']')
+	if end < 0 {
+		return "", "", false
+	}
+	key = plain[:end+1]
+	label = strings.TrimSpace(plain[end+1:])
+	return key, label, true
+}
+
+func compactActionLabel(key, label string) string {
+	switch label {
+	case "open issue details", "open habit details", "open details dialog", "open day details":
+		return "details"
+	case "open report":
+		return "report"
+	case "open release notes":
+		return "release"
+	case "open migration guide":
+		return "guide"
+	case "open roadmap":
+		return "roadmap"
+	case "open discussions":
+		return "discuss"
+	case "change context":
+		return "context"
+	case "create issue", "create habit", "create momentum", "create":
+		return "create"
+	case "set status":
+		return "status"
+	case "set due date":
+		return "due"
+	case "pin to daily", "pin":
+		return "pin"
+	case "start focus timer":
+		return "focus"
+	case "log work", "log completion":
+		return "log"
+	case "edit issue", "edit habit", "edit":
+		return "edit"
+	case "toggle completion", "toggle enabled":
+		return "toggle"
+	case "mark failed":
+		return "fail"
+	case "delete":
+		return "delete"
+	case "more":
+		return "more"
+	case "less":
+		return "less"
+	case "change option":
+		return "option"
+	case "rescan tools":
+		return "rescan"
+	case "edit or open":
+		return "edit/open"
+	case "edit, toggle, or confirm":
+		return "edit/toggle"
+	case "edit or run":
+		return "edit/run"
+	case "copy diagnostics":
+		return "copy"
+	case "generate bundle":
+		return "bundle"
+	case "switch views":
+		return "views"
+	case "keys":
+		return "help"
+	case "export data":
+		return "export"
+	case "check-in":
+		return "check-in"
+	case "away":
+		return "away"
+	case "disable away":
+		return "off"
+	case "change":
+		return "change"
+	case "today":
+		return "today"
+	case "date":
+		return "date"
+	case "window":
+		return "window"
+	case "beta support":
+		return "beta"
+	}
+
+	switch key {
+	case "[d/x]":
+		if label == "delete" {
+			return "delete"
+		}
+	case "[e/d]":
+		if label == "edit/delete" {
+			return "edit/del"
+		}
+	case "[c/space]":
+		if label == "change option" {
+			return "option"
+		}
+	case "[s/A]":
+		if label == "open issue" {
+			return "issue"
+		}
+	case "[+]":
+		if label == "more" {
+			return "more"
+		}
+	case "[-]":
+		if label == "less" {
+			return "less"
+		}
+	}
+
+	return label
+}

@@ -19,6 +19,8 @@ import (
 	"github.com/evertras/bubble-table/table"
 )
 
+const dailyIssueListBreakpoint = 220
+
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "issues"
 	cur := state.Cursors["issues"]
@@ -60,6 +62,25 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return base.Render(theme, viewhelpers.StringsJoin(lines))
+	}
+	modeWidth := width
+	if state.Width > 0 {
+		modeWidth = state.Width
+	}
+	if modeWidth < dailyIssueListBreakpoint {
+		return renderCompactDailyIssueList(
+			theme,
+			state,
+			width,
+			height,
+			base,
+			lines,
+			issues,
+			indices,
+			total,
+			cur,
+			active,
+		)
 	}
 	layout := issuecore.IssueTableLayoutForWidth(width)
 	inner := viewchrome.RemainingPaneHeight(height, lines)
@@ -124,6 +145,124 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
 	return base.Render(theme, viewhelpers.StringsJoin(lines))
+}
+
+func renderCompactDailyIssueList(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	base viewui.PaneBase,
+	lines []string,
+	issues []issuecore.APIIssue,
+	indices []int,
+	total, cur int,
+	active bool,
+) string {
+	inner := viewchrome.RemainingPaneHeight(height, lines)
+	availableRows := inner
+	itemSlots := max(1, availableRows/2)
+	start, end := viewchrome.ListWindow(cur, total, itemSlots)
+	if start > 0 {
+		lines = append(lines, base.MoreAbove(theme, start))
+		availableRows--
+	}
+	if remaining := total - end; remaining > 0 {
+		availableRows--
+	}
+	itemSlots = max(1, availableRows/2)
+	start, end = viewchrome.ListWindow(cur, total, itemSlots)
+	if start > 0 {
+		lines = append(lines, base.MoreAbove(theme, start))
+	}
+	for idx, rawIdx := range indices[start:end] {
+		if idx > 0 {
+			lines = append(lines, theme.StyleDim.Render(renderCompactDailyIssueDivider(width)))
+		}
+		issue := issues[rawIdx]
+		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
+		repoName, streamName := "-", "-"
+		workedSeconds := issue.WorkedSeconds
+		if meta != nil {
+			repoName = meta.RepoName
+			streamName = meta.StreamName
+			if workedSeconds <= 0 && meta.WorkedSeconds > 0 {
+				workedSeconds = meta.WorkedSeconds
+			}
+		}
+		title := issue.Title + issuecore.IssueDueSuffix(
+			issue.Status,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
+			state.Settings,
+		)
+		lines = append(lines,
+			renderCompactDailyIssueTitle(theme, width, rawIdx, cur, active, title, string(issue.Status)),
+			renderCompactDailyIssueMeta(theme, width, rawIdx, cur, active, repoName, streamName, workedSeconds, issue.EstimateMinutes, string(issue.Status)),
+		)
+	}
+	if remaining := total - end; remaining > 0 {
+		lines = append(lines, base.MoreBelow(theme, remaining))
+	}
+	return base.Render(theme, viewhelpers.StringsJoin(lines))
+}
+
+func renderCompactDailyIssueTitle(
+	theme types.Theme,
+	width int,
+	i, cur int,
+	active bool,
+	title string,
+	status string,
+) string {
+	rowStyle := lipgloss.NewStyle()
+	if statusStyle := issuecore.IssueStatusStyle(theme, status); statusStyle != nil {
+		rowStyle = *statusStyle
+	}
+	if i == cur && active {
+		rowStyle = rowStyle.Bold(true)
+	}
+	cursor := " "
+	if i == cur && active {
+		cursor = viewchrome.SelectionCursor
+	}
+	line := viewhelpers.TruncateANSI(title, max(18, width-4))
+	line = rowStyle.Render(line)
+	if i == cur && active {
+		return theme.StyleCursor.Render(cursor + " " + line)
+	}
+	if i == cur {
+		return theme.StyleSelected.Render("  " + line)
+	}
+	return theme.StyleNormal.Render("  " + line)
+}
+
+func renderCompactDailyIssueMeta(
+	theme types.Theme,
+	width int,
+	i, cur int,
+	active bool,
+	repoName, streamName string,
+	workedSeconds int,
+	estimateMinutes *int,
+	status string,
+) string {
+	metaParts := []string{
+		issuecore.IssueContextLabel(repoName, streamName),
+		issuecore.IssueWorkedEstimateCompactLabel(workedSeconds, estimateMinutes),
+		issuecore.PlainIssueStatus(status),
+	}
+	meta := strings.Join(metaParts, " | ")
+	if i == cur && active {
+		meta = theme.StyleSelected.Render("  " + meta)
+	} else {
+		meta = theme.StyleDim.Render("  " + meta)
+	}
+	return viewhelpers.TruncateANSI(meta, width)
+}
+
+func renderCompactDailyIssueDivider(width int) string {
+	return strings.Repeat("-", max(8, width-4))
 }
 
 func dailyTaskTitle(theme types.Theme, section string) string {

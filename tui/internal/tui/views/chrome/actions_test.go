@@ -3,6 +3,8 @@ package viewchrome
 import (
 	"strings"
 	"testing"
+
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
@@ -59,5 +61,43 @@ func TestUpdateActionsLabelMigrationCommands(t *testing.T) {
 	}
 	if !IsMigrationCommand("brew uninstall crona-beta && brew install webxsid/tap/crona") {
 		t.Fatalf("expected migration command helper to detect uninstall/install flow")
+	}
+}
+
+func TestRenderPaneActionLineCompactsWrappedActions(t *testing.T) {
+	rendered := RenderPaneActionLine(
+		Theme{},
+		[]string{"[enter] open issue details", "[a] create issue"},
+		32,
+	)
+	plain := ansi.Strip(rendered)
+	if strings.Contains(plain, "\n") {
+		t.Fatalf("expected compact action line to stay on one row, got %q", rendered)
+	}
+	for _, want := range []string{"[enter] details", "[a] create"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected compact action line to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"open issue details", "create issue"} {
+		if strings.Contains(plain, unwanted) {
+			t.Fatalf("expected compact action line to shorten %q, got %q", unwanted, rendered)
+		}
+	}
+}
+
+func TestRenderPaneActionLineKeepsWideLabels(t *testing.T) {
+	rendered := RenderPaneActionLine(
+		Theme{},
+		[]string{"[enter] open issue details", "[a] create issue"},
+		120,
+	)
+	if strings.Contains(rendered, "\n") {
+		t.Fatalf("expected wide action line to stay on one row, got %q", rendered)
+	}
+	for _, want := range []string{"open issue details", "create issue"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wide action line to keep %q, got %q", want, rendered)
+		}
 	}
 }

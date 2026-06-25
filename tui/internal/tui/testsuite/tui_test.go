@@ -22,19 +22,21 @@ import (
 func TestPaneActionLineWrapsInsteadOfDroppingActions(t *testing.T) {
 	rendered := viewchrome.RenderPaneActionLine(
 		support.Theme(),
-		[]string{"[enter] open details dialog", "[a] create", "[c] change context"},
-		30,
+		[]string{"[enter] open issue details", "[a] create issue"},
+		32,
 	)
-	lines := strings.Split(rendered, "\n")
-	if len(lines) < 2 {
-		t.Fatalf("expected wrapped action lines, got %q", rendered)
+	plain := ansi.Strip(rendered)
+	if strings.Contains(plain, "\n") {
+		t.Fatalf("expected compact action line to stay on one row, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "[c] change context") {
-		t.Fatalf("expected final action to be preserved, got %q", rendered)
+	for _, want := range []string{"[enter] details", "[a] create"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected compact action line to contain %q, got %q", want, rendered)
+		}
 	}
-	for _, line := range lines {
-		if got := lipgloss.Width(line); got > 30 {
-			t.Fatalf("line width %d exceeds max width 30: %q", got, line)
+	for _, unwanted := range []string{"open issue details", "create issue"} {
+		if strings.Contains(plain, unwanted) {
+			t.Fatalf("expected compact action line to shorten %q, got %q", unwanted, rendered)
 		}
 	}
 }
@@ -806,7 +808,7 @@ func TestDefaultViewShowsPaneActionsOnlyForActiveSection(t *testing.T) {
 	}
 
 	rendered := ansi.Strip(support.RenderDefault(state))
-	if got := strings.Count(rendered, "[f] start focus timer"); got != 1 {
+	if got := strings.Count(rendered, "[f] focus"); got != 1 {
 		t.Fatalf("expected exactly one active-pane timer action, got %d in %q", got, rendered)
 	}
 	if strings.Contains(rendered, "[F] hard limit") {
@@ -1518,6 +1520,29 @@ func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 			"expected wellbeing global actions to expose context and export, got %q",
 			wellbeingActions,
 		)
+	}
+}
+
+func TestDailyIssueActionLineCompactsOnNarrowWidths(t *testing.T) {
+	actions := viewchrome.ContextualActions(support.Theme(), viewchrome.ActionsState{
+		View: "daily",
+		Pane: "issues",
+	})
+	rendered := viewchrome.RenderPaneActionLine(support.Theme(), actions, 64)
+	plain := ansi.Strip(rendered)
+
+	if got := strings.Count(plain, "\n"); got > 1 {
+		t.Fatalf("expected compact daily issue hints to stay within two lines, got %q", rendered)
+	}
+	for _, want := range []string{"[enter] details", "[a] create", "[s] status", "[D] due", "[P] pin"} {
+		if !strings.Contains(plain, want) {
+			t.Fatalf("expected compact daily issue hints to contain %q, got %q", want, rendered)
+		}
+	}
+	for _, unwanted := range []string{"open issue details", "set status", "set due date", "pin to daily"} {
+		if strings.Contains(plain, unwanted) {
+			t.Fatalf("expected compact daily issue hints to shorten %q, got %q", unwanted, rendered)
+		}
 	}
 }
 

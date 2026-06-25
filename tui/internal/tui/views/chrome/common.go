@@ -69,14 +69,50 @@ func RenderSimplePaneWithActions(
 }
 
 func RenderPaneActionLine(theme Theme, actions []string, width int) string {
-	return joinActionSegments(actions, width)
+	return renderActionLine(theme, actions, width)
 }
 
 func RenderActionLine(theme Theme, width int, actions []string) string {
-	return joinActionSegments(actions, width)
+	return renderActionLine(theme, actions, width)
 }
 
-func joinActionSegments(segments []string, width int) string {
+func renderActionLine(theme Theme, actions []string, width int) string {
+	full := joinActionSegments(actions, width, "   ")
+	if full == "" || !strings.Contains(full, "\n") {
+		return full
+	}
+
+	compacted := compactActionSegments(theme, actions)
+	if len(compacted) == 0 {
+		return full
+	}
+
+	candidates := []string{
+		joinActionSegments(compacted, width, "  "),
+		joinActionSegments(compacted, width, " "),
+	}
+	best := ""
+	bestHeight := 0
+	bestWidth := 0
+	for _, candidate := range candidates {
+		if candidate == "" {
+			continue
+		}
+		height := lipgloss.Height(candidate)
+		width := renderedLineWidth(candidate)
+		if best == "" || height < bestHeight || (height == bestHeight && width < bestWidth) {
+			best = candidate
+			bestHeight = height
+			bestWidth = width
+		}
+	}
+	if best != "" {
+		return best
+	}
+	return full
+}
+
+func joinActionSegments(segments []string, width int, separator string) string {
 	if width < 1 {
 		return ""
 	}
@@ -90,10 +126,10 @@ func joinActionSegments(segments []string, width int) string {
 		segmentWidth := lipgloss.Width(segment)
 		additional := segmentWidth
 		if len(current) > 0 {
-			additional += 3
+			additional += lipgloss.Width(separator)
 		}
 		if used+additional > width && len(current) > 0 {
-			rows = append(rows, strings.Join(current, "   "))
+			rows = append(rows, strings.Join(current, separator))
 			current = []string{segment}
 			used = segmentWidth
 			continue
@@ -107,7 +143,7 @@ func joinActionSegments(segments []string, width int) string {
 		used += additional
 	}
 	if len(current) > 0 {
-		rows = append(rows, strings.Join(current, "   "))
+		rows = append(rows, strings.Join(current, separator))
 	}
 	if len(rows) == 0 {
 		return ""
@@ -154,6 +190,16 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		UpdateScriptDeprecated: versionpkg.InstallScriptDeprecationEnabled() ||
 			(state.UpdateStatus != nil && state.UpdateStatus.InstallScriptDeprecated),
 	})
+}
+
+func renderedLineWidth(rendered string) int {
+	width := 0
+	for _, line := range strings.Split(rendered, "\n") {
+		if lineWidth := lipgloss.Width(line); lineWidth > width {
+			width = lineWidth
+		}
+	}
+	return width
 }
 
 func timerStateFromContent(state ContentState) string {
