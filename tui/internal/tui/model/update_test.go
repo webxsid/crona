@@ -61,11 +61,7 @@ func TestIssuePanePreflightClearMessagesOpenRequestedDialog(t *testing.T) {
 }
 
 func int64Ptr(v int64) *int64 {
-	return &v
-}
-
-func stringPtr(v string) *string {
-	return &v
+	return new(v)
 }
 
 func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
@@ -330,7 +326,7 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title"))
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRight})
 		model = next.(Model)
 	}
@@ -510,7 +506,7 @@ func TestHardLimitDialogRefreshesFromTimerSnapshot(t *testing.T) {
 
 func makeWellbeingRangeForAnchorTest(days int) []api.DailyMetricsDay {
 	out := make([]api.DailyMetricsDay, 0, days)
-	for i := 0; i < days; i++ {
+	for i := range days {
 		sleep := 7.0
 		out = append(out, api.DailyMetricsDay{
 			Date:          "2026-04-04",

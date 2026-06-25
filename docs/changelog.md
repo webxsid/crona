@@ -2,6 +2,13 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.6.1-beta.2] - 2026-06-25
+
+### Changed
+- The daily issue pane now switches to a compact list layout on narrow screens so context, effort, and status stay readable.
+- Pane action hints now shorten their labels on small screens instead of wrapping into multiple lines.
+- The daily dashboard calendar and hint regions now stay stable when navigating narrow layouts and paging backward through dates.
+
 ## [1.6.1-beta.1] - 2026-06-21
 
 ### Changed

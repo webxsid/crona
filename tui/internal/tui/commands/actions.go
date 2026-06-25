@@ -1052,13 +1052,6 @@ func optionalInt64(value int64) *int64 {
 	return &value
 }
 
-func derefInt64(value *int64) int64 {
-	if value == nil {
-		return 0
-	}
-	return *value
-}
-
 func GenerateReport(c *api.Client, input shareddto.ExportReportRequest) tea.Cmd {
 	return func() tea.Msg {
 		result, err := c.GenerateReport(input)
