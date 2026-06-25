@@ -171,13 +171,9 @@ func renderIssueContextColumns(
 	repoName, streamName string,
 ) string {
 	contentWidth := min(width-8, maxWidth) - 8
-	if contentWidth < 28 {
-		contentWidth = 28
-	}
+	contentWidth = max(28, contentWidth)
 	colWidth := (contentWidth - 2) / 2
-	if colWidth < 12 {
-		colWidth = 12
-	}
+	colWidth = max(colWidth, 12)
 	repoCol := lipgloss.NewStyle().Width(colWidth).Render(
 		theme.StyleDim.Render("Repo") + "\n" + theme.StyleHeader.Render(fallback(repoName, "-")),
 	)
@@ -194,13 +190,9 @@ func renderDefaultIssueContextColumns(
 	width, maxWidth int,
 ) string {
 	contentWidth := min(width-8, maxWidth) - 8
-	if contentWidth < 28 {
-		contentWidth = 28
-	}
+	contentWidth = max(28, contentWidth)
 	colWidth := (contentWidth - 2) / 2
-	if colWidth < 12 {
-		colWidth = 12
-	}
+	colWidth = max(colWidth, 12)
 	repoCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
 		theme.StyleDim.Render("Repo"),
 		state.Inputs[0].View(),

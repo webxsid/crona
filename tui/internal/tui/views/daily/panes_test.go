@@ -24,7 +24,7 @@ func TestRenderIssuesShowsWorkedSuffix(t *testing.T) {
 				Title:           "Investigate timer display",
 				Status:          "in_progress",
 				WorkedSeconds:   4500,
-				EstimateMinutes: ptrInt(25),
+				EstimateMinutes: new(25),
 			},
 		},
 	}
@@ -80,7 +80,7 @@ func TestRenderIssuesUsesCompactContextAndEffortColumns(t *testing.T) {
 				Title:           "Investigate timer display",
 				Status:          "in_progress",
 				WorkedSeconds:   4500,
-				EstimateMinutes: ptrInt(25),
+				EstimateMinutes: new(25),
 			},
 		},
 		AllIssues: []api.IssueWithMeta{{

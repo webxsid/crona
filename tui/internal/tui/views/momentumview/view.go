@@ -678,9 +678,9 @@ func momentumContextAxis(maxAxis int) momentumContextAxisSpec {
 		}
 	}
 	maxAxis = momentumRoundUpAxis(maxAxis, step)
-	if maxAxis < step {
-		maxAxis = step
-	}
+
+	maxAxis = max(maxAxis, step)
+
 	return momentumContextAxisSpec{
 		MaxAxis:    maxAxis,
 		Step:       step,

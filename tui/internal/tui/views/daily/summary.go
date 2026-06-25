@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	shareddatefmt "crona/shared/datefmt"
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
@@ -98,17 +99,14 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	)
 	lines = viewchrome.ClipSummaryLines(theme, lines, height)
 	calendarLines := []string(nil)
-	if viewcalendar.ShouldRender(summaryInnerW) && hasSelectedDate {
-		calendarLines = viewcalendar.Render(theme, viewcalendar.Selection{
-			AnchorDate:   rawDate,
-			SelectedDate: rawDate,
-			MaxLines:     len(lines),
-			WeekStart:    state.WeekStart,
-		})
-		leftWidth, _ = viewcalendar.ColumnWidths(
+	if hasSelectedDate {
+		mode := viewcalendar.ModeForWidth(summaryInnerW)
+		calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode)
+		leftWidth, _ = viewcalendar.ColumnWidthsForMode(
 			summaryInnerW,
 			viewcalendar.MaxLineWidth(calendarLines),
 			3,
+			mode,
 		)
 		if leftWidth != summaryInnerW {
 			lines = buildSummaryLines(
@@ -130,12 +128,10 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 				habitMeta,
 			)
 			lines = viewchrome.ClipSummaryLines(theme, lines, height)
-			calendarLines = viewcalendar.Render(theme, viewcalendar.Selection{
-				AnchorDate:   rawDate,
-				SelectedDate: rawDate,
-				MaxLines:     len(lines),
-				WeekStart:    state.WeekStart,
-			})
+			calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode)
+		}
+		if leftWidth == summaryInnerW {
+			calendarLines = nil
 		}
 	}
 	if len(calendarLines) > 0 {
@@ -168,26 +164,45 @@ func renderCompactSummaryRow(
 	}
 	barWidth := sizeBar(width, lipgloss.Width(text))
 	if barWidth < 1 || renderBar == nil {
-		return viewhelpers.Truncate(text, width)
+		return viewhelpers.TruncateANSI(text, width)
 	}
 	bar := renderBar(barWidth)
 	if strings.TrimSpace(bar) == "" {
-		return viewhelpers.Truncate(text, width)
+		return viewhelpers.TruncateANSI(text, width)
 	}
 	bar = ansi.Truncate(bar, barWidth, "")
-	return viewhelpers.Truncate(text+"  "+bar, width)
+	return viewhelpers.TruncateANSI(text+"  "+bar, width)
 }
 
 func renderCompactMetadataRow(width int, left, right string) string {
 	row := left
 	if strings.TrimSpace(right) == "" {
-		return viewhelpers.Truncate(row, width)
+		return viewhelpers.TruncateANSI(row, width)
 	}
 	remaining := width - lipgloss.Width(left) - lipgloss.Width(right) - 2
 	if remaining < 1 {
-		return viewhelpers.Truncate(left+"  "+right, width)
+		return viewhelpers.TruncateANSI(left+"  "+right, width)
 	}
 	return left + strings.Repeat(" ", remaining+2) + right
+}
+
+func renderCalendarForMode(
+	theme types.Theme,
+	rawDate string,
+	weekStart sharedtypes.WeekStart,
+	maxLines int,
+	mode viewcalendar.Mode,
+) []string {
+	if mode == viewcalendar.ModeAuto {
+		return nil
+	}
+	return viewcalendar.Render(theme, viewcalendar.Selection{
+		AnchorDate:   rawDate,
+		SelectedDate: rawDate,
+		MaxLines:     maxLines,
+		WeekStart:    weekStart,
+		Mode:         mode,
+	})
 }
 
 func compactSummaryBarWidth(totalWidth, textWidth int) int {

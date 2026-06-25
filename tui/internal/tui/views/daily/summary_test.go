@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/tui/chrome"
 	types "crona/tui/internal/tui/views/types"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -124,6 +125,30 @@ func TestRenderSummaryOmitsMomentumWhenNoSignalData(t *testing.T) {
 	}
 }
 
+func TestRenderSummaryFallsBackToWeekCalendarOnMediumWidths(t *testing.T) {
+	state := dailySummaryTestState()
+	state.Height = 38
+	rendered := ansi.Strip(renderSummary(testTheme(), state, 78, 20))
+
+	if !strings.Contains(rendered, "Mo Tu We Th Fr Sa Su") {
+		t.Fatalf("expected medium-width summary to render compact week calendar, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Wk  Mo Tu We Th Fr Sa Su") {
+		t.Fatalf("expected medium-width summary to avoid the month calendar grid, got %q", rendered)
+	}
+}
+
+func TestRenderSummaryKeepsEveryLineWithinWidthBudget(t *testing.T) {
+	state := dailySummaryTestState()
+	state.Height = 38
+	rendered := renderSummary(testTheme(), state, 78, 20)
+	for line := range strings.SplitSeq(rendered, "\n") {
+		if got := lipgloss.Width(line); got > 78 {
+			t.Fatalf("summary line width %d exceeds max width 78: %q", got, ansi.Strip(line))
+		}
+	}
+}
+
 func dailySummaryTestState() types.ContentState {
 	sleep := 7.5
 	avgMood := 3.1
@@ -146,7 +171,7 @@ func dailySummaryTestState() types.ContentState {
 				ID:              1,
 				Title:           "Ship momentum block",
 				Status:          "done",
-				EstimateMinutes: ptrInt(55),
+				EstimateMinutes: new(55),
 			},
 		},
 		DueHabits: []api.HabitDailyItem{
@@ -188,10 +213,6 @@ func dailySummaryTestState() types.ContentState {
 			LongestHabitDays:   9,
 		},
 	}
-}
-
-func ptrInt(value int) *int {
-	return &value
 }
 
 func testTheme() types.Theme {

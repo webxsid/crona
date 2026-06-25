@@ -575,13 +575,12 @@ func renderMomentumContextColumns(
 	width, maxWidth int,
 ) string {
 	contentWidth := min(width-8, maxWidth) - 8
-	if contentWidth < 28 {
-		contentWidth = 28
-	}
+
+	contentWidth = max(contentWidth, 28)
+
 	colWidth := (contentWidth - 2) / 2
-	if colWidth < 12 {
-		colWidth = 12
-	}
+
+	colWidth = max(colWidth, 12)
 	repoCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
 		renderTargetFieldLabel(theme, state.FocusIdx == 0, "Repo"),
 		state.MomentumRepoInput.View(),

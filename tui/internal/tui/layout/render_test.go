@@ -5,9 +5,12 @@ import (
 	"testing"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	uistate "crona/tui/internal/tui/state"
 	viewtypes "crona/tui/internal/tui/views/types"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func TestRenderSidebarIncludesHabitHistoryView(t *testing.T) {
@@ -145,5 +148,50 @@ func TestRenderMomentumDetailDialogShowsModalContent(t *testing.T) {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected momentum detail render to contain %q, got %q", want, rendered)
 		}
+	}
+}
+
+func TestRenderPadsFullViewportAcrossDailyFrames(t *testing.T) {
+	first := Render(dailyLayoutStateForTest(140, 44, 96, 38, "2026-05-14"))
+	second := Render(dailyLayoutStateForTest(140, 44, 96, 38, "2026-02-03"))
+
+	for _, rendered := range []string{first, second} {
+		lines := strings.Split(rendered, "\n")
+		if len(lines) != 44 {
+			t.Fatalf("expected rendered frame height 44, got %d", len(lines))
+		}
+		for _, line := range lines {
+			if got := lipgloss.Width(line); got != 140 {
+				t.Fatalf("expected padded line width 140, got %d", got)
+			}
+		}
+	}
+}
+
+func dailyLayoutStateForTest(
+	width, height, contentWidth, contentHeight int,
+	date string,
+) State {
+	return State{
+		Width:  width,
+		Height: height,
+		View:   uistate.ViewDaily,
+		Pane:   uistate.PaneIssues,
+		ContentState: viewtypes.ContentState{
+			View:          string(uistate.ViewDaily),
+			Pane:          string(uistate.PaneIssues),
+			Width:         contentWidth,
+			Height:        contentHeight,
+			DashboardDate: date,
+			DailySummary:  &api.DailyIssueSummary{Date: date},
+			Cursors: map[string]int{
+				string(uistate.PaneIssues): 0,
+				string(uistate.PaneHabits): 0,
+			},
+			Filters: map[string]string{
+				string(uistate.PaneIssues): "",
+				string(uistate.PaneHabits): "",
+			},
+		},
 	}
 }

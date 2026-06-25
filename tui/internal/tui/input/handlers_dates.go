@@ -11,9 +11,9 @@ import (
 func handleShiftRollupStartDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
 	start := shiftInputISODate(deps.CurrentRollupStartDate(s), delta)
 	end := deps.CurrentRollupEndDate(s)
-	if start > end {
-		end = start
-	}
+
+	start = min(start, end)
+
 	s.RollupStartDate = start
 	s.RollupEndDate = end
 	return s, deps.LoadRollupSummaries(start, end), true
@@ -22,9 +22,9 @@ func handleShiftRollupStartDate(s State, deps Deps, delta int) (tea.Model, tea.C
 func handleShiftRollupEndDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
 	end := shiftInputISODate(deps.CurrentRollupEndDate(s), delta)
 	start := deps.CurrentRollupStartDate(s)
-	if start > end {
-		start = end
-	}
+
+	start = min(start, end)
+
 	s.RollupStartDate = start
 	s.RollupEndDate = end
 	return s, deps.LoadRollupSummaries(start, end), true

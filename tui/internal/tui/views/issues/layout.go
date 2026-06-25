@@ -64,9 +64,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		)
 	}
 	priorityPreferred := remainingHeight * 2 / 3
-	if priorityPreferred < primaryPreferred {
-		priorityPreferred = primaryPreferred
-	}
+	priorityPreferred = max(priorityPreferred, primaryPreferred)
 	priorityH, completedH := viewhelpers.SplitVertical(remainingHeight, 8, 6, priorityPreferred)
 	if completedH > 6 {
 		completedH--

@@ -22,7 +22,16 @@ type Selection struct {
 	MaxLines     int
 	Today        string
 	WeekStart    sharedtypes.WeekStart
+	Mode         Mode
 }
+
+type Mode string
+
+const (
+	ModeAuto  Mode = ""
+	ModeMonth Mode = "month"
+	ModeWeek  Mode = "week"
+)
 
 func Render(theme types.Theme, selection Selection) []string {
 	anchor, ok := parseISODate(
@@ -49,6 +58,25 @@ func Render(theme types.Theme, selection Selection) []string {
 
 	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
 	weekStart := sharedtypes.NormalizeWeekStart(selection.WeekStart)
+	mode := selection.Mode
+	if mode == ModeAuto {
+		mode = ModeMonth
+	}
+	if mode == ModeWeek {
+		return renderWeek(
+			theme,
+			selection,
+			anchor,
+			today,
+			selected,
+			rangeStart,
+			rangeEnd,
+			hasSelected,
+			hasRangeStart,
+			hasRangeEnd,
+			weekStart,
+		)
+	}
 	lines := []string{
 		theme.StyleHeader.Render(monthStart.Format("January 2006")),
 		calendarMetaLine(
@@ -125,6 +153,63 @@ func Render(theme types.Theme, selection Selection) []string {
 	return Window(lines, anchor, selection.MaxLines, weekStart)
 }
 
+func renderWeek(
+	theme types.Theme,
+	selection Selection,
+	anchor, today, selected, rangeStart, rangeEnd time.Time,
+	hasSelected, hasRangeStart, hasRangeEnd bool,
+	weekStart sharedtypes.WeekStart,
+) []string {
+	rowStart := shareddatefmt.StartOfWeek(anchor, weekStart)
+	rowWeek := WeekNumber(rowStart, weekStart)
+	selectedDateStyle := lipgloss.NewStyle().
+		Background(theme.ColorGreen).
+		Foreground(lipgloss.Color("0")).
+		Bold(true)
+	todayStyle := lipgloss.NewStyle().
+		Background(theme.ColorYellow).
+		Foreground(lipgloss.Color("0")).
+		Bold(true)
+	rangeStyle := lipgloss.NewStyle().Background(theme.ColorBlue).Foreground(theme.ColorWhite)
+	cells := make([]string, 0, 7)
+	for day := range 7 {
+		current := rowStart.AddDate(0, 0, day)
+		inSelected := hasSelected && sameDay(current, selected)
+		inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) && !current.After(rangeEnd)
+		isToday := sameDay(current, today)
+		cell := fmt.Sprintf("%2d", current.Day())
+		switch {
+		case inSelected:
+			cell = selectedDateStyle.Render(cell)
+		case isToday:
+			cell = todayStyle.Render(cell)
+		case inRange:
+			cell = rangeStyle.Render(cell)
+		case current.Month() != anchor.Month():
+			cell = theme.StyleDim.Render(cell)
+		default:
+			cell = theme.StyleNormal.Render(cell)
+		}
+		cells = append(cells, cell)
+	}
+	lines := []string{
+		theme.StyleHeader.Render(anchor.Format("Jan 2006")),
+		calendarMetaLine(
+			theme,
+			selected,
+			hasSelected,
+			rangeStart,
+			rangeEnd,
+			hasRangeStart && hasRangeEnd,
+			today,
+			weekStart,
+		),
+		theme.StyleDim.Render(compactWeekHeader(weekStart)),
+		theme.StyleHeader.Render(fmt.Sprintf("W%02d", rowWeek)) + " " + strings.Join(cells, " "),
+	}
+	return Window(lines, anchor, selection.MaxLines, weekStart)
+}
+
 func Window(lines []string, anchor time.Time, maxLines int, weekStart sharedtypes.WeekStart) []string {
 	if maxLines <= 0 || len(lines) <= maxLines {
 		return lines
@@ -152,6 +237,17 @@ func Window(lines []string, anchor time.Time, maxLines int, weekStart sharedtype
 
 func ShouldRender(innerWidth int) bool {
 	return innerWidth >= 84
+}
+
+func ModeForWidth(innerWidth int) Mode {
+	switch {
+	case innerWidth >= 84:
+		return ModeMonth
+	case innerWidth >= 58:
+		return ModeWeek
+	default:
+		return ModeAuto
+	}
 }
 
 func MergeBeside(leftLines, calendarLines []string, innerWidth, gutterWidth int) []string {
@@ -203,6 +299,27 @@ func ColumnWidths(innerWidth, calendarWidth, gutterWidth int) (int, int) {
 		rightWidth = max(0, innerWidth-gutterWidth-leftWidth)
 	}
 	return leftWidth, rightWidth
+}
+
+func ColumnWidthsForMode(innerWidth, calendarWidth, gutterWidth int, mode Mode) (int, int) {
+	if mode == ModeAuto || calendarWidth < 1 {
+		return innerWidth, 0
+	}
+	switch mode {
+	case ModeWeek:
+		rightWidth := min(calendarWidth, max(22, innerWidth/3))
+		leftWidth := innerWidth - gutterWidth - rightWidth
+		if leftWidth < 44 {
+			return innerWidth, 0
+		}
+		return leftWidth, rightWidth
+	default:
+		leftWidth, rightWidth := ColumnWidths(innerWidth, calendarWidth, gutterWidth)
+		if leftWidth < 36 || rightWidth < 24 {
+			return innerWidth, 0
+		}
+		return leftWidth, rightWidth
+	}
 }
 
 func MaxLineWidth(lines []string) int {
@@ -321,9 +438,11 @@ func weekHeader(weekStart sharedtypes.WeekStart) string {
 	}
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
+func compactWeekHeader(weekStart sharedtypes.WeekStart) string {
+	switch sharedtypes.NormalizeWeekStart(weekStart) {
+	case sharedtypes.WeekStartSunday:
+		return "Su Mo Tu We Th Fr Sa"
+	default:
+		return "Mo Tu We Th Fr Sa Su"
 	}
-	return b
 }

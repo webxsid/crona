@@ -49,8 +49,8 @@ func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 		Cursor:        map[uistate.Pane]int{uistate.PaneIssues: 0},
 		Filters:       map[uistate.Pane]string{uistate.PaneIssues: ""},
 		Issues: []api.Issue{
-			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")},
-			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")},
+			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: new("2026-05-06")},
+			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: new("2026-05-06")},
 		},
 		AllIssues: []api.IssueWithMeta{
 			{
@@ -59,7 +59,7 @@ func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 					StreamID:    1,
 					Title:       "Alpha",
 					Status:      "planned",
-					TodoForDate: strPtr("2026-05-06"),
+					TodoForDate: new("2026-05-06"),
 				},
 				RepoID:     1,
 				RepoName:   "Work",
@@ -71,7 +71,7 @@ func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 					StreamID:    1,
 					Title:       "Bravo",
 					Status:      "in_progress",
-					TodoForDate: strPtr("2026-05-06"),
+					TodoForDate: new("2026-05-06"),
 				},
 				RepoID:     1,
 				RepoName:   "Work",
@@ -81,8 +81,8 @@ func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 	}, commands.IssuesLoadedMsg{
 		StreamID: 1,
 		Issues: []api.Issue{
-			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: strPtr("2026-05-06")},
-			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: strPtr("2026-05-06")},
+			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: new("2026-05-06")},
+			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: new("2026-05-06")},
 		},
 		SelectedIssueID: &selectedID,
 	}, MessageDeps{
@@ -211,8 +211,4 @@ func TestSettingsLoadedSkipsOnboardingWhenCompleted(t *testing.T) {
 	if state.Dialog != "" {
 		t.Fatalf("expected no dialog, got %q", state.Dialog)
 	}
-}
-
-func strPtr(value string) *string {
-	return &value
 }

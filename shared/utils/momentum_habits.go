@@ -174,7 +174,7 @@ func monthOccurrences(weekdays []int, monthLen int, startWeekday int) int {
 		target[day] = struct{}{}
 	}
 	count := 0
-	for dayOfMonth := 0; dayOfMonth < monthLen; dayOfMonth++ {
+	for dayOfMonth := range monthLen {
 		weekday := (startWeekday + dayOfMonth) % 7
 		if _, ok := target[weekday]; ok {
 			count++

@@ -62,8 +62,8 @@ func TestTinyAndCompactModes(t *testing.T) {
 						},
 					},
 					Context: &api.ActiveContext{
-						RepoName:   strPtr("Work"),
-						StreamName: strPtr("app"),
+						RepoName:   new("Work"),
+						StreamName: new("app"),
 					},
 				}
 				return support.RenderDaily(state)
@@ -117,8 +117,8 @@ func TestTinyAndCompactModes(t *testing.T) {
 						},
 					},
 					Context: &api.ActiveContext{
-						RepoName:   strPtr("Work"),
-						StreamName: strPtr("app"),
+						RepoName:   new("Work"),
+						StreamName: new("app"),
 					},
 				}
 				return support.RenderDaily(state)

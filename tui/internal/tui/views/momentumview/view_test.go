@@ -23,7 +23,7 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
 					Name:          "Signal Quality",
-					Description:   ptrString("Keep the signal steady and visible."),
+					Description:   new("Keep the signal steady and visible."),
 					Enabled:       true,
 					Period:        sharedtypes.HabitStreakPeriodWeek,
 					RequiredCount: 3,
@@ -590,12 +590,8 @@ func testTheme() types.Theme {
 	}
 }
 
-func ptrString(value string) *string {
-	return &value
-}
-
 func hasWidePaneLine(rendered string, minWidth int) bool {
-	for _, line := range strings.Split(rendered, "\n") {
+	for line := range strings.SplitSeq(rendered, "\n") {
 		if lipgloss.Width(line) >= minWidth {
 			return true
 		}
@@ -604,7 +600,7 @@ func hasWidePaneLine(rendered string, minWidth int) bool {
 }
 
 func lineContaining(rendered, pattern string) string {
-	for _, line := range strings.Split(rendered, "\n") {
+	for line := range strings.SplitSeq(rendered, "\n") {
 		if strings.Contains(line, pattern) {
 			return line
 		}

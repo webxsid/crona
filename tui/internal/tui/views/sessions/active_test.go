@@ -22,8 +22,8 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 		Timer: &api.TimerState{
 			State:           "running",
 			IssueID:         &issueID,
-			SegmentType:     segmentPtr(sharedtypes.SessionSegmentWork),
-			NextSegmentType: segmentPtr(sharedtypes.SessionSegmentShortBreak),
+			SegmentType:     new(sharedtypes.SessionSegmentWork),
+			NextSegmentType: new(sharedtypes.SessionSegmentShortBreak),
 			ElapsedSeconds:  754,
 		},
 		AllIssues: []api.IssueWithMeta{{
@@ -80,8 +80,8 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	}
 
 	breakState := state
-	breakState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
-	breakState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	breakState.Timer.SegmentType = new(sharedtypes.SessionSegmentShortBreak)
+	breakState.Timer.NextSegmentType = new(sharedtypes.SessionSegmentWork)
 	rendered = renderActiveView(types.Theme{}, breakState)
 	if strings.Contains(rendered, "min left") {
 		t.Fatalf("expected stopwatch break state to avoid timing labels, got %q", rendered)
@@ -89,7 +89,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 
 	pausedState := state
 	pausedState.Timer.State = "paused"
-	pausedState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentRest)
+	pausedState.Timer.SegmentType = new(sharedtypes.SessionSegmentRest)
 	pausedState.Timer.ElapsedSeconds = 754
 	pausedNow := time.Now().UTC().Format(time.RFC3339)
 	pausedState.Timer.SegmentStartTime = &pausedNow
@@ -105,8 +105,8 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	readyState := state
 	readyState.Timer.State = "ready"
 	readyState.Timer.SegmentType = nil
-	readyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
-	readyState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
+	readyState.Timer.ReadySegmentType = new(sharedtypes.SessionSegmentShortBreak)
+	readyState.Timer.NextSegmentType = new(sharedtypes.SessionSegmentShortBreak)
 	rendered = renderActiveView(types.Theme{}, readyState)
 	if strings.Contains(rendered, "mins left") {
 		t.Fatalf("expected stopwatch ready state to avoid session timing labels, got %q", rendered)
@@ -114,9 +114,9 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 
 	hardLimitState := state
 	hardLimitState.Timer.State = "running"
-	hardLimitState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	hardLimitState.Timer.SegmentType = new(sharedtypes.SessionSegmentWork)
 	hardLimitState.Timer.ReadySegmentType = nil
-	hardLimitState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
+	hardLimitState.Timer.NextSegmentType = new(sharedtypes.SessionSegmentShortBreak)
 	hardLimitState.Timer.HardLimitActive = true
 	hardLimitState.Timer.HardLimitTotalSeconds = 5400
 	hardLimitState.Timer.HardLimitWorkSeconds = 1200
@@ -148,9 +148,9 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	pomodoroState.Timer.HardLimitWorkSeconds = 120
 	pomodoroState.Timer.HardLimitBreakSeconds = 60
 	pomodoroState.Timer.HardLimitLongBreakSeconds = 120
-	pomodoroState.Timer.SegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	pomodoroState.Timer.SegmentType = new(sharedtypes.SessionSegmentWork)
 	pomodoroState.Timer.ReadySegmentType = nil
-	pomodoroState.Timer.NextSegmentType = segmentPtr(sharedtypes.SessionSegmentShortBreak)
+	pomodoroState.Timer.NextSegmentType = new(sharedtypes.SessionSegmentShortBreak)
 	workStart := time.Now().UTC().Format(time.RFC3339)
 	pomodoroState.Timer.SegmentStartTime = &workStart
 	if got := sessionTimingLabel(pomodoroState, time.Now().UTC()); got != "2 mins left" {
@@ -160,7 +160,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	hardLimitReadyState := hardLimitState
 	hardLimitReadyState.Timer.State = "ready"
 	hardLimitReadyState.Timer.SegmentType = nil
-	hardLimitReadyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	hardLimitReadyState.Timer.ReadySegmentType = new(sharedtypes.SessionSegmentWork)
 	rendered = renderActiveView(types.Theme{}, hardLimitReadyState)
 	if strings.Contains(rendered, "Ready For") {
 		t.Fatalf("expected hard-limit ready state to avoid ready-for title, got %q", rendered)
@@ -172,7 +172,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	pomodoroReadyState := pomodoroState
 	pomodoroReadyState.Timer.State = "ready"
 	pomodoroReadyState.Timer.SegmentType = nil
-	pomodoroReadyState.Timer.ReadySegmentType = segmentPtr(sharedtypes.SessionSegmentWork)
+	pomodoroReadyState.Timer.ReadySegmentType = new(sharedtypes.SessionSegmentWork)
 	if got := sessionTimingLabel(pomodoroReadyState, time.Now().UTC()); got != "2 mins left" {
 		t.Fatalf("expected hard-limit ready label to use the selected focus duration, got %q", got)
 	}
@@ -191,20 +191,16 @@ func TestActiveTimerColorUsesSegmentType(t *testing.T) {
 		ColorMagenta: lipgloss.Color("5"),
 		ColorYellow:  lipgloss.Color("3"),
 	}
-	if got := activeTimerColor(theme, &api.TimerState{State: "running", SegmentType: segmentPtr(sharedtypes.SessionSegmentWork)}); got != theme.ColorGreen {
+	if got := activeTimerColor(theme, &api.TimerState{State: "running", SegmentType: new(sharedtypes.SessionSegmentWork)}); got != theme.ColorGreen {
 		t.Fatalf("expected work to use green, got %v", got)
 	}
-	if got := activeTimerColor(theme, &api.TimerState{State: "paused", SegmentType: segmentPtr(sharedtypes.SessionSegmentShortBreak)}); got != theme.ColorCyan {
+	if got := activeTimerColor(theme, &api.TimerState{State: "paused", SegmentType: new(sharedtypes.SessionSegmentShortBreak)}); got != theme.ColorCyan {
 		t.Fatalf("expected short break to use cyan, got %v", got)
 	}
-	if got := activeTimerColor(theme, &api.TimerState{State: "paused", SegmentType: segmentPtr(sharedtypes.SessionSegmentLongBreak)}); got != theme.ColorMagenta {
+	if got := activeTimerColor(theme, &api.TimerState{State: "paused", SegmentType: new(sharedtypes.SessionSegmentLongBreak)}); got != theme.ColorMagenta {
 		t.Fatalf("expected long break to use magenta, got %v", got)
 	}
 	if got := activeTimerColor(theme, &api.TimerState{State: "ready"}); got != theme.ColorYellow {
 		t.Fatalf("expected ready state to use yellow, got %v", got)
 	}
-}
-
-func segmentPtr(value sharedtypes.SessionSegmentType) *sharedtypes.SessionSegmentType {
-	return &value
 }

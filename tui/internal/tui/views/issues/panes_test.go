@@ -22,7 +22,7 @@ func TestRenderIssuePaneShowsWorkedSuffix(t *testing.T) {
 				Title:           "Investigate timer display",
 				Status:          "in_progress",
 				WorkedSeconds:   4500,
-				EstimateMinutes: ptrInt(25),
+				EstimateMinutes: new(25),
 			},
 			RepoName:   "Core",
 			StreamName: "TUI",
@@ -131,7 +131,7 @@ func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
 				Title:           "Investigate timer display",
 				Status:          "in_progress",
 				WorkedSeconds:   4500,
-				EstimateMinutes: ptrInt(25),
+				EstimateMinutes: new(25),
 			},
 			RepoName:   "Core",
 			StreamName: "TUI",
@@ -177,7 +177,7 @@ func TestRenderIssuePaneCollapsesEmptyWorkedEffort(t *testing.T) {
 				Title:           "Investigate timer display",
 				Status:          "in_progress",
 				WorkedSeconds:   0,
-				EstimateMinutes: ptrInt(25),
+				EstimateMinutes: new(25),
 			},
 			RepoName:   "Core",
 			StreamName: "TUI",
@@ -209,8 +209,4 @@ func normalizeTableLine(line string) string {
 	line = strings.TrimPrefix(line, "  ")
 	line = strings.TrimLeft(line, " ")
 	return line
-}
-
-func ptrInt(value int) *int {
-	return &value
 }

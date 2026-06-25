@@ -115,9 +115,7 @@ func IssueDueSuffix(
 		todayTime, todayErr := time.Parse("2006-01-02", today)
 		if todayErr == nil && dueTime.Before(todayTime) {
 			overdueDays := int(todayTime.Sub(dueTime).Hours() / 24)
-			if overdueDays < 1 {
-				overdueDays = 1
-			}
+			overdueDays = max(overdueDays, 1)
 			return fmt.Sprintf("  [overdue %dd]", overdueDays)
 		}
 	}

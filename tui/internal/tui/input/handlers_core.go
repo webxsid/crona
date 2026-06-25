@@ -46,16 +46,6 @@ func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 		}
 		return s, nil, true
 	}
-	// if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
-	// 	sections := []uistate.DailyTaskSection{
-	// 		uistate.DailyTaskSectionPlanned,
-	// 		uistate.DailyTaskSectionPinned,
-	// 		uistate.DailyTaskSectionOverdue,
-	// 	}
-	// 	next := nextIndex(s.DailyTaskSection, sections, dir)
-	// 	deps.SetDailyTaskSection(&s, sections[next])
-	// 	return s, nil, true
-	// }
 	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
 	return s, nil, true
 }

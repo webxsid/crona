@@ -104,6 +104,32 @@ func TestRenderSundayWeekStartUsesSundayHeaderAndBoundaries(t *testing.T) {
 	}
 }
 
+func TestRenderWeekModeUsesCompactHeaderAndSingleWeekRow(t *testing.T) {
+	rendered := ansi.Strip(strings.Join(Render(testTheme(), Selection{
+		AnchorDate:   "2026-05-14",
+		SelectedDate: "2026-05-14",
+		Today:        "2026-05-14",
+		WeekStart:    sharedtypes.WeekStartMonday,
+		Mode:         ModeWeek,
+	}), "\n"))
+
+	for _, want := range []string{"May 2026", "Today 14", "Mo Tu We Th Fr Sa Su", "W20", "14"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected compact week calendar to contain %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Wk  Mo Tu We Th Fr Sa Su") {
+		t.Fatalf("expected compact week mode to omit the month-grid header, got %q", rendered)
+	}
+}
+
+func TestColumnWidthsForWeekModeFallsBackWhenSummaryWouldBeTooNarrow(t *testing.T) {
+	left, right := ColumnWidthsForMode(50, 24, 3, ModeWeek)
+	if left != 50 || right != 0 {
+		t.Fatalf("expected week mode to disable calendar when width is too narrow, got left=%d right=%d", left, right)
+	}
+}
+
 func testTheme() viewtypes.Theme {
 	return viewtypes.Theme{
 		ColorBlue:            chrome.ColorBlue,

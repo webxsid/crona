@@ -125,7 +125,7 @@ func LoadIssuesSelecting(c *api.Client, streamID, selectedIssueID int64) tea.Cmd
 		return IssuesLoadedMsg{
 			StreamID:        streamID,
 			Issues:          issues,
-			SelectedIssueID: int64Ptr(selectedIssueID),
+			SelectedIssueID: new(selectedIssueID),
 		}
 	}
 }
@@ -183,7 +183,7 @@ func LoadAllIssuesSelecting(c *api.Client, selectedIssueID int64) tea.Cmd {
 			logger.Errorf("loadAllIssues: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return AllIssuesLoadedMsg{Issues: issues, SelectedIssueID: int64Ptr(selectedIssueID)}
+		return AllIssuesLoadedMsg{Issues: issues, SelectedIssueID: new(selectedIssueID)}
 	}
 }
 
@@ -208,8 +208,6 @@ func LoadDailySummary(c *api.Client, date string) tea.Cmd {
 		return DailySummaryLoadedMsg{Summary: summary}
 	}
 }
-
-func int64Ptr(v int64) *int64 { return &v }
 
 func LoadDailyPlan(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {

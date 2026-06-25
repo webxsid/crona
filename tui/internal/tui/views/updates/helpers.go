@@ -161,9 +161,7 @@ func relativeCheckedAt(value string) string {
 		return value
 	}
 	d := time.Since(ts)
-	if d < 0 {
-		d = 0
-	}
+	d = max(d, 0)
 	switch {
 	case d < time.Minute:
 		return "just now"

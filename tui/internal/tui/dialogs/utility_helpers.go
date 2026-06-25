@@ -128,12 +128,7 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 }
 
 func hasStreakKind(values []sharedtypes.StreakKind, target sharedtypes.StreakKind) bool {
-	for _, value := range values {
-		if value == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(values, target)
 }
 
 func streakKindsSummary(values []sharedtypes.StreakKind) string {

@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	helperpkg "crona/tui/internal/tui/helpers"
+
+	"github.com/charmbracelet/x/ansi"
 )
 
 func Truncate(s string, maxLen int) string {
@@ -16,6 +18,13 @@ func Truncate(s string, maxLen int) string {
 		return s
 	}
 	return string(runes[:maxLen-3]) + "..."
+}
+
+func TruncateANSI(s string, maxWidth int) string {
+	if maxWidth < 1 {
+		return ""
+	}
+	return ansi.Truncate(s, maxWidth, "")
 }
 
 func FormatClock(totalSeconds int) string {

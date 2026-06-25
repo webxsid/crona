@@ -166,20 +166,20 @@ func estimateSummary(state types.ContentState) string {
 	)
 }
 
-func lipStyle(theme types.Theme, color interface{}) styleLike {
+func lipStyle(theme types.Theme, color any) styleLike {
 	return styleLike{theme: theme, color: color}
 }
 
 type styleLike struct {
 	theme types.Theme
-	color interface{}
+	color any
 }
 
 func (s styleLike) Render(text string) string {
 	return newStyle(s.color).Render(text)
 }
 
-func newStyle(color interface{}) lipgloss.Style {
+func newStyle(color any) lipgloss.Style {
 	style := lipgloss.NewStyle().Bold(true)
 	if c, ok := color.(lipgloss.Color); ok {
 		style = style.Foreground(c)
