@@ -41,10 +41,16 @@ func TestSessionDetailAndAmendFlowOverIPC(t *testing.T) {
 		t.Fatalf("expected active-session amend denial, got %q", errMessage)
 	}
 
+	commitMessage := new(string)
+	*commitMessage = "Initial commit"
+	outcome := new(string)
+	*outcome = "Detailed outcome"
+	nextStep := new(string)
+	*nextStep = "Detailed next step"
 	kernel.call(t, protocol.MethodTimerEnd, shareddto.EndSessionRequest{
-		CommitMessage: stringPtr("Initial commit"),
-		Outcome:       stringPtr("Detailed outcome"),
-		NextStep:      stringPtr("Detailed next step"),
+		CommitMessage: commitMessage,
+		Outcome:       outcome,
+		NextStep:      nextStep,
 	}, &timer)
 
 	var history []sharedtypes.SessionHistoryEntry
@@ -66,8 +72,10 @@ func TestSessionDetailAndAmendFlowOverIPC(t *testing.T) {
 	}
 
 	var amended sharedtypes.Session
+	amendedID := new(string)
+	*amendedID = history[0].ID
 	kernel.call(t, protocol.MethodSessionAmendNote, shareddto.AmendSessionNoteRequest{
-		ID:   stringPtr(history[0].ID),
+		ID:   amendedID,
 		Note: "Updated commit",
 	}, &amended)
 

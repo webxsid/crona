@@ -53,7 +53,7 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			status: sharedtypes.UpdateStatus{
 				InstallSource: sharedtypes.InstallSourceBrew,
 			},
-			want: "brew upgrade crona-beta",
+			want: "brew upgrade crona",
 		},
 		{
 			name: "winget",
@@ -66,9 +66,9 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			name: "brew migration",
 			status: sharedtypes.UpdateStatus{
 				InstallSource: sharedtypes.InstallSourceBrew,
-				BrewFormula:   "crona",
+				BrewFormula:   "crona-beta",
 			},
-			want: "brew uninstall crona && brew install webxsid/tap/crona-beta",
+			want: "brew uninstall crona-beta && brew install webxsid/tap/crona",
 		},
 		{
 			name: "script",

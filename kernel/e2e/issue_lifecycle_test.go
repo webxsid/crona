@@ -55,10 +55,16 @@ func TestFocusStartRequiresEligibleIssueStatusAndSessionEndDoesNotCompleteIssue(
 		t.Fatalf("expected issue to auto-move to in_progress, got %s", issues[0].Status)
 	}
 
+	commitMessage := new(string)
+	*commitMessage = "session ended"
+	outcome := new(string)
+	*outcome = "Kernel lifecycle migrated"
+	nextStep := new(string)
+	*nextStep = "Polish footer and CRUD"
 	kernel.call(t, protocol.MethodTimerEnd, shareddto.EndSessionRequest{
-		CommitMessage: stringPtr("session ended"),
-		Outcome:       stringPtr("Kernel lifecycle migrated"),
-		NextStep:      stringPtr("Polish footer and CRUD"),
+		CommitMessage: commitMessage,
+		Outcome:       outcome,
+		NextStep:      nextStep,
 	}, &timer)
 	if timer.State != "idle" {
 		t.Fatalf("expected idle timer after end, got %+v", timer)

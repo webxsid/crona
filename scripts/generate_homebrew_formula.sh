@@ -29,9 +29,10 @@ output_path="$(abs_path "$OUTPUT_PATH")"
 
 formula_class_name() {
   case "$1" in
-    crona) printf '%s\n' "Crona" ;;
-    crona-beta) printf '%s\n' "CronaBeta" ;;
-    *) printf '%s\n' "${1}" | awk '
+  crona) printf '%s\n' "Crona" ;;
+  crona-beta) printf '%s\n' "CronaBeta" ;;
+  *)
+    printf '%s\n' "${1}" | awk '
       {
         out = ""
         n = split($0, parts, /[-_]/)
@@ -42,7 +43,7 @@ formula_class_name() {
         }
         print out
       }'
-      ;;
+    ;;
   esac
 }
 
@@ -175,24 +176,24 @@ emit_platform_block() {
 
 mkdir -p "$(dirname "$output_path")"
 
-cat <<EOF > "$output_path"
+cat <<EOF >"$output_path"
 require "fileutils"
 
 class ${CLASS_NAME} < Formula
-  desc "local-first work tracker for developers"
+  desc "Local-first work tracker for developers"
   homepage "https://crona.work"
   version "${VERSION#v}"
 
 EOF
 
-emit_platform_block macos darwin >> "$output_path"
-printf '\n' >> "$output_path"
-emit_platform_block linux linux >> "$output_path"
+emit_platform_block macos darwin >>"$output_path"
+printf '\n' >>"$output_path"
+emit_platform_block linux linux >>"$output_path"
 
-printf '\n' >> "$output_path"
-emit_install_dispatch >> "$output_path"
+printf '\n' >>"$output_path"
+emit_install_dispatch >>"$output_path"
 
-cat <<'EOF' >> "$output_path"
+cat <<'EOF' >>"$output_path"
   test do
     system "#{bin}/crona", "--version"
     system "#{bin}/crona-daemon", "--version"

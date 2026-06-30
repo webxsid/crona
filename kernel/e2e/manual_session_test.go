@@ -20,15 +20,23 @@ func TestManualSessionLoggingOverIPC(t *testing.T) {
 	issue = changeIssueStatus(t, kernel, issue.ID, sharedtypes.IssueStatusPlanned)
 
 	var created sharedtypes.Session
+	startTime := new(string)
+	*startTime = "09:00"
+	endTime := new(string)
+	*endTime = "09:40"
+	commitMessage := new(string)
+	*commitMessage = "Manual catch-up"
+	notes := new(string)
+	*notes = "Forgot to start timer"
 	kernel.call(t, protocol.MethodSessionLogManual, shareddto.ManualSessionLogRequest{
 		IssueID:              issue.ID,
 		Date:                 "2026-03-28",
 		WorkDurationSeconds:  1800,
 		BreakDurationSeconds: 600,
-		StartTime:            stringPtr("09:00"),
-		EndTime:              stringPtr("09:40"),
-		CommitMessage:        stringPtr("Manual catch-up"),
-		Notes:                stringPtr("Forgot to start timer"),
+		StartTime:            startTime,
+		EndTime:              endTime,
+		CommitMessage:        commitMessage,
+		Notes:                notes,
 	}, &created)
 
 	if created.Source != sharedtypes.SessionSourceManual {

@@ -1,6 +1,6 @@
 # Documentation
 
-Use this index as the entry point for Crona's project docs.
+Use this index as the entry point for Crona docs.
 
 - [Concepts](concepts.md)
 - [Install](install.md)

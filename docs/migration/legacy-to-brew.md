@@ -1,14 +1,12 @@
 # Legacy To Homebrew
 
 Use this guide when you are moving off the legacy install script and want to keep Crona on Homebrew afterward.
-
-If you are on a beta build and want to stay on the beta track, install `crona-beta` instead of `crona`. The migration flow is the same either way.
+Use `crona-beta` instead of `crona` if you want to stay on the beta track.
 
 Estimated time: 15-20 minutes, plus any extra time needed to finish backup and restore on a large dataset.
 
-This path keeps the process simple: stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, and switch to Homebrew.
-Follow the steps in order so you do not lose the backup path or leave an old runtime behind.
-If you are moving between stable and beta Homebrew tracks, the install command changes but the migration flow does not.
+Stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, and switch to Homebrew.
+If you are moving between stable and beta Homebrew tracks, only the install command changes.
 
 ## Before You Start
 
@@ -18,14 +16,14 @@ Close any open TUI windows, CLI sessions, and background Crona processes. If a p
 
 ## 1. Download The Latest Beta Installer
 
-Open the latest beta release page on GitHub Releases and download the legacy installer script for your platform.
+Download the legacy installer script for your platform from the latest beta release page on GitHub Releases.
 
 - macOS and Linux: `install-crona-tui.sh`
 - Windows: `install-crona-tui.ps1`
 
 ## 2. Run The Legacy Installer Once
 
-Make the script executable, then run it and allow it to replace the existing install when prompted.
+Make the script executable, run it, and allow it to replace the existing install when prompted.
 
 ```bash
 chmod +x install-crona-tui.sh
@@ -99,7 +97,7 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 - Beta updates use `brew upgrade crona-beta`.
 - `crona backup` and `crona restore` only move `crona.db`.
 
-## Contact Me If Stuck
+## Contact
 
 If something is unclear or the install does not line up with these steps, contact me directly:
 

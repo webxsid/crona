@@ -4,7 +4,7 @@
   <img src="docs/logo/Logo%20Extended%20Dark.png" alt="Crona" width="480" />
 </p>
 
-Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local daemon into one workflow for planning work, tracking focus sessions, and exporting structured artifacts.
+Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local daemon into one workflow for planning work, tracking focus sessions, reviewing momentum, and exporting structured artifacts.
 
 Managed package installers are the preferred distribution path:
 - Homebrew on macOS and Linux
@@ -37,6 +37,8 @@ If you are migrating from the install script, another package manager, or a beta
 Runtime notes:
 - local alerts are emitted by the background daemon, not the TUI process
 - scheduled reminders only fire while the background daemon is running
+- the Daily view adapts cleanly to smaller terminals with compact issue rendering and shorter pane hints
+- the Wellbeing view includes Momentum detail with current bucket metadata and contributor breakdowns
 - the TUI owns the terminal tab title while it is running and shows active session context when focused
 - PDF export depends on local renderer tooling; see [docs/install.md](docs/install.md)
 

@@ -85,9 +85,9 @@ The shared `{ repo -> stream -> issue }` selection across local clients.
 
 The Wellbeing view combines a selected-day check-in with a rolling metrics window. Mood, energy, sleep, screen time, burnout, focus, and habit rollups are still shown for the recent 7-day window ending on the selected wellbeing date.
 
-Momentum is separate from that 7-day window. It uses all stored local history up to the selected wellbeing date, so focus, check-in, and habit streaks can exceed the visible metrics window. The range-based streak API remains available for reports and callers that intentionally want date-window streak calculations.
+Momentum is separate from that 7-day window. It uses all stored local history up to the selected wellbeing date, so focus, check-in, and habit streaks can exceed the visible metrics window. The range-based streak API is available for reports and callers that need date-window streak calculations.
 
-Custom habit momentum follows the habit streak definitions configured in Settings:
+Custom momentum follows the streak definitions configured in Settings:
 
 - daily definitions count matching completed days
 - weekly definitions count weeks that meet their configured completion threshold
@@ -100,7 +100,7 @@ Momentum definitions can now target either habits or contexts. Habit targets use
 
 For weekly and monthly custom momentum, the current in-progress bucket does not break an existing streak just because it has not reached its threshold yet. It only extends the streak once the threshold is met.
 
-The Momentum pane visualizes current streak length with a cadence-specific ladder and the corresponding target summary. Filled blocks are milestones reached by the current streak; empty blocks are future milestones. The detail view adds the current bucket metadata and contributor list so you can see which completions or sessions produced the active streak.
+The Momentum pane visualizes current streak length with a cadence-specific ladder and the corresponding target summary. Filled blocks are milestones reached by the current streak; empty blocks are future milestones. The detail view expands the selected card with current-bucket metadata, the resolved target summary, and contributor rows so you can see exactly which completions or sessions produced the active streak.
 
 ```text
 Daily/check-in/focus: 1d, 3d, 7d, 14d, 30d, 60d, 100d
@@ -113,6 +113,8 @@ The exact current and best values are shown next to the ladder, for example `14d
 ## Terminal UI Surfaces
 
 On wider terminals, the Wellbeing dashboard splits its lower region into a 7-day Metrics Window pane and a separate Momentum pane. The Momentum pane is focusable and scrollable independently so custom habit momentum can grow without clipping the metrics content.
+
+The Daily view also adapts to terminal width. Wider layouts keep the denser multi-pane presentation. Narrower terminals collapse the issue area into a compact list that keeps title, due date, context, effort, and status readable. On smaller widths, pane action hints shorten their labels before they wrap.
 
 Calendar surfaces use terminal background styling for selected dates, date ranges, today, and the current week rather than bracket markers. This keeps date cells fixed-width while relying on color and background state to distinguish selection and today.
 

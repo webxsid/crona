@@ -197,7 +197,7 @@ Momentum behavior notes:
 - Habit targets count habit-completion history against the selected habit set.
 - Context targets count ended sessions that fall within the selected repo, stream, or repo-wide context set.
 - `any` mode treats the selected targets as alternatives, while `all` mode requires all selected targets to contribute to the threshold.
-- `momentum.detail` uses the same normalization and series logic as the card surface, but expands the result with current-bucket metadata and contributor rows.
+- `momentum.detail` uses the same normalization and series logic as the card surface, but expands the result with current-bucket metadata, resolved target summary, and contributor rows.
 
 ### Check-Ins And Metrics
 
@@ -217,7 +217,7 @@ Streak behavior notes:
 - `metrics.streaks` keeps range-based semantics for callers that need streaks constrained to a specific date window.
 - `metrics.streaks_lifetime` computes the same streak summary shape across stored local history through the requested date, excluding future records.
 - The lifetime start date is derived from the earliest stored ended focus session, check-in, or habit completion at or before the requested date. If no history exists, the requested date is used as the start date.
-- The TUI Wellbeing dashboard uses `metrics.streaks_lifetime` for Momentum while retaining 7-day `metrics.range`, `metrics.rollup`, burnout, and dashboard summary calls.
+- The TUI Wellbeing dashboard uses `metrics.streaks_lifetime` for Momentum while retaining 7-day `metrics.range`, `metrics.rollup`, burnout, and dashboard summary calls for the rest of the daily metrics surface.
 - For weekly and monthly custom habit streaks, an incomplete current week/month does not break the current streak while that bucket is still open.
 
 ### Dashboards

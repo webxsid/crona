@@ -19,8 +19,8 @@ Release assets ship as:
 - installer scripts for Unix-like systems and Windows
 
 > [!IMPORTANT]
-> Crona 1.6.x shows an install-script deprecation banner in the Updates view.
-> GitHub install scripts are legacy fallback and will stop being exposed in-app moving forward.
+> The Updates view warns when Crona was installed with the legacy GitHub install script.
+> Use a managed installer when possible. Use the script path only when Homebrew or winget are not viable.
 > Prefer a managed package installer when possible, and use [migration.md](migration.md) if you need to switch install methods or release channels.
 
 ## macOS And Linux
@@ -38,7 +38,7 @@ or:
 brew install webxsid/tap/crona
 ```
 
-Prerelease beta tags publish a separate opt-in formula:
+Use `crona` for stable releases. Use `crona-beta` for prerelease builds:
 
 ```bash
 brew install webxsid/tap/crona-beta
@@ -62,7 +62,7 @@ Legacy install script fallback:
 curl -fsSL https://crona.work/install.sh | sh
 ```
 
-This script is a legacy fallback, not the preferred path. Crona 1.6.x warns about it in the Updates view, and later releases stop exposing it there.
+This script is a fallback path. The Updates view shows the migration guide and the managed-installer commands for switching away from it.
 
 If you need to switch install methods or release channels, use the migration guide:
 
@@ -138,7 +138,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui
 
 Download your platform bundle zip from the release page and extract `crona`, `crona-daemon`, and `crona-tui`. The embedded templates and alert assets ship inside the binaries, so the shared assets archive is only needed for the legacy script installers.
 
-The TUI starts the local engine automatically when needed. `crona-tui` remains available as a compatibility entrypoint.
+The TUI starts the local engine automatically when needed. `crona-tui` is also available as a compatibility entrypoint.
 
 ## Runtime Layout
 
@@ -169,15 +169,16 @@ Override the binary install directory with `CRONA_INSTALL_DIR`.
 ## Updates
 
 Users can switch release tracks from the TUI settings.
-The default track follows normal releases, and testers can opt into upcoming builds.
+The default track follows stable releases. The beta track is opt-in.
 
 Use the in-app `Updates` view to check release status, read notes, and get the right migration or package-manager command.
 
 - Homebrew installs never self-update from inside Crona.
 - Winget installs never self-update from inside Crona.
 - The TUI shows the source-aware update command for the current install type, but does not execute it.
+- Stable Homebrew installs use `brew upgrade crona`, while beta Homebrew installs use `brew upgrade crona-beta`.
 - When Crona asks you to migrate, back up with `crona backup`, uninstall with your package manager, remove runtime data if you want a clean reset, then reinstall and restore with `crona restore <path>`.
-- The migration guide at [docs/migration.md](migration.md) is the canonical handoff for switching install methods or release channels.
+- Use the migration guide at [docs/migration.md](migration.md) when switching install methods or release channels.
 - Script installs rerun the install script.
 - Winget installs use `winget upgrade --id Webxsid.Crona -e`.
 - Source installs show the `go install` command.
