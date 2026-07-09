@@ -455,11 +455,30 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 	if !ok {
 		return m, nil
 	}
-	return m.openStartTimerDialog(target.repoID, target.streamID, target.issueID, target.title), nil
+	return m.openStartTimerDialog(
+		target.repoID,
+		target.streamID,
+		target.issueID,
+		target.title,
+		target.estimateMinutes,
+		target.workedSeconds,
+	), nil
 }
 
-func (m Model) openStartTimerDialog(repoID, streamID, issueID int64, issueLabel string) Model {
+func (m Model) openStartTimerDialog(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
+) Model {
 	return m.withDialogState(
-		m.dialogSnapshot().OpenTimerStartType(repoID, streamID, issueID, issueLabel),
+		m.dialogSnapshot().OpenTimerStartType(
+			repoID,
+			streamID,
+			issueID,
+			issueLabel,
+			estimateMinutes,
+			workedSeconds,
+		),
 	)
 }

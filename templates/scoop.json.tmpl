@@ -1,0 +1,27 @@
+{
+  "version": "__VERSION__",
+  "description": "__DESCRIPTION__",
+  "homepage": "__HOMEPAGE__",
+  "license": "__LICENSE__",
+  "architecture": {
+    "64bit": {
+      "url": "__URL_AMD64__",
+      "hash": "__HASH_AMD64__"
+    },
+    "arm64": {
+      "url": "__URL_ARM64__",
+      "hash": "__HASH_ARM64__"
+    }
+  },
+  "post_install": [
+    "$runtimeDir = Join-Path $env:LOCALAPPDATA 'Crona'",
+    "New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null",
+    "$installRecord = @{ installSource = 'scoop'; releaseChannel = '__RELEASE_CHANNEL__' } | ConvertTo-Json -Compress",
+    "Set-Content -Path (Join-Path $runtimeDir 'install.json') -Value $installRecord -NoNewline"
+  ],
+  "bin": [
+    "crona.exe",
+    "crona-daemon.exe",
+    "crona-tui.exe"
+  ]
+}

@@ -20,7 +20,7 @@ Release assets ship as:
 
 > [!IMPORTANT]
 > The Updates view warns when Crona was installed with the legacy GitHub install script.
-> Use a managed installer when possible. Use the script path only when Homebrew or winget are not viable.
+> Use a managed installer when possible. Use the script path only when Homebrew or Scoop are not viable.
 > Prefer a managed package installer when possible, and use [migration.md](migration.md) if you need to switch install methods or release channels.
 
 ## macOS And Linux
@@ -74,7 +74,7 @@ For step-by-step destination-specific migration flows, see:
 
 - [Legacy to Homebrew](migration/legacy-to-brew.md)
 - [Legacy to Go](migration/legacy-to-go.md)
-- [Legacy to Winget](migration/legacy-to-winget.md)
+- [Legacy to Scoop](migration/legacy-to-scoop.md)
 
 The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
 When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona daemon wipe-data --force` before uninstalling.
@@ -101,18 +101,32 @@ sh /tmp/install-crona-tui.sh
 
 ## Windows
 
-Prefer winget:
+Prefer Scoop:
 
 ```powershell
-winget install --id Webxsid.Crona -e
+scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
+scoop install crona
 ```
 
-The winget package installs the Crona bundle and exposes `crona`, `crona-daemon`, and `crona-tui`.
-
-Winget users update with:
+For beta builds:
 
 ```powershell
-winget upgrade --id Webxsid.Crona -e
+scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
+scoop install crona-beta
+```
+
+The Scoop manifest installs the Crona bundle and exposes `crona`, `crona-daemon`, and `crona-tui`.
+
+Scoop users update with:
+
+```powershell
+scoop update crona
+```
+
+Beta Scoop installs should use:
+
+```powershell
+scoop update crona-beta
 ```
 
 Legacy install script fallback:
@@ -123,7 +137,7 @@ Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/i
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
 
-For managed installs, winget owns the update command, and Crona only surfaces it in the Updates view.
+For managed installs, Scoop owns the update command, and Crona only surfaces it in the Updates view.
 
 By default, Windows installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to the user `PATH`, and stores runtime data under `%LocalAppData%\Crona`.
 
@@ -174,13 +188,13 @@ The default track follows stable releases. The beta track is opt-in.
 Use the in-app `Updates` view to check release status, read notes, and get the right migration or package-manager command.
 
 - Homebrew installs never self-update from inside Crona.
-- Winget installs never self-update from inside Crona.
+- Scoop installs never self-update from inside Crona.
 - The TUI shows the source-aware update command for the current install type, but does not execute it.
 - Stable Homebrew installs use `brew upgrade crona`, while beta Homebrew installs use `brew upgrade crona-beta`.
 - When Crona asks you to migrate, back up with `crona backup`, uninstall with your package manager, remove runtime data if you want a clean reset, then reinstall and restore with `crona restore <path>`.
 - Use the migration guide at [docs/migration.md](migration.md) when switching install methods or release channels.
 - Script installs rerun the install script.
-- Winget installs use `winget upgrade --id Webxsid.Crona -e`.
+- Stable Scoop installs use `scoop update crona`, while beta Scoop installs use `scoop update crona-beta`.
 - Source installs show the `go install` command.
 - Manual installs and unknown installs are directed to the GitHub release page.
 

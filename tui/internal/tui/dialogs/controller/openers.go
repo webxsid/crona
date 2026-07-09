@@ -257,15 +257,52 @@ func (s Snapshot) OpenManualSession(
 func (s Snapshot) OpenPomodoroStart(
 	repoID, streamID, issueID int64,
 	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
 ) State {
-	return OpenPomodoroStart(s.Dialog, repoID, streamID, issueID, issueLabel)
+	return OpenPomodoroStart(
+		s.Dialog,
+		repoID,
+		streamID,
+		issueID,
+		issueLabel,
+		estimateMinutes,
+		workedSeconds,
+	)
+}
+
+func (s Snapshot) OpenSingleTimerStart(
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
+) State {
+	return OpenSingleTimerStart(
+		s.Dialog,
+		repoID,
+		streamID,
+		issueID,
+		issueLabel,
+		estimateMinutes,
+		workedSeconds,
+	)
 }
 
 func (s Snapshot) OpenTimerStartType(
 	repoID, streamID, issueID int64,
 	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
 ) State {
-	return OpenTimerStartType(s.Dialog, repoID, streamID, issueID, issueLabel)
+	return OpenTimerStartType(
+		s.Dialog,
+		repoID,
+		streamID,
+		issueID,
+		issueLabel,
+		estimateMinutes,
+		workedSeconds,
+	)
 }
 
 func (s Snapshot) OpenHardLimitExpired(issueLabel string) State {

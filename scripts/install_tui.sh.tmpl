@@ -300,11 +300,22 @@ rm -rf "${ASSETS_DIR}/export"
 echo "Extracting bundled assets..."
 tar -xzf "${ASSETS_FILE}" -C "${ASSETS_DIR}"
 printf '%s\n' "${VERSION}" > "${VERSION_FILE}"
-cat > "${CRONA_HOME}/install.json" <<'EOF'
+INSTALL_SOURCE="${CRONA_INSTALL_SOURCE:-script}"
+RELEASE_CHANNEL="${CRONA_RELEASE_CHANNEL:-}"
+if [ -n "${RELEASE_CHANNEL}" ]; then
+  cat > "${CRONA_HOME}/install.json" <<EOF
 {
-  "installSource": "script"
+  "installSource": "${INSTALL_SOURCE}",
+  "releaseChannel": "${RELEASE_CHANNEL}"
 }
 EOF
+else
+  cat > "${CRONA_HOME}/install.json" <<EOF
+{
+  "installSource": "${INSTALL_SOURCE}"
+}
+EOF
+fi
 
 echo
 echo "Installed:"

@@ -235,10 +235,31 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 	}, "   ")
 	bodyParts := []string{
 		"Current Bucket",
-		fmt.Sprintf("Status %s", momentumBucketStatusLabel(detail.CurrentBucket.MetTarget)),
+		fmt.Sprintf("Status %s", momentumBucketStatusLabel(detail.CurrentBucket)),
 		"",
 		targetLabel,
 		targetSummary,
+	}
+	if detail.CurrentBucket.OriginalTarget > 0 && detail.CurrentBucket.OriginalTarget != detail.CurrentBucket.Target {
+		bodyParts = append(
+			bodyParts,
+			"",
+			"Adjusted Target",
+			fmt.Sprintf("%d effective from %d original", detail.CurrentBucket.Target, detail.CurrentBucket.OriginalTarget),
+		)
+	}
+	if detail.CurrentBucket.ProtectedDayCount > 0 {
+		bodyParts = append(
+			bodyParts,
+			"",
+			"Protection",
+			fmt.Sprintf(
+				"%d protected days across %d bucket days (%d available)",
+				detail.CurrentBucket.ProtectedDayCount,
+				detail.CurrentBucket.BucketDayCount,
+				detail.CurrentBucket.AvailableDayCount,
+			),
+		)
 	}
 	if detail.Definition.Description != nil && strings.TrimSpace(*detail.Definition.Description) != "" {
 		bodyParts = append(bodyParts, "", "Description", strings.TrimSpace(*detail.Definition.Description))
@@ -321,8 +342,11 @@ func updateMomentumDetail(state State, msg tea.KeyMsg) (State, *Action, string) 
 	}
 }
 
-func momentumBucketStatusLabel(met bool) string {
-	if met {
+func momentumBucketStatusLabel(bucket sharedtypes.MomentumBucketDetail) string {
+	if bucket.Skipped {
+		return "Skipped"
+	}
+	if bucket.MetTarget {
 		return "Met"
 	}
 	return "Missed"

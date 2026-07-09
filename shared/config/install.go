@@ -11,6 +11,7 @@ const (
 	EnvVarInstallDir     = "CRONA_INSTALL_DIR"
 	EnvVarReleaseBaseURL = "CRONA_RELEASE_BASE_URL"
 	EnvVarInstallSource  = "CRONA_INSTALL_SOURCE"
+	EnvVarReleaseChannel = "CRONA_RELEASE_CHANNEL"
 )
 
 func InstallDir() (string, error) {

@@ -10,8 +10,9 @@ import (
 )
 
 type InstallSourceFile struct {
-	InstallSource sharedtypes.InstallSource `json:"installSource"`
-	BrewFormula   string                    `json:"brewFormula,omitempty"`
+	InstallSource  sharedtypes.InstallSource `json:"installSource"`
+	BrewFormula    string                    `json:"brewFormula,omitempty"`
+	ReleaseChannel sharedtypes.UpdateChannel `json:"releaseChannel,omitempty"`
 }
 
 func LoadInstallSource(path string) (sharedtypes.InstallSource, error) {
@@ -35,10 +36,15 @@ func LoadInstallSourceFile(path string) (InstallSourceFile, error) {
 }
 
 func WriteInstallSource(path string, source sharedtypes.InstallSource) error {
-	return WriteInstallSourceDetails(path, source, "")
+	return WriteInstallSourceDetails(path, source, "", sharedtypes.UpdateChannelStable)
 }
 
-func WriteInstallSourceDetails(path string, source sharedtypes.InstallSource, brewFormula string) error {
+func WriteInstallSourceDetails(
+	path string,
+	source sharedtypes.InstallSource,
+	brewFormula string,
+	releaseChannel sharedtypes.UpdateChannel,
+) error {
 	if strings.TrimSpace(path) == "" {
 		return nil
 	}
@@ -47,8 +53,9 @@ func WriteInstallSourceDetails(path string, source sharedtypes.InstallSource, br
 		return nil
 	}
 	body, err := json.MarshalIndent(InstallSourceFile{
-		InstallSource: sharedtypes.NormalizeInstallSource(source),
-		BrewFormula:   strings.TrimSpace(brewFormula),
+		InstallSource:  sharedtypes.NormalizeInstallSource(source),
+		BrewFormula:    strings.TrimSpace(brewFormula),
+		ReleaseChannel: sharedtypes.NormalizeUpdateChannel(releaseChannel),
 	}, "", "  ")
 	if err != nil {
 		return err

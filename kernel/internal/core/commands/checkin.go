@@ -551,7 +551,7 @@ func ComputeCustomHabitStreaksForRange(
 			RequiredCount: def.RequiredCount,
 		}
 		if def.Enabled {
-			summary.Current, summary.Longest = computeMomentumSummaryFromCounts(def, countsByDate, start, end)
+			summary.Current, summary.Longest = computeMomentumSummaryFromCounts(def, countsByDate, start, end, settings)
 		}
 		results = append(results, summary)
 	}
@@ -563,6 +563,7 @@ func computeMomentumSummaryFromCounts(
 	countsByDate map[string]map[string]int,
 	start string,
 	end string,
+	settings *sharedtypes.CoreSettings,
 ) (int, int) {
 	buckets := customHabitRangeBuckets(start, end, def.Period)
 	if len(buckets) == 0 {
@@ -589,8 +590,13 @@ func computeMomentumSummaryFromCounts(
 	current := 0
 	longest := 0
 	for bucketIdx, bucket := range buckets {
-		if countsByBucket[bucket] >= required {
-			if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+		isOpenTrailingBucket := bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period)
+		eval := evaluateMomentumBucket(def, bucket, countsByBucket[bucket], end, settings)
+		if eval.OriginalTarget == 0 {
+			eval.OriginalTarget = required
+		}
+		if eval.MetTarget {
+			if isOpenTrailingBucket {
 				continue
 			}
 			current++
@@ -599,7 +605,7 @@ func computeMomentumSummaryFromCounts(
 			}
 			continue
 		}
-		if bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period) {
+		if eval.Skipped || isOpenTrailingBucket {
 			continue
 		}
 		current = 0

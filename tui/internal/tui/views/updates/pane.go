@@ -111,6 +111,9 @@ func statusCardLines(theme types.Theme, state types.ContentState) []string {
 	if viewruntime.ShouldShowUpdatesView(status) {
 		lines = append(lines, fieldBlock(theme, "Current Version", displayVersion(status.CurrentVersion), false)...)
 		lines = append(lines, fieldBlock(theme, "Latest Version", displayVersion(status.LatestVersion), true)...)
+		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop {
+			lines = append(lines, fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
+		}
 		if strings.TrimSpace(status.UpdateCommand) != "" {
 			lines = append(lines, fieldBlock(theme, "Update Command", strings.TrimSpace(status.UpdateCommand), true)...)
 		}
@@ -121,6 +124,9 @@ func statusCardLines(theme types.Theme, state types.ContentState) []string {
 		lines = append(lines, fieldBlock(theme, "Current Version", displayVersion(status.CurrentVersion), true)...)
 		if source := strings.TrimSpace(string(status.InstallSource)); source != "" {
 			lines = append(lines, fieldBlock(theme, "Install Source", sourceLabel(status.InstallSource), false)...)
+		}
+		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop {
+			lines = append(lines, fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
 		}
 		if checked := relativeCheckedAt(status.CheckedAt); checked != "" {
 			lines = append(lines, fieldBlock(theme, "Last Checked", checked, false)...)
@@ -149,8 +155,8 @@ func sourceLabel(source sharedtypes.InstallSource) string {
 	switch source {
 	case sharedtypes.InstallSourceBrew:
 		return "Homebrew"
-	case sharedtypes.InstallSourceWinget:
-		return "winget"
+	case sharedtypes.InstallSourceScoop:
+		return "Scoop"
 	case sharedtypes.InstallSourceGo:
 		return "go install"
 	case sharedtypes.InstallSourceScript:
@@ -159,6 +165,15 @@ func sourceLabel(source sharedtypes.InstallSource) string {
 		return "manual"
 	default:
 		return strings.TrimSpace(string(source))
+	}
+}
+
+func channelLabel(channel sharedtypes.UpdateChannel) string {
+	switch sharedtypes.NormalizeUpdateChannel(channel) {
+	case sharedtypes.UpdateChannelBeta:
+		return "Beta"
+	default:
+		return "Stable"
 	}
 }
 
@@ -209,6 +224,7 @@ func diagnosticsSectionLines(theme types.Theme, state types.ContentState) []stri
 	addField("Release Page", status.ReleaseURL)
 	addField("Configured Channel", string(status.Channel))
 	addField("Install Source", string(status.InstallSource))
+	addField("Install Channel", string(status.ReleaseChannel))
 	addField("Brew Formula", status.BrewFormula)
 	addField("Last Checked", strings.TrimSpace(status.CheckedAt))
 	addField("Update Command", status.UpdateCommand)

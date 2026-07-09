@@ -173,6 +173,59 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 	}
 }
 
+func TestRenderShowsSkippedAndProratedMomentumMetadata(t *testing.T) {
+	state := types.ContentState{
+		View:        "momentum",
+		Pane:        "momentum_cards",
+		MomentumTab: "custom",
+		Width:       180,
+		Height:      42,
+		MomentumCards: []sharedtypes.MomentumCard{
+			{
+				Definition: sharedtypes.HabitStreakDefinition{
+					Name:          "Recovery-heavy habit",
+					Enabled:       true,
+					Period:        sharedtypes.HabitStreakPeriodWeek,
+					RequiredCount: 2,
+				},
+				Series: []sharedtypes.MomentumSeriesPoint{
+					{BucketKey: "2026-W23", Label: "Jun 1-7", Count: 0, Target: 2, OriginalTarget: 2, ProtectedDayCount: 3, BucketDayCount: 7, AvailableDayCount: 4, Skipped: true, RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeSkipBucket},
+				},
+			},
+			{
+				Definition: sharedtypes.HabitStreakDefinition{
+					Name:       "Prorated context",
+					Enabled:    true,
+					TargetKind: sharedtypes.MomentumTargetKindContext,
+					Period:     sharedtypes.HabitStreakPeriodWeek,
+				},
+				Series: []sharedtypes.MomentumSeriesPoint{
+					{BucketKey: "2026-W23", Label: "Jun 1-7", Count: 5400, Target: 5143, OriginalTarget: 7200, ProtectedDayCount: 2, BucketDayCount: 7, AvailableDayCount: 5, MetTarget: true, RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeProratedGoal},
+				},
+				TargetNames: []string{"Work/app"},
+			},
+		},
+		Cursors: map[string]int{"momentum_cards": 0},
+	}
+
+	rendered := Render(testTheme(), state)
+	if !strings.Contains(rendered, "Latest bucket: skipped (3 protected days)") {
+		t.Fatalf("expected skipped-bucket footnote, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "skip") {
+		t.Fatalf("expected skipped bucket row label, got %q", rendered)
+	}
+
+	state.Cursors["momentum_cards"] = 1
+	rendered = Render(testTheme(), state)
+	if !strings.Contains(rendered, "original 2h") {
+		t.Fatalf("expected prorated footnote to include original target, got %q", rendered)
+	}
+	if !strings.Contains(rendered, "2 protected days") {
+		t.Fatalf("expected prorated footnote to include protected-day count, got %q", rendered)
+	}
+}
+
 func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 	shortState := types.ContentState{
 		View:        "momentum",

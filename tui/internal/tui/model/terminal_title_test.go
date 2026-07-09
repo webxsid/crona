@@ -15,11 +15,11 @@ func TestTerminalTitleActiveSessionUsesIssueTimerAndState(t *testing.T) {
 	segmentStart := time.Now().UTC().Add(-12 * time.Minute).Format(time.RFC3339)
 	model := Model{
 		timer: &api.TimerState{
-			State:             "running",
-			IssueID:           &issueID,
-			SegmentType:       &segment,
-			ElapsedSeconds:    35 * 60,
-			SegmentStartTime:   &segmentStart,
+			State:            "running",
+			IssueID:          &issueID,
+			SegmentType:      &segment,
+			ElapsedSeconds:   35 * 60,
+			SegmentStartTime: &segmentStart,
 		},
 		elapsed: 7 * 60,
 		allIssues: []api.IssueWithMeta{{
@@ -43,7 +43,7 @@ func TestTerminalTitleActiveSessionFallsBackToIssueIDAndPausedState(t *testing.T
 			ElapsedSeconds:              65 * 60,
 			SegmentStartTime:            &now,
 			SegmentType:                 &segment,
-			SegmentElapsedOffsetSeconds:  intPtr(0),
+			SegmentElapsedOffsetSeconds: new(0),
 		},
 	}
 
@@ -51,8 +51,6 @@ func TestTerminalTitleActiveSessionFallsBackToIssueIDAndPausedState(t *testing.T
 		t.Fatalf("expected %q, got %q", want, got)
 	}
 }
-
-func intPtr(v int) *int { return &v }
 
 func TestTerminalTitleIdleUsesContextAndView(t *testing.T) {
 	repo := "Work"

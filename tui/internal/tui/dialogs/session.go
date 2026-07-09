@@ -3,9 +3,12 @@ package dialogs
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	viewchrome "crona/tui/internal/tui/views/chrome"
+	issuecore "crona/tui/internal/tui/views/issuecore"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func renderSessionDialog(theme Theme, state controllerpkg.State) string {
@@ -32,6 +35,9 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ViewName != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
+		if meta := renderTimerMeta(theme, state, "", 0, false); meta != "" {
+			rows = append(rows, "", meta)
+		}
 		for i, item := range state.ChoiceItems {
 			line := timerStartChoiceLabel(i, item)
 			if i == state.ChoiceCursor {
@@ -51,8 +57,8 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.ViewName != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
-		if totalPreview := vm.EstimatedTotalDuration; totalPreview != "" {
-			rows = append(rows, "", theme.StyleSelected.Render(totalPreview))
+		if meta := renderTimerMeta(theme, state, vm.EstimatedTotalDuration, vm.EstimatedTotalSeconds, true); meta != "" {
+			rows = append(rows, "", meta)
 		}
 		if vm.ShowSummary {
 			rows = append(
@@ -121,6 +127,27 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			"[←/→] choose   [↑/↓] move   "+dialogSubmitHint(state, "start")+"   [esc] back",
 		)
 		return modal(theme, state.Width, 72, theme.ColorGreen, rows)
+	case "timer_countdown_start":
+		rows := []string{theme.StylePaneTitle.Render("Timer Session")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		if meta := renderTimerMeta(theme, state, "", state.TimerCountdownSeconds, true); meta != "" {
+			rows = append(rows, "", meta)
+		}
+		rows = append(rows, "", theme.StyleDim.Render("Focus Time"), state.Inputs[0].View())
+		rows = append(
+			rows,
+			"",
+			theme.StyleDim.Render("Single countdown. No breaks. Reuses the hard-limit session completion flow."),
+		)
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "start")+"   [esc] back",
+		)
+		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	case "hard_limit_expired":
 		rows := []string{theme.StylePaneTitle.Render("Pomodoro Session Complete")}
 		if state.ViewName != "" {
@@ -270,9 +297,60 @@ func timerStartChoiceLabel(idx int, item string) string {
 		return "[s] " + item
 	case 1:
 		return "[p] " + item
+	case 2:
+		return "[t] " + item
 	default:
 		return item
 	}
+}
+
+func timerIssueSummary(state controllerpkg.State) string {
+	if state.IssueEstimateMins == nil && state.IssueWorkedSeconds <= 0 {
+		return ""
+	}
+	return issuecore.IssueWorkedEstimateSummary(state.IssueWorkedSeconds, state.IssueEstimateMins)
+}
+
+func renderTimerMeta(
+	theme Theme,
+	state controllerpkg.State,
+	totalLabel string,
+	totalSeconds int,
+	includeEndsAt bool,
+) string {
+	rows := make([]string, 0, 3)
+	if summary := timerIssueSummary(state); summary != "" {
+		rows = append(rows, timerMetaRow(theme, "Worked / Est", summary))
+	}
+	if strings.TrimSpace(totalLabel) != "" {
+		rows = append(rows, timerMetaRow(theme, "Total", strings.TrimPrefix(totalLabel, "Total Duration ")))
+	}
+	if includeEndsAt {
+		if endsAt := timerEndsAtLabel(time.Now(), totalSeconds); endsAt != "" {
+			rows = append(rows, timerMetaRow(theme, "Ends At", endsAt))
+		}
+	}
+	if len(rows) == 0 {
+		return ""
+	}
+	return strings.Join(rows, "\n")
+}
+
+func timerMetaRow(theme Theme, label string, value string) string {
+	labelStyle := theme.StyleDim.PaddingRight(2)
+	valueStyle := theme.StyleNormal
+	return lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		labelStyle.Render(label),
+		valueStyle.Render(strings.TrimSpace(value)),
+	)
+}
+
+func timerEndsAtLabel(base time.Time, totalSeconds int) string {
+	if totalSeconds <= 0 {
+		return ""
+	}
+	return base.Add(time.Duration(totalSeconds) * time.Second).Format("15:04")
 }
 
 func pomodoroChoiceRow(

@@ -35,6 +35,10 @@ func ListMomentumCards(
 		return nil, nil
 	}
 	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
 
 	countsByDate, err := loadCustomHabitMomentumCountsByDate(ctx, c, defs, endDate)
 	if err != nil {
@@ -89,7 +93,7 @@ func ListMomentumCards(
 			Longest:     summary.Longest,
 			HabitNames:  momentumHabitNames(def.HabitIDs, habitNamesByID),
 			TargetNames: momentumTargetNames(def, habitNamesByID, repoNamesByID, streamNamesByID),
-			Series:      buildMomentumSeries(def, startDate, endDate, countsByDate),
+			Series:      buildMomentumSeries(def, startDate, endDate, countsByDate, settings),
 		}
 		out = append(out, card)
 	}
@@ -101,6 +105,7 @@ func buildMomentumSeries(
 	startDate string,
 	endDate string,
 	countsByDate map[string]map[string]int,
+	settings *sharedtypes.CoreSettings,
 ) []sharedtypes.MomentumSeriesPoint {
 	buckets := customHabitRangeBuckets(startDate, endDate, def.Period)
 	if len(buckets) == 0 {
@@ -125,15 +130,11 @@ func buildMomentumSeries(
 			bucketEnd = endDate
 		}
 		count := countsByBucket[key]
-		series = append(series, sharedtypes.MomentumSeriesPoint{
-			BucketKey: key,
-			Label:     momentumBucketLabel(key, def.Period, bucketStart, bucketEnd),
-			StartDate: bucketStart,
-			EndDate:   bucketEnd,
-			Count:     count,
-			Target:    momentumRequiredUnits(def),
-			MetTarget: count >= momentumRequiredUnits(def),
-		})
+		point := evaluateMomentumBucket(def, key, count, bucketEnd, settings)
+		point.Label = momentumBucketLabel(key, def.Period, bucketStart, bucketEnd)
+		point.StartDate = bucketStart
+		point.EndDate = bucketEnd
+		series = append(series, point)
 	}
 	return series
 }

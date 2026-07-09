@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 )
 
 func TestSourceFromExecutablePath(t *testing.T) {
@@ -23,9 +24,9 @@ func TestSourceFromExecutablePath(t *testing.T) {
 			want: sharedtypes.InstallSourceGo,
 		},
 		{
-			name: "winget",
-			path: `C:\Users\alice\AppData\Local\Microsoft\WinGet\Links\crona.exe`,
-			want: sharedtypes.InstallSourceWinget,
+			name: "scoop",
+			path: `C:\Users\alice\scoop\apps\crona\current\crona.exe`,
+			want: sharedtypes.InstallSourceScoop,
 		},
 		{
 			name: "unknown",
@@ -43,6 +44,10 @@ func TestSourceFromExecutablePath(t *testing.T) {
 }
 
 func TestUpdateCommandForStatus(t *testing.T) {
+	prev := versionpkg.Version
+	versionpkg.Version = "1.6.1"
+	defer func() { versionpkg.Version = prev }()
+
 	tests := []struct {
 		name   string
 		status sharedtypes.UpdateStatus
@@ -56,11 +61,20 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			want: "brew upgrade crona",
 		},
 		{
-			name: "winget",
+			name: "scoop stable",
 			status: sharedtypes.UpdateStatus{
-				InstallSource: sharedtypes.InstallSourceWinget,
+				InstallSource:  sharedtypes.InstallSourceScoop,
+				ReleaseChannel: sharedtypes.UpdateChannelStable,
 			},
-			want: "winget upgrade --id Webxsid.Crona -e",
+			want: "scoop update crona",
+		},
+		{
+			name: "scoop beta",
+			status: sharedtypes.UpdateStatus{
+				InstallSource:  sharedtypes.InstallSourceScoop,
+				ReleaseChannel: sharedtypes.UpdateChannelBeta,
+			},
+			want: "scoop update crona-beta",
 		},
 		{
 			name: "brew migration",
@@ -96,6 +110,48 @@ func TestUpdateCommandForStatus(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := updateCommandForStatus(tc.status); got != tc.want {
 				t.Fatalf("updateCommandForStatus() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestDefaultReleaseChannel(t *testing.T) {
+	tests := []struct {
+		name    string
+		source  sharedtypes.InstallSource
+		version string
+		want    sharedtypes.UpdateChannel
+	}{
+		{
+			name:    "stable scoop",
+			source:  sharedtypes.InstallSourceScoop,
+			version: "1.6.1",
+			want:    sharedtypes.UpdateChannelStable,
+		},
+		{
+			name:    "beta release scoop",
+			source:  sharedtypes.InstallSourceScoop,
+			version: "1.6.1-beta.1",
+			want:    sharedtypes.UpdateChannelBeta,
+		},
+		{
+			name:    "beta scoop path",
+			source:  sharedtypes.InstallSourceScoop,
+			version: "1.6.1",
+			want:    sharedtypes.UpdateChannelBeta,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			prev := versionpkg.Version
+			versionpkg.Version = tc.version
+			defer func() { versionpkg.Version = prev }()
+			path := ""
+			if tc.name == "beta scoop path" {
+				path = `C:\Users\alice\scoop\apps\crona-beta\current\crona.exe`
+			}
+			if got := defaultReleaseChannel(tc.source, path); got != tc.want {
+				t.Fatalf("defaultReleaseChannel() = %q, want %q", got, tc.want)
 			}
 		})
 	}

@@ -509,7 +509,7 @@ func buildSummaryMap(data *sharedtypes.DailyReportData) map[string]any {
 	summary["estimatedTime"] = formatDurationHMS(data.Summary.TotalEstimatedMinutes * 60)
 	summary["workedEstimate"] = formatWorkedEstimate(
 		data.Summary.WorkedSeconds,
-		intPtr(data.Summary.TotalEstimatedMinutes),
+		new(data.Summary.TotalEstimatedMinutes),
 	)
 	summary["varianceTime"] = formatVarianceTime(
 		data.Summary.WorkedSeconds,
@@ -1043,10 +1043,6 @@ func collectPendingHabitNames(habits []sharedtypes.HabitDailyItem, limit int) []
 		}
 	}
 	return items
-}
-
-func intPtr(value int) *int {
-	return &value
 }
 
 func sessionSummary(session sharedtypes.DailyReportSession) string {

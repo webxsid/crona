@@ -218,6 +218,7 @@ type Model struct {
 	dialogViewTitle                      string
 	dialogViewName                       string
 	dialogIssueEstimateMins              *int
+	dialogIssueWorkedSeconds             int
 	dialogReminderID                     string
 	dialogReminderKind                   sharedtypes.AlertReminderKind
 	dialogViewMeta                       string
@@ -253,6 +254,7 @@ type Model struct {
 	dialogPomodoroLongBreakChoice        int
 	dialogPomodoroCyclesBeforeLongBreak  int
 	dialogPomodoroCycles                 int
+	dialogTimerCountdownSeconds          int
 	dialogHardLimitTotalSeconds          int
 	dialogHardLimitFocusSeconds          int
 	dialogHardLimitBreakSeconds          int

@@ -188,7 +188,7 @@ func (s *Service) refresh(ctx context.Context, force bool) (sharedtypes.UpdateSt
 	s.status.UpdateAvailable = isNewerVersion(s.status.CurrentVersion, release.Version)
 	s.status.InstallAvailable = release.InstallURL != "" && release.ChecksumsURL != ""
 	s.status.InstallUnavailableReason = release.installUnavailableReason()
-	s.status.InstallSource, s.status.BrewFormula = s.resolveInstallMetadataLocked(localOverrideActive)
+	s.status.InstallSource, s.status.BrewFormula, s.status.ReleaseChannel = s.resolveInstallMetadataLocked(localOverrideActive)
 	s.status.UpdateCommand = updateCommandForStatus(s.status)
 	if reason := brewMigrationReason(s.status); reason != "" {
 		s.status.InstallUnavailableReason = reason

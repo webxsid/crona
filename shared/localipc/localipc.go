@@ -1,6 +1,8 @@
 package localipc
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"path/filepath"
 	"runtime"
@@ -22,7 +24,7 @@ func DefaultTransport() string {
 
 func DefaultEndpoint(baseDir, mode string) string {
 	if DefaultTransport() == TransportWindowsNamedPipe {
-		return windowsPipeEndpoint(mode)
+		return windowsPipeEndpoint(baseDir, mode)
 	}
 	return filepath.Join(baseDir, "kernel.sock")
 }
@@ -48,10 +50,22 @@ func Label(transport, endpoint string) string {
 	}
 }
 
-func windowsPipeEndpoint(mode string) string {
+func windowsPipeEndpoint(baseDir, mode string) string {
 	name := "crona-daemon"
 	if strings.EqualFold(strings.TrimSpace(mode), "dev") {
 		name += "-dev"
 	}
+	if suffix := windowsPipeSuffix(baseDir); suffix != "" {
+		name += "-" + suffix
+	}
 	return `\\.\pipe\` + name
+}
+
+func windowsPipeSuffix(baseDir string) string {
+	trimmed := strings.TrimSpace(baseDir)
+	if trimmed == "" {
+		return ""
+	}
+	sum := sha1.Sum([]byte(strings.ToLower(trimmed)))
+	return hex.EncodeToString(sum[:4])
 }

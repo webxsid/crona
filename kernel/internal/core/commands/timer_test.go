@@ -325,12 +325,12 @@ func TestTimerHardLimitStartRecordsCapMetadata(t *testing.T) {
 	state, err := service.Start(
 		ctx,
 		nil,
-		int64Ptr(issue.StreamID),
-		int64Ptr(issue.ID),
+		new(issue.StreamID),
+		new(issue.ID),
 		&shareddto.TimerStartRequest{
-			HardLimitTotalSeconds: intPtr(3600),
-			HardLimitWorkSeconds:  intPtr(1500),
-			HardLimitBreakSeconds: intPtr(300),
+			HardLimitTotalSeconds: new(3600),
+			HardLimitWorkSeconds:  new(1500),
+			HardLimitBreakSeconds: new(300),
 		},
 	)
 	if err != nil {
@@ -382,14 +382,14 @@ func TestTimerHardLimitGetStateIncludesFullPomodoroMetadata(t *testing.T) {
 	startState, err := service.Start(
 		ctx,
 		nil,
-		int64Ptr(issue.StreamID),
-		int64Ptr(issue.ID),
+		new(issue.StreamID),
+		new(issue.ID),
 		&shareddto.TimerStartRequest{
-			HardLimitTotalSeconds:          intPtr(7200),
-			HardLimitWorkSeconds:           intPtr(3600),
-			HardLimitBreakSeconds:          intPtr(300),
-			HardLimitLongBreakSeconds:      intPtr(900),
-			HardLimitCyclesBeforeLongBreak: intPtr(4),
+			HardLimitTotalSeconds:          new(7200),
+			HardLimitWorkSeconds:           new(3600),
+			HardLimitBreakSeconds:          new(300),
+			HardLimitLongBreakSeconds:      new(900),
+			HardLimitCyclesBeforeLongBreak: new(4),
 		},
 	)
 	if err != nil {
@@ -441,14 +441,14 @@ func TestTimerHardLimitSchedulesWorkBoundaryFromFocusDuration(t *testing.T) {
 	state, err := service.Start(
 		ctx,
 		nil,
-		int64Ptr(issue.StreamID),
-		int64Ptr(issue.ID),
+		new(issue.StreamID),
+		new(issue.ID),
 		&shareddto.TimerStartRequest{
-			HardLimitTotalSeconds:          intPtr(180),
-			HardLimitWorkSeconds:           intPtr(60),
-			HardLimitBreakSeconds:          intPtr(30),
-			HardLimitLongBreakSeconds:      intPtr(120),
-			HardLimitCyclesBeforeLongBreak: intPtr(2),
+			HardLimitTotalSeconds:          new(180),
+			HardLimitWorkSeconds:           new(60),
+			HardLimitBreakSeconds:          new(30),
+			HardLimitLongBreakSeconds:      new(120),
+			HardLimitCyclesBeforeLongBreak: new(2),
 		},
 	)
 	if err != nil {
@@ -520,9 +520,9 @@ func TestTimerHardLimitRejectsPauseAndResume(t *testing.T) {
 	if _, err := service.Start(
 		ctx,
 		nil,
-		int64Ptr(issue.StreamID),
-		int64Ptr(issue.ID),
-		&shareddto.TimerStartRequest{HardLimitTotalSeconds: intPtr(1800)},
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{HardLimitTotalSeconds: new(1800)},
 	); err != nil {
 		t.Fatalf("start hard-limit session: %v", err)
 	}
@@ -551,12 +551,12 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 	startState, err := service.Start(
 		ctx,
 		nil,
-		int64Ptr(issue.StreamID),
-		int64Ptr(issue.ID),
+		new(issue.StreamID),
+		new(issue.ID),
 		&shareddto.TimerStartRequest{
-			HardLimitTotalSeconds: intPtr(60),
-			HardLimitWorkSeconds:  intPtr(25),
-			HardLimitBreakSeconds: intPtr(5),
+			HardLimitTotalSeconds: new(60),
+			HardLimitWorkSeconds:  new(25),
+			HardLimitBreakSeconds: new(5),
 		},
 	)
 	if err != nil {
@@ -815,12 +815,4 @@ func mustMakeIssuePlanned(
 	); err != nil {
 		t.Fatalf("mark issue planned: %v", err)
 	}
-}
-
-func intPtr(value int) *int {
-	return &value
-}
-
-func int64Ptr(value int64) *int64 {
-	return &value
 }

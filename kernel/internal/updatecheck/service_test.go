@@ -4,10 +4,14 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
+	"crona/shared/config"
 	sharedtypes "crona/shared/types"
+	runtimepkg "crona/kernel/internal/runtime"
 )
 
 func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {
@@ -184,6 +188,81 @@ func TestFetchLatestReleaseBetaChannelSelectsNewestPrerelease(t *testing.T) {
 	if !release.IsBeta {
 		t.Fatalf("expected beta release to be marked beta")
 	}
+}
+
+func TestResolveInstallMetadataLocked(t *testing.T) {
+	t.Run("persisted metadata wins", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "install.json")
+		if err := runtimepkg.WriteInstallSourceDetails(
+			path,
+			sharedtypes.InstallSourceScoop,
+			"",
+			sharedtypes.UpdateChannelBeta,
+		); err != nil {
+			t.Fatalf("write install metadata: %v", err)
+		}
+
+		service := &Service{installPath: path}
+		source, formula, channel := service.resolveInstallMetadataLocked(false)
+		if source != sharedtypes.InstallSourceScoop || formula != "" || channel != sharedtypes.UpdateChannelBeta {
+			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		}
+	})
+
+	t.Run("env fallback persists release metadata", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "install.json")
+		t.Setenv(config.EnvVarInstallSource, string(sharedtypes.InstallSourceScoop))
+		t.Setenv(config.EnvVarReleaseChannel, string(sharedtypes.UpdateChannelBeta))
+
+		service := &Service{installPath: path}
+		source, formula, channel := service.resolveInstallMetadataLocked(false)
+		if source != sharedtypes.InstallSourceScoop || formula != "" || channel != sharedtypes.UpdateChannelBeta {
+			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		}
+		file, err := runtimepkg.LoadInstallSourceFile(path)
+		if err != nil {
+			t.Fatalf("load persisted metadata: %v", err)
+		}
+		if file.InstallSource != sharedtypes.InstallSourceScoop || file.ReleaseChannel != sharedtypes.UpdateChannelBeta {
+			t.Fatalf("unexpected persisted metadata: %+v", file)
+		}
+	})
+
+	t.Run("local release writes script metadata", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "install.json")
+		service := &Service{installPath: path}
+
+		source, formula, channel := service.resolveInstallMetadataLocked(true)
+		if source != sharedtypes.InstallSourceScript || formula != "" || channel != sharedtypes.UpdateChannelStable {
+			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		}
+		file, err := runtimepkg.LoadInstallSourceFile(path)
+		if err != nil {
+			t.Fatalf("load persisted metadata: %v", err)
+		}
+		if file.InstallSource != sharedtypes.InstallSourceScript || file.ReleaseChannel != sharedtypes.UpdateChannelStable {
+			t.Fatalf("unexpected persisted metadata: %+v", file)
+		}
+	})
+
+	t.Run("unknown source stays unknown", func(t *testing.T) {
+		dir := t.TempDir()
+		path := filepath.Join(dir, "install.json")
+		t.Setenv(config.EnvVarInstallSource, "")
+		t.Setenv(config.EnvVarReleaseChannel, "")
+		service := &Service{installPath: path}
+
+		source, formula, channel := service.resolveInstallMetadataLocked(false)
+		if source != sharedtypes.InstallSourceUnknown || formula != "" || channel != sharedtypes.UpdateChannelStable {
+			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		}
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Fatalf("expected no install metadata file, got err=%v", err)
+		}
+	})
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)

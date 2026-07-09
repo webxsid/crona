@@ -477,16 +477,31 @@ func momentumSeriesFootnote(
 		return ""
 	}
 	last := series[len(series)-1]
+	if last.Skipped {
+		return fmt.Sprintf(
+			"Latest bucket: skipped (%d protected days)",
+			last.ProtectedDayCount,
+		)
+	}
 	status := "missed"
 	if last.MetTarget {
 		status = "met"
 	}
-	return fmt.Sprintf(
-		"Latest bucket: %s/%s %s",
-		momentumValueDisplay(last.Count, def),
-		momentumValueDisplay(last.Target, def),
-		status,
-	)
+	parts := []string{
+		fmt.Sprintf(
+			"Latest bucket: %s/%s %s",
+			momentumValueDisplay(last.Count, def),
+			momentumValueDisplay(last.Target, def),
+			status,
+		),
+	}
+	if last.OriginalTarget > 0 && last.OriginalTarget != last.Target {
+		parts = append(parts, fmt.Sprintf("original %s", momentumValueDisplay(last.OriginalTarget, def)))
+	}
+	if last.ProtectedDayCount > 0 {
+		parts = append(parts, fmt.Sprintf("%d protected days", last.ProtectedDayCount))
+	}
+	return strings.Join(parts, " · ")
 }
 
 func renderMomentumBucketTimeline(
@@ -731,7 +746,7 @@ func momentumSharedTarget(series []sharedtypes.MomentumSeriesPoint) (int, bool) 
 	}
 	target := series[0].Target
 	for _, point := range series[1:] {
-		if point.Target != target {
+		if point.Target != target || point.Skipped {
 			return 0, false
 		}
 	}
@@ -939,11 +954,7 @@ func renderMomentumBucketRow(
 		labelWidth,
 	)
 	ratioText := padRight(
-		fmt.Sprintf(
-			"%s/%s",
-			momentumValueDisplay(point.Count, def),
-			momentumValueDisplay(point.Target, def),
-		),
+		momentumRatioText(point, def),
 		ratioWidth,
 	)
 	status := momentumStatusForPoint(point, enabled)
@@ -987,6 +998,9 @@ func momentumBucketBar(
 	width = max(1, width)
 	scaleMax = max(1, scaleMax)
 	status := momentumStatusForPoint(point, enabled)
+	if point.Skipped {
+		return theme.StyleDim.Render(strings.Repeat("·", width))
+	}
 	renderWidth := width
 	filled := int(math.Round(float64(point.Count) / float64(scaleMax) * float64(renderWidth)))
 	filled = min(max(0, filled), renderWidth)
@@ -1042,6 +1056,9 @@ func momentumStatusForPoint(point sharedtypes.MomentumSeriesPoint, enabled bool)
 	if !enabled {
 		return "paused"
 	}
+	if point.Skipped {
+		return "skipped"
+	}
 	if point.Count >= point.Target {
 		return "met"
 	}
@@ -1059,9 +1076,22 @@ func momentumStatusStyle(theme types.Theme, status string) lipgloss.Style {
 		return lipgloss.NewStyle().Foreground(theme.ColorYellow)
 	case "paused":
 		return theme.StyleDim
+	case "skipped":
+		return theme.StyleDim
 	default:
 		return lipgloss.NewStyle().Foreground(theme.ColorDullRed)
 	}
+}
+
+func momentumRatioText(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition) string {
+	if point.Skipped {
+		return "skip"
+	}
+	return fmt.Sprintf(
+		"%s/%s",
+		momentumValueDisplay(point.Count, def),
+		momentumValueDisplay(point.Target, def),
+	)
 }
 
 func padRight(value string, width int) string {

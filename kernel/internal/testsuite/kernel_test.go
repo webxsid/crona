@@ -520,7 +520,7 @@ func TestGenerateCalendarExportWritesRepoScopedIssuesAndSessionsFiles(t *testing
 		t.Fatalf("start work session: %v", err)
 	}
 	currentNow = "2026-03-20T11:30:00Z"
-	if _, err := corecommands.StopSession(ctx, coreCtx, corecommands.SessionEndInput{WorkedOn: strPtr("Built export flow")}); err != nil {
+	if _, err := corecommands.StopSession(ctx, coreCtx, corecommands.SessionEndInput{WorkedOn: new("Built export flow")}); err != nil {
 		t.Fatalf("stop work session: %v", err)
 	}
 
@@ -529,7 +529,7 @@ func TestGenerateCalendarExportWritesRepoScopedIssuesAndSessionsFiles(t *testing
 		t.Fatalf("start personal session: %v", err)
 	}
 	currentNow = "2026-03-21T09:00:00Z"
-	if _, err := corecommands.StopSession(ctx, coreCtx, corecommands.SessionEndInput{WorkedOn: strPtr("Personal work")}); err != nil {
+	if _, err := corecommands.StopSession(ctx, coreCtx, corecommands.SessionEndInput{WorkedOn: new("Personal work")}); err != nil {
 		t.Fatalf("stop personal session: %v", err)
 	}
 
@@ -721,7 +721,7 @@ func TestDetailedIssueGroupRenderingIncludesDescriptionsIssueNotesAndSessionNote
 			Status:          sharedtypes.IssueStatusInProgress,
 			Description:     &description,
 			Notes:           &notes,
-			EstimateMinutes: intPtr(90),
+			EstimateMinutes: new(90),
 		},
 		RepoName:   "Work",
 		StreamName: "app",
@@ -731,8 +731,8 @@ func TestDetailedIssueGroupRenderingIncludesDescriptionsIssueNotesAndSessionNote
 				ID:              "session-1",
 				IssueID:         42,
 				StartTime:       "2026-03-19T10:00:00Z",
-				EndTime:         strPtr("2026-03-19T11:00:00Z"),
-				DurationSeconds: intPtr(3600),
+				EndTime:         new("2026-03-19T11:00:00Z"),
+				DurationSeconds: new(3600),
 				Notes:           &rawNotes,
 			},
 			ParsedNotes: sessionnotes.Parse(&rawNotes),
@@ -753,12 +753,4 @@ func TestDetailedIssueGroupRenderingIncludesDescriptionsIssueNotesAndSessionNote
 			t.Fatalf("expected rendered detailed issue group to contain %q, got %q", want, rendered)
 		}
 	}
-}
-
-func intPtr(v int) *int {
-	return &v
-}
-
-func strPtr(v string) *string {
-	return &v
 }

@@ -344,7 +344,7 @@ func generateRepoExport(
 		Until    *string
 		Limit    *int
 		Offset   *int
-	}{RepoID: &repo.ID, Since: datePtr(start + "T00:00:00.000Z"), Until: datePtr(end + "T23:59:59.999Z")}, false)
+	}{RepoID: &repo.ID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +423,7 @@ func generateStreamExport(
 		Until    *string
 		Limit    *int
 		Offset   *int
-	}{StreamID: &stream.ID, Since: datePtr(start + "T00:00:00.000Z"), Until: datePtr(end + "T23:59:59.999Z")}, false)
+	}{StreamID: &stream.ID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func generateIssueRollupExport(
 		Until    *string
 		Limit    *int
 		Offset   *int
-	}{RepoID: input.RepoID, StreamID: input.StreamID, Since: datePtr(start + "T00:00:00.000Z"), Until: datePtr(end + "T23:59:59.999Z")}, false)
+	}{RepoID: input.RepoID, StreamID: input.StreamID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -611,7 +611,7 @@ func generateCSVExport(
 		Until    *string
 		Limit    *int
 		Offset   *int
-	}{RepoID: input.RepoID, StreamID: input.StreamID, Since: datePtr(start + "T00:00:00.000Z"), Until: datePtr(end + "T23:59:59.999Z")}, false)
+	}{RepoID: input.RepoID, StreamID: input.StreamID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1398,10 +1398,6 @@ func sessionNoteText(session sharedtypes.SessionHistoryEntry) string {
 		return strings.TrimSpace(*session.Notes)
 	}
 	return ""
-}
-
-func datePtr(value string) *string {
-	return &value
 }
 
 func writeReportMetadata(path string, metadata reportFileMetadata) error {

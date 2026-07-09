@@ -438,7 +438,13 @@ func OpenSessionMessageWithParent(state State, kind string, parent string) State
 	return state
 }
 
-func OpenTimerStartType(state State, repoID, streamID, issueID int64, issueLabel string) State {
+func OpenTimerStartType(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
+) State {
 	state = Close(state)
 	state.Kind = "timer_start_type"
 	state.ViewTitle = "Start Timer"
@@ -446,11 +452,14 @@ func OpenTimerStartType(state State, repoID, streamID, issueID int64, issueLabel
 	state.RepoID = repoID
 	state.StreamID = streamID
 	state.IssueID = issueID
-	state.ChoiceItems = []string{"Stopwatch", "Pomodoro"}
-	state.ChoiceValues = []string{"stopwatch", "pomodoro"}
+	state.IssueEstimateMins = estimateMinutes
+	state.IssueWorkedSeconds = workedSeconds
+	state.ChoiceItems = []string{"Stopwatch", "Pomodoro", "Timer"}
+	state.ChoiceValues = []string{"stopwatch", "pomodoro", "timer"}
 	state.ChoiceDetails = []string{
 		"Start an open-ended focus session.",
 		"Configure focus, breaks, and cycles in a single pomodoro setup dialog.",
+		"Run a single countdown with no breaks. Defaults from the remaining issue estimate.",
 	}
 	state.ChoiceCursor = 0
 	return state
@@ -460,6 +469,8 @@ func OpenPomodoroStart(
 	state State,
 	repoID, streamID, issueID int64,
 	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
 ) State {
 	focusSeconds := state.PomodoroFocusSeconds
 	if focusSeconds <= 0 {
@@ -489,6 +500,8 @@ func OpenPomodoroStart(
 	state.StreamID = streamID
 	state.IssueID = issueID
 	state.ViewName = strings.TrimSpace(issueLabel)
+	state.IssueEstimateMins = estimateMinutes
+	state.IssueWorkedSeconds = workedSeconds
 	state.Inputs = newPomodoroDialogInputs(state, focusSeconds, breakSeconds, longBreakSeconds, cycles, cyclesBeforeLongBreak)
 	state.PomodoroFocusSeconds = focusSeconds
 	state.PomodoroFocusChoice = pomodoroFocusChoiceForSeconds(focusSeconds)
@@ -498,6 +511,37 @@ func OpenPomodoroStart(
 	state.PomodoroLongBreakChoice = pomodoroLongBreakChoiceForSeconds(longBreakSeconds)
 	state.PomodoroCyclesBeforeLongBreak = cyclesBeforeLongBreak
 	state.PomodoroCycles = cycles
+	state.FocusIdx = 0
+	return SyncDialogFocus(state)
+}
+
+func OpenSingleTimerStart(
+	state State,
+	repoID, streamID, issueID int64,
+	issueLabel string,
+	estimateMinutes *int,
+	workedSeconds int,
+) State {
+	countdownSeconds := state.TimerCountdownSeconds
+	if countdownSeconds <= 0 {
+		countdownSeconds = timerDefaultCountdownSeconds(estimateMinutes, workedSeconds)
+	}
+	input := newSessionDetailInput(state, "25m")
+	input.SetValue(pomodoroSeedDurationInput(countdownSeconds, 25*60))
+	input.Focus()
+
+	state = Close(state)
+	state.Kind = "timer_countdown_start"
+	state.Parent = "timer_start_type"
+	state.ViewTitle = "Timer Session"
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.IssueID = issueID
+	state.ViewName = strings.TrimSpace(issueLabel)
+	state.IssueEstimateMins = estimateMinutes
+	state.IssueWorkedSeconds = workedSeconds
+	state.TimerCountdownSeconds = countdownSeconds
+	state.Inputs = []textinput.Model{input}
 	state.FocusIdx = 0
 	return SyncDialogFocus(state)
 }
@@ -593,6 +637,16 @@ func newPomodoroDialogInputs(
 		inputs[4].SetValue(strconv.Itoa(cyclesBeforeLongBreak))
 	}
 	return inputs
+}
+
+func timerDefaultCountdownSeconds(estimateMinutes *int, workedSeconds int) int {
+	if estimateMinutes != nil && *estimateMinutes > 0 {
+		remaining := (*estimateMinutes * 60) - max(0, workedSeconds)
+		if remaining > 0 {
+			return remaining
+		}
+	}
+	return 25 * 60
 }
 
 func OpenIssueSessionTransition(state State, issueID int64, status string) State {

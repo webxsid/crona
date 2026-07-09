@@ -47,6 +47,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"issue_session_transition",
 		"timer_start_type",
 		"pomodoro_start",
+		"timer_countdown_start",
 		"hard_limit_expired",
 		"hard_limit_extend",
 		"amend_session",

@@ -19,7 +19,7 @@ type Service struct {
 	bus    *events.Bus
 	logger *runtimepkg.Logger
 	paths  runtimepkg.Paths
-	queue  chan sharedtypes.AlertRequest
+	queue  chan queuedAlert
 
 	mu                 sync.Mutex
 	lastUpdateNotified string
@@ -37,6 +37,11 @@ var (
 	playAlertSoundFn        = playAlertSound
 )
 
+type queuedAlert struct {
+	req             sharedtypes.AlertRequest
+	respectSettings bool
+}
+
 func Start(
 	ctx context.Context,
 	coreCtx *core.Context,
@@ -49,7 +54,7 @@ func Start(
 		bus:               bus,
 		logger:            logger,
 		paths:             paths,
-		queue:             make(chan sharedtypes.AlertRequest, 32),
+		queue:             make(chan queuedAlert, 32),
 		lastReminderSlots: make(map[string]string),
 	}
 	unsubscribe := bus.Subscribe(func(event sharedtypes.KernelEvent) {
@@ -60,14 +65,18 @@ func Start(
 				logger.Error("decode timer boundary payload", err)
 				return
 			}
-			service.enqueue(timerBoundaryAlert(payload))
+			if err := service.enqueue(timerBoundaryAlert(payload), true); err != nil {
+				logger.Error("enqueue timer boundary alert", err)
+			}
 		case sharedtypes.EventTypeTimerHardLimitReached:
 			var payload sharedtypes.TimerHardLimitReachedPayload
 			if err := json.Unmarshal(event.Payload, &payload); err != nil {
 				logger.Error("decode timer hard limit payload", err)
 				return
 			}
-			service.enqueue(hardLimitReachedAlert(payload))
+			if err := service.enqueue(hardLimitReachedAlert(payload), true); err != nil {
+				logger.Error("enqueue timer hard limit alert", err)
+			}
 		case sharedtypes.EventTypeUpdateStatus:
 			var status sharedtypes.UpdateStatus
 			if err := json.Unmarshal(event.Payload, &status); err != nil {
@@ -75,7 +84,9 @@ func Start(
 				return
 			}
 			if req, ok := service.updateAvailableAlert(status); ok {
-				service.enqueue(req)
+				if err := service.enqueue(req, true); err != nil {
+					logger.Error("enqueue update status alert", err)
+				}
 			}
 		}
 	})
@@ -89,7 +100,7 @@ func Start(
 				if !ok {
 					return
 				}
-				if err := service.deliver(ctx, req, true); err != nil {
+				if err := service.deliver(ctx, req.req, req.respectSettings); err != nil {
 					service.logger.Error("deliver alert", err)
 				}
 			}
@@ -118,7 +129,7 @@ func (s *Service) TestNotification(ctx context.Context) error {
 		IconEnabled: settings != nil && settings.AlertIconEnabled,
 		PlaySound:   false,
 	}
-	return s.deliver(ctx, req, false)
+	return s.enqueue(req, false)
 }
 
 func (s *Service) TestSound(ctx context.Context) error {
@@ -135,18 +146,19 @@ func (s *Service) TestSound(ctx context.Context) error {
 		IconEnabled: settings != nil && settings.AlertIconEnabled,
 		PlaySound:   true,
 	}
-	return s.deliver(ctx, req, false)
+	return s.enqueue(req, false)
 }
 
 func (s *Service) Notify(ctx context.Context, req sharedtypes.AlertRequest) error {
-	return s.deliver(ctx, req, true)
+	return s.enqueue(req, true)
 }
 
-func (s *Service) enqueue(req sharedtypes.AlertRequest) {
+func (s *Service) enqueue(req sharedtypes.AlertRequest, respectSettings bool) error {
 	select {
-	case s.queue <- req:
+	case s.queue <- queuedAlert{req: req, respectSettings: respectSettings}:
+		return nil
 	default:
-		s.logger.Error("drop alert", fmt.Errorf("alert queue full"))
+		return fmt.Errorf("alert queue full")
 	}
 }
 

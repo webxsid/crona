@@ -22,9 +22,9 @@ func TestNormalizeHabitStreakDefinitionPreservesRepoWideContexts(t *testing.T) {
 func TestMomentumContextRedundanciesDetectRepoWideCoverage(t *testing.T) {
 	redundancies := MomentumContextRedundancies([]MomentumContext{
 		{RepoID: 7},
-		{RepoID: 7, StreamID: int64PtrTest(9)},
-		{RepoID: 7, StreamID: int64PtrTest(10)},
-		{RepoID: 8, StreamID: int64PtrTest(11)},
+		{RepoID: 7, StreamID: new(int64(9))},
+		{RepoID: 7, StreamID: new(int64(10))},
+		{RepoID: 8, StreamID: new(int64(11))},
 	})
 
 	if len(redundancies) != 1 {
@@ -36,8 +36,4 @@ func TestMomentumContextRedundanciesDetectRepoWideCoverage(t *testing.T) {
 	if len(redundancies[0].RedundantContexts) != 2 {
 		t.Fatalf("expected two redundant stream contexts, got %+v", redundancies[0].RedundantContexts)
 	}
-}
-
-func int64PtrTest(v int64) *int64 {
-	return &v
 }

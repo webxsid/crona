@@ -176,6 +176,7 @@ type issueActionTarget struct {
 	issueID         int64
 	title           string
 	estimateMinutes *int
+	workedSeconds   int
 }
 
 func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
@@ -196,6 +197,7 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 			issueID:         issueID,
 			title:           meta.Title,
 			estimateMinutes: meta.EstimateMinutes,
+			workedSeconds:   meta.WorkedSeconds,
 		}, true
 	}
 	if m.pane != PaneIssues {
@@ -219,6 +221,7 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 			issueID:         issue.ID,
 			title:           meta.Title,
 			estimateMinutes: meta.EstimateMinutes,
+			workedSeconds:   meta.WorkedSeconds,
 		}, true
 	case ViewDefault:
 		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneIssues)
@@ -233,6 +236,7 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 			issueID:         issue.ID,
 			title:           issue.Title,
 			estimateMinutes: issue.EstimateMinutes,
+			workedSeconds:   issue.WorkedSeconds,
 		}, true
 	default:
 		if m.context == nil || m.context.RepoID == nil {
@@ -251,6 +255,7 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 				issueID:         issue.ID,
 				title:           meta.Title,
 				estimateMinutes: meta.EstimateMinutes,
+				workedSeconds:   max(issue.WorkedSeconds, meta.WorkedSeconds),
 			}, true
 		}
 		return &issueActionTarget{
@@ -259,19 +264,34 @@ func (m Model) selectedIssueActionTarget() (*issueActionTarget, bool) {
 			issueID:         issue.ID,
 			title:           issue.Title,
 			estimateMinutes: estimateMinutes,
+			workedSeconds:   issue.WorkedSeconds,
 		}, true
 	}
 }
 
 func (m Model) openFocusSessionFromIssue(repoID, streamID, issueID int64) Model {
 	if target, ok := m.selectedIssueActionTarget(); ok && target.issueID == issueID {
-		return m.openStartTimerDialog(repoID, streamID, issueID, target.title)
+		return m.openStartTimerDialog(
+			repoID,
+			streamID,
+			issueID,
+			target.title,
+			target.estimateMinutes,
+			target.workedSeconds,
+		)
 	}
 	meta, ok := m.issueMetaByID(issueID)
 	if !ok {
 		return m
 	}
-	return m.openStartTimerDialog(repoID, streamID, issueID, meta.Title)
+	return m.openStartTimerDialog(
+		repoID,
+		streamID,
+		issueID,
+		meta.Title,
+		meta.EstimateMinutes,
+		meta.WorkedSeconds,
+	)
 }
 
 func (m Model) openManualSessionFromIssue(repoID, streamID, issueID int64) Model {
@@ -632,6 +652,7 @@ func (m Model) dialogState() dialogstate.State {
 		ViewTitle:                      m.dialogViewTitle,
 		ViewName:                       m.dialogViewName,
 		IssueEstimateMins:              m.dialogIssueEstimateMins,
+		IssueWorkedSeconds:             m.dialogIssueWorkedSeconds,
 		ReminderID:                     m.dialogReminderID,
 		ReminderKind:                   m.dialogReminderKind,
 		ViewMeta:                       m.dialogViewMeta,
@@ -668,6 +689,7 @@ func (m Model) dialogState() dialogstate.State {
 		PomodoroLongBreakChoice:        m.dialogPomodoroLongBreakChoice,
 		PomodoroCyclesBeforeLongBreak:  m.dialogPomodoroCyclesBeforeLongBreak,
 		PomodoroCycles:                 m.dialogPomodoroCycles,
+		TimerCountdownSeconds:          m.dialogTimerCountdownSeconds,
 		HardLimitTotalSeconds:          m.dialogHardLimitTotalSeconds,
 		HardLimitFocusSeconds:          m.dialogHardLimitFocusSeconds,
 		HardLimitBreakSeconds:          m.dialogHardLimitBreakSeconds,
@@ -730,6 +752,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogViewTitle = state.ViewTitle
 	m.dialogViewName = state.ViewName
 	m.dialogIssueEstimateMins = state.IssueEstimateMins
+	m.dialogIssueWorkedSeconds = state.IssueWorkedSeconds
 	m.dialogReminderID = state.ReminderID
 	m.dialogReminderKind = state.ReminderKind
 	m.dialogViewMeta = state.ViewMeta
@@ -765,6 +788,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogPomodoroLongBreakChoice = state.PomodoroLongBreakChoice
 	m.dialogPomodoroCyclesBeforeLongBreak = state.PomodoroCyclesBeforeLongBreak
 	m.dialogPomodoroCycles = state.PomodoroCycles
+	m.dialogTimerCountdownSeconds = state.TimerCountdownSeconds
 	m.dialogHardLimitTotalSeconds = state.HardLimitTotalSeconds
 	m.dialogHardLimitFocusSeconds = state.HardLimitFocusSeconds
 	m.dialogHardLimitBreakSeconds = state.HardLimitBreakSeconds

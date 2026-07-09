@@ -83,23 +83,3 @@ release:
 before:
   hooks:
     - sh -c 'CRONA_RELEASE_ASSETS_ONLY=1 sh ./scripts/build_release.sh {{ .Tag }}'
-
-winget:
-  - name: crona
-    package_identifier: Webxsid.Crona
-    package_name: Crona
-    publisher: Webxsid
-    short_description: local-first work tracker for developers
-    description: local-first work tracker for developers
-    homepage: https://crona.work
-    license: MIT
-    ids:
-      - crona-bundle
-    repository:
-      owner: "webxsid"
-      name: "winget-pkgs"
-      token: "{{ .Env.WINGET_PKGS_GITHUB_TOKEN }}"
-      branch: "crona-{{ .Tag }}"
-      pull_request:
-        enabled: false
-    skip_upload: '{{ if or (contains .Tag "-beta") (eq .Env.WINGET_PKGS_GITHUB_TOKEN "") }}true{{ else }}false{{ end }}'

@@ -69,7 +69,7 @@ func TestHandleStructuredManualPauseBlocksManualLogDuringActiveSession(t *testin
 		Timer: &api.TimerState{
 			State:           "running",
 			SegmentType:     &work,
-			IssueID:         int64Ptr(1),
+			IssueID:         new(int64(1)),
 			HardLimitActive: false,
 		},
 	}
@@ -100,5 +100,3 @@ func TestHandleStructuredManualPauseAllowsManualLogWhenIdle(t *testing.T) {
 		t.Fatal("expected idle session view to fall through to manual log")
 	}
 }
-
-func int64Ptr(v int64) *int64 { return new(v) }

@@ -1,11 +1,11 @@
-# Legacy To Winget
+# Legacy To Scoop
 
-Use this guide when you are moving off the legacy install script and want to keep Crona managed by winget on Windows.
-Stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, install Winget, and restore the backup.
+Use this guide when you are moving off the legacy install script and want to keep Crona managed by Scoop on Windows.
+Stop Crona, run the beta installer once, back up the database, clear the old runtime, remove the old binaries, install Scoop, and restore the backup.
 
 Estimated time: 20-30 minutes, mainly because the Windows install and restore steps can take a little longer to complete.
 
-Use this guide when the final install should be managed by Winget rather than the legacy script.
+Use this guide when the final install should be managed by Scoop rather than the legacy script.
 
 ## Before You Start
 
@@ -48,18 +48,26 @@ Remove the Crona runtime directory after the backup is complete.
 
 ## 5. Remove The Legacy Binaries
 
-Remove the old binaries from the winget user install directory if they are still present.
+Remove the old binaries from the previous user install directory if they are still present.
 
 Typical location:
 
 - `%LocalAppData%\Programs\Crona\bin`
 
-## 6. Install Winget
+## 6. Install Scoop
 
 Install the package manager version you want to keep:
 
 ```powershell
-winget install --id Webxsid.Crona -e
+scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
+scoop install crona
+```
+
+To stay on the beta track instead, use:
+
+```powershell
+scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
+scoop install crona-beta
 ```
 
 ## 7. Restore The Backup
@@ -74,8 +82,9 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 
 ## After Migration
 
-- Winget owns install, update, and uninstall.
-- Updates use `winget upgrade --id Webxsid.Crona -e`.
+- Scoop owns install, update, and uninstall.
+- Stable updates use `scoop update crona`.
+- Beta updates use `scoop update crona-beta`.
 - `crona backup` and `crona restore` only move `crona.db`.
 
 ## Contact

@@ -27,6 +27,23 @@ function Get-RuntimeDir {
     return Join-Path $localAppData "Crona"
 }
 
+function Get-InstallSourceMetadata {
+    $installSource = "script"
+    if ($env:CRONA_INSTALL_SOURCE -and $env:CRONA_INSTALL_SOURCE.Trim() -ne "") {
+        $installSource = $env:CRONA_INSTALL_SOURCE.Trim().ToLowerInvariant()
+    }
+
+    $releaseChannel = ""
+    if ($env:CRONA_RELEASE_CHANNEL -and $env:CRONA_RELEASE_CHANNEL.Trim() -ne "") {
+        $releaseChannel = $env:CRONA_RELEASE_CHANNEL.Trim().ToLowerInvariant()
+    }
+
+    return @{
+        InstallSource = $installSource
+        ReleaseChannel = $releaseChannel
+    }
+}
+
 function Get-ArchSuffix {
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($env:PROCESSOR_ARCHITEW6432 -and $env:PROCESSOR_ARCHITEW6432.Trim() -ne "") {
@@ -236,11 +253,14 @@ try {
     Write-Host "Extracting bundled assets..."
     tar -xzf $assetsPath -C $assetsDir
     Add-InstallDirToUserPath $installDir
-    Set-Content -Path (Join-Path $runtimeDir "install.json") -Value (@"
-{
-  "installSource": "script"
-}
-"@) -NoNewline
+    $metadata = Get-InstallSourceMetadata
+    $installRecord = @{
+        installSource = $metadata.InstallSource
+    }
+    if ($metadata.ReleaseChannel -ne "") {
+        $installRecord["releaseChannel"] = $metadata.ReleaseChannel
+    }
+    Set-Content -Path (Join-Path $runtimeDir "install.json") -Value (($installRecord | ConvertTo-Json -Depth 4)) -NoNewline
 
     Write-Host ""
     Write-Host "Installed:"

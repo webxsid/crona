@@ -360,6 +360,14 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	qaStream, err := createStream(
+		personalRepo.ID,
+		"seed-qa",
+		"Dedicated fixtures for rest-aware momentum validation.",
+	)
+	if err != nil {
+		return err
+	}
 
 	focusIssue, err := createIssue(
 		-6,
@@ -464,6 +472,19 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	proratedContextIssue, err := createIssue(
+		-6,
+		qaStream.ID,
+		"Rest-aware context seed",
+		"Seeded specifically to test prorated weekly context momentum targets.",
+		120,
+		new(dateAt(0)),
+		[]sharedtypes.IssueStatus{sharedtypes.IssueStatusReady, sharedtypes.IssueStatusInProgress},
+		"Keep this stream isolated so the prorated target is deterministic.",
+	)
+	if err != nil {
+		return err
+	}
 	if _, err := createIssue(-3, cliStream.ID, "Publish example config bundle", "Ship realistic examples for repo, stream, and timer setup.", 25, new(dateAt(0)), nil); err != nil {
 		return err
 	}
@@ -544,6 +565,18 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 	if _, err := createHabit(-29, cliStream.ID, "Read Release Notes", "Scan upstream release notes for dependency changes.", "weekly", []int{2, 4}, new(20)); err != nil {
+		return err
+	}
+	recoveryDrillHabit, err := createHabit(
+		-29,
+		qaStream.ID,
+		"Recovery Drill",
+		"Dedicated fixture for skipped weekly habit momentum under protected rest days.",
+		"daily",
+		nil,
+		new(10),
+	)
+	if err != nil {
 		return err
 	}
 
@@ -635,12 +668,49 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 				{RepoID: workRepo.ID, StreamID: &infraStream.ID},
 			},
 		},
+		{
+			ID:            "rest-aware-habit-weekly",
+			Name:          "Rest-Aware Habit Weekly",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 2,
+			HabitIDs:      []int64{recoveryDrillHabit.ID},
+		},
+		{
+			ID:            "rest-aware-context-weekly",
+			Name:          "Rest-Aware Context Weekly",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindContext,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			RequiredCount: 7200,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: personalRepo.ID, StreamID: &qaStream.ID},
+			},
+		},
 	}
 	if err := h.core.HabitStreakDefinitions.ReplaceAll(
 		ctx,
 		h.core.UserID,
 		h.core.Now(),
 		habitStreakDefs,
+	); err != nil {
+		return err
+	}
+	if err := h.core.CoreSettings.SetSetting(
+		ctx,
+		h.core.UserID,
+		sharedtypes.CoreSettingsKeyRestWeekdays,
+		[]int{0, 6},
+	); err != nil {
+		return err
+	}
+	if err := h.core.CoreSettings.SetSetting(
+		ctx,
+		h.core.UserID,
+		sharedtypes.CoreSettingsKeyRestSpecificDates,
+		[]string{dateAt(-2)},
 	); err != nil {
 		return err
 	}
@@ -696,6 +766,11 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			if err := seedHabitStatus(-i, inboxHabit.ID, date, sharedtypes.HabitCompletionStatusFailed, nil, new("Inbox sweep missed during a heavy day.")); err != nil {
 				return err
 			}
+		}
+	}
+	for _, date := range []string{dateAt(-8), dateAt(-7)} {
+		if err := seedHabitStatus(-6, recoveryDrillHabit.ID, date, sharedtypes.HabitCompletionStatusCompleted, new(12), new("Previous bucket met cleanly before the protected rest window.")); err != nil {
+			return err
 		}
 	}
 	olderSessionPatterns := []struct {
@@ -918,6 +993,30 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 	}
 	for _, item := range sessionPlan {
 		if err := seedSession(item.dayOffset, item.issueID, item.startHour, item.startMinute, item.durationMinutes, item.input); err != nil {
+			return err
+		}
+	}
+	for _, item := range []struct {
+		dayOffset       int
+		startHour       int
+		startMinute     int
+		durationMinutes int
+	}{
+		{-5, 10, 0, 60},
+		{-4, 14, 15, 30},
+	} {
+		if err := seedSession(
+			item.dayOffset,
+			proratedContextIssue.ID,
+			item.startHour,
+			item.startMinute,
+			item.durationMinutes,
+			corecommands.SessionEndInput{
+				CommitMessage: new("test: seed rest-aware context momentum"),
+				WorkedOn:      new("deterministic weekly time bucket"),
+				Outcome:       new("prorated target should be met with weekend rest plus one protected date"),
+			},
+		); err != nil {
 			return err
 		}
 	}

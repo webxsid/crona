@@ -3,6 +3,7 @@ package dialogs
 import (
 	"strings"
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
@@ -73,7 +74,8 @@ func TestEditMomentumDialogShowsDescriptionOnDetailsStep(t *testing.T) {
 }
 
 func TestPomodoroStartHighlightsActiveRow(t *testing.T) {
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title")
+	estimate := 60
+	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 900)
 	state.FocusIdx = 6
 
 	rendered := renderSessionDialog(Theme{}, state)
@@ -86,10 +88,15 @@ func TestPomodoroStartHighlightsActiveRow(t *testing.T) {
 	if !strings.Contains(rendered, "25m Focus  ·  5m Short Break  ·  15m Long Break") {
 		t.Fatalf("expected unified summary line to remain visible, got %q", rendered)
 	}
+	for _, want := range []string{"Worked / Est", "worked 15m / est. 1h", "Total", "2h10m", "Ends At"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected pomodoro dialog to contain %q, got %q", want, rendered)
+		}
+	}
 }
 
 func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title")
+	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", nil, 0)
 	state.PomodoroFocusChoice = 3
 	state.FocusIdx = 1
 
@@ -100,7 +107,7 @@ func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
 }
 
 func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T) {
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title")
+	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", nil, 0)
 	state.PomodoroBreakChoice = 3
 	state.PomodoroBreakSeconds = 0
 	state.PomodoroLongBreakChoice = 0
@@ -114,5 +121,45 @@ func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T
 	}
 	if !strings.Contains(rendered, "Long Break: disabled") {
 		t.Fatalf("expected compact long-break cycle disabled text, got %q", rendered)
+	}
+}
+
+func TestTimerStartTypeShowsEstimateSummaryAndTimerChoice(t *testing.T) {
+	estimate := 45
+	state := controllerpkg.OpenTimerStartType(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 1200)
+
+	rendered := renderSessionDialog(Theme{}, state)
+	for _, want := range []string{"Worked / Est", "worked 20m / est. 45m", "[t] Timer"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected timer start type to contain %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Ends At") {
+		t.Fatalf("expected timer start type to omit ends-at preview, got %q", rendered)
+	}
+}
+
+func TestTimerCountdownDialogShowsSingleCountdownCopy(t *testing.T) {
+	estimate := 45
+	state := controllerpkg.OpenSingleTimerStart(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 0)
+
+	rendered := renderSessionDialog(Theme{}, state)
+	for _, want := range []string{"Timer Session", "Focus Time", "Single countdown. No breaks.", "Worked / Est", "worked - / est. 45m", "Ends At"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected countdown dialog to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestTimerEndsAtLabelUsesLocalHHMM(t *testing.T) {
+	base := time.Date(2026, 7, 7, 18, 5, 0, 0, time.Local)
+	if got := timerEndsAtLabel(base, 90*60); got != "19:35" {
+		t.Fatalf("expected local HH:MM ends-at label, got %q", got)
+	}
+}
+
+func TestTimerEndsAtLabelSkipsNonPositiveDurations(t *testing.T) {
+	if got := timerEndsAtLabel(time.Date(2026, 7, 7, 18, 5, 0, 0, time.Local), 0); got != "" {
+		t.Fatalf("expected empty ends-at label for zero duration, got %q", got)
 	}
 }

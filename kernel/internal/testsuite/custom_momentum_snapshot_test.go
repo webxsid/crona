@@ -2,9 +2,11 @@ package testsuite
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"testing"
 
+	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
 	sharedtypes "crona/shared/types"
 )
@@ -327,8 +329,8 @@ func TestMomentumAllModeUsesFinalBucketCountsForHabitsAndContexts(t *testing.T) 
 			MatchMode:     sharedtypes.MomentumMatchModeAll,
 			RequiredCount: 7200,
 			Contexts: []sharedtypes.MomentumContext{
-				{RepoID: contextRepoA.ID, StreamID: int64Ptr(contextStreamA.ID)},
-				{RepoID: contextRepoB.ID, StreamID: int64Ptr(contextStreamB.ID)},
+				{RepoID: contextRepoA.ID, StreamID: new(contextStreamA.ID)},
+				{RepoID: contextRepoB.ID, StreamID: new(contextStreamB.ID)},
 			},
 		},
 	}
@@ -370,6 +372,178 @@ func TestMomentumAllModeUsesFinalBucketCountsForHabitsAndContexts(t *testing.T) 
 	}
 	if contextLatest.Count != 3600 {
 		t.Fatalf("expected context bucket to use the final shared time, got %+v", contextLatest)
+	}
+}
+
+func TestWeeklyHabitMomentumSkipsBucketWhenProtectedDaysExceedRequiredCount(t *testing.T) {
+	ctx := context.Background()
+	coreCtx, _ := newTestCoreContext(t, func() string { return "2026-06-07T12:00:00Z" })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Personal"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "wellbeing"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	habit, err := corecommands.CreateHabit(ctx, coreCtx, struct {
+		StreamID      int64
+		Name          string
+		Description   *string
+		ScheduleType  string
+		Weekdays      []int
+		TargetMinutes *int
+	}{StreamID: stream.ID, Name: "Journal", ScheduleType: string(sharedtypes.HabitScheduleDaily)})
+	if err != nil {
+		t.Fatalf("create habit: %v", err)
+	}
+	for _, date := range []string{"2026-05-25", "2026-05-26"} {
+		if _, err := corecommands.CompleteHabit(ctx, coreCtx, habit.ID, date, sharedtypes.HabitCompletionStatusCompleted, nil, nil); err != nil {
+			t.Fatalf("complete habit %s: %v", date, err)
+		}
+	}
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2026-06-05", "2026-06-06", "2026-06-07"}); err != nil {
+		t.Fatalf("set rest dates: %v", err)
+	}
+	created, err := corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
+		Name:          "Weekly journal",
+		Enabled:       true,
+		TargetKind:    sharedtypes.MomentumTargetKindHabit,
+		MatchMode:     sharedtypes.MomentumMatchModeAny,
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 2,
+		HabitIDs:      []int64{habit.ID},
+	})
+	if err != nil {
+		t.Fatalf("create momentum: %v", err)
+	}
+
+	streaks, err := corecommands.ComputeMetricsLifetimeStreaks(ctx, coreCtx, "2026-06-07")
+	if err != nil {
+		t.Fatalf("compute lifetime streaks: %v", err)
+	}
+	if len(streaks.CustomHabitStreaks) != 1 || streaks.CustomHabitStreaks[0].Current != 1 {
+		t.Fatalf("expected skipped bucket to preserve weekly streak, got %+v", streaks.CustomHabitStreaks)
+	}
+
+	detail, err := corecommands.GetMomentumDetail(ctx, coreCtx, created.ID, "2026-06-07", 30)
+	if err != nil {
+		t.Fatalf("get momentum detail: %v", err)
+	}
+	if !detail.CurrentBucket.Skipped || detail.CurrentBucket.ProtectedDayCount != 3 {
+		t.Fatalf("expected skipped current bucket with 3 protected days, got %+v", detail.CurrentBucket)
+	}
+}
+
+func TestWeeklyContextMomentumProratesBucketTargetByAvailableDays(t *testing.T) {
+	ctx := context.Background()
+	coreCtx, _ := newTestCoreContext(t, func() string { return "2026-06-07T12:00:00Z" })
+
+	repo, err := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	if err != nil {
+		t.Fatalf("create repo: %v", err)
+	}
+	stream, err := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	if err != nil {
+		t.Fatalf("create stream: %v", err)
+	}
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestWeekdays, []int{0, 6}); err != nil {
+		t.Fatalf("set rest weekdays: %v", err)
+	}
+	created, err := corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
+		Name:       "Weekly delivery",
+		Enabled:    true,
+		TargetKind: sharedtypes.MomentumTargetKindContext,
+		MatchMode:  sharedtypes.MomentumMatchModeAny,
+		Contexts: []sharedtypes.MomentumContext{
+			{RepoID: repo.ID, StreamID: &stream.ID},
+		},
+		Period:        sharedtypes.HabitStreakPeriodWeek,
+		RequiredCount: 7200,
+	})
+	if err != nil {
+		t.Fatalf("create momentum: %v", err)
+	}
+	seedContextSessionSeconds(t, ctx, coreCtx, stream.ID, 801, "2026-06-02", 3600)
+	seedContextSessionSeconds(t, ctx, coreCtx, stream.ID, 802, "2026-06-03", 1800)
+
+	streaks, err := corecommands.ComputeMetricsLifetimeStreaks(ctx, coreCtx, "2026-06-07")
+	if err != nil {
+		t.Fatalf("compute lifetime streaks: %v", err)
+	}
+	if len(streaks.CustomHabitStreaks) != 1 || streaks.CustomHabitStreaks[0].Current != 1 {
+		t.Fatalf("expected prorated weekly context streak to count, got %+v", streaks.CustomHabitStreaks)
+	}
+
+	detail, err := corecommands.GetMomentumDetail(ctx, coreCtx, created.ID, "2026-06-07", 30)
+	if err != nil {
+		t.Fatalf("get momentum detail: %v", err)
+	}
+	if detail.CurrentBucket.Target != 5143 || detail.CurrentBucket.OriginalTarget != 7200 {
+		t.Fatalf("expected prorated target 5143 from 7200, got %+v", detail.CurrentBucket)
+	}
+	if detail.CurrentBucket.ProtectedDayCount != 2 || detail.CurrentBucket.AvailableDayCount != 5 || !detail.CurrentBucket.MetTarget {
+		t.Fatalf("expected 2 protected days, 5 available days, and met target, got %+v", detail.CurrentBucket)
+	}
+}
+
+func seedContextSessionSeconds(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	streamID, issueID int64,
+	date string,
+	durationSeconds int,
+) {
+	t.Helper()
+
+	issue, err := coreCtx.Issues.Create(ctx, sharedtypes.Issue{
+		ID:          issueID,
+		StreamID:    streamID,
+		Title:       fmt.Sprintf("Issue %d", issueID),
+		Status:      sharedtypes.IssueStatusPlanned,
+		TodoForDate: ptrTo(date),
+	}, coreCtx.UserID, date+"T08:00:00Z")
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+
+	sessionID := fmt.Sprintf("session-%d", issueID)
+	if _, err := coreCtx.Sessions.Start(ctx, sharedtypes.Session{
+		ID:        sessionID,
+		IssueID:   issue.ID,
+		StartTime: date + "T09:00:00Z",
+	}, coreCtx.UserID, coreCtx.DeviceID, date+"T09:00:00Z"); err != nil {
+		t.Fatalf("start session: %v", err)
+	}
+	if _, err := coreCtx.Sessions.Stop(ctx, sessionID, struct {
+		EndTime         string
+		DurationSeconds int
+		Notes           *string
+	}{
+		EndTime:         date + "T10:00:00Z",
+		DurationSeconds: durationSeconds,
+	}, coreCtx.UserID, coreCtx.DeviceID, date+"T10:00:00Z"); err != nil {
+		t.Fatalf("stop session: %v", err)
 	}
 }
 
@@ -429,8 +603,8 @@ func TestMomentumContextTargetNamesIncludeStreamsWithoutHabits(t *testing.T) {
 			MatchMode:     sharedtypes.MomentumMatchModeAll,
 			RequiredCount: 3600,
 			Contexts: []sharedtypes.MomentumContext{
-				{RepoID: repo.ID, StreamID: int64Ptr(appStream.ID)},
-				{RepoID: repo.ID, StreamID: int64Ptr(infraStream.ID)},
+				{RepoID: repo.ID, StreamID: new(appStream.ID)},
+				{RepoID: repo.ID, StreamID: new(infraStream.ID)},
 			},
 		},
 	}
@@ -557,8 +731,4 @@ func momentumCardByID(cards []sharedtypes.MomentumCard, id string) *sharedtypes.
 		}
 	}
 	return nil
-}
-
-func int64Ptr(v int64) *int64 {
-	return &v
 }

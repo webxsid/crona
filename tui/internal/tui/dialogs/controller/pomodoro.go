@@ -50,6 +50,7 @@ type PomodoroDialogViewModel struct {
 	LongBreakDisplay       string
 	CyclesSummary          string
 	EstimatedTotalDuration string
+	EstimatedTotalSeconds  int
 }
 
 type pomodoroValues struct {
@@ -129,6 +130,7 @@ func BuildPomodoroDialogViewModel(state State) PomodoroDialogViewModel {
 		),
 		CyclesSummary:          pomodoroCyclesSummary(state, values),
 		EstimatedTotalDuration: pomodoroEstimatedTotalDuration(values),
+		EstimatedTotalSeconds:  values.TotalSeconds,
 	}
 }
 

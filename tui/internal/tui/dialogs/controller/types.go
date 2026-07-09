@@ -71,6 +71,7 @@ type State struct {
 	ViewTitle                      string
 	ViewName                       string
 	IssueEstimateMins              *int
+	IssueWorkedSeconds             int
 	ReminderID                     string
 	ReminderKind                   sharedtypes.AlertReminderKind
 	ViewMeta                       string
@@ -115,6 +116,7 @@ type State struct {
 	PomodoroLongBreakChoice        int
 	PomodoroCyclesBeforeLongBreak  int
 	PomodoroCycles                 int
+	TimerCountdownSeconds          int
 	HardLimitTotalSeconds          int
 	HardLimitFocusSeconds          int
 	HardLimitBreakSeconds          int

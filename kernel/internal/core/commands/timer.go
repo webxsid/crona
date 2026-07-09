@@ -806,7 +806,7 @@ func (t *TimerService) applyBoundaryTransition(
 			state := runtimepkg.NewPreparedTimerRuntimeState(sessionID, activeSession.IssueID, boundary.NextSegment)
 			runtimeState = &state
 		} else {
-			runtimeState.PreparedSegmentType = segmentPtr(boundary.NextSegment)
+			runtimeState.PreparedSegmentType = new(boundary.NextSegment)
 		}
 		if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 			return sharedtypes.TimerState{}, err
@@ -864,7 +864,7 @@ func (t *TimerService) applyHardLimitExpiry(
 	); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	runtimeState.PreparedSegmentType = segmentPtr(currentType)
+	runtimeState.PreparedSegmentType = new(currentType)
 	runtimeState.HardLimitExpired = true
 	runtimeState.HardLimitExpiredAt = t.ctx.Now()
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
@@ -881,7 +881,7 @@ func (t *TimerService) applyHardLimitExpiry(
 		sharedtypes.TimerHardLimitReachedPayload{
 			SessionID:                      sessionID,
 			IssueID:                        activeSession.IssueID,
-			SegmentType:                    segmentPtr(currentType),
+			SegmentType:                    new(currentType),
 			HardLimitTotalSeconds:          runtimeState.HardLimitTotalSeconds,
 			HardLimitWorkSeconds:           runtimeState.HardLimitWorkSeconds,
 			HardLimitBreakSeconds:          runtimeState.HardLimitBreakSeconds,
@@ -1300,8 +1300,4 @@ func hardLimitDelay(
 		return 0, false
 	}
 	return time.Duration(max(1, remaining)) * time.Second, true
-}
-
-func segmentPtr(segment sharedtypes.SessionSegmentType) *sharedtypes.SessionSegmentType {
-	return &segment
 }

@@ -116,6 +116,7 @@ func Close(state State) State {
 	state.ViewTitle = ""
 	state.ViewName = ""
 	state.IssueEstimateMins = nil
+	state.IssueWorkedSeconds = 0
 	state.ReminderID = ""
 	state.ReminderKind = ""
 	state.ViewMeta = ""
@@ -138,6 +139,7 @@ func Close(state State) State {
 	state.PomodoroLongBreakChoice = 0
 	state.PomodoroCyclesBeforeLongBreak = 0
 	state.PomodoroCycles = 0
+	state.TimerCountdownSeconds = 0
 	state.HardLimitTotalSeconds = 0
 	state.HardLimitFocusSeconds = 0
 	state.HardLimitBreakSeconds = 0
@@ -317,6 +319,8 @@ func Update(
 		return updateTimerStartType(state, msg)
 	case "pomodoro_start":
 		return updatePomodoroStart(state, msg)
+	case "timer_countdown_start":
+		return updateTimerCountdownStart(state, msg)
 	case "hard_limit_expired":
 		return updateHardLimitExpired(state, msg)
 	case "hard_limit_extend":
@@ -553,18 +557,18 @@ func updateSessionMessage(
 			payload := EndSessionRequest(state.Inputs)
 			kind := state.Kind
 			state = Close(state)
-		if kind == "end_session" {
-			if !ctx.HasActiveIssue {
-				return state, nil, "Active issue metadata unavailable"
+			if kind == "end_session" {
+				if !ctx.HasActiveIssue {
+					return state, nil, "Active issue metadata unavailable"
+				}
+				return state, &Action{
+					Kind:     "end_session",
+					StreamID: ctx.ActiveIssueStream,
+					Payload:  payload,
+				}, ""
 			}
-			return state, &Action{
-				Kind:     "end_session",
-				StreamID: ctx.ActiveIssueStream,
-				Payload:  payload,
-			}, ""
+			return state, nil, ""
 		}
-		return state, nil, ""
-	}
 	}
 	var cmd tea.Cmd
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
@@ -581,6 +585,9 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
 	case "p":
 		state.ChoiceCursor = 1
+		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
+	case "t":
+		state.ChoiceCursor = 2
 		return updateTimerStartType(state, tea.KeyMsg{Type: tea.KeyEnter})
 	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
@@ -604,7 +611,25 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 				},
 			}, ""
 		case "pomodoro":
-			return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			return OpenPomodoroStart(
+				state,
+				state.RepoID,
+				state.StreamID,
+				state.IssueID,
+				state.ViewName,
+				state.IssueEstimateMins,
+				state.IssueWorkedSeconds,
+			), nil, ""
+		case "timer":
+			return OpenSingleTimerStart(
+				state,
+				state.RepoID,
+				state.StreamID,
+				state.IssueID,
+				state.ViewName,
+				state.IssueEstimateMins,
+				state.IssueWorkedSeconds,
+			), nil, ""
 		default:
 			return state, nil, "Choose a timer type"
 		}
@@ -621,13 +646,80 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 					},
 				}, ""
 			case "pomodoro":
-				return OpenPomodoroStart(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+				return OpenPomodoroStart(
+					state,
+					state.RepoID,
+					state.StreamID,
+					state.IssueID,
+					state.ViewName,
+					state.IssueEstimateMins,
+					state.IssueWorkedSeconds,
+				), nil, ""
+			case "timer":
+				return OpenSingleTimerStart(
+					state,
+					state.RepoID,
+					state.StreamID,
+					state.IssueID,
+					state.ViewName,
+					state.IssueEstimateMins,
+					state.IssueWorkedSeconds,
+				), nil, ""
 			default:
 				return state, nil, "Choose a timer type"
 			}
 		}
 	}
 	return state, nil, ""
+}
+
+func updateTimerCountdownStart(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
+		return OpenTimerStartType(
+			state,
+			state.RepoID,
+			state.StreamID,
+			state.IssueID,
+			state.ViewName,
+			state.IssueEstimateMins,
+			state.IssueWorkedSeconds,
+		), nil, ""
+	default:
+		if action == dialogActionPrimary {
+			seconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Focus time")
+			if err != nil {
+				return state, nil, err.Error()
+			}
+			state.TimerCountdownSeconds = seconds
+			totalSeconds := new(int)
+			*totalSeconds = seconds
+			workSeconds := new(int)
+			*workSeconds = seconds
+			breakSeconds := new(int)
+			longBreakSeconds := new(int)
+			cyclesBeforeLongBreak := new(int)
+			req := &shareddto.TimerStartRequest{
+				RepoID:                         int64Ptr(state.RepoID),
+				StreamID:                       int64Ptr(state.StreamID),
+				IssueID:                        int64Ptr(state.IssueID),
+				HardLimitTotalSeconds:          totalSeconds,
+				HardLimitWorkSeconds:           workSeconds,
+				HardLimitBreakSeconds:          breakSeconds,
+				HardLimitLongBreakSeconds:      longBreakSeconds,
+				HardLimitCyclesBeforeLongBreak: cyclesBeforeLongBreak,
+			}
+			return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+		}
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
+	seconds, err := ParseDurationInput(state.Inputs[0].Value(), false, "Focus time")
+	if err == nil && seconds > 0 {
+		state.TimerCountdownSeconds = seconds
+	}
+	return clearDialogError(state), nil, ""
 }
 
 func pomodoroLongBreakDisabled(state State) bool {
@@ -814,7 +906,15 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 			state.FocusIdx = pomodoroLongBreakRowIdx
 			return SyncDialogFocus(clearDialogError(state)), nil, ""
 		default:
-			return OpenTimerStartType(state, state.RepoID, state.StreamID, state.IssueID, state.ViewName), nil, ""
+			return OpenTimerStartType(
+				state,
+				state.RepoID,
+				state.StreamID,
+				state.IssueID,
+				state.ViewName,
+				state.IssueEstimateMins,
+				state.IssueWorkedSeconds,
+			), nil, ""
 		}
 	case "tab", "down":
 		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, 1)

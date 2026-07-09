@@ -8,7 +8,7 @@ Crona is a local-first work tracker for developers. It combines a terminal UI, a
 
 Managed package installers are the preferred distribution path:
 - Homebrew on macOS and Linux
-- winget on Windows
+- Scoop on Windows
 - GitHub Releases as the canonical binary source
 
 Use [docs/install.md](docs/install.md) for installation and [docs/migration.md](docs/migration.md) when you need to switch install methods or release channels.

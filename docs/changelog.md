@@ -2,6 +2,45 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.6.2] - 2026-07-07
+
+Crona v1.6.2 makes custom Momentum rest-aware across custom cadences, adds a dedicated no-break countdown timer in the TUI, fixes the Windows alert/runtime failures reported during testing, and expands the release workflow with a first-class Scoop channel plus local manifest generation for Windows validation.
+
+### Highlights
+
+- Custom Momentum now respects protected rest and away days for daily, weekly, and monthly definitions, including streak preservation when a bucket is skipped.
+- Context-based weekly and monthly Momentum targets now prorate required time by the number of non-protected days in the bucket.
+- The issue focus flow now offers a dedicated `Timer` mode for a single countdown without breaks, seeded from the remaining estimate when an issue already has tracked work.
+- Windows alert delivery no longer blocks the IPC request path during test notification or sound playback, avoiding the `i/o timeout` failures seen in support bundles.
+- Windows distribution now supports separate stable and beta Scoop manifests, and the repo can generate local manifests under `.manifest/` for pre-publish testing.
+
+## Added
+
+- Custom Momentum now understands protected rest and away days across daily, weekly, and monthly buckets.
+- Weekly and monthly context-based Momentum targets can now prorate their required work by the number of available days in the bucket.
+- The timer chooser now includes a dedicated no-break `Timer` mode that starts a single countdown from the issue flow.
+- Timer and pomodoro dialogs now show richer session metadata, including worked vs estimate summaries, total duration previews, and an `Ends At` preview when a duration is known.
+- The release pipeline now publishes Scoop manifests for stable and beta Windows channels.
+- The repo now includes `make scoop-manifest*` targets that generate local Windows manifests under `.manifest/` for pre-publish validation.
+- Runtime install metadata now records the release channel so stable and beta Scoop installs can surface the correct upgrade command.
+
+## Changed
+
+- Momentum snapshot generation now evaluates rest-aware buckets directly while building the snapshot state, so current and longest streaks stay continuous across protected skipped buckets.
+- Momentum detail and Momentum cards now expose protected-day counts, adjusted targets, skipped buckets, original vs effective targets, and skipped-bucket status instead of only met/missed counts.
+- The Momentum detail support view and Wellbeing Momentum card rendering now explain when a bucket was skipped and when a context target was reduced by protected days.
+- Timer and pomodoro issue flows now carry estimate and worked-time context through dialog transitions so defaults and previews stay aligned with the selected issue.
+- Dev seed data now includes a dedicated QA stream, rest-aware weekly habit and weekly context fixtures, weekend protection, a recent protected date, and deterministic seeded sessions so the new Momentum behavior is testable without manual setup.
+- Windows install and release docs now distinguish stable `crona.json` from beta `crona-beta.json`.
+- Windows install/update detection now preserves enough source metadata to recommend the correct `scoop update` command for stable versus beta installs.
+
+## Fixed
+
+- Windows test notifications, test sounds, and alert-triggered updates no longer block the IPC request path while PowerShell-backed delivery runs, which avoids the `i/o timeout` failures seen during alert testing.
+- Windows named-pipe endpoints are now runtime-scoped instead of using a single global pipe name, which prevents `Access is denied` launch collisions across install contexts.
+- Current Momentum streak calculations now preserve streak continuity across skipped protected buckets instead of treating those buckets like misses.
+- The timer/pomodoro issue flow now carries issue estimate and worked-time context consistently through dialog transitions and defaults the no-break timer from remaining estimate time.
+
 ## [1.6.1] - 2026-06-30
 
 Crona v1.6.1 consolidates the 1.6.1 beta series into a stable release. It carries forward the richer momentum and habit workflows from beta 1 and the narrow-screen daily view polish from beta 2 so the final 1.6.1 release is both more capable and easier to use on small terminals.

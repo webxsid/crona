@@ -60,10 +60,6 @@ func TestIssuePanePreflightClearMessagesOpenRequestedDialog(t *testing.T) {
 	}
 }
 
-func int64Ptr(v int64) *int64 {
-	return new(v)
-}
-
 func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	now := time.Date(2026, 4, 11, 10, 0, 0, 0, time.UTC)
 	model := Model{
@@ -324,7 +320,7 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 }
 
 func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
-	model := Model{}.withDialogState(dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title"))
+	model := Model{}.withDialogState(dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title", nil, 0))
 
 	for range 3 {
 		next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRight})
@@ -420,7 +416,7 @@ func TestExpiredTimerStateReopensHardLimitExpiredDialog(t *testing.T) {
 			HardLimitBreakSeconds:          0,
 			HardLimitLongBreakSeconds:      120,
 			HardLimitCyclesBeforeLongBreak: 3,
-			IssueID:                        int64Ptr(42),
+			IssueID:                        new(int64(42)),
 		},
 	})
 

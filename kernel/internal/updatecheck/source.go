@@ -211,30 +211,49 @@ func (s *Service) targetGOOS() string {
 	return runtime.GOOS
 }
 
-func (s *Service) resolveInstallMetadataLocked(localReleaseActive bool) (sharedtypes.InstallSource, string) {
-	if source, formula := s.persistedInstallMetadataLocked(); source != sharedtypes.InstallSourceUnknown {
-		return source, formula
+func (s *Service) resolveInstallMetadataLocked(
+	localReleaseActive bool,
+) (sharedtypes.InstallSource, string, sharedtypes.UpdateChannel) {
+	if source, formula, releaseChannel := s.persistedInstallMetadataLocked(); source != sharedtypes.InstallSourceUnknown {
+		return source, formula, releaseChannel
 	}
 	if source := sourceFromEnv(); source != sharedtypes.InstallSourceUnknown {
-		_ = runtimepkg.WriteInstallSource(s.installPath, source)
-		return source, defaultBrewFormula(source)
+		releaseChannel := defaultReleaseChannel(source, "")
+		_ = runtimepkg.WriteInstallSourceDetails(
+			s.installPath,
+			source,
+			defaultBrewFormula(source),
+			releaseChannel,
+		)
+		return source, defaultBrewFormula(source), releaseChannel
 	}
 	if source := sourceFromExecutablePath(s.executablePathLocked()); source != sharedtypes.InstallSourceUnknown {
-		_ = runtimepkg.WriteInstallSource(s.installPath, source)
-		return source, defaultBrewFormula(source)
+		releaseChannel := defaultReleaseChannel(source, s.executablePathLocked())
+		_ = runtimepkg.WriteInstallSourceDetails(
+			s.installPath,
+			source,
+			defaultBrewFormula(source),
+			releaseChannel,
+		)
+		return source, defaultBrewFormula(source), releaseChannel
 	}
 	if localReleaseActive {
-		_ = runtimepkg.WriteInstallSource(s.installPath, sharedtypes.InstallSourceScript)
-		return sharedtypes.InstallSourceScript, ""
+		_ = runtimepkg.WriteInstallSourceDetails(
+			s.installPath,
+			sharedtypes.InstallSourceScript,
+			"",
+			sharedtypes.UpdateChannelStable,
+		)
+		return sharedtypes.InstallSourceScript, "", sharedtypes.UpdateChannelStable
 	}
-	return sharedtypes.InstallSourceUnknown, ""
+	return sharedtypes.InstallSourceUnknown, "", sharedtypes.UpdateChannelStable
 }
 
-func (s *Service) persistedInstallMetadataLocked() (sharedtypes.InstallSource, string) {
+func (s *Service) persistedInstallMetadataLocked() (sharedtypes.InstallSource, string, sharedtypes.UpdateChannel) {
 	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
-		return sharedtypes.NormalizeInstallSource(file.InstallSource), strings.TrimSpace(file.BrewFormula)
+		return sharedtypes.NormalizeInstallSource(file.InstallSource), strings.TrimSpace(file.BrewFormula), sharedtypes.NormalizeUpdateChannel(file.ReleaseChannel)
 	}
-	return sharedtypes.NormalizeInstallSource(s.status.InstallSource), strings.TrimSpace(s.status.BrewFormula)
+	return sharedtypes.NormalizeInstallSource(s.status.InstallSource), strings.TrimSpace(s.status.BrewFormula), sharedtypes.NormalizeUpdateChannel(s.status.ReleaseChannel)
 }
 
 func (s *Service) executablePathLocked() string {
@@ -264,9 +283,9 @@ func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
 		strings.Contains(normalized, "/homebrew/") {
 		return sharedtypes.InstallSourceBrew
 	}
-	if strings.Contains(normalized, "/microsoft/winget/") ||
-		strings.Contains(normalized, "/winget/") {
-		return sharedtypes.InstallSourceWinget
+	if strings.Contains(normalized, "/scoop/apps/") ||
+		strings.Contains(normalized, "/scoop/shims/") {
+		return sharedtypes.InstallSourceScoop
 	}
 	if strings.Contains(normalized, "/go/bin/") ||
 		strings.Contains(normalized, "/gobin/") {
@@ -284,12 +303,27 @@ func defaultBrewFormula(source sharedtypes.InstallSource) string {
 	}
 }
 
+func defaultReleaseChannel(source sharedtypes.InstallSource, path string) sharedtypes.UpdateChannel {
+	if sharedtypes.NormalizeInstallSource(source) == sharedtypes.InstallSourceUnknown {
+		return sharedtypes.UpdateChannelStable
+	}
+	if value := strings.TrimSpace(os.Getenv(config.EnvVarReleaseChannel)); value != "" {
+		return sharedtypes.NormalizeUpdateChannel(sharedtypes.UpdateChannel(value))
+	}
+	normalized := strings.ToLower(strings.TrimSpace(path))
+	normalized = strings.ReplaceAll(normalized, "\\", "/")
+	if strings.Contains(normalized, "/scoop/apps/crona-beta/") {
+		return sharedtypes.UpdateChannelBeta
+	}
+	return versionpkg.RunningChannel()
+}
+
 func updateCommandForStatus(status sharedtypes.UpdateStatus) string {
 	switch sharedtypes.NormalizeInstallSource(status.InstallSource) {
 	case sharedtypes.InstallSourceBrew:
 		return brewCommandForStatus(status)
-	case sharedtypes.InstallSourceWinget:
-		return wingetUpgradeCommand()
+	case sharedtypes.InstallSourceScoop:
+		return scoopCommandForStatus(status)
 	case sharedtypes.InstallSourceScript:
 		if versionpkg.InstallScriptDeprecationEnabled() {
 			return versionpkg.InstallScriptMigrationURL
@@ -369,8 +403,11 @@ func brewCommandForStatus(status sharedtypes.UpdateStatus) string {
 	return "brew upgrade " + formula
 }
 
-func wingetUpgradeCommand() string {
-	return "winget upgrade --id Webxsid.Crona -e"
+func scoopCommandForStatus(status sharedtypes.UpdateStatus) string {
+	if sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		return "scoop update crona-beta"
+	}
+	return "scoop update crona"
 }
 
 func (s *Service) hasLocalRelease() bool {

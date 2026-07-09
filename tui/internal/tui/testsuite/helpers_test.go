@@ -12,8 +12,6 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func strPtr(v string) *string { return &v }
-
 func assertTinySummary(t *testing.T, rendered string) {
 	t.Helper()
 	if !strings.Contains(rendered, "Daily Dashboard") {
@@ -127,7 +125,7 @@ func compactWellbeingState(height int) views.ContentState {
 					IssueID:       2,
 					Status:        "failed",
 					CommittedAt:   "2026-03-19T08:00:00Z",
-					FailureReason: dailyPlanFailureReasonPtr("moved"),
+					FailureReason: new(api.DailyPlanFailureReason("moved")),
 				},
 				{
 					ID:               "3",
@@ -135,7 +133,7 @@ func compactWellbeingState(height int) views.ContentState {
 					IssueID:          3,
 					Status:           "planned",
 					CommittedAt:      "2026-03-19T08:00:00Z",
-					PendingFailureAt: strPtr("2026-03-19T10:00:00Z"),
+					PendingFailureAt: new("2026-03-19T10:00:00Z"),
 				},
 			},
 		},
@@ -200,9 +198,4 @@ func assertCompactWellbeing(t *testing.T, rendered string, height int) {
 	if got := lipgloss.Height(rendered); got > height {
 		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)
 	}
-}
-
-func dailyPlanFailureReasonPtr(value string) *api.DailyPlanFailureReason {
-	reason := api.DailyPlanFailureReason(value)
-	return &reason
 }

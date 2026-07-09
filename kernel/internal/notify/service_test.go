@@ -207,6 +207,67 @@ func TestHardLimitReachedEventEnqueuesNotificationWithSound(t *testing.T) {
 	}
 }
 
+func TestNotifyQueuesAlertForBackgroundDelivery(t *testing.T) {
+	ctx := context.Background()
+	coreCtx := testCoreContext(t, ctx)
+	service := &Service{
+		core:   coreCtx,
+		logger: testLogger(t),
+		queue:  make(chan queuedAlert, 1),
+	}
+
+	req := sharedtypes.AlertRequest{
+		Kind:      sharedtypes.AlertEventExportCompleted,
+		Title:     "Export ready",
+		Body:      "report.md",
+		PlaySound: false,
+	}
+	if err := service.Notify(ctx, req); err != nil {
+		t.Fatalf("notify: %v", err)
+	}
+
+	select {
+	case queued := <-service.queue:
+		if queued.req.Kind != req.Kind {
+			t.Fatalf("expected queued kind %q, got %q", req.Kind, queued.req.Kind)
+		}
+		if !queued.respectSettings {
+			t.Fatal("expected queued notify alert to respect settings")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected alert to be queued")
+	}
+}
+
+func TestTestSoundQueuesAlertForBackgroundDelivery(t *testing.T) {
+	ctx := context.Background()
+	coreCtx := testCoreContext(t, ctx)
+	service := &Service{
+		core:   coreCtx,
+		logger: testLogger(t),
+		queue:  make(chan queuedAlert, 1),
+	}
+
+	if err := service.TestSound(ctx); err != nil {
+		t.Fatalf("test sound: %v", err)
+	}
+
+	select {
+	case queued := <-service.queue:
+		if queued.req.Kind != sharedtypes.AlertEventTestSound {
+			t.Fatalf("expected queued test-sound kind, got %q", queued.req.Kind)
+		}
+		if queued.respectSettings {
+			t.Fatal("expected test sound to bypass boundary settings")
+		}
+		if !queued.req.PlaySound {
+			t.Fatal("expected test sound alert to request sound playback")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected test sound alert to be queued")
+	}
+}
+
 func TestInactivityAlertFiresAfterThresholdAndRepeats(t *testing.T) {
 	ctx := context.Background()
 	currentNow := "2026-04-11T10:00:00Z"

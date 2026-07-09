@@ -68,8 +68,8 @@ func TestWellbeingLabelsReflectSelectedWindow(t *testing.T) {
 		Height:              40,
 		WellbeingWindowDays: 14,
 		MetricsRollup: &api.MetricsRollup{
-			AverageMood:       floatPtr(4.2),
-			AverageEnergy:     floatPtr(3.8),
+			AverageMood:       new(4.2),
+			AverageEnergy:     new(3.8),
 			AverageSleepHours: &sleep,
 		},
 	}
@@ -80,8 +80,4 @@ func TestWellbeingLabelsReflectSelectedWindow(t *testing.T) {
 			t.Fatalf("expected wellbeing render to contain %q, got %q", want, rendered)
 		}
 	}
-}
-
-func floatPtr(v float64) *float64 {
-	return &v
 }

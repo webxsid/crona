@@ -43,7 +43,7 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 		Timer: &api.TimerState{
 			State:       "running",
 			SessionID:   &sessionID,
-			SegmentType: segmentPtr(sharedtypes.SessionSegmentWork),
+			SegmentType: new(sharedtypes.SessionSegmentWork),
 		},
 		KernelInfo: &api.KernelInfo{
 			Endpoint:       filepath.Join(baseDir, "socket", "crona.sock"),
@@ -160,8 +160,4 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 	if meta.RedactionMode != "safe" {
 		t.Fatalf("expected redaction mode safe, got %q", meta.RedactionMode)
 	}
-}
-
-func segmentPtr(value sharedtypes.SessionSegmentType) *sharedtypes.SessionSegmentType {
-	return &value
 }

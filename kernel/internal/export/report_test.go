@@ -41,7 +41,7 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 						ID:              7,
 						Title:           "Tighten exported plan narrative",
 						Status:          sharedtypes.IssueStatusBlocked,
-						EstimateMinutes: intPtr(90),
+						EstimateMinutes: new(90),
 					},
 					RepoName:   "Work",
 					StreamName: "core",
@@ -50,7 +50,7 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 				PlanStatus:             sharedtypes.DailyPlanEntryStatusFailed,
 				PlanCurrentDelayedDays: 4,
 				PlanFailScore:          0.84,
-				PlanFailureReason:      planFailurePtr(sharedtypes.DailyPlanFailureReasonMissed),
+				PlanFailureReason:      new(sharedtypes.DailyPlanFailureReasonMissed),
 			},
 		},
 	}
@@ -116,7 +116,7 @@ func TestFallbackDailyReportTemplateRendersAccountabilityAndFailureDetails(t *te
 						ID:              9,
 						Title:           "Recover failed plan item",
 						Status:          sharedtypes.IssueStatusBlocked,
-						EstimateMinutes: intPtr(60),
+						EstimateMinutes: new(60),
 					},
 					RepoName:   "Work",
 					StreamName: "core",
@@ -124,7 +124,7 @@ func TestFallbackDailyReportTemplateRendersAccountabilityAndFailureDetails(t *te
 				WorkedSeconds:          1200,
 				PlanStatus:             sharedtypes.DailyPlanEntryStatusFailed,
 				PlanCurrentDelayedDays: 3,
-				PlanFailureReason:      planFailurePtr(sharedtypes.DailyPlanFailureReasonMissed),
+				PlanFailureReason:      new(sharedtypes.DailyPlanFailureReasonMissed),
 			},
 		},
 	}
@@ -174,7 +174,7 @@ func TestBuildTemplateDataMapSuppressesStalePlanRiskForResolvedIssues(t *testing
 				PlanMaxDelayedDays:       7,
 				PlanFailScore:            2.84,
 				PlanPendingFailureAt:     &pendingAt,
-				PlanPendingFailureReason: planFailurePtr(sharedtypes.DailyPlanFailureReasonMoved),
+				PlanPendingFailureReason: new(sharedtypes.DailyPlanFailureReasonMoved),
 			},
 		},
 	}
@@ -359,8 +359,4 @@ func TestMarkdownPresetsRenderFrontmatter(t *testing.T) {
 			t.Fatalf("expected rendered preset to contain %q\n%s", snippet, rendered)
 		}
 	}
-}
-
-func planFailurePtr(reason sharedtypes.DailyPlanFailureReason) *sharedtypes.DailyPlanFailureReason {
-	return &reason
 }

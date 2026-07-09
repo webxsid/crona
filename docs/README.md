@@ -7,7 +7,7 @@ Use this index as the entry point for Crona docs.
 - [Migration](migration.md)
 - [Legacy to Homebrew](migration/legacy-to-brew.md)
 - [Legacy to Go](migration/legacy-to-go.md)
-- [Legacy to Winget](migration/legacy-to-winget.md)
+- [Legacy to Scoop](migration/legacy-to-scoop.md)
 - [Development](development.md)
 - [Contributing](contributing.md)
 - [Release Process](release.md)

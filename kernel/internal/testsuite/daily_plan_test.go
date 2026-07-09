@@ -253,7 +253,7 @@ func TestDailyReportIncludesWorkedPinnedFutureIssue(t *testing.T) {
 		IssueID:             workedPinned.ID,
 		Date:                reportDate,
 		WorkDurationSeconds: 1800,
-		StartTime:           strPtr("10:00"),
+		StartTime:           new("10:00"),
 	}); err != nil {
 		t.Fatalf("log manual session: %v", err)
 	}
@@ -308,7 +308,7 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 			IssueID:             issue.ID,
 			Date:                day,
 			WorkDurationSeconds: 8 * 60 * 60,
-			StartTime:           strPtr("09:00"),
+			StartTime:           new("09:00"),
 		}); err != nil {
 			t.Fatalf("log heavy session for %s: %v", day, err)
 		}
@@ -325,7 +325,7 @@ func TestDailyReportBurnoutUsesSevenDayWindow(t *testing.T) {
 		IssueID:             issue.ID,
 		Date:                reportDate,
 		WorkDurationSeconds: 30 * 60,
-		StartTime:           strPtr("09:00"),
+		StartTime:           new("09:00"),
 	}); err != nil {
 		t.Fatalf("log report date session: %v", err)
 	}

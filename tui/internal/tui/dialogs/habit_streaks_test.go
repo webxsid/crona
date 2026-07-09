@@ -60,8 +60,8 @@ func TestMomentumTargetsShowRedundancyWarningForRepoWideAndSpecificContexts(t *t
 			TargetKind: sharedtypes.MomentumTargetKindContext,
 			Contexts: []sharedtypes.MomentumContext{
 				{RepoID: 7},
-				{RepoID: 7, StreamID: int64PtrTest(8)},
-				{RepoID: 7, StreamID: int64PtrTest(9)},
+				{RepoID: 7, StreamID: new(int64(8))},
+				{RepoID: 7, StreamID: new(int64(9))},
 			},
 		},
 	)
@@ -87,7 +87,7 @@ func TestMomentumTargetsSkipRedundancyWarningForDistinctContexts(t *testing.T) {
 			Enabled:    true,
 			TargetKind: sharedtypes.MomentumTargetKindContext,
 			Contexts: []sharedtypes.MomentumContext{
-				{RepoID: 7, StreamID: int64PtrTest(8)},
+				{RepoID: 7, StreamID: new(int64(8))},
 			},
 		},
 	)
@@ -101,8 +101,4 @@ func TestMomentumTargetsSkipRedundancyWarningForDistinctContexts(t *testing.T) {
 
 func testTheme() Theme {
 	return Theme{}
-}
-
-func int64PtrTest(v int64) *int64 {
-	return &v
 }

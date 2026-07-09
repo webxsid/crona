@@ -41,7 +41,6 @@ jobs:
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          WINGET_PKGS_GITHUB_TOKEN: ${{ secrets.WINGET_PKGS_GITHUB_TOKEN }}
         run: goreleaser release --clean
 
       - name: Normalize GitHub release state
@@ -64,3 +63,8 @@ jobs:
         env:
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: sh ./scripts/publish_homebrew_formula.sh "${GITHUB_REF_NAME}" "release/${GITHUB_REF_NAME}"
+
+      - name: Publish Scoop manifest
+        env:
+          SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
+        run: sh ./scripts/publish_scoop_manifest.sh "${GITHUB_REF_NAME}"

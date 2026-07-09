@@ -164,8 +164,8 @@ func TestDailyViewReportedHeightRangeFitsAllocation(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -287,8 +287,8 @@ func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -1111,8 +1111,8 @@ func TestDailySummaryShowsBarsAtHeight55AndAbove(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -1166,8 +1166,8 @@ func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -1225,8 +1225,8 @@ func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -1276,23 +1276,23 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 				Title:           "Old task",
 				Status:          "done",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-04-28"),
-				CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+				TodoForDate:     new("2026-04-28"),
+				CompletedAt:     new("2026-04-28T18:00:00Z"),
 			},
 			{
 				ID:              2,
 				Title:           "Today task",
 				Status:          "done",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-04-30"),
-				CompletedAt:     strPtr("2026-04-30T18:00:00Z"),
+				TodoForDate:     new("2026-04-30"),
+				CompletedAt:     new("2026-04-30T18:00:00Z"),
 			},
 			{
 				ID:              4,
 				Title:           "Pinned today task",
 				Status:          "ready",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-04-30"),
+				TodoForDate:     new("2026-04-30"),
 				PinnedDaily:     true,
 			},
 			{
@@ -1300,7 +1300,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 				Title:           "Pinned future task",
 				Status:          "backlog",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-05-03"),
+				TodoForDate:     new("2026-05-03"),
 				PinnedDaily:     true,
 			},
 			{
@@ -1308,7 +1308,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 				Title:           "Pinned overdue task",
 				Status:          "ready",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-04-27"),
+				TodoForDate:     new("2026-04-27"),
 				PinnedDaily:     true,
 			},
 		},
@@ -1320,8 +1320,8 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 					Title:           "Old task",
 					Status:          "done",
 					EstimateMinutes: &estimate,
-					TodoForDate:     strPtr("2026-04-28"),
-					CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+					TodoForDate:     new("2026-04-28"),
+					CompletedAt:     new("2026-04-28T18:00:00Z"),
 				},
 				RepoID:     1,
 				RepoName:   "Work",
@@ -1334,8 +1334,8 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 					Title:           "Today task",
 					Status:          "done",
 					EstimateMinutes: &estimate,
-					TodoForDate:     strPtr("2026-04-30"),
-					CompletedAt:     strPtr("2026-04-30T18:00:00Z"),
+					TodoForDate:     new("2026-04-30"),
+					CompletedAt:     new("2026-04-30T18:00:00Z"),
 				},
 				RepoID:     1,
 				RepoName:   "Work",
@@ -1348,7 +1348,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 					Title:           "Pinned today task",
 					Status:          "ready",
 					EstimateMinutes: &estimate,
-					TodoForDate:     strPtr("2026-04-30"),
+					TodoForDate:     new("2026-04-30"),
 					PinnedDaily:     true,
 				},
 				RepoID:     1,
@@ -1362,7 +1362,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 					Title:           "Pinned future task",
 					Status:          "backlog",
 					EstimateMinutes: &estimate,
-					TodoForDate:     strPtr("2026-05-03"),
+					TodoForDate:     new("2026-05-03"),
 					PinnedDaily:     true,
 				},
 				RepoID:     1,
@@ -1376,7 +1376,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 					Title:           "Pinned overdue task",
 					Status:          "ready",
 					EstimateMinutes: &estimate,
-					TodoForDate:     strPtr("2026-04-27"),
+					TodoForDate:     new("2026-04-27"),
 					PinnedDaily:     true,
 				},
 				RepoID:     1,
@@ -1385,8 +1385,8 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 	planned := base
@@ -1417,8 +1417,8 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 			Title:           "Old task",
 			Status:          "done",
 			EstimateMinutes: &estimate,
-			TodoForDate:     strPtr("2026-04-28"),
-			CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+			TodoForDate:     new("2026-04-28"),
+			CompletedAt:     new("2026-04-28T18:00:00Z"),
 		},
 	}
 	past.AllIssues = []api.IssueWithMeta{
@@ -1429,8 +1429,8 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 				Title:           "Old task",
 				Status:          "done",
 				EstimateMinutes: &estimate,
-				TodoForDate:     strPtr("2026-04-28"),
-				CompletedAt:     strPtr("2026-04-28T18:00:00Z"),
+				TodoForDate:     new("2026-04-28"),
+				CompletedAt:     new("2026-04-28T18:00:00Z"),
 			},
 			RepoID:     1,
 			RepoName:   "Work",
@@ -1573,8 +1573,8 @@ func TestDailySummaryKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 
@@ -1616,8 +1616,8 @@ func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 			},
 		},
 		Context: &api.ActiveContext{
-			RepoName:   strPtr("Work"),
-			StreamName: strPtr("app"),
+			RepoName:   new("Work"),
+			StreamName: new("app"),
 		},
 	}
 

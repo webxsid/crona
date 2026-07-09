@@ -60,7 +60,7 @@ func TestKernelStatusTextIncludesWindowsTransportAndEndpoint(t *testing.T) {
 			*info = sharedtypes.KernelInfo{
 				PID:        7,
 				Transport:  localipc.TransportWindowsNamedPipe,
-		Endpoint:   `\\.\pipe\crona-daemon-dev`,
+				Endpoint:   `\\.\pipe\crona-daemon-dev`,
 				Env:        "Dev",
 				StartedAt:  "2026-03-27T00:00:00Z",
 				ScratchDir: `C:\Users\alice\AppData\Local\Crona Dev\scratch`,
@@ -268,9 +268,10 @@ func TestUpdateStatusTextIncludesInstallSourceAndCommand(t *testing.T) {
 			status := target.(*sharedtypes.UpdateStatus)
 			status.CurrentVersion = "1.5.1"
 			status.LatestVersion = "1.6.0"
-			status.InstallSource = sharedtypes.InstallSourceWinget
-			status.UpdateCommand = "winget upgrade --id Webxsid.Crona -e"
-			status.InstallUnavailableReason = "managed by winget"
+			status.InstallSource = sharedtypes.InstallSourceScoop
+			status.ReleaseChannel = sharedtypes.UpdateChannelBeta
+			status.UpdateCommand = "scoop update crona-beta"
+			status.InstallUnavailableReason = "managed by Scoop"
 			status.UpdateAvailable = true
 			status.Enabled = true
 			status.PromptEnabled = true
@@ -280,7 +281,7 @@ func TestUpdateStatusTextIncludesInstallSourceAndCommand(t *testing.T) {
 	if err != nil {
 		t.Fatalf("update status: %v", err)
 	}
-	for _, want := range []string{"current: 1.5.1", "latest: 1.6.0", "install-source: winget", "update-command: winget upgrade --id Webxsid.Crona -e", "install-unavailable: managed by winget"} {
+	for _, want := range []string{"current: 1.5.1", "latest: 1.6.0", "install-source: scoop", "release-channel: beta", "update-command: scoop update crona-beta", "install-unavailable: managed by Scoop"} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, out.String())
 		}

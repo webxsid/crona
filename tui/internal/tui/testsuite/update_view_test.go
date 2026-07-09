@@ -135,7 +135,7 @@ func TestHomebrewInstallUsesPackageManagerCommand(t *testing.T) {
 	}
 }
 
-func TestWingetInstallUsesPackageManagerCommand(t *testing.T) {
+func TestScoopInstallUsesPackageManagerCommand(t *testing.T) {
 	rendered := support.RenderUpdates(viewtypes.ContentState{
 		View:   "updates",
 		Pane:   "issues",
@@ -148,13 +148,14 @@ func TestWingetInstallUsesPackageManagerCommand(t *testing.T) {
 			CurrentVersion:           "1.5.1",
 			LatestVersion:            "1.6.0",
 			InstallAvailable:         false,
-			InstallSource:            sharedtypes.InstallSourceWinget,
-			UpdateCommand:            "winget upgrade --id Webxsid.Crona -e",
+			InstallSource:            sharedtypes.InstallSourceScoop,
+			ReleaseChannel:           sharedtypes.UpdateChannelStable,
+			UpdateCommand:            "scoop update crona",
 			ReleaseURL:               "https://github.com/webxsid/crona/releases/tag/v1.6.0",
 			ReleaseNotes:             "## Improvements\n- Faster startup\n",
 			ChecksumsURL:             "https://example.com/checksums.txt",
 			InstallScriptURL:         "https://example.com/install.ps1",
-			InstallUnavailableReason: "managed by winget",
+			InstallUnavailableReason: "managed by Scoop",
 			InstallScriptDeprecated:  true,
 			MigrationGuideURL:        "https://crona.work/migration",
 		},
@@ -170,23 +171,25 @@ func TestWingetInstallUsesPackageManagerCommand(t *testing.T) {
 		"Current Version",
 		"Latest Version",
 		"Install Source",
-		"winget",
+		"Scoop",
+		"Channel",
+		"Stable",
 		"Update Command",
-		"winget upgrade --id Webxsid.Crona -e",
+		"scoop update crona",
 		"What's New",
 		"[o] open migration guide",
 	} {
 		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected winget update view to contain %q, got %q", want, rendered)
+			t.Fatalf("expected scoop update view to contain %q, got %q", want, rendered)
 		}
 	}
 	for _, unwanted := range []string{"Release Page", "Checksums", "Configured Channel", "Install Status", "Installer", "TUI Path", "Engine Path"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected winget update view to keep %q hidden by default, got %q", unwanted, rendered)
+			t.Fatalf("expected scoop update view to keep %q hidden by default, got %q", unwanted, rendered)
 		}
 	}
 	if strings.Contains(rendered, "[i]") {
-		t.Fatalf("expected winget update view to hide install action, got %q", rendered)
+		t.Fatalf("expected scoop update view to hide install action, got %q", rendered)
 	}
 }
 
@@ -300,6 +303,53 @@ func TestUpdatesViewExpandedDiagnosticsRevealInternalFields(t *testing.T) {
 	}
 }
 
+func TestUpdatesViewExpandedDiagnosticsShowScoopInstallChannel(t *testing.T) {
+	rendered := support.RenderUpdates(viewtypes.ContentState{
+		View:                      "updates",
+		Pane:                      "issues",
+		Width:                     100,
+		Height:                    60,
+		UpdateDiagnosticsExpanded: true,
+		UpdateStatus: &api.UpdateStatus{
+			Enabled:                  true,
+			PromptEnabled:            true,
+			UpdateAvailable:          true,
+			CurrentVersion:           "1.5.1",
+			LatestVersion:            "1.6.0",
+			InstallSource:            sharedtypes.InstallSourceScoop,
+			ReleaseChannel:           sharedtypes.UpdateChannelBeta,
+			UpdateCommand:            "scoop update crona-beta",
+			ReleaseTag:               "v1.6.0-beta.1",
+			ReleaseURL:               "https://github.com/webxsid/crona/releases/tag/v1.6.0-beta.1",
+			ReleaseNotes:             "## Improvements\n- Faster startup\n",
+			InstallUnavailableReason: "managed by Scoop",
+			InstallScriptDeprecated:  true,
+			Channel:                  sharedtypes.UpdateChannelBeta,
+			RunningChannel:           sharedtypes.UpdateChannelBeta,
+			RunningIsBeta:            true,
+			ReleaseIsPrerelease:      true,
+			LatestIsBeta:             true,
+			CheckedAt:                "2026-06-16T06:20:10Z",
+		},
+		UpdateManualReason:   "managed by Scoop",
+		TUIExecutablePath:    "/opt/homebrew/bin/crona-tui",
+		KernelExecutablePath: "/opt/homebrew/bin/crona-daemon",
+	})
+	for _, want := range []string{
+		"Diagnostics",
+		"Install Source",
+		"Scoop",
+		"Install Channel",
+		"beta",
+		"Update Command",
+		"scoop update crona-beta",
+	} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected scoop diagnostics to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
 func TestHomebrewInstallBlocksSelfUpdate(t *testing.T) {
 	model := app.NewUpdateViewModel("", app.PaneIssues, "", &api.UpdateStatus{
 		InstallAvailable: true,
@@ -315,17 +365,18 @@ func TestHomebrewInstallBlocksSelfUpdate(t *testing.T) {
 	}
 }
 
-func TestWingetInstallBlocksSelfUpdate(t *testing.T) {
+func TestScoopInstallBlocksSelfUpdate(t *testing.T) {
 	model := app.NewUpdateViewModel("", app.PaneIssues, "", &api.UpdateStatus{
 		InstallAvailable: true,
-		InstallSource:    sharedtypes.InstallSourceWinget,
-		UpdateCommand:    "winget upgrade --id Webxsid.Crona -e",
+		InstallSource:    sharedtypes.InstallSourceScoop,
+		ReleaseChannel:   sharedtypes.UpdateChannelBeta,
+		UpdateCommand:    "scoop update crona-beta",
 	}, "", nil)
 
 	if got := model.SelfUpdateUnsupportedReasonForTest(); got == "" {
-		t.Fatalf("expected winget installs to report a manual update path")
+		t.Fatalf("expected scoop installs to report a manual update path")
 	}
 	if model.SelfUpdateInstallAvailableForTest() {
-		t.Fatalf("expected winget installs to disable self-update")
+		t.Fatalf("expected scoop installs to disable self-update")
 	}
 }

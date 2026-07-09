@@ -460,13 +460,19 @@ type MomentumContextRedundancy struct {
 }
 
 type MomentumSeriesPoint struct {
-	BucketKey string `json:"bucketKey"`
-	Label     string `json:"label"`
-	StartDate string `json:"startDate"`
-	EndDate   string `json:"endDate"`
-	Count     int    `json:"count"`
-	Target    int    `json:"target"`
-	MetTarget bool   `json:"metTarget"`
+	BucketKey          string                 `json:"bucketKey"`
+	Label              string                 `json:"label"`
+	StartDate          string                 `json:"startDate"`
+	EndDate            string                 `json:"endDate"`
+	Count              int                    `json:"count"`
+	Target             int                    `json:"target"`
+	MetTarget          bool                   `json:"metTarget"`
+	OriginalTarget     int                    `json:"originalTarget,omitempty"`
+	ProtectedDayCount  int                    `json:"protectedDayCount,omitempty"`
+	BucketDayCount     int                    `json:"bucketDayCount,omitempty"`
+	AvailableDayCount  int                    `json:"availableDayCount,omitempty"`
+	Skipped            bool                   `json:"skipped,omitempty"`
+	RestAdjustmentMode MomentumRestAdjustMode `json:"restAdjustmentMode,omitempty"`
 }
 
 type MomentumCard struct {
@@ -486,13 +492,28 @@ const (
 )
 
 type MomentumBucketDetail struct {
-	Label     string `json:"label"`
-	StartDate string `json:"startDate"`
-	EndDate   string `json:"endDate"`
-	Count     int    `json:"count"`
-	Target    int    `json:"target"`
-	MetTarget bool   `json:"metTarget"`
+	Label              string                 `json:"label"`
+	StartDate          string                 `json:"startDate"`
+	EndDate            string                 `json:"endDate"`
+	Count              int                    `json:"count"`
+	Target             int                    `json:"target"`
+	MetTarget          bool                   `json:"metTarget"`
+	OriginalTarget     int                    `json:"originalTarget,omitempty"`
+	ProtectedDayCount  int                    `json:"protectedDayCount,omitempty"`
+	BucketDayCount     int                    `json:"bucketDayCount,omitempty"`
+	AvailableDayCount  int                    `json:"availableDayCount,omitempty"`
+	Skipped            bool                   `json:"skipped,omitempty"`
+	RestAdjustmentMode MomentumRestAdjustMode `json:"restAdjustmentMode,omitempty"`
 }
+
+type MomentumRestAdjustMode string
+
+const (
+	MomentumRestAdjustModeNone         MomentumRestAdjustMode = ""
+	MomentumRestAdjustModeSkipDay      MomentumRestAdjustMode = "skip_day"
+	MomentumRestAdjustModeSkipBucket   MomentumRestAdjustMode = "skip_bucket"
+	MomentumRestAdjustModeProratedGoal MomentumRestAdjustMode = "prorated_target"
+)
 
 type MomentumContributor struct {
 	Kind        MomentumContributorKind `json:"kind"`
@@ -1345,6 +1366,7 @@ type UpdateStatus struct {
 	ChecksumsURL             string        `json:"checksumsUrl,omitempty"`
 	InstallSource            InstallSource `json:"installSource,omitempty"`
 	BrewFormula              string        `json:"brewFormula,omitempty"`
+	ReleaseChannel           UpdateChannel `json:"releaseChannel,omitempty"`
 	InstallScriptDeprecated  bool          `json:"installScriptDeprecated"`
 	MigrationGuideURL        string        `json:"migrationGuideUrl,omitempty"`
 	UpdateCommand            string        `json:"updateCommand,omitempty"`

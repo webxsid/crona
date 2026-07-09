@@ -55,7 +55,11 @@ func GetMomentumDetail(
 	if err != nil {
 		return nil, err
 	}
-	currentBucket, err := momentumCurrentBucket(def, endDate, countsByDate)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	currentBucket, err := momentumCurrentBucket(def, endDate, countsByDate, settings)
 	if err != nil {
 		return nil, err
 	}
@@ -92,12 +96,18 @@ func GetMomentumDetail(
 		HabitNames:  momentumHabitNames(def.HabitIDs, habitNamesByID),
 		TargetNames: momentumTargetNames(def, habitNamesByID, repoNamesByID, streamNamesByID),
 		CurrentBucket: sharedtypes.MomentumBucketDetail{
-			Label:     currentBucket.Label,
-			StartDate: currentBucket.StartDate,
-			EndDate:   currentBucket.EndDate,
-			Count:     currentBucket.Count,
-			Target:    currentBucket.Target,
-			MetTarget: currentBucket.MetTarget,
+			Label:              currentBucket.Label,
+			StartDate:          currentBucket.StartDate,
+			EndDate:            currentBucket.EndDate,
+			Count:              currentBucket.Count,
+			Target:             currentBucket.Target,
+			MetTarget:          currentBucket.MetTarget,
+			OriginalTarget:     currentBucket.OriginalTarget,
+			ProtectedDayCount:  currentBucket.ProtectedDayCount,
+			BucketDayCount:     currentBucket.BucketDayCount,
+			AvailableDayCount:  currentBucket.AvailableDayCount,
+			Skipped:            currentBucket.Skipped,
+			RestAdjustmentMode: currentBucket.RestAdjustmentMode,
 		},
 	}
 	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
@@ -129,6 +139,7 @@ func momentumCurrentBucket(
 	def sharedtypes.HabitStreakDefinition,
 	endDate string,
 	countsByDate map[string]map[string]int,
+	settings *sharedtypes.CoreSettings,
 ) (sharedtypes.MomentumSeriesPoint, error) {
 	key := customHabitBucketKey(endDate, def.Period)
 	startDate, endBucketDate := momentumBucketBounds(key, def.Period)
@@ -136,20 +147,11 @@ func momentumCurrentBucket(
 		return sharedtypes.MomentumSeriesPoint{}, errors.New("could not resolve momentum bucket")
 	}
 	bucketEnd := minISODate(endDate, endBucketDate)
-	series := buildMomentumSeries(def, startDate, bucketEnd, countsByDate)
+	series := buildMomentumSeries(def, startDate, bucketEnd, countsByDate, settings)
 	if len(series) == 0 {
 		return sharedtypes.MomentumSeriesPoint{}, errors.New("could not resolve momentum bucket")
 	}
-	point := series[len(series)-1]
-	return sharedtypes.MomentumSeriesPoint{
-		BucketKey: key,
-		Label:     point.Label,
-		StartDate: startDate,
-		EndDate:   bucketEnd,
-		Count:     point.Count,
-		Target:    point.Target,
-		MetTarget: point.MetTarget,
-	}, nil
+	return series[len(series)-1], nil
 }
 
 func momentumHabitContributors(

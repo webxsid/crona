@@ -94,7 +94,7 @@ emit_install_dispatch() {
   printf '    FileUtils.mkdir_p(runtime_home)\n'
   printf '    File.write(\n'
   printf '      File.join(runtime_home, "install.json"),\n'
-  printf '      "{\\n  \\"installSource\\": \\"" + source + "\\",\\n  \\"brewFormula\\": \\"" + formula_name + "\\"\\n}\\n",\n'
+  printf '      "{\\n  \\"installSource\\": \\"" + source + "\\",\\n  \\"brewFormula\\": \\"" + formula_name + "\\",\\n  \\"releaseChannel\\": \\"%s\\"\\n}\\n",\n' "$(if printf '%s' "$VERSION" | grep -Eq -- '-beta'; then printf 'beta'; else printf 'stable'; fi)"
   printf '    )\n'
   printf '  end\n'
   printf '\n'

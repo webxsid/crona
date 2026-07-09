@@ -9,7 +9,7 @@ import (
 )
 
 func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 
 	next, action, status := Update(
 		state,
@@ -50,7 +50,7 @@ func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
 }
 
 func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
-	state := OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	state := OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
 
 	next, action, status := Update(
 		state,
@@ -75,7 +75,7 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 		t.Fatalf("expected stopwatch timer start to omit pomodoro fields, got %+v", action.TimerStart)
 	}
 
-	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
 	next, action, status = Update(
 		state,
 		UpdateContext{},
@@ -92,7 +92,7 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 		t.Fatalf("expected stopwatch shortcut to close dialog, got %q", next.Kind)
 	}
 
-	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
 	next, action, status = Update(
 		state,
 		UpdateContext{},
@@ -115,7 +115,42 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 		t.Fatalf("expected pomodoro choice to open unified pomodoro dialog, got %q", next.Kind)
 	}
 
-	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title")
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyDown},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected second down result status=%q action=%+v", status, action)
+	}
+	next, action, status = Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyDown},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected third down result status=%q action=%+v", status, action)
+	}
+	next, action, status = Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected timer choice to open dialog, got %+v", action)
+	}
+	if next.Kind != "timer_countdown_start" {
+		t.Fatalf("expected timer choice to open countdown dialog, got %q", next.Kind)
+	}
+
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
 	next, action, status = Update(
 		state,
 		UpdateContext{},
@@ -131,10 +166,68 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 	if next.Kind != "pomodoro_start" {
 		t.Fatalf("expected pomodoro shortcut to open unified pomodoro dialog, got %q", next.Kind)
 	}
+
+	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
+	next, action, status = Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'t'}},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if action != nil {
+		t.Fatalf("expected timer shortcut to open dialog, got action %+v", action)
+	}
+	if next.Kind != "timer_countdown_start" {
+		t.Fatalf("expected timer shortcut to open countdown dialog, got %q", next.Kind)
+	}
+}
+
+func TestTimerCountdownStartUsesRemainingEstimateAndBuildsNoBreakHardLimit(t *testing.T) {
+	estimate := 60
+	state := OpenSingleTimerStart(State{}, 11, 22, 33, "Issue title", &estimate, 15*60)
+	if got := state.Inputs[0].Value(); got != "45m" {
+		t.Fatalf("expected remaining estimate default of 45m, got %q", got)
+	}
+
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
+	if status != "" {
+		t.Fatalf("unexpected status %q", status)
+	}
+	if next.Kind != "" {
+		t.Fatalf("expected dialog to close, got %q", next.Kind)
+	}
+	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
+		t.Fatalf("unexpected action %+v", action)
+	}
+	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 45*60 {
+		t.Fatalf("expected countdown total of 45m, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitWorkSeconds == nil || *action.TimerStart.HardLimitWorkSeconds != 45*60 {
+		t.Fatalf("expected countdown work seconds of 45m, got %+v", action.TimerStart)
+	}
+	if action.TimerStart.HardLimitBreakSeconds == nil || *action.TimerStart.HardLimitBreakSeconds != 0 {
+		t.Fatalf("expected no-break timer, got %+v", action.TimerStart)
+	}
+}
+
+func TestTimerCountdownStartFallsBackToTwentyFiveMinutesWhenEstimateConsumed(t *testing.T) {
+	estimate := 45
+	state := OpenSingleTimerStart(State{}, 11, 22, 33, "Issue title", &estimate, 45*60)
+	if got := state.Inputs[0].Value(); got != "25m" {
+		t.Fatalf("expected 25m fallback when estimate is consumed, got %q", got)
+	}
 }
 
 func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	var next State
 	var action *Action
 	var status string
@@ -203,7 +296,7 @@ func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
 }
 
 func TestPomodoroRowNavigationBlursCustomInputFocus(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	var next State
 	var action *Action
 	var status string
@@ -255,7 +348,7 @@ func TestPomodoroRowNavigationBlursCustomInputFocus(t *testing.T) {
 }
 
 func TestPomodoroLeftAtCustomInputStartReturnsToPresetRow(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	var next State
 	var action *Action
 	var status string
@@ -295,7 +388,7 @@ func TestPomodoroLeftAtCustomInputStartReturnsToPresetRow(t *testing.T) {
 }
 
 func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	var next State
 	var action *Action
 	var status string
@@ -383,7 +476,7 @@ func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
 }
 
 func TestPomodoroShortBreakNoBreakDisablesCyclesAndStartsContinuousFocus(t *testing.T) {
-	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	state := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	var next State
 	var action *Action
 	var status string
@@ -584,7 +677,7 @@ func TestPomodoroExtendDialogReturnsExtensionAction(t *testing.T) {
 }
 
 func TestPomodoroExtendDialogMatchesPomodoroStartInputChrome(t *testing.T) {
-	start := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title")
+	start := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	extend := OpenHardLimitExtend(State{
 		ViewName:                       "Issue title",
 		HardLimitTotalSeconds:          7800,

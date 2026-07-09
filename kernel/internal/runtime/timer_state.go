@@ -133,7 +133,7 @@ func NewPreparedTimerRuntimeState(
 	return TimerRuntimeState{
 		SessionID:           strings.TrimSpace(sessionID),
 		IssueID:             issueID,
-		PreparedSegmentType: valuePtr(segmentType),
+		PreparedSegmentType: new(segmentType),
 		RecordedAt:          time.Now().UTC().Format(time.RFC3339),
 	}
 }
@@ -164,8 +164,4 @@ func timerRuntimeStatePath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(base, "timer.json"), nil
-}
-
-func valuePtr(value sharedtypes.SessionSegmentType) *sharedtypes.SessionSegmentType {
-	return &value
 }

@@ -40,8 +40,11 @@ func (m Model) selfUpdateUnsupportedReason() string {
 			}
 		}
 		return fmt.Sprintf("Installed via Homebrew. Use brew upgrade %s.", currentBrewFormula())
-	case sharedtypes.InstallSourceWinget:
-		return "Installed via winget. Use winget upgrade --id Webxsid.Crona -e."
+	case sharedtypes.InstallSourceScoop:
+		if m.updateStatus != nil && sharedtypes.NormalizeUpdateChannel(m.updateStatus.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+			return "Installed via Scoop. Use scoop update crona-beta."
+		}
+		return "Installed via Scoop. Use scoop update crona."
 	case sharedtypes.InstallSourceGo:
 		return "Installed via go install. Use go install github.com/webxsid/crona/...@latest."
 	case sharedtypes.InstallSourceManual, sharedtypes.InstallSourceUnknown:
@@ -101,9 +104,9 @@ func installSourceFromPath(path string) sharedtypes.InstallSource {
 		strings.Contains(normalized, "/homebrew/") {
 		return sharedtypes.InstallSourceBrew
 	}
-	if strings.Contains(normalized, "/microsoft/winget/") ||
-		strings.Contains(normalized, "/winget/") {
-		return sharedtypes.InstallSourceWinget
+	if strings.Contains(normalized, "/scoop/apps/") ||
+		strings.Contains(normalized, "/scoop/shims/") {
+		return sharedtypes.InstallSourceScoop
 	}
 	if strings.Contains(normalized, "/go/bin/") ||
 		strings.Contains(normalized, "/gobin/") {

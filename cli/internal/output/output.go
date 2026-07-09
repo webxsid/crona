@@ -184,6 +184,11 @@ func PrintUpdateStatus(w io.Writer, status sharedtypes.UpdateStatus) error {
 			return err
 		}
 	}
+	if strings.TrimSpace(string(status.ReleaseChannel)) != "" {
+		if _, err := fmt.Fprintf(w, "release-channel: %s\n", status.ReleaseChannel); err != nil {
+			return err
+		}
+	}
 	if strings.TrimSpace(status.UpdateCommand) != "" {
 		if _, err := fmt.Fprintf(w, "update-command: %s\n", status.UpdateCommand); err != nil {
 			return err

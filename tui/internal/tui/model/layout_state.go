@@ -220,16 +220,22 @@ func updateCommand(status *api.UpdateStatus, currentExecutablePath, kernelExecut
 	switch installSourceFromPath(currentExecutablePath) {
 	case sharedtypes.InstallSourceBrew:
 		return "brew upgrade " + currentBrewFormula()
-	case sharedtypes.InstallSourceWinget:
-		return "winget upgrade --id Webxsid.Crona -e"
+	case sharedtypes.InstallSourceScoop:
+		if status != nil && sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+			return "scoop update crona-beta"
+		}
+		return "scoop update crona"
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
 	}
 	switch installSourceFromPath(kernelExecutablePath) {
 	case sharedtypes.InstallSourceBrew:
 		return "brew upgrade " + currentBrewFormula()
-	case sharedtypes.InstallSourceWinget:
-		return "winget upgrade --id Webxsid.Crona -e"
+	case sharedtypes.InstallSourceScoop:
+		if status != nil && sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+			return "scoop update crona-beta"
+		}
+		return "scoop update crona"
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
 	}

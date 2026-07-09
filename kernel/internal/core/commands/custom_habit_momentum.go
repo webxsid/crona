@@ -18,7 +18,7 @@ type customHabitMomentumSnapshotState struct {
 	Definitions []customHabitMomentumSnapshotDefState `json:"definitions,omitempty"`
 }
 
-const customHabitMomentumSnapshotStateVersion = 3
+const customHabitMomentumSnapshotStateVersion = 4
 
 type customHabitMomentumSnapshotDefState struct {
 	ID          string `json:"id"`
@@ -105,6 +105,10 @@ func ensureCustomHabitMomentumSnapshot(
 		return &customHabitMomentumSnapshot{summaries: nil, state: customHabitMomentumSnapshotState{}}, nil
 	}
 	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
+	settings, err := c.CoreSettings.Get(ctx, c.UserID)
+	if err != nil {
+		return nil, err
+	}
 	if momentumDefinitionsCanReuseSnapshot(defs) {
 		existing, err := c.CustomHabitMomentumSnapshots.GetByDate(ctx, c.UserID, throughDate)
 		if err != nil {
@@ -164,7 +168,7 @@ func ensureCustomHabitMomentumSnapshot(
 	}
 	state := baseState
 	for day := startDate; day <= throughDate; day = nextISODate(day) {
-		state = advanceCustomHabitMomentumSnapshotState(state, day, countsByDate, defs)
+		state = advanceCustomHabitMomentumSnapshotState(state, day, countsByDate, defs, settings)
 		summaries := customHabitMomentumSummariesFromState(state, defs)
 		if persistEveryDay || day == throughDate {
 			if momentumDefinitionsCanReuseSnapshot(defs) {
@@ -239,6 +243,7 @@ func advanceCustomHabitMomentumSnapshotState(
 	date string,
 	countsByDate map[string]map[string]int,
 	defs []sharedtypes.HabitStreakDefinition,
+	settings *sharedtypes.CoreSettings,
 ) customHabitMomentumSnapshotState {
 	prevByID := map[string]customHabitMomentumSnapshotDefState{}
 	for _, item := range prev.Definitions {
@@ -259,31 +264,39 @@ func advanceCustomHabitMomentumSnapshotState(
 
 		prevState, hasPrev := prevByID[def.ID]
 		count := momentumCountForDefinition(def, dayCounts)
-		required := momentumRequiredUnits(def)
-		prevBucketMet := prevState.BucketCount >= required
 		bucketKey := customHabitBucketKey(date, def.Period)
 		state.BucketKey = bucketKey
 		if hasPrev && prevState.BucketKey == bucketKey && bucketKey != "" {
 			state.BucketCount = prevState.BucketCount + count
-			state.BucketMet = state.BucketCount >= required
+			eval := evaluateMomentumBucket(def, bucketKey, state.BucketCount, date, settings)
+			prevEval := evaluateMomentumBucket(def, prevState.BucketKey, prevState.BucketCount, previousISODate(date), settings)
+			state.BucketMet = eval.MetTarget
 			state.Current = prevState.Current
 			state.Longest = prevState.Longest
-			if state.BucketMet && !prevBucketMet {
+			if eval.Skipped {
+				out.Definitions = append(out.Definitions, state)
+				continue
+			}
+			if state.BucketMet && (!prevEval.MetTarget || prevEval.Skipped) {
 				state.Current = prevState.Current + 1
 			}
 		} else {
 			state.BucketCount = count
-			state.BucketMet = state.BucketCount >= required
+			eval := evaluateMomentumBucket(def, bucketKey, state.BucketCount, date, settings)
+			state.BucketMet = eval.MetTarget
 			if hasPrev {
+				prevEval := evaluateMomentumBucket(def, prevState.BucketKey, prevState.BucketCount, previousISODate(date), settings)
 				state.Longest = prevState.Longest
 				state.Current = prevState.Current
-				if prevBucketMet {
+				switch {
+				case eval.Skipped:
+				case prevEval.MetTarget:
 					if state.BucketMet {
 						state.Current = prevState.Current + 1
 					}
-				} else if state.BucketMet {
+				case state.BucketMet:
 					state.Current = 1
-				} else {
+				default:
 					state.Current = 0
 				}
 			} else if state.BucketMet {
@@ -544,6 +557,77 @@ func momentumRequiredUnits(def sharedtypes.HabitStreakDefinition) int {
 	return max(1, def.RequiredCount)
 }
 
+func evaluateMomentumBucket(
+	def sharedtypes.HabitStreakDefinition,
+	bucketKey string,
+	count int,
+	throughDate string,
+	settings *sharedtypes.CoreSettings,
+) sharedtypes.MomentumSeriesPoint {
+	startDate, endDate := momentumBucketBounds(bucketKey, def.Period)
+	if startDate == "" || endDate == "" {
+		return sharedtypes.MomentumSeriesPoint{
+			BucketKey: bucketKey,
+			Count:     count,
+			Target:    momentumRequiredUnits(def),
+		}
+	}
+	if throughDate != "" && throughDate < endDate {
+		endDate = throughDate
+	}
+	originalTarget := momentumRequiredUnits(def)
+	protectedDays := countProtectedMomentumDays(startDate, endDate, settings)
+	bucketDays := isoDateDistance(startDate, endDate) + 1
+	if bucketDays < 0 {
+		bucketDays = 0
+	}
+	availableDays := max(0, bucketDays-protectedDays)
+	mode := sharedtypes.MomentumRestAdjustModeNone
+	target := originalTarget
+	skipped := false
+
+	switch sharedtypes.NormalizeHabitStreakPeriod(def.Period) {
+	case sharedtypes.HabitStreakPeriodDay:
+		if protectedDays > 0 {
+			mode = sharedtypes.MomentumRestAdjustModeSkipDay
+			skipped = true
+		}
+	case sharedtypes.HabitStreakPeriodWeek, sharedtypes.HabitStreakPeriodMonth:
+		if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+			mode = sharedtypes.MomentumRestAdjustModeProratedGoal
+			if availableDays == 0 {
+				skipped = true
+				target = 0
+			} else {
+				target = intCeilDiv(originalTarget*availableDays, max(1, bucketDays))
+				target = max(1, target)
+			}
+		} else if protectedDays > originalTarget {
+			mode = sharedtypes.MomentumRestAdjustModeSkipBucket
+			skipped = true
+		}
+	}
+
+	met := false
+	if !skipped && target > 0 {
+		met = count >= target
+	}
+	return sharedtypes.MomentumSeriesPoint{
+		BucketKey:          bucketKey,
+		StartDate:          startDate,
+		EndDate:            endDate,
+		Count:              count,
+		Target:             target,
+		OriginalTarget:     originalTarget,
+		ProtectedDayCount:  protectedDays,
+		BucketDayCount:     bucketDays,
+		AvailableDayCount:  availableDays,
+		Skipped:            skipped,
+		RestAdjustmentMode: mode,
+		MetTarget:          met,
+	}
+}
+
 func momentumDailyCount[T comparable](
 	dayCounts map[T]int,
 	targets []T,
@@ -585,6 +669,59 @@ func nextISODate(value string) string {
 		return value
 	}
 	return parsed.AddDate(0, 0, 1).Format("2006-01-02")
+}
+
+func previousISODate(value string) string {
+	parsed, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return value
+	}
+	return parsed.AddDate(0, 0, -1).Format("2006-01-02")
+}
+
+func countProtectedMomentumDays(startDate string, endDate string, settings *sharedtypes.CoreSettings) int {
+	if settings == nil || startDate == "" || endDate == "" || endDate < startDate {
+		return 0
+	}
+	total := 0
+	for day := startDate; day <= endDate; day = nextISODate(day) {
+		if isMomentumProtectedDay(day, settings) {
+			total++
+		}
+	}
+	return total
+}
+
+func isMomentumProtectedDay(date string, settings *sharedtypes.CoreSettings) bool {
+	if settings == nil {
+		return false
+	}
+	if settings.AwayModeEnabled {
+		return true
+	}
+	if isRestWeekday(date, settings.RestWeekdays) {
+		return true
+	}
+	return slices.Contains(settings.RestSpecificDates, date)
+}
+
+func isoDateDistance(startDate string, endDate string) int {
+	start, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return 0
+	}
+	end, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		return 0
+	}
+	return int(end.Sub(start).Hours() / 24)
+}
+
+func intCeilDiv(numerator, denominator int) int {
+	if denominator <= 0 {
+		return 0
+	}
+	return (numerator + denominator - 1) / denominator
 }
 
 func yesterdayISODate(now string) (string, error) {
