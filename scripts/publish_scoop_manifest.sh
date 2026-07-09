@@ -52,7 +52,8 @@ cp "${DIST_DIR}/crona-bundle-${VERSION#v}-windows-arm64.zip" "${TMP_DIR}/release
 
 (
   cd "${TMP_DIR}"
-  sh "${ROOT_DIR}/scripts/generate_scoop_manifest.sh" "${VERSION}" "${FLAVOR}" "${TMP_DIR}/generated"
+  CRONA_RELEASE_DIR="${TMP_DIR}/release/${VERSION}" \
+    sh "${ROOT_DIR}/scripts/generate_scoop_manifest.sh" "${VERSION}" "${FLAVOR}" "${TMP_DIR}/generated"
 )
 
 git clone --branch "${BUCKET_BRANCH}" --single-branch \

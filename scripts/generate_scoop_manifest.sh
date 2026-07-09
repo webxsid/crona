@@ -12,7 +12,7 @@ VERSION="$1"
 CHANNEL="$2"
 OUTPUT_DIR="$3"
 ROOT_DIR="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
-RELEASE_DIR="${ROOT_DIR}/release/${VERSION}"
+RELEASE_DIR="${CRONA_RELEASE_DIR:-${ROOT_DIR}/release/${VERSION}}"
 TEMPLATE_PATH="${ROOT_DIR}/templates/scoop.json.tmpl"
 VERSION_NO_V="${VERSION#v}"
 DESCRIPTION="local-first work tracker for developers"
@@ -27,6 +27,13 @@ require_file() {
 }
 
 ensure_release_dir() {
+  if [ -n "${CRONA_RELEASE_DIR:-}" ]; then
+    if [ ! -d "${RELEASE_DIR}" ] || [ ! -f "${RELEASE_DIR}/checksums.txt" ]; then
+      echo "missing required release artifacts: ${RELEASE_DIR}" >&2
+      exit 1
+    fi
+    return
+  fi
   if [ ! -d "${RELEASE_DIR}" ] || [ ! -f "${RELEASE_DIR}/checksums.txt" ]; then
     echo "Building local release artifacts for ${VERSION}"
     sh "${ROOT_DIR}/scripts/build_release.sh" "${VERSION}"
