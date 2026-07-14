@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -541,9 +542,17 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
 
 	var hardLimitEvents []sharedtypes.KernelEvent
+	var extendedEvents []sharedtypes.KernelEvent
+	var endedEvents []sharedtypes.KernelEvent
 	unsubscribe := coreCtx.Events.Subscribe(func(event sharedtypes.KernelEvent) {
 		if event.Type == sharedtypes.EventTypeTimerHardLimitReached {
 			hardLimitEvents = append(hardLimitEvents, event)
+		}
+		if event.Type == sharedtypes.EventTypeTimerExtended {
+			extendedEvents = append(extendedEvents, event)
+		}
+		if event.Type == sharedtypes.EventTypeSessionEnded {
+			endedEvents = append(endedEvents, event)
 		}
 	})
 	defer unsubscribe()
@@ -684,9 +693,20 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 	if boundaryAfterExtend == nil || boundaryAfterExtend.AfterSeconds != 25 {
 		t.Fatalf("expected restarted work segment boundary after 25s, got %+v", boundaryAfterExtend)
 	}
+	if len(extendedEvents) != 1 {
+		t.Fatalf("expected exactly one timer.extended event, got %d", len(extendedEvents))
+	}
+	var extendedPayload sharedtypes.SessionEventPayload
+	if err := json.Unmarshal(extendedEvents[0].Payload, &extendedPayload); err != nil {
+		t.Fatalf("decode timer.extended payload: %v", err)
+	}
+	if extendedPayload.SessionID != *startState.SessionID {
+		t.Fatalf("expected timer.extended session %q, got %q", *startState.SessionID, extendedPayload.SessionID)
+	}
 
 	now = "2026-05-24T10:10:00Z"
-	endedState, err := service.End(ctx, SessionEndInput{})
+	commitMessage := "feat: finish hard-limit session"
+	endedState, err := service.End(ctx, SessionEndInput{CommitMessage: &commitMessage})
 	if err != nil {
 		t.Fatalf("end extended hard-limit session: %v", err)
 	}
@@ -702,6 +722,34 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 	}
 	if *lastSession.DurationSeconds < 0 {
 		t.Fatalf("expected non-negative duration, got %d", *lastSession.DurationSeconds)
+	}
+	if len(endedEvents) != 1 {
+		t.Fatalf("expected exactly one session.ended event, got %d", len(endedEvents))
+	}
+	var endedPayload sharedtypes.SessionEventPayload
+	if err := json.Unmarshal(endedEvents[0].Payload, &endedPayload); err != nil {
+		t.Fatalf("decode session.ended payload: %v", err)
+	}
+	if endedPayload.SessionID != *startState.SessionID {
+		t.Fatalf("expected session.ended session %q, got %q", *startState.SessionID, endedPayload.SessionID)
+	}
+}
+
+func TestTimerEndRequiresCommitMessage(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	if _, err := service.Start(ctx, nil, new(issue.StreamID), new(issue.ID), nil); err != nil {
+		t.Fatalf("start session: %v", err)
+	}
+	if _, err := service.End(ctx, SessionEndInput{}); err == nil {
+		t.Fatal("expected timer end without commit message to fail")
+	}
+	blank := "   "
+	if _, err := service.End(ctx, SessionEndInput{CommitMessage: &blank}); err == nil {
+		t.Fatal("expected timer end with blank commit message to fail")
 	}
 }
 

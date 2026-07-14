@@ -15,6 +15,8 @@ type EventState struct {
 	View                   uistate.View
 	Pane                   uistate.Pane
 	Cursor                 map[uistate.Pane]int
+	Dialog                 string
+	DialogParent           string
 	Streams                []api.Stream
 	Issues                 []api.Issue
 	SelectedIssueID        *int64
@@ -218,11 +220,58 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
+	case "timer.extended":
+		if shouldDismissDialogForSessionEvent(state, event, false) {
+			state.Dialog = ""
+			state.DialogParent = ""
+		}
+		return state, tea.Batch(
+			deps.LoadTimer(),
+			deps.LoadSessionHistoryFor200(state),
+			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+		)
+	case "session.ended":
+		if shouldDismissDialogForSessionEvent(state, event, true) {
+			state.Dialog = ""
+			state.DialogParent = ""
+		}
+		return state, tea.Batch(
+			deps.LoadTimer(),
+			deps.LoadContext(),
+			deps.LoadSessionHistoryFor200(state),
+			deps.LoadDailyStreaks(state.CurrentDash),
+			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+		)
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
 	case "ops.created":
 		return state, deps.LoadOps(state.CurrentOpsLim)
 	default:
 		return state, nil
+	}
+}
+
+func shouldDismissDialogForSessionEvent(
+	state EventState,
+	event api.KernelEvent,
+	includeEndSession bool,
+) bool {
+	if state.Timer == nil || state.Timer.SessionID == nil || *state.Timer.SessionID == "" {
+		return false
+	}
+	var payload sharedtypes.SessionEventPayload
+	if err := json.Unmarshal(event.Payload, &payload); err != nil || payload.SessionID == "" {
+		return false
+	}
+	if payload.SessionID != *state.Timer.SessionID {
+		return false
+	}
+	switch state.Dialog {
+	case "hard_limit_expired", "hard_limit_extend":
+		return true
+	case "end_session":
+		return includeEndSession || state.DialogParent == "hard_limit_expired"
+	default:
+		return false
 	}
 }

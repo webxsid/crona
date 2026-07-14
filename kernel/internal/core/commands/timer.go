@@ -586,6 +586,9 @@ func (t *TimerService) extendHardLimit(
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	emit(t.ctx, sharedtypes.EventTypeTimerExtended, sharedtypes.SessionEventPayload{
+		SessionID: activeSession.ID,
+	})
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
 }
@@ -659,7 +662,11 @@ func (t *TimerService) End(
 	ctx context.Context,
 	input SessionEndInput,
 ) (sharedtypes.TimerState, error) {
-	if _, err := StopSession(ctx, t.ctx, input); err != nil {
+	if strings.TrimSpace(valueOrEmpty(input.CommitMessage)) == "" {
+		return sharedtypes.TimerState{}, errors.New("commit message is required")
+	}
+	stopped, err := StopSession(ctx, t.ctx, input)
+	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	_ = runtimepkg.ClearTimerRuntimeState()
@@ -667,6 +674,11 @@ func (t *TimerService) End(
 	state, err := t.GetState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
+	}
+	if stopped != nil {
+		emit(t.ctx, sharedtypes.EventTypeSessionEnded, sharedtypes.SessionEventPayload{
+			SessionID: stopped.ID,
+		})
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil

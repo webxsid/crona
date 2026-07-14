@@ -23,6 +23,7 @@ const (
 	EventTypeCheckInDeleted        = "checkin.deleted"
 	EventTypeSessionStarted        = "session.started"
 	EventTypeSessionStopped        = "session.stopped"
+	EventTypeSessionEnded          = "session.ended"
 	EventTypeTimerState            = "timer.state"
 	EventTypeContextRepoChanged    = "context.repo.changed"
 	EventTypeContextStreamChanged  = "context.stream.changed"
@@ -30,6 +31,7 @@ const (
 	EventTypeContextCleared        = "context.cleared"
 	EventTypeTimerBoundary         = "timer.boundary"
 	EventTypeTimerHardLimitReached = "timer.hard_limit_reached"
+	EventTypeTimerExtended         = "timer.extended"
 	EventTypeTimerTick             = "timer.tick"
 	EventTypeUpdateStatus          = "update.status"
 )
@@ -68,6 +70,10 @@ type TimerBoundaryPayload struct {
 
 type TimerTickPayload struct {
 	RemainingSeconds int `json:"remainingSeconds"`
+}
+
+type SessionEventPayload struct {
+	SessionID string `json:"sessionId"`
 }
 
 type TimerHardLimitReachedPayload struct {

@@ -22,7 +22,10 @@ func TestDailyCheckInAndMetricsOverIPC(t *testing.T) {
 
 	kernel.call(t, protocol.MethodTimerStart, shareddto.TimerStartRequest{IssueID: &issue.ID}, nil)
 	time.Sleep(1200 * time.Millisecond)
-	kernel.call(t, protocol.MethodTimerEnd, shareddto.EndSessionRequest{}, nil)
+	commitMessage := "chore: wrap up check-in metrics session"
+	kernel.call(t, protocol.MethodTimerEnd, shareddto.EndSessionRequest{
+		CommitMessage: &commitMessage,
+	}, nil)
 
 	today := time.Now().Format("2006-01-02")
 	sleepHours := 6.5

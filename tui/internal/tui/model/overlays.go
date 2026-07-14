@@ -152,6 +152,8 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		View:                   m.view,
 		Pane:                   m.pane,
 		Cursor:                 m.cursor,
+		Dialog:                 m.dialog,
+		DialogParent:           m.dialogParent,
 		SelectedIssueID:        selectedIssueID,
 		Streams:                m.streams,
 		Issues:                 m.issues,
@@ -176,6 +178,8 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 	m.view = state.View
 	m.pane = state.Pane
 	m.cursor = state.Cursor
+	m.dialog = state.Dialog
+	m.dialogParent = state.DialogParent
 	m.streams = state.Streams
 	m.issues = state.Issues
 	m.habits = state.Habits
