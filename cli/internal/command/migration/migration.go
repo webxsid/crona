@@ -148,7 +148,11 @@ func runtimeDBPath(resolver func() (string, error)) (string, error) {
 	return filepath.Join(base, "crona.db"), nil
 }
 
-func createBackup(source string, resolver func() (string, error), now func() time.Time) (string, error) {
+func createBackup(
+	source string,
+	resolver func() (string, error),
+	now func() time.Time,
+) (string, error) {
 	info, err := os.Stat(source)
 	if err != nil {
 		return "", fmt.Errorf("read runtime database: %w", err)
@@ -237,7 +241,9 @@ func copyFileAtomic(source, target string, perm os.FileMode) error {
 
 func confirmRestoreOverwrite(deps Deps) (bool, error) {
 	if !deps.IsInteractive() {
-		return false, errors.New("restore requires an interactive terminal when overwriting the current database")
+		return false, errors.New(
+			"restore requires an interactive terminal when overwriting the current database",
+		)
 	}
 	if _, err := fmt.Fprintf(
 		deps.Stdout,

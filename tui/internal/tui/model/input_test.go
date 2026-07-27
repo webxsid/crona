@@ -26,7 +26,10 @@ func TestInputDepsOpenCheckInDialogUsesCreateForMissingCheckIn(t *testing.T) {
 		t.Fatalf("expected create_checkin dialog, got %q", state.DialogState.Kind)
 	}
 	if state.DialogState.CheckInDate != "2026-05-27" {
-		t.Fatalf("expected check-in dialog date to use dashboard date, got %q", state.DialogState.CheckInDate)
+		t.Fatalf(
+			"expected check-in dialog date to use dashboard date, got %q",
+			state.DialogState.CheckInDate,
+		)
 	}
 }
 
@@ -54,7 +57,10 @@ func TestInputDepsOpenCheckInDialogUsesWellbeingDateForWellbeingView(t *testing.
 		t.Fatalf("expected edit_checkin dialog, got %q", state.DialogState.Kind)
 	}
 	if state.DialogState.CheckInDate != "2026-05-28" {
-		t.Fatalf("expected wellbeing check-in dialog date to use wellbeing date, got %q", state.DialogState.CheckInDate)
+		t.Fatalf(
+			"expected wellbeing check-in dialog date to use wellbeing date, got %q",
+			state.DialogState.CheckInDate,
+		)
 	}
 }
 
@@ -80,7 +86,10 @@ func TestInputDepsOpenCheckInDialogUsesEditForExistingCheckIn(t *testing.T) {
 		t.Fatalf("expected edit_checkin dialog, got %q", state.DialogState.Kind)
 	}
 	if state.DialogState.CheckInDate != "2026-05-27" {
-		t.Fatalf("expected check-in dialog date to use dashboard date, got %q", state.DialogState.CheckInDate)
+		t.Fatalf(
+			"expected check-in dialog date to use dashboard date, got %q",
+			state.DialogState.CheckInDate,
+		)
 	}
 }
 
@@ -156,10 +165,10 @@ func TestMomentumEditKeyUsesEditDialog(t *testing.T) {
 
 func TestMomentumEnterUsesDetailsInsteadOfEdit(t *testing.T) {
 	model := Model{
-		view:        ViewMomentum,
-		pane:        PaneMomentumCards,
-		momentumTab: MomentumTabCustom,
-		momentumDate: "2026-06-19",
+		view:               ViewMomentum,
+		pane:               PaneMomentumCards,
+		momentumTab:        MomentumTabCustom,
+		momentumDate:       "2026-06-19",
 		momentumWindowDays: 30,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,

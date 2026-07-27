@@ -30,7 +30,7 @@ func Ensure() (*Info, error) {
 
 	if info, err := readInfo(infoPath); err == nil {
 		if isHealthy(info) {
-	logger.Infof("Daemon already running at %s (pid %d)", EndpointLabel(info), info.PID)
+			logger.Infof("Daemon already running at %s (pid %d)", EndpointLabel(info), info.PID)
 			return info, nil
 		}
 	}

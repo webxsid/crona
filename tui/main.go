@@ -17,6 +17,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Println(versionpkg.Current())
+		return
+	}
 	appEnv := config.Load()
 	var telemetry sharedposthog.Client
 	info, err := kernel.Ensure()

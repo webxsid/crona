@@ -140,6 +140,13 @@ func shouldSuppressReminder(
 			return false
 		}
 		return checkIn != nil
+	case sharedtypes.AlertReminderKindDailyPlan:
+		plan, err := s.core.DailyPlans.GetByDate(ctx, s.core.UserID, now.Format("2006-01-02"))
+		if err != nil {
+			s.logger.Error("lookup daily plan for reminder", err)
+			return false
+		}
+		return plan != nil && len(plan.Entries) > 0
 	default:
 		return false
 	}
@@ -153,6 +160,15 @@ func reminderAlert(reminder sharedtypes.AlertReminder) sharedtypes.AlertRequest 
 			Title:     "Daily check-in reminder",
 			Subtitle:  reminder.TimeHHMM,
 			Body:      "Add today’s check-in to keep your wellbeing dashboard current.",
+			Urgency:   sharedtypes.AlertUrgencyNormal,
+			PlaySound: false,
+		}
+	case sharedtypes.AlertReminderKindDailyPlan:
+		return sharedtypes.AlertRequest{
+			Kind:      sharedtypes.AlertEventDailyPlanReminder,
+			Title:     "Plan the day",
+			Subtitle:  reminder.TimeHHMM,
+			Body:      "Choose today’s priorities and add them to your daily plan.",
 			Urgency:   sharedtypes.AlertUrgencyNormal,
 			PlaySound: false,
 		}

@@ -263,7 +263,12 @@ func renderHabitStreakDetails(
 		habitStreakRowLabel(theme, state, periodRowIdx, "Period"),
 		renderHabitStreakPeriodChoice(theme, state),
 		"",
-		habitStreakRowLabel(theme, state, countRowIdx, habitStreakRequirementLabel(state.HabitStreakDraft)),
+		habitStreakRowLabel(
+			theme,
+			state,
+			countRowIdx,
+			habitStreakRequirementLabel(state.HabitStreakDraft),
+		),
 		dialogInputView(state, 1),
 	)
 	if momentumMode &&
@@ -462,7 +467,9 @@ func habitStreakMatchTypeLabel(def sharedtypes.HabitStreakDefinition) string {
 
 func habitStreakMatchTypeSummary(def sharedtypes.HabitStreakDefinition) string {
 	kind := "habits"
-	if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		def.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		kind = "contexts"
 	}
 	switch sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) {
@@ -498,13 +505,31 @@ func habitStreakTargetSummary(def sharedtypes.HabitStreakDefinition) string {
 	mode := cases.Title(language.Und).String(sharedtypes.MomentumMatchModeLabel(def.MatchMode))
 	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
 	case sharedtypes.MomentumTargetKindContext:
-		if sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) == sharedtypes.MomentumMatchModeAll {
-			return fmt.Sprintf("%s · %d contexts, %s each", mode, max(1, len(def.Contexts)), helperpkg.FormatCompactDurationSeconds(max(1, def.RequiredCount)))
+		if sharedtypes.NormalizeMomentumMatchMode(
+			def.MatchMode,
+		) == sharedtypes.MomentumMatchModeAll {
+			return fmt.Sprintf(
+				"%s · %d contexts, %s each",
+				mode,
+				max(1, len(def.Contexts)),
+				helperpkg.FormatCompactDurationSeconds(max(1, def.RequiredCount)),
+			)
 		}
-		return fmt.Sprintf("%s · %s work", mode, helperpkg.FormatCompactDurationSeconds(max(1, def.RequiredCount)))
+		return fmt.Sprintf(
+			"%s · %s work",
+			mode,
+			helperpkg.FormatCompactDurationSeconds(max(1, def.RequiredCount)),
+		)
 	default:
-		if sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) == sharedtypes.MomentumMatchModeAll {
-			return fmt.Sprintf("%s · %d habits, %d each", mode, max(1, len(def.HabitIDs)), max(1, def.RequiredCount))
+		if sharedtypes.NormalizeMomentumMatchMode(
+			def.MatchMode,
+		) == sharedtypes.MomentumMatchModeAll {
+			return fmt.Sprintf(
+				"%s · %d habits, %d each",
+				mode,
+				max(1, len(def.HabitIDs)),
+				max(1, def.RequiredCount),
+			)
 		}
 		return fmt.Sprintf("%s · %d completions", mode, max(1, def.RequiredCount))
 	}
@@ -557,7 +582,8 @@ func renderMomentumMatchMode(
 		renderSelector(
 			theme,
 			state,
-			cases.Title(language.Und).String(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode)),
+			cases.Title(language.Und).
+				String(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode)),
 			active,
 		)
 }
@@ -687,7 +713,9 @@ func habitMomentumViewCapacity(
 	for _, habitID := range def.HabitIDs {
 		habit, ok := habitMap[habitID]
 		if !ok {
-			return sharedutils.HabitMomentumCapacity{Reason: "selected habits are no longer available"}
+			return sharedutils.HabitMomentumCapacity{
+				Reason: "selected habits are no longer available",
+			}
 		}
 		selected = append(selected, habit)
 	}

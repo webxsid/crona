@@ -848,7 +848,10 @@ func TestHardLimitSessionActionsShowCommitOnly(t *testing.T) {
 		}
 	}
 	if strings.Contains(joined, "pause/resume") || strings.Contains(joined, "manual pause") {
-		t.Fatalf("expected hard-limit session actions to drop pause/resume and manual pause, got %q", joined)
+		t.Fatalf(
+			"expected hard-limit session actions to drop pause/resume and manual pause, got %q",
+			joined,
+		)
 	}
 }
 
@@ -861,7 +864,10 @@ func TestReadyHardLimitSessionActionsStayCommitBased(t *testing.T) {
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
 	if strings.Contains(joined, "[r] start long break") {
-		t.Fatalf("expected hard-limit ready state not to show prepared-segment actions, got %q", joined)
+		t.Fatalf(
+			"expected hard-limit ready state not to show prepared-segment actions, got %q",
+			joined,
+		)
 	}
 	for _, want := range []string{"[x] commit issue", "[i] change context"} {
 		if !strings.Contains(joined, want) {
@@ -899,7 +905,11 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 	}
 	for _, unwanted := range []string{"Running channel:", "Configured Channel", "Release Kind", "Release Tag", "Install Status", "Release URL", "Checksums"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected updates view to keep %q out of the default layout, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected updates view to keep %q out of the default layout, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 	if strings.Contains(rendered, "[i]") {
@@ -1502,7 +1512,8 @@ func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 	if strings.Contains(dailyIssueActions, "[c]") {
 		t.Fatalf("expected daily issue pane actions to omit context, got %q", dailyIssueActions)
 	}
-	if strings.Contains(dailyIssueActions, "[h/l]") || strings.Contains(dailyIssueActions, "[←/→]") {
+	if strings.Contains(dailyIssueActions, "[h/l]") ||
+		strings.Contains(dailyIssueActions, "[←/→]") {
 		t.Fatalf(
 			"expected daily issue pane actions to keep section switching out of the action line, got %q",
 			dailyIssueActions,

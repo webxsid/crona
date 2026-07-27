@@ -196,7 +196,10 @@ func TestCheckoutContextArrowCyclesBlankSelections(t *testing.T) {
 		t.Fatalf("expected stream cycling to stay in dialog, got %+v", action)
 	}
 	if next.StreamIndex != 0 {
-		t.Fatalf("expected right from blank stream to select first option, got %d", next.StreamIndex)
+		t.Fatalf(
+			"expected right from blank stream to select first option, got %d",
+			next.StreamIndex,
+		)
 	}
 
 	repoLabel, streamLabel = dialogs.CheckoutDialogLabels(

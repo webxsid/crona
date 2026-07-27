@@ -17,14 +17,14 @@ func summaryBodyLines(
 ) []string {
 	if compact {
 		lines := append([]string{}, compactCards(theme, state)...)
-			if heatmap := Heatmap(types.ViewSizeCompact, theme, state); len(heatmap) > 0 {
-				lines = append(lines, theme.StyleHeader.Render("Activity"))
-				lines = append(lines, heatmap...)
-			}
-			if status := wellbeingStatusLines(theme, state, width, true); len(status) > 0 {
-				lines = append(lines, "")
-				lines = append(lines, status...)
-			}
+		if heatmap := Heatmap(types.ViewSizeCompact, theme, state); len(heatmap) > 0 {
+			lines = append(lines, theme.StyleHeader.Render("Activity"))
+			lines = append(lines, heatmap...)
+		}
+		if status := wellbeingStatusLines(theme, state, width, true); len(status) > 0 {
+			lines = append(lines, "")
+			lines = append(lines, status...)
+		}
 		return lines
 	}
 
@@ -102,7 +102,10 @@ func wellbeingStatusLines(
 		parts = append(
 			parts,
 			theme.StyleDim.Render(
-				viewhelpers.Truncate(strings.TrimSpace(*state.DailyCheckIn.Notes), max(18, width-28)),
+				viewhelpers.Truncate(
+					strings.TrimSpace(*state.DailyCheckIn.Notes),
+					max(18, width-28),
+				),
 			),
 		)
 	}
@@ -179,7 +182,9 @@ func wellbeingCheckInDetailLines(
 			lines,
 			"",
 			theme.StyleError.Render("Backfilled check-in"),
-			theme.StyleDim.Render("Recorded later, so it does not count toward the same-day streak."),
+			theme.StyleDim.Render(
+				"Recorded later, so it does not count toward the same-day streak.",
+			),
 		)
 	}
 	return lines
@@ -290,13 +295,21 @@ func trendsBodyLinesWithStreaks(
 	if state.MetricsRollup.AverageMood != nil {
 		lines = append(
 			lines,
-			fmt.Sprintf("%s  %.1f", theme.StyleHeader.Render("Avg Mood"), *state.MetricsRollup.AverageMood),
+			fmt.Sprintf(
+				"%s  %.1f",
+				theme.StyleHeader.Render("Avg Mood"),
+				*state.MetricsRollup.AverageMood,
+			),
 		)
 	}
 	if state.MetricsRollup.AverageEnergy != nil {
 		lines = append(
 			lines,
-			fmt.Sprintf("%s  %.1f", theme.StyleHeader.Render("Avg Energy"), *state.MetricsRollup.AverageEnergy),
+			fmt.Sprintf(
+				"%s  %.1f",
+				theme.StyleHeader.Render("Avg Energy"),
+				*state.MetricsRollup.AverageEnergy,
+			),
 		)
 	}
 	if state.MetricsRollup.HabitDueCount > 0 || state.MetricsRollup.HabitCompletedCount > 0 ||

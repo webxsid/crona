@@ -73,28 +73,37 @@ func IssueTableColumns(layout IssueTableLayout) []table.Column {
 	if layout.Compact {
 		return []table.Column{
 			table.NewColumn(issueTableKeyCursor, "", 2),
-			table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).
+				WithStyle(issueColumnStyle(true)),
 			table.NewColumn(issueTableKeyGap1, "", 1),
-			table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).
+				WithStyle(issueColumnStyle(true)),
 			table.NewColumn(issueTableKeyGap2, "", 1),
-			table.NewColumn(issueTableKeyContext, "Context", layout.ContextW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyContext, "Context", layout.ContextW).
+				WithStyle(issueColumnStyle(true)),
 			table.NewColumn(issueTableKeyGap3, "", 1),
-			table.NewColumn(issueTableKeyEffort, "Effort", layout.EffortW).WithStyle(issueColumnStyle(true)),
+			table.NewColumn(issueTableKeyEffort, "Effort", layout.EffortW).
+				WithStyle(issueColumnStyle(true)),
 		}
 	}
 	return []table.Column{
 		table.NewColumn(issueTableKeyCursor, "", 2),
-		table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).
+			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap1, "", 1),
-		table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).
+			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap2, "", 1),
-		table.NewColumn(issueTableKeyEstimate, "Est.", layout.EstimateW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyEstimate, "Est.", layout.EstimateW).
+			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap3, "", 1),
-		table.NewColumn(issueTableKeyWorked, "Worked", layout.WorkedW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyWorked, "Worked", layout.WorkedW).
+			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap4, "", 1),
 		table.NewColumn(issueTableKeyRepo, "Repo", layout.RepoW).WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap5, "", 1),
-		table.NewColumn(issueTableKeyStream, "Stream", layout.StreamW).WithStyle(issueColumnStyle(false)),
+		table.NewColumn(issueTableKeyStream, "Stream", layout.StreamW).
+			WithStyle(issueColumnStyle(false)),
 	}
 }
 

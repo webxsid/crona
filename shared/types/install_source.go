@@ -15,7 +15,11 @@ const (
 
 func NormalizeInstallSource(value InstallSource) InstallSource {
 	switch value {
-	case InstallSourceScript, InstallSourceBrew, InstallSourceScoop, InstallSourceGo, InstallSourceManual:
+	case InstallSourceScript,
+		InstallSourceBrew,
+		InstallSourceScoop,
+		InstallSourceGo,
+		InstallSourceManual:
 		return value
 	default:
 		return InstallSourceUnknown

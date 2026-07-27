@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -269,9 +270,15 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderOnboardingScreen(theme, state)
 	case "create_alert_reminder", "edit_alert_reminder":
 		title := "Add Check-In Reminder"
+		if state.ReminderKind == sharedtypes.AlertReminderKindDailyPlan {
+			title = "Add Plan-the-Day Reminder"
+		}
 		border := theme.ColorCyan
 		if state.Kind == "edit_alert_reminder" {
 			title = "Edit Check-In Reminder"
+			if state.ReminderKind == sharedtypes.AlertReminderKindDailyPlan {
+				title = "Edit Plan-the-Day Reminder"
+			}
 			border = theme.ColorYellow
 		}
 		rows := []string{
@@ -386,7 +393,10 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		rows = append(rows, "", theme.StyleDim.Render("Contributors"))
 		if len(state.ChoiceItems) == 0 {
-			rows = append(rows, theme.StyleDim.Render("No contributing entries in the current bucket"))
+			rows = append(
+				rows,
+				theme.StyleDim.Render("No contributing entries in the current bucket"),
+			)
 		} else {
 			inner := 8
 			start, end := viewchrome.ListWindow(state.ChoiceCursor, len(state.ChoiceItems), inner)

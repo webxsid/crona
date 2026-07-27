@@ -125,7 +125,9 @@ func rollupBreakdownBodyLines(theme types.Theme, state types.ContentState) []str
 	lines = append(lines, renderDistributionSection(theme, "Repos", state.RepoDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Streams", state.StreamDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Issues", state.IssueDistribution)...)
-	lines = append(lines, renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
+	lines = append(
+		lines,
+		renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
 	return lines
 }
 
@@ -140,7 +142,13 @@ func renderRollupScrollablePane(
 	lines := append([]string{}, header...)
 	bodyLines := rollupFlattenLines(body)
 	if len(bodyLines) == 0 {
-		return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+		return viewchrome.RenderPaneBox(
+			theme,
+			active,
+			width,
+			height,
+			viewhelpers.StringsJoin(lines),
+		)
 	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	start, end := rollupVisibleBodyWindow(cursor, len(bodyLines), inner)

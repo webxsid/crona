@@ -62,10 +62,17 @@ func NewHandler(
 }
 
 func (h *Handler) Stream(ctx context.Context, req protocol.Request, writer *json.Encoder) error {
-	if req.Method != protocol.MethodEventsSubscribe {
+	switch req.Method {
+	case protocol.MethodEventsSubscribe:
+		return h.streamEvents(ctx, writer)
+	case protocol.MethodAlertsDeliverySubscribe:
+		return h.streamAlertDeliveries(ctx, req, writer)
+	default:
 		return errors.New("unsupported stream method")
 	}
+}
 
+func (h *Handler) streamEvents(ctx context.Context, writer *json.Encoder) error {
 	eventsCh := make(chan sharedtypes.KernelEvent, 64)
 	unsubscribe := h.bus.Subscribe(func(event sharedtypes.KernelEvent) {
 		select {
@@ -83,6 +90,45 @@ func (h *Handler) Stream(ctx context.Context, req protocol.Request, writer *json
 			if err := writer.Encode(protocol.Event{
 				Type:    event.Type,
 				Payload: event.Payload,
+			}); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func (h *Handler) streamAlertDeliveries(
+	ctx context.Context,
+	req protocol.Request,
+	writer *json.Encoder,
+) error {
+	if h.alerts == nil {
+		return errors.New("alerts service is unavailable")
+	}
+	var capabilities sharedtypes.AlertDeliveryCapability
+	if err := json.Unmarshal(req.Params, &capabilities); err != nil {
+		return errors.New("invalid alert delivery capabilities")
+	}
+	if capabilities.ClientID == "" {
+		return errors.New("alert delivery clientId is required")
+	}
+	deliveries, unsubscribe := h.alerts.SubscribeCompanion(ctx, capabilities)
+	defer unsubscribe()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case delivery, ok := <-deliveries:
+			if !ok {
+				return nil
+			}
+			payload, err := json.Marshal(delivery)
+			if err != nil {
+				return err
+			}
+			if err := writer.Encode(protocol.Event{
+				Type:    sharedtypes.EventTypeAlertDelivery,
+				Payload: payload,
 			}); err != nil {
 				return err
 			}

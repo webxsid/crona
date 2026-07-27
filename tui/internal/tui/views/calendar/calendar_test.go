@@ -126,7 +126,11 @@ func TestRenderWeekModeUsesCompactHeaderAndSingleWeekRow(t *testing.T) {
 func TestColumnWidthsForWeekModeFallsBackWhenSummaryWouldBeTooNarrow(t *testing.T) {
 	left, right := ColumnWidthsForMode(50, 24, 3, ModeWeek)
 	if left != 50 || right != 0 {
-		t.Fatalf("expected week mode to disable calendar when width is too narrow, got left=%d right=%d", left, right)
+		t.Fatalf(
+			"expected week mode to disable calendar when width is too narrow, got left=%d right=%d",
+			left,
+			right,
+		)
 	}
 }
 

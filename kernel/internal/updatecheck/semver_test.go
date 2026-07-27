@@ -51,8 +51,10 @@ func TestClearReleaseLocked(t *testing.T) {
 
 	service.clearReleaseLocked()
 
-	if service.status.LatestVersion != "" || service.status.ReleaseTag != "" || service.status.ReleaseName != "" ||
-		service.status.ReleaseNotes != "" || service.status.ReleaseURL != "" ||
+	if service.status.LatestVersion != "" || service.status.ReleaseTag != "" ||
+		service.status.ReleaseName != "" ||
+		service.status.ReleaseNotes != "" ||
+		service.status.ReleaseURL != "" ||
 		service.status.InstallScriptURL != "" ||
 		service.status.ChecksumsURL != "" ||
 		service.status.UpdateCommand != "" ||

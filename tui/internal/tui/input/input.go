@@ -124,7 +124,7 @@ type Deps struct {
 	UpdateAlertReminder             func(shareddto.AlertReminderUpdateRequest) tea.Cmd
 	ToggleAlertReminder             func(string, bool) tea.Cmd
 	DeleteAlertReminder             func(string) tea.Cmd
-	OpenCreateAlertReminderDialog   func(*State) bool
+	OpenCreateAlertReminderDialog   func(*State, sharedtypes.AlertReminderKind) bool
 	OpenEditAlertReminderDialog     func(*State, string) bool
 	OpenEditDateDisplayFormatDialog func(*State) bool
 	OpenEditRestProtectionDialog    func(*State) bool

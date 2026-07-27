@@ -34,6 +34,7 @@ const (
 	EventTypeTimerExtended         = "timer.extended"
 	EventTypeTimerTick             = "timer.tick"
 	EventTypeUpdateStatus          = "update.status"
+	EventTypeAlertDelivery         = "alert.delivery"
 )
 
 type KernelEvent struct {
@@ -80,6 +81,7 @@ type TimerHardLimitReachedPayload struct {
 	SessionID                      string              `json:"sessionId"`
 	IssueID                        int64               `json:"issueId"`
 	SegmentType                    *SessionSegmentType `json:"segmentType,omitempty"`
+	HardLimitKind                  TimerHardLimitKind  `json:"hardLimitKind,omitempty"`
 	HardLimitTotalSeconds          int                 `json:"hardLimitTotalSeconds"`
 	HardLimitWorkSeconds           int                 `json:"hardLimitWorkSeconds"`
 	HardLimitBreakSeconds          int                 `json:"hardLimitBreakSeconds"`

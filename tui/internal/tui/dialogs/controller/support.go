@@ -217,7 +217,9 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 	state.HabitStreakDraft = detail.Definition
 	targetLabel := "Habits"
 	targetSummary := "-"
-	if sharedtypes.NormalizeMomentumTargetKind(detail.Definition.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		detail.Definition.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		targetLabel = "Contexts"
 	}
 	if len(detail.TargetNames) > 0 {
@@ -227,8 +229,14 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 	}
 	targetCase := cases.Title(language.Und)
 	state.ViewMeta = strings.Join([]string{
-		fmt.Sprintf("Kind %s", targetCase.String(sharedtypes.MomentumTargetKindLabel(detail.Definition.TargetKind))),
-		fmt.Sprintf("Match %s", targetCase.String(sharedtypes.MomentumMatchModeLabel(detail.Definition.MatchMode))),
+		fmt.Sprintf(
+			"Kind %s",
+			targetCase.String(sharedtypes.MomentumTargetKindLabel(detail.Definition.TargetKind)),
+		),
+		fmt.Sprintf(
+			"Match %s",
+			targetCase.String(sharedtypes.MomentumMatchModeLabel(detail.Definition.MatchMode)),
+		),
 		fmt.Sprintf("Bucket %s", strings.TrimSpace(detail.CurrentBucket.Label)),
 		fmt.Sprintf("Range %s to %s", detail.CurrentBucket.StartDate, detail.CurrentBucket.EndDate),
 		fmt.Sprintf("Progress %d/%d", detail.CurrentBucket.Count, detail.CurrentBucket.Target),
@@ -240,12 +248,17 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 		targetLabel,
 		targetSummary,
 	}
-	if detail.CurrentBucket.OriginalTarget > 0 && detail.CurrentBucket.OriginalTarget != detail.CurrentBucket.Target {
+	if detail.CurrentBucket.OriginalTarget > 0 &&
+		detail.CurrentBucket.OriginalTarget != detail.CurrentBucket.Target {
 		bodyParts = append(
 			bodyParts,
 			"",
 			"Adjusted Target",
-			fmt.Sprintf("%d effective from %d original", detail.CurrentBucket.Target, detail.CurrentBucket.OriginalTarget),
+			fmt.Sprintf(
+				"%d effective from %d original",
+				detail.CurrentBucket.Target,
+				detail.CurrentBucket.OriginalTarget,
+			),
 		)
 	}
 	if detail.CurrentBucket.ProtectedDayCount > 0 {
@@ -261,8 +274,14 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 			),
 		)
 	}
-	if detail.Definition.Description != nil && strings.TrimSpace(*detail.Definition.Description) != "" {
-		bodyParts = append(bodyParts, "", "Description", strings.TrimSpace(*detail.Definition.Description))
+	if detail.Definition.Description != nil &&
+		strings.TrimSpace(*detail.Definition.Description) != "" {
+		bodyParts = append(
+			bodyParts,
+			"",
+			"Description",
+			strings.TrimSpace(*detail.Definition.Description),
+		)
 	}
 	state.ViewBody = strings.Join(bodyParts, "\n")
 	state.ChoiceItems = make([]string, 0, len(detail.Contributors))

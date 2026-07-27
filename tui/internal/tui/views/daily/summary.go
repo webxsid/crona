@@ -297,7 +297,9 @@ func buildSummaryLines(
 				[]string{
 					theme.StyleHeader.Render("Issues"),
 					theme.StyleNormal.Render(fmt.Sprintf("%d/%d", resolvedCount, totalIssues)),
-					theme.StyleDim.Render(issueProgressText(dailyWorkedSeconds, totalEstimate, true)),
+					theme.StyleDim.Render(
+						issueProgressText(dailyWorkedSeconds, totalEstimate, true),
+					),
 					theme.StyleDim.Render(compactIssueLegend(issueStatusCounts)),
 				},
 				func(barWidth int) string { return renderIssueStatusBar(theme, issueStatusCounts, barWidth) },

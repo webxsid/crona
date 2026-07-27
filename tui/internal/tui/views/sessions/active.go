@@ -49,6 +49,10 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	stateColor := activeTimerColor(theme, state.Timer)
 	if hardLimit {
 		timerTitle = "Pomodoro Session"
+		if sharedtypes.NormalizeTimerHardLimitKind(state.Timer.HardLimitKind) ==
+			sharedtypes.TimerHardLimitKindCountdown {
+			timerTitle = "Timer Session"
+		}
 		timerHint = "[x] commit issue  [i] change context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint
@@ -93,6 +97,12 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		AlignHorizontal(lipgloss.Center).
 		Render(timerText)
 	timingLabel := sessionTimingLabel(state, now)
+	endsAtLabel := sessionEndsAtLabel(state, now)
+	if timingLabel != "" && endsAtLabel != "" {
+		timingLabel += "  ·  " + endsAtLabel
+	} else if timingLabel == "" {
+		timingLabel = endsAtLabel
+	}
 	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(
 		state.IssueSessions,
 	)
@@ -208,6 +218,41 @@ func sessionTimingLabel(state types.ContentState, now time.Time) string {
 		return ""
 	}
 	return remainingLabel + " left"
+}
+
+func sessionEndsAtLabel(state types.ContentState, now time.Time) string {
+	if state.Timer == nil ||
+		state.Timer.State == "ready" ||
+		state.Timer.State == "paused" ||
+		state.Timer.State == "expired" {
+		return ""
+	}
+	remaining := 0
+	if state.Timer.HardLimitActive {
+		remaining = helperpkg.DerivedHardLimitRemainingSeconds(
+			state.Timer,
+			state.Elapsed,
+			now,
+		)
+	} else {
+		if state.Settings == nil || state.Settings.TimerMode == sharedtypes.TimerModeStopwatch {
+			return ""
+		}
+		segment := state.Timer.SegmentType
+		if segment == nil {
+			return ""
+		}
+		durationSeconds, ok := segmentDurationSeconds(state.Settings, *segment)
+		if !ok || durationSeconds <= 0 {
+			return ""
+		}
+		elapsed := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
+		remaining = max(0, durationSeconds-min(elapsed, durationSeconds))
+	}
+	if remaining <= 0 {
+		return ""
+	}
+	return "Ends At " + now.Add(time.Duration(remaining)*time.Second).Format("15:04")
 }
 
 func segmentReadyLabel(segment sharedtypes.SessionSegmentType) string {
@@ -365,7 +410,10 @@ func structuredProgressBar(
 	durationSeconds := 0
 	if state.Timer.SegmentType != nil {
 		if state.Timer.HardLimitActive {
-			durationSeconds, _ = hardLimitSegmentDurationSeconds(state.Timer, *state.Timer.SegmentType)
+			durationSeconds, _ = hardLimitSegmentDurationSeconds(
+				state.Timer,
+				*state.Timer.SegmentType,
+			)
 		} else {
 			switch *state.Timer.SegmentType {
 			case sharedtypes.SessionSegmentWork:
@@ -400,7 +448,11 @@ func structuredProgressBar(
 		Render(viewhelpers.RenderGradientBar(width, filled, sessionProgressPalette(theme, state.Timer, color)))
 }
 
-func sessionProgressPalette(theme types.Theme, timer *api.TimerState, color lipgloss.Color) viewhelpers.GradientBarPalette {
+func sessionProgressPalette(
+	theme types.Theme,
+	timer *api.TimerState,
+	color lipgloss.Color,
+) viewhelpers.GradientBarPalette {
 	palette := viewhelpers.GradientBarPalette{
 		Start: theme.ColorDullGreen,
 		End:   color,

@@ -27,7 +27,10 @@ func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 		t.Fatalf("expected wellbeing global actions to advertise away on W, got %q", wellbeing)
 	}
 
-	away := strings.Join(GlobalActions(Theme{}, ActionsState{View: "away", AwayModeActive: true}), "\n")
+	away := strings.Join(
+		GlobalActions(Theme{}, ActionsState{View: "away", AwayModeActive: true}),
+		"\n",
+	)
 	if !strings.Contains(away, "[W]") || !strings.Contains(away, "disable away") {
 		t.Fatalf("expected away global actions to advertise disable away on W, got %q", away)
 	}

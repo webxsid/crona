@@ -19,10 +19,21 @@ type focusCell struct {
 	lineTop bool
 }
 
-func renderFocusVisual(theme types.Theme, state types.ContentState, width int, availableHeight int) []string {
+func renderFocusVisual(
+	theme types.Theme,
+	state types.ContentState,
+	width int,
+	availableHeight int,
+) []string {
 	window := state.RollupMetricsRange
 	if len(window) == 0 || width < 28 {
-		return []string{theme.StyleHeader.Render("Focus") + "  " + theme.StyleDim.Render("No focus data for this range.")}
+		return []string{
+			theme.StyleHeader.Render(
+				"Focus",
+			) + "  " + theme.StyleDim.Render(
+				"No focus data for this range.",
+			),
+		}
 	}
 	lines := []string{
 		theme.StyleHeader.Render("Focus"),
@@ -119,7 +130,10 @@ func renderFocusGraph(
 		}
 		lines = append(lines, fmt.Sprintf("%s │%s", theme.StyleDim.Render(label), b.String()))
 	}
-	lines = append(lines, fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)))
+	lines = append(
+		lines,
+		fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)),
+	)
 	lines = append(lines, renderFocusXAxis(theme, days, yLabelWidth+2, chartWidth, xPositions))
 	return lines
 }
@@ -177,7 +191,9 @@ func renderFocusLegend(theme types.Theme, state types.ContentState) string {
 	estimateText := "estimated -"
 	loggedText := "logged -"
 	if state.GoalProgress != nil {
-		estimateText = "estimated " + compactHoursFromMinutes(state.GoalProgress.TotalEstimateMinutes)
+		estimateText = "estimated " + compactHoursFromMinutes(
+			state.GoalProgress.TotalEstimateMinutes,
+		)
 		loggedText = "logged " + compactHoursFromSeconds(state.GoalProgress.TotalActualSeconds)
 	}
 	return fmt.Sprintf("%s %s   %s %s", estimate, estimateText, actual, loggedText)

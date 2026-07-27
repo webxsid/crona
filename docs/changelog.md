@@ -2,6 +2,48 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.7.0] - 2026-07-27
+
+Crona v1.7.0 prepares the daemon and shared IPC contract for the upcoming Mac companion while improving countdown timers, issue lifecycle discovery, reminders, and active-session handling in the TUI.
+
+### Highlights
+
+- Native companion clients can claim notification and sound delivery over a capability-aware stream, acknowledge each delivery channel independently, and let the daemon fall back to its local alert backend when delivery is not accepted.
+- Clients can now query daemon-authoritative issue status transitions, including the reason transitions are blocked while an issue has an active focus session.
+- Countdown timers are now represented explicitly across the shared contract, runtime state, events, and TUI, with duration-only extension support and timer-specific completion language.
+- Scheduled reminders now support both daily check-ins and plan-the-day prompts, with automatic suppression after the relevant daily action is complete.
+- The repository now includes a detailed architecture audit for the upcoming Mac companion and its daemon-backed integration boundaries.
+
+### Added
+
+- `alerts.delivery.subscribe` and `alerts.delivery.ack` IPC methods, plus alert delivery capability, action, payload, and acknowledgement types for native companion integration.
+- Companion delivery status fields and an `alert.delivery` stream event so clients can discover and receive daemon-owned alerts.
+- `issue.status_transitions`, which returns the current issue status, allowed next statuses, and an optional blocked reason.
+- Explicit `pomodoro` and `countdown` hard-limit kinds in timer requests, state, runtime persistence, expiry events, and TUI presentation.
+- Duration-only countdown extension flow and `timer.extended` and `session.ended` lifecycle events.
+- Daily-plan reminder support alongside check-in reminders.
+- Active-session end-time previews and expanded tests across daemon commands, alerts, runtime state, event dispatch, dialogs, and session views.
+- A Mac companion architecture audit covering IPC ownership, compatibility, security boundaries, packaging, and phased implementation.
+- Consistent `--version` flags across the CLI, daemon, and TUI binaries for package-manager and installation verification.
+
+### Changed
+
+- Alert delivery now prefers a connected native companion for the capabilities it claims, while retaining daemon-local notification and sound delivery as a fallback.
+- Timer start validation now keeps countdown configuration distinct from pomodoro cadence settings.
+- Ending an active timer now requires a non-empty commit message and emits a dedicated session-ended event.
+- Hard-limit completion and extension dialogs now use timer-specific language and behavior for countdown sessions.
+- Reminder documentation and TUI controls now cover both check-in and plan-the-day reminders.
+- `issue.clear_todo` now consistently accepts a numeric issue ID request.
+
+### Fixed
+
+- Issue status controls no longer offer invalid lifecycle transitions or allow status changes while the same issue has an active focus session.
+- Countdown timer state now survives runtime persistence and is preserved through expiry, extension, and UI refresh paths.
+- Companion alert delivery falls back cleanly when a subscriber disconnects, times out, or acknowledges only part of a delivery.
+- Active-session timing now shows an `Ends At` value only when the timer has a meaningful running deadline.
+- The isolated Homebrew release check now executes its test-prefix Homebrew command, links the current Homebrew library layout correctly, and uses a local offline tap repository.
+- Generated `crona-beta` formulas now retain their distinct Ruby class name in local release validation.
+
 ## [1.6.2] - 2026-07-07
 
 Crona v1.6.2 makes custom Momentum rest-aware across custom cadences, adds a dedicated no-break countdown timer in the TUI, fixes the Windows alert/runtime failures reported during testing, and expands the release workflow with a first-class Scoop channel plus local manifest generation for Windows validation.

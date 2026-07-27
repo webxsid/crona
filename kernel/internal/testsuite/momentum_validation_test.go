@@ -53,15 +53,19 @@ func TestCreateHabitMomentumRejectsInvalidDailyAllSelection(t *testing.T) {
 		t.Fatalf("create habit B: %v", err)
 	}
 
-	_, err = corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
-		Name:          "Daily all",
-		Enabled:       true,
-		TargetKind:    sharedtypes.MomentumTargetKindHabit,
-		MatchMode:     sharedtypes.MomentumMatchModeAll,
-		Period:        sharedtypes.HabitStreakPeriodDay,
-		RequiredCount: 1,
-		HabitIDs:      []int64{habitA.ID, habitB.ID},
-	})
+	_, err = corecommands.CreateHabitStreakDefinition(
+		ctx,
+		coreCtx,
+		sharedtypes.HabitStreakDefinition{
+			Name:          "Daily all",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindHabit,
+			MatchMode:     sharedtypes.MomentumMatchModeAll,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+			HabitIDs:      []int64{habitA.ID, habitB.ID},
+		},
+	)
 	if err == nil {
 		t.Fatalf("expected validation error")
 	}
@@ -103,15 +107,19 @@ func TestCreateHabitMomentumRejectsRequiredCountAboveCapacity(t *testing.T) {
 		t.Fatalf("create habit: %v", err)
 	}
 
-	_, err = corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
-		Name:          "Weekly cap",
-		Enabled:       true,
-		TargetKind:    sharedtypes.MomentumTargetKindHabit,
-		MatchMode:     sharedtypes.MomentumMatchModeAny,
-		Period:        sharedtypes.HabitStreakPeriodWeek,
-		RequiredCount: 4,
-		HabitIDs:      []int64{habit.ID},
-	})
+	_, err = corecommands.CreateHabitStreakDefinition(
+		ctx,
+		coreCtx,
+		sharedtypes.HabitStreakDefinition{
+			Name:          "Weekly cap",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindHabit,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 4,
+			HabitIDs:      []int64{habit.ID},
+		},
+	)
 	if err == nil {
 		t.Fatalf("expected validation error")
 	}

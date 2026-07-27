@@ -15,11 +15,12 @@ import (
 )
 
 type Service struct {
-	core   *core.Context
-	bus    *events.Bus
-	logger *runtimepkg.Logger
-	paths  runtimepkg.Paths
-	queue  chan queuedAlert
+	core      *core.Context
+	bus       *events.Bus
+	logger    *runtimepkg.Logger
+	paths     runtimepkg.Paths
+	queue     chan queuedAlert
+	companion *companionBroker
 
 	mu                 sync.Mutex
 	lastUpdateNotified string
@@ -35,11 +36,13 @@ var (
 	alertSoundPathFn        = alertSoundPath
 	sendAlertNotificationFn = sendAlertNotification
 	playAlertSoundFn        = playAlertSound
+	companionAckTimeout     = 1500 * time.Millisecond
 )
 
 type queuedAlert struct {
 	req             sharedtypes.AlertRequest
 	respectSettings bool
+	actions         []sharedtypes.AlertDeliveryAction
 }
 
 func Start(
@@ -55,6 +58,7 @@ func Start(
 		logger:            logger,
 		paths:             paths,
 		queue:             make(chan queuedAlert, 32),
+		companion:         newCompanionBroker(),
 		lastReminderSlots: make(map[string]string),
 	}
 	unsubscribe := bus.Subscribe(func(event sharedtypes.KernelEvent) {
@@ -65,7 +69,11 @@ func Start(
 				logger.Error("decode timer boundary payload", err)
 				return
 			}
-			if err := service.enqueue(timerBoundaryAlert(payload), true); err != nil {
+			if err := service.enqueueWithActions(
+				timerBoundaryAlert(payload),
+				true,
+				timerBoundaryActions(payload),
+			); err != nil {
 				logger.Error("enqueue timer boundary alert", err)
 			}
 		case sharedtypes.EventTypeTimerHardLimitReached:
@@ -100,7 +108,12 @@ func Start(
 				if !ok {
 					return
 				}
-				if err := service.deliver(ctx, req.req, req.respectSettings); err != nil {
+				if err := service.deliverWithActions(
+					ctx,
+					req.req,
+					req.respectSettings,
+					req.actions,
+				); err != nil {
 					service.logger.Error("deliver alert", err)
 				}
 			}
@@ -112,7 +125,36 @@ func Start(
 }
 
 func (s *Service) Status() sharedtypes.AlertStatus {
-	return alertStatusFn(s.paths)
+	status := alertStatusFn(s.paths)
+	status.CompanionDeliverySupported = true
+	status.CompanionDeliveryActive = s.companionBroker().isActive()
+	if status.CompanionDeliveryActive {
+		status.NotificationsAvailable = true
+		status.SoundAvailable = true
+		status.NotificationBackend = "companion"
+		status.SoundBackend = "companion"
+	}
+	return status
+}
+
+func (s *Service) SubscribeCompanion(
+	ctx context.Context,
+	capabilities sharedtypes.AlertDeliveryCapability,
+) (<-chan sharedtypes.AlertDelivery, func()) {
+	return s.companionBroker().subscribe(ctx, capabilities)
+}
+
+func (s *Service) AcknowledgeCompanion(ack sharedtypes.AlertDeliveryAck) bool {
+	return s.companionBroker().acknowledge(ack)
+}
+
+func (s *Service) companionBroker() *companionBroker {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.companion == nil {
+		s.companion = newCompanionBroker()
+	}
+	return s.companion
 }
 
 func (s *Service) TestNotification(ctx context.Context) error {
@@ -154,11 +196,49 @@ func (s *Service) Notify(ctx context.Context, req sharedtypes.AlertRequest) erro
 }
 
 func (s *Service) enqueue(req sharedtypes.AlertRequest, respectSettings bool) error {
+	return s.enqueueWithActions(req, respectSettings, nil)
+}
+
+func (s *Service) enqueueWithActions(
+	req sharedtypes.AlertRequest,
+	respectSettings bool,
+	actions []sharedtypes.AlertDeliveryAction,
+) error {
 	select {
-	case s.queue <- queuedAlert{req: req, respectSettings: respectSettings}:
+	case s.queue <- queuedAlert{
+		req:             req,
+		respectSettings: respectSettings,
+		actions:         actions,
+	}:
 		return nil
 	default:
 		return fmt.Errorf("alert queue full")
+	}
+}
+
+func timerBoundaryActions(
+	payload sharedtypes.TimerBoundaryPayload,
+) []sharedtypes.AlertDeliveryAction {
+	if payload.Started {
+		return nil
+	}
+	switch payload.To {
+	case sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
+		expected := payload.To
+		return []sharedtypes.AlertDeliveryAction{{
+			ID:                       "timer.advance",
+			Title:                    "Start Break",
+			ExpectedReadySegmentType: &expected,
+		}}
+	case sharedtypes.SessionSegmentWork:
+		expected := payload.To
+		return []sharedtypes.AlertDeliveryAction{{
+			ID:                       "timer.advance",
+			Title:                    "Resume Focus",
+			ExpectedReadySegmentType: &expected,
+		}}
+	default:
+		return nil
 	}
 }
 
@@ -220,7 +300,22 @@ func timerBoundaryAlert(payload sharedtypes.TimerBoundaryPayload) sharedtypes.Al
 	return req
 }
 
-func hardLimitReachedAlert(payload sharedtypes.TimerHardLimitReachedPayload) sharedtypes.AlertRequest {
+func hardLimitReachedAlert(
+	payload sharedtypes.TimerHardLimitReachedPayload,
+) sharedtypes.AlertRequest {
+	if sharedtypes.NormalizeTimerHardLimitKind(payload.HardLimitKind) ==
+		sharedtypes.TimerHardLimitKindCountdown {
+		return sharedtypes.AlertRequest{
+			Kind:        sharedtypes.AlertEventTimerWorkComplete,
+			Title:       "Timer complete",
+			Subtitle:    "Commit or extend to continue",
+			Body:        "The countdown has finished. Commit to finish the session or extend to keep working.",
+			Urgency:     sharedtypes.AlertUrgencyHigh,
+			SoundPreset: sharedtypes.AlertSoundPresetFocusGong,
+			PlaySound:   true,
+			IconEnabled: true,
+		}
+	}
 	req := sharedtypes.AlertRequest{
 		Kind:        sharedtypes.AlertEventTimerWorkComplete,
 		Title:       "Pomodoro session complete",
@@ -253,6 +348,15 @@ func (s *Service) deliver(
 	req sharedtypes.AlertRequest,
 	respectSettings bool,
 ) error {
+	return s.deliverWithActions(ctx, req, respectSettings, nil)
+}
+
+func (s *Service) deliverWithActions(
+	ctx context.Context,
+	req sharedtypes.AlertRequest,
+	respectSettings bool,
+	actions []sharedtypes.AlertDeliveryAction,
+) error {
 	settings, err := s.core.CoreSettings.Get(ctx, s.core.UserID)
 	if err != nil {
 		return err
@@ -274,8 +378,41 @@ func (s *Service) deliver(
 		return nil
 	}
 
+	deliverNotification := !respectSettings || settings.BoundaryNotifications
+	if req.Kind == sharedtypes.AlertEventTestSound {
+		deliverNotification = false
+	}
+	deliverSound := req.PlaySound && (!respectSettings || settings.BoundarySound)
+	notificationAccepted := false
+	soundAccepted := false
+
+	deliveryID := fmt.Sprintf("alert-%d", time.Now().UnixNano())
+	result, offered := s.companionBroker().offer(sharedtypes.AlertDelivery{
+		ID:                  deliveryID,
+		Alert:               req,
+		DeliverNotification: deliverNotification,
+		PlaySound:           deliverSound,
+		Actions:             actions,
+	})
+	if offered {
+		timer := time.NewTimer(companionAckTimeout)
+		select {
+		case accepted := <-result:
+			notificationAccepted = accepted.notificationAccepted
+			soundAccepted = accepted.soundAccepted
+			if !timer.Stop() {
+				<-timer.C
+			}
+		case <-timer.C:
+			s.companionBroker().abandon(deliveryID)
+		case <-ctx.Done():
+			s.companionBroker().abandon(deliveryID)
+			return ctx.Err()
+		}
+	}
+
 	var firstErr error
-	if (!respectSettings || settings.BoundaryNotifications) && status.NotificationsAvailable {
+	if deliverNotification && !notificationAccepted && status.NotificationsAvailable {
 		if err := sendAlertNotificationFn(status, req); err != nil {
 			s.logger.Error("send alert notification", err)
 			if firstErr == nil {
@@ -283,7 +420,7 @@ func (s *Service) deliver(
 			}
 		}
 	}
-	if req.PlaySound && (!respectSettings || settings.BoundarySound) && status.SoundAvailable {
+	if deliverSound && !soundAccepted && status.SoundAvailable {
 		soundPath, err := alertSoundPathFn(s.paths, req.SoundPreset)
 		if err != nil {
 			return err

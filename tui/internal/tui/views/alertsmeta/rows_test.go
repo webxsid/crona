@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 )
 
 func TestRowsIncludeInactivityControls(t *testing.T) {
@@ -34,5 +35,29 @@ func TestRowsIncludeInactivityControls(t *testing.T) {
 	}
 	if got := soundPresetLabel(sharedtypes.AlertSoundPresetNotificationPing); got != "Notification Ping" {
 		t.Fatalf("expected notification ping label, got %q", got)
+	}
+}
+
+func TestRowsIncludeBothReminderActionsAndLabels(t *testing.T) {
+	settings := &sharedtypes.CoreSettings{}
+	reminders := []api.AlertReminder{
+		{ID: "checkin", Kind: sharedtypes.AlertReminderKindCheckIn},
+		{ID: "plan", Kind: sharedtypes.AlertReminderKindDailyPlan},
+	}
+
+	rows := Rows(settings, nil, reminders)
+	labels := map[RowKey]string{}
+	for _, row := range rows {
+		labels[row.Key] = row.Label
+	}
+
+	if labels[RowAddCheckInReminder] != "Add Check-In Reminder" {
+		t.Fatalf("missing check-in reminder action: %+v", labels)
+	}
+	if labels[RowAddDailyPlanReminder] != "Add Plan-the-Day Reminder" {
+		t.Fatalf("missing daily-plan reminder action: %+v", labels)
+	}
+	if labels[reminderRowKey("plan")] != "Plan-the-Day Reminder" {
+		t.Fatalf("unexpected daily-plan reminder label: %+v", labels)
 	}
 }

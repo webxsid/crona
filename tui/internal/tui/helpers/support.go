@@ -201,7 +201,10 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 			fmt.Sprintf("install_available=%t", input.UpdateStatus.InstallAvailable),
 			fmt.Sprintf(
 				"install_unavailable_reason=%s",
-				fallbackSupport(strings.TrimSpace(input.UpdateStatus.InstallUnavailableReason), "-"),
+				fallbackSupport(
+					strings.TrimSpace(input.UpdateStatus.InstallUnavailableReason),
+					"-",
+				),
 			),
 			fmt.Sprintf(
 				"update_error=%s",

@@ -140,6 +140,7 @@ func Close(state State) State {
 	state.PomodoroCyclesBeforeLongBreak = 0
 	state.PomodoroCycles = 0
 	state.TimerCountdownSeconds = 0
+	state.HardLimitKind = ""
 	state.HardLimitTotalSeconds = 0
 	state.HardLimitFocusSeconds = 0
 	state.HardLimitBreakSeconds = 0
@@ -325,6 +326,8 @@ func Update(
 		return updateHardLimitExpired(state, msg)
 	case "hard_limit_extend":
 		return updateHardLimitExtend(state, msg)
+	case "timer_countdown_extend":
+		return updateCountdownExtend(state, msg)
 	case "amend_session":
 		return updateAmendSession(state, msg)
 	case "manual_session":
@@ -694,20 +697,12 @@ func updateTimerCountdownStart(state State, msg tea.KeyMsg) (State, *Action, str
 			state.TimerCountdownSeconds = seconds
 			totalSeconds := new(int)
 			*totalSeconds = seconds
-			workSeconds := new(int)
-			*workSeconds = seconds
-			breakSeconds := new(int)
-			longBreakSeconds := new(int)
-			cyclesBeforeLongBreak := new(int)
 			req := &shareddto.TimerStartRequest{
-				RepoID:                         int64Ptr(state.RepoID),
-				StreamID:                       int64Ptr(state.StreamID),
-				IssueID:                        int64Ptr(state.IssueID),
-				HardLimitTotalSeconds:          totalSeconds,
-				HardLimitWorkSeconds:           workSeconds,
-				HardLimitBreakSeconds:          breakSeconds,
-				HardLimitLongBreakSeconds:      longBreakSeconds,
-				HardLimitCyclesBeforeLongBreak: cyclesBeforeLongBreak,
+				RepoID:                int64Ptr(state.RepoID),
+				StreamID:              int64Ptr(state.StreamID),
+				IssueID:               int64Ptr(state.IssueID),
+				HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+				HardLimitTotalSeconds: totalSeconds,
 			}
 			return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
 		}
@@ -827,6 +822,7 @@ func submitPomodoroStart(state State) (State, *Action, string) {
 		RepoID:                         int64Ptr(state.RepoID),
 		StreamID:                       int64Ptr(state.StreamID),
 		IssueID:                        int64Ptr(state.IssueID),
+		HardLimitKind:                  sharedtypes.TimerHardLimitKindPomodoro,
 		HardLimitTotalSeconds:          intPtr(values.TotalSeconds),
 		HardLimitWorkSeconds:           intPtr(values.FocusSeconds),
 		HardLimitBreakSeconds:          intPtr(values.BreakSeconds),
@@ -1323,13 +1319,25 @@ func updateHardLimitExtend(state State, msg tea.KeyMsg) (State, *Action, string)
 			if err != nil {
 				return state, nil, err.Error()
 			}
-			return Close(state), &Action{Kind: "extend_hard_limit", AdditionalSessions: req.AdditionalSessions, TimerExtend: req}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:               "extend_hard_limit",
+					AdditionalSessions: req.AdditionalSessions,
+					TimerExtend:        req,
+				}, ""
 		case pomodoroLongBreakCyclesIdx:
 			req, err := pomodoroExtendRequestFromState(state)
 			if err != nil {
 				return state, nil, err.Error()
 			}
-			return Close(state), &Action{Kind: "extend_hard_limit", AdditionalSessions: req.AdditionalSessions, TimerExtend: req}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:               "extend_hard_limit",
+					AdditionalSessions: req.AdditionalSessions,
+					TimerExtend:        req,
+				}, ""
 		}
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
@@ -1337,7 +1345,13 @@ func updateHardLimitExtend(state State, msg tea.KeyMsg) (State, *Action, string)
 			if err != nil {
 				return state, nil, err.Error()
 			}
-			return Close(state), &Action{Kind: "extend_hard_limit", AdditionalSessions: req.AdditionalSessions, TimerExtend: req}, ""
+			return Close(
+					state,
+				), &Action{
+					Kind:               "extend_hard_limit",
+					AdditionalSessions: req.AdditionalSessions,
+					TimerExtend:        req,
+				}, ""
 		}
 	}
 	var cmd tea.Cmd
@@ -1347,6 +1361,28 @@ func updateHardLimitExtend(state State, msg tea.KeyMsg) (State, *Action, string)
 		state = refreshPomodoroPreviewFields(state, inputIdx)
 		return clearDialogError(state), nil, ""
 	}
+	return clearDialogError(state), nil, ""
+}
+
+func updateCountdownExtend(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
+		return OpenHardLimitExpired(state, state.ViewName), nil, ""
+	case dialogActionPrimary:
+		seconds, err := ParseDurationInput(state.Inputs[0].Value(), true, "Additional time")
+		if err != nil {
+			return state, nil, err.Error()
+		}
+		return Close(state), &Action{
+			Kind: "extend_hard_limit",
+			TimerExtend: &shareddto.TimerExtendRequest{
+				AdditionalSeconds: seconds,
+			},
+		}, ""
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
 	return clearDialogError(state), nil, ""
 }
 

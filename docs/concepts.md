@@ -124,6 +124,8 @@ Calendar surfaces use terminal background styling for selected dates, date range
 
 Crona can trigger local OS notifications and bundled alert sounds from the local daemon itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain local-daemon-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
 
+Scheduled reminders can prompt for a daily check-in or planning the current day. The daemon skips a check-in reminder after today’s check-in exists and skips a plan-the-day reminder after at least one item has been committed to today’s daily plan.
+
 Focus inactivity alerts are also local-daemon-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, or end the session.
 
 ### Calendar Export

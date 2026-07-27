@@ -10,12 +10,16 @@ TAP_NAME="${CRONA_BREW_TAP_NAME:-crona/local-test}"
 PREFIX_ROOT="${CRONA_BREW_PREFIX_ROOT:-${TEST_ROOT}/homebrew}"
 CELLAR_ROOT="${CRONA_BREW_CELLAR_ROOT:-${PREFIX_ROOT}/Cellar}"
 CACHE_ROOT="${CRONA_BREW_CACHE_ROOT:-${TEST_ROOT}/Cache}"
+RUNTIME_ROOT="${CRONA_BREW_RUNTIME_ROOT:-${TEST_ROOT}/runtime}"
 REPO_ROOT="${CRONA_BREW_REPO_ROOT:-${PREFIX_ROOT}/Library/Homebrew}"
-TAP_DIR="${CRONA_BREW_TAP_DIR:-${TEST_ROOT}}"
+TAP_DIR="${CRONA_BREW_TAP_DIR:-${TEST_ROOT}/tap}"
 DIST_DIR="${CRONA_BREW_DIST_DIR:-${PWD}/dist}"
 GO_CMD="${GO_CMD:-go}"
 SYSTEM_BREW_REPO="$("${SYSTEM_BREW_BIN}" --repo)"
+SYSTEM_BREW_LIBRARY="${SYSTEM_BREW_REPO}/Library/Homebrew"
 ISOLATED_BREW_BIN="${PREFIX_ROOT}/bin/brew"
+export CRONA_HOME="${RUNTIME_ROOT}"
+export CRONA_ENV="Prod"
 
 cleanup_root() {
   rm -rf "${TEST_ROOT}"
@@ -58,7 +62,8 @@ brew_env() {
     HOMEBREW_NO_ANALYTICS=1 \
     HOMEBREW_NO_AUTO_UPDATE=1 \
     HOMEBREW_NO_INSTALL_CLEANUP=1 \
-    PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+    PATH="/usr/bin:/bin:/usr/sbin:/sbin" \
+    "$@"
 }
 
 brew_cmd() {
@@ -80,7 +85,7 @@ ensure_dirs() {
   chmod +x "${ISOLATED_BREW_BIN}"
   rm -rf "${REPO_ROOT}"
   mkdir -p "$(dirname "${REPO_ROOT}")"
-  ln -sfn "${SYSTEM_BREW_REPO}" "${REPO_ROOT}"
+  ln -sfn "${SYSTEM_BREW_LIBRARY}" "${REPO_ROOT}"
 }
 
 archive_name() {
@@ -142,14 +147,26 @@ generate_formula() {
   archive_dir="$2"
   checksum_file="$3"
   output_path="$4"
+  formula_name="${5:-crona}"
   if [ -z "${CRONA_HOMEBREW_BASE_URL:-}" ]; then
     export CRONA_HOMEBREW_BASE_URL="file://$(cd "${archive_dir}" && pwd -P)"
   fi
-  sh "${0%/*}/generate_homebrew_formula.sh" "${version}" "${archive_dir}" "${checksum_file}" "${output_path}"
+  sh "${0%/*}/generate_homebrew_formula.sh" \
+    "${version}" "${archive_dir}" "${checksum_file}" "${output_path}" "${formula_name}"
+  if [ ! -d "${TAP_DIR}/.git" ]; then
+    git -C "${TAP_DIR}" init -q
+  fi
+  git -C "${TAP_DIR}" add Formula
+  git -C "${TAP_DIR}" \
+    -c user.name="Crona Release Test" \
+    -c user.email="release-test@crona.local" \
+    commit -q --allow-empty -m "Test formula ${version}"
 }
 
 run_status_checks() {
   expected_version="$1"
+  expected_version="${expected_version#v}"
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona daemon attach >/dev/null
   status_output="$(PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona update status)"
   printf '%s\n' "${status_output}" | grep -F "current: ${expected_version}" >/dev/null 2>&1
   printf '%s\n' "${status_output}" | grep -F "install-source: brew" >/dev/null 2>&1
@@ -158,16 +175,18 @@ run_status_checks() {
     echo "update status exposed a non-brew update path" >&2
     exit 1
   fi
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona daemon detach >/dev/null
 }
 
 run_brew_validation() {
   version="$1"
+  expected_version="${version#v}"
   brew_cmd tap "${TAP_NAME}" "${TAP_DIR}"
   brew_cmd install "${TAP_NAME}/crona"
 
-  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona --version | grep -F "${version}" >/dev/null
-  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-daemon --version | grep -F "${version}" >/dev/null
-  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-tui --version | grep -F "${version}" >/dev/null
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona --version | grep -F "${expected_version}" >/dev/null
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-daemon --version | grep -F "${expected_version}" >/dev/null
+  PATH="${PREFIX_ROOT}/bin:/usr/bin:/bin:/usr/sbin:/sbin" crona-tui --version | grep -F "${expected_version}" >/dev/null
 
   run_status_checks "${version}"
 

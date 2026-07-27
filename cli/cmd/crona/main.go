@@ -99,6 +99,10 @@ func run(args []string) error {
 		fmt.Print(rootUsage())
 		return nil
 	}
+	if args[0] == "--version" || args[0] == "-v" {
+		fmt.Println(versionpkg.Current())
+		return nil
+	}
 
 	switch args[0] {
 	case "help":

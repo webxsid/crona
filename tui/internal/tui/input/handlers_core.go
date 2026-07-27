@@ -164,7 +164,8 @@ func handleOpenExportDaily(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleOpenCheckIn(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing) || s.Dialog != "" {
+	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing) ||
+		s.Dialog != "" {
 		return s, nil, false
 	}
 	if deps.OpenCheckInDialog == nil {

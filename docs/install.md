@@ -206,7 +206,7 @@ Alerts are emitted by the local engine. The TUI configures and tests them, but t
 - focus inactivity alerts when an active work session runs too long without TUI activity
 - update-available alerts
 - support/export completion alerts
-- scheduled reminders such as nightly check-in reminders
+- scheduled reminders such as nightly check-ins and morning plan-the-day prompts
 
 Scheduled reminders and inactivity alerts are local-only and only fire while the local engine is running.
 

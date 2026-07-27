@@ -68,7 +68,10 @@ func TestMomentumTargetsShowRedundancyWarningForRepoWideAndSpecificContexts(t *t
 	state.HabitStreakStep = 1
 
 	rendered := renderHabitStreakDialog(testTheme(), state)
-	if !strings.Contains(rendered, "Warning: Work / Any stream already covers Work / App and Work / Infra") {
+	if !strings.Contains(
+		rendered,
+		"Warning: Work / Any stream already covers Work / App and Work / Infra",
+	) {
 		t.Fatalf("expected redundancy warning in dialog, got %q", rendered)
 	}
 }

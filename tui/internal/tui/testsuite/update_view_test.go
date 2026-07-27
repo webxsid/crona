@@ -127,7 +127,11 @@ func TestHomebrewInstallUsesPackageManagerCommand(t *testing.T) {
 	}
 	for _, unwanted := range []string{"Homebrew formula:", "Release Page", "Checksums", "Configured Channel", "Install Status", "Installer", "TUI Path", "Engine Path"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected brew update view to keep %q hidden by default, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected brew update view to keep %q hidden by default, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 	if strings.Contains(rendered, "[i]") {
@@ -185,7 +189,11 @@ func TestScoopInstallUsesPackageManagerCommand(t *testing.T) {
 	}
 	for _, unwanted := range []string{"Release Page", "Checksums", "Configured Channel", "Install Status", "Installer", "TUI Path", "Engine Path"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected scoop update view to keep %q hidden by default, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected scoop update view to keep %q hidden by default, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 	if strings.Contains(rendered, "[i]") {
@@ -239,7 +247,11 @@ func TestHomebrewFormulaMismatchShowsMigrationCommand(t *testing.T) {
 	}
 	for _, unwanted := range []string{"Release Page", "Checksums", "Configured Channel", "Install Status", "Installer", "TUI Path", "Engine Path", "Homebrew formula:", "Install status:"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected migration view to keep %q hidden by default, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected migration view to keep %q hidden by default, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 	if strings.Contains(rendered, "[i]") {

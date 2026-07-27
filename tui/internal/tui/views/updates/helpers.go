@@ -13,7 +13,8 @@ import (
 )
 
 func installScriptDeprecationBanner(theme viewtypes.Theme, status *api.UpdateStatus) []string {
-	if !versionpkg.InstallScriptDeprecationEnabled() && (status == nil || !status.InstallScriptDeprecated) {
+	if !versionpkg.InstallScriptDeprecationEnabled() &&
+		(status == nil || !status.InstallScriptDeprecated) {
 		return nil
 	}
 	lines := []string{
@@ -130,7 +131,8 @@ func normalizeReleaseNoteLine(line string) (string, bool) {
 	if trimmed == "" {
 		return "", false
 	}
-	if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") || strings.HasPrefix(trimmed, "• ") {
+	if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") ||
+		strings.HasPrefix(trimmed, "• ") {
 		return strings.TrimSpace(trimmed[2:]), true
 	}
 	if idx := strings.IndexFunc(trimmed, func(r rune) bool { return !unicode.IsDigit(r) }); idx > 0 {

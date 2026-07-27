@@ -41,11 +41,17 @@ func TestOpenSelectedViewDialogIncludesWorkedEstimate(t *testing.T) {
 		t.Fatalf("expected view entity dialog, got %q", next.dialog)
 	}
 	if !strings.Contains(next.dialogViewMeta, "worked 1h15m / est. -") {
-		t.Fatalf("expected dialog meta to include worked/estimate summary, got %q", next.dialogViewMeta)
+		t.Fatalf(
+			"expected dialog meta to include worked/estimate summary, got %q",
+			next.dialogViewMeta,
+		)
 	}
 	if !strings.Contains(next.dialogViewBody, "Worked / est.") ||
 		!strings.Contains(next.dialogViewBody, "1h15m / est. -") {
-		t.Fatalf("expected dialog body to include worked/estimate summary, got %q", next.dialogViewBody)
+		t.Fatalf(
+			"expected dialog body to include worked/estimate summary, got %q",
+			next.dialogViewBody,
+		)
 	}
 }
 
@@ -74,7 +80,10 @@ func TestProtectedRestKeepsSettingsReachable(t *testing.T) {
 	}
 	state := m.layoutState()
 	if state.View != ViewSettings {
-		t.Fatalf("expected settings view to remain visible during configured rest, got %q", state.View)
+		t.Fatalf(
+			"expected settings view to remain visible during configured rest, got %q",
+			state.View,
+		)
 	}
 	if !state.ContentState.RestModeActive {
 		t.Fatal("expected settings view to keep rest mode active")
@@ -86,7 +95,14 @@ func TestProtectedRestKeepsSettingsReachable(t *testing.T) {
 	if inputState.ActiveView != ViewSettings {
 		t.Fatalf("expected settings input view to remain reachable, got %q", inputState.ActiveView)
 	}
-	if active, away, detail := viewruntime.ProtectedRestMode(m.settings, restDate); !active || away || detail == "" {
-		t.Fatalf("expected configured rest to be date-based, got active=%t away=%t detail=%q", active, away, detail)
+	if active, away, detail := viewruntime.ProtectedRestMode(m.settings, restDate); !active ||
+		away ||
+		detail == "" {
+		t.Fatalf(
+			"expected configured rest to be date-based, got active=%t away=%t detail=%q",
+			active,
+			away,
+			detail,
+		)
 	}
 }

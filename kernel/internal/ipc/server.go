@@ -124,7 +124,8 @@ func (s *Server) handleConn(conn net.Conn) {
 			continue
 		}
 
-		if req.Method == protocol.MethodEventsSubscribe {
+		if req.Method == protocol.MethodEventsSubscribe ||
+			req.Method == protocol.MethodAlertsDeliverySubscribe {
 			streamHandler, ok := s.handler.(EventStreamHandler)
 			if !ok {
 				_ = writer.Encode(protocol.Response{

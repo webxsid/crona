@@ -175,7 +175,8 @@ func renderWeek(
 	for day := range 7 {
 		current := rowStart.AddDate(0, 0, day)
 		inSelected := hasSelected && sameDay(current, selected)
-		inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) && !current.After(rangeEnd)
+		inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) &&
+			!current.After(rangeEnd)
 		isToday := sameDay(current, today)
 		cell := fmt.Sprintf("%2d", current.Day())
 		switch {
@@ -210,7 +211,12 @@ func renderWeek(
 	return Window(lines, anchor, selection.MaxLines, weekStart)
 }
 
-func Window(lines []string, anchor time.Time, maxLines int, weekStart sharedtypes.WeekStart) []string {
+func Window(
+	lines []string,
+	anchor time.Time,
+	maxLines int,
+	weekStart sharedtypes.WeekStart,
+) []string {
 	if maxLines <= 0 || len(lines) <= maxLines {
 		return lines
 	}

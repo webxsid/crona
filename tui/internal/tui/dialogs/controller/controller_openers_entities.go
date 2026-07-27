@@ -502,7 +502,14 @@ func OpenPomodoroStart(
 	state.ViewName = strings.TrimSpace(issueLabel)
 	state.IssueEstimateMins = estimateMinutes
 	state.IssueWorkedSeconds = workedSeconds
-	state.Inputs = newPomodoroDialogInputs(state, focusSeconds, breakSeconds, longBreakSeconds, cycles, cyclesBeforeLongBreak)
+	state.Inputs = newPomodoroDialogInputs(
+		state,
+		focusSeconds,
+		breakSeconds,
+		longBreakSeconds,
+		cycles,
+		cyclesBeforeLongBreak,
+	)
 	state.PomodoroFocusSeconds = focusSeconds
 	state.PomodoroFocusChoice = pomodoroFocusChoiceForSeconds(focusSeconds)
 	state.PomodoroBreakSeconds = breakSeconds
@@ -547,8 +554,20 @@ func OpenSingleTimerStart(
 }
 
 func OpenHardLimitExpired(state State, issueLabel string) State {
+	kind := sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind)
+	totalSeconds := state.HardLimitTotalSeconds
+	focusSeconds := state.HardLimitFocusSeconds
+	breakSeconds := state.HardLimitBreakSeconds
+	longBreakSeconds := state.HardLimitLongBreakSeconds
+	cyclesBeforeLongBreak := state.HardLimitCyclesBeforeLongBreak
 	state = Close(state)
 	state.Kind = "hard_limit_expired"
+	state.HardLimitKind = kind
+	state.HardLimitTotalSeconds = totalSeconds
+	state.HardLimitFocusSeconds = focusSeconds
+	state.HardLimitBreakSeconds = breakSeconds
+	state.HardLimitLongBreakSeconds = longBreakSeconds
+	state.HardLimitCyclesBeforeLongBreak = cyclesBeforeLongBreak
 	state.ViewTitle = "Pomodoro Session Complete"
 	state.ViewName = strings.TrimSpace(issueLabel)
 	state.ChoiceItems = []string{"[c] Commit", "[e] Extend"}
@@ -557,11 +576,19 @@ func OpenHardLimitExpired(state State, issueLabel string) State {
 		"Finish the session and capture what was completed.",
 		"Add more Pomodoro sessions and keep the same cadence running.",
 	}
+	if kind == sharedtypes.TimerHardLimitKindCountdown {
+		state.ViewTitle = "Timer Session Complete"
+		state.ChoiceDetails[1] = "Add more time and keep the same timer session running."
+	}
 	state.ChoiceCursor = 0
 	return state
 }
 
 func OpenHardLimitExtend(state State) State {
+	if sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) ==
+		sharedtypes.TimerHardLimitKindCountdown {
+		return OpenCountdownExtend(state)
+	}
 	viewName := state.ViewName
 	totalSeconds := state.HardLimitTotalSeconds
 	focusSeconds := state.HardLimitFocusSeconds
@@ -615,6 +642,30 @@ func OpenHardLimitExtend(state State) State {
 		state.PomodoroCyclesBeforeLongBreak,
 	)
 	state.FocusIdx = pomodoroFocusRowIdx
+	return SyncDialogFocus(state)
+}
+
+func OpenCountdownExtend(state State) State {
+	viewName := state.ViewName
+	durationSeconds := state.HardLimitFocusSeconds
+	if durationSeconds <= 0 {
+		durationSeconds = state.HardLimitTotalSeconds
+	}
+	if durationSeconds <= 0 {
+		durationSeconds = 25 * 60
+	}
+	input := withTimePrompt(state, newSessionDetailInput(state, "25m"))
+	input.SetValue(pomodoroSeedDurationInput(durationSeconds, 25*60))
+	input.Focus()
+
+	state = Close(state)
+	state.Kind = "timer_countdown_extend"
+	state.Parent = "hard_limit_expired"
+	state.ViewName = viewName
+	state.HardLimitKind = sharedtypes.TimerHardLimitKindCountdown
+	state.HardLimitFocusSeconds = durationSeconds
+	state.Inputs = []textinput.Model{input}
+	state.FocusIdx = 0
 	return SyncDialogFocus(state)
 }
 

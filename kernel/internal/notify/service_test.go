@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	dbpkg "crona/kernel/internal/store/db"
 	"crona/kernel/internal/store/migrations"
 	"crona/kernel/internal/store/repositories"
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
 
@@ -161,7 +163,13 @@ func TestHardLimitReachedEventEnqueuesNotificationWithSound(t *testing.T) {
 		playAlertSoundFn = playAlertSound
 	}()
 
-	_ = Start(ctx, coreCtx, coreCtx.Events, testLogger(t), runtimepkg.Paths{CurrentLogDir: t.TempDir()})
+	_ = Start(
+		ctx,
+		coreCtx,
+		coreCtx.Events,
+		testLogger(t),
+		runtimepkg.Paths{CurrentLogDir: t.TempDir()},
+	)
 
 	payload, err := json.Marshal(sharedtypes.TimerHardLimitReachedPayload{
 		SessionID:                      "session-1",
@@ -265,6 +273,91 @@ func TestTestSoundQueuesAlertForBackgroundDelivery(t *testing.T) {
 		}
 	case <-time.After(time.Second):
 		t.Fatal("expected test sound alert to be queued")
+	}
+}
+
+func TestDailyPlanReminderAlert(t *testing.T) {
+	req := reminderAlert(sharedtypes.AlertReminder{
+		Kind:     sharedtypes.AlertReminderKindDailyPlan,
+		TimeHHMM: "09:00",
+	})
+
+	if req.Kind != sharedtypes.AlertEventDailyPlanReminder {
+		t.Fatalf("expected daily-plan reminder event, got %q", req.Kind)
+	}
+	if req.Title != "Plan the day" || req.Subtitle != "09:00" {
+		t.Fatalf("unexpected daily-plan reminder content: %+v", req)
+	}
+	if req.Body == "" || req.Urgency != sharedtypes.AlertUrgencyNormal || req.PlaySound {
+		t.Fatalf("unexpected daily-plan reminder delivery settings: %+v", req)
+	}
+}
+
+func TestHardLimitReachedAlertUsesCountdownCopy(t *testing.T) {
+	countdown := hardLimitReachedAlert(sharedtypes.TimerHardLimitReachedPayload{
+		HardLimitKind: sharedtypes.TimerHardLimitKindCountdown,
+	})
+	if countdown.Title != "Timer complete" || !strings.Contains(countdown.Body, "countdown") {
+		t.Fatalf("unexpected countdown alert copy: %+v", countdown)
+	}
+
+	legacy := hardLimitReachedAlert(sharedtypes.TimerHardLimitReachedPayload{})
+	if legacy.Title != "Pomodoro session complete" {
+		t.Fatalf("expected legacy hard-limit alert to remain Pomodoro, got %+v", legacy)
+	}
+}
+
+func TestDailyPlanReminderCreateAndListRoundTrip(t *testing.T) {
+	ctx := context.Background()
+	coreCtx := testFullCoreContext(t, func() string { return "2026-04-11T08:00:00Z" })
+	service := &Service{core: coreCtx, logger: testLogger(t)}
+
+	created, err := service.CreateReminder(ctx, shareddto.AlertReminderCreateRequest{
+		Kind:         sharedtypes.AlertReminderKindDailyPlan,
+		ScheduleType: sharedtypes.AlertReminderScheduleDaily,
+		TimeHHMM:     "09:00",
+	})
+	if err != nil {
+		t.Fatalf("create daily-plan reminder: %v", err)
+	}
+	if created.Kind != sharedtypes.AlertReminderKindDailyPlan {
+		t.Fatalf("expected persisted daily-plan kind, got %q", created.Kind)
+	}
+
+	reminders, err := service.ListReminders(ctx)
+	if err != nil {
+		t.Fatalf("list reminders: %v", err)
+	}
+	if len(reminders) != 1 || reminders[0].Kind != sharedtypes.AlertReminderKindDailyPlan {
+		t.Fatalf("unexpected reminder round trip: %+v", reminders)
+	}
+}
+
+func TestDailyPlanReminderSuppressesOnlyAfterAnItemIsCommitted(t *testing.T) {
+	ctx := context.Background()
+	now := mustTime(t, "2026-04-11T09:00:00Z")
+	coreCtx := testFullCoreContext(t, func() string { return now.Format(time.RFC3339) })
+	service := &Service{core: coreCtx, logger: testLogger(t)}
+	reminder := sharedtypes.AlertReminder{Kind: sharedtypes.AlertReminderKindDailyPlan}
+
+	if shouldSuppressReminder(ctx, service, reminder, now) {
+		t.Fatal("expected reminder without a daily plan to fire")
+	}
+	if _, err := coreCtx.DailyPlans.EnsurePlan(
+		ctx,
+		coreCtx.UserID,
+		now.Format("2006-01-02"),
+		coreCtx.Now(),
+	); err != nil {
+		t.Fatalf("ensure empty daily plan: %v", err)
+	}
+	if shouldSuppressReminder(ctx, service, reminder, now) {
+		t.Fatal("expected empty daily plan not to suppress reminder")
+	}
+
+	mustCreatePlannedIssue(t, ctx, coreCtx, now.Format("2006-01-02"))
+	if !shouldSuppressReminder(ctx, service, reminder, now) {
+		t.Fatal("expected committed daily-plan item to suppress reminder")
 	}
 }
 
@@ -442,6 +535,53 @@ func mustStartInactivitySession(t *testing.T, ctx context.Context, coreCtx *core
 	}
 	if _, err := corecommands.StartSession(ctx, coreCtx, issue.ID); err != nil {
 		t.Fatalf("start session: %v", err)
+	}
+}
+
+func mustCreatePlannedIssue(
+	t *testing.T,
+	ctx context.Context,
+	coreCtx *core.Context,
+	date string,
+) {
+	t.Helper()
+
+	repo, err := coreCtx.Repos.Create(
+		ctx,
+		sharedtypes.Repo{ID: 1, Name: "Planning"},
+		coreCtx.UserID,
+		coreCtx.Now(),
+	)
+	if err != nil {
+		t.Fatalf("create planning repo: %v", err)
+	}
+	stream, err := coreCtx.Streams.Create(
+		ctx,
+		sharedtypes.Stream{
+			ID:         1,
+			RepoID:     repo.ID,
+			Name:       "Today",
+			Visibility: sharedtypes.StreamVisibilityPersonal,
+		},
+		coreCtx.UserID,
+		coreCtx.Now(),
+	)
+	if err != nil {
+		t.Fatalf("create planning stream: %v", err)
+	}
+	if _, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{
+		StreamID:    stream.ID,
+		Title:       "Plan this work",
+		TodoForDate: &date,
+	}); err != nil {
+		t.Fatalf("create planned issue: %v", err)
 	}
 }
 

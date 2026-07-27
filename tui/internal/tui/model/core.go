@@ -255,6 +255,7 @@ type Model struct {
 	dialogPomodoroCyclesBeforeLongBreak  int
 	dialogPomodoroCycles                 int
 	dialogTimerCountdownSeconds          int
+	dialogHardLimitKind                  sharedtypes.TimerHardLimitKind
 	dialogHardLimitTotalSeconds          int
 	dialogHardLimitFocusSeconds          int
 	dialogHardLimitBreakSeconds          int

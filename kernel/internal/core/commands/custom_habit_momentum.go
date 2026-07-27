@@ -102,7 +102,10 @@ func ensureCustomHabitMomentumSnapshot(
 		}
 	}
 	if len(defs) == 0 {
-		return &customHabitMomentumSnapshot{summaries: nil, state: customHabitMomentumSnapshotState{}}, nil
+		return &customHabitMomentumSnapshot{
+			summaries: nil,
+			state:     customHabitMomentumSnapshotState{},
+		}, nil
 	}
 	defs = sharedtypes.NormalizeHabitStreakDefinitions(defs)
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
@@ -269,7 +272,13 @@ func advanceCustomHabitMomentumSnapshotState(
 		if hasPrev && prevState.BucketKey == bucketKey && bucketKey != "" {
 			state.BucketCount = prevState.BucketCount + count
 			eval := evaluateMomentumBucket(def, bucketKey, state.BucketCount, date, settings)
-			prevEval := evaluateMomentumBucket(def, prevState.BucketKey, prevState.BucketCount, previousISODate(date), settings)
+			prevEval := evaluateMomentumBucket(
+				def,
+				prevState.BucketKey,
+				prevState.BucketCount,
+				previousISODate(date),
+				settings,
+			)
 			state.BucketMet = eval.MetTarget
 			state.Current = prevState.Current
 			state.Longest = prevState.Longest
@@ -500,7 +509,10 @@ func buildCustomMomentumCounts(
 	return out, nil
 }
 
-func defByID(defs []sharedtypes.HabitStreakDefinition, id string) sharedtypes.HabitStreakDefinition {
+func defByID(
+	defs []sharedtypes.HabitStreakDefinition,
+	id string,
+) sharedtypes.HabitStreakDefinition {
 	for _, def := range defs {
 		if def.ID == id {
 			return sharedtypes.NormalizeHabitStreakDefinition(def)
@@ -511,7 +523,9 @@ func defByID(defs []sharedtypes.HabitStreakDefinition, id string) sharedtypes.Ha
 
 func momentumDefinitionsCanReuseSnapshot(defs []sharedtypes.HabitStreakDefinition) bool {
 	for _, def := range defs {
-		if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+		if sharedtypes.NormalizeMomentumTargetKind(
+			def.TargetKind,
+		) != sharedtypes.MomentumTargetKindHabit {
 			return false
 		}
 	}
@@ -593,7 +607,9 @@ func evaluateMomentumBucket(
 			skipped = true
 		}
 	case sharedtypes.HabitStreakPeriodWeek, sharedtypes.HabitStreakPeriodMonth:
-		if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+		if sharedtypes.NormalizeMomentumTargetKind(
+			def.TargetKind,
+		) == sharedtypes.MomentumTargetKindContext {
 			mode = sharedtypes.MomentumRestAdjustModeProratedGoal
 			if availableDays == 0 {
 				skipped = true
@@ -679,7 +695,11 @@ func previousISODate(value string) string {
 	return parsed.AddDate(0, 0, -1).Format("2006-01-02")
 }
 
-func countProtectedMomentumDays(startDate string, endDate string, settings *sharedtypes.CoreSettings) int {
+func countProtectedMomentumDays(
+	startDate string,
+	endDate string,
+	settings *sharedtypes.CoreSettings,
+) int {
 	if settings == nil || startDate == "" || endDate == "" || endDate < startDate {
 		return 0
 	}

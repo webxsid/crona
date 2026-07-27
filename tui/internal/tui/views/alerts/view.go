@@ -38,7 +38,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			),
 			state.Width-6,
 		),
-	"",
+		"",
 	}
 	if state.Settings == nil {
 		lines = append(lines, theme.StyleDim.Render("Loading alert settings..."))

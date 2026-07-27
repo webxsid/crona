@@ -10,23 +10,29 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func OpenCreateAlertReminder(state State) State {
+func OpenCreateAlertReminder(state State, kind sharedtypes.AlertReminderKind) State {
+	kind = sharedtypes.NormalizeAlertReminderKind(kind)
+	defaultTime := "20:00"
+	if kind == sharedtypes.AlertReminderKindDailyPlan {
+		defaultTime = "09:00"
+	}
 	inputs := []textinput.Model{
 		newAlertReminderInput("daily | weekdays | mon,wed,fri"),
-		withTimePrompt(state, newAlertReminderInput("20:00")),
+		withTimePrompt(state, newAlertReminderInput(defaultTime)),
 	}
 	inputs[0].SetValue("daily")
+	inputs[1].SetValue(defaultTime)
 	inputs[0].Focus()
 	state = Close(state)
 	state.Kind = "create_alert_reminder"
-	state.ReminderKind = sharedtypes.AlertReminderKindCheckIn
+	state.ReminderKind = kind
 	state.Inputs = inputs
 	state.FocusIdx = 0
 	return SyncDialogFocus(state)
 }
 
 func OpenEditAlertReminder(state State, reminder sharedtypes.AlertReminder) State {
-	next := OpenCreateAlertReminder(state)
+	next := OpenCreateAlertReminder(state, reminder.Kind)
 	next.Kind = "edit_alert_reminder"
 	next.ReminderID = reminder.ID
 	next.ReminderKind = reminder.Kind

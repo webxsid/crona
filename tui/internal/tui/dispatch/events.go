@@ -202,6 +202,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			}
 			state.Timer.State = "expired"
 			state.Timer.HardLimitActive = true
+			state.Timer.HardLimitKind = sharedtypes.NormalizeTimerHardLimitKind(
+				payload.HardLimitKind,
+			)
 			state.Timer.HardLimitExpired = true
 			state.Timer.HardLimitTotalSeconds = payload.HardLimitTotalSeconds
 			state.Timer.HardLimitRemainingSeconds = 0
@@ -267,7 +270,7 @@ func shouldDismissDialogForSessionEvent(
 		return false
 	}
 	switch state.Dialog {
-	case "hard_limit_expired", "hard_limit_extend":
+	case "hard_limit_expired", "hard_limit_extend", "timer_countdown_extend":
 		return true
 	case "end_session":
 		return includeEndSession || state.DialogParent == "hard_limit_expired"

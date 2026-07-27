@@ -85,11 +85,18 @@ func TestRenderSummaryUsesAverageSignalsWhenCheckInMissing(t *testing.T) {
 
 	for _, want := range []string{"Signals", "Streaks", "avg 3.1/5", "avg 3.8/5", "avg 6h15m", "2h"} {
 		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected daily summary to fall back to averages for %q, got %q", want, rendered)
+			t.Fatalf(
+				"expected daily summary to fall back to averages for %q, got %q",
+				want,
+				rendered,
+			)
 		}
 	}
 	if strings.Contains(rendered, "today 4/5") || strings.Contains(rendered, "today 3/5") {
-		t.Fatalf("expected daily summary to use averages instead of today's check-in values, got %q", rendered)
+		t.Fatalf(
+			"expected daily summary to use averages instead of today's check-in values, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -102,7 +109,10 @@ func TestRenderSummaryUsesDailySummaryWorkInsteadOfRollupWork(t *testing.T) {
 	rendered := ansi.Strip(renderSummary(testTheme(), state, 120, 60))
 
 	if !strings.Contains(rendered, "worked 1h30m / est. 55m") {
-		t.Fatalf("expected daily summary to use the selected day's worked seconds, got %q", rendered)
+		t.Fatalf(
+			"expected daily summary to use the selected day's worked seconds, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -117,7 +127,11 @@ func TestRenderSummaryOmitsMomentumWhenNoSignalData(t *testing.T) {
 
 	for _, unwanted := range []string{"Signals", "Streaks"} {
 		if strings.Contains(rendered, unwanted) {
-			t.Fatalf("expected daily summary to omit %q when no signal data is present, got %q", unwanted, rendered)
+			t.Fatalf(
+				"expected daily summary to omit %q when no signal data is present, got %q",
+				unwanted,
+				rendered,
+			)
 		}
 	}
 	if !strings.Contains(rendered, "Issues") || !strings.Contains(rendered, "Habits") {

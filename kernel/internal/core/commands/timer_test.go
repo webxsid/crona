@@ -356,7 +356,10 @@ func TestTimerHardLimitStartRecordsCapMetadata(t *testing.T) {
 		t.Fatalf("expected break seconds 300, got %d", state.HardLimitBreakSeconds)
 	}
 	if state.HardLimitLongBreakSeconds != 0 {
-		t.Fatalf("expected long break seconds to default to 0, got %d", state.HardLimitLongBreakSeconds)
+		t.Fatalf(
+			"expected long break seconds to default to 0, got %d",
+			state.HardLimitLongBreakSeconds,
+		)
 	}
 	if state.HardLimitCyclesBeforeLongBreak != 0 {
 		t.Fatalf(
@@ -489,6 +492,7 @@ func TestTimerHardLimitSkipsZeroLengthBreaks(t *testing.T) {
 	runtimeState := runtimepkg.NewHardLimitTimerRuntimeState(
 		"session-123",
 		42,
+		sharedtypes.TimerHardLimitKindPomodoro,
 		1800,
 		600,
 		0,
@@ -532,6 +536,106 @@ func TestTimerHardLimitRejectsPauseAndResume(t *testing.T) {
 	}
 	if _, err := service.Resume(ctx); err == nil {
 		t.Fatal("expected resume to be rejected for hard-limit sessions")
+	}
+}
+
+func TestCountdownTimerCarriesExplicitKindAndUsesDurationOnlyExtensions(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	total := 30 * 60
+	state, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: &total,
+		},
+	)
+	if err != nil {
+		t.Fatalf("start countdown timer: %v", err)
+	}
+	if state.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected countdown state, got %+v", state)
+	}
+	if state.HardLimitWorkSeconds != total ||
+		state.HardLimitBreakSeconds != 0 ||
+		state.HardLimitLongBreakSeconds != 0 ||
+		state.HardLimitCyclesBeforeLongBreak != 0 {
+		t.Fatalf("unexpected countdown cadence: %+v", state)
+	}
+
+	if _, err := service.ExtendConfigured(ctx, shareddto.TimerExtendRequest{
+		AdditionalSessions: 1,
+	}); err == nil {
+		t.Fatal("expected configured countdown extension to be rejected")
+	}
+	if _, err := service.ExtendBySessions(ctx, 1); err == nil {
+		t.Fatal("expected session-count countdown extension to be rejected")
+	}
+	extended, err := service.Extend(ctx, 5*60)
+	if err != nil {
+		t.Fatalf("extend countdown by duration: %v", err)
+	}
+	if extended.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected extension to preserve countdown kind, got %+v", extended)
+	}
+	if extended.HardLimitTotalSeconds != 35*60 {
+		t.Fatalf("expected 35-minute extended total, got %d", extended.HardLimitTotalSeconds)
+	}
+
+	runtimeState, err := service.runtimeStateForSession(*state.SessionID)
+	if err != nil {
+		t.Fatalf("read countdown runtime state: %v", err)
+	}
+	if runtimeState == nil ||
+		runtimeState.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected persisted countdown kind, got %+v", runtimeState)
+	}
+}
+
+func TestCountdownTimerRejectsPomodoroConfigurationBeforeStartingSession(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	total := 30 * 60
+	work := 25 * 60
+	if _, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: &total,
+			HardLimitWorkSeconds:  &work,
+		},
+	); err == nil {
+		t.Fatal("expected countdown cadence configuration to be rejected")
+	}
+	active, err := coreCtx.Sessions.GetActiveSession(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("load active session: %v", err)
+	}
+	if active != nil {
+		t.Fatalf("expected rejected countdown not to create a session, got %+v", active)
+	}
+	if _, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitKind: sharedtypes.TimerHardLimitKindCountdown,
+		},
+	); err == nil {
+		t.Fatal("expected countdown without a duration to be rejected")
 	}
 }
 
@@ -620,10 +724,16 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 		t.Fatalf("expected expired state to stay expired, got %q", frozenState.State)
 	}
 	if frozenState.ElapsedSeconds != 0 {
-		t.Fatalf("expected expired state to stop accumulating elapsed time, got %d", frozenState.ElapsedSeconds)
+		t.Fatalf(
+			"expected expired state to stop accumulating elapsed time, got %d",
+			frozenState.ElapsedSeconds,
+		)
 	}
 	if frozenState.HardLimitRemainingSeconds != 0 {
-		t.Fatalf("expected hard-limit remaining time to stay frozen at 0, got %d", frozenState.HardLimitRemainingSeconds)
+		t.Fatalf(
+			"expected hard-limit remaining time to stay frozen at 0, got %d",
+			frozenState.HardLimitRemainingSeconds,
+		)
 	}
 	if len(hardLimitEvents) != 1 {
 		t.Fatalf("expected exactly one hard-limit event, got %d", len(hardLimitEvents))
@@ -673,7 +783,10 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 		t.Fatal("expected active segment after extend")
 	}
 	if afterExtendSegment.SegmentType != sharedtypes.SessionSegmentWork {
-		t.Fatalf("expected extend to restart the expired work segment, got %q", afterExtendSegment.SegmentType)
+		t.Fatalf(
+			"expected extend to restart the expired work segment, got %q",
+			afterExtendSegment.SegmentType,
+		)
 	}
 	boundaryAfterExtend, err := service.nextBoundary(
 		ctx,
@@ -701,7 +814,11 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 		t.Fatalf("decode timer.extended payload: %v", err)
 	}
 	if extendedPayload.SessionID != *startState.SessionID {
-		t.Fatalf("expected timer.extended session %q, got %q", *startState.SessionID, extendedPayload.SessionID)
+		t.Fatalf(
+			"expected timer.extended session %q, got %q",
+			*startState.SessionID,
+			extendedPayload.SessionID,
+		)
 	}
 
 	now = "2026-05-24T10:10:00Z"
@@ -731,7 +848,11 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 		t.Fatalf("decode session.ended payload: %v", err)
 	}
 	if endedPayload.SessionID != *startState.SessionID {
-		t.Fatalf("expected session.ended session %q, got %q", *startState.SessionID, endedPayload.SessionID)
+		t.Fatalf(
+			"expected session.ended session %q, got %q",
+			*startState.SessionID,
+			endedPayload.SessionID,
+		)
 	}
 }
 

@@ -152,7 +152,8 @@ func signalEnergyValue(state types.ContentState) string {
 }
 
 func signalSleepValue(state types.ContentState) string {
-	if state.DailyCheckIn != nil && state.DailyCheckIn.Date != "" && state.DailyCheckIn.SleepHours != nil {
+	if state.DailyCheckIn != nil && state.DailyCheckIn.Date != "" &&
+		state.DailyCheckIn.SleepHours != nil {
 		return "today " + helperpkg.FormatCompactDurationHours(*state.DailyCheckIn.SleepHours)
 	}
 	if state.MetricsRollup != nil && state.MetricsRollup.AverageSleepHours != nil {

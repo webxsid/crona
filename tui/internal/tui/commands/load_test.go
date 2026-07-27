@@ -382,7 +382,10 @@ func runBatchCommands(batch tea.BatchMsg) {
 	cmdWG.Wait()
 }
 
-func runHabitCompletionReloadTest(t *testing.T, buildCmd func(endpoint string) tea.Cmd) map[string][]protocol.Request {
+func runHabitCompletionReloadTest(
+	t *testing.T,
+	buildCmd func(endpoint string) tea.Cmd,
+) map[string][]protocol.Request {
 	t.Helper()
 	endpoint := testCommandEndpoint()
 	ln, err := localipc.Listen(endpoint)

@@ -84,6 +84,7 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 				NextSegmentType:                &segmentType,
 				ElapsedSeconds:                 0,
 				HardLimitActive:                base.HardLimitActive,
+				HardLimitKind:                  base.HardLimitKind,
 				HardLimitExpired:               base.HardLimitExpired,
 				HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
 				HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
@@ -102,6 +103,7 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 			SegmentType:                    &segmentType,
 			ElapsedSeconds:                 elapsedSeconds(activeSession.StartTime, now),
 			HardLimitActive:                base.HardLimitActive,
+			HardLimitKind:                  base.HardLimitKind,
 			HardLimitExpired:               base.HardLimitExpired,
 			HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
 			HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
@@ -144,6 +146,7 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 		NextSegmentType:                nextSegment,
 		ElapsedSeconds:                 elapsed,
 		HardLimitActive:                base.HardLimitActive,
+		HardLimitKind:                  base.HardLimitKind,
 		HardLimitExpired:               base.HardLimitExpired,
 		HardLimitTotalSeconds:          base.HardLimitTotalSeconds,
 		HardLimitRemainingSeconds:      base.HardLimitRemainingSeconds,
@@ -211,11 +214,32 @@ func (t *TimerService) start(
 			"focus sessions cannot be started for the current issue status",
 		)
 	}
+	if input != nil && input.HardLimitKind == sharedtypes.TimerHardLimitKindCountdown {
+		if input.HardLimitTotalSeconds == nil || *input.HardLimitTotalSeconds <= 0 {
+			return sharedtypes.TimerState{}, errors.New(
+				"countdown timers require a positive total duration",
+			)
+		}
+		workMismatch := input.HardLimitWorkSeconds != nil &&
+			*input.HardLimitWorkSeconds != *input.HardLimitTotalSeconds
+		hasPomodoroConfig := input.HardLimitBreakSeconds != nil &&
+			*input.HardLimitBreakSeconds != 0 ||
+			input.HardLimitLongBreakSeconds != nil &&
+				*input.HardLimitLongBreakSeconds != 0 ||
+			input.HardLimitCyclesBeforeLongBreak != nil &&
+				*input.HardLimitCyclesBeforeLongBreak != 0
+		if workMismatch || hasPomodoroConfig {
+			return sharedtypes.TimerState{}, errors.New(
+				"countdown timers cannot configure work cadence, breaks, or cycles",
+			)
+		}
+	}
 	session, err := StartSession(ctx, t.ctx, resolvedIssueID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if input != nil && input.HardLimitTotalSeconds != nil && *input.HardLimitTotalSeconds > 0 {
+		kind := sharedtypes.NormalizeTimerHardLimitKind(input.HardLimitKind)
 		workSeconds := 0
 		if input.HardLimitWorkSeconds != nil {
 			workSeconds = *input.HardLimitWorkSeconds
@@ -235,11 +259,18 @@ func (t *TimerService) start(
 		if input.HardLimitCyclesBeforeLongBreak != nil {
 			cyclesBeforeLongBreak = *input.HardLimitCyclesBeforeLongBreak
 		}
+		if kind == sharedtypes.TimerHardLimitKindCountdown {
+			workSeconds = *input.HardLimitTotalSeconds
+			breakSeconds = 0
+			longBreakSeconds = 0
+			cyclesBeforeLongBreak = 0
+		}
 		if err := runtimepkg.WriteTimerRuntimeState(
 			func() runtimepkg.TimerRuntimeState {
 				state := runtimepkg.NewHardLimitTimerRuntimeState(
 					session.ID,
 					resolvedIssueID,
+					kind,
 					*input.HardLimitTotalSeconds,
 					workSeconds,
 					breakSeconds,
@@ -475,7 +506,17 @@ func (t *TimerService) ExtendBySessions(
 	if runtimeState == nil || !runtimeState.HasHardLimit() {
 		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
 	}
-	additionalSeconds, err := t.hardLimitExtensionSecondsForSessions(ctx, activeSession.ID, additionalSessions, runtimeState)
+	if runtimeState.HardLimitKind == sharedtypes.TimerHardLimitKindCountdown {
+		return sharedtypes.TimerState{}, errors.New(
+			"countdown timers accept duration-only extensions",
+		)
+	}
+	additionalSeconds, err := t.hardLimitExtensionSecondsForSessions(
+		ctx,
+		activeSession.ID,
+		additionalSessions,
+		runtimeState,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -503,6 +544,11 @@ func (t *TimerService) ExtendConfigured(
 	}
 	if runtimeState == nil || !runtimeState.HasHardLimit() {
 		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
+	}
+	if runtimeState.HardLimitKind == sharedtypes.TimerHardLimitKindCountdown {
+		return sharedtypes.TimerState{}, errors.New(
+			"countdown timers accept duration-only extensions",
+		)
 	}
 	workSeconds := runtimeState.HardLimitWorkSeconds
 	if input.HardLimitWorkSeconds != nil && *input.HardLimitWorkSeconds > 0 {
@@ -894,6 +940,7 @@ func (t *TimerService) applyHardLimitExpiry(
 			SessionID:                      sessionID,
 			IssueID:                        activeSession.IssueID,
 			SegmentType:                    new(currentType),
+			HardLimitKind:                  runtimeState.HardLimitKind,
 			HardLimitTotalSeconds:          runtimeState.HardLimitTotalSeconds,
 			HardLimitWorkSeconds:           runtimeState.HardLimitWorkSeconds,
 			HardLimitBreakSeconds:          runtimeState.HardLimitBreakSeconds,
@@ -1252,6 +1299,7 @@ func hardLimitTimerState(
 	}
 	remaining, _ := hardLimitRemaining(state, sessionStart, now)
 	timerState.HardLimitActive = true
+	timerState.HardLimitKind = sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind)
 	timerState.HardLimitExpired = state.HardLimitExpired
 	timerState.HardLimitTotalSeconds = state.HardLimitTotalSeconds
 	timerState.HardLimitRemainingSeconds = remaining

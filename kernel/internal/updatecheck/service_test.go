@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	runtimepkg "crona/kernel/internal/runtime"
 	"crona/shared/config"
 	sharedtypes "crona/shared/types"
-	runtimepkg "crona/kernel/internal/runtime"
 )
 
 func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {
@@ -205,8 +205,14 @@ func TestResolveInstallMetadataLocked(t *testing.T) {
 
 		service := &Service{installPath: path}
 		source, formula, channel := service.resolveInstallMetadataLocked(false)
-		if source != sharedtypes.InstallSourceScoop || formula != "" || channel != sharedtypes.UpdateChannelBeta {
-			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		if source != sharedtypes.InstallSourceScoop || formula != "" ||
+			channel != sharedtypes.UpdateChannelBeta {
+			t.Fatalf(
+				"unexpected resolved metadata: source=%s formula=%q channel=%s",
+				source,
+				formula,
+				channel,
+			)
 		}
 	})
 
@@ -218,14 +224,21 @@ func TestResolveInstallMetadataLocked(t *testing.T) {
 
 		service := &Service{installPath: path}
 		source, formula, channel := service.resolveInstallMetadataLocked(false)
-		if source != sharedtypes.InstallSourceScoop || formula != "" || channel != sharedtypes.UpdateChannelBeta {
-			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		if source != sharedtypes.InstallSourceScoop || formula != "" ||
+			channel != sharedtypes.UpdateChannelBeta {
+			t.Fatalf(
+				"unexpected resolved metadata: source=%s formula=%q channel=%s",
+				source,
+				formula,
+				channel,
+			)
 		}
 		file, err := runtimepkg.LoadInstallSourceFile(path)
 		if err != nil {
 			t.Fatalf("load persisted metadata: %v", err)
 		}
-		if file.InstallSource != sharedtypes.InstallSourceScoop || file.ReleaseChannel != sharedtypes.UpdateChannelBeta {
+		if file.InstallSource != sharedtypes.InstallSourceScoop ||
+			file.ReleaseChannel != sharedtypes.UpdateChannelBeta {
 			t.Fatalf("unexpected persisted metadata: %+v", file)
 		}
 	})
@@ -236,14 +249,21 @@ func TestResolveInstallMetadataLocked(t *testing.T) {
 		service := &Service{installPath: path}
 
 		source, formula, channel := service.resolveInstallMetadataLocked(true)
-		if source != sharedtypes.InstallSourceScript || formula != "" || channel != sharedtypes.UpdateChannelStable {
-			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		if source != sharedtypes.InstallSourceScript || formula != "" ||
+			channel != sharedtypes.UpdateChannelStable {
+			t.Fatalf(
+				"unexpected resolved metadata: source=%s formula=%q channel=%s",
+				source,
+				formula,
+				channel,
+			)
 		}
 		file, err := runtimepkg.LoadInstallSourceFile(path)
 		if err != nil {
 			t.Fatalf("load persisted metadata: %v", err)
 		}
-		if file.InstallSource != sharedtypes.InstallSourceScript || file.ReleaseChannel != sharedtypes.UpdateChannelStable {
+		if file.InstallSource != sharedtypes.InstallSourceScript ||
+			file.ReleaseChannel != sharedtypes.UpdateChannelStable {
 			t.Fatalf("unexpected persisted metadata: %+v", file)
 		}
 	})
@@ -256,8 +276,14 @@ func TestResolveInstallMetadataLocked(t *testing.T) {
 		service := &Service{installPath: path}
 
 		source, formula, channel := service.resolveInstallMetadataLocked(false)
-		if source != sharedtypes.InstallSourceUnknown || formula != "" || channel != sharedtypes.UpdateChannelStable {
-			t.Fatalf("unexpected resolved metadata: source=%s formula=%q channel=%s", source, formula, channel)
+		if source != sharedtypes.InstallSourceUnknown || formula != "" ||
+			channel != sharedtypes.UpdateChannelStable {
+			t.Fatalf(
+				"unexpected resolved metadata: source=%s formula=%q channel=%s",
+				source,
+				formula,
+				channel,
+			)
 		}
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Fatalf("expected no install metadata file, got err=%v", err)

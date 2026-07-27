@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
 
@@ -143,6 +144,38 @@ func ChangeIssueStatus(
 	note *string,
 ) (*sharedtypes.Issue, error) {
 	return changeIssueStatus(ctx, c, issueID, nextStatus, note, false)
+}
+
+func IssueStatusTransitions(
+	ctx context.Context,
+	c *core.Context,
+	issueID int64,
+) (shareddto.IssueStatusTransitionsResponse, error) {
+	issue, err := c.Issues.GetByID(ctx, issueID, c.UserID)
+	if err != nil {
+		return shareddto.IssueStatusTransitionsResponse{}, err
+	}
+	if issue == nil {
+		return shareddto.IssueStatusTransitionsResponse{}, errors.New("issue not found")
+	}
+
+	currentStatus := sharedtypes.NormalizeIssueStatus(issue.Status)
+	response := shareddto.IssueStatusTransitionsResponse{
+		ID:              issueID,
+		CurrentStatus:   currentStatus,
+		AllowedStatuses: sharedtypes.AllowedIssueStatusTransitions(currentStatus),
+	}
+
+	activeSession, err := c.Sessions.GetActiveSession(ctx, c.UserID)
+	if err != nil {
+		return shareddto.IssueStatusTransitionsResponse{}, err
+	}
+	if activeSession != nil && activeSession.IssueID == issueID {
+		reason := "cannot change issue status while a focus session is active"
+		response.AllowedStatuses = []sharedtypes.IssueStatus{}
+		response.BlockedReason = &reason
+	}
+	return response, nil
 }
 
 func changeIssueStatus(

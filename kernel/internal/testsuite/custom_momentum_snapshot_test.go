@@ -146,7 +146,10 @@ func TestCustomMomentumSnapshotCarriesForwardAcrossDefinitionChange(t *testing.T
 		t.Fatalf("expected two custom streaks before change, got %+v", before.CustomHabitStreaks)
 	}
 	if before.CustomHabitStreaks[0].Current != 2 {
-		t.Fatalf("expected weekly current streak of 2 before change, got %+v", before.CustomHabitStreaks[0])
+		t.Fatalf(
+			"expected weekly current streak of 2 before change, got %+v",
+			before.CustomHabitStreaks[0],
+		)
 	}
 
 	defs[0].RequiredCount = 3
@@ -166,10 +169,16 @@ func TestCustomMomentumSnapshotCarriesForwardAcrossDefinitionChange(t *testing.T
 		t.Fatalf("expected two custom streaks after change, got %+v", after.CustomHabitStreaks)
 	}
 	if after.CustomHabitStreaks[0].Current != 3 || after.CustomHabitStreaks[0].Longest != 3 {
-		t.Fatalf("expected weekly streak to carry forward to 3 after change, got %+v", after.CustomHabitStreaks[0])
+		t.Fatalf(
+			"expected weekly streak to carry forward to 3 after change, got %+v",
+			after.CustomHabitStreaks[0],
+		)
 	}
 	if after.CustomHabitStreaks[1].Current != 3 || after.CustomHabitStreaks[1].Longest != 3 {
-		t.Fatalf("expected monthly streak to stay at 3 after weekly change, got %+v", after.CustomHabitStreaks[1])
+		t.Fatalf(
+			"expected monthly streak to stay at 3 after weekly change, got %+v",
+			after.CustomHabitStreaks[1],
+		)
 	}
 }
 
@@ -415,15 +424,19 @@ func TestWeeklyHabitMomentumSkipsBucketWhenProtectedDaysExceedRequiredCount(t *t
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2026-06-05", "2026-06-06", "2026-06-07"}); err != nil {
 		t.Fatalf("set rest dates: %v", err)
 	}
-	created, err := corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
-		Name:          "Weekly journal",
-		Enabled:       true,
-		TargetKind:    sharedtypes.MomentumTargetKindHabit,
-		MatchMode:     sharedtypes.MomentumMatchModeAny,
-		Period:        sharedtypes.HabitStreakPeriodWeek,
-		RequiredCount: 2,
-		HabitIDs:      []int64{habit.ID},
-	})
+	created, err := corecommands.CreateHabitStreakDefinition(
+		ctx,
+		coreCtx,
+		sharedtypes.HabitStreakDefinition{
+			Name:          "Weekly journal",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindHabit,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 2,
+			HabitIDs:      []int64{habit.ID},
+		},
+	)
 	if err != nil {
 		t.Fatalf("create momentum: %v", err)
 	}
@@ -433,7 +446,10 @@ func TestWeeklyHabitMomentumSkipsBucketWhenProtectedDaysExceedRequiredCount(t *t
 		t.Fatalf("compute lifetime streaks: %v", err)
 	}
 	if len(streaks.CustomHabitStreaks) != 1 || streaks.CustomHabitStreaks[0].Current != 1 {
-		t.Fatalf("expected skipped bucket to preserve weekly streak, got %+v", streaks.CustomHabitStreaks)
+		t.Fatalf(
+			"expected skipped bucket to preserve weekly streak, got %+v",
+			streaks.CustomHabitStreaks,
+		)
 	}
 
 	detail, err := corecommands.GetMomentumDetail(ctx, coreCtx, created.ID, "2026-06-07", 30)
@@ -441,7 +457,10 @@ func TestWeeklyHabitMomentumSkipsBucketWhenProtectedDaysExceedRequiredCount(t *t
 		t.Fatalf("get momentum detail: %v", err)
 	}
 	if !detail.CurrentBucket.Skipped || detail.CurrentBucket.ProtectedDayCount != 3 {
-		t.Fatalf("expected skipped current bucket with 3 protected days, got %+v", detail.CurrentBucket)
+		t.Fatalf(
+			"expected skipped current bucket with 3 protected days, got %+v",
+			detail.CurrentBucket,
+		)
 	}
 }
 
@@ -469,17 +488,21 @@ func TestWeeklyContextMomentumProratesBucketTargetByAvailableDays(t *testing.T) 
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestWeekdays, []int{0, 6}); err != nil {
 		t.Fatalf("set rest weekdays: %v", err)
 	}
-	created, err := corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
-		Name:       "Weekly delivery",
-		Enabled:    true,
-		TargetKind: sharedtypes.MomentumTargetKindContext,
-		MatchMode:  sharedtypes.MomentumMatchModeAny,
-		Contexts: []sharedtypes.MomentumContext{
-			{RepoID: repo.ID, StreamID: &stream.ID},
+	created, err := corecommands.CreateHabitStreakDefinition(
+		ctx,
+		coreCtx,
+		sharedtypes.HabitStreakDefinition{
+			Name:       "Weekly delivery",
+			Enabled:    true,
+			TargetKind: sharedtypes.MomentumTargetKindContext,
+			MatchMode:  sharedtypes.MomentumMatchModeAny,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: repo.ID, StreamID: &stream.ID},
+			},
+			Period:        sharedtypes.HabitStreakPeriodWeek,
+			RequiredCount: 7200,
 		},
-		Period:        sharedtypes.HabitStreakPeriodWeek,
-		RequiredCount: 7200,
-	})
+	)
 	if err != nil {
 		t.Fatalf("create momentum: %v", err)
 	}
@@ -491,7 +514,10 @@ func TestWeeklyContextMomentumProratesBucketTargetByAvailableDays(t *testing.T) 
 		t.Fatalf("compute lifetime streaks: %v", err)
 	}
 	if len(streaks.CustomHabitStreaks) != 1 || streaks.CustomHabitStreaks[0].Current != 1 {
-		t.Fatalf("expected prorated weekly context streak to count, got %+v", streaks.CustomHabitStreaks)
+		t.Fatalf(
+			"expected prorated weekly context streak to count, got %+v",
+			streaks.CustomHabitStreaks,
+		)
 	}
 
 	detail, err := corecommands.GetMomentumDetail(ctx, coreCtx, created.ID, "2026-06-07", 30)
@@ -501,8 +527,12 @@ func TestWeeklyContextMomentumProratesBucketTargetByAvailableDays(t *testing.T) 
 	if detail.CurrentBucket.Target != 5143 || detail.CurrentBucket.OriginalTarget != 7200 {
 		t.Fatalf("expected prorated target 5143 from 7200, got %+v", detail.CurrentBucket)
 	}
-	if detail.CurrentBucket.ProtectedDayCount != 2 || detail.CurrentBucket.AvailableDayCount != 5 || !detail.CurrentBucket.MetTarget {
-		t.Fatalf("expected 2 protected days, 5 available days, and met target, got %+v", detail.CurrentBucket)
+	if detail.CurrentBucket.ProtectedDayCount != 2 || detail.CurrentBucket.AvailableDayCount != 5 ||
+		!detail.CurrentBucket.MetTarget {
+		t.Fatalf(
+			"expected 2 protected days, 5 available days, and met target, got %+v",
+			detail.CurrentBucket,
+		)
 	}
 }
 

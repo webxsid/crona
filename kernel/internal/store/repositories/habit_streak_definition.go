@@ -97,7 +97,9 @@ func (r *HabitStreakDefinitionRepository) selectDefinitionRows(
 	return rows, nil
 }
 
-func assembleHabitStreakDefinitions(rows []habitStreakDefinitionRow) []sharedtypes.HabitStreakDefinition {
+func assembleHabitStreakDefinitions(
+	rows []habitStreakDefinitionRow,
+) []sharedtypes.HabitStreakDefinition {
 	defsByID := make(map[string]*sharedtypes.HabitStreakDefinition, len(rows))
 	order := make([]string, 0, len(rows))
 	for _, row := range rows {
@@ -203,7 +205,9 @@ func (r *HabitStreakDefinitionRepository) Update(
 		if rows, _ := res.RowsAffected(); rows == 0 {
 			return errors.New("habit streak not found")
 		}
-		if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+		if sharedtypes.NormalizeMomentumTargetKind(
+			def.TargetKind,
+		) != sharedtypes.MomentumTargetKindHabit {
 			return clearHabitStreakHabitLinks(ctx, tx, userID, def.ID)
 		}
 		return replaceHabitStreakHabitLinks(ctx, tx, userID, def.ID, def.HabitIDs, now)
@@ -316,7 +320,9 @@ func (r *HabitStreakDefinitionRepository) ReplaceAll(
 					return err
 				}
 			}
-			if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+			if sharedtypes.NormalizeMomentumTargetKind(
+				def.TargetKind,
+			) != sharedtypes.MomentumTargetKindHabit {
 				if err := clearHabitStreakHabitLinks(ctx, tx, userID, def.ID); err != nil {
 					return err
 				}
@@ -466,7 +472,9 @@ func parseMomentumContexts(raw string, repoID, streamID *int64) []sharedtypes.Mo
 	if raw != "" {
 		var contexts []sharedtypes.MomentumContext
 		if err := json.Unmarshal([]byte(raw), &contexts); err == nil {
-			return sharedtypes.NormalizeHabitStreakDefinition(sharedtypes.HabitStreakDefinition{Contexts: contexts}).Contexts
+			return sharedtypes.NormalizeHabitStreakDefinition(
+				sharedtypes.HabitStreakDefinition{Contexts: contexts},
+			).Contexts
 		}
 	}
 	if repoID != nil && *repoID > 0 {

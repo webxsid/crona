@@ -43,15 +43,19 @@ func TestGetMomentumDetailReturnsCurrentBucketHabitContributors(t *testing.T) {
 	if _, err := corecommands.CompleteHabit(ctx, coreCtx, habit.ID, "2026-06-19", sharedtypes.HabitCompletionStatusCompleted, nil, nil); err != nil {
 		t.Fatalf("complete habit: %v", err)
 	}
-	created, err := corecommands.CreateHabitStreakDefinition(ctx, coreCtx, sharedtypes.HabitStreakDefinition{
-		Name:          "Daily journal",
-		Enabled:       true,
-		TargetKind:    sharedtypes.MomentumTargetKindHabit,
-		MatchMode:     sharedtypes.MomentumMatchModeAny,
-		Period:        sharedtypes.HabitStreakPeriodDay,
-		RequiredCount: 1,
-		HabitIDs:      []int64{habit.ID},
-	})
+	created, err := corecommands.CreateHabitStreakDefinition(
+		ctx,
+		coreCtx,
+		sharedtypes.HabitStreakDefinition{
+			Name:          "Daily journal",
+			Enabled:       true,
+			TargetKind:    sharedtypes.MomentumTargetKindHabit,
+			MatchMode:     sharedtypes.MomentumMatchModeAny,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+			HabitIDs:      []int64{habit.ID},
+		},
+	)
 	if err != nil {
 		t.Fatalf("create momentum: %v", err)
 	}

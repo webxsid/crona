@@ -435,8 +435,15 @@ func (m Model) openSessionMessageDialog(kind string) Model {
 }
 
 func (m Model) openHardLimitExpiredDialog(issueLabel string) Model {
-	state := m.dialogSnapshot().OpenHardLimitExpired(issueLabel)
-	if m.timer != nil && (m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
+	snapshot := m.dialogSnapshot()
+	if m.timer != nil {
+		snapshot.Dialog.HardLimitKind = sharedtypes.NormalizeTimerHardLimitKind(
+			m.timer.HardLimitKind,
+		)
+	}
+	state := snapshot.OpenHardLimitExpired(issueLabel)
+	if m.timer != nil &&
+		(m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
 		state = m.hydrateHardLimitDialogStateFromTimer(state)
 	}
 	return m.withDialogState(state)
@@ -449,6 +456,7 @@ func (m Model) hydrateHardLimitDialogStateFromTimer(state dialogstate.State) dia
 	if !m.timer.HardLimitActive && !m.timer.HardLimitExpired && m.timer.HardLimitTotalSeconds <= 0 {
 		return state
 	}
+	state.HardLimitKind = sharedtypes.NormalizeTimerHardLimitKind(m.timer.HardLimitKind)
 	state.HardLimitTotalSeconds = m.timer.HardLimitTotalSeconds
 	state.HardLimitFocusSeconds = m.timer.HardLimitWorkSeconds
 	state.HardLimitBreakSeconds = m.timer.HardLimitBreakSeconds
@@ -534,8 +542,8 @@ func (m Model) openExportICSDirDialog(current string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenExportICSDir(current))
 }
 
-func (m Model) openCreateAlertReminderDialog() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenCreateAlertReminder())
+func (m Model) openCreateAlertReminderDialog(kind sharedtypes.AlertReminderKind) Model {
+	return m.withDialogState(m.dialogSnapshot().OpenCreateAlertReminder(kind))
 }
 
 func (m Model) openEditAlertReminderDialog(id string) Model {
@@ -690,6 +698,7 @@ func (m Model) dialogState() dialogstate.State {
 		PomodoroCyclesBeforeLongBreak:  m.dialogPomodoroCyclesBeforeLongBreak,
 		PomodoroCycles:                 m.dialogPomodoroCycles,
 		TimerCountdownSeconds:          m.dialogTimerCountdownSeconds,
+		HardLimitKind:                  m.dialogHardLimitKind,
 		HardLimitTotalSeconds:          m.dialogHardLimitTotalSeconds,
 		HardLimitFocusSeconds:          m.dialogHardLimitFocusSeconds,
 		HardLimitBreakSeconds:          m.dialogHardLimitBreakSeconds,
@@ -789,6 +798,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogPomodoroCyclesBeforeLongBreak = state.PomodoroCyclesBeforeLongBreak
 	m.dialogPomodoroCycles = state.PomodoroCycles
 	m.dialogTimerCountdownSeconds = state.TimerCountdownSeconds
+	m.dialogHardLimitKind = state.HardLimitKind
 	m.dialogHardLimitTotalSeconds = state.HardLimitTotalSeconds
 	m.dialogHardLimitFocusSeconds = state.HardLimitFocusSeconds
 	m.dialogHardLimitBreakSeconds = state.HardLimitBreakSeconds

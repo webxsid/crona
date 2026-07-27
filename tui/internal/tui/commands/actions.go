@@ -446,7 +446,13 @@ func SetHabitStatus(
 	}
 }
 
-func UncompleteHabit(c *api.Client, habitID int64, date string, momentumDate string, momentumWindowDays int) tea.Cmd {
+func UncompleteHabit(
+	c *api.Client,
+	habitID int64,
+	date string,
+	momentumDate string,
+	momentumWindowDays int,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.UncompleteHabit(habitID, date); err != nil {
 			logger.Errorf("UncompleteHabit: %v", err)

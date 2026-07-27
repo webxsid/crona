@@ -12,13 +12,21 @@ import (
 )
 
 func TestMomentumDialogAllowsQInNameField(t *testing.T) {
-	state := OpenEditMomentumDirect(State{}, nil, nil, nil, nil, nil, sharedtypes.HabitStreakDefinition{
-		ID:            "momentum-1",
-		Name:          "Focus",
-		Enabled:       true,
-		Period:        sharedtypes.HabitStreakPeriodDay,
-		RequiredCount: 1,
-	})
+	state := OpenEditMomentumDirect(
+		State{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		sharedtypes.HabitStreakDefinition{
+			ID:            "momentum-1",
+			Name:          "Focus",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+		},
+	)
 	state.HabitStreakStep = 2
 
 	next, action, status := Update(
@@ -39,14 +47,22 @@ func TestMomentumDialogAllowsQInNameField(t *testing.T) {
 }
 
 func TestMomentumDialogAllowsQInDescriptionField(t *testing.T) {
-	state := OpenEditMomentumDirect(State{}, nil, nil, nil, nil, nil, sharedtypes.HabitStreakDefinition{
-		ID:            "momentum-1",
-		Name:          "Focus",
-		Description:   ValueToPointer("Keep it steady"),
-		Enabled:       true,
-		Period:        sharedtypes.HabitStreakPeriodDay,
-		RequiredCount: 1,
-	})
+	state := OpenEditMomentumDirect(
+		State{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		sharedtypes.HabitStreakDefinition{
+			ID:            "momentum-1",
+			Name:          "Focus",
+			Description:   ValueToPointer("Keep it steady"),
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+		},
+	)
 	state.HabitStreakStep = 2
 	state.FocusIdx = 1
 	state = SyncDialogFocus(state)
@@ -64,14 +80,22 @@ func TestMomentumDialogAllowsQInDescriptionField(t *testing.T) {
 		t.Fatalf("expected no action, got %+v", action)
 	}
 	if !strings.HasSuffix(next.Description.Value(), "q") {
-		t.Fatalf("expected q to be inserted into the description field, got %q", next.Description.Value())
+		t.Fatalf(
+			"expected q to be inserted into the description field, got %q",
+			next.Description.Value(),
+		)
 	}
 }
 
 func TestMomentumCreateUsesCtrlSToAdvanceKindStep(t *testing.T) {
 	state := OpenCreateMomentumDirect(State{}, nil, nil, nil, nil, nil)
 
-	next, action, status := Update(state, UpdateContext{}, "2026-05-26", tea.KeyMsg{Type: tea.KeyCtrlS})
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -101,7 +125,12 @@ func TestMomentumDetailsUseCtrlSToAdvanceToReview(t *testing.T) {
 	})
 	state.HabitStreakStep = 2
 
-	next, action, status := Update(state, UpdateContext{}, "2026-05-26", tea.KeyMsg{Type: tea.KeyCtrlS})
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -114,13 +143,21 @@ func TestMomentumDetailsUseCtrlSToAdvanceToReview(t *testing.T) {
 }
 
 func TestMomentumDetailsShiftTabReturnsToTargets(t *testing.T) {
-	state := OpenEditMomentumDirect(State{}, nil, nil, nil, nil, nil, sharedtypes.HabitStreakDefinition{
-		ID:            "momentum-1",
-		Name:          "Focus",
-		Enabled:       true,
-		Period:        sharedtypes.HabitStreakPeriodDay,
-		RequiredCount: 1,
-	})
+	state := OpenEditMomentumDirect(
+		State{},
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		sharedtypes.HabitStreakDefinition{
+			ID:            "momentum-1",
+			Name:          "Focus",
+			Enabled:       true,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+		},
+	)
 	state.HabitStreakStep = 2
 	state.FocusIdx = 0
 	state = SyncDialogFocus(state)
@@ -181,7 +218,8 @@ func TestMomentumContextTargetsAllowRepoWideSelection(t *testing.T) {
 	if len(next.HabitStreakDraft.Contexts) != 1 {
 		t.Fatalf("expected one selected context, got %+v", next.HabitStreakDraft.Contexts)
 	}
-	if next.HabitStreakDraft.Contexts[0].RepoID != 7 || next.HabitStreakDraft.Contexts[0].StreamID != nil {
+	if next.HabitStreakDraft.Contexts[0].RepoID != 7 ||
+		next.HabitStreakDraft.Contexts[0].StreamID != nil {
 		t.Fatalf("expected repo-wide context, got %+v", next.HabitStreakDraft.Contexts[0])
 	}
 }
@@ -220,7 +258,10 @@ func TestMomentumContextTargetsLetPrintableHTypeIntoRepoSearch(t *testing.T) {
 		t.Fatalf("expected no action, got %+v", action)
 	}
 	if next.MomentumRepoInput.Value() != "h" {
-		t.Fatalf("expected h to be inserted into repo search, got %q", next.MomentumRepoInput.Value())
+		t.Fatalf(
+			"expected h to be inserted into repo search, got %q",
+			next.MomentumRepoInput.Value(),
+		)
 	}
 	if next.RepoIndex != 0 {
 		t.Fatalf("expected repo selection to stay on first filtered result, got %d", next.RepoIndex)
@@ -302,7 +343,10 @@ func TestMomentumDetailsAcceptDurationAndKeepDailyThreshold(t *testing.T) {
 		t.Fatalf("expected no action, got %+v", action)
 	}
 	if next.HabitStreakDraft.RequiredCount != 5663 {
-		t.Fatalf("expected duration to be stored as seconds, got %d", next.HabitStreakDraft.RequiredCount)
+		t.Fatalf(
+			"expected duration to be stored as seconds, got %d",
+			next.HabitStreakDraft.RequiredCount,
+		)
 	}
 	if next.HabitStreakDraft.Period != sharedtypes.HabitStreakPeriodDay {
 		t.Fatalf("expected daily period to remain unchanged, got %q", next.HabitStreakDraft.Period)
@@ -345,7 +389,12 @@ func TestMomentumDetailsBlockInvalidDailyAllHabitSelection(t *testing.T) {
 	)
 	state.HabitStreakStep = 2
 
-	next, action, status := Update(state, UpdateContext{}, "2026-05-26", tea.KeyMsg{Type: tea.KeyCtrlS})
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
 	if status != "" {
 		t.Fatalf("unexpected status %q", status)
 	}
@@ -405,8 +454,12 @@ func TestMomentumContextTargetsUseSelectedStreamIndexEvenWhenSearchIsBlank(t *te
 	if next.HabitStreakDraft.Contexts[0].RepoID != 7 {
 		t.Fatalf("expected repo id 7, got %+v", next.HabitStreakDraft.Contexts[0])
 	}
-	if next.HabitStreakDraft.Contexts[0].StreamID == nil || *next.HabitStreakDraft.Contexts[0].StreamID != 9 {
-		t.Fatalf("expected selected stream id 9, got %+v", next.HabitStreakDraft.Contexts[0].StreamID)
+	if next.HabitStreakDraft.Contexts[0].StreamID == nil ||
+		*next.HabitStreakDraft.Contexts[0].StreamID != 9 {
+		t.Fatalf(
+			"expected selected stream id 9, got %+v",
+			next.HabitStreakDraft.Contexts[0].StreamID,
+		)
 	}
 }
 

@@ -12,17 +12,18 @@ import (
 type RowKey string
 
 const (
-	RowNotifications    RowKey = "notifications"
-	RowSound            RowKey = "sound"
-	RowSoundPreset      RowKey = "sound_preset"
-	RowUrgency          RowKey = "urgency"
-	RowLogoIcon         RowKey = "logo_icon"
-	RowInactivityAlerts RowKey = "inactivity_alerts"
-	RowInactivityAfter  RowKey = "inactivity_after"
-	RowInactivityRepeat RowKey = "inactivity_repeat"
-	RowTestNotification RowKey = "test_notification"
-	RowTestSound        RowKey = "test_sound"
-	RowAddReminder      RowKey = "add_checkin_reminder"
+	RowNotifications        RowKey = "notifications"
+	RowSound                RowKey = "sound"
+	RowSoundPreset          RowKey = "sound_preset"
+	RowUrgency              RowKey = "urgency"
+	RowLogoIcon             RowKey = "logo_icon"
+	RowInactivityAlerts     RowKey = "inactivity_alerts"
+	RowInactivityAfter      RowKey = "inactivity_after"
+	RowInactivityRepeat     RowKey = "inactivity_repeat"
+	RowTestNotification     RowKey = "test_notification"
+	RowTestSound            RowKey = "test_sound"
+	RowAddCheckInReminder   RowKey = "add_checkin_reminder"
+	RowAddDailyPlanReminder RowKey = "add_daily_plan_reminder"
 )
 
 type Row struct {
@@ -154,9 +155,16 @@ func Rows(
 		rows,
 		Row{
 			Section:    "Actions",
-			Key:        RowAddReminder,
+			Key:        RowAddCheckInReminder,
 			Label:      "Add Check-In Reminder",
 			Value:      "Create a scheduled nightly reminder",
+			Selectable: true,
+		},
+		Row{
+			Section:    "Actions",
+			Key:        RowAddDailyPlanReminder,
+			Label:      "Add Plan-the-Day Reminder",
+			Value:      "Create a scheduled planning reminder",
 			Selectable: true,
 		},
 		Row{
@@ -284,6 +292,8 @@ func reminderLabel(reminder api.AlertReminder) string {
 	switch reminder.Kind {
 	case sharedtypes.AlertReminderKindCheckIn:
 		return "Check-In Reminder"
+	case sharedtypes.AlertReminderKindDailyPlan:
+		return "Plan-the-Day Reminder"
 	default:
 		return "Reminder"
 	}

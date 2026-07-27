@@ -223,9 +223,11 @@ func TestMomentumDialogStatePreservesSearchInputs(t *testing.T) {
 		MomentumRepoInput:   textinput.New(),
 		MomentumStreamInput: textinput.New(),
 		HabitStreakStep:     2,
-		HabitStreakDraft:    sharedtypes.HabitStreakDefinition{TargetKind: sharedtypes.MomentumTargetKindContext},
-		ChoiceCursor:        1,
-		FocusIdx:            0,
+		HabitStreakDraft: sharedtypes.HabitStreakDefinition{
+			TargetKind: sharedtypes.MomentumTargetKindContext,
+		},
+		ChoiceCursor: 1,
+		FocusIdx:     0,
 	}
 	model = model.withDialogState(state)
 	model.dialogMomentumRepoInput.SetValue("Work")
@@ -233,10 +235,16 @@ func TestMomentumDialogStatePreservesSearchInputs(t *testing.T) {
 
 	roundTripped := model.withDialogState(model.dialogState())
 	if roundTripped.dialogMomentumRepoInput.Value() != "Work" {
-		t.Fatalf("expected repo search value to survive round-trip, got %q", roundTripped.dialogMomentumRepoInput.Value())
+		t.Fatalf(
+			"expected repo search value to survive round-trip, got %q",
+			roundTripped.dialogMomentumRepoInput.Value(),
+		)
 	}
 	if roundTripped.dialogMomentumStreamInput.Value() != "Mobile" {
-		t.Fatalf("expected stream search value to survive round-trip, got %q", roundTripped.dialogMomentumStreamInput.Value())
+		t.Fatalf(
+			"expected stream search value to survive round-trip, got %q",
+			roundTripped.dialogMomentumStreamInput.Value(),
+		)
 	}
 }
 
@@ -259,13 +267,22 @@ func TestMomentumDialogStateCarriesRepoAndStreamData(t *testing.T) {
 	state := dialogstate.State{Kind: "create_momentum"}
 	roundTripped := model.dialogState()
 	if len(roundTripped.MomentumRepos) != 2 {
-		t.Fatalf("expected repos to be carried into dialog state, got %+v", roundTripped.MomentumRepos)
+		t.Fatalf(
+			"expected repos to be carried into dialog state, got %+v",
+			roundTripped.MomentumRepos,
+		)
 	}
 	if len(roundTripped.MomentumStreams) != 2 {
-		t.Fatalf("expected streams to be carried into dialog state, got %+v", roundTripped.MomentumStreams)
+		t.Fatalf(
+			"expected streams to be carried into dialog state, got %+v",
+			roundTripped.MomentumStreams,
+		)
 	}
 	if len(roundTripped.MomentumAllIssues) != 1 {
-		t.Fatalf("expected issues to be carried into dialog state, got %+v", roundTripped.MomentumAllIssues)
+		t.Fatalf(
+			"expected issues to be carried into dialog state, got %+v",
+			roundTripped.MomentumAllIssues,
+		)
 	}
 	_ = state
 }
@@ -285,16 +302,28 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 
 	state := model.dialogState()
 	if state.PomodoroFocusSeconds != 60 {
-		t.Fatalf("expected focus seconds to survive dialog round trip, got %d", state.PomodoroFocusSeconds)
+		t.Fatalf(
+			"expected focus seconds to survive dialog round trip, got %d",
+			state.PomodoroFocusSeconds,
+		)
 	}
 	if state.PomodoroFocusChoice != 2 {
-		t.Fatalf("expected focus choice to survive dialog round trip, got %d", state.PomodoroFocusChoice)
+		t.Fatalf(
+			"expected focus choice to survive dialog round trip, got %d",
+			state.PomodoroFocusChoice,
+		)
 	}
 	if state.PomodoroBreakSeconds != 30 {
-		t.Fatalf("expected break seconds to survive dialog round trip, got %d", state.PomodoroBreakSeconds)
+		t.Fatalf(
+			"expected break seconds to survive dialog round trip, got %d",
+			state.PomodoroBreakSeconds,
+		)
 	}
 	if state.PomodoroBreakChoice != 4 {
-		t.Fatalf("expected break choice to survive dialog round trip, got %d", state.PomodoroBreakChoice)
+		t.Fatalf(
+			"expected break choice to survive dialog round trip, got %d",
+			state.PomodoroBreakChoice,
+		)
 	}
 	if state.PomodoroLongBreakSeconds != 120 {
 		t.Fatalf(
@@ -320,7 +349,9 @@ func TestDialogStatePreservesPomodoroFields(t *testing.T) {
 }
 
 func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
-	model := Model{}.withDialogState(dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title", nil, 0))
+	model := Model{}.withDialogState(
+		dialogstate.OpenPomodoroStart(dialogstate.State{}, 11, 22, 33, "Issue title", nil, 0),
+	)
 
 	for range 3 {
 		next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRight})
@@ -332,7 +363,10 @@ func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
 		t.Fatalf("expected pomodoro dialog to remain open, got %q", state.Kind)
 	}
 	if state.PomodoroFocusChoice != 3 {
-		t.Fatalf("expected focus choice to reach custom after three right keys, got %d", state.PomodoroFocusChoice)
+		t.Fatalf(
+			"expected focus choice to reach custom after three right keys, got %d",
+			state.PomodoroFocusChoice,
+		)
 	}
 	if state.FocusIdx != 1 {
 		t.Fatalf("expected focus to move into custom input, got %d", state.FocusIdx)
@@ -345,7 +379,10 @@ func TestPomodoroDialogRightKeyPersistsAcrossModelUpdates(t *testing.T) {
 	model = next.(Model)
 	state = model.dialogState()
 	if state.FocusIdx != 2 {
-		t.Fatalf("expected enter from custom focus input to advance to short break row, got %d", state.FocusIdx)
+		t.Fatalf(
+			"expected enter from custom focus input to advance to short break row, got %d",
+			state.FocusIdx,
+		)
 	}
 }
 
@@ -381,16 +418,46 @@ func TestHardLimitExpiredDialogSeedsLivePomodoroConfig(t *testing.T) {
 		t.Fatalf("expected focus seconds to be seeded, got %d", next.dialogHardLimitFocusSeconds)
 	}
 	if next.dialogHardLimitBreakSeconds != 0 {
-		t.Fatalf("expected short break seconds to remain disabled, got %d", next.dialogHardLimitBreakSeconds)
+		t.Fatalf(
+			"expected short break seconds to remain disabled, got %d",
+			next.dialogHardLimitBreakSeconds,
+		)
 	}
 	if next.dialogHardLimitLongBreakSeconds != 120 {
-		t.Fatalf("expected long break seconds to be seeded, got %d", next.dialogHardLimitLongBreakSeconds)
+		t.Fatalf(
+			"expected long break seconds to be seeded, got %d",
+			next.dialogHardLimitLongBreakSeconds,
+		)
 	}
 	if next.dialogHardLimitCyclesBeforeLongBreak != 3 {
 		t.Fatalf(
 			"expected cycles before long break to be seeded, got %d",
 			next.dialogHardLimitCyclesBeforeLongBreak,
 		)
+	}
+}
+
+func TestHardLimitExpiredDialogPreservesCountdownKind(t *testing.T) {
+	model := Model{
+		timer: &api.TimerState{
+			State:                 "expired",
+			HardLimitActive:       true,
+			HardLimitExpired:      true,
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: 45 * 60,
+			HardLimitWorkSeconds:  45 * 60,
+		},
+	}
+
+	next := model.openHardLimitExpiredDialog("Issue title")
+	if next.dialog != "hard_limit_expired" {
+		t.Fatalf("expected hard-limit expired dialog, got %q", next.dialog)
+	}
+	if next.dialogHardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected countdown dialog kind, got %q", next.dialogHardLimitKind)
+	}
+	if next.dialogViewTitle != "Timer Session Complete" {
+		t.Fatalf("expected timer completion title, got %q", next.dialogViewTitle)
 	}
 }
 
@@ -427,7 +494,10 @@ func TestExpiredTimerStateReopensHardLimitExpiredDialog(t *testing.T) {
 		t.Fatalf("expected session active view to remain behind the dialog, got %q", next.view)
 	}
 	if next.dialogHardLimitTotalSeconds != 90 {
-		t.Fatalf("expected total seconds to be seeded from the expired timer, got %d", next.dialogHardLimitTotalSeconds)
+		t.Fatalf(
+			"expected total seconds to be seeded from the expired timer, got %d",
+			next.dialogHardLimitTotalSeconds,
+		)
 	}
 }
 
@@ -484,13 +554,22 @@ func TestHardLimitDialogRefreshesFromTimerSnapshot(t *testing.T) {
 
 	next := model.applyDispatchMessageState(model.dispatchMessageState())
 	if next.dialogHardLimitFocusSeconds != 60 {
-		t.Fatalf("expected focus seconds to refresh from timer, got %d", next.dialogHardLimitFocusSeconds)
+		t.Fatalf(
+			"expected focus seconds to refresh from timer, got %d",
+			next.dialogHardLimitFocusSeconds,
+		)
 	}
 	if next.dialogHardLimitBreakSeconds != 0 {
-		t.Fatalf("expected short break seconds to refresh from timer, got %d", next.dialogHardLimitBreakSeconds)
+		t.Fatalf(
+			"expected short break seconds to refresh from timer, got %d",
+			next.dialogHardLimitBreakSeconds,
+		)
 	}
 	if next.dialogHardLimitLongBreakSeconds != 0 {
-		t.Fatalf("expected long break seconds to refresh from timer, got %d", next.dialogHardLimitLongBreakSeconds)
+		t.Fatalf(
+			"expected long break seconds to refresh from timer, got %d",
+			next.dialogHardLimitLongBreakSeconds,
+		)
 	}
 	if next.dialogHardLimitCyclesBeforeLongBreak != 0 {
 		t.Fatalf(

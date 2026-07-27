@@ -131,7 +131,10 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 				Repo:     repoName,
 				Stream:   streamName,
 				Context:  issuecore.IssueContextLabel(repoName, streamName),
-				Effort:   issuecore.IssueWorkedEstimateCompactLabel(workedSeconds, issue.EstimateMinutes),
+				Effort: issuecore.IssueWorkedEstimateCompactLabel(
+					workedSeconds,
+					issue.EstimateMinutes,
+				),
 			}, rowStyle),
 		)
 	}
@@ -196,9 +199,29 @@ func renderCompactDailyIssueList(
 			issue.AbandonedAt,
 			state.Settings,
 		)
-		lines = append(lines,
-			renderCompactDailyIssueTitle(theme, width, rawIdx, cur, active, title, string(issue.Status)),
-			renderCompactDailyIssueMeta(theme, width, rawIdx, cur, active, repoName, streamName, workedSeconds, issue.EstimateMinutes, string(issue.Status)),
+		lines = append(
+			lines,
+			renderCompactDailyIssueTitle(
+				theme,
+				width,
+				rawIdx,
+				cur,
+				active,
+				title,
+				string(issue.Status),
+			),
+			renderCompactDailyIssueMeta(
+				theme,
+				width,
+				rawIdx,
+				cur,
+				active,
+				repoName,
+				streamName,
+				workedSeconds,
+				issue.EstimateMinutes,
+				string(issue.Status),
+			),
 		)
 	}
 	if remaining := total - end; remaining > 0 {
@@ -517,17 +540,29 @@ func renderHabitBar(theme types.Theme, completed, failed, total, width int) stri
 		failedWidth = max(0, width-completedWidth)
 	}
 	remainingWidth := width - completedWidth - failedWidth
-	return viewhelpers.RenderGradientBar(completedWidth, completedWidth, viewhelpers.GradientBarPalette{
-		Start: theme.ColorDullGreen,
-		End:   theme.ColorCyan,
-		Track: theme.ColorDim,
-	}) + viewhelpers.RenderGradientBar(failedWidth, failedWidth, viewhelpers.GradientBarPalette{
-		Start: theme.ColorDullRed,
-		End:   theme.ColorOrange,
-		Track: theme.ColorDim,
-	}) + viewhelpers.RenderGradientBar(remainingWidth, 0, viewhelpers.GradientBarPalette{
-		Start: theme.ColorDim,
-		End:   theme.ColorDim,
-		Track: theme.ColorDim,
-	})
+	return viewhelpers.RenderGradientBar(
+		completedWidth,
+		completedWidth,
+		viewhelpers.GradientBarPalette{
+			Start: theme.ColorDullGreen,
+			End:   theme.ColorCyan,
+			Track: theme.ColorDim,
+		},
+	) + viewhelpers.RenderGradientBar(
+		failedWidth,
+		failedWidth,
+		viewhelpers.GradientBarPalette{
+			Start: theme.ColorDullRed,
+			End:   theme.ColorOrange,
+			Track: theme.ColorDim,
+		},
+	) + viewhelpers.RenderGradientBar(
+		remainingWidth,
+		0,
+		viewhelpers.GradientBarPalette{
+			Start: theme.ColorDim,
+			End:   theme.ColorDim,
+			Track: theme.ColorDim,
+		},
+	)
 }

@@ -119,6 +119,14 @@ func (h *Handler) handleKernelMethods(
 			}
 			return shareddto.OKResponse{OK: true}, h.alerts.Notify(ctx, input)
 		}), true
+	case protocol.MethodAlertsDeliveryAck:
+		return handle(req, func(input sharedtypes.AlertDeliveryAck) (any, error) {
+			if h.alerts == nil {
+				return nil, errors.New("alerts service is unavailable")
+			}
+			h.alerts.AcknowledgeCompanion(input)
+			return shareddto.OKResponse{OK: true}, nil
+		}), true
 	case protocol.MethodAlertsRemindersList:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.alerts == nil {

@@ -171,8 +171,11 @@ func updateHabitStreakDetails(state State, msg tea.KeyMsg) (State, *Action, stri
 	case dialogActionPrimary:
 		return commitHabitStreakDetails(state)
 	}
-	if sharedtypes.NormalizeMomentumTargetKind(state.HabitStreakDraft.TargetKind) == sharedtypes.MomentumTargetKindContext &&
-		row == habitStreakDetailRowCount && isMomentumThresholdTextInputKey(msg) {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		state.HabitStreakDraft.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext &&
+		row == habitStreakDetailRowCount &&
+		isMomentumThresholdTextInputKey(msg) {
 		var cmd tea.Cmd
 		state.Inputs[1], cmd = state.Inputs[1].Update(msg)
 		_ = cmd
@@ -218,7 +221,9 @@ func commitHabitStreakDetails(state State) (State, *Action, string) {
 	}
 	state.HabitStreakDraft.Name = name
 	if momentumMode {
-		state.HabitStreakDraft.Description = ValueToPointer(strings.TrimSpace(state.Description.Value()))
+		state.HabitStreakDraft.Description = ValueToPointer(
+			strings.TrimSpace(state.Description.Value()),
+		)
 	}
 	state.HabitStreakDraft.Period = sharedtypes.NormalizeHabitStreakPeriod(
 		state.HabitStreakDraft.Period,
@@ -258,23 +263,35 @@ func updateMomentumHabitTargets(state State, msg tea.KeyMsg) (State, *Action, st
 		return Close(state), nil, ""
 	case dialogActionMoveDown:
 		if state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, 1)
+			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+				state.HabitStreakDraft.MatchMode,
+				1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, 1)
 	case dialogActionMoveUp:
 		if state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, -1)
+			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+				state.HabitStreakDraft.MatchMode,
+				-1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 		state.HabitStreakCursor = ShiftSelection(state.HabitStreakCursor, total, -1)
 	case dialogActionMoveLeft:
 		if state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, -1)
+			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+				state.HabitStreakDraft.MatchMode,
+				-1,
+			)
 		}
 	case dialogActionMoveRight:
 		if state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, 1)
+			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+				state.HabitStreakDraft.MatchMode,
+				1,
+			)
 		}
 	case dialogActionFocusPrev:
 		if state.FocusIdx == int(habitTargetFocusList) {
@@ -284,7 +301,10 @@ func updateMomentumHabitTargets(state State, msg tea.KeyMsg) (State, *Action, st
 		return syncMomentumStepFocus(clearDialogError(state)), nil, ""
 	case dialogActionToggle:
 		if state.FocusIdx == int(habitTargetFocusMatchMode) {
-			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, 1)
+			state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+				state.HabitStreakDraft.MatchMode,
+				1,
+			)
 			return clearDialogError(state), nil, ""
 		}
 		if state.HabitStreakCursor >= 0 && state.HabitStreakCursor < len(state.HabitItems) {
@@ -344,7 +364,9 @@ func updateMomentumContextTargets(state State, msg tea.KeyMsg) (State, *Action, 
 		if state.FocusIdx == int(contextTargetFocusRepo) {
 			if state.Kind == "create_momentum" {
 				state.HabitStreakStep = 1
-				state.ChoiceCursor = kindChoiceCursorForTargetKind(state.HabitStreakDraft.TargetKind)
+				state.ChoiceCursor = kindChoiceCursorForTargetKind(
+					state.HabitStreakDraft.TargetKind,
+				)
 				state.HabitStreakCursor = 0
 				state.FocusIdx = 0
 				return syncMomentumStepFocus(clearDialogError(state)), nil, ""
@@ -527,7 +549,10 @@ func updateMomentumContextSelection(state State, dir int) State {
 			dir,
 		)
 	case int(contextTargetFocusMatchMode):
-		state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, dir)
+		state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+			state.HabitStreakDraft.MatchMode,
+			dir,
+		)
 	}
 	return clearDialogError(state)
 }
@@ -535,17 +560,24 @@ func updateMomentumContextSelection(state State, dir int) State {
 func handleMomentumContextActivation(state State) State {
 	switch state.FocusIdx {
 	case int(contextTargetFocusSelected):
-		if state.HabitStreakCursor >= 0 && state.HabitStreakCursor < len(state.HabitStreakDraft.Contexts) {
+		if state.HabitStreakCursor >= 0 &&
+			state.HabitStreakCursor < len(state.HabitStreakDraft.Contexts) {
 			state.HabitStreakDraft.Contexts = append(
-				append([]sharedtypes.MomentumContext(nil), state.HabitStreakDraft.Contexts[:state.HabitStreakCursor]...),
+				append(
+					[]sharedtypes.MomentumContext(nil),
+					state.HabitStreakDraft.Contexts[:state.HabitStreakCursor]...),
 				state.HabitStreakDraft.Contexts[state.HabitStreakCursor+1:]...,
 			)
-			if state.HabitStreakCursor >= len(state.HabitStreakDraft.Contexts) && state.HabitStreakCursor > 0 {
+			if state.HabitStreakCursor >= len(state.HabitStreakDraft.Contexts) &&
+				state.HabitStreakCursor > 0 {
 				state.HabitStreakCursor--
 			}
 		}
 	case int(contextTargetFocusMatchMode):
-		state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(state.HabitStreakDraft.MatchMode, 1)
+		state.HabitStreakDraft.MatchMode = nextMomentumMatchMode(
+			state.HabitStreakDraft.MatchMode,
+			1,
+		)
 	default:
 		if candidate, ok := currentMomentumContextCandidate(state); ok {
 			state.HabitStreakDraft.Contexts = toggleMomentumContextMembership(
@@ -601,7 +633,10 @@ func currentMomentumContextCandidate(state State) (sharedtypes.MomentumContext, 
 	if state.StreamIndex < 0 {
 		return sharedtypes.MomentumContext{RepoID: repoID}, true
 	}
-	streamOption, ok := selectedMomentumStreamOption(momentumStreamOptions(state), state.StreamIndex)
+	streamOption, ok := selectedMomentumStreamOption(
+		momentumStreamOptions(state),
+		state.StreamIndex,
+	)
 	if !ok {
 		return sharedtypes.MomentumContext{RepoID: repoID}, true
 	}
@@ -632,7 +667,9 @@ func syncMomentumTargetFocus(state State) State {
 	if state.HabitStreakStep != detailsStepForState(state)-1 {
 		return state
 	}
-	if sharedtypes.NormalizeMomentumTargetKind(state.HabitStreakDraft.TargetKind) != sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		state.HabitStreakDraft.TargetKind,
+	) != sharedtypes.MomentumTargetKindContext {
 		return state
 	}
 	switch state.FocusIdx {
@@ -729,7 +766,9 @@ func isMomentumContextTextInputKey(msg tea.KeyMsg) bool {
 }
 
 func momentumTargetMatchModeFocusIndex(state State) int {
-	if sharedtypes.NormalizeMomentumTargetKind(state.HabitStreakDraft.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		state.HabitStreakDraft.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		return int(contextTargetFocusMatchMode)
 	}
 	return int(habitTargetFocusMatchMode)
@@ -775,7 +814,9 @@ func habitMomentumDraftCapacity(
 	def sharedtypes.HabitStreakDefinition,
 	habits []sharedtypes.HabitWithMeta,
 ) sharedutils.HabitMomentumCapacity {
-	if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		def.TargetKind,
+	) != sharedtypes.MomentumTargetKindHabit {
 		return sharedutils.HabitMomentumCapacity{}
 	}
 	habitMap := make(map[int64]sharedtypes.Habit, len(habits))
@@ -786,7 +827,9 @@ func habitMomentumDraftCapacity(
 	for _, habitID := range def.HabitIDs {
 		habit, ok := habitMap[habitID]
 		if !ok {
-			return sharedutils.HabitMomentumCapacity{Reason: "selected habits are no longer available"}
+			return sharedutils.HabitMomentumCapacity{
+				Reason: "selected habits are no longer available",
+			}
 		}
 		selected = append(selected, habit)
 	}

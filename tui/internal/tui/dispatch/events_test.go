@@ -87,6 +87,33 @@ func TestSessionEventIgnoresDifferentSession(t *testing.T) {
 	}
 }
 
+func TestHardLimitReachedEventCarriesCountdownKind(t *testing.T) {
+	payload, err := json.Marshal(sharedtypes.TimerHardLimitReachedPayload{
+		SessionID:             "session-1",
+		IssueID:               7,
+		HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+		HardLimitTotalSeconds: 1500,
+		HardLimitWorkSeconds:  1500,
+	})
+	if err != nil {
+		t.Fatalf("marshal hard-limit event: %v", err)
+	}
+	state, _ := HandleEvent(
+		EventState{
+			Timer:         &api.TimerState{SessionID: stringPtr("session-1")},
+			CurrentDash:   "2026-07-14",
+			Cursor:        map[uistate.Pane]int{},
+			CurrentOpsLim: 50,
+		},
+		testEventDeps(),
+		api.KernelEvent{Type: sharedtypes.EventTypeTimerHardLimitReached, Payload: payload},
+	)
+
+	if state.Timer.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected countdown kind from event, got %+v", state.Timer)
+	}
+}
+
 func sessionEvent(eventType string, sessionID string) api.KernelEvent {
 	payload, _ := json.Marshal(sharedtypes.SessionEventPayload{SessionID: sessionID})
 	return api.KernelEvent{Type: eventType, Payload: payload}

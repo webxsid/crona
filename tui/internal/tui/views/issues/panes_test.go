@@ -116,7 +116,10 @@ func TestRenderIssuePaneKeepsWideGuttersAfterTruncation(t *testing.T) {
 		}
 	}
 	if !regexp.MustCompile(`…\s+in progress`).MatchString(plain) {
-		t.Fatalf("expected wide issue title and status to keep a gutter after truncation, got %q", rendered)
+		t.Fatalf(
+			"expected wide issue title and status to keep a gutter after truncation, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -161,7 +164,11 @@ func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
 		`Core > TUI\s+1h15m / 25m`,
 	} {
 		if !regexp.MustCompile(want).MatchString(plain) {
-			t.Fatalf("expected compact issue table to keep spacing around %q, got %q", want, rendered)
+			t.Fatalf(
+				"expected compact issue table to keep spacing around %q, got %q",
+				want,
+				rendered,
+			)
 		}
 	}
 }
@@ -199,7 +206,10 @@ func TestRenderIssuePaneCollapsesEmptyWorkedEffort(t *testing.T) {
 	)
 	plain := ansi.Strip(rendered)
 	if !strings.Contains(plain, "Effort") || !strings.Contains(plain, "-") {
-		t.Fatalf("expected compact issue table to collapse empty effort to a dash, got %q", rendered)
+		t.Fatalf(
+			"expected compact issue table to collapse empty effort to a dash, got %q",
+			rendered,
+		)
 	}
 }
 

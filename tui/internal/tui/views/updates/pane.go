@@ -109,16 +109,31 @@ func statusCardLines(theme types.Theme, state types.ContentState) []string {
 	status := state.UpdateStatus
 	lines := []string{theme.StyleHeader.Render(statusHeadline(status))}
 	if viewruntime.ShouldShowUpdatesView(status) {
-		lines = append(lines, fieldBlock(theme, "Current Version", displayVersion(status.CurrentVersion), false)...)
-		lines = append(lines, fieldBlock(theme, "Latest Version", displayVersion(status.LatestVersion), true)...)
+		lines = append(
+			lines,
+			fieldBlock(theme, "Current Version", displayVersion(status.CurrentVersion), false)...)
+		lines = append(
+			lines,
+			fieldBlock(theme, "Latest Version", displayVersion(status.LatestVersion), true)...)
 		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop {
-			lines = append(lines, fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
+			lines = append(
+				lines,
+				fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
 		}
 		if strings.TrimSpace(status.UpdateCommand) != "" {
-			lines = append(lines, fieldBlock(theme, "Update Command", strings.TrimSpace(status.UpdateCommand), true)...)
+			lines = append(
+				lines,
+				fieldBlock(
+					theme,
+					"Update Command",
+					strings.TrimSpace(status.UpdateCommand),
+					true,
+				)...)
 		}
 		if source := strings.TrimSpace(string(status.InstallSource)); source != "" {
-			lines = append(lines, fieldBlock(theme, "Install Source", sourceLabel(status.InstallSource), false)...)
+			lines = append(
+				lines,
+				fieldBlock(theme, "Install Source", sourceLabel(status.InstallSource), false)...)
 		}
 	} else {
 		lines = append(lines, fieldBlock(theme, "Current Version", displayVersion(status.CurrentVersion), true)...)
@@ -181,7 +196,10 @@ func releaseNotesExcerptLines(theme types.Theme, notes string, width int) []stri
 	excerpt, more := releaseNotesExcerpt(notes, 5)
 	lines := []string{}
 	if len(excerpt) == 0 {
-		lines = append(lines, theme.StyleDim.Render("No release notes were published for this release."))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("No release notes were published for this release."),
+		)
 		return lines
 	}
 	for _, item := range excerpt {
@@ -245,7 +263,10 @@ func shouldShowMigrationChecklist(status *api.UpdateStatus) bool {
 	if status.InstallScriptDeprecated || viewchrome.IsMigrationCommand(status.UpdateCommand) {
 		return true
 	}
-	return strings.Contains(strings.ToLower(strings.TrimSpace(status.InstallUnavailableReason)), "mismatch")
+	return strings.Contains(
+		strings.ToLower(strings.TrimSpace(status.InstallUnavailableReason)),
+		"mismatch",
+	)
 }
 
 func migrationChecklistLines(theme types.Theme, state types.ContentState) []string {

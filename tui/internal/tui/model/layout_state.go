@@ -131,12 +131,16 @@ func (m Model) viewContentState(
 		UpdateChecking:            m.updateChecking,
 		UpdateInstallAvailable:    m.selfUpdateInstallAvailable(),
 		UpdateDiagnosticsExpanded: m.updateDiagnosticsExpanded,
-		UpdateCommand:             updateCommand(m.updateStatus, m.currentExecutablePath, kernelExecutablePath(m.kernelInfo)),
-		UpdateManualReason:        m.selfUpdateUnsupportedReason(),
-		TUIExecutablePath:         m.currentExecutablePath,
-		KernelExecutablePath:      kernelExecutablePath(m.kernelInfo),
-		KernelInfo:                m.kernelInfo,
-		Settings:                  m.settings,
+		UpdateCommand: updateCommand(
+			m.updateStatus,
+			m.currentExecutablePath,
+			kernelExecutablePath(m.kernelInfo),
+		),
+		UpdateManualReason:   m.selfUpdateUnsupportedReason(),
+		TUIExecutablePath:    m.currentExecutablePath,
+		KernelExecutablePath: kernelExecutablePath(m.kernelInfo),
+		KernelInfo:           m.kernelInfo,
+		Settings:             m.settings,
 	}
 	restDate := time.Now().Format("2006-01-02")
 	if active, away, detail := viewruntime.ProtectedRestMode(state.Settings, restDate); active {
@@ -210,7 +214,10 @@ func dialogControllerTheme(theme dialogs.Theme) dialogstate.Theme {
 	}
 }
 
-func updateCommand(status *api.UpdateStatus, currentExecutablePath, kernelExecutablePath string) string {
+func updateCommand(
+	status *api.UpdateStatus,
+	currentExecutablePath, kernelExecutablePath string,
+) string {
 	if status == nil {
 		return ""
 	}
@@ -221,7 +228,10 @@ func updateCommand(status *api.UpdateStatus, currentExecutablePath, kernelExecut
 	case sharedtypes.InstallSourceBrew:
 		return "brew upgrade " + currentBrewFormula()
 	case sharedtypes.InstallSourceScoop:
-		if status != nil && sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		if status != nil &&
+			sharedtypes.NormalizeUpdateChannel(
+				status.ReleaseChannel,
+			) == sharedtypes.UpdateChannelBeta {
 			return "scoop update crona-beta"
 		}
 		return "scoop update crona"
@@ -232,7 +242,10 @@ func updateCommand(status *api.UpdateStatus, currentExecutablePath, kernelExecut
 	case sharedtypes.InstallSourceBrew:
 		return "brew upgrade " + currentBrewFormula()
 	case sharedtypes.InstallSourceScoop:
-		if status != nil && sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		if status != nil &&
+			sharedtypes.NormalizeUpdateChannel(
+				status.ReleaseChannel,
+			) == sharedtypes.UpdateChannelBeta {
 			return "scoop update crona-beta"
 		}
 		return "scoop update crona"

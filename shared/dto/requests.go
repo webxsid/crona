@@ -228,6 +228,13 @@ type ChangeIssueStatusRequest struct {
 	Note   *string           `json:"note,omitempty"`
 }
 
+type IssueStatusTransitionsResponse struct {
+	ID              int64               `json:"id"`
+	CurrentStatus   types.IssueStatus   `json:"currentStatus"`
+	AllowedStatuses []types.IssueStatus `json:"allowedStatuses"`
+	BlockedReason   *string             `json:"blockedReason,omitempty"`
+}
+
 type SetIssueTodoRequest struct {
 	ID   int64   `json:"id"`
 	Date *string `json:"date,omitempty"`
@@ -352,22 +359,23 @@ type NumericIDRequest struct {
 }
 
 type TimerStartRequest struct {
-	RepoID                         *int64 `json:"repoId,omitempty"`
-	StreamID                       *int64 `json:"streamId,omitempty"`
-	IssueID                        *int64 `json:"issueId,omitempty"`
-	HardLimitTotalSeconds          *int   `json:"hardLimitTotalSeconds,omitempty"`
-	HardLimitWorkSeconds           *int   `json:"hardLimitWorkSeconds,omitempty"`
-	HardLimitBreakSeconds          *int   `json:"hardLimitBreakSeconds,omitempty"`
-	HardLimitLongBreakSeconds      *int   `json:"hardLimitLongBreakSeconds,omitempty"`
-	HardLimitCyclesBeforeLongBreak *int   `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
+	RepoID                         *int64                   `json:"repoId,omitempty"`
+	StreamID                       *int64                   `json:"streamId,omitempty"`
+	IssueID                        *int64                   `json:"issueId,omitempty"`
+	HardLimitKind                  types.TimerHardLimitKind `json:"hardLimitKind,omitempty"`
+	HardLimitTotalSeconds          *int                     `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitWorkSeconds           *int                     `json:"hardLimitWorkSeconds,omitempty"`
+	HardLimitBreakSeconds          *int                     `json:"hardLimitBreakSeconds,omitempty"`
+	HardLimitLongBreakSeconds      *int                     `json:"hardLimitLongBreakSeconds,omitempty"`
+	HardLimitCyclesBeforeLongBreak *int                     `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }
 
 type TimerExtendRequest struct {
-	AdditionalSeconds               int  `json:"additionalSeconds,omitempty"`
-	AdditionalSessions              int  `json:"additionalSessions,omitempty"`
-	HardLimitTotalSeconds           *int `json:"hardLimitTotalSeconds,omitempty"`
-	HardLimitWorkSeconds            *int `json:"hardLimitWorkSeconds,omitempty"`
-	HardLimitBreakSeconds           *int `json:"hardLimitBreakSeconds,omitempty"`
-	HardLimitLongBreakSeconds       *int `json:"hardLimitLongBreakSeconds,omitempty"`
-	HardLimitCyclesBeforeLongBreak  *int `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
+	AdditionalSeconds              int  `json:"additionalSeconds,omitempty"`
+	AdditionalSessions             int  `json:"additionalSessions,omitempty"`
+	HardLimitTotalSeconds          *int `json:"hardLimitTotalSeconds,omitempty"`
+	HardLimitWorkSeconds           *int `json:"hardLimitWorkSeconds,omitempty"`
+	HardLimitBreakSeconds          *int `json:"hardLimitBreakSeconds,omitempty"`
+	HardLimitLongBreakSeconds      *int `json:"hardLimitLongBreakSeconds,omitempty"`
+	HardLimitCyclesBeforeLongBreak *int `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }

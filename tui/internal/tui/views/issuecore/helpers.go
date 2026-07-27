@@ -174,7 +174,11 @@ func IssueEstimateLabel(estimateMinutes *int) string {
 }
 
 func IssueWorkedEstimateLabel(workedSeconds int, estimateMinutes *int) string {
-	return fmt.Sprintf("%s / est. %s", IssueWorkedLabel(workedSeconds), IssueEstimateLabel(estimateMinutes))
+	return fmt.Sprintf(
+		"%s / est. %s",
+		IssueWorkedLabel(workedSeconds),
+		IssueEstimateLabel(estimateMinutes),
+	)
 }
 
 func IssueWorkedEstimateCompactLabel(workedSeconds int, estimateMinutes *int) string {

@@ -259,9 +259,14 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 		return s, deps.TestAlertNotification(), true
 	case alertsmeta.RowTestSound:
 		return s, deps.TestAlertSound(), true
-	case alertsmeta.RowAddReminder:
+	case alertsmeta.RowAddCheckInReminder:
 		if deps.OpenCreateAlertReminderDialog != nil {
-			deps.OpenCreateAlertReminderDialog(&s)
+			deps.OpenCreateAlertReminderDialog(&s, sharedtypes.AlertReminderKindCheckIn)
+		}
+		return s, nil, true
+	case alertsmeta.RowAddDailyPlanReminder:
+		if deps.OpenCreateAlertReminderDialog != nil {
+			deps.OpenCreateAlertReminderDialog(&s, sharedtypes.AlertReminderKindDailyPlan)
 		}
 		return s, nil, true
 	default:
@@ -351,7 +356,10 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		s.Settings == nil {
 		return s, nil, false
 	}
-	protected, awayMode, _ := viewruntime.ProtectedRestMode(s.Settings, time.Now().Format("2006-01-02"))
+	protected, awayMode, _ := viewruntime.ProtectedRestMode(
+		s.Settings,
+		time.Now().Format("2006-01-02"),
+	)
 	if protected && !awayMode {
 		return s, nil, true
 	}

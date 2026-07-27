@@ -371,7 +371,9 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	if m.dialog == "" && m.timer != nil && m.timer.State == "expired" && !prevTimerExpired {
 		m = m.openHardLimitExpiredDialog(m.terminalSessionTitle())
 	}
-	if m.dialog == "hard_limit_expired" || m.dialog == "hard_limit_extend" {
+	if m.dialog == "hard_limit_expired" ||
+		m.dialog == "hard_limit_extend" ||
+		m.dialog == "timer_countdown_extend" {
 		m = m.withDialogState(m.hydrateHardLimitDialogStateFromTimer(m.dialogState()))
 	}
 	m.opsLimit = state.OpsLimit

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	shareddto "crona/shared/dto"
+	sharedtypes "crona/shared/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -31,6 +32,7 @@ func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
 		RepoID:                         int64Ptr(11),
 		StreamID:                       int64Ptr(22),
 		IssueID:                        int64Ptr(33),
+		HardLimitKind:                  sharedtypes.TimerHardLimitKindPomodoro,
 		HardLimitTotalSeconds:          intPtr(7800),
 		HardLimitWorkSeconds:           intPtr(1500),
 		HardLimitBreakSeconds:          intPtr(300),
@@ -40,6 +42,7 @@ func TestPomodoroStartDialogBuildsTimerStartRequest(t *testing.T) {
 	if *action.TimerStart.RepoID != *want.RepoID ||
 		*action.TimerStart.StreamID != *want.StreamID ||
 		*action.TimerStart.IssueID != *want.IssueID ||
+		action.TimerStart.HardLimitKind != want.HardLimitKind ||
 		*action.TimerStart.HardLimitTotalSeconds != *want.HardLimitTotalSeconds ||
 		*action.TimerStart.HardLimitWorkSeconds != *want.HardLimitWorkSeconds ||
 		*action.TimerStart.HardLimitBreakSeconds != *want.HardLimitBreakSeconds ||
@@ -72,7 +75,10 @@ func TestTimerStartTypeDialogRoutesToStopwatchOrPomodoro(t *testing.T) {
 		action.TimerStart.HardLimitBreakSeconds != nil ||
 		action.TimerStart.HardLimitLongBreakSeconds != nil ||
 		action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
-		t.Fatalf("expected stopwatch timer start to omit pomodoro fields, got %+v", action.TimerStart)
+		t.Fatalf(
+			"expected stopwatch timer start to omit pomodoro fields, got %+v",
+			action.TimerStart,
+		)
 	}
 
 	state = OpenTimerStartType(State{}, 11, 22, 33, "Issue title", nil, 0)
@@ -207,14 +213,21 @@ func TestTimerCountdownStartUsesRemainingEstimateAndBuildsNoBreakHardLimit(t *te
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 45*60 {
+	if action.TimerStart.HardLimitTotalSeconds == nil ||
+		*action.TimerStart.HardLimitTotalSeconds != 45*60 {
 		t.Fatalf("expected countdown total of 45m, got %+v", action.TimerStart)
 	}
-	if action.TimerStart.HardLimitWorkSeconds == nil || *action.TimerStart.HardLimitWorkSeconds != 45*60 {
-		t.Fatalf("expected countdown work seconds of 45m, got %+v", action.TimerStart)
+	if action.TimerStart.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected explicit countdown kind, got %+v", action.TimerStart)
 	}
-	if action.TimerStart.HardLimitBreakSeconds == nil || *action.TimerStart.HardLimitBreakSeconds != 0 {
-		t.Fatalf("expected no-break timer, got %+v", action.TimerStart)
+	if action.TimerStart.HardLimitWorkSeconds != nil ||
+		action.TimerStart.HardLimitBreakSeconds != nil ||
+		action.TimerStart.HardLimitLongBreakSeconds != nil ||
+		action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
+		t.Fatalf(
+			"expected countdown not to encode Pomodoro cadence fields, got %+v",
+			action.TimerStart,
+		)
 	}
 }
 
@@ -248,7 +261,10 @@ func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
 		t.Fatalf("expected custom focus choice, got %d", state.PomodoroFocusChoice)
 	}
 	if state.FocusIdx != pomodoroFocusCustomIdx {
-		t.Fatalf("expected right onto custom focus to enter inline input, got focus %d", state.FocusIdx)
+		t.Fatalf(
+			"expected right onto custom focus to enter inline input, got focus %d",
+			state.FocusIdx,
+		)
 	}
 	if !state.Inputs[0].Focused() {
 		t.Fatalf("expected custom focus input to be focused immediately")
@@ -264,7 +280,10 @@ func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
 		t.Fatalf("unexpected enter result status=%q action=%+v", status, action)
 	}
 	if next.Kind != "pomodoro_start" || next.FocusIdx != pomodoroBreakRowIdx {
-		t.Fatalf("expected enter from active custom focus input to advance to short break row, got %+v", next)
+		t.Fatalf(
+			"expected enter from active custom focus input to advance to short break row, got %+v",
+			next,
+		)
 	}
 
 	next.FocusIdx = pomodoroFocusCustomIdx
@@ -287,10 +306,12 @@ func TestPomodoroInlineCustomFocusSubmitsInSameDialog(t *testing.T) {
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.TimerStart.HardLimitWorkSeconds == nil || *action.TimerStart.HardLimitWorkSeconds != 45*60 {
+	if action.TimerStart.HardLimitWorkSeconds == nil ||
+		*action.TimerStart.HardLimitWorkSeconds != 45*60 {
 		t.Fatalf("expected custom focus seconds, got %+v", action.TimerStart)
 	}
-	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 12600 {
+	if action.TimerStart.HardLimitTotalSeconds == nil ||
+		*action.TimerStart.HardLimitTotalSeconds != 12600 {
 		t.Fatalf("unexpected total seconds %+v", action.TimerStart)
 	}
 }
@@ -380,7 +401,10 @@ func TestPomodoroLeftAtCustomInputStartReturnsToPresetRow(t *testing.T) {
 		t.Fatalf("unexpected left result status=%q action=%+v", status, action)
 	}
 	if next.FocusIdx != pomodoroFocusRowIdx {
-		t.Fatalf("expected left at cursor start to return to focus preset row, got %d", next.FocusIdx)
+		t.Fatalf(
+			"expected left at cursor start to return to focus preset row, got %d",
+			next.FocusIdx,
+		)
 	}
 	if next.Inputs[0].Focused() {
 		t.Fatal("expected custom input to blur when returning to preset row")
@@ -461,16 +485,21 @@ func TestPomodoroNoBreakDisablesLongBreakCyclesField(t *testing.T) {
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.TimerStart.HardLimitBreakSeconds == nil || *action.TimerStart.HardLimitBreakSeconds != 5*60 {
+	if action.TimerStart.HardLimitBreakSeconds == nil ||
+		*action.TimerStart.HardLimitBreakSeconds != 5*60 {
 		t.Fatalf("expected default short break, got %+v", action.TimerStart)
 	}
 	if action.TimerStart.HardLimitLongBreakSeconds != nil {
 		t.Fatalf("expected disabled long break to be omitted, got %+v", action.TimerStart)
 	}
 	if action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
-		t.Fatalf("expected disabled cycles-before-long-break to be omitted, got %+v", action.TimerStart)
+		t.Fatalf(
+			"expected disabled cycles-before-long-break to be omitted, got %+v",
+			action.TimerStart,
+		)
 	}
-	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 2*(25*60+5*60) {
+	if action.TimerStart.HardLimitTotalSeconds == nil ||
+		*action.TimerStart.HardLimitTotalSeconds != 2*(25*60+5*60) {
 		t.Fatalf("unexpected total seconds %+v", action.TimerStart)
 	}
 }
@@ -518,7 +547,10 @@ func TestPomodoroShortBreakNoBreakDisablesCyclesAndStartsContinuousFocus(t *test
 		t.Fatalf("unexpected tab result status=%q action=%+v", status, action)
 	}
 	if next.FocusIdx != pomodoroFocusRowIdx {
-		t.Fatalf("expected continuous mode to skip disabled rows back to focus, got %d", next.FocusIdx)
+		t.Fatalf(
+			"expected continuous mode to skip disabled rows back to focus, got %d",
+			next.FocusIdx,
+		)
 	}
 
 	next, action, status = Update(
@@ -536,14 +568,21 @@ func TestPomodoroShortBreakNoBreakDisablesCyclesAndStartsContinuousFocus(t *test
 	if action == nil || action.Kind != "start_focus_session" || action.TimerStart == nil {
 		t.Fatalf("unexpected action %+v", action)
 	}
-	if action.TimerStart.HardLimitTotalSeconds == nil || *action.TimerStart.HardLimitTotalSeconds != 25*60 {
-		t.Fatalf("expected continuous focus total to equal focus duration, got %+v", action.TimerStart)
+	if action.TimerStart.HardLimitTotalSeconds == nil ||
+		*action.TimerStart.HardLimitTotalSeconds != 25*60 {
+		t.Fatalf(
+			"expected continuous focus total to equal focus duration, got %+v",
+			action.TimerStart,
+		)
 	}
 	if action.TimerStart.HardLimitBreakSeconds != nil {
 		t.Fatalf("expected short break to be omitted, got %+v", action.TimerStart)
 	}
 	if action.TimerStart.HardLimitLongBreakSeconds != nil {
-		t.Fatalf("expected long break to be omitted in continuous focus mode, got %+v", action.TimerStart)
+		t.Fatalf(
+			"expected long break to be omitted in continuous focus mode, got %+v",
+			action.TimerStart,
+		)
 	}
 	if action.TimerStart.HardLimitCyclesBeforeLongBreak != nil {
 		t.Fatalf("expected cycles-before-long-break to be omitted, got %+v", action.TimerStart)
@@ -676,6 +715,53 @@ func TestPomodoroExtendDialogReturnsExtensionAction(t *testing.T) {
 	}
 }
 
+func TestCountdownExpiredOpensDurationOnlyExtension(t *testing.T) {
+	state := OpenHardLimitExpired(State{
+		HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+		HardLimitTotalSeconds: 45 * 60,
+		HardLimitFocusSeconds: 45 * 60,
+	}, "Issue title")
+
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'e'}},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("unexpected countdown extend transition: status=%q action=%+v", status, action)
+	}
+	if next.Kind != "timer_countdown_extend" {
+		t.Fatalf("expected countdown extension dialog, got %+v", next)
+	}
+	if next.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
+		t.Fatalf("expected countdown kind to persist, got %q", next.HardLimitKind)
+	}
+	if len(next.Inputs) != 1 || next.Inputs[0].Value() != "45m" {
+		t.Fatalf("expected original duration default, got %+v", next.Inputs)
+	}
+
+	next.Inputs[0].SetValue("15m")
+	closed, action, status := Update(
+		next,
+		UpdateContext{},
+		"2026-05-26",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
+	if status != "" || closed.Kind != "" {
+		t.Fatalf("unexpected countdown extend submission: state=%+v status=%q", closed, status)
+	}
+	if action == nil || action.Kind != "extend_hard_limit" || action.TimerExtend == nil {
+		t.Fatalf("unexpected countdown extension action %+v", action)
+	}
+	if action.TimerExtend.AdditionalSeconds != 15*60 ||
+		action.TimerExtend.AdditionalSessions != 0 ||
+		action.TimerExtend.HardLimitWorkSeconds != nil ||
+		action.TimerExtend.HardLimitBreakSeconds != nil {
+		t.Fatalf("expected duration-only countdown extension, got %+v", action.TimerExtend)
+	}
+}
+
 func TestPomodoroExtendDialogMatchesPomodoroStartInputChrome(t *testing.T) {
 	start := OpenPomodoroStart(State{}, 11, 22, 33, "Issue title", nil, 0)
 	extend := OpenHardLimitExtend(State{
@@ -688,11 +774,20 @@ func TestPomodoroExtendDialogMatchesPomodoroStartInputChrome(t *testing.T) {
 	})
 
 	if len(start.Inputs) != len(extend.Inputs) {
-		t.Fatalf("expected same number of inputs, got %d and %d", len(start.Inputs), len(extend.Inputs))
+		t.Fatalf(
+			"expected same number of inputs, got %d and %d",
+			len(start.Inputs),
+			len(extend.Inputs),
+		)
 	}
 	for i := range start.Inputs {
 		if got, want := extend.Inputs[i].View(), start.Inputs[i].View(); got != want {
-			t.Fatalf("expected input %d to match pomodoro start chrome, got %q want %q", i, got, want)
+			t.Fatalf(
+				"expected input %d to match pomodoro start chrome, got %q want %q",
+				i,
+				got,
+				want,
+			)
 		}
 	}
 }
@@ -814,7 +909,11 @@ func TestPomodoroExtendDialogPreservesCustomValuesAcrossPresetRoundTrip(t *testi
 			state = tc.returnToCust(state)
 
 			if got := state.Inputs[tc.inputIdx].Value(); got != tc.customValue {
-				t.Fatalf("expected custom value to survive round-trip, got %q want %q", got, tc.customValue)
+				t.Fatalf(
+					"expected custom value to survive round-trip, got %q want %q",
+					got,
+					tc.customValue,
+				)
 			}
 		})
 	}

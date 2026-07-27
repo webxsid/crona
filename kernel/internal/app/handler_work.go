@@ -196,6 +196,10 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.ChangeIssueStatusRequest) (any, error) {
 			return corecommands.ChangeIssueStatus(ctx, h.core, input.ID, input.Status, input.Note)
 		}), true
+	case protocol.MethodIssueStatusTransitions:
+		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
+			return corecommands.IssueStatusTransitions(ctx, h.core, input.ID)
+		}), true
 	case protocol.MethodIssueSetTodo:
 		return h.handleNoParams(req, func() (any, error) {
 			raw, err := decodeObject(req.Params)
@@ -340,7 +344,13 @@ func (h *Handler) handleWorkMethods(
 		}), true
 	case protocol.MethodMomentumDelete:
 		return handle(req, func(input shareddto.HabitStreakDefinitionDeleteRequest) (any, error) {
-			return shareddto.OKResponse{OK: true}, corecommands.DeleteHabitStreakDefinition(ctx, h.core, input.ID)
+			return shareddto.OKResponse{
+					OK: true,
+				}, corecommands.DeleteHabitStreakDefinition(
+					ctx,
+					h.core,
+					input.ID,
+				)
 		}), true
 	case protocol.MethodMomentumRange:
 		return handle(req, func(input shareddto.MomentumRangeRequest) (any, error) {
@@ -348,7 +358,13 @@ func (h *Handler) handleWorkMethods(
 		}), true
 	case protocol.MethodMomentumDetail:
 		return handle(req, func(input shareddto.MomentumDetailRequest) (any, error) {
-			return corecommands.GetMomentumDetail(ctx, h.core, input.ID, input.EndDate, input.WindowDays)
+			return corecommands.GetMomentumDetail(
+				ctx,
+				h.core,
+				input.ID,
+				input.EndDate,
+				input.WindowDays,
+			)
 		}), true
 	case protocol.MethodCheckInGet:
 		return handle(req, func(input shareddto.DailyCheckInQuery) (any, error) {

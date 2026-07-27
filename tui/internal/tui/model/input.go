@@ -578,9 +578,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 		DeleteAlertReminder: func(id string) tea.Cmd {
 			return commands.DeleteAlertReminder(m.client, id)
 		},
-		OpenCreateAlertReminderDialog: func(state *inputpkg.State) bool {
+		OpenCreateAlertReminderDialog: func(
+			state *inputpkg.State,
+			kind sharedtypes.AlertReminderKind,
+		) bool {
 			next := m.applyInputState(*state)
-			next = next.openCreateAlertReminderDialog()
+			next = next.openCreateAlertReminderDialog(kind)
 			*state = next.inputState()
 			return true
 		},

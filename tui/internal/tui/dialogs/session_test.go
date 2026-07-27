@@ -75,7 +75,15 @@ func TestEditMomentumDialogShowsDescriptionOnDetailsStep(t *testing.T) {
 
 func TestPomodoroStartHighlightsActiveRow(t *testing.T) {
 	estimate := 60
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 900)
+	state := controllerpkg.OpenPomodoroStart(
+		controllerpkg.State{},
+		11,
+		22,
+		33,
+		"Issue title",
+		&estimate,
+		900,
+	)
 	state.FocusIdx = 6
 
 	rendered := renderSessionDialog(Theme{}, state)
@@ -96,7 +104,15 @@ func TestPomodoroStartHighlightsActiveRow(t *testing.T) {
 }
 
 func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", nil, 0)
+	state := controllerpkg.OpenPomodoroStart(
+		controllerpkg.State{},
+		11,
+		22,
+		33,
+		"Issue title",
+		nil,
+		0,
+	)
 	state.PomodoroFocusChoice = 3
 	state.FocusIdx = 1
 
@@ -107,7 +123,15 @@ func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
 }
 
 func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T) {
-	state := controllerpkg.OpenPomodoroStart(controllerpkg.State{}, 11, 22, 33, "Issue title", nil, 0)
+	state := controllerpkg.OpenPomodoroStart(
+		controllerpkg.State{},
+		11,
+		22,
+		33,
+		"Issue title",
+		nil,
+		0,
+	)
 	state.PomodoroBreakChoice = 3
 	state.PomodoroBreakSeconds = 0
 	state.PomodoroLongBreakChoice = 0
@@ -126,7 +150,15 @@ func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T
 
 func TestTimerStartTypeShowsEstimateSummaryAndTimerChoice(t *testing.T) {
 	estimate := 45
-	state := controllerpkg.OpenTimerStartType(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 1200)
+	state := controllerpkg.OpenTimerStartType(
+		controllerpkg.State{},
+		11,
+		22,
+		33,
+		"Issue title",
+		&estimate,
+		1200,
+	)
 
 	rendered := renderSessionDialog(Theme{}, state)
 	for _, want := range []string{"Worked / Est", "worked 20m / est. 45m", "[t] Timer"} {
@@ -141,12 +173,47 @@ func TestTimerStartTypeShowsEstimateSummaryAndTimerChoice(t *testing.T) {
 
 func TestTimerCountdownDialogShowsSingleCountdownCopy(t *testing.T) {
 	estimate := 45
-	state := controllerpkg.OpenSingleTimerStart(controllerpkg.State{}, 11, 22, 33, "Issue title", &estimate, 0)
+	state := controllerpkg.OpenSingleTimerStart(
+		controllerpkg.State{},
+		11,
+		22,
+		33,
+		"Issue title",
+		&estimate,
+		0,
+	)
 
 	rendered := renderSessionDialog(Theme{}, state)
 	for _, want := range []string{"Timer Session", "Focus Time", "Single countdown. No breaks.", "Worked / Est", "worked - / est. 45m", "Ends At"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected countdown dialog to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestCountdownCompletionAndExtensionUseTimerCopy(t *testing.T) {
+	expired := controllerpkg.OpenHardLimitExpired(controllerpkg.State{
+		HardLimitKind: sharedtypes.TimerHardLimitKindCountdown,
+	}, "Issue title")
+	rendered := renderSessionDialog(Theme{}, expired)
+	for _, want := range []string{"Timer Session Complete", "finish this timer session"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected countdown completion to contain %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "pomodoro") || strings.Contains(rendered, "Pomodoro") {
+		t.Fatalf("expected countdown completion to avoid Pomodoro copy, got %q", rendered)
+	}
+
+	extend := controllerpkg.OpenHardLimitExtend(controllerpkg.State{
+		HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+		HardLimitFocusSeconds: 45 * 60,
+		ViewName:              "Issue title",
+	})
+	rendered = renderSessionDialog(Theme{}, extend)
+	for _, want := range []string{"Extend Timer Session", "Additional Time", "No breaks or cycles"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected countdown extension to contain %q, got %q", want, rendered)
 		}
 	}
 }

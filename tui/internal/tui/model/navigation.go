@@ -342,7 +342,12 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
 			body = append(body, "", "Notes", strings.TrimSpace(*issue.Notes))
 		}
-		body = append(body, "", "Worked / est.", issuecore.IssueWorkedEstimateLabel(spentSeconds, issue.EstimateMinutes))
+		body = append(
+			body,
+			"",
+			"Worked / est.",
+			issuecore.IssueWorkedEstimateLabel(spentSeconds, issue.EstimateMinutes),
+		)
 		return m.openViewEntityDialog(
 			"Issue",
 			issue.Title,

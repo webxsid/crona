@@ -117,6 +117,7 @@ type State struct {
 	PomodoroCyclesBeforeLongBreak  int
 	PomodoroCycles                 int
 	TimerCountdownSeconds          int
+	HardLimitKind                  sharedtypes.TimerHardLimitKind
 	HardLimitTotalSeconds          int
 	HardLimitFocusSeconds          int
 	HardLimitBreakSeconds          int

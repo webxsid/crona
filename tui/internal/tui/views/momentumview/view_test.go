@@ -32,15 +32,69 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 				Longest:    7,
 				HabitNames: []string{"Alpha", "Beta", "Gamma", "Delta"},
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-W18", Label: "May 4-10", Count: 1, Target: 3, MetTarget: false},
-					{BucketKey: "2026-W19", Label: "May 11-17", Count: 2, Target: 3, MetTarget: false},
-					{BucketKey: "2026-W20", Label: "May 18-24", Count: 3, Target: 3, MetTarget: true},
-					{BucketKey: "2026-W21", Label: "May 25-31", Count: 4, Target: 3, MetTarget: true},
-					{BucketKey: "2026-W22", Label: "Jun 1-7", Count: 2, Target: 3, MetTarget: false},
-					{BucketKey: "2026-W23", Label: "Jun 8-14", Count: 5, Target: 3, MetTarget: true},
-					{BucketKey: "2026-W24", Label: "Jun 15-21", Count: 6, Target: 3, MetTarget: true},
-					{BucketKey: "2026-W25", Label: "Jun 22-28", Count: 4, Target: 3, MetTarget: true},
-					{BucketKey: "2026-W26", Label: "Jun 29-Jul 5", Count: 13, Target: 10, MetTarget: true},
+					{
+						BucketKey: "2026-W18",
+						Label:     "May 4-10",
+						Count:     1,
+						Target:    3,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-W19",
+						Label:     "May 11-17",
+						Count:     2,
+						Target:    3,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-W20",
+						Label:     "May 18-24",
+						Count:     3,
+						Target:    3,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W21",
+						Label:     "May 25-31",
+						Count:     4,
+						Target:    3,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W22",
+						Label:     "Jun 1-7",
+						Count:     2,
+						Target:    3,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-W23",
+						Label:     "Jun 8-14",
+						Count:     5,
+						Target:    3,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W24",
+						Label:     "Jun 15-21",
+						Count:     6,
+						Target:    3,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W25",
+						Label:     "Jun 22-28",
+						Count:     4,
+						Target:    3,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W26",
+						Label:     "Jun 29-Jul 5",
+						Count:     13,
+						Target:    10,
+						MetTarget: true,
+					},
 				},
 			},
 		},
@@ -65,10 +119,12 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	if !strings.Contains(rendered, "weekly · target Any · 3/week · current streak 4w · best 7w") {
 		t.Fatalf("expected streak header in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "[18] May 4-10") || !strings.Contains(rendered, "[25] Jun 22-28") {
+	if !strings.Contains(rendered, "[18] May 4-10") ||
+		!strings.Contains(rendered, "[25] Jun 22-28") {
 		t.Fatalf("expected bucket labels in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "3/3") || !strings.Contains(rendered, "4/3") {
+	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "3/3") ||
+		!strings.Contains(rendered, "4/3") {
 		t.Fatalf("expected explicit ratios in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "13/10") {
@@ -91,7 +147,10 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 		t.Fatalf("expected overflow row to show both fill and target marker, got %q", overflowLine)
 	}
 	if strings.LastIndex(overflowLine, "┆") >= strings.LastIndex(overflowLine, "█") {
-		t.Fatalf("expected overflow row fill to extend beyond the target marker, got %q", overflowLine)
+		t.Fatalf(
+			"expected overflow row fill to extend beyond the target marker, got %q",
+			overflowLine,
+		)
 	}
 	if !hasWidePaneLine(rendered, 130) {
 		t.Fatalf("expected a wide card layout in render, got %q", rendered)
@@ -128,9 +187,27 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 				Current: 4,
 				Longest: 7,
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-W18", Label: "May 4-10", Count: 7200, Target: 7200, MetTarget: true},
-					{BucketKey: "2026-W19", Label: "May 11-17", Count: 3600, Target: 7200, MetTarget: false},
-					{BucketKey: "2026-W20", Label: "May 18-24", Count: 10800, Target: 7200, MetTarget: true},
+					{
+						BucketKey: "2026-W18",
+						Label:     "May 4-10",
+						Count:     7200,
+						Target:    7200,
+						MetTarget: true,
+					},
+					{
+						BucketKey: "2026-W19",
+						Label:     "May 11-17",
+						Count:     3600,
+						Target:    7200,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-W20",
+						Label:     "May 18-24",
+						Count:     10800,
+						Target:    7200,
+						MetTarget: true,
+					},
 				},
 				TargetNames: []string{"Work/app", "OSS/cli"},
 			},
@@ -169,7 +246,11 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 		t.Fatalf("expected context rows in render, got %q", rendered)
 	}
 	if strings.Count(shortRow, "█") >= strings.Count(longRow, "█") {
-		t.Fatalf("expected longer duration to render a larger fill, got short=%q long=%q", shortRow, longRow)
+		t.Fatalf(
+			"expected longer duration to render a larger fill, got short=%q long=%q",
+			shortRow,
+			longRow,
+		)
 	}
 }
 
@@ -189,7 +270,18 @@ func TestRenderShowsSkippedAndProratedMomentumMetadata(t *testing.T) {
 					RequiredCount: 2,
 				},
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-W23", Label: "Jun 1-7", Count: 0, Target: 2, OriginalTarget: 2, ProtectedDayCount: 3, BucketDayCount: 7, AvailableDayCount: 4, Skipped: true, RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeSkipBucket},
+					{
+						BucketKey:          "2026-W23",
+						Label:              "Jun 1-7",
+						Count:              0,
+						Target:             2,
+						OriginalTarget:     2,
+						ProtectedDayCount:  3,
+						BucketDayCount:     7,
+						AvailableDayCount:  4,
+						Skipped:            true,
+						RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeSkipBucket,
+					},
 				},
 			},
 			{
@@ -200,7 +292,18 @@ func TestRenderShowsSkippedAndProratedMomentumMetadata(t *testing.T) {
 					Period:     sharedtypes.HabitStreakPeriodWeek,
 				},
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-W23", Label: "Jun 1-7", Count: 5400, Target: 5143, OriginalTarget: 7200, ProtectedDayCount: 2, BucketDayCount: 7, AvailableDayCount: 5, MetTarget: true, RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeProratedGoal},
+					{
+						BucketKey:          "2026-W23",
+						Label:              "Jun 1-7",
+						Count:              5400,
+						Target:             5143,
+						OriginalTarget:     7200,
+						ProtectedDayCount:  2,
+						BucketDayCount:     7,
+						AvailableDayCount:  5,
+						MetTarget:          true,
+						RestAdjustmentMode: sharedtypes.MomentumRestAdjustModeProratedGoal,
+					},
 				},
 				TargetNames: []string{"Work/app"},
 			},
@@ -248,8 +351,20 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 				},
 				Current: 1,
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-06-18", Label: "Jun 18", Count: 900, Target: 2700, MetTarget: false},
-					{BucketKey: "2026-06-19", Label: "Jun 19", Count: 1800, Target: 2700, MetTarget: false},
+					{
+						BucketKey: "2026-06-18",
+						Label:     "Jun 18",
+						Count:     900,
+						Target:    2700,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-06-19",
+						Label:     "Jun 19",
+						Count:     1800,
+						Target:    2700,
+						MetTarget: false,
+					},
 				},
 				TargetNames: []string{"Work"},
 			},
@@ -259,11 +374,18 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 	shortRendered := Render(testTheme(), shortState)
 	for _, label := range []string{"00m", "15m", "30m", "45m"} {
 		if !strings.Contains(shortRendered, label) {
-			t.Fatalf("expected short context axis to use fixed minute ticks, missing %q in %q", label, shortRendered)
+			t.Fatalf(
+				"expected short context axis to use fixed minute ticks, missing %q in %q",
+				label,
+				shortRendered,
+			)
 		}
 	}
 	if strings.Contains(shortRendered, "1h23m") {
-		t.Fatalf("expected short context axis to avoid dynamic duration labels, got %q", shortRendered)
+		t.Fatalf(
+			"expected short context axis to avoid dynamic duration labels, got %q",
+			shortRendered,
+		)
 	}
 
 	longState := types.ContentState{
@@ -287,8 +409,20 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 				},
 				Current: 1,
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-06-18", Label: "Jun 18", Count: 2700, Target: 5400, MetTarget: false},
-					{BucketKey: "2026-06-19", Label: "Jun 19", Count: 5400, Target: 5400, MetTarget: true},
+					{
+						BucketKey: "2026-06-18",
+						Label:     "Jun 18",
+						Count:     2700,
+						Target:    5400,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-06-19",
+						Label:     "Jun 19",
+						Count:     5400,
+						Target:    5400,
+						MetTarget: true,
+					},
 				},
 				TargetNames: []string{"Work"},
 			},
@@ -298,11 +432,18 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 	longRendered := Render(testTheme(), longState)
 	for _, label := range []string{"00h00m", "00h30m", "01h00m", "01h30m"} {
 		if !strings.Contains(longRendered, label) {
-			t.Fatalf("expected long context axis to use fixed hour ticks, missing %q in %q", label, longRendered)
+			t.Fatalf(
+				"expected long context axis to use fixed hour ticks, missing %q in %q",
+				label,
+				longRendered,
+			)
 		}
 	}
 	if strings.Contains(longRendered, "1h23m") {
-		t.Fatalf("expected long context axis to avoid dynamic duration labels, got %q", longRendered)
+		t.Fatalf(
+			"expected long context axis to avoid dynamic duration labels, got %q",
+			longRendered,
+		)
 	}
 }
 
@@ -325,8 +466,20 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 				Longest:    7,
 				HabitNames: []string{"Alpha", "Beta"},
 				Series: []sharedtypes.MomentumSeriesPoint{
-					{BucketKey: "2026-W18", Label: "May 4-10", Count: 1, Target: 3, MetTarget: false},
-					{BucketKey: "2026-W19", Label: "May 11-17", Count: 3, Target: 3, MetTarget: true},
+					{
+						BucketKey: "2026-W18",
+						Label:     "May 4-10",
+						Count:     1,
+						Target:    3,
+						MetTarget: false,
+					},
+					{
+						BucketKey: "2026-W19",
+						Label:     "May 11-17",
+						Count:     3,
+						Target:    3,
+						MetTarget: true,
+					},
 				},
 			},
 		},
@@ -369,7 +522,11 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 				Current:    5,
 				Longest:    6,
 				HabitNames: []string{"Journal"},
-				Series:     dailyMomentumSeries(time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 0, 1, 1}, 1),
+				Series: dailyMomentumSeries(
+					time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
+					[]int{0, 1, 1, 1, 0, 1, 1},
+					1,
+				),
 			},
 		},
 		Cursors: map[string]int{"momentum_cards": 0},
@@ -382,16 +539,19 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 	if !strings.Contains(rendered, "daily · target Any · 1/day · current streak 5d · best 6d") {
 		t.Fatalf("expected daily header in render, got %q", rendered)
 	}
-	if strings.Contains(rendered, "Mon Tue Wed Thu Fri Sat Sun") || strings.Contains(rendered, "Scale  low") {
+	if strings.Contains(rendered, "Mon Tue Wed Thu Fri Sat Sun") ||
+		strings.Contains(rendered, "Scale  low") {
 		t.Fatalf("expected daily square grid to avoid calendar headers and scale, got %q", rendered)
 	}
-	if strings.Contains(rendered, "┆") || strings.Contains(rendered, "W1") || strings.Contains(rendered, "May 4-10") {
+	if strings.Contains(rendered, "┆") || strings.Contains(rendered, "W1") ||
+		strings.Contains(rendered, "May 4-10") {
 		t.Fatalf("expected daily square grid to avoid bucket bars, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
 		t.Fatalf("expected filled and empty squares in render, got %q", rendered)
 	}
-	if strings.Contains(rendered, "█") || strings.Contains(rendered, "┆") || strings.Contains(rendered, "May 4-10") {
+	if strings.Contains(rendered, "█") || strings.Contains(rendered, "┆") ||
+		strings.Contains(rendered, "May 4-10") {
 		t.Fatalf("expected binary daily habit to stay on the square grid, got %q", rendered)
 	}
 }
@@ -417,7 +577,11 @@ func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 				Current:    7,
 				Longest:    9,
 				HabitNames: []string{"Journal", "Walk", "Strength"},
-				Series:     dailyMomentumSeries(time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), []int{0, 1, 2, 3, 1, 0, 2}, 1),
+				Series: dailyMomentumSeries(
+					time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
+					[]int{0, 1, 2, 3, 1, 0, 2},
+					1,
+				),
 			},
 		},
 		Cursors: map[string]int{"momentum_cards": 0},
@@ -431,7 +595,10 @@ func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 		t.Fatalf("expected daily multi-habit header in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "█") || !strings.Contains(rendered, "│") {
-		t.Fatalf("expected multi-habit daily momentum to use a vertical distribution chart, got %q", rendered)
+		t.Fatalf(
+			"expected multi-habit daily momentum to use a vertical distribution chart, got %q",
+			rendered,
+		)
 	}
 	if strings.Contains(rendered, "■") || strings.Contains(rendered, "□") {
 		t.Fatalf("expected multi-habit daily momentum to avoid square cells, got %q", rendered)
@@ -442,7 +609,11 @@ func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 }
 
 func TestMomentumDailySquaresWrapByWidth(t *testing.T) {
-	series := dailyMomentumSeries(time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), []int{1, 0, 1, 1, 0, 1, 1, 1, 0, 1}, 1)
+	series := dailyMomentumSeries(
+		time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
+		[]int{1, 0, 1, 1, 0, 1, 1, 1, 0, 1},
+		1,
+	)
 	rows := momentumDailySquareRows(testTheme(), series, 5, true)
 	if len(rows) < 2 {
 		t.Fatalf("expected wrapped rows for narrow width, got %v", rows)
@@ -459,45 +630,93 @@ func TestMomentumDailySquaresWrapByWidth(t *testing.T) {
 }
 
 func TestMomentumBucketBarUsesSharedScale(t *testing.T) {
-	short := momentumBucketBar(testTheme(), sharedtypes.MomentumSeriesPoint{Count: 5, Target: 10, MetTarget: false}, 40, true, 13)
+	short := momentumBucketBar(
+		testTheme(),
+		sharedtypes.MomentumSeriesPoint{Count: 5, Target: 10, MetTarget: false},
+		40,
+		true,
+		13,
+	)
 	if got := lipgloss.Width(short); got != 40 {
-		t.Fatalf("expected scaled bar width to match the available width, got %d for %q", got, short)
+		t.Fatalf(
+			"expected scaled bar width to match the available width, got %d for %q",
+			got,
+			short,
+		)
 	}
 	if !strings.Contains(short, "┆") {
 		t.Fatalf("expected target marker in under-target bar, got %q", short)
 	}
 
-	exact := momentumBucketBar(testTheme(), sharedtypes.MomentumSeriesPoint{Count: 10, Target: 10, MetTarget: true}, 40, true, 13)
+	exact := momentumBucketBar(
+		testTheme(),
+		sharedtypes.MomentumSeriesPoint{Count: 10, Target: 10, MetTarget: true},
+		40,
+		true,
+		13,
+	)
 	if got := lipgloss.Width(exact); got != 40 {
-		t.Fatalf("expected scaled bar width to match the available width, got %d for %q", got, exact)
+		t.Fatalf(
+			"expected scaled bar width to match the available width, got %d for %q",
+			got,
+			exact,
+		)
 	}
 	if !strings.Contains(exact, "┆") {
 		t.Fatalf("expected target marker in exact-target bar, got %q", exact)
 	}
 
-	overflow := momentumBucketBar(testTheme(), sharedtypes.MomentumSeriesPoint{Count: 13, Target: 10, MetTarget: true}, 40, true, 13)
+	overflow := momentumBucketBar(
+		testTheme(),
+		sharedtypes.MomentumSeriesPoint{Count: 13, Target: 10, MetTarget: true},
+		40,
+		true,
+		13,
+	)
 	if got := lipgloss.Width(overflow); got != 40 {
-		t.Fatalf("expected overflow bar to stay within the available width, got %d for %q", got, overflow)
+		t.Fatalf(
+			"expected overflow bar to stay within the available width, got %d for %q",
+			got,
+			overflow,
+		)
 	}
 	if !strings.Contains(overflow, "┆") {
 		t.Fatalf("expected target marker in overflow bar, got %q", overflow)
 	}
 	if strings.Count(short, "█") >= strings.Count(exact, "█") {
-		t.Fatalf("expected exact-target bar to render more fill than the under-target bar, got short=%q exact=%q", short, exact)
+		t.Fatalf(
+			"expected exact-target bar to render more fill than the under-target bar, got short=%q exact=%q",
+			short,
+			exact,
+		)
 	}
 	if strings.Count(exact, "█") >= strings.Count(overflow, "█") {
-		t.Fatalf("expected overflow bar to render more fill than the exact-target bar, got exact=%q overflow=%q", exact, overflow)
+		t.Fatalf(
+			"expected overflow bar to render more fill than the exact-target bar, got exact=%q overflow=%q",
+			exact,
+			overflow,
+		)
 	}
 }
 
 func TestMomentumDailySquaresStayCompactWhenNarrow(t *testing.T) {
-	series := dailyMomentumSeries(time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 0, 1, 1}, 1)
+	series := dailyMomentumSeries(
+		time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
+		[]int{0, 1, 1, 1, 0, 1, 1},
+		1,
+	)
 	rendered := renderMomentumDailySquares(testTheme(), series, 20, true)
 	if strings.Contains(rendered, "Scale") || strings.Contains(rendered, "Mon Tue") {
-		t.Fatalf("did not expect calendar headers or scale in daily square render, got %q", rendered)
+		t.Fatalf(
+			"did not expect calendar headers or scale in daily square render, got %q",
+			rendered,
+		)
 	}
 	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
-		t.Fatalf("expected daily square render to include filled and empty squares, got %q", rendered)
+		t.Fatalf(
+			"expected daily square render to include filled and empty squares, got %q",
+			rendered,
+		)
 	}
 }
 
@@ -575,7 +794,8 @@ func TestRenderShowsBottomOverflowHintWhenCardsContinueBelow(t *testing.T) {
 	if strings.Contains(rendered, "...") {
 		t.Fatalf("expected overflow hint render to avoid clipping, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") || !strings.Contains(rendered, "3/3") {
+	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") ||
+		!strings.Contains(rendered, "3/3") {
 		t.Fatalf("expected ratios in overflow render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "┆") {
@@ -608,7 +828,8 @@ func TestRenderShowsTopOverflowHintWhenCardsContinueAbove(t *testing.T) {
 	if strings.Contains(rendered, "...") {
 		t.Fatalf("expected overflow hint render to avoid clipping, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") || !strings.Contains(rendered, "3/3") {
+	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") ||
+		!strings.Contains(rendered, "3/3") {
 		t.Fatalf("expected ratios in overflow render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "┆") {
@@ -685,7 +906,11 @@ func momentumTestCard(name string, labels ...string) sharedtypes.MomentumCard {
 	}
 }
 
-func dailyMomentumSeries(start time.Time, counts []int, target int) []sharedtypes.MomentumSeriesPoint {
+func dailyMomentumSeries(
+	start time.Time,
+	counts []int,
+	target int,
+) []sharedtypes.MomentumSeriesPoint {
 	series := make([]sharedtypes.MomentumSeriesPoint, 0, len(counts))
 	for idx, count := range counts {
 		day := start.AddDate(0, 0, idx)

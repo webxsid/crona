@@ -191,7 +191,9 @@ func pomodoroEstimatedTotalDuration(values pomodoroValues) string {
 	return "Total Duration " + helperpkg.FormatCompactDurationSeconds(values.TotalSeconds)
 }
 
-func inferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int) int {
+func inferPomodoroCycles(
+	totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int,
+) int {
 	if totalSeconds <= 0 || focusSeconds <= 0 {
 		return 1
 	}

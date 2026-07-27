@@ -198,7 +198,8 @@ func TestWellbeingSummaryPaneSupportsScrolling(t *testing.T) {
 	}
 
 	rendered := support.RenderWellbeing(state)
-	if !strings.Contains(rendered, "Today") || !strings.Contains(rendered, "Check-in  recorded  backfilled") {
+	if !strings.Contains(rendered, "Today") ||
+		!strings.Contains(rendered, "Check-in  recorded  backfilled") {
 		t.Fatalf("expected wellbeing summary pane to render the snapshot row, got %q", rendered)
 	}
 }
@@ -241,8 +242,18 @@ func TestWellbeingDetailsPaneSupportsScrolling(t *testing.T) {
 				HighRiskIssueCount:   2,
 			},
 			Entries: []api.DailyPlanEntry{
-				{ID: "1", IssueID: 1, Status: "failed", FailureReason: new(api.DailyPlanFailureReason("missed"))},
-				{ID: "2", IssueID: 2, Status: "failed", FailureReason: new(api.DailyPlanFailureReason("moved"))},
+				{
+					ID:            "1",
+					IssueID:       1,
+					Status:        "failed",
+					FailureReason: new(api.DailyPlanFailureReason("missed")),
+				},
+				{
+					ID:            "2",
+					IssueID:       2,
+					Status:        "failed",
+					FailureReason: new(api.DailyPlanFailureReason("moved")),
+				},
 			},
 		},
 		MetricsRange: makeMetricsRange(21),
@@ -263,7 +274,10 @@ func TestWellbeingDetailsPaneSupportsScrolling(t *testing.T) {
 	state.Cursors[string(uistate.PaneWellbeingDetails)] = 16
 	rendered = support.RenderWellbeing(state)
 	if !strings.Contains(rendered, "↑ more") {
-		t.Fatalf("expected details pane to show upward scroll indicator after scrolling, got %q", rendered)
+		t.Fatalf(
+			"expected details pane to show upward scroll indicator after scrolling, got %q",
+			rendered,
+		)
 	}
 }
 

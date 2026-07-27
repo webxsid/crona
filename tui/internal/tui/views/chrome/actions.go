@@ -49,10 +49,16 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" create"))
 	}
 	if supportsGlobalContext(state.View) {
-		actions = append(actions, theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" change context"))
+		actions = append(
+			actions,
+			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" change context"),
+		)
 	}
 	if supportsGlobalExport(state.View) {
-		actions = append(actions, theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export data"))
+		actions = append(
+			actions,
+			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export data"),
+		)
 	}
 	if state.View == "daily" || state.View == "wellbeing" {
 		actions = append(actions, checkInAction(theme))
@@ -288,7 +294,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
 			}
 			if state.TimerState == "" || state.TimerState == "idle" {
-				actions = append(actions, theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"))
+				actions = append(
+					actions,
+					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"),
+				)
 			}
 			return actions
 		}
@@ -307,7 +316,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	case "settings":
 		return []string{
 			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change"),
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit, toggle, or confirm"),
+			theme.StyleHeader.Render(
+				"[enter]",
+			) + theme.StyleDim.Render(
+				" edit, toggle, or confirm",
+			),
 		}
 	case "alerts":
 		return []string{

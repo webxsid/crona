@@ -320,7 +320,9 @@ func backfillMomentumContexts(ctx context.Context, db *bun.DB) error {
 			continue
 		}
 		streamID := *row.StreamID
-		payload, err := json.Marshal([]sharedtypes.MomentumContext{{RepoID: *row.RepoID, StreamID: &streamID}})
+		payload, err := json.Marshal(
+			[]sharedtypes.MomentumContext{{RepoID: *row.RepoID, StreamID: &streamID}},
+		)
 		if err != nil {
 			return err
 		}

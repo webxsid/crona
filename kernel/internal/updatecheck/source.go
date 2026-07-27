@@ -251,9 +251,21 @@ func (s *Service) resolveInstallMetadataLocked(
 
 func (s *Service) persistedInstallMetadataLocked() (sharedtypes.InstallSource, string, sharedtypes.UpdateChannel) {
 	if file, err := runtimepkg.LoadInstallSourceFile(s.installPath); err == nil {
-		return sharedtypes.NormalizeInstallSource(file.InstallSource), strings.TrimSpace(file.BrewFormula), sharedtypes.NormalizeUpdateChannel(file.ReleaseChannel)
+		return sharedtypes.NormalizeInstallSource(
+				file.InstallSource,
+			), strings.TrimSpace(
+				file.BrewFormula,
+			), sharedtypes.NormalizeUpdateChannel(
+				file.ReleaseChannel,
+			)
 	}
-	return sharedtypes.NormalizeInstallSource(s.status.InstallSource), strings.TrimSpace(s.status.BrewFormula), sharedtypes.NormalizeUpdateChannel(s.status.ReleaseChannel)
+	return sharedtypes.NormalizeInstallSource(
+			s.status.InstallSource,
+		), strings.TrimSpace(
+			s.status.BrewFormula,
+		), sharedtypes.NormalizeUpdateChannel(
+			s.status.ReleaseChannel,
+		)
 }
 
 func (s *Service) executablePathLocked() string {
@@ -303,7 +315,10 @@ func defaultBrewFormula(source sharedtypes.InstallSource) string {
 	}
 }
 
-func defaultReleaseChannel(source sharedtypes.InstallSource, path string) sharedtypes.UpdateChannel {
+func defaultReleaseChannel(
+	source sharedtypes.InstallSource,
+	path string,
+) sharedtypes.UpdateChannel {
 	if sharedtypes.NormalizeInstallSource(source) == sharedtypes.InstallSourceUnknown {
 		return sharedtypes.UpdateChannelStable
 	}

@@ -92,7 +92,7 @@ func splitTestState() types.ContentState {
 			SessionCount:        6,
 			AverageMood:         &avgMood,
 			AverageEnergy:       &avgEnergy,
-			HabitDueCount:      9,
+			HabitDueCount:       9,
 			HabitCompletedCount: 6,
 			HabitFailedCount:    2,
 			LatestBurnout: &api.BurnoutIndicator{

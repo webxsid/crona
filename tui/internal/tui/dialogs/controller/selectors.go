@@ -152,7 +152,14 @@ func CheckoutDialogSelection(
 		}
 	}
 	if streamRaw == "" {
-		streamOptions := CheckoutStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+		streamOptions := CheckoutStreamOptions(
+			inputs,
+			repoIndex,
+			repos,
+			allIssues,
+			streams,
+			context,
+		)
 		option, ok := selectedOption(streamOptions, streamIndex)
 		if !ok {
 			return repoID, repoName, nil, ""
@@ -299,7 +306,14 @@ func MomentumDialogLabels(
 		streamRaw = strings.TrimSpace(inputs[1].Value())
 	}
 	repoOptions := stripCreateOptions(DefaultRepoOptions(inputs, repos))
-	streamOptions := momentumStreamOptionsForLabels(inputs, repoIndex, repos, allIssues, streams, context)
+	streamOptions := momentumStreamOptionsForLabels(
+		inputs,
+		repoIndex,
+		repos,
+		allIssues,
+		streams,
+		context,
+	)
 	return labelOrPlaceholder(repoRaw, repoOptions, repoIndex, "Type to search"),
 		momentumStreamLabel(streamRaw, streamOptions, streamIndex)
 }
@@ -313,7 +327,9 @@ func momentumStreamOptionsForLabels(
 	context *api.ActiveContext,
 ) []SelectorOption {
 	options := []SelectorOption{{ID: "__any__", Label: "Any Stream"}}
-	options = append(options, DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)...)
+	options = append(
+		options,
+		DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)...)
 	return stripCreateOptions(options)
 }
 
@@ -366,7 +382,12 @@ func selectedOption(options []SelectorOption, index int) (SelectorOption, bool) 
 	return options[index], true
 }
 
-func labelOrPlaceholder(raw string, options []SelectorOption, index int, placeholder string) string {
+func labelOrPlaceholder(
+	raw string,
+	options []SelectorOption,
+	index int,
+	placeholder string,
+) string {
 	if strings.TrimSpace(raw) == "" && index < 0 {
 		return placeholder
 	}

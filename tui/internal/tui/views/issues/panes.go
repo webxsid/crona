@@ -41,14 +41,14 @@ func renderIssuePane(
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
 		theme.StyleDim.Render(subtitle),
 	)
-		lines = append(
-			lines,
-			base.ControlLine(
-				theme,
-				width-6,
-				paneActive,
-				viewchrome.PaneActionsForState(theme, state, paneActive),
-				showFilter,
+	lines = append(
+		lines,
+		base.ControlLine(
+			theme,
+			width-6,
+			paneActive,
+			viewchrome.PaneActionsForState(theme, state, paneActive),
+			showFilter,
 		),
 	)
 	inner := viewchrome.RemainingPaneHeight(height, lines)
@@ -70,7 +70,8 @@ func renderIssuePane(
 		issue := state.DefaultIssues[indices[pos]]
 		workedSeconds := issue.WorkedSeconds
 		if workedSeconds <= 0 {
-			if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil && meta.WorkedSeconds > 0 {
+			if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil &&
+				meta.WorkedSeconds > 0 {
 				workedSeconds = meta.WorkedSeconds
 			}
 		}
@@ -102,7 +103,10 @@ func renderIssuePane(
 			Repo:     issue.RepoName,
 			Stream:   issue.StreamName,
 			Context:  issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
-			Effort:   issuecore.IssueWorkedEstimateCompactLabel(workedSeconds, issue.EstimateMinutes),
+			Effort: issuecore.IssueWorkedEstimateCompactLabel(
+				workedSeconds,
+				issue.EstimateMinutes,
+			),
 		}, rowStyle))
 	}
 	tablePane := viewui.TablePane{
@@ -136,14 +140,14 @@ func renderCompactIssuePane(
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
 		theme.StyleDim.Render(subtitle),
 	)
-		lines = append(
-			lines,
-			base.ControlLine(
-				theme,
-				state.Width-6,
-				paneActive,
-				viewchrome.PaneActionsForState(theme, state, paneActive),
-				true,
+	lines = append(
+		lines,
+		base.ControlLine(
+			theme,
+			state.Width-6,
+			paneActive,
+			viewchrome.PaneActionsForState(theme, state, paneActive),
+			true,
 		),
 	)
 	inner := viewchrome.RemainingPaneHeight(height, lines)
@@ -189,8 +193,14 @@ func renderCompactIssueRow(
 	parts := []string{
 		viewhelpers.Truncate(title, max(18, width/2-1)),
 		viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11),
-		viewhelpers.Truncate(issuecore.IssueContextLabel(issue.RepoName, issue.StreamName), max(14, width/4-1)),
-		viewhelpers.Truncate(issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes), max(14, width/4-1)),
+		viewhelpers.Truncate(
+			issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
+			max(14, width/4-1),
+		),
+		viewhelpers.Truncate(
+			issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes),
+			max(14, width/4-1),
+		),
 	}
 	row := strings.Join(parts, compactIssueRowGap)
 	contentStyle := issuecore.IssueStatusStyle(theme, string(issue.Status))

@@ -22,7 +22,10 @@ func TestHandleOpenCheckInUsesDashboardDate(t *testing.T) {
 		OpenCheckInDialog: func(s *State) bool {
 			called = true
 			if s.DashboardDate != "2026-05-27" {
-				t.Fatalf("expected daily check-in opener to preserve dashboard date, got %q", s.DashboardDate)
+				t.Fatalf(
+					"expected daily check-in opener to preserve dashboard date, got %q",
+					s.DashboardDate,
+				)
 			}
 			return true
 		},
@@ -46,7 +49,10 @@ func TestHandleOpenCheckInUsesWellbeingDate(t *testing.T) {
 		OpenCheckInDialog: func(s *State) bool {
 			called = true
 			if s.WellbeingDate != "2026-05-28" {
-				t.Fatalf("expected wellbeing check-in opener to preserve wellbeing date, got %q", s.WellbeingDate)
+				t.Fatalf(
+					"expected wellbeing check-in opener to preserve wellbeing date, got %q",
+					s.WellbeingDate,
+				)
 			}
 			return true
 		},

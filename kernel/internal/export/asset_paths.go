@@ -54,7 +54,10 @@ func defaultAssetSource(paths runtime.Paths, descriptor assetDescriptor) ([]byte
 			filepath.Join("..", "assets", "export", descriptor.legacyBundledPath),
 			filepath.Join("..", "..", "assets", "export", descriptor.legacyBundledPath),
 		)
-		embeddedCandidates = append(embeddedCandidates, filepath.Join("export", descriptor.legacyBundledPath))
+		embeddedCandidates = append(
+			embeddedCandidates,
+			filepath.Join("export", descriptor.legacyBundledPath),
+		)
 	}
 	for _, candidate := range candidates {
 		body, err := os.ReadFile(candidate)

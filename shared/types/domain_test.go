@@ -2,6 +2,27 @@ package types
 
 import "testing"
 
+func TestNormalizeAlertReminderKindPreservesSupportedKinds(t *testing.T) {
+	if got := NormalizeAlertReminderKind(AlertReminderKindDailyPlan); got != AlertReminderKindDailyPlan {
+		t.Fatalf("expected daily-plan reminder kind, got %q", got)
+	}
+	if got := NormalizeAlertReminderKind("unknown"); got != AlertReminderKindCheckIn {
+		t.Fatalf("expected unknown reminder kind to fall back to check-in, got %q", got)
+	}
+}
+
+func TestNormalizeTimerHardLimitKindDefaultsLegacyValuesToPomodoro(t *testing.T) {
+	if got := NormalizeTimerHardLimitKind(TimerHardLimitKindCountdown); got != TimerHardLimitKindCountdown {
+		t.Fatalf("expected countdown kind, got %q", got)
+	}
+	if got := NormalizeTimerHardLimitKind(""); got != TimerHardLimitKindPomodoro {
+		t.Fatalf("expected missing kind to default to pomodoro, got %q", got)
+	}
+	if got := NormalizeTimerHardLimitKind("unknown"); got != TimerHardLimitKindPomodoro {
+		t.Fatalf("expected unknown kind to default to pomodoro, got %q", got)
+	}
+}
+
 func TestNormalizeHabitStreakDefinitionPreservesRepoWideContexts(t *testing.T) {
 	def := NormalizeHabitStreakDefinition(HabitStreakDefinition{
 		TargetKind: MomentumTargetKindContext,
@@ -34,6 +55,9 @@ func TestMomentumContextRedundanciesDetectRepoWideCoverage(t *testing.T) {
 		t.Fatalf("expected repo 7 redundancy, got %+v", redundancies[0])
 	}
 	if len(redundancies[0].RedundantContexts) != 2 {
-		t.Fatalf("expected two redundant stream contexts, got %+v", redundancies[0].RedundantContexts)
+		t.Fatalf(
+			"expected two redundant stream contexts, got %+v",
+			redundancies[0].RedundantContexts,
+		)
 	}
 }

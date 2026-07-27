@@ -105,7 +105,10 @@ func TestRenderIssuesUsesWideTableAboveBreakpoint(t *testing.T) {
 	}
 	for _, unwanted := range []string{" | "} {
 		if strings.Contains(plain, unwanted) {
-			t.Fatalf("expected wide daily issue table to avoid compact separators, got %q", rendered)
+			t.Fatalf(
+				"expected wide daily issue table to avoid compact separators, got %q",
+				rendered,
+			)
 		}
 	}
 }

@@ -50,6 +50,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"timer_countdown_start",
 		"hard_limit_expired",
 		"hard_limit_extend",
+		"timer_countdown_extend",
 		"amend_session",
 		"manual_session":
 		matched = "session"

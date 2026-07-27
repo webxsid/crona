@@ -62,10 +62,53 @@ func TestManualSessionPromptsRespectASCIIMode(t *testing.T) {
 }
 
 func TestAlertReminderTimePromptUsesConfiguredGlyphs(t *testing.T) {
-	state := OpenCreateAlertReminder(State{PromptGlyphMode: sharedtypes.PromptGlyphModeUnicode})
+	state := OpenCreateAlertReminder(
+		State{PromptGlyphMode: sharedtypes.PromptGlyphModeUnicode},
+		sharedtypes.AlertReminderKindCheckIn,
+	)
 
 	if got := state.Inputs[1].Prompt; got != dialogTimePromptUnicode {
 		t.Fatalf("expected reminder time prompt %q, got %q", dialogTimePromptUnicode, got)
+	}
+}
+
+func TestAlertReminderDefaultsDependOnKind(t *testing.T) {
+	checkIn := OpenCreateAlertReminder(State{}, sharedtypes.AlertReminderKindCheckIn)
+	if checkIn.ReminderKind != sharedtypes.AlertReminderKindCheckIn ||
+		checkIn.Inputs[1].Value() != "20:00" {
+		t.Fatalf(
+			"unexpected check-in reminder defaults: kind=%q time=%q",
+			checkIn.ReminderKind,
+			checkIn.Inputs[1].Value(),
+		)
+	}
+
+	plan := OpenCreateAlertReminder(State{}, sharedtypes.AlertReminderKindDailyPlan)
+	if plan.ReminderKind != sharedtypes.AlertReminderKindDailyPlan ||
+		plan.Inputs[1].Value() != "09:00" {
+		t.Fatalf(
+			"unexpected daily-plan reminder defaults: kind=%q time=%q",
+			plan.ReminderKind,
+			plan.Inputs[1].Value(),
+		)
+	}
+}
+
+func TestEditAlertReminderPreservesKindAndTime(t *testing.T) {
+	state := OpenEditAlertReminder(State{}, sharedtypes.AlertReminder{
+		ID:           "plan",
+		Kind:         sharedtypes.AlertReminderKindDailyPlan,
+		ScheduleType: sharedtypes.AlertReminderScheduleDaily,
+		TimeHHMM:     "08:30",
+	})
+
+	if state.ReminderKind != sharedtypes.AlertReminderKindDailyPlan ||
+		state.Inputs[1].Value() != "08:30" {
+		t.Fatalf(
+			"unexpected edited reminder state: kind=%q time=%q",
+			state.ReminderKind,
+			state.Inputs[1].Value(),
+		)
 	}
 }
 

@@ -204,3 +204,111 @@ func TestActiveTimerColorUsesSegmentType(t *testing.T) {
 		t.Fatalf("expected ready state to use yellow, got %v", got)
 	}
 }
+
+func TestActiveCountdownUsesTimerSessionTitle(t *testing.T) {
+	issueID := int64(7)
+	state := types.ContentState{
+		Width:  96,
+		Height: 36,
+		Timer: &api.TimerState{
+			State:                 "running",
+			IssueID:               &issueID,
+			SegmentType:           new(sharedtypes.SessionSegmentWork),
+			HardLimitActive:       true,
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: 25 * 60,
+			HardLimitWorkSeconds:  25 * 60,
+		},
+		AllIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{ID: issueID, Title: "Countdown work"},
+		}},
+	}
+
+	rendered := renderActiveView(types.Theme{}, state)
+	if !strings.Contains(rendered, "Timer Session") {
+		t.Fatalf("expected countdown title, got %q", rendered)
+	}
+	if strings.Contains(rendered, "Pomodoro Session") {
+		t.Fatalf("expected countdown not to render as Pomodoro, got %q", rendered)
+	}
+
+	state.Timer.HardLimitKind = ""
+	rendered = renderActiveView(types.Theme{}, state)
+	if !strings.Contains(rendered, "Pomodoro Session") {
+		t.Fatalf("expected legacy hard limit to remain Pomodoro, got %q", rendered)
+	}
+}
+
+func TestSessionEndsAtLabelForTimedSessions(t *testing.T) {
+	now := time.Date(2026, 7, 14, 12, 0, 0, 0, time.Local)
+	sessionStart := now.Add(-5 * time.Minute).Format(time.RFC3339)
+	segmentStart := now.Add(-5 * time.Minute).Format(time.RFC3339)
+	work := sharedtypes.SessionSegmentWork
+
+	hardLimit := types.ContentState{
+		Timer: &api.TimerState{
+			State:                 "running",
+			SessionStartTime:      &sessionStart,
+			SegmentType:           &work,
+			HardLimitActive:       true,
+			HardLimitTotalSeconds: 30 * 60,
+		},
+	}
+	if got := sessionEndsAtLabel(hardLimit, now); got != "Ends At 12:25" {
+		t.Fatalf("unexpected hard-limit ends-at label %q", got)
+	}
+
+	structured := types.ContentState{
+		Settings: &api.CoreSettings{
+			TimerMode:           sharedtypes.TimerModeStructured,
+			WorkDurationMinutes: 25,
+		},
+		Timer: &api.TimerState{
+			State:            "running",
+			SegmentType:      &work,
+			SegmentStartTime: &segmentStart,
+		},
+	}
+	if got := sessionEndsAtLabel(structured, now); got != "Ends At 12:20" {
+		t.Fatalf("unexpected structured ends-at label %q", got)
+	}
+
+	structured.Settings.TimerMode = sharedtypes.TimerModeStopwatch
+	if got := sessionEndsAtLabel(structured, now); got != "" {
+		t.Fatalf("expected stopwatch to omit ends-at label, got %q", got)
+	}
+	structured.Settings.TimerMode = sharedtypes.TimerModeStructured
+	structured.Timer.State = "ready"
+	if got := sessionEndsAtLabel(structured, now); got != "" {
+		t.Fatalf("expected ready timer to omit ends-at label, got %q", got)
+	}
+}
+
+func TestActiveTimedSessionRendersEndsAt(t *testing.T) {
+	issueID := int64(7)
+	now := time.Now()
+	sessionStart := now.Add(-5 * time.Minute).Format(time.RFC3339)
+	work := sharedtypes.SessionSegmentWork
+	state := types.ContentState{
+		Width:  96,
+		Height: 36,
+		Timer: &api.TimerState{
+			State:                 "running",
+			IssueID:               &issueID,
+			SessionStartTime:      &sessionStart,
+			SegmentType:           &work,
+			HardLimitActive:       true,
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: 30 * 60,
+			HardLimitWorkSeconds:  30 * 60,
+		},
+		AllIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{ID: issueID, Title: "Timed work"},
+		}},
+	}
+
+	rendered := renderActiveView(types.Theme{}, state)
+	if !strings.Contains(rendered, "Ends At") {
+		t.Fatalf("expected active timed session to render ends-at time, got %q", rendered)
+	}
+}

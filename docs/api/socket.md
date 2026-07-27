@@ -121,6 +121,8 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `alerts.test_notification` | `dto.Empty` | `dto.OKResponse` | Sends a sample alert through the current backend. |
 | `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
 | `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local daemon alerts layer. |
+| `alerts.delivery.subscribe` | `types.AlertDeliveryCapability` | `alert.delivery` stream | Claims native alert delivery while the stream remains connected. |
+| `alerts.delivery.ack` | `types.AlertDeliveryAck` | `dto.OKResponse` | Acknowledges notification and sound delivery independently. |
 | `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
 | `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
 | `alerts.reminders.update` | `dto.AlertReminderUpdateRequest` | reminder object | Updates one scheduled reminder rule. |
@@ -131,6 +133,7 @@ Alert behavior notes:
 
 - the local daemon, not the TUI, decides when alerts fire
 - scheduled reminders are local-only and only fire while the local daemon is running
+- reminder kinds are `checkin_reminder` and `daily_plan_reminder`; check-in reminders are suppressed after today’s check-in exists, and daily-plan reminders are suppressed after today’s plan contains an item
 - focus inactivity alerts are local-daemon-owned; TUI clients may call `timer.activity.touch` to report recent user input while a focus session is active
 - `AlertStatus` reflects the current OS helper/backend that the local daemon detected at runtime
 
@@ -162,8 +165,9 @@ Alert behavior notes:
 | `issue.update` | `dto.UpdateIssueRequest` | issue object | Updates an issue. |
 | `issue.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes an issue. |
 | `issue.change_status` | `dto.ChangeIssueStatusRequest` | issue object | Applies a lifecycle transition. |
+| `issue.status_transitions` | `dto.NumericIDRequest` | `dto.IssueStatusTransitionsResponse` | Returns daemon-authoritative valid lifecycle transitions for an issue. |
 | `issue.set_todo` | `dto.SetIssueTodoRequest` | issue object | Sets a todo date. |
-| `issue.clear_todo` | `dto.SetIssueTodoRequest` | issue object | Clears a todo date. |
+| `issue.clear_todo` | `dto.NumericIDRequest` | issue object | Clears a todo date. |
 | `issue.daily_summary` | `dto.DailyIssueSummaryQuery` | daily summary object | Summary for an arbitrary date. |
 | `issue.today_summary` | `dto.Empty` | daily summary object | Today's summary shortcut. |
 | `daily_plan.get` | `dto.DailyPlanQuery` | daily plan object | Returns planned issues and supporting daily data. |
@@ -275,11 +279,13 @@ Export behavior notes:
 | `timer.activity.touch` | `dto.Empty` | `dto.OKResponse` | Records recent client activity for active-session inactivity alert suppression. |
 | `timer.pause` | `dto.Empty` | timer/session state | Pauses the timer. |
 | `timer.resume` | `dto.Empty` | timer/session state | Resumes the timer. |
+| `timer.extend` | `dto.TimerExtendRequest` | timer/session state | Extends an active hard-limit timer. |
 | `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. |
 
 Timer start behavior notes:
 
 - `TimerStartRequest` can carry `repoId`, `streamId`, and `issueId` so clients can start focus from a selected issue without first mutating the shared active context.
+- Hard-limit starts can set `hardLimitKind` to `pomodoro` or `countdown`. Missing values remain `pomodoro` for compatibility; countdowns use only `hardLimitTotalSeconds` and accept duration-only extensions through `additionalSeconds`.
 - If `issueId` is omitted, the local daemon resolves the current active context issue.
 - Inactivity alerts use core settings for enablement, first-alert threshold, and repeat interval. The default is enabled, 60 minutes to first alert, and 60 minutes between repeats.
 

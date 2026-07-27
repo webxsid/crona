@@ -43,6 +43,20 @@ const (
 	TimerModeStructured TimerMode = "structured"
 )
 
+type TimerHardLimitKind string
+
+const (
+	TimerHardLimitKindPomodoro  TimerHardLimitKind = "pomodoro"
+	TimerHardLimitKindCountdown TimerHardLimitKind = "countdown"
+)
+
+func NormalizeTimerHardLimitKind(value TimerHardLimitKind) TimerHardLimitKind {
+	if value == TimerHardLimitKindCountdown {
+		return value
+	}
+	return TimerHardLimitKindPomodoro
+}
+
 type WeekStart string
 
 const (
@@ -135,6 +149,7 @@ const (
 	AlertEventExportCompleted    AlertEventKind = "export.completed"
 	AlertEventRuntimeDegraded    AlertEventKind = "runtime.degraded"
 	AlertEventCheckInReminder    AlertEventKind = "checkin.reminder"
+	AlertEventDailyPlanReminder  AlertEventKind = "daily_plan.reminder"
 	AlertEventFocusInactivity    AlertEventKind = "focus.inactivity"
 	AlertEventTestNotification   AlertEventKind = "test.notification"
 	AlertEventTestSound          AlertEventKind = "test.sound"
@@ -143,12 +158,13 @@ const (
 type AlertReminderKind string
 
 const (
-	AlertReminderKindCheckIn AlertReminderKind = "checkin_reminder"
+	AlertReminderKindCheckIn   AlertReminderKind = "checkin_reminder"
+	AlertReminderKindDailyPlan AlertReminderKind = "daily_plan_reminder"
 )
 
 func NormalizeAlertReminderKind(value AlertReminderKind) AlertReminderKind {
 	switch value {
-	case AlertReminderKindCheckIn:
+	case AlertReminderKindCheckIn, AlertReminderKindDailyPlan:
 		return value
 	default:
 		return AlertReminderKindCheckIn
@@ -1275,6 +1291,7 @@ type TimerState struct {
 	NextSegmentType                *SessionSegmentType `json:"nextSegmentType,omitempty"`
 	ElapsedSeconds                 int                 `json:"elapsedSeconds,omitempty"`
 	HardLimitActive                bool                `json:"hardLimitActive,omitempty"`
+	HardLimitKind                  TimerHardLimitKind  `json:"hardLimitKind,omitempty"`
 	HardLimitExpired               bool                `json:"hardLimitExpired,omitempty"`
 	HardLimitTotalSeconds          int                 `json:"hardLimitTotalSeconds,omitempty"`
 	HardLimitRemainingSeconds      int                 `json:"hardLimitRemainingSeconds,omitempty"`
@@ -1329,6 +1346,32 @@ type AlertRequest struct {
 	PlaySound   bool             `json:"playSound"`
 }
 
+type AlertDeliveryCapability struct {
+	ClientID      string `json:"clientId"`
+	Notifications bool   `json:"notifications"`
+	Sounds        bool   `json:"sounds"`
+}
+
+type AlertDeliveryAction struct {
+	ID                       string              `json:"id"`
+	Title                    string              `json:"title"`
+	ExpectedReadySegmentType *SessionSegmentType `json:"expectedReadySegmentType,omitempty"`
+}
+
+type AlertDelivery struct {
+	ID                  string                `json:"id"`
+	Alert               AlertRequest          `json:"alert"`
+	DeliverNotification bool                  `json:"deliverNotification"`
+	PlaySound           bool                  `json:"playSound"`
+	Actions             []AlertDeliveryAction `json:"actions,omitempty"`
+}
+
+type AlertDeliveryAck struct {
+	DeliveryID           string `json:"deliveryId"`
+	NotificationAccepted bool   `json:"notificationAccepted"`
+	SoundAccepted        bool   `json:"soundAccepted"`
+}
+
 type AlertReminder struct {
 	ID           string                    `json:"id"`
 	Kind         AlertReminderKind         `json:"kind"`
@@ -1341,18 +1384,20 @@ type AlertReminder struct {
 }
 
 type AlertStatus struct {
-	NotificationsAvailable bool               `json:"notificationsAvailable"`
-	SoundAvailable         bool               `json:"soundAvailable"`
-	NotificationBackend    string             `json:"notificationBackend,omitempty"`
-	SoundBackend           string             `json:"soundBackend,omitempty"`
-	NotificationOptions    []string           `json:"notificationOptions,omitempty"`
-	SoundOptions           []string           `json:"soundOptions,omitempty"`
-	SubtitleSupported      bool               `json:"subtitleSupported"`
-	UrgencySupported       bool               `json:"urgencySupported"`
-	IconSupported          bool               `json:"iconSupported"`
-	BundledSoundSupported  bool               `json:"bundledSoundSupported"`
-	IconPath               string             `json:"iconPath,omitempty"`
-	AvailableSoundPresets  []AlertSoundPreset `json:"availableSoundPresets,omitempty"`
+	NotificationsAvailable     bool               `json:"notificationsAvailable"`
+	SoundAvailable             bool               `json:"soundAvailable"`
+	NotificationBackend        string             `json:"notificationBackend,omitempty"`
+	SoundBackend               string             `json:"soundBackend,omitempty"`
+	NotificationOptions        []string           `json:"notificationOptions,omitempty"`
+	SoundOptions               []string           `json:"soundOptions,omitempty"`
+	SubtitleSupported          bool               `json:"subtitleSupported"`
+	UrgencySupported           bool               `json:"urgencySupported"`
+	IconSupported              bool               `json:"iconSupported"`
+	BundledSoundSupported      bool               `json:"bundledSoundSupported"`
+	IconPath                   string             `json:"iconPath,omitempty"`
+	AvailableSoundPresets      []AlertSoundPreset `json:"availableSoundPresets,omitempty"`
+	CompanionDeliverySupported bool               `json:"companionDeliverySupported"`
+	CompanionDeliveryActive    bool               `json:"companionDeliveryActive"`
 }
 
 type UpdateStatus struct {

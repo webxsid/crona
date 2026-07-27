@@ -16,6 +16,7 @@ type TimerRuntimeState struct {
 	SessionID                      string                          `json:"sessionId"`
 	IssueID                        int64                           `json:"issueId"`
 	PreparedSegmentType            *sharedtypes.SessionSegmentType `json:"preparedSegmentType,omitempty"`
+	HardLimitKind                  sharedtypes.TimerHardLimitKind  `json:"hardLimitKind,omitempty"`
 	HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
 	HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
 	HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
@@ -34,6 +35,7 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 		IssueID                        int64                           `json:"issueId"`
 		PreparedSegmentType            *sharedtypes.SessionSegmentType `json:"preparedSegmentType,omitempty"`
 		LegacyPreparedSegmentType      *sharedtypes.SessionSegmentType `json:"segmentType,omitempty"`
+		HardLimitKind                  sharedtypes.TimerHardLimitKind  `json:"hardLimitKind,omitempty"`
 		HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
 		HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
 		HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
@@ -55,6 +57,7 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 	if s.PreparedSegmentType == nil {
 		s.PreparedSegmentType = decoded.LegacyPreparedSegmentType
 	}
+	s.HardLimitKind = decoded.HardLimitKind
 	s.HardLimitTotalSeconds = decoded.HardLimitTotalSeconds
 	s.HardLimitElapsedOffsetSeconds = decoded.HardLimitElapsedOffsetSeconds
 	s.HardLimitElapsedStartedAt = decoded.HardLimitElapsedStartedAt
@@ -108,6 +111,7 @@ func ReadTimerRuntimeState() (*TimerRuntimeState, error) {
 		return &state, nil
 	}
 	if state.HasHardLimit() {
+		state.HardLimitKind = sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind)
 		return &state, nil
 	}
 	return nil, errors.New("invalid timer runtime state")
@@ -141,12 +145,14 @@ func NewPreparedTimerRuntimeState(
 func NewHardLimitTimerRuntimeState(
 	sessionID string,
 	issueID int64,
+	kind sharedtypes.TimerHardLimitKind,
 	totalSeconds, workSeconds, breakSeconds int,
 	longBreakSeconds, cyclesBeforeLongBreak int,
 ) TimerRuntimeState {
 	return TimerRuntimeState{
 		SessionID:                      strings.TrimSpace(sessionID),
 		IssueID:                        issueID,
+		HardLimitKind:                  sharedtypes.NormalizeTimerHardLimitKind(kind),
 		HardLimitTotalSeconds:          totalSeconds,
 		HardLimitElapsedOffsetSeconds:  0,
 		HardLimitElapsedStartedAt:      "",

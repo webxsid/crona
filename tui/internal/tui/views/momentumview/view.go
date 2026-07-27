@@ -23,11 +23,21 @@ func Render(theme types.Theme, state types.ContentState) string {
 		return renderMomentumEmptyState(theme, state, active, topSection)
 	}
 	lines := renderMomentumCards(theme, state, active, topSection)
-	return viewchrome.RenderPaneBox(theme, active, state.Width, state.Height, strings.Join(lines, "\n"))
+	return viewchrome.RenderPaneBox(
+		theme,
+		active,
+		state.Width,
+		state.Height,
+		strings.Join(lines, "\n"),
+	)
 }
 
 func momentumHeader(state types.ContentState) string {
-	return fmt.Sprintf("Momentum  %s  %dd window", state.MomentumDate, max(1, state.MomentumWindowDays))
+	return fmt.Sprintf(
+		"Momentum  %s  %dd window",
+		state.MomentumDate,
+		max(1, state.MomentumWindowDays),
+	)
 }
 
 func renderMomentumTopSection(theme types.Theme, state types.ContentState) []string {
@@ -88,7 +98,12 @@ func renderMomentumCards(
 	if len(cardBodies) == 0 {
 		return lines
 	}
-	windowStart, windowEnd := momentumCardWindow(cursor, cardHeights, availableCardLines, len(cardBodies))
+	windowStart, windowEnd := momentumCardWindow(
+		cursor,
+		cardHeights,
+		availableCardLines,
+		len(cardBodies),
+	)
 	return appendMomentumCardWindow(lines, theme, cardBodies, windowStart, windowEnd)
 }
 
@@ -116,7 +131,12 @@ func renderMomentumCardBodies(
 	return cardBodies, cardHeights
 }
 
-func momentumCardWindow(cursor int, cardHeights []int, availableCardLines int, totalCards int) (int, int) {
+func momentumCardWindow(
+	cursor int,
+	cardHeights []int,
+	availableCardLines int,
+	totalCards int,
+) (int, int) {
 	windowStart, windowEnd := 0, 0
 	overflowHints := 0
 	for range 4 {
@@ -284,7 +304,9 @@ func renderCardBody(
 	meta := renderMomentumCardMeta(theme, def, card, graphWidth)
 	targets := renderMomentumCardTargets(theme, def, card, graphWidth)
 	timeline := renderMomentumSeries(theme, def, card.Series, graphWidth, def.Enabled)
-	footnote := theme.StyleDim.Render(viewhelpers.Truncate(momentumSeriesFootnote(def, card.Series, def.Enabled), graphWidth))
+	footnote := theme.StyleDim.Render(
+		viewhelpers.Truncate(momentumSeriesFootnote(def, card.Series, def.Enabled), graphWidth),
+	)
 	return renderMomentumCardLayout(
 		titleRow,
 		renderMomentumCardDescription(theme, def.Description, graphWidth),
@@ -406,7 +428,9 @@ func momentumDailySeriesUsesSquares(
 	if len(series) == 0 {
 		return false
 	}
-	if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		def.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		return false
 	}
 	if max(1, def.RequiredCount) > 1 {
@@ -496,7 +520,10 @@ func momentumSeriesFootnote(
 		),
 	}
 	if last.OriginalTarget > 0 && last.OriginalTarget != last.Target {
-		parts = append(parts, fmt.Sprintf("original %s", momentumValueDisplay(last.OriginalTarget, def)))
+		parts = append(
+			parts,
+			fmt.Sprintf("original %s", momentumValueDisplay(last.OriginalTarget, def)),
+		)
 	}
 	if last.ProtectedDayCount > 0 {
 		parts = append(parts, fmt.Sprintf("%d protected days", last.ProtectedDayCount))
@@ -605,11 +632,18 @@ func momentumDailyDistributionRows(
 	yLabelWidth := 5
 	axisMax := seriesMax
 	tickRows, tickLabels := momentumChartTicks(seriesMax, chartHeight, def)
-	if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		def.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		ctxAxis := momentumContextAxis(seriesMax)
 		axisMax = ctxAxis.MaxAxis
 		yLabelWidth = ctxAxis.LabelWidth
-		tickRows, tickLabels = momentumContextTickRows(axisMax, chartHeight, ctxAxis.Step, ctxAxis.Format)
+		tickRows, tickLabels = momentumContextTickRows(
+			axisMax,
+			chartHeight,
+			ctxAxis.Step,
+			ctxAxis.Format,
+		)
 	}
 	chartWidth := max(12, width-yLabelWidth-2)
 
@@ -665,7 +699,10 @@ func momentumDailyDistributionRows(
 		}
 		lines = append(lines, fmt.Sprintf("%s │%s", theme.StyleDim.Render(label), b.String()))
 	}
-	lines = append(lines, fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)))
+	lines = append(
+		lines,
+		fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)),
+	)
 	lines = append(lines, momentumChartXAxis(theme, series, yLabelWidth+2, chartWidth, xPositions))
 	return lines
 }
@@ -838,7 +875,10 @@ func momentumChartValueRow(value, maxAxis, chartHeight int) int {
 	return row
 }
 
-func momentumChartTicks(maxAxis, chartHeight int, def sharedtypes.HabitStreakDefinition) (map[int]bool, map[int]string) {
+func momentumChartTicks(
+	maxAxis, chartHeight int,
+	def sharedtypes.HabitStreakDefinition,
+) (map[int]bool, map[int]string) {
 	rows := map[int]bool{}
 	labels := map[int]string{}
 	steps := min(chartHeight, 5)
@@ -888,7 +928,10 @@ func momentumChartXAxis(
 			continue
 		}
 		seen[idx] = true
-		label := viewhelpers.Truncate(momentumDisplayLabel(series[idx]), max(4, min(chartWidth, 12)))
+		label := viewhelpers.Truncate(
+			momentumDisplayLabel(series[idx]),
+			max(4, min(chartWidth, 12)),
+		)
 		x := xPositions[idx]
 		start := max(0, min(x-lipgloss.Width(label)/2, chartWidth-lipgloss.Width(label)))
 		for i, r := range label {
@@ -929,7 +972,11 @@ func momentumDailySquareRows(
 	return rows
 }
 
-func momentumDailySquareCell(theme types.Theme, point sharedtypes.MomentumSeriesPoint, enabled bool) string {
+func momentumDailySquareCell(
+	theme types.Theme,
+	point sharedtypes.MomentumSeriesPoint,
+	enabled bool,
+) string {
 	if !enabled {
 		if point.Count > 0 || point.MetTarget {
 			return theme.StyleDim.Render("■")
@@ -1007,14 +1054,20 @@ func momentumBucketBar(
 
 	markerPos := 0
 	if point.Target > 0 {
-		markerPos = int(math.Round(float64(point.Target) / float64(scaleMax) * float64(renderWidth-1)))
+		markerPos = int(
+			math.Round(float64(point.Target) / float64(scaleMax) * float64(renderWidth-1)),
+		)
 		markerPos = min(max(0, markerPos), renderWidth-1)
 	}
 	palette := momentumBarPalette(theme, status, enabled)
 	return viewhelpers.RenderGradientBarWithMarker(renderWidth, filled, markerPos, palette, "┆")
 }
 
-func momentumBarPalette(theme types.Theme, status string, enabled bool) viewhelpers.GradientBarPalette {
+func momentumBarPalette(
+	theme types.Theme,
+	status string,
+	enabled bool,
+) viewhelpers.GradientBarPalette {
 	if !enabled {
 		return viewhelpers.GradientBarPalette{
 			Start: theme.ColorDim,
@@ -1083,7 +1136,10 @@ func momentumStatusStyle(theme types.Theme, status string) lipgloss.Style {
 	}
 }
 
-func momentumRatioText(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition) string {
+func momentumRatioText(
+	point sharedtypes.MomentumSeriesPoint,
+	def sharedtypes.HabitStreakDefinition,
+) string {
 	if point.Skipped {
 		return "skip"
 	}
@@ -1109,7 +1165,9 @@ func momentumTargetSummary(def sharedtypes.HabitStreakDefinition) string {
 	mode := momentumModeLabel(def.MatchMode)
 	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
 	case sharedtypes.MomentumTargetKindContext:
-		if sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) == sharedtypes.MomentumMatchModeAll {
+		if sharedtypes.NormalizeMomentumMatchMode(
+			def.MatchMode,
+		) == sharedtypes.MomentumMatchModeAll {
 			return fmt.Sprintf(
 				"%s · %d contexts, %s each",
 				mode,
@@ -1117,9 +1175,15 @@ func momentumTargetSummary(def sharedtypes.HabitStreakDefinition) string {
 				helperpkg.FormatCompactDurationSeconds(max(1, def.RequiredCount)),
 			)
 		}
-		return fmt.Sprintf("%s · %s work", mode, helperpkg.FormatCompactDurationSeconds(def.RequiredCount))
+		return fmt.Sprintf(
+			"%s · %s work",
+			mode,
+			helperpkg.FormatCompactDurationSeconds(def.RequiredCount),
+		)
 	default:
-		if sharedtypes.NormalizeMomentumMatchMode(def.MatchMode) == sharedtypes.MomentumMatchModeAll {
+		if sharedtypes.NormalizeMomentumMatchMode(
+			def.MatchMode,
+		) == sharedtypes.MomentumMatchModeAll {
 			return fmt.Sprintf(
 				"%s · %d habits, %d each",
 				mode,
@@ -1127,7 +1191,12 @@ func momentumTargetSummary(def sharedtypes.HabitStreakDefinition) string {
 				max(1, def.RequiredCount),
 			)
 		}
-		return fmt.Sprintf("%s · %d/%s", mode, max(1, def.RequiredCount), momentumBucketUnit(def.Period))
+		return fmt.Sprintf(
+			"%s · %d/%s",
+			mode,
+			max(1, def.RequiredCount),
+			momentumBucketUnit(def.Period),
+		)
 	}
 }
 

@@ -217,20 +217,24 @@ func TestCustomMomentumStreaksCountRepoAndStreamWork(t *testing.T) {
 
 	defs := []sharedtypes.HabitStreakDefinition{
 		{
-			ID:            "repo-work",
-			Name:          "Repo work",
-			Enabled:       true,
-			TargetKind:    sharedtypes.MomentumTargetKindContext,
-			Contexts:      []sharedtypes.MomentumContext{{RepoID: repo.ID, StreamID: ptrTo(stream.ID)}},
+			ID:         "repo-work",
+			Name:       "Repo work",
+			Enabled:    true,
+			TargetKind: sharedtypes.MomentumTargetKindContext,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: repo.ID, StreamID: ptrTo(stream.ID)},
+			},
 			Period:        sharedtypes.HabitStreakPeriodDay,
 			RequiredCount: 2,
 		},
 		{
-			ID:            "stream-work",
-			Name:          "Stream work",
-			Enabled:       true,
-			TargetKind:    sharedtypes.MomentumTargetKindContext,
-			Contexts:      []sharedtypes.MomentumContext{{RepoID: repo.ID, StreamID: ptrTo(stream.ID)}},
+			ID:         "stream-work",
+			Name:       "Stream work",
+			Enabled:    true,
+			TargetKind: sharedtypes.MomentumTargetKindContext,
+			Contexts: []sharedtypes.MomentumContext{
+				{RepoID: repo.ID, StreamID: ptrTo(stream.ID)},
+			},
 			Period:        sharedtypes.HabitStreakPeriodDay,
 			RequiredCount: 1,
 		},
@@ -261,13 +265,23 @@ func TestCustomMomentumStreaksCountRepoAndStreamWork(t *testing.T) {
 	if len(storedDefs) != 2 {
 		t.Fatalf("expected two stored momentum definitions, got %+v", storedDefs)
 	}
-	if sharedtypes.NormalizeMomentumTargetKind(storedDefs[0].TargetKind) != sharedtypes.MomentumTargetKindContext ||
+	if sharedtypes.NormalizeMomentumTargetKind(
+		storedDefs[0].TargetKind,
+	) != sharedtypes.MomentumTargetKindContext ||
 		len(storedDefs[0].Contexts) == 0 {
-		t.Fatalf("expected first stored momentum definition to carry contexts, got %+v", storedDefs[0])
+		t.Fatalf(
+			"expected first stored momentum definition to carry contexts, got %+v",
+			storedDefs[0],
+		)
 	}
-	if sharedtypes.NormalizeMomentumTargetKind(storedDefs[1].TargetKind) != sharedtypes.MomentumTargetKindContext ||
+	if sharedtypes.NormalizeMomentumTargetKind(
+		storedDefs[1].TargetKind,
+	) != sharedtypes.MomentumTargetKindContext ||
 		len(storedDefs[1].Contexts) == 0 {
-		t.Fatalf("expected second stored momentum definition to carry contexts, got %+v", storedDefs[1])
+		t.Fatalf(
+			"expected second stored momentum definition to carry contexts, got %+v",
+			storedDefs[1],
+		)
 	}
 
 	streaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-04-01", "2026-04-02")

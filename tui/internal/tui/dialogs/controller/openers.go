@@ -437,8 +437,8 @@ func (s Snapshot) OpenOnboarding() State {
 	)
 }
 
-func (s Snapshot) OpenCreateAlertReminder() State {
-	return OpenCreateAlertReminder(s.Dialog)
+func (s Snapshot) OpenCreateAlertReminder(kind sharedtypes.AlertReminderKind) State {
+	return OpenCreateAlertReminder(s.Dialog, kind)
 }
 
 func (s Snapshot) OpenEditAlertReminder(id string) State {

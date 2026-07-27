@@ -108,7 +108,11 @@ func TestRenderBreakdownPaneSupportsScrolling(t *testing.T) {
 	rendered := Render(testTheme(), state)
 	for _, want := range []string{"Breakdown", "↑ more", "↓ more"} {
 		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected rollup breakdown scroll render to include %q, got %q", want, rendered)
+			t.Fatalf(
+				"expected rollup breakdown scroll render to include %q, got %q",
+				want,
+				rendered,
+			)
 		}
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	issuecore "crona/tui/internal/tui/views/issuecore"
@@ -15,7 +16,10 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
 	case "end_session":
 		title := "End Session"
-		hint := dialogSubmitHint(state, "confirm") + "   [ctrl+e] open details dialog   [esc] cancel"
+		hint := dialogSubmitHint(
+			state,
+			"confirm",
+		) + "   [ctrl+e] open details dialog   [esc] cancel"
 		labels := []string{
 			"Commit message",
 			"Worked on",
@@ -77,7 +81,11 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 				vm.CyclesSummary,
 			))
 		}
-		rows = append(rows, "", pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive))
+		rows = append(
+			rows,
+			"",
+			pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive),
+		)
 		rows = append(rows, pomodoroChoiceRow(
 			theme,
 			vm.FocusChoices,
@@ -86,7 +94,11 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			vm.FocusCustomActive,
 			state.Inputs[0].View(),
 		))
-		rows = append(rows, "", pomodoroRowLabel(theme, "Short Break", vm.BreakRowActive || vm.BreakCustomActive))
+		rows = append(
+			rows,
+			"",
+			pomodoroRowLabel(theme, "Short Break", vm.BreakRowActive || vm.BreakCustomActive),
+		)
 		rows = append(rows, pomodoroChoiceRow(
 			theme,
 			vm.BreakChoices,
@@ -139,7 +151,9 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		rows = append(
 			rows,
 			"",
-			theme.StyleDim.Render("Single countdown. No breaks. Reuses the hard-limit session completion flow."),
+			theme.StyleDim.Render(
+				"Single countdown. No breaks. Reuses the hard-limit session completion flow.",
+			),
 		)
 		rows = appendDialogFooter(
 			theme,
@@ -149,11 +163,17 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		)
 		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
 	case "hard_limit_expired":
-		rows := []string{theme.StylePaneTitle.Render("Pomodoro Session Complete")}
+		title := "Pomodoro Session Complete"
+		description := "Choose how to finish this pomodoro session."
+		if state.HardLimitKind == sharedtypes.TimerHardLimitKindCountdown {
+			title = "Timer Session Complete"
+			description = "Choose how to finish this timer session."
+		}
+		rows := []string{theme.StylePaneTitle.Render(title)}
 		if state.ViewName != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
 		}
-		rows = append(rows, "", theme.StyleDim.Render("Choose how to finish this pomodoro session."))
+		rows = append(rows, "", theme.StyleDim.Render(description))
 		for i, item := range state.ChoiceItems {
 			line := "  " + item
 			if i == state.ChoiceCursor {
@@ -191,10 +211,38 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			)
 			rows = append(rows, theme.StyleDim.Render(vm.CyclesSummary))
 		}
-		rows = append(rows, "", pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive))
-		rows = append(rows, pomodoroChoiceRow(theme, vm.FocusChoices, state.PomodoroFocusChoice, vm.FocusCustomChoice, vm.FocusCustomActive, state.Inputs[0].View()))
-		rows = append(rows, "", pomodoroRowLabel(theme, "Short Break", vm.BreakRowActive || vm.BreakCustomActive))
-		rows = append(rows, pomodoroChoiceRow(theme, vm.BreakChoices, state.PomodoroBreakChoice, vm.BreakCustomChoice, vm.BreakCustomActive, state.Inputs[1].View()))
+		rows = append(
+			rows,
+			"",
+			pomodoroRowLabel(theme, "Focus", vm.FocusRowActive || vm.FocusCustomActive),
+		)
+		rows = append(
+			rows,
+			pomodoroChoiceRow(
+				theme,
+				vm.FocusChoices,
+				state.PomodoroFocusChoice,
+				vm.FocusCustomChoice,
+				vm.FocusCustomActive,
+				state.Inputs[0].View(),
+			),
+		)
+		rows = append(
+			rows,
+			"",
+			pomodoroRowLabel(theme, "Short Break", vm.BreakRowActive || vm.BreakCustomActive),
+		)
+		rows = append(
+			rows,
+			pomodoroChoiceRow(
+				theme,
+				vm.BreakChoices,
+				state.PomodoroBreakChoice,
+				vm.BreakCustomChoice,
+				vm.BreakCustomActive,
+				state.Inputs[1].View(),
+			),
+		)
 		if vm.LongBreakForcedOff {
 			rows = append(rows, "", pomodoroDisabledValueRow(theme, "Long Break"))
 		} else {
@@ -220,6 +268,26 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			"[←/→] choose   [↑/↓] move   [enter] extend   [esc] back",
 		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "timer_countdown_extend":
+		rows := []string{theme.StylePaneTitle.Render("Extend Timer Session")}
+		if state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		rows = append(
+			rows,
+			"",
+			theme.StyleDim.Render("Additional Time"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("Adds time to the current countdown. No breaks or cycles."),
+		)
+		rows = appendDialogFooter(
+			theme,
+			state,
+			rows,
+			dialogSubmitHint(state, "extend")+"   [esc] back",
+		)
+		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "amend_session":
 		rows := []string{
 			theme.StylePaneTitle.Render("Amend Session"),
@@ -323,7 +391,10 @@ func renderTimerMeta(
 		rows = append(rows, timerMetaRow(theme, "Worked / Est", summary))
 	}
 	if strings.TrimSpace(totalLabel) != "" {
-		rows = append(rows, timerMetaRow(theme, "Total", strings.TrimPrefix(totalLabel, "Total Duration ")))
+		rows = append(
+			rows,
+			timerMetaRow(theme, "Total", strings.TrimPrefix(totalLabel, "Total Duration ")),
+		)
 	}
 	if includeEndsAt {
 		if endsAt := timerEndsAtLabel(time.Now(), totalSeconds); endsAt != "" {

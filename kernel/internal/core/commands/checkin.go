@@ -322,7 +322,13 @@ func ComputeMetricsStreaks(
 		return nil, err
 	}
 	streaks := ComputeMetricsStreaksFromDays(days, settings)
-	streaks.CustomHabitStreaks, err = ComputeCustomHabitStreaksForRange(ctx, c, start, end, settings)
+	streaks.CustomHabitStreaks, err = ComputeCustomHabitStreaksForRange(
+		ctx,
+		c,
+		start,
+		end,
+		settings,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -551,7 +557,13 @@ func ComputeCustomHabitStreaksForRange(
 			RequiredCount: def.RequiredCount,
 		}
 		if def.Enabled {
-			summary.Current, summary.Longest = computeMomentumSummaryFromCounts(def, countsByDate, start, end, settings)
+			summary.Current, summary.Longest = computeMomentumSummaryFromCounts(
+				def,
+				countsByDate,
+				start,
+				end,
+				settings,
+			)
 		}
 		results = append(results, summary)
 	}
@@ -590,7 +602,8 @@ func computeMomentumSummaryFromCounts(
 	current := 0
 	longest := 0
 	for bucketIdx, bucket := range buckets {
-		isOpenTrailingBucket := bucketIdx == len(buckets)-1 && customHabitTrailingIncompleteBucketIsOpen(end, def.Period)
+		isOpenTrailingBucket := bucketIdx == len(buckets)-1 &&
+			customHabitTrailingIncompleteBucketIsOpen(end, def.Period)
 		eval := evaluateMomentumBucket(def, bucket, countsByBucket[bucket], end, settings)
 		if eval.OriginalTarget == 0 {
 			eval.OriginalTarget = required
@@ -619,7 +632,10 @@ func computeCustomMomentumStreak(
 	start string,
 	end string,
 ) (int, int) {
-	if !def.Enabled || sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) != sharedtypes.MomentumTargetKindHabit {
+	if !def.Enabled ||
+		sharedtypes.NormalizeMomentumTargetKind(
+			def.TargetKind,
+		) != sharedtypes.MomentumTargetKindHabit {
 		return 0, 0
 	}
 	dayCountsByDate := map[string]map[int64]int{}

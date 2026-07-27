@@ -41,7 +41,10 @@ func (m Model) selfUpdateUnsupportedReason() string {
 		}
 		return fmt.Sprintf("Installed via Homebrew. Use brew upgrade %s.", currentBrewFormula())
 	case sharedtypes.InstallSourceScoop:
-		if m.updateStatus != nil && sharedtypes.NormalizeUpdateChannel(m.updateStatus.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		if m.updateStatus != nil &&
+			sharedtypes.NormalizeUpdateChannel(
+				m.updateStatus.ReleaseChannel,
+			) == sharedtypes.UpdateChannelBeta {
 			return "Installed via Scoop. Use scoop update crona-beta."
 		}
 		return "Installed via Scoop. Use scoop update crona."

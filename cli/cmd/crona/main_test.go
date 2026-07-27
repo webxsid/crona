@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	versionpkg "crona/shared/version"
 )
 
 func TestRunNoArgsLaunchesTUI(t *testing.T) {
@@ -46,6 +48,18 @@ func TestRunHelpFlagStillPrintsUsage(t *testing.T) {
 	}
 	if !strings.Contains(output, "Run without a command to open the TUI.") {
 		t.Fatalf("expected updated usage output, got:\n%s", output)
+	}
+}
+
+func TestRunVersionFlagPrintsCurrentVersion(t *testing.T) {
+	output := captureStdout(t, func() {
+		if err := run([]string{"--version"}); err != nil {
+			t.Fatalf("run version: %v", err)
+		}
+	})
+
+	if output != versionpkg.Current() {
+		t.Fatalf("expected version %q, got %q", versionpkg.Current(), output)
 	}
 }
 

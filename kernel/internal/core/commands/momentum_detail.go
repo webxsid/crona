@@ -190,8 +190,11 @@ func momentumHabitContributors(
 		}
 		habitID := entry.HabitID
 		out = append(out, sharedtypes.MomentumContributor{
-			Kind:        sharedtypes.MomentumContributorKindHabitCompletion,
-			Title:       fallbackString(strings.TrimSpace(entry.HabitName), fmt.Sprintf("Habit %d", entry.HabitID)),
+			Kind: sharedtypes.MomentumContributorKindHabitCompletion,
+			Title: fallbackString(
+				strings.TrimSpace(entry.HabitName),
+				fmt.Sprintf("Habit %d", entry.HabitID),
+			),
 			Context:     fallbackString(contextLabel, "-"),
 			Date:        entry.Date,
 			AmountLabel: amount,
@@ -266,8 +269,11 @@ func momentumContextContributors(
 		}
 		sessionID := session.ID
 		out = append(out, sharedtypes.MomentumContributor{
-			Kind:        sharedtypes.MomentumContributorKindSession,
-			Title:       fallbackString(strings.TrimSpace(meta.Title), fmt.Sprintf("Issue %d", session.IssueID)),
+			Kind: sharedtypes.MomentumContributorKindSession,
+			Title: fallbackString(
+				strings.TrimSpace(meta.Title),
+				fmt.Sprintf("Issue %d", session.IssueID),
+			),
 			Context:     strings.TrimSpace(meta.RepoName + " / " + meta.StreamName),
 			Date:        day,
 			AmountLabel: formatCompactDurationSeconds(duration),
