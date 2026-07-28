@@ -87,9 +87,9 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		if state.HardLimitActive {
 			return []string{
-				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" commit issue"),
-				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
+				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
 			}
 		}
 		if state.TimerState == "ready" {
@@ -100,15 +100,15 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 					" start "+timerActionSegmentLabel(state.TimerNextSegment),
 				),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
-				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
+				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
 			}
 		}
 		return []string{
 			theme.StyleHeader.Render("[p]") + theme.StyleDim.Render(" pause"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
-			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" change context"),
-			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" open issue"),
+			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
+			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
 		}
 	}
 	if state.View == "session_history" {
@@ -589,8 +589,8 @@ func compactActionLabel(key, label string) string {
 			return "option"
 		}
 	case "[s/A]":
-		if label == "open issue" {
-			return "issue"
+		if label == "change status" {
+			return "status"
 		}
 	case "[+]":
 		if label == "more" {

@@ -842,7 +842,7 @@ func TestHardLimitSessionActionsShowCommitOnly(t *testing.T) {
 		HardLimitActive:  true,
 	})
 	joined := ansi.Strip(strings.Join(actions, " "))
-	for _, want := range []string{"[x] commit issue", "[i] change context"} {
+	for _, want := range []string{"[x] end session", "[i] context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit session actions to contain %q, got %q", want, joined)
 		}
@@ -869,7 +869,7 @@ func TestReadyHardLimitSessionActionsStayCommitBased(t *testing.T) {
 			joined,
 		)
 	}
-	for _, want := range []string{"[x] commit issue", "[i] change context"} {
+	for _, want := range []string{"[x] end session", "[i] context"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected hard-limit ready state to contain %q, got %q", want, joined)
 		}

@@ -43,7 +43,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		seg = string(*state.Timer.ReadySegmentType)
 	}
 	timerTitle := "Focus Session"
-	timerHint := "[p] pause  [x] end session  [i] change context"
+	timerHint := "[p] pause  [x] end session  [i] context"
 	structured := false
 	nextLabel := sessionActionSegmentLabel(state.Timer)
 	stateColor := activeTimerColor(theme, state.Timer)
@@ -53,7 +53,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 			sharedtypes.TimerHardLimitKindCountdown {
 			timerTitle = "Timer Session"
 		}
-		timerHint = "[x] commit issue  [i] change context"
+		timerHint = "[x] end session  [i] context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint
 			if state.Timer.ReadySegmentType != nil {
@@ -64,9 +64,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		}
 	} else if state.Timer.State == "ready" && !hardLimit {
 		timerTitle = "Ready For"
-		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] change context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] context"
 	} else if structured {
-		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] change context"
+		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] context"
 		if state.Timer.SegmentType != nil {
 			switch *state.Timer.SegmentType {
 			case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
@@ -76,7 +76,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	} else if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
-		timerHint = "[r] resume  [x] end session  [i] change context"
+		timerHint = "[r] resume  [x] end session  [i] context"
 		seg = "paused"
 	}
 	leftW := state.Width - 4
@@ -531,7 +531,8 @@ func sessionIssueCompactLines(
 		return lines
 	}
 	maxLine := max(20, width-12)
-	lines = append(lines,
+	lines = append(
+		lines,
 		fmt.Sprintf("[%s/%s]", activeIssue.RepoName, activeIssue.StreamName),
 		viewhelpers.Truncate(activeIssue.Title, maxLine),
 	)
