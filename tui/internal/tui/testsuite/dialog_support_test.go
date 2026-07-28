@@ -40,13 +40,46 @@ func TestViewJumpDialogIncludesSummaryView(t *testing.T) {
 	)
 	found := false
 	for _, item := range state.ChoiceItems {
-		if item == "[y] Summary" {
+		if item == "[g] Summary" {
 			found = true
 			break
 		}
 	}
 	if !found {
 		t.Fatalf("expected jump dialog to include summary view, got %#v", state.ChoiceItems)
+	}
+}
+
+func TestViewJumpDialogUsesUniqueMnemonicKeys(t *testing.T) {
+	state := dialogs.OpenViewJump(dialogs.State{}, []uistate.View{
+		uistate.ViewAway,
+		uistate.ViewSummary,
+		uistate.ViewDaily,
+		uistate.ViewRollup,
+		uistate.ViewWellbeing,
+		uistate.ViewMomentum,
+		uistate.ViewReports,
+		uistate.ViewConfig,
+		uistate.ViewDefault,
+		uistate.ViewMeta,
+		uistate.ViewOps,
+		uistate.ViewSettings,
+		uistate.ViewAlerts,
+		uistate.ViewUpdates,
+		uistate.ViewSupport,
+		uistate.ViewSessionHistory,
+		uistate.ViewSessionActive,
+	})
+	seen := map[string]string{}
+	for _, item := range state.ChoiceItems {
+		if len(item) < 3 || item[0] != '[' || item[2] != ']' {
+			t.Fatalf("unexpected jump item format %q", item)
+		}
+		key := item[1:2]
+		if prev, ok := seen[key]; ok {
+			t.Fatalf("duplicate jump key %q for %q and %q", key, prev, item)
+		}
+		seen[key] = item
 	}
 }
 

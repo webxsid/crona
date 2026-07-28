@@ -16,6 +16,15 @@ All notable changes to **Crona** are documented here.
 - The CLI summary output now uses a denser at-a-glance layout with stronger terminal visuals intended for direct reading rather than interactive editing.
 - Hard-limit timer alerts now carry companion actions for commit and extend, matching the existing TUI recovery flow.
 
+## [1.7.2] - 2026-07-29
+
+Crona v1.7.2 is a small TUI hotfix for the view-jump menu.
+
+### Fixed
+
+- The view-jump menu now keeps `[y]` for History and moves Summary to `[g]`, avoiding the duplicate mnemonic that made one of the destinations unreachable by key.
+- Added a regression check so the full view-jump menu cannot silently reuse a mnemonic key.
+
 ## [1.7.1] - 2026-07-28
 
 Crona v1.7.1 fixes repeated extension of the dedicated no-break Timer countdown.
