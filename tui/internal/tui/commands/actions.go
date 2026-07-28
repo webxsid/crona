@@ -1065,6 +1065,12 @@ func GenerateReport(c *api.Client, input shareddto.ExportReportRequest) tea.Cmd 
 			logger.Errorf("GenerateReport: %v", err)
 			return ErrMsg{Err: err}
 		}
+		if input.OutputMode == sharedtypes.ExportOutputModeClipboard {
+			if err := copyToClipboard(result.Content); err != nil {
+				return ErrMsg{Err: err}
+			}
+			return ClipboardCopiedMsg{Message: "Markdown copied to clipboard"}
+		}
 		return DailyReportGeneratedMsg{Result: result}
 	}
 }

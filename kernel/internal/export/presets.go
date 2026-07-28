@@ -105,6 +105,40 @@ func presetsForAsset(
 		return nil
 	}
 	switch reportKind {
+	case sharedtypes.ExportReportKindSummaryRange:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
+			return []templatePreset{{
+				ID: "balanced", Label: "Dashboard", Description: "Wide visual range summary.",
+				PreviewTitle: "Range Summary", PreviewBody: "Range outcomes and daily rhythm.",
+				Body: fallbackSummaryRangePDFTemplate,
+			}}
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return []templatePreset{{ID: "balanced", Body: fallbackGlanceReportPDFStyles}}
+		}
+		return []templatePreset{{
+			ID: "balanced", Label: "Dashboard", Description: "Range-focused Markdown summary.",
+			PreviewTitle: "Range Summary", PreviewBody: "Range metrics, progress, and daily rhythm.",
+			Body: fallbackSummaryRangeTemplate,
+		}}
+	case sharedtypes.ExportReportKindGlance:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {
+			return []templatePreset{{
+				ID: "balanced", Label: "Dashboard", Description: "Wide visual summary report.",
+				PreviewTitle: "Summary", PreviewBody: "Focus, outcomes, and daily rhythm.",
+				Body: fallbackGlanceReportPDFTemplate,
+			}}
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return []templatePreset{{ID: "balanced", Body: fallbackGlanceReportPDFStyles}}
+		}
+		return []templatePreset{{
+			ID: "balanced", Label: "Dashboard", Description: "Compact Markdown dashboard.",
+			PreviewTitle: "Summary", PreviewBody: "Metrics, progress bars, and daily rhythm.",
+			Body: fallbackGlanceReportTemplate,
+		}}
 	case sharedtypes.ExportReportKindDaily:
 		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
 			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML {

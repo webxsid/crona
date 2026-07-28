@@ -94,7 +94,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = appendDialogFooter(theme, state, rows, hint)
 		return modal(theme, state.Width, 68, border, rows)
-	case "export_report":
+	case "export_report", "export_summary_period":
 		rows := []string{
 			theme.StylePaneTitle.Render("Export Report"),
 			"",
@@ -164,7 +164,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"[↑/↓] move   [enter] choose category   [esc] cancel",
 		)
 		return modal(theme, state.Width, 54, theme.ColorGreen, rows)
-	case "export_preset":
+	case "export_preset", "export_summary_output":
 		rows := []string{
 			theme.StylePaneTitle.Render("Choose Report Style"),
 			"",
@@ -190,7 +190,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] use style   [esc] back")
 		return modal(theme, state.Width, 74, theme.ColorGreen, rows)
-	case "export_calendar_repo":
+	case "export_calendar_repo", "export_scope":
 		rows := []string{
 			theme.StylePaneTitle.Render("Calendar Export Repo"),
 			"",
@@ -230,6 +230,18 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			dialogSubmitHint(state, "save")+"   [esc] cancel",
 		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "export_summary_range":
+		rows := []string{
+			theme.StylePaneTitle.Render("Custom Summary Range"),
+			"",
+			theme.StyleDim.Render("Start date"),
+			state.Inputs[0].View(),
+			"",
+			theme.StyleDim.Render("End date"),
+			state.Inputs[1].View(),
+		}
+		rows = appendDialogFooter(theme, state, rows, "[tab] switch   [enter] continue   [esc] back")
+		return modal(theme, state.Width, 58, theme.ColorGreen, rows)
 	case "edit_export_ics_dir":
 		rows := []string{
 			theme.StylePaneTitle.Render("ICS Export Directory"),

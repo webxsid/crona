@@ -33,6 +33,23 @@ func TestViewJumpDialogUsesMnemonicKeys(t *testing.T) {
 	}
 }
 
+func TestViewJumpDialogIncludesSummaryView(t *testing.T) {
+	state := dialogs.OpenViewJump(
+		dialogs.State{},
+		[]uistate.View{uistate.ViewSummary, uistate.ViewDaily},
+	)
+	found := false
+	for _, item := range state.ChoiceItems {
+		if item == "[y] Summary" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected jump dialog to include summary view, got %#v", state.ChoiceItems)
+	}
+}
+
 func TestViewJumpDialogHidesUnavailableViews(t *testing.T) {
 	state := dialogs.OpenViewJump(
 		dialogs.State{},

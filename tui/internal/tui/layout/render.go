@@ -301,8 +301,9 @@ func renderSidebar(state State, width, height int) string {
 	if state.ProtectedMode {
 		lines = []string{
 			chrome.StylePaneTitle.Render("Away"),
+			chrome.StyleActive.Render("[ and ] switch"),
+			chrome.StyleActive.Render("[v] jump"),
 			"",
-			chrome.StyleDim.Render("AVAILABLE"),
 			renderSidebarItem(state, uistate.ViewAway, "Away"),
 			renderSidebarItem(state, uistate.ViewReports, "Reports"),
 			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
@@ -332,6 +333,7 @@ func renderSidebar(state State, width, height int) string {
 			chrome.StyleDim.Render("[v] jump"),
 			"",
 			chrome.StyleDim.Render("DASHBOARD"),
+			renderSidebarItem(state, uistate.ViewSummary, "Summary"),
 			renderSidebarItem(state, uistate.ViewDaily, "Daily"),
 			renderSidebarItem(state, uistate.ViewRollup, "Rollup"),
 			renderSidebarItem(state, uistate.ViewMomentum, "Momentum"),

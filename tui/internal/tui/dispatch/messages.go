@@ -21,6 +21,7 @@ type MessageState struct {
 	Pane                    uistate.Pane
 	DailyTaskSection        uistate.DailyTaskSection
 	DashboardDate           string
+	SummaryDate             string
 	Cursor                  map[uistate.Pane]int
 	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
@@ -133,6 +134,7 @@ type MessageDeps struct {
 	LoadMomentumFocus          func(string, int) tea.Cmd
 	LoadDueHabits              func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
+	LoadSummarySnapshot        func(string) tea.Cmd
 	LoadDailyStreaks           func(string) tea.Cmd
 	LoadWellbeing              func(string, int) tea.Cmd
 	LoadRollupSummaries        func(string, string) tea.Cmd
@@ -767,6 +769,9 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadExportAssets(),
 		deps.LoadExportReports(),
 	)
+	if deps.LoadSummarySnapshot != nil {
+		cmds = append(cmds, deps.LoadSummarySnapshot(state.SummaryDate))
+	}
 	return tea.Batch(cmds...)
 }
 

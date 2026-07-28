@@ -1,5 +1,99 @@
 package export
 
+const fallbackGlanceReportTemplate = `{{frontmatterBlock}}
+
+# Summary — {{periodLabel}}
+
+| Focus | Issues | Habits | Plan |
+|---|---|---|---|
+| {{focus.value}} | {{issueMetric.value}} | {{habitMetric.value}} | {{planMetric.value}} |
+
+## Outcomes
+
+{{#each outcomes}}
+- {{label}}: {{bar}} {{value}}
+{{/each}}
+
+{{#if isRange}}
+## Daily rhythm
+
+| Day | Focus | Rest | Sessions | Issues | Habits | Mood |
+|---|---:|---:|---:|---:|---:|---:|
+{{#each days}}
+| {{displayDate}} | {{workedTime}} | {{restTime}} | {{sessionCount}} | {{issues}} | {{habits}} | {{mood}} |
+{{/each}}
+{{/if}}
+`
+
+const fallbackGlanceReportPDFTemplate = `<!doctype html>
+<html><head><meta charset="utf-8"><title>Summary — {{periodLabel}}</title><link rel="stylesheet" href="report.css"></head>
+<body>
+<header><div class="eyebrow">Summary</div><h1>{{periodLabel}}</h1></header>
+<section class="metrics">
+<article><span>Focus</span><strong>{{focus.value}}</strong><i><b style="width:{{focus.percent}}%"></b></i></article>
+<article><span>Issues</span><strong>{{issueMetric.value}}</strong><i><b style="width:{{issueMetric.percent}}%"></b></i></article>
+<article><span>Habits</span><strong>{{habitMetric.value}}</strong><i><b style="width:{{habitMetric.percent}}%"></b></i></article>
+<article><span>Plan</span><strong>{{planMetric.value}}</strong><i><b style="width:{{planMetric.percent}}%"></b></i></article>
+</section>
+<section><h2>Outcomes</h2>{{#each outcomes}}<div class="outcome"><span>{{label}}</span><i><b style="width:{{percent}}%"></b></i><strong>{{value}}</strong></div>{{/each}}</section>
+{{#if isRange}}<section><h2>Daily rhythm</h2><table><thead><tr><th>Day</th><th>Focus</th><th>Rest</th><th>Sessions</th><th>Issues</th><th>Habits</th><th>Mood</th></tr></thead><tbody>{{#each days}}<tr><td>{{displayDate}}</td><td>{{workedTime}}</td><td>{{restTime}}</td><td>{{sessionCount}}</td><td>{{issues}}</td><td>{{habits}}</td><td>{{mood}}</td></tr>{{/each}}</tbody></table></section>{{/if}}
+</body></html>`
+
+const fallbackGlanceReportPDFStyles = `@page { size: A4 landscape; margin: 14mm; }
+* { box-sizing: border-box; } body { color:#172033; font:12px system-ui,sans-serif; } header { border-bottom:3px solid #5b5bd6; margin-bottom:20px; } h1 { font-size:28px; margin:4px 0 14px; } h2 { margin-top:24px; } .eyebrow { color:#5b5bd6; font-weight:700; text-transform:uppercase; letter-spacing:.12em; } .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; } article { background:#f3f4fb; border-radius:8px; padding:14px; } article span { display:block; color:#667085; } article strong { display:block; font-size:20px; margin:5px 0 10px; } i { display:block; height:6px; background:#dfe1ec; border-radius:4px; overflow:hidden; } i b { display:block; height:100%; background:#5b5bd6; } .outcome { display:grid; grid-template-columns:160px 1fr 44px; gap:12px; align-items:center; margin:10px 0; } table { width:100%; border-collapse:collapse; } th,td { padding:7px; border-bottom:1px solid #e4e7ec; text-align:left; } th { color:#667085; }`
+
+const fallbackGlanceReportVariables = `# Summary Template Variables
+
+- periodLabel, startDate, endDate, isRange
+- focus, issueMetric, habitMetric, planMetric: value, bar, percent
+- outcomes: label, value, bar, percent
+- days (ranges): displayDate, workedTime, restTime, sessionCount, issues, habits, mood, energy
+`
+
+const fallbackSummaryRangeTemplate = `{{frontmatterBlock}}
+
+# Range Summary — {{periodLabel}}
+
+| Focus | Issues | Habits | Plan |
+|---|---|---|---|
+| {{focus.value}} | {{issueMetric.value}} | {{habitMetric.value}} | {{planMetric.value}} |
+
+## Outcomes
+
+{{#each outcomes}}
+- {{label}}: {{bar}} {{value}}
+{{/each}}
+
+## Daily rhythm
+
+| Day | Focus | Rest | Sessions | Issues | Habits | Mood |
+|---|---:|---:|---:|---:|---:|---:|
+{{#each days}}
+| {{displayDate}} | {{workedTime}} | {{restTime}} | {{sessionCount}} | {{issues}} | {{habits}} | {{mood}} |
+{{/each}}
+`
+
+const fallbackSummaryRangePDFTemplate = `<!doctype html>
+<html><head><meta charset="utf-8"><title>Range Summary — {{periodLabel}}</title><link rel="stylesheet" href="report.css"></head>
+<body><header><div class="eyebrow">Range summary</div><h1>{{periodLabel}}</h1></header>
+<section class="metrics">
+<article><span>Focus</span><strong>{{focus.value}}</strong><i><b style="width:{{focus.percent}}%"></b></i></article>
+<article><span>Issues</span><strong>{{issueMetric.value}}</strong><i><b style="width:{{issueMetric.percent}}%"></b></i></article>
+<article><span>Habits</span><strong>{{habitMetric.value}}</strong><i><b style="width:{{habitMetric.percent}}%"></b></i></article>
+<article><span>Plan</span><strong>{{planMetric.value}}</strong><i><b style="width:{{planMetric.percent}}%"></b></i></article>
+</section>
+<section><h2>Outcomes</h2>{{#each outcomes}}<div class="outcome"><span>{{label}}</span><i><b style="width:{{percent}}%"></b></i><strong>{{value}}</strong></div>{{/each}}</section>
+<section><h2>Daily rhythm</h2><table><thead><tr><th>Day</th><th>Focus</th><th>Rest</th><th>Sessions</th><th>Issues</th><th>Habits</th><th>Mood</th></tr></thead><tbody>{{#each days}}<tr><td>{{displayDate}}</td><td>{{workedTime}}</td><td>{{restTime}}</td><td>{{sessionCount}}</td><td>{{issues}}</td><td>{{habits}}</td><td>{{mood}}</td></tr>{{/each}}</tbody></table></section>
+</body></html>`
+
+const fallbackSummaryRangeVariables = `# Range Summary Template Variables
+
+- periodLabel, startDate, endDate
+- focus, issueMetric, habitMetric, planMetric: value, bar, percent
+- outcomes: label, value, bar, percent
+- days: displayDate, workedTime, restTime, sessionCount, issues, habits, mood, energy
+`
+
 const fallbackDailyReportTemplate = `{{frontmatterBlock}}
 
 # Daily Report - {{displayDate}}

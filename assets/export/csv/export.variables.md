@@ -2,16 +2,17 @@
 
 The CSV export uses a JSON spec instead of Handlebars.
 
-Supported keys:
-- `headers`: ordered CSV header labels
-- `columns`: ordered field names pulled from each session row
+Supported key:
+- `columns`: ordered objects with a `header` label and `field` name
+
+Legacy specs with separate `headers` and string `columns` arrays remain supported.
 
 Common row fields:
-- `id`
+- `sessionId`
 - `issueId`
 - `issueTitle`
-- `repoName`
-- `streamName`
+- `repo`
+- `stream`
 - `startTime`
 - `endTime`
 - `durationSeconds`

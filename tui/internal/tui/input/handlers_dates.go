@@ -64,6 +64,16 @@ func handleResetDailyDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	), true
 }
 
+func handleShiftSummaryDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.SummaryDate = navigationutil.ShiftISODate(deps.CurrentSummaryDate(s), dir)
+	return s, deps.LoadSummarySnapshot(s.SummaryDate), true
+}
+
+func handleResetSummaryDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.SummaryDate = time.Now().Format("2006-01-02")
+	return s, deps.LoadSummarySnapshot(s.SummaryDate), true
+}
+
 func handleShiftMomentumDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	s.MomentumDate = navigationutil.ShiftISODate(deps.CurrentMomentumDate(s), dir)
 	return s, deps.LoadMomentumRange(s.MomentumDate, s.MomentumWindowDays), true

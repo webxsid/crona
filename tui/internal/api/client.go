@@ -587,6 +587,8 @@ func (c *Client) GenerateReport(input shareddto.ExportReportRequest) (*ExportRep
 	var out ExportReportResult
 	method := protocol.MethodExportDaily
 	switch input.Kind {
+	case sharedtypes.ExportReportKindGlance, sharedtypes.ExportReportKindSummaryRange:
+		method = protocol.MethodExportGlance
 	case sharedtypes.ExportReportKindWeekly:
 		method = protocol.MethodExportWeekly
 	case sharedtypes.ExportReportKindRepo:

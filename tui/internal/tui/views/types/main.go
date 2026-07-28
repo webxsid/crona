@@ -42,6 +42,7 @@ type ContentState struct {
 	Filters             map[string]string
 	Elapsed             int
 	DashboardDate       string
+	SummaryDate         string
 	RollupStartDate     string
 	RollupEndDate       string
 	MomentumDate        string
@@ -72,6 +73,7 @@ type ContentState struct {
 	DueHabits                 []api.HabitDailyItem
 	MomentumCards             []api.MomentumCard
 	DailySummary              *api.DailyIssueSummary
+	SummarySnapshot           *api.SummarySnapshot
 	DailyPlan                 *api.DailyPlan
 	DailyCheckIn              *api.DailyCheckIn
 	MetricsRange              []api.DailyMetricsDay

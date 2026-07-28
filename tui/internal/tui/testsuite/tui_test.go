@@ -469,7 +469,11 @@ func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 		"2026-03-19",
 		true,
 		repos,
+		nil,
+		nil,
 		&checkedRepoID,
+		nil,
+		0,
 		nil,
 	)
 	if state.Kind != "export_report_category" {
@@ -496,7 +500,7 @@ func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 
 func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil, nil, nil, 0, nil)
 	if state.RepoID != 5 || state.RepoName != "Work" || state.RepoIndex != 0 {
 		t.Fatalf(
 			"expected first repo selected by default, got id=%d name=%q index=%d",
@@ -509,7 +513,7 @@ func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing
 
 func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil)
+	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil, nil, nil, 0, nil)
 	for i, item := range state.ChoiceItems {
 		if item == "Data Exports" {
 			state.ChoiceCursor = i
@@ -552,6 +556,87 @@ func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	if len(next.ChoiceItems) != 2 || next.ChoiceItems[0] != "Work" ||
 		next.ChoiceItems[1] != "Personal" {
 		t.Fatalf("unexpected repo picker options: %#v", next.ChoiceItems)
+	}
+}
+
+func TestSummaryExportAsksForPeriodThenOutputType(t *testing.T) {
+	state := dialogs.OpenExportDaily(
+		dialogs.State{}, "2026-03-19", true, nil, nil, nil, nil, nil, 0, nil,
+	)
+	for i, item := range state.ChoiceItems {
+		if item == "Summary" {
+			state.ChoiceCursor = i
+			break
+		}
+	}
+	state, action, status := dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("summary category should open period selection: status=%q action=%#v", status, action)
+	}
+	if state.Kind != "export_summary_period" {
+		t.Fatalf("expected summary period selection, got %q", state.Kind)
+	}
+
+	state, action, status = dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action != nil {
+		t.Fatalf("summary period should open output selection: status=%q action=%#v", status, action)
+	}
+	if state.Kind != "export_summary_output" {
+		t.Fatalf("expected summary output selection, got %q", state.Kind)
+	}
+	if got := strings.Join(state.ChoiceItems, "\n"); !strings.Contains(got, "Write PDF file") ||
+		!strings.Contains(got, "Write Markdown file") ||
+		!strings.Contains(got, "Copy Markdown") {
+		t.Fatalf("missing summary output types: %q", got)
+	}
+}
+
+func TestLastSevenDaySummaryKeepsRangeThroughExportAction(t *testing.T) {
+	state := dialogs.OpenExportDaily(
+		dialogs.State{}, "2026-03-19", false, nil, nil, nil, nil, nil, 0, nil,
+	)
+	for i, item := range state.ChoiceItems {
+		if item == "Summary" {
+			state.ChoiceCursor = i
+		}
+	}
+	state, _, _ = dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	for i, item := range state.ChoiceItems {
+		if item == "Last 7 days" {
+			state.ChoiceCursor = i
+		}
+	}
+	state, _, _ = dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if state.ExportStart != "2026-03-13" || state.ExportEnd != "2026-03-19" {
+		t.Fatalf("unexpected seven-day range: %s to %s", state.ExportStart, state.ExportEnd)
+	}
+	state.ChoiceCursor = 0 // Markdown when PDF is unavailable.
+	state, _, _ = dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if state.ExportPresetKind != sharedtypes.ExportReportKindSummaryRange {
+		t.Fatalf("expected dedicated range report kind, got %q", state.ExportPresetKind)
+	}
+	state.ChoiceItems = []string{"Dashboard"}
+	state.ChoiceValues = []string{"balanced"}
+	state.ChoiceCursor = 0
+	_, action, status := dialogs.Update(
+		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
+	)
+	if status != "" || action == nil {
+		t.Fatalf("expected range export action: status=%q action=%#v", status, action)
+	}
+	if action.ReportKind != sharedtypes.ExportReportKindSummaryRange ||
+		action.StartDate != "2026-03-13" || action.EndDate != "2026-03-19" {
+		t.Fatalf("range was lost from export action: %#v", action)
 	}
 }
 

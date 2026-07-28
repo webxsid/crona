@@ -209,6 +209,44 @@ func LoadDailySummary(c *api.Client, date string) tea.Cmd {
 	}
 }
 
+func LoadSummarySnapshot(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		summary, err := c.GetDailySummary(date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary issues"}
+		}
+		habits, err := c.ListDueHabits(date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary habits"}
+		}
+		plan, err := c.GetDailyPlan(date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary plan"}
+		}
+		checkIn, err := c.GetDailyCheckIn(date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary check-in"}
+		}
+		rollup, err := c.GetMetricsRollup(shiftISODate(date, -6), date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary rollup"}
+		}
+		streaks, err := c.GetMetricsLifetimeStreaks(date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary streaks"}
+		}
+		return SummarySnapshotLoadedMsg{Snapshot: &api.SummarySnapshot{
+			Date:    date,
+			Issues:  summary,
+			Habits:  habits,
+			Plan:    plan,
+			CheckIn: checkIn,
+			Rollup:  rollup,
+			Streaks: streaks,
+		}}
+	}
+}
+
 func LoadDailyPlan(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {
 		plan, err := c.GetDailyPlan(date)

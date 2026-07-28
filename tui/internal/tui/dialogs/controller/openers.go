@@ -378,15 +378,21 @@ func (s Snapshot) OpenUpdateNotes() State {
 func (s Snapshot) OpenExportDaily() State {
 	includePDF := s.ExportAssets != nil && s.ExportAssets.PDFRendererAvailable
 	var checkedRepoID *int64
+	var checkedStreamID *int64
 	if s.Context != nil {
 		checkedRepoID = s.Context.RepoID
+		checkedStreamID = s.Context.StreamID
 	}
 	return OpenExportDaily(
 		s.Dialog,
 		s.CurrentDashboardDate,
 		includePDF,
 		s.Repos,
+		s.Streams,
+		s.AllIssues,
 		checkedRepoID,
+		checkedStreamID,
+		s.SelectedIssueID,
 		s.ExportAssets,
 	)
 }

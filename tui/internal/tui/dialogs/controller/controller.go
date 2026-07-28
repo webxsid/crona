@@ -40,6 +40,8 @@ type Action struct {
 	Name               string
 	Path               string
 	CheckInDate        string
+	StartDate          string
+	EndDate            string
 	RepoName           string
 	StreamName         string
 	Title              string
@@ -113,6 +115,8 @@ func Close(state State) State {
 	state.StatusLabel = ""
 	state.StatusRequired = false
 	state.CheckInDate = ""
+	state.ExportStart = ""
+	state.ExportEnd = ""
 	state.ViewTitle = ""
 	state.ViewName = ""
 	state.IssueEstimateMins = nil
@@ -358,6 +362,14 @@ func Update(
 		return updateExportCategory(state, msg)
 	case "export_preset":
 		return updateExportPreset(state, msg)
+	case "export_summary_period":
+		return updateExportSummaryPeriod(state, msg)
+	case "export_summary_output":
+		return updateExportSummaryOutput(state, msg)
+	case "export_summary_range":
+		return updateExportSummaryRange(state, msg)
+	case "export_scope":
+		return updateExportScope(state, msg)
 	case "export_calendar_repo":
 		return updateExportCalendarRepo(state, msg)
 	case "edit_export_reports_dir":

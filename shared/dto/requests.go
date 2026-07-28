@@ -170,6 +170,7 @@ type ExportReportRequest struct {
 	End        string                 `json:"end,omitempty"`
 	RepoID     *int64                 `json:"repoId,omitempty"`
 	StreamID   *int64                 `json:"streamId,omitempty"`
+	IssueID    *int64                 `json:"issueId,omitempty"`
 	Format     types.ExportFormat     `json:"format,omitempty"`
 	OutputMode types.ExportOutputMode `json:"outputMode"`
 	PresetID   string                 `json:"presetId,omitempty"`

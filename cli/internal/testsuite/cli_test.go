@@ -197,19 +197,14 @@ func TestIssueStartFromContextUsesCheckedOutIssue(t *testing.T) {
 	}
 }
 
-func TestExportRepoUsesContextRepoWhenMissing(t *testing.T) {
+func TestExportRepoUsesExplicitRepo(t *testing.T) {
 	var out bytes.Buffer
 	var gotMethods []string
-	err := exportcmd.Run([]string{"repo", "--json"}, exportcmd.Deps{
+	err := exportcmd.Run([]string{"repo", "--repo-id", "44", "--json"}, exportcmd.Deps{
 		Stdout: &out,
 		CallKernel: func(method string, params, target any) error {
 			gotMethods = append(gotMethods, method)
 			switch method {
-			case protocol.MethodContextGet:
-				ctx := target.(*sharedtypes.ActiveContext)
-				repoID := int64(44)
-				ctx.RepoID = &repoID
-				return nil
 			case protocol.MethodExportRepo:
 				body, err := json.Marshal(params)
 				if err != nil {
@@ -238,8 +233,7 @@ func TestExportRepoUsesContextRepoWhenMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("export repo: %v", err)
 	}
-	if len(gotMethods) != 2 || gotMethods[0] != protocol.MethodContextGet ||
-		gotMethods[1] != protocol.MethodExportRepo {
+	if len(gotMethods) != 1 || gotMethods[0] != protocol.MethodExportRepo {
 		t.Fatalf("unexpected method order: %+v", gotMethods)
 	}
 	if !strings.Contains(out.String(), "\"filePath\": \"/tmp/repo-report.md\"") {

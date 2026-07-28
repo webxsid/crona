@@ -22,12 +22,16 @@ type templateMeta struct {
 }
 
 type exportConfig struct {
-	ReportsDir             string `json:"reportsDir,omitempty"`
-	ICSDir                 string `json:"icsDir,omitempty"`
-	DailyMarkdownPresetID  string `json:"dailyMarkdownPresetId,omitempty"`
-	DailyPDFPresetID       string `json:"dailyPdfPresetId,omitempty"`
-	WeeklyMarkdownPresetID string `json:"weeklyMarkdownPresetId,omitempty"`
-	WeeklyPDFPresetID      string `json:"weeklyPdfPresetId,omitempty"`
+	ReportsDir                   string `json:"reportsDir,omitempty"`
+	ICSDir                       string `json:"icsDir,omitempty"`
+	DailyMarkdownPresetID        string `json:"dailyMarkdownPresetId,omitempty"`
+	DailyPDFPresetID             string `json:"dailyPdfPresetId,omitempty"`
+	WeeklyMarkdownPresetID       string `json:"weeklyMarkdownPresetId,omitempty"`
+	WeeklyPDFPresetID            string `json:"weeklyPdfPresetId,omitempty"`
+	GlanceMarkdownPresetID       string `json:"glanceMarkdownPresetId,omitempty"`
+	GlancePDFPresetID            string `json:"glancePdfPresetId,omitempty"`
+	RangeSummaryMarkdownPresetID string `json:"rangeSummaryMarkdownPresetId,omitempty"`
+	RangeSummaryPDFPresetID      string `json:"rangeSummaryPdfPresetId,omitempty"`
 }
 
 type templateStatus struct {
@@ -794,6 +798,24 @@ func selectedPresetIDFromConfig(
 	assetKind sharedtypes.ExportAssetKind,
 ) string {
 	switch reportKind {
+	case sharedtypes.ExportReportKindSummaryRange:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return config.RangeSummaryPDFPresetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			return config.RangeSummaryMarkdownPresetID
+		}
+	case sharedtypes.ExportReportKindGlance:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			return config.GlancePDFPresetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			return config.GlanceMarkdownPresetID
+		}
 	case sharedtypes.ExportReportKindDaily:
 		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
 			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
@@ -824,6 +846,24 @@ func setSelectedPresetID(
 ) {
 	presetID = normalizePresetID(reportKind, assetKind, presetID)
 	switch reportKind {
+	case sharedtypes.ExportReportKindSummaryRange:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			config.RangeSummaryPDFPresetID = presetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			config.RangeSummaryMarkdownPresetID = presetID
+		}
+	case sharedtypes.ExportReportKindGlance:
+		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
+			assetKind == sharedtypes.ExportAssetKindTemplatePDFCSS {
+			config.GlancePDFPresetID = presetID
+		}
+		if assetKind == sharedtypes.ExportAssetKindTemplateMarkdown {
+			config.GlanceMarkdownPresetID = presetID
+		}
 	case sharedtypes.ExportReportKindDaily:
 		if assetKind == sharedtypes.ExportAssetKindTemplatePDF ||
 			assetKind == sharedtypes.ExportAssetKindTemplatePDFHTML ||
@@ -897,7 +937,9 @@ func isNarrativePDFAsset(
 	reportKind sharedtypes.ExportReportKind,
 	assetKind sharedtypes.ExportAssetKind,
 ) bool {
-	if reportKind != sharedtypes.ExportReportKindDaily &&
+	if reportKind != sharedtypes.ExportReportKindSummaryRange &&
+		reportKind != sharedtypes.ExportReportKindGlance &&
+		reportKind != sharedtypes.ExportReportKindDaily &&
 		reportKind != sharedtypes.ExportReportKindWeekly {
 		return false
 	}

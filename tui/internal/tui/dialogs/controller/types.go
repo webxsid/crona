@@ -107,6 +107,8 @@ type State struct {
 	ExportPresetOutput             sharedtypes.ExportOutputMode
 	ExportIncludePDF               bool
 	ExportCategory                 string
+	ExportStart                    string
+	ExportEnd                      string
 	PromptGlyphMode                sharedtypes.PromptGlyphMode
 	PomodoroFocusSeconds           int
 	PomodoroFocusChoice            int

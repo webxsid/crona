@@ -6,6 +6,7 @@ type View string
 
 const (
 	ViewAway           View = "away"
+	ViewSummary        View = "summary"
 	ViewDefault        View = "default"
 	ViewDaily          View = "daily"
 	ViewRollup         View = "rollup"
@@ -31,6 +32,7 @@ const (
 	PaneStreams          Pane = "streams"
 	PaneIssues           Pane = "issues"
 	PaneHabits           Pane = "habits"
+	PaneSummary          Pane = "summary"
 	PaneRollupDays       Pane = "rollup_days"
 	PaneRollupBreakdown  Pane = "rollup_breakdown"
 	PaneSessions         Pane = "sessions"
@@ -62,25 +64,27 @@ const (
 )
 
 var viewOrder = []View{
-	ViewSessionHistory,
-	ViewHabitHistory,
+	ViewSummary,
 	ViewDaily,
 	ViewRollup,
 	ViewMomentum,
 	ViewWellbeing,
-	ViewReports,
-	ViewConfig,
 	ViewDefault,
 	ViewMeta,
 	ViewOps,
+	ViewReports,
+	ViewConfig,
 	ViewSettings,
 	ViewAlerts,
 	ViewUpdates,
 	ViewSupport,
+	ViewSessionHistory,
+	ViewHabitHistory,
 }
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},
+	ViewSummary:        {PaneSummary},
 	ViewDefault:        {PaneIssues},
 	ViewDaily:          {PaneIssues, PaneHabits},
 	ViewRollup:         {PaneRollupDays, PaneRollupBreakdown},
@@ -101,6 +105,7 @@ var viewPanes = map[View][]Pane{
 
 var viewDefaultPane = map[View]Pane{
 	ViewAway:           PaneIssues,
+	ViewSummary:        PaneSummary,
 	ViewDefault:        PaneIssues,
 	ViewDaily:          PaneIssues,
 	ViewRollup:         PaneRollupDays,

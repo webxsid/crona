@@ -130,6 +130,13 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
 	}
+	if state.View == "summary" {
+		return []string{
+			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
+			theme.StyleHeader.Render("[↑/↓]") + theme.StyleDim.Render(" scroll"),
+		}
+	}
 	if state.View == "momentum" {
 		return []string{
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),

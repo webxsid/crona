@@ -83,6 +83,7 @@ const (
 	MethodDashboardGoalProgress  = "dashboard.goal_progress"
 
 	MethodExportDaily         = "export.daily"
+	MethodExportGlance        = "export.glance"
 	MethodExportWeekly        = "export.weekly"
 	MethodExportRepo          = "export.repo"
 	MethodExportStream        = "export.stream"

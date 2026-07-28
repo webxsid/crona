@@ -1450,13 +1450,15 @@ const (
 type ExportReportKind string
 
 const (
-	ExportReportKindDaily       ExportReportKind = "daily"
-	ExportReportKindWeekly      ExportReportKind = "weekly"
-	ExportReportKindRepo        ExportReportKind = "repo"
-	ExportReportKindStream      ExportReportKind = "stream"
-	ExportReportKindIssueRollup ExportReportKind = "issue_rollup"
-	ExportReportKindCSV         ExportReportKind = "csv"
-	ExportReportKindCalendar    ExportReportKind = "calendar"
+	ExportReportKindDaily        ExportReportKind = "daily"
+	ExportReportKindGlance       ExportReportKind = "glance"
+	ExportReportKindSummaryRange ExportReportKind = "summary_range"
+	ExportReportKindWeekly       ExportReportKind = "weekly"
+	ExportReportKindRepo         ExportReportKind = "repo"
+	ExportReportKindStream       ExportReportKind = "stream"
+	ExportReportKindIssueRollup  ExportReportKind = "issue_rollup"
+	ExportReportKindCSV          ExportReportKind = "csv"
+	ExportReportKindCalendar     ExportReportKind = "calendar"
 )
 
 type ExportAssetKind string
@@ -1476,6 +1478,8 @@ type ExportReportScope struct {
 	RepoName   *string `json:"repoName,omitempty"`
 	StreamID   *int64  `json:"streamId,omitempty"`
 	StreamName *string `json:"streamName,omitempty"`
+	IssueID    *int64  `json:"issueId,omitempty"`
+	IssueTitle *string `json:"issueTitle,omitempty"`
 }
 
 type ExportTemplateAsset struct {

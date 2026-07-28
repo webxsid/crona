@@ -91,6 +91,7 @@ func (m Model) inputState() inputpkg.State {
 		DefaultIssueSection:       m.defaultIssueSection,
 		DailyTaskSection:          m.dailyTaskSection,
 		DashboardDate:             m.dashboardDate,
+		SummaryDate:               m.currentSummaryDate(),
 		RollupStartDate:           m.rollupStartDate,
 		RollupEndDate:             m.rollupEndDate,
 		MomentumDate:              m.momentumDate,
@@ -136,6 +137,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dailyTaskSection = state.DailyTaskSection
 	m.dashboardDate = state.DashboardDate
+	m.summaryDate = state.SummaryDate
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
 	m.momentumDate = state.MomentumDate
@@ -204,9 +206,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return cmd
 		},
 		LoadDailySummary:     func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadSummarySnapshot:  func(date string) tea.Cmd { return commands.LoadSummarySnapshot(m.client, date) },
 		LoadDueHabits:        func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailyStreaks:     func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
+		CurrentSummaryDate:   func(state inputpkg.State) string { return m.applyInputState(state).currentSummaryDate() },
 		LoadRollupSummaries:  func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)

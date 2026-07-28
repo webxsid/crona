@@ -42,6 +42,13 @@ func TestContextualActionsUseCheckInAndAwayLabels(t *testing.T) {
 		t.Fatalf("expected wellbeing contextual actions to advertise check-in, got %q", wellbeing)
 	}
 
+	summary := strings.Join(ContextualActions(Theme{}, ActionsState{View: "summary"}), "\n")
+	for _, want := range []string{"[,/.]", "[g]", "date", "today"} {
+		if !strings.Contains(summary, want) {
+			t.Fatalf("expected summary contextual actions to contain %q, got %q", want, summary)
+		}
+	}
+
 	away := strings.Join(ContextualActions(Theme{}, ActionsState{
 		View:           "away",
 		RestModeActive: true,

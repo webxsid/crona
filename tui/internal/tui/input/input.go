@@ -21,6 +21,7 @@ type State struct {
 	DefaultIssueSection       uistate.DefaultIssueSection
 	DailyTaskSection          uistate.DailyTaskSection
 	DashboardDate             string
+	SummaryDate               string
 	RollupStartDate           string
 	RollupEndDate             string
 	MomentumDate              string
@@ -72,9 +73,11 @@ type Deps struct {
 	LoadExportAssets                func() tea.Cmd
 	SetStatus                       func(*State, string, bool) tea.Cmd
 	LoadDailySummary                func(string) tea.Cmd
+	LoadSummarySnapshot             func(string) tea.Cmd
 	LoadDailyStreaks                func(string) tea.Cmd
 	LoadDueHabits                   func(string) tea.Cmd
 	CurrentDashboardDate            func(State) string
+	CurrentSummaryDate              func(State) string
 	LoadRollupSummaries             func(string, string) tea.Cmd
 	LoadMomentumRange               func(string, int) tea.Cmd
 	CurrentMomentumDate             func(State) string
@@ -372,6 +375,21 @@ func newRouter(deps Deps) *router {
 			cmd, handled := deps.ToggleHabitCompletedAction(&s)
 			return s, cmd, handled
 		},
+	)
+	r.RegisterView(
+		uistate.ViewSummary,
+		",",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftSummaryDate(s, deps, -1) },
+	)
+	r.RegisterView(
+		uistate.ViewSummary,
+		".",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftSummaryDate(s, deps, 1) },
+	)
+	r.RegisterView(
+		uistate.ViewSummary,
+		"g",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetSummaryDate(s, deps) },
 	)
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)

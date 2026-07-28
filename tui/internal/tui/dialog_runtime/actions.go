@@ -372,10 +372,6 @@ func checkinCmd(action dialogstate.Action, deps Deps) tea.Cmd {
 }
 
 func exportCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
-	if action.OutputMode == sharedtypes.ExportOutputModeClipboard &&
-		action.ReportKind == sharedtypes.ExportReportKindDaily {
-		return deps.CopyDailyReport(action.CheckInDate)
-	}
 	if action.ReportKind == sharedtypes.ExportReportKindCalendar {
 		repoID := action.RepoID
 		if repoID == 0 {
@@ -393,27 +389,31 @@ func exportCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	req := shareddto.ExportReportRequest{
 		Kind:       action.ReportKind,
 		Date:       action.CheckInDate,
+		Start:      action.StartDate,
+		End:        action.EndDate,
 		Format:     action.ReportFormat,
 		OutputMode: action.OutputMode,
 		PresetID:   action.PresetID,
 	}
 	if action.ReportKind == sharedtypes.ExportReportKindRepo {
-		if state.Context == nil || state.Context.RepoID == nil {
-			return deps.ErrorCmd(errors.New("repo report requires an active repo context"))
+		if action.RepoID == 0 {
+			return deps.ErrorCmd(errors.New("repo report requires a selected repo"))
 		}
-		req.RepoID = state.Context.RepoID
+		req.RepoID = &action.RepoID
 	}
 	if action.ReportKind == sharedtypes.ExportReportKindStream {
-		if state.Context == nil || state.Context.StreamID == nil {
-			return deps.ErrorCmd(errors.New("stream report requires an active stream context"))
+		if action.StreamID == 0 {
+			return deps.ErrorCmd(errors.New("stream report requires a selected stream"))
 		}
-		req.StreamID = state.Context.StreamID
-		if state.Context.RepoID != nil {
-			req.RepoID = state.Context.RepoID
-		}
+		req.StreamID = &action.StreamID
 	}
-	if action.ReportKind == sharedtypes.ExportReportKindIssueRollup ||
-		action.ReportKind == sharedtypes.ExportReportKindCSV {
+	if action.ReportKind == sharedtypes.ExportReportKindIssueRollup {
+		if action.IssueID == 0 {
+			return deps.ErrorCmd(errors.New("issue report requires a selected issue"))
+		}
+		req.IssueID = &action.IssueID
+	}
+	if action.ReportKind == sharedtypes.ExportReportKindCSV {
 		if state.Context != nil {
 			req.RepoID = state.Context.RepoID
 			req.StreamID = state.Context.StreamID

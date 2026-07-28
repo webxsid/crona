@@ -55,3 +55,16 @@ type SessionDetail = sharedtypes.SessionDetail
 type Op = sharedtypes.Op
 type KernelEvent = sharedtypes.KernelEvent
 type KernelInfo = sharedtypes.KernelInfo
+
+// SummarySnapshot is a client-side read model for the view-only daily summary.
+// It deliberately stays outside the kernel protocol so the summary surface can
+// evolve independently from dashboard and daily view presentation.
+type SummarySnapshot struct {
+	Date    string
+	Issues  *DailyIssueSummary
+	Habits  []HabitDailyItem
+	Plan    *DailyPlan
+	CheckIn *DailyCheckIn
+	Rollup  *MetricsRollup
+	Streaks *StreakSummary
+}

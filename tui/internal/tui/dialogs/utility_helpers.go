@@ -14,6 +14,8 @@ import (
 
 func exportCategoryTitle(category string) string {
 	switch category {
+	case "summary":
+		return "Summary"
 	case "project":
 		return "Project Reports"
 	case "data":

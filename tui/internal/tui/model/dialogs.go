@@ -682,6 +682,9 @@ func (m Model) dialogState() dialogstate.State {
 		ExportPresetFormat:             m.dialogExportPresetFormat,
 		ExportPresetOutput:             m.dialogExportPresetOutput,
 		ExportIncludePDF:               m.dialogExportIncludePDF,
+		ExportCategory:                 m.dialogExportCategory,
+		ExportStart:                    m.dialogExportStart,
+		ExportEnd:                      m.dialogExportEnd,
 		PromptGlyphMode:                m.dialogPromptGlyphMode,
 		TelemetryStep:                  m.dialogTelemetryStep,
 		TelemetryUsage:                 m.dialogTelemetryUsage,
@@ -782,6 +785,9 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogExportPresetFormat = state.ExportPresetFormat
 	m.dialogExportPresetOutput = state.ExportPresetOutput
 	m.dialogExportIncludePDF = state.ExportIncludePDF
+	m.dialogExportCategory = state.ExportCategory
+	m.dialogExportStart = state.ExportStart
+	m.dialogExportEnd = state.ExportEnd
 	m.dialogPromptGlyphMode = state.PromptGlyphMode
 	m.dialogTelemetryStep = state.TelemetryStep
 	m.dialogTelemetryUsage = state.TelemetryUsage

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"crona/tui/internal/api"
+	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 )
 
@@ -104,5 +105,38 @@ func TestProtectedRestKeepsSettingsReachable(t *testing.T) {
 			away,
 			detail,
 		)
+	}
+}
+
+func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
+	views := (Model{}).availableViews()
+	want := []View{
+		ViewSummary,
+		ViewDaily,
+		ViewRollup,
+		ViewMomentum,
+		ViewWellbeing,
+		ViewDefault,
+		ViewMeta,
+		ViewOps,
+		ViewReports,
+		ViewConfig,
+		ViewSettings,
+		ViewAlerts,
+		ViewUpdates,
+		ViewSupport,
+		ViewSessionHistory,
+		ViewHabitHistory,
+	}
+	if len(views) != len(want) {
+		t.Fatalf("unexpected view count: got %d want %d (%#v)", len(views), len(want), views)
+	}
+	for i := range want {
+		if views[i] != want[i] {
+			t.Fatalf("view order mismatch at %d: got %q want %q (%#v)", i, views[i], want[i], views)
+		}
+	}
+	if views[0] != uistate.ViewSummary {
+		t.Fatalf("expected summary to be first sidebar navigation target, got %q", views[0])
 	}
 }

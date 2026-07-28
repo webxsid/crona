@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 
@@ -530,20 +532,11 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 				sharedtypes.ExportOutputModeFile,
 			), nil, ""
 		case "Repo report: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindRepo
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating repo report..."
+			return OpenExportScope(state, sharedtypes.ExportReportKindRepo), nil, ""
 		case "Stream report: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindStream
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating stream report..."
+			return OpenExportScope(state, sharedtypes.ExportReportKindStream), nil, ""
 		case "Issue rollup: write Markdown file":
-			action.ReportKind = sharedtypes.ExportReportKindIssueRollup
-			action.ReportFormat = sharedtypes.ExportFormatMarkdown
-			action.OutputMode = sharedtypes.ExportOutputModeFile
-			state.ProcessingLabel = "Generating issue rollup..."
+			return OpenExportScope(state, sharedtypes.ExportReportKindIssueRollup), nil, ""
 		case "Calendar export: write ICS file":
 			if len(state.RepoItems) == 0 {
 				return state, nil, "Calendar export requires at least one repo"
@@ -559,6 +552,138 @@ func updateExportDaily(state State, msg tea.KeyMsg) (State, *Action, string) {
 		return state, &action, ""
 	}
 	return state, nil, ""
+}
+
+func updateExportSummaryPeriod(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		items, values, details := exportReportCategories()
+		state.Kind = "export_report_category"
+		state.ExportCategory = ""
+		state.ChoiceItems, state.ChoiceValues, state.ChoiceDetails = items, values, details
+		state.ChoiceCursor = 0
+	case "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+	case "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceItems) {
+			return state, nil, "Select a summary period"
+		}
+		return OpenSummaryOutput(state, state.ChoiceItems[state.ChoiceCursor]), nil, ""
+	}
+	return clearDialogError(state), nil, ""
+}
+
+func updateExportScope(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenExportReportChoices(state, "project"), nil, ""
+	case "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+	case "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			return state, nil, "Select an export target"
+		}
+		id, err := strconv.ParseInt(state.ChoiceValues[state.ChoiceCursor], 10, 64)
+		if err != nil {
+			return state, nil, "Invalid export target"
+		}
+		action := &Action{Kind: "export_report", ReportKind: state.ExportPresetKind, ReportFormat: sharedtypes.ExportFormatMarkdown, OutputMode: sharedtypes.ExportOutputModeFile, CheckInDate: state.CheckInDate}
+		switch state.ExportPresetKind {
+		case sharedtypes.ExportReportKindRepo:
+			action.RepoID = id
+		case sharedtypes.ExportReportKindStream:
+			action.StreamID = id
+		case sharedtypes.ExportReportKindIssueRollup:
+			action.IssueID = id
+		}
+		state.Processing = true
+		state.ProcessingLabel = "Generating report..."
+		return state, action, ""
+	}
+	return clearDialogError(state), nil, ""
+}
+
+func updateExportSummaryOutput(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenExportReportChoices(state, "summary"), nil, ""
+	case "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+	case "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+	case "enter":
+		selected := state.ChoiceItems[state.ChoiceCursor]
+		format, output := sharedtypes.ExportFormatMarkdown, sharedtypes.ExportOutputModeFile
+		if selected == "Write PDF file" {
+			format = sharedtypes.ExportFormatPDF
+		}
+		if selected == "Copy Markdown" {
+			output = sharedtypes.ExportOutputModeClipboard
+		}
+		reportKind := sharedtypes.ExportReportKindGlance
+		if state.ExportStart != "" && state.ExportEnd != "" && state.ExportStart != state.ExportEnd {
+			reportKind = sharedtypes.ExportReportKindSummaryRange
+		}
+		return OpenExportPreset(state, reportKind, format, output), nil, ""
+	}
+	return clearDialogError(state), nil, ""
+}
+
+func updateExportSummaryRange(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenExportReportChoices(state, "summary"), nil, ""
+	case "tab", "shift+tab", "up", "down":
+		if len(state.Inputs) == 2 {
+			state.Inputs[state.FocusIdx].Blur()
+			state.FocusIdx = 1 - state.FocusIdx
+			state.Inputs[state.FocusIdx].Focus()
+		}
+		return clearDialogError(state), nil, ""
+	case "enter":
+		start, end := strings.TrimSpace(state.Inputs[0].Value()), strings.TrimSpace(state.Inputs[1].Value())
+		startDate, startErr := time.Parse(time.DateOnly, start)
+		endDate, endErr := time.Parse(time.DateOnly, end)
+		if startErr != nil || endErr != nil {
+			return state, nil, "Use dates in YYYY-MM-DD format"
+		}
+		if endDate.Before(startDate) {
+			return state, nil, "End date must be on or after start date"
+		}
+		state.ExportStart, state.ExportEnd = start, end
+		state.Inputs = nil
+		state.Kind = "export_summary_output"
+		state.ChoiceItems = []string{"Write Markdown file", "Copy Markdown"}
+		state.ChoiceDetails = []string{"Save the dashboard as Markdown.", "Copy the dashboard Markdown to the clipboard."}
+		if state.ExportIncludePDF {
+			state.ChoiceItems = append([]string{"Write PDF file"}, state.ChoiceItems...)
+			state.ChoiceDetails = append([]string{"Save a styled, landscape PDF dashboard."}, state.ChoiceDetails...)
+		}
+		state.ChoiceCursor = 0
+		return state, nil, ""
+	}
+	if len(state.Inputs) > 0 {
+		var cmd tea.Cmd
+		state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
+		_ = cmd
+	}
+	return clearDialogError(state), nil, ""
 }
 
 func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
@@ -611,6 +736,8 @@ func updateExportPreset(state State, msg tea.KeyMsg) (State, *Action, string) {
 			ReportFormat: state.ExportPresetFormat,
 			OutputMode:   state.ExportPresetOutput,
 			CheckInDate:  state.CheckInDate,
+			StartDate:    state.ExportStart,
+			EndDate:      state.ExportEnd,
 			PresetID:     presetID,
 		}, ""
 	}

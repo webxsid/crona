@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -15,7 +17,11 @@ func OpenExportDaily(
 	date string,
 	includePDF bool,
 	repos []api.Repo,
+	streams []api.Stream,
+	issues []api.IssueWithMeta,
 	checkedRepoID *int64,
+	checkedStreamID *int64,
+	checkedIssueID int64,
 	assets *api.ExportAssetStatus,
 ) State {
 	state = Close(state)
@@ -23,6 +29,24 @@ func OpenExportDaily(
 	state.CheckInDate = date
 	state.ExportIncludePDF = includePDF
 	state.ExportCategory = ""
+	state.MomentumStreams = append([]api.Stream(nil), streams...)
+	state.MomentumAllIssues = append([]api.IssueWithMeta(nil), issues...)
+	knownStreams := make(map[int64]bool, len(state.MomentumStreams))
+	for _, stream := range state.MomentumStreams {
+		knownStreams[stream.ID] = true
+	}
+	for _, issue := range issues {
+		if !knownStreams[issue.StreamID] {
+			state.MomentumStreams = append(state.MomentumStreams, api.Stream{
+				ID: issue.StreamID, RepoID: issue.RepoID, Name: issue.StreamName,
+			})
+			knownStreams[issue.StreamID] = true
+		}
+	}
+	if checkedStreamID != nil {
+		state.StreamID = *checkedStreamID
+	}
+	state.IssueID = checkedIssueID
 	items, values, details := exportReportCategories()
 	state.ChoiceItems = items
 	state.ChoiceValues = values
@@ -51,16 +75,54 @@ func OpenExportDaily(
 	return state
 }
 
+func OpenExportScope(state State, kind sharedtypes.ExportReportKind) State {
+	state.Kind = "export_scope"
+	state.ExportPresetKind = kind
+	state.ChoiceItems = nil
+	state.ChoiceValues = nil
+	state.ChoiceCursor = 0
+	switch kind {
+	case sharedtypes.ExportReportKindRepo:
+		for i, name := range state.RepoItems {
+			state.ChoiceItems = append(state.ChoiceItems, name)
+			state.ChoiceValues = append(state.ChoiceValues, fmt.Sprint(state.RepoItemIDs[i]))
+			if state.RepoItemIDs[i] == state.RepoID {
+				state.ChoiceCursor = i
+			}
+		}
+	case sharedtypes.ExportReportKindStream:
+		for i, stream := range state.MomentumStreams {
+			state.ChoiceItems = append(state.ChoiceItems, stream.Name)
+			state.ChoiceValues = append(state.ChoiceValues, fmt.Sprint(stream.ID))
+			if stream.ID == state.StreamID {
+				state.ChoiceCursor = i
+			}
+		}
+	case sharedtypes.ExportReportKindIssueRollup:
+		for i, issue := range state.MomentumAllIssues {
+			state.ChoiceItems = append(state.ChoiceItems, issue.RepoName+" / "+issue.StreamName+" / "+issue.Title)
+			state.ChoiceValues = append(state.ChoiceValues, fmt.Sprint(issue.ID))
+			if issue.ID == state.IssueID {
+				state.ChoiceCursor = i
+			}
+		}
+	}
+	return state
+}
+
 func exportReportCategories() ([]string, []string, []string) {
 	return []string{
+			"Summary",
 			"Narrative Reports",
 			"Project Reports",
 			"Data Exports",
 		}, []string{
+			"summary",
 			"narrative",
 			"project",
 			"data",
 		}, []string{
+			"View-only daily and range summaries as Markdown, PDF, or copied Markdown.",
 			"Daily and weekly summaries, including Markdown, PDF, and clipboard output.",
 			"Repo, stream, and issue rollup reports for focused project review.",
 			"CSV session dumps and calendar exports for external tools and automations.",
@@ -69,6 +131,22 @@ func exportReportCategories() ([]string, []string, []string) {
 
 func exportReportChoices(category string, includePDF bool) ([]string, []string) {
 	switch category {
+	case "summary":
+		return []string{
+				"Selected day",
+				"Calendar week",
+				"Calendar month",
+				"Last 7 days",
+				"Last 30 days",
+				"Custom range",
+			}, []string{
+				"Summary for the selected day.",
+				"Monday through the selected day.",
+				"First of the month through the selected day.",
+				"Seven-day rolling window ending on the selected day.",
+				"Thirty-day rolling window ending on the selected day.",
+				"Enter an exact inclusive start and end date.",
+			}
 	case "project":
 		return []string{
 				"Repo report: write Markdown file",
@@ -110,6 +188,51 @@ func exportReportChoices(category string, includePDF bool) ([]string, []string) 
 		}
 		return items, details
 	}
+}
+
+func OpenSummaryOutput(state State, period string) State {
+	if period == "Custom range" {
+		start := textinput.New()
+		start.Placeholder = "YYYY-MM-DD"
+		start.SetValue(state.CheckInDate)
+		start.Focus()
+		end := textinput.New()
+		end.Placeholder = "YYYY-MM-DD"
+		end.SetValue(state.CheckInDate)
+		state.Kind = "export_summary_range"
+		state.Inputs = []textinput.Model{start, end}
+		state.FocusIdx = 0
+		return state
+	}
+	anchor, err := time.Parse(time.DateOnly, state.CheckInDate)
+	if err != nil {
+		anchor = time.Now()
+	}
+	state.ExportStart, state.ExportEnd = "", ""
+	switch period {
+	case "Calendar week":
+		offset := (int(anchor.Weekday()) + 6) % 7
+		state.ExportStart = anchor.AddDate(0, 0, -offset).Format(time.DateOnly)
+		state.ExportEnd = anchor.Format(time.DateOnly)
+	case "Calendar month":
+		state.ExportStart = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).Format(time.DateOnly)
+		state.ExportEnd = anchor.Format(time.DateOnly)
+	case "Last 7 days":
+		state.ExportStart = anchor.AddDate(0, 0, -6).Format(time.DateOnly)
+		state.ExportEnd = anchor.Format(time.DateOnly)
+	case "Last 30 days":
+		state.ExportStart = anchor.AddDate(0, 0, -29).Format(time.DateOnly)
+		state.ExportEnd = anchor.Format(time.DateOnly)
+	}
+	state.Kind = "export_summary_output"
+	state.ChoiceItems = []string{"Write Markdown file", "Copy Markdown"}
+	state.ChoiceDetails = []string{"Save the dashboard as Markdown.", "Copy the dashboard Markdown to the clipboard."}
+	if state.ExportIncludePDF {
+		state.ChoiceItems = append([]string{"Write PDF file"}, state.ChoiceItems...)
+		state.ChoiceDetails = append([]string{"Save a styled, landscape PDF dashboard."}, state.ChoiceDetails...)
+	}
+	state.ChoiceCursor = 0
+	return state
 }
 
 func OpenExportPreset(
@@ -168,6 +291,9 @@ func OpenExportPreset(
 
 func OpenExportReportChoices(state State, category string) State {
 	state.Kind = "export_report"
+	if category == "summary" {
+		state.Kind = "export_summary_period"
+	}
 	state.Parent = "export_report_category"
 	state.ExportCategory = category
 	state.ChoiceCursor = 0

@@ -5,6 +5,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	inputpkg "crona/tui/internal/tui/input"
 	uistate "crona/tui/internal/tui/state"
 	tea "github.com/charmbracelet/bubbletea"
@@ -61,6 +62,38 @@ func TestInputDepsOpenCheckInDialogUsesWellbeingDateForWellbeingView(t *testing.
 			"expected wellbeing check-in dialog date to use wellbeing date, got %q",
 			state.DialogState.CheckInDate,
 		)
+	}
+}
+
+func TestDialogStatePreservesSummaryExportRange(t *testing.T) {
+	model := Model{
+		dialog:                   "export_preset",
+		dialogCheckInDate:        "2026-03-19",
+		dialogExportCategory:     "summary",
+		dialogExportStart:        "2026-03-13",
+		dialogExportEnd:          "2026-03-19",
+		dialogExportPresetKind:   sharedtypes.ExportReportKindSummaryRange,
+		dialogExportPresetFormat: sharedtypes.ExportFormatMarkdown,
+		dialogExportPresetOutput: sharedtypes.ExportOutputModeFile,
+	}
+
+	state := model.dialogState()
+	if state.ExportCategory != "summary" || state.ExportStart != "2026-03-13" || state.ExportEnd != "2026-03-19" {
+		t.Fatalf("dialogState dropped summary range: %#v", state)
+	}
+
+	next := model.withDialogState(dialogstate.State{
+		Kind:               "export_preset",
+		CheckInDate:        "2026-03-19",
+		ExportCategory:     "summary",
+		ExportStart:        "2026-03-13",
+		ExportEnd:          "2026-03-19",
+		ExportPresetKind:   sharedtypes.ExportReportKindSummaryRange,
+		ExportPresetFormat: sharedtypes.ExportFormatMarkdown,
+		ExportPresetOutput: sharedtypes.ExportOutputModeFile,
+	})
+	if next.dialogExportCategory != "summary" || next.dialogExportStart != "2026-03-13" || next.dialogExportEnd != "2026-03-19" {
+		t.Fatalf("withDialogState dropped summary range: %#v", next)
 	}
 }
 

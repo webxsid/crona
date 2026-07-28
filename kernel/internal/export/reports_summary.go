@@ -60,6 +60,38 @@ type csvExportColumn struct {
 	Field  string `json:"field"`
 }
 
+func (spec *csvExportSpec) UnmarshalJSON(body []byte) error {
+	var raw struct {
+		Headers []string          `json:"headers"`
+		Columns []json.RawMessage `json:"columns"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return err
+	}
+	spec.Columns = make([]csvExportColumn, 0, len(raw.Columns))
+	for index, entry := range raw.Columns {
+		var column csvExportColumn
+		if err := json.Unmarshal(entry, &column); err == nil &&
+			strings.TrimSpace(column.Field) != "" {
+			if strings.TrimSpace(column.Header) == "" {
+				column.Header = column.Field
+			}
+			spec.Columns = append(spec.Columns, column)
+			continue
+		}
+		var field string
+		if err := json.Unmarshal(entry, &field); err != nil {
+			return fmt.Errorf("csv export column %d must be a field name or column object", index+1)
+		}
+		header := field
+		if index < len(raw.Headers) && strings.TrimSpace(raw.Headers[index]) != "" {
+			header = raw.Headers[index]
+		}
+		spec.Columns = append(spec.Columns, csvExportColumn{Header: header, Field: field})
+	}
+	return nil
+}
+
 func GenerateReport(
 	ctx context.Context,
 	c *core.Context,
@@ -68,6 +100,8 @@ func GenerateReport(
 ) (*sharedtypes.ExportReportResult, error) {
 	kind := normalizeReportKind(input.Kind)
 	switch kind {
+	case sharedtypes.ExportReportKindGlance, sharedtypes.ExportReportKindSummaryRange:
+		return generateGlanceExport(ctx, c, paths, input)
 	case sharedtypes.ExportReportKindDaily:
 		return generateDailyExport(ctx, c, paths, input)
 	case sharedtypes.ExportReportKindWeekly:
@@ -485,6 +519,9 @@ func generateIssueRollupExport(
 	paths runtime.Paths,
 	input shareddto.ExportReportRequest,
 ) (*sharedtypes.ExportReportResult, error) {
+	if input.IssueID == nil || *input.IssueID <= 0 {
+		return nil, errors.New("issue export requires an issue id")
+	}
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -499,7 +536,7 @@ func generateIssueRollupExport(
 		Until    *string
 		Limit    *int
 		Offset   *int
-	}{RepoID: input.RepoID, StreamID: input.StreamID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
+	}{RepoID: input.RepoID, StreamID: input.StreamID, IssueID: input.IssueID, Since: new(start + "T00:00:00.000Z"), Until: new(end + "T23:59:59.999Z")}, false)
 	if err != nil {
 		return nil, err
 	}
@@ -510,6 +547,16 @@ func generateIssueRollupExport(
 	issueMeta := make(map[int64]sharedtypes.IssueWithMeta, len(allIssues))
 	for _, issue := range allIssues {
 		issueMeta[issue.ID] = issue
+	}
+	selected, ok := issueMeta[*input.IssueID]
+	if !ok {
+		return nil, fmt.Errorf("issue %d not found", *input.IssueID)
+	}
+	if input.RepoID != nil && selected.RepoID != *input.RepoID {
+		return nil, errors.New("selected issue does not belong to the requested repo")
+	}
+	if input.StreamID != nil && selected.StreamID != *input.StreamID {
+		return nil, errors.New("selected issue does not belong to the requested stream")
 	}
 	type rollup struct {
 		issue        sharedtypes.IssueWithMeta
@@ -523,6 +570,14 @@ func generateIssueRollupExport(
 		entries      []reportIssueSession
 	}
 	rollups := map[int64]*rollup{}
+	initial := &rollup{
+		issue: selected, title: selected.Title, status: selected.Status,
+		repoName: selected.RepoName, streamName: selected.StreamName,
+	}
+	if selected.EstimateMinutes != nil {
+		initial.estimateMins = *selected.EstimateMinutes
+	}
+	rollups[selected.ID] = initial
 	for _, entry := range entries {
 		meta, ok := issueMeta[entry.IssueID]
 		if !ok {
@@ -574,21 +629,28 @@ func generateIssueRollupExport(
 		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
 		"issues":           mapDetailedIssueGroups(detailedGroups, map[int64]map[string]any{}),
 	}
+	scope := &sharedtypes.ExportReportScope{
+		RepoID: &selected.RepoID, RepoName: &selected.RepoName,
+		StreamID: &selected.StreamID, StreamName: &selected.StreamName,
+		IssueID: &selected.ID, IssueTitle: &selected.Title,
+	}
 	return renderNarrativeReport(
 		paths,
 		sharedtypes.ExportReportKindIssueRollup,
 		data,
 		reportWriteSpec{
-			Kind:      sharedtypes.ExportReportKindIssueRollup,
-			Label:     "Session to Issue Rollup",
-			Date:      end,
-			StartDate: start,
-			EndDate:   end,
-			Format:    format,
-			BaseName:  fmt.Sprintf("issue-rollup-%s-to-%s", start, end),
+			Kind:       sharedtypes.ExportReportKindIssueRollup,
+			Label:      "Issue Report",
+			ScopeLabel: joinNonEmpty(" / ", selected.RepoName, selected.StreamName, selected.Title),
+			Date:       end,
+			StartDate:  start,
+			EndDate:    end,
+			Format:     format,
+			BaseName:   fmt.Sprintf("issue-%d-%s-%s-to-%s", selected.ID, slugify(selected.Title), start, end),
 		},
 		input.OutputMode,
 		"",
+		scope,
 	)
 }
 
@@ -731,7 +793,10 @@ func renderNarrativeReport(
 	presetID string,
 	scope ...*sharedtypes.ExportReportScope,
 ) (*sharedtypes.ExportReportResult, error) {
-	if spec.Format == sharedtypes.ExportFormatPDF && kind == sharedtypes.ExportReportKindWeekly {
+	if spec.Format == sharedtypes.ExportFormatPDF &&
+		(kind == sharedtypes.ExportReportKindWeekly ||
+			kind == sharedtypes.ExportReportKindGlance ||
+			kind == sharedtypes.ExportReportKindSummaryRange) {
 		htmlTemplate, cssTemplate, assets, err := LoadNarrativePDFAssets(paths, kind, presetID)
 		if err != nil {
 			return nil, err
@@ -790,7 +855,9 @@ func renderNarrativeReport(
 
 func normalizeReportKind(kind sharedtypes.ExportReportKind) sharedtypes.ExportReportKind {
 	switch kind {
-	case sharedtypes.ExportReportKindWeekly,
+	case sharedtypes.ExportReportKindGlance,
+		sharedtypes.ExportReportKindSummaryRange,
+		sharedtypes.ExportReportKindWeekly,
 		sharedtypes.ExportReportKindRepo,
 		sharedtypes.ExportReportKindStream,
 		sharedtypes.ExportReportKindIssueRollup,

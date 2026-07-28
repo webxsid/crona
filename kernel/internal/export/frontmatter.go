@@ -83,7 +83,7 @@ func renderFrontmatterBlock(spec reportWriteSpec, fields map[string]any) string 
 	switch spec.Kind {
 	case "daily":
 		lines = append(lines, "date: "+frontmatterString(fields, "date"))
-	case "weekly", "repo", "stream", "issue_rollup":
+	case "glance", "summary_range", "weekly", "repo", "stream", "issue_rollup":
 		lines = append(lines,
 			"start_date: "+frontmatterString(fields, "startDate"),
 			"end_date: "+frontmatterString(fields, "endDate"),

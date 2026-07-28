@@ -15,6 +15,7 @@ import (
 	kernelcmd "crona/cli/internal/command/kernel"
 	migrationcmd "crona/cli/internal/command/migration"
 	sessioncmd "crona/cli/internal/command/session"
+	summarycmd "crona/cli/internal/command/summary"
 	updatecmd "crona/cli/internal/command/update"
 	flagspkg "crona/cli/internal/flags"
 	runtimepkg "crona/cli/internal/runtime"
@@ -148,6 +149,11 @@ func run(args []string) error {
 			Stdout:     os.Stdout,
 			CallKernel: callKernelFn,
 		})
+	case "summary":
+		return summarycmd.Run(args[1:], summarycmd.Deps{
+			Stdout:     os.Stdout,
+			CallKernel: callKernelFn,
+		})
 	case "export":
 		return exportcmd.Run(args[1:], exportcmd.Deps{
 			Stdout:     os.Stdout,
@@ -191,6 +197,7 @@ Run without a command to open the TUI.
   context     Inspect or update checked-out context
   timer       Control the active timer/session
   issue       Start issue focus
+  summary     Read-only daily and range snapshot
   restore     Restore a backup database into the current runtime dir
   update      Inspect release updates and release notes
   export      Export automation artifacts such as calendar ICS files

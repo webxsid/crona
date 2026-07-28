@@ -44,6 +44,7 @@ type MetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
 type MetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }
 type StreaksLoadedMsg struct{ Streaks *api.StreakSummary }
 type DailyStreaksLoadedMsg struct{ Streaks *api.StreakSummary }
+type SummarySnapshotLoadedMsg struct{ Snapshot *api.SummarySnapshot }
 type DashboardWindowLoadedMsg struct{ Summary *api.DashboardWindowSummary }
 type FocusScoreLoadedMsg struct {
 	WindowDays int

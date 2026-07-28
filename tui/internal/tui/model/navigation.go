@@ -538,6 +538,13 @@ func (m Model) currentDashboardDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
+func (m Model) currentSummaryDate() string {
+	if m.summaryDate != "" {
+		return m.summaryDate
+	}
+	return time.Now().Format("2006-01-02")
+}
+
 func (m Model) currentRollupEndDate() string {
 	if m.rollupEndDate != "" {
 		return m.rollupEndDate

@@ -1,0 +1,21 @@
+{{frontmatterBlock}}
+
+# Range Summary — {{periodLabel}}
+
+| Focus | Issues | Habits | Plan |
+|---|---|---|---|
+| {{focus.value}} | {{issueMetric.value}} | {{habitMetric.value}} | {{planMetric.value}} |
+
+## Outcomes
+
+{{#each outcomes}}
+- {{label}}: {{bar}} {{value}}
+{{/each}}
+
+## Daily rhythm
+
+| Day | Focus | Rest | Sessions | Issues | Habits | Mood |
+|---|---:|---:|---:|---:|---:|---:|
+{{#each days}}
+| {{displayDate}} | {{workedTime}} | {{restTime}} | {{sessionCount}} | {{issues}} | {{habits}} | {{mood}} |
+{{/each}}

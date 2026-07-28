@@ -13,6 +13,7 @@ import (
 	"crona/tui/internal/tui/terminaltitle"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	rollupview "crona/tui/internal/tui/views/rollup"
+	summaryview "crona/tui/internal/tui/views/summary"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -26,6 +27,7 @@ type View = uistate.View
 
 const (
 	ViewAway           = uistate.ViewAway
+	ViewSummary        = uistate.ViewSummary
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
 	ViewRollup         = uistate.ViewRollup
@@ -51,6 +53,7 @@ const (
 	PaneStreams          = uistate.PaneStreams
 	PaneIssues           = uistate.PaneIssues
 	PaneHabits           = uistate.PaneHabits
+	PaneSummary          = uistate.PaneSummary
 	PaneRollupDays       = uistate.PaneRollupDays
 	PaneRollupBreakdown  = uistate.PaneRollupBreakdown
 	PaneSessions         = uistate.PaneSessions
@@ -117,6 +120,8 @@ type Model struct {
 	dailySummary              *api.DailyIssueSummary
 	dailyPlan                 *api.DailyPlan
 	dashboardDate             string
+	summaryDate               string
+	summarySnapshot           *api.SummarySnapshot
 	rollupStartDate           string
 	rollupEndDate             string
 	momentumDate              string
@@ -240,6 +245,9 @@ type Model struct {
 	dialogExportPresetFormat             sharedtypes.ExportFormat
 	dialogExportPresetOutput             sharedtypes.ExportOutputMode
 	dialogExportIncludePDF               bool
+	dialogExportCategory                 string
+	dialogExportStart                    string
+	dialogExportEnd                      string
 	dialogPromptGlyphMode                sharedtypes.PromptGlyphMode
 	dialogTelemetryStep                  int
 	dialogTelemetryUsage                 bool
@@ -378,6 +386,7 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailySummary(m.client, ""),
+		commands.LoadSummarySnapshot(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailyStreaks(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadWellbeingWindow(
 			m.client,
@@ -423,6 +432,12 @@ func (m *Model) clamp(p Pane, max int) {
 }
 
 func (m *Model) listLen(p Pane) int {
+	if p == PaneSummary {
+		snapshot := m.selectionSnapshot()
+		activeIssue := selectionpkg.ActiveIssue(snapshot)
+		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
+		return summaryview.PaneLineCount(state)
+	}
 	if p == PaneRollupDays {
 		if m.dashboardWindow == nil {
 			return 0

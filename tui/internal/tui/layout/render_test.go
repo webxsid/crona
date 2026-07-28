@@ -42,6 +42,36 @@ func TestRenderSidebarIncludesHabitHistoryView(t *testing.T) {
 	}
 }
 
+func TestRenderSidebarIncludesSummaryView(t *testing.T) {
+	rendered := Render(State{
+		Width:  140,
+		Height: 44,
+		View:   uistate.ViewSummary,
+		Pane:   uistate.PaneSummary,
+		ContentState: viewtypes.ContentState{
+			View:   string(uistate.ViewSummary),
+			Pane:   string(uistate.PaneSummary),
+			Width:  118,
+			Height: 44,
+			Cursors: map[string]int{
+				string(uistate.PaneSummary): 0,
+			},
+			Filters: map[string]string{
+				string(uistate.PaneSummary): "",
+			},
+		},
+	})
+
+	summaryAt := strings.Index(rendered, "Summary")
+	dailyAt := strings.Index(rendered, "Daily")
+	if summaryAt == -1 || dailyAt == -1 {
+		t.Fatalf("expected sidebar to include summary and daily views, got %q", rendered)
+	}
+	if summaryAt > dailyAt {
+		t.Fatalf("expected summary view to appear before daily view, got %q", rendered)
+	}
+}
+
 func TestRenderProtectedSidebarIncludesSettingsView(t *testing.T) {
 	rendered := Render(State{
 		Width:         140,

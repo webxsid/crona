@@ -107,6 +107,12 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.openMomentumDetailDialog(*msg.Detail), nil
 	case commands.MomentumDetailFailedMsg:
 		return m, m.setStatus(msg.Err.Error(), true)
+	case commands.SummarySnapshotLoadedMsg:
+		if msg.Snapshot == nil || msg.Snapshot.Date != m.currentSummaryDate() {
+			return m, nil
+		}
+		m.summarySnapshot = msg.Snapshot
+		return m, nil
 	}
 	state, cmd, handled := dispatchpkg.HandleMessage(
 		m.dispatchMessageState(),
@@ -186,6 +192,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		Pane:                    m.pane,
 		DailyTaskSection:        m.dailyTaskSection,
 		DashboardDate:           m.dashboardDate,
+		SummaryDate:             m.currentSummaryDate(),
 		Cursor:                  m.cursor,
 		Filters:                 m.filters,
 		Repos:                   m.repos,
@@ -298,6 +305,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dailySummary = state.DailySummary
 	m.dailyPlan = state.DailyPlan
 	m.dashboardDate = state.DashboardDate
+	m.summaryDate = state.SummaryDate
 	m.rollupStartDate = state.RollupStartDate
 	m.rollupEndDate = state.RollupEndDate
 	m.momentumDate = state.MomentumDate
@@ -473,6 +481,9 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadSummarySnapshot: func(date string) tea.Cmd {
+			return commands.LoadSummarySnapshot(m.client, date)
+		},
 		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)

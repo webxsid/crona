@@ -20,6 +20,17 @@ import (
 )
 
 func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
+	lines := summaryBodyLines(theme, state, width, height)
+	return lipgloss.NewStyle().
+		BorderStyle(lipgloss.RoundedBorder()).
+		BorderForeground(theme.ColorDim).
+		Padding(1, 2).
+		Width(width - 2).
+		Height(max(1, height-2)).
+		Render(viewhelpers.StringsJoin(lines))
+}
+
+func summaryBodyLines(theme types.Theme, state types.ContentState, width, height int) []string {
 	rawDate := viewruntime.CurrentDashboardDate(state)
 	totalIssues, totalEstimate, completedCount, abandonedCount := 0, 0, 0, 0
 	totalHabits, completedHabits, failedHabits, habitMinutes := len(state.DueHabits), 0, 0, 0
@@ -137,13 +148,7 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 	if len(calendarLines) > 0 {
 		lines = viewcalendar.MergeBeside(lines, calendarLines, summaryInnerW, 3)
 	}
-	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorDim).
-		Padding(1, 2).
-		Width(width - 2).
-		Height(max(1, height-2)).
-		Render(viewhelpers.StringsJoin(lines))
+	return lines
 }
 
 func renderCompactSummaryRow(

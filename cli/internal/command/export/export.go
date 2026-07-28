@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
+	"time"
 
 	contextcmd "crona/cli/internal/command/context"
 	flagspkg "crona/cli/internal/flags"
@@ -20,7 +22,7 @@ type Deps struct {
 }
 
 func Usage() string {
-	return "Usage: crona export <daily|weekly|repo|stream|issue-rollup|csv|calendar|reports> ...\n"
+	return "Usage: crona export <summary|daily|weekly|repo|stream|issue-rollup|csv|calendar|reports> ...\n"
 }
 
 func Run(args []string, deps Deps) error {
@@ -29,6 +31,8 @@ func Run(args []string, deps Deps) error {
 		return err
 	}
 	switch args[0] {
+	case "summary", "glance":
+		return runReport(args[1:], sharedtypes.ExportReportKindGlance, deps)
 	case "daily":
 		return runReport(args[1:], sharedtypes.ExportReportKindDaily, deps)
 	case "weekly":
@@ -141,6 +145,11 @@ func runReport(args []string, kind sharedtypes.ExportReportKind, deps Deps) erro
 	end := fs.String("end", "", "")
 	repoID := fs.Int64("repo-id", 0, "")
 	streamID := fs.Int64("stream-id", 0, "")
+	issueID := fs.Int64("issue-id", 0, "")
+	yesterday := fs.Bool("yesterday", false, "")
+	week := fs.Bool("week", false, "")
+	month := fs.Bool("month", false, "")
+	lastXDays := fs.Int("last-x-days", 0, "")
 	formatValue := fs.String("format", "", "")
 	outputValue := fs.String("output", "", "")
 	jsonOut := fs.Bool("json", false, "")
@@ -162,6 +171,20 @@ func runReport(args []string, kind sharedtypes.ExportReportKind, deps Deps) erro
 	if *streamID > 0 {
 		input.StreamID = streamID
 	}
+	if *issueID > 0 {
+		input.IssueID = issueID
+	}
+	if kind == sharedtypes.ExportReportKindGlance {
+		if err := applyGlancePeriod(&input, *yesterday, *week, *month, *lastXDays, time.Now()); err != nil {
+			return err
+		}
+		if input.Start != "" && input.End != "" && input.Start != input.End {
+			input.Kind = sharedtypes.ExportReportKindSummaryRange
+		}
+	}
+	if err := requireExplicitScope(input); err != nil {
+		return err
+	}
 	if err := applyScopeDefaults(&input, deps); err != nil {
 		return err
 	}
@@ -173,7 +196,82 @@ func runReport(args []string, kind sharedtypes.ExportReportKind, deps Deps) erro
 	if *jsonOut {
 		return outputpkg.PrintJSON(deps.Stdout, out)
 	}
+	if input.OutputMode == sharedtypes.ExportOutputModeClipboard {
+		if err := copyToClipboard(out.Content); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintln(deps.Stdout, "Markdown copied to clipboard")
+		return err
+	}
 	return outputpkg.PrintExportResult(deps.Stdout, out)
+}
+
+func requireExplicitScope(input shareddto.ExportReportRequest) error {
+	switch input.Kind {
+	case sharedtypes.ExportReportKindRepo:
+		if input.RepoID == nil {
+			return errors.New("repo export requires --repo-id")
+		}
+	case sharedtypes.ExportReportKindStream:
+		if input.StreamID == nil {
+			return errors.New("stream export requires --stream-id")
+		}
+	case sharedtypes.ExportReportKindIssueRollup:
+		if input.IssueID == nil {
+			return errors.New("issue export requires --issue-id")
+		}
+	}
+	return nil
+}
+
+func applyGlancePeriod(input *shareddto.ExportReportRequest, yesterday, week, month bool, lastXDays int, now time.Time) error {
+	selected := 0
+	for _, active := range []bool{yesterday, week, month, lastXDays > 0} {
+		if active {
+			selected++
+		}
+	}
+	if selected > 1 || (selected > 0 && (input.Date != "" || input.Start != "" || input.End != "")) {
+		return errors.New("choose one summary period")
+	}
+	if (input.Start == "") != (input.End == "") {
+		return errors.New("--start and --end must be used together")
+	}
+	anchor := now
+	switch {
+	case yesterday:
+		anchor = anchor.AddDate(0, 0, -1)
+		input.Date = anchor.Format(time.DateOnly)
+	case week:
+		offset := (int(anchor.Weekday()) + 6) % 7
+		input.Start = anchor.AddDate(0, 0, -offset).Format(time.DateOnly)
+		input.End = anchor.Format(time.DateOnly)
+	case month:
+		input.Start = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).Format(time.DateOnly)
+		input.End = anchor.Format(time.DateOnly)
+	case lastXDays > 0:
+		input.Start = anchor.AddDate(0, 0, -(lastXDays - 1)).Format(time.DateOnly)
+		input.End = anchor.Format(time.DateOnly)
+	case input.Date == "" && input.Start == "":
+		input.Date = anchor.Format(time.DateOnly)
+	}
+	return nil
+}
+
+func copyToClipboard(content string) error {
+	commands := [][]string{{"pbcopy"}, {"wl-copy"}, {"xclip", "-selection", "clipboard"}, {"xsel", "--clipboard", "--input"}, {"clip"}}
+	for _, candidate := range commands {
+		path, err := exec.LookPath(candidate[0])
+		if err != nil {
+			continue
+		}
+		cmd := exec.Command(path, candidate[1:]...)
+		cmd.Stdin = strings.NewReader(content)
+		if err := cmd.Run(); err == nil {
+			return nil
+		}
+	}
+	return errors.New("no supported clipboard command found")
 }
 
 func resolveCalendarRepoID(explicit int64, deps Deps) (int64, error) {
@@ -202,23 +300,7 @@ func applyScopeDefaults(input *shareddto.ExportReportRequest, deps Deps) error {
 	}
 	contextDeps := contextcmd.Deps{Stdout: deps.Stdout, CallKernel: deps.CallKernel}
 	switch input.Kind {
-	case sharedtypes.ExportReportKindRepo:
-		ctxOut, err := contextcmd.ResolveActive(contextDeps)
-		if err != nil {
-			return err
-		}
-		if input.RepoID == nil && ctxOut.RepoID != nil && *ctxOut.RepoID > 0 {
-			input.RepoID = ctxOut.RepoID
-		}
-	case sharedtypes.ExportReportKindStream:
-		ctxOut, err := contextcmd.ResolveActive(contextDeps)
-		if err != nil {
-			return err
-		}
-		if input.StreamID == nil && ctxOut.StreamID != nil && *ctxOut.StreamID > 0 {
-			input.StreamID = ctxOut.StreamID
-		}
-	case sharedtypes.ExportReportKindIssueRollup, sharedtypes.ExportReportKindCSV:
+	case sharedtypes.ExportReportKindCSV:
 		ctxOut, err := contextcmd.ResolveActive(contextDeps)
 		if err != nil {
 			return err
@@ -234,6 +316,8 @@ func applyScopeDefaults(input *shareddto.ExportReportRequest, deps Deps) error {
 
 func exportMethodForKind(kind sharedtypes.ExportReportKind) string {
 	switch kind {
+	case sharedtypes.ExportReportKindGlance, sharedtypes.ExportReportKindSummaryRange:
+		return protocol.MethodExportGlance
 	case sharedtypes.ExportReportKindWeekly:
 		return protocol.MethodExportWeekly
 	case sharedtypes.ExportReportKindRepo:

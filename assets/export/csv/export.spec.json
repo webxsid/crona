@@ -1,24 +1,13 @@
 {
-  "headers": [
-    "issue_id",
-    "issue_title",
-    "repo",
-    "stream",
-    "session_id",
-    "start_time",
-    "end_time",
-    "duration_seconds",
-    "summary"
-  ],
   "columns": [
-    "issueId",
-    "issueTitle",
-    "repoName",
-    "streamName",
-    "id",
-    "startTime",
-    "endTime",
-    "durationSeconds",
-    "summary"
+    {"header": "Issue ID", "field": "issueId"},
+    {"header": "Issue Title", "field": "issueTitle"},
+    {"header": "Repo", "field": "repo"},
+    {"header": "Stream", "field": "stream"},
+    {"header": "Session ID", "field": "sessionId"},
+    {"header": "Start Time", "field": "startTime"},
+    {"header": "End Time", "field": "endTime"},
+    {"header": "Duration Seconds", "field": "durationSeconds"},
+    {"header": "Summary", "field": "summary"}
   ]
 }

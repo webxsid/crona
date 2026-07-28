@@ -46,7 +46,7 @@ func zsh(name string) string {
 	return fmt.Sprintf(`#compdef %s
 _%s() {
   local -a commands
-  commands=('backup:Back up data' 'restore:Restore data' 'daemon:Daemon commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'export:Export commands' 'dev:Dev-only commands')
+  commands=('backup:Back up data' 'restore:Restore data' 'daemon:Daemon commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'summary:Day and range summary' 'export:Export commands' 'dev:Dev-only commands')
   if (( CURRENT == 2 )); then
     _describe 'command' commands
     return
@@ -60,7 +60,8 @@ _%s() {
     timer) _values 'timer command' status start pause resume end ;;
     issue) _values 'issue command' start ;;
     update) _values 'update command' status check dismiss notes ;;
-    export) _values 'export command' daily weekly repo stream issue-rollup csv calendar reports ;;
+    summary) _values 'summary command' --date --start --end --yesterday --week --month --last-x-days ;;
+    export) _values 'export command' summary daily weekly repo stream issue-rollup csv calendar reports ;;
     dev) _values 'dev command' seed clear ;;
   esac
 }
@@ -74,7 +75,7 @@ func bash(name string) string {
   local cur prev words cword
   _init_completion || return
   if [[ ${cword} -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "backup restore daemon completion context timer issue update export dev" -- "$cur") )
+    COMPREPLY=( $(compgen -W "backup restore daemon completion context timer issue update summary export dev" -- "$cur") )
     return
   fi
   case "${words[1]}" in
@@ -86,7 +87,8 @@ func bash(name string) string {
     timer) COMPREPLY=( $(compgen -W "status start pause resume end" -- "$cur") ) ;;
     issue) COMPREPLY=( $(compgen -W "start" -- "$cur") ) ;;
     update) COMPREPLY=( $(compgen -W "status check dismiss notes" -- "$cur") ) ;;
-    export) COMPREPLY=( $(compgen -W "daily weekly repo stream issue-rollup csv calendar reports" -- "$cur") ) ;;
+    summary) COMPREPLY=( $(compgen -W "--date --start --end --yesterday --week --month --last-x-days" -- "$cur") ) ;;
+    export) COMPREPLY=( $(compgen -W "summary daily weekly repo stream issue-rollup csv calendar reports" -- "$cur") ) ;;
     dev) COMPREPLY=( $(compgen -W "seed clear" -- "$cur") ) ;;
   esac
 }
@@ -96,7 +98,7 @@ complete -F _%s %s
 
 func fish(name string) string {
 	return fmt.Sprintf(
-		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore daemon completion context timer issue update export dev"
+		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore daemon completion context timer issue update summary export dev"
 complete -c %s -f -n "__fish_seen_subcommand_from backup" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from restore" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from daemon" -a "attach detach restart wipe-data info status"
@@ -105,9 +107,11 @@ complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear cle
 complete -c %s -f -n "__fish_seen_subcommand_from timer" -a "status start pause resume end"
 complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start"
 complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismiss notes"
-complete -c %s -f -n "__fish_seen_subcommand_from export" -a "daily weekly repo stream issue-rollup csv calendar reports"
+complete -c %s -f -n "__fish_seen_subcommand_from summary" -a "--date --start --end --yesterday --week --month --last-x-days"
+complete -c %s -f -n "__fish_seen_subcommand_from export" -a "summary daily weekly repo stream issue-rollup csv calendar reports"
 complete -c %s -f -n "__fish_seen_subcommand_from dev" -a "seed clear"
 `,
+		name,
 		name,
 		name,
 		name,

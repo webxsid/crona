@@ -461,6 +461,13 @@ func (h *Handler) handleWorkMethods(
 			input.Kind = sharedtypes.ExportReportKindDaily
 			return export.GenerateReport(ctx, h.core, h.paths, input)
 		}), true
+	case protocol.MethodExportGlance:
+		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
+			if input.Kind != sharedtypes.ExportReportKindSummaryRange {
+				input.Kind = sharedtypes.ExportReportKindGlance
+			}
+			return export.GenerateReport(ctx, h.core, h.paths, input)
+		}), true
 	case protocol.MethodExportWeekly:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindWeekly
