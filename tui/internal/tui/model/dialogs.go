@@ -576,12 +576,11 @@ func (m Model) openHelpDialog() Model {
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
 		TimerNextSegment:       chromeState.TimerNextSegment,
-		StructuredTimer:        chromeState.StructuredTimer,
 		RestModeActive:         stateRestModeFromChrome(chromeState),
 		AwayModeActive:         stateAwayModeFromContent(m),
 		IsDevMode:              m.isDevMode(),
 		IsBetaBuild:            m.isBetaBuild(),
-		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateVisible:          viewruntime.ShouldShowUpdatesView(m.updateStatus),
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
 	globalActions := viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions)

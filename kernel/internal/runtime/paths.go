@@ -3,6 +3,7 @@ package runtime
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"crona/shared/config"
 	"crona/shared/localipc"
@@ -60,7 +61,7 @@ func ResolvePaths() (Paths, error) {
 		Transport:        transport,
 		Endpoint:         endpoint,
 		SocketPath:       socketPath,
-		CurrentLogDir:    filepath.Join(logs, dateStamp()),
+		CurrentLogDir:    filepath.Join(logs, time.Now().Format("2006-01-02")),
 	}, nil
 }
 

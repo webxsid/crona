@@ -10,29 +10,6 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-func RenderSimplePane(
-	theme Theme,
-	title, filter string,
-	cursor int,
-	items []string,
-	active bool,
-	width, height int,
-	empty string,
-) string {
-	return RenderSimplePaneWithActions(
-		theme,
-		title,
-		filter,
-		cursor,
-		items,
-		active,
-		width,
-		height,
-		empty,
-		nil,
-	)
-}
-
 func RenderSimplePaneWithActions(
 	theme Theme,
 	title, filter string,
@@ -181,7 +158,6 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		TimerState:                timerStateFromContent(state),
 		TimerSegment:              timerSegmentFromContent(state),
 		TimerNextSegment:          timerNextSegmentFromContent(state),
-		StructuredTimer:           structuredTimerFromContent(state),
 		RestModeActive:            state.RestModeActive,
 		AwayModeActive:            state.AwayModeActive,
 		UpdateVisible:             viewruntime.ShouldShowUpdatesView(state.UpdateStatus),
@@ -227,10 +203,6 @@ func timerNextSegmentFromContent(state ContentState) string {
 		return string(*state.Timer.NextSegmentType)
 	}
 	return ""
-}
-
-func structuredTimerFromContent(state ContentState) bool {
-	return false
 }
 
 func RenderPaneRowStyled(

@@ -27,12 +27,11 @@ func (m Model) layoutState() layoutpkg.State {
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
 		TimerNextSegment:       chromeState.TimerNextSegment,
-		StructuredTimer:        chromeState.StructuredTimer,
 		RestModeActive:         stateRestModeFromChrome(chromeState),
 		AwayModeActive:         stateAwayModeFromContent(m),
 		IsDevMode:              m.isDevMode(),
 		IsBetaBuild:            m.isBetaBuild(),
-		UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+		UpdateVisible:          viewruntime.ShouldShowUpdatesView(m.updateStatus),
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 		UpdateCommand: updateCommand(
 			m.updateStatus,
@@ -107,7 +106,6 @@ type layoutChromeState struct {
 	TimerState       string
 	TimerSegment     string
 	TimerNextSegment string
-	StructuredTimer  bool
 	HeaderState      viewchrome.HeaderState
 	GlobalActions    []string
 }
@@ -139,7 +137,6 @@ func (m Model) layoutChromeState() layoutChromeState {
 			timerNextSegment = string(*m.timer.NextSegmentType)
 		}
 	}
-	structuredTimer := false
 	protectedMode, _, _ := viewruntime.ProtectedRestMode(
 		m.settings,
 		time.Now().Format("2006-01-02"),
@@ -161,7 +158,6 @@ func (m Model) layoutChromeState() layoutChromeState {
 		TimerState:       timerState,
 		TimerSegment:     timerSegment,
 		TimerNextSegment: timerNextSegment,
-		StructuredTimer:  structuredTimer,
 		HeaderState:      headerState,
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
@@ -170,11 +166,10 @@ func (m Model) layoutChromeState() layoutChromeState {
 			TimerState:             timerState,
 			TimerSegment:           timerSegment,
 			TimerNextSegment:       timerNextSegment,
-			StructuredTimer:        structuredTimer,
 			HardLimitActive:        hardLimitActive,
 			IsDevMode:              m.isDevMode(),
 			IsBetaBuild:            m.isBetaBuild(),
-			UpdateVisible:          viewsShouldShowUpdate(m.updateStatus),
+			UpdateVisible:          viewruntime.ShouldShowUpdatesView(m.updateStatus),
 			UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 			UpdateCommand: updateCommand(
 				m.updateStatus,

@@ -14,7 +14,6 @@ type ActionsState struct {
 	TimerState                string
 	TimerSegment              string
 	TimerNextSegment          string
-	StructuredTimer           bool
 	HardLimitActive           bool
 	RestModeActive            bool
 	AwayModeActive            bool
@@ -112,11 +111,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	}
 	if state.View == "session_history" {
-		if state.RestModeActive {
-			return []string{
-				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
-			}
-		}
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 		}

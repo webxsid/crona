@@ -1,8 +1,6 @@
 package model
 
 import (
-	"strings"
-
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -13,17 +11,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-func viewsShouldShowUpdate(status *api.UpdateStatus) bool {
-	if status == nil {
-		return false
-	}
-	if !status.Enabled || !status.PromptEnabled || !status.UpdateAvailable {
-		return false
-	}
-	return strings.TrimSpace(status.LatestVersion) != "" &&
-		strings.TrimSpace(status.LatestVersion) != strings.TrimSpace(status.DismissedVersion)
-}
 
 func (m Model) overlayState() overlaypkg.State {
 	return overlaypkg.State{

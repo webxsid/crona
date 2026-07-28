@@ -195,10 +195,6 @@ func RenderResponsiveClock(
 	return RenderClockTiny(clock)
 }
 
-func RenderBigClock(clock string) string {
-	return RenderClockLarge(clock)
-}
-
 func renderClockCanvas(clock string, spec clockTileSpec, litColor lipgloss.Color) string {
 	runes := []rune(strings.TrimSpace(clock))
 	if len(runes) == 0 {

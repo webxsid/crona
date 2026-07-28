@@ -28,7 +28,7 @@ import (
 var (
 	runtimeBaseDir = config.RuntimeBaseDir
 	readFileFn     = os.ReadFile
-	kernelBinaryFn = config.KernelBinaryName
+	kernelBinaryFn = config.DaemonBinaryName
 	tuiBinaryFn    = config.TUIBinaryName
 	osExecutableFn = os.Executable
 	execLookPathFn = exec.LookPath

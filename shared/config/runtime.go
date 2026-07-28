@@ -155,11 +155,6 @@ func DaemonBinaryName() string {
 	return DaemonBinaryNameForMode(Load().Mode)
 }
 
-// KernelBinaryName remains as a compatibility alias for internal callers.
-func KernelBinaryName() string {
-	return DaemonBinaryName()
-}
-
 func TUIBinaryName() string {
 	return TUIBinaryNameForMode(Load().Mode)
 }
