@@ -121,7 +121,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `alerts.test_notification` | `dto.Empty` | `dto.OKResponse` | Sends a sample alert through the current backend. |
 | `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
 | `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local daemon alerts layer. |
-| `alerts.delivery.subscribe` | `types.AlertDeliveryCapability` | `alert.delivery` stream | Claims native alert delivery while the stream remains connected. |
+| `alerts.delivery.subscribe` | `types.AlertDeliveryCapability` | `alert.delivery` stream | Claims native alert delivery while the stream remains connected. Delivered alerts can include companion actions when the backend has something actionable to offer. |
 | `alerts.delivery.ack` | `types.AlertDeliveryAck` | `dto.OKResponse` | Acknowledges notification and sound delivery independently. |
 | `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
 | `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
@@ -237,6 +237,7 @@ Streak behavior notes:
 
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
+| `export.glance` | `dto.ExportReportRequest` | export result | Summary export generation. |
 | `export.daily` | `dto.DailyReportRequest` | export result | Daily report generation. |
 | `export.weekly` | `dto.ExportReportRequest` | export result | Weekly report generation. |
 | `export.repo` | `dto.ExportReportRequest` | export result | Repo report generation. |
@@ -255,8 +256,9 @@ Streak behavior notes:
 Export behavior notes:
 
 - markdown export does not require extra renderer tooling
-- daily and weekly PDF export require `weasyprint`
-- repo, stream, and issue-rollup PDF export require `pandoc` plus a supported daemon
+- summary, daily, and weekly PDF export require `weasyprint`
+- repo, stream, and issue-rollup PDF export require `pandoc` plus a supported PDF engine
+- repo, stream, and issue-rollup exports can be generated for explicitly selected entities; callers do not need to mutate the shared active context first
 - `export.assets.get` is the runtime capability/status surface for renderer availability, active template paths, and reports directories
 
 ### Sessions And Timer

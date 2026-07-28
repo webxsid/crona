@@ -333,6 +333,7 @@ Observed error behavior:
 | `dashboard.focus_score` | Focus score summary | `dto.DashboardSummaryQuery` | `types.FocusScoreSummary` | None | TUI | Yes |
 | `dashboard.distribution` | Time distribution summary | `dto.DashboardSummaryQuery` | `types.TimeDistributionSummary` | None | TUI | Yes |
 | `dashboard.goal_progress` | Goal progress summary | `dto.DashboardSummaryQuery` | `types.GoalProgressSummary` | None | TUI | Yes |
+| `export.glance` | Summary export | `dto.ExportReportRequest` | `types.ExportReportResult` | Writes artifact or clipboard | TUI, CLI | Yes |
 | `export.daily` | Daily export | `dto.DailyReportRequest` | `types.ExportReportResult` | Writes report artifact or clipboard | TUI, CLI | Yes |
 | `export.weekly` | Weekly export | `dto.ExportReportRequest` | `types.ExportReportResult` | Writes report artifact or clipboard | TUI, CLI | Yes |
 | `export.repo` | Repo export | `dto.ExportReportRequest` | `types.ExportReportResult` | Writes artifact or clipboard | TUI, CLI | Yes |
@@ -711,7 +712,7 @@ Observed helper backends:
 The companion should not reimplement alert scheduling. The best boundary is:
 
 - use daemon alerts for delivery timing,
-- use the companion only for local UI surfaces and maybe notification actions when those actions require a client-side response.
+- use the companion only for local UI surfaces and notification actions when those actions require a client-side response.
 
 ## Reusable Packages
 
@@ -899,4 +900,3 @@ Reusability for a companion:
 - `tui/internal/api/events.go`
 - `tui/internal/kernel/client.go`
 - `cli/internal/runtime/runtime.go`
-

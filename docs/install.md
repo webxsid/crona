@@ -224,6 +224,8 @@ Supported notification helpers by OS:
 
 The `Alerts` view shows the active backend and whether subtitle, urgency, icon, and bundled sound support are currently available on the running machine.
 
+On macOS, `terminal-notifier` and `osascript` cover basic notification delivery. Companion-capable actions, such as the hard-limit commit or extend choices, are handled by the native companion when it is connected.
+
 Bundled alert sounds include royalty-free effects by Universfield on Pixabay:
 
 > Sound Effect by [Universfield](https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248)
@@ -234,7 +236,7 @@ Markdown export works without extra tooling. PDF export requires local renderer 
 
 Current renderer expectations:
 
-- Daily and weekly narrative PDF exports require `weasyprint`
+- Summary, daily, and weekly narrative PDF exports require `weasyprint`
 - Repo, stream, and issue-rollup PDF exports require `pandoc` plus one supported PDF engine:
   - `tectonic`
   - `weasyprint`
@@ -245,3 +247,5 @@ Current renderer expectations:
 Renderer availability is detected at runtime and surfaced in the TUI `Config` view and through `export.assets.get`.
 
 If the required renderer chain is missing, PDF export remains unavailable but markdown export still works.
+
+The export UI separates the at-a-glance Summary exports from narrative reports. Summary exports use their own date and range flow and can produce markdown, PDF, clipboard markdown, or CSV depending on the target. Repo, stream, and issue report exports prompt for the entity at export time and can prefill from the current checked-out context when one exists.

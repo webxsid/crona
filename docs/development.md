@@ -172,7 +172,7 @@ Focus inactivity alerts are local-daemon-owned. During active focus sessions the
 
 The export layer uses two PDF paths:
 
-- daily/weekly narrative PDF: `weasyprint`
+- summary/daily/weekly narrative PDF: `weasyprint`
 - repo/stream/issue-rollup PDF: `pandoc` plus `tectonic`, `weasyprint`, `wkhtmltopdf`, `xelatex`, or `pdflatex`
 
 Useful local checks:
@@ -182,7 +182,7 @@ go test ./kernel/internal/export
 go test ./kernel/internal/... ./shared/... ./tui/internal/api
 ```
 
-If renderer tooling is missing, markdown export still works and the runtime asset status marks PDF rendering as unavailable.
+If renderer tooling is missing, markdown export still works and the runtime asset status marks PDF rendering as unavailable. Repo, stream, and issue report exports should also be tested without relying on whatever repo, stream, or issue happens to be checked out in the TUI; those flows now accept explicit selections at export time.
 
 ## Repository Layout
 

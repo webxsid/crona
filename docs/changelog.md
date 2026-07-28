@@ -2,6 +2,20 @@
 
 All notable changes to **Crona** are documented here.
 
+## Unreleased
+
+### Added
+
+- A dedicated read-only `Summary` surface in both the TUI and CLI for quick day and range snapshots, including calendar week, calendar month, yesterday, and rolling last-X-days entry points.
+- Summary exports as a first-class export category, with dedicated markdown and PDF output alongside clipboard markdown and CSV flows where applicable.
+
+### Changed
+
+- The TUI sidebar now promotes workspace navigation above export tooling, while bracket-based view navigation follows the same visible order.
+- Repo, stream, and issue report exports no longer depend on the currently checked-out context; the export flow prompts for the target and prefills from active context when available.
+- The CLI summary output now uses a denser at-a-glance layout with stronger terminal visuals intended for direct reading rather than interactive editing.
+- Hard-limit timer alerts now carry companion actions for commit and extend, matching the existing TUI recovery flow.
+
 ## [1.7.1] - 2026-07-28
 
 Crona v1.7.1 fixes repeated extension of the dedicated no-break Timer countdown.

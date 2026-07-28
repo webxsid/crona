@@ -247,6 +247,109 @@ func TestNotifyQueuesAlertForBackgroundDelivery(t *testing.T) {
 	}
 }
 
+func TestNotifyWithActionsQueuesExportActions(t *testing.T) {
+	ctx := context.Background()
+	coreCtx := testCoreContext(t, ctx)
+	service := &Service{
+		core:   coreCtx,
+		logger: testLogger(t),
+		queue:  make(chan queuedAlert, 1),
+	}
+	path := "/tmp/report.md"
+	req := sharedtypes.AlertRequest{
+		Kind:      sharedtypes.AlertEventExportCompleted,
+		Title:     "Export ready",
+		Body:      "Open the file or reveal it in Finder.",
+		PlaySound: false,
+	}
+	actions := []sharedtypes.AlertDeliveryAction{
+		{
+			ID:    "export.open",
+			Title: "Open File",
+			Path:  &path,
+		},
+	}
+
+	if err := service.NotifyWithActions(ctx, req, actions); err != nil {
+		t.Fatalf("notify with actions: %v", err)
+	}
+
+	select {
+	case queued := <-service.queue:
+		if queued.req.Kind != req.Kind {
+			t.Fatalf("expected queued kind %q, got %q", req.Kind, queued.req.Kind)
+		}
+		if !queued.respectSettings {
+			t.Fatal("expected queued notify alert to respect settings")
+		}
+		if len(queued.actions) != 1 || queued.actions[0].Path == nil || *queued.actions[0].Path != path {
+			t.Fatalf("unexpected queued actions: %+v", queued.actions)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected export alert to be queued")
+	}
+}
+
+func TestNotifyWithActionsQueuesHardLimitActions(t *testing.T) {
+	ctx := context.Background()
+	coreCtx := testCoreContext(t, ctx)
+	service := &Service{
+		core:   coreCtx,
+		logger: testLogger(t),
+		queue:  make(chan queuedAlert, 1),
+	}
+
+	req := hardLimitReachedAlert(sharedtypes.TimerHardLimitReachedPayload{
+		HardLimitKind: sharedtypes.TimerHardLimitKindCountdown,
+	})
+
+	if err := service.NotifyWithActions(ctx, req, hardLimitReachedActions()); err != nil {
+		t.Fatalf("notify with actions: %v", err)
+	}
+
+	select {
+	case queued := <-service.queue:
+		if queued.req.Kind != sharedtypes.AlertEventTimerWorkComplete {
+			t.Fatalf("expected queued timer kind, got %q", queued.req.Kind)
+		}
+		if len(queued.actions) != 2 {
+			t.Fatalf("expected two hard-limit actions, got %+v", queued.actions)
+		}
+		if queued.actions[0].Title != "Commit" ||
+			queued.actions[0].DialogKind != "end_session" ||
+			queued.actions[0].DialogParent != "hard_limit_expired" {
+			t.Fatalf("unexpected commit action: %+v", queued.actions[0])
+		}
+		if queued.actions[1].Title != "Extend" ||
+			queued.actions[1].DialogKind != "hard_limit_extend" ||
+			queued.actions[1].DialogParent != "hard_limit_expired" {
+			t.Fatalf("unexpected extend action: %+v", queued.actions[1])
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected hard-limit alert to be queued")
+	}
+}
+
+func TestAlertDeliveryActionEncodesDialogTargets(t *testing.T) {
+	action := sharedtypes.AlertDeliveryAction{
+		ID:           "timer.commit",
+		Title:        "Commit",
+		DialogKind:   "end_session",
+		DialogParent: "hard_limit_expired",
+	}
+	body, err := json.Marshal(action)
+	if err != nil {
+		t.Fatalf("marshal action: %v", err)
+	}
+	var out sharedtypes.AlertDeliveryAction
+	if err := json.Unmarshal(body, &out); err != nil {
+		t.Fatalf("unmarshal action: %v", err)
+	}
+	if out.DialogKind != action.DialogKind || out.DialogParent != action.DialogParent {
+		t.Fatalf("unexpected dialog action round-trip: %+v", out)
+	}
+}
+
 func TestTestSoundQueuesAlertForBackgroundDelivery(t *testing.T) {
 	ctx := context.Background()
 	coreCtx := testCoreContext(t, ctx)
@@ -304,6 +407,19 @@ func TestHardLimitReachedAlertUsesCountdownCopy(t *testing.T) {
 	legacy := hardLimitReachedAlert(sharedtypes.TimerHardLimitReachedPayload{})
 	if legacy.Title != "Pomodoro session complete" {
 		t.Fatalf("expected legacy hard-limit alert to remain Pomodoro, got %+v", legacy)
+	}
+}
+
+func TestHardLimitReachedActionsUseDialogTargets(t *testing.T) {
+	actions := hardLimitReachedActions()
+	if len(actions) != 2 {
+		t.Fatalf("expected two hard-limit actions, got %+v", actions)
+	}
+	if actions[0].DialogKind != "end_session" || actions[1].DialogKind != "hard_limit_extend" {
+		t.Fatalf("unexpected dialog kinds: %+v", actions)
+	}
+	if actions[0].DialogParent != "hard_limit_expired" || actions[1].DialogParent != "hard_limit_expired" {
+		t.Fatalf("unexpected dialog parents: %+v", actions)
 	}
 }
 

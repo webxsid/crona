@@ -82,7 +82,11 @@ func Start(
 				logger.Error("decode timer hard limit payload", err)
 				return
 			}
-			if err := service.enqueue(hardLimitReachedAlert(payload), true); err != nil {
+			if err := service.enqueueWithActions(
+				hardLimitReachedAlert(payload),
+				true,
+				hardLimitReachedActions(),
+			); err != nil {
 				logger.Error("enqueue timer hard limit alert", err)
 			}
 		case sharedtypes.EventTypeUpdateStatus:
@@ -193,6 +197,14 @@ func (s *Service) TestSound(ctx context.Context) error {
 
 func (s *Service) Notify(ctx context.Context, req sharedtypes.AlertRequest) error {
 	return s.enqueue(req, true)
+}
+
+func (s *Service) NotifyWithActions(
+	ctx context.Context,
+	req sharedtypes.AlertRequest,
+	actions []sharedtypes.AlertDeliveryAction,
+) error {
+	return s.enqueueWithActions(req, true, actions)
 }
 
 func (s *Service) enqueue(req sharedtypes.AlertRequest, respectSettings bool) error {
@@ -327,6 +339,24 @@ func hardLimitReachedAlert(
 		IconEnabled: true,
 	}
 	return req
+}
+
+func hardLimitReachedActions() []sharedtypes.AlertDeliveryAction {
+	parent := "hard_limit_expired"
+	return []sharedtypes.AlertDeliveryAction{
+		{
+			ID:           "timer.commit",
+			Title:        "Commit",
+			DialogKind:   "end_session",
+			DialogParent: parent,
+		},
+		{
+			ID:           "timer.extend",
+			Title:        "Extend",
+			DialogKind:   "hard_limit_extend",
+			DialogParent: parent,
+		},
+	}
 }
 
 func timerBoundarySubtitle(payload sharedtypes.TimerBoundaryPayload) string {

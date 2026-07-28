@@ -118,6 +118,16 @@ The Daily view also adapts to terminal width. Wider layouts keep the denser mult
 
 Calendar surfaces use terminal background styling for selected dates, date ranges, today, and the current week rather than bracket markers. This keeps date cells fixed-width while relying on color and background state to distinguish selection and today.
 
+The main dashboard surfaces serve different jobs:
+
+- Summary is the read-only at-a-glance surface. It is meant to answer “what does today or this period look like?” without dropping the user into editing flows.
+- Daily is the interactive working surface for planning the day, updating issue state, managing timer-driven work, and handling the small decisions that happen while work is in motion.
+- Rollup and Wellbeing are interpretation surfaces. They step back from the day and show patterns, distribution, streaks, and risk.
+
+The CLI follows the same split. `crona summary` is a glanceable output surface for one day, yesterday, the current calendar week, the current calendar month, or a rolling last-X-days window. Export flows reuse the same idea when you need a saved artifact rather than an on-screen check.
+
+The sidebar order reflects that shape. Summary and Daily sit at the top as the primary day-to-day entry points, workspace views stay grouped together, and export/reporting tools live lower in the navigation because they are downstream artifacts rather than the main place work is edited.
+
 ## Notifications And Automation
 
 ### Notifications

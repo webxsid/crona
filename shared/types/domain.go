@@ -1356,6 +1356,9 @@ type AlertDeliveryAction struct {
 	ID                       string              `json:"id"`
 	Title                    string              `json:"title"`
 	ExpectedReadySegmentType *SessionSegmentType `json:"expectedReadySegmentType,omitempty"`
+	Path                     *string             `json:"path,omitempty"`
+	DialogKind               string              `json:"dialogKind,omitempty"`
+	DialogParent             string              `json:"dialogParent,omitempty"`
 }
 
 type AlertDelivery struct {
