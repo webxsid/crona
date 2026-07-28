@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	corecommands "crona/kernel/internal/core/commands"
 	"crona/kernel/internal/export"
@@ -459,39 +460,74 @@ func (h *Handler) handleWorkMethods(
 	case protocol.MethodExportDaily:
 		return handle(req, func(input shareddto.DailyReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindDaily
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportGlance:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			if input.Kind != sharedtypes.ExportReportKindSummaryRange {
 				input.Kind = sharedtypes.ExportReportKindGlance
 			}
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportWeekly:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindWeekly
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportRepo:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindRepo
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportStream:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindStream
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportIssueRollup:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindIssueRollup
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportCSV:
 		return handle(req, func(input shareddto.ExportReportRequest) (any, error) {
 			input.Kind = sharedtypes.ExportReportKindCSV
-			return export.GenerateReport(ctx, h.core, h.paths, input)
+			result, err := h.generateExportReport(ctx, input)
+			if err != nil {
+				return nil, err
+			}
+			h.notifyExportCompleted(ctx, result)
+			return result, nil
 		}), true
 	case protocol.MethodExportCalendar:
 		return handle(req, func(input shareddto.ExportCalendarRequest) (any, error) {
@@ -500,4 +536,48 @@ func (h *Handler) handleWorkMethods(
 	default:
 		return protocol.Response{}, false
 	}
+}
+
+func (h *Handler) generateExportReport(
+	ctx context.Context,
+	input shareddto.ExportReportRequest,
+) (*sharedtypes.ExportReportResult, error) {
+	return export.GenerateReport(ctx, h.core, h.paths, input)
+}
+
+func (h *Handler) notifyExportCompleted(
+	ctx context.Context,
+	result *sharedtypes.ExportReportResult,
+) {
+	if h.alerts == nil || result == nil || result.FilePath == nil {
+		return
+	}
+	path := strings.TrimSpace(*result.FilePath)
+	if path == "" {
+		return
+	}
+	label := strings.TrimSpace(result.Label)
+	if label == "" {
+		label = "Export"
+	}
+	req := sharedtypes.AlertRequest{
+		Kind:        sharedtypes.AlertEventExportCompleted,
+		Title:       label + " exported",
+		Body:        "Open the file or reveal it in Finder.",
+		Urgency:     sharedtypes.AlertUrgencyLow,
+		IconEnabled: true,
+	}
+	actions := []sharedtypes.AlertDeliveryAction{
+		{
+			ID:    "export.open",
+			Title: "Open File",
+			Path:  &path,
+		},
+		{
+			ID:    "export.reveal",
+			Title: "Reveal in Finder",
+			Path:  &path,
+		},
+	}
+	_ = h.alerts.NotifyWithActions(ctx, req, actions)
 }
