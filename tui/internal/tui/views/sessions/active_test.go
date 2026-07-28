@@ -247,11 +247,12 @@ func TestSessionEndsAtLabelForTimedSessions(t *testing.T) {
 
 	hardLimit := types.ContentState{
 		Timer: &api.TimerState{
-			State:                 "running",
-			SessionStartTime:      &sessionStart,
-			SegmentType:           &work,
-			HardLimitActive:       true,
-			HardLimitTotalSeconds: 30 * 60,
+			State:                     "running",
+			SessionStartTime:          &sessionStart,
+			SegmentType:               &work,
+			HardLimitActive:           true,
+			HardLimitTotalSeconds:     30 * 60,
+			HardLimitRemainingSeconds: 25 * 60,
 		},
 	}
 	if got := sessionEndsAtLabel(hardLimit, now); got != "Ends At 12:25" {
@@ -293,14 +294,15 @@ func TestActiveTimedSessionRendersEndsAt(t *testing.T) {
 		Width:  96,
 		Height: 36,
 		Timer: &api.TimerState{
-			State:                 "running",
-			IssueID:               &issueID,
-			SessionStartTime:      &sessionStart,
-			SegmentType:           &work,
-			HardLimitActive:       true,
-			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
-			HardLimitTotalSeconds: 30 * 60,
-			HardLimitWorkSeconds:  30 * 60,
+			State:                     "running",
+			IssueID:                   &issueID,
+			SessionStartTime:          &sessionStart,
+			SegmentType:               &work,
+			HardLimitActive:           true,
+			HardLimitKind:             sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds:     30 * 60,
+			HardLimitRemainingSeconds: 25 * 60,
+			HardLimitWorkSeconds:      30 * 60,
 		},
 		AllIssues: []api.IssueWithMeta{{
 			Issue: api.Issue{ID: issueID, Title: "Timed work"},

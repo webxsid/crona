@@ -2,6 +2,17 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.7.1] - 2026-07-28
+
+Crona v1.7.1 fixes repeated extension of the dedicated no-break Timer countdown.
+
+### Fixed
+
+- Extending an expired countdown now starts the TUI clock from the added duration instead of redisplaying the original timer duration.
+- Countdown clocks, remaining-time labels, end-time previews, and progress now advance from the daemon's authoritative remaining-time snapshot.
+- When a local countdown reaches zero, the TUI refreshes daemon timer state so the commit-or-extend dialog reopens even if the completion event is delayed or missed.
+- An extended countdown can expire repeatedly, emitting a completion event and presenting the commit-or-extend flow after every extension.
+
 ## [1.7.0] - 2026-07-27
 
 Crona v1.7.0 prepares the daemon and shared IPC contract for the upcoming Mac companion while improving countdown timers, issue lifecycle discovery, reminders, and active-session handling in the TUI.

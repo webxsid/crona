@@ -593,6 +593,7 @@ func (t *TimerService) extendHardLimit(
 	if runtimeState == nil || !runtimeState.HasHardLimit() {
 		return sharedtypes.TimerState{}, errors.New("no hard-limit session is active")
 	}
+	wasExpired := runtimeState.HardLimitExpired
 	activeSegment, err := t.ctx.SessionSegments.GetActive(
 		ctx,
 		t.ctx.UserID,
@@ -619,6 +620,16 @@ func (t *TimerService) extendHardLimit(
 	}
 	runtimeState.PreparedSegmentType = nil
 	runtimeState.HardLimitTotalSeconds += additionalSeconds
+	if runtimeState.HardLimitKind == sharedtypes.TimerHardLimitKindCountdown {
+		if wasExpired {
+			runtimeState.HardLimitWorkSeconds = additionalSeconds
+		} else {
+			runtimeState.HardLimitWorkSeconds += additionalSeconds
+		}
+		runtimeState.HardLimitBreakSeconds = 0
+		runtimeState.HardLimitLongBreakSeconds = 0
+		runtimeState.HardLimitCyclesBeforeLongBreak = 0
+	}
 	runtimeState.HardLimitExpired = false
 	runtimeState.HardLimitExpiredAt = ""
 	runtimeState.HardLimitElapsedStartedAt = t.ctx.Now()

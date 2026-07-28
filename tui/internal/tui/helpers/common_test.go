@@ -35,7 +35,7 @@ func TestFormatCompactDurationSeconds(t *testing.T) {
 	}
 }
 
-func TestDerivedTimerValuesPreferTimestamps(t *testing.T) {
+func TestDerivedSegmentElapsedPrefersTimestampAndHardLimitUsesSnapshot(t *testing.T) {
 	now := time.Date(2026, 5, 26, 12, 0, 0, 0, time.UTC)
 	sessionStart := now.Add(-55 * time.Second).Format(time.RFC3339)
 	segmentStart := now.Add(-25 * time.Second).Format(time.RFC3339)
@@ -55,8 +55,8 @@ func TestDerivedTimerValuesPreferTimestamps(t *testing.T) {
 	if got := DerivedSegmentElapsedSeconds(timer, 7, now); got != 30 {
 		t.Fatalf("expected timestamp-derived segment elapsed 30, got %d", got)
 	}
-	if got := DerivedHardLimitRemainingSeconds(timer, 7, now); got != 245 {
-		t.Fatalf("expected timestamp-derived hard-limit remaining 245, got %d", got)
+	if got := DerivedHardLimitRemainingSeconds(timer, 7, now); got != 992 {
+		t.Fatalf("expected snapshot-derived hard-limit remaining 992, got %d", got)
 	}
 }
 
@@ -74,5 +74,30 @@ func TestDerivedTimerValuesFallBackToKernelCounters(t *testing.T) {
 	}
 	if got := DerivedHardLimitRemainingSeconds(timer, 5, time.Now()); got != 115 {
 		t.Fatalf("expected fallback hard-limit remaining 115, got %d", got)
+	}
+}
+
+func TestExtendedCountdownUsesOverallRemainingInsteadOfOriginalSegment(t *testing.T) {
+	segment := sharedtypes.SessionSegmentWork
+	timer := &api.TimerState{
+		State:                     "running",
+		SegmentType:               &segment,
+		HardLimitActive:           true,
+		HardLimitKind:             sharedtypes.TimerHardLimitKindCountdown,
+		HardLimitTotalSeconds:     20 * 60,
+		HardLimitRemainingSeconds: 5 * 60,
+		HardLimitWorkSeconds:      15 * 60,
+	}
+
+	remaining, gotSegment, ok := DerivedHardLimitSegmentRemainingSeconds(
+		timer,
+		0,
+		time.Now(),
+	)
+	if !ok || gotSegment == nil || *gotSegment != sharedtypes.SessionSegmentWork {
+		t.Fatalf("expected an active countdown work segment, got %v %v", gotSegment, ok)
+	}
+	if remaining != 5*60 {
+		t.Fatalf("expected extended countdown to display five minutes, got %d", remaining)
 	}
 }

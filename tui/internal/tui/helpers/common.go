@@ -200,22 +200,13 @@ func DerivedSegmentElapsedSeconds(
 func DerivedHardLimitRemainingSeconds(
 	timer *api.TimerState,
 	localElapsed int,
-	now time.Time,
+	_ time.Time,
 ) int {
 	if timer == nil || !timer.HardLimitActive {
 		return 0
 	}
 	if timer.HardLimitExpired {
 		return 0
-	}
-	if timer.SessionStartTime != nil && strings.TrimSpace(*timer.SessionStartTime) != "" {
-		if start, err := time.Parse(time.RFC3339, strings.TrimSpace(*timer.SessionStartTime)); err == nil {
-			remaining := timer.HardLimitTotalSeconds - max(0, int(now.Sub(start).Seconds()))
-			if remaining < 0 {
-				return 0
-			}
-			return remaining
-		}
 	}
 	remaining := timer.HardLimitRemainingSeconds - localElapsed
 	if remaining < 0 {
@@ -241,6 +232,10 @@ func DerivedHardLimitSegmentRemainingSeconds(
 	}
 	if segment == nil {
 		return 0, nil, false
+	}
+	if sharedtypes.NormalizeTimerHardLimitKind(timer.HardLimitKind) ==
+		sharedtypes.TimerHardLimitKindCountdown {
+		return DerivedHardLimitRemainingSeconds(timer, localElapsed, now), segment, true
 	}
 	duration := 0
 	switch *segment {

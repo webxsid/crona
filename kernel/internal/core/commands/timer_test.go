@@ -587,6 +587,12 @@ func TestCountdownTimerCarriesExplicitKindAndUsesDurationOnlyExtensions(t *testi
 	if extended.HardLimitTotalSeconds != 35*60 {
 		t.Fatalf("expected 35-minute extended total, got %d", extended.HardLimitTotalSeconds)
 	}
+	if extended.HardLimitWorkSeconds != 35*60 {
+		t.Fatalf(
+			"expected an active countdown extension to extend its segment to 35 minutes, got %d",
+			extended.HardLimitWorkSeconds,
+		)
+	}
 
 	runtimeState, err := service.runtimeStateForSession(*state.SessionID)
 	if err != nil {
@@ -595,6 +601,79 @@ func TestCountdownTimerCarriesExplicitKindAndUsesDurationOnlyExtensions(t *testi
 	if runtimeState == nil ||
 		runtimeState.HardLimitKind != sharedtypes.TimerHardLimitKindCountdown {
 		t.Fatalf("expected persisted countdown kind, got %+v", runtimeState)
+	}
+}
+
+func TestExpiredCountdownExtensionUsesAddedDurationAndExpiresAgain(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	hardLimitEvents := 0
+	unsubscribe := coreCtx.Events.Subscribe(func(event sharedtypes.KernelEvent) {
+		if event.Type == sharedtypes.EventTypeTimerHardLimitReached {
+			hardLimitEvents++
+		}
+	})
+	defer unsubscribe()
+
+	total := 15 * 60
+	started, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+			HardLimitTotalSeconds: &total,
+		},
+	)
+	if err != nil {
+		t.Fatalf("start countdown: %v", err)
+	}
+
+	now = "2026-05-24T10:15:01Z"
+	if _, err := service.applyHardLimitExpiry(
+		ctx,
+		*started.SessionID,
+		sharedtypes.SessionSegmentWork,
+	); err != nil {
+		t.Fatalf("expire initial countdown: %v", err)
+	}
+
+	now = "2026-05-24T10:16:00Z"
+	extended, err := service.Extend(ctx, 5*60)
+	if err != nil {
+		t.Fatalf("extend expired countdown: %v", err)
+	}
+	if extended.HardLimitTotalSeconds != 20*60 {
+		t.Fatalf("expected cumulative total of 20 minutes, got %d", extended.HardLimitTotalSeconds)
+	}
+	if extended.HardLimitRemainingSeconds != 5*60 {
+		t.Fatalf("expected five minutes remaining, got %d", extended.HardLimitRemainingSeconds)
+	}
+	if extended.HardLimitWorkSeconds != 5*60 {
+		t.Fatalf(
+			"expected a five-minute active countdown segment, got %d",
+			extended.HardLimitWorkSeconds,
+		)
+	}
+
+	now = "2026-05-24T10:21:01Z"
+	expiredAgain, err := service.applyHardLimitExpiry(
+		ctx,
+		*started.SessionID,
+		sharedtypes.SessionSegmentWork,
+	)
+	if err != nil {
+		t.Fatalf("expire extended countdown: %v", err)
+	}
+	if expiredAgain.State != "expired" || !expiredAgain.HardLimitExpired {
+		t.Fatalf("expected extended countdown to expire again, got %+v", expiredAgain)
+	}
+	if hardLimitEvents != 2 {
+		t.Fatalf("expected two hard-limit events across both expiries, got %d", hardLimitEvents)
 	}
 }
 

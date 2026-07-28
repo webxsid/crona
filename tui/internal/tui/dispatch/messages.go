@@ -158,6 +158,7 @@ type MessageDeps struct {
 	TickAfter                  func(int) tea.Cmd
 	WaitForEvent               func() tea.Cmd
 	HandleKernelEvent          func(MessageState, api.KernelEvent) (MessageState, tea.Cmd)
+	HardLimitRemaining         func(*api.TimerState, int) int
 	CloseEventStop             func()
 }
 
@@ -553,6 +554,12 @@ func HandleMessage(
 			return state, nil, true
 		}
 		if state.Timer != nil && state.Timer.State != "idle" && state.Timer.State != "expired" {
+			state.Elapsed++
+			if state.Timer.HardLimitActive &&
+				deps.HardLimitRemaining != nil &&
+				deps.HardLimitRemaining(state.Timer, state.Elapsed) <= 0 {
+				return state, deps.LoadTimer(), true
+			}
 			return state, deps.TickAfter(state.TimerTickSeq), true
 		}
 		return state, nil, true

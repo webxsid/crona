@@ -523,6 +523,9 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			nextModel, cmd := next.handleKernelEvent(event)
 			return nextModel.dispatchMessageState(), cmd
 		},
+		HardLimitRemaining: func(timer *api.TimerState, elapsed int) int {
+			return helperpkg.DerivedHardLimitRemainingSeconds(timer, elapsed, time.Now())
+		},
 		CloseEventStop: func() { m.stopEventStream() },
 	}
 }

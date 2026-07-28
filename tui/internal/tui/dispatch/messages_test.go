@@ -3,12 +3,57 @@ package dispatch
 import (
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/commands"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+func TestTimerTickReloadsHardLimitAtZero(t *testing.T) {
+	loaded := false
+	state, cmd, handled := HandleMessage(
+		MessageState{
+			Timer: &api.TimerState{
+				State:                     "running",
+				HardLimitActive:           true,
+				HardLimitKind:             sharedtypes.TimerHardLimitKindCountdown,
+				HardLimitRemainingSeconds: 1,
+			},
+			TimerTickSeq: 4,
+		},
+		commands.TimerTickMsg{Seq: 4},
+		MessageDeps{
+			HardLimitRemaining: func(timer *api.TimerState, elapsed int) int {
+				return timer.HardLimitRemainingSeconds - elapsed
+			},
+			LoadTimer: func() tea.Cmd {
+				return func() tea.Msg {
+					loaded = true
+					return nil
+				}
+			},
+			TickAfter: func(int) tea.Cmd {
+				t.Fatal("expected zero-time tick to reload instead of scheduling another tick")
+				return nil
+			},
+		},
+	)
+	if !handled {
+		t.Fatal("expected timer tick to be handled")
+	}
+	if state.Elapsed != 1 {
+		t.Fatalf("expected local elapsed time to advance, got %d", state.Elapsed)
+	}
+	if cmd == nil {
+		t.Fatal("expected zero-time tick to schedule a timer reload")
+	}
+	_ = cmd()
+	if !loaded {
+		t.Fatal("expected timer reload command to run")
+	}
+}
 
 func TestAllIssuesLoadedRestoresCreatedIssueInDefaultView(t *testing.T) {
 	selectedID := int64(2)
