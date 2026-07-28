@@ -88,7 +88,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			return []string{
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
+				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 			}
 		}
 		if state.TimerState == "ready" {
@@ -100,14 +100,14 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-				theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
+				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 			}
 		}
 		return []string{
 			theme.StyleHeader.Render("[p]") + theme.StyleDim.Render(" pause"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
 			theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
-			theme.StyleHeader.Render("[s/A]") + theme.StyleDim.Render(" change status"),
+			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 		}
 	}
 	if state.View == "session_history" {
@@ -127,7 +127,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[+/-]") + theme.StyleDim.Render(" window"),
 			theme.StyleHeader.Render("[0]") + theme.StyleDim.Render(" reset window"),
 			checkInAction(theme),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
 	}
 	if state.View == "momentum" {
@@ -135,7 +135,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle enabled"),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
@@ -170,7 +170,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		return []string{
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
 			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" open report"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 		}
 	}
@@ -225,7 +225,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change"),
 			theme.StyleHeader.Render("[space]") + theme.StyleDim.Render(" toggle"),
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" edit or run"),
-			theme.StyleHeader.Render("[d/x]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
 	}
 
@@ -240,7 +240,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(contextLabel),
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
 	case "issues":
 		timerIdle := state.TimerState == "" || state.TimerState == "idle"
@@ -273,7 +273,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				actions,
 				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
 				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
-				theme.StyleHeader.Render("[e/d]")+theme.StyleDim.Render(" edit/delete"),
+				theme.StyleHeader.Render("[e/D]")+theme.StyleDim.Render(" edit/delete"),
 			)
 		}
 		return actions
@@ -285,7 +285,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle completion"),
 				theme.StyleHeader.Render("[F]") + theme.StyleDim.Render(" mark failed"),
 				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
-				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 			}
 			if state.TimerState == "" || state.TimerState == "idle" {
 				actions = append(
@@ -300,7 +300,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create habit"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
 			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log completion"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" delete"),
+			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
 	case "ops":
 		return []string{
@@ -570,11 +570,11 @@ func compactActionLabel(key, label string) string {
 	}
 
 	switch key {
-	case "[d/x]":
+	case "[d/x]", "[D]":
 		if label == "delete" {
 			return "delete"
 		}
-	case "[e/d]":
+	case "[e/d]", "[e/D]":
 		if label == "edit/delete" {
 			return "edit/del"
 		}
@@ -582,7 +582,7 @@ func compactActionLabel(key, label string) string {
 		if label == "change option" {
 			return "option"
 		}
-	case "[s/A]":
+	case "[s]":
 		if label == "change status" {
 			return "status"
 		}

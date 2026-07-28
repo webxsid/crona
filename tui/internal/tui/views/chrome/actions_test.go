@@ -104,3 +104,16 @@ func TestRenderPaneActionLineKeepsWideLabels(t *testing.T) {
 		}
 	}
 }
+
+func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
+	actions := ContextualActions(Theme{}, ActionsState{
+		View: "reports",
+		Pane: "export_reports",
+	})
+	joined := strings.Join(actions, " ")
+	for _, want := range []string{"[e]", "edit", "[o]", "open report", "[D]", "delete", "[enter]", "open details dialog"} {
+		if !strings.Contains(joined, want) {
+			t.Fatalf("expected reports actions to contain %q, got %q", want, joined)
+		}
+	}
+}

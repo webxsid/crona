@@ -175,3 +175,112 @@ func TestRouterIgnoresWDuringConfiguredRestButStillAllowsManualAwayToggle(t *tes
 		t.Fatal("expected W to disable manual away mode even during protected rest")
 	}
 }
+
+func TestHandleUsesSingleIssueBindings(t *testing.T) {
+	state := State{
+		ActiveView: uistate.ViewDaily,
+		ActivePane: uistate.PaneIssues,
+	}
+
+	statusCalled := false
+	dueDateCalled := false
+	deleteCalled := false
+	abandonCalled := false
+	deps := Deps{
+		OpenIssueStatusFromSelection: func(*State) bool {
+			statusCalled = true
+			return true
+		},
+		OpenSelectedIssueTodoDateDialog: func(*State) bool {
+			dueDateCalled = true
+			return true
+		},
+		DeleteSelectionAction: func(*State) (tea.Cmd, bool) {
+			deleteCalled = true
+			return nil, true
+		},
+		AbandonSelectedIssue: func(*State) tea.Cmd {
+			abandonCalled = true
+			return nil
+		},
+	}
+
+	_, _ = Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'s'}}, deps)
+	if !statusCalled {
+		t.Fatal("expected s to open issue status")
+	}
+	if dueDateCalled || deleteCalled || abandonCalled {
+		t.Fatalf(
+			"expected s to avoid due date/delete/abandon, got due=%t delete=%t abandon=%t",
+			dueDateCalled,
+			deleteCalled,
+			abandonCalled,
+		)
+	}
+
+	statusCalled = false
+	dueDateCalled = false
+	deleteCalled = false
+	abandonCalled = false
+	_, _ = Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'d'}}, deps)
+	if !dueDateCalled {
+		t.Fatal("expected d to open issue due date")
+	}
+	if statusCalled || deleteCalled || abandonCalled {
+		t.Fatalf(
+			"expected d to avoid status/delete/abandon, got status=%t delete=%t abandon=%t",
+			statusCalled,
+			deleteCalled,
+			abandonCalled,
+		)
+	}
+
+	statusCalled = false
+	dueDateCalled = false
+	deleteCalled = false
+	abandonCalled = false
+	_, _ = Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'D'}}, deps)
+	if !deleteCalled {
+		t.Fatal("expected D to delete the selected issue")
+	}
+	if statusCalled || dueDateCalled || abandonCalled {
+		t.Fatalf(
+			"expected D to avoid status/due date/abandon, got status=%t due=%t abandon=%t",
+			statusCalled,
+			dueDateCalled,
+			abandonCalled,
+		)
+	}
+
+	statusCalled = false
+	dueDateCalled = false
+	deleteCalled = false
+	abandonCalled = false
+	_, _ = Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'A'}}, deps)
+	if statusCalled || dueDateCalled || deleteCalled || abandonCalled {
+		t.Fatalf(
+			"expected A to be ignored, got status=%t due=%t delete=%t abandon=%t",
+			statusCalled,
+			dueDateCalled,
+			deleteCalled,
+			abandonCalled,
+		)
+	}
+}
+
+func TestHandleRoutesReportDeleteOnD(t *testing.T) {
+	state := State{
+		ActiveView: uistate.ViewReports,
+		ActivePane: uistate.PaneExportReports,
+	}
+	called := false
+	_, _ = Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'D'}}, Deps{
+		DeleteSelectionAction: func(*State) (tea.Cmd, bool) {
+			called = true
+			return nil, true
+		},
+	})
+	if !called {
+		t.Fatal("expected D to delete export reports")
+	}
+}

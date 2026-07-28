@@ -12,5 +12,5 @@ func RegisterReports[M tea.Model, V comparable, P comparable](
 	r.RegisterPane(view, pane, "e", openEditor)
 	r.RegisterPane(view, pane, "o", open)
 	r.RegisterPane(view, pane, "enter", enter)
-	r.RegisterPane(view, pane, "d", delete)
+	r.RegisterPane(view, pane, "D", delete)
 }

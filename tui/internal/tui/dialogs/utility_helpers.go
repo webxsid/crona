@@ -104,7 +104,7 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 			theme,
 			state,
 			rows,
-			"[a] add date   [d] remove selected   [tab] next",
+			"[a] add date   [D] remove selected   [tab] next",
 		)
 	case 3:
 		rows = append(rows,

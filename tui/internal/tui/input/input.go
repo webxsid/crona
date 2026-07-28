@@ -234,12 +234,6 @@ func newRouter(deps Deps) *router {
 			}
 			return handleIssueStatus(s, deps)
 		},
-		"A": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
-				return s, nil, false
-			}
-			return s, deps.AbandonSelectedIssue(&s), true
-		},
 		"y": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false
@@ -252,8 +246,8 @@ func newRouter(deps Deps) *router {
 			}
 			return s, deps.ToggleSelectedIssuePinnedDaily(&s), true
 		},
-		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
+		"d": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if !issueEditorContext(s) || s.ProtectedModeActive {
 				return s, nil, false
 			}
 			deps.OpenSelectedIssueTodoDateDialog(&s)
@@ -291,7 +285,7 @@ func newRouter(deps Deps) *router {
 			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled
 		},
-		"d": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewAlerts {
 				return handleDeleteSelectedAlertReminder(s, deps)
 			}
@@ -299,9 +293,6 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 		"x": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ActiveView == uistate.ViewAlerts {
-				return handleDeleteSelectedAlertReminder(s, deps)
-			}
 			cmd, handled := deps.ToggleMomentumAction(&s)
 			return s, cmd, handled
 		},

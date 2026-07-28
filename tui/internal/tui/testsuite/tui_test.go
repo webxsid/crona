@@ -641,7 +641,7 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 		Pane: "export_reports",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[e]", "edit", "[o]", "open report", "[d]", "delete", "[enter]", "open details dialog"} {
+	for _, want := range []string{"[e]", "edit", "[o]", "open report", "[D]", "delete", "[enter]", "open details dialog"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected reports actions to contain %q, got %q", want, joined)
 		}

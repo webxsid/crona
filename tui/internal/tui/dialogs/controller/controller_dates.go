@@ -248,7 +248,7 @@ func updateRestProtectionDates(
 			ValueToPointer(initial),
 			currentDate,
 		), nil, ""
-	case "d", "backspace", "delete":
+	case "D", "backspace", "delete":
 		if len(state.ProtectionDates) == 0 {
 			return state, nil, ""
 		}
