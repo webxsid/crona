@@ -8,6 +8,7 @@ import (
 
 	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
+	"crona/kernel/internal/dayboundary"
 	"crona/kernel/internal/events"
 	"crona/kernel/internal/export"
 	"crona/kernel/internal/ipc"
@@ -122,6 +123,31 @@ func Run(ctx context.Context) (runErr error) {
 		}()
 	}
 	alerts := notify.Start(runCtx, commandCtx, bus, logger, paths)
+	scheduler := dayboundary.New(
+		func(ctx context.Context) (*sharedtypes.CoreSettings, error) {
+			return commandCtx.CoreSettings.Get(ctx, commandCtx.UserID)
+		},
+		func(ctx context.Context, id, userID, kind, scheduledAtUTC, timezone string) (bool, error) {
+			return registry.DayBoundaryOccurrences.Claim(ctx, id, userID, kind, scheduledAtUTC, timezone)
+		},
+		bus.Emit,
+		func(ctx context.Context, request sharedtypes.AlertRequest) error {
+			if err := alerts.Notify(ctx, request); err != nil {
+				logger.Error("enqueue day-boundary alert", err)
+			}
+			return nil
+		},
+	)
+	commandCtx.CurrentDate = scheduler.CurrentDate
+	if err := scheduler.Initialize(runCtx); err != nil {
+		return fmt.Errorf("initialize day-boundary scheduler: %w", err)
+	}
+	go func() {
+		if err := scheduler.Run(runCtx); err != nil && runCtx.Err() == nil {
+			logger.Error("day-boundary scheduler stopped", err)
+			cancel()
+		}
+	}()
 	updater := updatecheck.Start(runCtx, commandCtx, bus, logger, paths, appEnv.Mode)
 	if _, err := export.EnsureAssets(paths); err != nil {
 		return fmt.Errorf("ensure export assets: %w", err)
@@ -157,6 +183,7 @@ func Run(ctx context.Context) (runErr error) {
 			updater,
 			alerts,
 			telemetry,
+			scheduler,
 		),
 		logger,
 	)

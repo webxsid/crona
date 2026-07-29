@@ -75,6 +75,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"edit_export_reports_dir",
 		"edit_export_ics_dir",
 		"edit_date_display_format",
+		"edit_day_boundary",
 		"edit_rest_protection",
 		"create_alert_reminder",
 		"edit_alert_reminder",

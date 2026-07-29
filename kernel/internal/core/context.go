@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"crona/kernel/internal/events"
 	"crona/kernel/internal/health"
@@ -28,11 +29,12 @@ type Context struct {
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
 
-	UserID     string
-	DeviceID   string
-	ScratchDir string
-	Now        func() string
-	Events     *events.Bus
+	UserID      string
+	DeviceID    string
+	ScratchDir  string
+	Now         func() string
+	CurrentDate func() string
+	Events      *events.Bus
 }
 
 func NewContext(
@@ -44,7 +46,7 @@ func NewContext(
 	now func() string,
 	bus *events.Bus,
 ) *Context {
-	return &Context{
+	ctx := &Context{
 		Store:                        db,
 		Repos:                        registry.Repos,
 		Streams:                      registry.Streams,
@@ -68,6 +70,14 @@ func NewContext(
 		Now:                          now,
 		Events:                       bus,
 	}
+	ctx.CurrentDate = func() string {
+		value, err := time.Parse(time.RFC3339, ctx.Now())
+		if err != nil {
+			return time.Now().Format("2006-01-02")
+		}
+		return value.In(time.Local).Format("2006-01-02")
+	}
+	return ctx
 }
 
 func (c *Context) InitDefaults(ctx context.Context) error {

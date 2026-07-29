@@ -40,6 +40,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		UpdateStatus:         m.updateStatus,
 		ExportAssets:         m.exportAssets,
 		Settings:             m.settings,
+		DaemonTimezone:       healthTimezone(m.health),
 		HabitStreakDefs:      m.habitStreakDefs,
 		AlertReminders:       m.alertReminders,
 		CurrentDashboardDate: m.currentDashboardDate(),
@@ -558,12 +559,23 @@ func (m Model) openEditDateDisplayFormatDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditDateDisplayFormat(current))
 }
 
+func (m Model) openEditDayBoundaryDialog(key sharedtypes.CoreSettingsKey) Model {
+	return m.withDialogState(m.dialogSnapshot().OpenEditDayBoundary(key))
+}
+
 func (m Model) openEditRestProtectionDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditRestProtection())
 }
 
 func (m Model) openEditTelemetrySettingsDialog() Model {
 	return m.withDialogState(m.dialogSnapshot().OpenEditTelemetrySettings())
+}
+
+func healthTimezone(health *api.Health) string {
+	if health == nil {
+		return ""
+	}
+	return health.Timezone
 }
 
 func (m Model) openHelpDialog() Model {
@@ -691,6 +703,16 @@ func (m Model) dialogState() dialogstate.State {
 		TelemetryErrors:                m.dialogTelemetryErrors,
 		TelemetryPrivacyCursor:         m.dialogTelemetryPrivacyCursor,
 		TelemetryReviewCursor:          m.dialogTelemetryReviewCursor,
+		DayBoundaryEnabled:             m.dialogDayBoundaryEnabled,
+		DayBoundaryTimezone:            m.dialogDayBoundaryTimezone,
+		SettingKey:                     m.dialogSettingKey,
+		DayBoundaryStep:                m.dialogDayBoundaryStep,
+		DayBoundarySchedule:            m.dialogDayBoundarySchedule,
+		DayBoundaryOverrides:           m.dialogDayBoundaryOverrides,
+		DayBoundaryOverrideCursor:      m.dialogDayBoundaryOverrideCursor,
+		DayBoundarySelectedDays:        m.dialogDayBoundarySelectedDays,
+		DayBoundaryEditingTime:         m.dialogDayBoundaryEditingTime,
+		DayBoundaryEditingOverride:     m.dialogDayBoundaryEditingOverride,
 		PomodoroFocusSeconds:           m.dialogPomodoroFocusSeconds,
 		PomodoroFocusChoice:            m.dialogPomodoroFocusChoice,
 		PomodoroBreakSeconds:           m.dialogPomodoroBreakSeconds,
@@ -794,6 +816,16 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogTelemetryErrors = state.TelemetryErrors
 	m.dialogTelemetryPrivacyCursor = state.TelemetryPrivacyCursor
 	m.dialogTelemetryReviewCursor = state.TelemetryReviewCursor
+	m.dialogDayBoundaryEnabled = state.DayBoundaryEnabled
+	m.dialogDayBoundaryTimezone = state.DayBoundaryTimezone
+	m.dialogSettingKey = state.SettingKey
+	m.dialogDayBoundaryStep = state.DayBoundaryStep
+	m.dialogDayBoundarySchedule = state.DayBoundarySchedule
+	m.dialogDayBoundaryOverrides = state.DayBoundaryOverrides
+	m.dialogDayBoundaryOverrideCursor = state.DayBoundaryOverrideCursor
+	m.dialogDayBoundarySelectedDays = state.DayBoundarySelectedDays
+	m.dialogDayBoundaryEditingTime = state.DayBoundaryEditingTime
+	m.dialogDayBoundaryEditingOverride = state.DayBoundaryEditingOverride
 	m.dialogPomodoroFocusSeconds = state.PomodoroFocusSeconds
 	m.dialogPomodoroFocusChoice = state.PomodoroFocusChoice
 	m.dialogPomodoroBreakSeconds = state.PomodoroBreakSeconds
@@ -1052,6 +1084,8 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		ErrorCmd: func(err error) tea.Cmd { return func() tea.Msg { return commands.ErrMsg{Err: err} } },
 		ResolvePatchSettingValue: func(action dialogstate.Action) any {
 			switch action.SettingKey {
+			case sharedtypes.CoreSettingsKeyStartOfDay, sharedtypes.CoreSettingsKeyEndOfDay:
+				return action.DayBoundarySchedule
 			case sharedtypes.CoreSettingsKeyRestWeekdays:
 				return action.IntList
 			case sharedtypes.CoreSettingsKeyDateDisplayFormat:

@@ -132,6 +132,7 @@ type Deps struct {
 	OpenEditDateDisplayFormatDialog func(*State) bool
 	OpenEditRestProtectionDialog    func(*State) bool
 	OpenEditTelemetrySettingsDialog func(*State) bool
+	OpenEditDayBoundaryDialog       func(*State, sharedtypes.CoreSettingsKey) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
 	WipeRuntimeData                 func() tea.Cmd
 	OpenRollupStartDateDialog       func(*State) bool

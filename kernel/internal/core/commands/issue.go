@@ -450,7 +450,7 @@ func MarkIssueTodoForToday(
 	c *core.Context,
 	issueID int64,
 ) (*sharedtypes.Issue, error) {
-	today := strings.Split(c.Now(), "T")[0]
+	today := c.CurrentDate()
 	if today == "" {
 		return nil, errors.New("invalid date")
 	}
@@ -554,7 +554,7 @@ func ComputeDailyIssueSummaryForToday(
 	ctx context.Context,
 	c *core.Context,
 ) (sharedtypes.DailyIssueSummary, error) {
-	today := strings.Split(c.Now(), "T")[0]
+	today := c.CurrentDate()
 	if today == "" {
 		return sharedtypes.DailyIssueSummary{}, errors.New("invalid date")
 	}

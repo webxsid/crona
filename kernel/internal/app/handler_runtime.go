@@ -215,6 +215,9 @@ func (h *Handler) handleRuntimeMethods(
 			if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, input.Key, input.Value); err != nil {
 				return nil, err
 			}
+			if h.scheduler != nil {
+				h.scheduler.Refresh()
+			}
 			return shareddto.OKResponse{OK: true}, nil
 		}), true
 	case protocol.MethodSettingsPut:
@@ -223,6 +226,9 @@ func (h *Handler) handleRuntimeMethods(
 			for key, value := range input {
 				if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, key, value); err != nil {
 					return nil, err
+				}
+				if h.scheduler != nil {
+					h.scheduler.Refresh()
 				}
 				updated[string(key)] = value
 			}

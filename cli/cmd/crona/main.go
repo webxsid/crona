@@ -224,10 +224,12 @@ func loadCLISettings() (*sharedtypes.CoreSettings, error) {
 		return nil, err
 	}
 	if settings, ok := raw["local"]; ok {
+		sharedtypes.NormalizeCoreSettingsDayBoundaries(&settings)
 		return &settings, nil
 	}
 	for _, settings := range raw {
 		value := settings
+		sharedtypes.NormalizeCoreSettingsDayBoundaries(&value)
 		return &value, nil
 	}
 	return nil, fmt.Errorf("settings not found")

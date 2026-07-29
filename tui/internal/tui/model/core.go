@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/terminaltitle"
@@ -254,6 +255,16 @@ type Model struct {
 	dialogTelemetryErrors                bool
 	dialogTelemetryPrivacyCursor         int
 	dialogTelemetryReviewCursor          int
+	dialogDayBoundaryEnabled             bool
+	dialogDayBoundaryTimezone            string
+	dialogSettingKey                     sharedtypes.CoreSettingsKey
+	dialogDayBoundaryStep                int
+	dialogDayBoundarySchedule            sharedtypes.DayBoundarySchedule
+	dialogDayBoundaryOverrides           []dialogstate.DayBoundaryOverride
+	dialogDayBoundaryOverrideCursor      int
+	dialogDayBoundarySelectedDays        []int
+	dialogDayBoundaryEditingTime         string
+	dialogDayBoundaryEditingOverride     bool
 	dialogPomodoroFocusSeconds           int
 	dialogPomodoroFocusChoice            int
 	dialogPomodoroBreakSeconds           int

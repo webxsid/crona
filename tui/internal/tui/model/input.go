@@ -615,6 +615,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenEditDayBoundaryDialog: func(state *inputpkg.State, key sharedtypes.CoreSettingsKey) bool {
+			next := m.applyInputState(*state)
+			next = next.openEditDayBoundaryDialog(key)
+			*state = next.inputState()
+			return true
+		},
 		OpenConfirmWipeDataDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openConfirmWipeDataDialog()

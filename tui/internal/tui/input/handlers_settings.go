@@ -133,6 +133,15 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.DashboardDate,
 		), true
+	case "Start of Day", "End of Day":
+		if deps.OpenEditDayBoundaryDialog != nil {
+			key := sharedtypes.CoreSettingsKeyStartOfDay
+			if row.Label == "End of Day" {
+				key = sharedtypes.CoreSettingsKeyEndOfDay
+			}
+			deps.OpenEditDayBoundaryDialog(&s, key)
+		}
+		return s, nil, true
 	default:
 		return s, nil, true
 	}
@@ -158,6 +167,15 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 	case "Privacy & Diagnostics":
 		if deps.OpenEditTelemetrySettingsDialog != nil {
 			deps.OpenEditTelemetrySettingsDialog(&s)
+		}
+		return s, nil, true
+	case "Start of Day", "End of Day":
+		if deps.OpenEditDayBoundaryDialog != nil {
+			key := sharedtypes.CoreSettingsKeyStartOfDay
+			if row.Label == "End of Day" {
+				key = sharedtypes.CoreSettingsKeyEndOfDay
+			}
+			deps.OpenEditDayBoundaryDialog(&s, key)
 		}
 		return s, nil, true
 	case "Wipe Runtime Data":

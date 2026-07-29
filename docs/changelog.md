@@ -2,10 +2,11 @@
 
 All notable changes to **Crona** are documented here.
 
-## Unreleased
+## [1.8.0] - 2026-07-29
 
 ### Added
 
+- Daemon-owned Start of Day and End of Day schedules with local-time weekday overrides, durable occurrence deduplication, boundary events, and normal EOD alert routing.
 - A dedicated read-only `Summary` surface in both the TUI and CLI for quick day and range snapshots, including calendar week, calendar month, yesterday, and rolling last-X-days entry points.
 - Summary exports as a first-class export category, with dedicated markdown and PDF output alongside clipboard markdown and CSV flows where applicable.
 

@@ -312,6 +312,54 @@ Timer start behavior notes:
 | `settings.patch` | `dto.PatchCoreSettingRequest` | settings object | Patches one setting. |
 | `settings.put` | `dto.PutCoreSettingsRequest` | settings object | Replaces multiple settings at once. |
 
+Day-boundary settings use explicit schedule objects:
+
+```json
+{
+  "enabled": true,
+  "defaultTime": "00:00",
+  "weekdayOverrides": {
+    "1": "08:30",
+    "5": "09:00"
+  }
+}
+```
+
+The weekday keys are ISO weekdays (`1` Monday through `7` Sunday). `startOfDay`
+defaults to enabled at `00:00`; `endOfDay` defaults to disabled. The daemon's
+local timezone is authoritative. SOD advances Crona's logical current date;
+EOD only emits an event and alert.
+
+### Day-boundary events
+
+`events.subscribe` can emit `day.start` and `day.end` events with this payload:
+
+```json
+{
+  "kind": "start",
+  "dateBefore": "2026-07-28",
+  "dateAfter": "2026-07-29",
+  "effectiveLocalTime": "2026-07-29T08:30:00+05:30",
+  "effectiveUtcTime": "2026-07-29T03:00:00Z",
+  "timezone": "Asia/Kolkata",
+  "occurrenceId": "day-boundary:start:2026-07-29T03:00:00Z:Asia/Kolkata",
+  "logicalDate": "2026-07-29"
+}
+```
+
+Clients should refresh date-scoped state on `day.start`. Clients reconnecting
+after a boundary should use `health.get.currentDate` rather than expecting a
+stale event to be replayed. EOD alerts use the `day.boundary` alert kind and
+are routed through the normal daemon notification and companion-delivery paths.
+
+Boundary occurrence persistence uses UTC RFC3339 timestamps (`scheduled_at_utc`
+and `claimed_at_utc`) plus the timezone name used for the local decision. The
+local timestamp and logical dates in the event are presentation and calendar
+values for clients. Existing date-only domain fields such as check-in, habit,
+and daily-plan dates remain calendar dates; they must not be converted through
+UTC midnight because that would shift a user’s selected day when the timezone
+changes.
+
 ### Operations Log
 
 | Method | Request | Result | Notes |

@@ -26,7 +26,7 @@ The release version must stay consistent across:
 - `shared/version/version.go`
 - `docs/release-notes/<tag>.md`
 
-`make release-check` validates these references, confirms the matching release notes file exists, and keeps the protocol version pinned to `1.0` until an external GUI compatibility requirement forces a protocol bump.
+`make release-check` validates these references, confirms the matching release notes file exists, and verifies the current local IPC protocol version.
 
 ## Publishing
 

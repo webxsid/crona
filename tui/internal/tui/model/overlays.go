@@ -1,6 +1,8 @@
 package model
 
 import (
+	"encoding/json"
+
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -220,6 +222,20 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 	if event.Type == sharedtypes.EventTypeTimerHardLimitReached && next.dialog == "" {
 		label := next.terminalSessionTitle()
 		next = next.openHardLimitExpiredDialog(label)
+	}
+	if event.Type == sharedtypes.EventTypeDayStart {
+		var payload sharedtypes.DayBoundaryEventPayload
+		if err := json.Unmarshal(event.Payload, &payload); err == nil && payload.LogicalDate != "" {
+			date := payload.LogicalDate
+			return next, tea.Batch(
+				cmd,
+				commands.LoadDailySummary(m.client, date),
+				commands.LoadDueHabits(m.client, date),
+				commands.LoadSummarySnapshot(m.client, date),
+				commands.LoadDailyStreaks(m.client, date),
+				commands.LoadWellbeingWindow(m.client, date, next.currentWellbeingWindowDays()),
+			)
+		}
 	}
 	return next, cmd
 }

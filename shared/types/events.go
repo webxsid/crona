@@ -35,11 +35,31 @@ const (
 	EventTypeTimerTick             = "timer.tick"
 	EventTypeUpdateStatus          = "update.status"
 	EventTypeAlertDelivery         = "alert.delivery"
+	EventTypeDayStart              = "day.start"
+	EventTypeDayEnd                = "day.end"
 )
 
 type KernelEvent struct {
 	Type    string          `json:"type"`
 	Payload json.RawMessage `json:"payload"`
+}
+
+type DayBoundaryKind string
+
+const (
+	DayBoundaryStart DayBoundaryKind = "start"
+	DayBoundaryEnd   DayBoundaryKind = "end"
+)
+
+type DayBoundaryEventPayload struct {
+	Kind               DayBoundaryKind `json:"kind"`
+	DateBefore         string          `json:"dateBefore"`
+	DateAfter          string          `json:"dateAfter"`
+	EffectiveLocalTime string          `json:"effectiveLocalTime"`
+	EffectiveUTCTime   string          `json:"effectiveUtcTime"`
+	Timezone           string          `json:"timezone"`
+	OccurrenceID       string          `json:"occurrenceId"`
+	LogicalDate        string          `json:"logicalDate"`
 }
 
 type IDEventPayload struct {

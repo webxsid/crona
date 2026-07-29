@@ -15,7 +15,7 @@ protocol_version="$(sed -n 's/^const Version = "\([^"]*\)".*/\1/p' "${ROOT_DIR}/
 [ -n "${project_version}" ] || fail "PROJECT_VERSION is missing from Makefile"
 [ -n "${shared_version}" ] || fail "shared version is missing from shared/version/version.go"
 [ "${project_version}" = "${shared_version}" ] || fail "Makefile version ${project_version} does not match shared version ${shared_version}"
-[ "${protocol_version}" = "1.0" ] || fail "protocol version must remain 1.0 before stable external GUI compatibility work"
+[ "${protocol_version}" = "1.1" ] || fail "protocol version must be 1.1 for the current IPC contract"
 
 tag="v${project_version}"
 release_notes_file="${ROOT_DIR}/docs/release-notes/${tag}.md"

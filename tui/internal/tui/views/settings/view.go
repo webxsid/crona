@@ -22,7 +22,11 @@ func newView() viewui.View {
 func renderView(theme types.Theme, state types.ContentState) string {
 	active := state.Pane == "settings"
 	cur := state.Cursors["settings"]
-	rows := settingsmeta.Rows(state.Settings)
+	timezone := ""
+	if state.Health != nil {
+		timezone = state.Health.Timezone
+	}
+	rows := settingsmeta.RowsWithTimezone(state.Settings, timezone)
 	indices := settingsmeta.FilteredIndices(state.Filters["settings"], state.Settings)
 	total := len(indices)
 	lines := []string{

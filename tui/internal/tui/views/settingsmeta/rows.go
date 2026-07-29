@@ -24,6 +24,10 @@ type VisibleRow struct {
 }
 
 func Rows(settings *sharedtypes.CoreSettings) []Row {
+	return RowsWithTimezone(settings, "")
+}
+
+func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row {
 	if settings == nil {
 		return nil
 	}
@@ -75,8 +79,27 @@ func Rows(settings *sharedtypes.CoreSettings) []Row {
 			Label:   "Privacy & Diagnostics",
 			Value:   telemetrySettingsLabel(settings),
 		},
+		{Section: "Day Boundaries", Label: "Start of Day", Value: dayBoundaryLabel(settings.StartOfDay, timezone)},
+		{Section: "Day Boundaries", Label: "End of Day", Value: dayBoundaryLabel(settings.EndOfDay, timezone)},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 	}
+}
+
+func dayBoundaryLabel(schedule sharedtypes.DayBoundarySchedule, timezone string) string {
+	if !schedule.Enabled {
+		if strings.TrimSpace(timezone) != "" {
+			return "Disabled · " + strings.TrimSpace(timezone)
+		}
+		return "Disabled"
+	}
+	value := "Enabled · " + schedule.DefaultTime
+	if len(schedule.WeekdayOverrides) > 0 {
+		value += fmt.Sprintf(" · %d overrides", len(schedule.WeekdayOverrides))
+	}
+	if strings.TrimSpace(timezone) != "" {
+		value += " · " + strings.TrimSpace(timezone)
+	}
+	return value
 }
 
 func GroupedVisibleRows(

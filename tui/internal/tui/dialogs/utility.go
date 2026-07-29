@@ -274,6 +274,8 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			dialogSubmitHint(state, "save")+"   [esc] cancel",
 		)
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+	case "edit_day_boundary":
+		return renderDayBoundaryDialog(theme, state)
 	case "edit_rest_protection":
 		return renderRestProtectionDialog(theme, state)
 	case "edit_telemetry_settings":

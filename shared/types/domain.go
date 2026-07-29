@@ -151,6 +151,7 @@ const (
 	AlertEventCheckInReminder    AlertEventKind = "checkin.reminder"
 	AlertEventDailyPlanReminder  AlertEventKind = "daily_plan.reminder"
 	AlertEventFocusInactivity    AlertEventKind = "focus.inactivity"
+	AlertEventDayBoundary        AlertEventKind = "day.boundary"
 	AlertEventTestNotification   AlertEventKind = "test.notification"
 	AlertEventTestSound          AlertEventKind = "test.sound"
 )
@@ -338,6 +339,8 @@ const (
 	CoreSettingsKeyUsageTelemetryEnabled CoreSettingsKey = "usageTelemetryEnabled"
 	CoreSettingsKeyErrorReportingEnabled CoreSettingsKey = "errorReportingEnabled"
 	CoreSettingsKeyHabitStreakDefs       CoreSettingsKey = "habitStreakDefinitions"
+	CoreSettingsKeyStartOfDay            CoreSettingsKey = "startOfDay"
+	CoreSettingsKeyEndOfDay              CoreSettingsKey = "endOfDay"
 )
 
 type DateDisplayPreset string
@@ -1275,6 +1278,8 @@ type CoreSettings struct {
 	UsageTelemetryEnabled bool                    `json:"usageTelemetryEnabled"`
 	ErrorReportingEnabled bool                    `json:"errorReportingEnabled"`
 	HabitStreakDefs       []HabitStreakDefinition `json:"habitStreakDefinitions,omitempty"`
+	StartOfDay            DayBoundarySchedule     `json:"startOfDay"`
+	EndOfDay              DayBoundarySchedule     `json:"endOfDay"`
 	CreatedAt             string                  `json:"createdAt"`
 	UpdatedAt             string                  `json:"updatedAt"`
 }
@@ -1313,10 +1318,12 @@ type Op struct {
 }
 
 type Health struct {
-	Status string  `json:"status"`
-	DB     bool    `json:"db"`
-	OK     int     `json:"ok"`
-	Uptime float64 `json:"uptime"`
+	Status      string  `json:"status"`
+	DB          bool    `json:"db"`
+	OK          int     `json:"ok"`
+	Uptime      float64 `json:"uptime"`
+	CurrentDate string  `json:"currentDate,omitempty"`
+	Timezone    string  `json:"timezone,omitempty"`
 }
 
 type KernelInfo struct {

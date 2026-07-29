@@ -8,6 +8,7 @@ import (
 
 	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
+	"crona/kernel/internal/dayboundary"
 	"crona/kernel/internal/events"
 	"crona/kernel/internal/notify"
 	"crona/kernel/internal/runtime"
@@ -30,6 +31,7 @@ type Handler struct {
 	updater   *updatecheck.Service
 	alerts    *notify.Service
 	telemetry sharedposthog.Client
+	scheduler *dayboundary.Scheduler
 }
 
 func NewHandler(
@@ -44,7 +46,12 @@ func NewHandler(
 	updater *updatecheck.Service,
 	alerts *notify.Service,
 	telemetry sharedposthog.Client,
+	schedulers ...*dayboundary.Scheduler,
 ) *Handler {
+	var scheduler *dayboundary.Scheduler
+	if len(schedulers) > 0 {
+		scheduler = schedulers[0]
+	}
 	return &Handler{
 		startedAt: startedAt,
 		info:      info,
@@ -58,6 +65,7 @@ func NewHandler(
 		updater:   updater,
 		alerts:    alerts,
 		telemetry: telemetry,
+		scheduler: scheduler,
 	}
 }
 

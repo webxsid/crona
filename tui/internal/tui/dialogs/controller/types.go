@@ -92,6 +92,16 @@ type State struct {
 	TelemetryErrors                bool
 	TelemetryPrivacyCursor         int
 	TelemetryReviewCursor          int
+	DayBoundaryEnabled             bool
+	DayBoundaryTimezone            string
+	SettingKey                     sharedtypes.CoreSettingsKey
+	DayBoundaryStep                int
+	DayBoundarySchedule            sharedtypes.DayBoundarySchedule
+	DayBoundaryOverrides           []DayBoundaryOverride
+	DayBoundaryOverrideCursor      int
+	DayBoundarySelectedDays        []int
+	DayBoundaryEditingTime         string
+	DayBoundaryEditingOverride     bool
 	HabitItems                     []sharedtypes.HabitWithMeta
 	MomentumRepos                  []api.Repo
 	MomentumStreams                []api.Stream

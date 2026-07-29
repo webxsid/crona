@@ -190,8 +190,21 @@ type CoreSettingsModel struct {
 	ErrorReportingEnabled bool   `bun:"error_reporting_enabled,notnull,type:integer"`
 	HabitStreakDefs       string `bun:"habit_streak_definitions,notnull,type:text"`
 	RestRecurringDates    string `bun:"rest_recurring_dates,notnull,type:text"`
+	StartOfDay            string `bun:"start_of_day,notnull,type:text"`
+	EndOfDay              string `bun:"end_of_day,notnull,type:text"`
 	CreatedAt             string `bun:"created_at,notnull,type:text"`
 	UpdatedAt             string `bun:"updated_at,notnull,type:text"`
+}
+
+type DayBoundaryOccurrenceModel struct {
+	bun.BaseModel `bun:"table:day_boundary_occurrences"`
+
+	ID             string `bun:"id,pk,type:text"`
+	UserID         string `bun:"user_id,notnull,type:text"`
+	Kind           string `bun:"kind,notnull,type:text"`
+	ScheduledAtUTC string `bun:"scheduled_at_utc,notnull,type:text"`
+	Timezone       string `bun:"timezone,notnull,type:text"`
+	ClaimedAtUTC   string `bun:"claimed_at_utc,notnull,type:text"`
 }
 
 type SessionSegmentModel struct {

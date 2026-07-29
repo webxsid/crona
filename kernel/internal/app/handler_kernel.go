@@ -23,10 +23,12 @@ func (h *Handler) handleKernelMethods(
 		defer cancel()
 		dbOK := h.pingDB == nil || h.pingDB(ctx) == nil
 		return mustResult(req.ID, sharedtypes.Health{
-			Status: map[bool]string{true: "ok", false: "degraded"}[dbOK],
-			DB:     dbOK,
-			OK:     map[bool]int{true: 1, false: 0}[dbOK],
-			Uptime: time.Since(parseStartedAt(h.startedAt)).Seconds(),
+			Status:      map[bool]string{true: "ok", false: "degraded"}[dbOK],
+			DB:          dbOK,
+			OK:          map[bool]int{true: 1, false: 0}[dbOK],
+			Uptime:      time.Since(parseStartedAt(h.startedAt)).Seconds(),
+			CurrentDate: h.core.CurrentDate(),
+			Timezone:    time.Now().Location().String(),
 		}), true
 	case protocol.MethodKernelInfoGet:
 		return mustResult(req.ID, h.info), true

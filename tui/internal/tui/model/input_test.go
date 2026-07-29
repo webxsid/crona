@@ -97,6 +97,28 @@ func TestDialogStatePreservesSummaryExportRange(t *testing.T) {
 	}
 }
 
+func TestDialogStatePreservesDayBoundarySettings(t *testing.T) {
+	model := Model{}
+	state := dialogstate.State{
+		Kind:                "edit_day_boundary",
+		DayBoundaryEnabled:  true,
+		DayBoundaryTimezone: "Asia/Kolkata",
+		SettingKey:          sharedtypes.CoreSettingsKeyStartOfDay,
+	}
+
+	next := model.withDialogState(state)
+	got := next.dialogState()
+	if !got.DayBoundaryEnabled {
+		t.Fatal("expected day-boundary enabled state to survive model round-trip")
+	}
+	if got.DayBoundaryTimezone != state.DayBoundaryTimezone {
+		t.Fatalf("timezone = %q, want %q", got.DayBoundaryTimezone, state.DayBoundaryTimezone)
+	}
+	if got.SettingKey != state.SettingKey {
+		t.Fatalf("setting key = %q, want %q", got.SettingKey, state.SettingKey)
+	}
+}
+
 func TestInputDepsOpenCheckInDialogUsesEditForExistingCheckIn(t *testing.T) {
 	m := Model{
 		dashboardDate: "2026-05-27",

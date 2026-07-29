@@ -26,55 +26,56 @@ type UpdateContext struct {
 }
 
 type Action struct {
-	Kind               string
-	TargetView         string
-	ReportKind         sharedtypes.ExportReportKind
-	ReportFormat       sharedtypes.ExportFormat
-	OutputMode         sharedtypes.ExportOutputMode
-	PresetID           string
-	ID                 string
-	RepoID             int64
-	StreamID           int64
-	IssueID            int64
-	HabitID            int64
-	Name               string
-	Path               string
-	CheckInDate        string
-	StartDate          string
-	EndDate            string
-	RepoName           string
-	StreamName         string
-	Title              string
-	Description        *string
-	Status             string
-	Weekdays           []int
-	Active             bool
-	Estimate           *int
-	DueDate            *string
-	Note               *string
-	ReminderKind       sharedtypes.AlertReminderKind
-	ReminderSchedule   sharedtypes.AlertReminderScheduleType
-	ReminderTimeHHMM   string
-	SettingKey         sharedtypes.CoreSettingsKey
-	StringList         []string
-	IntList            []int
-	StreakKinds        []string
-	HabitStreakDefs    []sharedtypes.HabitStreakDefinition
-	RestDates          []string
-	UsageTelemetry     bool
-	ErrorReporting     bool
-	RestartAfterSave   bool
-	OnboardingDone     bool
-	Mood               int
-	Energy             int
-	SleepHours         *float64
-	SleepScore         *int
-	ScreenTimeMinutes  *int
-	Payload            shareddto.EndSessionRequest
-	ManualSession      *shareddto.ManualSessionLogRequest
-	TimerStart         *shareddto.TimerStartRequest
-	TimerExtend        *shareddto.TimerExtendRequest
-	AdditionalSessions int
+	Kind                string
+	TargetView          string
+	ReportKind          sharedtypes.ExportReportKind
+	ReportFormat        sharedtypes.ExportFormat
+	OutputMode          sharedtypes.ExportOutputMode
+	PresetID            string
+	ID                  string
+	RepoID              int64
+	StreamID            int64
+	IssueID             int64
+	HabitID             int64
+	Name                string
+	Path                string
+	CheckInDate         string
+	StartDate           string
+	EndDate             string
+	RepoName            string
+	StreamName          string
+	Title               string
+	Description         *string
+	Status              string
+	Weekdays            []int
+	Active              bool
+	Estimate            *int
+	DueDate             *string
+	Note                *string
+	ReminderKind        sharedtypes.AlertReminderKind
+	ReminderSchedule    sharedtypes.AlertReminderScheduleType
+	ReminderTimeHHMM    string
+	SettingKey          sharedtypes.CoreSettingsKey
+	DayBoundarySchedule sharedtypes.DayBoundarySchedule
+	StringList          []string
+	IntList             []int
+	StreakKinds         []string
+	HabitStreakDefs     []sharedtypes.HabitStreakDefinition
+	RestDates           []string
+	UsageTelemetry      bool
+	ErrorReporting      bool
+	RestartAfterSave    bool
+	OnboardingDone      bool
+	Mood                int
+	Energy              int
+	SleepHours          *float64
+	SleepScore          *int
+	ScreenTimeMinutes   *int
+	Payload             shareddto.EndSessionRequest
+	ManualSession       *shareddto.ManualSessionLogRequest
+	TimerStart          *shareddto.TimerStartRequest
+	TimerExtend         *shareddto.TimerExtendRequest
+	AdditionalSessions  int
 }
 
 func Close(state State) State {
@@ -114,6 +115,16 @@ func Close(state State) State {
 	state.ProcessingLabel = ""
 	state.StatusLabel = ""
 	state.StatusRequired = false
+	state.DayBoundaryEnabled = false
+	state.DayBoundaryTimezone = ""
+	state.SettingKey = ""
+	state.DayBoundaryStep = 0
+	state.DayBoundarySchedule = sharedtypes.DayBoundarySchedule{}
+	state.DayBoundaryOverrides = nil
+	state.DayBoundaryOverrideCursor = 0
+	state.DayBoundarySelectedDays = nil
+	state.DayBoundaryEditingTime = ""
+	state.DayBoundaryEditingOverride = false
 	state.CheckInDate = ""
 	state.ExportStart = ""
 	state.ExportEnd = ""
@@ -163,6 +174,15 @@ func SyncDialogFocus(state State) State {
 	if state.Kind == "pomodoro_start" || state.Kind == "hard_limit_extend" {
 		if inputIdx, ok := pomodoroDialogInputIndex(state, state.FocusIdx); ok {
 			state.Inputs[inputIdx].Focus()
+		}
+		return state
+	}
+	if state.Kind == "edit_day_boundary" {
+		if state.DayBoundaryStep == DayBoundaryStepOverview && state.FocusIdx == 0 && len(state.Inputs) > 0 {
+			state.Inputs[0].Focus()
+		}
+		if state.DayBoundaryStep == DayBoundaryStepTime && len(state.Inputs) > 1 {
+			state.Inputs[1].Focus()
 		}
 		return state
 	}
@@ -398,6 +418,8 @@ func Update(
 				Path:       value,
 			}
 		})
+	case "edit_day_boundary":
+		return updateDayBoundary(state, msg)
 	case "edit_rest_protection":
 		return updateRestProtection(state, currentDate, msg)
 	case "create_momentum", "edit_momentum":

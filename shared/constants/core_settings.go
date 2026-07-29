@@ -38,4 +38,6 @@ var DefaultCoreSettings = map[string]any{
 	"usageTelemetryEnabled":        false,
 	"errorReportingEnabled":        false,
 	"habitStreakDefinitions":       []map[string]any{},
+	"startOfDay":                   map[string]any{"enabled": true, "defaultTime": "00:00", "weekdayOverrides": map[string]string{}},
+	"endOfDay":                     map[string]any{"enabled": false, "defaultTime": "00:00", "weekdayOverrides": map[string]string{}},
 }

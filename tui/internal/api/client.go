@@ -761,9 +761,11 @@ func decodeSettings(raw json.RawMessage) (*CoreSettings, error) {
 		return nil, err
 	}
 	if settings, ok := out["local"]; ok {
+		sharedtypes.NormalizeCoreSettingsDayBoundaries(&settings)
 		return &settings, nil
 	}
 	for _, settings := range out {
+		sharedtypes.NormalizeCoreSettingsDayBoundaries(&settings)
 		return &settings, nil
 	}
 	return nil, nil

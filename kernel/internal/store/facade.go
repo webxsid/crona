@@ -22,6 +22,7 @@ type Registry struct {
 	Sessions                     *repositories.SessionRepository
 	Ops                          *repositories.OpRepository
 	CoreSettings                 *repositories.CoreSettingsRepository
+	DayBoundaryOccurrences       *repositories.DayBoundaryOccurrenceRepository
 	AlertReminders               *repositories.AlertReminderRepository
 	SessionSegments              *repositories.SessionSegmentRepository
 	ActiveContext                *repositories.ActiveContextRepository
@@ -53,6 +54,7 @@ func NewRegistry(db *bun.DB) *Registry {
 		Sessions:                     repositories.NewSessionRepository(db),
 		Ops:                          repositories.NewOpRepository(db),
 		CoreSettings:                 repositories.NewCoreSettingsRepository(db),
+		DayBoundaryOccurrences:       repositories.NewDayBoundaryOccurrenceRepository(db),
 		AlertReminders:               repositories.NewAlertReminderRepository(db),
 		SessionSegments:              repositories.NewSessionSegmentRepository(db),
 		ActiveContext:                repositories.NewActiveContextRepository(db),

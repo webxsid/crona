@@ -25,6 +25,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.SessionModel)(nil),
 		(*storemodels.OpModel)(nil),
 		(*storemodels.CoreSettingsModel)(nil),
+		(*storemodels.DayBoundaryOccurrenceModel)(nil),
 		(*storemodels.AlertReminderModel)(nil),
 		(*storemodels.SessionSegmentModel)(nil),
 		(*storemodels.ActiveContextModel)(nil),
@@ -126,8 +127,15 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"rest_weekdays":            "[]",
 		"rest_specific_dates":      "[]",
 		"rest_recurring_dates":     "[]",
+		"start_of_day":             "{}",
+		"end_of_day":               "{}",
 	} {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
+			return err
+		}
+	}
+	for _, columnName := range []string{"scheduled_at_utc", "claimed_at_utc"} {
+		if err := ensureTextColumn(ctx, db, "day_boundary_occurrences", columnName); err != nil {
 			return err
 		}
 	}

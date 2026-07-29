@@ -181,6 +181,14 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "error_reporting_enabled",
 		queryKind: coreSettingQueryBool,
 	},
+	sharedtypes.CoreSettingsKeyStartOfDay: {
+		column:    "start_of_day",
+		queryKind: coreSettingQueryString,
+	},
+	sharedtypes.CoreSettingsKeyEndOfDay: {
+		column:    "end_of_day",
+		queryKind: coreSettingQueryString,
+	},
 }
 
 func NewCoreSettingsRepository(db *bun.DB) *CoreSettingsRepository {
@@ -381,8 +389,10 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		HabitStreakDefs: mustJSON(
 			sharedconstants.DefaultCoreSettings["habitStreakDefinitions"],
 		),
-		CreatedAt: now,
-		UpdatedAt: now,
+		StartOfDay: mustJSON(sharedconstants.DefaultCoreSettings["startOfDay"]),
+		EndOfDay:   mustJSON(sharedconstants.DefaultCoreSettings["endOfDay"]),
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}).Exec(ctx)
 	return err
 }
@@ -421,6 +431,10 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseIntSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(toString(value))
+	case sharedtypes.CoreSettingsKeyStartOfDay:
+		return parseDayBoundarySchedule(toString(value), true)
+	case sharedtypes.CoreSettingsKeyEndOfDay:
+		return parseDayBoundarySchedule(toString(value), false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value)
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -471,6 +485,10 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return intSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return stringSliceJSON(value)
+	case sharedtypes.CoreSettingsKeyStartOfDay:
+		return dayBoundaryScheduleJSON(value, true)
+	case sharedtypes.CoreSettingsKeyEndOfDay:
+		return dayBoundaryScheduleJSON(value, false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value), nil
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -479,6 +497,54 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 	default:
 		return value, nil
 	}
+}
+
+func parseDayBoundarySchedule(raw string, startOfDay bool) sharedtypes.DayBoundarySchedule {
+	defaults := sharedtypes.DefaultEndOfDaySchedule()
+	if startOfDay {
+		defaults = sharedtypes.DefaultStartOfDaySchedule()
+	}
+	var schedule sharedtypes.DayBoundarySchedule
+	if err := json.Unmarshal([]byte(raw), &schedule); err != nil {
+		return defaults
+	}
+	if schedule.DefaultTime == "" {
+		schedule.DefaultTime = defaults.DefaultTime
+	}
+	if err := schedule.Validate(); err != nil {
+		return defaults
+	}
+	return schedule.Normalized()
+}
+
+func dayBoundaryScheduleJSON(value any, startOfDay bool) (string, error) {
+	if raw, ok := value.(string); ok {
+		var schedule sharedtypes.DayBoundarySchedule
+		if err := json.Unmarshal([]byte(raw), &schedule); err != nil {
+			return "", err
+		}
+		value = schedule
+	}
+	b, err := json.Marshal(value)
+	if err != nil {
+		return "", err
+	}
+	var schedule sharedtypes.DayBoundarySchedule
+	if err := json.Unmarshal(b, &schedule); err != nil {
+		return "", err
+	}
+	if schedule.DefaultTime == "" {
+		if startOfDay {
+			schedule = sharedtypes.DefaultStartOfDaySchedule()
+		} else {
+			schedule = sharedtypes.DefaultEndOfDaySchedule()
+		}
+	}
+	if err := schedule.Validate(); err != nil {
+		return "", err
+	}
+	b, err = json.Marshal(schedule.Normalized())
+	return string(b), err
 }
 
 func (r *CoreSettingsRepository) hydrateCoreSettings(
@@ -536,6 +602,8 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		OnboardingCompleted:   row.OnboardingCompleted,
 		UsageTelemetryEnabled: row.UsageTelemetryEnabled,
 		ErrorReportingEnabled: row.ErrorReportingEnabled,
+		StartOfDay:            parseDayBoundarySchedule(row.StartOfDay, true),
+		EndOfDay:              parseDayBoundarySchedule(row.EndOfDay, false),
 		CreatedAt:             row.CreatedAt,
 		UpdatedAt:             row.UpdatedAt,
 	}
@@ -544,6 +612,7 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		return sharedtypes.CoreSettings{}, err
 	}
 	settings.HabitStreakDefs = defs
+	sharedtypes.NormalizeCoreSettingsDayBoundaries(&settings)
 	return settings, nil
 }
 

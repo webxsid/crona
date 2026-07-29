@@ -19,6 +19,7 @@ type Snapshot struct {
 	UpdateStatus         *api.UpdateStatus
 	ExportAssets         *api.ExportAssetStatus
 	Settings             *api.CoreSettings
+	DaemonTimezone       string
 	HabitStreakDefs      []api.HabitStreakDefinition
 	AlertReminders       []api.AlertReminder
 	CurrentDashboardDate string
@@ -31,6 +32,17 @@ type Snapshot struct {
 	SelectedStreamID     int64
 	HasActiveIssue       bool
 	ActiveIssueStream    int64
+}
+
+func (s Snapshot) OpenEditDayBoundary(key sharedtypes.CoreSettingsKey) State {
+	if s.Settings == nil {
+		return OpenEditDayBoundary(s.Dialog, key, sharedtypes.DayBoundarySchedule{}, s.DaemonTimezone)
+	}
+	schedule := s.Settings.StartOfDay
+	if key == sharedtypes.CoreSettingsKeyEndOfDay {
+		schedule = s.Settings.EndOfDay
+	}
+	return OpenEditDayBoundary(s.Dialog, key, schedule, s.DaemonTimezone)
 }
 
 func (s Snapshot) OpenCreateRepo() State { return OpenCreateRepo(s.Dialog) }
