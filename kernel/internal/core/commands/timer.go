@@ -484,6 +484,57 @@ func (t *TimerService) Extend(
 	return t.extendHardLimit(ctx, activeSession, runtimeState, additionalSeconds)
 }
 
+func (t *TimerService) ExtendCurrentSession(
+	ctx context.Context,
+	sessionID string,
+	additionalSeconds int,
+) (sharedtypes.TimerState, error) {
+	if additionalSeconds <= 0 {
+		return sharedtypes.TimerState{}, errors.New("extension duration must be positive")
+	}
+	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSession == nil || activeSession.ID != sessionID {
+		return sharedtypes.TimerState{}, errors.New("session is no longer active")
+	}
+	runtimeState, err := t.runtimeStateForSession(sessionID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState == nil || !runtimeState.HasHardLimit() ||
+		runtimeState.HardLimitKind != sharedtypes.TimerHardLimitKindPomodoro {
+		return sharedtypes.TimerState{}, errors.New("current session is not a pomodoro hard-limit session")
+	}
+	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, sessionID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if activeSegment == nil || activeSegment.SegmentType != sharedtypes.SessionSegmentWork {
+		return sharedtypes.TimerState{}, errors.New("current session is not in a work segment")
+	}
+	consumed := hardLimitConsumedSeconds(runtimeState, activeSession.StartTime, t.ctx.Now())
+	runtimeState.HardLimitElapsedOffsetSeconds = consumed
+	runtimeState.HardLimitElapsedStartedAt = t.ctx.Now()
+	runtimeState.HardLimitTotalSeconds += additionalSeconds
+	runtimeState.HardLimitExpired = false
+	runtimeState.HardLimitExpiredAt = ""
+	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if err := t.ScheduleNextBoundary(ctx); err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	state, err := t.GetState(ctx)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	emit(t.ctx, sharedtypes.EventTypeTimerExtended, sharedtypes.SessionEventPayload{SessionID: sessionID})
+	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
+	return state, nil
+}
+
 func (t *TimerService) ExtendBySessions(
 	ctx context.Context,
 	additionalSessions int,

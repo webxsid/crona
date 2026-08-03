@@ -3,6 +3,7 @@ package viewchrome
 import (
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -15,6 +16,7 @@ type ActionsState struct {
 	TimerSegment              string
 	TimerNextSegment          string
 	HardLimitActive           bool
+	HardLimitKind             sharedtypes.TimerHardLimitKind
 	RestModeActive            bool
 	AwayModeActive            bool
 	IsDevMode                 bool
@@ -85,11 +87,16 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			}
 		}
 		if state.HardLimitActive {
-			return []string{
+			actions := []string{
+				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" advance"),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 			}
+			if state.HardLimitKind != sharedtypes.TimerHardLimitKindPomodoro {
+				return actions[1:]
+			}
+			return actions
 		}
 		if state.TimerState == "ready" {
 			return []string{

@@ -191,6 +191,10 @@ func (h *Handler) handleRuntimeMethods(
 			}
 			return h.timer.Extend(ctx, input.AdditionalSeconds)
 		}), true
+	case protocol.MethodTimerExtendCurrentSession:
+		return handle(req, func(input shareddto.TimerExtendCurrentSessionRequest) (any, error) {
+			return h.timer.ExtendCurrentSession(ctx, input.SessionID, input.AdditionalSeconds)
+		}), true
 	case protocol.MethodTimerEnd:
 		return handle(req, func(input shareddto.EndSessionRequest) (any, error) {
 			return h.timer.End(ctx, corecommands.SessionEndInput{

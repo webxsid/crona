@@ -95,6 +95,7 @@ type Deps struct {
 	Checkout                        func(*State) tea.Cmd
 	CheckUpdateNow                  func() tea.Cmd
 	ResumeSession                   func(State) tea.Cmd
+	AdvanceSession                  func() tea.Cmd
 	PauseSession                    func() tea.Cmd
 	OpenEndSessionDialog            func(*State) bool
 	ClampFiltered                   func(*State, uistate.Pane)
@@ -551,6 +552,7 @@ func newRouter(deps Deps) *router {
 		uistate.ViewSessionHistory,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handlePauseSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResumeSession(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdvanceSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleEndSession(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if deps.OpenSessionContextOverlay(&s) {

@@ -53,6 +53,10 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 			sharedtypes.TimerHardLimitKindCountdown {
 			timerTitle = "Timer Session"
 		}
+		if sharedtypes.NormalizeTimerHardLimitKind(state.Timer.HardLimitKind) ==
+			sharedtypes.TimerHardLimitKindPomodoro {
+			timerHint = "[z] advance  " + timerHint
+		}
 		timerHint = "[x] end session  [i] context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint

@@ -2,6 +2,16 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0] - 2026-08-03
+
+Crona v1.9.0 adds Pomodoro segment controls and companion-oriented timer IPC extensions.
+
+### Added
+
+- A `[z]` TUI binding to advance Pomodoro work and break segments early.
+- `timer.extend_current_session` for companion clients.
+- Local IPC protocol version `1.2`.
+
 ## [1.8.0] - 2026-07-29
 
 ### Added

@@ -305,6 +305,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		CheckUpdateNow: func() tea.Cmd { return commands.CheckUpdateNow(m.client) },
 		ResumeSession:  func(state inputpkg.State) tea.Cmd { return commands.ResumeFocusSession(m.client, state.Timer) },
+		AdvanceSession: func() tea.Cmd { return commands.AdvanceFocusSession(m.client) },
 		PauseSession:   func() tea.Cmd { return commands.PauseFocusSession(m.client) },
 		OpenEndSessionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

@@ -32,6 +32,22 @@ func TestTimerExtendedDismissesMatchingHardLimitDialog(t *testing.T) {
 	}
 }
 
+func TestTimerActionEventsRefreshTimer(t *testing.T) {
+	for _, eventType := range []string{"timer.advance", "timer.extend_current_session"} {
+		state, cmd := HandleEvent(
+			EventState{CurrentDash: "2026-07-14", Cursor: map[uistate.Pane]int{}},
+			testEventDeps(),
+			api.KernelEvent{Type: eventType},
+		)
+		if cmd == nil {
+			t.Fatalf("%s: expected timer refresh command", eventType)
+		}
+		if state.Timer != nil {
+			t.Fatalf("%s: expected event to defer timer replacement to LoadTimer", eventType)
+		}
+	}
+}
+
 func TestTimerExtendedDismissesMatchingHardLimitEndSessionDialog(t *testing.T) {
 	state, _ := HandleEvent(
 		EventState{

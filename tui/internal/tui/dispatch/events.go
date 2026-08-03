@@ -223,7 +223,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
-	case "timer.extended":
+	case "timer.advance", "timer.extend_current_session", "timer.extended":
 		if shouldDismissDialogForSessionEvent(state, event, false) {
 			state.Dialog = ""
 			state.DialogParent = ""

@@ -380,3 +380,8 @@ type TimerExtendRequest struct {
 	HardLimitLongBreakSeconds      *int `json:"hardLimitLongBreakSeconds,omitempty"`
 	HardLimitCyclesBeforeLongBreak *int `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }
+
+type TimerExtendCurrentSessionRequest struct {
+	SessionID         string `json:"sessionId"`
+	AdditionalSeconds int    `json:"additionalSeconds"`
+}

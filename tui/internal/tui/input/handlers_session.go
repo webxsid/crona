@@ -1,6 +1,7 @@
 package input
 
 import (
+	sharedtypes "crona/shared/types"
 	tea "github.com/charmbracelet/bubbletea"
 
 	uistate "crona/tui/internal/tui/state"
@@ -8,6 +9,16 @@ import (
 
 func timerIsActive(s State) bool {
 	return s.Timer != nil && s.Timer.State != "idle"
+}
+
+func handleAdvanceSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil ||
+		s.Timer.State == "idle" || !s.Timer.HardLimitActive ||
+		sharedtypes.NormalizeTimerHardLimitKind(s.Timer.HardLimitKind) !=
+			sharedtypes.TimerHardLimitKindPomodoro {
+		return s, nil, false
+	}
+	return s, deps.AdvanceSession(), true
 }
 
 func issueEditorContext(s State) bool {

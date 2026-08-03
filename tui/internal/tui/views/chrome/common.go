@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewruntime "crona/tui/internal/tui/views/runtime"
@@ -153,11 +154,17 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		return nil
 	}
 	return ContextualActions(theme, ActionsState{
-		View:                      state.View,
-		Pane:                      state.Pane,
-		TimerState:                timerStateFromContent(state),
-		TimerSegment:              timerSegmentFromContent(state),
-		TimerNextSegment:          timerNextSegmentFromContent(state),
+		View:             state.View,
+		Pane:             state.Pane,
+		TimerState:       timerStateFromContent(state),
+		TimerSegment:     timerSegmentFromContent(state),
+		TimerNextSegment: timerNextSegmentFromContent(state),
+		HardLimitKind: func() sharedtypes.TimerHardLimitKind {
+			if state.Timer == nil {
+				return ""
+			}
+			return sharedtypes.NormalizeTimerHardLimitKind(state.Timer.HardLimitKind)
+		}(),
 		RestModeActive:            state.RestModeActive,
 		AwayModeActive:            state.AwayModeActive,
 		UpdateVisible:             viewruntime.ShouldShowUpdatesView(state.UpdateStatus),

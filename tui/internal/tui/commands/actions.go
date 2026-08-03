@@ -1015,6 +1015,16 @@ func ResumeFocusSession(c *api.Client, timer *api.TimerState) tea.Cmd {
 	}
 }
 
+func AdvanceFocusSession(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.AdvanceTimer(); err != nil {
+			logger.Errorf("AdvanceTimer: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return FocusSessionChangedMsg{ReloadTimer: true}
+	}
+}
+
 func ExtendFocusSession(c *api.Client, req shareddto.TimerExtendRequest) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.ExtendTimer(req); err != nil {

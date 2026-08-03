@@ -62,6 +62,45 @@ func TestHandleResumeSessionRejectsRunningHardLimit(t *testing.T) {
 	}
 }
 
+func TestHandleAdvanceSessionAllowsPomodoroStates(t *testing.T) {
+	for _, timerState := range []string{"running", "ready", "paused"} {
+		called := false
+		state := State{
+			ActiveView: uistate.ViewSessionActive,
+			Timer: &api.TimerState{
+				State:           timerState,
+				HardLimitActive: true,
+				HardLimitKind:   sharedtypes.TimerHardLimitKindPomodoro,
+			},
+		}
+		_, _, handled := handleAdvanceSession(state, Deps{
+			AdvanceSession: func() tea.Cmd {
+				called = true
+				return nil
+			},
+		})
+		if !handled || !called {
+			t.Fatalf("state %q: expected z to advance Pomodoro session", timerState)
+		}
+	}
+}
+
+func TestHandleAdvanceSessionRejectsNonPomodoroSessions(t *testing.T) {
+	for _, timer := range []*api.TimerState{
+		{State: "idle"},
+		{State: "running"},
+		{State: "running", HardLimitActive: true, HardLimitKind: sharedtypes.TimerHardLimitKindCountdown},
+	} {
+		_, _, handled := handleAdvanceSession(State{
+			ActiveView: uistate.ViewSessionActive,
+			Timer:      timer,
+		}, Deps{AdvanceSession: func() tea.Cmd { t.Fatal("unexpected advance"); return nil }})
+		if handled {
+			t.Fatalf("timer %+v: expected z to be ignored", timer)
+		}
+	}
+}
+
 func TestHandleStructuredManualPauseBlocksManualLogDuringActiveSession(t *testing.T) {
 	work := sharedtypes.SessionSegmentWork
 	state := State{

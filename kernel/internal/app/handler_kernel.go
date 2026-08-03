@@ -91,6 +91,7 @@ func (h *Handler) handleKernelMethods(
 			}
 			return h.updater.CheckNow(ctx)
 		}), true
+		// CONTINUE FROM HERE: ownership doc
 	case protocol.MethodAlertsStatusGet:
 		return h.handleNoParams(req, func() (any, error) {
 			if h.alerts == nil {

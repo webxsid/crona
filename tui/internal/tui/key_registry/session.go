@@ -5,10 +5,11 @@ import tea "github.com/charmbracelet/bubbletea"
 func RegisterSession[M tea.Model, V comparable, P comparable](
 	r *Router[M, V, P],
 	activeView, historyView V,
-	pause, resume, end, context, editHistory, enterHistory Handler[M],
+	pause, resume, advance, end, context, editHistory, enterHistory Handler[M],
 ) {
 	r.RegisterView(activeView, "p", pause)
 	r.RegisterView(activeView, "r", resume)
+	r.RegisterView(activeView, "z", advance)
 	r.RegisterView(activeView, "x", end)
 	r.RegisterView(activeView, "i", context)
 	r.RegisterView(historyView, "e", editHistory)
