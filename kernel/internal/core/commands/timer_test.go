@@ -488,6 +488,52 @@ func TestTimerHardLimitSchedulesWorkBoundaryFromFocusDuration(t *testing.T) {
 	}
 }
 
+func TestTimerAdvanceExpiresAfterFinalPomodoroBreak(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, coreCtx, issue.ID)
+
+	state, err := service.Start(ctx, nil, new(issue.StreamID), new(issue.ID), &shareddto.TimerStartRequest{
+		HardLimitTotalSeconds:          new(14 * 60),
+		HardLimitWorkSeconds:           new(5 * 60),
+		HardLimitBreakSeconds:          new(2 * 60),
+		HardLimitLongBreakSeconds:      new(0),
+		HardLimitCyclesBeforeLongBreak: new(0),
+	})
+	if err != nil {
+		t.Fatalf("start Pomodoro: %v", err)
+	}
+
+	for i, test := range []struct {
+		want      sharedtypes.SessionSegmentType
+		remaining int
+	}{
+		{want: sharedtypes.SessionSegmentShortBreak, remaining: 9 * 60},
+		{want: sharedtypes.SessionSegmentWork, remaining: 7 * 60},
+		{want: sharedtypes.SessionSegmentShortBreak, remaining: 2 * 60},
+	} {
+		state, err = service.Advance(ctx)
+		if err != nil {
+			t.Fatalf("advance %d: %v", i+1, err)
+		}
+		if state.SegmentType == nil || *state.SegmentType != test.want {
+			t.Fatalf("advance %d: expected %q, got %+v", i+1, test.want, state.SegmentType)
+		}
+		if state.HardLimitRemainingSeconds != test.remaining {
+			t.Fatalf("advance %d: expected %d seconds remaining, got %d", i+1, test.remaining, state.HardLimitRemainingSeconds)
+		}
+	}
+
+	stateAfterFinalAdvance, err := service.Advance(ctx)
+	if err != nil {
+		t.Fatalf("advance after final break: %v", err)
+	}
+	if !stateAfterFinalAdvance.HardLimitExpired || stateAfterFinalAdvance.State != "expired" {
+		t.Fatalf("expected final break advance to expire session, got %+v", stateAfterFinalAdvance)
+	}
+}
+
 func TestTimerHardLimitSkipsZeroLengthBreaks(t *testing.T) {
 	runtimeState := runtimepkg.NewHardLimitTimerRuntimeState(
 		"session-123",

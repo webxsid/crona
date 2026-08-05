@@ -2,9 +2,9 @@
 
 All notable changes to **Crona** are documented here.
 
-## [1.9.0] - 2026-08-03
+## [1.9.0-beta.1] - 2026-08-05
 
-Crona v1.9.0 adds Pomodoro segment controls and companion-oriented timer IPC extensions.
+Crona v1.9.0-beta.1 adds Pomodoro segment controls and companion-oriented timer IPC extensions.
 
 ### Added
 

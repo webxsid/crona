@@ -53,10 +53,6 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 			sharedtypes.TimerHardLimitKindCountdown {
 			timerTitle = "Timer Session"
 		}
-		if sharedtypes.NormalizeTimerHardLimitKind(state.Timer.HardLimitKind) ==
-			sharedtypes.TimerHardLimitKindPomodoro {
-			timerHint = "[z] advance  " + timerHint
-		}
 		timerHint = "[x] end session  [i] context"
 		if state.Timer.State == "ready" {
 			timerHint = "[r] start " + nextLabel + "  " + timerHint
@@ -65,6 +61,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 			} else if state.Timer.NextSegmentType != nil {
 				stateColor = segmentColor(theme, *state.Timer.NextSegmentType)
 			}
+		}
+		if label := helperpkg.PomodoroAdvanceActionLabel(state.Timer); label != "" {
+			timerHint = "[z] " + label + "  " + timerHint
 		}
 	} else if state.Timer.State == "ready" && !hardLimit {
 		timerTitle = "Ready For"

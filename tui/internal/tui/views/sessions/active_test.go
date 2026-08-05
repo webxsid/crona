@@ -314,3 +314,26 @@ func TestActiveTimedSessionRendersEndsAt(t *testing.T) {
 		t.Fatalf("expected active timed session to render ends-at time, got %q", rendered)
 	}
 }
+
+func TestActivePomodoroSessionAdvertisesAdvanceKey(t *testing.T) {
+	work := sharedtypes.SessionSegmentWork
+	shortBreak := sharedtypes.SessionSegmentShortBreak
+	rendered := renderActiveView(types.Theme{}, types.ContentState{
+		View:   "session_active",
+		Width:  96,
+		Height: 36,
+		Timer: &api.TimerState{
+			State:                     "running",
+			HardLimitActive:           true,
+			HardLimitKind:             sharedtypes.TimerHardLimitKindPomodoro,
+			HardLimitTotalSeconds:     600,
+			HardLimitRemainingSeconds: 300,
+			HardLimitWorkSeconds:      300,
+			SegmentType:               &work,
+			NextSegmentType:           &shortBreak,
+		},
+	})
+	if !strings.Contains(rendered, "[z]") || !strings.Contains(rendered, "start short break") {
+		t.Fatalf("expected Pomodoro active view to advertise starting the short break, got %q", rendered)
+	}
+}

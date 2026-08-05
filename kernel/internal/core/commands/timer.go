@@ -422,6 +422,23 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if activeSegment == nil {
 		return sharedtypes.TimerState{}, errors.New("no prepared timer segment")
 	}
+	if runtimeState != nil && sharedtypes.NormalizeTimerHardLimitKind(runtimeState.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro &&
+		(activeSegment.SegmentType == sharedtypes.SessionSegmentShortBreak ||
+			activeSegment.SegmentType == sharedtypes.SessionSegmentLongBreak) {
+		completedWorkCycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, activeSession.ID)
+		if err != nil {
+			return sharedtypes.TimerState{}, err
+		}
+		if completedWorkCycles >= hardLimitConfiguredCycles(runtimeState) {
+			if err := advanceHardLimitTimeline(runtimeState, activeSegment.SegmentType, t.ctx.Now()); err != nil {
+				return sharedtypes.TimerState{}, err
+			}
+			if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
+				return sharedtypes.TimerState{}, err
+			}
+			return t.applyHardLimitExpiry(ctx, activeSession.ID, activeSegment.SegmentType)
+		}
+	}
 	nextSegment, err := t.nextSegmentForActiveState(
 		ctx,
 		activeSession.ID,
@@ -434,6 +451,9 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	}
 	if nextSegment == nil {
 		return sharedtypes.TimerState{}, errors.New("timer cannot advance from the current state")
+	}
+	if err := advanceHardLimitTimeline(runtimeState, activeSegment.SegmentType, t.ctx.Now()); err != nil {
+		return sharedtypes.TimerState{}, err
 	}
 	if err := t.ctx.SessionSegments.EndActiveSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID); err != nil {
 		return sharedtypes.TimerState{}, err
@@ -461,6 +481,51 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 		return sharedtypes.TimerState{}, err
 	}
 	return state, nil
+}
+
+func hardLimitConfiguredCycles(state *runtimepkg.TimerRuntimeState) int {
+	if state == nil || state.HardLimitTotalSeconds <= 0 || state.HardLimitWorkSeconds <= 0 {
+		return 0
+	}
+	cycles := 0
+	total := 0
+	for total < state.HardLimitTotalSeconds {
+		total += state.HardLimitWorkSeconds
+		cycles++
+		breakSeconds := state.HardLimitBreakSeconds
+		if hardLimitShouldUseLongBreak(state, cycles) && state.HardLimitLongBreakSeconds > 0 {
+			breakSeconds = state.HardLimitLongBreakSeconds
+		}
+		total += breakSeconds
+	}
+	return cycles
+}
+
+func advanceHardLimitTimeline(
+	state *runtimepkg.TimerRuntimeState,
+	segment sharedtypes.SessionSegmentType,
+	now string,
+) error {
+	if state == nil || !state.HasHardLimit() ||
+		sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) != sharedtypes.TimerHardLimitKindPomodoro {
+		return nil
+	}
+	duration := state.HardLimitWorkSeconds
+	switch segment {
+	case sharedtypes.SessionSegmentShortBreak:
+		duration = state.HardLimitBreakSeconds
+	case sharedtypes.SessionSegmentLongBreak:
+		duration = state.HardLimitLongBreakSeconds
+		if duration <= 0 {
+			duration = state.HardLimitBreakSeconds
+		}
+	}
+	if duration <= 0 {
+		return nil
+	}
+	state.HardLimitElapsedOffsetSeconds += duration
+	state.HardLimitElapsedStartedAt = now
+	return nil
 }
 
 func (t *TimerService) Extend(
@@ -889,6 +954,9 @@ func (t *TimerService) applyBoundaryTransition(
 	}
 	runtimeState, err := t.runtimeStateForSession(sessionID)
 	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if err := advanceHardLimitTimeline(runtimeState, currentType, t.ctx.Now()); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	autoStart := shouldAutoStart(boundary.NextSegment, settings)

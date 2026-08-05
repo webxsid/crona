@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
+	helperpkg "crona/tui/internal/tui/helpers"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -27,6 +29,14 @@ type ActionsState struct {
 	UpdateScriptDeprecated    bool
 	UpdateCommand             string
 	MomentumTab               string
+}
+
+func segmentPtr(value string) *sharedtypes.SessionSegmentType {
+	if value == "" {
+		return nil
+	}
+	segment := sharedtypes.SessionSegmentType(value)
+	return &segment
 }
 
 func GlobalActions(theme Theme, state ActionsState) []string {
@@ -88,13 +98,20 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 		if state.HardLimitActive {
 			actions := []string{
-				theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" advance"),
 				theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" end session"),
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 			}
-			if state.HardLimitKind != sharedtypes.TimerHardLimitKindPomodoro {
-				return actions[1:]
+			if sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro {
+				if label := helperpkg.PomodoroAdvanceActionLabel(&api.TimerState{
+					State:           state.TimerState,
+					SegmentType:     segmentPtr(state.TimerSegment),
+					NextSegmentType: segmentPtr(state.TimerNextSegment),
+					HardLimitActive: true,
+					HardLimitKind:   state.HardLimitKind,
+				}); label != "" {
+					actions = append([]string{theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" "+label)}, actions...)
+				}
 			}
 			return actions
 		}

@@ -28,6 +28,45 @@ func IssueScheduleLabel(issue api.Issue, settings *api.CoreSettings) string {
 	return "due " + FormatDisplayDate(date, settings)
 }
 
+func PomodoroAdvanceActionLabel(timer *api.TimerState) string {
+	if timer == nil || timer.State == "idle" || !timer.HardLimitActive ||
+		sharedtypes.NormalizeTimerHardLimitKind(timer.HardLimitKind) != sharedtypes.TimerHardLimitKindPomodoro {
+		return ""
+	}
+	next := timer.NextSegmentType
+	if timer.State == "ready" && timer.ReadySegmentType != nil {
+		next = timer.ReadySegmentType
+	}
+	if next == nil {
+		return ""
+	}
+	if timer.State == "ready" {
+		return "start " + SegmentLabel(*next)
+	}
+	if timer.SegmentType == nil {
+		return "start " + SegmentLabel(*next)
+	}
+	switch *timer.SegmentType {
+	case sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
+		return "end break"
+	default:
+		return "start " + SegmentLabel(*next)
+	}
+}
+
+func SegmentLabel(segment sharedtypes.SessionSegmentType) string {
+	switch segment {
+	case sharedtypes.SessionSegmentShortBreak:
+		return "short break"
+	case sharedtypes.SessionSegmentLongBreak:
+		return "long break"
+	case sharedtypes.SessionSegmentWork:
+		return "work"
+	default:
+		return "next segment"
+	}
+}
+
 func resolvedOnDate(
 	status sharedtypes.IssueStatus,
 	completedAt, abandonedAt *string,

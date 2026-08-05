@@ -8,6 +8,38 @@ import (
 	"crona/tui/internal/api"
 )
 
+func TestPomodoroAdvanceActionLabel(t *testing.T) {
+	work := sharedtypes.SessionSegmentWork
+	shortBreak := sharedtypes.SessionSegmentShortBreak
+	for _, test := range []struct {
+		name  string
+		timer api.TimerState
+		want  string
+	}{
+		{
+			name:  "work starts short break",
+			timer: api.TimerState{State: "running", HardLimitActive: true, HardLimitKind: sharedtypes.TimerHardLimitKindPomodoro, SegmentType: &work, NextSegmentType: &shortBreak},
+			want:  "start short break",
+		},
+		{
+			name:  "break ends break",
+			timer: api.TimerState{State: "running", HardLimitActive: true, HardLimitKind: sharedtypes.TimerHardLimitKindPomodoro, SegmentType: &shortBreak, NextSegmentType: &work},
+			want:  "end break",
+		},
+		{
+			name:  "terminal break hides action",
+			timer: api.TimerState{State: "running", HardLimitActive: true, HardLimitKind: sharedtypes.TimerHardLimitKindPomodoro, SegmentType: &shortBreak},
+			want:  "",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			if got := PomodoroAdvanceActionLabel(&test.timer); got != test.want {
+				t.Fatalf("label = %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 func TestSessionHistorySummaryPrefixesManualEntries(t *testing.T) {
 	entry := api.SessionHistoryEntry{
 		Session: sharedtypes.Session{
