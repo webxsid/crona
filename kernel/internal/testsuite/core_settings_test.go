@@ -62,7 +62,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
 		t.Fatalf("initialize defaults: %v", err)
 	}
-	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
+	if _, err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
 		t.Fatalf("set away mode: %v", err)
 	}
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyFrozenStreakKinds, []string{string(sharedtypes.StreakKindCheckInDays)}); err != nil {
@@ -170,14 +170,26 @@ func TestAwayModeRetainsCanonicalDateAfterDisable(t *testing.T) {
 	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
 		t.Fatalf("initialize defaults: %v", err)
 	}
-	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
+	changed, err := repo.SetAwayMode(ctx, "local", true, "2026-03-29")
+	if err != nil {
 		t.Fatalf("enable away mode: %v", err)
 	}
-	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
+	if !changed {
+		t.Fatal("expected first away-mode enable to record the date")
+	}
+	changed, err = repo.SetAwayMode(ctx, "local", true, "2026-03-29")
+	if err != nil {
 		t.Fatalf("repeat away mode: %v", err)
 	}
-	if err := repo.SetAwayMode(ctx, "local", false, "2026-03-29"); err != nil {
+	if changed {
+		t.Fatal("expected repeated away-mode enable not to change history")
+	}
+	changed, err = repo.SetAwayMode(ctx, "local", false, "2026-03-29")
+	if err != nil {
 		t.Fatalf("disable away mode: %v", err)
+	}
+	if changed {
+		t.Fatal("expected disabling away mode not to change history")
 	}
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {

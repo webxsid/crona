@@ -18,7 +18,7 @@ type customHabitMomentumSnapshotState struct {
 	Definitions []customHabitMomentumSnapshotDefState `json:"definitions,omitempty"`
 }
 
-const customHabitMomentumSnapshotStateVersion = 4
+const customHabitMomentumSnapshotStateVersion = 5
 
 type customHabitMomentumSnapshotDefState struct {
 	ID          string `json:"id"`
@@ -299,6 +299,8 @@ func advanceCustomHabitMomentumSnapshotState(
 				state.Current = prevState.Current
 				switch {
 				case eval.Skipped:
+				case prevEval.Skipped && state.BucketMet:
+					state.Current = prevState.Current + 1
 				case prevEval.MetTarget:
 					if state.BucketMet {
 						state.Current = prevState.Current + 1

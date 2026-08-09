@@ -160,6 +160,9 @@ func Run(ctx context.Context) (runErr error) {
 		if !changed {
 			return nil
 		}
+		if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, commandCtx, date); err != nil {
+			return err
+		}
 		emitSettingsChanged(bus, sharedtypes.CoreSettingsKeyAwayDates)
 		return nil
 	})

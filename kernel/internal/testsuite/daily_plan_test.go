@@ -524,7 +524,7 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 			entry.CurrentDelayedDays,
 		)
 	}
-	if err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-30"); err != nil {
+	if _, err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-30"); err != nil {
 		t.Fatalf("enable away mode: %v", err)
 	}
 	plan, err = corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")

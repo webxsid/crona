@@ -2,6 +2,24 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.3] - 2026-08-09
+
+Crona v1.9.0-beta.3 fixes Momentum continuity across protected away and rest days.
+
+### Changed
+
+- Canonical away-date changes invalidate affected Momentum snapshots so historical streaks are rebuilt from the daemon's authoritative rest history.
+- TUI clients refresh Momentum, streak, wellbeing, and rollup data when away or rest settings change.
+
+### Fixed
+
+- Daily Momentum now continues from its previous value after a protected day when the next required habit or context target is completed.
+- Snapshot-based Momentum summaries now agree with range-based calculations after skipped protected buckets across daily, weekly, and monthly periods.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.3`; no companion contract changes are required for this beta.
+
 ## [1.9.0-beta.2] - 2026-08-09
 
 Crona v1.9.0-beta.2 makes Pomodoro break deferral daemon-authoritative and advances the local IPC protocol.

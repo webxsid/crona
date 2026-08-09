@@ -55,7 +55,7 @@ func TestAwayModeOnlyFreezesSelectedStreakKinds(t *testing.T) {
 	seedCheckInDay(t, ctx, coreCtx, "2026-03-27")
 	seedCheckInDay(t, ctx, coreCtx, "2026-03-28")
 
-	if err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-29"); err != nil {
+	if _, err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-29"); err != nil {
 		t.Fatalf("set away mode: %v", err)
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyFrozenStreakKinds, []string{string(sharedtypes.StreakKindCheckInDays)}); err != nil {

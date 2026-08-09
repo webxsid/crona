@@ -61,6 +61,48 @@ func TestSettingsChangedReloadsSettings(t *testing.T) {
 	}
 }
 
+func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
+	called := map[string]bool{}
+	deps := testEventDeps()
+	deps.LoadSettings = trackedEventCommand(called, "settings")
+	deps.LoadDailyStreaks = func(string) tea.Cmd { return trackedEventCommand(called, "daily")() }
+	deps.LoadWellbeing = func(string, int) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
+	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	deps.LoadMomentumRange = func(string, int) tea.Cmd { return trackedEventCommand(called, "momentum")() }
+	payload, err := json.Marshal(sharedtypes.SettingsChangedPayload{
+		Keys: []sharedtypes.CoreSettingsKey{sharedtypes.CoreSettingsKeyAwayDates},
+	})
+	if err != nil {
+		t.Fatalf("marshal settings event: %v", err)
+	}
+	state := EventState{
+		CurrentDash:         "2026-08-09",
+		CurrentWell:         "2026-08-09",
+		CurrentMomentum:     "2026-08-09",
+		MomentumWindowDays:  30,
+		WellbeingWindowDays: 7,
+	}
+	_, cmd := HandleEvent(state, deps, api.KernelEvent{
+		Type:    sharedtypes.EventTypeSettingsChanged,
+		Payload: payload,
+	})
+	if cmd == nil {
+		t.Fatal("expected awayDates change to schedule refresh commands")
+	}
+	for _, name := range []string{"settings", "daily", "wellbeing", "rollup", "momentum"} {
+		if !called[name] {
+			t.Fatalf("expected %s reload after awayDates change", name)
+		}
+	}
+}
+
+func trackedEventCommand(called map[string]bool, name string) func() tea.Cmd {
+	return func() tea.Cmd {
+		called[name] = true
+		return func() tea.Msg { return nil }
+	}
+}
+
 func TestTimerExtendedDismissesMatchingHardLimitEndSessionDialog(t *testing.T) {
 	state, _ := HandleEvent(
 		EventState{
@@ -164,6 +206,7 @@ func testEventDeps() EventDeps {
 		LoadDailyStreaks:         func(string) tea.Cmd { return noop() },
 		LoadHabitHistory:         func(*api.ActiveContext, *int64) tea.Cmd { return noop() },
 		LoadWellbeing:            func(string, int) tea.Cmd { return noop() },
+		LoadMomentumRange:        func(string, int) tea.Cmd { return noop() },
 		LoadRollupSummaries:      func(string, string) tea.Cmd { return noop() },
 		LoadSessionHistoryFor200: func(EventState) tea.Cmd { return noop() },
 		LoadContext:              noop,

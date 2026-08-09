@@ -2,6 +2,7 @@ package dispatch
 
 import (
 	"encoding/json"
+	"slices"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -50,6 +51,7 @@ type EventDeps struct {
 	LoadDailyStreaks         func(date string) tea.Cmd
 	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
 	LoadWellbeing            func(date string, windowDays int) tea.Cmd
+	LoadMomentumRange        func(date string, windowDays int) tea.Cmd
 	LoadRollupSummaries      func(start, end string) tea.Cmd
 	LoadSessionHistoryFor200 func(EventState) tea.Cmd
 	LoadContext              func() tea.Cmd
@@ -249,12 +251,41 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
 	case sharedtypes.EventTypeSettingsChanged:
-		return state, deps.LoadSettings()
+		cmds := []tea.Cmd{deps.LoadSettings()}
+		var payload sharedtypes.SettingsChangedPayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil || len(payload.Keys) == 0 {
+			return state, tea.Batch(cmds...)
+		}
+		if settingsKeysAffectStreaks(payload.Keys) {
+			cmds = append(
+				cmds,
+				deps.LoadDailyStreaks(state.CurrentDash),
+				deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
+				deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+				deps.LoadMomentumRange(state.CurrentMomentum, state.MomentumWindowDays),
+			)
+		}
+		return state, tea.Batch(cmds...)
 	case "ops.created":
 		return state, deps.LoadOps(state.CurrentOpsLim)
 	default:
 		return state, nil
 	}
+}
+
+func settingsKeysAffectStreaks(keys []sharedtypes.CoreSettingsKey) bool {
+	for _, key := range []sharedtypes.CoreSettingsKey{
+		sharedtypes.CoreSettingsKeyAwayModeEnabled,
+		sharedtypes.CoreSettingsKeyAwayDates,
+		sharedtypes.CoreSettingsKeyFrozenStreakKinds,
+		sharedtypes.CoreSettingsKeyRestWeekdays,
+		sharedtypes.CoreSettingsKeyRestSpecificDates,
+	} {
+		if slices.Contains(keys, key) {
+			return true
+		}
+	}
+	return false
 }
 
 func shouldDismissDialogForSessionEvent(

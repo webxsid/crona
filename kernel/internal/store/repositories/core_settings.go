@@ -356,15 +356,16 @@ func (r *CoreSettingsRepository) SetAwayMode(
 	userID string,
 	enabled bool,
 	date string,
-) error {
-	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+) (bool, error) {
+	awayDatesChanged := false
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
 		var model storemodels.CoreSettingsModel
 		if err := tx.NewSelect().Model(&model).Where("user_id = ?", userID).Limit(1).Scan(ctx); err != nil {
 			return err
 		}
 		awayDates := parseStringSlice(model.AwayDates)
 		if enabled {
-			awayDates, _ = mergeUniqueStrings(awayDates, []string{date})
+			awayDates, awayDatesChanged = mergeUniqueStrings(awayDates, []string{date})
 		}
 		encoded, err := json.Marshal(awayDates)
 		if err != nil {
@@ -378,6 +379,7 @@ func (r *CoreSettingsRepository) SetAwayMode(
 			Exec(ctx)
 		return err
 	})
+	return awayDatesChanged, err
 }
 
 func (r *CoreSettingsRepository) RecordAwayDate(ctx context.Context, userID, date string) (bool, error) {

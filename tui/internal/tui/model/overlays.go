@@ -203,6 +203,9 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},
+		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
+			return commands.LoadMomentumRange(m.client, date, windowDays)
+		},
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {
 			return commands.LoadSessionHistory(
