@@ -349,8 +349,9 @@ func (r *CoreSettingsRepository) SetSettings(
 	})
 }
 
-// SetAwayMode atomically changes the live away flag and records the current
-// logical date in the canonical historical away-date list when enabling.
+// SetAwayMode atomically changes the live away flag. Canonical away history is
+// recorded only after a logical date has completed. Disabling also removes the
+// current date in case an older build recorded it provisionally.
 func (r *CoreSettingsRepository) SetAwayMode(
 	ctx context.Context,
 	userID string,
@@ -364,8 +365,12 @@ func (r *CoreSettingsRepository) SetAwayMode(
 			return err
 		}
 		awayDates := parseStringSlice(model.AwayDates)
-		if enabled {
-			awayDates, awayDatesChanged = mergeUniqueStrings(awayDates, []string{date})
+		if !enabled {
+			before := len(awayDates)
+			awayDates = slices.DeleteFunc(awayDates, func(value string) bool {
+				return strings.TrimSpace(value) == strings.TrimSpace(date)
+			})
+			awayDatesChanged = len(awayDates) != before
 		}
 		encoded, err := json.Marshal(awayDates)
 		if err != nil {

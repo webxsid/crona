@@ -21,26 +21,26 @@ func TestLogicalDateUsesSODBoundary(t *testing.T) {
 	}
 }
 
-func TestDateRecorderRunsOnlyWhenDateOrRulesChange(t *testing.T) {
-	calls := 0
-	scheduler := &Scheduler{record: func(context.Context, string, *sharedtypes.CoreSettings) error {
-		calls++
+func TestDateRecorderRecordsCompletedDateOnlyOnRollover(t *testing.T) {
+	var dates []string
+	scheduler := &Scheduler{record: func(_ context.Context, date string, _ *sharedtypes.CoreSettings) error {
+		dates = append(dates, date)
 		return nil
-	}}
+	}, recordKey: "2026-08-08"}
 	settings := &sharedtypes.CoreSettings{RestWeekdays: []int{6}}
 	ctx := context.Background()
 	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
 		t.Fatalf("record date: %v", err)
 	}
-	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
-		t.Fatalf("repeat date: %v", err)
-	}
 	settings.RestSpecificDates = []string{"2026-08-08"}
 	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
 		t.Fatalf("record changed rules: %v", err)
 	}
-	if calls != 2 {
-		t.Fatalf("expected initial and rule-change recordings only, got %d", calls)
+	if err := scheduler.recordDateIfChanged(ctx, "2026-08-09", settings); err != nil {
+		t.Fatalf("record rollover: %v", err)
+	}
+	if len(dates) != 1 || dates[0] != "2026-08-08" {
+		t.Fatalf("expected only completed date at rollover, got %v", dates)
 	}
 }
 

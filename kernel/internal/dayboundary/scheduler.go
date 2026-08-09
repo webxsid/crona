@@ -75,9 +75,7 @@ func (s *Scheduler) Initialize(ctx context.Context) error {
 		location = time.Local
 	}
 	s.setCurrent(LogicalDate(s.now().In(location), settings.StartOfDay))
-	if err := s.recordDateIfChanged(ctx, s.CurrentDate(), settings); err != nil {
-		return err
-	}
+	s.recordKey = s.CurrentDate()
 	return nil
 }
 
@@ -151,27 +149,23 @@ func (s *Scheduler) recordDateIfChanged(
 	if s.record == nil || settings == nil {
 		return nil
 	}
-	weekdays := append([]int(nil), settings.RestWeekdays...)
-	dates := append([]string(nil), settings.RestSpecificDates...)
-	slices.Sort(weekdays)
-	slices.Sort(dates)
-	keyBytes, err := json.Marshal(struct {
-		Date     string
-		Weekdays []int
-		Dates    []string
-	}{date, weekdays, dates})
-	if err != nil {
-		return err
-	}
-	key := string(keyBytes)
-	if key == s.recordKey {
+	if date == s.recordKey {
 		return nil
 	}
-	if err := s.record(ctx, date, settings); err != nil {
+	completedDate := previousDate(date)
+	if err := s.record(ctx, completedDate, settings); err != nil {
 		return err
 	}
-	s.recordKey = key
+	s.recordKey = date
 	return nil
+}
+
+func previousDate(date string) string {
+	parsed, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return ""
+	}
+	return parsed.AddDate(0, 0, -1).Format(time.DateOnly)
 }
 
 func (s *Scheduler) fire(

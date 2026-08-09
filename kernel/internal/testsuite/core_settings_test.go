@@ -115,7 +115,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if settings == nil || !settings.AwayModeEnabled {
 		t.Fatalf("expected away mode enabled, got %+v", settings)
 	}
-	if len(settings.AwayDates) != 1 || settings.AwayDates[0] != "2026-03-29" {
+	if len(settings.AwayDates) != 0 {
 		t.Fatalf("unexpected away dates: %+v", settings.AwayDates)
 	}
 	if len(settings.FrozenStreakKinds) != 1 ||
@@ -163,7 +163,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	}
 }
 
-func TestAwayModeRetainsCanonicalDateAfterDisable(t *testing.T) {
+func TestAwayModeDoesNotRecordCurrentDateAndRemovesProvisionalHistory(t *testing.T) {
 	ctx := context.Background()
 	store := openTestStore(t)
 	repo := repositories.NewCoreSettingsRepository(store.DB())
@@ -174,22 +174,18 @@ func TestAwayModeRetainsCanonicalDateAfterDisable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("enable away mode: %v", err)
 	}
-	if !changed {
-		t.Fatal("expected first away-mode enable to record the date")
-	}
-	changed, err = repo.SetAwayMode(ctx, "local", true, "2026-03-29")
-	if err != nil {
-		t.Fatalf("repeat away mode: %v", err)
-	}
 	if changed {
-		t.Fatal("expected repeated away-mode enable not to change history")
+		t.Fatal("expected away-mode enable not to record an incomplete date")
+	}
+	if _, err := repo.RecordAwayDate(ctx, "local", "2026-03-29"); err != nil {
+		t.Fatalf("seed provisional date: %v", err)
 	}
 	changed, err = repo.SetAwayMode(ctx, "local", false, "2026-03-29")
 	if err != nil {
 		t.Fatalf("disable away mode: %v", err)
 	}
-	if changed {
-		t.Fatal("expected disabling away mode not to change history")
+	if !changed {
+		t.Fatal("expected disabling away mode to remove provisional current date")
 	}
 	settings, err := repo.Get(ctx, "local")
 	if err != nil {
@@ -198,8 +194,8 @@ func TestAwayModeRetainsCanonicalDateAfterDisable(t *testing.T) {
 	if settings.AwayModeEnabled {
 		t.Fatal("expected live away mode to be disabled")
 	}
-	if len(settings.AwayDates) != 1 || settings.AwayDates[0] != "2026-03-29" {
-		t.Fatalf("expected retained canonical away date, got %+v", settings.AwayDates)
+	if len(settings.AwayDates) != 0 {
+		t.Fatalf("expected current date removed from canonical history, got %+v", settings.AwayDates)
 	}
 }
 

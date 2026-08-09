@@ -39,6 +39,7 @@ func ListMomentumCards(
 	if err != nil {
 		return nil, err
 	}
+	settings = settingsWithLiveAwayDate(settings, endDate)
 
 	countsByDate, err := loadCustomHabitMomentumCountsByDate(ctx, c, defs, endDate)
 	if err != nil {

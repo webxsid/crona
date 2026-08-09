@@ -2,6 +2,26 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.4] - 2026-08-09
+
+Crona v1.9.0-beta.4 makes same-day ad-hoc away mode reversible while preserving immutable historical away dates.
+
+### Changed
+
+- Canonical `awayDates` are materialized only after a logical date has completed instead of when away mode is enabled.
+- Active away mode protects the current logical date through a transient daemon calculation overlay without prematurely changing historical state.
+- Logical-day rollover records the completed date when either ad-hoc away mode or a configured rest rule applies.
+
+### Fixed
+
+- Disabling ad-hoc away mode on the same logical date removes any provisional current-date entry created by an older daemon build.
+- Toggling away mode invalidates the current Momentum snapshot in both directions so live streak and accountability calculations update immediately.
+- Rest-rule changes during a day no longer retroactively materialize the preceding date.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.3`; no companion contract changes are required for this beta.
+
 ## [1.9.0-beta.3] - 2026-08-09
 
 Crona v1.9.0-beta.3 fixes Momentum continuity across protected away and rest days.

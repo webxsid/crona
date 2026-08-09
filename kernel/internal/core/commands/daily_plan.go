@@ -36,6 +36,7 @@ func finalizeExpiredDailyPlanFailures(ctx context.Context, c *core.Context, now 
 	if err != nil {
 		return err
 	}
+	settings = settingsWithLiveAwayDate(settings, c.CurrentDate())
 	cutoff, err := time.Parse(time.RFC3339, now)
 	if err != nil {
 		return nil
@@ -237,6 +238,7 @@ func scoreDailyPlan(
 	if err != nil {
 		return nil, err
 	}
+	settings = settingsWithLiveAwayDate(settings, plan.Date)
 	for i := range plan.Entries {
 		applyDailyPlanScore(&plan.Entries[i], settings)
 	}

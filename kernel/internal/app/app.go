@@ -150,7 +150,7 @@ func Run(ctx context.Context) (runErr error) {
 		},
 	)
 	scheduler.SetDateRecorder(func(ctx context.Context, date string, settings *sharedtypes.CoreSettings) error {
-		if settings == nil || !settings.IsConfiguredRestDate(date) {
+		if settings == nil || date == "" || (!settings.AwayModeEnabled && !settings.IsConfiguredRestDate(date)) {
 			return nil
 		}
 		changed, err := commandCtx.CoreSettings.RecordAwayDate(ctx, commandCtx.UserID, date)

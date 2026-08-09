@@ -235,14 +235,12 @@ func (h *Handler) handleRuntimeMethods(
 	case protocol.MethodSettingsAwayMode:
 		return handle(req, func(input shareddto.AwayModeRequest) (any, error) {
 			date := h.core.CurrentDate()
-			awayDatesChanged, err := h.core.CoreSettings.SetAwayMode(ctx, h.core.UserID, input.Enabled, date)
+			_, err := h.core.CoreSettings.SetAwayMode(ctx, h.core.UserID, input.Enabled, date)
 			if err != nil {
 				return nil, err
 			}
-			if awayDatesChanged {
-				if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, h.core, date); err != nil {
-					return nil, err
-				}
+			if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, h.core, date); err != nil {
+				return nil, err
 			}
 			if h.scheduler != nil {
 				h.scheduler.Refresh()

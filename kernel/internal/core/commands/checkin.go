@@ -321,6 +321,7 @@ func ComputeMetricsStreaks(
 	if err != nil {
 		return nil, err
 	}
+	settings = settingsWithLiveAwayDate(settings, end)
 	streaks := ComputeMetricsStreaksFromDays(days, settings)
 	streaks.CustomHabitStreaks, err = ComputeCustomHabitStreaksForRange(
 		ctx,
@@ -981,6 +982,18 @@ func freezesStreakKind(settings *sharedtypes.CoreSettings, kind sharedtypes.Stre
 		}
 	}
 	return false
+}
+
+func settingsWithLiveAwayDate(
+	settings *sharedtypes.CoreSettings,
+	date string,
+) *sharedtypes.CoreSettings {
+	if settings == nil || !settings.AwayModeEnabled || date == "" || settings.IsAwayDate(date) {
+		return settings
+	}
+	copySettings := *settings
+	copySettings.AwayDates = append(append([]string(nil), settings.AwayDates...), date)
+	return &copySettings
 }
 
 func countsForCheckInStreak(checkIn *sharedtypes.DailyCheckIn) bool {

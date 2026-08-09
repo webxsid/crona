@@ -59,6 +59,7 @@ func GetMomentumDetail(
 	if err != nil {
 		return nil, err
 	}
+	settings = settingsWithLiveAwayDate(settings, endDate)
 	currentBucket, err := momentumCurrentBucket(def, endDate, countsByDate, settings)
 	if err != nil {
 		return nil, err

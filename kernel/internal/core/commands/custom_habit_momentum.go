@@ -112,6 +112,7 @@ func ensureCustomHabitMomentumSnapshot(
 	if err != nil {
 		return nil, err
 	}
+	settings = settingsWithLiveAwayDate(settings, throughDate)
 	if momentumDefinitionsCanReuseSnapshot(defs) {
 		existing, err := c.CustomHabitMomentumSnapshots.GetByDate(ctx, c.UserID, throughDate)
 		if err != nil {
