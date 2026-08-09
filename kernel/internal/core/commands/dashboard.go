@@ -105,15 +105,7 @@ func ComputeFocusScoreSummary(
 		return nil, err
 	}
 	rollup := ComputeMetricsRollupFromDays(input.Start, input.End, days)
-	settings, err := c.CoreSettings.Get(ctx, c.UserID)
-	if err != nil {
-		return nil, err
-	}
-	targetPerDay := 100 * 60
-	if settings != nil && settings.WorkDurationMinutes > 0 {
-		targetPerDay = settings.WorkDurationMinutes * 4 * 60
-	}
-	targetTotal := targetPerDay * max(1, len(days))
+	targetTotal := rollup.TotalEstimatedMinutes * 60
 	workedRatio := 0.0
 	if targetTotal > 0 {
 		workedRatio = float64(rollup.WorkedSeconds) / float64(targetTotal)
@@ -141,10 +133,13 @@ func ComputeFocusScoreSummary(
 		overworkPenalty = math.Min((workedRatio-1.20)/0.80*20.0, 20.0)
 	}
 	noBreakPenalty := 0.0
-	if rollup.WorkedSeconds > targetPerDay && restRatio < 0.10 {
+	if targetTotal > 0 && rollup.WorkedSeconds > targetTotal && restRatio < 0.10 {
 		noBreakPenalty = 10.0
 	}
-	spikePenalty := focusSpikePenalty(days)
+	spikePenalty := 0.0
+	if targetTotal > 0 {
+		spikePenalty = focusSpikePenalty(days)
+	}
 	score := int(
 		math.Round(
 			math.Max(
@@ -158,7 +153,7 @@ func ComputeFocusScoreSummary(
 	)
 	level := sharedtypes.FocusScoreLevelLow
 	switch {
-	case workedRatio > 1.30 && restRatio < 0.12:
+	case targetTotal > 0 && workedRatio > 1.30 && restRatio < 0.12:
 		level = sharedtypes.FocusScoreLevelOverextended
 	case score >= 75:
 		level = sharedtypes.FocusScoreLevelStrong

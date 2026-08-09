@@ -424,6 +424,9 @@ func TestWeeklyHabitMomentumSkipsBucketWhenProtectedDaysExceedRequiredCount(t *t
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2026-06-05", "2026-06-06", "2026-06-07"}); err != nil {
 		t.Fatalf("set rest dates: %v", err)
 	}
+	if _, err := coreCtx.CoreSettings.RecordAwayDates(ctx, coreCtx.UserID, []string{"2026-06-05", "2026-06-06", "2026-06-07"}); err != nil {
+		t.Fatalf("materialize rest dates: %v", err)
+	}
 	created, err := corecommands.CreateHabitStreakDefinition(
 		ctx,
 		coreCtx,
@@ -487,6 +490,9 @@ func TestWeeklyContextMomentumProratesBucketTargetByAvailableDays(t *testing.T) 
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestWeekdays, []int{0, 6}); err != nil {
 		t.Fatalf("set rest weekdays: %v", err)
+	}
+	if _, err := coreCtx.CoreSettings.RecordAwayDates(ctx, coreCtx.UserID, []string{"2026-06-06", "2026-06-07"}); err != nil {
+		t.Fatalf("materialize weekend dates: %v", err)
 	}
 	created, err := corecommands.CreateHabitStreakDefinition(
 		ctx,

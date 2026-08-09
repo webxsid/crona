@@ -772,10 +772,17 @@ func decodeSettings(raw json.RawMessage) (*CoreSettings, error) {
 }
 
 func (c *Client) PatchSetting(key sharedtypes.CoreSettingsKey, value any) error {
+	if key == sharedtypes.CoreSettingsKeyAwayModeEnabled || key == sharedtypes.CoreSettingsKeyAwayDates {
+		return fmt.Errorf("away mode must be changed through SetAwayMode")
+	}
 	return c.call(protocol.MethodSettingsPatch, shareddto.PatchCoreSettingRequest{
 		Key:   key,
 		Value: value,
 	}, nil)
+}
+
+func (c *Client) SetAwayMode(enabled bool) error {
+	return c.call(protocol.MethodSettingsAwayMode, shareddto.AwayModeRequest{Enabled: enabled}, nil)
 }
 
 func (c *Client) ListHabitStreakDefinitions() ([]HabitStreakDefinition, error) {

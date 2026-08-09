@@ -26,6 +26,9 @@ func TestSpecificRestDatePreservesFocusAndCheckInStreaks(t *testing.T) {
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2026-03-29"}); err != nil {
 		t.Fatalf("set rest specific dates: %v", err)
 	}
+	if _, err := coreCtx.CoreSettings.RecordAwayDate(ctx, coreCtx.UserID, "2026-03-29"); err != nil {
+		t.Fatalf("materialize rest date: %v", err)
+	}
 
 	streaks, err := corecommands.ComputeMetricsStreaks(ctx, coreCtx, "2026-03-27", "2026-03-29")
 	if err != nil {
@@ -52,7 +55,7 @@ func TestAwayModeOnlyFreezesSelectedStreakKinds(t *testing.T) {
 	seedCheckInDay(t, ctx, coreCtx, "2026-03-27")
 	seedCheckInDay(t, ctx, coreCtx, "2026-03-28")
 
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyAwayModeEnabled, true); err != nil {
+	if err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-29"); err != nil {
 		t.Fatalf("set away mode: %v", err)
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyFrozenStreakKinds, []string{string(sharedtypes.StreakKindCheckInDays)}); err != nil {

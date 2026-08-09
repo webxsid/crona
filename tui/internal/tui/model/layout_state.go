@@ -2,7 +2,6 @@ package model
 
 import (
 	"strings"
-	"time"
 
 	sharedtypes "crona/shared/types"
 	versionpkg "crona/shared/version"
@@ -146,7 +145,14 @@ func (m Model) viewContentState(
 		KernelInfo:           m.kernelInfo,
 		Settings:             m.settings,
 	}
-	restDate := time.Now().Format("2006-01-02")
+	selectedDate := m.currentDashboardDate()
+	if m.view == ViewWellbeing {
+		selectedDate = state.WellbeingDate
+	}
+	if viewruntime.HistoricalAwayDate(m.settings, selectedDate) {
+		state.HistoricalAwayDate = selectedDate
+	}
+	restDate := m.currentLogicalDate()
 	if active, away, detail := viewruntime.ProtectedRestMode(state.Settings, restDate); active {
 		state.RestModeActive = true
 		state.AwayModeActive = away
@@ -208,6 +214,7 @@ func dialogControllerTheme(theme dialogs.Theme) dialogstate.Theme {
 		ColorYellow:    theme.ColorYellow,
 		ColorRed:       theme.ColorRed,
 		ColorGreen:     theme.ColorGreen,
+		ColorDim:       theme.ColorDim,
 		StylePaneTitle: theme.StylePaneTitle,
 		StyleDim:       theme.StyleDim,
 		StyleCursor:    theme.StyleCursor,

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -15,18 +15,23 @@ type ClaimFunc func(context.Context, string, string, string, string, string) (bo
 type EmitFunc func(sharedtypes.KernelEvent)
 type AlertFunc func(context.Context, sharedtypes.AlertRequest) error
 type SettingsFunc func(context.Context) (*sharedtypes.CoreSettings, error)
+type DateRecorderFunc func(context.Context, string, *sharedtypes.CoreSettings) error
 
 type Scheduler struct {
-	settings SettingsFunc
-	claim    ClaimFunc
-	emit     EmitFunc
-	alert    AlertFunc
-	now      func() time.Time
-	location func() *time.Location
-	refresh  chan struct{}
-	mu       sync.RWMutex
-	current  string
+	settings  SettingsFunc
+	claim     ClaimFunc
+	emit      EmitFunc
+	alert     AlertFunc
+	now       func() time.Time
+	location  func() *time.Location
+	record    DateRecorderFunc
+	recordKey string
+	refresh   chan struct{}
+	mu        sync.RWMutex
+	current   string
 }
+
+func (s *Scheduler) SetDateRecorder(record DateRecorderFunc) { s.record = record }
 
 func New(
 	settings SettingsFunc,
@@ -70,6 +75,9 @@ func (s *Scheduler) Initialize(ctx context.Context) error {
 		location = time.Local
 	}
 	s.setCurrent(LogicalDate(s.now().In(location), settings.StartOfDay))
+	if err := s.recordDateIfChanged(ctx, s.CurrentDate(), settings); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -102,6 +110,9 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			settings = &sharedtypes.CoreSettings{StartOfDay: sharedtypes.DefaultStartOfDaySchedule(), EndOfDay: sharedtypes.DefaultEndOfDaySchedule()}
 		}
 		s.setCurrent(LogicalDate(now, settings.StartOfDay))
+		if err := s.recordDateIfChanged(ctx, s.CurrentDate(), settings); err != nil {
+			return err
+		}
 		next, kind, schedule := nextBoundary(now, settings)
 		if next.IsZero() {
 			select {
@@ -130,6 +141,37 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (s *Scheduler) recordDateIfChanged(
+	ctx context.Context,
+	date string,
+	settings *sharedtypes.CoreSettings,
+) error {
+	if s.record == nil || settings == nil {
+		return nil
+	}
+	weekdays := append([]int(nil), settings.RestWeekdays...)
+	dates := append([]string(nil), settings.RestSpecificDates...)
+	slices.Sort(weekdays)
+	slices.Sort(dates)
+	keyBytes, err := json.Marshal(struct {
+		Date     string
+		Weekdays []int
+		Dates    []string
+	}{date, weekdays, dates})
+	if err != nil {
+		return err
+	}
+	key := string(keyBytes)
+	if key == s.recordKey {
+		return nil
+	}
+	if err := s.record(ctx, date, settings); err != nil {
+		return err
+	}
+	s.recordKey = key
+	return nil
 }
 
 func (s *Scheduler) fire(
@@ -215,7 +257,7 @@ func nextBoundary(now time.Time, settings *sharedtypes.CoreSettings) (time.Time,
 		schedule sharedtypes.DayBoundarySchedule
 	}
 	var candidates []candidate
-	for offset := 0; offset <= 8; offset++ {
+	for offset := range 9 {
 		date := now.AddDate(0, 0, offset)
 		for _, item := range []struct {
 			kind     sharedtypes.DayBoundaryKind
@@ -240,11 +282,19 @@ func nextBoundary(now time.Time, settings *sharedtypes.CoreSettings) (time.Time,
 	if len(candidates) == 0 {
 		return time.Time{}, "", sharedtypes.DayBoundarySchedule{}
 	}
-	sort.Slice(candidates, func(i, j int) bool {
-		if candidates[i].at.Equal(candidates[j].at) {
-			return candidates[i].kind == sharedtypes.DayBoundaryStart
+	slices.SortFunc(candidates, func(left, right candidate) int {
+		switch {
+		case left.at.Before(right.at):
+			return -1
+		case left.at.After(right.at):
+			return 1
+		case left.kind == right.kind:
+			return 0
+		case left.kind == sharedtypes.DayBoundaryStart:
+			return -1
+		default:
+			return 1
 		}
-		return candidates[i].at.Before(candidates[j].at)
 	})
 	return candidates[0].at, candidates[0].kind, candidates[0].schedule
 }

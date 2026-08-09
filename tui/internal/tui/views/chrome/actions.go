@@ -280,7 +280,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open issue details"),
 				theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create issue"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" set status"),
-				theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" set due date"),
+				theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" set due date"),
 				theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin to daily"),
 			}
 			if timerIdle {
@@ -296,7 +296,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		actions := []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open issue details"),
 			theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" set status"),
-			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" set due date"),
+			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" set due date"),
 			theme.StyleHeader.Render("[P]") + theme.StyleDim.Render(" pin"),
 		}
 		if timerIdle {

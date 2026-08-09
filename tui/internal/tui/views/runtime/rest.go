@@ -32,6 +32,13 @@ func ProtectedRestMode(settings *api.CoreSettings, date string) (bool, bool, str
 	return false, false, ""
 }
 
+func HistoricalAwayDate(settings *api.CoreSettings, date string) bool {
+	if settings == nil || strings.TrimSpace(date) == "" {
+		return false
+	}
+	return slices.Contains(settings.AwayDates, strings.TrimSpace(date))
+}
+
 func RestModeMessage(date string) string {
 	messages := []string{
 		"Enjoy your break",

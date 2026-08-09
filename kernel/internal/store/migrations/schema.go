@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	storemodels "crona/kernel/internal/store/models"
 	storerepositories "crona/kernel/internal/store/repositories"
@@ -126,6 +127,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"frozen_streak_kinds":      "[]",
 		"rest_weekdays":            "[]",
 		"rest_specific_dates":      "[]",
+		"away_dates":               "[]",
 		"rest_recurring_dates":     "[]",
 		"start_of_day":             "{}",
 		"end_of_day":               "{}",
@@ -133,6 +135,24 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		if err := ensureCoreSettingsColumn(ctx, db, columnName, defaultValue); err != nil {
 			return err
 		}
+	}
+	if _, err := db.ExecContext(ctx, `
+		UPDATE core_settings
+		SET away_dates = COALESCE((
+			SELECT json_group_array(value)
+			FROM (
+				SELECT DISTINCT value
+				FROM (
+					SELECT value FROM json_each(core_settings.away_dates)
+					UNION ALL
+					SELECT value FROM json_each(core_settings.rest_specific_dates)
+					WHERE value < ?
+				)
+				ORDER BY value
+			)
+		), '[]')
+	`, time.Now().Format("2006-01-02")); err != nil {
+		return err
 	}
 	for _, columnName := range []string{"scheduled_at_utc", "claimed_at_utc"} {
 		if err := ensureTextColumn(ctx, db, "day_boundary_occurrences", columnName); err != nil {

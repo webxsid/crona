@@ -330,6 +330,22 @@ func TestNotifyWithActionsQueuesHardLimitActions(t *testing.T) {
 	}
 }
 
+func TestBreakDeferralWarningUsesCompanionActionKind(t *testing.T) {
+	payload := sharedtypes.TimerBreakDeferralWarningPayload{
+		SessionID:        "session-1",
+		SecondsRemaining: 5,
+		SuggestedSeconds: 60,
+	}
+	req := breakDeferralWarningAlert(payload)
+	if req.Kind != sharedtypes.AlertEventTimerBreakDeferral {
+		t.Fatalf("expected companion-recognized deferral kind, got %q", req.Kind)
+	}
+	actions := breakDeferralWarningActions(payload)
+	if len(actions) != 1 || actions[0].ID != "timer.defer_break" || actions[0].SessionID != payload.SessionID {
+		t.Fatalf("unexpected break deferral actions: %+v", actions)
+	}
+}
+
 func TestAlertDeliveryActionEncodesDialogTargets(t *testing.T) {
 	action := sharedtypes.AlertDeliveryAction{
 		ID:           "timer.commit",

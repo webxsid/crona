@@ -123,6 +123,17 @@ func Run(ctx context.Context) (runErr error) {
 		}()
 	}
 	alerts := notify.Start(runCtx, commandCtx, bus, logger, paths)
+	timerService := corecommands.GetTimerService(commandCtx)
+	alerts.SetCompanionActionHandler(func(actionCtx context.Context, sessionID, actionID string, seconds int) error {
+		if actionID != "timer.defer_break" {
+			return nil
+		}
+		if seconds <= 0 {
+			return nil
+		}
+		_, err := timerService.DeferBreak(actionCtx, sessionID, seconds)
+		return err
+	})
 	scheduler := dayboundary.New(
 		func(ctx context.Context) (*sharedtypes.CoreSettings, error) {
 			return commandCtx.CoreSettings.Get(ctx, commandCtx.UserID)
@@ -138,6 +149,20 @@ func Run(ctx context.Context) (runErr error) {
 			return nil
 		},
 	)
+	scheduler.SetDateRecorder(func(ctx context.Context, date string, settings *sharedtypes.CoreSettings) error {
+		if settings == nil || !settings.IsConfiguredRestDate(date) {
+			return nil
+		}
+		changed, err := commandCtx.CoreSettings.RecordAwayDate(ctx, commandCtx.UserID, date)
+		if err != nil {
+			return err
+		}
+		if !changed {
+			return nil
+		}
+		emitSettingsChanged(bus, sharedtypes.CoreSettingsKeyAwayDates)
+		return nil
+	})
 	commandCtx.CurrentDate = scheduler.CurrentDate
 	if err := scheduler.Initialize(runCtx); err != nil {
 		return fmt.Errorf("initialize day-boundary scheduler: %w", err)

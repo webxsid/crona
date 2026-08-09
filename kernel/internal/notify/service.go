@@ -29,6 +29,13 @@ type Service struct {
 	lastActivityAt     time.Time
 	inactivitySession  string
 	lastInactivityAt   time.Time
+	actionHandler      func(context.Context, string, string, int) error
+}
+
+func (s *Service) SetCompanionActionHandler(handler func(context.Context, string, string, int) error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.actionHandler = handler
 }
 
 var (
@@ -88,6 +95,19 @@ func Start(
 				hardLimitReachedActions(),
 			); err != nil {
 				logger.Error("enqueue timer hard limit alert", err)
+			}
+		case sharedtypes.EventTypeTimerBreakDeferralWarning:
+			var payload sharedtypes.TimerBreakDeferralWarningPayload
+			if err := json.Unmarshal(event.Payload, &payload); err != nil {
+				logger.Error("decode timer break deferral warning payload", err)
+				return
+			}
+			if err := service.enqueueWithActions(
+				breakDeferralWarningAlert(payload),
+				false,
+				breakDeferralWarningActions(payload),
+			); err != nil {
+				logger.Error("enqueue timer break deferral warning", err)
 			}
 		case sharedtypes.EventTypeUpdateStatus:
 			var status sharedtypes.UpdateStatus
@@ -430,6 +450,9 @@ func (s *Service) deliverWithActions(
 		case accepted := <-result:
 			notificationAccepted = accepted.notificationAccepted
 			soundAccepted = accepted.soundAccepted
+			if err := s.actionHandlerFor(accepted.actionID)(ctx, accepted.sessionID, accepted.actionID, accepted.actionSeconds); err != nil {
+				s.logger.Error("handle companion alert action", err)
+			}
 			if !timer.Stop() {
 				<-timer.C
 			}
@@ -463,6 +486,38 @@ func (s *Service) deliverWithActions(
 		}
 	}
 	return firstErr
+}
+
+func (s *Service) actionHandlerFor(actionID string) func(context.Context, string, string, int) error {
+	s.mu.Lock()
+	handler := s.actionHandler
+	s.mu.Unlock()
+	if handler == nil || actionID == "" {
+		return func(context.Context, string, string, int) error { return nil }
+	}
+	return handler
+}
+
+func breakDeferralWarningAlert(payload sharedtypes.TimerBreakDeferralWarningPayload) sharedtypes.AlertRequest {
+	return sharedtypes.AlertRequest{
+		Kind:        sharedtypes.AlertEventTimerBreakDeferral,
+		Title:       "Break approaching",
+		Subtitle:    "Keep working?",
+		Body:        fmt.Sprintf("Your break starts in %d seconds.", payload.SecondsRemaining),
+		Urgency:     sharedtypes.AlertUrgencyHigh,
+		IconEnabled: true,
+		PlaySound:   true,
+		SoundPreset: sharedtypes.AlertSoundPresetFocusGong,
+	}
+}
+
+func breakDeferralWarningActions(payload sharedtypes.TimerBreakDeferralWarningPayload) []sharedtypes.AlertDeliveryAction {
+	return []sharedtypes.AlertDeliveryAction{{
+		ID:               "timer.defer_break",
+		Title:            "Keep Working",
+		SessionID:        payload.SessionID,
+		SuggestedSeconds: payload.SuggestedSeconds,
+	}}
 }
 
 func normalizeRequest(

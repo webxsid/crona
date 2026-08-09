@@ -34,6 +34,22 @@ func TestWellbeingRenderShowsHabitStreakLabel(t *testing.T) {
 	}
 }
 
+func TestWellbeingRenderShowsHistoricalAwayModePanel(t *testing.T) {
+	state := types.ContentState{
+		View:               "wellbeing",
+		Pane:               "wellbeing",
+		Width:              100,
+		Height:             30,
+		HistoricalAwayDate: "2026-05-27",
+	}
+	rendered := wellbeingviews.Render(layoutpkg.ViewTheme(), state)
+	for _, want := range []string{"Away Mode", "You chose to rest and recover on"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected historical away panel to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
 func TestWellbeingRenderShowsHabitRollupCounts(t *testing.T) {
 	state := types.ContentState{
 		View:   "wellbeing",

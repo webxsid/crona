@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"crona/kernel/internal/core"
@@ -978,6 +979,247 @@ func TestTimerHardLimitExpiryAndExtend(t *testing.T) {
 			*startState.SessionID,
 			endedPayload.SessionID,
 		)
+	}
+}
+
+func TestTimerDeferBreakKeepsWorkSegmentAndStartsBreak(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	var deferredEvents []sharedtypes.KernelEvent
+	unsubscribe := coreCtx.Events.Subscribe(func(event sharedtypes.KernelEvent) {
+		if event.Type == sharedtypes.EventTypeTimerBreakDeferred {
+			deferredEvents = append(deferredEvents, event)
+		}
+	})
+	defer unsubscribe()
+
+	started, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds: new(60),
+			HardLimitWorkSeconds:  new(25),
+			HardLimitBreakSeconds: new(5),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	defer service.ClearBoundary()
+	now = "2026-05-24T10:00:21Z"
+
+	deferred, err := service.DeferBreak(ctx, *started.SessionID, 60)
+	if err != nil {
+		t.Fatalf("defer break: %v", err)
+	}
+	if deferred.State != "running" || deferred.HardLimitExpired {
+		t.Fatalf("expected running non-expired state, got %+v", deferred)
+	}
+	active, err := service.ctx.SessionSegments.GetActive(ctx, service.ctx.UserID, service.ctx.DeviceID, *started.SessionID)
+	if err != nil {
+		t.Fatalf("load active segment after deferral: %v", err)
+	}
+	if active == nil || active.SegmentType != sharedtypes.SessionSegmentWork {
+		t.Fatalf("expected work segment to remain active, got %+v", active)
+	}
+	runtimeState, err := service.runtimeStateForSession(*started.SessionID)
+	if err != nil {
+		t.Fatalf("load runtime state after deferral: %v", err)
+	}
+	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 {
+		t.Fatalf("expected sixty-second current-segment deferral, got %+v", runtimeState)
+	}
+	if runtimeState.HardLimitElapsedOffsetSeconds != 0 || runtimeState.HardLimitElapsedStartedAt != "2026-05-24T10:00:00Z" {
+		t.Fatalf("expected deferral not to rebase elapsed accounting, got %+v", runtimeState)
+	}
+	if _, err := service.DeferBreak(ctx, *started.SessionID, 30); err == nil {
+		t.Fatal("expected a second deferral in the same work segment to be rejected")
+	}
+	runtimeState, err = service.runtimeStateForSession(*started.SessionID)
+	if err != nil || runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 {
+		t.Fatalf("expected rejected deferral to preserve timer state, state=%+v err=%v", runtimeState, err)
+	}
+
+	boundary, err := service.nextBoundary(ctx, *started.SessionID, sharedtypes.SessionSegmentWork, runtimeState)
+	if err != nil || boundary == nil || boundary.NextSegment != sharedtypes.SessionSegmentShortBreak {
+		t.Fatalf("expected work-to-short-break boundary, got boundary=%+v err=%v", boundary, err)
+	}
+	if _, err := service.applyBoundaryTransition(ctx, *started.SessionID, sharedtypes.SessionSegmentWork, boundary); err != nil {
+		t.Fatalf("apply deferred work boundary: %v", err)
+	}
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get break state: %v", err)
+	}
+	if state.SegmentType == nil || *state.SegmentType != sharedtypes.SessionSegmentShortBreak {
+		t.Fatalf("expected active short break, got %+v", state)
+	}
+	if state.HardLimitRemainingSeconds != 35 {
+		t.Fatalf("expected 35 seconds after consuming extended work block, got %+v", state)
+	}
+	runtimeState, err = service.runtimeStateForSession(*started.SessionID)
+	if err != nil {
+		t.Fatalf("load runtime state after boundary: %v", err)
+	}
+	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 0 {
+		t.Fatalf("expected deferral to be consumed, got %+v", runtimeState)
+	}
+	if len(deferredEvents) != 1 {
+		t.Fatalf("expected one break-deferred event, got %d", len(deferredEvents))
+	}
+}
+
+func TestTimerDeferBreakSerializesConcurrentRequests(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	deferredEvents := 0
+	unsubscribe := coreCtx.Events.Subscribe(func(event sharedtypes.KernelEvent) {
+		if event.Type == sharedtypes.EventTypeTimerBreakDeferred {
+			deferredEvents++
+		}
+	})
+	defer unsubscribe()
+
+	started, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds: new(60),
+			HardLimitWorkSeconds:  new(25),
+			HardLimitBreakSeconds: new(5),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	defer service.ClearBoundary()
+
+	start := make(chan struct{})
+	errs := make(chan error, 2)
+	var ready sync.WaitGroup
+	ready.Add(2)
+	for range 2 {
+		go func() {
+			ready.Done()
+			<-start
+			_, deferErr := service.DeferBreak(ctx, *started.SessionID, 60)
+			errs <- deferErr
+		}()
+	}
+	ready.Wait()
+	close(start)
+
+	successes := 0
+	failures := 0
+	for range 2 {
+		if err := <-errs; err != nil {
+			failures++
+		} else {
+			successes++
+		}
+	}
+	if successes != 1 || failures != 1 {
+		t.Fatalf("expected one successful deferral and one rejection, successes=%d failures=%d", successes, failures)
+	}
+	runtimeState, err := service.runtimeStateForSession(*started.SessionID)
+	if err != nil {
+		t.Fatalf("load runtime state: %v", err)
+	}
+	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 || runtimeState.HardLimitTotalSeconds != 120 {
+		t.Fatalf("expected one persisted extension, got %+v", runtimeState)
+	}
+	if deferredEvents != 1 {
+		t.Fatalf("expected one timer.break_deferred event, got %d", deferredEvents)
+	}
+}
+
+func TestTimerDeferBreakInvalidatesQueuedBoundaryCallback(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+
+	started, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds: new(60),
+			HardLimitWorkSeconds:  new(25),
+			HardLimitBreakSeconds: new(5),
+		},
+	)
+	if err != nil {
+		t.Fatalf("start hard-limit session: %v", err)
+	}
+	defer service.ClearBoundary()
+
+	service.timerMu.Lock()
+	queuedGeneration := service.boundaryGen
+	service.timerMu.Unlock()
+	boundary := &boundaryResult{
+		NextSegment:  sharedtypes.SessionSegmentShortBreak,
+		AfterSeconds: 25,
+	}
+	if _, err := service.DeferBreak(ctx, *started.SessionID, 60); err != nil {
+		t.Fatalf("defer break: %v", err)
+	}
+	if _, err := service.applyBoundaryTransitionIfCurrent(
+		ctx,
+		queuedGeneration,
+		*started.SessionID,
+		sharedtypes.SessionSegmentWork,
+		boundary,
+	); err != nil {
+		t.Fatalf("run stale boundary callback: %v", err)
+	}
+
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get state after stale callback: %v", err)
+	}
+	if state.SegmentType == nil || *state.SegmentType != sharedtypes.SessionSegmentWork {
+		t.Fatalf("expected stale callback not to start the break, got %+v", state)
+	}
+	runtimeState, err := service.runtimeStateForSession(*started.SessionID)
+	if err != nil || runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 {
+		t.Fatalf("expected deferral to remain active, state=%+v err=%v", runtimeState, err)
+	}
+}
+
+func TestDeferredWorkBoundaryRemainingIncludesOriginalRemainder(t *testing.T) {
+	remaining := deferredWorkBoundaryRemainingSeconds(
+		&boundaryResult{AfterSeconds: 25},
+		60,
+		"2026-05-24T10:00:00Z",
+		"2026-05-24T10:00:21Z",
+	)
+	if remaining != 64 {
+		t.Fatalf("expected four original seconds plus sixty deferred seconds, got %d", remaining)
+	}
+}
+
+func TestTimerDeferBreakRejectsUnsupportedDuration(t *testing.T) {
+	for _, seconds := range []int{-1, 0, 5, 121} {
+		if validBreakDeferralSeconds(seconds) {
+			t.Fatalf("expected %d seconds to be rejected", seconds)
+		}
+	}
+	for _, seconds := range []int{30, 60, 120} {
+		if !validBreakDeferralSeconds(seconds) {
+			t.Fatalf("expected %d seconds to be accepted", seconds)
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package dayboundary
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -17,6 +18,29 @@ func TestLogicalDateUsesSODBoundary(t *testing.T) {
 	}
 	if got := LogicalDate(after, schedule); got != "2026-07-29" {
 		t.Fatalf("date after SOD = %s", got)
+	}
+}
+
+func TestDateRecorderRunsOnlyWhenDateOrRulesChange(t *testing.T) {
+	calls := 0
+	scheduler := &Scheduler{record: func(context.Context, string, *sharedtypes.CoreSettings) error {
+		calls++
+		return nil
+	}}
+	settings := &sharedtypes.CoreSettings{RestWeekdays: []int{6}}
+	ctx := context.Background()
+	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
+		t.Fatalf("record date: %v", err)
+	}
+	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
+		t.Fatalf("repeat date: %v", err)
+	}
+	settings.RestSpecificDates = []string{"2026-08-08"}
+	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
+		t.Fatalf("record changed rules: %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("expected initial and rule-change recordings only, got %d", calls)
 	}
 }
 

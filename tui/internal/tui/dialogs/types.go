@@ -13,6 +13,7 @@ type Theme struct {
 	ColorOrange lipgloss.Color
 	ColorRed    lipgloss.Color
 	ColorGreen  lipgloss.Color
+	ColorDim    lipgloss.Color
 
 	StylePaneTitle lipgloss.Style
 	StyleDim       lipgloss.Style

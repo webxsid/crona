@@ -2,6 +2,7 @@ package calendar
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ type Selection struct {
 	Today        string
 	WeekStart    sharedtypes.WeekStart
 	Mode         Mode
+	AwayDates    []string
 }
 
 type Mode string
@@ -99,15 +101,7 @@ func Render(theme types.Theme, selection Selection) []string {
 		selectedWeek = shareddatefmt.StartOfWeek(rangeEnd, weekStart)
 	}
 	currentWeek := shareddatefmt.StartOfWeek(today, weekStart)
-	selectedDateStyle := lipgloss.NewStyle().
-		Background(theme.ColorGreen).
-		Foreground(lipgloss.Color("0")).
-		Bold(true)
-	todayStyle := lipgloss.NewStyle().
-		Background(theme.ColorYellow).
-		Foreground(lipgloss.Color("0")).
-		Bold(true)
-	rangeStyle := lipgloss.NewStyle().Background(theme.ColorBlue).Foreground(theme.ColorWhite)
+	cellStyles := newDateCellStyles(theme)
 	currentWeekStyle := lipgloss.NewStyle().
 		Background(theme.ColorYellow).
 		Foreground(lipgloss.Color("0")).
@@ -131,22 +125,23 @@ func Render(theme types.Theme, selection Selection) []string {
 			inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) &&
 				!current.After(rangeEnd)
 			isToday := sameDay(current, today)
-			cell := fmt.Sprintf("%2d", current.Day())
+			fallback := theme.StyleNormal
 			switch {
-			case inSelected:
-				cell = selectedDateStyle.Render(cell)
-			case isToday:
-				cell = todayStyle.Render(cell)
-			case inRange:
-				cell = rangeStyle.Render(cell)
 			case current.Month() != monthStart.Month():
-				cell = theme.StyleDim.Render(cell)
+				fallback = theme.StyleDim
 			case sameDay(rowStart, selectedWeek) && !selectedWeek.IsZero():
-				cell = theme.StyleHeader.Render(cell)
-			default:
-				cell = theme.StyleNormal.Render(cell)
+				fallback = theme.StyleHeader
 			}
-			cells = append(cells, cell)
+			cells = append(cells, renderDateCell(
+				theme,
+				current,
+				inSelected,
+				isToday,
+				inRange,
+				fallback,
+				cellStyles,
+				selection.AwayDates,
+			))
 		}
 		lines = append(lines, weekLabel+"  "+strings.Join(cells, " "))
 	}
@@ -162,15 +157,7 @@ func renderWeek(
 ) []string {
 	rowStart := shareddatefmt.StartOfWeek(anchor, weekStart)
 	rowWeek := WeekNumber(rowStart, weekStart)
-	selectedDateStyle := lipgloss.NewStyle().
-		Background(theme.ColorGreen).
-		Foreground(lipgloss.Color("0")).
-		Bold(true)
-	todayStyle := lipgloss.NewStyle().
-		Background(theme.ColorYellow).
-		Foreground(lipgloss.Color("0")).
-		Bold(true)
-	rangeStyle := lipgloss.NewStyle().Background(theme.ColorBlue).Foreground(theme.ColorWhite)
+	cellStyles := newDateCellStyles(theme)
 	cells := make([]string, 0, 7)
 	for day := range 7 {
 		current := rowStart.AddDate(0, 0, day)
@@ -178,20 +165,20 @@ func renderWeek(
 		inRange := hasRangeStart && hasRangeEnd && !current.Before(rangeStart) &&
 			!current.After(rangeEnd)
 		isToday := sameDay(current, today)
-		cell := fmt.Sprintf("%2d", current.Day())
-		switch {
-		case inSelected:
-			cell = selectedDateStyle.Render(cell)
-		case isToday:
-			cell = todayStyle.Render(cell)
-		case inRange:
-			cell = rangeStyle.Render(cell)
-		case current.Month() != anchor.Month():
-			cell = theme.StyleDim.Render(cell)
-		default:
-			cell = theme.StyleNormal.Render(cell)
+		fallback := theme.StyleNormal
+		if current.Month() != anchor.Month() {
+			fallback = theme.StyleDim
 		}
-		cells = append(cells, cell)
+		cells = append(cells, renderDateCell(
+			theme,
+			current,
+			inSelected,
+			isToday,
+			inRange,
+			fallback,
+			cellStyles,
+			selection.AwayDates,
+		))
 	}
 	lines := []string{
 		theme.StyleHeader.Render(anchor.Format("Jan 2006")),
@@ -209,6 +196,51 @@ func renderWeek(
 		theme.StyleHeader.Render(fmt.Sprintf("W%02d", rowWeek)) + " " + strings.Join(cells, " "),
 	}
 	return Window(lines, anchor, selection.MaxLines, weekStart)
+}
+
+type dateCellStyles struct {
+	selected lipgloss.Style
+	today    lipgloss.Style
+	rangeDay lipgloss.Style
+}
+
+func newDateCellStyles(theme types.Theme) dateCellStyles {
+	return dateCellStyles{
+		selected: lipgloss.NewStyle().
+			Background(theme.ColorGreen).
+			Foreground(lipgloss.Color("0")).
+			Bold(true),
+		today: lipgloss.NewStyle().
+			Background(theme.ColorYellow).
+			Foreground(lipgloss.Color("0")).
+			Bold(true),
+		rangeDay: lipgloss.NewStyle().
+			Background(theme.ColorBlue).
+			Foreground(theme.ColorWhite),
+	}
+}
+
+func renderDateCell(
+	theme types.Theme,
+	date time.Time,
+	selected, today, inRange bool,
+	fallback lipgloss.Style,
+	styles dateCellStyles,
+	awayDates []string,
+) string {
+	style := fallback
+	switch {
+	case selected:
+		style = styles.selected
+	case today:
+		style = styles.today
+	case inRange:
+		style = styles.rangeDay
+	}
+	if slices.Contains(awayDates, date.Format("2006-01-02")) {
+		style = style.Foreground(theme.ColorRed)
+	}
+	return style.Render(fmt.Sprintf("%2d", date.Day()))
 }
 
 func Window(

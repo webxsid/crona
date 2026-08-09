@@ -967,16 +967,7 @@ func isProtectedStreakDay(
 	if settings == nil || !freezesStreakKind(settings, kind) {
 		return false
 	}
-	if settings.AwayModeEnabled {
-		return true
-	}
-	if isRestWeekday(date, settings.RestWeekdays) {
-		return true
-	}
-	if slices.Contains(settings.RestSpecificDates, date) {
-		return true
-	}
-	return false
+	return settings.IsAwayDate(date)
 }
 
 func freezesStreakKind(settings *sharedtypes.CoreSettings, kind sharedtypes.StreakKind) bool {
@@ -986,23 +977,6 @@ func freezesStreakKind(settings *sharedtypes.CoreSettings, kind sharedtypes.Stre
 	}
 	for _, current := range selected {
 		if current == kind {
-			return true
-		}
-	}
-	return false
-}
-
-func isRestWeekday(date string, weekdays []int) bool {
-	if len(weekdays) == 0 {
-		return false
-	}
-	parsed, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return false
-	}
-	current := int(parsed.Weekday())
-	for _, weekday := range weekdays {
-		if weekday == current {
 			return true
 		}
 	}

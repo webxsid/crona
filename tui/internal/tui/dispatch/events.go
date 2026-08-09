@@ -55,6 +55,7 @@ type EventDeps struct {
 	LoadContext              func() tea.Cmd
 	LoadTimer                func() tea.Cmd
 	LoadAlertStatus          func() tea.Cmd
+	LoadSettings             func() tea.Cmd
 	LoadUpdateStatus         func() tea.Cmd
 	LoadOps                  func(limit int) tea.Cmd
 	TickAfter                func(seq int) tea.Cmd
@@ -223,7 +224,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
-	case "timer.advance", "timer.extend_current_session", "timer.extended":
+	case "timer.advance", "timer.defer_break", "timer.extended", "timer.break_deferred":
 		if shouldDismissDialogForSessionEvent(state, event, false) {
 			state.Dialog = ""
 			state.DialogParent = ""
@@ -247,6 +248,8 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		)
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
+	case sharedtypes.EventTypeSettingsChanged:
+		return state, deps.LoadSettings()
 	case "ops.created":
 		return state, deps.LoadOps(state.CurrentOpsLim)
 	default:

@@ -96,6 +96,20 @@ func PatchSetting(
 	}
 }
 
+func SetAwayMode(c *api.Client, enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.SetAwayMode(enabled); err != nil {
+			logger.Errorf("SetAwayMode(%t): %v", enabled, err)
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(
+			LoadSettings(c),
+			LoadWellbeing(c, dashboardDate),
+			LoadDashboardSummaries(c, dashboardDate),
+		)()
+	}
+}
+
 func CreateMomentumDefinition(
 	c *api.Client,
 	def api.HabitStreakDefinition,

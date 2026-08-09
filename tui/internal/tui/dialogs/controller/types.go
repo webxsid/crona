@@ -14,6 +14,7 @@ type Theme struct {
 	ColorYellow lipgloss.Color
 	ColorRed    lipgloss.Color
 	ColorGreen  lipgloss.Color
+	ColorDim    lipgloss.Color
 
 	StylePaneTitle lipgloss.Style
 	StyleDim       lipgloss.Style
@@ -66,6 +67,10 @@ type State struct {
 	Parent                         string
 	DateMonthValue                 string
 	DateCursorValue                string
+	DueDateToday                   string
+	DueDateRestWeekdays            []int
+	DueDateRestDates               []string
+	DueDateAwayDates               []string
 	RepoSelectorLabel              string
 	StreamSelectorLabel            string
 	ViewTitle                      string

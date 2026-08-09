@@ -3,6 +3,7 @@ package types
 import (
 	"slices"
 	"strings"
+	"time"
 )
 
 // Shared domain and wire types used across the Go workspace.
@@ -143,6 +144,7 @@ type AlertEventKind string
 const (
 	AlertEventTimerWorkComplete  AlertEventKind = "timer.work_complete"
 	AlertEventTimerBreakComplete AlertEventKind = "timer.break_complete"
+	AlertEventTimerBreakDeferral AlertEventKind = "timer.break_deferral_warning"
 	AlertEventUpdateAvailable    AlertEventKind = "update.available"
 	AlertEventUpdateInstalled    AlertEventKind = "update.installed"
 	AlertEventSupportBundleReady AlertEventKind = "support.bundle_ready"
@@ -328,6 +330,7 @@ const (
 	CoreSettingsKeyHabitSort             CoreSettingsKey = "habitSort"
 	CoreSettingsKeyWeekStart             CoreSettingsKey = "weekStart"
 	CoreSettingsKeyAwayModeEnabled       CoreSettingsKey = "awayModeEnabled"
+	CoreSettingsKeyAwayDates             CoreSettingsKey = "awayDates"
 	CoreSettingsKeyFrozenStreakKinds     CoreSettingsKey = "frozenStreakKinds"
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
@@ -1267,6 +1270,7 @@ type CoreSettings struct {
 	HabitSort             HabitSort               `json:"habitSort"`
 	WeekStart             WeekStart               `json:"weekStart"`
 	AwayModeEnabled       bool                    `json:"awayModeEnabled"`
+	AwayDates             []string                `json:"awayDates,omitempty"`
 	FrozenStreakKinds     []StreakKind            `json:"frozenStreakKinds,omitempty"`
 	RestWeekdays          []int                   `json:"restWeekdays,omitempty"`
 	RestSpecificDates     []string                `json:"restSpecificDates,omitempty"`
@@ -1282,6 +1286,29 @@ type CoreSettings struct {
 	EndOfDay              DayBoundarySchedule     `json:"endOfDay"`
 	CreatedAt             string                  `json:"createdAt"`
 	UpdatedAt             string                  `json:"updatedAt"`
+}
+
+// IsAwayDate reports whether a date belongs to the canonical historical
+// away-date set. Current rest rules must not be evaluated retroactively.
+func (s CoreSettings) IsAwayDate(date string) bool {
+	return slices.Contains(s.AwayDates, strings.TrimSpace(date))
+}
+
+// IsConfiguredRestDate reports whether a date matches a currently configured
+// explicit or weekday rest rule.
+func (s CoreSettings) IsConfiguredRestDate(date string) bool {
+	date = strings.TrimSpace(date)
+	if slices.Contains(s.RestSpecificDates, date) {
+		return true
+	}
+	if len(s.RestWeekdays) == 0 {
+		return false
+	}
+	parsed, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return false
+	}
+	return slices.Contains(s.RestWeekdays, int(parsed.Weekday()))
 }
 
 type TimerState struct {
@@ -1362,10 +1389,12 @@ type AlertDeliveryCapability struct {
 type AlertDeliveryAction struct {
 	ID                       string              `json:"id"`
 	Title                    string              `json:"title"`
+	SessionID                string              `json:"sessionId,omitempty"`
 	ExpectedReadySegmentType *SessionSegmentType `json:"expectedReadySegmentType,omitempty"`
 	Path                     *string             `json:"path,omitempty"`
 	DialogKind               string              `json:"dialogKind,omitempty"`
 	DialogParent             string              `json:"dialogParent,omitempty"`
+	SuggestedSeconds         int                 `json:"suggestedSeconds,omitempty"`
 }
 
 type AlertDelivery struct {
@@ -1380,6 +1409,8 @@ type AlertDeliveryAck struct {
 	DeliveryID           string `json:"deliveryId"`
 	NotificationAccepted bool   `json:"notificationAccepted"`
 	SoundAccepted        bool   `json:"soundAccepted"`
+	ActionID             string `json:"actionId,omitempty"`
+	ActionSeconds        int    `json:"actionSeconds,omitempty"`
 }
 
 type AlertReminder struct {

@@ -26,6 +26,10 @@ func updateCreateIssueMeta(
 		), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
+		if err := ValidateDueDateAt(state, currentDate, currentDate); err != nil {
+			state.ErrorMessage = err.Error()
+			return state, nil, ""
+		}
 		state.Inputs[2].SetValue(currentDate)
 		return clearDialogError(state), nil, ""
 	}
@@ -41,6 +45,9 @@ func updateCreateIssueMeta(
 		}
 		dueDate, err := ParseDueDateInput(state.Inputs[2].Value())
 		if err != nil {
+			return nil, err.Error()
+		}
+		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 			return nil, err.Error()
 		}
 		return &Action{
@@ -76,6 +83,10 @@ func updateCreateIssueDefault(
 		}
 	case "g":
 		if state.FocusIdx == 5 {
+			if err := ValidateDueDateAt(state, currentDate, currentDate); err != nil {
+				state.ErrorMessage = err.Error()
+				return state, nil, ""
+			}
 			state.Inputs[4].SetValue(currentDate)
 			return state, nil, ""
 		}
@@ -173,6 +184,9 @@ func updateCreateIssueDefault(
 		}
 		dueDate, err := ParseDueDateInput(state.Inputs[4].Value())
 		if err != nil {
+			return state, nil, err.Error()
+		}
+		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 			return state, nil, err.Error()
 		}
 		return Close(
@@ -362,6 +376,10 @@ func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *A
 		), nil, ""
 	}
 	if state.FocusIdx == 3 && msg.String() == "g" {
+		if err := ValidateDueDateAt(state, currentDate, currentDate); err != nil {
+			state.ErrorMessage = err.Error()
+			return state, nil, ""
+		}
 		state.Inputs[2].SetValue(currentDate)
 		return clearDialogError(state), nil, ""
 	}
@@ -377,6 +395,9 @@ func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *A
 		}
 		dueDate, err := ParseDueDateInput(state.Inputs[2].Value())
 		if err != nil {
+			return nil, err.Error()
+		}
+		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 			return nil, err.Error()
 		}
 		return &Action{

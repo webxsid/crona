@@ -2,6 +2,40 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.2] - 2026-08-09
+
+Crona v1.9.0-beta.2 makes Pomodoro break deferral daemon-authoritative and advances the local IPC protocol.
+
+### Added
+
+- Daemon-issued five-second break-deferral warnings with companion action acknowledgements.
+- A daemon-owned one-shot deferral state that preserves the work-to-break transition and prevents timer offset drift.
+- Alert-delivery action acknowledgements carrying `actionId`, `actionSeconds`, and the associated session.
+- Cross-client `settings.changed` events carrying the affected core-setting keys.
+- Local IPC protocol version `1.3`.
+- Historical away-date styling across TUI calendars and a concise recovery view for away dates in Daily and Wellbeing.
+
+### Changed
+
+- Automatic break deferral now uses `timer.defer_break`; the daemon applies the accepted duration and owns the resulting timer state.
+- Missing companion acknowledgements fall back to the normal notification backend.
+- Away history is now tracked in canonical `awayDates`, preserving dates from manual away mode and rest rules for backward calculations even after rules change.
+- Away mode changes now use the daemon-owned `settings.away_mode` operation.
+- Break deferral is enforced once per work segment, including direct IPC requests.
+- Away-history migration leaves the current date to the logical-day scheduler instead of recording it early from wall-clock time.
+- Focus-score targets now total estimates for issues due in the requested date range and return zero when no estimated work is due.
+- Issue due-date pickers now block past dates and configured future rest dates while visually distinguishing both categories.
+
+### Fixed
+
+- Concurrent direct break-deferral requests can no longer apply more than one extension to the same work segment.
+- Queued timer callbacks are invalidated when a deferral reschedules the boundary, preventing an acknowledged deferral from immediately transitioning to break.
+- The issue pane now shows `[d]` for the due-date action, matching its binding.
+
+### Compatibility
+
+- Companion clients must use protocol `1.3` and acknowledge the `timer.defer_break` alert action to request deferral.
+
 ## [1.9.0-beta.1] - 2026-08-05
 
 Crona v1.9.0-beta.1 adds Pomodoro segment controls and companion-oriented timer IPC extensions.

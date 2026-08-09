@@ -27,6 +27,7 @@ var DefaultCoreSettings = map[string]any{
 	"habitSort":                    string("schedule"),
 	"weekStart":                    string("monday"),
 	"awayModeEnabled":              false,
+	"awayDates":                    []string{},
 	"frozenStreakKinds":            []string{"focus_days", "checkin_days", "habit_days"},
 	"restWeekdays":                 []int{},
 	"restSpecificDates":            []string{},

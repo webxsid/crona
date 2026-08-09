@@ -50,7 +50,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	}
 	dialogSnapshot.ProtectedModeActive, _, _ = viewruntime.ProtectedRestMode(
 		m.settings,
-		time.Now().Format("2006-01-02"),
+		m.currentLogicalDate(),
 	)
 	if issue, ok := selectionpkg.SelectedIssueDetail(selectionSnapshot); ok {
 		dialogSnapshot.SelectedIssueID = issue.ID
@@ -624,6 +624,13 @@ func (m Model) openConfirmWipeDataDialog() Model {
 }
 
 func (m Model) dialogState() dialogstate.State {
+	var restWeekdays []int
+	var restDates, awayDates []string
+	if m.settings != nil {
+		restWeekdays = m.settings.RestWeekdays
+		restDates = m.settings.RestSpecificDates
+		awayDates = m.settings.AwayDates
+	}
 	return dialogstate.State{
 		Kind:                           m.dialog,
 		Width:                          m.width,
@@ -652,6 +659,10 @@ func (m Model) dialogState() dialogstate.State {
 		Parent:                         m.dialogParent,
 		DateMonthValue:                 m.dialogDateMonth,
 		DateCursorValue:                m.dialogDateCursor,
+		DueDateToday:                   m.currentLogicalDate(),
+		DueDateRestWeekdays:            restWeekdays,
+		DueDateRestDates:               restDates,
+		DueDateAwayDates:               awayDates,
 		StatusItems:                    m.dialogStatusItems,
 		StatusCursor:                   m.dialogStatusCursor,
 		ChoiceItems:                    m.dialogChoiceItems,

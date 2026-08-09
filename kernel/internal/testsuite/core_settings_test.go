@@ -62,7 +62,7 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
 		t.Fatalf("initialize defaults: %v", err)
 	}
-	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyAwayModeEnabled, true); err != nil {
+	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
 		t.Fatalf("set away mode: %v", err)
 	}
 	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyFrozenStreakKinds, []string{string(sharedtypes.StreakKindCheckInDays)}); err != nil {
@@ -115,6 +115,9 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 	if settings == nil || !settings.AwayModeEnabled {
 		t.Fatalf("expected away mode enabled, got %+v", settings)
 	}
+	if len(settings.AwayDates) != 1 || settings.AwayDates[0] != "2026-03-29" {
+		t.Fatalf("unexpected away dates: %+v", settings.AwayDates)
+	}
 	if len(settings.FrozenStreakKinds) != 1 ||
 		settings.FrozenStreakKinds[0] != sharedtypes.StreakKindCheckInDays {
 		t.Fatalf("unexpected frozen streak kinds: %+v", settings.FrozenStreakKinds)
@@ -157,6 +160,97 @@ func TestCoreSettingsRoundTripAwayModeFields(t *testing.T) {
 		settings.HabitStreakDefs[0].Period != sharedtypes.HabitStreakPeriodWeek ||
 		settings.HabitStreakDefs[0].RequiredCount != 2 {
 		t.Fatalf("unexpected habit streak definition: %+v", settings.HabitStreakDefs[0])
+	}
+}
+
+func TestAwayModeRetainsCanonicalDateAfterDisable(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+	repo := repositories.NewCoreSettingsRepository(store.DB())
+	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
+		t.Fatalf("initialize defaults: %v", err)
+	}
+	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
+		t.Fatalf("enable away mode: %v", err)
+	}
+	if err := repo.SetAwayMode(ctx, "local", true, "2026-03-29"); err != nil {
+		t.Fatalf("repeat away mode: %v", err)
+	}
+	if err := repo.SetAwayMode(ctx, "local", false, "2026-03-29"); err != nil {
+		t.Fatalf("disable away mode: %v", err)
+	}
+	settings, err := repo.Get(ctx, "local")
+	if err != nil {
+		t.Fatalf("get settings: %v", err)
+	}
+	if settings.AwayModeEnabled {
+		t.Fatal("expected live away mode to be disabled")
+	}
+	if len(settings.AwayDates) != 1 || settings.AwayDates[0] != "2026-03-29" {
+		t.Fatalf("expected retained canonical away date, got %+v", settings.AwayDates)
+	}
+}
+
+func TestFutureSpecificRestDateIsNotHistoricalUntilRecorded(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+	repo := repositories.NewCoreSettingsRepository(store.DB())
+	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
+		t.Fatalf("initialize defaults: %v", err)
+	}
+	if err := repo.SetSetting(ctx, "local", sharedtypes.CoreSettingsKeyRestSpecificDates, []string{"2099-03-29"}); err != nil {
+		t.Fatalf("set future rest date: %v", err)
+	}
+	settings, err := repo.Get(ctx, "local")
+	if err != nil {
+		t.Fatalf("get settings: %v", err)
+	}
+	if len(settings.AwayDates) != 0 {
+		t.Fatalf("expected future rule not to alter history, got %+v", settings.AwayDates)
+	}
+	if !settings.IsConfiguredRestDate("2099-03-29") || settings.IsAwayDate("2099-03-29") {
+		t.Fatalf("expected configured and historical semantics to remain separate: %+v", settings)
+	}
+	changed, err := repo.RecordAwayDates(ctx, "local", []string{" 2099-03-29 ", "2099-03-29"})
+	if err != nil {
+		t.Fatalf("record occurred rest date: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected first recorded rest date to report a change")
+	}
+	changed, err = repo.RecordAwayDate(ctx, "local", "2099-03-29")
+	if err != nil {
+		t.Fatalf("record duplicate rest date: %v", err)
+	}
+	if changed {
+		t.Fatal("expected duplicate recorded rest date to report no change")
+	}
+	settings, err = repo.Get(ctx, "local")
+	if err != nil || !settings.IsAwayDate("2099-03-29") {
+		t.Fatalf("expected recorded date in canonical history, settings=%+v err=%v", settings, err)
+	}
+}
+
+func TestSetSettingsValidatesBeforeWriting(t *testing.T) {
+	ctx := context.Background()
+	store := openTestStore(t)
+	repo := repositories.NewCoreSettingsRepository(store.DB())
+	if err := repo.InitializeDefaults(ctx, "local", "device-1"); err != nil {
+		t.Fatalf("initialize defaults: %v", err)
+	}
+	err := repo.SetSettings(ctx, "local", map[sharedtypes.CoreSettingsKey]any{
+		sharedtypes.CoreSettingsKeyWorkDurationMinutes: 45,
+		sharedtypes.CoreSettingsKey("unknownSetting"):  true,
+	})
+	if err == nil {
+		t.Fatal("expected invalid batch to fail")
+	}
+	settings, getErr := repo.Get(ctx, "local")
+	if getErr != nil {
+		t.Fatalf("get settings: %v", getErr)
+	}
+	if settings.WorkDurationMinutes == 45 {
+		t.Fatal("expected failed batch not to partially update valid settings")
 	}
 }
 

@@ -504,6 +504,9 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyRestWeekdays, []int{0, 6}); err != nil {
 		t.Fatalf("set rest weekdays: %v", err)
 	}
+	if _, err := coreCtx.CoreSettings.RecordAwayDates(ctx, coreCtx.UserID, []string{"2026-03-28", "2026-03-29"}); err != nil {
+		t.Fatalf("materialize weekend dates: %v", err)
+	}
 
 	currentNow = "2026-03-27T09:05:00Z"
 	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-30"); err != nil {
@@ -521,7 +524,7 @@ func TestDailyPlanScoreExcludesRestDaysAndAwayMode(t *testing.T) {
 			entry.CurrentDelayedDays,
 		)
 	}
-	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyAwayModeEnabled, true); err != nil {
+	if err := coreCtx.CoreSettings.SetAwayMode(ctx, coreCtx.UserID, true, "2026-03-30"); err != nil {
 		t.Fatalf("enable away mode: %v", err)
 	}
 	plan, err = corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")

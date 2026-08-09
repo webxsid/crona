@@ -23,12 +23,17 @@ func updateDatePicker(
 		return closeDatePicker(state), nil, ""
 	case "enter", " ":
 		selected := state.DateCursorValue
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" ||
-			state.Parent == "edit_issue" {
-			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
-				state.Inputs[idx].SetValue(selected)
+		if isIssueDueDatePicker(state) {
+			if err := ValidateDueDate(state, selected); err != nil {
+				state.ErrorMessage = err.Error()
+				return state, nil, ""
 			}
-			return closeDatePicker(state), nil, ""
+			if state.Parent != "" {
+				if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
+					state.Inputs[idx].SetValue(selected)
+				}
+				return closeDatePicker(state), nil, ""
+			}
 		}
 		if state.Parent == "edit_rest_protection" {
 			state.ProtectionDates = normalizedDateList(append(state.ProtectionDates, selected))
@@ -59,8 +64,7 @@ func updateDatePicker(
 				DueDate:  ValueToPointer(selected),
 			}, ""
 	case "backspace", "delete", "c":
-		if state.Parent == "create_issue_meta" || state.Parent == "create_issue_default" ||
-			state.Parent == "edit_issue" {
+		if isIssueDueDatePicker(state) && state.Parent != "" {
 			if idx, ok := dialogInputIndex(state, state.FocusIdx); ok {
 				state.Inputs[idx].SetValue("")
 			}
@@ -93,13 +97,24 @@ func updateDatePicker(
 	case ".":
 		return shiftDatePicker(state, 0, 1, 0), nil, ""
 	case "g":
+		today := currentDate
+		if isIssueDueDatePicker(state) {
+			today = strings.TrimSpace(state.DueDateToday)
+			if today == "" {
+				today = currentDate
+			}
+			if err := ValidateDueDateAt(state, today, today); err != nil {
+				state.ErrorMessage = err.Error()
+				return state, nil, ""
+			}
+		}
 		return OpenDatePicker(
 			state,
 			state.Parent,
 			state.IssueID,
 			state.FocusIdx,
-			ValueToPointer(time.Now().Format("2006-01-02")),
-			currentDate,
+			ValueToPointer(today),
+			today,
 		), nil, ""
 	}
 	return state, nil, ""

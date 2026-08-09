@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -140,6 +142,10 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 	sharedtypes.CoreSettingsKeyAwayModeEnabled: {
 		column:    "away_mode_enabled",
 		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyAwayDates: {
+		column:    "away_dates",
+		queryKind: coreSettingQueryString,
 	},
 	sharedtypes.CoreSettingsKeyFrozenStreakKinds: {
 		column:    "frozen_streak_kinds",
@@ -306,6 +312,112 @@ func (r *CoreSettingsRepository) SetSetting(
 	return err
 }
 
+func (r *CoreSettingsRepository) SetSettings(
+	ctx context.Context,
+	userID string,
+	values map[sharedtypes.CoreSettingsKey]any,
+) error {
+	type settingUpdate struct {
+		column string
+		value  any
+	}
+	updates := make([]settingUpdate, 0, len(values))
+	for key, value := range values {
+		if key == sharedtypes.CoreSettingsKeyHabitStreakDefs {
+			return errors.New("habit streak definitions must be managed via momentum APIs")
+		}
+		meta, ok := coreSettingMetas[key]
+		if !ok {
+			return fmt.Errorf("unknown core setting %q", key)
+		}
+		dbValue, err := coreSettingsDBValue(key, value)
+		if err != nil {
+			return err
+		}
+		updates = append(updates, settingUpdate{column: meta.column, value: dbValue})
+	}
+	if len(updates) == 0 {
+		return nil
+	}
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		query := tx.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).Where("user_id = ?", userID)
+		for _, update := range updates {
+			query = query.Set(update.column+" = ?", update.value)
+		}
+		_, err := query.Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10)).Exec(ctx)
+		return err
+	})
+}
+
+// SetAwayMode atomically changes the live away flag and records the current
+// logical date in the canonical historical away-date list when enabling.
+func (r *CoreSettingsRepository) SetAwayMode(
+	ctx context.Context,
+	userID string,
+	enabled bool,
+	date string,
+) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		var model storemodels.CoreSettingsModel
+		if err := tx.NewSelect().Model(&model).Where("user_id = ?", userID).Limit(1).Scan(ctx); err != nil {
+			return err
+		}
+		awayDates := parseStringSlice(model.AwayDates)
+		if enabled {
+			awayDates, _ = mergeUniqueStrings(awayDates, []string{date})
+		}
+		encoded, err := json.Marshal(awayDates)
+		if err != nil {
+			return err
+		}
+		_, err = tx.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).
+			Where("user_id = ?", userID).
+			Set("away_mode_enabled = ?", enabled).
+			Set("away_dates = ?", string(encoded)).
+			Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10)).
+			Exec(ctx)
+		return err
+	})
+}
+
+func (r *CoreSettingsRepository) RecordAwayDate(ctx context.Context, userID, date string) (bool, error) {
+	return r.RecordAwayDates(ctx, userID, []string{date})
+}
+
+func (r *CoreSettingsRepository) RecordAwayDates(
+	ctx context.Context,
+	userID string,
+	dates []string,
+) (bool, error) {
+	normalized, _ := mergeUniqueStrings(nil, dates)
+	if len(normalized) == 0 {
+		return false, nil
+	}
+	changed := false
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		var model storemodels.CoreSettingsModel
+		if err := tx.NewSelect().Model(&model).Where("user_id = ?", userID).Limit(1).Scan(ctx); err != nil {
+			return err
+		}
+		awayDates := parseStringSlice(model.AwayDates)
+		awayDates, changed = mergeUniqueStrings(awayDates, normalized)
+		if !changed {
+			return nil
+		}
+		encoded, err := json.Marshal(awayDates)
+		if err != nil {
+			return err
+		}
+		_, err = tx.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).
+			Where("user_id = ?", userID).
+			Set("away_dates = ?", string(encoded)).
+			Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10)).
+			Exec(ctx)
+		return err
+	})
+	return changed, err
+}
+
 func (r *CoreSettingsRepository) GetAllSettings(ctx context.Context) (map[string]any, error) {
 	var rows []storemodels.CoreSettingsModel
 	if err := r.db.NewSelect().Model(&rows).Scan(ctx); err != nil {
@@ -376,6 +488,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		HabitSort:             sharedconstants.DefaultCoreSettings["habitSort"].(string),
 		WeekStart:             sharedconstants.DefaultCoreSettings["weekStart"].(string),
 		AwayModeEnabled:       sharedconstants.DefaultCoreSettings["awayModeEnabled"].(bool),
+		AwayDates:             mustJSON(sharedconstants.DefaultCoreSettings["awayDates"]),
 		FrozenStreakKinds:     mustJSON(sharedconstants.DefaultCoreSettings["frozenStreakKinds"]),
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
@@ -431,6 +544,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseIntSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(toString(value))
+	case sharedtypes.CoreSettingsKeyAwayDates:
+		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyStartOfDay:
 		return parseDayBoundarySchedule(toString(value), true)
 	case sharedtypes.CoreSettingsKeyEndOfDay:
@@ -484,6 +599,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
 		return intSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
+		return stringSliceJSON(value)
+	case sharedtypes.CoreSettingsKeyAwayDates:
 		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyStartOfDay:
 		return dayBoundaryScheduleJSON(value, true)
@@ -588,6 +705,7 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		HabitSort:             sharedtypes.NormalizeHabitSort(sharedtypes.HabitSort(row.HabitSort)),
 		WeekStart:             sharedtypes.NormalizeWeekStart(sharedtypes.WeekStart(row.WeekStart)),
 		AwayModeEnabled:       row.AwayModeEnabled,
+		AwayDates:             parseStringSlice(row.AwayDates),
 		FrozenStreakKinds:     parseStreakKinds(row.FrozenStreakKinds),
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
@@ -830,6 +948,31 @@ func parseStringSlice(raw string) []string {
 		out = append(out, item)
 	}
 	return out
+}
+
+func mergeUniqueStrings(existing, candidates []string) ([]string, bool) {
+	merged := slices.Clone(existing)
+	seen := make(map[string]struct{}, len(existing)+len(candidates))
+	for _, value := range existing {
+		seen[value] = struct{}{}
+	}
+	changed := false
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		if _, exists := seen[candidate]; exists {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		merged = append(merged, candidate)
+		changed = true
+	}
+	if changed {
+		slices.Sort(merged)
+	}
+	return merged, changed
 }
 
 func parseIntSlice(raw string) []int {

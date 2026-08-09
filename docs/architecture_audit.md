@@ -330,7 +330,7 @@ Observed error behavior:
 | `metrics.streaks` | Range-based streaks | `dto.DateRangeQuery` | `types.StreakSummary` | None | TUI, CLI | Yes |
 | `metrics.streaks_lifetime` | Lifetime streaks through date | `dto.DailyCheckInQuery` | `types.StreakSummary` | None | TUI | Yes |
 | `dashboard.window` | Daily plan window summary | `dto.DashboardWindowQuery` | `types.DashboardWindowSummary` | None | TUI | Yes |
-| `dashboard.focus_score` | Focus score summary | `dto.DashboardSummaryQuery` | `types.FocusScoreSummary` | None | TUI | Yes |
+| `dashboard.focus_score` | Focus score summary; target comes from estimates on issues due in the requested range | `dto.DashboardSummaryQuery` | `types.FocusScoreSummary` | None | TUI, companion | Yes |
 | `dashboard.distribution` | Time distribution summary | `dto.DashboardSummaryQuery` | `types.TimeDistributionSummary` | None | TUI | Yes |
 | `dashboard.goal_progress` | Goal progress summary | `dto.DashboardSummaryQuery` | `types.GoalProgressSummary` | None | TUI | Yes |
 | `export.glance` | Summary export | `dto.ExportReportRequest` | `types.ExportReportResult` | Writes artifact or clipboard | TUI, CLI | Yes |
@@ -371,6 +371,7 @@ Observed error behavior:
 | `timer.resume` | Resume timer | `dto.Empty` | `types.TimerState` | Clears runtime state, resumes work segment, schedules next boundary | TUI, CLI | Yes |
 | `timer.advance` | Manually advance boundary | `dto.Empty` | `types.TimerState` | Starts next segment / clears prepared state / emits boundary and state | TUI, CLI | Yes |
 | `timer.extend` | Extend hard-limit timer | `dto.TimerExtendRequest` | `types.TimerState` | Extends runtime hard limit and reschedules | TUI, CLI | Yes |
+| `timer.defer_break` | Defer the current Pomodoro break once | `dto.TimerDeferBreakRequest` | `types.TimerState` | Persists one-shot deferral and reschedules the daemon boundary | companion / direct IPC | Yes |
 | `timer.end` | End timer | `dto.EndSessionRequest` | `types.TimerState` | Stops session, clears runtime timer state, clears boundary | TUI, CLI | Yes |
 | `context.get` | Current shared context | `dto.Empty` | `types.ActiveContext` | None | TUI, CLI | Yes |
 | `context.set` | Set repo/stream/issue together | `dto.UpdateContextRequest` | `types.ActiveContext` | Writes active context + op + event | CLI, TUI | Yes |
@@ -383,6 +384,7 @@ Observed error behavior:
 | `settings.get` | One setting | `dto.GetCoreSettingRequest` | Any | None | TUI | Yes |
 | `settings.patch` | One setting update | `dto.PatchCoreSettingRequest` | `types.CoreSettings` map | Persists setting | TUI | Yes |
 | `settings.put` | Multi-setting update | `dto.PutCoreSettingsRequest` | map[string]any | Persists settings | TUI | Yes |
+| `settings.away_mode` | Change live away mode | `dto.AwayModeRequest` | `dto.OKResponse` | Persists live state and records the current logical date when enabled | TUI, companion | Yes |
 | `ops.list` | Ops filtered list | `dto.ListOpsQuery` | `[]types.Op` | None | TUI | Yes |
 | `ops.latest` | Latest ops | `dto.ListLatestOpsQuery` | `[]types.Op` | None | TUI | Yes |
 | `ops.since` | Ops since timestamp | `dto.ListOpsSinceQuery` | `[]types.Op` | None | TUI | Yes |
@@ -412,6 +414,9 @@ Observed error behavior:
 | `timer.state` | `types.TimerState` | `core/commands/timer.go`, dev clear | TUI refresh; notify subscribers | Project current timer state |
 | `timer.boundary` | `types.TimerBoundaryPayload` | `core/commands/timer.go` | TUI refresh; notify subscribers | Project boundary transitions |
 | `timer.hard_limit_reached` | `types.TimerHardLimitReachedPayload` | `core/commands/timer.go` | TUI refresh; notify subscribers | Project hard-limit expiry |
+| `timer.break_deferral_warning` | `types.TimerBreakDeferralWarningPayload` | `core/commands/timer.go` | notify service / companion | Offer the daemon-owned five-second deferral action |
+| `timer.break_deferred` | `types.SessionEventPayload` | `core/commands/timer.go` | TUI and companion refresh | Refetch timer state after accepted deferral |
+| `settings.changed` | `types.SettingsChangedPayload` | runtime settings handlers / logical-day materializer | TUI and companion refresh | Refetch settings using the changed keys as invalidation hints |
 | `context.repo.changed` | `types.ContextChangedPayload` | `core/commands/active_context.go` | TUI refresh | Project repo context |
 | `context.stream.changed` | `types.ContextChangedPayload` | `core/commands/active_context.go` | TUI refresh | Project stream context |
 | `context.issue.changed` | `types.ContextChangedPayload` | `core/commands/active_context.go`, timer start | TUI refresh | Project issue context |
@@ -794,9 +799,9 @@ Observed assumptions already in the repo:
 
 | Feature | Daemon API / Events | Projection Strategy |
 | --- | --- | --- |
-| Menu bar timer | `timer.get_state`, `timer.start`, `timer.pause`, `timer.resume`, `timer.advance`, `timer.extend`, `timer.end`, `timer.state`, `timer.boundary`, `timer.hard_limit_reached` | Keep a local timer projection and refetch state after every event |
+| Menu bar timer | `timer.get_state`, `timer.start`, `timer.pause`, `timer.resume`, `timer.advance`, `timer.extend`, `timer.defer_break`, `timer.end`, `timer.state`, `timer.boundary`, `timer.hard_limit_reached`, `timer.break_deferral_warning`, `timer.break_deferred` | Keep a local timer projection and refetch state after every event |
 | Notifications | `alerts.status.get`, `alerts.notify`, `alerts.reminders.*`, `update.status` | Use daemon alerts; companion only surfaces settings and actions |
-| Settings | `settings.get_all`, `settings.get`, `settings.patch`, `settings.put` | Read from daemon; keep companion-only prefs local |
+| Settings | `settings.get_all`, `settings.get`, `settings.patch`, `settings.put`, `settings.away_mode`, `settings.changed` | Read shared state from the daemon and reload on invalidation; keep companion-only prefs local |
 | Launch at login | none | Companion-owned login item and install helper |
 | Runtime selection | `kernel.info.get`, `health.get` | Discover daemon from runtime metadata and health check |
 | Diagnostics | `health.get`, `kernel.info.get`, `ops.latest`, `ops.since`, `export.assets.get`, `update.status.get` | Present read-only diagnostics page |

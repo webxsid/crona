@@ -8,7 +8,9 @@ import (
 	"crona/tui/internal/tui/chrome"
 	viewtypes "crona/tui/internal/tui/views/types"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/muesli/termenv"
 )
 
 func TestRenderSingleDateMarksSelectionTodayAndCurrentWeek(t *testing.T) {
@@ -83,6 +85,26 @@ func TestRenderUsesStyledCellsWithoutBracketMarkers(t *testing.T) {
 				rendered,
 			)
 		}
+	}
+}
+
+func TestRenderMarksAwayDateWithRedText(t *testing.T) {
+	previousProfile := lipgloss.ColorProfile()
+	lipgloss.SetColorProfile(termenv.ANSI)
+	defer lipgloss.SetColorProfile(previousProfile)
+	theme := testTheme()
+	rendered := strings.Join(Render(testTheme(), Selection{
+		AnchorDate:   "2026-05-14",
+		SelectedDate: "2026-05-14",
+		AwayDates:    []string{"2026-05-15"},
+		Today:        "2026-05-20",
+	}), "\n")
+	if !strings.Contains(ansi.Strip(rendered), "15") {
+		t.Fatalf("expected away date to remain visible, got %q", rendered)
+	}
+	expected := theme.StyleNormal.Foreground(theme.ColorRed).Render("15")
+	if !strings.Contains(rendered, expected) {
+		t.Fatalf("expected away date to use red text, got %q", rendered)
 	}
 }
 

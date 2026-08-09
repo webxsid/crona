@@ -20,6 +20,7 @@ type TimerRuntimeState struct {
 	HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
 	HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
 	HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
+	CurrentSegmentDeferralSeconds  int                             `json:"currentSegmentDeferralSeconds,omitempty"`
 	HardLimitWorkSeconds           int                             `json:"hardLimitWorkSeconds,omitempty"`
 	HardLimitBreakSeconds          int                             `json:"hardLimitBreakSeconds,omitempty"`
 	HardLimitLongBreakSeconds      int                             `json:"hardLimitLongBreakSeconds,omitempty"`
@@ -39,6 +40,7 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 		HardLimitTotalSeconds          int                             `json:"hardLimitTotalSeconds,omitempty"`
 		HardLimitElapsedOffsetSeconds  int                             `json:"hardLimitElapsedOffsetSeconds,omitempty"`
 		HardLimitElapsedStartedAt      string                          `json:"hardLimitElapsedStartedAt,omitempty"`
+		CurrentSegmentDeferralSeconds  int                             `json:"currentSegmentDeferralSeconds,omitempty"`
 		HardLimitWorkSeconds           int                             `json:"hardLimitWorkSeconds,omitempty"`
 		HardLimitBreakSeconds          int                             `json:"hardLimitBreakSeconds,omitempty"`
 		HardLimitLongBreakSeconds      int                             `json:"hardLimitLongBreakSeconds,omitempty"`
@@ -61,6 +63,7 @@ func (s *TimerRuntimeState) UnmarshalJSON(data []byte) error {
 	s.HardLimitTotalSeconds = decoded.HardLimitTotalSeconds
 	s.HardLimitElapsedOffsetSeconds = decoded.HardLimitElapsedOffsetSeconds
 	s.HardLimitElapsedStartedAt = decoded.HardLimitElapsedStartedAt
+	s.CurrentSegmentDeferralSeconds = decoded.CurrentSegmentDeferralSeconds
 	s.HardLimitWorkSeconds = decoded.HardLimitWorkSeconds
 	s.HardLimitBreakSeconds = decoded.HardLimitBreakSeconds
 	s.HardLimitLongBreakSeconds = decoded.HardLimitLongBreakSeconds

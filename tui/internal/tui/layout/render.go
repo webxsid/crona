@@ -62,7 +62,7 @@ func ViewTheme() viewtypes.Theme {
 
 func DialogTheme() dialogs.Theme {
 	return dialogs.Theme{
-		ColorCyan: chrome.ColorCyan, ColorYellow: chrome.ColorYellow, ColorOrange: chrome.ColorOrange, ColorRed: chrome.ColorRed, ColorGreen: chrome.ColorGreen,
+		ColorCyan: chrome.ColorCyan, ColorYellow: chrome.ColorYellow, ColorOrange: chrome.ColorOrange, ColorRed: chrome.ColorRed, ColorGreen: chrome.ColorGreen, ColorDim: chrome.ColorDim,
 		StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim, StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleNormal: chrome.StyleNormal,
 	}
 }

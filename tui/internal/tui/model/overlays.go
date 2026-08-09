@@ -214,6 +214,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadContext:      func() tea.Cmd { return commands.LoadContext(m.client) },
 		LoadTimer:        func() tea.Cmd { return commands.LoadTimer(m.client) },
 		LoadAlertStatus:  func() tea.Cmd { return commands.LoadAlertStatus(m.client) },
+		LoadSettings:     func() tea.Cmd { return commands.LoadSettings(m.client) },
 		LoadUpdateStatus: func() tea.Cmd { return commands.LoadUpdateStatus(m.client) },
 		LoadOps:          func(limit int) tea.Cmd { return commands.LoadOps(m.client, limit) },
 		TickAfter:        commands.TickAfter,

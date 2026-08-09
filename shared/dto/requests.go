@@ -308,6 +308,10 @@ type PatchCoreSettingRequest struct {
 	Value any                   `json:"value"`
 }
 
+type AwayModeRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
 type GetCoreSettingRequest struct {
 	Key types.CoreSettingsKey `json:"key"`
 }
@@ -381,7 +385,7 @@ type TimerExtendRequest struct {
 	HardLimitCyclesBeforeLongBreak *int `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
 }
 
-type TimerExtendCurrentSessionRequest struct {
+type TimerDeferBreakRequest struct {
 	SessionID         string `json:"sessionId"`
 	AdditionalSeconds int    `json:"additionalSeconds"`
 }

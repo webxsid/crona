@@ -122,6 +122,7 @@ type Deps struct {
 	OpenSessionContextOverlay       func(*State) bool
 	ConfigReset                     func(*State) tea.Cmd
 	PatchSetting                    func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd
+	SetAwayMode                     func(enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd
 	TestAlertNotification           func() tea.Cmd
 	TestAlertSound                  func() tea.Cmd
 	CreateAlertReminder             func(shareddto.AlertReminderCreateRequest) tea.Cmd

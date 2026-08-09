@@ -405,8 +405,14 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView == uistate.ViewWellbeing && strings.TrimSpace(s.WellbeingDate) != "" {
 		date = s.WellbeingDate
 	}
+	setAwayMode := deps.SetAwayMode
+	if setAwayMode == nil {
+		setAwayMode = func(enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {
+			return deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, enabled, repoID, streamID, dashboardDate)
+		}
+	}
 	return s, tea.Batch(
-		deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, next, repoID, streamID, date),
+		setAwayMode(next, repoID, streamID, date),
 		deps.SetStatus(&s, status, false),
 	), true
 }

@@ -2,9 +2,13 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"maps"
+	"slices"
 
 	corecommands "crona/kernel/internal/core/commands"
+	"crona/kernel/internal/events"
 	shareddto "crona/shared/dto"
 	"crona/shared/protocol"
 	sharedtypes "crona/shared/types"
@@ -191,9 +195,9 @@ func (h *Handler) handleRuntimeMethods(
 			}
 			return h.timer.Extend(ctx, input.AdditionalSeconds)
 		}), true
-	case protocol.MethodTimerExtendCurrentSession:
-		return handle(req, func(input shareddto.TimerExtendCurrentSessionRequest) (any, error) {
-			return h.timer.ExtendCurrentSession(ctx, input.SessionID, input.AdditionalSeconds)
+	case protocol.MethodTimerDeferBreak:
+		return handle(req, func(input shareddto.TimerDeferBreakRequest) (any, error) {
+			return h.timer.DeferBreak(ctx, input.SessionID, input.AdditionalSeconds)
 		}), true
 	case protocol.MethodTimerEnd:
 		return handle(req, func(input shareddto.EndSessionRequest) (any, error) {
@@ -216,27 +220,48 @@ func (h *Handler) handleRuntimeMethods(
 		}), true
 	case protocol.MethodSettingsPatch:
 		return handle(req, func(input shareddto.PatchCoreSettingRequest) (any, error) {
+			if isManagedAwaySetting(input.Key) {
+				return nil, errors.New("away mode must be changed through settings.away_mode")
+			}
 			if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, input.Key, input.Value); err != nil {
 				return nil, err
 			}
 			if h.scheduler != nil {
 				h.scheduler.Refresh()
 			}
+			h.emitSettingsChanged(input.Key)
+			return shareddto.OKResponse{OK: true}, nil
+		}), true
+	case protocol.MethodSettingsAwayMode:
+		return handle(req, func(input shareddto.AwayModeRequest) (any, error) {
+			if err := h.core.CoreSettings.SetAwayMode(ctx, h.core.UserID, input.Enabled, h.core.CurrentDate()); err != nil {
+				return nil, err
+			}
+			if h.scheduler != nil {
+				h.scheduler.Refresh()
+			}
+			h.emitSettingsChanged(
+				sharedtypes.CoreSettingsKeyAwayModeEnabled,
+				sharedtypes.CoreSettingsKeyAwayDates,
+			)
 			return shareddto.OKResponse{OK: true}, nil
 		}), true
 	case protocol.MethodSettingsPut:
 		return handle(req, func(input shareddto.PutCoreSettingsRequest) (any, error) {
-			updated := map[string]any{}
-			for key, value := range input {
-				if err := h.core.CoreSettings.SetSetting(ctx, h.core.UserID, key, value); err != nil {
-					return nil, err
+			for key := range input {
+				if isManagedAwaySetting(key) {
+					return nil, errors.New("away mode must be changed through settings.away_mode")
 				}
-				if h.scheduler != nil {
-					h.scheduler.Refresh()
-				}
-				updated[string(key)] = value
 			}
-			return updated, nil
+			if err := h.core.CoreSettings.SetSettings(ctx, h.core.UserID, input); err != nil {
+				return nil, err
+			}
+			if h.scheduler != nil {
+				h.scheduler.Refresh()
+			}
+			keys := slices.Collect(maps.Keys(input))
+			h.emitSettingsChanged(keys...)
+			return input, nil
 		}), true
 	case protocol.MethodOpsLatest:
 		return handle(req, func(input shareddto.ListLatestOpsQuery) (any, error) {
@@ -264,4 +289,26 @@ func (h *Handler) handleRuntimeMethods(
 	default:
 		return protocol.Response{}, false
 	}
+}
+
+func (h *Handler) emitSettingsChanged(keys ...sharedtypes.CoreSettingsKey) {
+	emitSettingsChanged(h.bus, keys...)
+}
+
+func emitSettingsChanged(bus *events.Bus, keys ...sharedtypes.CoreSettingsKey) {
+	if bus == nil || len(keys) == 0 {
+		return
+	}
+	keys = slices.Clone(keys)
+	slices.Sort(keys)
+	keys = slices.Compact(keys)
+	payload, err := json.Marshal(sharedtypes.SettingsChangedPayload{Keys: keys})
+	if err != nil {
+		return
+	}
+	bus.Emit(sharedtypes.KernelEvent{Type: sharedtypes.EventTypeSettingsChanged, Payload: payload})
+}
+
+func isManagedAwaySetting(key sharedtypes.CoreSettingsKey) bool {
+	return key == sharedtypes.CoreSettingsKeyAwayModeEnabled || key == sharedtypes.CoreSettingsKeyAwayDates
 }

@@ -75,6 +75,9 @@ crona completion bash
 crona completion fish
 ```
 
+## macOS Companion
+
+The [Crona macOS companion](https://github.com/webxsid/crona-macos) is a native menu-bar app that connects to your local Crona daemon. It’s still in beta and changing quickly, so expect rough edges and occasional changes to the UI, APIs, and installation process.
 
 ## Documentation
 

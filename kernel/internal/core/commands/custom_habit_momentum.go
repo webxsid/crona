@@ -716,13 +716,7 @@ func isMomentumProtectedDay(date string, settings *sharedtypes.CoreSettings) boo
 	if settings == nil {
 		return false
 	}
-	if settings.AwayModeEnabled {
-		return true
-	}
-	if isRestWeekday(date, settings.RestWeekdays) {
-		return true
-	}
-	return slices.Contains(settings.RestSpecificDates, date)
+	return settings.IsAwayDate(date)
 }
 
 func isoDateDistance(startDate string, endDate string) int {

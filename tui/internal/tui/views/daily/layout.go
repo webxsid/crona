@@ -1,6 +1,7 @@
 package daily
 
 import (
+	viewaway "crona/tui/internal/tui/views/away"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
@@ -8,6 +9,9 @@ import (
 )
 
 func renderView(theme types.Theme, state types.ContentState) string {
+	if state.HistoricalAwayDate != "" {
+		return viewaway.RenderHistorical(theme, state)
+	}
 	summaryH, listH := viewhelpers.SplitVertical(state.Height, 10, 8, state.Height*2/5)
 	sections := []string{}
 	if summaryH >= 3 {

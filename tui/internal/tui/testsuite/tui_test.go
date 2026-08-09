@@ -1630,7 +1630,7 @@ func TestDailyIssueActionLineCompactsOnNarrowWidths(t *testing.T) {
 	if got := strings.Count(plain, "\n"); got > 1 {
 		t.Fatalf("expected compact daily issue hints to stay within two lines, got %q", rendered)
 	}
-	for _, want := range []string{"[enter] details", "[a] create", "[s] status", "[D] due", "[P] pin"} {
+	for _, want := range []string{"[enter] details", "[a] create", "[s] status", "[d] due", "[P] pin"} {
 		if !strings.Contains(plain, want) {
 			t.Fatalf("expected compact daily issue hints to contain %q, got %q", want, rendered)
 		}

@@ -542,6 +542,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PatchSetting: func(key sharedtypes.CoreSettingsKey, value any, repoID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.PatchSetting(m.client, key, value, repoID, streamID, dashboardDate)
 		},
+		SetAwayMode: func(enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {
+			return commands.SetAwayMode(m.client, enabled, repoID, streamID, dashboardDate)
+		},
 		CreateMomentumDefinition: func(def api.HabitStreakDefinition, dashboardDate string, momentumDate string, momentumWindowDays int) tea.Cmd {
 			return commands.CreateMomentumDefinition(
 				m.client,

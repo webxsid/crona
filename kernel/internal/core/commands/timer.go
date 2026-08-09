@@ -19,17 +19,22 @@ import (
 type TimerService struct {
 	ctx           *core.Context
 	boundaryTimer *time.Timer
-	mu            sync.Mutex
+	warningTimer  *time.Timer
+	// timerMu guards timer handles and boundaryGen. operationMu serializes
+	// session/runtime transitions across IPC calls and timer callbacks.
+	timerMu     sync.Mutex
+	operationMu sync.Mutex
+	boundaryGen uint64
 }
 
 var (
-	timerMu       sync.Mutex
+	servicesMu    sync.Mutex
 	timerServices = map[*core.Context]*TimerService{}
 )
 
 func GetTimerService(c *core.Context) *TimerService {
-	timerMu.Lock()
-	defer timerMu.Unlock()
+	servicesMu.Lock()
+	defer servicesMu.Unlock()
 	if service, ok := timerServices[c]; ok {
 		return service
 	}
@@ -39,6 +44,12 @@ func GetTimerService(c *core.Context) *TimerService {
 }
 
 func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.getState(ctx)
+}
+
+func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, error) {
 	now := t.ctx.Now()
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
@@ -162,6 +173,8 @@ func (t *TimerService) Start(
 	repoID, streamID, issueID *int64,
 	hardLimit *shareddto.TimerStartRequest,
 ) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
 	return t.start(ctx, repoID, streamID, issueID, hardLimit)
 }
 
@@ -309,10 +322,10 @@ func (t *TimerService) start(
 			})
 		}
 	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -321,6 +334,12 @@ func (t *TimerService) start(
 }
 
 func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.pause(ctx)
+}
+
+func (t *TimerService) pause(ctx context.Context) (sharedtypes.TimerState, error) {
 	runtimeState, err := t.activeRuntimeState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -334,10 +353,10 @@ func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error
 	if err := PauseSession(ctx, t.ctx, sharedtypes.SessionSegmentRest); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -346,6 +365,12 @@ func (t *TimerService) Pause(ctx context.Context) (sharedtypes.TimerState, error
 }
 
 func (t *TimerService) Resume(ctx context.Context) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.resume(ctx)
+}
+
+func (t *TimerService) resume(ctx context.Context) (sharedtypes.TimerState, error) {
 	runtimeState, err := t.activeRuntimeState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -359,10 +384,10 @@ func (t *TimerService) Resume(ctx context.Context) (sharedtypes.TimerState, erro
 	if err := ResumeSession(ctx, t.ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -371,6 +396,12 @@ func (t *TimerService) Resume(ctx context.Context) (sharedtypes.TimerState, erro
 }
 
 func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.advance(ctx)
+}
+
+func (t *TimerService) advance(ctx context.Context) (sharedtypes.TimerState, error) {
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -396,10 +427,10 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 		if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
-		if err := t.ScheduleNextBoundary(ctx); err != nil {
+		if err := t.scheduleNextBoundary(ctx); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
-		state, err := t.GetState(ctx)
+		state, err := t.getState(ctx)
 		if err != nil {
 			return sharedtypes.TimerState{}, err
 		}
@@ -436,7 +467,7 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 			if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 				return sharedtypes.TimerState{}, err
 			}
-			return t.applyHardLimitExpiry(ctx, activeSession.ID, activeSegment.SegmentType)
+			return t.applyHardLimitExpiryLocked(ctx, activeSession.ID, activeSegment.SegmentType)
 		}
 	}
 	nextSegment, err := t.nextSegmentForActiveState(
@@ -455,6 +486,9 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if err := advanceHardLimitTimeline(runtimeState, activeSegment.SegmentType, t.ctx.Now()); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	if runtimeState != nil && activeSegment.SegmentType == sharedtypes.SessionSegmentWork {
+		runtimeState.CurrentSegmentDeferralSeconds = 0
+	}
 	if err := t.ctx.SessionSegments.EndActiveSegment(ctx, t.ctx.UserID, t.ctx.DeviceID, activeSession.ID); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -467,7 +501,7 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -477,7 +511,7 @@ func (t *TimerService) Advance(ctx context.Context) (sharedtypes.TimerState, err
 		t.boundaryPayload(activeSegment.SegmentType, *nextSegment, true),
 	)
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	return state, nil
@@ -511,6 +545,9 @@ func advanceHardLimitTimeline(
 		return nil
 	}
 	duration := state.HardLimitWorkSeconds
+	if segment == sharedtypes.SessionSegmentWork {
+		duration += state.CurrentSegmentDeferralSeconds
+	}
 	switch segment {
 	case sharedtypes.SessionSegmentShortBreak:
 		duration = state.HardLimitBreakSeconds
@@ -532,6 +569,15 @@ func (t *TimerService) Extend(
 	ctx context.Context,
 	additionalSeconds int,
 ) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.extend(ctx, additionalSeconds)
+}
+
+func (t *TimerService) extend(
+	ctx context.Context,
+	additionalSeconds int,
+) (sharedtypes.TimerState, error) {
 	if additionalSeconds <= 0 {
 		return sharedtypes.TimerState{}, errors.New("extension duration must be positive")
 	}
@@ -549,13 +595,23 @@ func (t *TimerService) Extend(
 	return t.extendHardLimit(ctx, activeSession, runtimeState, additionalSeconds)
 }
 
-func (t *TimerService) ExtendCurrentSession(
+func (t *TimerService) DeferBreak(
 	ctx context.Context,
 	sessionID string,
 	additionalSeconds int,
 ) (sharedtypes.TimerState, error) {
-	if additionalSeconds <= 0 {
-		return sharedtypes.TimerState{}, errors.New("extension duration must be positive")
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.deferBreak(ctx, sessionID, additionalSeconds)
+}
+
+func (t *TimerService) deferBreak(
+	ctx context.Context,
+	sessionID string,
+	additionalSeconds int,
+) (sharedtypes.TimerState, error) {
+	if !validBreakDeferralSeconds(additionalSeconds) {
+		return sharedtypes.TimerState{}, errors.New("break deferral must be 30, 60, or 120 seconds")
 	}
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
@@ -568,9 +624,13 @@ func (t *TimerService) ExtendCurrentSession(
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if runtimeState == nil || !runtimeState.HasHardLimit() ||
+	if runtimeState == nil ||
+		!runtimeState.HasHardLimit() ||
 		runtimeState.HardLimitKind != sharedtypes.TimerHardLimitKindPomodoro {
 		return sharedtypes.TimerState{}, errors.New("current session is not a pomodoro hard-limit session")
+	}
+	if runtimeState.CurrentSegmentDeferralSeconds > 0 {
+		return sharedtypes.TimerState{}, errors.New("break has already been deferred for this work segment")
 	}
 	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, sessionID)
 	if err != nil {
@@ -579,28 +639,35 @@ func (t *TimerService) ExtendCurrentSession(
 	if activeSegment == nil || activeSegment.SegmentType != sharedtypes.SessionSegmentWork {
 		return sharedtypes.TimerState{}, errors.New("current session is not in a work segment")
 	}
-	consumed := hardLimitConsumedSeconds(runtimeState, activeSession.StartTime, t.ctx.Now())
-	runtimeState.HardLimitElapsedOffsetSeconds = consumed
-	runtimeState.HardLimitElapsedStartedAt = t.ctx.Now()
 	runtimeState.HardLimitTotalSeconds += additionalSeconds
+	runtimeState.CurrentSegmentDeferralSeconds = additionalSeconds
 	runtimeState.HardLimitExpired = false
 	runtimeState.HardLimitExpiredAt = ""
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	emit(t.ctx, sharedtypes.EventTypeTimerExtended, sharedtypes.SessionEventPayload{SessionID: sessionID})
+	emit(t.ctx, sharedtypes.EventTypeTimerBreakDeferred, sharedtypes.SessionEventPayload{SessionID: sessionID})
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
 }
 
 func (t *TimerService) ExtendBySessions(
+	ctx context.Context,
+	additionalSessions int,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.extendBySessions(ctx, additionalSessions)
+}
+
+func (t *TimerService) extendBySessions(
 	ctx context.Context,
 	additionalSessions int,
 ) (sharedtypes.TimerState, error) {
@@ -640,6 +707,15 @@ func (t *TimerService) ExtendBySessions(
 }
 
 func (t *TimerService) ExtendConfigured(
+	ctx context.Context,
+	input shareddto.TimerExtendRequest,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.extendConfigured(ctx, input)
+}
+
+func (t *TimerService) extendConfigured(
 	ctx context.Context,
 	input shareddto.TimerExtendRequest,
 ) (sharedtypes.TimerState, error) {
@@ -752,10 +828,10 @@ func (t *TimerService) extendHardLimit(
 	if err := t.writeOrClearRuntimeState(runtimeState); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	if err := t.ScheduleNextBoundary(ctx); err != nil {
+	if err := t.scheduleNextBoundary(ctx); err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -835,6 +911,15 @@ func (t *TimerService) End(
 	ctx context.Context,
 	input SessionEndInput,
 ) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.end(ctx, input)
+}
+
+func (t *TimerService) end(
+	ctx context.Context,
+	input SessionEndInput,
+) (sharedtypes.TimerState, error) {
 	if strings.TrimSpace(valueOrEmpty(input.CommitMessage)) == "" {
 		return sharedtypes.TimerState{}, errors.New("commit message is required")
 	}
@@ -844,7 +929,7 @@ func (t *TimerService) End(
 	}
 	_ = runtimepkg.ClearTimerRuntimeState()
 	t.clearBoundary()
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -858,6 +943,12 @@ func (t *TimerService) End(
 }
 
 func (t *TimerService) RecoverBoundary(ctx context.Context) error {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.recoverBoundary(ctx)
+}
+
+func (t *TimerService) recoverBoundary(ctx context.Context) error {
 	t.clearBoundary()
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
@@ -873,10 +964,16 @@ func (t *TimerService) RecoverBoundary(ctx context.Context) error {
 	if runtimeState != nil && runtimeState.HasPreparedSegment() {
 		return nil
 	}
-	return t.ScheduleNextBoundary(ctx)
+	return t.scheduleNextBoundary(ctx)
 }
 
 func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.scheduleNextBoundary(ctx)
+}
+
+func (t *TimerService) scheduleNextBoundary(ctx context.Context) error {
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil || activeSession == nil {
 		return err
@@ -904,21 +1001,45 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if runtimeState != nil &&
+		runtimeState.CurrentSegmentDeferralSeconds > 0 &&
+		activeSegment.SegmentType == sharedtypes.SessionSegmentWork {
+		t.clearWarning()
+		remainingSeconds := deferredWorkBoundaryRemainingSeconds(
+			boundary,
+			runtimeState.CurrentSegmentDeferralSeconds,
+			activeSegment.StartTime,
+			t.ctx.Now(),
+		)
+		t.scheduleBoundary(time.Duration(remainingSeconds)*time.Second, func(generation uint64) {
+			_, _ = t.applyBoundaryTransitionIfCurrent(
+				context.Background(),
+				generation,
+				activeSession.ID,
+				activeSegment.SegmentType,
+				boundary,
+			)
+		})
+		return nil
+	}
+	t.scheduleBreakDeferralWarning(activeSession.ID, activeSegment, boundary)
 	delay, hardLimitFirst, ok := t.nextTimerDelay(activeSession.StartTime, boundary, runtimeState)
 	if !ok {
 		return nil
 	}
-	t.scheduleBoundary(delay, func() {
+	t.scheduleBoundary(delay, func(generation uint64) {
 		if hardLimitFirst {
-			_, _ = t.applyHardLimitExpiry(
+			_, _ = t.applyHardLimitExpiryIfCurrent(
 				context.Background(),
+				generation,
 				activeSession.ID,
 				activeSegment.SegmentType,
 			)
 			return
 		}
-		_, _ = t.applyBoundaryTransition(
+		_, _ = t.applyBoundaryTransitionIfCurrent(
 			context.Background(),
+			generation,
 			activeSession.ID,
 			activeSegment.SegmentType,
 			boundary,
@@ -927,7 +1048,50 @@ func (t *TimerService) ScheduleNextBoundary(ctx context.Context) error {
 	return nil
 }
 
+func (t *TimerService) applyBoundaryTransitionIfCurrent(
+	ctx context.Context,
+	generation uint64,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+	boundary *boundaryResult,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	if !t.isBoundaryGenerationCurrent(generation) {
+		return t.getState(ctx)
+	}
+	return t.applyBoundaryTransitionLocked(ctx, sessionID, currentType, boundary)
+}
+
+func validBreakDeferralSeconds(seconds int) bool {
+	return seconds == 30 || seconds == 60 || seconds == 120
+}
+
+func deferredWorkBoundaryRemainingSeconds(
+	boundary *boundaryResult,
+	deferralSeconds int,
+	segmentStart string,
+	now string,
+) int {
+	if boundary == nil {
+		return 0
+	}
+	total := boundary.AfterSeconds + max(0, deferralSeconds)
+	return max(0, total-elapsedSeconds(segmentStart, now))
+}
+
 func (t *TimerService) applyBoundaryTransition(
+	ctx context.Context,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+	boundary *boundaryResult,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.applyBoundaryTransitionLocked(ctx, sessionID, currentType, boundary)
+}
+
+func (t *TimerService) applyBoundaryTransitionLocked(
 	ctx context.Context,
 	sessionID string,
 	currentType sharedtypes.SessionSegmentType,
@@ -938,7 +1102,7 @@ func (t *TimerService) applyBoundaryTransition(
 		return sharedtypes.TimerState{}, err
 	}
 	if current == nil || current.SegmentType != currentType {
-		return t.GetState(ctx)
+		return t.getState(ctx)
 	}
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
@@ -958,6 +1122,9 @@ func (t *TimerService) applyBoundaryTransition(
 	}
 	if err := advanceHardLimitTimeline(runtimeState, currentType, t.ctx.Now()); err != nil {
 		return sharedtypes.TimerState{}, err
+	}
+	if runtimeState != nil && currentType == sharedtypes.SessionSegmentWork {
+		runtimeState.CurrentSegmentDeferralSeconds = 0
 	}
 	autoStart := shouldAutoStart(boundary.NextSegment, settings)
 	if runtimeState != nil && runtimeState.HasHardLimit() {
@@ -1000,7 +1167,7 @@ func (t *TimerService) applyBoundaryTransition(
 			return sharedtypes.TimerState{}, err
 		}
 	}
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -1011,7 +1178,7 @@ func (t *TimerService) applyBoundaryTransition(
 		t.boundaryPayload(currentType, boundary.NextSegment, autoStart),
 	)
 	if autoStart {
-		if err := t.ScheduleNextBoundary(ctx); err != nil {
+		if err := t.scheduleNextBoundary(ctx); err != nil {
 			return sharedtypes.TimerState{}, err
 		}
 	}
@@ -1019,6 +1186,30 @@ func (t *TimerService) applyBoundaryTransition(
 }
 
 func (t *TimerService) applyHardLimitExpiry(
+	ctx context.Context,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	return t.applyHardLimitExpiryLocked(ctx, sessionID, currentType)
+}
+
+func (t *TimerService) applyHardLimitExpiryIfCurrent(
+	ctx context.Context,
+	generation uint64,
+	sessionID string,
+	currentType sharedtypes.SessionSegmentType,
+) (sharedtypes.TimerState, error) {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
+	if !t.isBoundaryGenerationCurrent(generation) {
+		return t.getState(ctx)
+	}
+	return t.applyHardLimitExpiryLocked(ctx, sessionID, currentType)
+}
+
+func (t *TimerService) applyHardLimitExpiryLocked(
 	ctx context.Context,
 	sessionID string,
 	currentType sharedtypes.SessionSegmentType,
@@ -1036,7 +1227,7 @@ func (t *TimerService) applyHardLimitExpiry(
 		return sharedtypes.TimerState{}, err
 	}
 	if runtimeState == nil || !runtimeState.HasHardLimit() || runtimeState.HardLimitExpired {
-		return t.GetState(ctx)
+		return t.getState(ctx)
 	}
 	runtimeState.HardLimitElapsedOffsetSeconds = hardLimitConsumedSeconds(
 		runtimeState,
@@ -1059,7 +1250,7 @@ func (t *TimerService) applyHardLimitExpiry(
 		return sharedtypes.TimerState{}, err
 	}
 	t.clearBoundary()
-	state, err := t.GetState(ctx)
+	state, err := t.getState(ctx)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -1165,25 +1356,78 @@ func boundaryMessage(from, to sharedtypes.SessionSegmentType, started bool) stri
 	}
 }
 
-func (t *TimerService) scheduleBoundary(delay time.Duration, callback func()) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+func (t *TimerService) scheduleBoundary(delay time.Duration, callback func(uint64)) {
+	t.timerMu.Lock()
+	defer t.timerMu.Unlock()
 	if t.boundaryTimer != nil {
 		t.boundaryTimer.Stop()
 	}
-	t.boundaryTimer = time.AfterFunc(delay, callback)
+	t.boundaryGen++
+	generation := t.boundaryGen
+	t.boundaryTimer = time.AfterFunc(delay, func() { callback(generation) })
 }
 
 func (t *TimerService) clearBoundary() {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	t.timerMu.Lock()
+	defer t.timerMu.Unlock()
+	t.boundaryGen++
 	if t.boundaryTimer != nil {
 		t.boundaryTimer.Stop()
 		t.boundaryTimer = nil
 	}
+	if t.warningTimer != nil {
+		t.warningTimer.Stop()
+		t.warningTimer = nil
+	}
+}
+
+func (t *TimerService) isBoundaryGenerationCurrent(generation uint64) bool {
+	t.timerMu.Lock()
+	defer t.timerMu.Unlock()
+	return generation == t.boundaryGen
+}
+
+func (t *TimerService) clearWarning() {
+	t.timerMu.Lock()
+	defer t.timerMu.Unlock()
+	if t.warningTimer != nil {
+		t.warningTimer.Stop()
+		t.warningTimer = nil
+	}
+}
+
+func (t *TimerService) scheduleBreakDeferralWarning(
+	sessionID string,
+	activeSegment *sharedtypes.SessionSegment,
+	boundary *boundaryResult,
+) {
+	t.clearWarning()
+	if activeSegment == nil || boundary == nil ||
+		activeSegment.SegmentType != sharedtypes.SessionSegmentWork ||
+		(boundary.NextSegment != sharedtypes.SessionSegmentShortBreak &&
+			boundary.NextSegment != sharedtypes.SessionSegmentLongBreak) {
+		return
+	}
+	remaining := boundary.AfterSeconds - elapsedSeconds(activeSegment.StartTime, t.ctx.Now())
+	delay := max(0, remaining-5)
+	t.timerMu.Lock()
+	t.warningTimer = time.AfterFunc(time.Duration(delay)*time.Second, func() {
+		payload, _ := json.Marshal(sharedtypes.TimerBreakDeferralWarningPayload{
+			SessionID:        sessionID,
+			SecondsRemaining: 5,
+			SuggestedSeconds: 60,
+		})
+		t.ctx.Events.Emit(sharedtypes.KernelEvent{
+			Type:    sharedtypes.EventTypeTimerBreakDeferralWarning,
+			Payload: payload,
+		})
+	})
+	t.timerMu.Unlock()
 }
 
 func (t *TimerService) ClearBoundary() {
+	t.operationMu.Lock()
+	defer t.operationMu.Unlock()
 	t.clearBoundary()
 }
 
@@ -1449,9 +1693,8 @@ func hardLimitRemaining(
 		return 0, false
 	}
 	remaining := state.HardLimitTotalSeconds - hardLimitConsumedSeconds(state, sessionStart, now)
-	if remaining < 0 {
-		remaining = 0
-	}
+	remaining = max(0, remaining)
+
 	return remaining, true
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"slices"
 	"time"
 
 	"crona/kernel/internal/core"
@@ -369,14 +368,5 @@ func isProtectedAccountabilityDay(date string, settings *sharedtypes.CoreSetting
 	if settings == nil {
 		return false
 	}
-	if settings.AwayModeEnabled {
-		return true
-	}
-	if isRestWeekday(date, settings.RestWeekdays) {
-		return true
-	}
-	if slices.Contains(settings.RestSpecificDates, date) {
-		return true
-	}
-	return false
+	return settings.IsAwayDate(date)
 }

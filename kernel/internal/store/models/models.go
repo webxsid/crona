@@ -178,6 +178,7 @@ type CoreSettingsModel struct {
 	HabitSort             string `bun:"habit_sort,notnull,type:text"`
 	WeekStart             string `bun:"week_start,notnull,type:text"`
 	AwayModeEnabled       bool   `bun:"away_mode_enabled,notnull,type:integer"`
+	AwayDates             string `bun:"away_dates,notnull,type:text"`
 	FrozenStreakKinds     string `bun:"frozen_streak_kinds,notnull,type:text"`
 	RestWeekdays          string `bun:"rest_weekdays,notnull,type:text"`
 	RestSpecificDates     string `bun:"rest_specific_dates,notnull,type:text"`

@@ -62,6 +62,7 @@ type ContentState struct {
 	AwayModeActive      bool
 	RestModeMessage     string
 	RestModeDetail      string
+	HistoricalAwayDate  string
 
 	Repos                     []api.Repo
 	Streams                   []api.Stream
@@ -113,4 +114,11 @@ type ContentState struct {
 	KernelExecutablePath      string
 	KernelInfo                *api.KernelInfo
 	Settings                  *api.CoreSettings
+}
+
+func (s ContentState) AwayDates() []string {
+	if s.Settings == nil {
+		return nil
+	}
+	return s.Settings.AwayDates
 }

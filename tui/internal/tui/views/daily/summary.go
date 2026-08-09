@@ -111,8 +111,9 @@ func summaryBodyLines(theme types.Theme, state types.ContentState, width, height
 	lines = viewchrome.ClipSummaryLines(theme, lines, height)
 	calendarLines := []string(nil)
 	if hasSelectedDate {
+		awayDates := state.AwayDates()
 		mode := viewcalendar.ModeForWidth(summaryInnerW)
-		calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode)
+		calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode, awayDates)
 		leftWidth, _ = viewcalendar.ColumnWidthsForMode(
 			summaryInnerW,
 			viewcalendar.MaxLineWidth(calendarLines),
@@ -139,7 +140,7 @@ func summaryBodyLines(theme types.Theme, state types.ContentState, width, height
 				habitMeta,
 			)
 			lines = viewchrome.ClipSummaryLines(theme, lines, height)
-			calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode)
+			calendarLines = renderCalendarForMode(theme, rawDate, state.WeekStart, len(lines), mode, awayDates)
 		}
 		if leftWidth == summaryInnerW {
 			calendarLines = nil
@@ -197,6 +198,7 @@ func renderCalendarForMode(
 	weekStart sharedtypes.WeekStart,
 	maxLines int,
 	mode viewcalendar.Mode,
+	awayDates []string,
 ) []string {
 	if mode == viewcalendar.ModeAuto {
 		return nil
@@ -207,6 +209,7 @@ func renderCalendarForMode(
 		MaxLines:     maxLines,
 		WeekStart:    weekStart,
 		Mode:         mode,
+		AwayDates:    awayDates,
 	})
 }
 

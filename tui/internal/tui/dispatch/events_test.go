@@ -33,7 +33,7 @@ func TestTimerExtendedDismissesMatchingHardLimitDialog(t *testing.T) {
 }
 
 func TestTimerActionEventsRefreshTimer(t *testing.T) {
-	for _, eventType := range []string{"timer.advance", "timer.extend_current_session"} {
+	for _, eventType := range []string{"timer.advance", "timer.defer_break"} {
 		state, cmd := HandleEvent(
 			EventState{CurrentDash: "2026-07-14", Cursor: map[uistate.Pane]int{}},
 			testEventDeps(),
@@ -45,6 +45,19 @@ func TestTimerActionEventsRefreshTimer(t *testing.T) {
 		if state.Timer != nil {
 			t.Fatalf("%s: expected event to defer timer replacement to LoadTimer", eventType)
 		}
+	}
+}
+
+func TestSettingsChangedReloadsSettings(t *testing.T) {
+	called := false
+	deps := testEventDeps()
+	deps.LoadSettings = func() tea.Cmd {
+		called = true
+		return func() tea.Msg { return nil }
+	}
+	_, cmd := HandleEvent(EventState{}, deps, api.KernelEvent{Type: sharedtypes.EventTypeSettingsChanged})
+	if cmd == nil || !called {
+		t.Fatal("expected settings.changed to reload settings")
 	}
 }
 
@@ -156,6 +169,7 @@ func testEventDeps() EventDeps {
 		LoadContext:              noop,
 		LoadTimer:                noop,
 		LoadAlertStatus:          noop,
+		LoadSettings:             noop,
 		LoadUpdateStatus:         noop,
 		LoadOps:                  func(int) tea.Cmd { return noop() },
 		TickAfter:                func(int) tea.Cmd { return noop() },

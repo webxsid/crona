@@ -60,6 +60,38 @@ func TestCompanionBrokerReplacesActiveSubscriber(t *testing.T) {
 	}
 }
 
+func TestCompanionBrokerOnlyForwardsOfferedActions(t *testing.T) {
+	broker := newCompanionBroker()
+	deliveries, unsubscribe := broker.subscribe(context.Background(), sharedtypes.AlertDeliveryCapability{
+		ClientID:      "mac",
+		Notifications: true,
+	})
+	defer unsubscribe()
+	result, offered := broker.offer(sharedtypes.AlertDelivery{
+		ID:                  "delivery-action",
+		DeliverNotification: true,
+		Actions: []sharedtypes.AlertDeliveryAction{{
+			ID:        "timer.defer_break",
+			SessionID: "session-1",
+		}},
+	})
+	if !offered {
+		t.Fatal("expected action delivery to be offered")
+	}
+	<-deliveries
+	if !broker.acknowledge(sharedtypes.AlertDeliveryAck{
+		DeliveryID:    "delivery-action",
+		ActionID:      "timer.fabricated",
+		ActionSeconds: 120,
+	}) {
+		t.Fatal("expected delivery acknowledgement")
+	}
+	accepted := <-result
+	if accepted.actionID != "" || accepted.sessionID != "" || accepted.actionSeconds != 0 {
+		t.Fatalf("expected fabricated action to be discarded, got %+v", accepted)
+	}
+}
+
 func TestCompanionAcknowledgementSuppressesLegacyDelivery(t *testing.T) {
 	ctx := context.Background()
 	coreCtx := testCoreContext(t, ctx)

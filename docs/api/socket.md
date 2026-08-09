@@ -122,7 +122,7 @@ Request DTO names below refer to types in [`shared/dto/requests.go`](../../share
 | `alerts.test_sound` | `dto.Empty` | `dto.OKResponse` | Plays the selected bundled alert preset when supported. |
 | `alerts.notify` | `types.AlertRequest` | `dto.OKResponse` | Delivers one structured alert request through the local daemon alerts layer. |
 | `alerts.delivery.subscribe` | `types.AlertDeliveryCapability` | `alert.delivery` stream | Claims native alert delivery while the stream remains connected. Delivered alerts can include companion actions when the backend has something actionable to offer. |
-| `alerts.delivery.ack` | `types.AlertDeliveryAck` | `dto.OKResponse` | Acknowledges notification and sound delivery independently. |
+| `alerts.delivery.ack` | `types.AlertDeliveryAck` | `dto.OKResponse` | Acknowledges notification and sound delivery independently; actionable companion deliveries may also include `actionId` and `actionSeconds`. Break deferral accepts the companion preference values `30`, `60`, or `120` seconds only. Empty action ACKs decline deferral, while a missing ACK triggers notification fallback. |
 | `alerts.reminders.list` | `dto.Empty` | reminder list | Lists scheduled local alert reminders. |
 | `alerts.reminders.create` | `dto.AlertReminderCreateRequest` | reminder object | Creates a scheduled reminder rule. |
 | `alerts.reminders.update` | `dto.AlertReminderUpdateRequest` | reminder object | Updates one scheduled reminder rule. |
@@ -229,7 +229,7 @@ Streak behavior notes:
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
 | `dashboard.window` | `dto.DashboardWindowQuery` | dashboard window object | Shared dashboard data for a range and optional scope. |
-| `dashboard.focus_score` | `dto.DashboardSummaryQuery` | focus score summary | Focus scoring summary. |
+| `dashboard.focus_score` | `dto.DashboardSummaryQuery` | focus score summary | Focus scoring summary; `targetWorkedSeconds` is the sum of estimates on issues due in the requested date range, or `0` when none are estimated. |
 | `dashboard.distribution` | `dto.DashboardSummaryQuery` | distribution summary | Time distribution summary. |
 | `dashboard.goal_progress` | `dto.DashboardSummaryQuery` | goal progress summary | Estimate and execution progress. |
 
@@ -282,6 +282,7 @@ Export behavior notes:
 | `timer.pause` | `dto.Empty` | timer/session state | Pauses the timer. |
 | `timer.resume` | `dto.Empty` | timer/session state | Resumes the timer. |
 | `timer.extend` | `dto.TimerExtendRequest` | timer/session state | Extends an active hard-limit timer. |
+| `timer.defer_break` | `dto.TimerDeferBreakRequest` | timer/session state | Daemon-authoritative automatic Pomodoro break deferral; normally invoked by acknowledging the daemon’s break-deferral alert action. |
 | `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. |
 
 Timer start behavior notes:
@@ -290,6 +291,7 @@ Timer start behavior notes:
 - Hard-limit starts can set `hardLimitKind` to `pomodoro` or `countdown`. Missing values remain `pomodoro` for compatibility; countdowns use only `hardLimitTotalSeconds` and accept duration-only extensions through `additionalSeconds`.
 - If `issueId` is omitted, the local daemon resolves the current active context issue.
 - Inactivity alerts use core settings for enablement, first-alert threshold, and repeat interval. The default is enabled, 60 minutes to first alert, and 60 minutes between repeats.
+- `timer.defer_break` accepts 30, 60, or 120 seconds exactly once per active Pomodoro work segment. Timer mutations and boundary callbacks are serialized; a successful deferral reschedules and invalidates the previous boundary callback.
 
 ### Context
 
@@ -311,6 +313,11 @@ Timer start behavior notes:
 | `settings.get` | `dto.GetCoreSettingRequest` | single setting result | Gets one core setting. |
 | `settings.patch` | `dto.PatchCoreSettingRequest` | settings object | Patches one setting. |
 | `settings.put` | `dto.PutCoreSettingsRequest` | settings object | Replaces multiple settings at once. |
+| `settings.away_mode` | `dto.AwayModeRequest` | `dto.OKResponse` | Daemon-owned live away toggle; enabling records the daemon's current logical date in canonical `awayDates`. `awayModeEnabled` and `awayDates` cannot be changed through generic settings patch/put. |
+
+The `awayDates` settings field is a sorted, deduplicated historical list. Manual away mode records the current logical date immediately. Configured weekday and explicit-date rules are recorded only when their logical date occurs. Removing a rule does not remove dates already recorded, and current rules are not evaluated retroactively by historical calculations.
+
+Successful settings mutations emit `settings.changed` with a `keys` array containing the affected core-setting keys. Connected clients should reload settings when this event arrives.
 
 Day-boundary settings use explicit schedule objects:
 
@@ -401,11 +408,19 @@ Typical payload:
 - `timer.state`
 - `timer.boundary`
 - `timer.tick`
+- `timer.break_deferral_warning`
+- `timer.break_deferred`
 
 Payload notes:
 - `timer.boundary` uses `types.TimerBoundaryPayload`
 - `timer.tick` uses `types.TimerTickPayload`
 - `timer.state` carries the current timer/session state snapshot
+- `timer.break_deferral_warning` uses `types.TimerBreakDeferralWarningPayload` and includes the five-second warning, session ID, and suggested deferral duration.
+- `timer.break_deferred` uses `types.SessionEventPayload` and is emitted after the daemon applies a companion action acknowledgement.
+
+### Settings Events
+
+- `settings.changed` uses `types.SettingsChangedPayload` and includes the changed core-setting keys.
 
 ### Context Events
 

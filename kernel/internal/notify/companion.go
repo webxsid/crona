@@ -8,8 +8,11 @@ import (
 )
 
 type companionDeliveryResult struct {
+	sessionID            string
 	notificationAccepted bool
 	soundAccepted        bool
+	actionID             string
+	actionSeconds        int
 }
 
 type companionSubscriber struct {
@@ -35,6 +38,7 @@ type companionBroker struct {
 
 type pendingCompanionDelivery struct {
 	result              chan companionDeliveryResult
+	actions             map[string]sharedtypes.AlertDeliveryAction
 	notificationOffered bool
 	soundOffered        bool
 }
@@ -105,6 +109,7 @@ func (b *companionBroker) offer(
 	case b.active.deliveries <- delivery:
 		b.pending[delivery.ID] = pendingCompanionDelivery{
 			result:              result,
+			actions:             deliveryActionsByID(delivery.Actions),
 			notificationOffered: delivery.DeliverNotification,
 			soundOffered:        delivery.PlaySound,
 		}
@@ -124,11 +129,34 @@ func (b *companionBroker) acknowledge(ack sharedtypes.AlertDeliveryAck) bool {
 	if !ok {
 		return false
 	}
+	actionID := ""
+	actionSeconds := 0
+	sessionID := ""
+	if ack.ActionID != "" {
+		if action, offered := pending.actions[ack.ActionID]; offered {
+			actionID = action.ID
+			actionSeconds = ack.ActionSeconds
+			sessionID = action.SessionID
+		}
+	}
 	pending.result <- companionDeliveryResult{
+		sessionID:            sessionID,
 		notificationAccepted: pending.notificationOffered && ack.NotificationAccepted,
 		soundAccepted:        pending.soundOffered && ack.SoundAccepted,
+		actionID:             actionID,
+		actionSeconds:        actionSeconds,
 	}
 	return true
+}
+
+func deliveryActionsByID(actions []sharedtypes.AlertDeliveryAction) map[string]sharedtypes.AlertDeliveryAction {
+	result := make(map[string]sharedtypes.AlertDeliveryAction, len(actions))
+	for _, action := range actions {
+		if action.ID != "" {
+			result[action.ID] = action
+		}
+	}
+	return result
 }
 
 func (b *companionBroker) abandon(deliveryID string) {
