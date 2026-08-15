@@ -35,5 +35,5 @@ Thanks for contributing to Crona.
 
 ## Where To Discuss Things
 
-- Bugs: [GitHub Issues](https://github.com/webxsid/crona/issues)
+- Bugs and feedback: [UserJot](https://crona.userjot.com/)
 - Questions and ideas: [GitHub Discussions](https://github.com/webxsid/crona/discussions)

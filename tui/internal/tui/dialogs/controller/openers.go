@@ -226,8 +226,20 @@ func (s Snapshot) OpenConfirmWipeData() State {
 	return OpenConfirmWipeData(s.Dialog)
 }
 
-func (s Snapshot) OpenIssueStatus(status string) State {
-	return OpenIssueStatus(s.Dialog, status)
+func (s Snapshot) OpenIssueStatus(
+	status, title, repoName, streamName string,
+	estimateMinutes *int,
+	workedSeconds int,
+) State {
+	return OpenIssueStatus(
+		s.Dialog,
+		status,
+		title,
+		repoName,
+		streamName,
+		estimateMinutes,
+		workedSeconds,
+	)
 }
 
 func (s Snapshot) OpenIssueStatusNote(status, label string, required bool) State {

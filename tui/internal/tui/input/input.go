@@ -139,10 +139,9 @@ type Deps struct {
 	WipeRuntimeData                 func() tea.Cmd
 	OpenRollupStartDateDialog       func(*State) bool
 	OpenRollupEndDateDialog         func(*State) bool
-	OpenSupportIssueURL             func() tea.Cmd
-	OpenSupportDiscussionsURL       func() tea.Cmd
+	OpenSupportFeedbackRoadmapURL   func() tea.Cmd
 	OpenSupportReleasesURL          func() tea.Cmd
-	OpenSupportRoadmapURL           func() tea.Cmd
+	OpenSupportDocumentationURL     func() tea.Cmd
 	CopySupportDiagnostics          func(State) tea.Cmd
 	GenerateSupportBundle           func(State) tea.Cmd
 	OpenViewJumpDialog              func(*State) bool
@@ -601,14 +600,7 @@ func newRouter(deps Deps) *router {
 		uistate.ViewSupport,
 		"o",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportIssueURL(), true
-		},
-	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"d",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportDiscussionsURL(), true
+			return s, deps.OpenSupportFeedbackRoadmapURL(), true
 		},
 	)
 	r.RegisterView(
@@ -622,7 +614,7 @@ func newRouter(deps Deps) *router {
 		uistate.ViewSupport,
 		"g",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportRoadmapURL(), true
+			return s, deps.OpenSupportDocumentationURL(), true
 		},
 	)
 	r.RegisterView(

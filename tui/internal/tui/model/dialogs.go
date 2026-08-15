@@ -1083,11 +1083,10 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			}
 			return commands.SetRollupRange(currentStart, date)
 		},
-		WipeRuntimeData:           func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
-		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
-		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
-		OpenSupportReleasesURL:    func() tea.Cmd { return m.openSupportReleasesURL() },
-		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
+		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
+		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },
+		OpenSupportReleasesURL:        func() tea.Cmd { return m.openSupportReleasesURL() },
+		OpenSupportDocumentationURL:   func() tea.Cmd { return m.openSupportDocumentationURL() },
 		OpenExternalPath: func(path string) tea.Cmd {
 			return commands.OpenExternalPath(path)
 		},

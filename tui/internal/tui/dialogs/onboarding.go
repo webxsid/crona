@@ -31,7 +31,7 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			rows,
 			centerLine(
 				theme.StyleDim.Render(
-					"Your work stays on this machine. You can change these choices later.",
+					"Your work remains on this machine. You can change these choices later.",
 				),
 				contentWidth,
 			),
@@ -67,18 +67,18 @@ func renderOnboardingScreen(theme Theme, state controllerpkg.State) string {
 			"",
 			centerLine(
 				theme.StyleNormal.Render(
-					"Daily work, focus sessions, habits, and reports stay connected.",
+					"Daily work, focus sessions, habits, and reports remain connected.",
 				),
 				contentWidth,
 			),
 			centerLine(
 				theme.StyleNormal.Render(
-					"Wellbeing and momentum stay visible without extra setup.",
+					"Wellbeing and momentum remain visible without extra setup.",
 				),
 				contentWidth,
 			),
 			centerLine(
-				theme.StyleNormal.Render("Everything stays local, searchable, and quick."),
+				theme.StyleNormal.Render("Everything remains local, searchable, and quick."),
 				contentWidth,
 			),
 			"",

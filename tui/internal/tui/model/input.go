@@ -333,7 +333,14 @@ func (m Model) inputDeps() inputpkg.Deps {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()
 			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
-				next = next.withDialogState(next.dialogSnapshot().OpenIssueStatus(issue.Status))
+				next = next.withDialogState(next.dialogSnapshot().OpenIssueStatus(
+					issue.Status,
+					issue.Title,
+					issue.RepoName,
+					issue.StreamName,
+					issue.Estimate,
+					issue.Worked,
+				))
 				*state = next.inputState()
 				return true
 			}
@@ -631,13 +638,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
-		WipeRuntimeData:           func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
-		OpenSupportIssueURL:       func() tea.Cmd { return m.openSupportIssueURL() },
-		OpenSupportDiscussionsURL: func() tea.Cmd { return m.openSupportDiscussionsURL() },
-		OpenSupportReleasesURL:    func() tea.Cmd { return m.openSupportReleasesURL() },
-		OpenSupportRoadmapURL:     func() tea.Cmd { return m.openSupportRoadmapURL() },
-		CopySupportDiagnostics:    func(state inputpkg.State) tea.Cmd { return m.copySupportDiagnosticsCmd(state) },
-		GenerateSupportBundle:     func(state inputpkg.State) tea.Cmd { return m.generateSupportBundleCmd(state) },
+		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
+		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },
+		OpenSupportReleasesURL:        func() tea.Cmd { return m.openSupportReleasesURL() },
+		OpenSupportDocumentationURL:   func() tea.Cmd { return m.openSupportDocumentationURL() },
+		CopySupportDiagnostics:        func(state inputpkg.State) tea.Cmd { return m.copySupportDiagnosticsCmd(state) },
+		GenerateSupportBundle:         func(state inputpkg.State) tea.Cmd { return m.generateSupportBundleCmd(state) },
 		OpenViewJumpDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openViewJumpDialog()

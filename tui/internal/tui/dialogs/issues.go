@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	issuecore "crona/tui/internal/tui/views/issuecore"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -80,7 +81,35 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorYellow, rows)
 	case "issue_status":
-		rows := []string{theme.StylePaneTitle.Render("Set Issue Status"), ""}
+		contextRow := renderIssueContextColumns(
+			theme,
+			state.Width,
+			64,
+			state.RepoName,
+			state.StreamName,
+		)
+		statusSummary := theme.StyleDim.Render("Current status") + "\n" +
+			theme.StyleHeader.Render(plainIssueStatus(state.IssueStatus))
+		workSummary := theme.StyleDim.Render("Effort") + "\n" +
+			theme.StyleHeader.Render(
+				issuecore.IssueWorkedEstimateSummary(
+					state.IssueWorkedSeconds,
+					state.IssueEstimateMins,
+				),
+			)
+		metaRow := renderInputColumns(state.Width, 64, statusSummary, workSummary)
+		rows := []string{
+			theme.StylePaneTitle.Render("Set Issue Status"),
+			"",
+			theme.StyleDim.Render("Issue"),
+			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
+			"",
+			contextRow,
+			"",
+			metaRow,
+			"",
+			theme.StyleDim.Render("Change status to"),
+		}
 		if len(state.StatusItems) == 0 {
 			rows = appendDialogFooter(
 				theme,
@@ -99,7 +128,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 			}
 			rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] set   [esc] cancel")
 		}
-		return modal(theme, state.Width, 48, theme.ColorYellow, rows)
+		return modal(theme, state.Width, 64, theme.ColorYellow, rows)
 	case "issue_status_note":
 		title := map[string]string{"blocked": "Block Issue", "in_review": "Send To Review", "done": "Complete Issue", "abandoned": "Abandon Issue"}[state.IssueStatus]
 		if title == "" {

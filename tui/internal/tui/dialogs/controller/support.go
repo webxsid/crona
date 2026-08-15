@@ -142,15 +142,9 @@ func OpenBetaSupport(state State) State {
 	choices := []menuChoice{
 		{
 			Key:    "o",
-			Label:  "Report Bug",
-			Value:  "open_support_issue",
-			Detail: "Open the prefilled GitHub issue flow.",
-		},
-		{
-			Key:    "d",
-			Label:  "Discussions",
-			Value:  "open_support_discussions",
-			Detail: "Open GitHub Discussions for questions and ideas.",
+			Label:  "Feedback & Roadmap",
+			Value:  "open_support_feedback_roadmap",
+			Detail: "Share feedback, report bugs, and explore the roadmap on UserJot.",
 		},
 		{
 			Key:    "r",
@@ -160,9 +154,9 @@ func OpenBetaSupport(state State) State {
 		},
 		{
 			Key:    "g",
-			Label:  "Roadmap",
-			Value:  "open_support_roadmap",
-			Detail: "Open the public roadmap document.",
+			Label:  "Documentation",
+			Value:  "open_support_documentation",
+			Detail: "Open Crona's guides and reference documentation.",
 		},
 		{
 			Key:    "c",
@@ -402,7 +396,7 @@ func updateSupportBundleResult(state State, msg tea.KeyMsg) (State, *Action, str
 				Path: state.SupportBundlePath,
 			}, ""
 	case "g":
-		return clearDialogError(state), &Action{Kind: "open_support_issue"}, ""
+		return clearDialogError(state), &Action{Kind: "open_support_feedback_roadmap"}, ""
 	default:
 		return clearDialogError(state), nil, ""
 	}

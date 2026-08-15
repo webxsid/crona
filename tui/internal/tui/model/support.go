@@ -39,22 +39,16 @@ func (m Model) supportDiagnosticsInput() helperpkg.SupportDiagnosticsInput {
 	}
 }
 
-func (m Model) openSupportIssueURL() tea.Cmd {
-	return commands.OpenExternalURL(
-		helperpkg.SupportBugReportURL(m.supportDiagnosticsInput(), m.dialogSupportBundlePath),
-	)
-}
-
-func (m Model) openSupportDiscussionsURL() tea.Cmd {
-	return commands.OpenExternalURL(helperpkg.SupportDiscussionsURL())
+func (m Model) openSupportFeedbackRoadmapURL() tea.Cmd {
+	return commands.OpenExternalURL(helperpkg.SupportFeedbackRoadmapURL())
 }
 
 func (m Model) openSupportReleasesURL() tea.Cmd {
 	return commands.OpenExternalURL(helperpkg.SupportReleasesURL())
 }
 
-func (m Model) openSupportRoadmapURL() tea.Cmd {
-	return commands.OpenExternalURL(helperpkg.SupportRoadmapURL())
+func (m Model) openSupportDocumentationURL() tea.Cmd {
+	return commands.OpenExternalURL(helperpkg.SupportDocumentationURL())
 }
 
 func (m Model) copySupportDiagnosticsCmd(state inputpkg.State) tea.Cmd {

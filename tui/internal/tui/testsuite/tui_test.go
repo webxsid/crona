@@ -1032,7 +1032,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "github.com/webxsid/crona/issues", "github.com/webxsid/crona/discussions", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/roadmap.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable: Homebrew formula mismatch:", "Beta builds expose [f9] support actions", "Diagnostics", "Releases and discussions track updates"} {
+	for _, want := range []string{"Support", "crona.userjot.com", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/README.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable: Homebrew formula mismatch:", "Beta builds expose [f9] support actions", "Diagnostics", "Share feedback and explore the roadmap on UserJot"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -1044,7 +1044,7 @@ func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[o]", "report bug", "[d]", "open discussions", "[r]", "open releases", "[g]", "open roadmap", "[c]", "copy diagnostics", "[b]", "generate bundle"} {
+	for _, want := range []string{"[o]", "feedback & roadmap", "[r]", "open releases", "[g]", "open documentation", "[c]", "copy diagnostics", "[b]", "generate bundle"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}

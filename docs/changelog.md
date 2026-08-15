@@ -2,6 +2,19 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.5] - 2026-08-11
+
+Crona v1.9.0-beta.5 improves TUI support navigation and adds useful issue context to status changes.
+
+### Changed
+
+- The Support view and beta support menu now link to Crona's documentation index instead of the roadmap.
+- The Set Issue Status dialog now shows the selected issue title, repo, stream, current status, and worked-versus-estimate details.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.3`.
+
 ## [1.9.0-beta.4] - 2026-08-09
 
 Crona v1.9.0-beta.4 makes same-day ad-hoc away mode reversible while preserving immutable historical away dates.

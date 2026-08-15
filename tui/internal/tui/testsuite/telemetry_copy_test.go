@@ -20,7 +20,7 @@ func TestTelemetryDialogCopyUsesProductLanguage(t *testing.T) {
 		"Let's get things set up.",
 		"What to expect",
 		"Keep issues, sessions, habits, reports, and wellbeing in one place.",
-		"Your work stays on this machine",
+		"Your work remains on this machine",
 		"change these choices later",
 	} {
 		if !strings.Contains(onboarding, want) {

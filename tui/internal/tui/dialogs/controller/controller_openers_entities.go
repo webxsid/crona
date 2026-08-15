@@ -387,9 +387,20 @@ func newDescriptionInput(width, height int) textarea.Model {
 	return input
 }
 
-func OpenIssueStatus(state State, status string) State {
+func OpenIssueStatus(
+	state State,
+	status, title, repoName, streamName string,
+	estimateMinutes *int,
+	workedSeconds int,
+) State {
 	state = Close(state)
 	state.Kind = "issue_status"
+	state.IssueStatus = status
+	state.ViewName = title
+	state.RepoName = repoName
+	state.StreamName = streamName
+	state.IssueEstimateMins = estimateMinutes
+	state.IssueWorkedSeconds = workedSeconds
 	state.StatusItems = sharedtypes.AllowedIssueStatusTransitions(sharedtypes.IssueStatus(status))
 	return state
 }

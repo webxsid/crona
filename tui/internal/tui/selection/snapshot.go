@@ -56,7 +56,12 @@ type Snapshot struct {
 type IssueSelection struct {
 	ID          int64
 	StreamID    int64
+	Title       string
+	RepoName    string
+	StreamName  string
 	Status      string
+	Estimate    *int
+	Worked      int
 	TodoForDate *string
 }
 
@@ -451,12 +456,21 @@ func SelectedIssueDetail(s Snapshot) (IssueSelection, bool) {
 	if !ok {
 		return IssueSelection{}, false
 	}
-	return IssueSelection{
+	selection := IssueSelection{
 		ID:          issue.ID,
 		StreamID:    issue.StreamID,
+		Title:       issue.Title,
 		Status:      string(issue.Status),
+		Estimate:    issue.EstimateMinutes,
+		Worked:      issue.WorkedSeconds,
 		TodoForDate: issue.TodoForDate,
-	}, true
+	}
+	if meta := IssueMetaByID(s, issue.ID); meta != nil {
+		selection.RepoName = meta.RepoName
+		selection.StreamName = meta.StreamName
+		selection.Worked = max(selection.Worked, meta.WorkedSeconds)
+	}
+	return selection, true
 }
 
 func SelectedHabit(s Snapshot) (*api.Habit, bool) {

@@ -68,10 +68,9 @@ type Deps struct {
 	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
 	SetRollupEndDate               func(currentStart, date string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
-	OpenSupportIssueURL            func() tea.Cmd
-	OpenSupportDiscussionsURL      func() tea.Cmd
+	OpenSupportFeedbackRoadmapURL  func() tea.Cmd
 	OpenSupportReleasesURL         func() tea.Cmd
-	OpenSupportRoadmapURL          func() tea.Cmd
+	OpenSupportDocumentationURL    func() tea.Cmd
 	OpenExternalPath               func(path string) tea.Cmd
 	CopyText                       func(text, message string) tea.Cmd
 	ErrorCmd                       func(error) tea.Cmd
@@ -331,20 +330,20 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		func(action dialogstate.Action) tea.Cmd { return deps.WipeRuntimeData() },
 	)
 	r.Register(
-		"open_support_issue",
-		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportIssueURL() },
+		"open_support_feedback_roadmap",
+		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportFeedbackRoadmapURL() },
 	)
 	r.Register(
-		"open_support_discussions",
-		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportDiscussionsURL() },
+		"open_support_feedback_roadmap",
+		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportFeedbackRoadmapURL() },
 	)
 	r.Register(
 		"open_support_releases",
 		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportReleasesURL() },
 	)
 	r.Register(
-		"open_support_roadmap",
-		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportRoadmapURL() },
+		"open_support_documentation",
+		func(action dialogstate.Action) tea.Cmd { return deps.OpenSupportDocumentationURL() },
 	)
 	r.Register(
 		"open_support_bundle_folder",

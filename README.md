@@ -98,10 +98,10 @@ Operational references:
 
 ## Support And Updates
 
-Public support surfaces live on GitHub:
+Public support is available through these links:
 
-- Bugs: [Issues](https://github.com/webxsid/crona/issues)
-- Help and ideas: [Discussions](https://github.com/webxsid/crona/discussions)
+- Bugs: [UserJot](https://crona.userjot.com/)
+- Feedback and roadmap: [UserJot](https://crona.userjot.com/)
 - Release updates: [Releases](https://github.com/webxsid/crona/releases)
 - Release process: [docs/release.md](docs/release.md)
 

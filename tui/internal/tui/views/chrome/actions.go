@@ -243,10 +243,9 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "support" {
 		return []string{
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" report bug"),
-			theme.StyleHeader.Render("[d]") + theme.StyleDim.Render(" open discussions"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" feedback & roadmap"),
 			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" open releases"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open roadmap"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open documentation"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
 			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" generate bundle"),
 		}
@@ -532,10 +531,10 @@ func compactActionLabel(key, label string) string {
 		return "release"
 	case "open migration guide":
 		return "guide"
-	case "open roadmap":
-		return "roadmap"
-	case "open discussions":
-		return "discuss"
+	case "open documentation":
+		return "documentation"
+	case "feedback & roadmap":
+		return "feedback"
 	case "change context":
 		return "context"
 	case "create issue", "create habit", "create momentum", "create":
