@@ -4,16 +4,24 @@ All notable changes to **Crona** are documented here.
 
 ## [1.9.0-beta.5] - 2026-08-11
 
-Crona v1.9.0-beta.5 improves TUI support navigation and adds useful issue context to status changes.
+Crona v1.9.0-beta.5 improves TUI support navigation, expands dashboard IPC, advances the local protocol to 1.4, and makes configured day boundaries reliable across live clients.
 
 ### Changed
 
 - The Support view and beta support menu now link to Crona's documentation index instead of the roadmap.
 - The Set Issue Status dialog now shows the selected issue title, repo, stream, current status, and worked-versus-estimate details.
+- The dashboard now provides a date-range focus-score endpoint for calendar and range views.
+- The TUI refreshes all date-scoped surfaces together at the configured Start of Day, including issues, daily plans, habits, summaries, wellbeing, Momentum, and rollups.
+- TUI logical-date state is reconciled from daemon health after reconnects when a boundary event was missed.
+
+### Fixed
+
+- Day-boundary settings or persistence failures no longer stop the daemon scheduler; boundary delivery retries instead.
+- Delayed scheduler wake-ups catch up the logical Start of Day transition and notify connected clients.
 
 ### Compatibility
 
-- The local IPC protocol remains at `1.3`.
+- The local IPC protocol is now `1.4`.
 
 ## [1.9.0-beta.4] - 2026-08-09
 

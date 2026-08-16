@@ -69,3 +69,18 @@ func TestNextBoundarySkipsDisabledSchedule(t *testing.T) {
 		t.Fatalf("unexpected disabled schedule candidate: %s %+v", kind, schedule)
 	}
 }
+
+func TestStartOfDayBoundaryResolvesLogicalDateWithWeekdayOverride(t *testing.T) {
+	location := time.FixedZone("Test", 0)
+	schedule := sharedtypes.DayBoundarySchedule{
+		Enabled:     true,
+		DefaultTime: "08:00",
+		WeekdayOverrides: map[int]string{
+			3: "06:00",
+		},
+	}
+	got, ok := startOfDayBoundary("2026-07-29", schedule, location)
+	if !ok || !got.Equal(time.Date(2026, 7, 29, 6, 0, 0, 0, location)) {
+		t.Fatalf("start-of-day boundary = %s, ok=%t", got, ok)
+	}
+}

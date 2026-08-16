@@ -331,6 +331,7 @@ Observed error behavior:
 | `metrics.streaks_lifetime` | Lifetime streaks through date | `dto.DailyCheckInQuery` | `types.StreakSummary` | None | TUI | Yes |
 | `dashboard.window` | Daily plan window summary | `dto.DashboardWindowQuery` | `types.DashboardWindowSummary` | None | TUI | Yes |
 | `dashboard.focus_score` | Focus score summary; target comes from estimates on issues due in the requested range | `dto.DashboardSummaryQuery` | `types.FocusScoreSummary` | None | TUI, companion | Yes |
+| `dashboard.focus_score_range` | One focus-score result per date in an inclusive range | `dto.DateRangeQuery` | `types.FocusScoreRangeDay[]` | None | TUI | Yes |
 | `dashboard.distribution` | Time distribution summary | `dto.DashboardSummaryQuery` | `types.TimeDistributionSummary` | None | TUI | Yes |
 | `dashboard.goal_progress` | Goal progress summary | `dto.DashboardSummaryQuery` | `types.GoalProgressSummary` | None | TUI | Yes |
 | `export.glance` | Summary export | `dto.ExportReportRequest` | `types.ExportReportResult` | Writes artifact or clipboard | TUI, CLI | Yes |

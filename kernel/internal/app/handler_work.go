@@ -413,6 +413,10 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.DashboardSummaryQuery) (any, error) {
 			return corecommands.ComputeFocusScoreSummary(ctx, h.core, input)
 		}), true
+	case protocol.MethodDashboardFocusScoreRange:
+		return handle(req, func(input shareddto.DateRangeQuery) (any, error) {
+			return corecommands.ComputeFocusScoreRange(ctx, h.core, input)
+		}), true
 	case protocol.MethodDashboardDistribution:
 		return handle(req, func(input shareddto.DashboardSummaryQuery) (any, error) {
 			return corecommands.ComputeTimeDistributionSummary(ctx, h.core, input)

@@ -174,6 +174,34 @@ func ComputeFocusScoreSummary(
 	}, nil
 }
 
+func ComputeFocusScoreRange(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.DateRangeQuery,
+) ([]sharedtypes.FocusScoreRangeDay, error) {
+	if err := validateRange(input.Start, input.End); err != nil {
+		return nil, err
+	}
+
+	days := make([]sharedtypes.FocusScoreRangeDay, 0)
+	for date := range eachDate(input.Start, input.End) {
+		summary, err := ComputeFocusScoreSummary(ctx, c, shareddto.DashboardSummaryQuery{
+			Start: date,
+			End:   date,
+		})
+		if err != nil {
+			return nil, err
+		}
+		days = append(days, sharedtypes.FocusScoreRangeDay{
+			Date:    date,
+			Score:   summary.Score,
+			Level:   summary.Level,
+			HasData: summary.WorkedSeconds > 0 || summary.RestSeconds > 0 || summary.SessionCount > 0 || summary.TargetWorkedSeconds > 0,
+		})
+	}
+	return days, nil
+}
+
 func ComputeTimeDistributionSummary(
 	ctx context.Context,
 	c *core.Context,

@@ -446,8 +446,20 @@ func HandleMessage(
 		}
 		return state, historyCmd, true
 	case commands.HealthLoadedMsg:
+		previousDate := ""
+		if state.Health != nil {
+			previousDate = strings.TrimSpace(state.Health.CurrentDate)
+		}
 		state.Health = msg.Health
-		return state, nil, true
+		if msg.Health == nil || strings.TrimSpace(msg.Health.CurrentDate) == "" {
+			return state, nil, true
+		}
+		date := strings.TrimSpace(msg.Health.CurrentDate)
+		if previousDate == date && state.DashboardDate != "" {
+			return state, nil, true
+		}
+		cmd := applyLogicalDate(&state, date, previousDate, deps)
+		return state, cmd, true
 	case commands.AlertStatusLoadedMsg:
 		state.AlertStatus = msg.Status
 		if deps.ClampFiltered != nil {
@@ -773,6 +785,36 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		cmds = append(cmds, deps.LoadSummarySnapshot(state.SummaryDate))
 	}
 	return tea.Batch(cmds...)
+}
+
+func applyLogicalDate(state *MessageState, date, previousDate string, deps MessageDeps) tea.Cmd {
+	if previousDate == "" || state.DashboardDate == "" || state.DashboardDate == previousDate {
+		state.DashboardDate = date
+	}
+	if previousDate == "" || state.SummaryDate == "" || state.SummaryDate == previousDate {
+		state.SummaryDate = date
+	}
+	if previousDate == "" || state.RollupEndDate == "" || state.RollupEndDate == previousDate {
+		state.RollupEndDate = date
+		state.RollupStartDate = shiftISODate(date, -6)
+	}
+	if previousDate == "" || state.WellbeingDate == "" || state.WellbeingDate == previousDate {
+		state.WellbeingDate = date
+	}
+	if previousDate == "" || state.MomentumDate == "" || state.MomentumDate == previousDate {
+		state.MomentumDate = date
+	}
+	return tea.Batch(
+		deps.LoadAllIssues(),
+		deps.LoadAllHabits(),
+		deps.LoadDailySummary(date),
+		deps.LoadDailyPlan(date),
+		deps.LoadDueHabits(date),
+		deps.LoadDailyStreaks(date),
+		deps.LoadWellbeing(date, state.WellbeingWindowDays),
+		deps.LoadMomentumRange(date, state.MomentumWindowDays),
+		deps.LoadRollupSummaries(shiftISODate(date, -6), date),
+	)
 }
 
 func isExportDialog(kind string) bool {

@@ -1112,6 +1112,13 @@ type FocusScoreSummary struct {
 	TargetWorkedSeconds int             `json:"targetWorkedSeconds"`
 }
 
+type FocusScoreRangeDay struct {
+	Date    string          `json:"date"`
+	Score   int             `json:"score"`
+	Level   FocusScoreLevel `json:"level"`
+	HasData bool            `json:"hasData"`
+}
+
 type DistributionGroup string
 
 const (

@@ -3,6 +3,7 @@ package dispatch
 import (
 	"encoding/json"
 	"slices"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -47,6 +48,7 @@ type EventDeps struct {
 	LoadAllIssues            func() tea.Cmd
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
+	LoadDailyPlan            func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
 	LoadDailyStreaks         func(date string) tea.Cmd
 	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
@@ -268,9 +270,41 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(cmds...)
 	case "ops.created":
 		return state, deps.LoadOps(state.CurrentOpsLim)
+	case sharedtypes.EventTypeDayStart:
+		var payload sharedtypes.DayBoundaryEventPayload
+		if err := json.Unmarshal(event.Payload, &payload); err != nil || payload.LogicalDate == "" {
+			return state, nil
+		}
+		date := payload.LogicalDate
+		cmds := []tea.Cmd{
+			deps.LoadAllIssues(),
+			deps.LoadAllHabits(),
+			deps.LoadDailySummary(date),
+			deps.LoadDailyPlan(date),
+			deps.LoadDueHabits(date),
+			deps.LoadDailyStreaks(date),
+			deps.LoadWellbeing(date, state.WellbeingWindowDays),
+			deps.LoadMomentumRange(date, state.MomentumWindowDays),
+			deps.LoadRollupSummaries(shiftISODate(date, -6), date),
+		}
+		if state.Context != nil && state.Context.StreamID != nil {
+			cmds = append(cmds,
+				deps.LoadIssues(*state.Context.StreamID),
+				deps.LoadHabits(*state.Context.StreamID),
+			)
+		}
+		return state, tea.Batch(cmds...)
 	default:
 		return state, nil
 	}
+}
+
+func shiftISODate(date string, days int) string {
+	parsed, err := time.Parse(time.DateOnly, date)
+	if err != nil {
+		return date
+	}
+	return parsed.AddDate(0, 0, days).Format(time.DateOnly)
 }
 
 func settingsKeysAffectStreaks(keys []sharedtypes.CoreSettingsKey) bool {

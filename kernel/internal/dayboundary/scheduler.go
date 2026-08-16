@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 	"time"
@@ -96,7 +97,11 @@ func (s *Scheduler) Run(ctx context.Context) error {
 	for {
 		settings, err := s.settings(ctx)
 		if err != nil {
-			return err
+			log.Printf("crona: day-boundary settings read failed: %v", err)
+			if !waitForRetry(ctx, s.refresh, time.Minute) {
+				return ctx.Err()
+			}
+			continue
 		}
 		now := s.now()
 		location := s.location()
@@ -107,9 +112,22 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		if settings == nil {
 			settings = &sharedtypes.CoreSettings{StartOfDay: sharedtypes.DefaultStartOfDaySchedule(), EndOfDay: sharedtypes.DefaultEndOfDaySchedule()}
 		}
-		s.setCurrent(LogicalDate(now, settings.StartOfDay))
+		logicalDate := LogicalDate(now, settings.StartOfDay)
+		previousDate := s.CurrentDate()
+		s.setCurrent(logicalDate)
+		if previousDate != "" && previousDate != logicalDate {
+			if boundary, ok := startOfDayBoundary(logicalDate, settings.StartOfDay, location); ok {
+				if err := s.fireWithRetry(ctx, sharedtypes.DayBoundaryStart, boundary, settings.StartOfDay, location, settings); err != nil {
+					return err
+				}
+			}
+		}
 		if err := s.recordDateIfChanged(ctx, s.CurrentDate(), settings); err != nil {
-			return err
+			log.Printf("crona: day-boundary date recording failed: %v", err)
+			if !waitForRetry(ctx, s.refresh, time.Minute) {
+				return ctx.Err()
+			}
+			continue
 		}
 		next, kind, schedule := nextBoundary(now, settings)
 		if next.IsZero() {
@@ -134,10 +152,59 @@ func (s *Scheduler) Run(ctx context.Context) error {
 			timer.Stop()
 			continue
 		case <-timer.C:
-			if err := s.fire(ctx, kind, next, schedule, location, settings); err != nil {
+			if err := s.fireWithRetry(ctx, kind, next, schedule, location, settings); err != nil {
 				return err
 			}
 		}
+	}
+}
+
+func (s *Scheduler) fireWithRetry(
+	ctx context.Context,
+	kind sharedtypes.DayBoundaryKind,
+	at time.Time,
+	schedule sharedtypes.DayBoundarySchedule,
+	location *time.Location,
+	settings *sharedtypes.CoreSettings,
+) error {
+	for {
+		err := s.fire(ctx, kind, at, schedule, location, settings)
+		if err == nil {
+			return nil
+		}
+		log.Printf("crona: day-boundary delivery failed; retrying: %v", err)
+		timer := time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func startOfDayBoundary(date string, schedule sharedtypes.DayBoundarySchedule, location *time.Location) (time.Time, bool) {
+	parsed, err := time.Parse(time.DateOnly, date)
+	if err != nil || !schedule.Enabled {
+		return time.Time{}, false
+	}
+	minutes, err := schedule.MinutesForWeekday(parsed.Weekday())
+	if err != nil {
+		return time.Time{}, false
+	}
+	return time.Date(parsed.Year(), parsed.Month(), parsed.Day(), minutes/60, minutes%60, 0, 0, location), true
+}
+
+func waitForRetry(ctx context.Context, refresh <-chan struct{}, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-refresh:
+		return true
+	case <-timer.C:
+		return true
 	}
 }
 

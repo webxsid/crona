@@ -96,6 +96,32 @@ func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
 	}
 }
 
+func TestDayStartReloadsAllDateScopedSurfaces(t *testing.T) {
+	called := map[string]bool{}
+	deps := testEventDeps()
+	deps.LoadAllIssues = func() tea.Cmd { return trackedEventCommand(called, "issues")() }
+	deps.LoadAllHabits = func() tea.Cmd { return trackedEventCommand(called, "habits")() }
+	deps.LoadDailySummary = func(string) tea.Cmd { return trackedEventCommand(called, "summary")() }
+	deps.LoadDailyPlan = func(string) tea.Cmd { return trackedEventCommand(called, "plan")() }
+	deps.LoadDueHabits = func(string) tea.Cmd { return trackedEventCommand(called, "due")() }
+	deps.LoadDailyStreaks = func(string) tea.Cmd { return trackedEventCommand(called, "streaks")() }
+	deps.LoadWellbeing = func(string, int) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
+	deps.LoadMomentumRange = func(string, int) tea.Cmd { return trackedEventCommand(called, "momentum")() }
+	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10"})
+	_, cmd := HandleEvent(EventState{WellbeingWindowDays: 7, MomentumWindowDays: 30}, deps, api.KernelEvent{
+		Type: sharedtypes.EventTypeDayStart, Payload: payload,
+	})
+	if cmd == nil {
+		t.Fatal("expected day.start to schedule refresh commands")
+	}
+	for _, name := range []string{"issues", "habits", "summary", "plan", "due", "streaks", "wellbeing", "momentum", "rollup"} {
+		if !called[name] {
+			t.Fatalf("expected %s reload after day.start", name)
+		}
+	}
+}
+
 func trackedEventCommand(called map[string]bool, name string) func() tea.Cmd {
 	return func() tea.Cmd {
 		called[name] = true
@@ -202,6 +228,7 @@ func testEventDeps() EventDeps {
 		LoadAllIssues:            noop,
 		LoadAllIssuesSelecting:   func(int64) tea.Cmd { return noop() },
 		LoadDailySummary:         func(string) tea.Cmd { return noop() },
+		LoadDailyPlan:            func(string) tea.Cmd { return noop() },
 		LoadDueHabits:            func(string) tea.Cmd { return noop() },
 		LoadDailyStreaks:         func(string) tea.Cmd { return noop() },
 		LoadHabitHistory:         func(*api.ActiveContext, *int64) tea.Cmd { return noop() },

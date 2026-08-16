@@ -195,6 +195,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 			return commands.LoadAllIssuesSelecting(m.client, selectedIssueID)
 		},
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadDailyPlan:    func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
 		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
 		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
@@ -231,14 +232,24 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		var payload sharedtypes.DayBoundaryEventPayload
 		if err := json.Unmarshal(event.Payload, &payload); err == nil && payload.LogicalDate != "" {
 			date := payload.LogicalDate
-			return next, tea.Batch(
-				cmd,
-				commands.LoadDailySummary(m.client, date),
-				commands.LoadDueHabits(m.client, date),
-				commands.LoadSummarySnapshot(m.client, date),
-				commands.LoadDailyStreaks(m.client, date),
-				commands.LoadWellbeingWindow(m.client, date, next.currentWellbeingWindowDays()),
-			)
+			previousDate := payload.DateBefore
+			if next.dashboardDate == "" || next.dashboardDate == previousDate {
+				next.dashboardDate = date
+			}
+			if next.summaryDate == "" || next.summaryDate == previousDate {
+				next.summaryDate = date
+			}
+			if next.rollupEndDate == "" || next.rollupEndDate == previousDate {
+				next.rollupEndDate = date
+				next.rollupStartDate = shiftISODate(date, -6)
+			}
+			if next.wellbeingDate == "" || next.wellbeingDate == previousDate {
+				next.wellbeingDate = date
+			}
+			if next.momentumDate == "" || next.momentumDate == previousDate {
+				next.momentumDate = date
+			}
+			return next, cmd
 		}
 	}
 	return next, cmd
