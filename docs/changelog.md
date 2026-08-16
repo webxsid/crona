@@ -2,6 +2,19 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.6] - 2026-08-16
+
+Crona v1.9.0-beta.6 is a TUI startup hotfix following the protocol 1.4 and day-boundary work in beta.5.
+
+### Fixed
+
+- The TUI no longer panics during startup when reconciling the daemon's logical date from `health.get`.
+- Logical-date refresh dependencies are wired before the initial health response can trigger date-scoped reloads.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.4`.
+
 ## [1.9.0-beta.5] - 2026-08-11
 
 Crona v1.9.0-beta.5 improves TUI support navigation, expands dashboard IPC, advances the local protocol to 1.4, and makes configured day boundaries reliable across live clients.

@@ -473,6 +473,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		LoadRepos:     func() tea.Cmd { return commands.LoadRepos(m.client) },
 		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadAllHabits: func() tea.Cmd { return commands.LoadAllHabits(m.client) },
 		LoadStreams:   func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
 		LoadIssues:    func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
 		LoadHabits:    func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
