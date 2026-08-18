@@ -89,6 +89,7 @@ type Deps struct {
 	LoadWellbeing                   func(string, int) tea.Cmd
 	CurrentWellbeingDate            func(State) string
 	OpenCheckInDialog               func(*State) bool
+	OpenSummaryCalendar             func(*State) bool
 	OpenHelpDialog                  func(*State) bool
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
@@ -392,6 +393,16 @@ func newRouter(deps Deps) *router {
 		uistate.ViewSummary,
 		"g",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetSummaryDate(s, deps) },
+	)
+	r.RegisterView(
+		uistate.ViewSummary,
+		"c",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenSummaryCalendar == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenSummaryCalendar(&s)
+		},
 	)
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)

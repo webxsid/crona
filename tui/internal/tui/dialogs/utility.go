@@ -59,6 +59,17 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			"[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back",
 		)
 		return modal(theme, state.Width, 46, theme.ColorCyan, rows)
+	case "summary_calendar":
+		rows := []string{
+			theme.StylePaneTitle.Render("Summary Calendar"),
+			"",
+			theme.StyleHeader.Render(helperpkg.FormatDisplayDate(state.DateCursorValue, nil)),
+			theme.StyleDim.Render(state.DateMonth),
+			"",
+			state.DateGrid,
+		}
+		rows = appendDialogFooter(theme, state, rows, "[←/→/↑/↓] move   [,/.] month   [g] today   [enter] choose   [esc] back")
+		return modal(theme, state.Width, 100, theme.ColorCyan, rows)
 	case "create_checkin", "edit_checkin":
 		title := "New Check-In"
 		border := theme.ColorCyan

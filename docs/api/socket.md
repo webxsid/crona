@@ -77,7 +77,7 @@ Use these files as the canonical contract:
 - Before `1.0.0`, use the shared Go types and method constants as the source of truth over any prose doc.
 - Check GUI compatibility against `kernel.info.get -> protocolVersion`.
 - `protocolVersion` is independent from the Crona release version and only changes when the local IPC contract or its client-visible semantics change.
-- The current local IPC protocol is `1.4`.
+- The current local IPC protocol is `1.5`.
 
 `kernel.info.get` is the expected GUI handshake:
 
@@ -230,8 +230,8 @@ Streak behavior notes:
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
 | `dashboard.window` | `dto.DashboardWindowQuery` | dashboard window object | Shared dashboard data for a range and optional scope. |
-| `dashboard.focus_score` | `dto.DashboardSummaryQuery` | focus score summary | Focus scoring summary; `targetWorkedSeconds` is the sum of estimates on issues due in the requested date range, or `0` when none are estimated. |
-| `dashboard.focus_score_range` | `dto.DateRangeQuery` | array of `types.FocusScoreRangeDay` | One focus-score entry per calendar date in the inclusive requested range. Each entry includes the date, score, level, and whether the day has score data. |
+| `dashboard.focus_score` | `dto.DashboardSummaryQuery` | focus score summary | Focus scoring summary; `targetWorkedSeconds` is the sum of estimates on issues due in the requested date range, or `0` when none are estimated. The response also includes a cause-oriented `reason` (`no_activity`, `under_target`, `needs_breaks`, `balanced`, or `overextended`). |
+| `dashboard.focus_score_range` | `dto.DateRangeQuery` | array of `types.FocusScoreRangeDay` | One focus-score entry per calendar date in the inclusive requested range. Each entry includes the date, score, level, cause-oriented reason, and whether the day has score data. |
 | `dashboard.distribution` | `dto.DashboardSummaryQuery` | distribution summary | Time distribution summary. |
 | `dashboard.goal_progress` | `dto.DashboardSummaryQuery` | goal progress summary | Estimate and execution progress. |
 
@@ -253,12 +253,14 @@ The response contains an entry for every date, including dates without activity:
     "date": "2026-08-01",
     "score": 82,
     "level": "strong",
+    "reason": "balanced",
     "hasData": true
   },
   {
     "date": "2026-08-02",
     "score": 0,
     "level": "low",
+    "reason": "no_activity",
     "hasData": false
   }
 ]

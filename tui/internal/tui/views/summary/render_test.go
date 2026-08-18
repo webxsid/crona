@@ -40,6 +40,18 @@ func TestRenderHistoricalSummaryOmitsLiveTimer(t *testing.T) {
 	}
 }
 
+func TestRenderSummaryIncludesStatsMetrics(t *testing.T) {
+	state := summaryTestState()
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 82, Level: sharedtypes.FocusScoreLevelStrong, Reason: sharedtypes.FocusScoreReasonBalanced, TargetWorkedSeconds: 3600}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 2400, RestSeconds: 600, SessionCount: 3, TotalIssues: 4, CompletedIssues: 2, AbandonedIssues: 1, HabitDueCount: 3, HabitCompletedCount: 2, HabitFailedCount: 1}
+	rendered := ansi.Strip(Render(types.Theme{}, state))
+	for _, want := range []string{"Stats", "Focus 82/100", "worked 40m", "rest 10m", "issues  completed 2", "habits  done 2"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
 func summaryTestState() types.ContentState {
 	estimate := 30
 	target := 20

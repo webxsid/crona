@@ -235,15 +235,52 @@ func LoadSummarySnapshot(c *api.Client, date string) tea.Cmd {
 		if err != nil {
 			return ErrMsg{Err: err, Operation: "load summary streaks"}
 		}
+		focus, err := c.GetFocusScoreSummary(date, date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary focus score"}
+		}
+		metricsDays, err := c.GetMetricsRange(date, date)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary metrics"}
+		}
+		var metrics *api.DailyMetricsDay
+		if len(metricsDays) > 0 {
+			metrics = &metricsDays[0]
+		}
+		monthStart := date[:7] + "-01"
+		monthEnd := shiftISODate(monthStart, 40)
+		monthEnd = monthEnd[:7] + "-01"
+		monthEnd = shiftISODate(monthEnd, -1)
+		scores, err := c.GetFocusScoreRange(monthStart, monthEnd)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary calendar scores"}
+		}
+		calendarScores := make(map[string]api.FocusScoreRangeDay, len(scores))
+		for _, score := range scores {
+			calendarScores[score.Date] = score
+		}
 		return SummarySnapshotLoadedMsg{Snapshot: &api.SummarySnapshot{
-			Date:    date,
-			Issues:  summary,
-			Habits:  habits,
-			Plan:    plan,
-			CheckIn: checkIn,
-			Rollup:  rollup,
-			Streaks: streaks,
+			Date:           date,
+			Issues:         summary,
+			Habits:         habits,
+			Plan:           plan,
+			CheckIn:        checkIn,
+			Rollup:         rollup,
+			Streaks:        streaks,
+			Focus:          focus,
+			Metrics:        metrics,
+			CalendarScores: calendarScores,
 		}}
+	}
+}
+
+func LoadSummaryCalendarScores(c *api.Client, start, end string) tea.Cmd {
+	return func() tea.Msg {
+		scores, err := c.GetFocusScoreRange(start, end)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "load summary calendar scores"}
+		}
+		return SummaryCalendarScoresLoadedMsg{Start: start, End: end, Scores: scores}
 	}
 }
 

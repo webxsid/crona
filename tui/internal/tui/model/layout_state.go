@@ -202,8 +202,15 @@ func (m Model) dialogRenderState() dialogstate.State {
 		state = dialogstate.PopulateDatePresentation(
 			dialogControllerTheme(layoutpkg.DialogTheme()),
 			state,
-			m.currentDashboardDate(),
+			m.currentSummaryDate(),
 		)
+	}
+	if m.dialog == "summary_calendar" {
+		state.CalendarScores = nil
+		if m.summarySnapshot != nil {
+			state.CalendarScores = m.summarySnapshot.CalendarScores
+		}
+		state = dialogstate.PopulateSummaryCalendarPresentation(dialogControllerTheme(layoutpkg.DialogTheme()), state, m.currentLogicalDate())
 	}
 	return state
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -31,6 +32,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 
 	lines = append(lines, "", renderKPIBand(theme, state, innerWidth))
+	lines = append(lines, "", renderStats(theme, snapshot, innerWidth))
 	if state.Width >= wideSummaryWidth {
 		leftWidth, rightWidth := viewhelpers.SplitHorizontal(innerWidth, 42, 32, innerWidth*3/5)
 		left := strings.Join(renderAgenda(theme, state, leftWidth), "\n")
@@ -58,7 +60,7 @@ func PaneLineCount(state types.ContentState) int {
 	if state.SummarySnapshot == nil {
 		return 1
 	}
-	return 18 + len(state.SummarySnapshot.Habits) + issueCount(state.SummarySnapshot.Issues)
+	return 28 + len(state.SummarySnapshot.Habits) + issueCount(state.SummarySnapshot.Issues)
 }
 
 func scrollSummaryLines(lines []string, offset, height int, moreLabel string) []string {
@@ -134,6 +136,34 @@ func renderKPIBand(theme types.Theme, state types.ContentState, width int) strin
 	}
 	return theme.StyleHeader.Render("At a glance") + "\n" +
 		lipgloss.JoinHorizontal(lipgloss.Top, rendered...)
+}
+
+func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) string {
+	if snapshot == nil {
+		return ""
+	}
+	lines := []string{theme.StyleHeader.Render("Stats")}
+	if snapshot.Focus == nil || snapshot.Metrics == nil {
+		return strings.Join(append(lines, theme.StyleDim.Render("Stats unavailable.")), "\n")
+	}
+	focus := snapshot.Focus
+	metrics := snapshot.Metrics
+	reason := strings.ReplaceAll(string(focus.Reason), "_", " ")
+	level := strings.Title(strings.ReplaceAll(string(focus.Level), "_", " "))
+	lines = append(lines,
+		fmt.Sprintf("%s  %s  %s", theme.StylePaneTitle.Render(fmt.Sprintf("Focus %d/100", focus.Score)), theme.StyleNormal.Render(level), theme.StyleDim.Render(reason)),
+		fmt.Sprintf("worked %s  ·  rest %s  ·  sessions %d  ·  target %s",
+			helperpkg.FormatCompactDurationSeconds(metrics.WorkedSeconds),
+			helperpkg.FormatCompactDurationSeconds(metrics.RestSeconds),
+			metrics.SessionCount,
+			helperpkg.FormatCompactDurationSeconds(focus.TargetWorkedSeconds)),
+		fmt.Sprintf("issues  completed %d  ·  abandoned %d  ·  planned %d",
+			metrics.CompletedIssues, metrics.AbandonedIssues, metrics.TotalIssues),
+		fmt.Sprintf("habits  done %d  ·  due %d  ·  failed %d",
+			metrics.HabitCompletedCount, metrics.HabitDueCount, metrics.HabitFailedCount),
+		renderBar(theme, metrics.WorkedSeconds, 0, max(1, focus.TargetWorkedSeconds), max(8, width-2), theme.ColorCyan),
+	)
+	return strings.Join(lines, "\n")
 }
 
 type kpi struct {

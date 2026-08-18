@@ -87,6 +87,7 @@ type State struct {
 	DateHeader                     string
 	DateMonth                      string
 	DateGrid                       string
+	CalendarScores                 map[string]api.FocusScoreRangeDay
 	ProtectionStep                 int
 	ProtectionCursor               int
 	ProtectionStreaks              []sharedtypes.StreakKind

@@ -238,6 +238,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenSummaryCalendar: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(next.dialogSnapshot().OpenSummaryCalendar())
+			*state = next.inputState()
+			return true
+		},
 		OpenHelpDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openHelpDialog()

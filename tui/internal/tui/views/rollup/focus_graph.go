@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
@@ -237,9 +238,13 @@ func renderFocusXAxis(
 
 func renderFocusSubtitle(state types.ContentState, width int) string {
 	line := "logged bars with estimated reference line"
-	scoreText := ""
+	focusText := ""
 	if state.WeeklyFocusScore != nil {
-		scoreText = fmt.Sprintf("   focus %d/100", state.WeeklyFocusScore.Score)
+		focusText = fmt.Sprintf(
+			"   focus %d/100   %s",
+			state.WeeklyFocusScore.Score,
+			focusReasonText(state.WeeklyFocusScore.Reason),
+		)
 	}
 	if state.GoalProgress != nil {
 		diffSeconds := state.GoalProgress.TotalActualSeconds - (state.GoalProgress.TotalEstimateMinutes * 60)
@@ -252,14 +257,29 @@ func renderFocusSubtitle(state types.ContentState, width int) string {
 		}
 		line = fmt.Sprintf(
 			"logged bars with estimate line%s   delta %s   %s",
-			scoreText,
+			focusText,
 			signedCompactHoursFromSeconds(diffSeconds),
 			status,
 		)
-	} else if scoreText != "" {
-		line = "logged bars with estimate line" + scoreText
+	} else if focusText != "" {
+		line = "logged bars with estimate line" + focusText
 	}
 	return truncateFocusLine(line, width)
+}
+
+func focusReasonText(reason sharedtypes.FocusScoreReason) string {
+	switch reason {
+	case sharedtypes.FocusScoreReasonNoActivity:
+		return "ready to begin"
+	case sharedtypes.FocusScoreReasonUnderTarget:
+		return "build momentum"
+	case sharedtypes.FocusScoreReasonNeedsBreaks:
+		return "take a break"
+	case sharedtypes.FocusScoreReasonOverextended:
+		return "overextended"
+	default:
+		return "steady rhythm"
+	}
 }
 
 func compactHoursFromMinutes(minutes int) string {

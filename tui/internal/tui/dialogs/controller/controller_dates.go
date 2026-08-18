@@ -93,9 +93,11 @@ func updateDatePicker(
 	case "down":
 		return shiftDatePicker(state, 0, 0, 7), nil, ""
 	case ",":
-		return shiftDatePicker(state, 0, -1, 0), nil, ""
+		state = shiftDatePicker(state, 0, -1, 0)
+		return state, summaryCalendarMonthAction(state), ""
 	case ".":
-		return shiftDatePicker(state, 0, 1, 0), nil, ""
+		state = shiftDatePicker(state, 0, 1, 0)
+		return state, summaryCalendarMonthAction(state), ""
 	case "g":
 		today := currentDate
 		if isIssueDueDatePicker(state) {
@@ -118,6 +120,83 @@ func updateDatePicker(
 		), nil, ""
 	}
 	return state, nil, ""
+}
+
+func summaryCalendarMonthAction(state State) *Action {
+	month := DialogMonth(state, state.DateCursorValue)
+	start := month.Format("2006-01-02")
+	end := month.AddDate(0, 1, -1).Format("2006-01-02")
+	return &Action{Kind: "load_summary_calendar_month", StartDate: start, EndDate: end}
+}
+
+func updateSummaryCalendar(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "enter", " ":
+		selected := state.DateCursorValue
+		if current, err := time.Parse("2006-01-02", currentDate); err == nil {
+			if candidate, err := time.Parse("2006-01-02", selected); err == nil && candidate.After(current) {
+				state.ErrorMessage = "Future dates are not available"
+				return state, nil, ""
+			}
+		}
+		return Close(state), &Action{Kind: "set_summary_date", DueDate: ValueToPointer(selected)}, ""
+	case "left":
+		return summaryCalendarMove(state, currentDate, -1), nil, ""
+	case "right":
+		return summaryCalendarMove(state, currentDate, 1), nil, ""
+	case "up":
+		return summaryCalendarMove(state, currentDate, -7), nil, ""
+	case "down":
+		return summaryCalendarMove(state, currentDate, 7), nil, ""
+	case ",":
+		state = summaryCalendarShiftMonth(state, currentDate, -1)
+		return state, summaryCalendarMonthAction(state), ""
+	case ".":
+		state = summaryCalendarShiftMonth(state, currentDate, 1)
+		return state, summaryCalendarMonthAction(state), ""
+	case "g":
+		return OpenSummaryCalendar(state, currentDate), nil, ""
+	}
+	return state, nil, ""
+}
+
+func summaryCalendarMove(state State, currentDate string, days int) State {
+	month := DialogMonth(state, currentDate)
+	candidate := DialogDate(state, currentDate).AddDate(0, 0, days)
+	return summaryCalendarSetValidDate(state, candidate, month, currentDate)
+}
+
+func summaryCalendarShiftMonth(state State, currentDate string, months int) State {
+	currentMonth := DialogMonth(state, currentDate)
+	targetMonth := currentMonth.AddDate(0, months, 0)
+	today, _ := time.Parse("2006-01-02", currentDate)
+	if !today.IsZero() && targetMonth.After(time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())) {
+		return state
+	}
+	day := DialogDate(state, currentDate).Day()
+	candidate := time.Date(targetMonth.Year(), targetMonth.Month(), day, 0, 0, 0, 0, targetMonth.Location())
+	return summaryCalendarSetValidDate(state, candidate, targetMonth, currentDate)
+}
+
+func summaryCalendarSetValidDate(state State, candidate, month time.Time, currentDate string) State {
+	monthStart := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, month.Location())
+	monthEnd := monthStart.AddDate(0, 1, -1)
+	today, _ := time.Parse("2006-01-02", currentDate)
+	maxDate := monthEnd
+	if !today.IsZero() && monthStart.Year() == today.Year() && monthStart.Month() == today.Month() {
+		maxDate = today
+	}
+	if candidate.Before(monthStart) {
+		candidate = monthStart
+	}
+	if candidate.After(maxDate) {
+		candidate = maxDate
+	}
+	state.DateCursorValue = candidate.Format("2006-01-02")
+	state.DateMonthValue = monthStart.Format("2006-01-02")
+	return state
 }
 
 func ternaryDir(key string) int {

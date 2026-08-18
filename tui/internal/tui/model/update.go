@@ -113,6 +113,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.summarySnapshot = msg.Snapshot
 		return m, nil
+	case commands.SummaryCalendarScoresLoadedMsg:
+		if m.summarySnapshot == nil {
+			return m, nil
+		}
+		if m.summarySnapshot.CalendarScores == nil {
+			m.summarySnapshot.CalendarScores = map[string]api.FocusScoreRangeDay{}
+		}
+		for _, score := range msg.Scores {
+			m.summarySnapshot.CalendarScores[score.Date] = score
+		}
+		return m, nil
 	}
 	state, cmd, handled := dispatchpkg.HandleMessage(
 		m.dispatchMessageState(),

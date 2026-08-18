@@ -156,6 +156,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "summary" {
 		return []string{
+			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" calendar"),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
 			theme.StyleHeader.Render("[↑/↓]") + theme.StyleDim.Render(" scroll"),

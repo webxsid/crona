@@ -160,11 +160,13 @@ func ComputeFocusScoreSummary(
 	case score >= 45:
 		level = sharedtypes.FocusScoreLevelSteady
 	}
+	reason := focusScoreReason(rollup.WorkedSeconds, targetTotal, restRatio, level)
 	return &sharedtypes.FocusScoreSummary{
 		StartDate:           input.Start,
 		EndDate:             input.End,
 		Score:               score,
 		Level:               level,
+		Reason:              reason,
 		WorkedSeconds:       rollup.WorkedSeconds,
 		RestSeconds:         rollup.RestSeconds,
 		SessionCount:        rollup.SessionCount,
@@ -172,6 +174,22 @@ func ComputeFocusScoreSummary(
 		Days:                rollup.Days,
 		TargetWorkedSeconds: targetTotal,
 	}, nil
+}
+
+func focusScoreReason(workedSeconds, targetSeconds int, restRatio float64, level sharedtypes.FocusScoreLevel) sharedtypes.FocusScoreReason {
+	if level == sharedtypes.FocusScoreLevelOverextended {
+		return sharedtypes.FocusScoreReasonOverextended
+	}
+	if workedSeconds == 0 {
+		return sharedtypes.FocusScoreReasonNoActivity
+	}
+	if restRatio < 0.15 {
+		return sharedtypes.FocusScoreReasonNeedsBreaks
+	}
+	if targetSeconds > 0 && workedSeconds < targetSeconds {
+		return sharedtypes.FocusScoreReasonUnderTarget
+	}
+	return sharedtypes.FocusScoreReasonBalanced
 }
 
 func ComputeFocusScoreRange(
@@ -196,6 +214,7 @@ func ComputeFocusScoreRange(
 			Date:    date,
 			Score:   summary.Score,
 			Level:   summary.Level,
+			Reason:  summary.Reason,
 			HasData: summary.WorkedSeconds > 0 || summary.RestSeconds > 0 || summary.SessionCount > 0 || summary.TargetWorkedSeconds > 0,
 		})
 	}

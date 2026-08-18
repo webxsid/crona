@@ -21,6 +21,16 @@ const (
 	IssueStatusAbandoned  IssueStatus = "abandoned"
 )
 
+type FocusScoreReason string
+
+const (
+	FocusScoreReasonNoActivity   FocusScoreReason = "no_activity"
+	FocusScoreReasonUnderTarget  FocusScoreReason = "under_target"
+	FocusScoreReasonNeedsBreaks  FocusScoreReason = "needs_breaks"
+	FocusScoreReasonBalanced     FocusScoreReason = "balanced"
+	FocusScoreReasonOverextended FocusScoreReason = "overextended"
+)
+
 type StreamVisibility string
 
 const (
@@ -796,6 +806,8 @@ type HabitDailyItem struct {
 type Issue struct {
 	ID              int64       `json:"id"`
 	StreamID        int64       `json:"streamId"`
+	RepoName        string      `json:"repoName,omitempty"`
+	StreamName      string      `json:"streamName,omitempty"`
 	Title           string      `json:"title"`
 	Description     *string     `json:"description,omitempty"`
 	Status          IssueStatus `json:"status"`
@@ -1100,23 +1112,25 @@ const (
 )
 
 type FocusScoreSummary struct {
-	StartDate           string          `json:"startDate"`
-	EndDate             string          `json:"endDate"`
-	Score               int             `json:"score"`
-	Level               FocusScoreLevel `json:"level"`
-	WorkedSeconds       int             `json:"workedSeconds"`
-	RestSeconds         int             `json:"restSeconds"`
-	SessionCount        int             `json:"sessionCount"`
-	FocusDays           int             `json:"focusDays"`
-	Days                int             `json:"days"`
-	TargetWorkedSeconds int             `json:"targetWorkedSeconds"`
+	StartDate           string           `json:"startDate"`
+	EndDate             string           `json:"endDate"`
+	Score               int              `json:"score"`
+	Level               FocusScoreLevel  `json:"level"`
+	Reason              FocusScoreReason `json:"reason"`
+	WorkedSeconds       int              `json:"workedSeconds"`
+	RestSeconds         int              `json:"restSeconds"`
+	SessionCount        int              `json:"sessionCount"`
+	FocusDays           int              `json:"focusDays"`
+	Days                int              `json:"days"`
+	TargetWorkedSeconds int              `json:"targetWorkedSeconds"`
 }
 
 type FocusScoreRangeDay struct {
-	Date    string          `json:"date"`
-	Score   int             `json:"score"`
-	Level   FocusScoreLevel `json:"level"`
-	HasData bool            `json:"hasData"`
+	Date    string           `json:"date"`
+	Score   int              `json:"score"`
+	Level   FocusScoreLevel  `json:"level"`
+	Reason  FocusScoreReason `json:"reason"`
+	HasData bool             `json:"hasData"`
 }
 
 type DistributionGroup string

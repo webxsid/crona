@@ -795,3 +795,13 @@ func OpenDatePicker(
 	state.FocusIdx = inputIndex
 	return state
 }
+
+func OpenSummaryCalendar(state State, date string) State {
+	selected := ResolveDialogDate(nil, date)
+	monthStart := time.Date(selected.Year(), selected.Month(), 1, 0, 0, 0, 0, selected.Location())
+	state.Kind = "summary_calendar"
+	state.Parent = ""
+	state.DateCursorValue = selected.Format("2006-01-02")
+	state.DateMonthValue = monthStart.Format("2006-01-02")
+	return state
+}

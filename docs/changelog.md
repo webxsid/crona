@@ -2,6 +2,19 @@
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.7] - 2026-08-18
+
+Crona v1.9.0-beta.7 improves date-scoped issue responses and advances the local IPC protocol to 1.5.
+
+### Changed
+
+- Issues returned from date-range daily-plan queries now include repository and stream names when available.
+- Date-range issue responses provide enough context for clients to render issue location without additional repository and stream lookups.
+
+### Compatibility
+
+- The local IPC protocol is now `1.5`.
+
 ## [1.9.0-beta.6] - 2026-08-16
 
 Crona v1.9.0-beta.6 is a TUI startup hotfix following the protocol 1.4 and day-boundary work in beta.5.

@@ -360,6 +360,8 @@ func (r *IssueRepository) ListByTodoDateRange(
 	type row struct {
 		PublicID        int64   `bun:"public_id"`
 		StreamPublicID  int64   `bun:"stream_public_id"`
+		StreamName      string  `bun:"stream_name"`
+		RepoName        string  `bun:"repo_name"`
 		Title           string  `bun:"title"`
 		Description     *string `bun:"description"`
 		Status          string  `bun:"status"`
@@ -375,8 +377,11 @@ func (r *IssueRepository) ListByTodoDateRange(
 	if err := r.db.NewSelect().
 		TableExpr("issues").
 		Join("INNER JOIN streams ON streams.id = issues.stream_id").
+		Join("INNER JOIN repos ON repos.id = streams.repo_id").
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
+		ColumnExpr("streams.name AS stream_name").
+		ColumnExpr("repos.name AS repo_name").
 		ColumnExpr("issues.title").
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
@@ -400,6 +405,8 @@ func (r *IssueRepository) ListByTodoDateRange(
 		out = append(out, sharedtypes.Issue{
 			ID:              row.PublicID,
 			StreamID:        row.StreamPublicID,
+			RepoName:        row.RepoName,
+			StreamName:      row.StreamName,
 			Title:           row.Title,
 			Description:     row.Description,
 			Status:          sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(row.Status)),

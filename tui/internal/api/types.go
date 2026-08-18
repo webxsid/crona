@@ -23,6 +23,7 @@ type StreakSummary = sharedtypes.StreakSummary
 type DashboardWindowSummary = sharedtypes.DashboardWindowSummary
 type DashboardWindowDay = sharedtypes.DashboardWindowDay
 type FocusScoreSummary = sharedtypes.FocusScoreSummary
+type FocusScoreRangeDay = sharedtypes.FocusScoreRangeDay
 type TimeDistributionSummary = sharedtypes.TimeDistributionSummary
 type TimeDistributionRow = sharedtypes.TimeDistributionRow
 type GoalProgressSummary = sharedtypes.GoalProgressSummary
@@ -60,11 +61,14 @@ type KernelInfo = sharedtypes.KernelInfo
 // It deliberately stays outside the kernel protocol so the summary surface can
 // evolve independently from dashboard and daily view presentation.
 type SummarySnapshot struct {
-	Date    string
-	Issues  *DailyIssueSummary
-	Habits  []HabitDailyItem
-	Plan    *DailyPlan
-	CheckIn *DailyCheckIn
-	Rollup  *MetricsRollup
-	Streaks *StreakSummary
+	Date           string
+	Issues         *DailyIssueSummary
+	Habits         []HabitDailyItem
+	Plan           *DailyPlan
+	CheckIn        *DailyCheckIn
+	Rollup         *MetricsRollup
+	Streaks        *StreakSummary
+	Focus          *FocusScoreSummary
+	Metrics        *DailyMetricsDay
+	CalendarScores map[string]FocusScoreRangeDay
 }

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/chrome"
 	types "crona/tui/internal/tui/views/types"
@@ -13,7 +14,7 @@ func TestRenderShowsCalendarAndFocusVisual(t *testing.T) {
 	state := types.ContentState{
 		View:            "rollup",
 		Pane:            "rollup_days",
-		Width:           140,
+		Width:           180,
 		Height:          42,
 		RollupStartDate: "2026-06-01",
 		RollupEndDate:   "2026-06-07",
@@ -30,7 +31,7 @@ func TestRenderShowsCalendarAndFocusVisual(t *testing.T) {
 			TotalActualSeconds:   19800,
 			EstimateBias:         "balanced",
 		},
-		WeeklyFocusScore: &api.FocusScoreSummary{Score: 77},
+		WeeklyFocusScore: &api.FocusScoreSummary{Score: 77, Reason: sharedtypes.FocusScoreReasonNeedsBreaks},
 	}
 
 	rendered := Render(testTheme(), state)
@@ -39,6 +40,7 @@ func TestRenderShowsCalendarAndFocusVisual(t *testing.T) {
 		"Focus",
 		"logged bars with estimate line",
 		"focus 77/100",
+		"take a break",
 		"│",
 		"June 2026",
 		"Wk  Mo Tu We Th Fr Sa Su",
@@ -68,6 +70,41 @@ func TestRenderShowsCalendarAndFocusVisual(t *testing.T) {
 		if strings.Count(rendered, label) > 1 {
 			t.Fatalf("expected y-axis label %q to appear at most once, got %q", label, rendered)
 		}
+	}
+}
+
+func TestRenderFocusSubtitleKeepsReasonWithAndWithoutGoalProgress(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		goal   *api.GoalProgressSummary
+		reason sharedtypes.FocusScoreReason
+		want   string
+	}{
+		{name: "with goal progress", goal: &api.GoalProgressSummary{}, reason: sharedtypes.FocusScoreReasonOverextended, want: "overextended"},
+		{name: "without goal progress", reason: sharedtypes.FocusScoreReasonUnderTarget, want: "build momentum"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got := renderFocusSubtitle(types.ContentState{
+				WeeklyFocusScore: &api.FocusScoreSummary{Score: 60, Reason: test.reason},
+				GoalProgress:     test.goal,
+			}, 200)
+			if !strings.Contains(got, test.want) {
+				t.Fatalf("expected subtitle %q to contain %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestRenderFocusSubtitleTruncatesNarrowWidths(t *testing.T) {
+	got := renderFocusSubtitle(types.ContentState{
+		WeeklyFocusScore: &api.FocusScoreSummary{
+			Score:  60,
+			Reason: sharedtypes.FocusScoreReasonNeedsBreaks,
+		},
+		GoalProgress: &api.GoalProgressSummary{},
+	}, 24)
+	if got == "" {
+		t.Fatal("expected a non-empty narrow subtitle")
 	}
 }
 

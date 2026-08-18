@@ -63,6 +63,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 	case "confirm_delete",
 		"confirm_wipe",
 		"pick_date",
+		"summary_calendar",
 		"create_checkin",
 		"edit_checkin",
 		"export_report_category",

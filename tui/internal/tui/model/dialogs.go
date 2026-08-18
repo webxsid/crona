@@ -44,6 +44,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		HabitStreakDefs:      m.habitStreakDefs,
 		AlertReminders:       m.alertReminders,
 		CurrentDashboardDate: m.currentDashboardDate(),
+		CurrentSummaryDate:   m.currentSummaryDate(),
 		CurrentWellbeingDate: m.currentWellbeingDate(),
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
 		AvailableViews:       m.jumpAvailableViews(),
@@ -70,6 +71,14 @@ func (m Model) dialogActionCmd(action dialogstate.Action) tea.Cmd {
 
 func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model, tea.Cmd) {
 	switch action.Kind {
+	case "set_summary_date":
+		if action.DueDate == nil || strings.TrimSpace(*action.DueDate) == "" {
+			return next, nil
+		}
+		next.summaryDate = strings.TrimSpace(*action.DueDate)
+		return next, commands.LoadSummarySnapshot(next.client, next.summaryDate)
+	case "load_summary_calendar_month":
+		return next, commands.LoadSummaryCalendarScores(next.client, action.StartDate, action.EndDate)
 	case "jump_view":
 		target := View(strings.TrimSpace(action.TargetView))
 		if target == "" {
@@ -632,33 +641,39 @@ func (m Model) dialogState() dialogstate.State {
 		awayDates = m.settings.AwayDates
 	}
 	return dialogstate.State{
-		Kind:                           m.dialog,
-		Width:                          m.width,
-		Inputs:                         m.dialogInputs,
-		Description:                    m.dialogDescription,
-		DescriptionEnabled:             m.dialogDescriptionOn,
-		DescriptionIndex:               m.dialogDescriptionIdx,
-		FocusIdx:                       m.dialogFocusIdx,
-		ErrorMessage:                   m.dialogErrorMessage,
-		DeleteID:                       m.dialogDeleteID,
-		DeleteKind:                     m.dialogDeleteKind,
-		DeleteLabel:                    m.dialogDeleteLabel,
-		SessionID:                      m.dialogSessionID,
-		IssueID:                        m.dialogIssueID,
-		HabitID:                        m.dialogHabitID,
-		IssueStatus:                    m.dialogIssueStatus,
-		CheckInDate:                    m.dialogCheckInDate,
-		RepoID:                         m.dialogRepoID,
-		RepoName:                       m.dialogRepoName,
-		RepoItems:                      m.dialogRepoItems,
-		RepoItemIDs:                    m.dialogRepoItemIDs,
-		StreamID:                       m.dialogStreamID,
-		StreamName:                     m.dialogStreamName,
-		RepoIndex:                      m.dialogRepoIndex,
-		StreamIndex:                    m.dialogStreamIndex,
-		Parent:                         m.dialogParent,
-		DateMonthValue:                 m.dialogDateMonth,
-		DateCursorValue:                m.dialogDateCursor,
+		Kind:               m.dialog,
+		Width:              m.width,
+		Inputs:             m.dialogInputs,
+		Description:        m.dialogDescription,
+		DescriptionEnabled: m.dialogDescriptionOn,
+		DescriptionIndex:   m.dialogDescriptionIdx,
+		FocusIdx:           m.dialogFocusIdx,
+		ErrorMessage:       m.dialogErrorMessage,
+		DeleteID:           m.dialogDeleteID,
+		DeleteKind:         m.dialogDeleteKind,
+		DeleteLabel:        m.dialogDeleteLabel,
+		SessionID:          m.dialogSessionID,
+		IssueID:            m.dialogIssueID,
+		HabitID:            m.dialogHabitID,
+		IssueStatus:        m.dialogIssueStatus,
+		CheckInDate:        m.dialogCheckInDate,
+		RepoID:             m.dialogRepoID,
+		RepoName:           m.dialogRepoName,
+		RepoItems:          m.dialogRepoItems,
+		RepoItemIDs:        m.dialogRepoItemIDs,
+		StreamID:           m.dialogStreamID,
+		StreamName:         m.dialogStreamName,
+		RepoIndex:          m.dialogRepoIndex,
+		StreamIndex:        m.dialogStreamIndex,
+		Parent:             m.dialogParent,
+		DateMonthValue:     m.dialogDateMonth,
+		DateCursorValue:    m.dialogDateCursor,
+		CalendarScores: func() map[string]api.FocusScoreRangeDay {
+			if m.summarySnapshot != nil {
+				return m.summarySnapshot.CalendarScores
+			}
+			return nil
+		}(),
 		DueDateToday:                   m.currentLogicalDate(),
 		DueDateRestWeekdays:            restWeekdays,
 		DueDateRestDates:               restDates,

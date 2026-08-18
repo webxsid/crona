@@ -23,6 +23,7 @@ type Snapshot struct {
 	HabitStreakDefs      []api.HabitStreakDefinition
 	AlertReminders       []api.AlertReminder
 	CurrentDashboardDate string
+	CurrentSummaryDate   string
 	CurrentWellbeingDate string
 	ProtectedModeActive  bool
 	HasActiveTimer       bool
@@ -32,6 +33,10 @@ type Snapshot struct {
 	SelectedStreamID     int64
 	HasActiveIssue       bool
 	ActiveIssueStream    int64
+}
+
+func (s Snapshot) OpenSummaryCalendar() State {
+	return OpenSummaryCalendar(s.Dialog, s.CurrentSummaryDate)
 }
 
 func (s Snapshot) OpenEditDayBoundary(key sharedtypes.CoreSettingsKey) State {

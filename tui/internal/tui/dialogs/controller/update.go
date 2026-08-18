@@ -5,10 +5,14 @@ import (
 )
 
 func (snapshot Snapshot) Update(msg tea.KeyMsg) (State, *Action, string) {
+	currentDate := snapshot.CurrentDashboardDate
+	if snapshot.Dialog.Kind == "summary_calendar" {
+		currentDate = snapshot.CurrentSummaryDate
+	}
 	return Update(
 		snapshot.Dialog,
 		snapshotUpdateContext(snapshot),
-		snapshot.CurrentDashboardDate,
+		currentDate,
 		msg,
 	)
 }

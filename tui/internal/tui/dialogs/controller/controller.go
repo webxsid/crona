@@ -360,6 +360,8 @@ func Update(
 		return updateIssueSessionTransition(state, ctx, currentDate, msg)
 	case "pick_date":
 		return updateDatePicker(state, ctx, currentDate, msg)
+	case "summary_calendar":
+		return updateSummaryCalendar(state, currentDate, msg)
 	case "create_issue_meta":
 		return updateCreateIssueMeta(state, currentDate, msg)
 	case "create_issue_default":

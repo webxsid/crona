@@ -484,6 +484,14 @@ func (c *Client) GetFocusScoreSummary(start, end string) (*FocusScoreSummary, er
 	return &out, nil
 }
 
+func (c *Client) GetFocusScoreRange(start, end string) ([]FocusScoreRangeDay, error) {
+	var out []FocusScoreRangeDay
+	return out, c.call(protocol.MethodDashboardFocusScoreRange, shareddto.DateRangeQuery{
+		Start: strings.TrimSpace(start),
+		End:   strings.TrimSpace(end),
+	}, &out)
+}
+
 func (c *Client) GetTimeDistributionSummary(
 	start, end, groupBy string,
 	repoID, streamID, issueID *int64,
