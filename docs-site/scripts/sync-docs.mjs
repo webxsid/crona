@@ -72,7 +72,11 @@ for (const path of markdownFiles) {
       const metadata = sourceMarkdown.get(targetPath);
       if (!metadata) return _match;
       if (metadata.get("hosted") === "true") {
-        const route = targetPath === "README.md" ? "/" : `/${targetPath.slice(0, -3)}/`;
+        const route = targetPath === "README.md"
+          ? "/"
+          : targetPath.endsWith("/index.md")
+            ? `/${targetPath.slice(0, -"index.md".length)}`
+            : `/${targetPath.slice(0, -3)}/`;
         return `](${route}${fragment})`;
       }
       return `](${sourceBase}${targetPath}${fragment})`;

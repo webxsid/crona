@@ -5,7 +5,9 @@ hosted: true
 order: 7.2
 ---
 
-# Socket API
+# Socket API (legacy overview)
+
+> This page remains available for compatibility with the original documentation URL. The expanded reference is now organized under the [API Reference](/api/).
 
 This document describes Crona's local daemon IPC surface.
 

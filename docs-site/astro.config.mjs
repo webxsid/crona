@@ -1,12 +1,26 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import lucode from "lucode-starlight";
 
 export default defineConfig({
   integrations: [
     starlight({
       title: "Crona Docs",
       description: "Documentation for Crona.",
-      social: [{ icon: "github", label: "GitHub", href: "https://github.com/webxsid/crona" }],
+      social: [
+        { icon: "github", label: "GitHub", href: "https://github.com/webxsid/crona" },
+        { icon: "threads", label: "Threads", href: "https://www.threads.com/@crona.work" },
+        { icon: "blueSky", label: "Bluesky", href: "https://bsky.app/profile/crona.work" },
+      ],
+      plugins: [
+        lucode({
+          navLinks: [
+            { label: "Docs", link: "/" },
+            { label: "API Reference", link: "/api/" },
+          ],
+          footerText: "Built with [Lucode Starlight](https://github.com/lucas-labs/lucode-starlight-theme).",
+        }),
+      ],
       sidebar: [
         {
           label: "Documentation",
@@ -40,6 +54,18 @@ export default defineConfig({
                 { label: "CLI and Local Engine", link: "/reference/cli-and-local-engine/" },
                 { label: "TUI Keymap Reference", link: "/reference/tui-keymap-reference/" },
                 { label: "Usage and Diagnostics", link: "/reference/usage-and-diagnostics/" },
+              ],
+            },
+            {
+              label: "API Reference",
+              items: [
+                { label: "Overview", link: "/api/" },
+                { label: "Transport and Envelopes", link: "/api/transport/" },
+                { label: "Runtime and Operations", link: "/api/runtime/" },
+                { label: "Work Management", link: "/api/work-management/" },
+                { label: "Focus and Wellbeing", link: "/api/focus-and-wellbeing/" },
+                { label: "Exports and Settings", link: "/api/exports-and-settings/" },
+                { label: "Events", link: "/api/events/" },
               ],
             },
             {
