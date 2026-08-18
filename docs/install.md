@@ -1,3 +1,10 @@
+---
+title: "Install Crona"
+description: "Install Crona on macOS, Linux, and Windows using the supported package and fallback methods."
+hosted: false
+order: 0.5
+---
+
 # Install
 
 ## Release Artifacts

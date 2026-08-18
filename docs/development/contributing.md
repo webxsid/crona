@@ -1,13 +1,18 @@
-# Contributing
+---
+hosted: true
+title: "Contributing"
+description: "Contribution workflow, code quality, and pull request guidelines."
+order: 6.2
+---
 
 Thanks for contributing to Crona.
 
 ## Before You Start
 
-- Read [concepts.md](concepts.md) for the product model.
+- Read [concepts.md](../guides/concepts.md) for the product model.
 - Read [development.md](development.md) for build and test workflows.
-- Read [api/socket.md](api/socket.md) if your change touches local daemon IPC.
-- Check [release.md](release.md) and the current changelog before starting larger release-facing work.
+- Read [socket-api.md](../reference/socket-api.md) if your change touches local daemon IPC.
+- Check [release.md](../release.md) and the current changelog before starting larger release-facing work.
 
 ## Workflow Expectations
 
@@ -35,5 +40,5 @@ Thanks for contributing to Crona.
 
 ## Where To Discuss Things
 
-- Bugs and feedback: [UserJot](https://crona.userjot.com/)
+- Bugs: [GitHub Issues](https://github.com/webxsid/crona/issues)
 - Questions and ideas: [GitHub Discussions](https://github.com/webxsid/crona/discussions)

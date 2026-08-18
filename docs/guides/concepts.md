@@ -1,4 +1,9 @@
-# Concepts
+---
+hosted: true
+title: "Concepts"
+description: "The work model behind repos, streams, issues, sessions, stashes, habits, and daily check-ins."
+order: 1.1
+---
 
 Crona is a local-first work tracker for developers. A background local daemon owns state, and the TUI and CLI act as clients over local IPC.
 
@@ -22,7 +27,7 @@ Crona has three main runtime pieces:
 - `crona-tui`: the interactive terminal UI.
 - `crona`: the scriptable CLI and default launcher.
 
-All clients talk to the local daemon over the shared IPC surface documented in [api/socket.md](api/socket.md).
+All clients talk to the local daemon over the shared IPC surface documented in [reference/socket-api.md](../reference/socket-api.md).
 
 The TUI owns the terminal tab/window title while it is running. Idle titles show Crona plus the active repo/stream and current view when available; active focus sessions show Crona plus the issue/session context and elapsed timer state. The title is reset on exit on a best-effort basis.
 
@@ -110,6 +115,8 @@ Monthly customs:      1mo, 2mo, 3mo, 6mo, 12mo, 24mo
 
 The exact current and best values are shown next to the ladder, for example `14d current · 30d best`.
 
+Protected rest and away days are part of this history. Enabling Away Today protects the current logical date immediately; disabling it that same day removes the provisional protection. The daemon only commits a protected date to canonical history once the logical day completes, keeping both the terminal and native clients aligned.
+
 ## Terminal UI Surfaces
 
 On wider terminals, the Wellbeing dashboard splits its lower region into a 7-day Metrics Window pane and a separate Momentum pane. The Momentum pane is focusable and scrollable independently so custom habit momentum can grow without clipping the metrics content.
@@ -120,22 +127,17 @@ Calendar surfaces use terminal background styling for selected dates, date range
 
 The main dashboard surfaces serve different jobs:
 
-- Summary is the read-only at-a-glance surface. It is meant to answer “what does today or this period look like?” without dropping the user into editing flows.
-- Summary also includes a stats strip for focus score, focus/rest/session totals, issue outcomes, and habit outcomes. Press `[c]` to open its interactive calendar; each boxed day shows its focus score when available, while configured away dates remain selectable and are marked as Away.
-- Daily is the interactive working surface for planning the day, updating issue state, managing timer-driven work, and handling the small decisions that happen while work is in motion.
-- Rollup and Wellbeing are interpretation surfaces. They step back from the day and show patterns, distribution, streaks, and risk.
+- **Summary** is a read-only view for checking the selected day at a glance: focus, issues, habits, planning, check-in signals, and Momentum.
+- **Daily** is the working view for planning, updating issues, and making changes as the day moves.
+- **Rollup** and **Wellbeing** help interpret longer-term patterns, distribution, and risk.
 
-The CLI follows the same split. `crona summary` is a glanceable output surface for one day, yesterday, the current calendar week, the current calendar month, or a rolling last-X-days window. Export flows reuse the same idea when you need a saved artifact rather than an on-screen check.
-
-The sidebar order reflects that shape. Summary and Daily sit at the top as the primary day-to-day entry points, workspace views stay grouped together, and export/reporting tools live lower in the navigation because they are downstream artifacts rather than the main place work is edited.
+The CLI follows the same split. `crona summary` prints a read-only day or range snapshot; use an export when you want to save or share the same kind of information.
 
 ## Notifications And Automation
 
 ### Notifications
 
-Crona can trigger local OS notifications and bundled alert sounds from the local daemon itself. The TUI configures and tests alerts, but notification timing, scheduled reminder evaluation, and delivery decisions remain local-daemon-owned. Today this uses platform-specific local helpers rather than a separate native companion layer.
-
-Scheduled reminders can prompt for a daily check-in or planning the current day. The daemon skips a check-in reminder after today’s check-in exists and skips a plan-the-day reminder after at least one item has been committed to today’s daily plan.
+Crona can trigger local OS notifications and bundled alert sounds from the local daemon itself. The TUI configures and tests alerts, while notification timing and scheduled reminder evaluation run in the daemon.
 
 Focus inactivity alerts are also local-daemon-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, or end the session.
 
@@ -166,5 +168,6 @@ The core workflow is usable for general users, while validation builds remain av
 Current mainline focus:
 - stable-channel maintenance
 - installer/updater/support polish
+- future native-client integration work
 - documentation and contributor-facing references
 - tester feedback for upcoming releases

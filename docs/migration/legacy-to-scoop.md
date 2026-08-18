@@ -1,3 +1,8 @@
+---
+title: "legacy to scoop"
+hosted: true
+---
+
 # Legacy To Scoop
 
 Use this guide when you are moving off the legacy install script and want to keep Crona managed by Scoop on Windows.

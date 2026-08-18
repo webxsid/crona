@@ -1,3 +1,10 @@
+---
+title: "Socket API"
+description: "Reference for Crona's local daemon IPC transport, envelopes, methods, and events."
+hosted: true
+order: 7.2
+---
+
 # Socket API
 
 This document describes Crona's local daemon IPC surface.

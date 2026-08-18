@@ -1,3 +1,8 @@
+---
+title: "changelog"
+hosted: false
+---
+
 # Changelog
 
 All notable changes to **Crona** are documented here.
@@ -184,7 +189,6 @@ Crona v1.7.0 prepares the daemon and shared IPC contract for the upcoming Mac co
 - Clients can now query daemon-authoritative issue status transitions, including the reason transitions are blocked while an issue has an active focus session.
 - Countdown timers are now represented explicitly across the shared contract, runtime state, events, and TUI, with duration-only extension support and timer-specific completion language.
 - Scheduled reminders now support both daily check-ins and plan-the-day prompts, with automatic suppression after the relevant daily action is complete.
-- The repository now includes a detailed architecture audit for the upcoming Mac companion and its daemon-backed integration boundaries.
 
 ### Added
 
@@ -195,7 +199,6 @@ Crona v1.7.0 prepares the daemon and shared IPC contract for the upcoming Mac co
 - Duration-only countdown extension flow and `timer.extended` and `session.ended` lifecycle events.
 - Daily-plan reminder support alongside check-in reminders.
 - Active-session end-time previews and expanded tests across daemon commands, alerts, runtime state, event dispatch, dialogs, and session views.
-- A Mac companion architecture audit covering IPC ownership, compatibility, security boundaries, packaging, and phased implementation.
 - Consistent `--version` flags across the CLI, daemon, and TUI binaries for package-manager and installation verification.
 
 ### Changed

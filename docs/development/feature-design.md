@@ -1,4 +1,9 @@
-# Feature Design
+---
+hosted: true
+title: "Feature Design"
+description: "Proposed multi-device sync architecture using op logs."
+order: 7.1
+---
 
 ## Multi-Device Sync
 

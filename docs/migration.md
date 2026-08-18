@@ -1,3 +1,10 @@
+---
+title: "Migration"
+description: "Move Crona between installation methods and release channels without losing local data."
+hosted: true
+order: 0.6
+---
+
 # Migration Guide
 
 Use this guide when switching Crona install methods or release channels.

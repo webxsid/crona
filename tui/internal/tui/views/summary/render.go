@@ -149,7 +149,10 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) st
 	focus := snapshot.Focus
 	metrics := snapshot.Metrics
 	reason := strings.ReplaceAll(string(focus.Reason), "_", " ")
-	level := strings.Title(strings.ReplaceAll(string(focus.Level), "_", " "))
+	level := strings.ReplaceAll(string(focus.Level), "_", " ")
+	if level != "" {
+		level = strings.ToUpper(level[:1]) + level[1:]
+	}
 	lines = append(lines,
 		fmt.Sprintf("%s  %s  %s", theme.StylePaneTitle.Render(fmt.Sprintf("Focus %d/100", focus.Score)), theme.StyleNormal.Render(level), theme.StyleDim.Render(reason)),
 		fmt.Sprintf("worked %s  ·  rest %s  ·  sessions %d  ·  target %s",

@@ -1,3 +1,8 @@
+---
+title: "legacy to brew"
+hosted: true
+---
+
 # Legacy To Homebrew
 
 Use this guide when you are moving off the legacy install script and want to keep Crona on Homebrew afterward.

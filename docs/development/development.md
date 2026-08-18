@@ -1,4 +1,9 @@
-# Development
+---
+hosted: true
+title: "Development"
+description: "Prerequisites, common tasks, and running Crona from source."
+order: 6.1
+---
 
 ## Prerequisites
 
@@ -54,7 +59,7 @@ Developer-only TUI hotkeys:
 - `f6` seeds sample data
 - `f7` clears local data
 
-The dev seed data is shaped for dashboard validation. It creates roughly 30 days of check-ins, focus/work history, due habits, habit completions, misses, and varied wellbeing signals. It also seeds custom momentum definitions with daily, weekly, and monthly cadences, including habit-targeted and context-targeted examples, so the Wellbeing Momentum pane and momentum detail view can be tested without hand-entering history. The seeded rest calendar now includes weekend protection plus one recent specific rest date, along with dedicated weekly habit and weekly context fixtures for testing skipped buckets and prorated targets.
+The dev seed data is shaped for dashboard validation. It creates roughly 30 days of check-ins, focus/work history, due habits, habit completions, misses, and varied wellbeing signals. It also seeds custom momentum definitions with daily, weekly, and monthly cadences, including habit-targeted and context-targeted examples, so the Wellbeing Momentum pane and momentum detail view can be tested without hand-entering history.
 
 ## Running From Source
 
@@ -164,7 +169,7 @@ The TUI `Alerts` view is the easiest smoke-test surface:
 - `Test Notification`
 - `Test Sound`
 - adjust focus inactivity alert threshold/repeat controls
-- create a check-in or plan-the-day reminder for a near-future time
+- create a check-in reminder for a near-future time
 
 Focus inactivity alerts are local-daemon-owned. During active focus sessions the TUI reports throttled keypress activity with `timer.activity.touch`; if no activity is reported for the configured threshold, the local daemon sends a review-session alert and repeats on the configured interval.
 
@@ -172,7 +177,7 @@ Focus inactivity alerts are local-daemon-owned. During active focus sessions the
 
 The export layer uses two PDF paths:
 
-- summary/daily/weekly narrative PDF: `weasyprint`
+- daily/weekly narrative PDF: `weasyprint`
 - repo/stream/issue-rollup PDF: `pandoc` plus `tectonic`, `weasyprint`, `wkhtmltopdf`, `xelatex`, or `pdflatex`
 
 Useful local checks:
@@ -182,7 +187,7 @@ go test ./kernel/internal/export
 go test ./kernel/internal/... ./shared/... ./tui/internal/api
 ```
 
-If renderer tooling is missing, markdown export still works and the runtime asset status marks PDF rendering as unavailable. Repo, stream, and issue report exports should also be tested without relying on whatever repo, stream, or issue happens to be checked out in the TUI; those flows now accept explicit selections at export time.
+If renderer tooling is missing, markdown export still works and the runtime asset status marks PDF rendering as unavailable.
 
 ## Repository Layout
 

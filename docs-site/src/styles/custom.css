@@ -1,0 +1,12 @@
+:root {
+  --sl-color-accent-low: #102b29;
+  --sl-color-accent: #62d1c4;
+  --sl-color-accent-high: #b8f4ec;
+  --sl-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+body { letter-spacing: -0.01em; }
+
+.sidebar-content a[aria-current="page"] {
+  border-inline-start: 2px solid var(--sl-color-accent);
+}

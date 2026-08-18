@@ -1,3 +1,8 @@
+---
+title: "legacy to go"
+hosted: true
+---
+
 # Legacy To Go
 
 Use this guide when you are moving off the legacy install script and want to keep Crona installed from source with `go install`.
