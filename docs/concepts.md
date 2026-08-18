@@ -121,6 +121,7 @@ Calendar surfaces use terminal background styling for selected dates, date range
 The main dashboard surfaces serve different jobs:
 
 - Summary is the read-only at-a-glance surface. It is meant to answer “what does today or this period look like?” without dropping the user into editing flows.
+- Summary also includes a stats strip for focus score, focus/rest/session totals, issue outcomes, and habit outcomes. Press `[c]` to open its interactive calendar; each boxed day shows its focus score when available, while configured away dates remain selectable and are marked as Away.
 - Daily is the interactive working surface for planning the day, updating issue state, managing timer-driven work, and handling the small decisions that happen while work is in motion.
 - Rollup and Wellbeing are interpretation surfaces. They step back from the day and show patterns, distribution, streaks, and risk.
 

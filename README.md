@@ -37,7 +37,7 @@ If you are migrating from the install script, another package manager, or a beta
 Runtime notes:
 - local alerts are emitted by the background daemon, not the TUI process
 - scheduled reminders only fire while the background daemon is running
-- the `Summary` view and `crona summary` are read-only at-a-glance surfaces; use `Daily` when you want to plan or make changes interactively
+- the `Summary` view and `crona summary` are read-only at-a-glance surfaces; the TUI Summary also includes focus stats and an interactive score calendar via `[c]`; use `Daily` when you want to plan or make changes interactively
 - the Daily view adapts cleanly to smaller terminals with compact issue rendering and shorter pane hints
 - the Wellbeing view includes Momentum detail with current bucket metadata and contributor breakdowns
 - the TUI owns the terminal tab title while it is running and shows active session context when focused

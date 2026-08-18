@@ -4,12 +4,20 @@ All notable changes to **Crona** are documented here.
 
 ## [1.9.0-beta.7] - 2026-08-18
 
-Crona v1.9.0-beta.7 improves date-scoped issue responses and advances the local IPC protocol to 1.5.
+Crona v1.9.0-beta.7 improves date-scoped issue responses, adds focus-score context, and advances the local IPC protocol to 1.5.
+
+### Added
+
+- The TUI Summary view now includes focus score, focus/rest/session metrics, issue outcomes, and habit outcomes while retaining the existing agenda, plan, wellbeing, and momentum sections.
+- Summary includes a companion-style interactive calendar opened with `[c]`, with boxed dates, daily focus scores, score-based color treatment, today/selection states, and month score prefetching.
+- Summary calendar cells preserve configured away-date semantics and keep away dates selectable.
 
 ### Changed
 
 - Issues returned from date-range daily-plan queries now include repository and stream names when available.
 - Date-range issue responses provide enough context for clients to render issue location without additional repository and stream lookups.
+- Summary date navigation and calendar selection reload the complete date-scoped snapshot for the selected logical date.
+- Focus-score responses now include cause-oriented reasons, including `no_activity`, `under_target`, `needs_breaks`, `balanced`, and `overextended`.
 
 ### Compatibility
 
