@@ -1,5 +1,5 @@
 import { cp, mkdir, readFile, readdir, rename, rm, unlink, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,6 +24,7 @@ const index = join(destination, "index.md");
 await rename(readme, index);
 
 const sourceBase = "https://github.com/webxsid/crona/blob/main/";
+const sourceMarkdown = new Map();
 const markdownFiles = [];
 async function collectMarkdown(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -32,6 +33,19 @@ async function collectMarkdown(directory) {
     if (entry.isDirectory()) await collectMarkdown(path);
     else if (entry.name.endsWith(".md")) markdownFiles.push(path);
   }
+}
+const sourceMarkdownFiles = [];
+async function collectSourceMarkdown(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  for (const entry of entries) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) await collectSourceMarkdown(path);
+    else if (entry.name.endsWith(".md")) sourceMarkdownFiles.push(path);
+  }
+}
+await collectSourceMarkdown(source);
+for (const path of sourceMarkdownFiles) {
+  sourceMarkdown.set(relative(source, path).split(sep).join("/"), frontmatter(await readFile(path, "utf8")));
 }
 await collectMarkdown(destination);
 
@@ -48,9 +62,21 @@ for (const path of markdownFiles) {
       content = `---\ntitle: ${JSON.stringify(heading[1].trim())}\n---\n\n${content.slice(heading[0].length)}`;
     }
   }
-  const rewritten = content.replace(/\]\(\.\.\/\.\.\/(shared\/[^)#]+)(#[^)]+)?\)/g, (_match, file, fragment = "") =>
-    `](${sourceBase}${file}${fragment})`,
-  );
+  const sourcePath = path === index ? "README.md" : relative(destination, path).split(sep).join("/");
+  const rewritten = content
+    .replace(/\]\(\.\.\/\.\.\/(shared\/[^)#]+)(#[^)]+)?\)/g, (_match, file, fragment = "") =>
+      `](${sourceBase}${file}${fragment})`,
+    )
+    .replace(/\]\((?!https?:|\/|#|mailto:)([^)#]+\.md)(#[^)]+)?\)/g, (_match, target, fragment = "") => {
+      const targetPath = relative(source, resolve(source, dirname(sourcePath), target)).split(sep).join("/");
+      const metadata = sourceMarkdown.get(targetPath);
+      if (!metadata) return _match;
+      if (metadata.get("hosted") === "true") {
+        const route = targetPath === "README.md" ? "/" : `/${targetPath.slice(0, -3)}/`;
+        return `](${route}${fragment})`;
+      }
+      return `](${sourceBase}${targetPath}${fragment})`;
+    });
   if (rewritten !== original) await writeFile(path, rewritten);
 }
 
