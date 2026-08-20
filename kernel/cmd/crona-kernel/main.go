@@ -17,8 +17,15 @@ func main() {
 		fmt.Println(versionpkg.Current())
 		return
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
+	ctx, cancel := context.WithCancelCause(context.Background())
+	defer cancel(nil)
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(signals)
+	go func() {
+		sig := <-signals
+		cancel(fmt.Errorf("received %s", sig))
+	}()
 
 	if err := app.Run(ctx); err != nil {
 		log.Printf("crona-kernel: %v", err)

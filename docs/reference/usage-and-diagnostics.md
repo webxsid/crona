@@ -7,6 +7,10 @@ order: 5.9
 
 Crona processes diagnostics locally. Users control telemetry and exception submission preferences via the **Privacy & Diagnostics** panel in the TUI Settings.
 
+:::note[Beta diagnostics]
+Beta diagnostics include the release channel and protocol version so a report can identify the runtime being tested. They do not include your issues, habits, notes, check-ins, or other work data.
+:::
+
 ## Telemetry & Exception Tracking
 
 Crona divides reporting into two optional tracks:

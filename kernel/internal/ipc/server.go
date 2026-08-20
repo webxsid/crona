@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
+	"runtime/debug"
 	"sync"
 
 	"crona/kernel/internal/runtime"
@@ -51,7 +53,11 @@ func (s *Server) Start() error {
 	}
 	s.listener = ln
 	s.wg.Add(1)
-	go s.acceptLoop()
+	if s.logger != nil {
+		s.logger.Go("ipc accept loop", s.acceptLoop)
+	} else {
+		go s.acceptLoop()
+	}
 	return nil
 }
 
@@ -105,6 +111,11 @@ func (s *Server) acceptLoop() {
 
 func (s *Server) handleConn(conn net.Conn) {
 	defer s.wg.Done()
+	defer func() {
+		if recovered := recover(); recovered != nil && s.logger != nil {
+			s.logger.Error("panic in ipc connection handler", fmt.Errorf("%v\n%s", recovered, debug.Stack()))
+		}
+	}()
 	defer func() {
 		_ = conn.Close()
 	}()

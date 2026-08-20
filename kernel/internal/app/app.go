@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"time"
 
 	"crona/kernel/internal/core"
@@ -44,6 +45,13 @@ func Run(ctx context.Context) (runErr error) {
 
 	logger := runtime.NewLogger(paths)
 	startedAt := time.Now().UTC().Format(time.RFC3339)
+	logger.Info(fmt.Sprintf("daemon starting pid=%d executable=%s protocol=%s", os.Getpid(), executablePath(), protocol.Version))
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			logger.Error("daemon panic", fmt.Errorf("%v\n%s", recovered, debug.Stack()))
+			runErr = fmt.Errorf("daemon panic: %v", recovered)
+		}
+	}()
 
 	dbStore, err := store.Open(paths.DBPath)
 	if err != nil {
@@ -170,12 +178,12 @@ func Run(ctx context.Context) (runErr error) {
 	if err := scheduler.Initialize(runCtx); err != nil {
 		return fmt.Errorf("initialize day-boundary scheduler: %w", err)
 	}
-	go func() {
+	logger.Go("day-boundary scheduler", func() {
 		if err := scheduler.Run(runCtx); err != nil && runCtx.Err() == nil {
 			logger.Error("day-boundary scheduler stopped", err)
 			cancel()
 		}
-	}()
+	})
 	updater := updatecheck.Start(runCtx, commandCtx, bus, logger, paths, appEnv.Mode)
 	if _, err := export.EnsureAssets(paths); err != nil {
 		return fmt.Errorf("ensure export assets: %w", err)
@@ -250,7 +258,7 @@ func Run(ctx context.Context) (runErr error) {
 			logger.Error("capture daemon stopped", captureErr)
 		}
 	}
-	logger.Info("kernel shutting down")
+	logger.Info(fmt.Sprintf("kernel shutting down reason=%v uptime=%s", context.Cause(runCtx), time.Since(parseStartedAt(startedAt))))
 	return nil
 }
 

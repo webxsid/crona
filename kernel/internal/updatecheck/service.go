@@ -61,11 +61,11 @@ func Start(
 			MigrationGuideURL:       versionpkg.InstallScriptMigrationURL,
 		},
 	}
-	go func() {
+	logger.Go("update release server cleanup", func() {
 		<-ctx.Done()
 		service.stopLocalReleaseServer()
-	}()
-	go service.run(ctx)
+	})
+	logger.Go("update checker", func() { service.run(ctx) })
 	return service
 }
 

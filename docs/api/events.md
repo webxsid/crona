@@ -2,10 +2,15 @@
 title: Events
 description: Subscribe to Crona daemon events and keep client views synchronized.
 hosted: true
+badge: Beta
 order: 7.6
 ---
 
 # Events
+
+:::note[Protocol compatibility]
+The event stream is shared by Crona clients. Logical-date and day-boundary events require protocol `1.5`; clients that connect to an older daemon should tolerate missing events and reload state after reconnecting.
+:::
 
 Call `events.subscribe` once a client has connected. The daemon then sends event envelopes with a `type` and `payload`. Events are hints that state changed: clients should update the affected view from the payload when possible and refetch when the event is unknown or incomplete.
 

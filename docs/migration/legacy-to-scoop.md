@@ -1,6 +1,6 @@
 ---
 title: "legacy to scoop"
-hosted: true
+hosted: false
 ---
 
 # Legacy To Scoop

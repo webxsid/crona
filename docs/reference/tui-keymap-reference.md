@@ -2,10 +2,15 @@
 hosted: true
 title: TUI Keymap Reference
 description: Quick-reference keybindings for global navigation, dialog controls, and view-specific commands.
+badge: Beta
 order: 6.4
 ---
 
 Crona's Terminal User Interface is keyboard-driven and context-aware. Use the footer of each pane for active key guides.
+
+:::caution[Beta-only support actions]
+The `F9` support surface is available only in beta builds. The `F6` and `F7` shortcuts remain restricted to development builds.
+:::
 
 ## Global Bindings
 
@@ -23,10 +28,10 @@ These shortcuts remain active across most standard views:
 
 After opening view jump with `v`, press a view mnemonic directly. For example, `g` opens **Summary** and `y` opens **History**. Use the arrow keys and `enter` to choose from the menu instead.
 
-### Dev & Beta Build Hotkeys
-- `f9`: Open support dialog (beta channels only)
-- `f6`: Seed mock wellbeing and focus data (dev mode only)
-- `f7`: Clear local database (dev mode only)
+### Development and beta hotkeys
+- `F9`: Open the support dialog (beta builds only)
+- `F6`: Seed mock wellbeing and focus data (development builds only)
+- `F7`: Clear the local database (development builds only)
 
 ## Common Work Bindings
 

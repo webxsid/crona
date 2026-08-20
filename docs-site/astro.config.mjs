@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
-import lucode from "lucode-starlight";
+import { ion } from "starlight-ion-theme";
 
 export default defineConfig({
   integrations: [
@@ -12,30 +12,24 @@ export default defineConfig({
         { icon: "threads", label: "Threads", href: "https://www.threads.com/@crona.work" },
         { icon: "blueSky", label: "Bluesky", href: "https://bsky.app/profile/crona.work" },
       ],
-      plugins: [
-        lucode({
-          navLinks: [
-            { label: "Docs", link: "/" },
-            { label: "API Reference", link: "/api/" },
-          ],
-          footerText: "Built with [Lucode Starlight](https://github.com/lucas-labs/lucode-starlight-theme).",
-        }),
-      ],
+      plugins: [ion()],
       sidebar: [
         {
           label: "Documentation",
           items: [
             {
-              label: "Guides",
+              label: "Start here",
               items: [
+                { label: "Install", link: "/install/" },
                 { label: "Getting Started", link: "/guides/getting-started/" },
+                { label: "Beta Channel", link: "/guides/beta-channel/", badge: { text: "Beta" } },
                 { label: "Concepts", link: "/guides/concepts/" },
                 { label: "Features Overview", link: "/guides/features-overview/" },
                 { label: "Screenshots and Walkthrough", link: "/guides/screenshots-and-walkthrough/" },
               ],
             },
             {
-              label: "Workflows",
+              label: "Use Crona",
               items: [
                 { label: "Issues and Planning", link: "/workflows/issues-and-planning/" },
                 { label: "Habits", link: "/workflows/habits/" },
@@ -50,52 +44,33 @@ export default defineConfig({
             {
               label: "Reference",
               items: [
-                { label: "Socket API", link: "/reference/socket-api/" },
                 { label: "CLI and Local Engine", link: "/reference/cli-and-local-engine/" },
-                { label: "TUI Keymap Reference", link: "/reference/tui-keymap-reference/" },
+                { label: "TUI Keymap Reference", link: "/reference/tui-keymap-reference/", badge: { text: "Beta" } },
                 { label: "Usage and Diagnostics", link: "/reference/usage-and-diagnostics/" },
               ],
             },
             {
               label: "API Reference",
               items: [
-                { label: "Overview", link: "/api/" },
-                { label: "Transport and Envelopes", link: "/api/transport/" },
+                { label: "Overview", link: "/api/", badge: { text: "Beta" } },
+                { label: "Transport and Envelopes", link: "/api/transport/", badge: { text: "Beta" } },
                 { label: "Runtime and Operations", link: "/api/runtime/" },
                 { label: "Work Management", link: "/api/work-management/" },
-                { label: "Focus and Wellbeing", link: "/api/focus-and-wellbeing/" },
+                { label: "Focus and Wellbeing", link: "/api/focus-and-wellbeing/", badge: { text: "Beta" } },
                 { label: "Exports and Settings", link: "/api/exports-and-settings/" },
-                { label: "Events", link: "/api/events/" },
+                { label: "Events", link: "/api/events/", badge: { text: "Beta" } },
               ],
             },
             {
-              label: "Automation",
+              label: "Automate",
               items: [
                 { label: "CLI Automation Patterns", link: "/automation/cli-automation-patterns/" },
                 { label: "macOS Shortcuts Workflows", link: "/automation/macos-shortcuts-workflows/" },
               ],
             },
-            {
-              label: "Development",
-              items: [
-                { label: "Development", link: "/development/development/" },
-                { label: "Contributing", link: "/development/contributing/" },
-                { label: "Feature Design", link: "/development/feature-design/" },
-              ],
-            },
-            {
-              label: "Migration",
-              items: [
-                { label: "Migration", link: "/migration/" },
-                { label: "Legacy to Homebrew", link: "/migration/legacy-to-brew/" },
-                { label: "Legacy to Go", link: "/migration/legacy-to-go/" },
-                { label: "Legacy to Scoop", link: "/migration/legacy-to-scoop/" },
-              ],
-            },
           ],
         },
       ],
-      customCss: ["./src/styles/custom.css"],
     }),
   ],
   site: "https://docs.crona.work",

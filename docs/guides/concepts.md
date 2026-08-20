@@ -1,173 +1,58 @@
 ---
 hosted: true
-title: "Concepts"
-description: "The work model behind repos, streams, issues, sessions, stashes, habits, and daily check-ins."
+title: Concepts
+description: The simple work model behind Crona's planning, focus, and history.
 order: 1.1
 ---
 
-Crona is a local-first work tracker for developers. A background local daemon owns state, and the TUI and CLI act as clients over local IPC.
+# How Crona thinks about work
 
-## Terminology
+Crona is built around a simple loop: decide what matters, work on one thing, and leave enough context to pick it up again.
 
-The codebase and socket API still use the term `kernel` for the internal daemon process and IPC method names. In user-facing docs, this is usually called the daemon or local daemon because it is the small local service that owns storage, timers, reminders, update checks, and IPC.
+## The work model
 
-## Core Ideas
+Imagine you are working on a product:
 
-- Local-first state, with the background daemon as the source of truth.
-- Terminal-native interaction through the TUI and CLI.
-- Structured work objects instead of loose notes.
-- Deterministic exports and local automation hooks instead of cloud coupling.
-- UIs are clients, not controllers.
+- A **repository** is the broad place where the work belongs: `work`, `personal`, or `research`.
+- A **stream** is a long-running lane inside it: `crona-site`, `backend`, or `experiments`.
+- An **issue** is one piece of work you can intend, schedule, and complete.
+- A **session** is a focused interval spent on an issue.
 
-## Runtime Model
+This gives Crona more context than a flat task list without forcing you into a project-management ceremony.
 
-Crona has three main runtime pieces:
+## Active context
 
-- `crona-daemon`: the background local daemon that owns storage, timers, updates, and IPC.
-- `crona-tui`: the interactive terminal UI.
-- `crona`: the scriptable CLI and default launcher.
+Your active context is the repository, stream, and issue you are currently working in. The TUI and CLI share it through the local daemon, so a command can usually operate on the thing you already selected.
 
-All clients talk to the local daemon over the shared IPC surface documented in [reference/socket-api.md](../reference/socket-api.md).
+Think of context as a working pointer, not a permanent assignment. Change it when the work changes.
 
-The TUI owns the terminal tab/window title while it is running. Idle titles show Crona plus the active repo/stream and current view when available; active focus sessions show Crona plus the issue/session context and elapsed timer state. The title is reset on exit on a best-effort basis.
+## Sessions are records, not just timers
 
-## Core Entities
+A timer answers “how long have I been doing this?” A Crona session also answers “what was I doing, and what did I leave behind?”
 
-### Repository
+Sessions can include work and break segments, be stashed when you are interrupted, and end with a short summary. The result is a readable history connected to the issue that motivated it.
 
-A top-level bucket for work.
+## The local pieces
 
-Examples:
-- Office
-- Personal
-- Research
+Crona has three surfaces:
 
-### Stream
+- `crona` is the launcher and scriptable CLI.
+- `crona-tui` is the terminal interface for planning and focused work.
+- `crona-daemon` is the local background service that owns the database, timers, reminders, and client communication.
 
-A long-lived subdivision inside a repository.
+The TUI, CLI, and macOS Companion are clients of the same local state. Switching surfaces does not require an account or a sync step.
 
-Examples:
-- main
-- backend
-- experiments
+## Planning, focus, and review
 
-### Issue
+Most days can be understood as three moves:
 
-The smallest intentional unit of work. An issue can carry a title, estimate, notes, and lifecycle state.
+1. **Plan**: choose issues, habits, and check-ins for the day.
+2. **Focus**: start a session from the issue you are moving forward.
+3. **Review**: read the day, session summaries, habits, and Momentum to see what happened.
 
-### Session
+Read the workflow guides when you are ready to go deeper:
 
-A focused work interval tied to an issue.
-
-Sessions:
-- are started and stopped via the timer
-- contain one or more segments
-- end with a commit-style summary message
-
-### Session Segments
-
-A session is composed of:
-- `work`
-- `short_break`
-- `long_break`
-- `rest`
-
-### Timer
-
-The timer is derived state, not stored state.
-
-It:
-- starts and stops sessions
-- transitions segments
-- enforces structured boundaries
-- emits events for subscribed clients
-
-### Active Context
-
-The shared `{ repo -> stream -> issue }` selection across local clients.
-
-## Wellbeing Metrics
-
-The Wellbeing view combines a selected-day check-in with a rolling metrics window. Mood, energy, sleep, screen time, burnout, focus, and habit rollups are still shown for the recent 7-day window ending on the selected wellbeing date.
-
-Momentum is separate from that 7-day window. It uses all stored local history up to the selected wellbeing date, so focus, check-in, and habit streaks can exceed the visible metrics window. The range-based streak API is available for reports and callers that need date-window streak calculations.
-
-Custom momentum follows the streak definitions configured in Settings:
-
-- daily definitions count matching completed days
-- weekly definitions count weeks that meet their configured completion threshold
-- monthly definitions count months that meet their configured completion threshold
-
-Momentum definitions can now target either habits or contexts. Habit targets use the selected habit IDs, while context targets use repo and stream selections from the workspace. The matching mode controls how selected targets contribute:
-
-- `any` treats the selected targets as alternatives and counts whichever selected target contributes
-- `all` requires the selected targets to contribute together before the threshold is met
-
-For weekly and monthly custom momentum, the current in-progress bucket does not break an existing streak just because it has not reached its threshold yet. It only extends the streak once the threshold is met.
-
-The Momentum pane visualizes current streak length with a cadence-specific ladder and the corresponding target summary. Filled blocks are milestones reached by the current streak; empty blocks are future milestones. The detail view expands the selected card with current-bucket metadata, the resolved target summary, and contributor rows so you can see exactly which completions or sessions produced the active streak.
-
-```text
-Daily/check-in/focus: 1d, 3d, 7d, 14d, 30d, 60d, 100d
-Weekly customs:       1w, 2w, 4w, 8w, 13w, 26w, 52w
-Monthly customs:      1mo, 2mo, 3mo, 6mo, 12mo, 24mo
-```
-
-The exact current and best values are shown next to the ladder, for example `14d current · 30d best`.
-
-Protected rest and away days are part of this history. Enabling Away Today protects the current logical date immediately; disabling it that same day removes the provisional protection. The daemon only commits a protected date to canonical history once the logical day completes, keeping both the terminal and native clients aligned.
-
-## Terminal UI Surfaces
-
-On wider terminals, the Wellbeing dashboard splits its lower region into a 7-day Metrics Window pane and a separate Momentum pane. The Momentum pane is focusable and scrollable independently so custom habit momentum can grow without clipping the metrics content.
-
-The Daily view also adapts to terminal width. Wider layouts keep the denser multi-pane presentation. Narrower terminals collapse the issue area into a compact list that keeps title, due date, context, effort, and status readable. On smaller widths, pane action hints shorten their labels before they wrap.
-
-Calendar surfaces use terminal background styling for selected dates, date ranges, today, and the current week rather than bracket markers. This keeps date cells fixed-width while relying on color and background state to distinguish selection and today.
-
-The main dashboard surfaces serve different jobs:
-
-- **Summary** is a read-only view for checking the selected day at a glance: focus, issues, habits, planning, check-in signals, and Momentum.
-- **Daily** is the working view for planning, updating issues, and making changes as the day moves.
-- **Rollup** and **Wellbeing** help interpret longer-term patterns, distribution, and risk.
-
-The CLI follows the same split. `crona summary` prints a read-only day or range snapshot; use an export when you want to save or share the same kind of information.
-
-## Notifications And Automation
-
-### Notifications
-
-Crona can trigger local OS notifications and bundled alert sounds from the local daemon itself. The TUI configures and tests alerts, while notification timing and scheduled reminder evaluation run in the daemon.
-
-Focus inactivity alerts are also local-daemon-owned. If a focus session keeps running without recent TUI activity for the configured threshold, Crona can notify the user to review, pause, or end the session.
-
-### Calendar Export
-
-Crona can generate deterministic local `.ics` files for external automations.
-
-Typical workflow:
-- Crona writes `.ics` files into the configured export directory.
-- Local automations watch that directory.
-- External tools import or react to those files.
-
-Crona does not require direct Google Calendar or iCloud API integration for this flow.
-
-## Design Principles
-
-- local-first
-- authoritative data over derived state
-- replayable operations
-- no hidden background jobs
-- deterministic local artifacts
-- a git-like mental model for work state
-
-## Project Status
-
-The core workflow is usable for general users, while validation builds remain available for faster feedback on upcoming changes.
-
-Current mainline focus:
-- stable-channel maintenance
-- installer/updater/support polish
-- future native-client integration work
-- documentation and contributor-facing references
-- tester feedback for upcoming releases
+- [Issues and Planning](../workflows/issues-and-planning.md)
+- [Focus Sessions](../workflows/focus-sessions.md)
+- [Habits](../workflows/habits.md)
+- [Check-Ins and Wellbeing](../workflows/check-ins-and-wellbeing.md)

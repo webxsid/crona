@@ -5,9 +5,9 @@ description: System notifications, sound profiles, inactivity tracking, and sche
 order: 5.8
 ---
 
-Crona processes alerts locally through the background daemon. The TUI lets you configure and test alerts; the daemon evaluates timers and reminders, then delivers them through the available local OS helper.
+Alerts are useful when you are deep in work and do not want to watch the clock. Crona evaluates them locally through the background daemon and uses the notification tools available on your machine.
 
-## Trigger Scopes
+## What can notify you
 
 The local alert layer fires on these events:
 - **Timer Boundaries**: Transitions between work segments, short breaks, and long breaks.
@@ -17,16 +17,16 @@ The local alert layer fires on these events:
 - **Scheduled Reminders**: Recurring alarms for check-ins or planning the day.
 - **Day Boundaries**: Start-of-day and end-of-day schedule events.
 
-## Scheduled Reminders
+## Set a reminder
 
-Reminder rules can be configured via the **Alerts** view in the TUI:
+In the TUI's **Alerts** view, you can create, edit, pause, or delete:
 - **Schedules**: Daily or weekly reminder alarms.
 - **Kinds**: `checkin_reminder` and `daily_plan_reminder`.
 - **Action Group**: Create, edit, toggle, or delete rules directly from the interface.
 - **Suppression**: Check-in reminders stop firing once today's check-in exists. Daily-plan reminders stop firing once today's plan contains an item.
 - **Prerequisite**: Scheduled reminders only trigger while `crona-daemon` is running.
 
-## Day-Boundary Schedules
+## Start and end of day
 
 Configure **Start of Day** and **End of Day** in the TUI Settings view. Each schedule has:
 
@@ -36,7 +36,7 @@ Configure **Start of Day** and **End of Day** in the TUI Settings view. Each sch
 
 Start of Day is enabled at `00:00` by default. End of Day is disabled by default. The daemon evaluates these schedules, records each occurrence so a restart cannot duplicate it, and routes End of Day notifications through the normal local alert system. Schedules are daemon-owned and only run while `crona-daemon` is running.
 
-## Alert Customization & Presets
+## Tune the sound
 
 You can adjust how notifications behave per alert type:
 - **Toggles**: Enable/disable visual toasts, audio cues, or both.
@@ -48,7 +48,7 @@ You can adjust how notifications behave per alert type:
   - `focus_gong`
   - `minimal_click`
 
-## Platform Notification Backends
+## Platform support
 
 Alert delivery depends on platform-specific helpers:
 
@@ -59,3 +59,5 @@ Alert delivery depends on platform-specific helpers:
 | **Windows** | `BurntToast` (fallback: PowerShell toasts) | PowerShell `SoundPlayer` |
 
 You can check active backend capabilities (e.g., subtitle, urgency, icon support) in the **Alerts** panel.
+
+The daemon must be running for scheduled reminders and day-boundary alerts. Next: [Focus Sessions](focus-sessions.md) for timer behavior.

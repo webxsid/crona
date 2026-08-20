@@ -1,6 +1,6 @@
 ---
 title: "legacy to go"
-hosted: true
+hosted: false
 ---
 
 # Legacy To Go

@@ -7,6 +7,25 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.8] - 2026-08-20
+
+Crona v1.9.0-beta.8 makes daemon failures easier to diagnose and keeps the local runtime alive when an individual worker panics.
+
+### Added
+
+- Daemon lifecycle metadata and panic stack traces for production diagnostics.
+- A dedicated hosted API Reference with focused pages for transport, runtime, work management, focus and wellbeing, exports and settings, and events.
+
+### Changed
+
+- Daemon logs now preserve the complete lifecycle instead of truncating the current log on every write.
+- Daemon worker panics in IPC, scheduling, update, and notification paths are captured without silently terminating the process.
+- Signal-driven daemon shutdowns now retain their cancellation cause in lifecycle logs.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.5`; this release does not require a storage migration.
+
 ## [1.9.0-beta.7] - 2026-08-18
 
 Crona v1.9.0-beta.7 improves date-scoped issue responses, adds focus-score context, and advances the local IPC protocol to 1.5.

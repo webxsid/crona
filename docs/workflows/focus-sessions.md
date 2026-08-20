@@ -1,39 +1,45 @@
 ---
 hosted: true
 title: Focus Sessions
-description: Timed work blocks, Pomodoro profiles, stash management, and session logs.
+description: Work on one issue, handle interruptions, and leave a useful session record.
 order: 5.2
 ---
 
-Focus sessions are timed intervals tied directly to specific issues. The daemon manages active timers, ensuring that tracking continues even if clients disconnect.
+# Focus on one thing
 
-## Starting a Session
+A focus session connects a timed work block to an issue. You do not start with a blank timer; you start with a reason for the work.
 
-Focus sessions can be initiated for issues in the **Planned**, **Ready**, or **In Progress** states:
-- Starting a timer on a **Planned** or **Ready** issue automatically promotes its status to **In Progress**.
-- The timer configuration (`Pomodoro` cadence or no-break `Timer` countdown mode) is loaded directly from the issue profile.
-- Start dialogs show worked time, estimate context, total duration, and an `Ends At` preview before the session begins.
-- Timer defaults use the remaining estimate instead of ignoring already logged work.
-- The interactive client owns the terminal tab/window title, updating it with elapsed time and task context.
+## Start a session
 
-When a countdown expires, you can commit the session or add more time. Extending a countdown adds duration only; it does not add Pomodoro breaks or cycles.
+Select an issue in Planned, Ready, or In Progress and start focus. Before the timer begins, Crona shows the issue’s estimate, worked time, duration, and expected end time when available.
 
-## Interruptions & Stashes
+Choose the profile that fits:
 
-If interrupted during a session, you can create a **Stash** to suspend the current work state:
-- The stash preserves elapsed timer segments, cycle counts, and task context.
-- Resuming a task with an existing stash prompts the user to either resume the stashed session or start a fresh timer while keeping the stash intact.
-- Stashes prevent incomplete or fragmented logs when switching tasks mid-session.
+- **Pomodoro** gives the session work and break segments.
+- **Timer** gives you one no-break countdown.
 
-## Completing and Amending Sessions
+The daemon owns the timer, so it keeps running if you move between the TUI, CLI, and Companion.
 
-Stopping a session triggers the completion flow:
-- **Session Summaries**: Users write a commit-style summary detailing what was accomplished.
-- **Session History**: Completed sessions are written to the database. You can browse history or amend logs (such as editing descriptions or correcting durations) retroactively.
-- **Manual Logging**: Work completed offline or away from the terminal can be logged manually.
+## Handle an interruption
 
-## Focus Inactivity Alerts
+If something pulls you away, stash the session instead of abandoning the context. A stash keeps the issue, elapsed segments, and timer state available for later.
 
-The local daemon runs focus inactivity checks:
-- The TUI client periodically reports keyboard activity to the daemon.
-- If no client activity is reported for a configured duration, the daemon triggers an OS-level notification asking the user to review, pause, or end the active session.
+When you return, resume the stash or start a fresh session. Both choices keep the earlier work visible.
+
+## Finish with a summary
+
+Stopping a session opens a summary prompt. Write what changed, what you learned, or what remains:
+
+```text
+Reworked the docs flow and moved installation details into the core guide.
+```
+
+Completed sessions are saved in local history. You can review or amend them later when a duration or description needs correcting.
+
+## If the timer reaches its limit
+
+For a Pomodoro session, Crona moves through its configured break flow. For a no-break timer, you can commit the session or add more time. Extending a Timer adds duration; it does not create Pomodoro cycles.
+
+## Next step
+
+Use [Exports and Reports](exports-and-reports.md) when you want to turn the day or a set of sessions into something you can read elsewhere.

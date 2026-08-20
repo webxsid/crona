@@ -122,7 +122,7 @@ func Start(
 			}
 		}
 	})
-	go func() {
+	logger.Go("notification delivery worker", func() {
 		defer unsubscribe()
 		for {
 			select {
@@ -142,9 +142,9 @@ func Start(
 				}
 			}
 		}
-	}()
-	go service.runReminderScheduler(ctx)
-	go service.runInactivityScheduler(ctx)
+	})
+	logger.Go("reminder scheduler", func() { service.runReminderScheduler(ctx) })
+	logger.Go("inactivity scheduler", func() { service.runInactivityScheduler(ctx) })
 	return service
 }
 

@@ -5,25 +5,27 @@ description: Track recurring routines, schedules, and custom streak metrics alon
 order: 5.5
 ---
 
-Habits in Crona are recurring routines tracked independently of issues. They represent repeatable processes, wellness metrics, or daily routines.
+Use habits for the things you want to remember without turning them into project work: stretch, review your inbox, take a walk, or write a daily note.
 
-## Habit Schedules
+Create them in the TUI's Habits view, then let the Daily view show what is due alongside your issues.
+
+## Choose a cadence
 
 Crona supports three cadences:
 - **Daily**: Due every day.
 - **Weekdays**: Due Monday through Friday.
 - **Weekly**: Due once per week, tracked within the configured week boundary.
 
-## Logging & Completions
+## Mark a habit complete
 
 Habit completions are recorded against calendar days:
 - Log completions directly in the Daily dashboard.
 - Toggle completions backward or forward in time to keep logs accurate.
 - Habit history is stored in the local SQLite database and can be queried or exported.
 
-## Custom Streaks and Momentum
+## Keep the useful streak
 
-Crona tracks streaks using customizable rules configured in Settings. These definitions can target habits or contexts (specific repository and stream combinations):
+Crona can turn completions into Momentum rules configured in Settings. A rule can target habits or a context (a repository and stream):
 - **Cadence**: Daily, weekly, or monthly completion checks.
 - **Matching Mode**:
   - `any`: Streak continues if any target meets its completion threshold.
@@ -31,6 +33,8 @@ Crona tracks streaks using customizable rules configured in Settings. These defi
 - **Milestones**: Streaks are visualized via progress ladders on the Wellbeing dashboard.
 - **Grace Periods**: Weekly and monthly streaks do not break immediately when a new period starts; they remain valid until the period expires and the threshold fails to be met.
 
-## Protected Days and Away Today
+## Take a day off
 
-Protected rest rules and away days keep a completed Momentum streak continuous rather than treating time away as a miss. Turning on **Away Today** protects the current logical date immediately. Turn it off again on the same date and that provisional protection disappears; it does not create a historical away record. Once a protected day has passed the configured day boundary, Crona records it as immutable history.
+Protected rest rules and **Away Today** keep time away from breaking a Momentum story. Away Today is reversible until the day boundary; after that, a qualifying protected day becomes history.
+
+Next: [Check-ins and Wellbeing](check-ins-and-wellbeing.md) if you want to pair routines with a daily reflection.

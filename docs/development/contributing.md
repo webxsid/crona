@@ -1,5 +1,5 @@
 ---
-hosted: true
+hosted: false
 title: "Contributing"
 description: "Contribution workflow, code quality, and pull request guidelines."
 order: 6.2

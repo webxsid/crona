@@ -1,40 +1,36 @@
 ---
-title: "Documentation"
-description: "The hosted documentation index for Crona."
+title: "Crona Documentation"
+description: "Learn Crona from installation through your first focused workday."
 hosted: true
 order: 0
 ---
 
-# Documentation
-
-Use this index as the entry point for Crona's hosted documentation.
+Crona helps you plan the workday, focus on one issue, and leave behind a useful record. It keeps that state on your machine and gives you a terminal-first way to work with it.
 
 ## Start here
 
-- [Getting Started](guides/getting-started.md)
-- [Concepts](guides/concepts.md)
-- [Features Overview](guides/features-overview.md)
-- [Install](install.md)
+Follow this path if you are new to Crona:
 
-## Daily workflows
+1. [Install Crona](install.md)
+2. [Start your first workday](guides/getting-started.md)
+3. [Learn the work model](guides/concepts.md)
+4. [See what Crona can do](guides/features-overview.md)
+
+## Use Crona
 
 - [Issues and Planning](workflows/issues-and-planning.md)
-- [Habits](workflows/habits.md)
 - [Focus Sessions](workflows/focus-sessions.md)
+- [Habits](workflows/habits.md)
 - [Check-Ins and Wellbeing](workflows/check-ins-and-wellbeing.md)
+- [Exports and Reports](workflows/exports-and-reports.md)
 - [macOS Companion](workflows/macos-companion.md)
 
-## Reference and automation
+## Go deeper
 
-- [Socket API](reference/socket-api.md)
 - [CLI and Local Engine](reference/cli-and-local-engine.md)
 - [TUI Keymap Reference](reference/tui-keymap-reference.md)
-- [Exports and Reports](workflows/exports-and-reports.md)
 - [Calendar and File Automation](workflows/calendar-and-file-automation.md)
 - [Usage and Diagnostics](reference/usage-and-diagnostics.md)
+- [API Reference](api/index.md)
 
-## Development
-
-- [Development](development/development.md)
-- [Contributing](development/contributing.md)
-- [Feature Design](development/feature-design.md)
+If you are contributing to Crona or building another client, use the source repository's contributor and API material alongside these guides.

@@ -1,7 +1,7 @@
 ---
 title: "Socket API"
 description: "Reference for Crona's local daemon IPC transport, envelopes, methods, and events."
-hosted: true
+hosted: false
 order: 7.2
 ---
 

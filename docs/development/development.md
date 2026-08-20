@@ -1,5 +1,5 @@
 ---
-hosted: true
+hosted: false
 title: "Development"
 description: "Prerequisites, common tasks, and running Crona from source."
 order: 6.1

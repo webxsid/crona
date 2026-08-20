@@ -1,6 +1,6 @@
 ---
 title: "legacy to brew"
-hosted: true
+hosted: false
 ---
 
 # Legacy To Homebrew

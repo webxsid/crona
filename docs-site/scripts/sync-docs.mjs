@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = join(root, "..", "docs");
 const destination = join(root, "src/content/docs");
+const sourceScreenshots = join(source, "screenshots");
+const destinationScreenshots = join(root, "src/assets/screenshots");
 
 const frontmatter = (content) => {
   const match = content.match(/^---\n([\s\S]*?)\n---\n/);
@@ -18,6 +20,9 @@ const frontmatter = (content) => {
 await rm(destination, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 await cp(source, destination, { recursive: true });
+await rm(destinationScreenshots, { recursive: true, force: true });
+await mkdir(destinationScreenshots, { recursive: true });
+await cp(sourceScreenshots, destinationScreenshots, { recursive: true });
 
 const readme = join(destination, "README.md");
 const index = join(destination, "index.md");
@@ -64,6 +69,9 @@ for (const path of markdownFiles) {
   }
   const sourcePath = path === index ? "README.md" : relative(destination, path).split(sep).join("/");
   const rewritten = content
+    .replace(/\]\(\/screenshots\/([^)#]+)(#[^)]+)?\)/g, (_match, file, fragment = "") =>
+      `](../../../assets/screenshots/${file}${fragment})`,
+    )
     .replace(/\]\(\.\.\/\.\.\/(shared\/[^)#]+)(#[^)]+)?\)/g, (_match, file, fragment = "") =>
       `](${sourceBase}${file}${fragment})`,
     )
@@ -84,4 +92,4 @@ for (const path of markdownFiles) {
   if (rewritten !== original) await writeFile(path, rewritten);
 }
 
-console.log(`Synced local docs from ${source}`);
+console.log(`Synced local docs and screenshots from ${source}`);

@@ -2,10 +2,15 @@
 title: Focus and Wellbeing
 description: Sessions, timers, context, check-ins, momentum, dashboards, and metrics.
 hosted: true
+badge: Beta
 order: 7.4
 ---
 
 # Focus and Wellbeing
+
+:::note[Protocol compatibility]
+The focus-score dashboard methods and logical-date synchronization require protocol `1.5`. Read `kernel.info.get` before using `dashboard.focus_score`, `dashboard.focus_score_range`, or relying on configured Start of Day semantics across clients.
+:::
 
 ## Sessions and timers
 

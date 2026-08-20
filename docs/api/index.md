@@ -2,10 +2,15 @@
 title: API Reference
 description: The local Crona daemon API for TUI, CLI, companion, and automation clients.
 hosted: true
+badge: Beta
 order: 7.0
 ---
 
 # API Reference
+
+:::caution[Compatibility]
+Some methods and fields in this reference may arrive in beta before stable. The local IPC protocol is independent of the Crona release version. Check `kernel.info.get` before depending on a newer capability, and make your client tolerate unsupported methods when connecting to an older daemon.
+:::
 
 Crona clients communicate with the local daemon through a request/response socket API. This reference is organized by responsibility so you can find the contract for a feature without reading one large method catalogue.
 
@@ -29,10 +34,10 @@ Crona clients communicate with the local daemon through a request/response socke
 
 ## Contract rules
 
-- The current local IPC protocol is **1.5**. It is independent of the Crona release version.
+- The current local IPC protocol is **1.5**. It is independent of the Crona release version; beta additions may not be available on stable daemons.
 - The canonical method names are defined in [`shared/protocol/methods.go`](../../shared/protocol/methods.go).
 - Request and response DTOs are defined in [`shared/dto`](../../shared/dto/requests.go).
 - Before `1.0.0`, generated clients should prefer the shared Go types over assumptions from prose.
 - This is a local API, not a remotely exposed network service.
 
-For the complete legacy overview, see [Socket API](../reference/socket-api.md).
+The domain pages above are the canonical API reference. Use the source repository when you need implementation details beyond the public contract.

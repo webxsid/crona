@@ -1,258 +1,73 @@
 ---
 title: "Install Crona"
-description: "Install Crona on macOS, Linux, and Windows using the supported package and fallback methods."
-hosted: false
+description: "Install Crona on macOS, Linux, or Windows and start your first local workday."
+hosted: true
 order: 0.5
 ---
 
-# Install
+# Install Crona
 
-## Release Artifacts
+Crona is installed as a small local toolkit: the `crona` launcher, the terminal UI, and the background daemon that keeps timers and local state running.
 
-End users do not need Go installed.
+You do not need Go installed for a normal package-manager install.
 
-Installed binaries:
+## macOS and Linux
 
-- `crona`
-- `crona-daemon`
-- `crona-tui`
-
-`crona-daemon` is the background local engine binary. Most user-facing docs call it the daemon or local engine because it owns storage, timers, reminders, update checks, and local IPC.
-
-Release assets ship as:
-
-- one platform bundle zip containing all three binaries
-- one shared `crona-assets-<version>.tar.gz` archive for legacy script installers and release compatibility
-- installer scripts for Unix-like systems and Windows
-
-> [!IMPORTANT]
-> The Updates view warns when Crona was installed with the legacy GitHub install script.
-> Use a managed installer when possible. Use the script path only when Homebrew or Scoop are not viable.
-> Prefer a managed package installer when possible, and use [migration.md](migration.md) if you need to switch install methods or release channels.
-
-## macOS And Linux
-
-Prefer Homebrew:
-
-```bash
-brew tap webxsid/tap
-brew install crona
-```
-
-or:
+Install with Homebrew:
 
 ```bash
 brew install webxsid/tap/crona
 ```
 
-Use `crona` for stable releases. Use `crona-beta` for prerelease builds:
+Then start Crona:
 
 ```bash
-brew install webxsid/tap/crona-beta
+crona
 ```
 
-Homebrew users update with:
+Homebrew handles updates:
 
 ```bash
 brew upgrade crona
 ```
 
-Beta users update with:
-
-```bash
-brew upgrade crona-beta
-```
-
-Legacy install script fallback:
-
-```bash
-curl -fsSL https://crona.work/install.sh | sh
-```
-
-This script is a fallback path. The Updates view shows the migration guide and the managed-installer commands for switching away from it.
-
-If you need to switch install methods or release channels, use the migration guide:
-
-```bash
-https://crona.work/migration
-```
-
-For step-by-step destination-specific migration flows, see:
-
-- [Legacy to Homebrew](migration/legacy-to-brew.md)
-- [Legacy to Go](migration/legacy-to-go.md)
-- [Legacy to Scoop](migration/legacy-to-scoop.md)
-
-The guide uses `crona backup` and `crona restore <path>` to preserve your database while you reinstall.
-When you remove Crona with your package manager, only the binaries go away. Your runtime data stays behind until you remove it yourself or run `crona daemon wipe-data --force` before uninstalling.
-If you want a fully clean switch after uninstalling, remove the runtime directory manually using the paths listed in the migration guide.
-
-Legacy direct GitHub install:
-
-```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/<version>/install-crona-tui.sh | sh
-```
-
-Force a non-interactive reinstall:
-
-```bash
-curl -fsSL https://github.com/webxsid/crona/releases/download/<version>/install-crona-tui.sh | CRONA_INSTALL_FORCE=1 sh
-```
-
-Run the installer from a downloaded file:
-
-```bash
-curl -fsSL -o /tmp/install-crona-tui.sh https://github.com/webxsid/crona/releases/download/<version>/install-crona-tui.sh
-sh /tmp/install-crona-tui.sh
-```
-
 ## Windows
 
-Prefer Scoop:
+Install with Scoop:
 
 ```powershell
 scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
 scoop install crona
 ```
 
-For beta builds:
+Start Crona from PowerShell:
 
 ```powershell
-scoop bucket add webxsid https://github.com/webxsid/scoop-bucket
-scoop install crona-beta
+crona
 ```
 
-The Scoop manifest installs the Crona bundle and exposes `crona`, `crona-daemon`, and `crona-tui`.
-
-Scoop users update with:
+Update it with:
 
 ```powershell
 scoop update crona
 ```
 
-Beta Scoop installs should use:
+## macOS Companion
 
-```powershell
-scoop update crona-beta
-```
+The macOS Companion adds quick issue creation, check-ins, and a floating timer without replacing the TUI. It uses the same local daemon and data as Crona's terminal surfaces.
 
-Legacy install script fallback:
+[Open the macOS Companion](https://crona.work/companions/)
 
-```powershell
-$version = "<version>"
-Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
-```
+## Where Crona keeps data
 
-For managed installs, Scoop owns the update command, and Crona only surfaces it in the Updates view.
+Crona stores its runtime data locally:
 
-By default, Windows installs binaries into `%LocalAppData%\Programs\Crona\bin`, adds that directory to the user `PATH`, and stores runtime data under `%LocalAppData%\Crona`.
+- macOS: `~/Library/Application Support/Crona`
+- Linux: `${XDG_DATA_HOME:-~/.local/share}/crona`
+- Windows: `%LocalAppData%\Crona`
 
-Override the binary install location with `CRONA_INSTALL_DIR`:
+Set `CRONA_HOME` when you need a different location.
 
-```powershell
-$env:CRONA_INSTALL_DIR = "D:\tools\crona\bin"
-powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
-```
+## Next step
 
-## Manual Installation
-
-Download your platform bundle zip from the release page and extract `crona`, `crona-daemon`, and `crona-tui`. The embedded templates and alert assets ship inside the binaries, so the shared assets archive is only needed for the legacy script installers.
-
-The TUI starts the local engine automatically when needed. `crona-tui` is also available as a compatibility entrypoint.
-
-## Runtime Layout
-
-### Runtime Data
-
-Default runtime directories:
-
-- macOS prod: `~/Library/Application Support/Crona`
-- macOS dev: `~/Library/Application Support/Crona Dev`
-- Linux prod: `${XDG_DATA_HOME:-~/.local/share}/crona`
-- Linux dev: `${XDG_DATA_HOME:-~/.local/share}/crona-dev`
-- Windows prod: `%LocalAppData%\Crona`
-- Windows dev: `%LocalAppData%\Crona Dev`
-
-Override the runtime directory with `CRONA_HOME`.
-
-On macOS and Linux, legacy `~/.crona` and `~/.crona-dev` directories migrate automatically on install or first local engine start unless `CRONA_HOME` is set.
-
-### Binary Install Location
-
-Default binary install directories:
-
-- macOS/Linux: `~/.local/bin`
-- Windows: `%LocalAppData%\Programs\Crona\bin`
-
-Override the binary install directory with `CRONA_INSTALL_DIR`.
-
-## Updates
-
-Users can switch release tracks from the TUI settings.
-The default track follows stable releases. The beta track is opt-in.
-
-Use the in-app `Updates` view to check release status, read notes, and get the right migration or package-manager command.
-
-- Homebrew installs never self-update from inside Crona.
-- Scoop installs never self-update from inside Crona.
-- The TUI shows the source-aware update command for the current install type, but does not execute it.
-- Stable Homebrew installs use `brew upgrade crona`, while beta Homebrew installs use `brew upgrade crona-beta`.
-- When Crona asks you to migrate, back up with `crona backup`, uninstall with your package manager, remove runtime data if you want a clean reset, then reinstall and restore with `crona restore <path>`.
-- Use the migration guide at [docs/migration.md](migration.md) when switching install methods or release channels.
-- Script installs rerun the install script.
-- Stable Scoop installs use `scoop update crona`, while beta Scoop installs use `scoop update crona-beta`.
-- Source installs show the `go install` command.
-- Manual installs and unknown installs are directed to the GitHub release page.
-
-## Notifications And Alerts
-
-Alerts are emitted by the local engine. The TUI configures and tests them, but the background engine is the process that decides when to fire:
-
-- timer boundary alerts
-- focus inactivity alerts when an active work session runs too long without TUI activity
-- update-available alerts
-- support/export completion alerts
-- scheduled reminders such as nightly check-ins and morning plan-the-day prompts
-
-Scheduled reminders and inactivity alerts are local-only and only fire while the local engine is running.
-
-Supported notification helpers by OS:
-
-- macOS:
-  - notifications: `terminal-notifier`, fallback `osascript`
-  - sound playback: `afplay`
-- Linux:
-  - notifications: `notify-send`
-  - sound playback: `paplay`, `aplay`, `play`, fallback `canberra-gtk-play`
-- Windows:
-  - notifications: `BurntToast` when installed, fallback PowerShell toast delivery
-  - sound playback: PowerShell `SoundPlayer`
-
-The `Alerts` view shows the active backend and whether subtitle, urgency, icon, and bundled sound support are currently available on the running machine.
-
-On macOS, `terminal-notifier` and `osascript` cover basic notification delivery. Companion-capable actions, such as the hard-limit commit or extend choices, are handled by the native companion when it is connected.
-
-Bundled alert sounds include royalty-free effects by Universfield on Pixabay:
-
-> Sound Effect by [Universfield](https://pixabay.com/users/universfield-28281460/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248) from [Pixabay](https://pixabay.com//?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=494248)
-
-## PDF Rendering
-
-Markdown export works without extra tooling. PDF export requires local renderer support.
-
-Current renderer expectations:
-
-- Summary, daily, and weekly narrative PDF exports require `weasyprint`
-- Repo, stream, and issue-rollup PDF exports require `pandoc` plus one supported PDF engine:
-  - `tectonic`
-  - `weasyprint`
-  - `wkhtmltopdf`
-  - `xelatex`
-  - `pdflatex`
-
-Renderer availability is detected at runtime and surfaced in the TUI `Config` view and through `export.assets.get`.
-
-If the required renderer chain is missing, PDF export remains unavailable but markdown export still works.
-
-The export UI separates the at-a-glance Summary exports from narrative reports. Summary exports use their own date and range flow and can produce markdown, PDF, clipboard markdown, or CSV depending on the target. Repo, stream, and issue report exports prompt for the entity at export time and can prefill from the current checked-out context when one exists.
+Open [Getting Started](guides/getting-started.md) and create one issue, run one session, and review the result.

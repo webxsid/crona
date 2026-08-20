@@ -1,5 +1,5 @@
 ---
-hosted: true
+hosted: false
 title: "Feature Design"
 description: "Proposed multi-device sync architecture using op logs."
 order: 7.1

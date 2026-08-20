@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -33,6 +34,19 @@ func (l *Logger) Error(msg string, err error) {
 	l.write("ERROR", msg, detail)
 }
 
+// Go runs fn in a daemon-owned goroutine and records panics without allowing
+// a worker failure to terminate the daemon process.
+func (l *Logger) Go(name string, fn func()) {
+	go func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				l.Error("panic in "+name, fmt.Errorf("%v\n%s", recovered, debug.Stack()))
+			}
+		}()
+		fn()
+	}()
+}
+
 func (l *Logger) write(level, msg, detail string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -43,11 +57,13 @@ func (l *Logger) write(level, msg, detail string) {
 	}
 	entry += "\n"
 
-	_ = os.WriteFile(l.infoPath, []byte{}, FilePerm())
-	_ = appendFile(l.infoPath, entry)
+	if err := appendFile(l.infoPath, entry); err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "crona logger: write info log: %v\n", err)
+	}
 	if level == "ERROR" {
-		_ = os.WriteFile(l.errorPath, []byte{}, FilePerm())
-		_ = appendFile(l.errorPath, entry)
+		if err := appendFile(l.errorPath, entry); err != nil {
+			_, _ = fmt.Fprintf(os.Stderr, "crona logger: write error log: %v\n", err)
+		}
 	}
 }
 

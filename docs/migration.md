@@ -1,7 +1,7 @@
 ---
 title: "Migration"
 description: "Move Crona between installation methods and release channels without losing local data."
-hosted: true
+hosted: false
 order: 0.6
 ---
 

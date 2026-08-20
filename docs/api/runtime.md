@@ -9,6 +9,10 @@ order: 7.2
 
 ## Health and lifecycle
 
+:::note[Development-only methods]
+`kernel.dev.seed` and `kernel.dev.clear` are restricted to development mode. They are not beta features and are unavailable in production beta or stable builds.
+:::
+
 | Method | Request | Result / behavior |
 | --- | --- | --- |
 | `health.get` | `dto.Empty` | Readiness and health status. |
@@ -27,7 +31,7 @@ order: 7.2
 | Alert status | `alerts.status.get` | Read backend capability and delivery status. |
 | Alert tests | `alerts.test_notification`, `alerts.test_sound`, `alerts.notify` | Test or request delivery through the configured backend. |
 | Alert delivery | `alerts.delivery.subscribe`, `alerts.delivery.ack` | Subscribe to and acknowledge delivery records. |
-| Reminders | `alerts.reminders.list`, `.create`, `.update`, `.delete`, `.toggle` | Manage configured reminders. |
+| Reminders | `alerts.reminders.list`, `alerts.reminders.create`, `alerts.reminders.update`, `alerts.reminders.delete`, `alerts.reminders.toggle` | Manage configured reminders. |
 
 ## Operations history
 
