@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"crona/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
@@ -70,6 +71,75 @@ func TestCreateIssueMetaDueDateF2FallbackOpensCalendar(t *testing.T) {
 	}
 	if next.DateCursorValue != "2026-04-19" {
 		t.Fatalf("expected calendar to open on existing due date, got %q", next.DateCursorValue)
+	}
+}
+
+func TestCreateIssueMetaCreateShortcuts(t *testing.T) {
+	state := OpenCreateIssueMeta(State{}, 34, "main", "Crona")
+	state.Inputs[0].SetValue("Fix alerts")
+	for _, test := range []struct {
+		msg      tea.KeyMsg
+		followUp int
+	}{
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlS}, followUp: IssueCreateFollowUpDefault},
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlA}, followUp: IssueCreateFollowUpMore},
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlF}, followUp: IssueCreateFollowUpFocus},
+	} {
+		next, action, status := updateCreateIssueMeta(state, "2026-04-20", test.msg)
+		if status != "" || action == nil || action.IssueCreateFollowUp != test.followUp {
+			t.Fatalf("expected follow-up %d, got action=%+v status=%q", test.followUp, action, status)
+		}
+		_ = next
+	}
+}
+
+func TestCreateIssueDefaultCreateShortcuts(t *testing.T) {
+	state := OpenCreateIssueDefault(State{})
+	state.Inputs[0].SetValue("Crona")
+	state.Inputs[1].SetValue("main")
+	state.Inputs[2].SetValue("Fix alerts")
+	ctx := UpdateContext{
+		Repos:   []api.Repo{{ID: 1, Name: "Crona"}},
+		Streams: []api.Stream{{ID: 2, RepoID: 1, Name: "main"}},
+	}
+	for _, test := range []struct {
+		msg      tea.KeyMsg
+		followUp int
+	}{
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlS}, followUp: IssueCreateFollowUpDefault},
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlA}, followUp: IssueCreateFollowUpMore},
+		{msg: tea.KeyMsg{Type: tea.KeyCtrlF}, followUp: IssueCreateFollowUpFocus},
+	} {
+		_, action, status := updateCreateIssueDefault(state, ctx, "2026-04-20", test.msg)
+		if status != "" || action == nil || action.IssueCreateFollowUp != test.followUp {
+			t.Fatalf("expected follow-up %d, got action=%+v status=%q", test.followUp, action, status)
+		}
+	}
+}
+
+func TestCreateIssueDefaultArrowDoesNotChangeCreateAction(t *testing.T) {
+	state := OpenCreateIssueDefault(State{})
+	state.FocusIdx = 2
+	next, action, status := updateCreateIssueDefault(
+		state,
+		UpdateContext{},
+		"2026-04-20",
+		tea.KeyMsg{Type: tea.KeyLeft},
+	)
+	if action != nil || status != "" || next.FocusIdx != 2 {
+		t.Fatalf("expected left arrow to leave focus unchanged, got focus=%d, action=%+v, status=%q", next.FocusIdx, action, status)
+	}
+}
+
+func TestDefaultIssueFocusFollowsVisualOrder(t *testing.T) {
+	want := []int{2, 3, 4, 5, 0, 1, 2}
+	for index := range want[:len(want)-1] {
+		if got := shiftDefaultIssueFocus(want[index], 1); got != want[index+1] {
+			t.Fatalf("focus from %d = %d, want %d", want[index], got, want[index+1])
+		}
+	}
+	if got := shiftDefaultIssueFocus(2, -1); got != 1 {
+		t.Fatalf("reverse focus from title = %d, want 1", got)
 	}
 }
 

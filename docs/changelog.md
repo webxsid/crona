@@ -7,6 +7,20 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0-beta.9] - 2026-08-26
+
+Crona v1.9.0-beta.9 improves issue creation with dedicated save actions and clearer contextual controls.
+
+### Changed
+
+- Issue creation now supports `Ctrl+S` to save and close, `Ctrl+A` to create more, and `Ctrl+F` to create and focus.
+- Issue-create dialogs now keep static creation actions separate from field-specific contextual guidance.
+- Create-more and create-and-focus flows preserve the selected repository and stream and route directly to their follow-up dialogs.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.5`; this release does not require a storage migration.
+
 ## [1.9.0-beta.8] - 2026-08-20
 
 Crona v1.9.0-beta.8 makes daemon failures easier to diagnose and keeps the local runtime alive when an individual worker panics.

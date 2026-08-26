@@ -51,6 +51,7 @@ type Action struct {
 	Active              bool
 	Estimate            *int
 	DueDate             *string
+	IssueCreateFollowUp int
 	Note                *string
 	ReminderKind        sharedtypes.AlertReminderKind
 	ReminderSchedule    sharedtypes.AlertReminderScheduleType

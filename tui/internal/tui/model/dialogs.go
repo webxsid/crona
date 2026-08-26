@@ -899,14 +899,14 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		UpdateStream: func(repoID, streamID int64, name string, description *string) tea.Cmd {
 			return commands.UpdateStream(m.client, repoID, streamID, name, description)
 		},
-		CreateIssueOnly: func(streamID int64, title string, description *string, estimateMinutes *int, dueDate *string) tea.Cmd {
+		CreateIssueOnly: func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd {
 			return commands.CreateIssueOnly(
 				m.client,
-				streamID,
+				repoID, streamID, repoName, streamName,
 				title,
 				description,
 				estimateMinutes,
-				dueDate,
+				dueDate, followUp,
 			)
 		},
 		CreateHabitWithPath: func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int) tea.Cmd {
@@ -937,7 +937,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dashboardDate,
 			)
 		},
-		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string) tea.Cmd {
+		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd {
 			return commands.CreateIssueWithPath(
 				m.client,
 				repoName,
@@ -947,7 +947,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				title,
 				description,
 				estimateMinutes,
-				dueDate,
+				dueDate, followUp,
 			)
 		},
 		CheckoutContext: func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd {

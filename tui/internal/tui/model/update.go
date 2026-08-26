@@ -6,6 +6,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
@@ -85,6 +86,26 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	switch msg := msg.(type) {
+	case commands.IssueCreatedMsg:
+		refresh := tea.Batch(
+			commands.LoadRepos(m.client),
+			commands.LoadStreams(m.client, msg.RepoID),
+			commands.LoadIssuesSelecting(m.client, msg.StreamID, msg.Issue.ID),
+			commands.LoadAllIssuesSelecting(m.client, msg.Issue.ID),
+			commands.LoadDailySummary(m.client, ""),
+			commands.LoadDashboardSummaries(m.client, m.currentDashboardDate()),
+		)
+		switch msg.FollowUp {
+		case dialogstate.IssueCreateFollowUpMore:
+			return m.withDialogState(m.dialogSnapshot().OpenCreateIssueDefaultForPath(
+				msg.RepoID, msg.StreamID, msg.RepoName, msg.StreamName,
+			)), refresh
+		case dialogstate.IssueCreateFollowUpFocus:
+			return m.openStartTimerDialog(msg.RepoID, msg.StreamID, msg.Issue.ID,
+				msg.Issue.Title, msg.Issue.EstimateMinutes, msg.Issue.WorkedSeconds), refresh
+		default:
+			return m, refresh
+		}
 	case commands.IssueActionPreflightClearMsg:
 		switch msg.Mode {
 		case commands.IssueActionModeManual:

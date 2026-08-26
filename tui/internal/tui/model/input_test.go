@@ -164,6 +164,18 @@ func TestInputDepsOpenCreateActionUsesMomentumCreateDialog(t *testing.T) {
 	}
 }
 
+func TestDailyIssueCreateOpensDefaultIssueDialog(t *testing.T) {
+	model := Model{view: ViewDaily, pane: PaneIssues}
+	next := model.handleInputCreateAction()
+
+	if next.dialog != "create_issue_default" {
+		t.Fatalf("daily issue create dialog = %q, want create_issue_default", next.dialog)
+	}
+	if next.dialogFocusIdx != 2 {
+		t.Fatalf("daily issue create focus = %d, want title index 2", next.dialogFocusIdx)
+	}
+}
+
 func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 	model := Model{
 		view:        ViewMomentum,

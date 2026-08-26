@@ -37,7 +37,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 			contextRow,
 			"",
 		}
-		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "create"))
+		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "create_issue_default":
 		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, issueDialogWidth)
@@ -59,7 +59,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 			contextRow,
 			"",
 		}
-		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "create"))
+		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
 		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
 	case "edit_issue":
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
@@ -153,28 +153,11 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 }
 
 func issueDialogHint(state controllerpkg.State, submitLabel string) string {
+	if state.Kind == "create_issue_default" || state.Kind == "create_issue_meta" {
+		return issueCreateHint(state)
+	}
 	switch state.Kind {
-	case "create_issue_default":
-		switch state.FocusIdx {
-		case 0, 1:
-			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		case 3:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		case 5:
-			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		default:
-			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
-		}
-	case "create_issue_meta", "edit_issue":
+	case "edit_issue":
 		switch state.FocusIdx {
 		case 1:
 			return "[enter] newline   [tab] next   " + dialogSubmitHint(
@@ -192,6 +175,29 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 	default:
 		return dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 	}
+}
+
+func issueCreateHint(state controllerpkg.State) string {
+	static := "[ctrl+s] save & close   [ctrl+a] create more   [ctrl+f] create & focus"
+	context := "[tab] next   [esc] cancel"
+	if state.Kind == "create_issue_default" {
+		switch state.FocusIdx {
+		case 0, 1:
+			context = "[type] filter   [←/→] choose   [↑/↓/tab] move   " + context
+		case 3:
+			context = "[enter] newline   " + context
+		case 5:
+			context = "[ctrl+e] calendar   [g] today   " + context
+		}
+	} else {
+		switch state.FocusIdx {
+		case 1:
+			context = "[enter] newline   " + context
+		case 3:
+			context = "[ctrl+e] calendar   [g] today   " + context
+		}
+	}
+	return static + "\n" + context
 }
 
 func renderIssueContextColumns(

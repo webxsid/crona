@@ -15,6 +15,7 @@ func updateCreateIssueMeta(
 	currentDate string,
 	msg tea.KeyMsg,
 ) (State, *Action, string) {
+	followUp := issueCreateFollowUpForKey(msg.String())
 	if state.FocusIdx == 3 && isDatePickerShortcut(msg.String()) {
 		return OpenDatePicker(
 			state,
@@ -31,6 +32,11 @@ func updateCreateIssueMeta(
 			return state, nil, ""
 		}
 		state.Inputs[2].SetValue(currentDate)
+		return clearDialogError(state), nil, ""
+	}
+	if msg.String() == "tab" || msg.String() == "shift+tab" {
+		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 4) % 4
+		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	}
 	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
@@ -51,12 +57,16 @@ func updateCreateIssueMeta(
 			return nil, err.Error()
 		}
 		return &Action{
-			Kind:        "create_issue_meta",
-			StreamID:    state.StreamID,
-			Title:       title,
-			Description: description,
-			Estimate:    estimate,
-			DueDate:     dueDate,
+			Kind:                "create_issue_meta",
+			RepoID:              state.RepoID,
+			RepoName:            state.RepoName,
+			StreamID:            state.StreamID,
+			StreamName:          state.StreamName,
+			Title:               title,
+			Description:         description,
+			Estimate:            estimate,
+			DueDate:             dueDate,
+			IssueCreateFollowUp: followUp,
 		}, ""
 	})
 }
@@ -105,7 +115,7 @@ func updateCreateIssueDefault(
 			}
 			return state, nil, ""
 		}
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 6) % 6
+		state.FocusIdx = shiftDefaultIssueFocus(state.FocusIdx, ternaryDir(msg.String()))
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	case "left":
@@ -163,7 +173,7 @@ func updateCreateIssueDefault(
 			return clearDialogError(state), nil, ""
 		}
 	}
-	if isDialogSubmitKey(state, msg.String()) {
+	if isIssueCreateSubmitKey(msg.String()) {
 		repoName, streamName := DefaultIssueDialogNames(
 			state.Inputs,
 			state.RepoIndex,
@@ -192,13 +202,14 @@ func updateCreateIssueDefault(
 		return Close(
 				state,
 			), &Action{
-				Kind:        "create_issue_default",
-				RepoName:    repoName,
-				StreamName:  streamName,
-				Title:       title,
-				Description: description,
-				Estimate:    estimate,
-				DueDate:     dueDate,
+				Kind:                "create_issue_default",
+				RepoName:            repoName,
+				StreamName:          streamName,
+				Title:               title,
+				Description:         description,
+				Estimate:            estimate,
+				DueDate:             dueDate,
+				IssueCreateFollowUp: issueCreateFollowUpForKey(msg.String()),
 			}, ""
 	}
 	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
@@ -222,6 +233,38 @@ func updateCreateIssueDefault(
 		state.StreamIndex = 0
 	}
 	return clearDialogError(state), nil, ""
+}
+
+func shiftDefaultIssueFocus(current, direction int) int {
+	order := []int{2, 3, 4, 5, 0, 1}
+	for index, focus := range order {
+		if focus != current {
+			continue
+		}
+		next := (index + direction + len(order)) % len(order)
+		return order[next]
+	}
+	return order[0]
+}
+
+func issueCreateFollowUpForKey(key string) int {
+	switch key {
+	case "ctrl+a":
+		return IssueCreateFollowUpMore
+	case "ctrl+f":
+		return IssueCreateFollowUpFocus
+	default:
+		return IssueCreateFollowUpDefault
+	}
+}
+
+func isIssueCreateSubmitKey(key string) bool {
+	switch key {
+	case "ctrl+s", "ctrl+a", "ctrl+f":
+		return true
+	default:
+		return false
+	}
 }
 
 func updateCheckoutContext(
@@ -426,7 +469,8 @@ func updateMultiInputIssue(
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	default:
-		if isDialogSubmitKey(state, msg.String()) {
+		if (state.Kind == "create_issue_meta" && isIssueCreateSubmitKey(msg.String())) ||
+			(state.Kind != "create_issue_meta" && isDialogSubmitKey(state, msg.String())) {
 			action, status := submit(state)
 			if action == nil {
 				return state, nil, status

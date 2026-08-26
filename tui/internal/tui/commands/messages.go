@@ -120,6 +120,12 @@ type ErrMsg struct {
 	Err       error
 	Operation string
 }
+type IssueCreatedMsg struct {
+	Issue                api.Issue
+	RepoID, StreamID     int64
+	RepoName, StreamName string
+	FollowUp             int
+}
 type ClearStatusMsg struct{ Seq int }
 
 type FocusSessionChangedMsg struct {

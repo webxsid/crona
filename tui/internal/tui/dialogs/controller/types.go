@@ -142,3 +142,9 @@ type State struct {
 	HardLimitLongBreakSeconds      int
 	HardLimitCyclesBeforeLongBreak int
 }
+
+const (
+	IssueCreateFollowUpDefault = iota
+	IssueCreateFollowUpMore
+	IssueCreateFollowUpFocus
+)

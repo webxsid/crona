@@ -69,7 +69,11 @@ func (s Snapshot) OpenEditStream(
 }
 
 func (s Snapshot) OpenCreateIssueMeta(streamID int64, streamName, repoName string) State {
-	return OpenCreateIssueMeta(s.Dialog, streamID, streamName, repoName)
+	next := OpenCreateIssueMeta(s.Dialog, streamID, streamName, repoName)
+	if s.Context != nil && s.Context.RepoID != nil {
+		next.RepoID = *s.Context.RepoID
+	}
+	return next
 }
 
 func (s Snapshot) OpenCreateHabit(streamID int64, streamName, repoName string) State {
@@ -156,6 +160,18 @@ func (s Snapshot) OpenCreateIssueDefault() State {
 		next.StreamIndex = 0
 	}
 	next.FocusIdx = 2
+	return SyncDialogFocus(next)
+}
+
+func (s Snapshot) OpenCreateIssueDefaultForPath(repoID, streamID int64, repoName, streamName string) State {
+	next := OpenCreateIssueDefault(s.Dialog)
+	next.Inputs[0].SetValue(repoName)
+	next.Inputs[1].SetValue(streamName)
+	next.RepoIndex = 0
+	next.StreamIndex = 0
+	next.FocusIdx = 2
+	next.RepoID = repoID
+	next.StreamID = streamID
 	return SyncDialogFocus(next)
 }
 

@@ -358,11 +358,13 @@ func DeleteStream(c *api.Client, repoID, streamID int64) tea.Cmd {
 
 func CreateIssueOnly(
 	c *api.Client,
-	streamID int64,
+	repoID, streamID int64,
+	repoName, streamName string,
 	title string,
 	description *string,
 	estimateMinutes *int,
 	todoForDate *string,
+	followUp int,
 ) tea.Cmd {
 	return func() tea.Msg {
 		issue, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate)
@@ -370,11 +372,7 @@ func CreateIssueOnly(
 			logger.Errorf("CreateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(
-			LoadIssuesSelecting(c, streamID, issue.ID),
-			LoadAllIssuesSelecting(c, issue.ID),
-			LoadDailySummary(c, ""),
-		)()
+		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp}
 	}
 }
 
@@ -547,6 +545,7 @@ func CreateIssueWithPath(
 	issueDescription *string,
 	estimateMinutes *int,
 	todoForDate *string,
+	followUp int,
 ) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
@@ -598,14 +597,7 @@ func CreateIssueWithPath(
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(
-			LoadRepos(c),
-			LoadStreams(c, repoID),
-			LoadIssuesSelecting(c, streamID, issue.ID),
-			LoadAllIssuesSelecting(c, issue.ID),
-			LoadDailySummary(c, ""),
-			LoadDashboardSummaries(c, time.Now().Format("2006-01-02")),
-		)()
+		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp}
 	}
 }
 
