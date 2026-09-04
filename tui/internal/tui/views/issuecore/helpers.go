@@ -99,8 +99,20 @@ func IssueDueSuffix(
 	todoForDate, completedAt, abandonedAt *string,
 	settings *api.CoreSettings,
 ) string {
+	label := IssueDateLabel(status, todoForDate, completedAt, abandonedAt, settings)
+	if label == "" {
+		return ""
+	}
+	return "  [" + label + "]"
+}
+
+func IssueDateLabel(
+	status sharedtypes.IssueStatus,
+	todoForDate, completedAt, abandonedAt *string,
+	settings *api.CoreSettings,
+) string {
 	if resolvedOn := resolvedOnDate(status, completedAt, abandonedAt, settings); resolvedOn != "" {
-		return "  [on " + resolvedOn + "]"
+		return "on " + resolvedOn
 	}
 	if todoForDate == nil || strings.TrimSpace(*todoForDate) == "" {
 		return ""
@@ -108,7 +120,7 @@ func IssueDueSuffix(
 	date := strings.TrimSpace(*todoForDate)
 	today := time.Now().Format("2006-01-02")
 	if date == today {
-		return "  [today]"
+		return "today"
 	}
 	dueTime, err := time.Parse("2006-01-02", date)
 	if err == nil {
@@ -116,10 +128,10 @@ func IssueDueSuffix(
 		if todayErr == nil && dueTime.Before(todayTime) {
 			overdueDays := int(todayTime.Sub(dueTime).Hours() / 24)
 			overdueDays = max(overdueDays, 1)
-			return fmt.Sprintf("  [overdue %dd]", overdueDays)
+			return fmt.Sprintf("overdue %dd", overdueDays)
 		}
 	}
-	return "  [due " + shareddatefmt.FormatISODate(date, settings) + "]"
+	return "due " + shareddatefmt.FormatISODate(date, settings)
 }
 
 func resolvedOnDate(

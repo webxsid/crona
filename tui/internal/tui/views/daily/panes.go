@@ -83,6 +83,9 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		)
 	}
 	layout := issuecore.IssueTableLayoutForWidth(width)
+	if state.DailyTaskSection != "planned" {
+		layout = issuecore.IssueTableLayoutForWidthWithDate(width)
+	}
 	inner := viewchrome.RemainingPaneHeight(height, lines)
 	issueSlots := max(1, inner)
 	start, end := viewchrome.ListWindow(cur, total, issueSlots)
@@ -103,13 +106,6 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			}
 		}
 		title := issue.Title
-		title += issuecore.IssueDueSuffix(
-			issue.Status,
-			issue.TodoForDate,
-			issue.CompletedAt,
-			issue.AbandonedAt,
-			state.Settings,
-		)
 		rowStyle := lipgloss.NewStyle()
 		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
 			rowStyle = *statusStyle
@@ -130,7 +126,14 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 				Worked:   issuecore.IssueWorkedLabel(workedSeconds),
 				Repo:     repoName,
 				Stream:   streamName,
-				Context:  issuecore.IssueContextLabel(repoName, streamName),
+				Date: issuecore.IssueDateLabel(
+					issue.Status,
+					issue.TodoForDate,
+					issue.CompletedAt,
+					issue.AbandonedAt,
+					state.Settings,
+				),
+				Context: issuecore.IssueContextLabel(repoName, streamName),
 				Effort: issuecore.IssueWorkedEstimateCompactLabel(
 					workedSeconds,
 					issue.EstimateMinutes,
@@ -192,13 +195,7 @@ func renderCompactDailyIssueList(
 				workedSeconds = meta.WorkedSeconds
 			}
 		}
-		title := issue.Title + issuecore.IssueDueSuffix(
-			issue.Status,
-			issue.TodoForDate,
-			issue.CompletedAt,
-			issue.AbandonedAt,
-			state.Settings,
-		)
+		title := issue.Title
 		lines = append(
 			lines,
 			renderCompactDailyIssueTitle(
@@ -208,6 +205,7 @@ func renderCompactDailyIssueList(
 				cur,
 				active,
 				title,
+				compactDailyIssueDate(state, issue),
 				string(issue.Status),
 			),
 			renderCompactDailyIssueMeta(
@@ -235,8 +233,7 @@ func renderCompactDailyIssueTitle(
 	width int,
 	i, cur int,
 	active bool,
-	title string,
-	status string,
+	title, date, status string,
 ) string {
 	rowStyle := lipgloss.NewStyle()
 	if statusStyle := issuecore.IssueStatusStyle(theme, status); statusStyle != nil {
@@ -248,6 +245,9 @@ func renderCompactDailyIssueTitle(
 	cursor := " "
 	if i == cur && active {
 		cursor = viewchrome.SelectionCursor
+	}
+	if date != "" {
+		title += "  " + dateField(date)
 	}
 	line := viewhelpers.TruncateANSI(title, max(18, width-4))
 	line = rowStyle.Render(line)
@@ -282,6 +282,26 @@ func renderCompactDailyIssueMeta(
 		meta = theme.StyleDim.Render("  " + meta)
 	}
 	return viewhelpers.TruncateANSI(meta, width)
+}
+
+func compactDailyIssueDate(state types.ContentState, issue issuecore.APIIssue) string {
+	if state.DailyTaskSection == "planned" {
+		return ""
+	}
+	return issuecore.IssueDateLabel(
+		issue.Status,
+		issue.TodoForDate,
+		issue.CompletedAt,
+		issue.AbandonedAt,
+		state.Settings,
+	)
+}
+
+func dateField(date string) string {
+	if date == "" {
+		return ""
+	}
+	return "[" + date + "]"
 }
 
 func renderCompactDailyIssueDivider(width int) string {

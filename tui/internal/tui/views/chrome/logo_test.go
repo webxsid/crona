@@ -6,8 +6,8 @@ import (
 )
 
 func TestLogoSizesAreDistinct(t *testing.T) {
-	if got := LogoTiny(); got != "[ CRONA ]" {
-		t.Fatalf("expected tiny logo wordmark, got %q", got)
+	if got := LogoTiny(); got != "[ >_ ]" {
+		t.Fatalf("expected tiny terminal mark, got %q", got)
 	}
 	if got := strings.Count(LogoSmall(), "\n") + 1; got != 2 {
 		t.Fatalf("expected small logo to span 2 lines, got %d", got)

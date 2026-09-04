@@ -8,12 +8,14 @@ import (
 const (
 	issueTableKeyCursor   = "cursor"
 	issueTableKeyIssue    = "issue"
+	issueTableKeyDate     = "date"
 	issueTableKeyStatus   = "status"
 	issueTableKeyGap1     = "gap1"
 	issueTableKeyGap2     = "gap2"
 	issueTableKeyGap3     = "gap3"
 	issueTableKeyGap4     = "gap4"
 	issueTableKeyGap5     = "gap5"
+	issueTableKeyGapDate  = "gapDate"
 	issueTableKeyEstimate = "estimate"
 	issueTableKeyWorked   = "worked"
 	issueTableKeyRepo     = "repo"
@@ -35,14 +37,27 @@ type IssueTableLayout struct {
 	StreamW   int
 	ContextW  int
 	EffortW   int
+	DateW     int
+	ShowDate  bool
 }
 
 func IssueTableLayoutForWidth(width int) IssueTableLayout {
+	return issueTableLayoutForWidth(width, false)
+}
+
+func IssueTableLayoutForWidthWithDate(width int) IssueTableLayout {
+	return issueTableLayoutForWidth(width, true)
+}
+
+func issueTableLayoutForWidth(width int, showDate bool) IssueTableLayout {
 	if width < issueTableCompactBreakpoint {
 		statusW := 14
 		contextW := max(18, width/4)
 		effortW := max(18, width/4)
 		titleW := width - statusW - contextW - effortW - 19
+		if showDate {
+			titleW -= 17
+		}
 		titleW = max(14, titleW)
 		return IssueTableLayout{
 			Compact:  true,
@@ -50,6 +65,8 @@ func IssueTableLayoutForWidth(width int) IssueTableLayout {
 			StatusW:  statusW,
 			ContextW: contextW,
 			EffortW:  effortW,
+			DateW:    16,
+			ShowDate: showDate,
 		}
 	}
 	statusW := 14
@@ -58,6 +75,9 @@ func IssueTableLayoutForWidth(width int) IssueTableLayout {
 	repoW := max(10, width/8)
 	streamW := max(10, width/8)
 	titleW := width - repoW - streamW - statusW - estimateW - workedW - 25
+	if showDate {
+		titleW -= 17
+	}
 	titleW = max(14, titleW)
 	return IssueTableLayout{
 		TitleW:    titleW,
@@ -66,31 +86,53 @@ func IssueTableLayoutForWidth(width int) IssueTableLayout {
 		WorkedW:   workedW,
 		RepoW:     repoW,
 		StreamW:   streamW,
+		DateW:     16,
+		ShowDate:  showDate,
 	}
 }
 
 func IssueTableColumns(layout IssueTableLayout) []table.Column {
 	if layout.Compact {
-		return []table.Column{
+		columns := []table.Column{
 			table.NewColumn(issueTableKeyCursor, "", 2),
 			table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).
 				WithStyle(issueColumnStyle(true)),
 			table.NewColumn(issueTableKeyGap1, "", 1),
+		}
+		if layout.ShowDate {
+			columns = append(columns,
+				table.NewColumn(issueTableKeyDate, "Date", layout.DateW).
+					WithStyle(issueColumnStyle(true)),
+				table.NewColumn(issueTableKeyGapDate, "", 1),
+			)
+		}
+		columns = append(columns,
 			table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).
 				WithStyle(issueColumnStyle(true)),
 			table.NewColumn(issueTableKeyGap2, "", 1),
 			table.NewColumn(issueTableKeyContext, "Context", layout.ContextW).
 				WithStyle(issueColumnStyle(true)),
+		)
+		return append(columns,
 			table.NewColumn(issueTableKeyGap3, "", 1),
 			table.NewColumn(issueTableKeyEffort, "Effort", layout.EffortW).
 				WithStyle(issueColumnStyle(true)),
-		}
+		)
 	}
-	return []table.Column{
+	columns := []table.Column{
 		table.NewColumn(issueTableKeyCursor, "", 2),
 		table.NewColumn(issueTableKeyIssue, "Issue", layout.TitleW).
 			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap1, "", 1),
+	}
+	if layout.ShowDate {
+		columns = append(columns,
+			table.NewColumn(issueTableKeyDate, "Date", layout.DateW).
+				WithStyle(issueColumnStyle(false)),
+			table.NewColumn(issueTableKeyGapDate, "", 1),
+		)
+	}
+	columns = append(columns,
 		table.NewColumn(issueTableKeyStatus, "Status", layout.StatusW).
 			WithStyle(issueColumnStyle(false)),
 		table.NewColumn(issueTableKeyGap2, "", 1),
@@ -104,7 +146,8 @@ func IssueTableColumns(layout IssueTableLayout) []table.Column {
 		table.NewColumn(issueTableKeyGap5, "", 1),
 		table.NewColumn(issueTableKeyStream, "Stream", layout.StreamW).
 			WithStyle(issueColumnStyle(false)),
-	}
+	)
+	return columns
 }
 
 func IssueTableRow(
@@ -125,6 +168,7 @@ func IssueTableRow(
 		issueTableKeyRepo:     data.Repo,
 		issueTableKeyGap5:     "",
 		issueTableKeyStream:   data.Stream,
+		issueTableKeyDate:     data.Date,
 		issueTableKeyContext:  data.Context,
 		issueTableKeyEffort:   data.Effort,
 	}).WithStyle(rowStyle)
@@ -148,6 +192,7 @@ type IssueTableData struct {
 	Worked   string
 	Repo     string
 	Stream   string
+	Date     string
 	Context  string
 	Effort   string
 }

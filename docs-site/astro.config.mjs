@@ -7,6 +7,13 @@ export default defineConfig({
     starlight({
       title: "Crona Docs",
       description: "Documentation for Crona.",
+      logo: {
+        dark: "./src/assets/brand/crona-dark.svg",
+        light: "./src/assets/brand/crona-light.svg",
+        alt: "Crona",
+        replacesTitle: false,
+      },
+      favicon: "/favicon.svg",
       social: [
         { icon: "github", label: "GitHub", href: "https://github.com/webxsid/crona" },
         { icon: "threads", label: "Threads", href: "https://www.threads.com/@crona.work" },

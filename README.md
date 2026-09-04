@@ -1,7 +1,11 @@
 # Crona
 
 <p align="center">
-  <img src="docs/logo/Logo%20Extended%20Dark.png" alt="Crona" width="480" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/mark/crona-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/mark/crona-light.svg" />
+    <img src="docs/brand/mark/crona-light.svg" alt="Crona" width="180" />
+  </picture>
 </p>
 
 Crona is a local-first work tracker for developers. It combines a terminal UI, a scriptable CLI, and a background local daemon into one workflow for planning work, tracking focus sessions, reviewing momentum, and exporting structured artifacts.

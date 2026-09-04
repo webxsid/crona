@@ -445,11 +445,10 @@ func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 	}
 
 	rendered := ansi.Strip(support.RenderDefault(state))
-	if !strings.Contains(rendered, "Completed shipped fix  [on 2026-03-20]") {
-		t.Fatalf("expected completed issue to show resolution date, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "Abandoned old task  [on 2026-03-21]") {
-		t.Fatalf("expected abandoned issue to show resolution date, got %q", rendered)
+	for _, want := range []string{"Completed shipped fix", "[on 2026-03-20]", "Abandoned old task", "[on 2026-03-21]"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected completed issue rendering to contain %q, got %q", want, rendered)
+		}
 	}
 	if strings.Contains(rendered, "Completed shipped fix  [due ") ||
 		strings.Contains(rendered, "Completed shipped fix  [overdue ") {

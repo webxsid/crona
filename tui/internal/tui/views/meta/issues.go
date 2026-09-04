@@ -2,11 +2,13 @@ package meta
 
 import (
 	"fmt"
+	"strings"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	types "crona/tui/internal/tui/views/types"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func renderIssues(
@@ -66,19 +68,18 @@ func renderIssues(
 		if issue.WorkedSeconds > 0 {
 			spent = viewhelpers.FormatCompactDurationSeconds(issue.WorkedSeconds)
 		}
-		text := fmt.Sprintf(
-			"[%s] %s%s  spent %s",
-			issuecore.PlainIssueStatus(string(issue.Status)),
-			issue.Title,
-			issuecore.IssueDueSuffix(
-				issue.Status,
-				issue.TodoForDate,
-				issue.CompletedAt,
-				issue.AbandonedAt,
-				state.Settings,
-			),
-			spent,
+		date := issuecore.IssueDateLabel(
+			issue.Status,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
+			state.Settings,
 		)
+		status := fmt.Sprintf("[%s]", issuecore.PlainIssueStatus(string(issue.Status)))
+		date = dateField(date)
+		fixedWidth := lipgloss.Width(status) + lipgloss.Width(date) + lipgloss.Width("spent "+spent) + 6
+		title := viewhelpers.Truncate(issue.Title, max(12, width-6-fixedWidth))
+		text := strings.Join([]string{status, title, date, "spent " + spent}, "  ")
 		lines = append(
 			lines,
 			viewchrome.RenderPaneRowStyled(
@@ -96,4 +97,11 @@ func renderIssues(
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+}
+
+func dateField(date string) string {
+	if date == "" {
+		return ""
+	}
+	return "[" + date + "]"
 }

@@ -34,7 +34,10 @@ func renderIssuePane(
 	paneActive := active && sectionActive
 	base := viewui.PaneBase{Focused: paneActive, Width: state.Width, Height: height, Cursor: cur}
 	width := state.Width
-	layout := issuecore.IssueTableLayoutForWidth(width)
+	layout := issuecore.IssueTableLayoutForWidthWithDate(width)
+	if !hasIssueDate(state.DefaultIssues, indices) {
+		layout = issuecore.IssueTableLayoutForWidth(width)
+	}
 
 	lines := base.HeaderLines(
 		base.TitleLine(theme, title),
@@ -76,13 +79,6 @@ func renderIssuePane(
 			}
 		}
 		title := issue.Title
-		title += issuecore.IssueDueSuffix(
-			issue.Status,
-			issue.TodoForDate,
-			issue.CompletedAt,
-			issue.AbandonedAt,
-			state.Settings,
-		)
 		selected := paneActive && pos == localCur
 		rowStyle := lipgloss.NewStyle()
 		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
@@ -102,7 +98,14 @@ func renderIssuePane(
 			Worked:   issuecore.IssueWorkedLabel(workedSeconds),
 			Repo:     issue.RepoName,
 			Stream:   issue.StreamName,
-			Context:  issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
+			Date: issuecore.IssueDateLabel(
+				issue.Status,
+				issue.TodoForDate,
+				issue.CompletedAt,
+				issue.AbandonedAt,
+				state.Settings,
+			),
+			Context: issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
 			Effort: issuecore.IssueWorkedEstimateCompactLabel(
 				workedSeconds,
 				issue.EstimateMinutes,
@@ -119,6 +122,22 @@ func renderIssuePane(
 		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
 	return base.Render(theme, viewhelpers.StringsJoin(lines))
+}
+
+func hasIssueDate(issues []api.IssueWithMeta, indices []int) bool {
+	for _, index := range indices {
+		issue := issues[index].Issue
+		if issuecore.IssueDateLabel(
+			issue.Status,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
+			nil,
+		) != "" {
+			return true
+		}
+	}
+	return false
 }
 
 func renderCompactIssuePane(
@@ -183,25 +202,39 @@ func renderCompactIssueRow(
 	settings *api.CoreSettings,
 ) string {
 	const compactIssueRowGap = "   "
-	title := issue.Title + issuecore.IssueDueSuffix(
+	date := issuecore.IssueDateLabel(
 		issue.Status,
 		issue.TodoForDate,
 		issue.CompletedAt,
 		issue.AbandonedAt,
 		settings,
 	)
-	parts := []string{
-		viewhelpers.Truncate(title, max(18, width/2-1)),
-		viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11),
-		viewhelpers.Truncate(
-			issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
-			max(14, width/4-1),
-		),
-		viewhelpers.Truncate(
-			issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes),
-			max(14, width/4-1),
-		),
+	status := viewhelpers.Truncate(issuecore.PlainIssueStatus(string(issue.Status)), 11)
+	context := viewhelpers.Truncate(
+		issuecore.IssueContextLabel(issue.RepoName, issue.StreamName),
+		max(14, width/4-1),
+	)
+	effort := viewhelpers.Truncate(
+		issuecore.IssueWorkedEstimateCompactLabel(issue.WorkedSeconds, issue.EstimateMinutes),
+		max(14, width/4-1),
+	)
+	titleWidth := max(18, width/2-1)
+	dateFieldText := dateField(date)
+	if dateFieldText != "" {
+		fixedWidth := lipgloss.Width(status) + lipgloss.Width(context) +
+			lipgloss.Width(effort) + lipgloss.Width(dateFieldText) +
+			4*lipgloss.Width(compactIssueRowGap)
+		titleWidth = max(12, width-4-fixedWidth)
 	}
+	parts := []string{
+		viewhelpers.Truncate(issue.Title, titleWidth),
+		status,
+		context,
+	}
+	if date != "" {
+		parts = append(parts, dateFieldText)
+	}
+	parts = append(parts, effort)
 	row := strings.Join(parts, compactIssueRowGap)
 	contentStyle := issuecore.IssueStatusStyle(theme, string(issue.Status))
 	if contentStyle != nil {
@@ -215,6 +248,13 @@ func renderCompactIssueRow(
 		return theme.StyleSelected.Render("  " + row)
 	}
 	return theme.StyleNormal.Render("  " + row)
+}
+
+func dateField(date string) string {
+	if date == "" {
+		return ""
+	}
+	return "[" + date + "]"
 }
 
 func renderCompactFooter(

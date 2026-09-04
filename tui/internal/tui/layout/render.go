@@ -258,14 +258,14 @@ func renderHeader(state State) string {
 		chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
 		mode,
 	)
-	if strings.TrimSpace(brand) != "" {
-		contextLine = brand + "  " + contextLine
-	}
 	versionLabel := chrome.StyleDim.Render(
 		"version:",
 	) + " " + chrome.StyleHeader.Render(
 		versionpkg.Current(),
 	)
+	if strings.TrimSpace(brand) != "" {
+		contextLine = brand + "  " + contextLine
+	}
 	contextWidth := ansi.StringWidth(contextLine)
 	versionWidth := ansi.StringWidth(versionLabel)
 	if contextWidth+versionWidth+3 <= state.Width {

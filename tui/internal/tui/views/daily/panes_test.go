@@ -113,6 +113,29 @@ func TestRenderIssuesUsesWideTableAboveBreakpoint(t *testing.T) {
 	}
 }
 
+func TestRenderIssuesKeepsDateVisibleWhenWideTitleTruncates(t *testing.T) {
+	todo := "2099-03-20"
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  240,
+		Height: 20,
+		Filters: map[string]string{
+			"issues": "",
+		},
+		DailyIssues: []api.Issue{{
+			ID:          1,
+			Title:       "A very long issue title that should be truncated before its date is rendered because it exceeds the available issue column width by a significant amount",
+			Status:      "planned",
+			TodoForDate: &todo,
+		}},
+	}
+
+	plain := ansi.Strip(renderIssues(types.Theme{}, state, 240, 20))
+	if !strings.Contains(plain, "Date") || !strings.Contains(plain, "due 2099-03-20") {
+		t.Fatalf("renderIssues(long title with date) = %q, want a visible Date field", plain)
+	}
+}
+
 func TestRenderIssuesUsesCompactListLayoutBelowBreakpoint(t *testing.T) {
 	todo := "2099-03-20"
 	todo2 := "2099-03-21"

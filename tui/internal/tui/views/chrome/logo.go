@@ -1,6 +1,8 @@
 package viewchrome
 
-import "strings"
+import (
+	"strings"
+)
 
 func LogoLarge() string {
 	return strings.Join([]string{
@@ -30,5 +32,5 @@ func LogoSmall() string {
 }
 
 func LogoTiny() string {
-	return "[ CRONA ]"
+	return "[ >_ ]"
 }

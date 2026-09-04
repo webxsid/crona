@@ -28,3 +28,23 @@ func TestRenderIssuesShowsSpentSuffix(t *testing.T) {
 		t.Fatalf("expected spent suffix to render, got %q", rendered)
 	}
 }
+
+func TestRenderIssuesKeepsDateVisibleWhenTitleTruncates(t *testing.T) {
+	todo := "2099-03-20"
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  80,
+		Height: 12,
+		Issues: []api.Issue{{
+			ID:          1,
+			Title:       "A very long issue title that should be truncated before its date is rendered",
+			Status:      "planned",
+			TodoForDate: &todo,
+		}},
+	}
+
+	rendered := renderIssues(types.Theme{}, state, 80, 12, "No issues")
+	if !strings.Contains(rendered, "[due 2099-03-20]") {
+		t.Fatalf("renderIssues(long title with date) = %q, want date to remain visible", rendered)
+	}
+}

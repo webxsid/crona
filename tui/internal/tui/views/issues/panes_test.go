@@ -173,6 +173,32 @@ func TestRenderIssuePaneUsesCompactContextAndEffortColumns(t *testing.T) {
 	}
 }
 
+func TestRenderIssuePaneKeepsDateVisibleWhenTitleTruncates(t *testing.T) {
+	todo := "2099-03-20"
+	state := types.ContentState{
+		Pane:   "issues",
+		Width:  84,
+		Height: 20,
+		DefaultIssues: []api.IssueWithMeta{{
+			Issue: api.Issue{
+				ID:          1,
+				Title:       "A very long issue title that should be truncated before its date is rendered",
+				Status:      "planned",
+				TodoForDate: &todo,
+			},
+		}},
+	}
+
+	rendered := renderIssuePane(
+		types.Theme{}, state, "Active Issues [1]", "Due work and open issues", []int{0},
+		0, true, 20, "No open issues match the current filter", true,
+	)
+	plain := ansi.Strip(rendered)
+	if !strings.Contains(plain, "Date") || !strings.Contains(plain, "due 2099-03-20") {
+		t.Fatalf("renderIssuePane(long title with date) = %q, want a visible Date field", plain)
+	}
+}
+
 func TestRenderIssuePaneCollapsesEmptyWorkedEffort(t *testing.T) {
 	state := types.ContentState{
 		Pane:   "issues",

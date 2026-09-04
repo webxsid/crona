@@ -16,6 +16,10 @@ Crona v1.9.0-beta.9 improves issue creation with dedicated save actions and clea
 - Issue creation now supports `Ctrl+S` to save and close, `Ctrl+A` to create more, and `Ctrl+F` to create and focus.
 - Issue-create dialogs now keep static creation actions separate from field-specific contextual guidance.
 - Create-more and create-and-focus flows preserve the selected repository and stream and route directly to their follow-up dialogs.
+- Issue dates in Daily, Issues, and Meta views now use dedicated display fields so long titles do not hide due or resolution dates.
+- The Daily Planned tab hides the date field when the selected date is already represented by the tab, while Pinned and Overdue retain it.
+- Issue dates now appear directly after the title and before status in table layouts.
+- The TUI header now uses a compact `[ >_ ]` terminal mark so it preserves vertical space.
 
 ### Compatibility
 
