@@ -7,6 +7,24 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.9.0] - 2026-09-13
+
+Crona v1.9.0 consolidates the beta series since v1.8.0 into a reliability and workflow release.
+
+### Highlights
+
+- Added Pomodoro segment advancement, daemon-authoritative break deferral, and companion timer actions.
+- Corrected away/rest history and Momentum continuity across protected days.
+- Added focus-score context, outcome metrics, and an interactive Summary calendar.
+- Improved logical-date synchronization, issue creation, issue date visibility, and date-range issue context.
+- Added daemon lifecycle diagnostics, panic recovery, preserved logs, and a hosted documentation site/API Reference.
+
+### Compatibility
+
+- The local IPC protocol is `1.5`.
+- No storage migration is required.
+- Companion clients should negotiate protocol `1.5` before using the newest response fields and events.
+
 ## [1.9.0-beta.9] - 2026-08-26
 
 Crona v1.9.0-beta.9 improves issue creation with dedicated save actions and clearer contextual controls.
