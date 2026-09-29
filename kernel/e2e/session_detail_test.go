@@ -86,4 +86,40 @@ func TestSessionDetailAndAmendFlowOverIPC(t *testing.T) {
 	if !strings.Contains(detail.ParsedNotes[sharedtypes.SessionNoteSectionNotes], "Outcome: Detailed outcome") {
 		t.Fatalf("expected non-commit notes preserved after amend, got %+v", detail.ParsedNotes)
 	}
+
+	var ok shareddto.OKResponse
+	kernel.call(t, protocol.MethodSettingsPatch, shareddto.PatchCoreSettingRequest{
+		Key: sharedtypes.CoreSettingsKeyManageHistory, Value: true,
+	}, &ok)
+	kernel.call(t, protocol.MethodSettingsPatch, shareddto.PatchCoreSettingRequest{
+		Key: sharedtypes.CoreSettingsKeyManageHistoryDays, Value: 5,
+	}, &ok)
+	updatedNotes := sharedtypes.ParsedSessionNotes{
+		sharedtypes.SessionNoteSectionCommit: "History edited commit",
+		sharedtypes.SessionNoteSectionWork:   detail.ParsedNotes[sharedtypes.SessionNoteSectionWork],
+		sharedtypes.SessionNoteSectionNotes:  detail.ParsedNotes[sharedtypes.SessionNoteSectionNotes],
+	}
+	kernel.call(t, protocol.MethodSessionHistoryUpdate, shareddto.UpdateSessionHistoryRequest{
+		ID: history[0].ID, StartTime: detail.StartTime, EndTime: *detail.EndTime,
+		EditableNotes: updatedNotes, Segments: detail.Segments,
+	}, &ok)
+	if !ok.OK {
+		t.Fatal("expected history update to succeed")
+	}
+	kernel.call(t, protocol.MethodSessionDetail, shareddto.SessionIDRequest{ID: history[0].ID}, &detail)
+	if detail.ParsedNotes[sharedtypes.SessionNoteSectionCommit] != "History edited commit" {
+		t.Fatalf("expected edited commit to persist, got %+v", detail.ParsedNotes)
+	}
+	if detail.ParsedNotes[sharedtypes.SessionNoteSectionContext] == "" ||
+		!strings.Contains(detail.ParsedNotes[sharedtypes.SessionNoteSectionNotes], "Outcome: Detailed outcome") {
+		t.Fatalf("expected context and notes to survive history edit, got %+v", detail.ParsedNotes)
+	}
+	kernel.call(t, protocol.MethodSessionHistoryDelete, shareddto.DeleteSessionHistoryRequest{ID: history[0].ID}, &ok)
+	if !ok.OK {
+		t.Fatal("expected history delete to succeed")
+	}
+	kernel.call(t, protocol.MethodSessionHistory, shareddto.SessionHistoryQuery{}, &history)
+	if len(history) != 0 {
+		t.Fatalf("expected deleted session to be absent from history, got %d entries", len(history))
+	}
 }

@@ -57,8 +57,10 @@ type Deps struct {
 	DeleteHabit                    func(habitID, streamID int64, dashboardDate string) tea.Cmd
 	DeleteDailyCheckIn             func(id string) tea.Cmd
 	DeleteExportReport             func(report api.ExportReportFile) tea.Cmd
+	DeleteSessionHistory           func(id string) tea.Cmd
 	ChangeIssueStatus              func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd
 	AmendSessionNote               func(id string, note string) tea.Cmd
+	UpdateSessionHistory           func(input shareddto.UpdateSessionHistoryRequest) tea.Cmd
 	LogManualSession               func(input shareddto.ManualSessionLogRequest) tea.Cmd
 	StartFocusSession              func(input shareddto.TimerStartRequest) tea.Cmd
 	ExtendHardLimit                func(req shareddto.TimerExtendRequest) tea.Cmd
@@ -273,6 +275,12 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	r.Register("amend_session", func(action dialogstate.Action) tea.Cmd {
 		return deps.AmendSessionNote(action.ID, dialogstate.ValueOrEmpty(action.Note))
 	})
+	r.Register("edit_session_history", func(action dialogstate.Action) tea.Cmd {
+		if action.SessionHistoryUpdate == nil {
+			return deps.ErrorCmd(errors.New("session history update payload is missing"))
+		}
+		return deps.UpdateSessionHistory(*action.SessionHistoryUpdate)
+	})
 	r.Register("manual_session", func(action dialogstate.Action) tea.Cmd {
 		if action.ManualSession == nil {
 			return deps.ErrorCmd(errors.New("manual session payload is missing"))
@@ -480,6 +488,9 @@ func deleteCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	)
 	r.Register("report", func(action dialogstate.Action) tea.Cmd {
 		return deps.DeleteExportReport(api.ExportReportFile{Name: action.Title, Path: action.ID})
+	})
+	r.Register("session_history", func(action dialogstate.Action) tea.Cmd {
+		return deps.DeleteSessionHistory(action.ID)
 	})
 	if cmd, ok := r.Resolve(action.Name, action); ok {
 		return cmd

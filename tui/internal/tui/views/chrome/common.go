@@ -156,6 +156,7 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 	return ContextualActions(theme, ActionsState{
 		View:             state.View,
 		Pane:             state.Pane,
+		ManageHistory:    state.Settings != nil && state.Settings.ManageHistory,
 		TimerState:       timerStateFromContent(state),
 		TimerSegment:     timerSegmentFromContent(state),
 		TimerNextSegment: timerNextSegmentFromContent(state),

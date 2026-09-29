@@ -1,11 +1,15 @@
 package controller
 
 import (
+	"errors"
+	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	shareddto "crona/shared/dto"
+	sharedtypes "crona/shared/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -102,6 +106,227 @@ func updateAmendSession(state State, msg tea.KeyMsg) (State, *Action, string) {
 	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
+}
+
+func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "tab":
+		return moveSessionHistoryFocus(state, 1), nil, ""
+	case "shift+tab":
+		return moveSessionHistoryFocus(state, -1), nil, ""
+	case "a":
+		row := newSessionHistorySegmentRow(state, sharedtypes.SessionSegmentWork)
+		if len(state.Inputs) >= 2 {
+			row.StartTime.SetValue(sessionHistoryDatePrefix(state.Inputs[0].Value()))
+			row.EndTime.SetValue(sessionHistoryDatePrefix(state.Inputs[1].Value()))
+		}
+		state.SessionHistorySegments = append(state.SessionHistorySegments, row)
+		state.FocusIdx = sessionHistorySegmentFocus(len(state.SessionHistorySegments)-1, 0)
+		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
+	case "D":
+		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
+		if !ok || rowIndex >= len(state.SessionHistorySegments) {
+			return state, nil, ""
+		}
+		state.SessionHistorySegments = slices.Delete(state.SessionHistorySegments, rowIndex, rowIndex+1)
+		if column > 0 {
+			column--
+		}
+		state.FocusIdx = min(state.FocusIdx, historyControlCount(state)-1)
+		if len(state.SessionHistorySegments) > 0 && state.FocusIdx >= 5 {
+			state.FocusIdx = sessionHistorySegmentFocus(min(rowIndex, len(state.SessionHistorySegments)-1), column)
+		}
+		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
+	}
+	if msg.String() == "left" || msg.String() == "right" {
+		if rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx); ok && column == 0 {
+			dir := 1
+			if msg.String() == "left" {
+				dir = -1
+			}
+			state.SessionHistorySegments[rowIndex].Type = nextSessionHistorySegmentType(
+				state.SessionHistorySegments[rowIndex].Type,
+				dir,
+			)
+			return clearDialogError(state), nil, ""
+		}
+	}
+	if isDialogSubmitKey(state, msg.String()) {
+		request, err := sessionHistoryUpdateRequest(state)
+		if err != nil {
+			return state, nil, err.Error()
+		}
+		return Close(state), &Action{Kind: state.Kind, SessionHistoryUpdate: request}, ""
+	}
+	if state.FocusIdx == 2 || state.FocusIdx == 3 || state.FocusIdx == 4 {
+		index := state.FocusIdx - 2
+		if index >= len(state.SessionHistoryNoteInputs) {
+			return state, nil, ""
+		}
+		var cmd tea.Cmd
+		state.SessionHistoryNoteInputs[index], cmd = state.SessionHistoryNoteInputs[index].Update(msg)
+		_ = cmd
+		return clearDialogError(state), nil, ""
+	}
+	if state.FocusIdx >= 5 {
+		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
+		if !ok || rowIndex >= len(state.SessionHistorySegments) {
+			return state, nil, ""
+		}
+		row := &state.SessionHistorySegments[rowIndex]
+		if column == 1 {
+			var cmd tea.Cmd
+			row.StartTime, cmd = row.StartTime.Update(msg)
+			_ = cmd
+		} else if column == 2 {
+			var cmd tea.Cmd
+			row.EndTime, cmd = row.EndTime.Update(msg)
+			_ = cmd
+		}
+		return clearDialogError(state), nil, ""
+	}
+	var cmd tea.Cmd
+	if state.FocusIdx < 0 || state.FocusIdx >= len(state.Inputs) {
+		return state, nil, ""
+	}
+	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRequest, error) {
+	if len(state.Inputs) < 2 || len(state.SessionHistoryNoteInputs) < 3 {
+		return nil, errors.New("session editor is incomplete")
+	}
+	start, err := parseSessionHistoryTimestamp(state.Inputs[0].Value())
+	if err != nil {
+		return nil, errors.New("session start must use YYYY-MM-DD HH:mm")
+	}
+	end, err := parseSessionHistoryTimestamp(state.Inputs[1].Value())
+	if err != nil || !end.After(start) {
+		return nil, errors.New("session end must be after its start")
+	}
+	segments := make([]sharedtypes.SessionSegment, 0, len(state.SessionHistorySegments))
+	for i, row := range state.SessionHistorySegments {
+		segmentStart, err := parseSessionHistoryTimestamp(row.StartTime.Value())
+		if err != nil {
+			return nil, fmt.Errorf("segment %d start must use YYYY-MM-DD HH:mm", i+1)
+		}
+		segmentEnd, err := parseSessionHistoryTimestamp(row.EndTime.Value())
+		if err != nil || !segmentEnd.After(segmentStart) {
+			return nil, fmt.Errorf("segment %d end must be after its start", i+1)
+		}
+		if segmentStart.Before(start) || segmentEnd.After(end) {
+			return nil, fmt.Errorf("segment %d must fall within the session", i+1)
+		}
+		endValue := segmentEnd.Format(time.RFC3339)
+		segments = append(segments, sharedtypes.SessionSegment{
+			SegmentType: row.Type,
+			StartTime:   segmentStart.Format(time.RFC3339),
+			EndTime:     &endValue,
+		})
+	}
+	slices.SortFunc(segments, func(a, b sharedtypes.SessionSegment) int {
+		return strings.Compare(a.StartTime, b.StartTime)
+	})
+	for i := 1; i < len(segments); i++ {
+		previousEnd, _ := time.Parse(time.RFC3339, *segments[i-1].EndTime)
+		currentStart, _ := time.Parse(time.RFC3339, segments[i].StartTime)
+		if currentStart.Before(previousEnd) {
+			return nil, errors.New("session segments cannot overlap")
+		}
+	}
+	notes := sharedtypes.ParsedSessionNotes{
+		sharedtypes.SessionNoteSectionCommit: strings.TrimSpace(state.SessionHistoryNoteInputs[0].Value()),
+		sharedtypes.SessionNoteSectionWork:   strings.TrimSpace(state.SessionHistoryNoteInputs[1].Value()),
+		sharedtypes.SessionNoteSectionNotes:  strings.TrimSpace(state.SessionHistoryNoteInputs[2].Value()),
+	}
+	return &shareddto.UpdateSessionHistoryRequest{
+		ID: state.SessionID, StartTime: start.Format(time.RFC3339), EndTime: end.Format(time.RFC3339),
+		EditableNotes: notes, Segments: segments,
+	}, nil
+}
+
+func parseSessionHistoryTimestamp(value string) (time.Time, error) {
+	return time.ParseInLocation("2006-01-02 15:04", strings.TrimSpace(value), time.Local)
+}
+
+func sessionHistoryDatePrefix(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) < len("2006-01-02") {
+		return ""
+	}
+	if _, err := time.Parse("2006-01-02", value[:len("2006-01-02")]); err != nil {
+		return ""
+	}
+	return value[:len("2006-01-02")] + " "
+}
+
+func historyControlCount(state State) int {
+	return 5 + len(state.SessionHistorySegments)*3
+}
+
+func sessionHistorySegmentFocus(rowIndex, column int) int {
+	return 5 + rowIndex*3 + column
+}
+
+func sessionHistorySegmentAt(focus int) (int, int, bool) {
+	if focus < 5 {
+		return 0, 0, false
+	}
+	index := focus - 5
+	return index / 3, index % 3, true
+}
+
+func moveSessionHistoryFocus(state State, dir int) State {
+	count := historyControlCount(state)
+	state.FocusIdx = (state.FocusIdx + dir + count) % count
+	return focusSessionHistoryControl(clearDialogError(state))
+}
+
+func focusSessionHistoryControl(state State) State {
+	for i := range state.Inputs {
+		state.Inputs[i].Blur()
+	}
+	for i := range state.SessionHistoryNoteInputs {
+		state.SessionHistoryNoteInputs[i].Blur()
+	}
+	for i := range state.SessionHistorySegments {
+		state.SessionHistorySegments[i].StartTime.Blur()
+		state.SessionHistorySegments[i].EndTime.Blur()
+	}
+	switch state.FocusIdx {
+	case 0, 1:
+		state.Inputs[state.FocusIdx].Focus()
+	case 2, 3, 4:
+		state.SessionHistoryNoteInputs[state.FocusIdx-2].Focus()
+	default:
+		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
+		if ok && rowIndex < len(state.SessionHistorySegments) {
+			if column == 1 {
+				state.SessionHistorySegments[rowIndex].StartTime.Focus()
+			} else if column == 2 {
+				state.SessionHistorySegments[rowIndex].EndTime.Focus()
+			}
+		}
+	}
+	return state
+}
+
+func nextSessionHistorySegmentType(current sharedtypes.SessionSegmentType, dir int) sharedtypes.SessionSegmentType {
+	types := []sharedtypes.SessionSegmentType{
+		sharedtypes.SessionSegmentWork,
+		sharedtypes.SessionSegmentShortBreak,
+		sharedtypes.SessionSegmentLongBreak,
+		sharedtypes.SessionSegmentRest,
+	}
+	index := slices.Index(types, current)
+	if index < 0 {
+		index = 0
+	}
+	return types[(index+dir+len(types))%len(types)]
 }
 
 func updateManualSession(state State, msg tea.KeyMsg) (State, *Action, string) {

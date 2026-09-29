@@ -29,6 +29,7 @@ type ActionsState struct {
 	UpdateScriptDeprecated    bool
 	UpdateCommand             string
 	MomentumTab               string
+	ManageHistory             bool
 }
 
 func segmentPtr(value string) *sharedtypes.SessionSegmentType {

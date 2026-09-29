@@ -932,6 +932,24 @@ func AmendSessionNote(c *api.Client, id string, note string) tea.Cmd {
 	}
 }
 
+func UpdateSessionHistory(c *api.Client, input shareddto.UpdateSessionHistoryRequest) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.UpdateSessionHistory(input); err != nil {
+			return ErrMsg{Err: err}
+		}
+		return SessionAmendedMsg{ID: input.ID}
+	}
+}
+
+func DeleteSessionHistory(c *api.Client, id string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.DeleteSessionHistory(id); err != nil {
+			return ErrMsg{Err: err}
+		}
+		return SessionHistoryDeletedMsg{ID: id}
+	}
+}
+
 func LogManualSession(c *api.Client, input shareddto.ManualSessionLogRequest) tea.Cmd {
 	return func() tea.Msg {
 		session, err := c.LogManualSession(input)

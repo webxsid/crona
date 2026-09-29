@@ -426,6 +426,7 @@ func GetSessionDetail(
 	}
 	detail.ParsedNotes = sessionnotes.Parse(detail.Notes)
 	detail.WorkSummary = sessionnotes.ComputeWorkSummary(segments)
+	detail.Segments = segments
 	return detail, nil
 }
 

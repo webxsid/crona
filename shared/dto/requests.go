@@ -278,6 +278,18 @@ type AmendSessionNoteRequest struct {
 	Note string  `json:"note"`
 }
 
+type UpdateSessionHistoryRequest struct {
+	ID            string                   `json:"id"`
+	StartTime     string                   `json:"startTime"`
+	EndTime       string                   `json:"endTime"`
+	EditableNotes types.ParsedSessionNotes `json:"editableNotes"`
+	Segments      []types.SessionSegment   `json:"segments"`
+}
+
+type DeleteSessionHistoryRequest struct {
+	ID string `json:"id"`
+}
+
 type SessionHistoryQuery struct {
 	RepoID   *int64  `json:"repoId,omitempty"`
 	StreamID *int64  `json:"streamId,omitempty"`

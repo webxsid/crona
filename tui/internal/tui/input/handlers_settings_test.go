@@ -5,6 +5,7 @@ import (
 
 	sharedtypes "crona/shared/types"
 	uistate "crona/tui/internal/tui/state"
+	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -18,7 +19,7 @@ func TestHandleAdjustSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeEmoji,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 11,
+			uistate.PaneSettings: settingsCursor(&sharedtypes.CoreSettings{}, "Prompt Glyphs"),
 		},
 	}
 	deps := Deps{
@@ -49,7 +50,7 @@ func TestHandleActivateSelectedSettingUpdatesPromptGlyphMode(t *testing.T) {
 			PromptGlyphMode: sharedtypes.PromptGlyphModeUnicode,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 11,
+			uistate.PaneSettings: settingsCursor(&sharedtypes.CoreSettings{}, "Prompt Glyphs"),
 		},
 	}
 	deps := Deps{
@@ -76,7 +77,7 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 			ErrorReportingEnabled: false,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 15,
+			uistate.PaneSettings: settingsCursor(&sharedtypes.CoreSettings{}, "Privacy & Diagnostics"),
 		},
 	}
 	deps := Deps{
@@ -105,7 +106,7 @@ func TestHandleAdjustSelectedSettingUpdatesWeekStart(t *testing.T) {
 			WeekStart: sharedtypes.WeekStartMonday,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: 10,
+			uistate.PaneSettings: settingsCursor(&sharedtypes.CoreSettings{}, "Week Start"),
 		},
 	}
 	deps := Deps{
@@ -126,4 +127,13 @@ func TestHandleAdjustSelectedSettingUpdatesWeekStart(t *testing.T) {
 	if patchedValue != sharedtypes.WeekStartSunday {
 		t.Fatalf("expected next week start Sunday, got %#v", patchedValue)
 	}
+}
+
+func settingsCursor(settings *sharedtypes.CoreSettings, label string) int {
+	for index, candidate := range settingsmeta.ItemLabels(settings) {
+		if candidate == label {
+			return index
+		}
+	}
+	return -1
 }

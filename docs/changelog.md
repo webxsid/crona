@@ -7,6 +7,21 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.10.0-beta.1] - 2026-09-29
+
+Crona v1.10.0-beta.1 adds configurable session history management, including daemon-validated editing and deletion of completed sessions.
+
+### Session history
+
+- Added a Manage History setting and a configurable edit window of up to five days.
+- Session detail now supports editing dates, summaries, notes, and work/break segments, plus deleting completed history entries.
+- The daemon enforces the configured edit window and preserves existing markdown notes during edits.
+
+### Compatibility
+
+- The local IPC protocol remains at `1.5`.
+- The database schema adds core settings defaults; existing databases are migrated automatically.
+
 ## [1.9.0] - 2026-09-13
 
 Crona v1.9.0 consolidates the beta series since v1.8.0 into a reliability and workflow release.

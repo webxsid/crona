@@ -302,6 +302,45 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 			dialogSubmitHint(state, "save")+"   [esc] cancel",
 		)
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
+	case "edit_session_history":
+		rows := []string{theme.StylePaneTitle.Render("Edit Session History")}
+		if state.SessionHistoryContext != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.SessionHistoryContext))
+		}
+		labels := []string{"Session start (YYYY-MM-DD HH:mm)", "Session end (YYYY-MM-DD HH:mm)"}
+		for i := range state.Inputs {
+			rows = append(rows, "", theme.StyleDim.Render(labels[i]), state.Inputs[i].View())
+		}
+		for i, label := range []string{"Commit / summary", "Work summary", "Notes"} {
+			if i < len(state.SessionHistoryNoteInputs) {
+				rows = append(rows, "", theme.StyleDim.Render(label), state.SessionHistoryNoteInputs[i].View())
+			}
+		}
+		rows = append(rows, "", theme.StyleDim.Render("Work and break segments"))
+		const rowHeight = 3
+		visibleRows := max(1, (state.Height-len(rows)-5)/rowHeight)
+		start := 0
+		if len(state.SessionHistorySegments) > visibleRows {
+			focused := max(0, (state.FocusIdx-5)/3)
+			start = min(max(0, focused-visibleRows/2), len(state.SessionHistorySegments)-visibleRows)
+		}
+		end := min(len(state.SessionHistorySegments), start+visibleRows)
+		if start > 0 {
+			rows = append(rows, theme.StyleDim.Render(fmt.Sprintf("… %d earlier segment(s)", start)))
+		}
+		for i := start; i < end; i++ {
+			segment := state.SessionHistorySegments[i]
+			rows = append(rows, historySegmentTypeRow(theme, state, segment, i))
+			rows = append(rows, segment.StartTime.View()+"  →  "+segment.EndTime.View())
+		}
+		if end < len(state.SessionHistorySegments) {
+			rows = append(rows, theme.StyleDim.Render(fmt.Sprintf("… %d later segment(s)", len(state.SessionHistorySegments)-end)))
+		}
+		if len(state.SessionHistorySegments) == 0 {
+			rows = append(rows, theme.StyleDim.Render("No segments. Press [a] to add one."))
+		}
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [tab] next   [a] add segment   [D] remove   [←/→] change type   [esc] cancel")
+		return modal(theme, state.Width, 100, theme.ColorCyan, rows)
 	case "manual_session":
 		rows := []string{theme.StylePaneTitle.Render("Log Session")}
 		if state.IssueID != 0 {
@@ -370,6 +409,24 @@ func timerStartChoiceLabel(idx int, item string) string {
 	default:
 		return item
 	}
+}
+
+func historySegmentTypeRow(
+	theme Theme,
+	state controllerpkg.State,
+	segment controllerpkg.SessionHistorySegmentRow,
+	index int,
+) string {
+	typeName := strings.Title(strings.ReplaceAll(string(segment.Type), "_", " "))
+	if typeName == "" {
+		typeName = "Work"
+	}
+	focus := (state.FocusIdx-5)/3 == index && state.FocusIdx >= 5
+	line := fmt.Sprintf("%02d  ‹ %s ›", index+1, typeName)
+	if focus {
+		return theme.StyleCursor.Render(viewchrome.SelectionCursor + " " + line)
+	}
+	return theme.StyleNormal.Render("  " + line)
 }
 
 func timerIssueSummary(state controllerpkg.State) string {

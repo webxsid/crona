@@ -351,6 +351,14 @@ func (c *Client) AmendSessionNote(id string, note string) error {
 	return c.call(protocol.MethodSessionAmendNote, req, nil)
 }
 
+func (c *Client) UpdateSessionHistory(input shareddto.UpdateSessionHistoryRequest) error {
+	return c.call(protocol.MethodSessionHistoryUpdate, input, nil)
+}
+
+func (c *Client) DeleteSessionHistory(id string) error {
+	return c.mustOK(protocol.MethodSessionHistoryDelete, shareddto.DeleteSessionHistoryRequest{ID: id})
+}
+
 func (c *Client) LogManualSession(input shareddto.ManualSessionLogRequest) (*Session, error) {
 	var out Session
 	if err := c.call(protocol.MethodSessionLogManual, input, &out); err != nil {

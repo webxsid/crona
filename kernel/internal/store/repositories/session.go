@@ -10,6 +10,7 @@ import (
 	sharedtypes "crona/shared/types"
 
 	storemodels "crona/kernel/internal/store/models"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
@@ -344,6 +345,85 @@ func (r *SessionRepository) AmendSessionNotes(
 		return nil, errors.New("session not found for ammending notes")
 	}
 	return r.GetByID(ctx, sessionID, userID)
+}
+
+func (r *SessionRepository) UpdateHistory(
+	ctx context.Context,
+	sessionID string,
+	expectedStartTime string,
+	userID string,
+	deviceID string,
+	startTime string,
+	endTime string,
+	durationSeconds int,
+	notes *string,
+	segments []sharedtypes.SessionSegment,
+	now string,
+) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		result, err := tx.NewUpdate().Model((*storemodels.SessionModel)(nil)).
+			Where("id = ? AND start_time = ? AND user_id = ? AND end_time IS NOT NULL AND deleted_at IS NULL", sessionID, expectedStartTime, userID).
+			Set("start_time = ?", startTime).
+			Set("end_time = ?", endTime).
+			Set("duration_seconds = ?", durationSeconds).
+			Set("notes = ?", notes).
+			Set("device_id = ?", deviceID).
+			Set("updated_at = ?", now).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return errors.New("completed session not found")
+		}
+		if _, err := tx.NewDelete().Model((*storemodels.SessionSegmentModel)(nil)).
+			Where("session_id = ? AND user_id = ?", sessionID, userID).Exec(ctx); err != nil {
+			return err
+		}
+		for _, segment := range segments {
+			model := storemodels.SessionSegmentModel{
+				ID: uuid.NewString(), UserID: userID, DeviceID: deviceID,
+				SessionID: sessionID, SegmentType: string(segment.SegmentType),
+				ElapsedOffsetSeconds: segment.ElapsedOffsetSeconds,
+				StartTime:            segment.StartTime, EndTime: segment.EndTime, CreatedAt: now,
+			}
+			if _, err := tx.NewInsert().Model(&model).Exec(ctx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func (r *SessionRepository) DeleteHistory(
+	ctx context.Context,
+	sessionID string,
+	expectedStartTime string,
+	userID string,
+	now string,
+) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		result, err := tx.NewUpdate().Model((*storemodels.SessionModel)(nil)).
+			Where("id = ? AND start_time = ? AND user_id = ? AND end_time IS NOT NULL AND deleted_at IS NULL", sessionID, expectedStartTime, userID).
+			Set("deleted_at = ?", now).Set("updated_at = ?", now).Exec(ctx)
+		if err != nil {
+			return err
+		}
+		rows, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if rows == 0 {
+			return errors.New("completed session not found")
+		}
+		_, err = tx.NewDelete().Model((*storemodels.SessionSegmentModel)(nil)).
+			Where("session_id = ? AND user_id = ?", sessionID, userID).Exec(ctx)
+		return err
+	})
 }
 
 func (r *SessionRepository) ListEnded(ctx context.Context, input struct {

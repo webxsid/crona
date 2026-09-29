@@ -26,57 +26,58 @@ type UpdateContext struct {
 }
 
 type Action struct {
-	Kind                string
-	TargetView          string
-	ReportKind          sharedtypes.ExportReportKind
-	ReportFormat        sharedtypes.ExportFormat
-	OutputMode          sharedtypes.ExportOutputMode
-	PresetID            string
-	ID                  string
-	RepoID              int64
-	StreamID            int64
-	IssueID             int64
-	HabitID             int64
-	Name                string
-	Path                string
-	CheckInDate         string
-	StartDate           string
-	EndDate             string
-	RepoName            string
-	StreamName          string
-	Title               string
-	Description         *string
-	Status              string
-	Weekdays            []int
-	Active              bool
-	Estimate            *int
-	DueDate             *string
-	IssueCreateFollowUp int
-	Note                *string
-	ReminderKind        sharedtypes.AlertReminderKind
-	ReminderSchedule    sharedtypes.AlertReminderScheduleType
-	ReminderTimeHHMM    string
-	SettingKey          sharedtypes.CoreSettingsKey
-	DayBoundarySchedule sharedtypes.DayBoundarySchedule
-	StringList          []string
-	IntList             []int
-	StreakKinds         []string
-	HabitStreakDefs     []sharedtypes.HabitStreakDefinition
-	RestDates           []string
-	UsageTelemetry      bool
-	ErrorReporting      bool
-	RestartAfterSave    bool
-	OnboardingDone      bool
-	Mood                int
-	Energy              int
-	SleepHours          *float64
-	SleepScore          *int
-	ScreenTimeMinutes   *int
-	Payload             shareddto.EndSessionRequest
-	ManualSession       *shareddto.ManualSessionLogRequest
-	TimerStart          *shareddto.TimerStartRequest
-	TimerExtend         *shareddto.TimerExtendRequest
-	AdditionalSessions  int
+	Kind                 string
+	TargetView           string
+	ReportKind           sharedtypes.ExportReportKind
+	ReportFormat         sharedtypes.ExportFormat
+	OutputMode           sharedtypes.ExportOutputMode
+	PresetID             string
+	ID                   string
+	RepoID               int64
+	StreamID             int64
+	IssueID              int64
+	HabitID              int64
+	Name                 string
+	Path                 string
+	CheckInDate          string
+	StartDate            string
+	EndDate              string
+	RepoName             string
+	StreamName           string
+	Title                string
+	Description          *string
+	Status               string
+	Weekdays             []int
+	Active               bool
+	Estimate             *int
+	DueDate              *string
+	IssueCreateFollowUp  int
+	Note                 *string
+	ReminderKind         sharedtypes.AlertReminderKind
+	ReminderSchedule     sharedtypes.AlertReminderScheduleType
+	ReminderTimeHHMM     string
+	SettingKey           sharedtypes.CoreSettingsKey
+	DayBoundarySchedule  sharedtypes.DayBoundarySchedule
+	StringList           []string
+	IntList              []int
+	StreakKinds          []string
+	HabitStreakDefs      []sharedtypes.HabitStreakDefinition
+	RestDates            []string
+	UsageTelemetry       bool
+	ErrorReporting       bool
+	RestartAfterSave     bool
+	OnboardingDone       bool
+	Mood                 int
+	Energy               int
+	SleepHours           *float64
+	SleepScore           *int
+	ScreenTimeMinutes    *int
+	Payload              shareddto.EndSessionRequest
+	ManualSession        *shareddto.ManualSessionLogRequest
+	TimerStart           *shareddto.TimerStartRequest
+	TimerExtend          *shareddto.TimerExtendRequest
+	AdditionalSessions   int
+	SessionHistoryUpdate *shareddto.UpdateSessionHistoryRequest
 }
 
 func Close(state State) State {
@@ -91,6 +92,9 @@ func Close(state State) State {
 	state.DeleteKind = ""
 	state.DeleteLabel = ""
 	state.SessionID = ""
+	state.SessionHistoryContext = ""
+	state.SessionHistoryNoteInputs = nil
+	state.SessionHistorySegments = nil
 	state.IssueID = 0
 	state.HabitID = 0
 	state.TargetView = ""
@@ -355,6 +359,8 @@ func Update(
 		return updateCountdownExtend(state, msg)
 	case "amend_session":
 		return updateAmendSession(state, msg)
+	case "edit_session_history":
+		return updateEditSessionHistory(state, msg)
 	case "manual_session":
 		return updateManualSession(state, msg)
 	case "issue_session_transition":

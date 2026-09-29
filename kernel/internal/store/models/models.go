@@ -189,6 +189,8 @@ type CoreSettingsModel struct {
 	OnboardingCompleted   bool   `bun:"onboarding_completed,notnull,type:integer"`
 	UsageTelemetryEnabled bool   `bun:"usage_telemetry_enabled,notnull,type:integer"`
 	ErrorReportingEnabled bool   `bun:"error_reporting_enabled,notnull,type:integer"`
+	ManageHistory         bool   `bun:"manage_history,notnull,type:integer"`
+	ManageHistoryDays     int    `bun:"manage_history_days,notnull,type:integer"`
 	HabitStreakDefs       string `bun:"habit_streak_definitions,notnull,type:text"`
 	RestRecurringDates    string `bun:"rest_recurring_dates,notnull,type:text"`
 	StartOfDay            string `bun:"start_of_day,notnull,type:text"`

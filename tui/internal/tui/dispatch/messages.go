@@ -532,6 +532,11 @@ func HandleMessage(
 	case commands.SessionAmendedMsg:
 		cmd := deps.SetStatus(&state, "Session amended", false)
 		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state), deps.LoadSessionDetail(msg.ID)), true
+	case commands.SessionHistoryDeletedMsg:
+		state.SessionDetailOpen = false
+		state.SessionDetail = nil
+		cmd := deps.SetStatus(&state, "Session deleted", false)
+		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state)), true
 	case commands.ManualSessionLoggedMsg:
 		cmds := []tea.Cmd{deps.SetStatus(&state, "Manual session logged", false), deps.LoadSessionHistoryFor200(state), deps.LoadAllIssues()}
 		if state.Context != nil && state.Context.IssueID != nil && *state.Context.IssueID == msg.IssueID {

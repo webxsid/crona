@@ -6,6 +6,7 @@ import (
 	"time"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -26,6 +27,76 @@ func OpenCreateRepo(state State) State {
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = 1
 	return state
+}
+
+func OpenEditSessionHistory(state State, detail *api.SessionDetail) State {
+	if detail == nil {
+		return state
+	}
+	inputs := []textinput.Model{
+		newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+		newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+	}
+	inputs[0].SetValue(sessionHistoryTimestampValue(detail.StartTime))
+	if detail.EndTime != nil {
+		inputs[1].SetValue(sessionHistoryTimestampValue(*detail.EndTime))
+	}
+	noteSections := []sharedtypes.SessionNoteSection{
+		sharedtypes.SessionNoteSectionCommit,
+		sharedtypes.SessionNoteSectionWork,
+		sharedtypes.SessionNoteSectionNotes,
+	}
+	noteInputs := make([]textarea.Model, 0, len(noteSections))
+	for _, section := range noteSections {
+		input := newDescriptionInput(64, 3)
+		if detail.ParsedNotes != nil {
+			input.SetValue(detail.ParsedNotes[section])
+		}
+		noteInputs = append(noteInputs, input)
+	}
+	segmentRows := make([]SessionHistorySegmentRow, 0, len(detail.Segments))
+	for _, segment := range detail.Segments {
+		row := newSessionHistorySegmentRow(state, segment.SegmentType)
+		row.StartTime.SetValue(sessionHistoryTimestampValue(segment.StartTime))
+		if segment.EndTime != nil {
+			row.EndTime.SetValue(sessionHistoryTimestampValue(*segment.EndTime))
+		}
+		segmentRows = append(segmentRows, row)
+	}
+	state = Close(state)
+	state.Kind = "edit_session_history"
+	state.SessionID = detail.ID
+	state.SessionHistoryContext = strings.TrimSpace(
+		detail.RepoName + " / " + detail.StreamName + " / Issue #" +
+			strconv.FormatInt(detail.IssueID, 10) + " " + detail.IssueTitle,
+	)
+	state.Inputs = inputs
+	state.SessionHistoryNoteInputs = noteInputs
+	state.SessionHistorySegments = segmentRows
+	state.FocusIdx = 0
+	return SyncDialogFocus(state)
+}
+
+func newSessionHistorySegmentRow(
+	state State,
+	segmentType sharedtypes.SessionSegmentType,
+) SessionHistorySegmentRow {
+	if segmentType == "" {
+		segmentType = sharedtypes.SessionSegmentWork
+	}
+	return SessionHistorySegmentRow{
+		Type:      segmentType,
+		StartTime: newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+		EndTime:   newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+	}
+}
+
+func sessionHistoryTimestampValue(value string) string {
+	parsed, err := time.Parse(time.RFC3339Nano, value)
+	if err != nil {
+		return strings.TrimSpace(value)
+	}
+	return parsed.In(time.Local).Format("2006-01-02 15:04")
 }
 
 func OpenEditRepo(state State, repoID int64, name string, descriptionValue *string) State {
