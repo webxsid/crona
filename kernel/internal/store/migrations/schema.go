@@ -85,6 +85,11 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 			return err
 		}
 	}
+	for _, table := range []string{"repos", "streams"} {
+		if err := ensureIntegerColumn(ctx, db, table, "is_reserved", 0); err != nil {
+			return err
+		}
+	}
 	for _, spec := range []struct {
 		table        string
 		column       string
@@ -227,7 +232,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_sessions_issue_id ON sessions (issue_id)",
 		"CREATE INDEX IF NOT EXISTS idx_ops_entity_entity_id ON ops (entity, entity_id)",
 		"CREATE INDEX IF NOT EXISTS idx_repos_user_id ON repos (user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_repos_reserved_user_name ON repos (user_id, is_reserved, name)",
 		"CREATE INDEX IF NOT EXISTS idx_streams_user_id ON streams (user_id)",
+		"CREATE INDEX IF NOT EXISTS idx_streams_reserved_user_name ON streams (user_id, is_reserved, name)",
 		"CREATE INDEX IF NOT EXISTS idx_issues_user_id ON issues (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habit_completions_user_id ON habit_completions (user_id)",

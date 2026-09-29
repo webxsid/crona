@@ -79,6 +79,7 @@ func (r *StreamRepository) ListByRepo(
 		ColumnExpr("streams.visibility").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
+		Where("streams.is_reserved = 0").
 		Where("streams.deleted_at IS NULL").
 		Where("repos.deleted_at IS NULL").
 		OrderExpr("streams.created_at ASC").
@@ -123,6 +124,7 @@ func (r *StreamRepository) GetByID(
 		ColumnExpr("streams.visibility").
 		Where("streams.public_id = ?", streamID).
 		Where("streams.user_id = ?", userID).
+		Where("streams.is_reserved = 0").
 		Where("streams.deleted_at IS NULL").
 		Where("repos.deleted_at IS NULL").
 		Limit(1).
@@ -167,6 +169,7 @@ func (r *StreamRepository) ListDeletedByRepo(
 		ColumnExpr("streams.visibility").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
+		Where("streams.is_reserved = 0").
 		Where("streams.deleted_at IS NOT NULL").
 		Where("repos.deleted_at IS NULL").
 		OrderExpr("streams.created_at ASC").
@@ -202,6 +205,7 @@ func (r *StreamRepository) Update(
 		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("updated_at = ?", now)
 	if updates.Name != nil {
@@ -241,6 +245,7 @@ func (r *StreamRepository) SoftDeleteByRepo(
 		Model((*storemodels.StreamModel)(nil)).
 		Where("repo_id = ?", repoInternalID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).
@@ -281,6 +286,7 @@ func (r *StreamRepository) Restore(
 		Model((*storemodels.StreamModel)(nil)).
 		Where("public_id = ?", streamID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NOT NULL").
 		Set("deleted_at = NULL").
 		Set("updated_at = ?", now).

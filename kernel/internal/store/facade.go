@@ -30,6 +30,7 @@ type Registry struct {
 	DailyPlans                   *repositories.DailyPlanRepository
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
+	ReservedContexts             *repositories.ReservedContextRepository
 }
 
 func Open(dbPath string) (*Store, error) {
@@ -62,5 +63,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		DailyPlans:                   repositories.NewDailyPlanRepository(db),
 		CustomHabitMomentumSnapshots: repositories.NewCustomHabitMomentumSnapshotRepository(db),
 		HabitStreakDefinitions:       repositories.NewHabitStreakDefinitionRepository(db),
+		ReservedContexts:             repositories.NewReservedContextRepository(db),
 	}
 }

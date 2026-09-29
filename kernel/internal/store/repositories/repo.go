@@ -57,6 +57,7 @@ func (r *RepoRepository) GetByID(
 		Column("public_id", "name", "description", "color").
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Limit(1).
 		Scan(ctx)
@@ -80,6 +81,7 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 		Model(&models).
 		Column("public_id", "name", "description", "color").
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Order("created_at ASC").
 		Scan(ctx); err != nil {
@@ -110,6 +112,7 @@ func (r *RepoRepository) ListDeleted(
 		Model(&models).
 		Column("public_id", "name", "description", "color").
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NOT NULL").
 		Order("created_at ASC").
 		Scan(ctx); err != nil {
@@ -146,6 +149,7 @@ func (r *RepoRepository) Update(
 		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("updated_at = ?", now)
 
@@ -187,6 +191,7 @@ func (r *RepoRepository) SoftDelete(
 		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).
@@ -210,6 +215,7 @@ func (r *RepoRepository) Restore(
 		Model((*storemodels.RepoModel)(nil)).
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NOT NULL").
 		Set("deleted_at = NULL").
 		Set("updated_at = ?", now).
