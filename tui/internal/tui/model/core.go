@@ -193,6 +193,9 @@ type Model struct {
 	dialogDeleteKind                     string
 	dialogDeleteLabel                    string
 	dialogSessionID                      string
+	dialogSessionHistoryContext          string
+	dialogSessionHistoryNoteInputs       []textarea.Model
+	dialogSessionHistorySegments         []dialogstate.SessionHistorySegmentRow
 	dialogIssueID                        int64
 	dialogHabitID                        int64
 	dialogIssueStatus                    string

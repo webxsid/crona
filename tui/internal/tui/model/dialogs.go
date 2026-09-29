@@ -641,33 +641,37 @@ func (m Model) dialogState() dialogstate.State {
 		awayDates = m.settings.AwayDates
 	}
 	return dialogstate.State{
-		Kind:               m.dialog,
-		Width:              m.width,
-		Inputs:             m.dialogInputs,
-		Description:        m.dialogDescription,
-		DescriptionEnabled: m.dialogDescriptionOn,
-		DescriptionIndex:   m.dialogDescriptionIdx,
-		FocusIdx:           m.dialogFocusIdx,
-		ErrorMessage:       m.dialogErrorMessage,
-		DeleteID:           m.dialogDeleteID,
-		DeleteKind:         m.dialogDeleteKind,
-		DeleteLabel:        m.dialogDeleteLabel,
-		SessionID:          m.dialogSessionID,
-		IssueID:            m.dialogIssueID,
-		HabitID:            m.dialogHabitID,
-		IssueStatus:        m.dialogIssueStatus,
-		CheckInDate:        m.dialogCheckInDate,
-		RepoID:             m.dialogRepoID,
-		RepoName:           m.dialogRepoName,
-		RepoItems:          m.dialogRepoItems,
-		RepoItemIDs:        m.dialogRepoItemIDs,
-		StreamID:           m.dialogStreamID,
-		StreamName:         m.dialogStreamName,
-		RepoIndex:          m.dialogRepoIndex,
-		StreamIndex:        m.dialogStreamIndex,
-		Parent:             m.dialogParent,
-		DateMonthValue:     m.dialogDateMonth,
-		DateCursorValue:    m.dialogDateCursor,
+		Kind:                     m.dialog,
+		Width:                    m.width,
+		Height:                   m.height,
+		Inputs:                   m.dialogInputs,
+		Description:              m.dialogDescription,
+		DescriptionEnabled:       m.dialogDescriptionOn,
+		DescriptionIndex:         m.dialogDescriptionIdx,
+		FocusIdx:                 m.dialogFocusIdx,
+		ErrorMessage:             m.dialogErrorMessage,
+		DeleteID:                 m.dialogDeleteID,
+		DeleteKind:               m.dialogDeleteKind,
+		DeleteLabel:              m.dialogDeleteLabel,
+		SessionID:                m.dialogSessionID,
+		SessionHistoryContext:    m.dialogSessionHistoryContext,
+		SessionHistoryNoteInputs: m.dialogSessionHistoryNoteInputs,
+		SessionHistorySegments:   m.dialogSessionHistorySegments,
+		IssueID:                  m.dialogIssueID,
+		HabitID:                  m.dialogHabitID,
+		IssueStatus:              m.dialogIssueStatus,
+		CheckInDate:              m.dialogCheckInDate,
+		RepoID:                   m.dialogRepoID,
+		RepoName:                 m.dialogRepoName,
+		RepoItems:                m.dialogRepoItems,
+		RepoItemIDs:              m.dialogRepoItemIDs,
+		StreamID:                 m.dialogStreamID,
+		StreamName:               m.dialogStreamName,
+		RepoIndex:                m.dialogRepoIndex,
+		StreamIndex:              m.dialogStreamIndex,
+		Parent:                   m.dialogParent,
+		DateMonthValue:           m.dialogDateMonth,
+		DateCursorValue:          m.dialogDateCursor,
 		CalendarScores: func() map[string]api.FocusScoreRangeDay {
 			if m.summarySnapshot != nil {
 				return m.summarySnapshot.CalendarScores
@@ -780,6 +784,9 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogDeleteKind = state.DeleteKind
 	m.dialogDeleteLabel = state.DeleteLabel
 	m.dialogSessionID = state.SessionID
+	m.dialogSessionHistoryContext = state.SessionHistoryContext
+	m.dialogSessionHistoryNoteInputs = state.SessionHistoryNoteInputs
+	m.dialogSessionHistorySegments = state.SessionHistorySegments
 	m.dialogIssueID = state.IssueID
 	m.dialogHabitID = state.HabitID
 	m.dialogIssueStatus = state.IssueStatus
@@ -1047,8 +1054,9 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		DeleteHabit: func(habitID, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.DeleteHabit(m.client, habitID, streamID, dashboardDate)
 		},
-		DeleteDailyCheckIn: func(id string) tea.Cmd { return commands.DeleteDailyCheckIn(m.client, id) },
-		DeleteExportReport: func(report api.ExportReportFile) tea.Cmd { return commands.DeleteExportReport(m.client, report) },
+		DeleteDailyCheckIn:   func(id string) tea.Cmd { return commands.DeleteDailyCheckIn(m.client, id) },
+		DeleteExportReport:   func(report api.ExportReportFile) tea.Cmd { return commands.DeleteExportReport(m.client, report) },
+		DeleteSessionHistory: func(id string) tea.Cmd { return commands.DeleteSessionHistory(m.client, id) },
 		ChangeIssueStatus: func(issueID int64, status string, note *string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.ChangeIssueStatus(
 				m.client,
@@ -1060,6 +1068,9 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			)
 		},
 		AmendSessionNote: func(id string, note string) tea.Cmd { return commands.AmendSessionNote(m.client, id, note) },
+		UpdateSessionHistory: func(input shareddto.UpdateSessionHistoryRequest) tea.Cmd {
+			return commands.UpdateSessionHistory(m.client, input)
+		},
 		LogManualSession: func(input shareddto.ManualSessionLogRequest) tea.Cmd {
 			return commands.LogManualSession(m.client, input)
 		},

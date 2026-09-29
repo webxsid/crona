@@ -25,9 +25,16 @@ type Theme struct {
 	StyleNormal    lipgloss.Style
 }
 
+type SessionHistorySegmentRow struct {
+	Type      sharedtypes.SessionSegmentType
+	StartTime textinput.Model
+	EndTime   textinput.Model
+}
+
 type State struct {
 	Kind                           string
 	Width                          int
+	Height                         int
 	Inputs                         []textinput.Model
 	Description                    textarea.Model
 	DescriptionEnabled             bool
@@ -38,6 +45,9 @@ type State struct {
 	DeleteKind                     string
 	DeleteLabel                    string
 	SessionID                      string
+	SessionHistoryContext          string
+	SessionHistoryNoteInputs       []textarea.Model
+	SessionHistorySegments         []SessionHistorySegmentRow
 	IssueID                        int64
 	HabitID                        int64
 	TargetView                     string

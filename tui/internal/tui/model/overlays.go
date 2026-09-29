@@ -6,6 +6,7 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
+	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	helperpkg "crona/tui/internal/tui/helpers"
 	overlaypkg "crona/tui/internal/tui/overlays"
@@ -21,6 +22,7 @@ func (m Model) overlayState() overlaypkg.State {
 		SessionDetailOpen: m.sessionDetailOpen,
 		SessionDetailY:    m.sessionDetailY,
 		SessionDetail:     m.sessionDetail,
+		ManageHistory:     m.settings != nil && m.settings.ManageHistory,
 		Cursor:            map[string]int{},
 		Timer:             m.timer,
 	}
@@ -52,6 +54,20 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 			next.sessionDetailOpen = false
 			next.sessionDetail = nil
 			next.sessionDetailY = 0
+			*state = next.overlayState()
+		},
+		OpenEditSessionHistory: func(state *overlaypkg.State, detail *api.SessionDetail) {
+			next := m.applyOverlayState(*state)
+			next.sessionDetailOpen = false
+			next.sessionDetail = nil
+			next = next.withDialogState(dialogstate.OpenEditSessionHistory(next.dialogSnapshot().Dialog, detail))
+			*state = next.overlayState()
+		},
+		OpenDeleteSessionHistory: func(state *overlaypkg.State, id string) {
+			next := m.applyOverlayState(*state)
+			next.sessionDetailOpen = false
+			next.sessionDetail = nil
+			next = next.withDialogState(next.dialogSnapshot().OpenConfirmDeleteEntity("session_history", id, "this session history entry"))
 			*state = next.overlayState()
 		},
 		SessionCommit: helperpkg.SessionCommit,

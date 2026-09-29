@@ -478,10 +478,14 @@ func renderSessionDetailOverlay(state State) string {
 	if offset+visibleHeight < len(wrapped) {
 		visible = append(visible, "[more below]")
 	}
+	footer := []string{"[↑/↓] scroll   [esc] close"}
+	if state.ContentState.Settings != nil && state.ContentState.Settings.ManageHistory {
+		footer = []string{"[↑/↓] scroll   [e] edit   [D] delete   [esc] close"}
+	}
 	return overlayBox(
 		"Session Detail",
 		visible,
-		[]string{"[↑/↓] scroll   [e] amend   [esc] close"},
+		footer,
 		boxWidth,
 		chrome.ColorCyan,
 		chrome.StyleNormal,

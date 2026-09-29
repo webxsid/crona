@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func TestSessionDetailOverlayOpensAmendDialog(t *testing.T) {
+func TestSessionDetailEditHotkeyDoesNothingWhenManageHistoryIsDisabled(t *testing.T) {
 	detail := &api.SessionDetail{
 		SessionHistoryEntry: sharedtypes.SessionHistoryEntry{
 			Session: sharedtypes.Session{
@@ -26,13 +26,7 @@ func TestSessionDetailOverlayOpensAmendDialog(t *testing.T) {
 	next, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("e")})
 	updated := next.(app.Model)
 
-	if got := updated.DialogKind(); got != "amend_session" {
-		t.Fatalf("expected amend_session dialog, got %q", got)
-	}
-	if got := updated.DialogSessionID(); got != detail.ID {
-		t.Fatalf("expected dialog session id %q, got %q", detail.ID, got)
-	}
-	if got := updated.DialogInputValue(0); got != "Refine alerts backend" {
-		t.Fatalf("expected commit message to be prefilled, got %q", got)
+	if got := updated.DialogKind(); got != "" {
+		t.Fatalf("expected edit dialog to remain closed when history management is disabled, got %q", got)
 	}
 }

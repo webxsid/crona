@@ -354,6 +354,8 @@ const (
 	CoreSettingsKeyHabitStreakDefs       CoreSettingsKey = "habitStreakDefinitions"
 	CoreSettingsKeyStartOfDay            CoreSettingsKey = "startOfDay"
 	CoreSettingsKeyEndOfDay              CoreSettingsKey = "endOfDay"
+	CoreSettingsKeyManageHistory         CoreSettingsKey = "manageHistory"
+	CoreSettingsKeyManageHistoryDays     CoreSettingsKey = "manageHistoryDays"
 )
 
 type DateDisplayPreset string
@@ -1228,6 +1230,7 @@ type SessionDetail struct {
 	StreamName  string             `json:"streamName"`
 	IssueTitle  string             `json:"issueTitle"`
 	WorkSummary SessionWorkSummary `json:"workSummary"`
+	Segments    []SessionSegment   `json:"segments"`
 }
 
 type SessionWorkSummary struct {
@@ -1302,6 +1305,8 @@ type CoreSettings struct {
 	OnboardingCompleted   bool                    `json:"onboardingCompleted"`
 	UsageTelemetryEnabled bool                    `json:"usageTelemetryEnabled"`
 	ErrorReportingEnabled bool                    `json:"errorReportingEnabled"`
+	ManageHistory         bool                    `json:"manageHistory"`
+	ManageHistoryDays     int                     `json:"manageHistoryDays"`
 	HabitStreakDefs       []HabitStreakDefinition `json:"habitStreakDefinitions,omitempty"`
 	StartOfDay            DayBoundarySchedule     `json:"startOfDay"`
 	EndOfDay              DayBoundarySchedule     `json:"endOfDay"`

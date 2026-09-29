@@ -95,6 +95,7 @@ type IssuePinnedDailyChangedMsg struct {
 	Pinned  bool
 }
 type SessionAmendedMsg struct{ ID string }
+type SessionHistoryDeletedMsg struct{ ID string }
 type OpsLoadedMsg struct{ Ops []api.Op }
 type ContextLoadedMsg struct{ Ctx *api.ActiveContext }
 type TimerLoadedMsg struct{ Timer *api.TimerState }

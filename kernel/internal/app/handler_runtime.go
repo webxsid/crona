@@ -85,6 +85,14 @@ func (h *Handler) handleRuntimeMethods(
 		return handle(req, func(input shareddto.SessionIDRequest) (any, error) {
 			return corecommands.GetSessionDetail(ctx, h.core, input.ID)
 		}), true
+	case protocol.MethodSessionHistoryUpdate:
+		return handle(req, func(input shareddto.UpdateSessionHistoryRequest) (any, error) {
+			return corecommands.UpdateSessionHistory(ctx, h.core, input)
+		}), true
+	case protocol.MethodSessionHistoryDelete:
+		return handle(req, func(input shareddto.DeleteSessionHistoryRequest) (any, error) {
+			return corecommands.DeleteSessionHistory(ctx, h.core, input.ID)
+		}), true
 	case protocol.MethodSessionGetActive:
 		return h.handleNoParams(req, func() (any, error) {
 			return h.core.Sessions.GetActiveSession(ctx, h.core.UserID)

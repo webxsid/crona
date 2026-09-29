@@ -3,6 +3,7 @@ package sessionnotes
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strings"
 	"time"
 
@@ -24,6 +25,10 @@ func Parse(raw *string) sharedtypes.ParsedSessionNotes {
 	flush := func() {
 		if hasSection {
 			result[current] = strings.TrimSpace(strings.Join(buffer, "\n"))
+		} else if preamble := strings.TrimSpace(strings.Join(buffer, "\n")); preamble != "" {
+			// Keep legacy notes that predate the ::section format. The empty key
+			// represents markdown that appeared before the first section marker.
+			result[""] = preamble
 		}
 		buffer = nil
 	}
@@ -52,13 +57,33 @@ func Serialize(sections sharedtypes.ParsedSessionNotes) string {
 		sharedtypes.SessionNoteSectionNotes,
 	}
 
-	blocks := make([]string, 0, len(ordered))
+	blocks := make([]string, 0, len(sections))
+	if preamble := strings.TrimSpace(sections[""]); preamble != "" {
+		blocks = append(blocks, preamble)
+	}
+	seen := make(map[sharedtypes.SessionNoteSection]struct{}, len(ordered))
 	for _, key := range ordered {
+		seen[key] = struct{}{}
 		value := sections[key]
 		if value == "" {
 			continue
 		}
 		blocks = append(blocks, fmt.Sprintf("::%s\n%s", key, strings.TrimSpace(value)))
+	}
+	unknown := make([]string, 0)
+	for key := range sections {
+		if _, ok := seen[key]; ok || key == "" {
+			continue
+		}
+		unknown = append(unknown, string(key))
+	}
+	slices.Sort(unknown)
+	for _, rawKey := range unknown {
+		key := sharedtypes.SessionNoteSection(rawKey)
+		value := strings.TrimSpace(sections[key])
+		if value != "" {
+			blocks = append(blocks, fmt.Sprintf("::%s\n%s", key, value))
+		}
 	}
 	return strings.Join(blocks, "\n\n")
 }

@@ -187,6 +187,14 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "error_reporting_enabled",
 		queryKind: coreSettingQueryBool,
 	},
+	sharedtypes.CoreSettingsKeyManageHistory: {
+		column:    "manage_history",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyManageHistoryDays: {
+		column:    "manage_history_days",
+		queryKind: coreSettingQueryInt,
+	},
 	sharedtypes.CoreSettingsKeyStartOfDay: {
 		column:    "start_of_day",
 		queryKind: coreSettingQueryString,
@@ -506,6 +514,8 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		OnboardingCompleted:   sharedconstants.DefaultCoreSettings["onboardingCompleted"].(bool),
 		UsageTelemetryEnabled: sharedconstants.DefaultCoreSettings["usageTelemetryEnabled"].(bool),
 		ErrorReportingEnabled: sharedconstants.DefaultCoreSettings["errorReportingEnabled"].(bool),
+		ManageHistory:         sharedconstants.DefaultCoreSettings["manageHistory"].(bool),
+		ManageHistoryDays:     sharedconstants.DefaultCoreSettings["manageHistoryDays"].(int),
 		HabitStreakDefs: mustJSON(
 			sharedconstants.DefaultCoreSettings["habitStreakDefinitions"],
 		),
@@ -559,6 +569,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseDayBoundarySchedule(toString(value), false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value)
+	case sharedtypes.CoreSettingsKeyManageHistoryDays:
+		return clampManageHistoryDays(value)
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
 		sharedtypes.CoreSettingsKeyInactivityRepeat:
 		return clampInactivityMinutes(value)
@@ -615,6 +627,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return dayBoundaryScheduleJSON(value, false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value), nil
+	case sharedtypes.CoreSettingsKeyManageHistoryDays:
+		return clampManageHistoryDays(value), nil
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
 		sharedtypes.CoreSettingsKeyInactivityRepeat:
 		return clampInactivityMinutes(value), nil
@@ -727,6 +741,8 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		OnboardingCompleted:   row.OnboardingCompleted,
 		UsageTelemetryEnabled: row.UsageTelemetryEnabled,
 		ErrorReportingEnabled: row.ErrorReportingEnabled,
+		ManageHistory:         row.ManageHistory,
+		ManageHistoryDays:     clampManageHistoryDays(row.ManageHistoryDays),
 		StartOfDay:            parseDayBoundarySchedule(row.StartOfDay, true),
 		EndOfDay:              parseDayBoundarySchedule(row.EndOfDay, false),
 		CreatedAt:             row.CreatedAt,
@@ -822,6 +838,25 @@ func clampRollbackMinutes(value any) int {
 		return 120
 	}
 	return minutes
+}
+
+func clampManageHistoryDays(value any) int {
+	days := 0
+	switch typed := value.(type) {
+	case int:
+		days = typed
+	case int64:
+		days = int(typed)
+	case float64:
+		days = int(typed)
+	}
+	if days < 0 {
+		return 0
+	}
+	if days > 5 {
+		return 5
+	}
+	return days
 }
 
 func toString(value any) string {

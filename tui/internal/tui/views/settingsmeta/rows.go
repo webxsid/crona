@@ -31,7 +31,8 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 	if settings == nil {
 		return nil
 	}
-	return []Row{
+	rows := []Row{
+		{Section: "History", Label: "Manage History", Value: enabledDisabled(settings.ManageHistory)},
 		{
 			Section: "Updates",
 			Label:   "Update Checks",
@@ -83,6 +84,20 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 		{Section: "Day Boundaries", Label: "End of Day", Value: dayBoundaryLabel(settings.EndOfDay, timezone)},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 	}
+	if settings.ManageHistory {
+		value := "Today"
+		if settings.ManageHistoryDays > 0 {
+			unit := "days"
+			if settings.ManageHistoryDays == 1 {
+				unit = "day"
+			}
+			value = fmt.Sprintf("%d %s", settings.ManageHistoryDays, unit)
+		}
+		rows = append(rows, Row{})
+		copy(rows[2:], rows[1:len(rows)-1])
+		rows[1] = Row{Section: "History", Label: "History Edit Window", Value: value}
+	}
+	return rows
 }
 
 func dayBoundaryLabel(schedule sharedtypes.DayBoundarySchedule, timezone string) string {

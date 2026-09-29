@@ -29,6 +29,22 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 		return s, nil, true
 	}
 	switch row.Label {
+	case "Manage History":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyManageHistory,
+			!s.Settings.ManageHistory,
+			repoID,
+			streamID,
+			s.DashboardDate,
+		), true
+	case "History Edit Window":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyManageHistoryDays,
+			min(max(s.Settings.ManageHistoryDays+dir, 0), 5),
+			repoID,
+			streamID,
+			s.DashboardDate,
+		), true
 	case "Work Duration":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyWorkDurationMinutes,

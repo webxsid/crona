@@ -53,6 +53,7 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"hard_limit_extend",
 		"timer_countdown_extend",
 		"amend_session",
+		"edit_session_history",
 		"manual_session":
 		matched = "session"
 		rendered = renderSessionDialog(theme, state)

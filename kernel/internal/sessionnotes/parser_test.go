@@ -1,10 +1,29 @@
 package sessionnotes
 
 import (
+	"strings"
 	"testing"
 
 	sharedtypes "crona/shared/types"
 )
+
+func TestParseAndSerializePreserveLegacyMarkdownAndUnknownSections(t *testing.T) {
+	raw := "# Session title\n\nLegacy markdown details\n\n::commit\nold commit\n\n::context\nRepo ID: 7\n\n::custom\ncustom metadata"
+	parsed := Parse(&raw)
+	parsed[sharedtypes.SessionNoteSectionCommit] = "updated commit"
+	got := Serialize(parsed)
+
+	for _, want := range []string{
+		"# Session title\n\nLegacy markdown details",
+		"::commit\nupdated commit",
+		"::context\nRepo ID: 7",
+		"::custom\ncustom metadata",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("serialized notes lost %q:\n%s", want, got)
+		}
+	}
+}
 
 func TestSegmentDurationsIncludeElapsedOffsets(t *testing.T) {
 	offset := 12
