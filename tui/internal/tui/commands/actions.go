@@ -519,6 +519,55 @@ func UpdateIssue(
 	}
 }
 
+func PromoteAdhocIssueWithPath(c *api.Client, issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
+	return func() tea.Msg {
+		repos, err := c.ListRepos()
+		if err != nil {
+			return ErrMsg{Err: err}
+		}
+		var repoID int64
+		for _, repo := range repos {
+			if strings.EqualFold(strings.TrimSpace(repo.Name), strings.TrimSpace(repoName)) {
+				repoID = repo.ID
+				break
+			}
+		}
+		if repoID == 0 {
+			repo, createErr := c.CreateRepo(strings.TrimSpace(repoName), nil)
+			if createErr != nil {
+				return ErrMsg{Err: createErr}
+			}
+			repoID = repo.ID
+		}
+		streams, err := c.ListStreams(repoID)
+		if err != nil {
+			return ErrMsg{Err: err}
+		}
+		var streamID int64
+		for _, stream := range streams {
+			if strings.EqualFold(strings.TrimSpace(stream.Name), strings.TrimSpace(streamName)) {
+				streamID = stream.ID
+				break
+			}
+		}
+		if streamID == 0 {
+			stream, createErr := c.CreateStream(repoID, strings.TrimSpace(streamName), nil)
+			if createErr != nil {
+				return ErrMsg{Err: createErr}
+			}
+			streamID = stream.ID
+		}
+		if err := c.PromoteAdhocIssue(shareddto.PromoteAdhocIssueRequest{
+			ID: issueID, StreamID: streamID, Title: title, Description: description,
+			EstimateMinutes: estimateMinutes, TodoForDate: dueDate,
+		}); err != nil {
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c))()
+	}
+}
+
 func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.DeleteIssue(issueID); err != nil {
@@ -546,6 +595,7 @@ func CreateIssueWithPath(
 	estimateMinutes *int,
 	todoForDate *string,
 	followUp int,
+	commitMessage string,
 ) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
@@ -597,7 +647,7 @@ func CreateIssueWithPath(
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp}
+		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp, CommitMessage: commitMessage}
 	}
 }
 

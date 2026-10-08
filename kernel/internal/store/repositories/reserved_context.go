@@ -21,6 +21,7 @@ const (
 type ReservedContext struct {
 	RepoID   int64
 	StreamID int64
+	IssueID  int64
 }
 
 type ReservedContextRepository struct {
@@ -128,7 +129,47 @@ func (r *ReservedContextRepository) EnsureAdhocContext(
 			}
 		}
 
-		out = ReservedContext{RepoID: repo.PublicID, StreamID: stream.PublicID}
+		var issue storemodels.IssueModel
+		err = tx.NewSelect().Model(&issue).
+			Where("stream_id = ?", stream.InternalID).
+			Where("title = ?", "Ad hoc pending").
+			Where("user_id = ?", userID).
+			Where("is_reserved = 1").
+			Limit(1).
+			Scan(ctx)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("find adhoc issue: %w", err)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			publicID, err := nextPublicIDTx(ctx, tx, "issues")
+			if err != nil {
+				return fmt.Errorf("allocate adhoc issue id: %w", err)
+			}
+			issue = storemodels.IssueModel{
+				InternalID: issueInternalID(publicID),
+				PublicID:   publicID,
+				StreamID:   stream.InternalID,
+				Title:      "Ad hoc pending",
+				Status:     string(sharedtypes.IssueStatusBacklog),
+				IsReserved: true,
+				UserID:     userID,
+				CreatedAt:  now,
+				UpdatedAt:  now,
+			}
+			if _, err := tx.NewInsert().Model(&issue).Exec(ctx); err != nil {
+				return fmt.Errorf("create adhoc issue: %w", err)
+			}
+		} else if issue.DeletedAt != nil {
+			if _, err := tx.NewUpdate().Model((*storemodels.IssueModel)(nil)).
+				Where("id = ?", issue.InternalID).
+				Set("deleted_at = NULL").
+				Set("updated_at = ?", now).
+				Exec(ctx); err != nil {
+				return fmt.Errorf("restore adhoc issue: %w", err)
+			}
+		}
+
+		out = ReservedContext{RepoID: repo.PublicID, StreamID: stream.PublicID, IssueID: issue.PublicID}
 		return nil
 	})
 	if err != nil {

@@ -119,6 +119,7 @@ type Deps struct {
 	ToggleHabitCompletedAction      func(*State) (tea.Cmd, bool)
 	SetHabitFailedAction            func(*State) (tea.Cmd, bool)
 	StartFocusFromSelection         func(*State) tea.Cmd
+	OpenAdhocTimerDialog            func(*State) bool
 	OpenManualSessionDialog         func(*State) (tea.Cmd, bool)
 	OpenSessionContextOverlay       func(*State) bool
 	ConfigReset                     func(*State) tea.Cmd
@@ -181,6 +182,9 @@ func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 func newRouter(deps Deps) *router {
 	r := keyregistry.New[State, uistate.View, uistate.Pane]()
 	keyregistry.RegisterGlobal(r, map[string]handler{
+		"A": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleStartAdhocTimer(s, deps)
+		},
 		"ctrl+c": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			deps.CloseEventStop()
 			return s, tea.Quit, true
@@ -223,7 +227,8 @@ func newRouter(deps Deps) *router {
 			if !focusStartContext(s) {
 				return s, nil, false
 			}
-			return s, deps.StartFocusFromSelection(&s), true
+			cmd := deps.StartFocusFromSelection(&s)
+			return s, cmd, true
 		},
 		"m": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive || timerIsActive(s) || !issueEditorContext(s) {

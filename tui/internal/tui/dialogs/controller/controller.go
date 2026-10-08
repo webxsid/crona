@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strconv"
 	"strings"
 
 	shareddto "crona/shared/dto"
@@ -17,6 +18,7 @@ type UpdateContext struct {
 	Repos             []api.Repo
 	Streams           []api.Stream
 	AllIssues         []api.IssueWithMeta
+	CurrentDate       string
 	Context           *api.ActiveContext
 	SelectedIssueID   int64
 	SelectedStreamID  int64
@@ -45,6 +47,7 @@ type Action struct {
 	RepoName             string
 	StreamName           string
 	Title                string
+	CommitMessage        string
 	Description          *string
 	Status               string
 	Weekdays             []int
@@ -96,6 +99,16 @@ func Close(state State) State {
 	state.SessionHistoryNoteInputs = nil
 	state.SessionHistorySegments = nil
 	state.IssueID = 0
+	state.AdhocTimer = false
+	state.PromotingAdhoc = false
+	state.ViewEntityAdhoc = false
+	state.AdhocResolution = ""
+	state.AdhocIssueIDs = nil
+	state.AdhocIssueTab = 0
+	state.AdhocIssueTabCounts = [4]int{}
+	state.AdhocElapsedSeconds = 0
+	state.AdhocDate = ""
+	state.NewIssueTitle = ""
 	state.HabitID = 0
 	state.TargetView = ""
 	state.IssueStatus = ""
@@ -282,6 +295,9 @@ func Update(
 	currentDate string,
 	msg tea.KeyMsg,
 ) (State, *Action, string) {
+	if ctx.CurrentDate == "" {
+		ctx.CurrentDate = currentDate
+	}
 	switch state.Kind {
 	case "create_repo":
 		return updateNameDescription(
@@ -345,6 +361,12 @@ func Update(
 		return updateIssueStatusNote(state, currentDate, msg)
 	case "end_session":
 		return updateSessionMessage(state, ctx, currentDate, msg)
+	case "adhoc_resolution":
+		return updateAdhocResolution(state, ctx, msg)
+	case "adhoc_issue_picker":
+		return updateAdhocIssuePicker(state, ctx, msg)
+	case "adhoc_new_issue":
+		return updateAdhocNewIssue(state, msg)
 	case "timer_start_type":
 		return updateTimerStartType(state, msg)
 	case "pomodoro_start":
@@ -352,7 +374,7 @@ func Update(
 	case "timer_countdown_start":
 		return updateTimerCountdownStart(state, msg)
 	case "hard_limit_expired":
-		return updateHardLimitExpired(state, msg)
+		return updateHardLimitExpired(state, ctx, msg)
 	case "hard_limit_extend":
 		return updateHardLimitExtend(state, msg)
 	case "timer_countdown_extend":
@@ -600,16 +622,42 @@ func updateSessionMessage(
 		return clearDialogError(state), nil, ""
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
+			if len(state.Inputs) == 0 || strings.TrimSpace(state.Inputs[0].Value()) == "" {
+				if state.AdhocTimer {
+					return state, nil, "Session summary is required"
+				}
+				return state, nil, "Commit message is required"
+			}
 			payload := EndSessionRequest(state.Inputs)
+			if state.AdhocTimer {
+				payload.AdhocResolution = state.AdhocResolution
+				if state.IssueID > 0 {
+					payload.IssueID = int64Ptr(state.IssueID)
+				}
+				if state.NewIssueTitle != "" {
+					title := state.NewIssueTitle
+					payload.NewIssueTitle = &title
+				}
+				if state.RepoID > 0 {
+					payload.RepoID = int64Ptr(state.RepoID)
+				}
+				if state.StreamID > 0 {
+					payload.StreamID = int64Ptr(state.StreamID)
+				}
+			}
 			kind := state.Kind
 			state = Close(state)
 			if kind == "end_session" {
-				if !ctx.HasActiveIssue {
+				if !ctx.HasActiveIssue && !validAdhocResolution(payload.AdhocResolution) {
 					return state, nil, "Active issue metadata unavailable"
+				}
+				streamID := ctx.ActiveIssueStream
+				if payload.StreamID != nil {
+					streamID = *payload.StreamID
 				}
 				return state, &Action{
 					Kind:     "end_session",
-					StreamID: ctx.ActiveIssueStream,
+					StreamID: streamID,
 					Payload:  payload,
 				}, ""
 			}
@@ -618,6 +666,143 @@ func updateSessionMessage(
 	}
 	var cmd tea.Cmd
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}
+
+func validAdhocResolution(resolution sharedtypes.AdhocSessionResolution) bool {
+	return resolution == sharedtypes.AdhocSessionResolutionAttach ||
+		resolution == sharedtypes.AdhocSessionResolutionCreate ||
+		resolution == sharedtypes.AdhocSessionResolutionKeep
+}
+
+func updateAdhocResolution(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "down":
+		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
+			state.ChoiceCursor++
+		}
+		return clearDialogError(state), nil, ""
+	case "up":
+		if state.ChoiceCursor > 0 {
+			state.ChoiceCursor--
+		}
+		return clearDialogError(state), nil, ""
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) {
+			return state, nil, "Choose how to record this session"
+		}
+		switch state.ChoiceValues[state.ChoiceCursor] {
+		case "attach":
+			next := OpenAdhocIssuePicker(state, ctx.AllIssues, ctx.CurrentDate)
+			if next.AdhocIssueTabCounts[3] == 0 {
+				return state, nil, "No eligible existing issues"
+			}
+			return next, nil, ""
+		case "create":
+			return OpenAdhocIssueCreation(state, ctx.Context), nil, ""
+		case "keep":
+			return OpenAdhocEndSession(state, sharedtypes.AdhocSessionResolutionKeep, 0, 0, 0, ""), nil, ""
+		}
+	}
+	return state, nil, ""
+}
+
+func updateAdhocIssuePicker(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return OpenAdhocResolution(state, ctx.Context), nil, ""
+	case "down":
+		state.ChoiceCursor = moveAdhocIssueCursor(state.ChoiceValues, state.ChoiceCursor, 1)
+		return clearDialogError(state), nil, ""
+	case "up":
+		state.ChoiceCursor = moveAdhocIssueCursor(state.ChoiceValues, state.ChoiceCursor, -1)
+		return clearDialogError(state), nil, ""
+	case "left", "shift+tab":
+		return switchAdhocIssueTab(state, ctx, -1), nil, ""
+	case "right", "tab":
+		return switchAdhocIssueTab(state, ctx, 1), nil, ""
+	case "home":
+		state.ChoiceCursor = 0
+		return clearDialogError(state), nil, ""
+	case "end":
+		state.ChoiceCursor = len(state.ChoiceItems) - 1
+		return clearDialogError(state), nil, ""
+	case "pgup", "pgdown":
+		direction := 1
+		if msg.String() == "pgup" {
+			direction = -1
+		}
+		state.ChoiceCursor = min(len(state.ChoiceItems)-1, max(0, state.ChoiceCursor+direction*max(1, (state.Height-16)/3)))
+		return clearDialogError(state), nil, ""
+	case "enter":
+		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) ||
+			strings.HasPrefix(state.ChoiceValues[state.ChoiceCursor], "group:") {
+			return state, nil, "Choose an issue"
+		}
+		issueID, err := strconv.ParseInt(state.ChoiceValues[state.ChoiceCursor], 10, 64)
+		if err != nil {
+			return state, nil, "Choose an issue"
+		}
+		for _, issue := range ctx.AllIssues {
+			if issue.ID == issueID {
+				next := OpenAdhocEndSession(state, sharedtypes.AdhocSessionResolutionAttach,
+					issue.ID, issue.RepoID, issue.StreamID, "")
+				next.ViewName = issue.Title
+				next.RepoName, next.StreamName = issue.RepoName, issue.StreamName
+				return next, nil, ""
+			}
+		}
+		return state, nil, "Issue is no longer available"
+	}
+	return state, nil, ""
+}
+
+func switchAdhocIssueTab(state State, ctx UpdateContext, direction int) State {
+	selectedID := int64(0)
+	if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceValues) {
+		selectedID, _ = strconv.ParseInt(state.ChoiceValues[state.ChoiceCursor], 10, 64)
+	}
+	state.AdhocIssueTab = (state.AdhocIssueTab + direction + len(adhocIssueTabNames)) % len(adhocIssueTabNames)
+	next := OpenAdhocIssuePicker(state, ctx.AllIssues, ctx.CurrentDate)
+	for i, value := range next.ChoiceValues {
+		if id, err := strconv.ParseInt(value, 10, 64); err == nil && id == selectedID {
+			next.ChoiceCursor = i
+			break
+		}
+	}
+	return next
+}
+
+func moveAdhocIssueCursor(values []string, cursor, direction int) int {
+	for next := cursor + direction; next >= 0 && next < len(values); next += direction {
+		if !strings.HasPrefix(values[next], "group:") {
+			return next
+		}
+	}
+	return cursor
+}
+
+func updateAdhocNewIssue(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch action := dialogActionForKey(state, msg.String()); action {
+	case dialogActionCancel:
+		repoID, streamID := state.RepoID, state.StreamID
+		next := OpenAdhocResolution(state, nil)
+		next.RepoID = repoID
+		next.StreamID = streamID
+		return next, nil, ""
+	case dialogActionPrimary:
+		title := strings.TrimSpace(state.Inputs[0].Value())
+		if title == "" {
+			return state, nil, "Issue title is required"
+		}
+		return OpenAdhocEndSession(state, sharedtypes.AdhocSessionResolutionCreate,
+			0, state.RepoID, state.StreamID, title), nil, ""
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
 }
@@ -650,11 +835,10 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 		case "stopwatch":
 			return Close(state), &Action{
 				Kind: "start_focus_session",
-				TimerStart: &shareddto.TimerStartRequest{
-					RepoID:   int64Ptr(state.RepoID),
-					StreamID: int64Ptr(state.StreamID),
-					IssueID:  int64Ptr(state.IssueID),
-				},
+				TimerStart: func() *shareddto.TimerStartRequest {
+					request := timerStartRequest(state)
+					return &request
+				}(),
 			}, ""
 		case "pomodoro":
 			return OpenPomodoroStart(
@@ -685,11 +869,10 @@ func updateTimerStartType(state State, msg tea.KeyMsg) (State, *Action, string) 
 			case "stopwatch":
 				return Close(state), &Action{
 					Kind: "start_focus_session",
-					TimerStart: &shareddto.TimerStartRequest{
-						RepoID:   int64Ptr(state.RepoID),
-						StreamID: int64Ptr(state.StreamID),
-						IssueID:  int64Ptr(state.IssueID),
-					},
+					TimerStart: func() *shareddto.TimerStartRequest {
+						request := timerStartRequest(state)
+						return &request
+					}(),
 				}, ""
 			case "pomodoro":
 				return OpenPomodoroStart(
@@ -740,14 +923,10 @@ func updateTimerCountdownStart(state State, msg tea.KeyMsg) (State, *Action, str
 			state.TimerCountdownSeconds = seconds
 			totalSeconds := new(int)
 			*totalSeconds = seconds
-			req := &shareddto.TimerStartRequest{
-				RepoID:                int64Ptr(state.RepoID),
-				StreamID:              int64Ptr(state.StreamID),
-				IssueID:               int64Ptr(state.IssueID),
-				HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
-				HardLimitTotalSeconds: totalSeconds,
-			}
-			return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+			req := timerStartRequest(state)
+			req.HardLimitKind = sharedtypes.TimerHardLimitKindCountdown
+			req.HardLimitTotalSeconds = totalSeconds
+			return Close(state), &Action{Kind: "start_focus_session", TimerStart: &req}, ""
 		}
 	}
 	var cmd tea.Cmd
@@ -861,18 +1040,25 @@ func submitPomodoroStart(state State) (State, *Action, string) {
 	if values.TotalSeconds <= 0 {
 		return state, nil, "Total duration must be positive"
 	}
-	req := &shareddto.TimerStartRequest{
-		RepoID:                         int64Ptr(state.RepoID),
-		StreamID:                       int64Ptr(state.StreamID),
-		IssueID:                        int64Ptr(state.IssueID),
-		HardLimitKind:                  sharedtypes.TimerHardLimitKindPomodoro,
-		HardLimitTotalSeconds:          intPtr(values.TotalSeconds),
-		HardLimitWorkSeconds:           intPtr(values.FocusSeconds),
-		HardLimitBreakSeconds:          intPtr(values.BreakSeconds),
-		HardLimitLongBreakSeconds:      intPtr(values.LongBreakSeconds),
-		HardLimitCyclesBeforeLongBreak: intPtr(values.CyclesBeforeLongBreak),
+	req := timerStartRequest(state)
+	req.HardLimitKind = sharedtypes.TimerHardLimitKindPomodoro
+	req.HardLimitTotalSeconds = intPtr(values.TotalSeconds)
+	req.HardLimitWorkSeconds = intPtr(values.FocusSeconds)
+	req.HardLimitBreakSeconds = intPtr(values.BreakSeconds)
+	req.HardLimitLongBreakSeconds = intPtr(values.LongBreakSeconds)
+	req.HardLimitCyclesBeforeLongBreak = intPtr(values.CyclesBeforeLongBreak)
+	return Close(state), &Action{Kind: "start_focus_session", TimerStart: &req}, ""
+}
+
+func timerStartRequest(state State) shareddto.TimerStartRequest {
+	if state.AdhocTimer {
+		return shareddto.TimerStartRequest{Adhoc: true}
 	}
-	return Close(state), &Action{Kind: "start_focus_session", TimerStart: req}, ""
+	return shareddto.TimerStartRequest{
+		RepoID:   int64Ptr(state.RepoID),
+		StreamID: int64Ptr(state.StreamID),
+		IssueID:  int64Ptr(state.IssueID),
+	}
 }
 
 func refreshPomodoroPreviewFields(state State, inputIdx int) State {
@@ -1134,7 +1320,7 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return clearDialogError(state), nil, ""
 }
 
-func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string) {
+func updateHardLimitExpired(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
 	switch msg.String() {
 	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {
@@ -1147,6 +1333,9 @@ func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string
 		}
 		return clearDialogError(state), nil, ""
 	case "c":
+		if state.AdhocTimer {
+			return OpenAdhocResolution(state, ctx.Context), nil, ""
+		}
 		return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
 	case "z":
 		return state, nil, ""
@@ -1155,6 +1344,9 @@ func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string
 	case "enter":
 		switch currentChoiceValue(state) {
 		case "commit":
+			if state.AdhocTimer {
+				return OpenAdhocResolution(state, ctx.Context), nil, ""
+			}
 			return OpenSessionMessageWithParent(state, "end_session", "hard_limit_expired"), nil, ""
 		default:
 			return OpenHardLimitExtend(state), nil, ""
@@ -1163,6 +1355,9 @@ func updateHardLimitExpired(state State, msg tea.KeyMsg) (State, *Action, string
 		if isDialogSubmitKey(state, msg.String()) {
 			switch currentChoiceValue(state) {
 			case "commit":
+				if state.AdhocTimer {
+					return OpenAdhocResolution(state, ctx.Context), nil, ""
+				}
 				return OpenSessionMessageWithParent(
 					state,
 					"end_session",

@@ -154,12 +154,13 @@ func PaneActionsForState(theme Theme, state ContentState, active bool) []string 
 		return nil
 	}
 	return ContextualActions(theme, ActionsState{
-		View:             state.View,
-		Pane:             state.Pane,
-		ManageHistory:    state.Settings != nil && state.Settings.ManageHistory,
-		TimerState:       timerStateFromContent(state),
-		TimerSegment:     timerSegmentFromContent(state),
-		TimerNextSegment: timerNextSegmentFromContent(state),
+		View:               state.View,
+		Pane:               state.Pane,
+		SelectedIssueAdhoc: state.SelectedIssueAdhoc,
+		ManageHistory:      state.Settings != nil && state.Settings.ManageHistory,
+		TimerState:         timerStateFromContent(state),
+		TimerSegment:       timerSegmentFromContent(state),
+		TimerNextSegment:   timerNextSegmentFromContent(state),
 		HardLimitKind: func() sharedtypes.TimerHardLimitKind {
 			if state.Timer == nil {
 				return ""

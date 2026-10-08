@@ -10,6 +10,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Default issue dialog focus IDs are logical positions in the rendered form.
+// The repo and stream inputs come first in State.Inputs, but appear after the
+// issue fields in the form, so their focus IDs intentionally differ from their
+// input slice indexes.
+const (
+	defaultIssueFocusRepo = iota
+	defaultIssueFocusStream
+	defaultIssueFocusTitle
+	defaultIssueFocusDescription
+	defaultIssueFocusEstimate
+	defaultIssueFocusDueDate
+	defaultIssueFocusAdhocSummary
+)
+
 func updateCreateIssueMeta(
 	state State,
 	currentDate string,
@@ -79,20 +93,23 @@ func updateCreateIssueDefault(
 ) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
+		if state.AdhocTimer {
+			return OpenAdhocResolution(state, ctx.Context), nil, ""
+		}
 		return Close(state), nil, ""
 	case "ctrl+e", "ctrl+y":
-		if state.FocusIdx == 5 {
+		if state.FocusIdx == defaultIssueFocusDueDate {
 			return OpenDatePicker(
 				state,
 				"create_issue_default",
 				0,
-				5,
+				defaultIssueFocusDueDate,
 				ValueToPointer(state.Inputs[4].Value()),
 				currentDate,
 			), nil, ""
 		}
 	case "g":
-		if state.FocusIdx == 5 {
+		if state.FocusIdx == defaultIssueFocusDueDate {
 			if err := ValidateDueDateAt(state, currentDate, currentDate); err != nil {
 				state.ErrorMessage = err.Error()
 				return state, nil, ""
@@ -115,7 +132,7 @@ func updateCreateIssueDefault(
 			}
 			return state, nil, ""
 		}
-		state.FocusIdx = shiftDefaultIssueFocus(state.FocusIdx, ternaryDir(msg.String()))
+		state.FocusIdx = shiftDefaultIssueFocus(state.FocusIdx, ternaryDir(msg.String()), state.AdhocTimer)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	case "left":
@@ -173,7 +190,11 @@ func updateCreateIssueDefault(
 			return clearDialogError(state), nil, ""
 		}
 	}
-	if isIssueCreateSubmitKey(msg.String()) {
+	if state.PromotingAdhoc && (msg.String() == "ctrl+a" || msg.String() == "ctrl+f") {
+		return state, nil, ""
+	}
+	if ((state.AdhocTimer || state.PromotingAdhoc) && msg.String() == "ctrl+s") ||
+		(!state.AdhocTimer && !state.PromotingAdhoc && isIssueCreateSubmitKey(msg.String())) {
 		repoName, streamName := DefaultIssueDialogNames(
 			state.Inputs,
 			state.RepoIndex,
@@ -192,24 +213,51 @@ func updateCreateIssueDefault(
 		if err != nil {
 			return state, nil, err.Error()
 		}
+		commitMessage := ""
+		if state.AdhocTimer {
+			if len(state.Inputs) < 6 {
+				return state, nil, "Session summary is required"
+			}
+			commitMessage = strings.TrimSpace(state.Inputs[5].Value())
+			if commitMessage == "" {
+				return state, nil, "Session summary is required"
+			}
+		}
 		dueDate, err := ParseDueDateInput(state.Inputs[4].Value())
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
-			return state, nil, err.Error()
+		preservingOriginalDate := (state.AdhocTimer || state.PromotingAdhoc) && ValueOrEmpty(dueDate) == state.AdhocDate
+		if !preservingOriginalDate {
+			if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
+				return state, nil, err.Error()
+			}
+		}
+		actionKind := "create_issue_default"
+		if state.PromotingAdhoc {
+			actionKind = "promote_adhoc_issue"
 		}
 		return Close(
 				state,
 			), &Action{
-				Kind:                "create_issue_default",
-				RepoName:            repoName,
-				StreamName:          streamName,
-				Title:               title,
-				Description:         description,
-				Estimate:            estimate,
-				DueDate:             dueDate,
-				IssueCreateFollowUp: issueCreateFollowUpForKey(msg.String()),
+				Kind:          actionKind,
+				IssueID:       state.IssueID,
+				RepoName:      repoName,
+				StreamName:    streamName,
+				Title:         title,
+				CommitMessage: commitMessage,
+				Description:   description,
+				Estimate:      estimate,
+				DueDate:       dueDate,
+				IssueCreateFollowUp: func() int {
+					if state.PromotingAdhoc {
+						return IssueCreateFollowUpDefault
+					}
+					if state.AdhocTimer {
+						return IssueCreateFollowUpAdhoc
+					}
+					return issueCreateFollowUpForKey(msg.String())
+				}(),
 			}, ""
 	}
 	if state.DescriptionEnabled && state.FocusIdx == state.DescriptionIndex {
@@ -235,8 +283,18 @@ func updateCreateIssueDefault(
 	return clearDialogError(state), nil, ""
 }
 
-func shiftDefaultIssueFocus(current, direction int) int {
-	order := []int{2, 3, 4, 5, 0, 1}
+func shiftDefaultIssueFocus(current, direction int, includeAdhocSummary bool) int {
+	order := []int{
+		defaultIssueFocusTitle,
+		defaultIssueFocusDescription,
+		defaultIssueFocusEstimate,
+		defaultIssueFocusDueDate,
+		defaultIssueFocusRepo,
+		defaultIssueFocusStream,
+	}
+	if includeAdhocSummary {
+		order = append(order, defaultIssueFocusAdhocSummary)
+	}
 	for index, focus := range order {
 		if focus != current {
 			continue

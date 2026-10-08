@@ -42,6 +42,7 @@ const (
 	MethodIssueListAll           = "issue.list_all"
 	MethodIssueCreate            = "issue.create"
 	MethodIssueUpdate            = "issue.update"
+	MethodIssuePromoteAdhoc      = "issue.promote_adhoc"
 	MethodIssueDelete            = "issue.delete"
 	MethodIssueChangeStatus      = "issue.change_status"
 	MethodIssueStatusTransitions = "issue.status_transitions"

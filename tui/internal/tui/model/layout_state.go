@@ -27,9 +27,11 @@ func (m Model) viewContentState(
 	dailyIssues := selectionpkg.DailyScopedIssues(snapshot)
 	defaultIssues := selectionpkg.DefaultScopedIssues(snapshot)
 	dueHabits := selectionpkg.FilteredDueHabits(snapshot)
+	selectedIssue, hasSelectedIssue := selectionpkg.SelectedIssue(snapshot)
 	state := viewtypes.ContentState{
 		View:                string(m.view),
 		Pane:                string(m.pane),
+		SelectedIssueAdhoc:  hasSelectedIssue && selectedIssue.Adhoc,
 		Width:               width,
 		Height:              height,
 		Elapsed:             m.elapsed,

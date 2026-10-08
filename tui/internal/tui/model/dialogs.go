@@ -24,6 +24,11 @@ import (
 func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	selectionSnapshot := m.selectionSnapshot()
 	dialogState := m.dialogState()
+	if m.timer != nil && m.timer.Adhoc {
+		dialogState.AdhocTimer = true
+		dialogState.AdhocElapsedSeconds = helperpkg.DerivedSessionElapsedSeconds(m.timer, m.elapsed, time.Now())
+		dialogState.AdhocDate = m.currentLogicalDate()
+	}
 	if m.settings != nil {
 		dialogState.PromptGlyphMode = sharedtypes.NormalizePromptGlyphMode(
 			m.settings.PromptGlyphMode,
@@ -31,6 +36,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	}
 	dialogSnapshot := dialogstate.Snapshot{
 		Dialog:               dialogState,
+		CurrentDate:          m.currentLogicalDate(),
 		Repos:                m.repos,
 		Streams:              m.streams,
 		AllHabits:            m.allHabits,
@@ -71,6 +77,12 @@ func (m Model) dialogActionCmd(action dialogstate.Action) tea.Cmd {
 
 func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model, tea.Cmd) {
 	switch action.Kind {
+	case "open_adhoc_conversion":
+		issue, ok := next.issueMetaByID(action.IssueID)
+		if !ok || issue == nil || !issue.Adhoc {
+			return next, next.setStatus("Ad hoc issue is no longer available", true)
+		}
+		return next.withDialogState(next.dialogSnapshot().OpenPromoteAdhocIssue(*issue)), nil
 	case "set_summary_date":
 		if action.DueDate == nil || strings.TrimSpace(*action.DueDate) == "" {
 			return next, nil
@@ -452,6 +464,9 @@ func (m Model) openHardLimitExpiredDialog(issueLabel string) Model {
 		)
 	}
 	state := snapshot.OpenHardLimitExpired(issueLabel)
+	if m.timer != nil {
+		state.AdhocTimer = m.timer.Adhoc
+	}
 	if m.timer != nil &&
 		(m.timer.HardLimitActive || m.timer.HardLimitExpired || m.timer.HardLimitTotalSeconds > 0) {
 		state = m.hydrateHardLimitDialogStateFromTimer(state)
@@ -590,9 +605,11 @@ func healthTimezone(health *api.Health) string {
 func (m Model) openHelpDialog() Model {
 	theme := layoutpkg.ViewTheme()
 	chromeState := m.layoutChromeState()
+	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
 	paneActions := viewchrome.ContextualActions(theme, viewchrome.ActionsState{
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
+		SelectedIssueAdhoc:     hasSelectedIssue && selectedIssue.Adhoc,
 		MomentumTab:            string(m.currentMomentumTab()),
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
@@ -658,6 +675,16 @@ func (m Model) dialogState() dialogstate.State {
 		SessionHistoryNoteInputs: m.dialogSessionHistoryNoteInputs,
 		SessionHistorySegments:   m.dialogSessionHistorySegments,
 		IssueID:                  m.dialogIssueID,
+		AdhocTimer:               m.dialogAdhocTimer,
+		PromotingAdhoc:           m.dialogPromotingAdhoc,
+		ViewEntityAdhoc:          m.dialogViewEntityAdhoc,
+		AdhocResolution:          m.dialogAdhocResolution,
+		AdhocIssueIDs:            m.dialogAdhocIssueIDs,
+		AdhocIssueTab:            m.dialogAdhocIssueTab,
+		AdhocIssueTabCounts:      m.dialogAdhocIssueTabCounts,
+		AdhocElapsedSeconds:      m.dialogAdhocElapsedSeconds,
+		AdhocDate:                m.dialogAdhocDate,
+		NewIssueTitle:            m.dialogNewIssueTitle,
 		HabitID:                  m.dialogHabitID,
 		IssueStatus:              m.dialogIssueStatus,
 		CheckInDate:              m.dialogCheckInDate,
@@ -788,6 +815,16 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogSessionHistoryNoteInputs = state.SessionHistoryNoteInputs
 	m.dialogSessionHistorySegments = state.SessionHistorySegments
 	m.dialogIssueID = state.IssueID
+	m.dialogAdhocTimer = state.AdhocTimer
+	m.dialogPromotingAdhoc = state.PromotingAdhoc
+	m.dialogViewEntityAdhoc = state.ViewEntityAdhoc
+	m.dialogAdhocResolution = state.AdhocResolution
+	m.dialogAdhocIssueIDs = state.AdhocIssueIDs
+	m.dialogAdhocIssueTab = state.AdhocIssueTab
+	m.dialogAdhocIssueTabCounts = state.AdhocIssueTabCounts
+	m.dialogAdhocElapsedSeconds = state.AdhocElapsedSeconds
+	m.dialogAdhocDate = state.AdhocDate
+	m.dialogNewIssueTitle = state.NewIssueTitle
 	m.dialogHabitID = state.HabitID
 	m.dialogIssueStatus = state.IssueStatus
 	m.dialogCheckInDate = state.CheckInDate
@@ -944,7 +981,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dashboardDate,
 			)
 		},
-		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd {
+		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string) tea.Cmd {
 			return commands.CreateIssueWithPath(
 				m.client,
 				repoName,
@@ -954,8 +991,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				title,
 				description,
 				estimateMinutes,
-				dueDate, followUp,
+				dueDate, followUp, commitMessage,
 			)
+		},
+		PromoteAdhocIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
+			return commands.PromoteAdhocIssueWithPath(m.client, issueID, repoName, streamName,
+				title, description, estimateMinutes, dueDate, dashboardDate)
 		},
 		CheckoutContext: func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd {
 			return commands.CheckoutContext(m.client, repoID, repoName, streamID, streamName)

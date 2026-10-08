@@ -6,6 +6,7 @@ import (
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 const (
@@ -119,4 +120,64 @@ func promptGlyphSet(state controllerpkg.State) dialogPromptSet {
 			Date:   dialogDatePromptEmoji,
 		}
 	}
+}
+
+// formModal keeps the title, active field and footer visible in short terminals.
+func formModal(theme Theme, state controllerpkg.State, maxWidth int, rows []string) string {
+	width := max(12, min(state.Width-8, maxWidth)-6)
+	if state.Height <= 0 {
+		return modal(theme, state.Width, maxWidth, theme.ColorCyan, rows)
+	}
+	wrapped := make([]string, len(rows))
+	for i, row := range rows {
+		wrapped[i] = lipgloss.NewStyle().Width(width).Render(row)
+	}
+	if lipgloss.Height(strings.Join(wrapped, "\n"))+4 <= state.Height-2 {
+		return modal(theme, state.Width, maxWidth, theme.ColorCyan, rows)
+	}
+	footer := wrapped[len(wrapped)-1]
+	title := wrapped[0]
+	errorRow := ""
+	if state.ErrorMessage != "" {
+		errorRow = lipgloss.NewStyle().Width(width).Render(theme.StyleError.Render(state.ErrorMessage))
+	}
+	budget := max(1, state.Height-8-lipgloss.Height(title)-lipgloss.Height(footer)-lipgloss.Height(errorRow))
+	bodyRows := wrapped[1 : len(wrapped)-1]
+	if errorRow != "" && len(bodyRows) >= 2 {
+		bodyRows = bodyRows[:len(bodyRows)-2]
+	}
+	body := strings.Split(strings.Join(bodyRows, "\n"), "\n")
+	target := 0
+	active := ""
+	for _, input := range state.Inputs {
+		if input.Focused() {
+			active = input.View()
+			break
+		}
+	}
+	if state.Description.Focused() {
+		active = state.Description.View()
+	}
+	if active != "" {
+		activeLines := strings.Split(lipgloss.NewStyle().Width(width).Render(active), "\n")
+		needle := []rune(strings.TrimSpace(ansi.Strip(activeLines[0])))
+		if len(needle) > 12 {
+			needle = needle[:12]
+		}
+		for i, line := range body {
+			if strings.Contains(ansi.Strip(line), string(needle)) {
+				target = i
+				break
+			}
+		}
+	}
+	first := max(0, target-budget/2)
+	last := min(len(body), first+budget)
+	visible := []string{title, theme.StyleDim.Render("[tab/shift+tab] move between fields")}
+	visible = append(visible, body[first:last]...)
+	if errorRow != "" {
+		visible = append(visible, errorRow)
+	}
+	visible = append(visible, footer)
+	return modal(theme, state.Width, maxWidth, theme.ColorCyan, visible)
 }

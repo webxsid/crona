@@ -465,6 +465,10 @@ func (m Model) handleInputStartFocusFromSelection() (tea.Model, tea.Cmd) {
 	), nil
 }
 
+func (m Model) openAdhocTimerDialog() Model {
+	return m.withDialogState(m.dialogSnapshot().OpenAdhocTimerStartType())
+}
+
 func (m Model) openStartTimerDialog(
 	repoID, streamID, issueID int64,
 	issueLabel string,

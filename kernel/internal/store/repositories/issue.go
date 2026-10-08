@@ -50,6 +50,7 @@ func (r *IssueRepository) Create(
 		TodoForDate:     issue.TodoForDate,
 		CompletedAt:     issue.CompletedAt,
 		AbandonedAt:     issue.AbandonedAt,
+		Adhoc:           issue.Adhoc,
 		UserID:          userID,
 		CreatedAt:       now,
 		UpdatedAt:       now,
@@ -78,6 +79,7 @@ func (r *IssueRepository) ListByStream(
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
+		Adhoc           bool    `bun:"adhoc"`
 	}
 
 	var rows []row
@@ -96,8 +98,10 @@ func (r *IssueRepository) ListByStream(
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
+		ColumnExpr("issues.adhoc").
 		Where("streams.public_id = ?", streamID).
 		Where("issues.user_id = ?", userID).
+		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
 		Where("streams.deleted_at IS NULL").
 		OrderExpr("issues.created_at ASC").
@@ -120,6 +124,7 @@ func (r *IssueRepository) ListByStream(
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
+			Adhoc:           row.Adhoc,
 		})
 	}
 	return out, nil
@@ -143,6 +148,7 @@ func (r *IssueRepository) GetByID(
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
+		Adhoc           bool    `bun:"adhoc"`
 	}
 
 	var item row
@@ -161,8 +167,10 @@ func (r *IssueRepository) GetByID(
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
+		ColumnExpr("issues.adhoc").
 		Where("issues.public_id = ?", issueID).
 		Where("issues.user_id = ?", userID).
+		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
 		Where("streams.deleted_at IS NULL").
 		Limit(1).
@@ -186,7 +194,38 @@ func (r *IssueRepository) GetByID(
 		TodoForDate:     item.TodoForDate,
 		CompletedAt:     item.CompletedAt,
 		AbandonedAt:     item.AbandonedAt,
+		Adhoc:           item.Adhoc,
 	}, nil
+}
+
+func (r *IssueRepository) GetReservedByID(
+	ctx context.Context,
+	issueID int64,
+	userID string,
+) (*sharedtypes.Issue, error) {
+	var item storemodels.IssueModel
+	err := r.db.NewSelect().Model(&item).
+		Where("public_id = ?", issueID).
+		Where("user_id = ?", userID).
+		Where("is_reserved = 1").
+		Where("deleted_at IS NULL").
+		Limit(1).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var streamID int64
+	if err := r.db.NewSelect().Model((*storemodels.StreamModel)(nil)).
+		Column("public_id").Where("id = ?", item.StreamID).Where("user_id = ?", userID).
+		Scan(ctx, &streamID); err != nil {
+		return nil, err
+	}
+	return &sharedtypes.Issue{ID: item.PublicID, StreamID: streamID, Title: item.Title,
+		Status:      sharedtypes.NormalizeIssueStatus(sharedtypes.IssueStatus(item.Status)),
+		TodoForDate: item.TodoForDate}, nil
 }
 
 func (r *IssueRepository) ResolveInternalID(
@@ -230,6 +269,7 @@ func (r *IssueRepository) ListAll(
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
+		Adhoc           bool    `bun:"adhoc"`
 		StreamName      string  `bun:"stream_name"`
 		RepoPublicID    int64   `bun:"repo_public_id"`
 		RepoName        string  `bun:"repo_name"`
@@ -251,11 +291,14 @@ func (r *IssueRepository) ListAll(
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
-		ColumnExpr("streams.name AS stream_name").
+		ColumnExpr("issues.adhoc").
+		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
-		ColumnExpr("repos.name AS repo_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
 		Where("issues.user_id = ?", userID).
+		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
+		Where("(issues.adhoc = 1 OR (streams.is_reserved = 0 AND repos.is_reserved = 0))").
 		Where("streams.deleted_at IS NULL").
 		Where("repos.deleted_at IS NULL").
 		OrderExpr("issues.created_at ASC").
@@ -280,6 +323,7 @@ func (r *IssueRepository) ListAll(
 				TodoForDate:     row.TodoForDate,
 				CompletedAt:     row.CompletedAt,
 				AbandonedAt:     row.AbandonedAt,
+				Adhoc:           row.Adhoc,
 			},
 			RepoID:     row.RepoPublicID,
 			RepoName:   row.RepoName,
@@ -307,6 +351,7 @@ func (r *IssueRepository) ListByTodoForDate(
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
+		Adhoc           bool    `bun:"adhoc"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -324,9 +369,12 @@ func (r *IssueRepository) ListByTodoForDate(
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
+		ColumnExpr("issues.adhoc").
 		Where("issues.todo_for_date = ?", todoForDate).
 		Where("issues.user_id = ?", userID).
+		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
+		Where("(issues.adhoc = 1 OR streams.is_reserved = 0)").
 		OrderExpr("issues.created_at ASC").
 		Scan(ctx, &rows); err != nil {
 		return nil, err
@@ -346,6 +394,7 @@ func (r *IssueRepository) ListByTodoForDate(
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
+			Adhoc:           row.Adhoc,
 		})
 	}
 	return out, nil
@@ -372,6 +421,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 		TodoForDate     *string `bun:"todo_for_date"`
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
+		Adhoc           bool    `bun:"adhoc"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -380,8 +430,8 @@ func (r *IssueRepository) ListByTodoDateRange(
 		Join("INNER JOIN repos ON repos.id = streams.repo_id").
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
-		ColumnExpr("streams.name AS stream_name").
-		ColumnExpr("repos.name AS repo_name").
+		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
 		ColumnExpr("issues.title").
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
@@ -392,10 +442,13 @@ func (r *IssueRepository) ListByTodoDateRange(
 		ColumnExpr("issues.todo_for_date").
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
+		ColumnExpr("issues.adhoc").
 		Where("issues.todo_for_date >= ?", startDate).
 		Where("issues.todo_for_date <= ?", endDate).
 		Where("issues.user_id = ?", userID).
+		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
+		Where("(issues.adhoc = 1 OR (streams.is_reserved = 0 AND repos.is_reserved = 0))").
 		OrderExpr("issues.todo_for_date ASC, issues.created_at ASC").
 		Scan(ctx, &rows); err != nil {
 		return nil, err
@@ -417,6 +470,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 			TodoForDate:     row.TodoForDate,
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
+			Adhoc:           row.Adhoc,
 		})
 	}
 	return out, nil
@@ -443,6 +497,8 @@ func (r *IssueRepository) Update(
 		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
+		Where("adhoc = 0").
 		Where("deleted_at IS NULL").
 		Set("updated_at = ?", now)
 	if updates.Title.Set && updates.Title.Value != nil {
@@ -520,6 +576,8 @@ func (r *IssueRepository) SoftDelete(
 		Model((*storemodels.IssueModel)(nil)).
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
+		Where("adhoc = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).
@@ -531,6 +589,49 @@ func (r *IssueRepository) SoftDelete(
 		return errors.New("issue not found or already deleted")
 	}
 	return nil
+}
+
+func (r *IssueRepository) PromoteAdhoc(
+	ctx context.Context,
+	issueID int64,
+	streamID int64,
+	userID string,
+	now string,
+	updates struct {
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		TodoForDate     *string
+	},
+) (*sharedtypes.Issue, error) {
+	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if streamInternalID == "" {
+		return nil, errors.New("stream not found")
+	}
+	res, err := r.db.NewUpdate().Model((*storemodels.IssueModel)(nil)).
+		Where("public_id = ?", issueID).
+		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
+		Where("adhoc = 1").
+		Where("deleted_at IS NULL").
+		Set("stream_id = ?", streamInternalID).
+		Set("title = ?", updates.Title).
+		Set("description = ?", updates.Description).
+		Set("estimate_minutes = ?", updates.EstimateMinutes).
+		Set("todo_for_date = ?", updates.TodoForDate).
+		Set("adhoc = 0").
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return nil, errors.New("ad hoc issue not found")
+	}
+	return r.GetByID(ctx, issueID, userID)
 }
 
 func (r *IssueRepository) CascadeSoftDeleteByStream(
@@ -547,6 +648,7 @@ func (r *IssueRepository) CascadeSoftDeleteByStream(
 		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id = ?", streamInternalID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).
@@ -568,6 +670,7 @@ func (r *IssueRepository) CascadeSoftDeleteByRepo(
 		Model((*storemodels.IssueModel)(nil)).
 		Where("stream_id IN (SELECT id FROM streams WHERE repo_id = ? AND user_id = ?)", repoInternalID, userID).
 		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).

@@ -7,20 +7,39 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
-## [1.10.0-beta.1] - 2026-09-29
+## [1.10.0-beta.1] - 2026-10-08
 
-Crona v1.10.0-beta.1 adds configurable session history management, including daemon-validated editing and deletion of completed sessions.
+Crona v1.10.0-beta.1 adds ad hoc timers with end-of-session attribution and configurable management of completed session history.
 
 ### Session history
 
-- Added a Manage History setting and a configurable edit window of up to five days.
-- Session detail now supports editing dates, summaries, notes, and work/break segments, plus deleting completed history entries.
-- The daemon enforces the configured edit window and preserves existing markdown notes during edits.
+- The Manage History setting enables editing and deleting completed sessions from their detail view.
+- The History Edit Window setting controls how far back sessions can be changed, up to five days.
+- Session edits use structured fields for dates, summaries, notes, and work/break segments.
+- The daemon enforces the configured history window and preserves existing markdown sections during edits.
+
+### Ad hoc timers
+
+- Start an ad hoc stopwatch, countdown, or Pomodoro with `Shift+A` from the session view or a supported issue workspace, without selecting an issue. The active repo, stream, and issue context stays unchanged.
+- When finishing, attach the session to an existing issue, create a new issue, or keep it as ad hoc.
+- The existing-issue picker has Due today, Overdue, Pinned, and All tabs, scrolling for large lists, assigned dates, and a visible selection position.
+- Create an issue and finish the session in one form, with repo and stream pickers, today's date, and an estimate rounded up to a 15-minute increment from elapsed time.
+- Keep ad hoc creates a visible Done issue in `Ad hoc / Sessions`, assigned today and titled from the session summary, shortened when necessary. These records contribute to summaries and scoring.
+- Press `e` on an ad hoc issue or its detail view to convert it to a regular issue in a chosen repo and stream. Conversion preserves its identity, completed status, original date, and session history.
+
+### TUI fixes
+
+- Ad hoc confirmations show the selected destination and elapsed time, with action labels that explain what saving does.
+- Canceling ad hoc issue creation returns to the attribution choices.
+- Required session summaries and commit messages are validated before submitting, keeping the dialog open when empty.
+- Short-terminal forms keep the active field, submission controls, and inline errors visible.
+- Conversion uses its own save action rather than issue-creation follow-up shortcuts.
 
 ### Compatibility
 
-- The local IPC protocol remains at `1.5`.
-- The database schema adds core settings defaults; existing databases are migrated automatically.
+The local IPC protocol advances to `1.6` for ad hoc timer requests, attribution on timer completion, the `adhoc` issue and timer-state fields, and `issue.promote_adhoc`. Clients must check `kernel.info.get` and require protocol `1.6` or newer before using these capabilities. Ordinary issue-backed workflows retain their existing contract.
+
+Existing databases are migrated automatically to include session history settings, reserved storage markers, and the ad hoc issue flag. Internal pending records stay hidden from normal repository APIs; retained ad hoc issues remain visible and can be converted.
 
 ## [1.9.0] - 2026-09-13
 

@@ -51,6 +51,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	if err := ensureIssueColumn(ctx, db, "abandoned_at"); err != nil {
 		return err
 	}
+	if err := ensureIntegerColumn(ctx, db, "issues", "adhoc", 0); err != nil {
+		return err
+	}
 	for _, spec := range []struct {
 		table  string
 		column string
@@ -85,10 +88,13 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 			return err
 		}
 	}
-	for _, table := range []string{"repos", "streams"} {
+	for _, table := range []string{"repos", "streams", "issues"} {
 		if err := ensureIntegerColumn(ctx, db, table, "is_reserved", 0); err != nil {
 			return err
 		}
+	}
+	if err := backfillLegacyAdhocIssues(ctx, db); err != nil {
+		return err
 	}
 	for _, spec := range []struct {
 		table        string
@@ -237,6 +243,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_repos_reserved_user_name ON repos (user_id, is_reserved, name)",
 		"CREATE INDEX IF NOT EXISTS idx_streams_user_id ON streams (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_streams_reserved_user_name ON streams (user_id, is_reserved, name)",
+		"CREATE INDEX IF NOT EXISTS idx_issues_reserved_user_stream_title ON issues (user_id, is_reserved, stream_id, title)",
 		"CREATE INDEX IF NOT EXISTS idx_issues_user_id ON issues (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habits_user_id ON habits (user_id)",
 		"CREATE INDEX IF NOT EXISTS idx_habit_completions_user_id ON habit_completions (user_id)",
@@ -412,6 +419,20 @@ func migrateLegacyIssueStatuses(ctx context.Context, db *bun.DB) error {
 
 func ensureIssueColumn(ctx context.Context, db *bun.DB, columnName string) error {
 	return ensureTextColumn(ctx, db, "issues", columnName)
+}
+
+func backfillLegacyAdhocIssues(ctx context.Context, db *bun.DB) error {
+	_, err := db.ExecContext(ctx, `
+		UPDATE issues
+		SET adhoc = 1,
+		    status = ?,
+		    completed_at = COALESCE(completed_at, updated_at)
+		WHERE is_reserved = 0
+		  AND deleted_at IS NULL
+		  AND stream_id IN (SELECT id FROM streams WHERE is_reserved = 1)
+		  AND title = 'Ad hoc'
+	`, string(sharedtypes.IssueStatusDone))
+	return err
 }
 
 func ensureTextColumn(ctx context.Context, db *bun.DB, tableName string, columnName string) error {

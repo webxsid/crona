@@ -1,6 +1,7 @@
 package model
 
 import (
+	shareddto "crona/shared/dto"
 	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -103,6 +104,21 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case dialogstate.IssueCreateFollowUpFocus:
 			return m.openStartTimerDialog(msg.RepoID, msg.StreamID, msg.Issue.ID,
 				msg.Issue.Title, msg.Issue.EstimateMinutes, msg.Issue.WorkedSeconds), refresh
+		case dialogstate.IssueCreateFollowUpAdhoc:
+			commitMessage := msg.CommitMessage
+			issueID, repoID, streamID := msg.Issue.ID, msg.RepoID, msg.StreamID
+			payload := shareddto.EndSessionRequest{
+				CommitMessage:   &commitMessage,
+				AdhocResolution: sharedtypes.AdhocSessionResolutionAttach,
+				IssueID:         &issueID,
+				RepoID:          &repoID,
+				StreamID:        &streamID,
+			}
+			endCmd := m.dialogActionCmd(dialogstate.Action{
+				Kind: "end_session", StreamID: streamID, Payload: payload,
+			})
+			statusCmd := m.setStatus("Issue created; finishing session…", false)
+			return m, tea.Batch(refresh, statusCmd, endCmd)
 		default:
 			return m, refresh
 		}

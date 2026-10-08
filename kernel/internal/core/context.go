@@ -28,6 +28,7 @@ type Context struct {
 	DailyPlans                   *repositories.DailyPlanRepository
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
+	ReservedContexts             *repositories.ReservedContextRepository
 
 	UserID      string
 	DeviceID    string
@@ -64,6 +65,7 @@ func NewContext(
 		DailyPlans:                   registry.DailyPlans,
 		CustomHabitMomentumSnapshots: registry.CustomHabitMomentumSnapshots,
 		HabitStreakDefinitions:       registry.HabitStreakDefinitions,
+		ReservedContexts:             registry.ReservedContexts,
 		UserID:                       userID,
 		DeviceID:                     deviceID,
 		ScratchDir:                   scratchDir,

@@ -49,6 +49,16 @@ type State struct {
 	SessionHistoryNoteInputs       []textarea.Model
 	SessionHistorySegments         []SessionHistorySegmentRow
 	IssueID                        int64
+	AdhocTimer                     bool
+	PromotingAdhoc                 bool
+	ViewEntityAdhoc                bool
+	AdhocResolution                sharedtypes.AdhocSessionResolution
+	AdhocIssueIDs                  []int64
+	AdhocIssueTab                  int
+	AdhocIssueTabCounts            [4]int
+	AdhocElapsedSeconds            int
+	AdhocDate                      string
+	NewIssueTitle                  string
 	HabitID                        int64
 	TargetView                     string
 	RepoID                         int64
@@ -157,4 +167,5 @@ const (
 	IssueCreateFollowUpDefault = iota
 	IssueCreateFollowUpMore
 	IssueCreateFollowUpFocus
+	IssueCreateFollowUpAdhoc
 )

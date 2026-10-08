@@ -403,8 +403,33 @@ func OpenCreateIssueDefault(state State) State {
 	state.Inputs = []textinput.Model{repoFilter, streamFilter, title, estimate, due}
 	state.Description = description
 	state.DescriptionEnabled = true
-	state.DescriptionIndex = 3
-	state.FocusIdx = 2
+	state.DescriptionIndex = defaultIssueFocusDescription
+	state.FocusIdx = defaultIssueFocusTitle
+	return SyncDialogFocus(state)
+}
+
+func OpenPromoteAdhocIssue(state State, issue api.IssueWithMeta, context *api.ActiveContext) State {
+	state = OpenCreateIssueDefault(state)
+	state.PromotingAdhoc = true
+	state.IssueID = issue.ID
+	state.ViewName = "Choose a repo and stream. This issue stays Done; session history is preserved."
+	state.Inputs[2].SetValue(issue.Title)
+	state.Description.SetValue(ValueOrEmpty(issue.Description))
+	if issue.EstimateMinutes != nil {
+		state.Inputs[3].SetValue(FormatDurationMinutesInput(issue.EstimateMinutes))
+	}
+	if issue.TodoForDate != nil {
+		state.Inputs[4].SetValue(*issue.TodoForDate)
+		state.AdhocDate = strings.TrimSpace(*issue.TodoForDate)
+	}
+	if context != nil {
+		if context.RepoName != nil {
+			state.Inputs[0].SetValue(*context.RepoName)
+		}
+		if context.StreamName != nil {
+			state.Inputs[1].SetValue(*context.StreamName)
+		}
+	}
 	return SyncDialogFocus(state)
 }
 
@@ -527,7 +552,9 @@ func OpenTimerStartType(
 	estimateMinutes *int,
 	workedSeconds int,
 ) State {
+	adhoc := state.AdhocTimer
 	state = Close(state)
+	state.AdhocTimer = adhoc
 	state.Kind = "timer_start_type"
 	state.ViewTitle = "Start Timer"
 	state.ViewName = strings.TrimSpace(issueLabel)
@@ -547,6 +574,206 @@ func OpenTimerStartType(
 	return state
 }
 
+func OpenAdhocTimerStartType(state State) State {
+	state = OpenTimerStartType(state, 0, 0, 0, "Ad hoc", nil, 0)
+	state.AdhocTimer = true
+	return state
+}
+
+func OpenAdhocResolution(state State, context *api.ActiveContext) State {
+	adhocElapsedSeconds := state.AdhocElapsedSeconds
+	adhocDate := state.AdhocDate
+	repoName, streamName := state.RepoName, state.StreamName
+	state = Close(state)
+	state.Kind = "adhoc_resolution"
+	state.ViewTitle = "Finish Ad hoc Session"
+	state.ViewName = "Choose where this session should be recorded."
+	state.AdhocTimer = true
+	state.AdhocElapsedSeconds = adhocElapsedSeconds
+	state.AdhocDate = adhocDate
+	state.RepoName = repoName
+	state.StreamName = streamName
+	state.ChoiceItems = []string{"Attach to an existing issue", "Create a new issue", "Keep as ad hoc"}
+	state.ChoiceValues = []string{"attach", "create", "keep"}
+	state.ChoiceDetails = []string{
+		"Choose an issue, then add a session summary.",
+		"Create an issue and finish this session in one step.",
+		"Create a completed issue in Ad hoc / Sessions. Convert it later.",
+	}
+	if context != nil {
+		if context.RepoID != nil {
+			state.RepoID = *context.RepoID
+		}
+		if context.RepoName != nil {
+			state.RepoName = *context.RepoName
+		}
+		if context.StreamID != nil {
+			state.StreamID = *context.StreamID
+		}
+		if context.StreamName != nil {
+			state.StreamName = *context.StreamName
+		}
+	}
+	return state
+}
+
+func OpenAdhocIssuePicker(state State, issues []api.IssueWithMeta, currentDate string) State {
+	adhocElapsedSeconds := state.AdhocElapsedSeconds
+	adhocDate := state.AdhocDate
+	repoID, streamID := state.RepoID, state.StreamID
+	repoName, streamName := state.RepoName, state.StreamName
+	initialOpening := state.Kind != "adhoc_issue_picker"
+	tab := state.AdhocIssueTab
+	state = Close(state)
+	state.Kind = "adhoc_issue_picker"
+	state.ViewTitle = "Attach to Issue"
+	state.ViewName = "Choose an issue. You’ll add a session summary before finishing."
+	state.AdhocTimer = true
+	state.AdhocResolution = sharedtypes.AdhocSessionResolutionAttach
+	state.AdhocElapsedSeconds = adhocElapsedSeconds
+	state.AdhocDate = adhocDate
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.RepoName = repoName
+	state.StreamName = streamName
+	if tab < 0 || tab >= len(adhocIssueTabNames) {
+		tab = 0
+	}
+	state.AdhocIssueTab = tab
+	eligible := make([]api.IssueWithMeta, 0, len(issues))
+	for _, issue := range issues {
+		if !sharedtypes.CanStartFocus(issue.Status) {
+			continue
+		}
+		eligible = append(eligible, issue)
+		dueDate := ""
+		if issue.TodoForDate != nil {
+			dueDate = strings.TrimSpace(*issue.TodoForDate)
+		}
+		if currentDate != "" && dueDate == currentDate {
+			state.AdhocIssueTabCounts[0]++
+		}
+		if currentDate != "" && dueDate != "" && dueDate < currentDate {
+			state.AdhocIssueTabCounts[1]++
+		}
+		if issue.PinnedDaily {
+			state.AdhocIssueTabCounts[2]++
+		}
+	}
+	state.AdhocIssueTabCounts[3] = len(eligible)
+	if initialOpening && tab == 0 && state.AdhocIssueTabCounts[0] == 0 && state.AdhocIssueTabCounts[3] > 0 {
+		tab = 3
+		state.AdhocIssueTab = tab
+	}
+	state.ChoiceCursor = -1
+	for _, issue := range eligible {
+		dueDate := ""
+		if issue.TodoForDate != nil {
+			dueDate = strings.TrimSpace(*issue.TodoForDate)
+		}
+		matches := tab == 3 || (tab == 0 && currentDate != "" && dueDate == currentDate) ||
+			(tab == 1 && currentDate != "" && dueDate != "" && dueDate < currentDate) ||
+			(tab == 2 && issue.PinnedDaily)
+		if !matches {
+			continue
+		}
+		state.AdhocIssueIDs = append(state.AdhocIssueIDs, issue.ID)
+		state.ChoiceValues = append(state.ChoiceValues, strconv.FormatInt(issue.ID, 10))
+		state.ChoiceItems = append(state.ChoiceItems, issue.Title)
+		status := strings.ReplaceAll(string(issue.Status), "_", " ")
+		detail := issue.RepoName + " / " + issue.StreamName + " · " + status
+		if dueDate != "" {
+			detail += " · " + dueDate
+		}
+		if issue.PinnedDaily {
+			detail += " · pinned"
+		}
+		state.ChoiceDetails = append(state.ChoiceDetails, detail)
+		if state.ChoiceCursor < 0 {
+			state.ChoiceCursor = len(state.ChoiceItems) - 1
+		}
+	}
+	return state
+}
+
+var adhocIssueTabNames = [...]string{"Due today", "Overdue", "Pinned", "All"}
+
+func OpenAdhocNewIssue(state State) State {
+	input := textinput.New()
+	input.Placeholder = "Issue title"
+	input.Focus()
+	input.CharLimit = 120
+	input.Width = 52
+	repoID, streamID := state.RepoID, state.StreamID
+	state = Close(state)
+	state.Kind = "adhoc_new_issue"
+	state.ViewTitle = "Create Issue"
+	state.ViewName = "The completed session will be attached to this issue."
+	state.AdhocTimer = true
+	state.AdhocResolution = sharedtypes.AdhocSessionResolutionCreate
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.Inputs = []textinput.Model{input}
+	return state
+}
+
+func OpenAdhocIssueCreation(state State, context *api.ActiveContext) State {
+	adhocElapsedSeconds := state.AdhocElapsedSeconds
+	adhocDate := state.AdhocDate
+	repoName, streamName := state.RepoName, state.StreamName
+	state = OpenCreateIssueDefault(state)
+	state.AdhocTimer = true
+	state.AdhocResolution = sharedtypes.AdhocSessionResolutionAttach
+	state.AdhocElapsedSeconds = adhocElapsedSeconds
+	state.AdhocDate = adhocDate
+	state.ViewName = "Saving creates the issue, attaches this session, and stops the timer."
+	commit := textinput.New()
+	commit.Placeholder = "What did you work on?"
+	commit.CharLimit = 200
+	commit.Width = 52
+	state.Inputs = append(state.Inputs, commit)
+	if context != nil {
+		if context.RepoName != nil {
+			repoName = *context.RepoName
+		}
+		if context.StreamName != nil {
+			streamName = *context.StreamName
+		}
+	}
+	state.Inputs[0].SetValue(repoName)
+	state.Inputs[1].SetValue(streamName)
+	if adhocElapsedSeconds > 0 {
+		minutes := ((adhocElapsedSeconds + 15*60 - 1) / (15 * 60)) * 15
+		state.Inputs[3].SetValue(FormatDurationMinutesInput(&minutes))
+	}
+	if adhocDate != "" {
+		state.Inputs[4].SetValue(adhocDate)
+	}
+	state.FocusIdx = defaultIssueFocusTitle
+	return SyncDialogFocus(state)
+}
+
+func OpenAdhocEndSession(
+	state State,
+	resolution sharedtypes.AdhocSessionResolution,
+	issueID, repoID, streamID int64,
+	newIssueTitle string,
+) State {
+	elapsed := state.AdhocElapsedSeconds
+	date := state.AdhocDate
+	state = OpenSessionMessage(state, "end_session")
+	state.AdhocElapsedSeconds = elapsed
+	state.AdhocDate = date
+	state.Inputs[0].Placeholder = "Session summary"
+	state.AdhocTimer = true
+	state.AdhocResolution = resolution
+	state.IssueID = issueID
+	state.RepoID = repoID
+	state.StreamID = streamID
+	state.NewIssueTitle = newIssueTitle
+	return state
+}
+
 func OpenPomodoroStart(
 	state State,
 	repoID, streamID, issueID int64,
@@ -554,6 +781,7 @@ func OpenPomodoroStart(
 	estimateMinutes *int,
 	workedSeconds int,
 ) State {
+	adhoc := state.AdhocTimer
 	focusSeconds := state.PomodoroFocusSeconds
 	if focusSeconds <= 0 {
 		focusSeconds = 25 * 60
@@ -575,6 +803,7 @@ func OpenPomodoroStart(
 		cycles = 4
 	}
 	state = Close(state)
+	state.AdhocTimer = adhoc
 	state.Kind = "pomodoro_start"
 	state.Parent = "timer_start_type"
 	state.ViewTitle = "Pomodoro Session"
@@ -611,6 +840,7 @@ func OpenSingleTimerStart(
 	estimateMinutes *int,
 	workedSeconds int,
 ) State {
+	adhoc := state.AdhocTimer
 	countdownSeconds := state.TimerCountdownSeconds
 	if countdownSeconds <= 0 {
 		countdownSeconds = timerDefaultCountdownSeconds(estimateMinutes, workedSeconds)
@@ -620,6 +850,7 @@ func OpenSingleTimerStart(
 	input.Focus()
 
 	state = Close(state)
+	state.AdhocTimer = adhoc
 	state.Kind = "timer_countdown_start"
 	state.Parent = "timer_start_type"
 	state.ViewTitle = "Timer Session"

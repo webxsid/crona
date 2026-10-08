@@ -14,6 +14,15 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
+type issueCreateInput struct {
+	StreamID        int64
+	Title           string
+	Description     *string
+	EstimateMinutes *int
+	Notes           *string
+	TodoForDate     *string
+}
+
 func CreateIssue(ctx context.Context, c *core.Context, input struct {
 	StreamID        int64
 	Title           string
@@ -22,11 +31,24 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 	Notes           *string
 	TodoForDate     *string
 }) (sharedtypes.Issue, error) {
+	return createIssue(ctx, c, issueCreateInput(input), false)
+}
+
+func createIssue(ctx context.Context, c *core.Context, input issueCreateInput, adhoc bool) (sharedtypes.Issue, error) {
 	if strings.TrimSpace(input.Title) == "" {
 		return sharedtypes.Issue{}, errors.New("issue title cannot be empty")
 	}
 	if input.EstimateMinutes != nil && *input.EstimateMinutes < 0 {
 		return sharedtypes.Issue{}, errors.New("estimate must be >= 0")
+	}
+	if !adhoc {
+		stream, err := c.Streams.GetByID(ctx, input.StreamID, c.UserID)
+		if err != nil {
+			return sharedtypes.Issue{}, err
+		}
+		if stream == nil {
+			return sharedtypes.Issue{}, errors.New("stream not found")
+		}
 	}
 	nextID, err := c.Issues.NextID(ctx)
 	if err != nil {
@@ -47,6 +69,11 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 		issue.Status = sharedtypes.IssueStatusPlanned
 	}
 	now := c.Now()
+	if adhoc {
+		issue.Adhoc = true
+		issue.Status = sharedtypes.IssueStatusDone
+		issue.CompletedAt = &now
+	}
 	if err := finalizeExpiredDailyPlanFailures(ctx, c, now); err != nil {
 		return sharedtypes.Issue{}, err
 	}
@@ -82,6 +109,16 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	Notes           sharedtypes.Patch[string]
 	PinnedDaily     sharedtypes.Patch[bool]
 }) (*sharedtypes.Issue, error) {
+	current, err := c.Issues.GetByID(ctx, issueID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if current == nil {
+		return nil, errors.New("issue not found")
+	}
+	if current.Adhoc {
+		return nil, errors.New("ad hoc issues must be converted before editing")
+	}
 	if updates.Title.Set && updates.Title.Value != nil &&
 		strings.TrimSpace(*updates.Title.Value) == "" {
 		return nil, errors.New("issue title cannot be empty")
@@ -136,6 +173,50 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	return updated, nil
 }
 
+func PromoteAdhocIssue(ctx context.Context, c *core.Context, input shareddto.PromoteAdhocIssueRequest) (*sharedtypes.Issue, error) {
+	title := strings.TrimSpace(input.Title)
+	if input.ID <= 0 || input.StreamID <= 0 {
+		return nil, errors.New("issue and stream are required")
+	}
+	if title == "" {
+		return nil, errors.New("issue title cannot be empty")
+	}
+	if input.EstimateMinutes != nil && *input.EstimateMinutes < 0 {
+		return nil, errors.New("estimate must be >= 0")
+	}
+	issue, err := c.Issues.GetByID(ctx, input.ID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if issue == nil || !issue.Adhoc {
+		return nil, errors.New("ad hoc issue not found")
+	}
+	stream, err := c.Streams.GetByID(ctx, input.StreamID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if stream == nil {
+		return nil, errors.New("stream not found")
+	}
+	now := c.Now()
+	updated, err := c.Issues.PromoteAdhoc(ctx, input.ID, input.StreamID, c.UserID, now, struct {
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		TodoForDate     *string
+	}{Title: title, Description: normalizeOptionalString(input.Description), EstimateMinutes: input.EstimateMinutes, TodoForDate: input.TodoForDate})
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Ops.Append(ctx, sharedtypes.Op{ID: uuid.NewString(), Entity: sharedtypes.OpEntityIssue,
+		EntityID: fmt.Sprintf("%d", input.ID), Action: sharedtypes.OpActionUpdate, Payload: input,
+		Timestamp: now, UserID: c.UserID, DeviceID: c.DeviceID}); err != nil {
+		return nil, err
+	}
+	emit(c, sharedtypes.EventTypeIssueUpdated, updated)
+	return updated, nil
+}
+
 func ChangeIssueStatus(
 	ctx context.Context,
 	c *core.Context,
@@ -157,6 +238,9 @@ func IssueStatusTransitions(
 	}
 	if issue == nil {
 		return shareddto.IssueStatusTransitionsResponse{}, errors.New("issue not found")
+	}
+	if issue.Adhoc {
+		return shareddto.IssueStatusTransitionsResponse{ID: issueID, CurrentStatus: issue.Status, AllowedStatuses: []sharedtypes.IssueStatus{}}, nil
 	}
 
 	currentStatus := sharedtypes.NormalizeIssueStatus(issue.Status)
@@ -192,6 +276,9 @@ func changeIssueStatus(
 	}
 	if issue == nil {
 		return nil, errors.New("issue not found")
+	}
+	if issue.Adhoc {
+		return nil, errors.New("ad hoc issues must be converted before changing status")
 	}
 	activeSession, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {

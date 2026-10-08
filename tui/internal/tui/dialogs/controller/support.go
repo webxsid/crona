@@ -314,6 +314,9 @@ func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
 	case "esc", "enter", "?":
 		return Close(state), nil, ""
 	case "e":
+		if state.ViewEntityAdhoc && state.IssueID > 0 {
+			return Close(state), &Action{Kind: "open_adhoc_conversion", IssueID: state.IssueID}, ""
+		}
 		if strings.TrimSpace(state.ViewPath) != "" {
 			return Close(state), &Action{Kind: "open_view_entity_editor", Path: state.ViewPath}, ""
 		}

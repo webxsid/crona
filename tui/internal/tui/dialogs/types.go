@@ -54,7 +54,10 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"timer_countdown_extend",
 		"amend_session",
 		"edit_session_history",
-		"manual_session":
+		"manual_session",
+		"adhoc_resolution",
+		"adhoc_issue_picker",
+		"adhoc_new_issue":
 		matched = "session"
 		rendered = renderSessionDialog(theme, state)
 	case "create_momentum",

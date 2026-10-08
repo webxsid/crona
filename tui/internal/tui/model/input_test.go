@@ -1,6 +1,7 @@
 package model
 
 import (
+	"strings"
 	"testing"
 
 	sharedtypes "crona/shared/types"
@@ -94,6 +95,60 @@ func TestDialogStatePreservesSummaryExportRange(t *testing.T) {
 	})
 	if next.dialogExportCategory != "summary" || next.dialogExportStart != "2026-03-13" || next.dialogExportEnd != "2026-03-19" {
 		t.Fatalf("withDialogState dropped summary range: %#v", next)
+	}
+}
+
+func TestSessionViewAdhocStartOpensTimerTypeDialog(t *testing.T) {
+	model := Model{view: ViewSessionActive, timer: &api.TimerState{State: "idle"}}
+	next := model.openAdhocTimerDialog()
+	got := next.dialogState()
+	if got.Kind != "timer_start_type" || !got.AdhocTimer {
+		t.Fatalf("session view start dialog = %+v, want ad hoc timer choices", got)
+	}
+}
+
+func TestAdhocShortcutPreservesMarkerIntoTimerStartRequest(t *testing.T) {
+	model := Model{view: ViewDaily, pane: PaneIssues, timer: &api.TimerState{State: "idle"}}
+	state, _ := inputpkg.Handle(model.inputState(), tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'A'}}, model.inputDeps())
+	next := model.applyInputState(state)
+	if next.dialog != "timer_start_type" || !next.dialogState().AdhocTimer {
+		t.Fatalf("dialog after A = %q adhoc=%t, want ad hoc timer type", next.dialog, next.dialogState().AdhocTimer)
+	}
+	_, action, status := dialogstate.Update(next.dialogState(), dialogstate.UpdateContext{}, "2026-10-08", tea.KeyMsg{Type: tea.KeyEnter})
+	if status != "" || action == nil || action.TimerStart == nil || !action.TimerStart.Adhoc {
+		t.Fatalf("timer start request = %+v, status %q; want adhoc marker", action, status)
+	}
+}
+
+func TestAdhocTimerEndOpensAttributionChoices(t *testing.T) {
+	model := Model{timer: &api.TimerState{State: "running", Adhoc: true}}
+	state := inputpkg.State{
+		ActiveView: uistate.ViewSessionActive,
+		Timer:      model.timer,
+	}
+	if !model.inputDeps().OpenEndSessionDialog(&state) {
+		t.Fatal("OpenEndSessionDialog() = false, want ad hoc attribution dialog")
+	}
+	if state.DialogState.Kind != "adhoc_resolution" {
+		t.Fatalf("end dialog kind = %q, want adhoc_resolution", state.DialogState.Kind)
+	}
+}
+
+func TestAdhocStopwatchEndRendersAttributionDialog(t *testing.T) {
+	model := Model{
+		view:   ViewSessionActive,
+		width:  160,
+		height: 40,
+		timer:  &api.TimerState{State: "running", Adhoc: true},
+	}
+	nextAny, _ := model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	next := nextAny.(Model)
+	if next.dialog != "adhoc_resolution" {
+		t.Fatalf("dialog after x = %q, want adhoc_resolution", next.dialog)
+	}
+	rendered := next.View()
+	if !strings.Contains(rendered, "Finish Ad hoc Session") || !strings.Contains(rendered, "Attach to an existing issue") {
+		t.Fatalf("ad hoc end dialog rendered blank or incomplete: %q", rendered)
 	}
 }
 

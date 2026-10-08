@@ -36,6 +36,45 @@ func TestHandleResumeSessionAllowsReadyHardLimitAdvance(t *testing.T) {
 	}
 }
 
+func TestHandleStartAdhocTimerOnlyHandlesIdleSessionView(t *testing.T) {
+	for _, test := range []struct {
+		name  string
+		state State
+		want  bool
+	}{
+		{name: "idle session", state: State{ActiveView: uistate.ViewSessionActive}, want: true},
+		{name: "idle issue pane", state: State{ActiveView: uistate.ViewDaily, ActivePane: uistate.PaneIssues}, want: true},
+		{name: "running session", state: State{ActiveView: uistate.ViewSessionActive, Timer: &api.TimerState{State: "running"}}},
+		{name: "issue view", state: State{ActiveView: uistate.ViewDaily}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			_, _, handled := handleStartAdhocTimer(test.state, Deps{
+				OpenAdhocTimerDialog: func(*State) bool {
+					called = true
+					return true
+				},
+			})
+			if handled != test.want || called != test.want {
+				t.Fatalf("handled=%t callback_called=%t, want %t", handled, called, test.want)
+			}
+		})
+	}
+}
+
+func TestAdhocShortcutReturnsDialogStateFromCallback(t *testing.T) {
+	state := State{ActiveView: uistate.ViewDaily, ActivePane: uistate.PaneIssues}
+	next, _ := Handle(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'A'}}, Deps{
+		OpenAdhocTimerDialog: func(state *State) bool {
+			state.Dialog = "timer_start_type"
+			return true
+		},
+	})
+	if next.Dialog != "timer_start_type" {
+		t.Fatalf("dialog after A = %q, want timer_start_type", next.Dialog)
+	}
+}
+
 func TestHandleResumeSessionRejectsRunningHardLimit(t *testing.T) {
 	work := sharedtypes.SessionSegmentWork
 	called := false

@@ -306,6 +306,10 @@ func (c *Client) UpdateIssue(
 	return c.call(protocol.MethodIssueUpdate, body, nil)
 }
 
+func (c *Client) PromoteAdhocIssue(input shareddto.PromoteAdhocIssueRequest) error {
+	return c.call(protocol.MethodIssuePromoteAdhoc, input, nil)
+}
+
 func (c *Client) SetIssuePinnedDaily(id int64, pinned bool) error {
 	return c.call(protocol.MethodIssueUpdate, shareddto.UpdateIssueRequest{
 		ID:          id,

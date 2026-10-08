@@ -132,14 +132,40 @@ func TestCreateIssueDefaultArrowDoesNotChangeCreateAction(t *testing.T) {
 }
 
 func TestDefaultIssueFocusFollowsVisualOrder(t *testing.T) {
-	want := []int{2, 3, 4, 5, 0, 1, 2}
+	want := []int{
+		defaultIssueFocusTitle,
+		defaultIssueFocusDescription,
+		defaultIssueFocusEstimate,
+		defaultIssueFocusDueDate,
+		defaultIssueFocusRepo,
+		defaultIssueFocusStream,
+		defaultIssueFocusTitle,
+	}
 	for index := range want[:len(want)-1] {
-		if got := shiftDefaultIssueFocus(want[index], 1); got != want[index+1] {
+		if got := shiftDefaultIssueFocus(want[index], 1, false); got != want[index+1] {
 			t.Fatalf("focus from %d = %d, want %d", want[index], got, want[index+1])
 		}
 	}
-	if got := shiftDefaultIssueFocus(2, -1); got != 1 {
-		t.Fatalf("reverse focus from title = %d, want 1", got)
+	if got := shiftDefaultIssueFocus(defaultIssueFocusTitle, -1, false); got != defaultIssueFocusStream {
+		t.Fatalf("reverse focus from title = %d, want %d", got, defaultIssueFocusStream)
+	}
+}
+
+func TestAdhocIssueFocusIncludesSessionSummary(t *testing.T) {
+	want := []int{
+		defaultIssueFocusTitle,
+		defaultIssueFocusDescription,
+		defaultIssueFocusEstimate,
+		defaultIssueFocusDueDate,
+		defaultIssueFocusRepo,
+		defaultIssueFocusStream,
+		defaultIssueFocusAdhocSummary,
+		defaultIssueFocusTitle,
+	}
+	for index := range want[:len(want)-1] {
+		if got := shiftDefaultIssueFocus(want[index], 1, true); got != want[index+1] {
+			t.Fatalf("ad hoc focus from %d = %d, want %d", want[index], got, want[index+1])
+		}
 	}
 }
 

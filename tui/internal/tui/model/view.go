@@ -19,10 +19,13 @@ func (m Model) View() string {
 func (m Model) layoutState() layoutpkg.State {
 	snapshot := m.selectionSnapshot()
 	activeIssue := selectionpkg.ActiveIssue(snapshot)
+	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
+	selectedIssueAdhoc := hasSelectedIssue && selectedIssue.Adhoc
 	chromeState := m.layoutChromeState()
 	paneActions := viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
+		SelectedIssueAdhoc:     selectedIssueAdhoc,
 		MomentumTab:            string(m.currentMomentumTab()),
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
@@ -113,6 +116,8 @@ type layoutChromeState struct {
 func (m Model) layoutChromeState() layoutChromeState {
 	repo := "-"
 	stream := "-"
+	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
+	selectedIssueAdhoc := hasSelectedIssue && selectedIssue.Adhoc
 	if m.context != nil {
 		if m.context.RepoName != nil && strings.TrimSpace(*m.context.RepoName) != "" {
 			repo = strings.TrimSpace(*m.context.RepoName)
@@ -162,6 +167,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
 			View:                   string(m.view),
 			Pane:                   string(m.pane),
+			SelectedIssueAdhoc:     selectedIssueAdhoc,
 			MomentumTab:            string(m.currentMomentumTab()),
 			TimerState:             timerState,
 			TimerSegment:           timerSegment,

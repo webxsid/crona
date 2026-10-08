@@ -210,12 +210,17 @@ func (h *Handler) handleRuntimeMethods(
 	case protocol.MethodTimerEnd:
 		return handle(req, func(input shareddto.EndSessionRequest) (any, error) {
 			return h.timer.End(ctx, corecommands.SessionEndInput{
-				CommitMessage: input.CommitMessage,
-				WorkedOn:      input.WorkedOn,
-				Outcome:       input.Outcome,
-				NextStep:      input.NextStep,
-				Blockers:      input.Blockers,
-				Links:         input.Links,
+				CommitMessage:   input.CommitMessage,
+				WorkedOn:        input.WorkedOn,
+				Outcome:         input.Outcome,
+				NextStep:        input.NextStep,
+				Blockers:        input.Blockers,
+				Links:           input.Links,
+				AdhocResolution: input.AdhocResolution,
+				IssueID:         input.IssueID,
+				NewIssueTitle:   input.NewIssueTitle,
+				RepoID:          input.RepoID,
+				StreamID:        input.StreamID,
 			})
 		}), true
 	case protocol.MethodSettingsGetAll:

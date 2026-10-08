@@ -36,6 +36,7 @@ type Theme struct {
 type ContentState struct {
 	View                string
 	Pane                string
+	SelectedIssueAdhoc  bool
 	Width               int
 	Height              int
 	Cursors             map[string]int

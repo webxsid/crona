@@ -176,11 +176,12 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 			return state, nil, ""
 		}
 		row := &state.SessionHistorySegments[rowIndex]
-		if column == 1 {
+		switch column {
+		case 1:
 			var cmd tea.Cmd
 			row.StartTime, cmd = row.StartTime.Update(msg)
 			_ = cmd
-		} else if column == 2 {
+		case 2:
 			var cmd tea.Cmd
 			row.EndTime, cmd = row.EndTime.Update(msg)
 			_ = cmd
@@ -305,9 +306,10 @@ func focusSessionHistoryControl(state State) State {
 	default:
 		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
 		if ok && rowIndex < len(state.SessionHistorySegments) {
-			if column == 1 {
+			switch column {
+			case 1:
 				state.SessionHistorySegments[rowIndex].StartTime.Focus()
-			} else if column == 2 {
+			case 2:
 				state.SessionHistorySegments[rowIndex].EndTime.Focus()
 			}
 		}

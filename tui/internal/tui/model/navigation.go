@@ -206,6 +206,11 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 		}
 	case PaneIssues:
 		if issue, ok := m.selectedIssueRecord(); ok {
+			if issue.Adhoc {
+				if meta, found := m.issueMetaByID(issue.ID); found {
+					return m.withDialogState(m.dialogSnapshot().OpenPromoteAdhocIssue(*meta)), true
+				}
+			}
 			return m.openEditIssueDialog(
 				issue.ID,
 				issue.StreamID,
@@ -348,12 +353,17 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			"Worked / est.",
 			issuecore.IssueWorkedEstimateLabel(spentSeconds, issue.EstimateMinutes),
 		)
-		return m.openViewEntityDialog(
+		dialog := m.dialogSnapshot().OpenViewEntity(
 			"Issue",
 			issue.Title,
 			strings.Join(metaBits, "   "),
 			strings.Join(body, "\n"),
-		), true
+		)
+		if issue.Adhoc {
+			dialog.ViewEntityAdhoc = true
+			dialog.IssueID = issue.ID
+		}
+		return m.withDialogState(dialog), true
 	case PaneHabits:
 		if m.view == ViewMeta {
 			if habit, ok := m.selectedHabitRecord(); ok {

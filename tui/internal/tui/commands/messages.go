@@ -126,6 +126,7 @@ type IssueCreatedMsg struct {
 	RepoID, StreamID     int64
 	RepoName, StreamName string
 	FollowUp             int
+	CommitMessage        string
 }
 type ClearStatusMsg struct{ Seq int }
 

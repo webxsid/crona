@@ -11,6 +11,16 @@ func timerIsActive(s State) bool {
 	return s.Timer != nil && s.Timer.State != "idle"
 }
 
+func handleStartAdhocTimer(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ProtectedModeActive || timerIsActive(s) ||
+		(s.ActiveView != uistate.ViewSessionActive && !issueEditorContext(s)) ||
+		deps.OpenAdhocTimerDialog == nil {
+		return s, nil, false
+	}
+	handled := deps.OpenAdhocTimerDialog(&s)
+	return s, nil, handled
+}
+
 func handleAdvanceSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView != uistate.ViewSessionActive || s.Timer == nil ||
 		s.Timer.State == "idle" || !s.Timer.HardLimitActive ||
@@ -36,11 +46,7 @@ func focusStartContext(s State) bool {
 	if s.ProtectedModeActive || timerIsActive(s) {
 		return false
 	}
-	if issueEditorContext(s) {
-		return true
-	}
-	return s.ActiveView == uistate.ViewSessionActive &&
-		(s.Timer == nil || s.Timer.State == "idle")
+	return issueEditorContext(s)
 }
 
 func handlePauseSession(s State, deps Deps) (tea.Model, tea.Cmd, bool) {

@@ -30,6 +30,7 @@ type ActionsState struct {
 	UpdateCommand             string
 	MomentumTab               string
 	ManageHistory             bool
+	SelectedIssueAdhoc        bool
 }
 
 func segmentPtr(value string) *sharedtypes.SessionSegmentType {
@@ -57,7 +58,7 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel),
 		)
 	}
-	if supportsGlobalCreate(state.View) {
+	if supportsGlobalCreate(state.View) && !state.SelectedIssueAdhoc {
 		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" create"))
 	}
 	if supportsGlobalContext(state.View) {
@@ -94,7 +95,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "session_active" {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
-				theme.StyleHeader.Render("[f]") + theme.StyleDim.Render(" start focus timer"),
+				theme.StyleHeader.Render("[A]") + theme.StyleDim.Render(" start ad hoc timer"),
 			}
 		}
 		if state.HardLimitActive {
@@ -276,6 +277,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		}
 	case "issues":
 		timerIdle := state.TimerState == "" || state.TimerState == "idle"
+		if state.SelectedIssueAdhoc {
+			return []string{
+				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" review ad hoc session"),
+				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" convert to regular issue"),
+			}
+		}
 		if state.View == "daily" {
 			actions := []string{
 				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open issue details"),
@@ -288,6 +295,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				actions = append(
 					actions,
 					theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
+					theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start ad hoc timer"),
 					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
 					theme.StyleHeader.Render("[e]")+theme.StyleDim.Render(" edit issue"),
 				)
@@ -304,6 +312,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			actions = append(
 				actions,
 				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
+				theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start ad hoc timer"),
 				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
 				theme.StyleHeader.Render("[e/D]")+theme.StyleDim.Render(" edit/delete"),
 			)

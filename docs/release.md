@@ -31,7 +31,7 @@ The release version must stay consistent across:
 - `shared/version/version.go`
 - `docs/release-notes/<tag>.md`
 
-`make release-check` validates these references, confirms the matching release notes file exists, and verifies the current local IPC protocol metadata. The current protocol version is `1.5`.
+`make release-check` validates these references, confirms the matching release notes file exists, and verifies the current local IPC protocol metadata. The current protocol version is `1.6`.
 
 ## Publishing
 

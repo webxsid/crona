@@ -12,6 +12,29 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
+func TestInitSchemaUpgradesBeforeLegacyAdhocBackfill(t *testing.T) {
+	ctx := context.Background()
+	db := openRepositoryTestStore(t)
+	for _, statement := range []string{
+		"DROP INDEX idx_repos_reserved_user_name",
+		"DROP INDEX idx_streams_reserved_user_name",
+		"DROP INDEX idx_issues_reserved_user_stream_title",
+		"ALTER TABLE issues DROP COLUMN adhoc",
+		"ALTER TABLE issues DROP COLUMN is_reserved",
+		"ALTER TABLE streams DROP COLUMN is_reserved",
+		"ALTER TABLE repos DROP COLUMN is_reserved",
+	} {
+		if _, err := db.DB().ExecContext(ctx, statement); err != nil {
+			t.Fatalf("prepare legacy schema (%s): %v", statement, err)
+		}
+	}
+	for i := 0; i < 2; i++ {
+		if err := migrations.InitSchema(ctx, db.DB()); err != nil {
+			t.Fatalf("initialize upgraded schema (attempt %d): %v", i+1, err)
+		}
+	}
+}
+
 func TestEnsureAdhocContextIsIdempotentAndOwned(t *testing.T) {
 	ctx := context.Background()
 	db := openRepositoryTestStore(t)
@@ -35,6 +58,16 @@ func TestEnsureAdhocContextIsIdempotentAndOwned(t *testing.T) {
 	}
 	if other == first {
 		t.Fatalf("expected different users to receive different context ids")
+	}
+	if issue, err := repositories.NewIssueRepository(db.DB()).GetByID(ctx, first.IssueID, "user-a"); err != nil {
+		t.Fatalf("get reserved issue through normal API: %v", err)
+	} else if issue != nil {
+		t.Fatalf("expected reserved issue to be hidden, got %+v", issue)
+	}
+	if issue, err := repositories.NewIssueRepository(db.DB()).GetReservedByID(ctx, first.IssueID, "user-a"); err != nil {
+		t.Fatalf("get reserved issue internally: %v", err)
+	} else if issue == nil {
+		t.Fatal("expected reserved issue to be available internally")
 	}
 
 	var repos []storemodels.RepoModel

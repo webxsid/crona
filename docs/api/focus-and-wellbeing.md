@@ -18,6 +18,8 @@ Sessions: `session.list_by_issue`, `session.get`, `session.detail`, `session.get
 
 Timers: `timer.get_state`, `timer.start`, `timer.activity.touch`, `timer.pause`, `timer.resume`, `timer.advance`, `timer.extend`, `timer.defer_break`, and `timer.end`.
 
+Ad hoc timers require protocol `1.6` or newer. Check `kernel.info.get` before sending `adhoc: true` to `timer.start`; older daemons may ignore that field and use the active issue context. Ad hoc starts preserve the active context. Timer state exposes `adhoc`, and `timer.end` accepts `adhocResolution` (`attach`, `create`, or `keep`) with the destination fields in `EndSessionRequest`.
+
 Timer mutations may emit session and timer events. Treat the daemon response as the immediate source of truth, then apply later events in order.
 
 ## Context

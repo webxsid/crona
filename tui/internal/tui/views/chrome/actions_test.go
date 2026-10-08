@@ -124,3 +124,39 @@ func TestReportsViewActionsExposeEditOpenDeleteSeparately(t *testing.T) {
 		}
 	}
 }
+
+func TestSelectedAdhocIssueOffersReviewAndConversionOnly(t *testing.T) {
+	actions := strings.Join(ContextualActions(Theme{}, ActionsState{
+		View: "daily", Pane: "issues", TimerState: "idle", SelectedIssueAdhoc: true,
+	}), " ")
+	for _, want := range []string{"[enter]", "[e]", "convert to regular issue"} {
+		if !strings.Contains(actions, want) {
+			t.Fatalf("expected ad hoc actions to contain %q, got %q", want, actions)
+		}
+	}
+	for _, hidden := range []string{"[f]", "[s]", "[d]", "[D]", "edit/delete", "start focus timer"} {
+		if strings.Contains(actions, hidden) {
+			t.Fatalf("expected ad hoc actions to hide %q, got %q", hidden, actions)
+		}
+	}
+}
+
+func TestPaneActionsForSelectedAdhocIssueUseReadOnlyActions(t *testing.T) {
+	actions := strings.Join(PaneActionsForState(Theme{}, ContentState{
+		View: "daily", Pane: "issues", SelectedIssueAdhoc: true,
+	}, true), " ")
+	for _, want := range []string{"[enter]", "[e]", "convert to regular issue"} {
+		if !strings.Contains(actions, want) {
+			t.Fatalf("expected pane actions to contain %q, got %q", want, actions)
+		}
+	}
+	for _, hidden := range []string{"[a]", "[s]", "[d]", "[D]", "[f]", "edit issue"} {
+		if strings.Contains(actions, hidden) {
+			t.Fatalf("expected pane actions to hide %q, got %q", hidden, actions)
+		}
+	}
+	global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily", SelectedIssueAdhoc: true}), " ")
+	if strings.Contains(global, "[a] create") {
+		t.Fatalf("global actions should not offer create while an ad hoc issue is selected: %q", global)
+	}
+}

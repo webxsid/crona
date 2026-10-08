@@ -20,6 +20,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	if state.Timer != nil && state.Timer.IssueID != nil {
 		activeIssue = sessionmeta.IssueMetaByID(state.AllIssues, *state.Timer.IssueID)
 	}
+	if state.Timer != nil && state.Timer.Adhoc {
+		activeIssue = nil
+	}
 	hardLimit := state.Timer != nil && state.Timer.HardLimitActive
 	now := time.Now()
 	workElapsedSeconds := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
@@ -165,7 +168,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		Padding(1, 2).
 		Width(leftW).
 		Height(max(1, issueH-2)).
-		Render(strings.Join(sessionIssueCompactLines(theme, activeIssue, leftW, state.Height, timerHint), "\n"))
+		Render(strings.Join(sessionIssueCompactLines(theme, activeIssue, state.Timer != nil && state.Timer.Adhoc, leftW, state.Height, timerHint), "\n"))
 	return lipgloss.JoinVertical(lipgloss.Left, timerSection, issueSection)
 }
 
@@ -525,12 +528,17 @@ func centerLines(lines []string, width int) string {
 func sessionIssueCompactLines(
 	theme types.Theme,
 	activeIssue *api.IssueWithMeta,
+	adhoc bool,
 	width, height int,
 	timerHint string,
 ) []string {
 	lines := []string{"Active Issue", ""}
 	if activeIssue == nil {
-		lines = append(lines, "No issue selected", "", theme.StyleDim.Render(timerHint))
+		label := "No issue selected"
+		if adhoc {
+			label = "Ad hoc session · attribution pending until you end it"
+		}
+		lines = append(lines, label, "", theme.StyleDim.Render(timerHint))
 		return lines
 	}
 	maxLine := max(20, width-12)

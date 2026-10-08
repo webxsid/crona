@@ -19,10 +19,11 @@ func (snapshot Snapshot) Update(msg tea.KeyMsg) (State, *Action, string) {
 
 func snapshotUpdateContext(snapshot Snapshot) UpdateContext {
 	ctx := UpdateContext{
-		Repos:     snapshot.Repos,
-		Streams:   snapshot.Streams,
-		AllIssues: snapshot.AllIssues,
-		Context:   snapshot.Context,
+		Repos:       snapshot.Repos,
+		Streams:     snapshot.Streams,
+		AllIssues:   snapshot.AllIssues,
+		Context:     snapshot.Context,
+		CurrentDate: snapshot.CurrentDate,
 	}
 	if snapshot.HasSelectedIssue {
 		ctx.SelectedIssueID = snapshot.SelectedIssueID

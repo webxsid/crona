@@ -315,7 +315,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 		PauseSession:   func() tea.Cmd { return commands.PauseFocusSession(m.client) },
 		OpenEndSessionDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			next = next.openSessionMessageDialog("end_session")
+			if next.timer != nil && next.timer.Adhoc {
+				next = next.withDialogState(next.dialogSnapshot().OpenAdhocResolution())
+			} else {
+				next = next.openSessionMessageDialog("end_session")
+			}
 			*state = next.inputState()
 			return true
 		},
@@ -505,6 +509,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 			model, cmd := next.handleInputStartFocusFromSelection()
 			*state = model.(Model).inputState()
 			return cmd
+		},
+		OpenAdhocTimerDialog: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			if next.dialog != "" || (next.timer != nil && next.timer.State != "idle") {
+				return false
+			}
+			next = next.openAdhocTimerDialog()
+			*state = next.inputState()
+			return true
 		},
 		OpenManualSessionDialog: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)

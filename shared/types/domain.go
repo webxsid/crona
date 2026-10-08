@@ -56,6 +56,14 @@ const (
 
 type TimerHardLimitKind string
 
+type AdhocSessionResolution string
+
+const (
+	AdhocSessionResolutionAttach AdhocSessionResolution = "attach"
+	AdhocSessionResolutionCreate AdhocSessionResolution = "create"
+	AdhocSessionResolutionKeep   AdhocSessionResolution = "keep"
+)
+
 const (
 	TimerHardLimitKindPomodoro  TimerHardLimitKind = "pomodoro"
 	TimerHardLimitKindCountdown TimerHardLimitKind = "countdown"
@@ -820,6 +828,7 @@ type Issue struct {
 	TodoForDate     *string     `json:"todoForDate,omitempty"`
 	CompletedAt     *string     `json:"completedAt,omitempty"`
 	AbandonedAt     *string     `json:"abandonedAt,omitempty"`
+	Adhoc           bool        `json:"adhoc,omitempty"`
 }
 
 type IssueWithMeta struct {
@@ -1342,6 +1351,7 @@ type TimerState struct {
 	SessionID                      *string             `json:"sessionId,omitempty"`
 	SessionStartTime               *string             `json:"sessionStartTime,omitempty"`
 	IssueID                        *int64              `json:"issueId,omitempty"`
+	Adhoc                          bool                `json:"adhoc,omitempty"`
 	SegmentType                    *SessionSegmentType `json:"segmentType,omitempty"`
 	SegmentStartTime               *string             `json:"segmentStartTime,omitempty"`
 	SegmentElapsedOffsetSeconds    *int                `json:"segmentElapsedOffsetSeconds,omitempty"`

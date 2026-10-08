@@ -24,10 +24,13 @@ Create and update requests use the corresponding request DTO; list methods retur
 | --- | --- |
 | Read | `issue.list`, `issue.list_all`, `issue.daily_summary`, `issue.today_summary` |
 | Lifecycle | `issue.create`, `issue.update`, `issue.delete`, `issue.change_status`, `issue.status_transitions` |
+| Ad hoc conversion (protocol `1.6`) | `issue.promote_adhoc` |
 | Todo state | `issue.set_todo`, `issue.clear_todo` |
 | Planning | `daily_plan.get` |
 
 Status changes must use a transition supported by `issue.status_transitions`. Daily summaries are date-boundary aware and should be requested using the configured logical day, not an arbitrary calendar midnight.
+
+Issues expose an `adhoc` flag in protocol `1.6`. Retained ad hoc issues are Done and must be converted before ordinary editing, deletion, or timer starts. `issue.promote_adhoc` accepts `PromoteAdhocIssueRequest`, moves the issue into a regular stream, clears the flag, and preserves its identity, status, and session history. Check `kernel.info.get` before using conversion.
 
 ## Habits
 

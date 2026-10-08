@@ -223,6 +223,15 @@ type UpdateIssueRequest struct {
 	PinnedDaily     *bool   `json:"pinnedDaily,omitempty"`
 }
 
+type PromoteAdhocIssueRequest struct {
+	ID              int64   `json:"id"`
+	StreamID        int64   `json:"streamId"`
+	Title           string  `json:"title"`
+	Description     *string `json:"description,omitempty"`
+	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
+	TodoForDate     *string `json:"todoForDate,omitempty"`
+}
+
 type ChangeIssueStatusRequest struct {
 	ID     int64             `json:"id"`
 	Status types.IssueStatus `json:"status"`
@@ -254,12 +263,17 @@ type StartSessionRequest struct {
 }
 
 type EndSessionRequest struct {
-	CommitMessage *string `json:"commitMessage,omitempty"`
-	WorkedOn      *string `json:"workedOn,omitempty"`
-	Outcome       *string `json:"outcome,omitempty"`
-	NextStep      *string `json:"nextStep,omitempty"`
-	Blockers      *string `json:"blockers,omitempty"`
-	Links         *string `json:"links,omitempty"`
+	CommitMessage   *string                      `json:"commitMessage,omitempty"`
+	WorkedOn        *string                      `json:"workedOn,omitempty"`
+	Outcome         *string                      `json:"outcome,omitempty"`
+	NextStep        *string                      `json:"nextStep,omitempty"`
+	Blockers        *string                      `json:"blockers,omitempty"`
+	Links           *string                      `json:"links,omitempty"`
+	AdhocResolution types.AdhocSessionResolution `json:"adhocResolution,omitempty"`
+	IssueID         *int64                       `json:"issueId,omitempty"`
+	NewIssueTitle   *string                      `json:"newIssueTitle,omitempty"`
+	RepoID          *int64                       `json:"repoId,omitempty"`
+	StreamID        *int64                       `json:"streamId,omitempty"`
 }
 
 type ManualSessionLogRequest struct {
@@ -379,6 +393,7 @@ type TimerStartRequest struct {
 	RepoID                         *int64                   `json:"repoId,omitempty"`
 	StreamID                       *int64                   `json:"streamId,omitempty"`
 	IssueID                        *int64                   `json:"issueId,omitempty"`
+	Adhoc                          bool                     `json:"adhoc,omitempty"`
 	HardLimitKind                  types.TimerHardLimitKind `json:"hardLimitKind,omitempty"`
 	HardLimitTotalSeconds          *int                     `json:"hardLimitTotalSeconds,omitempty"`
 	HardLimitWorkSeconds           *int                     `json:"hardLimitWorkSeconds,omitempty"`

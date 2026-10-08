@@ -95,20 +95,52 @@ func (r *SessionRepository) Stop(ctx context.Context, sessionID string, updates 
 	Notes           *string
 }, userID string, deviceID string, now string,
 ) (*sharedtypes.Session, error) {
+	return r.stop(ctx, sessionID, updates.EndTime, updates.DurationSeconds, updates.Notes,
+		userID, deviceID, now, nil)
+}
+
+func (r *SessionRepository) StopAsIssue(ctx context.Context, sessionID string, updates struct {
+	EndTime         string
+	DurationSeconds int
+	Notes           *string
+}, issueID int64, userID string, deviceID string, now string,
+) (*sharedtypes.Session, error) {
+	issueInternalID, err := resolveIssueInternalID(ctx, r.db, issueID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if issueInternalID == "" {
+		return nil, errors.New("issue not found")
+	}
+	return r.stop(ctx, sessionID, updates.EndTime, updates.DurationSeconds, updates.Notes,
+		userID, deviceID, now, &issueInternalID)
+}
+
+func (r *SessionRepository) stop(
+	ctx context.Context,
+	sessionID, endTime string,
+	durationSeconds int,
+	notes *string,
+	userID, deviceID, now string,
+	issueInternalID *string,
+) (*sharedtypes.Session, error) {
 	q := r.db.NewUpdate().
 		Model((*storemodels.SessionModel)(nil)).
 		Where("id = ?", sessionID).
 		Where("user_id = ?", userID).
 		Where("end_time IS NULL").
 		Where("deleted_at IS NULL").
-		Set("end_time = ?", updates.EndTime).
-		Set("duration_seconds = ?", updates.DurationSeconds).
+		Set("end_time = ?", endTime).
+		Set("duration_seconds = ?", durationSeconds).
 		Set("updated_at = ?", now).
 		Set("device_id = ?", deviceID)
-	if updates.Notes != nil {
-		q = q.Set("notes = ?", *updates.Notes)
+	if notes != nil {
+		q = q.Set("notes = ?", *notes)
 	} else {
 		q = q.Set("notes = NULL")
+	}
+	if issueInternalID != nil {
+		q = q.Set("issue_id = ?", *issueInternalID)
 	}
 	res, err := q.Exec(ctx)
 	if err != nil {
@@ -191,9 +223,9 @@ func (r *SessionRepository) GetDetail(
 		ColumnExpr("sessions.source").
 		ColumnExpr("issues.title AS issue_title").
 		ColumnExpr("streams.public_id AS stream_public_id").
-		ColumnExpr("streams.name AS stream_name").
+		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
-		ColumnExpr("repos.name AS repo_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").

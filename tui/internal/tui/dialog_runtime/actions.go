@@ -33,7 +33,8 @@ type Deps struct {
 	CreateIssueOnly                func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd
 	CreateHabitWithPath            func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int) tea.Cmd
 	UpdateHabit                    func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd
-	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd
+	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string) tea.Cmd
+	PromoteAdhocIssue              func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
 	CheckoutContext                func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd
 	UpsertDailyCheckIn             func(req shareddto.DailyCheckInUpsertRequest, refreshDate string) tea.Cmd
 	UpdateIssue                    func(issueID, streamID int64, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
@@ -134,8 +135,12 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Title,
 			action.Description,
 			action.Estimate,
-			action.DueDate, action.IssueCreateFollowUp,
+			action.DueDate, action.IssueCreateFollowUp, action.CommitMessage,
 		)
+	})
+	r.Register("promote_adhoc_issue", func(action dialogstate.Action) tea.Cmd {
+		return deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
+			action.Title, action.Description, action.Estimate, action.DueDate, state.DashboardDate)
 	})
 	r.Register("checkout_context", func(action dialogstate.Action) tea.Cmd {
 		return deps.CheckoutContext(

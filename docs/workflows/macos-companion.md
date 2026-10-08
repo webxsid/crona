@@ -9,12 +9,12 @@ order: 5.7
 The macOS companion gives you quick access to the same Crona work from a native desktop surface. It connects to the local daemon, so your issues, sessions, check-ins, and away history remain one shared set of data.
 
 :::caution[Beta compatibility]
-The current companion integration requires a daemon that supports protocol `1.5`. Install matching beta builds when using the beta companion; a stable daemon may not expose every companion action or synchronization event.
+The current companion integration requires a daemon that supports protocol `1.5` or newer. Install matching beta builds when using the beta companion; a stable daemon may not expose every companion action or synchronization event.
 :::
 
 ## Before You Install
 
-Install core Crona and start the local daemon first. The Mac app requires macOS 14 or later and connects to the daemon through its local runtime metadata. Keep the app and daemon on matching release tracks; current beta builds require protocol `1.5`.
+Install core Crona and start the local daemon first. The Mac app requires macOS 14 or later and connects to the daemon through its local runtime metadata. Keep the app and daemon on matching release tracks; the existing companion workflows require protocol `1.5` or newer. Ad hoc timer and issue-conversion capabilities require protocol `1.6` and client support.
 
 Download the signed DMG from the [Crona for macOS releases](https://github.com/webxsid/crona-macos/releases), move the app to Applications, and open it. If the daemon is unavailable, the app can open but daemon-backed actions remain unavailable until it reconnects.
 

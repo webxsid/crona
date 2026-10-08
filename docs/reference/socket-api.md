@@ -86,7 +86,7 @@ Use these files as the canonical contract:
 - Before `1.0.0`, use the shared Go types and method constants as the source of truth over any prose doc.
 - Check GUI compatibility against `kernel.info.get -> protocolVersion`.
 - `protocolVersion` is independent from the Crona release version and only changes when the local IPC contract or its client-visible semantics change.
-- The current local IPC protocol is `1.5`.
+- The current local IPC protocol is `1.6`.
 
 `kernel.info.get` is the expected GUI handshake:
 
@@ -173,6 +173,7 @@ Alert behavior notes:
 | `issue.list_all` | `dto.Empty` | issue-with-meta list | Lists issues across the workspace. |
 | `issue.create` | `dto.CreateIssueRequest` | issue object | Creates an issue. |
 | `issue.update` | `dto.UpdateIssueRequest` | issue object | Updates an issue. |
+| `issue.promote_adhoc` | `dto.PromoteAdhocIssueRequest` | issue object | Protocol `1.6`: converts a retained ad hoc issue into a regular issue, preserving identity, status, and session history. |
 | `issue.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes an issue. |
 | `issue.change_status` | `dto.ChangeIssueStatusRequest` | issue object | Applies a lifecycle transition. |
 | `issue.status_transitions` | `dto.NumericIDRequest` | `dto.IssueStatusTransitionsResponse` | Returns daemon-authoritative valid lifecycle transitions for an issue. |
@@ -323,13 +324,13 @@ Export behavior notes:
 | `session.amend_note` | `dto.AmendSessionNoteRequest` | session object | Rewrites the stored session note. |
 | `session.history` | `dto.SessionHistoryQuery` | session history result | History queries with scope and paging controls. |
 | `timer.get_state` | `dto.Empty` | timer state object | Current timer state. |
-| `timer.start` | `dto.TimerStartRequest` | timer/session state | Starts a timer, optionally from context or an explicit repo/stream/issue path. |
+| `timer.start` | `dto.TimerStartRequest` | timer/session state | Starts a timer, optionally from context or an explicit repo/stream/issue path. Protocol `1.6` adds `adhoc: true`, preserving the active context. |
 | `timer.activity.touch` | `dto.Empty` | `dto.OKResponse` | Records recent client activity for active-session inactivity alert suppression. |
 | `timer.pause` | `dto.Empty` | timer/session state | Pauses the timer. |
 | `timer.resume` | `dto.Empty` | timer/session state | Resumes the timer. |
 | `timer.extend` | `dto.TimerExtendRequest` | timer/session state | Extends an active hard-limit timer. |
 | `timer.defer_break` | `dto.TimerDeferBreakRequest` | timer/session state | Daemon-authoritative automatic Pomodoro break deferral; normally invoked by acknowledging the daemon’s break-deferral alert action. |
-| `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. |
+| `timer.end` | `dto.EndSessionRequest` | ended session object | Ends the active timer/session. Protocol `1.6` adds ad hoc attribution through `adhocResolution` and destination fields. |
 
 Timer start behavior notes:
 

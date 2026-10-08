@@ -57,12 +57,17 @@ func StartSession(
 }
 
 type SessionEndInput struct {
-	CommitMessage *string
-	WorkedOn      *string
-	Outcome       *string
-	NextStep      *string
-	Blockers      *string
-	Links         *string
+	CommitMessage   *string
+	WorkedOn        *string
+	Outcome         *string
+	NextStep        *string
+	Blockers        *string
+	Links           *string
+	AdhocResolution sharedtypes.AdhocSessionResolution
+	IssueID         *int64
+	NewIssueTitle   *string
+	RepoID          *int64
+	StreamID        *int64
 }
 
 type ManualSessionInput struct {
@@ -131,6 +136,45 @@ func StopSession(
 		streamID = activeContext.StreamID
 	}
 	issueID = &active.IssueID
+	if input.IssueID != nil {
+		issueID = input.IssueID
+		issue, err := c.Issues.GetByID(ctx, *input.IssueID, c.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if issue == nil {
+			return nil, errors.New("issue not found")
+		}
+		if input.StreamID != nil && input.RepoID != nil {
+			streamID = input.StreamID
+			repoID = input.RepoID
+		} else {
+			stream, err := c.Streams.GetByID(ctx, issue.StreamID, c.UserID)
+			if err != nil {
+				return nil, err
+			}
+			if stream == nil {
+				reserved, err := c.ReservedContexts.EnsureAdhocContext(ctx, c.UserID, c.Now())
+				if err != nil {
+					return nil, err
+				}
+				if issue.StreamID != reserved.StreamID {
+					return nil, errors.New("issue stream not found")
+				}
+				streamID = &reserved.StreamID
+				repoID = &reserved.RepoID
+			} else {
+				repoID = &stream.RepoID
+				streamID = &stream.ID
+			}
+		}
+	}
+	if input.RepoID != nil {
+		repoID = input.RepoID
+	}
+	if input.StreamID != nil {
+		streamID = input.StreamID
+	}
 
 	notes := sessionnotes.GenerateDefaultSessionNotes(struct {
 		Commit      *string
@@ -154,7 +198,7 @@ func StopSession(
 
 	durationSeconds := sessionnotes.TotalSegmentDurationSeconds(segments)
 
-	stopped, err := c.Sessions.Stop(ctx, active.ID, struct {
+	stopInput := struct {
 		EndTime         string
 		DurationSeconds int
 		Notes           *string
@@ -162,7 +206,13 @@ func StopSession(
 		EndTime:         now,
 		DurationSeconds: durationSeconds,
 		Notes:           notesPtr,
-	}, c.UserID, c.DeviceID, now)
+	}
+	var stopped *sharedtypes.Session
+	if input.IssueID != nil {
+		stopped, err = c.Sessions.StopAsIssue(ctx, active.ID, stopInput, *input.IssueID, c.UserID, c.DeviceID, now)
+	} else {
+		stopped, err = c.Sessions.Stop(ctx, active.ID, stopInput, c.UserID, c.DeviceID, now)
+	}
 	if err != nil {
 		return nil, err
 	}

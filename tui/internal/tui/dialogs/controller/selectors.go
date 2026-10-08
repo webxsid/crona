@@ -58,6 +58,9 @@ func DefaultStreamOptions(
 	seen := map[string]bool{}
 	options := []SelectorOption{}
 	for _, issue := range allIssues {
+		if issue.Adhoc {
+			continue
+		}
 		if strconv.FormatInt(issue.RepoID, 10) != repoOpt.ID ||
 			seen[strconv.FormatInt(issue.StreamID, 10)] {
 			continue
@@ -357,6 +360,19 @@ func DefaultIssueDialogNames(
 		streamName = strings.TrimSpace(inputs[1].Value())
 	}
 	return repoName, streamName
+}
+
+func DefaultIssueDialogIDs(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, int64, bool) {
+	repoOptions := DefaultRepoOptions(inputs, repos)
+	streamOptions := DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
+	repo, repoOK := selectedOption(repoOptions, repoIndex)
+	stream, streamOK := selectedOption(streamOptions, streamIndex)
+	if !repoOK || !streamOK {
+		return 0, 0, false
+	}
+	repoID, repoErr := strconv.ParseInt(repo.ID, 10, 64)
+	streamID, streamErr := strconv.ParseInt(stream.ID, 10, 64)
+	return repoID, streamID, repoErr == nil && streamErr == nil
 }
 
 func ShiftSelection(current, total, dir int) int {

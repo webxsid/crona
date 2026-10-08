@@ -197,6 +197,16 @@ type Model struct {
 	dialogSessionHistoryNoteInputs       []textarea.Model
 	dialogSessionHistorySegments         []dialogstate.SessionHistorySegmentRow
 	dialogIssueID                        int64
+	dialogAdhocTimer                     bool
+	dialogPromotingAdhoc                 bool
+	dialogViewEntityAdhoc                bool
+	dialogAdhocResolution                sharedtypes.AdhocSessionResolution
+	dialogAdhocIssueIDs                  []int64
+	dialogAdhocIssueTab                  int
+	dialogAdhocIssueTabCounts            [4]int
+	dialogAdhocElapsedSeconds            int
+	dialogAdhocDate                      string
+	dialogNewIssueTitle                  string
 	dialogHabitID                        int64
 	dialogIssueStatus                    string
 	dialogCheckInDate                    string

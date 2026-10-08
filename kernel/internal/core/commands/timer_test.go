@@ -1241,6 +1241,278 @@ func TestTimerEndRequiresCommitMessage(t *testing.T) {
 	}
 }
 
+func TestAdhocTimerRequiresResolutionBeforeEnding(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, contextIssue := newTimerTestContext(t, func() string { return now })
+	stream, err := coreCtx.Streams.GetByID(ctx, contextIssue.StreamID, coreCtx.UserID)
+	if err != nil || stream == nil {
+		t.Fatalf("get existing context stream: stream=%+v err=%v", stream, err)
+	}
+	if _, err := coreCtx.ActiveContext.Set(ctx, coreCtx.UserID, coreCtx.DeviceID, struct {
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+	}{RepoID: &stream.RepoID, StreamID: &stream.ID, IssueID: &contextIssue.ID}); err != nil {
+		t.Fatalf("set existing active context: %v", err)
+	}
+	initialContext, err := coreCtx.ActiveContext.Get(ctx, coreCtx.UserID, coreCtx.DeviceID)
+	if err != nil {
+		t.Fatalf("get initial context: %v", err)
+	}
+	started, err := service.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true})
+	if err != nil {
+		t.Fatalf("start adhoc timer: %v", err)
+	}
+	if !started.Adhoc || started.IssueID == nil {
+		t.Fatalf("Start(adhoc) = %+v, want an active pending adhoc session", started)
+	}
+	if _, err := service.End(ctx, SessionEndInput{CommitMessage: new("work")}); err == nil {
+		t.Fatal("End(adhoc without resolution) succeeded, want an error")
+	}
+	missingIssueID := int64(999999)
+	if _, err := service.End(ctx, SessionEndInput{
+		CommitMessage:   new("work"),
+		AdhocResolution: sharedtypes.AdhocSessionResolutionAttach,
+		IssueID:         &missingIssueID,
+	}); err == nil {
+		t.Fatal("End(adhoc with unknown issue) succeeded, want an error")
+	}
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get pending state: %v", err)
+	}
+	if state.State != "running" || !state.Adhoc {
+		t.Fatalf("GetState() = %+v, want the active pending adhoc timer", state)
+	}
+	currentContext, err := coreCtx.ActiveContext.Get(ctx, coreCtx.UserID, coreCtx.DeviceID)
+	if err != nil {
+		t.Fatalf("get current context: %v", err)
+	}
+	if initialContext.IssueID == nil || currentContext.IssueID == nil ||
+		*initialContext.IssueID != *currentContext.IssueID || *currentContext.IssueID != contextIssue.ID {
+		t.Fatalf("adhoc start changed active issue context: before=%+v after=%+v", initialContext, currentContext)
+	}
+}
+
+func TestAdhocTimerKeepCreatesTodayIssueAndReassignsSession(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, _ := newTimerTestContext(t, func() string { return now })
+	started, err := service.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true})
+	if err != nil {
+		t.Fatalf("start adhoc timer: %v", err)
+	}
+	commit := "miscellaneous work"
+	ended, err := service.End(ctx, SessionEndInput{
+		CommitMessage:   &commit,
+		AdhocResolution: sharedtypes.AdhocSessionResolutionKeep,
+	})
+	if err != nil {
+		t.Fatalf("end and keep adhoc: %v", err)
+	}
+	if ended.State != "idle" {
+		t.Fatalf("End(keep adhoc) state = %q, want idle", ended.State)
+	}
+	entries, err := coreCtx.Issues.ListByTodoForDate(ctx, "2026-05-24", coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list today's issues: %v", err)
+	}
+	var adhoc *sharedtypes.Issue
+	for i := range entries {
+		if entries[i].Title == commit {
+			adhoc = &entries[i]
+		}
+	}
+	if adhoc == nil {
+		t.Fatalf("ListByTodoForDate() omitted today's ad hoc issue: %+v", entries)
+	}
+	if !adhoc.Adhoc || adhoc.Status != sharedtypes.IssueStatusDone {
+		t.Fatalf("ad hoc issue = %+v, want a completed ad hoc record", adhoc)
+	}
+	listed, err := coreCtx.Issues.ListAll(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list all issues: %v", err)
+	}
+	var listedAdhoc *sharedtypes.IssueWithMeta
+	for i := range listed {
+		if listed[i].ID == adhoc.ID {
+			listedAdhoc = &listed[i]
+			break
+		}
+	}
+	if listedAdhoc == nil || listedAdhoc.RepoName != "Ad hoc" || listedAdhoc.StreamName != "Sessions" {
+		t.Fatalf("ListAll() ad hoc entry = %+v, want human-readable reserved context", listedAdhoc)
+	}
+	if _, err := UpdateIssue(ctx, coreCtx, adhoc.ID, struct {
+		Title           sharedtypes.Patch[string]
+		Description     sharedtypes.Patch[string]
+		EstimateMinutes sharedtypes.Patch[int]
+		Notes           sharedtypes.Patch[string]
+		PinnedDaily     sharedtypes.Patch[bool]
+	}{Title: sharedtypes.Patch[string]{Set: true, Value: new("should fail")}}); err == nil {
+		t.Fatal("expected standard issue edit to reject ad hoc issue")
+	}
+	if _, err := ChangeIssueStatus(ctx, coreCtx, adhoc.ID, sharedtypes.IssueStatusInProgress, nil); err == nil {
+		t.Fatal("expected standard status change to reject ad hoc issue")
+	}
+	if _, err := service.Start(ctx, nil, nil, &adhoc.ID, nil); err == nil {
+		t.Fatal("expected focus timer start to reject ad hoc issue")
+	}
+	history, err := coreCtx.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{UserID: coreCtx.UserID})
+	if err != nil {
+		t.Fatalf("list session history: %v", err)
+	}
+	if len(history) != 1 || history[0].IssueID != adhoc.ID || history[0].ID != *started.SessionID {
+		t.Fatalf("ListEnded() = %+v, want session attributed to ad hoc issue %d", history, adhoc.ID)
+	}
+	plan, err := GetDailyPlan(ctx, coreCtx, "2026-05-24")
+	if err != nil {
+		t.Fatalf("get today's daily plan: %v", err)
+	}
+	if len(plan.Entries) != 1 || plan.Entries[0].IssueID != adhoc.ID {
+		t.Fatalf("GetDailyPlan() = %+v, want today's ad hoc issue %d", plan, adhoc.ID)
+	}
+	allIssues, err := coreCtx.Issues.ListAll(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list issues before conversion: %v", err)
+	}
+	var targetStreamID int64
+	for _, item := range allIssues {
+		if !item.Adhoc {
+			targetStreamID = item.StreamID
+			break
+		}
+	}
+	converted, err := PromoteAdhocIssue(ctx, coreCtx, shareddto.PromoteAdhocIssueRequest{
+		ID: adhoc.ID, StreamID: targetStreamID, Title: "Converted work", TodoForDate: adhoc.TodoForDate,
+	})
+	if err != nil {
+		t.Fatalf("promote ad hoc issue: %v", err)
+	}
+	if converted.ID != adhoc.ID || converted.Adhoc || converted.StreamID != targetStreamID || converted.Status != sharedtypes.IssueStatusDone {
+		t.Fatalf("converted issue = %+v; want same id/context and completed regular issue", converted)
+	}
+	convertedHistory, err := coreCtx.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{UserID: coreCtx.UserID, IssueID: &adhoc.ID})
+	if err != nil || len(convertedHistory) != 1 || convertedHistory[0].ID != *started.SessionID {
+		t.Fatalf("session history after promotion = %+v, err %v", convertedHistory, err)
+	}
+}
+
+func TestAdhocTimerAttachTransitionsIssueAndReassignsSession(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, coreCtx, issue.ID)
+	started, err := service.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true})
+	if err != nil {
+		t.Fatalf("start adhoc timer: %v", err)
+	}
+	commit := "work on issue"
+	if _, err := service.End(ctx, SessionEndInput{
+		CommitMessage:   &commit,
+		AdhocResolution: sharedtypes.AdhocSessionResolutionAttach,
+		IssueID:         &issue.ID,
+	}); err != nil {
+		t.Fatalf("end and attach: %v", err)
+	}
+	updated, err := coreCtx.Issues.GetByID(ctx, issue.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("load attached issue: %v", err)
+	}
+	if updated.Status != sharedtypes.IssueStatusInProgress {
+		t.Fatalf("attached issue status = %q, want %q", updated.Status, sharedtypes.IssueStatusInProgress)
+	}
+	history, err := coreCtx.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{UserID: coreCtx.UserID})
+	if err != nil {
+		t.Fatalf("list session history: %v", err)
+	}
+	if len(history) != 1 || history[0].IssueID != issue.ID || history[0].ID != *started.SessionID {
+		t.Fatalf("ListEnded() = %+v, want session attributed to issue %d", history, issue.ID)
+	}
+}
+
+func TestAdhocTimerCreatesIssueInProvidedContext(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, existing := newTimerTestContext(t, func() string { return now })
+	stream, err := coreCtx.Streams.GetByID(ctx, existing.StreamID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("get stream: %v", err)
+	}
+	started, err := service.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true})
+	if err != nil {
+		t.Fatalf("start adhoc timer: %v", err)
+	}
+	commit := "new issue work"
+	title := "New issue from ad hoc session"
+	if _, err := service.End(ctx, SessionEndInput{
+		CommitMessage:   &commit,
+		AdhocResolution: sharedtypes.AdhocSessionResolutionCreate,
+		NewIssueTitle:   &title,
+		RepoID:          &stream.RepoID,
+		StreamID:        &stream.ID,
+	}); err != nil {
+		t.Fatalf("end and create issue: %v", err)
+	}
+	var created *sharedtypes.Issue
+	issues, err := coreCtx.Issues.ListByStream(ctx, stream.ID, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list stream issues: %v", err)
+	}
+	for i := range issues {
+		if issues[i].Title == title {
+			created = &issues[i]
+		}
+	}
+	if created == nil || created.Status != sharedtypes.IssueStatusBacklog {
+		t.Fatalf("created issue = %+v, want new issue with normal creation status", created)
+	}
+	history, err := coreCtx.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{UserID: coreCtx.UserID})
+	if err != nil {
+		t.Fatalf("list session history: %v", err)
+	}
+	if len(history) != 1 || history[0].IssueID != created.ID || history[0].ID != *started.SessionID {
+		t.Fatalf("ListEnded() = %+v, want session attributed to new issue %d", history, created.ID)
+	}
+}
+
 func newTimerTestContext(
 	t *testing.T,
 	now func() string,

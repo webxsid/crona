@@ -401,6 +401,9 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		footer := "[enter/esc] close"
+		if state.ViewEntityAdhoc {
+			footer = "[e] convert to regular issue   " + footer
+		}
 		if strings.TrimSpace(state.ViewPath) != "" {
 			footer = "[e] edit   " + footer
 		}

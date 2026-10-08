@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strconv"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -10,6 +11,7 @@ import (
 
 type Snapshot struct {
 	Dialog               State
+	CurrentDate          string
 	Repos                []api.Repo
 	Streams              []api.Stream
 	AllHabits            []api.HabitWithMeta
@@ -161,6 +163,33 @@ func (s Snapshot) OpenCreateIssueDefault() State {
 	}
 	next.FocusIdx = 2
 	return SyncDialogFocus(next)
+}
+
+func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
+	next := OpenPromoteAdhocIssue(s.Dialog, issue, s.Context)
+	if s.Context == nil {
+		return next
+	}
+	if s.Context.RepoID != nil {
+		want := strconv.FormatInt(*s.Context.RepoID, 10)
+		for index, option := range DefaultRepoOptions(next.Inputs, s.Repos) {
+			if option.ID == want {
+				next.RepoIndex = index
+				break
+			}
+		}
+	}
+	if s.Context.StreamID != nil {
+		want := strconv.FormatInt(*s.Context.StreamID, 10)
+		options := DefaultStreamOptions(next.Inputs, next.RepoIndex, s.Repos, s.AllIssues, s.Streams, s.Context)
+		for index, option := range options {
+			if option.ID == want {
+				next.StreamIndex = index
+				break
+			}
+		}
+	}
+	return next
 }
 
 func (s Snapshot) OpenCreateIssueDefaultForPath(repoID, streamID int64, repoName, streamName string) State {
@@ -348,6 +377,21 @@ func (s Snapshot) OpenTimerStartType(
 		estimateMinutes,
 		workedSeconds,
 	)
+}
+
+func (s Snapshot) OpenAdhocTimerStartType() State {
+	return OpenAdhocTimerStartType(s.Dialog)
+}
+
+func (s Snapshot) OpenAdhocResolution() State {
+	state := OpenAdhocResolution(s.Dialog, s.Context)
+	state.AdhocElapsedSeconds = s.Dialog.AdhocElapsedSeconds
+	state.AdhocDate = s.Dialog.AdhocDate
+	return state
+}
+
+func (s Snapshot) OpenAdhocIssuePicker() State {
+	return OpenAdhocIssuePicker(s.Dialog, s.AllIssues, s.CurrentDashboardDate)
 }
 
 func (s Snapshot) OpenHardLimitExpired(issueLabel string) State {

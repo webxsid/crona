@@ -34,7 +34,7 @@ Crona clients communicate with the local daemon through a request/response socke
 
 ## Contract rules
 
-- The current local IPC protocol is **1.5**. It is independent of the Crona release version; beta additions may not be available on stable daemons.
+- The current local IPC protocol is **1.6**. It is independent of the Crona release version; beta additions may not be available on stable daemons.
 - The canonical method names are defined in [`shared/protocol/methods.go`](../../shared/protocol/methods.go).
 - Request and response DTOs are defined in [`shared/dto`](../../shared/dto/requests.go).
 - Before `1.0.0`, generated clients should prefer the shared Go types over assumptions from prose.

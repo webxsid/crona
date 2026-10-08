@@ -48,6 +48,8 @@ type IssueModel struct {
 	TodoForDate     *string `bun:"todo_for_date,type:text,nullzero"`
 	CompletedAt     *string `bun:"completed_at,type:text,nullzero"`
 	AbandonedAt     *string `bun:"abandoned_at,type:text,nullzero"`
+	IsReserved      bool    `bun:"is_reserved,notnull,type:integer"`
+	Adhoc           bool    `bun:"adhoc,notnull,type:integer"`
 	UserID          string  `bun:"user_id,notnull,type:text"`
 	CreatedAt       string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt       string  `bun:"updated_at,notnull,type:text"`

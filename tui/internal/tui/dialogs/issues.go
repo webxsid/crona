@@ -38,15 +38,25 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 			"",
 		}
 		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
-		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
+		return formModal(theme, state, issueDialogWidth, rows)
 	case "create_issue_default":
 		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, issueDialogWidth)
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
 			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[3].View(),
 			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[4].View(),
 		)
-		rows := []string{
-			theme.StylePaneTitle.Render("New Issue"),
+		title := "New Issue"
+		if state.PromotingAdhoc {
+			title = "Convert Ad hoc Issue"
+		}
+		if state.AdhocTimer {
+			title = "Create Issue & Finish Session"
+		}
+		rows := []string{theme.StylePaneTitle.Render(title)}
+		if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
+			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
+		}
+		rows = append(rows,
 			"",
 			theme.StyleDim.Render("Title"),
 			state.Inputs[2].View(),
@@ -57,10 +67,13 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 			schedulingRow,
 			"",
 			contextRow,
-			"",
+		)
+		if state.AdhocTimer {
+			rows = append(rows, "", theme.StyleDim.Render("Session summary (required)"), state.Inputs[5].View())
 		}
+		rows = append(rows, "")
 		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
-		return modal(theme, state.Width, issueDialogWidth, theme.ColorCyan, rows)
+		return formModal(theme, state, issueDialogWidth, rows)
 	case "edit_issue":
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
 			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
@@ -179,7 +192,16 @@ func issueDialogHint(state controllerpkg.State, submitLabel string) string {
 
 func issueCreateHint(state controllerpkg.State) string {
 	static := "[ctrl+s] save & close   [ctrl+a] create more   [ctrl+f] create & focus"
+	if state.PromotingAdhoc {
+		static = "[ctrl+s] convert issue"
+	}
+	if state.AdhocTimer {
+		static = "[ctrl+s] create issue & finish session"
+	}
 	context := "[tab] next   [esc] cancel"
+	if state.AdhocTimer {
+		context = "[tab] next   [esc] back"
+	}
 	if state.Kind == "create_issue_default" {
 		switch state.FocusIdx {
 		case 0, 1:

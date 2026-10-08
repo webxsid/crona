@@ -76,6 +76,11 @@ func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, er
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
+	reservedIssue, err := t.ctx.Issues.GetReservedByID(ctx, activeSession.IssueID, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	adhoc := reservedIssue != nil
 	base := hardLimitTimerState(runtimeState, activeSession.StartTime, now)
 	if activeSegment == nil {
 		if runtimeState != nil && runtimeState.HasPreparedSegment() {
@@ -91,6 +96,7 @@ func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, er
 				SessionID:                      &sessionID,
 				SessionStartTime:               &activeSession.StartTime,
 				IssueID:                        &issueID,
+				Adhoc:                          adhoc,
 				ReadySegmentType:               &segmentType,
 				NextSegmentType:                &segmentType,
 				ElapsedSeconds:                 0,
@@ -111,6 +117,7 @@ func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, er
 			SessionID:                      &activeSession.ID,
 			SessionStartTime:               &activeSession.StartTime,
 			IssueID:                        &activeSession.IssueID,
+			Adhoc:                          adhoc,
 			SegmentType:                    &segmentType,
 			ElapsedSeconds:                 elapsedSeconds(activeSession.StartTime, now),
 			HardLimitActive:                base.HardLimitActive,
@@ -151,6 +158,7 @@ func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, er
 		SessionID:                      &activeSession.ID,
 		SessionStartTime:               &activeSession.StartTime,
 		IssueID:                        &activeSession.IssueID,
+		Adhoc:                          adhoc,
 		SegmentType:                    &activeSegment.SegmentType,
 		SegmentStartTime:               &activeSegment.StartTime,
 		SegmentElapsedOffsetSeconds:    activeSegment.ElapsedOffsetSeconds,
@@ -197,11 +205,18 @@ func (t *TimerService) start(
 			"cannot start a new session while another session is active",
 		)
 	}
+	adhoc := input != nil && input.Adhoc
 	var resolvedIssueID int64
-	if issueID != nil {
+	if adhoc {
+		reserved, err := t.ctx.ReservedContexts.EnsureAdhocContext(ctx, t.ctx.UserID, t.ctx.Now())
+		if err != nil {
+			return sharedtypes.TimerState{}, err
+		}
+		resolvedIssueID = reserved.IssueID
+	} else if issueID != nil {
 		resolvedIssueID = *issueID
 	}
-	if resolvedIssueID == 0 {
+	if resolvedIssueID == 0 && !adhoc {
 		activeContext, err := t.ctx.ActiveContext.Get(ctx, t.ctx.UserID, t.ctx.DeviceID)
 		if err != nil {
 			return sharedtypes.TimerState{}, err
@@ -215,14 +230,22 @@ func (t *TimerService) start(
 			"no issue specified and no active issue in context",
 		)
 	}
-	issue, err := t.ctx.Issues.GetByID(ctx, resolvedIssueID, t.ctx.UserID)
+	var issue *sharedtypes.Issue
+	if adhoc {
+		issue, err = t.ctx.Issues.GetReservedByID(ctx, resolvedIssueID, t.ctx.UserID)
+	} else {
+		issue, err = t.ctx.Issues.GetByID(ctx, resolvedIssueID, t.ctx.UserID)
+	}
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
 	if issue == nil {
 		return sharedtypes.TimerState{}, errors.New("issue not found")
 	}
-	if !sharedtypes.CanStartFocus(issue.Status) {
+	if !adhoc && issue.Adhoc {
+		return sharedtypes.TimerState{}, errors.New("ad hoc issues must be converted before starting a focus session")
+	}
+	if !adhoc && !sharedtypes.CanStartFocus(issue.Status) {
 		return sharedtypes.TimerState{}, errors.New(
 			"focus sessions cannot be started for the current issue status",
 		)
@@ -297,11 +320,13 @@ func (t *TimerService) start(
 			return sharedtypes.TimerState{}, err
 		}
 	}
-	if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(
-		issue.Status,
-	) {
-		if _, err := changeIssueStatus(ctx, t.ctx, resolvedIssueID, nextStatus, nil, true); err != nil {
-			return sharedtypes.TimerState{}, err
+	if !adhoc {
+		if nextStatus := sharedtypes.AutoStatusOnFocusStart(issue.Status); nextStatus != sharedtypes.NormalizeIssueStatus(
+			issue.Status,
+		) {
+			if _, err := changeIssueStatus(ctx, t.ctx, resolvedIssueID, nextStatus, nil, true); err != nil {
+				return sharedtypes.TimerState{}, err
+			}
 		}
 	}
 	if issueID != nil {
@@ -923,6 +948,23 @@ func (t *TimerService) end(
 	if strings.TrimSpace(valueOrEmpty(input.CommitMessage)) == "" {
 		return sharedtypes.TimerState{}, errors.New("commit message is required")
 	}
+	active, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
+	if err != nil {
+		return sharedtypes.TimerState{}, err
+	}
+	if active != nil {
+		pending, err := t.ctx.Issues.GetReservedByID(ctx, active.IssueID, t.ctx.UserID)
+		if err != nil {
+			return sharedtypes.TimerState{}, err
+		}
+		if pending != nil {
+			if err := t.resolveAdhocSession(ctx, &input); err != nil {
+				return sharedtypes.TimerState{}, err
+			}
+		} else if input.AdhocResolution != "" {
+			return sharedtypes.TimerState{}, errors.New("active session is not ad hoc")
+		}
+	}
 	stopped, err := StopSession(ctx, t.ctx, input)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
@@ -940,6 +982,135 @@ func (t *TimerService) end(
 	}
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
+}
+
+func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEndInput) error {
+	switch input.AdhocResolution {
+	case sharedtypes.AdhocSessionResolutionAttach:
+		if input.IssueID == nil || *input.IssueID <= 0 {
+			return errors.New("an issue is required to attach the ad hoc session")
+		}
+		issue, err := t.ctx.Issues.GetByID(ctx, *input.IssueID, t.ctx.UserID)
+		if err != nil {
+			return err
+		}
+		if issue == nil {
+			return errors.New("issue not found")
+		}
+		if !sharedtypes.CanStartFocus(issue.Status) {
+			return errors.New("ad hoc sessions cannot be attached to the current issue status")
+		}
+		stream, err := t.ctx.Streams.GetByID(ctx, issue.StreamID, t.ctx.UserID)
+		if err != nil {
+			return err
+		}
+		if stream == nil {
+			reserved, err := t.ctx.ReservedContexts.EnsureAdhocContext(ctx, t.ctx.UserID, t.ctx.Now())
+			if err != nil {
+				return err
+			}
+			if issue.StreamID != reserved.StreamID {
+				return errors.New("issue stream not found")
+			}
+			input.RepoID = &reserved.RepoID
+			input.StreamID = &reserved.StreamID
+		} else {
+			input.RepoID = &stream.RepoID
+			input.StreamID = &stream.ID
+		}
+		if err := applyFocusStartStatus(ctx, t.ctx, issue); err != nil {
+			return err
+		}
+		return nil
+	case sharedtypes.AdhocSessionResolutionCreate:
+		if input.NewIssueTitle == nil || strings.TrimSpace(*input.NewIssueTitle) == "" {
+			return errors.New("new issue title is required")
+		}
+		streamID := input.StreamID
+		if streamID == nil {
+			activeContext, err := t.ctx.ActiveContext.Get(ctx, t.ctx.UserID, t.ctx.DeviceID)
+			if err != nil {
+				return err
+			}
+			if activeContext != nil {
+				streamID = activeContext.StreamID
+			}
+		}
+		if streamID == nil || *streamID <= 0 {
+			return errors.New("select a repo and stream before creating an issue")
+		}
+		stream, err := t.ctx.Streams.GetByID(ctx, *streamID, t.ctx.UserID)
+		if err != nil {
+			return err
+		}
+		if stream == nil {
+			return errors.New("stream not found")
+		}
+		if input.RepoID != nil && *input.RepoID != stream.RepoID {
+			return errors.New("stream does not belong to the selected repo")
+		}
+		issue, err := CreateIssue(ctx, t.ctx, struct {
+			StreamID        int64
+			Title           string
+			Description     *string
+			EstimateMinutes *int
+			Notes           *string
+			TodoForDate     *string
+		}{StreamID: *streamID, Title: strings.TrimSpace(*input.NewIssueTitle)})
+		if err != nil {
+			return err
+		}
+		input.IssueID = &issue.ID
+		input.RepoID = &stream.RepoID
+		input.StreamID = &stream.ID
+		return applyFocusStartStatus(ctx, t.ctx, &issue)
+	case sharedtypes.AdhocSessionResolutionKeep:
+		reserved, err := t.ctx.ReservedContexts.EnsureAdhocContext(ctx, t.ctx.UserID, t.ctx.Now())
+		if err != nil {
+			return err
+		}
+		today := t.ctx.CurrentDate()
+		if today == "" {
+			return errors.New("current date is unavailable")
+		}
+		title := adhocIssueTitle(valueOrEmpty(input.CommitMessage))
+		issue, err := createIssue(ctx, t.ctx, issueCreateInput{
+			StreamID:    reserved.StreamID,
+			Title:       title,
+			TodoForDate: &today,
+		}, true)
+		if err != nil {
+			return err
+		}
+		input.IssueID = &issue.ID
+		input.RepoID = &reserved.RepoID
+		input.StreamID = &reserved.StreamID
+		return nil
+	default:
+		return errors.New("choose an issue, create a new issue, or keep the session ad hoc")
+	}
+}
+
+func adhocIssueTitle(message string) string {
+	title := strings.TrimSpace(message)
+	if title == "" {
+		return "Ad hoc session"
+	}
+	runes := []rune(title)
+	const maxTitleRunes = 80
+	if len(runes) > maxTitleRunes {
+		return strings.TrimSpace(string(runes[:maxTitleRunes-1])) + "…"
+	}
+	return title
+}
+
+func applyFocusStartStatus(ctx context.Context, c *core.Context, issue *sharedtypes.Issue) error {
+	next := sharedtypes.AutoStatusOnFocusStart(issue.Status)
+	if next == sharedtypes.NormalizeIssueStatus(issue.Status) {
+		return nil
+	}
+	_, err := changeIssueStatus(ctx, c, issue.ID, next, nil, true)
+	return err
 }
 
 func (t *TimerService) RecoverBoundary(ctx context.Context) error {
