@@ -86,6 +86,14 @@ func StopSession(
 	c *core.Context,
 	input SessionEndInput,
 ) (*sharedtypes.Session, error) {
+	timer := GetTimerService(c)
+	timer.operationMu.Lock()
+	defer timer.operationMu.Unlock()
+	return stopSession(ctx, c, input)
+}
+
+// stopSession requires the context's timer operation lock to be held.
+func stopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*sharedtypes.Session, error) {
 	active, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -93,42 +101,26 @@ func StopSession(
 	if active == nil {
 		return nil, nil
 	}
-	now := c.Now()
-	if err := c.SessionSegments.EndActiveSegment(ctx, c.UserID, c.DeviceID, active.ID); err != nil {
-		return nil, err
-	}
-	segments, err := c.SessionSegments.ListBySession(ctx, active.ID)
+
+	pending, err := c.Issues.GetReservedByID(ctx, active.IssueID, c.UserID)
 	if err != nil {
 		return nil, err
 	}
-	workSummary := sessionnotes.ComputeWorkSummary(segments)
-	workSummaryLines := sessionnotes.FormatWorkSummary(workSummary)
-	parsedExisting := sessionnotes.Parse(active.Notes)
-
+	existing := sessionnotes.Parse(active.Notes)[sharedtypes.SessionNoteSectionCommit]
+	if pending != nil && strings.TrimSpace(existing+valueOrEmpty(input.CommitMessage)) == "" {
+		return nil, errors.New("commit message is required")
+	}
+	if pending != nil {
+		if err := resolveAdhocSession(ctx, c, &input); err != nil {
+			return nil, err
+		}
+	} else if input.AdhocResolution != "" {
+		return nil, errors.New("active session is not ad hoc")
+	}
 	activeContext, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 	if err != nil {
 		return nil, err
 	}
-
-	var mergedCommit *string
-	existingCommit := parsedExisting[sharedtypes.SessionNoteSectionCommit]
-	newCommit := strings.TrimSpace(
-		strings.Join([]string{existingCommit, valueOrEmpty(input.CommitMessage)}, "\n"),
-	)
-	if newCommit != "" {
-		mergedCommit = &newCommit
-	}
-
-	workLines := workSummaryLines
-	if existingWork := parsedExisting[sharedtypes.SessionNoteSectionWork]; existingWork != "" {
-		workLines = append(workSummaryLines, "")
-		workLines = append(workLines, strings.Split(existingWork, "\n")...)
-	}
-
-	userNotes := mergeSessionNotes(
-		parsedExisting[sharedtypes.SessionNoteSectionNotes],
-		formatSessionDetailNotes(input),
-	)
 
 	var repoID, streamID, issueID *int64
 	if activeContext != nil {
@@ -175,6 +167,38 @@ func StopSession(
 	if input.StreamID != nil {
 		streamID = input.StreamID
 	}
+
+	now := c.Now()
+	if err := c.SessionSegments.EndActiveSegment(ctx, c.UserID, c.DeviceID, active.ID); err != nil {
+		return nil, err
+	}
+	segments, err := c.SessionSegments.ListBySession(ctx, active.ID)
+	if err != nil {
+		return nil, err
+	}
+	workSummary := sessionnotes.ComputeWorkSummary(segments)
+	workSummaryLines := sessionnotes.FormatWorkSummary(workSummary)
+	parsedExisting := sessionnotes.Parse(active.Notes)
+
+	var mergedCommit *string
+	existingCommit := parsedExisting[sharedtypes.SessionNoteSectionCommit]
+	newCommit := strings.TrimSpace(
+		strings.Join([]string{existingCommit, valueOrEmpty(input.CommitMessage)}, "\n"),
+	)
+	if newCommit != "" {
+		mergedCommit = &newCommit
+	}
+
+	workLines := workSummaryLines
+	if existingWork := parsedExisting[sharedtypes.SessionNoteSectionWork]; existingWork != "" {
+		workLines = append(workSummaryLines, "")
+		workLines = append(workLines, strings.Split(existingWork, "\n")...)
+	}
+
+	userNotes := mergeSessionNotes(
+		parsedExisting[sharedtypes.SessionNoteSectionNotes],
+		formatSessionDetailNotes(input),
+	)
 
 	notes := sessionnotes.GenerateDefaultSessionNotes(struct {
 		Commit      *string

@@ -257,3 +257,28 @@ func TestSettingsLoadedSkipsOnboardingWhenCompleted(t *testing.T) {
 		t.Fatalf("expected no dialog, got %q", state.Dialog)
 	}
 }
+
+func TestHistoryMutationMessagesRefreshTotals(t *testing.T) {
+	for _, msg := range []tea.Msg{commands.SessionAmendedMsg{ID: "s"}, commands.SessionHistoryDeletedMsg{}} {
+		called := map[string]bool{}
+		track := func(name string) tea.Cmd { called[name] = true; return func() tea.Msg { return nil } }
+		deps := MessageDeps{
+			SetStatus:                func(*MessageState, string, bool) tea.Cmd { return nil },
+			LoadSessionDetail:        func(string) tea.Cmd { return track("detail") },
+			LoadSessionHistoryFor200: func(MessageState) tea.Cmd { return track("history") },
+			LoadAllIssues:            func() tea.Cmd { return track("issues") },
+			LoadDailySummary:         func(string) tea.Cmd { return track("daily") },
+			LoadSummarySnapshot:      func(string) tea.Cmd { return track("summary") },
+			LoadRollupSummaries:      func(string, string) tea.Cmd { return track("rollup") },
+		}
+		_, _, handled := HandleMessage(MessageState{}, msg, deps)
+		if !handled {
+			t.Fatal("message not handled")
+		}
+		for _, name := range []string{"history", "issues", "daily", "summary", "rollup"} {
+			if !called[name] {
+				t.Fatalf("%T missing %s refresh", msg, name)
+			}
+		}
+	}
+}

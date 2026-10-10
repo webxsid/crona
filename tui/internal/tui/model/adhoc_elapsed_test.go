@@ -37,3 +37,19 @@ func TestAdhocAttributionUsesDerivedElapsedTime(t *testing.T) {
 		})
 	}
 }
+
+func TestActiveAdhocTimerDoesNotMarkOrdinaryFormsAsAttribution(t *testing.T) {
+	m := Model{timer: &api.TimerState{State: "running", Adhoc: true}, elapsed: 185}
+	ordinary := m.dialogSnapshot().OpenCreateIssueDefault()
+	if ordinary.AdhocTimer {
+		t.Fatal("ordinary issue creation inherited ad hoc attribution")
+	}
+	conversion := m.dialogSnapshot().OpenPromoteAdhocIssue(api.IssueWithMeta{Issue: sharedtypes.Issue{ID: 1, Title: "Saved", Adhoc: true}})
+	if conversion.AdhocTimer || !conversion.PromotingAdhoc {
+		t.Fatal("conversion inherited timer attribution")
+	}
+	attribution := m.dialogSnapshot().OpenAdhocResolution()
+	if !attribution.AdhocTimer || attribution.AdhocElapsedSeconds != 185 {
+		t.Fatal("attribution lost marker or elapsed")
+	}
+}

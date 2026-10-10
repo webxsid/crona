@@ -531,12 +531,12 @@ func HandleMessage(
 		return state, tea.Quit, true
 	case commands.SessionAmendedMsg:
 		cmd := deps.SetStatus(&state, "Session amended", false)
-		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state), deps.LoadSessionDetail(msg.ID)), true
+		return state, historyRefreshCmd(state, deps, cmd, deps.LoadSessionDetail(msg.ID)), true
 	case commands.SessionHistoryDeletedMsg:
 		state.SessionDetailOpen = false
 		state.SessionDetail = nil
 		cmd := deps.SetStatus(&state, "Session deleted", false)
-		return state, tea.Batch(cmd, deps.LoadSessionHistoryFor200(state)), true
+		return state, historyRefreshCmd(state, deps, cmd), true
 	case commands.ManualSessionLoggedMsg:
 		cmds := []tea.Cmd{deps.SetStatus(&state, "Manual session logged", false), deps.LoadSessionHistoryFor200(state), deps.LoadAllIssues()}
 		if state.Context != nil && state.Context.IssueID != nil && *state.Context.IssueID == msg.IssueID {
@@ -829,4 +829,41 @@ func isExportDialog(kind string) bool {
 	default:
 		return false
 	}
+}
+
+func historyRefreshCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.Cmd {
+	cmds := append([]tea.Cmd{}, extra...)
+	if deps.LoadSessionHistoryFor200 != nil {
+		cmds = append(cmds, deps.LoadSessionHistoryFor200(state))
+	}
+	if deps.LoadAllIssues != nil {
+		cmds = append(cmds, deps.LoadAllIssues())
+	}
+	if state.Context != nil {
+		if state.Context.StreamID != nil && deps.LoadIssues != nil {
+			cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID))
+		}
+		if state.Context.IssueID != nil && deps.LoadIssueSessions != nil {
+			cmds = append(cmds, deps.LoadIssueSessions(*state.Context.IssueID))
+		}
+	}
+	if deps.LoadDailySummary != nil {
+		cmds = append(cmds, deps.LoadDailySummary(state.DashboardDate))
+	}
+	if deps.LoadSummarySnapshot != nil {
+		cmds = append(cmds, deps.LoadSummarySnapshot(state.SummaryDate))
+	}
+	if deps.LoadDailyStreaks != nil {
+		cmds = append(cmds, deps.LoadDailyStreaks(state.DashboardDate))
+	}
+	if deps.LoadRollupSummaries != nil {
+		cmds = append(cmds, deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate))
+	}
+	if deps.LoadWellbeing != nil {
+		cmds = append(cmds, deps.LoadWellbeing(state.WellbeingDate, state.WellbeingWindowDays))
+	}
+	if deps.LoadMomentumRange != nil {
+		cmds = append(cmds, deps.LoadMomentumRange(state.MomentumDate, state.MomentumWindowDays))
+	}
+	return tea.Batch(cmds...)
 }

@@ -29,6 +29,7 @@ type EventState struct {
 	Elapsed                int
 	TimerTickSeq           int
 	CurrentDash            string
+	CurrentSummary         string
 	CurrentRollupStart     string
 	CurrentRollupEnd       string
 	CurrentWell            string
@@ -39,6 +40,8 @@ type EventState struct {
 }
 
 type EventDeps struct {
+	LoadSummarySnapshot      func(string) tea.Cmd
+	LoadIssueSessions        func(int64) tea.Cmd
 	LoadRepos                func() tea.Cmd
 	LoadStreams              func(repoID int64) tea.Cmd
 	LoadIssues               func(streamID int64) tea.Cmd
@@ -118,6 +121,26 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
 			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
 		)
+	case sharedtypes.EventTypeSessionHistoryChanged:
+		cmds := []tea.Cmd{
+			deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDash),
+			deps.LoadSessionHistoryFor200(state), deps.LoadDailyStreaks(state.CurrentDash),
+			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
+			deps.LoadMomentumRange(state.CurrentMomentum, state.MomentumWindowDays),
+		}
+		if deps.LoadSummarySnapshot != nil {
+			cmds = append(cmds, deps.LoadSummarySnapshot(state.CurrentSummary))
+		}
+		if state.Context != nil {
+			if state.Context.StreamID != nil {
+				cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID))
+			}
+			if state.Context.IssueID != nil && deps.LoadIssueSessions != nil {
+				cmds = append(cmds, deps.LoadIssueSessions(*state.Context.IssueID))
+			}
+		}
+		return state, tea.Batch(cmds...)
 	case "session.started", "session.stopped":
 		return state, tea.Batch(
 			deps.LoadTimer(),

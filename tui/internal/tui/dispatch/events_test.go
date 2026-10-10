@@ -249,3 +249,22 @@ func testEventDeps() EventDeps {
 func stringPtr(value string) *string {
 	return &value
 }
+
+func TestHistoryChangedRefreshesTotals(t *testing.T) {
+	called := map[string]bool{}
+	deps := testEventDeps()
+	deps.LoadAllIssues = trackedEventCommand(called, "issues")
+	deps.LoadDailySummary = func(string) tea.Cmd { return trackedEventCommand(called, "daily")() }
+	deps.LoadSummarySnapshot = func(string) tea.Cmd { return trackedEventCommand(called, "summary")() }
+	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	deps.LoadIssueSessions = func(int64) tea.Cmd { return trackedEventCommand(called, "issue sessions")() }
+	_, cmd := HandleEvent(EventState{Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDash: "2026-05-24", CurrentSummary: "2026-05-23"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
+	if cmd == nil {
+		t.Fatal("missing refresh")
+	}
+	for _, name := range []string{"issues", "daily", "summary", "rollup", "issue sessions"} {
+		if !called[name] {
+			t.Fatalf("missing %s refresh", name)
+		}
+	}
+}

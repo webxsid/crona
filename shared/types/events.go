@@ -23,6 +23,7 @@ const (
 	EventTypeCheckInDeleted            = "checkin.deleted"
 	EventTypeSessionStarted            = "session.started"
 	EventTypeSessionStopped            = "session.stopped"
+	EventTypeSessionHistoryChanged     = "session.history_changed"
 	EventTypeSessionEnded              = "session.ended"
 	EventTypeTimerState                = "timer.state"
 	EventTypeContextRepoChanged        = "context.repo.changed"

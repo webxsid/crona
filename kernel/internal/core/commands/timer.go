@@ -948,24 +948,7 @@ func (t *TimerService) end(
 	if strings.TrimSpace(valueOrEmpty(input.CommitMessage)) == "" {
 		return sharedtypes.TimerState{}, errors.New("commit message is required")
 	}
-	active, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
-	if err != nil {
-		return sharedtypes.TimerState{}, err
-	}
-	if active != nil {
-		pending, err := t.ctx.Issues.GetReservedByID(ctx, active.IssueID, t.ctx.UserID)
-		if err != nil {
-			return sharedtypes.TimerState{}, err
-		}
-		if pending != nil {
-			if err := t.resolveAdhocSession(ctx, &input); err != nil {
-				return sharedtypes.TimerState{}, err
-			}
-		} else if input.AdhocResolution != "" {
-			return sharedtypes.TimerState{}, errors.New("active session is not ad hoc")
-		}
-	}
-	stopped, err := StopSession(ctx, t.ctx, input)
+	stopped, err := stopSession(ctx, t.ctx, input)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -984,13 +967,13 @@ func (t *TimerService) end(
 	return state, nil
 }
 
-func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEndInput) error {
+func resolveAdhocSession(ctx context.Context, c *core.Context, input *SessionEndInput) error {
 	switch input.AdhocResolution {
 	case sharedtypes.AdhocSessionResolutionAttach:
 		if input.IssueID == nil || *input.IssueID <= 0 {
 			return errors.New("an issue is required to attach the ad hoc session")
 		}
-		issue, err := t.ctx.Issues.GetByID(ctx, *input.IssueID, t.ctx.UserID)
+		issue, err := c.Issues.GetByID(ctx, *input.IssueID, c.UserID)
 		if err != nil {
 			return err
 		}
@@ -1000,12 +983,12 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 		if !sharedtypes.CanStartFocus(issue.Status) {
 			return errors.New("ad hoc sessions cannot be attached to the current issue status")
 		}
-		stream, err := t.ctx.Streams.GetByID(ctx, issue.StreamID, t.ctx.UserID)
+		stream, err := c.Streams.GetByID(ctx, issue.StreamID, c.UserID)
 		if err != nil {
 			return err
 		}
 		if stream == nil {
-			reserved, err := t.ctx.ReservedContexts.EnsureAdhocContext(ctx, t.ctx.UserID, t.ctx.Now())
+			reserved, err := c.ReservedContexts.EnsureAdhocContext(ctx, c.UserID, c.Now())
 			if err != nil {
 				return err
 			}
@@ -1018,7 +1001,7 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 			input.RepoID = &stream.RepoID
 			input.StreamID = &stream.ID
 		}
-		if err := applyFocusStartStatus(ctx, t.ctx, issue); err != nil {
+		if err := applyFocusStartStatus(ctx, c, issue); err != nil {
 			return err
 		}
 		return nil
@@ -1028,7 +1011,7 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 		}
 		streamID := input.StreamID
 		if streamID == nil {
-			activeContext, err := t.ctx.ActiveContext.Get(ctx, t.ctx.UserID, t.ctx.DeviceID)
+			activeContext, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 			if err != nil {
 				return err
 			}
@@ -1039,7 +1022,7 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 		if streamID == nil || *streamID <= 0 {
 			return errors.New("select a repo and stream before creating an issue")
 		}
-		stream, err := t.ctx.Streams.GetByID(ctx, *streamID, t.ctx.UserID)
+		stream, err := c.Streams.GetByID(ctx, *streamID, c.UserID)
 		if err != nil {
 			return err
 		}
@@ -1049,7 +1032,7 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 		if input.RepoID != nil && *input.RepoID != stream.RepoID {
 			return errors.New("stream does not belong to the selected repo")
 		}
-		issue, err := CreateIssue(ctx, t.ctx, struct {
+		issue, err := CreateIssue(ctx, c, struct {
 			StreamID        int64
 			Title           string
 			Description     *string
@@ -1063,18 +1046,18 @@ func (t *TimerService) resolveAdhocSession(ctx context.Context, input *SessionEn
 		input.IssueID = &issue.ID
 		input.RepoID = &stream.RepoID
 		input.StreamID = &stream.ID
-		return applyFocusStartStatus(ctx, t.ctx, &issue)
+		return applyFocusStartStatus(ctx, c, &issue)
 	case sharedtypes.AdhocSessionResolutionKeep:
-		reserved, err := t.ctx.ReservedContexts.EnsureAdhocContext(ctx, t.ctx.UserID, t.ctx.Now())
+		reserved, err := c.ReservedContexts.EnsureAdhocContext(ctx, c.UserID, c.Now())
 		if err != nil {
 			return err
 		}
-		today := t.ctx.CurrentDate()
+		today := c.CurrentDate()
 		if today == "" {
 			return errors.New("current date is unavailable")
 		}
 		title := adhocIssueTitle(valueOrEmpty(input.CommitMessage))
-		issue, err := createIssue(ctx, t.ctx, issueCreateInput{
+		issue, err := createIssue(ctx, c, issueCreateInput{
 			StreamID:    reserved.StreamID,
 			Title:       title,
 			TodoForDate: &today,

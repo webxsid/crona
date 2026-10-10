@@ -25,7 +25,6 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	selectionSnapshot := m.selectionSnapshot()
 	dialogState := m.dialogState()
 	if m.timer != nil && m.timer.Adhoc {
-		dialogState.AdhocTimer = true
 		dialogState.AdhocElapsedSeconds = helperpkg.DerivedSessionElapsedSeconds(m.timer, m.elapsed, time.Now())
 		dialogState.AdhocDate = m.currentLogicalDate()
 	}

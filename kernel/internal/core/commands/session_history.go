@@ -75,6 +75,9 @@ func UpdateSessionHistory(
 		segments[i].UserID = c.UserID
 		segments[i].DeviceID = c.DeviceID
 		segments[i].ElapsedOffsetSeconds = nil
+		segments[i].StartTime = segmentStart.UTC().Format(time.RFC3339Nano)
+		endValue := segmentEnd.UTC().Format(time.RFC3339Nano)
+		segments[i].EndTime = &endValue
 	}
 	parsedNotes := sessionnotes.Parse(session.Notes)
 	for _, section := range []sharedtypes.SessionNoteSection{
@@ -89,10 +92,10 @@ func UpdateSessionHistory(
 	if serializedNotes != "" {
 		notes = &serializedNotes
 	}
-	duration := int(end.Sub(start).Seconds())
+	duration := sessionnotes.TotalSegmentDurationSeconds(segments)
 	if err := c.Sessions.UpdateHistory(
-		ctx, input.ID, session.StartTime, c.UserID, c.DeviceID, start.Format(time.RFC3339Nano),
-		end.Format(time.RFC3339Nano), duration, notes, segments, c.Now(),
+		ctx, input.ID, session.StartTime, c.UserID, c.DeviceID, start.UTC().Format(time.RFC3339Nano),
+		end.UTC().Format(time.RFC3339Nano), duration, notes, segments, c.Now(),
 	); err != nil {
 		return shareddto.OKResponse{}, err
 	}
@@ -104,6 +107,7 @@ func UpdateSessionHistory(
 	}); err != nil {
 		return shareddto.OKResponse{}, fmt.Errorf("recording session history update: %w", err)
 	}
+	emit(c, sharedtypes.EventTypeSessionHistoryChanged, sharedtypes.SessionEventPayload{SessionID: session.ID})
 	return shareddto.OKResponse{OK: true}, nil
 }
 
@@ -130,6 +134,7 @@ func DeleteSessionHistory(
 	}); err != nil {
 		return shareddto.OKResponse{}, fmt.Errorf("recording session history deletion: %w", err)
 	}
+	emit(c, sharedtypes.EventTypeSessionHistoryChanged, sharedtypes.SessionEventPayload{SessionID: session.ID})
 	return shareddto.OKResponse{OK: true}, nil
 }
 

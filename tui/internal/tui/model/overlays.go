@@ -169,6 +169,7 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		Elapsed:                m.elapsed,
 		TimerTickSeq:           m.timerTickSeq,
 		CurrentDash:            m.currentDashboardDate(),
+		CurrentSummary:         m.currentSummaryDate(),
 		CurrentRollupStart:     m.currentRollupStartDate(),
 		CurrentRollupEnd:       m.currentRollupEndDate(),
 		CurrentWell:            m.currentWellbeingDate(),
@@ -198,9 +199,11 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 
 func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 	state, cmd := dispatchpkg.HandleEvent(m.dispatchEventState(), dispatchpkg.EventDeps{
-		LoadRepos:   func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadStreams: func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
-		LoadIssues:  func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
+		LoadSummarySnapshot: func(date string) tea.Cmd { return commands.LoadSummarySnapshot(m.client, date) },
+		LoadIssueSessions:   func(id int64) tea.Cmd { return commands.LoadIssueSessions(m.client, id) },
+		LoadRepos:           func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadStreams:         func(repoID int64) tea.Cmd { return commands.LoadStreams(m.client, repoID) },
+		LoadIssues:          func(streamID int64) tea.Cmd { return commands.LoadIssues(m.client, streamID) },
 		LoadIssuesSelecting: func(streamID, selectedIssueID int64) tea.Cmd {
 			return commands.LoadIssuesSelecting(m.client, streamID, selectedIssueID)
 		},

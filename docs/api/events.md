@@ -26,6 +26,8 @@ Call `events.subscribe` once a client has connected. The daemon then sends event
 
 The exact event constants and payload types are defined in [`shared/types/events.go`](../../shared/types/events.go). Clients must ignore unknown event types for forward compatibility.
 
+Protocol `1.6` adds `session.history_changed`, with a `sessionId` payload, after completed-session edits or deletions. Reload session history, issue worked totals, and visible date-scoped summaries when receiving it.
+
 ## Synchronization rules
 
 - Apply events only after the connection is established and the initial snapshot has loaded.

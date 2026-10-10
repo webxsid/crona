@@ -162,3 +162,60 @@ func TestUpdateSessionHistoryRejectsInvalidSessionAndSegmentRanges(t *testing.T)
 }
 
 func historyTestStringPointer(value string) *string { return &value }
+
+func TestHistoryEditNormalizesUTCAndUsesSegmentDuration(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	c, _, issue := newTimerTestContext(t, func() string { return now })
+	if err := c.CoreSettings.SetSetting(ctx, c.UserID, sharedtypes.CoreSettingsKeyManageHistory, true); err != nil {
+		t.Fatal(err)
+	}
+	mustMakeIssuePlanned(t, ctx, c, issue.ID)
+	commit := "Work"
+	session, err := LogManualSession(ctx, c, ManualSessionInput{IssueID: issue.ID, Date: "2026-05-24", WorkDurationSeconds: 1800, CommitMessage: &commit})
+	if err != nil {
+		t.Fatal(err)
+	}
+	changes := 0
+	unsub := c.Events.Subscribe(func(event sharedtypes.KernelEvent) {
+		if event.Type == sharedtypes.EventTypeSessionHistoryChanged {
+			changes++
+		}
+	})
+	defer unsub()
+	segmentEnd := "2026-05-24T14:45:00+05:30"
+	_, err = UpdateSessionHistory(ctx, c, shareddto.UpdateSessionHistoryRequest{ID: session.ID, StartTime: "2026-05-24T14:30:00+05:30", EndTime: "2026-05-24T15:00:00+05:30", EditableNotes: sharedtypes.ParsedSessionNotes{sharedtypes.SessionNoteSectionCommit: commit}, Segments: []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork, StartTime: "2026-05-24T14:30:00+05:30", EndTime: &segmentEnd}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	detail, err := GetSessionDetail(ctx, c, session.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if detail.StartTime != "2026-05-24T09:00:00Z" || *detail.EndTime != "2026-05-24T09:30:00Z" || detail.Segments[0].StartTime != "2026-05-24T09:00:00Z" || *detail.Segments[0].EndTime != "2026-05-24T09:15:00Z" {
+		t.Fatalf("noncanonical timestamps: %+v", detail)
+	}
+	if detail.DurationSeconds == nil || *detail.DurationSeconds != 900 || detail.WorkSummary.WorkSeconds != 900 {
+		t.Fatalf("segment duration mismatch: %+v", detail)
+	}
+	since, until := "2026-05-24T08:59:00Z", "2026-05-24T09:01:00Z"
+	history, err := c.Sessions.ListEnded(ctx, struct {
+		UserID   string
+		RepoID   *int64
+		StreamID *int64
+		IssueID  *int64
+		Since    *string
+		Until    *string
+		Limit    *int
+		Offset   *int
+	}{UserID: c.UserID, Since: &since, Until: &until})
+	if err != nil || len(history) != 1 {
+		t.Fatalf("UTC range lost edited session: %+v %v", history, err)
+	}
+	if _, err := DeleteSessionHistory(ctx, c, session.ID); err != nil {
+		t.Fatal(err)
+	}
+	if changes != 2 {
+		t.Fatalf("history mutations emitted %d refresh events, want 2", changes)
+	}
+}

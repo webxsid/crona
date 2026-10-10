@@ -34,8 +34,8 @@ func OpenEditSessionHistory(state State, detail *api.SessionDetail) State {
 		return state
 	}
 	inputs := []textinput.Model{
-		newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
-		newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+		newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
+		newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
 	}
 	inputs[0].SetValue(sessionHistoryTimestampValue(detail.StartTime))
 	if detail.EndTime != nil {
@@ -86,8 +86,8 @@ func newSessionHistorySegmentRow(
 	}
 	return SessionHistorySegmentRow{
 		Type:      segmentType,
-		StartTime: newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
-		EndTime:   newSessionDetailInput(state, "YYYY-MM-DD HH:mm"),
+		StartTime: newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
+		EndTime:   newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
 	}
 }
 
@@ -96,7 +96,7 @@ func sessionHistoryTimestampValue(value string) string {
 	if err != nil {
 		return strings.TrimSpace(value)
 	}
-	return parsed.In(time.Local).Format("2006-01-02 15:04")
+	return parsed.In(time.Local).Format("2006-01-02 15:04:05.999999999 -07:00")
 }
 
 func OpenEditRepo(state State, repoID int64, name string, descriptionValue *string) State {

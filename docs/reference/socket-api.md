@@ -452,6 +452,7 @@ Typical payload:
 
 - `session.started`
 - `session.stopped`
+- `session.history_changed` (protocol `1.6`; completed-session edit or deletion)
 - `timer.state`
 - `timer.boundary`
 - `timer.tick`

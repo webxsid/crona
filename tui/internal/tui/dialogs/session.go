@@ -412,7 +412,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if state.SessionHistoryContext != "" {
 			rows = append(rows, "", theme.StyleDim.Render(state.SessionHistoryContext))
 		}
-		labels := []string{"Session start (YYYY-MM-DD HH:mm)", "Session end (YYYY-MM-DD HH:mm)"}
+		labels := []string{"Session start (YYYY-MM-DD HH:mm:ss)", "Session end (YYYY-MM-DD HH:mm:ss)"}
 		for i := range state.Inputs {
 			rows = append(rows, "", theme.StyleDim.Render(labels[i]), state.Inputs[i].View())
 		}
@@ -444,7 +444,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		if len(state.SessionHistorySegments) == 0 {
 			rows = append(rows, theme.StyleDim.Render("No segments. Press [a] to add one."))
 		}
-		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [tab] next   [a] add segment   [D] remove   [←/→] change type   [esc] cancel")
+		rows = appendDialogFooter(theme, state, rows, dialogSubmitHint(state, "save")+"   [tab] next   [ctrl+a] add segment   [ctrl+d] remove   [←/→] change type   [esc] cancel")
 		return modal(theme, state.Width, 100, theme.ColorCyan, rows)
 	case "manual_session":
 		rows := []string{theme.StylePaneTitle.Render("Log Session")}

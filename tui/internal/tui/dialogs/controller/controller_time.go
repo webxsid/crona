@@ -116,7 +116,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 		return moveSessionHistoryFocus(state, 1), nil, ""
 	case "shift+tab":
 		return moveSessionHistoryFocus(state, -1), nil, ""
-	case "a":
+	case "ctrl+a":
 		row := newSessionHistorySegmentRow(state, sharedtypes.SessionSegmentWork)
 		if len(state.Inputs) >= 2 {
 			row.StartTime.SetValue(sessionHistoryDatePrefix(state.Inputs[0].Value()))
@@ -125,7 +125,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 		state.SessionHistorySegments = append(state.SessionHistorySegments, row)
 		state.FocusIdx = sessionHistorySegmentFocus(len(state.SessionHistorySegments)-1, 0)
 		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
-	case "D":
+	case "ctrl+d":
 		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
 		if !ok || rowIndex >= len(state.SessionHistorySegments) {
 			return state, nil, ""
@@ -203,7 +203,7 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 	}
 	start, err := parseSessionHistoryTimestamp(state.Inputs[0].Value())
 	if err != nil {
-		return nil, errors.New("session start must use YYYY-MM-DD HH:mm")
+		return nil, errors.New("session start must use YYYY-MM-DD HH:mm:ss")
 	}
 	end, err := parseSessionHistoryTimestamp(state.Inputs[1].Value())
 	if err != nil || !end.After(start) {
@@ -213,7 +213,7 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 	for i, row := range state.SessionHistorySegments {
 		segmentStart, err := parseSessionHistoryTimestamp(row.StartTime.Value())
 		if err != nil {
-			return nil, fmt.Errorf("segment %d start must use YYYY-MM-DD HH:mm", i+1)
+			return nil, fmt.Errorf("segment %d start must use YYYY-MM-DD HH:mm:ss", i+1)
 		}
 		segmentEnd, err := parseSessionHistoryTimestamp(row.EndTime.Value())
 		if err != nil || !segmentEnd.After(segmentStart) {
@@ -222,15 +222,17 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 		if segmentStart.Before(start) || segmentEnd.After(end) {
 			return nil, fmt.Errorf("segment %d must fall within the session", i+1)
 		}
-		endValue := segmentEnd.Format(time.RFC3339)
+		endValue := segmentEnd.UTC().Format(time.RFC3339Nano)
 		segments = append(segments, sharedtypes.SessionSegment{
 			SegmentType: row.Type,
-			StartTime:   segmentStart.Format(time.RFC3339),
+			StartTime:   segmentStart.UTC().Format(time.RFC3339Nano),
 			EndTime:     &endValue,
 		})
 	}
 	slices.SortFunc(segments, func(a, b sharedtypes.SessionSegment) int {
-		return strings.Compare(a.StartTime, b.StartTime)
+		startA, _ := time.Parse(time.RFC3339Nano, a.StartTime)
+		startB, _ := time.Parse(time.RFC3339Nano, b.StartTime)
+		return startA.Compare(startB)
 	})
 	for i := 1; i < len(segments); i++ {
 		previousEnd, _ := time.Parse(time.RFC3339, *segments[i-1].EndTime)
@@ -245,13 +247,20 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 		sharedtypes.SessionNoteSectionNotes:  strings.TrimSpace(state.SessionHistoryNoteInputs[2].Value()),
 	}
 	return &shareddto.UpdateSessionHistoryRequest{
-		ID: state.SessionID, StartTime: start.Format(time.RFC3339), EndTime: end.Format(time.RFC3339),
+		ID: state.SessionID, StartTime: start.UTC().Format(time.RFC3339Nano), EndTime: end.UTC().Format(time.RFC3339Nano),
 		EditableNotes: notes, Segments: segments,
 	}, nil
 }
 
 func parseSessionHistoryTimestamp(value string) (time.Time, error) {
-	return time.ParseInLocation("2006-01-02 15:04", strings.TrimSpace(value), time.Local)
+	value = strings.TrimSpace(value)
+	if parsed, err := time.Parse("2006-01-02 15:04:05.999999999 -07:00", value); err == nil {
+		return parsed, nil
+	}
+	if parsed, err := time.ParseInLocation("2006-01-02 15:04:05.999999999", value, time.Local); err == nil {
+		return parsed, nil
+	}
+	return time.ParseInLocation("2006-01-02 15:04", value, time.Local)
 }
 
 func sessionHistoryDatePrefix(value string) string {
