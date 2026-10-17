@@ -190,7 +190,7 @@ func renderTabLine(state State) string {
 		}
 	}
 	left := " " + strings.Join(parts, "  ")
-	right := state.RepoName + " › " + state.StreamName
+	right := contextLabel(state.RepoName, state.StreamName)
 	if state.IsDevMode {
 		right += " · dev"
 	}
@@ -201,6 +201,18 @@ func renderTabLine(state State) string {
 	}
 	right = ansi.Truncate(right, room, "…")
 	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)
+}
+
+// contextLabel names the active scope, falling back to All when no repo is selected.
+func contextLabel(repo, stream string) string {
+	switch {
+	case repo == "":
+		return "All"
+	case stream == "":
+		return repo
+	default:
+		return repo + " › " + stream
+	}
 }
 
 func renderSubTabLine(state State) string {
@@ -220,7 +232,9 @@ func renderSubTabLine(state State) string {
 }
 
 func renderStatusLine(state State) string {
-	left := strings.Join(state.GlobalActions, "   ")
+	// The focused section's keys lead; global keys fill whatever room is left.
+	actions := append(append([]string{}, state.PaneActions...), state.GlobalActions...)
+	left := strings.Join(actions, "   ")
 	if state.TimerActive {
 		left = viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState)
 	}

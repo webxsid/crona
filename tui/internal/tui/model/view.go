@@ -126,8 +126,8 @@ type layoutChromeState struct {
 
 func (m Model) layoutChromeState() layoutChromeState {
 	view := m.effectiveView()
-	repo := "-"
-	stream := "-"
+	repo := ""
+	stream := ""
 	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
 	selectedIssueAdhoc := hasSelectedIssue && selectedIssue.Adhoc
 	if m.context != nil {

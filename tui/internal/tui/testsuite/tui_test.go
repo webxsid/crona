@@ -773,7 +773,7 @@ func TestGlobalActionsOmitUpdatesShortcut(t *testing.T) {
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[v]", "switch views"} {
+	for _, want := range []string{"[1-5]", "tabs"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected global actions to contain %q, got %q", want, joined)
 		}
@@ -810,7 +810,7 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 	actions := viewchrome.DedupeActionKeys(global, pane)
 	joined := ansi.Strip(strings.Join(actions, " "))
 
-	for _, want := range []string{"[v]", "switch views"} {
+	for _, want := range []string{"[1-5]", "tabs"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected deduped global actions to keep %q, got %q", want, joined)
 		}

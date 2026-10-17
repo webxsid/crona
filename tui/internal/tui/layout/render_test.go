@@ -280,3 +280,32 @@ func TestRenderTabLineKeepsTabsWithLongContext(t *testing.T) {
 		t.Fatalf("expected truncated context to remain visible, got %q", line)
 	}
 }
+
+func TestStatusLineShowsPaneActionsFirst(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 160, 30)
+	state.GlobalActions = []string{"[1-5] tabs", "[[/]] sub-tabs"}
+	state.PaneActions = []string{"[s] set status"}
+	line := plainLines(Render(state))[29]
+	pane, global := strings.Index(line, "[s] set status"), strings.Index(line, "[1-5]")
+	if pane < 0 || global < 0 || pane > global {
+		t.Fatalf("expected pane actions before global actions, got %q", line)
+	}
+}
+
+func TestTabLineContextAll(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 120, 30)
+	state.RepoName, state.StreamName = "", ""
+	line := plainLines(Render(state))[0]
+	if !strings.HasSuffix(strings.TrimSpace(line), "All") || strings.Contains(line, "-") {
+		t.Fatalf("expected All context, got %q", line)
+	}
+}
+
+func TestTabLineContextRepoOnly(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 120, 30)
+	state.StreamName = ""
+	line := strings.TrimSpace(plainLines(Render(state))[0])
+	if !strings.HasSuffix(line, "crona") || strings.Contains(line, "›") {
+		t.Fatalf("expected repo-only context, got %q", line)
+	}
+}

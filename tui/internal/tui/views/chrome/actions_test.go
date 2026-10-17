@@ -9,8 +9,8 @@ import (
 
 func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 	daily := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
-	if !strings.Contains(daily, "[?]") || !strings.Contains(daily, "keys") {
-		t.Fatalf("expected global actions to advertise the help dialog, got %q", daily)
+	if !strings.Contains(daily, "[1-5]") || !strings.Contains(daily, "tabs") {
+		t.Fatalf("expected global actions to advertise tabs, got %q", daily)
 	}
 	if !strings.Contains(daily, "[w]") || !strings.Contains(daily, "check-in") {
 		t.Fatalf("expected daily global actions to advertise check-in, got %q", daily)
@@ -166,6 +166,15 @@ func TestGlobalActionsHintTabKeys(t *testing.T) {
 	for _, want := range []string{"[1-5] tabs", "[[/]] sub-tabs"} {
 		if !strings.Contains(actions, want) {
 			t.Fatalf("expected global actions to include %q, got %q", want, actions)
+		}
+	}
+}
+
+func TestGlobalActionsOmitShellHints(t *testing.T) {
+	joined := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
+	for _, unwanted := range []string{"[v]", "[?]"} {
+		if strings.Contains(joined, unwanted) {
+			t.Fatalf("expected global actions to omit %q, got %q", unwanted, joined)
 		}
 	}
 }
