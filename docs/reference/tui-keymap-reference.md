@@ -18,13 +18,30 @@ These shortcuts remain active across most standard views:
 
 | Key | Description |
 | --- | --- |
+| `1`–`5` | Switch tab: Today, Issues, Insights, Log, System |
+| `[` / `]` | Cycle sub-tabs within the current tab |
 | `v` | Open the view selection jump menu |
-| `[` / `]` | Cycle through views (restricted when timer is active) |
-| `tab` / `shift+tab` | Cycle pane focus in the active view |
+| `tab` / `shift+tab` | Cycle pane focus in the active view (Daily and Meta panes, Issues open/completed) |
 | `up` / `down` | Navigate the current selection up / down |
 | `?` | Toggle help overlay modal |
 | `ctrl+c` | Quit TUI |
 | `K` | Request local daemon shutdown |
+
+### Tabs
+
+The top line shows the tabs; the line under it shows the current tab's sub-tabs.
+
+| Tab | Sub-tabs |
+| --- | --- |
+| `1` Today | Daily, Summary, Session (while a timer runs), Away (during rest) |
+| `2` Issues | Issues, Meta |
+| `3` Insights | Rollup, Momentum, Wellbeing |
+| `4` Log | Sessions, Habits, Ops |
+| `5` System | Settings, Alerts, Reports, Config, Updates, Support |
+
+While a timer runs, only Today and Log are available. During configured rest or away mode, only Today (Away), Log, and System (Settings, Reports) are available.
+
+The bottom line shows key hints and the active timer, and briefly shows status messages on the right.
 
 After opening view jump with `v`, press a view mnemonic directly. For example, `g` opens **Summary** and `y` opens **History**. Use the arrow keys and `enter` to choose from the menu instead.
 
