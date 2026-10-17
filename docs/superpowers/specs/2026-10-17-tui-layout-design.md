@@ -47,7 +47,9 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 
 ### Today tab
 
-- With **no timer**: summary metrics line, then issue sections, then habits. On wide screens, issues and habits sit side by side, with metrics in a right column.
+- With **no timer**: a 1–2 row **day strip** (tasks resolved + worked/estimate bar, habits done + bar, date and week; a second row for check-in signals and streaks when present), then **Tasks** as the primary list taking all remaining height, then **Habits** sized to its content (capped at a third of the rows, half when focused).
+- On wide screens a **detail pane** sits right of the lists (list │ detail, weights 3:2). It shows the selected task (or habit, when Habits is focused) and, below it, the month calendar when there is room. On medium and narrow screens the detail pane is hidden; `enter` opens details as today.
+- Sections never stretch past their content except the primary list. Pattern taken from htop/k9s (header strip + one growing list) and lazygit/Posting (list │ detail), not peer columns.
 - With an **active timer**: a session strip pins to the top of Today. It shows the issue, segment, elapsed/target, and progress bar, plus the session keys `p` pause, `r` resume, `x` stop and `z` advance. Below it, the issue and habit lists stay visible and navigable.
 - **Allowed during a timer** (a change from today's lock-out): `n` adds a note to the active session (existing `amend_session` dialog); `a` quick-captures a new issue (existing create-issue dialog, without starting it). Starting another issue with `f` keeps the existing `issue_session_transition` flow.
 - **Still locked during a timer**: tabs other than Today and Log, as today. Insights, Issues and System open after the session ends.
@@ -83,8 +85,10 @@ Width classes, computed once per frame:
 | Class | Width | Behaviour |
 | --- | --- | --- |
 | Narrow | < 100 | Sections stack vertically, one column |
-| Medium | 100–159 | Two columns where a tab defines them |
-| Wide | ≥ 160 | Up to three columns (e.g. Today: issues │ habits │ metrics) |
+| Medium | 100–159 | One primary column; strips and short sections stack around it |
+| Wide | ≥ 160 | Primary list │ detail pane for the selection (never peer lists side by side) |
+
+Rules: exactly one section per tab (the primary list) absorbs spare height; every other section is sized to its content. Columns are only used for list │ detail. Key hints for the focused section live in the status line, not inside sections.
 
 Each tab declares its sections and a per-class arrangement. A new `layout/grid` helper turns an arrangement plus the content box into one `Box{W,H}` per section. Sections never compute their own position.
 
