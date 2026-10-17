@@ -243,70 +243,6 @@ func TestDailyViewDoesNotExceedTerminalHeightInReportedRange(t *testing.T) {
 	}
 }
 
-func TestDailySummaryUsesCompactInlineModeBelowHeight55(t *testing.T) {
-	estimate := 60
-	target := 15
-	state := views.ContentState{
-		View:   "daily",
-		Pane:   "issues",
-		Width:  70,
-		Height: 54,
-		Cursors: map[string]int{
-			"issues": 0,
-			"habits": 0,
-		},
-		Filters: map[string]string{
-			"issues": "",
-			"habits": "",
-		},
-		DailySummary: &api.DailyIssueSummary{
-			Date: "2026-03-19",
-			Issues: []api.Issue{
-				{
-					ID:              1,
-					Title:           "Add keyboard-first command palette",
-					Status:          "planned",
-					EstimateMinutes: &estimate,
-				},
-			},
-		},
-		DailyIssues: []api.Issue{
-			{
-				ID:              1,
-				Title:           "Add keyboard-first command palette",
-				Status:          "planned",
-				EstimateMinutes: &estimate,
-			},
-		},
-		DueHabits: []api.HabitDailyItem{
-			{
-				HabitWithMeta: api.HabitWithMeta{
-					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
-				},
-				Status: "pending",
-			},
-		},
-		Context: &api.ActiveContext{
-			RepoName:   new("Work"),
-			StreamName: new("app"),
-		},
-	}
-
-	rendered := support.RenderDaily(state)
-	if !strings.Contains(rendered, "Issues  0/1 resolved") {
-		t.Fatalf("expected compact inline issues row below height 55")
-	}
-	if !strings.Contains(rendered, "Habits  0/1 completed") {
-		t.Fatalf("expected compact inline habits row below height 55")
-	}
-	if !strings.Contains(rendered, "0m / 15m") {
-		t.Fatalf("expected compact habit meta below height 55")
-	}
-	if !strings.Contains(rendered, "█") {
-		t.Fatalf("expected inline bars below height 55")
-	}
-}
-
 func TestDailyViewDoesNotRenderRollupTelemetry(t *testing.T) {
 	state := views.ContentState{
 		View:   "daily",
@@ -1216,66 +1152,7 @@ func TestDailySummaryShowsBarsAtHeight55AndAbove(t *testing.T) {
 	}
 }
 
-func TestDailySummaryUsesUltraCompactModeBelowHeight48(t *testing.T) {
-	estimate := 60
-	target := 15
-	state := views.ContentState{
-		View:   "daily",
-		Pane:   "issues",
-		Width:  70,
-		Height: 52,
-		Cursors: map[string]int{
-			"issues": 0,
-			"habits": 0,
-		},
-		Filters: map[string]string{
-			"issues": "",
-			"habits": "",
-		},
-		DailySummary: &api.DailyIssueSummary{
-			Date: "2026-03-19",
-			Issues: []api.Issue{
-				{
-					ID:              1,
-					Title:           "Add keyboard-first command palette",
-					Status:          "planned",
-					EstimateMinutes: &estimate,
-				},
-			},
-		},
-		DailyIssues: []api.Issue{
-			{
-				ID:              1,
-				Title:           "Add keyboard-first command palette",
-				Status:          "planned",
-				EstimateMinutes: &estimate,
-			},
-		},
-		DueHabits: []api.HabitDailyItem{
-			{
-				HabitWithMeta: api.HabitWithMeta{
-					Habit: api.Habit{Name: "Inbox Zero Sweep", TargetMinutes: &target},
-				},
-				Status: "pending",
-			},
-		},
-		Context: &api.ActiveContext{
-			RepoName:   new("Work"),
-			StreamName: new("app"),
-		},
-	}
-
-	rendered := support.RenderDaily(state)
-	if !strings.Contains(rendered, "Issues  0/1 resolved") ||
-		!strings.Contains(rendered, "Habits  0/1 completed") {
-		t.Fatalf("expected ultra-compact rows for both issues and habits")
-	}
-	if !strings.Contains(rendered, "█") {
-		t.Fatalf("expected inline bars to remain in ultra-compact mode")
-	}
-}
-
-func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
+func TestDailyStripShowsTotalsOnLargeScreens(t *testing.T) {
 	estimate := 60
 	target := 15
 	state := views.ContentState{
@@ -1325,25 +1202,10 @@ func TestDailySummaryShowsCalendarAndLongerBarsOnWideScreens(t *testing.T) {
 	}
 
 	rendered := support.RenderDaily(state)
-	if !strings.Contains(rendered, "Issues  0/1 resolved") {
-		t.Fatalf("expected issue summary row to remain visible on large screens")
-	}
-	if !strings.Contains(rendered, "Habits  0/1 completed") {
-		t.Fatalf("expected habit summary row to remain visible on large screens")
-	}
-	for _, want := range []string{"For 2026-03-19 - Week 12", "March 2026", "Week 12", "Wk  Mo Tu We Th Fr Sa Su"} {
+	for _, want := range []string{"Tasks 0/1", "Habits 0/1", "W12"} {
 		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected wide-screen daily summary to include %q, got %q", want, rendered)
+			t.Fatalf("expected the day strip to include %q, got %q", want, rendered)
 		}
-	}
-	if strings.Contains(rendered, "Daily Dashboard  March 2026") {
-		t.Fatalf(
-			"expected calendar to sit beside the summary without collapsing the left header, got %q",
-			rendered,
-		)
-	}
-	if !strings.Contains(rendered, "████████") {
-		t.Fatalf("expected wide-screen bars to remain visibly long")
 	}
 }
 
@@ -1641,12 +1503,12 @@ func TestDailyIssueActionLineCompactsOnNarrowWidths(t *testing.T) {
 	}
 }
 
-func TestDailySummaryKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
+func TestDailyDetailKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 	target := 15
 	state := views.ContentState{
 		View:   "daily",
 		Pane:   "issues",
-		Width:  120,
+		Width:  180,
 		Height: 46,
 		Cursors: map[string]int{
 			"issues": 0,
@@ -1684,12 +1546,12 @@ func TestDailySummaryKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 	}
 }
 
-func TestDailySummaryShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
+func TestDailyDetailShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 	target := 15
 	state := views.ContentState{
 		View:   "daily",
 		Pane:   "issues",
-		Width:  120,
+		Width:  180,
 		Height: 30,
 		Cursors: map[string]int{
 			"issues": 0,
@@ -1797,7 +1659,7 @@ func TestMinimumSizeThresholdRendersNormalUI(t *testing.T) {
 	if strings.Contains(rendered, "Terminal Too Small") {
 		t.Fatalf("expected normal UI at minimum size")
 	}
-	if !strings.Contains(rendered, "Daily Dashboard") {
+	if !strings.Contains(rendered, "─ Tasks") {
 		t.Fatalf("expected daily UI at minimum size")
 	}
 	if got := lipgloss.Height(rendered); got > minHeight {
@@ -1812,7 +1674,7 @@ func TestAboveMinimumSizeRendersNormalUI(t *testing.T) {
 	if strings.Contains(rendered, "Terminal Too Small") {
 		t.Fatalf("expected normal UI above minimum size")
 	}
-	if !strings.Contains(rendered, "Daily Dashboard") {
+	if !strings.Contains(rendered, "─ Tasks") {
 		t.Fatalf("expected daily UI above minimum size")
 	}
 }

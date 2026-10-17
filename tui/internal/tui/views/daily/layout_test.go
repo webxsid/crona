@@ -44,20 +44,58 @@ func TestDailyHasNoBorders(t *testing.T) {
 	}
 }
 
-func TestDailyArrangementByWidthClass(t *testing.T) {
-	narrow := renderView(testTheme(), dailyState(99, 60))
-	if rowOf(t, narrow, "─ Habits Due") <= rowOf(t, narrow, "─ Tasks") {
-		t.Fatal("expected habits stacked below tasks at 99 columns")
-	}
-	for _, width := range []int{100, 159} {
-		medium := renderView(testTheme(), dailyState(width, 60))
-		if rowOf(t, medium, "─ Habits Due") != rowOf(t, medium, "─ Tasks") {
-			t.Fatalf("expected tasks and habits side by side at %d columns", width)
+func TestDailyStripThenTasksThenHabits(t *testing.T) {
+	for _, width := range []int{99, 120, 160} {
+		rendered := renderView(testTheme(), dailyState(width, 40))
+		first := strings.Split(ansi.Strip(rendered), "\n")[0]
+		if !strings.Contains(first, "Habits 0/2") {
+			t.Fatalf("width %d: expected the day strip on row 0, got %q", width, first)
+		}
+		if rowOf(t, rendered, "─ Habits Due") <= rowOf(t, rendered, "─ Tasks") {
+			t.Fatalf("width %d: expected habits below tasks", width)
 		}
 	}
-	wide := renderView(testTheme(), dailyState(160, 60))
-	if rowOf(t, wide, "─ Day") != 0 || rowOf(t, wide, "─ Tasks") != 0 || rowOf(t, wide, "─ Habits Due") != 0 {
-		t.Fatal("expected three columns on row 0 at 160 columns")
+}
+
+func TestDailyWideHasDetailPane(t *testing.T) {
+	wide := renderView(testTheme(), dailyState(160, 40))
+	if rowOf(t, wide, "─ Selected") != rowOf(t, wide, "─ Tasks") {
+		t.Fatal("expected the detail pane beside tasks at 160 columns")
+	}
+	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(medium, "─ Selected") {
+		t.Fatal("expected no detail pane below 160 columns")
+	}
+}
+
+func TestDailyHabitsSizedToContent(t *testing.T) {
+	rendered := renderView(testTheme(), dailyState(200, 60))
+	if row := rowOf(t, rendered, "─ Habits Due"); row < 60-5 {
+		t.Fatalf("expected two habits to take only the bottom rows, header at row %d", row)
+	}
+}
+
+func TestDailyNoActionRowsInSections(t *testing.T) {
+	for _, pane := range []string{"issues", "habits"} {
+		state := dailyState(120, 40)
+		state.Pane = pane
+		if rendered := ansi.Strip(renderView(testTheme(), state)); strings.Contains(rendered, "[enter]") {
+			t.Fatalf("%s focused: expected key hints to live in the status line, got %q", pane, rendered)
+		}
+	}
+}
+
+func TestDailyFocusedHabitsCursorVisible(t *testing.T) {
+	state := dailyState(120, 30)
+	state.Pane = "habits"
+	state.DueHabits = nil
+	for i := range 30 {
+		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
+			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+		})
+	}
+	state.Cursors["habits"] = 29
+	if rendered := ansi.Strip(renderView(testTheme(), state)); !strings.Contains(rendered, "Habit 29") {
+		t.Fatalf("expected the focused habit cursor to stay visible, got %q", rendered)
 	}
 }
 
@@ -81,7 +119,7 @@ func TestDailyIssuesCursorVisibleInShortSection(t *testing.T) {
 }
 
 func TestDailyFitsFrame(t *testing.T) {
-	for _, size := range [][2]int{{60, 18}, {200, 47}} {
+	for _, size := range [][2]int{{60, 18}, {99, 30}, {159, 40}, {200, 47}, {285, 73}} {
 		rendered := renderView(testTheme(), dailyState(size[0], size[1]))
 		lines := strings.Split(rendered, "\n")
 		if len(lines) != size[1] {

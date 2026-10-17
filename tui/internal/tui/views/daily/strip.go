@@ -64,10 +64,7 @@ func dayTotalsRow(theme types.Theme, state types.ContentState, width int) string
 		"   " + habits + " " + renderHabitBar(theme, habitsDone, habitsFailed, len(state.DueHabits), dayStripBarWidth)
 	plain := tasks + " " + progress + "   " + habits
 
-	rawDate := viewruntime.CurrentDashboardDate(state)
-	if state.DailySummary != nil && state.DailySummary.Date != "" {
-		rawDate = state.DailySummary.Date
-	}
+	rawDate := dailyDate(state)
 	date := helperpkg.FormatDisplayDate(rawDate, state.Settings)
 	dated := date
 	if parsed, ok := viewcalendar.ParseDate(rawDate); ok && !displayPatternIncludesWeek(state.Settings) {
@@ -89,6 +86,14 @@ func dayTotalsRow(theme types.Theme, state types.ContentState, width int) string
 		}
 	}
 	return padCells(" "+plain, width)
+}
+
+// dailyDate is the day Daily shows: the loaded summary's date, else the dashboard date.
+func dailyDate(state types.ContentState) string {
+	if state.DailySummary != nil && state.DailySummary.Date != "" {
+		return state.DailySummary.Date
+	}
+	return viewruntime.CurrentDashboardDate(state)
 }
 
 func daySignalsRow(theme types.Theme, state types.ContentState) string {

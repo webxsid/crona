@@ -14,29 +14,10 @@ import (
 
 func assertTinySummary(t *testing.T, rendered string) {
 	t.Helper()
-	if !strings.Contains(rendered, "Daily Dashboard") {
-		t.Fatalf("expected dashboard title in tiny summary")
-	}
-	if !strings.Contains(rendered, "2026-03-19") {
-		t.Fatalf("expected date in tiny summary")
-	}
-	if !strings.Contains(rendered, "Scope: Work > app") {
-		t.Fatalf("expected scope in tiny summary")
-	}
-	if !strings.Contains(rendered, "[,] [.] [g]") {
-		t.Fatalf("expected compact date hints in tiny summary")
-	}
-	if !strings.Contains(rendered, "Issues  0/1") || !strings.Contains(rendered, "Habits  0/1") {
-		t.Fatalf("expected both issue and habit summary rows in tiny summary")
-	}
-	if !strings.Contains(rendered, "p1") {
-		t.Fatalf("expected abbreviated issue legend in tiny summary")
-	}
-	if !strings.Contains(rendered, "f0 r1") {
-		t.Fatalf("expected abbreviated habit tail in tiny summary")
-	}
-	if !strings.Contains(rendered, "█") {
-		t.Fatalf("expected micro-bars in tiny summary")
+	for _, want := range []string{"Tasks 0/1", "Habits 0/1", "2026-03-19", "─ Tasks", "─ Habits Due"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected compact daily to contain %q, got %q", want, rendered)
+		}
 	}
 }
 

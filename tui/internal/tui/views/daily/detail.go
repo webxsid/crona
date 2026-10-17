@@ -152,7 +152,7 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 }
 
 func detailCalendar(theme types.Theme, state types.ContentState, width, maxLines int) []string {
-	rawDate := viewruntime.CurrentDashboardDate(state)
+	rawDate := dailyDate(state)
 	if _, ok := viewcalendar.ParseDate(rawDate); !ok {
 		return nil
 	}

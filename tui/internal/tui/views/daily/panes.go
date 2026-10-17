@@ -18,7 +18,8 @@ import (
 	"github.com/evertras/bubble-table/table"
 )
 
-const dailyIssueListBreakpoint = 220
+// dailyIssueTableMinWidth is the section width below which tasks render as two-line items.
+const dailyIssueTableMinWidth = 120
 
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "issues"
@@ -42,20 +43,14 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	}
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
-	actions := viewchrome.PaneActionsForState(theme, state, active)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
-	actionLine := base.ControlLine(theme, width-6, active, actions, true)
 	meta := fmt.Sprintf("%d  [←/→]", total)
-	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), actionLine}
+	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection)}
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return dailySection(theme, "Tasks", meta, active, width, height, lines)
 	}
-	modeWidth := width
-	if state.Width > 0 {
-		modeWidth = state.Width
-	}
-	if modeWidth < dailyIssueListBreakpoint {
+	if width < dailyIssueTableMinWidth {
 		lines = renderCompactDailyIssueList(
 			theme,
 			state,
@@ -381,8 +376,6 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		state.Filters["habits"],
 	)
 	total := len(indices)
-	actions := viewchrome.PaneActionsForState(theme, state, active)
-	actionLine := viewchrome.RenderPaneActionLine(theme, actions, width-6)
 	done := 0
 	for _, habit := range state.DueHabits {
 		if habit.Status == "completed" {
@@ -390,7 +383,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		}
 	}
 	meta := fmt.Sprintf("%d/%d", done, len(state.DueHabits))
-	lines := []string{actionLine}
+	lines := []string{}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
@@ -540,33 +533,6 @@ func renderIssueStatusBar(theme types.Theme, counts map[string]int, width int) s
 		segments = append(segments, theme.StyleDim.Render(strings.Repeat("█", width-used)))
 	}
 	return strings.Join(segments, "")
-}
-
-func renderIssueLegend(counts map[string]int) string {
-	labels := []struct {
-		status string
-		label  string
-	}{
-		{status: "done", label: "done"},
-		{status: "abandoned", label: "abandoned"},
-		{status: "blocked", label: "blocked"},
-		{status: "in_progress", label: "active"},
-		{status: "in_review", label: "review"},
-		{status: "ready", label: "ready"},
-		{status: "planned", label: "planned"},
-		{status: "backlog", label: "backlog"},
-	}
-	parts := make([]string, 0, len(labels))
-	for _, item := range labels {
-		if counts[item.status] <= 0 {
-			continue
-		}
-		parts = append(parts, fmt.Sprintf("%s %d", item.label, counts[item.status]))
-	}
-	if len(parts) == 0 {
-		return "no issues scheduled"
-	}
-	return strings.Join(parts, "   ")
 }
 
 func renderHabitBar(theme types.Theme, completed, failed, total, width int) string {

@@ -4,55 +4,56 @@ import (
 	viewaway "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewruntime "crona/tui/internal/tui/views/runtime"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
+// dailyMinTaskRows keeps the primary list usable when habits or the strip compete for rows.
+const dailyMinTaskRows = 5
+
+// renderView lays Daily out as a day strip over one growing task list, habits sized to
+// their content, and on wide screens a detail pane for the selection.
 func renderView(theme types.Theme, state types.ContentState) string {
 	if state.HistoricalAwayDate != "" {
 		return viewaway.RenderHistorical(theme, state)
 	}
 	width, height := state.Width, state.Height
-	switch viewhelpers.ClassFor(width) {
-	case viewhelpers.WidthWide:
-		cols := viewhelpers.Columns(width, 3, 2, 2)
-		return viewchrome.JoinColumns(theme, height,
-			renderIssues(theme, state, cols[0], height),
-			renderHabits(theme, state, cols[1], height),
-			renderSummary(theme, state, cols[2], height),
-		)
-	case viewhelpers.WidthMedium:
-		sections, listH := daySection(theme, state, width, height)
-		cols := viewhelpers.Columns(width, 3, 2)
-		sections = append(sections, viewchrome.JoinColumns(theme, listH,
-			renderIssues(theme, state, cols[0], listH),
-			renderHabits(theme, state, cols[1], listH),
-		))
-		return lipgloss.JoinVertical(lipgloss.Left, sections...)
-	default:
-		// Stacked: Day keeps a compact band so the task list has room for rows.
-		summaryH, listH := viewhelpers.SplitVertical(height, 7, 11, height/3)
-		sections := []string{}
-		if summaryH >= 3 {
-			sections = append(sections, renderSummary(theme, state, width, summaryH))
-		} else {
-			listH = height
-		}
-		habitsH := min(listH/2, max(4, listH/3))
-		sections = append(sections,
-			renderIssues(theme, state, width, listH-habitsH),
-			renderHabits(theme, state, width, habitsH),
-		)
-		return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	strip := renderDayStrip(theme, state, width)
+	if len(strip) > 1 && height-len(strip) < dailyMinTaskRows+3 {
+		strip = strip[:1]
 	}
+	rest := height - len(strip)
+
+	listW := width
+	detail := ""
+	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide {
+		cols := viewhelpers.Columns(width, 3, 2)
+		listW = cols[0]
+		detail = renderDetail(theme, state, cols[1], rest)
+	}
+	habitsH := dailyHabitsHeight(state, rest)
+	body := lipgloss.JoinVertical(lipgloss.Left,
+		renderIssues(theme, state, listW, rest-habitsH),
+		renderHabits(theme, state, listW, habitsH),
+	)
+	if detail != "" {
+		body = viewchrome.JoinColumns(theme, rest, body, detail)
+	}
+	return lipgloss.JoinVertical(lipgloss.Left, append(strip, body)...)
 }
 
-// daySection renders the Day summary above the lists when there is room, returning the rows left.
-func daySection(theme types.Theme, state types.ContentState, width, height int) ([]string, int) {
-	summaryH, listH := viewhelpers.SplitVertical(height, 10, 8, height*2/5)
-	if summaryH < 3 {
-		return nil, height
+// dailyHabitsHeight sizes Habits to its rows, capped so the task list keeps most of the space.
+func dailyHabitsHeight(state types.ContentState, rest int) int {
+	rows := len(viewhelpers.FilteredStrings(
+		viewruntime.HabitDailyItems(state.DueHabits),
+		state.Filters["habits"],
+	))
+	limit := max(3, rest/3)
+	if state.Pane == "habits" {
+		limit = max(3, rest/2)
 	}
-	return []string{renderSummary(theme, state, width, summaryH)}, listH
+	want := 1 + max(1, rows)
+	return max(2, min(want, limit, rest-dailyMinTaskRows))
 }
