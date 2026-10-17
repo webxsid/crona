@@ -37,3 +37,48 @@ func RenderedLineCount(lines []string) int {
 	}
 	return total
 }
+
+type WidthClass int
+
+const (
+	WidthNarrow WidthClass = iota
+	WidthMedium
+	WidthWide
+)
+
+func ClassFor(width int) WidthClass {
+	switch {
+	case width >= 160:
+		return WidthWide
+	case width >= 100:
+		return WidthMedium
+	default:
+		return WidthNarrow
+	}
+}
+
+// ColumnGutter is the width of the " │ " separator between side-by-side sections.
+const ColumnGutter = 3
+
+// Columns splits total into proportional widths, leaving room for gutters between them.
+func Columns(total int, weights ...int) []int {
+	out := make([]int, len(weights))
+	if len(weights) == 0 {
+		return out
+	}
+	available := max(0, total-ColumnGutter*(len(weights)-1))
+	weightSum := 0
+	for _, weight := range weights {
+		weightSum += weight
+	}
+	if weightSum <= 0 {
+		return out
+	}
+	used := 0
+	for i, weight := range weights {
+		out[i] = available * weight / weightSum
+		used += out[i]
+	}
+	out[0] += available - used
+	return out
+}
