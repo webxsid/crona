@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/api"
 	types "crona/tui/internal/tui/views/types"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -94,5 +95,31 @@ func summaryTestState() types.ContentState {
 			CheckIn: &api.DailyCheckIn{Date: "2026-07-28", Mood: 4, Energy: 3},
 			Streaks: &api.StreakSummary{CurrentFocusDays: 3, CurrentCheckInDays: 4, CurrentHabitDays: 2},
 		},
+	}
+}
+
+func TestSummaryHasNoBorders(t *testing.T) {
+	state := summaryTestState()
+	state.Width, state.Height = 120, 40
+	bordered := lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
+	theme := types.Theme{StyleActive: bordered, StyleInactive: bordered}
+	if rendered := Render(theme, state); strings.ContainsAny(rendered, "╭╰") {
+		t.Fatalf("expected no box borders, got:\n%s", ansi.Strip(rendered))
+	}
+}
+
+func TestSummaryFitsFrame(t *testing.T) {
+	for _, size := range [][2]int{{60, 18}, {200, 47}} {
+		state := summaryTestState()
+		state.Width, state.Height = size[0], size[1]
+		lines := strings.Split(Render(types.Theme{}, state), "\n")
+		if len(lines) != size[1] {
+			t.Fatalf("%dx%d: got %d lines", size[0], size[1], len(lines))
+		}
+		for i, line := range lines {
+			if got := ansi.StringWidth(line); got > size[0] {
+				t.Fatalf("%dx%d: line %d width %d", size[0], size[1], i, got)
+			}
+		}
 	}
 }

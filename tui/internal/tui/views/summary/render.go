@@ -23,12 +23,12 @@ func Render(theme types.Theme, state types.ContentState) string {
 }
 
 func renderView(theme types.Theme, state types.ContentState) string {
-	innerWidth := max(24, state.Width-6)
+	innerWidth := max(24, state.Width-4)
 	lines := renderHeader(theme, state, innerWidth)
 	snapshot := state.SummarySnapshot
 	if snapshot == nil || snapshot.Date != state.SummaryDate {
 		lines = append(lines, "", theme.StyleDim.Render("Loading summary…"))
-		return viewchrome.RenderPaneBox(theme, false, state.Width, state.Height, strings.Join(lines, "\n"))
+		return summarySection(theme, state, lines)
 	}
 
 	lines = append(lines, "", renderKPIBand(theme, state, innerWidth))
@@ -50,10 +50,24 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	content := scrollSummaryLines(
 		lines,
 		state.Cursors["summary"],
-		max(1, state.Height-2),
+		max(1, state.Height-1),
 		theme.StyleDim.Render("↓ more"),
 	)
-	return viewchrome.RenderPaneBox(theme, false, state.Width, state.Height, strings.Join(content, "\n"))
+	return summarySection(theme, state, content)
+}
+
+func summarySection(theme types.Theme, state types.ContentState, lines []string) string {
+	body := make([]string, 0, len(lines))
+	for _, line := range lines {
+		body = append(body, strings.Split(line, "\n")...)
+	}
+	return viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:  "Summary",
+		Meta:   state.SummaryDate,
+		Width:  state.Width,
+		Height: state.Height,
+		Lines:  body,
+	})
 }
 
 func PaneLineCount(state types.ContentState) int {
