@@ -8,6 +8,7 @@ import (
 
 	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
+	layoutpkg "crona/tui/internal/tui/layout"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -96,5 +97,27 @@ func TestHelpDialogShowsVersion(t *testing.T) {
 	m = m.openHelpDialog()
 	if !strings.Contains(m.dialogState().ViewMeta, "Version "+versionpkg.Current()) {
 		t.Fatalf("expected help meta to include version, got %q", m.dialogState().ViewMeta)
+	}
+}
+
+func TestRestModeChromeUsesAwayView(t *testing.T) {
+	m := Model{
+		view:     ViewAlerts,
+		pane:     PaneAlerts,
+		width:    120,
+		height:   36,
+		cursor:   map[Pane]int{},
+		filters:  map[Pane]string{},
+		settings: &api.CoreSettings{RestSpecificDates: []string{time.Now().Format("2006-01-02")}},
+	}
+	state := m.layoutState()
+	if state.View != ViewAway {
+		t.Fatalf("expected away view during rest, got %q", state.View)
+	}
+	if slices.Contains(state.SubTabs, ViewSettings) {
+		t.Fatalf("expected away sub-tabs, got system sub-tabs %v", state.SubTabs)
+	}
+	if got, want := m.contentHeight(), layoutpkg.ContentHeight(state); got != want {
+		t.Fatalf("contentHeight() = %d, layout content height = %d", got, want)
 	}
 }

@@ -160,3 +160,12 @@ func TestPaneActionsForSelectedAdhocIssueUseReadOnlyActions(t *testing.T) {
 		t.Fatalf("global actions should not offer create while an ad hoc issue is selected: %q", global)
 	}
 }
+
+func TestGlobalActionsHintTabKeys(t *testing.T) {
+	actions := strings.Join(GlobalActions(Theme{}, ActionsState{View: "rollup"}), "\n")
+	for _, want := range []string{"[1-5] tabs", "[[/]] sub-tabs"} {
+		if !strings.Contains(actions, want) {
+			t.Fatalf("expected global actions to include %q, got %q", want, actions)
+		}
+	}
+}

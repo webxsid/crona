@@ -266,3 +266,17 @@ func dailyLayoutStateForTest(
 		},
 	}
 }
+
+func TestRenderTabLineKeepsTabsWithLongContext(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 60, 24)
+	state.IsDevMode = true
+	state.RepoName = "crona-monorepo"
+	state.StreamName = "feature/tui-layout-redesign-long-name"
+	line := plainLines(Render(state))[0]
+	if !strings.Contains(line, "5 System") {
+		t.Fatalf("expected all tabs to survive a long context, got %q", line)
+	}
+	if !strings.Contains(line, "crona") {
+		t.Fatalf("expected truncated context to remain visible, got %q", line)
+	}
+}

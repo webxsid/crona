@@ -43,6 +43,8 @@ func segmentPtr(value string) *sharedtypes.SessionSegmentType {
 
 func GlobalActions(theme Theme, state ActionsState) []string {
 	actions := []string{
+		theme.StyleHeader.Render("[1-5]") + theme.StyleDim.Render(" tabs"),
+		theme.StyleHeader.Render("[[/]]") + theme.StyleDim.Render(" sub-tabs"),
 		theme.StyleHeader.Render("[v]") + theme.StyleDim.Render(" switch views"),
 		theme.StyleHeader.Render("[?]") + theme.StyleDim.Render(" keys"),
 	}

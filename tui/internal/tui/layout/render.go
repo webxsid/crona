@@ -194,6 +194,12 @@ func renderTabLine(state State) string {
 	if state.IsDevMode {
 		right += " · dev"
 	}
+	// The tabs are the only navigation indicator, so the context gives way first.
+	room := state.Width - ansi.StringWidth(left) - 2
+	if room < 4 {
+		return joinEnds(left, "", state.Width)
+	}
+	right = ansi.Truncate(right, room, "…")
 	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)
 }
 

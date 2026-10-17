@@ -17,14 +17,27 @@ func (m Model) View() string {
 	return layoutpkg.Render(m.layoutState())
 }
 
+// effectiveView is the view the shell shows: Away replaces views that protected rest hides.
+func (m Model) effectiveView() View {
+	if m.view == ViewReports || m.view == ViewSessionHistory ||
+		m.view == ViewHabitHistory || m.view == ViewSettings {
+		return m.view
+	}
+	if protected, _, _ := viewruntime.ProtectedRestMode(m.settings, m.currentLogicalDate()); protected {
+		return ViewAway
+	}
+	return m.view
+}
+
 func (m Model) layoutState() layoutpkg.State {
+	view := m.effectiveView()
 	snapshot := m.selectionSnapshot()
 	activeIssue := selectionpkg.ActiveIssue(snapshot)
 	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
 	selectedIssueAdhoc := hasSelectedIssue && selectedIssue.Adhoc
 	chromeState := m.layoutChromeState()
 	paneActions := viewchrome.PaneActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
-		View:                   string(m.view),
+		View:                   string(view),
 		Pane:                   string(m.pane),
 		SelectedIssueAdhoc:     selectedIssueAdhoc,
 		MomentumTab:            string(m.currentMomentumTab()),
@@ -46,7 +59,7 @@ func (m Model) layoutState() layoutpkg.State {
 	state := layoutpkg.State{
 		Width:               m.width,
 		Height:              m.height,
-		View:                m.view,
+		View:                view,
 		Pane:                m.pane,
 		ProtectedMode:       chromeState.ProtectedMode,
 		IsDevMode:           m.isDevMode(),
@@ -67,7 +80,7 @@ func (m Model) layoutState() layoutpkg.State {
 		GlobalActions:       viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions),
 		PaneActions:         paneActions,
 		Tabs:                m.visibleTabs(),
-		SubTabs:             m.visibleTabViews(uistate.TabForView(m.view)),
+		SubTabs:             m.visibleTabViews(uistate.TabForView(view)),
 	}
 	state.ContentState = m.viewContentState(
 		m.mainContentWidth(),
@@ -75,13 +88,9 @@ func (m Model) layoutState() layoutpkg.State {
 		snapshot,
 		activeIssue,
 	)
-	if state.ContentState.RestModeActive {
-		if m.view != ViewReports && m.view != ViewSessionHistory &&
-			m.view != ViewHabitHistory && m.view != ViewSettings {
-			state.View = ViewAway
-			state.ContentState.View = "away"
-			state.ContentState.Pane = ""
-		}
+	if view == ViewAway && m.view != ViewAway {
+		state.ContentState.View = "away"
+		state.ContentState.Pane = ""
 	}
 	if m.dialog != "" {
 		state.DialogState = m.dialogRenderState()
@@ -116,6 +125,7 @@ type layoutChromeState struct {
 }
 
 func (m Model) layoutChromeState() layoutChromeState {
+	view := m.effectiveView()
 	repo := "-"
 	stream := "-"
 	selectedIssue, hasSelectedIssue := m.selectedIssueRecord()
@@ -150,7 +160,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 	)
 	headerState := viewchrome.HeaderState{
 		Width:         m.width,
-		View:          string(m.view),
+		View:          string(view),
 		Elapsed:       m.elapsed,
 		Timer:         m.timer,
 		IssueSessions: m.issueSessions,
@@ -167,7 +177,7 @@ func (m Model) layoutChromeState() layoutChromeState {
 		TimerNextSegment: timerNextSegment,
 		HeaderState:      headerState,
 		GlobalActions: viewchrome.GlobalActions(layoutpkg.ViewTheme(), viewchrome.ActionsState{
-			View:                   string(m.view),
+			View:                   string(view),
 			Pane:                   string(m.pane),
 			SelectedIssueAdhoc:     selectedIssueAdhoc,
 			MomentumTab:            string(m.currentMomentumTab()),
@@ -217,6 +227,6 @@ func (m Model) contentHeight() int {
 		StreamName:    chromeState.StreamName,
 		GlobalActions: chromeState.GlobalActions,
 		HeaderState:   chromeState.HeaderState,
-		SubTabs:       m.visibleTabViews(uistate.TabForView(m.view)),
+		SubTabs:       m.visibleTabViews(uistate.TabForView(m.effectiveView())),
 	})
 }
