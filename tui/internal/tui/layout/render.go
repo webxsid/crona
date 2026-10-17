@@ -22,6 +22,9 @@ import (
 const (
 	MinWidth  = 135
 	MinHeight = 30
+
+	// SidebarWidth is fixed because frames narrower than MinWidth are never rendered.
+	SidebarWidth = 22
 )
 
 type State struct {
@@ -288,8 +291,7 @@ func renderHeader(state State) string {
 }
 
 func renderBody(state State, height int) string {
-	sidebarWidth, _ := bodyWidths(state.Width)
-	sidebar := renderSidebar(state, sidebarWidth, height)
+	sidebar := renderSidebar(state, SidebarWidth, height)
 	content := viewrenderer.RenderContent(ViewTheme(), state.ContentState)
 	return lipgloss.NewStyle().
 		Width(state.Width).
@@ -378,22 +380,10 @@ func renderHelpBar(state State) string {
 		devRightAction = "[f6] seed dev data   [f7] clear dev data   "
 	}
 	leftActions := append([]string(nil), state.GlobalActions...)
-	rightText := devRightAction + "[K] stop daemon   [ctl+c] quit"
+	rightText := devRightAction + "[K] stop daemon   [ctrl+c] quit"
 	if state.Width < 200 && len(leftActions) > 5 {
 		leftActions = leftActions[:5]
 		rightText = "[?] more   [ctrl+c] quit"
-	}
-	if state.Width < 120 && len(leftActions) > 4 {
-		leftActions = leftActions[:4]
-		rightText = "[?] more   [ctlr+c] quit"
-	}
-	if state.Width < 96 && len(leftActions) > 3 {
-		leftActions = leftActions[:3]
-		rightText = "[?] more   [ctrl+c] quit"
-	}
-	if state.Width < 76 && len(leftActions) > 2 {
-		leftActions = leftActions[:2]
-		rightText = "[ctrl+c] quit"
 	}
 	left := strings.Join(leftActions, "   ")
 	right := chrome.StyleDim.Render(rightText)
@@ -606,25 +596,6 @@ func contentHeightFromChrome(protected bool, height int, header, help string) in
 		return 4
 	}
 	return availableHeight
-}
-
-func bodyWidths(width int) (int, int) {
-	sidebarWidth := 22
-	if width < 64 {
-		sidebarWidth = max(14, width/4)
-	} else if width < 90 {
-		sidebarWidth = 18
-	}
-	contentWidth := width - sidebarWidth
-	if contentWidth < 24 {
-		contentWidth = 24
-		sidebarWidth = max(14, width-contentWidth)
-		contentWidth = width - sidebarWidth
-	}
-	if contentWidth < 0 {
-		contentWidth = 0
-	}
-	return sidebarWidth, contentWidth
 }
 
 func WrapText(text string, width int) []string {

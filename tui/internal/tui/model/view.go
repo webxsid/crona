@@ -66,9 +66,8 @@ func (m Model) layoutState() layoutpkg.State {
 		GlobalActions:       viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions),
 		PaneActions:         paneActions,
 	}
-	contentWidth := max(0, m.width-sidebarWidth(m.width))
 	state.ContentState = m.viewContentState(
-		contentWidth,
+		m.mainContentWidth(),
 		layoutpkg.ContentHeight(state),
 		snapshot,
 		activeIssue,
@@ -196,18 +195,8 @@ func (m Model) isBetaBuild() bool {
 	return versionpkg.IsBetaRelease()
 }
 
-func sidebarWidth(width int) int {
-	if width < 64 {
-		return max(14, width/4)
-	}
-	if width < 90 {
-		return 18
-	}
-	return 22
-}
-
 func (m Model) mainContentWidth() int {
-	return max(0, m.width-sidebarWidth(m.width))
+	return max(0, m.width-layoutpkg.SidebarWidth)
 }
 
 func (m Model) isDevMode() bool {
