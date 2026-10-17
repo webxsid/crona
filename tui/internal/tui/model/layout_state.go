@@ -148,6 +148,10 @@ func (m Model) viewContentState(
 		Settings:             m.settings,
 	}
 	selectedDate := m.currentDashboardDate()
+	if m.view == ViewDaily {
+		state.DailyIssueIndices = selectionpkg.FilteredIndices(snapshot, PaneIssues)
+		state.DailyHabitIndices = selectionpkg.FilteredIndices(snapshot, PaneHabits)
+	}
 	if m.view == ViewWellbeing {
 		selectedDate = state.WellbeingDate
 	}

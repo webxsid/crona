@@ -121,3 +121,23 @@ func TestRestModeChromeUsesAwayView(t *testing.T) {
 		t.Fatalf("contentHeight() = %d, layout content height = %d", got, want)
 	}
 }
+
+func TestDailyContentStateCarriesModelFilterIndices(t *testing.T) {
+	today := time.Now().Format("2006-01-02")
+	m := Model{
+		view:    ViewDaily,
+		pane:    PaneIssues,
+		width:   120,
+		height:  36,
+		cursor:  map[Pane]int{},
+		filters: map[Pane]string{PaneIssues: "sync"},
+		allIssues: []api.IssueWithMeta{
+			{Issue: api.Issue{ID: 1, Title: "Write docs", Status: "ready", TodoForDate: &today}},
+			{Issue: api.Issue{ID: 2, Title: "Fix sync bug", Status: "ready", TodoForDate: &today}},
+		},
+	}
+	state := m.layoutState().ContentState
+	if !slices.Equal(state.DailyIssueIndices, []int{1}) {
+		t.Fatalf("expected the model's filtered task indices, got %v (issues %d)", state.DailyIssueIndices, len(state.DailyIssues))
+	}
+}

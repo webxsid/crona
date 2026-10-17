@@ -6,7 +6,6 @@ import (
 	viewaway "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewruntime "crona/tui/internal/tui/views/runtime"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -54,10 +53,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 
 // dailyHabitsHeight sizes Habits to its rows, capped so the task list keeps most of the space.
 func dailyHabitsHeight(state types.ContentState, rest int) int {
-	rows := len(viewhelpers.FilteredStrings(
-		viewruntime.HabitDailyItems(state.DueHabits),
-		state.Filters["habits"],
-	))
+	rows := len(dailyHabitIndices(state))
 	limit := max(3, rest/3)
 	if state.Pane == "habits" {
 		limit = max(3, rest/2)

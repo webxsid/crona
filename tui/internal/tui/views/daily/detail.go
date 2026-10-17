@@ -6,9 +6,7 @@ import (
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
-	viewruntime "crona/tui/internal/tui/views/runtime"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
 
@@ -42,20 +40,18 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 
 func selectedDailyIssue(state types.ContentState) (api.Issue, bool) {
 	issues := filteredDailyIssues(state)
+	indices := dailyIssueIndices(state, dailyAPIIssues(issues))
 	cur := state.Cursors["issues"]
-	if cur < 0 || cur >= len(issues) {
+	if cur < 0 || cur >= len(indices) || indices[cur] >= len(issues) {
 		return api.Issue{}, false
 	}
-	return issues[cur], true
+	return issues[indices[cur]], true
 }
 
 func selectedDailyHabit(state types.ContentState) (api.HabitDailyItem, bool) {
-	indices := viewhelpers.FilteredStrings(
-		viewruntime.HabitDailyItems(state.DueHabits),
-		state.Filters["habits"],
-	)
+	indices := dailyHabitIndices(state)
 	cur := state.Cursors["habits"]
-	if cur < 0 || cur >= len(indices) {
+	if cur < 0 || cur >= len(indices) || indices[cur] >= len(state.DueHabits) {
 		return api.HabitDailyItem{}, false
 	}
 	return state.DueHabits[indices[cur]], true

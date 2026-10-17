@@ -65,10 +65,14 @@ type ContentState struct {
 	RestModeDetail      string
 	HistoricalAwayDate  string
 
-	Repos                     []api.Repo
-	Streams                   []api.Stream
-	Issues                    []api.Issue
-	DailyIssues               []api.Issue
+	Repos       []api.Repo
+	Streams     []api.Stream
+	Issues      []api.Issue
+	DailyIssues []api.Issue
+	// DailyIssueIndices and DailyHabitIndices are the model's text-filtered raw indices into
+	// DailyIssues and DueHabits; the pane cursors are positions in these lists.
+	DailyIssueIndices         []int
+	DailyHabitIndices         []int
 	Habits                    []api.Habit
 	AllIssues                 []api.IssueWithMeta
 	DefaultIssues             []api.IssueWithMeta

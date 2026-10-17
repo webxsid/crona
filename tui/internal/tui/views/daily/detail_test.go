@@ -83,3 +83,41 @@ func TestDetailShowsCalendarWhenTall(t *testing.T) {
 		t.Fatalf("expected 12 rows, got %d", len(lines))
 	}
 }
+
+func TestDetailFollowsModelFilteredCursor(t *testing.T) {
+	state := detailState()
+	state.Filters["issues"] = "sync"
+	state.DailyIssueIndices = []int{1}
+	state.Cursors["issues"] = 0
+	detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	if !strings.Contains(detail, "Fix sync conflict") || strings.Contains(detail, "First task") {
+		t.Fatalf("expected the filtered selection in detail, got %q", detail)
+	}
+	list := ansi.Strip(renderIssues(testTheme(), state, 130, 20))
+	assertContainsLine(t, strings.Split(list, "\n"), "▶", "Fix sync conflict")
+}
+
+func TestDetailFollowsModelFilteredHabitCursor(t *testing.T) {
+	state := detailState()
+	state.Pane = "habits"
+	state.DailyHabitIndices = []int{1}
+	state.Cursors["habits"] = 0
+	detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	if !strings.Contains(detail, "Read") || strings.Contains(detail, "Walk") {
+		t.Fatalf("expected the filtered habit in detail, got %q", detail)
+	}
+}
+
+func TestDailyTrustsModelTaskSection(t *testing.T) {
+	state := dailyState(130, 30)
+	state.DailyTaskSection = "pinned"
+	yesterday := "2026-05-26"
+	state.DailyIssues = []api.Issue{
+		{ID: 1, Title: "Closed pinned task", Status: "done", PinnedDaily: true, TodoForDate: &yesterday},
+		{ID: 2, Title: "Open pinned task", Status: "ready", PinnedDaily: true},
+	}
+	state.Cursors["issues"] = 0
+	if detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(detail, "Closed pinned task") {
+		t.Fatalf("expected the model's first pinned task selected, got %q", detail)
+	}
+}

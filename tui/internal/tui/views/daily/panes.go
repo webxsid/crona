@@ -26,7 +26,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	cur := state.Cursors["issues"]
 	sources := filteredDailyIssues(state)
 	issues := dailyAPIIssues(sources)
-	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
+	indices := dailyIssueIndices(state, issues)
 	total := len(indices)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
 	meta := fmt.Sprintf("%d  [←/→]", total)
@@ -63,7 +63,8 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, base.MoreAbove(theme, start))
 	}
 	tableRows := make([]table.Row, 0, end-start)
-	for _, rawIdx := range indices[start:end] {
+	for offset, rawIdx := range indices[start:end] {
+		pos := start + offset
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
 		repoName, streamName := dailyIssueContext(sources[rawIdx])
@@ -80,11 +81,11 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
 			rowStyle = *statusStyle
 		}
-		if rawIdx == cur && active {
+		if pos == cur && active {
 			rowStyle = rowStyle.Bold(true)
 		}
 		cursor := " "
-		if rawIdx == cur && active {
+		if pos == cur && active {
 			cursor = viewchrome.SelectionCursor
 		}
 		tableRows = append(
@@ -146,10 +147,7 @@ func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {
 
 // dailyTaskRows is the height the Tasks section needs to show every task at width.
 func dailyTaskRows(state types.ContentState, width int) int {
-	total := len(issuecore.FilteredIssueIndices(
-		dailyAPIIssues(filteredDailyIssues(state)),
-		state.Filters["issues"],
-	))
+	total := len(dailyIssueIndices(state, dailyAPIIssues(filteredDailyIssues(state))))
 	// Header and the Planned/Pinned/Overdue row come first.
 	switch {
 	case total == 0:
@@ -210,7 +208,7 @@ func renderCompactDailyIssueList(
 			renderCompactDailyIssueTitle(
 				theme,
 				width,
-				rawIdx,
+				start+idx,
 				cur,
 				active,
 				title,
@@ -220,7 +218,7 @@ func renderCompactDailyIssueList(
 			renderCompactDailyIssueMeta(
 				theme,
 				width,
-				rawIdx,
+				start+idx,
 				cur,
 				active,
 				repoName,
@@ -362,56 +360,34 @@ func dailyTaskEmptyMessage(section string) string {
 	}
 }
 
+// filteredDailyIssues is the model's section-scoped task list; the view never re-scopes it.
 func filteredDailyIssues(state types.ContentState) []api.Issue {
-	if len(state.DailyIssues) == 0 {
-		return nil
-	}
-	anchorDate := strings.TrimSpace(state.DashboardDate)
-	if anchorDate == "" && state.DailySummary != nil {
-		anchorDate = strings.TrimSpace(state.DailySummary.Date)
-	}
-	if anchorDate == "" {
-		return state.DailyIssues
-	}
-	out := make([]api.Issue, 0, len(state.DailyIssues))
-	for _, issue := range state.DailyIssues {
-		if dailyTaskMatchesSection(issue, anchorDate, state.DailyTaskSection) {
-			out = append(out, issue)
-		}
-	}
-	return out
+	return state.DailyIssues
 }
 
-func dailyTaskMatchesSection(issue api.Issue, anchorDate, section string) bool {
-	if issue.TodoForDate != nil {
-		due := strings.TrimSpace(*issue.TodoForDate)
-		switch section {
-		case "overdue":
-			return due != "" && due < anchorDate && issue.Status != "done" &&
-				issue.Status != "abandoned"
-		case "planned":
-			return due == anchorDate
-		}
+// dailyIssueIndices is the model's filtered order for Tasks; the cursor is a position in it.
+func dailyIssueIndices(state types.ContentState, issues []issuecore.APIIssue) []int {
+	if state.DailyIssueIndices != nil {
+		return state.DailyIssueIndices
 	}
-	if section == "pinned" {
-		if issue.PinnedDaily {
-			if issue.TodoForDate == nil {
-				return true
-			}
-			due := strings.TrimSpace(*issue.TodoForDate)
-			return due >= anchorDate
-		}
+	return issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
+}
+
+// dailyHabitIndices is the model's filtered order for Habits; the cursor is a position in it.
+func dailyHabitIndices(state types.ContentState) []int {
+	if state.DailyHabitIndices != nil {
+		return state.DailyHabitIndices
 	}
-	return false
+	return viewhelpers.FilteredStrings(
+		viewruntime.HabitDailyItems(state.DueHabits),
+		state.Filters["habits"],
+	)
 }
 
 func renderHabits(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "habits"
 	cur := state.Cursors["habits"]
-	indices := viewhelpers.FilteredStrings(
-		viewruntime.HabitDailyItems(state.DueHabits),
-		state.Filters["habits"],
-	)
+	indices := dailyHabitIndices(state)
 	total := len(indices)
 	done := 0
 	for _, habit := range state.DueHabits {

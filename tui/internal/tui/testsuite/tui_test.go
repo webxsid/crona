@@ -8,6 +8,8 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	dialogs "crona/tui/internal/tui/dialogs/controller"
+	selectionpkg "crona/tui/internal/tui/selection"
+	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/testsuite/support"
 	"crona/tui/internal/tui/views"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -1347,7 +1349,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	}
 	planned := base
 	planned.DailyTaskSection = "planned"
-	plannedRendered := support.RenderDaily(planned)
+	plannedRendered := renderModelScopedDaily(planned)
 	plannedStripped := ansi.Strip(plannedRendered)
 	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Today task", "Pinned toda"} {
 		if !strings.Contains(plannedStripped, want) {
@@ -1393,7 +1395,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 			StreamName: "app",
 		},
 	}
-	pastRendered := support.RenderDaily(past)
+	pastRendered := renderModelScopedDaily(past)
 	pastStripped := ansi.Strip(pastRendered)
 	if !strings.Contains(pastStripped, "Old task") {
 		t.Fatalf(
@@ -1404,7 +1406,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 
 	pinned := base
 	pinned.DailyTaskSection = "pinned"
-	pinnedRendered := support.RenderDaily(pinned)
+	pinnedRendered := renderModelScopedDaily(pinned)
 	pinnedStripped := ansi.Strip(pinnedRendered)
 	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned futu", "Pinned toda"} {
 		if !strings.Contains(pinnedStripped, want) {
@@ -1422,7 +1424,7 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 
 	overdue := base
 	overdue.DailyTaskSection = "overdue"
-	overdueRendered := support.RenderDaily(overdue)
+	overdueRendered := renderModelScopedDaily(overdue)
 	overdueStripped := ansi.Strip(overdueRendered)
 	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned over"} {
 		if !strings.Contains(overdueStripped, want) {
@@ -1437,6 +1439,24 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	if !strings.Contains(overdueRendered, support.Theme().StyleSelected.Render("Overdue")) {
 		t.Fatalf("expected overdue section header to highlight Overdue, got %q", overdueRendered)
 	}
+}
+
+// renderModelScopedDaily scopes DailyIssues the way the model does before rendering, since
+// section scoping belongs to the selection package, not the view.
+func renderModelScopedDaily(state views.ContentState) string {
+	all := state.AllIssues
+	if len(all) == 0 {
+		for _, issue := range state.DailyIssues {
+			all = append(all, api.IssueWithMeta{Issue: issue})
+		}
+	}
+	state.DailyIssues = selectionpkg.DailyScopedIssues(selectionpkg.Snapshot{
+		View:             uistate.ViewDaily,
+		DailyTaskSection: uistate.DailyTaskSection(state.DailyTaskSection),
+		DashboardDate:    state.DashboardDate,
+		AllIssues:        all,
+	})
+	return support.RenderDaily(state)
 }
 
 func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
