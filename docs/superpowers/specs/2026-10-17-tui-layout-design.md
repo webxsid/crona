@@ -56,7 +56,7 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 
 - One list, scoped by a breadcrumb: `all › repo › stream`. `enter` on a repo/stream row drills in; `backspace` goes up.
 - At repo or stream scope, the list shows child streams/habits as group headers, so Meta's four panes collapse into one navigable tree-list.
-- Open/Completed sections stay (today's `1`/`2` in Issues move to `o` / `C`; see Keymap).
+- Open/Completed sections stay, switched with `tab` (already bound; today's `1`/`2` are dropped).
 
 ## Shell (chrome)
 
@@ -117,9 +117,9 @@ Each visual implements `Render(box Box) []string` and picks the richest tier tha
 Per-view digit bindings move off digits:
 
 - Daily `1`/`2` (issues/habits panes) → `tab`.
-- Issues `1`/`2` (open/completed) → `o` / `C`.
+- Issues `1`/`2` (open/completed) → `tab` (already toggles them; `o` is taken by open-selection).
 - Meta `1`–`4` → drill-down.
-- Config, Settings, Reports, Scratch `1` → reviewed per binding during planning.
+- Config, Settings, Alerts, Reports, Scratch `1` (focus the only pane) → dropped as redundant.
 
 Keymap profiles: `key_registry` gains a `Profile` (default only, for now) that maps logical actions (`nav.down`, `tab.next`, `section.next`, …) to keys. Handlers register against actions, not raw keys, so a later vim profile only adds a mapping table.
 
