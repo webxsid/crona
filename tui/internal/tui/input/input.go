@@ -63,8 +63,8 @@ type Deps struct {
 	SeedDevData                     func() tea.Cmd
 	ClearDevData                    func() tea.Cmd
 	IsDevMode                       func(State) bool
-	NextActiveSessionView           func(State, int) uistate.View
-	NextWorkspaceView               func(State, int) uistate.View
+	TabTargetView                   func(State, uistate.Tab) (uistate.View, bool)
+	NextSubTabView                  func(State, int) uistate.View
 	DefaultPane                     func(uistate.View) uistate.Pane
 	NextPane                        func(uistate.View, uistate.Pane, int) uistate.Pane
 	SetDefaultIssueSection          func(*State, uistate.DefaultIssueSection)
@@ -203,6 +203,21 @@ func newRouter(deps Deps) *router {
 			deps.OpenBetaSupportDialog(&s)
 			return s, nil, true
 		},
+		"1": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleJumpToTab(s, deps, uistate.TabToday)
+		},
+		"2": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleJumpToTab(s, deps, uistate.TabIssues)
+		},
+		"3": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleJumpToTab(s, deps, uistate.TabInsights)
+		},
+		"4": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleJumpToTab(s, deps, uistate.TabLog)
+		},
+		"5": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleJumpToTab(s, deps, uistate.TabSystem)
+		},
 		"]":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, 1) },
 		"[":         func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleView(s, deps, -1) },
 		"tab":       func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, 1) },
@@ -317,35 +332,11 @@ func newRouter(deps Deps) *router {
 		},
 		" ": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleSpace(s, deps) },
 	})
-	keyregistry.RegisterDefault(r, uistate.ViewDefault, uistate.PaneIssues,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneIssues
-			deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionOpen)
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneIssues
-			deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionCompleted)
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			deps.OpenCheckoutContextDialog(&s)
-			return s, nil, true
-		},
-	)
 	keyregistry.RegisterDaily(
 		r,
 		uistate.ViewDaily,
 		uistate.PaneIssues,
 		uistate.PaneHabits,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneIssues
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneHabits
-			return s, nil, true
-		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDailyDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDailyDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDailyDate(s, deps) },
@@ -435,22 +426,6 @@ func newRouter(deps Deps) *router {
 		uistate.PaneIssues,
 		uistate.PaneHabits,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneRepos
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneStreams
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneIssues
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneHabits
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false
 			}
@@ -498,10 +473,6 @@ func newRouter(deps Deps) *router {
 		r,
 		uistate.ViewSettings,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneSettings
-			return s, nil, true
-		},
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return handleAdjustSelectedSetting(s, deps, -1)
 		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustSelectedSetting(s, deps, 1) },
@@ -511,10 +482,6 @@ func newRouter(deps Deps) *router {
 	keyregistry.RegisterSettings(
 		r,
 		uistate.ViewAlerts,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneAlerts
-			return s, nil, true
-		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return handleAdjustSelectedAlert(s, deps, -1)
 		},
@@ -526,10 +493,6 @@ func newRouter(deps Deps) *router {
 		r,
 		uistate.ViewConfig,
 		uistate.PaneConfig,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneConfig
-			return s, nil, true
-		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRescanExportAssets(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return s, deps.ConfigChangeSelected(&s), true
@@ -541,10 +504,6 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return s, deps.ConfigReset(&s), true },
 	)
 	keyregistry.RegisterReports(r, uistate.ViewReports, uistate.PaneExportReports,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			s.ActivePane = uistate.PaneExportReports
-			return s, nil, true
-		},
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			cmd, handled := deps.OpenEditorAction(&s)
 			return s, cmd, handled

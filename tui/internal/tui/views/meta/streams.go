@@ -14,7 +14,7 @@ func renderStreams(
 ) string {
 	return viewchrome.RenderSimplePaneWithActions(
 		theme,
-		"Streams [2]",
+		"Streams",
 		state.Filters["streams"],
 		state.Cursors["streams"],
 		streamItems(state.Streams),

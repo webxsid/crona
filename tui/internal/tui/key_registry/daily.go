@@ -6,10 +6,8 @@ func RegisterDaily[M tea.Model, V comparable, P comparable](
 	r *Router[M, V, P],
 	view V,
 	issuesPane, habitsPane P,
-	one, two, prevDay, nextDay, today, exportDaily, checkout, editHabit, focusHabit, logHabit, historyHabit, failHabit, toggleHabit Handler[M],
+	prevDay, nextDay, today, exportDaily, checkout, editHabit, focusHabit, logHabit, historyHabit, failHabit, toggleHabit Handler[M],
 ) {
-	r.RegisterView(view, "1", one)
-	r.RegisterView(view, "2", two)
 	r.RegisterView(view, ",", prevDay)
 	r.RegisterView(view, ".", nextDay)
 	r.RegisterView(view, "g", today)

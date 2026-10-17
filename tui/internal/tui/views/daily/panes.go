@@ -317,7 +317,7 @@ func dailyTaskTitle(theme types.Theme, section string) string {
 		{key: "pinned", label: "Pinned"},
 		{key: "overdue", label: "Overdue"},
 	}
-	parts := []string{theme.StylePaneTitle.Render("Tasks [1]")}
+	parts := []string{theme.StylePaneTitle.Render("Tasks")}
 	for _, opt := range options {
 		label := opt.label
 		if section == opt.key {
@@ -395,7 +395,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, actions, width-6)
 	lines := []string{
-		theme.StylePaneTitle.Render("Habits Due [2]"),
+		theme.StylePaneTitle.Render("Habits Due"),
 		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
 		actionLine,
 	}

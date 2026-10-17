@@ -13,12 +13,27 @@ func handleDevCmd(s State, isDev func(State) bool, cmd func() tea.Cmd) (tea.Mode
 	return s, cmd(), true
 }
 
-func handleCycleView(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	if s.Timer != nil && s.Timer.State != "idle" {
-		s.ActiveView = deps.NextActiveSessionView(s, dir)
-	} else {
-		s.ActiveView = deps.NextWorkspaceView(s, dir)
+func handleJumpToTab(s State, deps Deps, tab uistate.Tab) (tea.Model, tea.Cmd, bool) {
+	view, ok := deps.TabTargetView(s, tab)
+	if !ok {
+		return s, nil, true
 	}
+	if view == s.ActiveView {
+		return s, nil, true
+	}
+	return enterView(s, deps, view)
+}
+
+func handleCycleView(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	view := deps.NextSubTabView(s, dir)
+	if view == s.ActiveView {
+		return s, nil, true
+	}
+	return enterView(s, deps, view)
+}
+
+func enterView(s State, deps Deps, view uistate.View) (tea.Model, tea.Cmd, bool) {
+	s.ActiveView = view
 	s.ActivePane = deps.DefaultPane(s.ActiveView)
 	if s.ActiveView == uistate.ViewHabitHistory && deps.EnterHabitHistoryView != nil {
 		cmd, handled := deps.EnterHabitHistoryView(&s)

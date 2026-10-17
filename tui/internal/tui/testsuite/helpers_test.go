@@ -166,7 +166,7 @@ func assertCompactDefault(t *testing.T, rendered string, height int) {
 	if !strings.Contains(plain, "Default Dashboard") {
 		t.Fatalf("expected compact stats header in default view")
 	}
-	if !strings.Contains(plain, "Active Issues [1]") {
+	if !strings.Contains(plain, "Active Issues") {
 		t.Fatalf("expected primary issue list in compact default view")
 	}
 	if !strings.Contains(plain, "Closed") {

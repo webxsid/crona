@@ -9,7 +9,7 @@ import (
 func renderRepos(theme types.Theme, state types.ContentState, width, height int) string {
 	return viewchrome.RenderSimplePaneWithActions(
 		theme,
-		"Repos [1]",
+		"Repos",
 		state.Filters["repos"],
 		state.Cursors["repos"],
 		repoItems(state.Repos),

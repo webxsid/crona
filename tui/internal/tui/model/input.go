@@ -176,11 +176,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 		SeedDevData:    func() tea.Cmd { return commands.SeedDevData(m.client) },
 		ClearDevData:   func() tea.Cmd { return commands.ClearDevData(m.client) },
 		IsDevMode:      func(state inputpkg.State) bool { return m.applyInputState(state).isDevMode() },
-		NextActiveSessionView: func(state inputpkg.State, dir int) uistate.View {
-			return m.applyInputState(state).nextActiveSessionView(dir)
+		TabTargetView: func(state inputpkg.State, tab uistate.Tab) (uistate.View, bool) {
+			return m.applyInputState(state).tabTargetView(tab)
 		},
-		NextWorkspaceView: func(state inputpkg.State, dir int) uistate.View {
-			return m.applyInputState(state).nextWorkspaceView(dir)
+		NextSubTabView: func(state inputpkg.State, dir int) uistate.View {
+			return m.applyInputState(state).nextSubTabView(dir)
 		},
 		DefaultPane: uistate.DefaultPane,
 		NextPane:    nextPane,

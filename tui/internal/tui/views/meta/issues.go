@@ -39,7 +39,7 @@ func renderIssues(
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
 	lines := []string{
-		theme.StylePaneTitle.Render("Issues [3]"),
+		theme.StylePaneTitle.Render("Issues"),
 		viewchrome.RenderPaneActionLine(theme, func() []string {
 			if !active {
 				return nil

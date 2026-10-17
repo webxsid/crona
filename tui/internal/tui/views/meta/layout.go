@@ -12,11 +12,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	topH, botH := viewhelpers.SplitVertical(state.Height, 7, 8, state.Height*30/100)
 	streamsEmpty := "No streams — [a] create new"
 	if state.Context == nil || state.Context.RepoID == nil {
-		streamsEmpty = "No repo checked out — [1] then [c]"
+		streamsEmpty = "No repo checked out — select a repo, then [c]"
 	}
 	issuesEmpty := "No issues — [a] create new"
 	if state.Context == nil || state.Context.StreamID == nil {
-		issuesEmpty = "No stream checked out — [2] then [c]"
+		issuesEmpty = "No stream checked out — select a stream, then [c]"
 	}
 	leftW, rightW := viewhelpers.SplitHorizontal(state.Width, 18, 18, state.Width/2)
 	topRow := lipgloss.JoinHorizontal(lipgloss.Top,

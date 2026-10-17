@@ -40,7 +40,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			renderIssuePane(
 				theme,
 				state,
-				"Active Issues [1]",
+				"Active Issues",
 				"Due work and open issues",
 				openIndices,
 				0,
@@ -52,7 +52,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			renderIssuePane(
 				theme,
 				state,
-				"Completed Issues [2]",
+				"Completed Issues",
 				"Done and abandoned, ready to revisit",
 				completedIndices,
 				len(openIndices),
@@ -76,7 +76,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		renderIssuePane(
 			theme,
 			state,
-			"Active Issues [1]",
+			"Active Issues",
 			"Due work and open issues",
 			openIndices,
 			0,
@@ -88,7 +88,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		renderIssuePane(
 			theme,
 			state,
-			"Completed Issues [2]",
+			"Completed Issues",
 			"Done and abandoned, ready to revisit",
 			completedIndices,
 			len(openIndices),
@@ -108,7 +108,7 @@ func renderCompactView(
 	summaryH := 6
 	footerH := 4
 	mainH := max(8, state.Height-summaryH-footerH-1)
-	mainTitle := "Active Issues [1]"
+	mainTitle := "Active Issues"
 	mainSubtitle := "Due work and open issues"
 	mainIndices := openIndices
 	mainOffset := 0
@@ -118,7 +118,7 @@ func renderCompactView(
 	footerIndices := completedIndices
 
 	if state.DefaultIssueSection == "completed" {
-		mainTitle = "Completed Issues [2]"
+		mainTitle = "Completed Issues"
 		mainSubtitle = "Done and abandoned, ready to revisit"
 		mainIndices = completedIndices
 		mainOffset = len(openIndices)

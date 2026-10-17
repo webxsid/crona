@@ -45,34 +45,50 @@ func (m Model) canJumpToView(target View) bool {
 	return canJump
 }
 
-func (m Model) nextWorkspaceView(dir int) View {
-	views := m.availableViews()
-	for _, candidate := range views {
-		if candidate == m.view {
-			return navigationutil.NextView(views, candidate, dir)
+func (m Model) visibleTabViews(tab uistate.Tab) []View {
+	available := m.jumpAvailableViews()
+	views := []View{}
+	for _, view := range uistate.TabViews(tab) {
+		if slices.Contains(available, view) {
+			views = append(views, view)
 		}
 	}
-	if len(views) > 0 {
-		return views[0]
-	}
-	return ViewDaily
+	return views
 }
 
-func (m Model) nextActiveSessionView(dir int) View {
-	views := []View{ViewSessionActive, ViewSessionHistory}
-	current := ViewSessionActive
-	for _, candidate := range views {
-		if m.view == candidate {
-			current = candidate
-			break
+func (m Model) visibleTabs() []uistate.Tab {
+	tabs := []uistate.Tab{}
+	for _, tab := range uistate.TabOrder() {
+		if len(m.visibleTabViews(tab)) > 0 {
+			tabs = append(tabs, tab)
 		}
 	}
-	for i, candidate := range views {
-		if candidate == current {
-			return views[(i+dir+len(views))%len(views)]
-		}
+	return tabs
+}
+
+func (m Model) tabTargetView(tab uistate.Tab) (View, bool) {
+	views := m.visibleTabViews(tab)
+	if len(views) == 0 {
+		return "", false
 	}
-	return ViewSessionActive
+	if slices.Contains(views, m.view) {
+		return m.view, true
+	}
+	return views[0], true
+}
+
+func (m Model) nextSubTabView(dir int) View {
+	views := m.visibleTabViews(uistate.TabForView(m.view))
+	if !slices.Contains(views, m.view) {
+		if len(views) > 0 {
+			return views[0]
+		}
+		return m.view
+	}
+	if len(views) < 2 {
+		return m.view
+	}
+	return navigationutil.NextView(views, m.view, dir)
 }
 
 func nextPane(view View, current Pane, dir int) Pane {

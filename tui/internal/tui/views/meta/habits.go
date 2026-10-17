@@ -18,7 +18,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	indices := viewhelpers.FilteredStrings(items, state.Filters["habits"])
 	total := len(indices)
 	lines := []string{
-		theme.StylePaneTitle.Render("Habits [4]"),
+		theme.StylePaneTitle.Render("Habits"),
 		viewchrome.RenderPaneActionLine(theme, func() []string {
 			if !active {
 				return nil
