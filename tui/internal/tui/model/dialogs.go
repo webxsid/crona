@@ -6,6 +6,7 @@ import (
 
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
@@ -629,7 +630,11 @@ func (m Model) openHelpDialog() Model {
 		rows = append(rows, "", "Current View")
 		rows = append(rows, paneActions...)
 	}
-	meta := "Hint Press ? or esc to close"
+	meta := "Version " + versionpkg.Current()
+	if m.isDevMode() {
+		meta += "  · Dev"
+	}
+	meta += "   Hint Press ? or esc to close"
 	body := strings.Join(rows, "\n")
 	return m.withDialogState(
 		m.dialogSnapshot().OpenViewEntity("Keys", "Keyboard Shortcuts", meta, body),

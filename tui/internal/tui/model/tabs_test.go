@@ -2,9 +2,11 @@ package model
 
 import (
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
+	versionpkg "crona/shared/version"
 	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
 
@@ -86,5 +88,13 @@ func TestDigitsInDialogDoNotSwitchTabs(t *testing.T) {
 	}
 	if got.dialog == "" {
 		t.Fatal("expected dialog to stay open")
+	}
+}
+
+func TestHelpDialogShowsVersion(t *testing.T) {
+	m := Model{view: ViewDaily, pane: PaneIssues, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+	m = m.openHelpDialog()
+	if !strings.Contains(m.dialogState().ViewMeta, "Version "+versionpkg.Current()) {
+		t.Fatalf("expected help meta to include version, got %q", m.dialogState().ViewMeta)
 	}
 }

@@ -11,128 +11,135 @@ import (
 	viewtypes "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
-func TestRenderSidebarIncludesHabitHistoryView(t *testing.T) {
-	rendered := Render(State{
-		Width:  140,
-		Height: 44,
-		View:   uistate.ViewDaily,
-		Pane:   uistate.PaneIssues,
+func shellStateForTest(view uistate.View, width, height int) State {
+	cursors := map[string]int{}
+	filters := map[string]string{}
+	for _, tab := range uistate.TabOrder() {
+		for _, v := range uistate.TabViews(tab) {
+			for _, pane := range uistate.ViewPanes(v) {
+				cursors[string(pane)] = 0
+				filters[string(pane)] = ""
+			}
+		}
+	}
+	state := State{
+		Width:      width,
+		Height:     height,
+		View:       view,
+		Pane:       uistate.DefaultPane(view),
+		RepoName:   "crona",
+		StreamName: "tui",
+		Tabs:       uistate.TabOrder(),
+		SubTabs:    uistate.TabViews(uistate.TabForView(view)),
 		ContentState: viewtypes.ContentState{
-			View:   string(uistate.ViewDaily),
-			Pane:   string(uistate.PaneIssues),
-			Width:  118,
-			Height: 44,
-			Cursors: map[string]int{
-				string(uistate.PaneIssues):       0,
-				string(uistate.PaneHabits):       0,
-				string(uistate.PaneHabitHistory): 0,
-			},
-			Filters: map[string]string{
-				string(uistate.PaneIssues):       "",
-				string(uistate.PaneHabits):       "",
-				string(uistate.PaneHabitHistory): "",
-			},
+			View:    string(view),
+			Pane:    string(uistate.DefaultPane(view)),
+			Width:   width,
+			Cursors: cursors,
+			Filters: filters,
 		},
-	})
+	}
+	state.ContentState.Height = ContentHeight(state)
+	return state
+}
 
-	if !strings.Contains(rendered, "Habit History") {
-		t.Fatalf("expected sidebar to include Habit History, got %q", rendered)
+func plainLines(rendered string) []string {
+	return strings.Split(ansi.Strip(rendered), "\n")
+}
+
+func TestRenderTabLineMarksActiveTab(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 120, 36)
+	state.SubTabs = []uistate.View{uistate.ViewDaily, uistate.ViewSummary}
+	lines := plainLines(Render(state))
+	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "5 System") {
+		t.Fatalf("expected tab line with all tabs, got %q", lines[0])
+	}
+	if !strings.Contains(lines[0], "crona › tui") {
+		t.Fatalf("expected repo › stream on tab line, got %q", lines[0])
+	}
+	rendered := strings.Join(lines, "\n")
+	for _, gone := range []string{"DASHBOARD", "version:", "stop daemon"} {
+		if strings.Contains(rendered, gone) {
+			t.Fatalf("expected old chrome %q to be gone", gone)
+		}
 	}
 }
 
-func TestRenderSidebarIncludesSummaryView(t *testing.T) {
-	rendered := Render(State{
-		Width:  140,
-		Height: 44,
-		View:   uistate.ViewSummary,
-		Pane:   uistate.PaneSummary,
-		ContentState: viewtypes.ContentState{
-			View:   string(uistate.ViewSummary),
-			Pane:   string(uistate.PaneSummary),
-			Width:  118,
-			Height: 44,
-			Cursors: map[string]int{
-				string(uistate.PaneSummary): 0,
-			},
-			Filters: map[string]string{
-				string(uistate.PaneSummary): "",
-			},
-		},
-	})
-
-	summaryAt := strings.Index(rendered, "Summary")
-	dailyAt := strings.Index(rendered, "Daily")
-	if summaryAt == -1 || dailyAt == -1 {
-		t.Fatalf("expected sidebar to include summary and daily views, got %q", rendered)
+func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
+	state := shellStateForTest(uistate.ViewRollup, 120, 36)
+	lines := plainLines(Render(state))
+	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Wellbeing") {
+		t.Fatalf("expected sub-tab line, got %q", lines[1])
 	}
-	if summaryAt > dailyAt {
-		t.Fatalf("expected summary view to appear before daily view, got %q", rendered)
+	if got := ContentHeight(state); got != 36-3 {
+		t.Fatalf("expected content height 33 with sub-tabs, got %d", got)
+	}
+	ops := shellStateForTest(uistate.ViewOps, 120, 36)
+	ops.SubTabs = []uistate.View{uistate.ViewOps}
+	if got := ContentHeight(ops); got != 36-2 {
+		t.Fatalf("expected content height 34 without sub-tabs, got %d", got)
 	}
 }
 
-func TestRenderProtectedSidebarIncludesSettingsView(t *testing.T) {
-	rendered := Render(State{
-		Width:         140,
-		Height:        44,
-		View:          uistate.ViewSettings,
-		Pane:          uistate.PaneIssues,
-		ProtectedMode: true,
-		ContentState: viewtypes.ContentState{
-			View:   string(uistate.ViewSettings),
-			Pane:   string(uistate.PaneIssues),
-			Width:  118,
-			Height: 44,
-			Cursors: map[string]int{
-				string(uistate.PaneIssues):       0,
-				string(uistate.PaneHabits):       0,
-				string(uistate.PaneHabitHistory): 0,
-			},
-			Filters: map[string]string{
-				string(uistate.PaneIssues):       "",
-				string(uistate.PaneHabits):       "",
-				string(uistate.PaneHabitHistory): "",
-			},
-		},
-	})
-
-	if !strings.Contains(rendered, "Settings") {
-		t.Fatalf("expected protected sidebar to include Settings, got %q", rendered)
+func TestRenderTimerActiveShowsOnlyAllowedTabs(t *testing.T) {
+	state := shellStateForTest(uistate.ViewSessionActive, 120, 36)
+	state.TimerActive = true
+	state.Tabs = []uistate.Tab{uistate.TabToday, uistate.TabLog}
+	state.SubTabs = []uistate.View{uistate.ViewSessionActive}
+	lines := plainLines(Render(state))
+	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "4 Log") {
+		t.Fatalf("expected today and log tabs, got %q", lines[0])
+	}
+	if strings.Contains(lines[0], "Insights") {
+		t.Fatalf("expected locked tabs hidden, got %q", lines[0])
 	}
 }
 
-func TestRenderSidebarPlacesWorkspaceBeforeExport(t *testing.T) {
-	rendered := Render(State{
-		Width:  140,
-		Height: 44,
-		View:   uistate.ViewDaily,
-		Pane:   uistate.PaneIssues,
-		ContentState: viewtypes.ContentState{
-			View:   string(uistate.ViewDaily),
-			Pane:   string(uistate.PaneIssues),
-			Width:  118,
-			Height: 44,
-			Cursors: map[string]int{
-				string(uistate.PaneIssues):       0,
-				string(uistate.PaneHabits):       0,
-				string(uistate.PaneHabitHistory): 0,
-			},
-			Filters: map[string]string{
-				string(uistate.PaneIssues):       "",
-				string(uistate.PaneHabits):       "",
-				string(uistate.PaneHabitHistory): "",
-			},
-		},
-	})
-
-	workspaceAt := strings.Index(rendered, "WORKSPACE")
-	exportAt := strings.Index(rendered, "EXPORT")
-	if workspaceAt == -1 || exportAt == -1 {
-		t.Fatalf("expected both workspace and export sections in sidebar, got %q", rendered)
+func TestRenderLongStatusFitsOneLine(t *testing.T) {
+	state := shellStateForTest(uistate.ViewOps, 60, 24)
+	state.SubTabs = []uistate.View{uistate.ViewOps}
+	state.StatusMsg = strings.Repeat("x", 200)
+	rendered := Render(state)
+	if got := lipgloss.Height(rendered); got != 24 {
+		t.Fatalf("expected frame height 24, got %d", got)
 	}
-	if workspaceAt > exportAt {
-		t.Fatalf("expected workspace section before export section, got %q", rendered)
+	lines := plainLines(rendered)
+	last := lines[len(lines)-1]
+	if ansi.StringWidth(last) != 60 || !strings.Contains(last, "xxx") {
+		t.Fatalf("expected status message on 60-col last line, got %q", last)
+	}
+}
+
+func TestRenderMinimumSize(t *testing.T) {
+	for _, size := range [][2]int{{59, 24}, {80, 19}} {
+		rendered := Render(shellStateForTest(uistate.ViewDaily, size[0], size[1]))
+		if !strings.Contains(rendered, "Terminal Too Small") {
+			t.Fatalf("expected minimum-size warning at %dx%d", size[0], size[1])
+		}
+	}
+	rendered := Render(shellStateForTest(uistate.ViewDaily, 60, 20))
+	if !strings.Contains(ansi.Strip(rendered), "1 Today") {
+		t.Fatal("expected shell at 60x20")
+	}
+}
+
+func TestRenderAllViewsFitNarrowFrame(t *testing.T) {
+	for _, tab := range uistate.TabOrder() {
+		for _, view := range uistate.TabViews(tab) {
+			rendered := Render(shellStateForTest(view, 80, 24))
+			lines := strings.Split(rendered, "\n")
+			if len(lines) != 24 {
+				t.Fatalf("%s: expected 24 lines, got %d", view, len(lines))
+			}
+			for i, line := range lines {
+				if got := ansi.StringWidth(line); got > 80 {
+					t.Fatalf("%s: line %d width %d > 80", view, i, got)
+				}
+			}
+		}
 	}
 }
 

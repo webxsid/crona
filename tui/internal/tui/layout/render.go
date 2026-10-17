@@ -2,9 +2,9 @@ package layout
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
-	versionpkg "crona/shared/version"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/chrome"
 	"crona/tui/internal/tui/dialogs"
@@ -20,11 +20,8 @@ import (
 )
 
 const (
-	MinWidth  = 135
-	MinHeight = 30
-
-	// SidebarWidth is fixed because frames narrower than MinWidth are never rendered.
-	SidebarWidth = 22
+	MinWidth  = 60
+	MinHeight = 20
 )
 
 type State struct {
@@ -52,6 +49,8 @@ type State struct {
 	StatusErr           bool
 	PaneActions         []string
 	GlobalActions       []string
+	Tabs                []uistate.Tab
+	SubTabs             []uistate.View
 }
 
 func ViewTheme() viewtypes.Theme {
@@ -95,121 +94,55 @@ func Render(state State) string {
 		return renderMinimumSizeWarning(state.Width, state.Height)
 	}
 
-	header := ""
-	help := ""
-	if !state.ProtectedMode {
-		header = renderHeader(state)
-		help = renderHelpBar(state)
-	}
-	contentHeight := contentHeightFromChrome(state.ProtectedMode, state.Height, header, help)
-	baseParts := []string{}
-	if header != "" {
-		baseParts = append(baseParts, header)
-	}
-	baseParts = append(baseParts, renderBody(state, contentHeight))
-	if help != "" {
-		baseParts = append(baseParts, help)
-	}
-	base := strings.Join(baseParts, "\n")
-
 	if state.DialogOpen {
 		dialogStr := dialogs.Render(DialogTheme(), state.DialogState)
-		result := clipViewportString(
-			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
-			state.Width,
-			state.Height,
-		)
 		logger.Infof(
-			"layout.Render dialog overlay: view=%q pane=%q dialog_kind=%q base_len=%d dialog_len=%d result_len=%d width=%d height=%d",
+			"layout.Render dialog overlay: view=%q pane=%q dialog_kind=%q dialog_len=%d width=%d height=%d",
 			state.View,
 			state.Pane,
 			state.DialogState.Kind,
-			len(base),
 			len(dialogStr),
-			len(result),
 			state.Width,
 			state.Height,
 		)
-		return result
+		return placeCentered(state, dialogStr)
 	}
 	if state.SessionDetailOpen {
-		dialogStr := renderSessionDetailOverlay(state)
-		result := clipViewportString(
-			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
-			state.Width,
-			state.Height,
-		)
-		logger.Infof(
-			"layout.Render session-detail overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
-			state.View,
-			state.Pane,
-			len(base),
-			len(dialogStr),
-			len(result),
-			state.Width,
-			state.Height,
-		)
-		return result
+		return placeCentered(state, renderSessionDetailOverlay(state))
 	}
 	if state.SessionContextOpen {
-		dialogStr := renderSessionContextOverlay(state)
-		result := clipViewportString(
-			lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, dialogStr),
-			state.Width,
-			state.Height,
-		)
-		logger.Infof(
-			"layout.Render session-context overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
-			state.View,
-			state.Pane,
-			len(base),
-			len(dialogStr),
-			len(result),
-			state.Width,
-			state.Height,
-		)
-		return result
+		return placeCentered(state, renderSessionContextOverlay(state))
 	}
-	if state.StatusMsg != "" {
-		overlay := renderStatusToast(state)
-		result := clipViewportString(
-			renderOverlay(
-				base,
-				overlay,
-				1,
-				max(0, state.Height-overlayHeight(overlay)-1),
-				state.Width,
-				state.Height,
-			),
-			state.Width,
-			state.Height,
-		)
-		logger.Infof(
-			"layout.Render status overlay: view=%q pane=%q base_len=%d overlay_len=%d result_len=%d width=%d height=%d",
-			state.View,
-			state.Pane,
-			len(base),
-			len(overlay),
-			len(result),
-			state.Width,
-			state.Height,
-		)
-		return result
+
+	parts := []string{renderTabLine(state)}
+	if subTabs := renderSubTabLine(state); subTabs != "" {
+		parts = append(parts, subTabs)
 	}
-	result := clipViewportString(base, state.Width, state.Height)
+	content := clipViewportString(
+		viewrenderer.RenderContent(ViewTheme(), state.ContentState),
+		state.Width,
+		ContentHeight(state),
+	)
+	parts = append(parts, content, renderStatusLine(state))
+	result := clipViewportString(strings.Join(parts, "\n"), state.Width, state.Height)
 	logger.Infof(
-		"layout.Render base: view=%q pane=%q base_len=%d result_len=%d width=%d height=%d dialog_open=%t help_open=%t status=%q",
+		"layout.Render base: view=%q pane=%q result_len=%d width=%d height=%d status=%q",
 		state.View,
 		state.Pane,
-		len(base),
 		len(result),
 		state.Width,
 		state.Height,
-		state.DialogOpen,
-		state.HelpOpen,
 		state.StatusMsg,
 	)
 	return result
+}
+
+func placeCentered(state State, overlay string) string {
+	return clipViewportString(
+		lipgloss.Place(state.Width, state.Height, lipgloss.Center, lipgloss.Center, overlay),
+		state.Width,
+		state.Height,
+	)
 }
 
 func renderMinimumSizeWarning(width, height int) string {
@@ -243,199 +176,72 @@ func renderMinimumSizeWarning(width, height int) string {
 	)
 }
 
-func renderHeader(state State) string {
-	mode := ""
-	if state.IsDevMode {
-		mode = "   " + chrome.StyleDim.Render("env:") + " " + chrome.StyleHeader.Render("Dev")
-	}
-	brand := chrome.StyleHeader.Render(viewchrome.LogoTiny())
-	contextLine := fmt.Sprintf(
-		"%s %s   %s %s%s",
-		chrome.StyleDim.Render(
-			"repo:",
-		),
-		chrome.StyleHeader.Render(helperpkg.Truncate(state.RepoName, max(16, state.Width/4))),
-		chrome.StyleDim.Render(
-			"stream:",
-		),
-		chrome.StyleHeader.Render(helperpkg.Truncate(state.StreamName, max(16, state.Width/4))),
-		mode,
-	)
-	versionLabel := chrome.StyleDim.Render(
-		"version:",
-	) + " " + chrome.StyleHeader.Render(
-		versionpkg.Current(),
-	)
-	if strings.TrimSpace(brand) != "" {
-		contextLine = brand + "  " + contextLine
-	}
-	contextWidth := ansi.StringWidth(contextLine)
-	versionWidth := ansi.StringWidth(versionLabel)
-	if contextWidth+versionWidth+3 <= state.Width {
-		contextLine += strings.Repeat(" ", state.Width-contextWidth-versionWidth) + versionLabel
-	} else {
-		contextLine = helperpkg.Truncate(contextLine, max(20, state.Width-versionWidth-3))
-		gap := max(1, state.Width-ansi.StringWidth(contextLine)-versionWidth)
-		contextLine += strings.Repeat(" ", gap) + versionLabel
-	}
-	lines := []string{contextLine}
-	if secondary := viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState); secondary != "" {
-		lines = append(lines, secondary)
-	}
-	return lipgloss.NewStyle().
-		Width(state.Width).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderBottom(true).
-		BorderForeground(chrome.ColorDim).
-		Render(strings.Join(lines, "\n"))
-}
-
-func renderBody(state State, height int) string {
-	sidebar := renderSidebar(state, SidebarWidth, height)
-	content := viewrenderer.RenderContent(ViewTheme(), state.ContentState)
-	return lipgloss.NewStyle().
-		Width(state.Width).
-		Render(lipgloss.JoinHorizontal(lipgloss.Top, sidebar, content))
-}
-
-func renderSidebar(state State, width, height int) string {
-	var lines []string
-	if state.ProtectedMode {
-		lines = []string{
-			chrome.StylePaneTitle.Render("Away"),
-			chrome.StyleActive.Render("[ and ] switch"),
-			chrome.StyleActive.Render("[v] jump"),
-			"",
-			renderSidebarItem(state, uistate.ViewAway, "Away"),
-			renderSidebarItem(state, uistate.ViewReports, "Reports"),
-			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
-			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
-			renderSidebarItem(state, uistate.ViewSettings, "Settings"),
-		}
-		return chrome.StyleInactive.Width(width-4).
-			Height(max(3, height-2)).
-			Padding(1, 1).
-			Render(strings.Join(lines, "\n"))
-	}
-	if state.TimerActive {
-		lines = []string{
-			chrome.StylePaneTitle.Render("Active Session"),
-			chrome.StyleDim.Render("[ and ] switch"),
-			chrome.StyleDim.Render("[v] jump"),
-			"",
-			chrome.StyleDim.Render("SESSION"),
-			renderSidebarItem(state, uistate.ViewSessionActive, "Session"),
-			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
-			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
-		}
-	} else {
-		lines = []string{
-			chrome.StylePaneTitle.Render("Views"),
-			chrome.StyleDim.Render("[ and ] switch"),
-			chrome.StyleDim.Render("[v] jump"),
-			"",
-			chrome.StyleDim.Render("DASHBOARD"),
-			renderSidebarItem(state, uistate.ViewSummary, "Summary"),
-			renderSidebarItem(state, uistate.ViewDaily, "Daily"),
-			renderSidebarItem(state, uistate.ViewRollup, "Rollup"),
-			renderSidebarItem(state, uistate.ViewMomentum, "Momentum"),
-			renderSidebarItem(state, uistate.ViewWellbeing, "Wellbeing"),
-			"",
-			chrome.StyleDim.Render("WORKSPACE"),
-			renderSidebarItem(state, uistate.ViewDefault, "Issues"),
-			renderSidebarItem(state, uistate.ViewMeta, "Meta"),
-			renderSidebarItem(state, uistate.ViewOps, "Ops"),
-			"",
-			chrome.StyleDim.Render("EXPORT"),
-			renderSidebarItem(state, uistate.ViewReports, "Reports"),
-			renderSidebarItem(state, uistate.ViewConfig, "Config"),
-			"",
-			chrome.StyleDim.Render("SYSTEM"),
-			renderSidebarItem(state, uistate.ViewSettings, "Settings"),
-			renderSidebarItem(state, uistate.ViewAlerts, "Alerts"),
-			renderSidebarItem(state, uistate.ViewUpdates, "Updates"),
-			renderSidebarItem(state, uistate.ViewSupport, "Support"),
-			"",
-			chrome.StyleDim.Render("SESSION"),
-			renderSidebarItem(state, uistate.ViewSessionHistory, "History"),
-			renderSidebarItem(state, uistate.ViewHabitHistory, "Habit History"),
-		}
-	}
-	return chrome.StyleInactive.Width(width-4).
-		Height(max(3, height-2)).
-		Padding(1, 1).
-		Render(strings.Join(lines, "\n"))
-}
-
-func renderSidebarItem(state State, view uistate.View, label string) string {
-	if state.View == view {
-		return chrome.StyleCursor.Render(chrome.SelectionCursor + " " + label)
-	}
-	return chrome.StyleNormal.Render("  " + label)
-}
-
-func renderHelpBar(state State) string {
-	devRightAction := ""
-	if state.IsDevMode {
-		devRightAction = "[f6] seed dev data   [f7] clear dev data   "
-	}
-	leftActions := append([]string(nil), state.GlobalActions...)
-	rightText := devRightAction + "[K] stop daemon   [ctrl+c] quit"
-	if state.Width < 200 && len(leftActions) > 5 {
-		leftActions = leftActions[:5]
-		rightText = "[?] more   [ctrl+c] quit"
-	}
-	left := strings.Join(leftActions, "   ")
-	right := chrome.StyleDim.Render(rightText)
-	gap := state.Width - lipgloss.Width(left) - lipgloss.Width(right)
-	gap = max(gap, 1)
-	return " " + left + strings.Repeat(" ", gap-1) + right
-}
-
-func renderOverlay(base, overlay string, x, y, width, height int) string {
-	baseLines := strings.Split(base, "\n")
-	for len(baseLines) < height {
-		baseLines = append(baseLines, "")
-	}
-	for i := range baseLines {
-		baseLines[i] = padRight(baseLines[i], width)
-	}
-	for row, line := range strings.Split(overlay, "\n") {
-		targetRow := y + row
-		if targetRow < 0 || targetRow >= len(baseLines) {
+func renderTabLine(state State) string {
+	parts := []string{}
+	for i, tab := range uistate.TabOrder() {
+		if !slices.Contains(state.Tabs, tab) {
 			continue
 		}
-		baseRunes := []rune(baseLines[targetRow])
-		for col, r := range []rune(line) {
-			targetCol := x + col
-			if targetCol < 0 || targetCol >= len(baseRunes) {
-				continue
-			}
-			baseRunes[targetCol] = r
+		label := fmt.Sprintf("%d %s", i+1, uistate.TabLabel(tab))
+		if tab == uistate.TabForView(state.View) {
+			parts = append(parts, chrome.StyleCursor.Render(label))
+		} else {
+			parts = append(parts, chrome.StyleDim.Render(label))
 		}
-		baseLines[targetRow] = string(baseRunes)
 	}
-	return strings.Join(baseLines, "\n")
+	left := " " + strings.Join(parts, "  ")
+	right := state.RepoName + " › " + state.StreamName
+	if state.IsDevMode {
+		right += " · dev"
+	}
+	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)
 }
 
-func renderStatusToast(state State) string {
-	maxWidth := min(max(28, state.Width/2), max(28, state.Width-4))
-	title := "Notice"
-	border := chrome.ColorCyan
-	bodyStyle := chrome.StyleNormal
-	if state.StatusErr {
-		title = "ERROR"
-		border = chrome.ColorRed
-		bodyStyle = chrome.StyleError.Bold(true)
+func renderSubTabLine(state State) string {
+	if len(state.SubTabs) < 2 {
+		return ""
 	}
-	return overlayBox(
-		title,
-		WrapText(state.StatusMsg, maxWidth-6),
-		nil,
-		maxWidth,
-		border,
-		bodyStyle,
-	)
+	parts := make([]string, 0, len(state.SubTabs))
+	for _, view := range state.SubTabs {
+		label := uistate.ViewLabel(view)
+		if view == state.View {
+			parts = append(parts, chrome.StyleHeader.Render(label))
+		} else {
+			parts = append(parts, chrome.StyleDim.Render(label))
+		}
+	}
+	return " " + strings.Join(parts, chrome.StyleDim.Render(" · "))
+}
+
+func renderStatusLine(state State) string {
+	left := strings.Join(state.GlobalActions, "   ")
+	if state.TimerActive {
+		left = viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState)
+	}
+	right := chrome.StyleDim.Render("? help  ctrl+c quit")
+	if state.StatusMsg != "" {
+		style := chrome.StyleSelected
+		if state.StatusErr {
+			style = chrome.StyleError
+		}
+		msg := strings.Join(strings.Fields(state.StatusMsg), " ")
+		right = style.Render(ansi.Truncate(msg, max(1, state.Width-2), "…"))
+	}
+	return joinEnds(" "+left, right, state.Width)
+}
+
+// joinEnds places left and right on one line of exactly width cells, truncating left first.
+func joinEnds(left, right string, width int) string {
+	rightWidth := ansi.StringWidth(right)
+	if rightWidth >= width {
+		return ansi.Truncate(right, width, "")
+	}
+	room := width - rightWidth - 1
+	if ansi.StringWidth(left) > room {
+		left = ansi.Truncate(left, room, "…")
+	}
+	gap := width - ansi.StringWidth(left) - rightWidth
+	return left + strings.Repeat(" ", gap) + right
 }
 
 func renderSessionDetailOverlay(state State) string {
@@ -570,32 +376,11 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 }
 
 func ContentHeight(state State) int {
-	if state.ProtectedMode {
-		return contentHeightFromChrome(true, state.Height, "", "")
+	rows := 2
+	if len(state.SubTabs) >= 2 {
+		rows++
 	}
-	return contentHeightFromChrome(false, state.Height, renderHeader(state), renderHelpBar(state))
-}
-
-func contentHeightFromChrome(protected bool, height int, header, help string) int {
-	if protected {
-		if height < 4 {
-			return 4
-		}
-		return height
-	}
-	headerH := 4
-	if header != "" {
-		headerH = lipgloss.Height(header)
-	}
-	helpH := 1
-	if help != "" {
-		helpH = lipgloss.Height(help)
-	}
-	availableHeight := height - headerH - helpH
-	if availableHeight < 4 {
-		return 4
-	}
-	return availableHeight
+	return max(4, state.Height-rows)
 }
 
 func WrapText(text string, width int) []string {
@@ -627,13 +412,6 @@ func WrapText(text string, width int) []string {
 		return []string{text}
 	}
 	return lines
-}
-
-func overlayHeight(overlay string) int {
-	if overlay == "" {
-		return 0
-	}
-	return len(strings.Split(overlay, "\n"))
 }
 
 func padRight(s string, width int) string {

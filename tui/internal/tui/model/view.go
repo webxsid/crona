@@ -8,6 +8,7 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
+	uistate "crona/tui/internal/tui/state"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 )
@@ -65,6 +66,8 @@ func (m Model) layoutState() layoutpkg.State {
 		StatusErr:           m.statusErr,
 		GlobalActions:       viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions),
 		PaneActions:         paneActions,
+		Tabs:                m.visibleTabs(),
+		SubTabs:             m.visibleTabViews(uistate.TabForView(m.view)),
 	}
 	state.ContentState = m.viewContentState(
 		m.mainContentWidth(),
@@ -196,7 +199,7 @@ func (m Model) isBetaBuild() bool {
 }
 
 func (m Model) mainContentWidth() int {
-	return max(0, m.width-layoutpkg.SidebarWidth)
+	return max(0, m.width)
 }
 
 func (m Model) isDevMode() bool {
@@ -214,5 +217,6 @@ func (m Model) contentHeight() int {
 		StreamName:    chromeState.StreamName,
 		GlobalActions: chromeState.GlobalActions,
 		HeaderState:   chromeState.HeaderState,
+		SubTabs:       m.visibleTabViews(uistate.TabForView(m.view)),
 	})
 }
