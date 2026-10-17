@@ -407,3 +407,26 @@ func TestActiveSessionFitsFrame(t *testing.T) {
 		}
 	}
 }
+
+func TestPomodoroMetadataFitsAt24Rows(t *testing.T) {
+	work := sharedtypes.SessionSegmentWork
+	shortBreak := sharedtypes.SessionSegmentShortBreak
+	rendered := ansi.Strip(renderActiveView(types.Theme{}, types.ContentState{
+		View:   "session_active",
+		Width:  80,
+		Height: 24,
+		Timer: &api.TimerState{
+			State:                     "running",
+			HardLimitActive:           true,
+			HardLimitKind:             sharedtypes.TimerHardLimitKindPomodoro,
+			HardLimitTotalSeconds:     600,
+			HardLimitRemainingSeconds: 300,
+			HardLimitWorkSeconds:      300,
+			SegmentType:               &work,
+			NextSegmentType:           &shortBreak,
+		},
+	}))
+	if !strings.Contains(rendered, "Completed sessions") {
+		t.Fatalf("expected pomodoro metadata at 80x24, got:\n%s", rendered)
+	}
+}

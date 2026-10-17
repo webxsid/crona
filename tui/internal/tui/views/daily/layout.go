@@ -31,11 +31,18 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		))
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	default:
-		sections, listH := daySection(theme, state, width, height)
-		issuesH := listH * 3 / 5
+		// Stacked: Day keeps a compact band so the task list has room for rows.
+		summaryH, listH := viewhelpers.SplitVertical(height, 7, 11, height/3)
+		sections := []string{}
+		if summaryH >= 3 {
+			sections = append(sections, renderSummary(theme, state, width, summaryH))
+		} else {
+			listH = height
+		}
+		habitsH := min(listH/2, max(4, listH/3))
 		sections = append(sections,
-			renderIssues(theme, state, width, issuesH),
-			renderHabits(theme, state, width, listH-issuesH),
+			renderIssues(theme, state, width, listH-habitsH),
+			renderHabits(theme, state, width, habitsH),
 		)
 		return lipgloss.JoinVertical(lipgloss.Left, sections...)
 	}

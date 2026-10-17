@@ -23,14 +23,26 @@ func Render(theme types.Theme, state types.ContentState) string {
 }
 
 func renderView(theme types.Theme, state types.ContentState) string {
-	innerWidth := max(24, state.Width-4)
-	lines := renderHeader(theme, state, innerWidth)
 	snapshot := state.SummarySnapshot
 	if snapshot == nil || snapshot.Date != state.SummaryDate {
+		lines := renderHeader(theme, state, max(24, state.Width-4))
 		lines = append(lines, "", theme.StyleDim.Render("Loading summary…"))
 		return summarySection(theme, state, lines)
 	}
+	content := scrollSummaryLines(
+		summaryRows(theme, state),
+		state.Cursors["summary"],
+		max(1, state.Height-1),
+		theme.StyleDim.Render("↓ more"),
+	)
+	return summarySection(theme, state, content)
+}
 
+// summaryRows is the full summary body split into screen rows, so scrolling counts real rows.
+func summaryRows(theme types.Theme, state types.ContentState) []string {
+	innerWidth := max(24, state.Width-4)
+	snapshot := state.SummarySnapshot
+	lines := renderHeader(theme, state, innerWidth)
 	lines = append(lines, "", renderKPIBand(theme, state, innerWidth))
 	lines = append(lines, "", renderStats(theme, snapshot, innerWidth))
 	if state.Width >= wideSummaryWidth {
@@ -47,34 +59,14 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		lines = append(lines, "")
 		lines = append(lines, renderSignals(theme, state, innerWidth)...)
 	}
-	content := scrollSummaryLines(
-		lines,
-		state.Cursors["summary"],
-		max(1, state.Height-1),
-		theme.StyleDim.Render("↓ more"),
-	)
-	return summarySection(theme, state, content)
-}
-
-func summarySection(theme types.Theme, state types.ContentState, lines []string) string {
-	body := make([]string, 0, len(lines))
-	for _, line := range lines {
-		body = append(body, strings.Split(line, "\n")...)
-	}
-	return viewchrome.RenderSection(theme, viewchrome.Section{
-		Title:  "Summary",
-		Meta:   state.SummaryDate,
-		Width:  state.Width,
-		Height: state.Height,
-		Lines:  body,
-	})
+	return splitRows(lines)
 }
 
 func PaneLineCount(state types.ContentState) int {
-	if state.SummarySnapshot == nil {
+	if state.SummarySnapshot == nil || state.SummarySnapshot.Date != state.SummaryDate {
 		return 1
 	}
-	return 28 + len(state.SummarySnapshot.Habits) + issueCount(state.SummarySnapshot.Issues)
+	return len(summaryRows(types.Theme{}, state))
 }
 
 func scrollSummaryLines(lines []string, offset, height int, moreLabel string) []string {
@@ -419,13 +411,6 @@ func habitCounts(habits []sharedtypes.HabitDailyItem) (completed, failed int) {
 	return completed, failed
 }
 
-func issueCount(summary *sharedtypes.DailyIssueSummary) int {
-	if summary == nil {
-		return 0
-	}
-	return len(summary.Issues)
-}
-
 func averageSignals(rollup *sharedtypes.MetricsRollup) string {
 	parts := make([]string, 0, 3)
 	if rollup.AverageMood != nil {
@@ -460,4 +445,22 @@ func clamp(value, low, high int) int {
 		return high
 	}
 	return value
+}
+
+func splitRows(lines []string) []string {
+	rows := make([]string, 0, len(lines))
+	for _, line := range lines {
+		rows = append(rows, strings.Split(line, "\n")...)
+	}
+	return rows
+}
+
+func summarySection(theme types.Theme, state types.ContentState, lines []string) string {
+	return viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:  "Summary",
+		Meta:   state.SummaryDate,
+		Width:  state.Width,
+		Height: state.Height,
+		Lines:  splitRows(lines),
+	})
 }

@@ -76,8 +76,8 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		layout = issuecore.IssueTableLayoutForWidthWithDate(width)
 	}
 	inner := sectionBodyRows(height, lines)
-	issueSlots := max(1, inner)
-	start, end := viewchrome.ListWindow(cur, total, issueSlots)
+	// The table adds a column-header row above the issue rows.
+	start, end := listWindow(cur, total, inner-1)
 	if start > 0 {
 		lines = append(lines, base.MoreAbove(theme, start))
 	}
@@ -396,7 +396,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
 	inner := sectionBodyRows(height, lines)
-	start, end := viewchrome.ListWindow(cur, total, inner)
+	start, end := listWindow(cur, total, inner)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
@@ -437,6 +437,22 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+}
+
+// listWindow picks the visible items for budget rows, reserving a row for each ↑/↓ marker.
+func listWindow(cur, total, budget int) (int, int) {
+	start, end := viewchrome.ListWindow(cur, total, max(1, budget))
+	for range 2 {
+		slots := budget
+		if start > 0 {
+			slots--
+		}
+		if end < total {
+			slots--
+		}
+		start, end = viewchrome.ListWindow(cur, total, max(1, slots))
+	}
+	return start, end
 }
 
 // sectionBodyRows is the list budget left in a section of height rows after its header and lines.

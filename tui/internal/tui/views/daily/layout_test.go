@@ -94,3 +94,51 @@ func TestDailyFitsFrame(t *testing.T) {
 		}
 	}
 }
+
+func manyIssues(state types.ContentState, n int) types.ContentState {
+	state.DailyTaskSection = "planned"
+	state.DailyIssues = nil
+	for i := range n {
+		state.DailyIssues = append(state.DailyIssues, api.Issue{
+			ID:          int64(i + 1),
+			Title:       fmt.Sprintf("Issue number %02d", i),
+			Status:      "ready",
+			TodoForDate: new(state.DashboardDate),
+		})
+	}
+	return state
+}
+
+func TestDailyHabitsCursorVisibleAtEnd(t *testing.T) {
+	state := dailyState(120, 24)
+	state.Pane = "habits"
+	state.DueHabits = nil
+	for i := range 30 {
+		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
+			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+		})
+	}
+	state.Cursors["habits"] = 29
+	rendered := ansi.Strip(renderHabits(testTheme(), state, 60, 20))
+	if !strings.Contains(rendered, "Habit 29") || !strings.Contains(rendered, "↑ ") {
+		t.Fatalf("expected last habit and ↑ marker, got %q", rendered)
+	}
+}
+
+func TestDailyTableCursorVisibleAtEnd(t *testing.T) {
+	state := manyIssues(dailyState(240, 24), 30)
+	state.Cursors["issues"] = 29
+	rendered := ansi.Strip(renderIssues(testTheme(), state, 240, 24))
+	if !strings.Contains(rendered, "Issue number 29") {
+		t.Fatalf("expected selected table row to be visible, got %q", rendered)
+	}
+}
+
+func TestDailyNarrowShowsSelectedTask(t *testing.T) {
+	state := manyIssues(dailyState(60, 18), 30)
+	state.Cursors["issues"] = 29
+	rendered := ansi.Strip(renderView(testTheme(), state))
+	if !strings.Contains(rendered, "Issue number 29") {
+		t.Fatalf("expected selected task visible at 60x18, got %q", rendered)
+	}
+}

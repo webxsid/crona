@@ -159,6 +159,12 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		timerParts = append(timerParts, "", progressLine)
 	}
 	timerParts = append(timerParts, "", centerLines(metadataLines, centerWidth))
+	timerRows := splitLines(timerParts)
+	if !wide {
+		// Grow the timer section to fit its body; the issue section takes what is left.
+		timerH = min(max(timerH, len(timerRows)+1), max(timerH, totalH-6))
+		issueH = totalH - timerH
+	}
 	titleStyle := lipgloss.NewStyle().Foreground(stateColor).Bold(true)
 	timerSection := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title:      timerTitle,
@@ -166,7 +172,7 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		TitleStyle: &titleStyle,
 		Width:      timerW,
 		Height:     timerH,
-		Lines:      splitLines(timerParts),
+		Lines:      timerRows,
 	})
 	issueSection := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title:  "Issue",

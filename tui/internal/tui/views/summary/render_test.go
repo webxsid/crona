@@ -123,3 +123,19 @@ func TestSummaryFitsFrame(t *testing.T) {
 		}
 	}
 }
+
+func TestSummaryScrollReachesEnd(t *testing.T) {
+	state := summaryTestState()
+	state.Width, state.Height = 80, 24
+	found := false
+	for offset := 0; offset <= PaneLineCount(state); offset++ {
+		state.Cursors = map[string]int{"summary": offset}
+		if strings.Contains(ansi.Strip(Render(types.Theme{}, state)), "Momentum") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatal("expected Momentum to be reachable by scrolling at 80x24")
+	}
+}
