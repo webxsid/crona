@@ -24,23 +24,8 @@ const dailyIssueTableMinWidth = 120
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "issues"
 	cur := state.Cursors["issues"]
-	issues := make([]issuecore.APIIssue, 0, len(state.DailyIssues))
-	for _, issue := range filteredDailyIssues(state) {
-		issues = append(
-			issues,
-			issuecore.NewAPIIssue(
-				issue.ID,
-				issue.Title,
-				issue.Status,
-				issue.EstimateMinutes,
-				issue.WorkedSeconds,
-				issue.PinnedDaily,
-				issue.TodoForDate,
-				issue.CompletedAt,
-				issue.AbandonedAt,
-			),
-		)
-	}
+	sources := filteredDailyIssues(state)
+	issues := dailyAPIIssues(sources)
 	indices := issuecore.FilteredIssueIndices(issues, state.Filters["issues"])
 	total := len(indices)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
@@ -59,6 +44,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			base,
 			lines,
 			issues,
+			sources,
 			indices,
 			total,
 			cur,
@@ -80,7 +66,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	for _, rawIdx := range indices[start:end] {
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
-		repoName, streamName := "-", "-"
+		repoName, streamName := dailyIssueContext(sources[rawIdx])
 		workedSeconds := issue.WorkedSeconds
 		if meta != nil {
 			repoName = meta.RepoName
@@ -137,6 +123,44 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	return dailySection(theme, "Tasks", meta, active, width, height, lines)
 }
 
+func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {
+	issues := make([]issuecore.APIIssue, 0, len(sources))
+	for _, issue := range sources {
+		issues = append(
+			issues,
+			issuecore.NewAPIIssue(
+				issue.ID,
+				issue.Title,
+				issue.Status,
+				issue.EstimateMinutes,
+				issue.WorkedSeconds,
+				issue.PinnedDaily,
+				issue.TodoForDate,
+				issue.CompletedAt,
+				issue.AbandonedAt,
+			),
+		)
+	}
+	return issues
+}
+
+// dailyTaskRows is the height the Tasks section needs to show every task at width.
+func dailyTaskRows(state types.ContentState, width int) int {
+	total := len(issuecore.FilteredIssueIndices(
+		dailyAPIIssues(filteredDailyIssues(state)),
+		state.Filters["issues"],
+	))
+	// Header and the Planned/Pinned/Overdue row come first.
+	switch {
+	case total == 0:
+		return 3
+	case width >= dailyIssueTableMinWidth:
+		return 3 + total
+	default:
+		return 2 + total*3 - 1
+	}
+}
+
 func renderCompactDailyIssueList(
 	theme types.Theme,
 	state types.ContentState,
@@ -144,6 +168,7 @@ func renderCompactDailyIssueList(
 	base viewui.PaneBase,
 	lines []string,
 	issues []issuecore.APIIssue,
+	sources []api.Issue,
 	indices []int,
 	total, cur int,
 	active bool,
@@ -170,7 +195,7 @@ func renderCompactDailyIssueList(
 		}
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
-		repoName, streamName := "-", "-"
+		repoName, streamName := dailyIssueContext(sources[rawIdx])
 		workedSeconds := issue.WorkedSeconds
 		if meta != nil {
 			repoName = meta.RepoName
@@ -210,6 +235,18 @@ func renderCompactDailyIssueList(
 		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
 	return lines
+}
+
+// dailyIssueContext is the issue's own repo and stream, used until session metadata has it.
+func dailyIssueContext(issue api.Issue) (string, string) {
+	repo, stream := strings.TrimSpace(issue.RepoName), strings.TrimSpace(issue.StreamName)
+	if repo == "" {
+		repo = "-"
+	}
+	if stream == "" {
+		stream = "-"
+	}
+	return repo, stream
 }
 
 func renderCompactDailyIssueTitle(

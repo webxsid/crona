@@ -68,9 +68,11 @@ func TestDailyWideHasDetailPane(t *testing.T) {
 }
 
 func TestDailyHabitsSizedToContent(t *testing.T) {
-	rendered := renderView(testTheme(), dailyState(200, 60))
-	if row := rowOf(t, rendered, "─ Habits Due"); row < 60-5 {
-		t.Fatalf("expected two habits to take only the bottom rows, header at row %d", row)
+	rendered := renderView(testTheme(), dailyState(120, 60))
+	lines := strings.Split(ansi.Strip(rendered), "\n")
+	header := rowOf(t, rendered, "─ Habits Due")
+	if !strings.Contains(lines[header+2], "Read") || strings.TrimSpace(lines[header+3]) != "" {
+		t.Fatalf("expected Habits to hold just its two rows, got %q", lines[header:header+4])
 	}
 }
 
@@ -178,5 +180,24 @@ func TestDailyNarrowShowsSelectedTask(t *testing.T) {
 	rendered := ansi.Strip(renderView(testTheme(), state))
 	if !strings.Contains(rendered, "Issue number 29") {
 		t.Fatalf("expected selected task visible at 60x18, got %q", rendered)
+	}
+}
+
+func TestDailyShortTaskListKeepsHabitsClose(t *testing.T) {
+	for _, width := range []int{80, 130, 200} {
+		rendered := renderView(testTheme(), manyIssues(dailyState(width, 36), 3))
+		if gap := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks"); gap > 12 {
+			t.Fatalf("width %d: expected habits right below 3 tasks, gap %d rows", width, gap)
+		}
+	}
+}
+
+func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
+	for _, width := range []int{80, 130} {
+		state := manyIssues(dailyState(width, 30), 1)
+		state.DailyIssues[0].RepoName, state.DailyIssues[0].StreamName = "crona", "core"
+		if rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20)); !strings.Contains(rendered, "crona") || !strings.Contains(rendered, "core") {
+			t.Fatalf("width %d: expected the issue's own repo and stream, got %q", width, rendered)
+		}
 	}
 }

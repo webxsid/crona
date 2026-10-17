@@ -1,6 +1,8 @@
 package daily
 
 import (
+	"strings"
+
 	viewaway "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -34,10 +36,16 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		detail = renderDetail(theme, state, cols[1], rest)
 	}
 	habitsH := dailyHabitsHeight(state, rest)
-	body := lipgloss.JoinVertical(lipgloss.Left,
-		renderIssues(theme, state, listW, rest-habitsH),
+	// A short task list ends at its last row so Habits follows it; spare rows go below.
+	tasksH := min(rest-habitsH, max(dailyMinTaskRows, dailyTaskRows(state, listW)))
+	sections := []string{
+		renderIssues(theme, state, listW, tasksH),
 		renderHabits(theme, state, listW, habitsH),
-	)
+	}
+	if spare := rest - tasksH - habitsH; spare > 0 {
+		sections = append(sections, strings.TrimSuffix(strings.Repeat(strings.Repeat(" ", listW)+"\n", spare), "\n"))
+	}
+	body := lipgloss.JoinVertical(lipgloss.Left, sections...)
 	if detail != "" {
 		body = viewchrome.JoinColumns(theme, rest, body, detail)
 	}
