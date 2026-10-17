@@ -8,6 +8,7 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
@@ -85,12 +86,18 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		timerHint = "[r] resume  [x] end session  [i] context"
 		seg = "paused"
 	}
-	leftW := state.Width - 4
-	totalH := state.Height
-	totalH = max(totalH, 1)
+	totalH := max(state.Height, 1)
+	timerW, issueW := state.Width, state.Width
 	timerH, issueH := viewhelpers.SplitVertical(totalH, 8, 8, max(8, totalH/2))
+	wide := viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide
+	if wide {
+		cols := viewhelpers.Columns(state.Width, 3, 2)
+		timerW, issueW = cols[0], cols[1]
+		timerH, issueH = totalH, totalH
+	}
+	leftW := timerW - 2
 	clockWidth := max(12, leftW-4)
-	clockHeight := max(7, timerH-8)
+	clockHeight := max(7, timerH-5)
 	timerText := sessionmeta.RenderResponsiveClock(
 		elapsed,
 		clockWidth,
@@ -136,7 +143,6 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		progressLine = structuredProgressBar(theme, state, centerWidth, now)
 	}
 	timerParts := []string{
-		timerTitle,
 		"",
 		lipgloss.NewStyle().
 			Width(centerWidth).
@@ -153,23 +159,40 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		timerParts = append(timerParts, "", progressLine)
 	}
 	timerParts = append(timerParts, "", centerLines(metadataLines, centerWidth))
-	timerBody := strings.Join(timerParts, "\n")
-	timerSection := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(stateColor).
-		Padding(1, 2).
-		Width(leftW).
-		AlignVertical(lipgloss.Top).
-		Height(max(1, timerH-2)).
-		Render(timerBody)
-	issueSection := lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorCyan).
-		Padding(1, 2).
-		Width(leftW).
-		Height(max(1, issueH-2)).
-		Render(strings.Join(sessionIssueCompactLines(theme, activeIssue, state.Timer != nil && state.Timer.Adhoc, leftW, state.Height, timerHint), "\n"))
+	titleStyle := lipgloss.NewStyle().Foreground(stateColor).Bold(true)
+	timerSection := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:      timerTitle,
+		Meta:       nextLabel,
+		TitleStyle: &titleStyle,
+		Width:      timerW,
+		Height:     timerH,
+		Lines:      splitLines(timerParts),
+	})
+	issueSection := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:  "Issue",
+		Width:  issueW,
+		Height: issueH,
+		Lines: splitLines(sessionIssueCompactLines(
+			theme,
+			activeIssue,
+			state.Timer != nil && state.Timer.Adhoc,
+			issueW-2,
+			state.Height,
+			timerHint,
+		)),
+	})
+	if wide {
+		return viewchrome.JoinColumns(theme, totalH, timerSection, issueSection)
+	}
 	return lipgloss.JoinVertical(lipgloss.Left, timerSection, issueSection)
+}
+
+func splitLines(lines []string) []string {
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, strings.Split(line, "\n")...)
+	}
+	return out
 }
 
 func sessionTimingLabel(state types.ContentState, now time.Time) string {

@@ -10,6 +10,8 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/muesli/termenv"
 )
 
 func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
@@ -335,5 +337,73 @@ func TestActivePomodoroSessionAdvertisesAdvanceKey(t *testing.T) {
 	})
 	if !strings.Contains(rendered, "[z]") || !strings.Contains(rendered, "start short break") {
 		t.Fatalf("expected Pomodoro active view to advertise starting the short break, got %q", rendered)
+	}
+}
+
+func activeSectionState(width, height int, segment sharedtypes.SessionSegmentType) types.ContentState {
+	issueID := int64(7)
+	return types.ContentState{
+		View:   "session_active",
+		Width:  width,
+		Height: height,
+		Timer: &api.TimerState{
+			State:       "running",
+			IssueID:     &issueID,
+			SegmentType: new(segment),
+		},
+		AllIssues: []api.IssueWithMeta{{Issue: api.Issue{ID: issueID, Title: "Timer sizing"}}},
+		Settings:  &api.CoreSettings{TimerMode: sharedtypes.TimerModeStopwatch},
+	}
+}
+
+func sessionTheme() types.Theme {
+	bordered := lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
+	return types.Theme{
+		ColorGreen:     lipgloss.Color("2"),
+		ColorCyan:      lipgloss.Color("6"),
+		ColorMagenta:   lipgloss.Color("5"),
+		ColorYellow:    lipgloss.Color("3"),
+		ColorDim:       lipgloss.Color("8"),
+		StyleActive:    bordered,
+		StyleInactive:  bordered,
+		StylePaneTitle: lipgloss.NewStyle().Foreground(lipgloss.Color("6")),
+	}
+}
+
+func TestActiveSessionHasNoBorders(t *testing.T) {
+	for _, width := range []int{80, 200} {
+		rendered := renderActiveView(sessionTheme(), activeSectionState(width, 36, sharedtypes.SessionSegmentWork))
+		if strings.ContainsAny(rendered, "╭╰") {
+			t.Fatalf("width %d: expected no box borders, got:\n%s", width, ansi.Strip(rendered))
+		}
+	}
+}
+
+func TestActiveSessionHeaderUsesSegmentColour(t *testing.T) {
+	previousProfile := lipgloss.ColorProfile()
+	lipgloss.SetColorProfile(termenv.ANSI)
+	defer lipgloss.SetColorProfile(previousProfile)
+	work := strings.Split(renderActiveView(sessionTheme(), activeSectionState(80, 36, sharedtypes.SessionSegmentWork)), "\n")[0]
+	rest := strings.Split(renderActiveView(sessionTheme(), activeSectionState(80, 36, sharedtypes.SessionSegmentShortBreak)), "\n")[0]
+	if !strings.HasPrefix(ansi.Strip(work), "─ ") {
+		t.Fatalf("expected section header on line 0, got %q", ansi.Strip(work))
+	}
+	if work == rest {
+		t.Fatal("expected work and break headers to use different segment colours")
+	}
+}
+
+func TestActiveSessionFitsFrame(t *testing.T) {
+	for _, size := range [][2]int{{60, 18}, {200, 47}} {
+		rendered := renderActiveView(sessionTheme(), activeSectionState(size[0], size[1], sharedtypes.SessionSegmentWork))
+		lines := strings.Split(rendered, "\n")
+		if len(lines) != size[1] {
+			t.Fatalf("%dx%d: got %d lines", size[0], size[1], len(lines))
+		}
+		for i, line := range lines {
+			if got := ansi.StringWidth(line); got > size[0] {
+				t.Fatalf("%dx%d: line %d width %d", size[0], size[1], i, got)
+			}
+		}
 	}
 }
