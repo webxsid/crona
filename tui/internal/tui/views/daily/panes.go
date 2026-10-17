@@ -7,7 +7,6 @@ import (
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	contextmeta "crona/tui/internal/tui/views/contextmeta"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
@@ -46,29 +45,18 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
 	actionLine := base.ControlLine(theme, width-6, active, actions, true)
-	titleLine := dailyTaskTitle(theme, state.DailyTaskSection)
-
-	// append [←/→] to the title line
-	titleLine += viewhelpers.StringsJoin([]string{
-		theme.StyleDim.Render("  [←/→]"),
-	})
-
-	lines := base.HeaderLines(
-		titleLine,
-		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
-		"",
-	)
-	lines = append(lines, actionLine)
+	meta := fmt.Sprintf("%d  [←/→]", total)
+	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), actionLine}
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
-		return base.Render(theme, viewhelpers.StringsJoin(lines))
+		return dailySection(theme, "Tasks", meta, active, width, height, lines)
 	}
 	modeWidth := width
 	if state.Width > 0 {
 		modeWidth = state.Width
 	}
 	if modeWidth < dailyIssueListBreakpoint {
-		return renderCompactDailyIssueList(
+		lines = renderCompactDailyIssueList(
 			theme,
 			state,
 			width,
@@ -81,12 +69,13 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			cur,
 			active,
 		)
+		return dailySection(theme, "Tasks", meta, active, width, height, lines)
 	}
 	layout := issuecore.IssueTableLayoutForWidth(width)
 	if state.DailyTaskSection != "planned" {
 		layout = issuecore.IssueTableLayoutForWidthWithDate(width)
 	}
-	inner := viewchrome.RemainingPaneHeight(height, lines)
+	inner := sectionBodyRows(height, lines)
 	issueSlots := max(1, inner)
 	start, end := viewchrome.ListWindow(cur, total, issueSlots)
 	if start > 0 {
@@ -150,7 +139,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
-	return base.Render(theme, viewhelpers.StringsJoin(lines))
+	return dailySection(theme, "Tasks", meta, active, width, height, lines)
 }
 
 func renderCompactDailyIssueList(
@@ -163,19 +152,19 @@ func renderCompactDailyIssueList(
 	indices []int,
 	total, cur int,
 	active bool,
-) string {
-	inner := viewchrome.RemainingPaneHeight(height, lines)
+) []string {
+	inner := sectionBodyRows(height, lines)
 	availableRows := inner
-	itemSlots := max(1, availableRows/2)
+	// Each item is a title row and a meta row, with a divider between items.
+	itemSlots := max(1, (availableRows+1)/3)
 	start, end := viewchrome.ListWindow(cur, total, itemSlots)
 	if start > 0 {
-		lines = append(lines, base.MoreAbove(theme, start))
 		availableRows--
 	}
 	if remaining := total - end; remaining > 0 {
 		availableRows--
 	}
-	itemSlots = max(1, availableRows/2)
+	itemSlots = max(1, (availableRows+1)/3)
 	start, end = viewchrome.ListWindow(cur, total, itemSlots)
 	if start > 0 {
 		lines = append(lines, base.MoreAbove(theme, start))
@@ -225,7 +214,7 @@ func renderCompactDailyIssueList(
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, base.MoreBelow(theme, remaining))
 	}
-	return base.Render(theme, viewhelpers.StringsJoin(lines))
+	return lines
 }
 
 func renderCompactDailyIssueTitle(
@@ -317,7 +306,7 @@ func dailyTaskTitle(theme types.Theme, section string) string {
 		{key: "pinned", label: "Pinned"},
 		{key: "overdue", label: "Overdue"},
 	}
-	parts := []string{theme.StylePaneTitle.Render("Tasks")}
+	parts := []string{}
 	for _, opt := range options {
 		label := opt.label
 		if section == opt.key {
@@ -394,22 +383,19 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	actions := viewchrome.PaneActionsForState(theme, state, active)
 	actionLine := viewchrome.RenderPaneActionLine(theme, actions, width-6)
-	lines := []string{
-		theme.StylePaneTitle.Render("Habits Due"),
-		theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
-		actionLine,
+	done := 0
+	for _, habit := range state.DueHabits {
+		if habit.Status == "completed" {
+			done++
+		}
 	}
+	meta := fmt.Sprintf("%d/%d", done, len(state.DueHabits))
+	lines := []string{actionLine}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
-		return viewchrome.RenderPaneBox(
-			theme,
-			active,
-			width,
-			height,
-			viewhelpers.StringsJoin(lines),
-		)
+		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
-	inner := viewchrome.RemainingPaneHeight(height, lines)
+	inner := sectionBodyRows(height, lines)
 	start, end := viewchrome.ListWindow(cur, total, inner)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
@@ -450,7 +436,33 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return viewchrome.RenderPaneBox(theme, active, width, height, viewhelpers.StringsJoin(lines))
+	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+}
+
+// sectionBodyRows is the list budget left in a section of height rows after its header and lines.
+func sectionBodyRows(height int, lines []string) int {
+	return max(1, height-1-viewchrome.RenderedLineCount(lines))
+}
+
+func dailySection(
+	theme types.Theme,
+	title, meta string,
+	focused bool,
+	width, height int,
+	lines []string,
+) string {
+	body := make([]string, 0, len(lines))
+	for _, line := range lines {
+		body = append(body, strings.Split(line, "\n")...)
+	}
+	return viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:   title,
+		Meta:    meta,
+		Focused: focused,
+		Width:   width,
+		Height:  height,
+		Lines:   body,
+	})
 }
 
 func renderIssueStatusBar(theme types.Theme, counts map[string]int, width int) string {

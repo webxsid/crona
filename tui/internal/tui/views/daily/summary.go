@@ -19,15 +19,29 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
+// summaryBodyLines budgets for a padded box (width-8 by height-4 inner);
+// the offsets give a section's body (width-4 by height-1) the same margins.
+const (
+	summarySectionWidthOffset  = 4
+	summarySectionHeightOffset = 3
+)
+
 func renderSummary(theme types.Theme, state types.ContentState, width, height int) string {
-	lines := summaryBodyLines(theme, state, width, height)
-	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(theme.ColorDim).
-		Padding(1, 2).
-		Width(width - 2).
-		Height(max(1, height-2)).
-		Render(viewhelpers.StringsJoin(lines))
+	lines := summaryBodyLines(
+		theme,
+		state,
+		width+summarySectionWidthOffset,
+		height+summarySectionHeightOffset,
+	)
+	return dailySection(
+		theme,
+		"Day",
+		helperpkg.FormatDisplayDate(viewruntime.CurrentDashboardDate(state), state.Settings),
+		false,
+		width,
+		height,
+		lines,
+	)
 }
 
 func summaryBodyLines(theme types.Theme, state types.ContentState, width, height int) []string {
