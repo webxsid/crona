@@ -236,22 +236,19 @@ func renderSubTabLine(state State) string {
 	return " " + key("[") + " " + strings.Join(parts, chrome.StyleDim.Render(" · ")) + " " + key("]")
 }
 
-// renderDateRow is a dated view's header row: the shared date's navigation on the left and
-// the view's own date keys on the right, which give way first when narrow.
+// renderDateRow is a dated view's header row: the shared date's navigation, at the right.
 func renderDateRow(state State) string {
 	if !viewrenderer.HasDateRow(state.ContentState) {
 		return ""
 	}
-	// Navigation sits at the right, over the day strip's week, led by the calendar key; the
-	// view's other keys sit at the left and give way first, then the calendar key.
+	// Navigation sits at the right, over the day strip's week, led by the calendar key.
 	theme := ViewTheme()
 	nav := viewrenderer.DateNav(theme, state.ContentState, state.Width-2)
 	if calendar := viewrenderer.DateCalendarKey(theme, state.ContentState); calendar != "" &&
 		ansi.StringWidth(calendar)+2+ansi.StringWidth(nav) <= state.Width-2 {
 		nav = calendar + "  " + nav
 	}
-	keys := viewchrome.FitHints(viewrenderer.DateRowKeys(theme, state.ContentState), state.Width-ansi.StringWidth(nav)-5)
-	return joinEnds(" "+keys, nav+" ", state.Width)
+	return joinEnds("", nav+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {

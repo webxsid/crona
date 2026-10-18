@@ -117,8 +117,8 @@ func TestRenderSubTabLineFramedByKeys(t *testing.T) {
 func TestRenderDateRowOnDatedViews(t *testing.T) {
 	for view, keys := range map[uistate.View]string{
 		uistate.ViewDaily:    "[C] calendar",
-		uistate.ViewMomentum: "[+/-/0] window",
-		uistate.ViewReview:   "[+/-/0] window",
+		uistate.ViewMomentum: "[g] today",
+		uistate.ViewReview:   "[E] calendar",
 	} {
 		line := plainLines(Render(datedShellState(view, 140, 36)))[2]
 		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") || !strings.Contains(line, keys) {
@@ -403,7 +403,9 @@ func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
 			t.Fatalf("%s: expected the navigation one cell from the right edge, got %q", view, line)
 		}
 	}
-	if line := plainLines(Render(datedShellState(uistate.ViewReview, 160, 36)))[2]; !strings.HasPrefix(line, " [+/-/0] window") {
-		t.Fatalf("expected the window key at the left, got %q", line)
+	// The window keys live on the strip below, at its right.
+	lines := plainLines(Render(datedShellState(uistate.ViewReview, 160, 36)))
+	if strings.Contains(lines[2], "[+/-/0]") || !strings.Contains(lines[3], "[+/-/0]") {
+		t.Fatalf("expected the window key under the date nav, got %q / %q", lines[2], lines[3])
 	}
 }

@@ -135,3 +135,11 @@ func TestStripRowsEmpty(t *testing.T) {
 }
 
 func squash(s string) string { return strings.Join(strings.Fields(s), " ") }
+
+func TestStripRowsCarryWindowHint(t *testing.T) {
+	state := stripState(cardWith("Deep work", true, 27, 30, points(4, 4)))
+	state.MomentumWindowDays = 90
+	if row := ansi.Strip(StripRows(types.Theme{}, state, 160)[0]); !strings.HasSuffix(row, "[+/-/0] 90d window") {
+		t.Fatalf("expected the window hint at the right of row 1, got %q", row)
+	}
+}

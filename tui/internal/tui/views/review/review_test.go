@@ -255,3 +255,14 @@ func TestWideDetailTakesMoreRoomAndWraps(t *testing.T) {
 		t.Fatalf("expected the risk summary wrapped whole:\n%s", out)
 	}
 }
+
+func TestStripCarriesWindowHintAtRight(t *testing.T) {
+	state := types.ContentState{Width: 200, ReviewWindowDays: 14}
+	rows := StripRows(types.Theme{}, state, 200)
+	if !strings.HasSuffix(ansi.Strip(rows[0]), "[+/-/0] 14d window") || ansi.StringWidth(rows[0]) != 200 {
+		t.Fatalf("expected the window hint at the right of row 1, got %q", ansi.Strip(rows[0]))
+	}
+	if narrow := ansi.Strip(StripRows(types.Theme{}, state, 30)[0]); strings.Contains(narrow, "[+/-/0]") {
+		t.Fatalf("expected the hint to give way when narrow, got %q", narrow)
+	}
+}

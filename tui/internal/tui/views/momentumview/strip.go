@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -11,6 +12,10 @@ import (
 
 // StripRows sums the momentums: counts over streaks, column groups dropped right-first.
 func StripRows(theme types.Theme, state types.ContentState, width int) []string {
+	return viewchrome.WithWindowHint(theme, state.MomentumWindowDays, width, func(width int) []string { return stripRows(theme, state, width) })
+}
+
+func stripRows(theme types.Theme, state types.ContentState, width int) []string {
 	if width <= 0 {
 		return []string{"", ""}
 	}

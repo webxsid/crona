@@ -90,12 +90,3 @@ func DateCalendarKey(theme types.Theme, state types.ContentState) string {
 	}
 	return ""
 }
-
-// DateRowKeys are the view's other date-row keys, shown at the left end of the date row.
-func DateRowKeys(theme types.Theme, state types.ContentState) []string {
-	switch state.View {
-	case "review", "momentum":
-		return []string{viewchrome.KeyHint(theme, "+/-/0", "window")}
-	}
-	return nil
-}

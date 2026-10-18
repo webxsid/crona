@@ -1,6 +1,7 @@
 package viewchrome
 
 import (
+	"fmt"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -667,4 +668,23 @@ func compactActionLabel(key, label string) string {
 	}
 
 	return label
+}
+
+// minStripBeforeHint is the strip room a window hint leaves before it gives way.
+const minStripBeforeHint = 40
+
+// WithWindowHint pins the window-size keys to the right of a strip's first row when the
+// strip keeps at least minStripBeforeHint cells; render draws the strip at the width given.
+func WithWindowHint(theme Theme, days, width int, render func(width int) []string) []string {
+	hint := KeyHint(theme, "+/-/0", fmt.Sprintf("%dd window", max(1, days)))
+	room := width - ansi.StringWidth(hint) - 3
+	if room < minStripBeforeHint {
+		return render(width)
+	}
+	rows := render(room)
+	rows[0] += "   " + hint
+	for i := 1; i < len(rows); i++ {
+		rows[i] += strings.Repeat(" ", width-room)
+	}
+	return rows
 }

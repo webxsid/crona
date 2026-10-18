@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
@@ -12,6 +13,14 @@ import (
 
 // StripRows sums the window: work over wellbeing, column groups dropped right-first.
 func StripRows(theme types.Theme, state types.ContentState, width int) []string {
+	days := state.ReviewWindowDays
+	if days < 1 {
+		days = 7
+	}
+	return viewchrome.WithWindowHint(theme, days, width, func(width int) []string { return stripRows(theme, state, width) })
+}
+
+func stripRows(theme types.Theme, state types.ContentState, width int) []string {
 	if width <= 0 {
 		return []string{"", ""}
 	}
