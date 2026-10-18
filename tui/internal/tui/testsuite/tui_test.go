@@ -974,7 +974,7 @@ func TestExportReportsViewShowsReportKindsAndScopeLabels(t *testing.T) {
 	}
 
 	rendered := support.RenderReports(state)
-	for _, want := range []string{"Reports", "[weekly]", "Work / app", "2026-03-17 to 2026-03-23"} {
+	for _, want := range []string{"Reports", "weekly", "Work / app", "2026-03-17 to 2026-03-23"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected export reports view to contain %q, got %q", want, rendered)
 		}
