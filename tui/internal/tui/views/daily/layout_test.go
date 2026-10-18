@@ -59,10 +59,10 @@ func TestDailyStripThenTasksThenHabits(t *testing.T) {
 
 func TestDailyWideHasDetailPane(t *testing.T) {
 	wide := renderView(testTheme(), dailyState(160, 40))
-	if rowOf(t, wide, "─ Selected") != rowOf(t, wide, "─ Tasks") {
+	if rowOf(t, wide, "─ Ship momentum block") != rowOf(t, wide, "─ Tasks") {
 		t.Fatal("expected the detail pane beside tasks at 160 columns")
 	}
-	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(medium, "─ Selected") {
+	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(medium, "─ Ship momentum block") {
 		t.Fatal("expected no detail pane below 160 columns")
 	}
 }

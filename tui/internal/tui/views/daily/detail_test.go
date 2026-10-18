@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	types "crona/tui/internal/tui/views/types"
 
@@ -34,7 +35,7 @@ func detailState() (state types.ContentState) {
 
 func TestDetailShowsSelectedTask(t *testing.T) {
 	rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30))
-	for _, want := range []string{"─ Selected", "Fix sync conflict", "in progress", "crona › core", "30m/1h", "keeping both edits"} {
+	for _, want := range []string{"Fix sync conflict", "in progress", "crona › core", "30m/1h", "keeping both edits"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected detail to contain %q, got %q", want, rendered)
 		}
@@ -139,5 +140,65 @@ func TestDetailHabitListsTheMomentumsItFeeds(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "Momentum") {
 		t.Fatalf("expected a Momentum heading, got %q", rendered)
+	}
+}
+
+func TestDetailTitleIsTheSelection(t *testing.T) {
+	lines := strings.Split(ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30)), "\n")
+	if !strings.HasPrefix(lines[0], "─ Fix sync conflict ") || strings.Contains(strings.Join(lines, "\n"), "Selected") {
+		t.Fatalf("expected the selected task as the pane title, got %q", lines[0])
+	}
+	if strings.Contains(strings.Join(lines[1:], "\n"), "Fix sync conflict") {
+		t.Fatalf("expected the title only in the header, got %q", lines)
+	}
+}
+
+func TestDetailDescriptionComesFirst(t *testing.T) {
+	rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30))
+	if strings.Index(rendered, "keeping both edits") > strings.Index(rendered, "status") {
+		t.Fatalf("expected the description above the fields, got %q", rendered)
+	}
+}
+
+func TestDetailFieldsFlowIntoColumns(t *testing.T) {
+	wide := strings.Split(ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30)), "\n")
+	assertContainsLine(t, wide, "status", "context")
+	narrow := ansi.Strip(renderDetail(testTheme(), detailState(), 32, 30))
+	for _, line := range strings.Split(narrow, "\n") {
+		if strings.Contains(line, "status") && strings.Contains(line, "context") {
+			t.Fatalf("expected one field per row when narrow, got %q", line)
+		}
+	}
+}
+
+func TestDetailIssueListsTheContextMomentumsItFeeds(t *testing.T) {
+	state := detailState()
+	state.AllIssues = []api.IssueWithMeta{{Issue: state.DailyIssues[1], RepoID: 1, RepoName: "crona", StreamName: "core"}}
+	state.DailyIssues[1].StreamID = 10
+	otherStream := int64(11)
+	sameStream := int64(10)
+	context := func(name string, contexts ...sharedtypes.MomentumContext) api.MomentumCard {
+		return api.MomentumCard{
+			Definition: api.HabitStreakDefinition{ID: name, Name: name, Enabled: true, Period: "day", RequiredCount: 3600, Contexts: contexts},
+			Current:    2,
+			Longest:    6,
+			Series:     []api.MomentumSeriesPoint{{Count: 2700, Target: 3600}},
+		}
+	}
+	state.MomentumCards = []api.MomentumCard{
+		context("Deep work", sharedtypes.MomentumContext{RepoID: 1}),
+		context("Core focus", sharedtypes.MomentumContext{RepoID: 1, StreamID: &sameStream}),
+		context("Docs push", sharedtypes.MomentumContext{RepoID: 1, StreamID: &otherStream}),
+		context("Other repo", sharedtypes.MomentumContext{RepoID: 2}),
+		{Definition: api.HabitStreakDefinition{ID: "h", Name: "Habit only", Enabled: true, HabitIDs: []int64{2}}},
+	}
+	rendered := ansi.Strip(renderDetail(testTheme(), state, 80, 30))
+	lines := strings.Split(rendered, "\n")
+	assertContainsLine(t, lines, "Deep work", "45m/1h")
+	assertContainsLine(t, lines, "Core focus", "2d best 6d")
+	for _, absent := range []string{"Docs push", "Other repo", "Habit only"} {
+		if strings.Contains(rendered, absent) {
+			t.Fatalf("expected %q left out, got %q", absent, rendered)
+		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	momentumhelpers "crona/tui/internal/tui/views/momentum"
@@ -15,23 +16,32 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
-// renderDetail shows the focused pane's selection.
+// renderDetail shows the focused pane's selection, titled with its name.
 func renderDetail(theme types.Theme, state types.ContentState, width, height int) string {
 	bodyWidth := max(1, width-2)
+	title := "Selected"
 	var lines []string
 	if state.Pane == "habits" {
 		if habit, ok := selectedDailyHabit(state); ok {
-			lines = habitDetailLines(theme, state, habit, bodyWidth)
+			title, lines = habit.Name, habitDetailLines(theme, state, habit, bodyWidth)
 		}
 	} else if issue, ok := selectedDailyIssue(state); ok {
-		lines = issueDetailLines(theme, state, issue, bodyWidth)
+		title, lines = issue.Title, issueDetailLines(theme, state, issue, bodyWidth)
 	}
-	if len(lines) == 0 {
+	if lines == nil {
 		lines = []string{theme.StyleDim.Render("Nothing selected")}
 	}
-	return dailySection(theme, "Selected", "", false, width, height, lines)
+	titleStyle := theme.StyleHeader.Bold(true)
+	return viewchrome.RenderSection(theme, viewchrome.Section{
+		Title:      title,
+		TitleStyle: &titleStyle,
+		Width:      width,
+		Height:     height,
+		Lines:      lines,
+	})
 }
 
 func selectedDailyIssue(state types.ContentState) (api.Issue, bool) {
@@ -53,10 +63,14 @@ func selectedDailyHabit(state types.ContentState) (api.HabitDailyItem, bool) {
 	return state.DueHabits[indices[cur]], true
 }
 
+// detailEntry is one labelled field in the detail grid.
+type detailEntry struct{ label, value string }
+
 func issueDetailLines(theme types.Theme, state types.ContentState, issue api.Issue, width int) []string {
 	repo, stream, worked := issue.RepoName, issue.StreamName, issue.WorkedSeconds
+	var repoID int64
 	if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil {
-		repo, stream = meta.RepoName, meta.StreamName
+		repo, stream, repoID = meta.RepoName, meta.StreamName, meta.RepoID
 		if worked <= 0 {
 			worked = meta.WorkedSeconds
 		}
@@ -69,20 +83,21 @@ func issueDetailLines(theme types.Theme, state types.ContentState, issue api.Iss
 	if issue.EstimateMinutes != nil {
 		estimate = *issue.EstimateMinutes
 	}
-	lines := wrapDetail(theme.StyleHeader.Bold(true), issue.Title, width)
-	lines = append(lines,
-		detailField(theme, "status", statusStyle.Render(issuecore.PlainIssueStatus(string(issue.Status)))),
-		detailField(theme, "context", theme.StyleNormal.Render(detailContext(repo, stream))),
-		detailField(theme, "effort", theme.StyleNormal.Render(issueProgressText(worked, estimate, true))),
-	)
+	fields := []detailEntry{
+		{"status", statusStyle.Render(issuecore.PlainIssueStatus(string(issue.Status)))},
+		{"context", theme.StyleNormal.Render(detailContext(repo, stream))},
+		{"effort", theme.StyleNormal.Render(issueProgressText(worked, estimate, true))},
+	}
 	if date := issuecore.IssueDateLabel(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings); date != "" {
-		lines = append(lines, detailField(theme, "date", theme.StyleNormal.Render(date)))
+		fields = append(fields, detailEntry{"date", theme.StyleNormal.Render(date)})
 	}
 	if issue.PinnedDaily {
-		lines = append(lines, detailField(theme, "pinned", theme.StyleNormal.Render("yes")))
+		fields = append(fields, detailEntry{"pinned", theme.StyleNormal.Render("yes")})
 	}
-	lines = append(lines, detailText(theme, "Description", issue.Description, width)...)
-	return append(lines, detailText(theme, "Notes", issue.Notes, width)...)
+	lines := detailDescription(theme, issue.Description, width)
+	lines = append(lines, detailGrid(theme, fields, width)...)
+	lines = append(lines, detailText(theme, "Notes", issue.Notes, width)...)
+	return append(lines, momentumLines(theme, issueMomentums(state, repoID, issue.StreamID), width)...)
 }
 
 func habitDetailLines(theme types.Theme, state types.ContentState, habit api.HabitDailyItem, width int) []string {
@@ -93,46 +108,119 @@ func habitDetailLines(theme types.Theme, state types.ContentState, habit api.Hab
 	case "failed":
 		status = "failed"
 	}
-	lines := wrapDetail(theme.StyleHeader.Bold(true), habit.Name, width)
-	lines = append(lines, detailField(theme, "status", theme.StyleNormal.Render(status)))
+	fields := []detailEntry{{"status", theme.StyleNormal.Render(status)}}
 	if habit.DurationMinutes != nil {
-		lines = append(lines, detailField(theme, "logged", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))))
+		fields = append(fields, detailEntry{"logged", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))})
 	}
 	if habit.TargetMinutes != nil {
-		lines = append(lines, detailField(theme, "target", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes))))
+		fields = append(fields, detailEntry{"target", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes))})
 	}
 	if meta := strings.TrimSpace(detailContext(habit.RepoName, habit.StreamName)); meta != "-" {
-		lines = append(lines, detailField(theme, "context", theme.StyleNormal.Render(meta)))
+		fields = append(fields, detailEntry{"context", theme.StyleNormal.Render(meta)})
 	}
-	lines = append(lines, habitMomentumLines(theme, state, habit.ID, width)...)
-	lines = append(lines, detailText(theme, "Description", habit.Description, width)...)
-	return append(lines, detailText(theme, "Notes", habit.Notes, width)...)
+	lines := detailDescription(theme, habit.Description, width)
+	lines = append(lines, detailGrid(theme, fields, width)...)
+	lines = append(lines, detailText(theme, "Notes", habit.Notes, width)...)
+	return append(lines, momentumLines(theme, habitMomentums(state, habit.ID), width)...)
 }
 
-// habitMomentumLines lists the enabled habit momentums this habit feeds, one per line:
-// cadence, the current period's count against its target, the ladder and the streak.
-func habitMomentumLines(theme types.Theme, state types.ContentState, habitID int64, width int) []string {
-	cards := []sharedtypes.MomentumCard{}
-	nameWidth := 0
+// detailDescription leads the pane with the description, followed by a blank row.
+func detailDescription(theme types.Theme, text *string, width int) []string {
+	if text == nil || strings.TrimSpace(*text) == "" {
+		return []string{}
+	}
+	return append(wrapDetail(theme.StyleNormal, strings.TrimSpace(*text), width), "")
+}
+
+// detailGrid flows fields row by row into as many equal columns (up to 3) as fit width.
+func detailGrid(theme types.Theme, fields []detailEntry, width int) []string {
+	const gap, labelWidth = 3, 9
+	cell := 0
+	for _, field := range fields {
+		cell = max(cell, labelWidth+ansi.StringWidth(field.value))
+	}
+	cols := min(3, len(fields), max(1, (width+gap)/(cell+gap)))
+	lines := []string{}
+	for start := 0; start < len(fields); start += cols {
+		cells := []string{}
+		for _, field := range fields[start:min(len(fields), start+cols)] {
+			cells = append(cells, padCells(theme.StyleDim.Render(padCells(field.label, labelWidth))+field.value, cell))
+		}
+		lines = append(lines, strings.TrimRight(strings.Join(cells, strings.Repeat(" ", gap)), " "))
+	}
+	return lines
+}
+
+// habitMomentums are the enabled habit momentums that count this habit.
+func habitMomentums(state types.ContentState, habitID int64) []sharedtypes.MomentumCard {
+	return enabledMomentums(state, func(def sharedtypes.HabitStreakDefinition) bool {
+		return def.TargetKind == sharedtypes.MomentumTargetKindHabit && slices.Contains(def.HabitIDs, habitID)
+	})
+}
+
+// issueMomentums are the enabled context momentums that sessions on this issue count toward:
+// a context matches the issue's repo and either its stream or the whole repo, as the daemon
+// counts them.
+func issueMomentums(state types.ContentState, repoID, streamID int64) []sharedtypes.MomentumCard {
+	if repoID == 0 {
+		return nil
+	}
+	return enabledMomentums(state, func(def sharedtypes.HabitStreakDefinition) bool {
+		if def.TargetKind != sharedtypes.MomentumTargetKindContext {
+			return false
+		}
+		return slices.ContainsFunc(def.Contexts, func(context sharedtypes.MomentumContext) bool {
+			return context.RepoID == repoID && (context.StreamID == nil || *context.StreamID == streamID)
+		})
+	})
+}
+
+func enabledMomentums(state types.ContentState, matches func(sharedtypes.HabitStreakDefinition) bool) []sharedtypes.MomentumCard {
+	out := []sharedtypes.MomentumCard{}
 	for _, card := range state.MomentumCards {
 		def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
-		if def.Enabled && def.TargetKind == sharedtypes.MomentumTargetKindHabit && slices.Contains(def.HabitIDs, habitID) {
+		if def.Enabled && matches(def) {
 			card.Definition = def
-			cards = append(cards, card)
-			nameWidth = max(nameWidth, lipgloss.Width(def.Name))
+			out = append(out, card)
 		}
 	}
-	lines := []string{}
-	for _, card := range cards {
+	return out
+}
+
+// momentumLines lists momentums one per line: cadence, the current period's progress (time
+// for context momentums), the ladder and the streak.
+func momentumLines(theme types.Theme, cards []sharedtypes.MomentumCard, width int) []string {
+	if len(cards) == 0 {
+		return nil
+	}
+	nameWidth := 0
+	progress := make([]string, len(cards))
+	for i, card := range cards {
+		nameWidth = max(nameWidth, lipgloss.Width(card.Definition.Name))
+		if len(card.Series) == 0 {
+			continue
+		}
+		point := card.Series[len(card.Series)-1]
+		progress[i] = fmt.Sprintf("%d/%d", point.Count, point.Target)
+		if card.Definition.TargetKind == sharedtypes.MomentumTargetKindContext {
+			progress[i] = helperpkg.FormatCompactDurationSeconds(point.Count) + "/" +
+				helperpkg.FormatCompactDurationSeconds(point.Target)
+		}
+	}
+	progressWidth := 0
+	for _, text := range progress {
+		progressWidth = max(progressWidth, ansi.StringWidth(text))
+	}
+	lines := []string{"", theme.StyleDim.Bold(true).Render("Momentum")}
+	for i, card := range cards {
 		def := card.Definition
 		unit := momentumhelpers.Unit(def.Period)
 		parts := []string{
 			theme.StyleNormal.Render(padCells(def.Name, min(nameWidth, max(8, width/3)))),
 			theme.StyleDim.Render(padCells(momentumhelpers.CadenceLabel(def.Period), 7)),
 		}
-		if len(card.Series) > 0 {
-			point := card.Series[len(card.Series)-1]
-			parts = append(parts, theme.StyleNormal.Render(padCells(fmt.Sprintf("%d/%d", point.Count, point.Target), 5)))
+		if progressWidth > 0 {
+			parts = append(parts, theme.StyleNormal.Render(padCells(progress[i], progressWidth)))
 		}
 		parts = append(parts,
 			momentumhelpers.Ladder(theme, def.Period, card.Current, card.Longest),
@@ -141,14 +229,7 @@ func habitMomentumLines(theme types.Theme, state types.ContentState, habitID int
 		)
 		lines = append(lines, viewhelpers.TruncateANSI(strings.Join(parts, "  "), width))
 	}
-	if len(lines) == 0 {
-		return nil
-	}
-	return append([]string{"", theme.StyleDim.Bold(true).Render("Momentum")}, lines...)
-}
-
-func detailField(theme types.Theme, label, value string) string {
-	return theme.StyleDim.Render(padCells(label, 9)) + value
+	return lines
 }
 
 func detailContext(repo, stream string) string {
