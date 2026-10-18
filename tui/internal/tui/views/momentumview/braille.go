@@ -6,22 +6,11 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/tui/views/charts"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )
-
-// brailleRows are a cell's dot pairs from the bottom up; each pair spans both dot columns.
-var brailleRows = []rune{0x40 | 0x80, 0x04 | 0x20, 0x02 | 0x10, 0x01 | 0x08}
-
-// brailleColumn is a cell filled with dots rows from the bottom, 0 to 4.
-func brailleColumn(dots int) string {
-	bits := rune(0)
-	for i := range min(4, max(0, dots)) {
-		bits |= brailleRows[i]
-	}
-	return string(0x2800 + bits)
-}
 
 // statusRank orders bucket statuses by how much they need attention.
 var statusRank = map[string]int{"skipped": 0, "met": 1, "near": 2, "missed": 3}
@@ -91,7 +80,7 @@ func renderMomentumBars(
 	}
 	chartWidth := max(4, width-labelWidth-2)
 	groups := groupBuckets(series, chartWidth, enabled)
-	starts, barWidth := barColumns(len(groups), chartWidth)
+	starts, barWidth := charts.Slots(len(groups), chartWidth)
 	dots := func(value int) int {
 		return int(math.Round(float64(value) / float64(max(1, axisMax)) * float64(chartRows*4)))
 	}
@@ -106,7 +95,7 @@ func renderMomentumBars(
 	if target, ok := momentumSharedTarget(series); ok && target > 0 {
 		level := min(chartRows*4, max(1, dots(target)))
 		row, within := chartRows-1-(level-1)/4, (level-1)%4
-		line := lipgloss.NewStyle().Foreground(theme.ColorYellow).Render(string(0x2800 + brailleRows[within]))
+		line := lipgloss.NewStyle().Foreground(theme.ColorYellow).Render(charts.DotRow(within))
 		for col := range grid[row] {
 			grid[row][col] = line
 		}
@@ -127,7 +116,7 @@ func renderMomentumBars(
 				continue
 			}
 			for col := starts[i]; col < starts[i]+barWidth; col++ {
-				grid[row][col] = style.Render(brailleColumn(fill))
+				grid[row][col] = style.Render(charts.Column(fill))
 			}
 		}
 	}
@@ -142,19 +131,4 @@ func renderMomentumBars(
 	}
 	lines = append(lines, strings.Repeat(" ", labelWidth)+" └"+strings.Repeat("─", chartWidth))
 	return append(lines, momentumChartXAxis(theme, series, labelWidth+2, chartWidth, seriesX))
-}
-
-// maxBarWidth caps a bar's cells, so a handful of buckets still reads as bars.
-const maxBarWidth = 6
-
-// barColumns centres n bars in equal slots across width: each bar's first column, and the
-// width every bar shares, about 3/5 of a slot.
-func barColumns(n, width int) ([]int, int) {
-	slot := float64(width) / float64(max(1, n))
-	barWidth := max(1, min(maxBarWidth, int(slot*3/5)))
-	starts := make([]int, n)
-	for i := range starts {
-		starts[i] = min(width-barWidth, int(float64(i)*slot+(slot-float64(barWidth))/2))
-	}
-	return starts, barWidth
 }

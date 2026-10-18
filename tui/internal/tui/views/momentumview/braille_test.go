@@ -10,14 +10,6 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestBrailleColumnFillsFromBottom(t *testing.T) {
-	for dots, want := range []string{"⠀", "⣀", "⣤", "⣶", "⣿"} {
-		if got := brailleColumn(dots); got != want {
-			t.Fatalf("%d dots: expected %q, got %q", dots, want, got)
-		}
-	}
-}
-
 func barDef() sharedtypes.HabitStreakDefinition {
 	return sharedtypes.HabitStreakDefinition{Name: "m", Enabled: true, Period: sharedtypes.HabitStreakPeriodDay, RequiredCount: 4}
 }
