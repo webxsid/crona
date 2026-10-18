@@ -65,14 +65,6 @@ const (
 type DefaultIssueSection = uistate.DefaultIssueSection
 type DailyTaskSection = uistate.DailyTaskSection
 
-type MomentumTab string
-
-const (
-	MomentumTabFocus     MomentumTab = "focus"
-	MomentumTabWellbeing MomentumTab = "wellbeing"
-	MomentumTabCustom    MomentumTab = "custom"
-)
-
 const (
 	DefaultIssueSectionOpen      = uistate.DefaultIssueSectionOpen
 	DefaultIssueSectionCompleted = uistate.DefaultIssueSectionCompleted
@@ -126,8 +118,6 @@ type Model struct {
 	// dailyDetailDay shows the Day summary in Daily's detail pane until the selection moves.
 	dailyDetailDay            bool
 	momentumWindowDays        int
-	momentumTab               MomentumTab
-	momentumHistoryCursor     int
 	dailyCheckIn              *api.DailyCheckIn
 	metricsRange              []api.DailyMetricsDay
 	metricsRollup             *api.MetricsRollup
@@ -324,7 +314,6 @@ func New(
 		pane:                PaneIssues,
 		defaultIssueSection: DefaultIssueSectionOpen,
 		dailyTaskSection:    DailyTaskSectionPlanned,
-		momentumTab:         MomentumTabCustom,
 		cursor: map[Pane]int{
 			PaneRepos:         0,
 			PaneStreams:       0,
@@ -436,12 +425,6 @@ func (m *Model) clamp(p Pane, max int) {
 
 func (m *Model) listLen(p Pane) int {
 	if p == PaneMomentumCards {
-		if m.currentMomentumTab() == MomentumTabFocus {
-			return len(m.momentumMetricsRange)
-		}
-		if m.currentMomentumTab() == MomentumTabWellbeing {
-			return 0
-		}
 		snapshot := m.selectionSnapshot()
 		return len(selectionpkg.FilteredIndices(snapshot, p))
 	}

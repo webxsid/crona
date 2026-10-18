@@ -29,8 +29,6 @@ type State struct {
 	ReviewWindowEnd           string
 	ReviewShowTime            bool
 	MomentumWindowDays        int
-	MomentumTab               string
-	MomentumHistoryY          int
 	Dialog                    string
 	DialogState               dialogstate.State
 	HelpOpen                  bool

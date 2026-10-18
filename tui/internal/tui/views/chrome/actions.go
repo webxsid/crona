@@ -28,7 +28,6 @@ type ActionsState struct {
 	UpdateDiagnosticsExpanded bool
 	UpdateScriptDeprecated    bool
 	UpdateCommand             string
-	MomentumTab               string
 	ManageHistory             bool
 	SelectedIssueAdhoc        bool
 }

@@ -54,8 +54,6 @@ type ContentState struct {
 	RollupEndDate       string
 	MomentumDate        string
 	MomentumWindowDays  int
-	MomentumTab         string
-	MomentumHistoryY    int
 	WellbeingDate       string
 	WellbeingWindowDays int
 	// ReviewWindowDays days end on ReviewWindowEnd; ReviewShowTime puts Time in Trends' slot.

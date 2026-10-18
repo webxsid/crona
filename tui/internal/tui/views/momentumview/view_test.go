@@ -14,11 +14,10 @@ import (
 
 func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       140,
-		Height:      50,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  140,
+		Height: 50,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -165,11 +164,10 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 
 func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       180,
-		Height:      42,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  180,
+		Height: 42,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -256,11 +254,10 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 
 func TestRenderShowsSkippedAndProratedMomentumMetadata(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       180,
-		Height:      42,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  180,
+		Height: 42,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -331,11 +328,10 @@ func TestRenderShowsSkippedAndProratedMomentumMetadata(t *testing.T) {
 
 func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 	shortState := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       160,
-		Height:      40,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  160,
+		Height: 40,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -389,11 +385,10 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 	}
 
 	longState := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       160,
-		Height:      40,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  160,
+		Height: 40,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -449,11 +444,10 @@ func TestRenderUsesFixedContextYAxisTicks(t *testing.T) {
 
 func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       120,
-		Height:      34,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  120,
+		Height: 34,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -506,11 +500,10 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 
 func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       120,
-		Height:      34,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  120,
+		Height: 34,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{
@@ -559,11 +552,10 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 
 func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       130,
-		Height:      38,
+		View:   "momentum",
+		Pane:   "momentum_cards",
+		Width:  130,
+		Height: 38,
 		MomentumCards: []sharedtypes.MomentumCard{
 			{
 				Definition: sharedtypes.HabitStreakDefinition{

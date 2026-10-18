@@ -653,7 +653,6 @@ func (m Model) openHelpDialog() Model {
 		View:                   string(m.view),
 		Pane:                   string(m.pane),
 		SelectedIssueAdhoc:     hasSelectedIssue && selectedIssue.Adhoc,
-		MomentumTab:            string(m.currentMomentumTab()),
 		TimerState:             chromeState.TimerState,
 		TimerSegment:           chromeState.TimerSegment,
 		TimerNextSegment:       chromeState.TimerNextSegment,

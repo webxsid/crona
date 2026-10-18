@@ -100,8 +100,6 @@ func (m Model) inputState() inputpkg.State {
 		ReviewWindowEnd:           m.reviewWindowEnd,
 		ReviewShowTime:            m.reviewShowTime,
 		MomentumWindowDays:        m.currentMomentumWindowDays(),
-		MomentumTab:               string(m.currentMomentumTab()),
-		MomentumHistoryY:          m.momentumHistoryCursor,
 		Dialog:                    m.dialog,
 		DialogState:               m.dialogState(),
 		HelpOpen:                  m.helpOpen,
@@ -140,9 +138,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 		m.cursor = map[Pane]int{}
 	}
 
-	if MomentumTab(state.MomentumTab) == MomentumTabFocus {
-		m.momentumHistoryCursor = state.Cursor[PaneMomentumCards]
-	} else if state.Cursor != nil {
+	if state.Cursor != nil {
 		m.cursor[PaneMomentumCards] = state.Cursor[PaneMomentumCards]
 	}
 	m.filters = state.Filters

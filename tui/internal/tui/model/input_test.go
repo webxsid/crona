@@ -203,9 +203,8 @@ func TestInputDepsOpenCheckInDialogUsesEditForExistingCheckIn(t *testing.T) {
 
 func TestInputDepsOpenCreateActionUsesMomentumCreateDialog(t *testing.T) {
 	model := Model{
-		view:        ViewMomentum,
-		pane:        PaneMomentumCards,
-		momentumTab: MomentumTabCustom,
+		view: ViewMomentum,
+		pane: PaneMomentumCards,
 	}
 
 	next := model.handleInputCreateAction()
@@ -231,9 +230,8 @@ func TestDailyIssueCreateOpensDefaultIssueDialog(t *testing.T) {
 
 func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 	model := Model{
-		view:        ViewMomentum,
-		pane:        PaneMomentumCards,
-		momentumTab: MomentumTabCustom,
+		view: ViewMomentum,
+		pane: PaneMomentumCards,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
 		},
@@ -260,9 +258,8 @@ func TestInputDepsOpenEditorUsesMomentumEditDialog(t *testing.T) {
 
 func TestMomentumEditKeyUsesEditDialog(t *testing.T) {
 	model := Model{
-		view:        ViewMomentum,
-		pane:        PaneMomentumCards,
-		momentumTab: MomentumTabCustom,
+		view: ViewMomentum,
+		pane: PaneMomentumCards,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
 		},
@@ -287,7 +284,6 @@ func TestMomentumEnterUsesDetailsInsteadOfEdit(t *testing.T) {
 	model := Model{
 		view:               ViewMomentum,
 		pane:               PaneMomentumCards,
-		momentumTab:        MomentumTabCustom,
 		date:               "2026-06-19",
 		momentumWindowDays: 30,
 		cursor: map[Pane]int{
@@ -318,9 +314,8 @@ func TestMomentumEnterUsesDetailsInsteadOfEdit(t *testing.T) {
 
 func TestMomentumDeleteSelectionOpensConfirmDialog(t *testing.T) {
 	model := Model{
-		view:        ViewMomentum,
-		pane:        PaneMomentumCards,
-		momentumTab: MomentumTabCustom,
+		view: ViewMomentum,
+		pane: PaneMomentumCards,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
 		},

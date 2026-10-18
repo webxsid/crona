@@ -269,8 +269,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DailySummary:            m.dailySummary,
 		DailyPlan:               m.dailyPlan,
 		MomentumWindowDays:      m.currentMomentumWindowDays(),
-		MomentumTab:             string(m.currentMomentumTab()),
-		MomentumHistoryY:        m.momentumHistoryCursor,
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
 		MetricsRollup:           m.metricsRollup,
@@ -367,8 +365,6 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.reviewWindowEnd = state.ReviewWindowEnd
 	m = m.anchorReviewWindow()
 	m.momentumWindowDays = state.MomentumWindowDays
-	m.momentumTab = MomentumTab(state.MomentumTab)
-	m.momentumHistoryCursor = state.MomentumHistoryY
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup

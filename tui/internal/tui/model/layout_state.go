@@ -42,8 +42,6 @@ func (m Model) viewContentState(
 		SummaryDate:         m.currentDate(),
 		MomentumDate:        m.currentDate(),
 		MomentumWindowDays:  m.currentMomentumWindowDays(),
-		MomentumTab:         string(m.currentMomentumTab()),
-		MomentumHistoryY:    m.momentumHistoryCursor,
 		WellbeingDate:       m.currentDate(),
 		WeekStart:           m.currentWeekStart(),
 		DefaultIssueSection: string(m.defaultIssueSection),

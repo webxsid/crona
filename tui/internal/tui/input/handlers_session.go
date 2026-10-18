@@ -36,7 +36,7 @@ func issueEditorContext(s State) bool {
 	case uistate.ViewDefault, uistate.ViewDaily:
 		return s.ActivePane == uistate.PaneIssues
 	case uistate.ViewMomentum:
-		return s.MomentumTab == "custom"
+		return true
 	default:
 		return false
 	}

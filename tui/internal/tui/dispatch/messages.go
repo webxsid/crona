@@ -44,8 +44,6 @@ type MessageState struct {
 	DailySummary            *api.DailyIssueSummary
 	DailyPlan               *api.DailyPlan
 	MomentumWindowDays      int
-	MomentumTab             string
-	MomentumHistoryY        int
 	DailyCheckIn            *api.DailyCheckIn
 	MetricsRange            []api.DailyMetricsDay
 	MetricsRollup           *api.MetricsRollup
@@ -289,16 +287,6 @@ func HandleMessage(
 		return state, nil, true
 	case commands.MomentumMetricsRangeLoadedMsg:
 		state.MomentumMetricsRange = msg.Days
-		if state.MomentumTab == "focus" {
-			if state.MomentumHistoryY < 0 {
-				state.MomentumHistoryY = 0
-			}
-			if len(msg.Days) == 0 {
-				state.MomentumHistoryY = 0
-			} else if state.MomentumHistoryY >= len(msg.Days) {
-				state.MomentumHistoryY = len(msg.Days) - 1
-			}
-		}
 		return state, nil, true
 	case commands.MetricsRollupLoadedMsg:
 		if msg.Rollup != nil && staleReviewRange(state, deps, msg.Rollup.StartDate, msg.Rollup.EndDate) {
