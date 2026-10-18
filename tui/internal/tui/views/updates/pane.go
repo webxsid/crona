@@ -1,108 +1,115 @@
 package updates
 
 import (
+	"github.com/charmbracelet/x/ansi"
 	"strings"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	types "crona/tui/internal/tui/views/types"
 )
 
+// renderView lays Updates out as a status column (with diagnostics below when shown)
+// beside full-height release notes; narrow screens stack the sections.
 func renderView(theme types.Theme, state types.ContentState) string {
-	lines := []string{theme.StylePaneTitle.Render("Updates")}
-	actions := updateActions(theme, state)
-	if len(actions) > 0 {
-		lines = append(lines, viewchrome.RenderActionLine(theme, state.Width-6, actions))
-		lines = append(lines, "")
+	width, height := state.Width, state.Height
+	listWidth, notesWidth := viewchrome.LogPaneWidths(width)
+	if notesWidth == 0 {
+		listWidth = width
 	}
-	if state.UpdateStatus == nil {
-		lines = append(lines, theme.StyleDim.Render("Loading update status..."))
-		return viewchrome.RenderPaneBox(
-			theme,
-			false,
-			state.Width,
-			state.Height,
-			viewhelpers.StringsJoin(lines),
-		)
+	inner := state
+	inner.Width = listWidth + 4
+	status := statusSectionLines(theme, inner)
+	meta := strings.Join(updateKeys(state), "  ")
+	if ansi.StringWidth(meta)+len(" Status ")+3 > listWidth {
+		keys := []string{}
+		for _, line := range viewchrome.PackHints(updateKeys(state), max(1, listWidth-2)) {
+			keys = append(keys, theme.StyleDim.Render(line))
+		}
+		status = append(append(keys, ""), status...)
+		meta = ""
 	}
-
-	status := state.UpdateStatus
-	if banner := installScriptDeprecationBanner(theme, status); len(banner) > 0 {
-		lines = append(lines, banner...)
-		lines = append(lines, "")
+	status = wrapLines(status, max(1, listWidth-2))
+	notes := []string{theme.StyleDim.Render("Loading…")}
+	notesTitle := "Release Notes"
+	if state.UpdateStatus != nil {
+		notesTitle = releaseNotesSectionTitle(state.UpdateStatus)
+		notes = releaseNotesExcerptLines(theme, state.UpdateStatus.ReleaseNotes, max(1, max(notesWidth, listWidth)-2))
 	}
-	if shouldShowMigrationChecklist(status) {
-		lines = append(lines, migrationChecklistLines(theme, state)...)
-		lines = append(lines, "")
+	diagnostics := []string{}
+	if state.UpdateDiagnosticsExpanded && state.UpdateStatus != nil {
+		diagnostics = diagnosticsFieldLines(theme, inner)
 	}
-	lines = append(lines, statusCardLines(theme, state)...)
-	lines = append(lines, "")
-	lines = append(lines, theme.StyleDim.Render(separatorLine(state.Width-6)))
-	lines = append(lines, theme.StyleHeader.Render(releaseNotesSectionTitle(status)))
-	lines = append(lines, releaseNotesExcerptLines(theme, status.ReleaseNotes, state.Width-6)...)
-	lines = append(lines, "")
-	lines = append(lines, diagnosticsSectionLines(theme, state)...)
-	if state.UpdateChecking {
-		lines = append(
-			lines,
-			"",
-			viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates..."),
-		)
+	section := func(title, meta string, focused bool, w, h int, lines []string) string {
+		return viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Meta: meta, Focused: focused, Width: w, Height: h, Lines: lines})
 	}
-	if strings.TrimSpace(status.Error) != "" {
-		lines = append(
-			lines,
-			"",
-			theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)),
-		)
+	if notesWidth == 0 {
+		statusHeight := min(len(status)+2, max(1, height/2))
+		notesHeight := height - statusHeight
+		diagHeight := 0
+		if len(diagnostics) > 0 {
+			notesHeight = min(len(notes)+2, max(1, (height-statusHeight)/2))
+			diagHeight = height - statusHeight - notesHeight
+		}
+		parts := []string{section("Status", meta, true, width, statusHeight, status), section(notesTitle, "", false, width, notesHeight, notes)}
+		if diagHeight > 0 {
+			parts = append(parts, section("Diagnostics", "", false, width, diagHeight, diagnostics))
+		}
+		return strings.Join(parts, "\n")
 	}
-	return viewchrome.RenderPaneBox(
-		theme,
-		false,
-		state.Width,
-		state.Height,
-		viewhelpers.StringsJoin(lines),
-	)
+	left := section("Status", meta, true, listWidth, height, status)
+	if len(diagnostics) > 0 {
+		statusHeight := min(len(status)+2, max(1, height/2))
+		left = section("Status", meta, true, listWidth, statusHeight, status) + "\n" +
+			section("Diagnostics", "", false, listWidth, height-statusHeight, diagnostics)
+	}
+	return viewchrome.JoinColumns(theme, height, left, section(notesTitle, "", false, notesWidth, height, notes))
 }
 
-func updateActions(theme types.Theme, state types.ContentState) []string {
-	actions := []string{
-		theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" check again"),
-	}
+// statusSectionLines are the Status body: any banner or migration checklist, the status
+// card, and the checking or error line.
+func statusSectionLines(theme types.Theme, state types.ContentState) []string {
 	status := state.UpdateStatus
 	if status == nil {
-		return actions
+		return []string{theme.StyleDim.Render("Loading…")}
 	}
-	if strings.TrimSpace(status.UpdateCommand) != "" {
-		copyLabel := "copy command"
-		if viewchrome.IsMigrationCommand(status.UpdateCommand) {
-			copyLabel = "copy migration command"
+	lines := []string{}
+	if banner := installScriptDeprecationBanner(theme, status); len(banner) > 0 {
+		lines = append(append(lines, banner...), "")
+	}
+	if shouldShowMigrationChecklist(status) {
+		lines = append(append(lines, migrationChecklistLines(theme, state)...), "")
+	}
+	lines = append(lines, statusCardLines(theme, state)...)
+	if state.UpdateChecking {
+		lines = append(lines, "", viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates…"))
+	}
+	if strings.TrimSpace(status.Error) != "" {
+		lines = append(lines, "", theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)))
+	}
+	return lines
+}
+
+// updateKeys are the Status section's keys, plain so the header can fit them.
+func updateKeys(state types.ContentState) []string {
+	keys := []string{"[r] check again"}
+	if status := state.UpdateStatus; status != nil {
+		if strings.TrimSpace(status.UpdateCommand) != "" {
+			label := "[c] copy command"
+			if viewchrome.IsMigrationCommand(status.UpdateCommand) {
+				label = "[c] copy migration command"
+			}
+			keys = append(keys, label)
 		}
-		actions = append(
-			actions,
-			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" "+copyLabel),
-		)
+		if status.InstallScriptDeprecated {
+			keys = append(keys, "[o] open migration guide")
+		} else if viewruntime.ShouldShowUpdatesView(status) {
+			keys = append(keys, "[o] open release notes")
+		}
 	}
-	if status.InstallScriptDeprecated {
-		actions = append(
-			actions,
-			theme.StyleHeader.Render("[o]")+theme.StyleDim.Render(" open migration guide"),
-		)
-	} else if viewruntime.ShouldShowUpdatesView(status) {
-		actions = append(
-			actions,
-			theme.StyleHeader.Render("[o]")+theme.StyleDim.Render(" open release notes"),
-		)
-	}
-	actions = append(
-		actions,
-		theme.StyleHeader.Render("[d]")+
-			theme.StyleDim.Render(" "+diagnosticsActionLabel(state.UpdateDiagnosticsExpanded)),
-	)
-	return actions
+	return append(keys, "[d] "+diagnosticsActionLabel(state.UpdateDiagnosticsExpanded))
 }
 
 func statusCardLines(theme types.Theme, state types.ContentState) []string {
@@ -193,7 +200,7 @@ func channelLabel(channel sharedtypes.UpdateChannel) string {
 }
 
 func releaseNotesExcerptLines(theme types.Theme, notes string, width int) []string {
-	excerpt, more := releaseNotesExcerpt(notes, 5)
+	excerpt, more := releaseNotesExcerpt(notes, 40)
 	lines := []string{}
 	if len(excerpt) == 0 {
 		lines = append(
@@ -213,16 +220,9 @@ func releaseNotesExcerptLines(theme types.Theme, notes string, width int) []stri
 	return lines
 }
 
-func diagnosticsSectionLines(theme types.Theme, state types.ContentState) []string {
+func diagnosticsFieldLines(theme types.Theme, state types.ContentState) []string {
 	status := state.UpdateStatus
-	lines := []string{
-		theme.StyleDim.Render(separatorLine(state.Width - 6)),
-		theme.StyleHeader.Render(diagnosticsHeadline(state.UpdateDiagnosticsExpanded)),
-	}
-	if !state.UpdateDiagnosticsExpanded {
-		lines = append(lines, theme.StyleDim.Render("[d] "+diagnosticsActionLabel(false)))
-		return lines
-	}
+	lines := []string{}
 
 	addField := func(label, value string) {
 		value = strings.TrimSpace(value)
@@ -230,7 +230,9 @@ func diagnosticsSectionLines(theme types.Theme, state types.ContentState) []stri
 			return
 		}
 		lines = append(lines, theme.StyleDim.Render(label))
-		lines = append(lines, theme.StyleNormal.Render("  "+value))
+		for _, row := range viewruntime.WrapMultilineBlock(value, max(1, state.Width-8)) {
+			lines = append(lines, theme.StyleNormal.Render("  "+row))
+		}
 	}
 
 	addField("Release Tag", status.ReleaseTag)
@@ -252,7 +254,6 @@ func diagnosticsSectionLines(theme types.Theme, state types.ContentState) []stri
 	if strings.TrimSpace(state.KernelExecutablePath) != "" {
 		addField("Engine Path", state.KernelExecutablePath)
 	}
-	lines = append(lines, theme.StyleDim.Render("[d] "+diagnosticsActionLabel(true)))
 	return lines
 }
 
@@ -285,4 +286,13 @@ func migrationChecklistLines(theme types.Theme, state types.ContentState) []stri
 		}
 	}
 	return lines
+}
+
+// wrapLines wraps each styled line to width, keeping its style.
+func wrapLines(lines []string, width int) []string {
+	out := make([]string, 0, len(lines))
+	for _, line := range lines {
+		out = append(out, strings.Split(ansi.Wrap(line, width, ""), "\n")...)
+	}
+	return out
 }

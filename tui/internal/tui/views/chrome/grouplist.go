@@ -76,3 +76,17 @@ func LabelColumn(labels []string, limit int) int {
 	}
 	return min(width, limit)
 }
+
+// PackHints packs key hints into as few lines of width as fit, never splitting a hint.
+func PackHints(hints []string, width int) []string {
+	lines := []string{}
+	for _, hint := range hints {
+		last := len(lines) - 1
+		if last >= 0 && ansi.StringWidth(lines[last])+2+ansi.StringWidth(hint) <= width {
+			lines[last] += "  " + hint
+			continue
+		}
+		lines = append(lines, hint)
+	}
+	return lines
+}

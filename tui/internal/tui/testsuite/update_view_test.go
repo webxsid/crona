@@ -237,7 +237,8 @@ func TestHomebrewFormulaMismatchShowsMigrationCommand(t *testing.T) {
 		"Install Source",
 		"Homebrew",
 		"Update Command",
-		"brew uninstall crona && brew install webxsid/tap/crona-beta",
+		"brew uninstall crona &&",
+		"webxsid/tap/crona-beta",
 		"What's New",
 		"[o] open migration guide",
 	} {

@@ -854,7 +854,7 @@ func TestUpdatesViewShowsInstallUnavailableReason(t *testing.T) {
 			MigrationGuideURL:        "https://crona.work/migration",
 		},
 	})
-	for _, want := range []string{"Important", "Install script deprecation", "Migration guide: https://crona.work/migration", "Migration steps", "crona backup", "crona restore <backup-path>", "↑ Update Available", "Latest Version", "Diagnostics (hidden)", "[d] show diagnostics"} {
+	for _, want := range []string{"Important", "Install script deprecation", "Migration guide: https://crona.work/migration", "Migration steps", "crona backup", "crona restore <backup-path>", "↑ Update Available", "Latest Version", "[d] show diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}

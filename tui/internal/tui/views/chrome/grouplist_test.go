@@ -60,3 +60,13 @@ func TestLabelColumn(t *testing.T) {
 		t.Fatalf("expected the cap, got %d", got)
 	}
 }
+
+func TestPackHintsKeepsHintsWhole(t *testing.T) {
+	got := PackHints([]string{"[r] check again", "[o] open migration guide", "[d] diagnostics"}, 30)
+	if len(got) != 3 || got[1] != "[o] open migration guide" {
+		t.Fatalf("expected whole hints per line, got %q", got)
+	}
+	if got := PackHints([]string{"[a] one", "[b] two"}, 30); len(got) != 1 || got[0] != "[a] one  [b] two" {
+		t.Fatalf("expected hints packed onto one line, got %q", got)
+	}
+}

@@ -43,25 +43,11 @@ func displayVersion(value string) string {
 	return "v" + value
 }
 
-func separatorLine(width int) string {
-	if width < 8 {
-		width = 8
-	}
-	return strings.Repeat("─", width)
-}
-
 func statusHeadline(status *api.UpdateStatus) string {
 	if status != nil && status.UpdateAvailable {
 		return "↑ Update Available"
 	}
 	return "✓ You're up to date"
-}
-
-func diagnosticsHeadline(expanded bool) string {
-	if expanded {
-		return "Diagnostics"
-	}
-	return "Diagnostics (hidden)"
 }
 
 func diagnosticsActionLabel(expanded bool) string {
