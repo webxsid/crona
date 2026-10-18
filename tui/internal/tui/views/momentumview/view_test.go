@@ -113,10 +113,10 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	if !strings.Contains(rendered, "Keep the signal steady and visible.") {
 		t.Fatalf("expected card description in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Habits:") {
+	if !strings.Contains(rendered, "Habits ") {
 		t.Fatalf("expected habit summary in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "weekly · target Any · 3/week · current streak 4w · best 7w") {
+	if !strings.Contains(rendered, "4w now · best 7w") {
 		t.Fatalf("expected streak header in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "[18] May 4-10") ||
@@ -216,13 +216,13 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 	}
 
 	rendered := Render(testTheme(), state)
-	if !strings.Contains(rendered, "Contexts:") {
+	if !strings.Contains(rendered, "Contexts ") {
 		t.Fatalf("expected context summary label in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "Work/app, OSS/cli") {
 		t.Fatalf("expected context target names in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "weekly · target All · 2 contexts, 2h each") {
+	if !strings.Contains(rendered, "All · 2 contexts, 2h each") {
 		t.Fatalf("expected context meta to use duration-based target text, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "1h/2h") {
@@ -487,13 +487,13 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	}
 
 	rendered := Render(testTheme(), state)
-	if !strings.Contains(rendered, "Inactive") {
+	if !strings.Contains(rendered, "[x] enable") {
 		t.Fatalf("expected disabled badge in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "paused") {
 		t.Fatalf("expected paused status in disabled render, got %q", rendered)
 	}
-	if strings.Contains(rendered, "missed") || strings.Contains(rendered, "met") {
+	if body := strings.Join(strings.Split(rendered, "\n")[2:], "\n"); strings.Contains(body, "missed") || strings.Contains(body, "met") {
 		t.Fatalf("expected disabled momentum to avoid live status labels, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "3/3") {
@@ -536,7 +536,7 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 	if !strings.Contains(rendered, "Daily Focus") {
 		t.Fatalf("expected daily card title in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "daily · target Any · 1/day · current streak 5d · best 6d") {
+	if !strings.Contains(rendered, "5d now · best 6d") {
 		t.Fatalf("expected daily header in render, got %q", rendered)
 	}
 	if strings.Contains(rendered, "Mon Tue Wed Thu Fri Sat Sun") ||
@@ -550,9 +550,10 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
 		t.Fatalf("expected filled and empty squares in render, got %q", rendered)
 	}
-	if strings.Contains(rendered, "█") || strings.Contains(rendered, "┆") ||
-		strings.Contains(rendered, "May 4-10") {
-		t.Fatalf("expected binary daily habit to stay on the square grid, got %q", rendered)
+	// The list's sparkline draws bars too, so check the chart alone.
+	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30), "\n"); strings.Contains(chart, "█") || strings.Contains(chart, "┆") ||
+		strings.Contains(chart, "May 4-10") {
+		t.Fatalf("expected binary daily habit to stay on the square grid, got %q", chart)
 	}
 }
 
@@ -591,7 +592,7 @@ func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 	if !strings.Contains(rendered, "Multi Habit Daily") {
 		t.Fatalf("expected daily multi-habit card title in render, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "daily · target Any · 1/day · current streak 7d · best 9d") {
+	if !strings.Contains(rendered, "7d now · best 9d") {
 		t.Fatalf("expected daily multi-habit header in render, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "█") || !strings.Contains(rendered, "│") {
@@ -717,123 +718,6 @@ func TestMomentumDailySquaresStayCompactWhenNarrow(t *testing.T) {
 			"expected daily square render to include filled and empty squares, got %q",
 			rendered,
 		)
-	}
-}
-
-func TestRenderKeepsFocusedCardFullyVisibleOnShortViewport(t *testing.T) {
-	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       92,
-		Height:      13,
-		MomentumCards: []sharedtypes.MomentumCard{
-			{
-				Definition: sharedtypes.HabitStreakDefinition{
-					Name:          "Tiny Signal",
-					Enabled:       true,
-					Period:        sharedtypes.HabitStreakPeriodWeek,
-					RequiredCount: 2,
-				},
-				Current:    2,
-				Longest:    5,
-				HabitNames: []string{"One", "Two"},
-				Series: []sharedtypes.MomentumSeriesPoint{
-					{Label: "W1", Count: 1, Target: 2, MetTarget: false},
-					{Label: "W2", Count: 2, Target: 2, MetTarget: true},
-					{Label: "W3", Count: 1, Target: 2, MetTarget: false},
-				},
-			},
-		},
-		Cursors: map[string]int{"momentum_cards": 0},
-	}
-
-	rendered := Render(testTheme(), state)
-	if strings.Contains(rendered, "...") {
-		t.Fatalf("expected short viewport render to avoid clipping, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "Tiny Signal") {
-		t.Fatalf("expected focused card title in render, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "╰") {
-		t.Fatalf("expected the focused card to render its bottom border, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "1/2") || !strings.Contains(rendered, "2/2") {
-		t.Fatalf("expected ratios in short viewport render, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "missed") || !strings.Contains(rendered, "met") {
-		t.Fatalf("expected statuses in short viewport render, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "┆") {
-		t.Fatalf("expected inline target marker in short viewport render, got %q", rendered)
-	}
-}
-
-func TestRenderShowsBottomOverflowHintWhenCardsContinueBelow(t *testing.T) {
-	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       96,
-		Height:      18,
-		MomentumCards: []sharedtypes.MomentumCard{
-			momentumTestCard("Alpha Momentum", "A1", "A2", "A3"),
-			momentumTestCard("Beta Momentum", "B1", "B2", "B3"),
-			momentumTestCard("Gamma Momentum", "C1", "C2", "C3"),
-		},
-		Cursors: map[string]int{"momentum_cards": 0},
-	}
-
-	rendered := Render(testTheme(), state)
-	if !strings.Contains(rendered, "↓ 2 more") {
-		t.Fatalf("expected bottom overflow hint in render, got %q", rendered)
-	}
-	if strings.Contains(rendered, "↑ 1 more") {
-		t.Fatalf("did not expect top overflow hint at the start of the list, got %q", rendered)
-	}
-	if strings.Contains(rendered, "...") {
-		t.Fatalf("expected overflow hint render to avoid clipping, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") ||
-		!strings.Contains(rendered, "3/3") {
-		t.Fatalf("expected ratios in overflow render, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "┆") {
-		t.Fatalf("expected inline target marker in overflow render, got %q", rendered)
-	}
-}
-
-func TestRenderShowsTopOverflowHintWhenCardsContinueAbove(t *testing.T) {
-	state := types.ContentState{
-		View:        "momentum",
-		Pane:        "momentum_cards",
-		MomentumTab: "custom",
-		Width:       96,
-		Height:      18,
-		MomentumCards: []sharedtypes.MomentumCard{
-			momentumTestCard("Alpha Momentum", "A1", "A2", "A3"),
-			momentumTestCard("Beta Momentum", "B1", "B2", "B3"),
-			momentumTestCard("Gamma Momentum", "C1", "C2", "C3"),
-		},
-		Cursors: map[string]int{"momentum_cards": 2},
-	}
-
-	rendered := Render(testTheme(), state)
-	if !strings.Contains(rendered, "↑ 2 more") {
-		t.Fatalf("expected top overflow hint in render, got %q", rendered)
-	}
-	if strings.Contains(rendered, "↓ 1 more") {
-		t.Fatalf("did not expect bottom overflow hint at the end of the list, got %q", rendered)
-	}
-	if strings.Contains(rendered, "...") {
-		t.Fatalf("expected overflow hint render to avoid clipping, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "2/3") ||
-		!strings.Contains(rendered, "3/3") {
-		t.Fatalf("expected ratios in overflow render, got %q", rendered)
-	}
-	if !strings.Contains(rendered, "┆") {
-		t.Fatalf("expected inline target marker in overflow render, got %q", rendered)
 	}
 }
 

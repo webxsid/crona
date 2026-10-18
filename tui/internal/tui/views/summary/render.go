@@ -35,8 +35,8 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 // labelWidth is the label column every summary row lines its value up after.
 const labelWidth = 10
 
-// row is one stat: a dim label column, then its value cut to the room left.
-func row(theme types.Theme, label, value string, width int) string {
+// Row is one stat: a dim label column, then its value cut to the room left.
+func Row(theme types.Theme, label, value string, width int) string {
 	return theme.StyleDim.Render(fmt.Sprintf("%-*s", labelWidth, label)) +
 		viewhelpers.TruncateANSI(value, max(1, width-labelWidth))
 }
@@ -58,17 +58,17 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) st
 	}
 	duration := helperpkg.FormatCompactDurationSeconds
 	lines = append(lines,
-		row(theme, "Focus", theme.StyleHeader.Render(fmt.Sprintf("%d/100", focus.Score))+"  "+theme.StyleNormal.Render(level), width))
+		Row(theme, "Focus", theme.StyleHeader.Render(fmt.Sprintf("%d/100", focus.Score))+"  "+theme.StyleNormal.Render(level), width))
 	if reason != "" && !strings.EqualFold(reason, level) {
-		lines = append(lines, row(theme, "", theme.StyleDim.Render(reason), width))
+		lines = append(lines, Row(theme, "", theme.StyleDim.Render(reason), width))
 	}
 	lines = append(lines,
-		row(theme, "Worked", fmt.Sprintf("%s of %s", duration(metrics.WorkedSeconds), duration(focus.TargetWorkedSeconds)), width),
+		Row(theme, "Worked", fmt.Sprintf("%s of %s", duration(metrics.WorkedSeconds), duration(focus.TargetWorkedSeconds)), width),
 		strings.Repeat(" ", labelWidth)+renderBar(theme, metrics.WorkedSeconds, 0, max(1, focus.TargetWorkedSeconds), max(8, width-labelWidth), theme.ColorCyan),
-		row(theme, "Rest", duration(metrics.RestSeconds), width),
-		row(theme, "Sessions", fmt.Sprint(metrics.SessionCount), width),
-		row(theme, "Issues", fmt.Sprintf("%d of %d done · %d abandoned", metrics.CompletedIssues, metrics.TotalIssues, metrics.AbandonedIssues), width),
-		row(theme, "Habits", fmt.Sprintf("%d of %d done · %d failed", metrics.HabitCompletedCount, metrics.HabitDueCount, metrics.HabitFailedCount), width),
+		Row(theme, "Rest", duration(metrics.RestSeconds), width),
+		Row(theme, "Sessions", fmt.Sprint(metrics.SessionCount), width),
+		Row(theme, "Issues", fmt.Sprintf("%d of %d done · %d abandoned", metrics.CompletedIssues, metrics.TotalIssues, metrics.AbandonedIssues), width),
+		Row(theme, "Habits", fmt.Sprintf("%d of %d done · %d failed", metrics.HabitCompletedCount, metrics.HabitDueCount, metrics.HabitFailedCount), width),
 	)
 	return strings.Join(lines, "\n")
 }
@@ -80,11 +80,11 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 	}
 	s := plan.Summary
 	return append(lines,
-		row(theme, "Score", fmt.Sprintf("%.0f%%", s.AccountabilityScore)+theme.StyleDim.Render(fmt.Sprintf("  pressure %.1f", s.BacklogPressure)), width),
-		row(theme, "Done", fmt.Sprintf("%d of %d", s.CompletedCount, s.PlannedCount), width),
+		Row(theme, "Score", fmt.Sprintf("%.0f%%", s.AccountabilityScore)+theme.StyleDim.Render(fmt.Sprintf("  pressure %.1f", s.BacklogPressure)), width),
+		Row(theme, "Done", fmt.Sprintf("%d of %d", s.CompletedCount, s.PlannedCount), width),
 		strings.Repeat(" ", labelWidth)+renderBar(theme, s.CompletedCount, s.FailedCount+s.AbandonedCount, max(1, s.PlannedCount), max(8, width-labelWidth), theme.ColorGreen),
-		row(theme, "Missed", fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount), width),
-		row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
+		Row(theme, "Missed", fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount), width),
+		Row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
 	)
 }
 
@@ -94,31 +94,31 @@ func renderWellbeing(theme types.Theme, checkIn *sharedtypes.DailyCheckIn, rollu
 		lines = append(lines, theme.StyleDim.Render("No check-in recorded."))
 		if rollup != nil {
 			if rollup.AverageMood != nil {
-				lines = append(lines, row(theme, "7d mood", fmt.Sprintf("%.1f/5", *rollup.AverageMood), width))
+				lines = append(lines, Row(theme, "7d mood", fmt.Sprintf("%.1f/5", *rollup.AverageMood), width))
 			}
 			if rollup.AverageEnergy != nil {
-				lines = append(lines, row(theme, "7d energy", fmt.Sprintf("%.1f/5", *rollup.AverageEnergy), width))
+				lines = append(lines, Row(theme, "7d energy", fmt.Sprintf("%.1f/5", *rollup.AverageEnergy), width))
 			}
 			if rollup.AverageSleepHours != nil {
-				lines = append(lines, row(theme, "7d sleep", helperpkg.FormatCompactDurationHours(*rollup.AverageSleepHours), width))
+				lines = append(lines, Row(theme, "7d sleep", helperpkg.FormatCompactDurationHours(*rollup.AverageSleepHours), width))
 			}
 		}
 		return lines
 	}
 	lines = append(lines,
-		row(theme, "Mood", fmt.Sprintf("%d/5", checkIn.Mood), width),
-		row(theme, "Energy", fmt.Sprintf("%d/5", checkIn.Energy), width),
+		Row(theme, "Mood", fmt.Sprintf("%d/5", checkIn.Mood), width),
+		Row(theme, "Energy", fmt.Sprintf("%d/5", checkIn.Energy), width),
 	)
 	if checkIn.SleepHours != nil {
-		lines = append(lines, row(theme, "Sleep", helperpkg.FormatCompactDurationHours(*checkIn.SleepHours), width))
+		lines = append(lines, Row(theme, "Sleep", helperpkg.FormatCompactDurationHours(*checkIn.SleepHours), width))
 	}
 	if checkIn.ScreenTimeMinutes != nil {
-		lines = append(lines, row(theme, "Screen", helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes), width))
+		lines = append(lines, Row(theme, "Screen", helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes), width))
 	}
 	if checkIn.Notes != nil && strings.TrimSpace(*checkIn.Notes) != "" {
 		label := "Notes"
 		for _, line := range strings.Split(ansi.Wordwrap(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth), ""), "\n") {
-			lines = append(lines, row(theme, label, theme.StyleDim.Render(line), width))
+			lines = append(lines, Row(theme, label, theme.StyleDim.Render(line), width))
 			label = ""
 		}
 	}
@@ -131,9 +131,9 @@ func renderStreaks(theme types.Theme, streaks *sharedtypes.StreakSummary, width 
 		return append(lines, theme.StyleDim.Render("No streak data."))
 	}
 	return append(lines,
-		row(theme, "Focus", days(streaks.CurrentFocusDays), width),
-		row(theme, "Check-ins", days(streaks.CurrentCheckInDays), width),
-		row(theme, "Habits", days(streaks.CurrentHabitDays), width),
+		Row(theme, "Focus", days(streaks.CurrentFocusDays), width),
+		Row(theme, "Check-ins", days(streaks.CurrentCheckInDays), width),
+		Row(theme, "Habits", days(streaks.CurrentHabitDays), width),
 	)
 }
 
