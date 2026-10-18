@@ -96,6 +96,25 @@ func TestRenderSubTabLineCarriesDailyDate(t *testing.T) {
 	}
 }
 
+func TestRenderSubTabLineCarriesDateOnDatedViews(t *testing.T) {
+	for _, view := range []uistate.View{uistate.ViewSummary, uistate.ViewMomentum, uistate.ViewWellbeing, uistate.ViewRollup} {
+		state := shellStateForTest(view, 140, 36)
+		state.ContentState.DashboardDate = "2026-05-27"
+		state.ContentState.SummaryDate = "2026-05-27"
+		state.ContentState.MomentumDate = "2026-05-27"
+		state.ContentState.WellbeingDate = "2026-05-27"
+		state.ContentState.RollupStartDate = "2026-05-21"
+		state.ContentState.RollupEndDate = "2026-05-27"
+		line := plainLines(Render(state))[1]
+		if !strings.HasSuffix(strings.TrimRight(line, " "), "next [.]") || !strings.Contains(line, "2026-05-27") {
+			t.Fatalf("%s: expected the shared date and its keys on the sub-tab line, got %q", view, line)
+		}
+		if view == uistate.ViewRollup && !strings.Contains(line, "2026-05-21") {
+			t.Fatalf("rollup: expected its start date on the sub-tab line, got %q", line)
+		}
+	}
+}
+
 func TestRenderSubTabLineKeepsDailyDateWhenNarrow(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 70, 30)
 	state.ContentState.DashboardDate = "2026-05-27"

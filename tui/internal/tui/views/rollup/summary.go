@@ -28,7 +28,6 @@ func renderSummary(theme types.Theme, state types.ContentState, width, height in
 			theme.StyleNormal.Render(startDateText),
 			theme.StyleNormal.Render(endDateText),
 		),
-		theme.StyleDim.Render("[S/E] calendar   [←/→] start   [,/.] end   [g] weekly"),
 		"",
 	}
 	visualHeight := max(1, maxSummaryLines-len(lines))

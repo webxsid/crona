@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	helperpkg "crona/tui/internal/tui/helpers"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewruntime "crona/tui/internal/tui/views/runtime"
@@ -98,26 +97,7 @@ func dayWeek(theme types.Theme, state types.ContentState) []string {
 // flanked by the date-navigation keys written out as in the status line. Within room it
 // drops the key words first, then the keys, then the week, so the date always shows.
 func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
-	rawDate := dailyDate(state)
-	date := theme.StyleHeader.Render(helperpkg.FormatDisplayDate(rawDate, state.Settings))
-	dated := date
-	if parsed, ok := viewcalendar.ParseDate(rawDate); ok && !displayPatternIncludesWeek(state.Settings) {
-		dated = theme.StyleHeader.Render(helperpkg.FormatDisplayDate(rawDate, state.Settings) +
-			fmt.Sprintf(" · W%02d", viewcalendar.WeekNumber(parsed, state.WeekStart)))
-	}
-	key := func(k string) string { return theme.StyleHeader.Render("[" + k + "]") }
-	dim := theme.StyleDim.Render
-	for _, candidate := range []string{
-		key("g") + dim(" today   ") + key(",") + dim(" prev  ") + dated + dim("  next ") + key("."),
-		key("g") + "  " + key(",") + " " + dated + " " + key("."),
-		dated,
-		date,
-	} {
-		if ansi.StringWidth(candidate) <= room {
-			return candidate
-		}
-	}
-	return ""
+	return viewcalendar.DateNav(theme, dailyDate(state), "", state.Settings, state.WeekStart, room)
 }
 
 func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) []string {

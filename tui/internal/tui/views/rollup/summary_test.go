@@ -177,3 +177,16 @@ func testTheme() types.Theme {
 		StyleNormal:          chrome.StyleNormal,
 	}
 }
+
+func TestRenderDropsRemovedRangeKeys(t *testing.T) {
+	state := types.ContentState{
+		View: "rollup", Pane: "rollup_days", Width: 120, Height: 30,
+		RollupStartDate: "2026-06-01", RollupEndDate: "2026-06-07",
+	}
+	rendered := Render(testTheme(), state)
+	for _, unwanted := range []string{"[S/E]", "[←/→]"} {
+		if strings.Contains(rendered, unwanted) {
+			t.Fatalf("expected Rollup to drop %q, got %q", unwanted, rendered)
+		}
+	}
+}

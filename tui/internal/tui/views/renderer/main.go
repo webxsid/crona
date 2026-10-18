@@ -3,6 +3,7 @@ package viewrenderer
 import (
 	alerts "crona/tui/internal/tui/views/alerts"
 	away "crona/tui/internal/tui/views/away"
+	viewcalendar "crona/tui/internal/tui/views/calendar"
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	habits "crona/tui/internal/tui/views/habits"
@@ -65,8 +66,19 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 // SubTabMeta is the view's text for the right end of the sub-tab line, if it has any,
 // fitted within room cells.
 func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
-	if state.View == "daily" && state.HistoricalAwayDate == "" {
-		return daily.SubTabMeta(theme, state, room)
+	switch state.View {
+	case "daily":
+		if state.HistoricalAwayDate == "" {
+			return daily.SubTabMeta(theme, state, room)
+		}
+	case "summary":
+		return viewcalendar.DateNav(theme, state.SummaryDate, "", state.Settings, state.WeekStart, room)
+	case "momentum":
+		return viewcalendar.DateNav(theme, state.MomentumDate, "", state.Settings, state.WeekStart, room)
+	case "wellbeing":
+		return viewcalendar.DateNav(theme, state.WellbeingDate, "", state.Settings, state.WeekStart, room)
+	case "rollup":
+		return viewcalendar.DateNav(theme, state.RollupEndDate, state.RollupStartDate, state.Settings, state.WeekStart, room)
 	}
 	return ""
 }
