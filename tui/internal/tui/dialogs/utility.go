@@ -8,40 +8,15 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 
-	"github.com/charmbracelet/lipgloss"
 )
 
 func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 	displayDate := helperpkg.FormatDisplayDate(state.CheckInDate, nil)
 	switch state.Kind {
 	case "confirm_delete":
-		rows := []string{
-			theme.StylePaneTitle.Render("Confirm Delete"),
-			"",
-			theme.StyleError.Render(fallback(state.DeleteLabel, "this item")),
-		}
-		rows = appendDialogFooter(theme, state, rows, "[enter] delete   [esc] cancel")
-		return lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(theme.ColorRed).
-			Padding(1, 3).
-			Width(min(state.Width-8, 44)).
-			Render(strings.Join(rows, "\n"))
+		return renderConfirmDelete(theme, state)
 	case "confirm_wipe":
-		rows := []string{
-			theme.StylePaneTitle.Render("Wipe All Data"),
-			"",
-			theme.StyleError.Render("This deletes all Crona runtime data."),
-			theme.StyleDim.Render("Issues, sessions, habits, reports, and settings will be reset."),
-			theme.StyleDim.Render("Installed binaries will remain untouched."),
-		}
-		rows = appendDialogFooter(theme, state, rows, "[enter] wipe data   [esc] cancel")
-		return lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(theme.ColorRed).
-			Padding(1, 3).
-			Width(min(state.Width-8, 68)).
-			Render(strings.Join(rows, "\n"))
+		return renderConfirmWipe(theme, state)
 	case "pick_date":
 		rows := []string{
 			theme.StylePaneTitle.Render(state.DateTitle),
@@ -402,32 +377,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		)
 		return modal(theme, state.Width, 76, theme.ColorGreen, rows)
 	case "view_jump", "beta_support":
-		rows := []string{
-			theme.StylePaneTitle.Render(state.ViewTitle),
-			"",
-			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
-			"",
-		}
-		for i, item := range state.ChoiceItems {
-			line := "  " + item
-			if i == state.ChoiceCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
-				continue
-			}
-			rows = append(rows, theme.StyleNormal.Render(line))
-		}
-		if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) &&
-			strings.TrimSpace(state.ChoiceDetails[state.ChoiceCursor]) != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ChoiceDetails[state.ChoiceCursor]))
-		}
-		var footer string
-		if state.Kind == "view_jump" {
-			footer = "[key] jump   [↑/↓] move   [enter] jump   [esc] cancel"
-		} else {
-			footer = "[key] run   [↑/↓] move   [enter] run   [esc] cancel"
-		}
-		rows = appendDialogFooter(theme, state, rows, footer)
-		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
+		return renderMenuList(theme, state)
 	case "complete_habit":
 		return renderHabitLogForm(theme, state)
 	default:

@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	issuecore "crona/tui/internal/tui/views/issuecore"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -16,54 +15,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	case "edit_issue":
 		return renderEditIssue(theme, state)
 	case "issue_status":
-		contextRow := renderIssueContextColumns(
-			theme,
-			state.Width,
-			64,
-			state.RepoName,
-			state.StreamName,
-		)
-		statusSummary := theme.StyleDim.Render("Current status") + "\n" +
-			theme.StyleHeader.Render(plainIssueStatus(state.IssueStatus))
-		workSummary := theme.StyleDim.Render("Effort") + "\n" +
-			theme.StyleHeader.Render(
-				issuecore.IssueWorkedEstimateSummary(
-					state.IssueWorkedSeconds,
-					state.IssueEstimateMins,
-				),
-			)
-		metaRow := renderInputColumns(state.Width, 64, statusSummary, workSummary)
-		rows := []string{
-			theme.StylePaneTitle.Render("Set Issue Status"),
-			"",
-			theme.StyleDim.Render("Issue"),
-			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
-			"",
-			contextRow,
-			"",
-			metaRow,
-			"",
-			theme.StyleDim.Render("Change status to"),
-		}
-		if len(state.StatusItems) == 0 {
-			rows = appendDialogFooter(
-				theme,
-				state,
-				append(rows, theme.StyleDim.Render("No valid status transitions")),
-				"[esc] close",
-			)
-		} else {
-			for i, status := range state.StatusItems {
-				label := plainIssueStatus(string(status))
-				if i == state.StatusCursor {
-					rows = append(rows, theme.StyleSelected.Render("> "+label))
-				} else {
-					rows = append(rows, "  "+label)
-				}
-			}
-			rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] set   [esc] cancel")
-		}
-		return modal(theme, state.Width, 64, theme.ColorYellow, rows)
+		return renderIssueStatus(theme, state)
 	case "issue_status_note":
 		return renderStatusNote(theme, state)
 	default:
