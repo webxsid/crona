@@ -27,10 +27,10 @@ const (
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	before := m.selectedSessionID()
+	before, wasWide := m.selectedSessionID(), m.width >= 100
 	next, cmd := m.update(msg)
 	if model, ok := next.(Model); ok {
-		if tick := model.sessionPreviewTick(before); tick != nil {
+		if tick := model.sessionPreviewTick(before, wasWide); tick != nil {
 			cmd = tea.Batch(cmd, tick)
 		}
 		return model.withTerminalTitle(cmd)

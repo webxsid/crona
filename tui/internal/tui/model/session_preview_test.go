@@ -103,3 +103,12 @@ func TestSessionDialogPathUntouched(t *testing.T) {
 		t.Fatalf("expected enter to still open the details dialog")
 	}
 }
+
+func TestSessionPreviewLoadsAfterWidening(t *testing.T) {
+	if previewModel(160).sessionPreviewTick("a", false) == nil {
+		t.Fatalf("expected a preview tick once the detail pane appears")
+	}
+	if previewModel(160).sessionPreviewTick("a", true) != nil {
+		t.Fatalf("expected no tick when nothing changed")
+	}
+}

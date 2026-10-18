@@ -21,11 +21,11 @@ func (m Model) selectedSessionID() string {
 	return ""
 }
 
-// sessionPreviewTick schedules a preview fetch when the selection moved to a new session
-// on a screen wide enough to show the detail pane.
-func (m Model) sessionPreviewTick(before string) tea.Cmd {
+// sessionPreviewTick schedules a preview fetch when the selection moved to a new session,
+// or the detail pane just appeared, on a screen wide enough to show it.
+func (m Model) sessionPreviewTick(before string, wasWide bool) tea.Cmd {
 	id := m.selectedSessionID()
-	if id == "" || id == before || m.width < 100 {
+	if id == "" || m.width < 100 || (id == before && wasWide) {
 		return nil
 	}
 	return tea.Tick(sessionPreviewDelay, func(time.Time) tea.Msg { return commands.SessionPreviewTickMsg{ID: id} })
