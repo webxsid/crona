@@ -98,7 +98,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		} else {
 			cmds = append(cmds, deps.LoadAllIssues())
 		}
-		return state, tea.Batch(cmds...)
+		return state, tea.Batch(append(cmds, summarySnapshotCmd(state, deps)...)...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
 		cmds := []tea.Cmd{
 			deps.LoadDueHabits(state.CurrentDate),
@@ -114,13 +114,13 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		if state.View == uistate.ViewHabitHistory {
 			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
 		}
-		return state, tea.Batch(cmds...)
+		return state, tea.Batch(append(cmds, summarySnapshotCmd(state, deps)...)...)
 	case "checkin.updated", "checkin.deleted":
-		return state, tea.Batch(
+		return state, tea.Batch(append([]tea.Cmd{
 			deps.LoadDailyStreaks(state.CurrentDate),
 			deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
 			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
-		)
+		}, summarySnapshotCmd(state, deps)...)...)
 	case sharedtypes.EventTypeSessionHistoryChanged:
 		cmds := []tea.Cmd{
 			deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDate),
@@ -379,4 +379,13 @@ func shouldDismissDialogForSessionEvent(
 	default:
 		return false
 	}
+}
+
+// summarySnapshotCmd reloads the shown date's summary snapshot, which Daily's Score/Plan
+// and Day summary read, after an edit that changes it.
+func summarySnapshotCmd(state EventState, deps EventDeps) []tea.Cmd {
+	if deps.LoadSummarySnapshot == nil {
+		return nil
+	}
+	return []tea.Cmd{deps.LoadSummarySnapshot(state.CurrentDate)}
 }

@@ -104,3 +104,15 @@ func TestRolloverReloadsSummarySnapshot(t *testing.T) {
 		t.Fatalf("expected the summary snapshot reloaded on day_start, got %q", snapshot)
 	}
 }
+
+func TestDailyEditsReloadSummarySnapshot(t *testing.T) {
+	for _, eventType := range []string{"issue.updated", "habit.completed", "checkin.updated"} {
+		snapshot := ""
+		deps := testEventDeps()
+		deps.LoadSummarySnapshot = func(date string) tea.Cmd { snapshot = date; return func() tea.Msg { return nil } }
+		HandleEvent(EventState{CurrentDate: "2026-08-10"}, deps, api.KernelEvent{Type: eventType})
+		if snapshot != "2026-08-10" {
+			t.Fatalf("%s: expected the summary snapshot reloaded for the shown date, got %q", eventType, snapshot)
+		}
+	}
+}
