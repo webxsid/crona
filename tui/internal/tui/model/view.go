@@ -57,11 +57,9 @@ func (m Model) layoutState() layoutpkg.State {
 		),
 	})
 	switch view {
-	case ViewDaily, ViewDefault, ViewHabitList, ViewReview:
+	case ViewDaily, ViewDefault, ViewHabitList, ViewReview, ViewMomentum:
 		// These panes show their own keys.
 		paneActions = nil
-	case ViewMomentum:
-		paneActions = viewchrome.WithoutDateKeys(paneActions)
 	}
 	state := layoutpkg.State{
 		Width:               m.width,

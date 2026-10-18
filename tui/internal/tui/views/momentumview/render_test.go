@@ -115,3 +115,12 @@ func TestDetailLinesWrapDescription(t *testing.T) {
 		t.Fatalf("expected the whole description")
 	}
 }
+
+func TestRenderWideListFitsLongerNames(t *testing.T) {
+	text := plain(Render(types.Theme{}, renderState(200, 50, momentumTestCard("Daily Context Any", "W1"), momentumTestCard("Daily Context All", "W1"))))
+	for _, want := range []string{"▶ Daily Context Any ", "  Daily Context All "} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected list row %q whole, got\n%s", want, text)
+		}
+	}
+}

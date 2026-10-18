@@ -124,3 +124,15 @@ func TestHelpSheetListsScopeKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestMomentumBottomRowIsGlobalsOnly(t *testing.T) {
+	row := bottomRow(Model{view: ViewMomentum, pane: PaneMomentumCards, date: "2026-10-18", width: 200, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}})
+	for _, unwanted := range []string{"[e] edit", "[enter]", "[D] delete", "[x] toggle"} {
+		if strings.Contains(row, unwanted) {
+			t.Fatalf("expected %q off the bottom row, got %q", unwanted, row)
+		}
+	}
+	if !strings.Contains(row, "[?] all keys") {
+		t.Fatalf("expected the help key on the bottom row, got %q", row)
+	}
+}

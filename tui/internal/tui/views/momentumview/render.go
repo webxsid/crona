@@ -12,7 +12,15 @@ import (
 	types "crona/tui/internal/tui/views/types"
 )
 
-const listWidth = 40
+const (
+	minListWidth = 40
+	maxListWidth = 56
+)
+
+// listWidthFor gives the list 3/10 of the screen, between the floor and the cap.
+func listWidthFor(width int) int {
+	return min(maxListWidth, max(minListWidth, width*3/10))
+}
 
 // Render shows the strip, the list, and the detail when the width allows.
 func Render(theme types.Theme, state types.ContentState) string {
@@ -31,6 +39,7 @@ func Render(theme types.Theme, state types.ContentState) string {
 		meta := viewchrome.KeyHint(theme, "enter", "details")
 		return strings.Join(append(rows, renderList(theme, cards, cursor, state.Width, height, meta)), "\n")
 	}
+	listWidth := listWidthFor(state.Width)
 	list := renderList(theme, cards, cursor, listWidth, height, fmt.Sprintf("%d", len(cards)))
 	detailWidth := state.Width - listWidth - 3
 	var detail string
