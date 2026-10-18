@@ -116,34 +116,37 @@ type Model struct {
 	reviewShowTime   bool
 	summarySnapshot  *api.SummarySnapshot
 	// dailyDetailDay shows the Day summary in Daily's detail pane until the selection moves.
-	dailyDetailDay            bool
-	momentumWindowDays        int
-	dailyCheckIn              *api.DailyCheckIn
-	metricsRange              []api.DailyMetricsDay
-	metricsRollup             *api.MetricsRollup
-	rollupMetricsRange        []api.DailyMetricsDay
-	rollupMetricsRollup       *api.MetricsRollup
-	momentumMetricsRange      []api.DailyMetricsDay
-	momentumMetricsRollup     *api.MetricsRollup
-	streaks                   *api.StreakSummary
-	dailyStreaks              *api.StreakSummary
-	dashboardWindow           *api.DashboardWindowSummary
-	dailyFocusScore           *api.FocusScoreSummary
-	weeklyFocusScore          *api.FocusScoreSummary
-	repoDistribution          *api.TimeDistributionSummary
-	streamDistribution        *api.TimeDistributionSummary
-	issueDistribution         *api.TimeDistributionSummary
-	segmentDistribution       *api.TimeDistributionSummary
-	goalProgress              *api.GoalProgressSummary
-	exportAssets              *api.ExportAssetStatus
-	exportReports             []api.ExportReportFile
-	issueSessions             []api.Session
-	sessionHistory            []api.SessionHistoryEntry
-	habitHistory              []api.HabitCompletion
-	habitHistoryHabitID       int64
-	habitHistoryTitle         string
-	habitHistoryMeta          string
-	sessionDetail             *api.SessionDetail
+	dailyDetailDay        bool
+	momentumWindowDays    int
+	dailyCheckIn          *api.DailyCheckIn
+	metricsRange          []api.DailyMetricsDay
+	metricsRollup         *api.MetricsRollup
+	rollupMetricsRange    []api.DailyMetricsDay
+	rollupMetricsRollup   *api.MetricsRollup
+	momentumMetricsRange  []api.DailyMetricsDay
+	momentumMetricsRollup *api.MetricsRollup
+	streaks               *api.StreakSummary
+	dailyStreaks          *api.StreakSummary
+	dashboardWindow       *api.DashboardWindowSummary
+	dailyFocusScore       *api.FocusScoreSummary
+	weeklyFocusScore      *api.FocusScoreSummary
+	repoDistribution      *api.TimeDistributionSummary
+	streamDistribution    *api.TimeDistributionSummary
+	issueDistribution     *api.TimeDistributionSummary
+	segmentDistribution   *api.TimeDistributionSummary
+	goalProgress          *api.GoalProgressSummary
+	exportAssets          *api.ExportAssetStatus
+	exportReports         []api.ExportReportFile
+	issueSessions         []api.Session
+	sessionHistory        []api.SessionHistoryEntry
+	habitHistory          []api.HabitCompletion
+	habitHistoryHabitID   int64
+	habitHistoryTitle     string
+	habitHistoryMeta      string
+	sessionDetail         *api.SessionDetail
+	// sessionPreview feeds Log's Sessions detail pane; sessionPreviewFailed holds the ID whose fetch failed.
+	sessionPreview            *api.SessionDetail
+	sessionPreviewFailed      string
 	ops                       []api.Op
 	context                   *api.ActiveContext
 	timer                     *api.TimerState

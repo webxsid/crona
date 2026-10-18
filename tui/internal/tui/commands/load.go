@@ -708,3 +708,14 @@ func goalProgressGroupForScope(repoID, streamID, issueID *int64) string {
 		return string(sharedtypes.GoalProgressGroupRepo)
 	}
 }
+
+func LoadSessionPreview(c *api.Client, id string) tea.Cmd {
+	return func() tea.Msg {
+		detail, err := c.GetSessionDetail(id)
+		if err != nil {
+			logger.Errorf("loadSessionPreview(%s): %v", id, err)
+			return SessionPreviewFailedMsg{ID: id, Err: err}
+		}
+		return SessionPreviewLoadedMsg{Detail: detail}
+	}
+}

@@ -164,3 +164,11 @@ type IssueActionPreflightClearMsg struct {
 }
 
 type EditorDoneMsg struct{}
+
+// Session previews feed Log's Sessions detail pane, apart from the details dialog.
+type SessionPreviewLoadedMsg struct{ Detail *api.SessionDetail }
+type SessionPreviewFailedMsg struct {
+	ID  string
+	Err error
+}
+type SessionPreviewTickMsg struct{ ID string }

@@ -118,6 +118,8 @@ func (m Model) viewContentState(
 		ExportReports:             m.exportReports,
 		IssueSessions:             m.issueSessions,
 		SessionHistory:            m.sessionHistory,
+		SessionPreview:            m.sessionPreview,
+		SessionPreviewFailed:      m.sessionPreviewFailed != "" && m.sessionPreviewFailed == m.selectedSessionID(),
 		HabitHistory:              m.habitHistory,
 		Ops:                       m.ops,
 		Context:                   m.context,

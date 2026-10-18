@@ -27,14 +27,21 @@ const (
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	before := m.selectedSessionID()
 	next, cmd := m.update(msg)
 	if model, ok := next.(Model); ok {
+		if tick := model.sessionPreviewTick(before); tick != nil {
+			cmd = tea.Batch(cmd, tick)
+		}
 		return model.withTerminalTitle(cmd)
 	}
 	return next, cmd
 }
 
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if next, cmd, ok := m.handleSessionPreview(msg); ok {
+		return next, cmd
+	}
 	if key, ok := msg.(tea.KeyMsg); ok {
 		logger.Infof(
 			"tui key msg: key=%q view=%s pane=%s dialog=%q help=%t session_detail=%t session_context=%t",
