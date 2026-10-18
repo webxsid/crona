@@ -68,7 +68,7 @@ func cadenceMissingDays(state State) bool {
 	return ok && state.CadenceIdx == cadenceCustom && len(state.CadenceDays) == 0
 }
 
-// updateCadenceKey moves focus with tab (skipping Days unless Custom days is chosen) and
+// updateCadenceKey moves focus with tab in cadenceFocusOrder and
 // handles the picker and Days row; it reports whether it consumed the key.
 func updateCadenceKey(state State, key string) (State, bool) {
 	layout, ok := cadenceLayoutFor(state)
@@ -77,12 +77,14 @@ func updateCadenceKey(state State, key string) (State, bool) {
 	}
 	switch {
 	case key == "tab" || key == "shift+tab":
-		dir := ternaryDir(key)
-		next := (state.FocusIdx + dir + layout.count) % layout.count
-		if next == layout.days && state.CadenceIdx != cadenceCustom {
-			next = (next + dir + layout.count) % layout.count
+		order := cadenceFocusOrder(state, layout)
+		at := 0
+		for i, focus := range order {
+			if focus == state.FocusIdx {
+				at = i
+			}
 		}
-		state.FocusIdx = next
+		state.FocusIdx = order[(at+ternaryDir(key)+len(order))%len(order)]
 		return SyncDialogFocus(clearDialogError(state)), true
 	case state.FocusIdx == layout.cadence:
 		switch key {
@@ -107,4 +109,20 @@ func updateCadenceKey(state State, key string) (State, bool) {
 		return state, true
 	}
 	return state, false
+}
+
+// cadenceFocusOrder is the tab order: Days sits right after the cadence picker, and only
+// while Custom days is chosen.
+func cadenceFocusOrder(state State, layout cadenceLayout) []int {
+	order := make([]int, 0, layout.count)
+	for focus := 0; focus < layout.count; focus++ {
+		if focus == layout.days {
+			continue
+		}
+		order = append(order, focus)
+		if focus == layout.cadence && state.CadenceIdx == cadenceCustom {
+			order = append(order, layout.days)
+		}
+	}
+	return order
 }

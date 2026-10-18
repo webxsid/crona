@@ -156,8 +156,8 @@ func TestFormPairsFitTheirPlaceholders(t *testing.T) {
 		t.Errorf("schedule placeholder truncated:\n%s", habit)
 	}
 	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
-	if !strings.Contains(reminder, "Time  20:00") {
-		t.Errorf("time label not tight to its value:\n%s", reminder)
+	if !strings.Contains(reminder, "Time     20:00") {
+		t.Errorf("time label not aligned with Cadence:\n%s", reminder)
 	}
 }
 
@@ -178,5 +178,32 @@ func TestCadenceRows(t *testing.T) {
 	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
 	if !strings.Contains(reminder, "‹ Daily ›") || strings.Contains(reminder, "weekday lists") {
 		t.Errorf("reminder should use the cadence picker without the typing help:\n%s", reminder)
+	}
+}
+
+func TestCadenceRowsStackAboveTarget(t *testing.T) {
+	states := []controllerpkg.State{
+		controllerpkg.OpenCreateHabit(controllerpkg.State{}),
+		controllerpkg.OpenEditHabit(controllerpkg.State{}, 3, 2, "Read", nil, "daily", nil, true),
+		controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""),
+	}
+	for _, state := range states {
+		lines := strings.Split(ansi.Strip(Render(testTheme(), sized(state, 120, 36))), "\n")
+		row := func(label string) int {
+			for i, line := range lines {
+				if strings.Contains(line, "  "+label+" ") {
+					return i
+				}
+			}
+			return -1
+		}
+		last := "Target"
+		if state.Kind == "create_alert_reminder" {
+			last = "Time"
+		}
+		cadence, days, end := row("Cadence"), row("Days"), row(last)
+		if !(cadence >= 0 && days == cadence+1 && end == days+1) {
+			t.Errorf("%s: Cadence %d, Days %d, %s %d; want consecutive rows\n%s", state.Kind, cadence, days, last, end, strings.Join(lines, "\n"))
+		}
 	}
 }

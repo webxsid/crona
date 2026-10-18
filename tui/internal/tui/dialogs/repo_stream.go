@@ -31,11 +31,7 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string {
 	inner := formInner(state.Width)
 	column := len("Description")
-	full, half := formColumns(inner, column)
-	pairColumn := len("Target")
-	if inner < 56 {
-		pairColumn = column
-	}
+	full, _ := formColumns(inner, column)
 	name, schedule, target := 0, 1, 2
 	if create {
 		name, schedule, target = 2, 3, 4
@@ -47,17 +43,14 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 		return input
 	}
 	focused := func(input int) bool { return state.FocusIdx == focusOf(input) }
+	_, days, count, _ := controllerpkg.CadenceLayout(state)
 	rows := []FormRow{
 		fieldRow(focusOf(name), Field(theme, "Name", column, bareInput(state.Inputs[name], full, "required"), focused(name))),
 		textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
-		pairRow(
-			cadenceField(theme, state, column, focusOf(schedule)),
-			Field(theme, "Target", pairColumn, bareInput(state.Inputs[target], half, "optional"), focused(target)),
-			focusOf(schedule), focusOf(target), inner,
-		),
+		fieldRow(focusOf(schedule), cadenceField(theme, state, column, focusOf(schedule))),
+		fieldRow(days, daysField(theme, state, column, days)),
+		fieldRow(focusOf(target), Field(theme, "Target", column, bareInput(state.Inputs[target], full, "optional"), focused(target))),
 	}
-	_, days, count, _ := controllerpkg.CadenceLayout(state)
-	rows = append(rows, fieldRow(days, daysField(theme, state, column, days)))
 	title, border, submit := "Edit Habit", lipgloss.Color(theme.ColorYellow), "save"
 	if create {
 		title, border, submit = "New Habit", "", "create"

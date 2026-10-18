@@ -67,11 +67,7 @@ func renderReminderForm(theme Theme, state controllerpkg.State) string {
 	}
 	inner := formInner(state.Width)
 	column := len("Cadence")
-	_, half := formColumns(inner, column)
-	timeColumn := len("Time")
-	if inner < 56 {
-		timeColumn = column
-	}
+	full, _ := formColumns(inner, column)
 	return renderForm(theme, state, FormSpec{
 		Title: title, Border: border, FocusCount: 3,
 		Primary: plainHint(dialogSubmitHint(state, "save")),
@@ -82,12 +78,9 @@ func renderReminderForm(theme Theme, state controllerpkg.State) string {
 			return tabNextHints(focus)
 		},
 		Rows: []FormRow{
-			pairRow(
-				cadenceField(theme, state, column, 0),
-				Field(theme, "Time", timeColumn, bareInput(state.Inputs[1], half, "HH:MM"), state.FocusIdx == 1),
-				0, 1, inner,
-			),
+			fieldRow(0, cadenceField(theme, state, column, 0)),
 			fieldRow(2, daysField(theme, state, column, 2)),
+			fieldRow(1, Field(theme, "Time", column, bareInput(state.Inputs[1], full, "HH:MM"), state.FocusIdx == 1)),
 			staticRow("", theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00.")),
 		},
 	})

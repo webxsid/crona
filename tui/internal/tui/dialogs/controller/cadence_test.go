@@ -67,17 +67,26 @@ func TestHabitEditOpensOnItsCustomDays(t *testing.T) {
 	}
 }
 
-func TestHabitTabSkipsDaysUnlessCustom(t *testing.T) {
+func tabs(t *testing.T, state State, key tea.KeyMsg, want ...int) {
+	t.Helper()
+	for _, focus := range want {
+		state, _, _ = press(state, key)
+		if state.FocusIdx != focus {
+			t.Fatalf("%s %s: focus %d, want %d (order %v)", state.Kind, key, state.FocusIdx, focus, want)
+		}
+	}
+}
+
+func TestHabitTabGoesCadenceDaysTarget(t *testing.T) {
+	// edit_habit focus: Name 0, Description 1, Cadence 2, Target 3, Days 4.
 	state := editHabit("daily")
-	state.FocusIdx = 3
-	if next, _, _ := press(state, keyTab); next.FocusIdx != 0 {
-		t.Fatalf("daily: tab from Target went to %d, want 0", next.FocusIdx)
-	}
+	state.FocusIdx = 2
+	tabs(t, state, keyTab, 3, 0)
 	state = editHabit("mon")
+	state.FocusIdx = 2
+	tabs(t, state, keyTab, 4, 3, 0)
 	state.FocusIdx = 3
-	if next, _, _ := press(state, keyTab); next.FocusIdx != 4 {
-		t.Fatalf("custom: tab from Target went to %d, want Days (4)", next.FocusIdx)
-	}
+	tabs(t, state, tea.KeyMsg{Type: tea.KeyShiftTab}, 4, 2)
 }
 
 func TestCustomCadenceNeedsADay(t *testing.T) {
@@ -106,8 +115,5 @@ func TestReminderCadence(t *testing.T) {
 		t.Fatalf("weekdays reminder opened on cadence %d", state.CadenceIdx)
 	}
 	state, _, _ = press(state, keyRight)
-	state.FocusIdx = 1
-	if next, _, _ := press(state, keyTab); next.FocusIdx != 2 {
-		t.Fatalf("custom reminder: tab from Time went to %d, want Days (2)", next.FocusIdx)
-	}
+	tabs(t, state, keyTab, 2, 1, 0)
 }
