@@ -26,8 +26,8 @@ type calendarWeek struct {
 
 // calendarLines draws a binary daily momentum as weeks by weekday at exactly height lines:
 // a weekday header, square cells sized to the room, the latest weeks kept, each weekday's
-// hits right under the grid, then blank lines.
-func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, width, height int, enabled bool) []string {
+// hits right under the grid, then blank lines. Today's weekday and cell carry a dot.
+func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, width, height int, enabled bool, today string) []string {
 	weeks := calendarWeeks(series)
 	if len(weeks) == 0 || height < 3 {
 		return padLines([]string{theme.StyleDim.Render("no data")}, height)
@@ -43,11 +43,19 @@ func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, 
 	weeks = weeks[max(0, len(weeks)-max(1, room/block)):]
 
 	column := func(s string) string { return padRight(s, cellWidth) + " " }
-	header := strings.Repeat(" ", calendarLabelWidth)
-	for _, day := range calendarWeekdays {
-		header += column(day)
+	todayWeekday := -1
+	if day, err := time.Parse(isoDate, today); err == nil {
+		todayWeekday = (int(day.Weekday()) + 6) % 7
 	}
-	lines := []string{theme.StyleDim.Render(strings.TrimRight(header, " "))}
+	header := theme.StyleDim.Render(strings.Repeat(" ", calendarLabelWidth))
+	for i, day := range calendarWeekdays {
+		if i == todayWeekday {
+			header += theme.StyleNormal.Bold(true).Render(column(day + "•"))
+			continue
+		}
+		header += theme.StyleDim.Render(column(day))
+	}
+	lines := []string{strings.TrimRight(header, " ")}
 	for _, week := range weeks {
 		for row := range cellHeight {
 			label := ""
@@ -56,7 +64,8 @@ func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, 
 			}
 			line := theme.StyleDim.Render(padRight(label, calendarLabelWidth))
 			for _, point := range week.days {
-				line += calendarCell(theme, point, cellWidth, enabled) + " "
+				mark := point != nil && point.BucketKey == today && row == cellHeight/2
+				line += calendarCell(theme, point, cellWidth, enabled, mark) + " "
 			}
 			lines = append(lines, strings.TrimRight(line, " "))
 		}
@@ -85,19 +94,24 @@ func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, 
 	return padLines(append(lines, theme.StyleDim.Render(strings.TrimRight(hit, " "))), height)
 }
 
-func calendarCell(theme types.Theme, point *sharedtypes.MomentumSeriesPoint, width int, enabled bool) string {
-	switch {
-	case point == nil:
+func calendarCell(theme types.Theme, point *sharedtypes.MomentumSeriesPoint, width int, enabled, mark bool) string {
+	if point == nil {
 		return strings.Repeat(" ", width)
-	case point.Skipped:
-		return theme.StyleDim.Render(strings.Repeat("·", width))
 	}
 	status := momentumStatusForPoint(*point, enabled)
-	glyph := "█"
-	if status != "met" {
+	glyph, style := "█", momentumStatusStyle(theme, status)
+	switch {
+	case point.Skipped:
+		glyph, style = "·", theme.StyleDim
+	case status != "met":
 		glyph = "░"
 	}
-	return momentumStatusStyle(theme, status).Render(strings.Repeat(glyph, width))
+	if !mark {
+		return style.Render(strings.Repeat(glyph, width))
+	}
+	half := (width - 1) / 2
+	return style.Render(strings.Repeat(glyph, half)) + theme.StyleNormal.Bold(true).Render("•") +
+		style.Render(strings.Repeat(glyph, width-1-half))
 }
 
 // calendarWeeks groups the series by ISO week, oldest first.

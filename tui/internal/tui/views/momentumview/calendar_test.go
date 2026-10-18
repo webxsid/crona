@@ -13,7 +13,7 @@ import (
 // twoWeeks runs Mon 5 to Sun 18 Oct 2026 (W41, W42); Mondays are missed, all else done.
 func twoWeeks() []string {
 	series := dailyMomentumSeries(time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}, 1)
-	return calendarLines(types.Theme{}, series, 70, 20, true)
+	return calendarLines(types.Theme{}, series, 70, 20, true, "")
 }
 
 func TestCalendarFillsHeightWithinWidth(t *testing.T) {
@@ -53,7 +53,7 @@ func TestCalendarCountsHitsPerWeekday(t *testing.T) {
 
 func TestCalendarDropsOldestWeeksWhenShort(t *testing.T) {
 	series := dailyMomentumSeries(time.Date(2026, 8, 10, 0, 0, 0, 0, time.UTC), make([]int, 70), 1)
-	text := ansi.Strip(strings.Join(calendarLines(types.Theme{}, series, 70, 6, true), "\n"))
+	text := ansi.Strip(strings.Join(calendarLines(types.Theme{}, series, 70, 6, true, ""), "\n"))
 	if strings.Contains(text, "W33") || !strings.Contains(text, "W42") {
 		t.Fatalf("expected the latest weeks only, got\n%s", text)
 	}
@@ -74,11 +74,27 @@ func TestCalendarHitRowSitsUnderTheGrid(t *testing.T) {
 
 func TestCalendarCellsUseTheWholePane(t *testing.T) {
 	series := dailyMomentumSeries(time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC), []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 1)
-	text := ansi.Strip(strings.Join(calendarLines(types.Theme{}, series, 83, 40, true), "\n"))
+	text := ansi.Strip(strings.Join(calendarLines(types.Theme{}, series, 83, 40, true, ""), "\n"))
 	if !strings.Contains(text, strings.Repeat("█", 10)) {
 		t.Fatalf("expected 10-cell squares in an 83-cell pane, got\n%s", text)
 	}
 	if rows := strings.Count(text, "W38  "+strings.Repeat("█", 10)); rows != 1 {
 		t.Fatalf("expected one labelled row per week, got %d", rows)
+	}
+}
+
+func TestCalendarMarksToday(t *testing.T) {
+	series := dailyMomentumSeries(time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}, 1)
+	lines := calendarLines(types.Theme{}, series, 70, 20, true, "2026-10-17")
+	header := ansi.Strip(lines[0])
+	if !strings.Contains(header, "Sat•") || strings.Contains(header, "Fri•") {
+		t.Fatalf("expected Saturday marked in the header, got %q", header)
+	}
+	marked := 0
+	for _, line := range lines[1:] {
+		marked += strings.Count(ansi.Strip(line), "•")
+	}
+	if marked != 1 {
+		t.Fatalf("expected exactly one marked cell, got %d in\n%s", marked, ansi.Strip(strings.Join(lines, "\n")))
 	}
 }
