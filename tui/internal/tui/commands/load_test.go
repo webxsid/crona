@@ -106,30 +106,16 @@ drained:
 		"2026-04-04",
 		"2026-04-10",
 	)
-	assertDateRangeQuery(
-		t,
-		firstRequest(got, protocol.MethodDashboardWindow),
-		"2026-04-04",
-		"2026-04-10",
-	)
-	assertDateRangeQuery(
-		t,
-		firstRequest(got, protocol.MethodDashboardFocusScore),
-		"2026-04-04",
-		"2026-04-10",
-	)
-	for _, req := range got[protocol.MethodDashboardDistribution] {
-		assertDateRangeQuery(t, req, "2026-04-04", "2026-04-10")
+	for _, method := range []string{
+		protocol.MethodDashboardWindow,
+		protocol.MethodDashboardFocusScore,
+		protocol.MethodDashboardDistribution,
+		protocol.MethodDashboardGoalProgress,
+	} {
+		if len(got[method]) != 0 {
+			t.Fatalf("expected Wellbeing to leave Rollup's %s to the model, got %d requests", method, len(got[method]))
+		}
 	}
-	if len(got[protocol.MethodDashboardDistribution]) == 0 {
-		t.Fatalf("expected at least one distribution request")
-	}
-	assertDateRangeQuery(
-		t,
-		firstRequest(got, protocol.MethodDashboardGoalProgress),
-		"2026-04-04",
-		"2026-04-10",
-	)
 	if len(got[protocol.MethodMetricsStreaks]) > 0 {
 		t.Fatalf("wellbeing load should not call range-based %s", protocol.MethodMetricsStreaks)
 	}
@@ -217,12 +203,6 @@ drained:
 		"2026-03-28",
 		"2026-04-10",
 	)
-	assertDateRangeQuery(
-		t,
-		firstRequest(got, protocol.MethodDashboardWindow),
-		"2026-03-28",
-		"2026-04-10",
-	)
 }
 
 func TestLoadWellbeingWindowCapsAtThirtyDays(t *testing.T) {
@@ -297,12 +277,6 @@ drained:
 	assertDateRangeQuery(
 		t,
 		firstRequest(got, protocol.MethodMetricsRollup),
-		"2026-03-12",
-		"2026-04-10",
-	)
-	assertDateRangeQuery(
-		t,
-		firstRequest(got, protocol.MethodDashboardWindow),
 		"2026-03-12",
 		"2026-04-10",
 	)

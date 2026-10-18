@@ -60,6 +60,9 @@ type DistributionLoadedMsg struct {
 	Summary *api.TimeDistributionSummary
 }
 type GoalProgressLoadedMsg struct{ Summary *api.GoalProgressSummary }
+
+// RollupRefreshRequestedMsg asks for Rollup's data again; the model knows its range.
+type RollupRefreshRequestedMsg struct{}
 type ExportAssetsLoadedMsg struct{ Assets *api.ExportAssetStatus }
 type ExportReportsLoadedMsg struct{ Reports []api.ExportReportFile }
 type ExportReportDeletedMsg struct{ Name string }

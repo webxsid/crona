@@ -318,6 +318,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadMomentumRange(date, state.MomentumWindowDays),
 			deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)),
 		}
+		if deps.LoadSummarySnapshot != nil {
+			cmds = append(cmds, deps.LoadSummarySnapshot(date))
+		}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds,
 				deps.LoadIssues(*state.Context.StreamID),

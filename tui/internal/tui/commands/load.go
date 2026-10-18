@@ -543,22 +543,14 @@ func LoadWellbeingWindow(c *api.Client, date string, windowDays int) tea.Cmd {
 		LoadMetricsRange(c, start, date),
 		LoadMetricsRollup(c, start, date),
 		LoadMetricsLifetimeStreaks(c, date),
-		LoadDashboardSummariesWindow(c, date, windowDays),
+		RequestRollupRefresh(),
 	)
 }
 
-func LoadDashboardSummaries(c *api.Client, date string) tea.Cmd {
-	return LoadDashboardSummariesWindow(c, date, 7)
-}
-
-func LoadDashboardSummariesWindow(c *api.Client, date string, windowDays int) tea.Cmd {
-	if windowDays < 1 {
-		windowDays = 7
-	}
-	if windowDays > 30 {
-		windowDays = 30
-	}
-	return LoadRollupSummaries(c, shiftISODate(date, -(windowDays-1)), date)
+// RequestRollupRefresh asks the model to reload Rollup over its own range, which only it
+// knows: the shared date and Rollup's window.
+func RequestRollupRefresh() tea.Cmd {
+	return func() tea.Msg { return RollupRefreshRequestedMsg{} }
 }
 
 func LoadRollupSummaries(c *api.Client, start, end string) tea.Cmd {

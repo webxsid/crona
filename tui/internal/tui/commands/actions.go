@@ -29,7 +29,7 @@ func reloadMomentumSurfaces(
 		LoadSettings(c),
 		LoadDailyStreaks(c, dashboardDate),
 		LoadWellbeing(c, dashboardDate),
-		LoadDashboardSummaries(c, dashboardDate),
+		RequestRollupRefresh(),
 	)
 }
 
@@ -73,7 +73,7 @@ func PatchSetting(
 			cmds = append(
 				cmds,
 				LoadDailySummary(c, dashboardDate),
-				LoadDashboardSummaries(c, dashboardDate),
+				RequestRollupRefresh(),
 				LoadWellbeing(c, dashboardDate),
 				LoadExportReports(c),
 			)
@@ -89,7 +89,7 @@ func PatchSetting(
 			cmds = append(
 				cmds,
 				LoadWellbeing(c, dashboardDate),
-				LoadDashboardSummaries(c, dashboardDate),
+				RequestRollupRefresh(),
 			)
 		}
 		return tea.Batch(cmds...)()
@@ -105,7 +105,7 @@ func SetAwayMode(c *api.Client, enabled bool, repoID, streamID int64, dashboardD
 		return tea.Batch(
 			LoadSettings(c),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 		)()
 	}
 }
@@ -168,7 +168,7 @@ func UpsertDailyCheckIn(
 			logger.Errorf("UpsertDailyCheckIn: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadWellbeing(c, date), LoadDashboardSummaries(c, date))()
+		return tea.Batch(LoadWellbeing(c, date), RequestRollupRefresh())()
 	}
 }
 
@@ -178,7 +178,7 @@ func DeleteDailyCheckIn(c *api.Client, date string) tea.Cmd {
 			logger.Errorf("DeleteDailyCheckIn: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return tea.Batch(LoadWellbeing(c, date), LoadDashboardSummaries(c, date))()
+		return tea.Batch(LoadWellbeing(c, date), RequestRollupRefresh())()
 	}
 }
 
@@ -509,7 +509,7 @@ func UpdateIssue(
 			LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 			LoadContext(c),
 		}
 		if streamID != 0 {
@@ -564,7 +564,7 @@ func PromoteAdhocIssueWithPath(c *api.Client, issueID int64, repoName, streamNam
 			return ErrMsg{Err: err}
 		}
 		return tea.Batch(LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate),
-			LoadDailyPlan(c, dashboardDate), LoadDashboardSummaries(c, dashboardDate), LoadContext(c))()
+			LoadDailyPlan(c, dashboardDate), RequestRollupRefresh(), LoadContext(c))()
 	}
 }
 
@@ -577,7 +577,7 @@ func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) t
 		cmds := []tea.Cmd{
 			LoadAllIssues(c),
 			LoadDailySummary(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 			LoadContext(c),
 			LoadTimer(c),
 		}
@@ -838,7 +838,7 @@ func ChangeIssueStatus(
 			LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
@@ -870,7 +870,7 @@ func ToggleIssueToday(
 			LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
@@ -896,7 +896,7 @@ func ToggleIssuePinnedDaily(
 			LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 			func() tea.Msg {
 				return IssuePinnedDailyChangedMsg{IssueID: issueID, Pinned: !pinned}
 			},
@@ -931,7 +931,7 @@ func SetIssueTodoDate(
 			LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate),
 			LoadWellbeing(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 		}
 		if streamID != 0 {
 			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
@@ -961,7 +961,7 @@ func ChangeIssueStatusAndEndSession(
 		cmds := []tea.Cmd{
 			LoadAllIssuesSelecting(c, issueID),
 			LoadDailySummary(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 			LoadContext(c),
 			LoadTimer(c),
 		}
@@ -1123,7 +1123,7 @@ func EndFocusSession(
 		cmds := []tea.Cmd{
 			LoadAllIssues(c),
 			LoadDailySummary(c, dashboardDate),
-			LoadDashboardSummaries(c, dashboardDate),
+			RequestRollupRefresh(),
 			LoadContext(c),
 			LoadTimer(c),
 			LoadSessionHistory(c, nil, 200),

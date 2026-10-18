@@ -298,6 +298,8 @@ func HandleMessage(
 	case commands.DailyStreaksLoadedMsg:
 		state.DailyStreaks = msg.Streaks
 		return state, nil, true
+	case commands.RollupRefreshRequestedMsg:
+		return state, deps.LoadRollupSummaries(rollupRange(deps.CurrentDate(state), state.RollupWindowDays)), true
 	case commands.DashboardWindowLoadedMsg:
 		state.DashboardWindow = msg.Summary
 		return state, nil, true
@@ -805,7 +807,7 @@ func applyLogicalDate(state *MessageState, date, previousDate string, deps Messa
 		state.Date = date
 	}
 	shown := state.Date
-	return tea.Batch(
+	cmds := []tea.Cmd{
 		deps.LoadAllIssues(),
 		deps.LoadAllHabits(),
 		deps.LoadDailySummary(shown),
@@ -815,7 +817,11 @@ func applyLogicalDate(state *MessageState, date, previousDate string, deps Messa
 		deps.LoadWellbeing(shown, state.WellbeingWindowDays),
 		deps.LoadMomentumRange(shown, state.MomentumWindowDays),
 		deps.LoadRollupSummaries(rollupRange(shown, state.RollupWindowDays)),
-	)
+	}
+	if deps.LoadSummarySnapshot != nil {
+		cmds = append(cmds, deps.LoadSummarySnapshot(shown))
+	}
+	return tea.Batch(cmds...)
 }
 
 func isExportDialog(kind string) bool {

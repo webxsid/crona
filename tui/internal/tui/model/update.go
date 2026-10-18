@@ -94,7 +94,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			commands.LoadIssuesSelecting(m.client, msg.StreamID, msg.Issue.ID),
 			commands.LoadAllIssuesSelecting(m.client, msg.Issue.ID),
 			commands.LoadDailySummary(m.client, ""),
-			commands.LoadDashboardSummaries(m.client, m.currentDate()),
+			commands.RequestRollupRefresh(),
 		)
 		switch msg.FollowUp {
 		case dialogstate.IssueCreateFollowUpMore:

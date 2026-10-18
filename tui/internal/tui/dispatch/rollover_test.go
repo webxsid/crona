@@ -40,7 +40,7 @@ func TestLogicalDateRollover(t *testing.T) {
 			state, cmd, _ := HandleMessage(MessageState{
 				Date:   tc.date,
 				Health: &api.Health{CurrentDate: "2026-08-09"},
-				}, commands.HealthLoadedMsg{Health: &api.Health{CurrentDate: "2026-08-10"}}, rolloverMessageDeps(&loaded))
+			}, commands.HealthLoadedMsg{Health: &api.Health{CurrentDate: "2026-08-10"}}, rolloverMessageDeps(&loaded))
 			if state.Date != tc.want {
 				t.Fatalf("Date = %q, want %q", state.Date, tc.want)
 			}
@@ -70,5 +70,37 @@ func TestDayStartRollover(t *testing.T) {
 				t.Fatalf("Date = %q loaded %q, want %q loaded %q", state.Date, loaded, tc.wantDate, tc.wantLoaded)
 			}
 		})
+	}
+}
+
+func TestRollupRefreshUsesSharedDateAndWindow(t *testing.T) {
+	var start, end string
+	deps := MessageDeps{
+		CurrentDate:         func(s MessageState) string { return s.Date },
+		LoadRollupSummaries: func(s, e string) tea.Cmd { start, end = s, e; return func() tea.Msg { return nil } },
+	}
+	_, cmd, handled := HandleMessage(MessageState{Date: "2026-08-10", RollupWindowDays: 30}, commands.RequestRollupRefresh()(), deps)
+	if !handled || cmd == nil || start != "2026-07-12" || end != "2026-08-10" {
+		t.Fatalf("expected Rollup reloaded on 2026-07-12..2026-08-10, got %q..%q", start, end)
+	}
+}
+
+func TestRolloverReloadsSummarySnapshot(t *testing.T) {
+	snapshot := ""
+	loaded := ""
+	deps := rolloverMessageDeps(&loaded)
+	deps.LoadSummarySnapshot = func(date string) tea.Cmd { snapshot = date; return func() tea.Msg { return nil } }
+	HandleMessage(MessageState{Date: "2026-08-09", Health: &api.Health{CurrentDate: "2026-08-09"}},
+		commands.HealthLoadedMsg{Health: &api.Health{CurrentDate: "2026-08-10"}}, deps)
+	if snapshot != "2026-08-10" {
+		t.Fatalf("expected the summary snapshot reloaded on rollover, got %q", snapshot)
+	}
+	snapshot = ""
+	eventDeps := testEventDeps()
+	eventDeps.LoadSummarySnapshot = func(date string) tea.Cmd { snapshot = date; return func() tea.Msg { return nil } }
+	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10", DateBefore: "2026-08-09"})
+	HandleEvent(EventState{Date: "2026-08-09"}, eventDeps, api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
+	if snapshot != "2026-08-10" {
+		t.Fatalf("expected the summary snapshot reloaded on day_start, got %q", snapshot)
 	}
 }
