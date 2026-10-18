@@ -83,37 +83,40 @@ type ContentState struct {
 	DailyDetailDay bool
 	// DailyIssueIndices and DailyHabitIndices are the model's text-filtered raw indices into
 	// DailyIssues and DueHabits; the pane cursors are positions in these lists.
-	DailyIssueIndices         []int
-	DailyHabitIndices         []int
-	Habits                    []api.Habit
-	AllIssues                 []api.IssueWithMeta
-	DefaultIssues             []api.IssueWithMeta
-	DueHabits                 []api.HabitDailyItem
-	MomentumCards             []api.MomentumCard
-	DailySummary              *api.DailyIssueSummary
-	SummarySnapshot           *api.SummarySnapshot
-	DailyPlan                 *api.DailyPlan
-	DailyCheckIn              *api.DailyCheckIn
-	MetricsRange              []api.DailyMetricsDay
-	MetricsRollup             *api.MetricsRollup
-	RollupMetricsRange        []api.DailyMetricsDay
-	RollupMetricsRollup       *api.MetricsRollup
-	MomentumMetricsRange      []api.DailyMetricsDay
-	MomentumMetricsRollup     *api.MetricsRollup
-	Streaks                   *api.StreakSummary
-	DailyStreaks              *api.StreakSummary
-	DashboardWindow           *api.DashboardWindowSummary
-	DailyFocusScore           *api.FocusScoreSummary
-	WeeklyFocusScore          *api.FocusScoreSummary
-	RepoDistribution          *api.TimeDistributionSummary
-	StreamDistribution        *api.TimeDistributionSummary
-	IssueDistribution         *api.TimeDistributionSummary
-	SegmentDistribution       *api.TimeDistributionSummary
-	GoalProgress              *api.GoalProgressSummary
-	ExportAssets              *api.ExportAssetStatus
-	ExportReports             []api.ExportReportFile
-	IssueSessions             []api.Session
-	SessionHistory            []api.SessionHistoryEntry
+	DailyIssueIndices     []int
+	DailyHabitIndices     []int
+	Habits                []api.Habit
+	AllIssues             []api.IssueWithMeta
+	DefaultIssues         []api.IssueWithMeta
+	DueHabits             []api.HabitDailyItem
+	MomentumCards         []api.MomentumCard
+	DailySummary          *api.DailyIssueSummary
+	SummarySnapshot       *api.SummarySnapshot
+	DailyPlan             *api.DailyPlan
+	DailyCheckIn          *api.DailyCheckIn
+	MetricsRange          []api.DailyMetricsDay
+	MetricsRollup         *api.MetricsRollup
+	RollupMetricsRange    []api.DailyMetricsDay
+	RollupMetricsRollup   *api.MetricsRollup
+	MomentumMetricsRange  []api.DailyMetricsDay
+	MomentumMetricsRollup *api.MetricsRollup
+	Streaks               *api.StreakSummary
+	DailyStreaks          *api.StreakSummary
+	DashboardWindow       *api.DashboardWindowSummary
+	DailyFocusScore       *api.FocusScoreSummary
+	WeeklyFocusScore      *api.FocusScoreSummary
+	RepoDistribution      *api.TimeDistributionSummary
+	StreamDistribution    *api.TimeDistributionSummary
+	IssueDistribution     *api.TimeDistributionSummary
+	SegmentDistribution   *api.TimeDistributionSummary
+	GoalProgress          *api.GoalProgressSummary
+	ExportAssets          *api.ExportAssetStatus
+	ExportReports         []api.ExportReportFile
+	IssueSessions         []api.Session
+	SessionHistory        []api.SessionHistoryEntry
+	// SessionPreview is the selected session's loaded detail; ignore it when its ID differs.
+	SessionPreview            *api.SessionDetail
+	SessionPreviewFailed      bool
 	HabitHistory              []api.HabitCompletion
 	Ops                       []api.Op
 	Context                   *api.ActiveContext
