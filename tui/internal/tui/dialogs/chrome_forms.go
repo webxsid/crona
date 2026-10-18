@@ -139,3 +139,29 @@ func withError(theme Theme, state controllerpkg.State, footer []string) []string
 	}
 	return append([]string{theme.StyleError.Render(state.ErrorMessage), ""}, footer...)
 }
+
+// renderCheckoutContext draws the context switcher: Repo and Stream pickers.
+func renderCheckoutContext(theme Theme, state controllerpkg.State) string {
+	inner := FrameInner(state.Width, []string{strings.Repeat(" ", 56)})
+	column := len("Stream")
+	full := inner - column - 3
+	body := Picker(theme, PickerSpec{
+		Label: "Repo", Column: column, Focused: state.FocusIdx == 0, Input: bareInput(state.Inputs[0], full, "type to filter"),
+		Current: state.RepoSelectorLabel, Options: state.RepoOptionLabels, Selected: state.RepoIndex,
+		Placeholder: state.RepoSelectorLabel,
+	})
+	focus := 0
+	if state.FocusIdx == 1 {
+		focus = len(body)
+	}
+	body = append(body, Picker(theme, PickerSpec{
+		Label: "Stream", Column: column, Focused: state.FocusIdx == 1, Input: bareInput(state.Inputs[1], full, "type to filter"),
+		Current: state.StreamSelectorLabel, Options: state.StreamOptionLabels, Selected: state.StreamIndex,
+		Placeholder: state.StreamSelectorLabel,
+	})...)
+	footer := Footer(theme, "enter set context", []string{"c clear", "↑/↓/tab move", "type filter", "←/→ choose"}, inner)
+	return Frame(theme, FrameSpec{
+		Title: "Checkout Context", Body: body, Footer: withError(theme, state, footer),
+		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focus, Inner: inner,
+	})
+}

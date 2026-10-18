@@ -59,22 +59,7 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "save"))
 		return modal(theme, state.Width, 56, theme.ColorYellow, rows)
 	case "checkout_context":
-		rows := []string{
-			theme.StylePaneTitle.Render("Checkout Context"),
-			"",
-			theme.StyleDim.Render("Repo"),
-			state.Inputs[0].View(),
-			"",
-			renderSelector(theme, state, state.RepoSelectorLabel, true),
-			"",
-			theme.StyleDim.Render("Stream"),
-			state.Inputs[1].View(),
-			"",
-			renderSelector(theme, state, state.StreamSelectorLabel, false),
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, checkoutHint())
-		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
+		return renderCheckoutContext(theme, state)
 	case "create_habit":
 		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, 92)
 		rows := []string{
@@ -129,10 +114,6 @@ func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
 		) + "   [esc] cancel"
 	}
 	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
-}
-
-func checkoutHint() string {
-	return "[type] filter   [←/→] choose   [↑/↓/tab] move   [enter] set checkout context   [c] clear   [esc] cancel"
 }
 
 func habitDialogHint(state controllerpkg.State, submitLabel string) string {
