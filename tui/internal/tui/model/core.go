@@ -164,6 +164,8 @@ type Model struct {
 	kernelInfo                *api.KernelInfo
 	elapsed                   int // local seconds since last timer.state event
 	timerTickSeq              int
+	pendingEvents             []api.KernelEvent
+	eventFlushScheduled       bool
 	lastTimerActivityTouch    time.Time
 	terminalTitleEnabled      bool
 	lastTerminalTitle         string

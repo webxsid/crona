@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -27,66 +28,69 @@ type MessageState struct {
 	DefaultIssueSection uistate.DefaultIssueSection
 	BrowseScope         scope.Scope
 	// Date is the shared date every dated view shows; "" follows the logical today.
-	Date                    string
-	ReviewWindowDays        int
-	ReviewWindowEnd         string
-	Cursor                  map[uistate.Pane]int
-	Filters                 map[uistate.Pane]string
-	Repos                   []api.Repo
-	Streams                 []api.Stream
-	AllStreams              []api.Stream
-	Issues                  []api.Issue
-	Habits                  []api.Habit
-	AllHabits               []api.HabitWithMeta
-	HabitStreakDefs         []api.HabitStreakDefinition
-	MomentumCards           []api.MomentumCard
-	AllIssues               []api.IssueWithMeta
-	DueHabits               []api.HabitDailyItem
-	DailySummary            *api.DailyIssueSummary
-	DailyPlan               *api.DailyPlan
-	MomentumWindowDays      int
-	DailyCheckIn            *api.DailyCheckIn
-	MetricsRange            []api.DailyMetricsDay
-	MetricsRollup           *api.MetricsRollup
-	RollupMetricsRange      []api.DailyMetricsDay
-	RollupMetricsRollup     *api.MetricsRollup
-	MomentumMetricsRange    []api.DailyMetricsDay
-	MomentumMetricsRollup   *api.MetricsRollup
-	Streaks                 *api.StreakSummary
-	DailyStreaks            *api.StreakSummary
-	DashboardWindow         *api.DashboardWindowSummary
-	DailyFocusScore         *api.FocusScoreSummary
-	WeeklyFocusScore        *api.FocusScoreSummary
-	RepoDistribution        *api.TimeDistributionSummary
-	StreamDistribution      *api.TimeDistributionSummary
-	IssueDistribution       *api.TimeDistributionSummary
-	SegmentDistribution     *api.TimeDistributionSummary
-	GoalProgress            *api.GoalProgressSummary
-	ExportAssets            *api.ExportAssetStatus
-	ExportReports           []api.ExportReportFile
-	IssueSessions           []api.Session
-	SessionHistory          []api.SessionHistoryEntry
-	HabitHistory            []api.HabitCompletion
-	SelectedHabitHistoryID  *int64
-	HabitHistoryTitle       string
-	HabitHistoryMeta        string
-	SessionDetail           *api.SessionDetail
-	SessionDetailOpen       bool
-	SessionDetailY          int
-	SessionContextOpen      bool
-	SessionContextY         int
-	Ops                     []api.Op
-	Context                 *api.ActiveContext
-	Timer                   *api.TimerState
-	Health                  *api.Health
-	AlertStatus             *api.AlertStatus
-	AlertReminders          []api.AlertReminder
-	UpdateStatus            *api.UpdateStatus
-	UpdateChecking          bool
-	Settings                *api.CoreSettings
-	KernelInfo              *api.KernelInfo
-	Elapsed                 int
-	TimerTickSeq            int
+	Date                   string
+	ReviewWindowDays       int
+	ReviewWindowEnd        string
+	Cursor                 map[uistate.Pane]int
+	Filters                map[uistate.Pane]string
+	Repos                  []api.Repo
+	Streams                []api.Stream
+	AllStreams             []api.Stream
+	Issues                 []api.Issue
+	Habits                 []api.Habit
+	AllHabits              []api.HabitWithMeta
+	HabitStreakDefs        []api.HabitStreakDefinition
+	MomentumCards          []api.MomentumCard
+	AllIssues              []api.IssueWithMeta
+	DueHabits              []api.HabitDailyItem
+	DailySummary           *api.DailyIssueSummary
+	DailyPlan              *api.DailyPlan
+	MomentumWindowDays     int
+	DailyCheckIn           *api.DailyCheckIn
+	MetricsRange           []api.DailyMetricsDay
+	MetricsRollup          *api.MetricsRollup
+	RollupMetricsRange     []api.DailyMetricsDay
+	RollupMetricsRollup    *api.MetricsRollup
+	MomentumMetricsRange   []api.DailyMetricsDay
+	MomentumMetricsRollup  *api.MetricsRollup
+	Streaks                *api.StreakSummary
+	DailyStreaks           *api.StreakSummary
+	DashboardWindow        *api.DashboardWindowSummary
+	DailyFocusScore        *api.FocusScoreSummary
+	WeeklyFocusScore       *api.FocusScoreSummary
+	RepoDistribution       *api.TimeDistributionSummary
+	StreamDistribution     *api.TimeDistributionSummary
+	IssueDistribution      *api.TimeDistributionSummary
+	SegmentDistribution    *api.TimeDistributionSummary
+	GoalProgress           *api.GoalProgressSummary
+	ExportAssets           *api.ExportAssetStatus
+	ExportReports          []api.ExportReportFile
+	IssueSessions          []api.Session
+	SessionHistory         []api.SessionHistoryEntry
+	HabitHistory           []api.HabitCompletion
+	SelectedHabitHistoryID *int64
+	HabitHistoryTitle      string
+	HabitHistoryMeta       string
+	SessionDetail          *api.SessionDetail
+	SessionDetailOpen      bool
+	SessionDetailY         int
+	SessionContextOpen     bool
+	SessionContextY        int
+	Ops                    []api.Op
+	Context                *api.ActiveContext
+	Timer                  *api.TimerState
+	Health                 *api.Health
+	AlertStatus            *api.AlertStatus
+	AlertReminders         []api.AlertReminder
+	UpdateStatus           *api.UpdateStatus
+	UpdateChecking         bool
+	Settings               *api.CoreSettings
+	KernelInfo             *api.KernelInfo
+	Elapsed                int
+	TimerTickSeq           int
+	// PendingEvents holds data events waiting for the next flush, one per type.
+	PendingEvents           []api.KernelEvent
+	EventFlushScheduled     bool
 	StatusMsg               string
 	StatusSeq               int
 	StatusErr               bool
@@ -163,6 +167,24 @@ type MessageDeps struct {
 	HandleKernelEvent          func(MessageState, api.KernelEvent) (MessageState, tea.Cmd)
 	HardLimitRemaining         func(*api.TimerState, int) int
 	CloseEventStop             func()
+}
+
+// FlushEventsMsg handles the data events buffered since the last flush.
+type FlushEventsMsg struct{}
+
+// eventFlushDelay is how long data events gather before one reload handles them all, so a
+// burst (a seed, a sync) costs one reload per event type rather than one per event.
+const eventFlushDelay = 200 * time.Millisecond
+
+// coalescesEvent is true for data events, whose handlers only reload. Timer, session and
+// context events carry state the UI applies at once.
+func coalescesEvent(eventType string) bool {
+	for _, prefix := range []string{"timer.", "session.", "context."} {
+		if strings.HasPrefix(eventType, prefix) {
+			return false
+		}
+	}
+	return true
 }
 
 func HandleMessage(
@@ -589,8 +611,28 @@ func HandleMessage(
 		}
 		return state, nil, true
 	case commands.KernelEventMsg:
-		updated, cmd := deps.HandleKernelEvent(state, msg.Event)
-		return updated, tea.Batch(cmd, deps.WaitForEvent()), true
+		if !coalescesEvent(msg.Event.Type) {
+			updated, cmd := deps.HandleKernelEvent(state, msg.Event)
+			return updated, tea.Batch(cmd, deps.WaitForEvent()), true
+		}
+		state.PendingEvents = slices.DeleteFunc(state.PendingEvents, func(e api.KernelEvent) bool { return e.Type == msg.Event.Type })
+		state.PendingEvents = append(state.PendingEvents, msg.Event)
+		var flush tea.Cmd
+		if !state.EventFlushScheduled {
+			state.EventFlushScheduled = true
+			flush = tea.Tick(eventFlushDelay, func(time.Time) tea.Msg { return FlushEventsMsg{} })
+		}
+		return state, tea.Batch(flush, deps.WaitForEvent()), true
+	case FlushEventsMsg:
+		pending := state.PendingEvents
+		state.PendingEvents, state.EventFlushScheduled = nil, false
+		cmds := make([]tea.Cmd, 0, len(pending))
+		for _, event := range pending {
+			var cmd tea.Cmd
+			state, cmd = deps.HandleKernelEvent(state, event)
+			cmds = append(cmds, cmd)
+		}
+		return state, tea.Batch(cmds...), true
 	case commands.ErrMsg:
 		if state.Dialog != "" {
 			if isExportDialog(state.Dialog) && state.DialogProcessing {

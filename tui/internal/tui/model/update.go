@@ -318,6 +318,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		KernelInfo:              m.kernelInfo,
 		Elapsed:                 m.elapsed,
 		TimerTickSeq:            m.timerTickSeq,
+		PendingEvents:           m.pendingEvents,
+		EventFlushScheduled:     m.eventFlushScheduled,
 		StatusMsg:               m.statusMsg,
 		StatusSeq:               m.statusSeq,
 		StatusErr:               m.statusErr,
@@ -413,6 +415,8 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.kernelInfo = state.KernelInfo
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
+	m.pendingEvents = state.PendingEvents
+	m.eventFlushScheduled = state.EventFlushScheduled
 	m.statusMsg = state.StatusMsg
 	m.statusSeq = state.StatusSeq
 	m.statusErr = state.StatusErr
