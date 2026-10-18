@@ -45,18 +45,18 @@ dialog stay as they are.
   this is `optional`. A field's label is never repeated in its placeholder.
 - **Pairs:** two short fields can share one row, as `<field>  <field>`, each taking half the
   inner width. They fall back to two rows when the inner width is below 56.
+- **Fixed height (rule):** a dialog never changes height while you move between its fields.
+  Every field keeps its row count, and the footer is padded to its tallest variant.
 - **Textarea:**
-  - the label is on its own row
-  - the body is on the rows below, indented by 2, wrapped to the inner width
-  - there is no `┃` gutter
-  - it keeps the existing visible-height rules
+  - the label is on its first row
+  - the body has a fixed height (3 rows) behind a dim `┊` gutter
 - **Picker** (repo, stream and other searchable choices):
-  - Unfocused: `<label>  <current> ▾`. With no choice yet, it shows the placeholder in dim.
-  - Focused: the row shows the filter text with the cursor. Below it, indented to the value
-    column, are up to 5 matching options, with `▶` and the accent on the current choice and
-    the rest dim. When there are more matches, a dim `+N more` follows.
-  - The existing keys keep working: typing filters, `←/→` choose.
-  - This replaces the separate `⌕ Search …` input and the `[ > X ]` selector row.
+  - a single row: `<label>  ‹ <current> ›  i/n`
+  - while focused, the arrows are accented and `filter: <input>` follows it
+  - with no options, it shows the placeholder in dim
+  - the existing keys keep working: typing filters, `←/→` cycle
+  - this replaces the separate `⌕ Search …` input and the `[ > X ]` selector row
+  - pickers sit below the other fields, as before the redesign
 - **Choices** (a fixed list, such as the timer type):
   - each row is `▶ [k] Label` or `  [k] Label`
   - the selected choice's help line is dim, below the list after a blank line
@@ -90,8 +90,8 @@ dialog stay as they are.
 ## Proof dialogs
 
 - **New Issue** (`create_issue_default` and `create_issue_meta`):
-  - fields: Title; a Description textarea; Estimate and Due as a pair; Repo and Stream
-    pickers
+  - fields: Title; a Description textarea; Estimate and Due as a pair; then Repo and Stream
+    pickers at the bottom
   - footer: `ctrl+s save`, `ctrl+a create more`, `ctrl+f create & focus`, `tab next`,
     `esc cancel`
   - context: the active repo › stream
@@ -124,3 +124,16 @@ dialog stay as they are.
   200x50 (no `[ > ` and no `⌕ Search`). Their existing controller and dialog tests stay
   green.
 - **Visual check** in tmux at those three sizes.
+
+## Revision (after review)
+
+The user rejected the expanding picker list and the pickers sitting on top:
+
+- the list was too jumpy, because the row count kept changing
+- the pickers belong at the bottom
+
+The Fields section above now describes the replacement:
+
+- one-row `‹ choice ›` pickers at the bottom
+- a fixed-height textarea
+- a footer padded to its tallest variant
