@@ -90,3 +90,9 @@ func PackHints(hints []string, width int) []string {
 	}
 	return lines
 }
+
+// LabelCell fits a label to exactly width cells, truncating with … or padding.
+func LabelCell(label string, width int) string {
+	label = ansi.Truncate(label, width, "…")
+	return label + strings.Repeat(" ", max(0, width-ansi.StringWidth(label)))
+}

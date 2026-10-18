@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"strings"
 
 	configitems "crona/tui/internal/tui/configitems"
@@ -48,7 +47,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		rows := make([]viewchrome.GroupRow, 0, len(indices))
 		for _, idx := range indices {
 			rows = append(rows, viewchrome.GroupRow{
-				Group: groups[idx], Line: fmt.Sprintf("%-*s  %s", column, items[idx].Label, items[idx].Value),
+				Group: groups[idx], Line: viewchrome.LabelCell(items[idx].Label, column) + "  " + items[idx].Value,
 			})
 		}
 		body = viewchrome.GroupList(theme, rows, cursor, listWidth-1, state.Height-1)

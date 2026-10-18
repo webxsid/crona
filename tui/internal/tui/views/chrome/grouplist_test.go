@@ -70,3 +70,12 @@ func TestPackHintsKeepsHintsWhole(t *testing.T) {
 		t.Fatalf("expected hints packed onto one line, got %q", got)
 	}
 }
+
+func TestLabelCellFitsColumn(t *testing.T) {
+	if got := LabelCell("Add Plan-the-Day Reminder", 24); ansi.StringWidth(got) != 24 || !strings.HasSuffix(got, "…") {
+		t.Fatalf("expected a 24-cell truncated label, got %q", got)
+	}
+	if got := LabelCell("Sound", 8); got != "Sound   " {
+		t.Fatalf("expected a padded label, got %q", got)
+	}
+}

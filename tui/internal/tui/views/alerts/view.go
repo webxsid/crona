@@ -43,7 +43,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		groupRows := make([]viewchrome.GroupRow, 0, len(rows))
 		for _, row := range rows {
 			groupRows = append(groupRows, viewchrome.GroupRow{
-				Group: row.Section, Line: fmt.Sprintf("%-*s  %s", column, row.Label, row.Value),
+				Group: row.Section, Line: viewchrome.LabelCell(row.Label, column) + "  " + row.Value,
 			})
 		}
 		body = viewchrome.GroupList(theme, groupRows, cursor, listWidth-1, height-1)
