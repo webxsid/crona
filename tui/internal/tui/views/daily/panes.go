@@ -384,6 +384,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
+	if width >= habitCardMinWidth && height-1 >= habitCardHeight {
+		lines = habitCards(theme, state, indices, cur, active, width-1, height-1)
+		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+	}
 	if !active {
 		lines = habitChips(theme, state, indices, width-2)
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
@@ -431,6 +435,101 @@ func habitMark(theme types.Theme, habit api.HabitDailyItem) (string, lipgloss.St
 	default:
 		return "[ ]", theme.StyleNormal
 	}
+}
+
+const (
+	// habitCardMinWidth is the section width from which habits render as a card grid.
+	habitCardMinWidth = 90
+	// habitCardSlot is the width one card wants; it sets how many fit in a row (2-4).
+	habitCardSlot   = 32
+	habitCardHeight = 4
+)
+
+// habitCards lays habits out as a grid of bordered cards, 2-4 per row by width, scrolled
+// by card row so the cursor's card stays visible. The grid is the same focused or not.
+func habitCards(
+	theme types.Theme,
+	state types.ContentState,
+	indices []int,
+	cur int,
+	active bool,
+	width, budget int,
+) []string {
+	perRow := min(4, max(2, (width+1)/habitCardSlot))
+	cardW := (width - (perRow - 1)) / perRow
+	rows := (len(indices) + perRow - 1) / perRow
+	curRow := min(max(0, cur), len(indices)-1) / perRow
+	start, end := viewchrome.ListWindow(curRow, rows, max(1, budget/habitCardHeight))
+	for range 2 {
+		markers := 0
+		if start > 0 {
+			markers++
+		}
+		if end < rows {
+			markers++
+		}
+		start, end = viewchrome.ListWindow(curRow, rows, max(1, (budget-markers)/habitCardHeight))
+	}
+	lines := []string{}
+	if start > 0 {
+		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start*perRow)))
+	}
+	for row := start; row < end; row++ {
+		cards := []string{}
+		for pos := row * perRow; pos < min(len(indices), (row+1)*perRow); pos++ {
+			cards = append(cards, habitCard(theme, state.DueHabits[indices[pos]], cardW, active && pos == cur))
+		}
+		lines = append(lines, strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, intersperse(cards, " ")...), "\n")...)
+	}
+	if remaining := len(indices) - end*perRow; remaining > 0 {
+		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
+	}
+	return lines
+}
+
+func habitCard(theme types.Theme, habit api.HabitDailyItem, width int, selected bool) string {
+	inner := max(1, width-4)
+	mark, style := habitMark(theme, habit)
+	name := habit.Name
+	border := theme.ColorDim
+	if selected {
+		name = viewchrome.SelectionCursor + " " + name
+		style = style.Bold(true)
+		border = theme.ColorCyan
+	}
+	status := "due"
+	minutes := habit.TargetMinutes
+	switch habit.Status {
+	case "completed":
+		status = "done"
+		if habit.DurationMinutes != nil {
+			minutes = habit.DurationMinutes
+		}
+	case "failed":
+		status = "failed"
+	}
+	detail := style.Render(mark + " " + status)
+	if minutes != nil {
+		detail += "  " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*minutes))
+	}
+	body := style.Render(viewhelpers.TruncateANSI(name, inner)) + "\n" + viewhelpers.TruncateANSI(detail, inner)
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(border).
+		Padding(0, 1).
+		Width(width - 2).
+		Render(body)
+}
+
+func intersperse(items []string, sep string) []string {
+	out := make([]string, 0, len(items)*2)
+	for i, item := range items {
+		if i > 0 {
+			out = append(out, sep)
+		}
+		out = append(out, item)
+	}
+	return out
 }
 
 // habitChips lays the unfocused habits out as wrapped inline chips, so Habits reads as a
