@@ -22,19 +22,27 @@ type dayLine struct {
 // before each date's first row. Rows keep their order; dividers are never selectable, and
 // the divider of the window's first row is kept in view while the cursor stays visible.
 func DayList(theme Theme, rows []DayRow, cursor, width, height int, summary func(date string) string) []string {
-	if len(rows) == 0 || height < 1 {
-		return nil
-	}
 	lines := make([]dayLine, 0, len(rows)+8)
-	cursorLine := 0
 	for i, row := range rows {
 		if i == 0 || row.Date != rows[i-1].Date {
 			lines = append(lines, dayLine{text: dayDivider(theme, row.Date, summary(row.Date), width), row: -1})
 		}
-		if i == cursor {
-			cursorLine = len(lines)
-		}
 		lines = append(lines, dayLine{text: row.Line, row: i})
+	}
+	return dividedList(theme, lines, cursor, width, height)
+}
+
+// dividedList windows rows and dividers around the cursor's row, keeping the divider
+// above the window's first row in view while the cursor stays visible.
+func dividedList(theme Theme, lines []dayLine, cursor, width, height int) []string {
+	if len(lines) == 0 || height < 1 {
+		return nil
+	}
+	cursorLine := 0
+	for i, line := range lines {
+		if line.row == cursor {
+			cursorLine = i
+		}
 	}
 	start, end := ListWindow(cursorLine, len(lines), height)
 	if start > 0 && lines[start-1].row < 0 && cursorLine < start-1+height {
