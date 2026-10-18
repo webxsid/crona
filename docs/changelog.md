@@ -51,7 +51,7 @@ Crona v1.10.0-beta.2 redesigns the terminal UI around numbered tabs, a shared da
 
 ### Compatibility
 
-The local IPC protocol advances to `1.7`. Timer state gains `hardLimitCycles`, `completedWorkCycles`, `issueWorkedSeconds` and `issueCompletedSessions`, and `nextSegmentType` is omitted when a timed session ends with its current segment. Clients should require protocol `1.7` before relying on these fields. No storage migration is required.
+The local IPC protocol remains at `1.6`. Timer state gains the optional fields `hardLimitCycles`, `completedWorkCycles`, `issueWorkedSeconds` and `issueCompletedSessions`, which existing clients can ignore. `nextSegmentType` is omitted when a timed session ends with its current segment. No storage migration is required.
 
 ## [1.10.0-beta.1] - 2026-10-08
 
