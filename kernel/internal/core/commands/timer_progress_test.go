@@ -62,3 +62,54 @@ func TestTimerStateReportsPriorWorkOnTheIssue(t *testing.T) {
 		t.Fatalf("expected 1200s over 1 session, got %ds over %d", state.IssueWorkedSeconds, state.IssueCompletedSessions)
 	}
 }
+
+func TestCountdownReportsNoNextPhase(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+	if _, err := service.Start(ctx, nil, new(issue.StreamID), new(issue.ID), &shareddto.TimerStartRequest{
+		HardLimitKind:         sharedtypes.TimerHardLimitKindCountdown,
+		HardLimitTotalSeconds: new(600),
+	}); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get state: %v", err)
+	}
+	if state.NextSegmentType != nil {
+		t.Fatalf("expected no next phase for a countdown, got %q", *state.NextSegmentType)
+	}
+}
+
+func TestPomodoroLastPhaseReportsNoNextPhase(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	_, service, issue := newTimerTestContext(t, func() string { return now })
+	mustMakeIssuePlanned(t, ctx, service.ctx, issue.ID)
+	if _, err := service.Start(ctx, nil, new(issue.StreamID), new(issue.ID), &shareddto.TimerStartRequest{
+		HardLimitTotalSeconds: new(1800),
+		HardLimitWorkSeconds:  new(1500),
+		HardLimitBreakSeconds: new(300),
+	}); err != nil {
+		t.Fatalf("start: %v", err)
+	}
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("get state: %v", err)
+	}
+	if state.NextSegmentType == nil || *state.NextSegmentType != sharedtypes.SessionSegmentShortBreak {
+		t.Fatalf("expected a short break after the focus, got %v", state.NextSegmentType)
+	}
+	now = "2026-05-24T10:25:00Z"
+	if _, err := service.Advance(ctx); err != nil {
+		t.Fatalf("advance: %v", err)
+	}
+	if state, err = service.GetState(ctx); err != nil {
+		t.Fatalf("get state: %v", err)
+	}
+	if state.NextSegmentType != nil {
+		t.Fatalf("expected the session to end after its last break, got next %q", *state.NextSegmentType)
+	}
+}

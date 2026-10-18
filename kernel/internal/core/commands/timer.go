@@ -64,6 +64,9 @@ func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.Timer
 		return state, err
 	}
 	state.CompletedWorkCycles = cycles
+	if endsWithSegment(state) {
+		state.NextSegmentType = nil
+	}
 	if state.HardLimitActive && sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro {
 		state.HardLimitCycles = sharedtypes.InferPomodoroCycles(
 			state.HardLimitTotalSeconds, state.HardLimitWorkSeconds, state.HardLimitBreakSeconds,
@@ -85,6 +88,28 @@ func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.Timer
 		state.IssueCompletedSessions++
 	}
 	return state, nil
+}
+
+// endsWithSegment reports a timed session whose limit runs out with the current segment:
+// a countdown always, a pomodoro on its last phase. Nothing follows it.
+func endsWithSegment(state sharedtypes.TimerState) bool {
+	if !state.HardLimitActive || state.SegmentType == nil {
+		return false
+	}
+	if sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindCountdown {
+		return true
+	}
+	duration := state.HardLimitWorkSeconds
+	switch *state.SegmentType {
+	case sharedtypes.SessionSegmentShortBreak:
+		duration = state.HardLimitBreakSeconds
+	case sharedtypes.SessionSegmentLongBreak:
+		duration = state.HardLimitLongBreakSeconds
+		if duration <= 0 {
+			duration = state.HardLimitBreakSeconds
+		}
+	}
+	return state.HardLimitRemainingSeconds <= max(0, duration-state.ElapsedSeconds)
 }
 
 func (t *TimerService) getBaseState(ctx context.Context) (sharedtypes.TimerState, error) {
