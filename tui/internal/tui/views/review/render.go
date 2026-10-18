@@ -14,11 +14,13 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 const (
-	daysWidth   = 30
-	detailWidth = 44
+	daysWidth = 30
+	// minDetailWidth is the wide detail's floor; it takes 2/5 of the room beside Days.
+	minDetailWidth = 44
 	// wideMinHeight is the shortest screen that keeps the middle slot.
 	wideMinHeight = 24
 )
@@ -57,6 +59,7 @@ func Render(theme types.Theme, state types.ContentState) string {
 		}
 		rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), second))
 	default:
+		detailWidth := max(minDetailWidth, (state.Width-daysWidth-6)*2/5)
 		middleWidth := state.Width - daysWidth - detailWidth - 6
 		if state.HistoricalAwayDate != "" {
 			rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), renderAway(theme, state, middleWidth+detailWidth+3, height)))
@@ -127,8 +130,10 @@ func DetailLines(theme types.Theme, state types.ContentState, width int) []strin
 	if burnout == nil {
 		return lines
 	}
-	lines = append(lines, "", theme.StyleHeader.Render("Risk")+"  "+burnoutBadge(theme, burnout),
-		theme.StyleDim.Render(viewhelpers.Truncate(burnoutSummary(burnout), max(1, width))))
+	lines = append(lines, "", theme.StyleHeader.Render("Risk")+"  "+burnoutBadge(theme, burnout))
+	for _, line := range strings.Split(ansi.Wordwrap(burnoutSummary(burnout), max(1, width), ""), "\n") {
+		lines = append(lines, theme.StyleDim.Render(line))
+	}
 	risks, recoveries := burnoutContributorLines(burnout)
 	if len(risks) > 0 {
 		lines = append(lines, "", theme.StyleHeader.Render("Risk drivers"))

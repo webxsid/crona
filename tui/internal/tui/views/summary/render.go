@@ -13,6 +13,7 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // DayLines is the Day summary at width, one stat per row: the day's focus stats, plan accountability,
@@ -115,7 +116,11 @@ func renderWellbeing(theme types.Theme, checkIn *sharedtypes.DailyCheckIn, rollu
 		lines = append(lines, row(theme, "Screen", helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes), width))
 	}
 	if checkIn.Notes != nil && strings.TrimSpace(*checkIn.Notes) != "" {
-		lines = append(lines, row(theme, "Notes", theme.StyleDim.Render(viewhelpers.Truncate(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth))), width))
+		label := "Notes"
+		for _, line := range strings.Split(ansi.Wordwrap(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth), ""), "\n") {
+			lines = append(lines, row(theme, label, theme.StyleDim.Render(line), width))
+			label = ""
+		}
 	}
 	return lines
 }

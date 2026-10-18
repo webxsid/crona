@@ -244,3 +244,14 @@ func TestChartsGapDaysWithoutCheckIn(t *testing.T) {
 		t.Fatalf("expected Mood labelled with the last check-in, not 0:\n%s", out)
 	}
 }
+
+func TestWideDetailTakesMoreRoomAndWraps(t *testing.T) {
+	out := plain(Render(types.Theme{}, reviewState(200, 50)))
+	header := strings.Split(out, "\n")[2]
+	if i := strings.Index(header, "─ Wed 14 Oct"); i < 0 || 200-ansi.StringWidth(header[:i]) < 60 {
+		t.Fatalf("expected the detail column at least 60 wide, got header %q", header)
+	}
+	if !strings.Contains(squash(out), "Maintain your recovery rhythm.") || strings.Contains(out, "...") {
+		t.Fatalf("expected the risk summary wrapped whole:\n%s", out)
+	}
+}

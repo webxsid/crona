@@ -104,3 +104,18 @@ func summaryTestState() types.ContentState {
 		},
 	}
 }
+
+func TestDayLinesWrapLongNotes(t *testing.T) {
+	state := summaryTestState()
+	note := "Productive, but sleep debt is starting to show in the afternoon slump"
+	state.SummarySnapshot.CheckIn.Notes = &note
+	lines := DayLines(types.Theme{}, state, 42)
+	for _, line := range lines {
+		if ansi.StringWidth(line) > 42 {
+			t.Fatalf("expected notes within 42 cells, got %q", ansi.Strip(line))
+		}
+	}
+	if !strings.Contains(squash(dayText(state, 42)), note) {
+		t.Fatalf("expected the whole note, got %q", dayText(state, 42))
+	}
+}
