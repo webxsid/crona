@@ -226,6 +226,7 @@ func (m Model) isDevMode() bool {
 func (m Model) contentHeight() int {
 	chromeState := m.layoutChromeState()
 	return layoutpkg.ContentHeight(layoutpkg.State{
+		View:          m.effectiveView(),
 		Width:         m.width,
 		Height:        m.height,
 		ProtectedMode: chromeState.ProtectedMode,

@@ -29,8 +29,10 @@ func newTaskLine(theme types.Theme, state types.ContentState, width int) string 
 func taskActionLine(theme types.Theme, state types.ContentState, width int) string {
 	hints := []string{viewchrome.KeyHint(theme, "enter", "open")}
 	if state.SelectedIssueAdhoc {
-		hints = append(hints, viewchrome.KeyHint(theme, "e", "convert"))
-		return "  " + viewchrome.FitHints(hints, width-2)
+		if timerIdle(state) {
+			hints = append(hints, viewchrome.KeyHint(theme, "e", "convert"))
+		}
+		return "  " + viewchrome.FitHints(hints, width-3)
 	}
 	hints = append(hints,
 		viewchrome.KeyHint(theme, "s", "status"),
@@ -45,7 +47,8 @@ func taskActionLine(theme types.Theme, state types.ContentState, width int) stri
 			viewchrome.KeyHint(theme, "m", "log"),
 		)
 	}
-	return "  " + viewchrome.FitHints(hints, width-2)
+	// The section indents each line a cell, so the hints get width less three.
+	return "  " + viewchrome.FitHints(hints, width-3)
 }
 
 // habitActionLine sits under the focused selected habit.
@@ -55,10 +58,12 @@ func habitActionLine(theme types.Theme, state types.ContentState, width int) str
 		viewchrome.KeyHint(theme, "x", "done"),
 		viewchrome.KeyHint(theme, "F", "fail"),
 		viewchrome.KeyHint(theme, "e", "edit"),
-		viewchrome.KeyHint(theme, "D", "delete"),
 	}
 	if timerIdle(state) {
-		hints = append(hints, viewchrome.KeyHint(theme, "m", "log"))
+		hints = append(hints,
+			viewchrome.KeyHint(theme, "D", "delete"),
+			viewchrome.KeyHint(theme, "m", "log"),
+		)
 	}
 	return "    " + viewchrome.FitHints(hints, width-4)
 }

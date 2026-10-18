@@ -27,7 +27,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
 	meta := fmt.Sprintf("%d  [←/→]", total)
-	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), newTaskLine(theme, state, width-2)}
+	lines := dailyTaskHeader(theme, state, width, height)
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return dailySection(theme, "Tasks", meta, active, width, height, lines)
@@ -47,6 +47,20 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		active,
 	)
 	return dailySection(theme, "Tasks", meta, active, width, height, lines)
+}
+
+// dailyTaskHeader is the section selector over the new-task line; in a short pane the
+// new-task keys join the selector's row so a card and its actions still fit.
+func dailyTaskHeader(theme types.Theme, state types.ContentState, width, height int) []string {
+	selector := dailyTaskTitle(theme, state.DailyTaskSection)
+	if sectionBodyRows(height, []string{selector, ""}) >= 5 {
+		return []string{selector, newTaskLine(theme, state, width-2)}
+	}
+	room := width - 2 - ansi.StringWidth(selector) - 3
+	if keys := newTaskLine(theme, state, room); keys != "" {
+		selector += "   " + keys
+	}
+	return []string{selector}
 }
 
 func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {

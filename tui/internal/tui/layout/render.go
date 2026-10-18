@@ -421,7 +421,8 @@ func ContentHeight(state State) int {
 	if len(state.SubTabs) >= 2 {
 		rows++
 	}
-	if viewrenderer.HasDateRow(state.ContentState) {
+	// The shell's view, not ContentState's: the model sizes content before filling it in.
+	if viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
 		rows++
 	}
 	return max(4, state.Height-rows)

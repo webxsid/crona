@@ -100,3 +100,49 @@ func TestDetailTitleOffersDayKey(t *testing.T) {
 		t.Fatalf("expected [S] selection while the day shows, got %q", rendered)
 	}
 }
+
+func TestTaskActionsFitShortPaneWithPins(t *testing.T) {
+	state := groupedPlannedState(60)
+	for i := range 8 {
+		state.DailyIssues = append(state.DailyIssues, api.Issue{ID: int64(100 + i), Title: "Later", Status: "planned"})
+	}
+	state.Pane = "issues"
+	state.Cursors["issues"] = 4
+	rendered := ansi.Strip(renderIssues(testTheme(), state, 60, 7))
+	if lines := strings.Split(rendered, "\n"); len(lines) != 7 || !strings.Contains(rendered, "[s] status") {
+		t.Fatalf("expected the selected card's actions within 7 rows, got %q", rendered)
+	}
+}
+
+func TestRunningTimerHidesRefusedKeys(t *testing.T) {
+	state := detailState()
+	state.Pane = "issues"
+	state.SelectedIssueAdhoc = true
+	state.Timer = &api.TimerState{State: "running"}
+	if rendered := ansi.Strip(renderIssues(testTheme(), state, 160, 20)); strings.Contains(rendered, "[e] convert") {
+		t.Fatalf("expected convert hidden while a timer runs, got %q", rendered)
+	}
+	habits := meterHabitState(130)
+	habits.Pane = "habits"
+	habits.Timer = &api.TimerState{State: "running"}
+	if rendered := ansi.Strip(renderHabits(testTheme(), habits, 130, 10)); strings.Contains(rendered, "[D] delete") {
+		t.Fatalf("expected habit delete hidden while a timer runs, got %q", rendered)
+	}
+}
+
+func TestTaskActionLineKeepsWholeHints(t *testing.T) {
+	labels := []string{"open", "status", "due", "pin", "focus", "edit", "delete", "log"}
+	for width := 40; width <= 110; width++ {
+		state := detailState()
+		state.Pane = "issues"
+		rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20))
+		row := strings.TrimSpace(strings.Split(rendered, "\n")[rowOf(t, rendered, "Fix sync conflict")+1])
+		whole := false
+		for _, label := range labels {
+			whole = whole || strings.HasSuffix(row, " "+label)
+		}
+		if !whole {
+			t.Fatalf("width %d: expected the action line to end on a whole hint, got %q", width, row)
+		}
+	}
+}

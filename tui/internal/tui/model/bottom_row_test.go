@@ -53,3 +53,14 @@ func TestHelpSheetListsNavigationKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestModelContentHeightCountsDateRow(t *testing.T) {
+	for _, view := range []View{ViewDaily, ViewRollup, ViewMomentum, ViewWellbeing} {
+		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+		state := m.layoutState()
+		want := layoutpkg.ContentHeight(state)
+		if state.ContentState.Height != want || m.contentHeight() != want {
+			t.Fatalf("%s: views sized %d, model %d, shell shows %d", view, state.ContentState.Height, m.contentHeight(), want)
+		}
+	}
+}
