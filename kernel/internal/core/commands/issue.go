@@ -134,6 +134,12 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 	if updates.Description.Set {
 		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
 	}
+	if updates.PinnedDaily.Set && updates.PinnedDaily.Value != nil && *updates.PinnedDaily.Value &&
+		!current.PinnedDaily {
+		if err := ensurePinCapacity(ctx, c); err != nil {
+			return nil, err
+		}
+	}
 	now := c.Now()
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]
@@ -171,6 +177,26 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 		emit(c, sharedtypes.EventTypeIssueUpdated, updated)
 	}
 	return updated, nil
+}
+
+// ensurePinCapacity refuses a new pin once MaxPinnedDailyIssues open issues are pinned;
+// closed issues keep their pin but do not count.
+func ensurePinCapacity(ctx context.Context, c *core.Context) error {
+	issues, err := c.Issues.ListAll(ctx, c.UserID)
+	if err != nil {
+		return err
+	}
+	pinned := 0
+	for _, issue := range issues {
+		status := sharedtypes.NormalizeIssueStatus(issue.Status)
+		if issue.PinnedDaily && status != sharedtypes.IssueStatusDone && status != sharedtypes.IssueStatusAbandoned {
+			pinned++
+		}
+	}
+	if pinned >= sharedtypes.MaxPinnedDailyIssues {
+		return fmt.Errorf("%d tasks already pinned; unpin one first", sharedtypes.MaxPinnedDailyIssues)
+	}
+	return nil
 }
 
 func PromoteAdhocIssue(ctx context.Context, c *core.Context, input shareddto.PromoteAdhocIssueRequest) (*sharedtypes.Issue, error) {

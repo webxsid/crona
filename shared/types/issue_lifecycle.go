@@ -1,5 +1,9 @@
 package types
 
+// MaxPinnedDailyIssues caps how many open issues can be pinned to Daily at once, so a pin
+// keeps meaning priority.
+const MaxPinnedDailyIssues = 5
+
 func NormalizeIssueStatus(status IssueStatus) IssueStatus {
 	switch status {
 	case "todo":
