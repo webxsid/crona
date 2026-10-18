@@ -239,6 +239,9 @@ type Model struct {
 	dialogProtectionCursor               int
 	dialogProtectionStreaks              []sharedtypes.StreakKind
 	dialogProtectionWeekdays             []int
+	dialogCadenceIdx                     int
+	dialogCadenceDays                    []int
+	dialogCadenceCursor                  int
 	dialogProtectionDates                []string
 	dialogHabitStreakStep                int
 	dialogHabitStreakCursor              int

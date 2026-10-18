@@ -832,6 +832,9 @@ func (m Model) dialogState() dialogstate.State {
 		ProtectionCursor:               m.dialogProtectionCursor,
 		ProtectionStreaks:              m.dialogProtectionStreaks,
 		ProtectionWeekdays:             m.dialogProtectionWeekdays,
+		CadenceIdx:                     m.dialogCadenceIdx,
+		CadenceDays:                    m.dialogCadenceDays,
+		CadenceCursor:                  m.dialogCadenceCursor,
 		ProtectionDates:                m.dialogProtectionDates,
 		HabitItems:                     m.allHabits,
 		HabitStreakStep:                m.dialogHabitStreakStep,
@@ -959,6 +962,9 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogProtectionCursor = state.ProtectionCursor
 	m.dialogProtectionStreaks = state.ProtectionStreaks
 	m.dialogProtectionWeekdays = state.ProtectionWeekdays
+	m.dialogCadenceIdx = state.CadenceIdx
+	m.dialogCadenceDays = state.CadenceDays
+	m.dialogCadenceCursor = state.CadenceCursor
 	m.dialogProtectionDates = state.ProtectionDates
 	m.dialogHabitStreakStep = state.HabitStreakStep
 	m.dialogHabitStreakCursor = state.HabitStreakCursor
