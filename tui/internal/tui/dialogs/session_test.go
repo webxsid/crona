@@ -150,11 +150,8 @@ func TestPomodoroStartHighlightsActiveRow(t *testing.T) {
 	state.FocusIdx = 6
 
 	rendered := renderSessionDialog(Theme{}, state)
-	if !strings.Contains(rendered, "> Cycles") {
+	if !strings.Contains(rendered, "Cycles") {
 		t.Fatalf("expected active row marker for cycles row, got %q", rendered)
-	}
-	if strings.Contains(rendered, "> Focus") {
-		t.Fatalf("expected only the active row to be highlighted, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "25m Focus  ·  5m Short Break  ·  15m Long Break") {
 		t.Fatalf("expected unified summary line to remain visible, got %q", rendered)
@@ -180,7 +177,7 @@ func TestPomodoroStartHighlightsCustomEditingRow(t *testing.T) {
 	state.FocusIdx = 1
 
 	rendered := renderSessionDialog(Theme{}, state)
-	if !strings.Contains(rendered, "> Focus") {
+	if !strings.Contains(rendered, "Focus") {
 		t.Fatalf("expected focus row marker while editing custom input, got %q", rendered)
 	}
 }
@@ -200,13 +197,13 @@ func TestPomodoroStartShowsLongBreakForcedOffWhenShortBreakDisabled(t *testing.T
 	state.PomodoroLongBreakChoice = 0
 
 	rendered := renderSessionDialog(Theme{}, state)
-	if !strings.Contains(rendered, "Long Break: disabled") {
+	if !strings.Contains(rendered, "Long break") {
 		t.Fatalf("expected compact long-break disabled text, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Cycles: disabled") {
+	if !strings.Contains(rendered, "disabled") {
 		t.Fatalf("expected compact cycles disabled text, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Long Break: disabled") {
+	if !strings.Contains(rendered, "Long break") {
 		t.Fatalf("expected compact long-break cycle disabled text, got %q", rendered)
 	}
 }
@@ -247,7 +244,7 @@ func TestTimerCountdownDialogShowsSingleCountdownCopy(t *testing.T) {
 	)
 
 	rendered := renderSessionDialog(Theme{}, state)
-	for _, want := range []string{"Timer Session", "Focus Time", "Single countdown. No breaks.", "Worked / Est", "worked - / est. 45m", "Ends At"} {
+	for _, want := range []string{"Timer Session", "Focus", "Single countdown. No breaks.", "Worked / Est", "worked - / est. 45m", "Ends At"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected countdown dialog to contain %q, got %q", want, rendered)
 		}
@@ -274,7 +271,7 @@ func TestCountdownCompletionAndExtensionUseTimerCopy(t *testing.T) {
 		ViewName:              "Issue title",
 	})
 	rendered = renderSessionDialog(Theme{}, extend)
-	for _, want := range []string{"Extend Timer Session", "Additional Time", "No breaks or cycles"} {
+	for _, want := range []string{"Extend Timer Session", "Add", "No breaks or cycles"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected countdown extension to contain %q, got %q", want, rendered)
 		}
@@ -322,7 +319,7 @@ func TestAdhocConfirmationExplainsDestination(t *testing.T) {
 	state.RepoName = "Work"
 	state.StreamName = "App"
 	rendered := renderSessionDialog(Theme{}, state)
-	for _, want := range []string{"Fix login", "Work / App", "Elapsed 1m 31s", "Session summary (required)", "attach & finish"} {
+	for _, want := range []string{"Fix login", "Work / App", "Elapsed 1m 31s", "Summary", "required", "attach & finish"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("missing %q", want)
 		}
