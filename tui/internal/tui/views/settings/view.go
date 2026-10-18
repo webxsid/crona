@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
 	types "crona/tui/internal/tui/views/types"
 	viewui "crona/tui/internal/tui/views/ui"
@@ -19,104 +18,54 @@ func newView() viewui.View {
 	}
 }
 
+// renderView lays Settings out as a grouped list beside the selected setting's help.
 func renderView(theme types.Theme, state types.ContentState) string {
-	active := state.Pane == "settings"
-	cur := state.Cursors["settings"]
 	timezone := ""
 	if state.Health != nil {
 		timezone = state.Health.Timezone
 	}
 	rows := settingsmeta.RowsWithTimezone(state.Settings, timezone)
 	indices := settingsmeta.FilteredIndices(state.Filters["settings"], state.Settings)
-	total := len(indices)
-	lines := []string{
-		theme.StylePaneTitle.Render("Settings"),
-		viewchrome.RenderActionLine(
-			theme,
-			state.Width-6,
-			viewchrome.ContextualActions(
-				theme,
-				viewchrome.ActionsState{View: state.View, Pane: state.Pane},
-			),
-		),
-		"",
-	}
-	if state.Settings == nil {
-		lines = append(lines, theme.StyleDim.Render("Loading settings..."))
-		return viewchrome.RenderPaneBox(
-			theme,
-			active,
-			state.Width,
-			state.Height,
-			viewhelpers.StringsJoin(lines),
-		)
-	}
-	if total == 0 {
-		lines = append(lines, theme.StyleDim.Render("No settings match the current filter"))
-		return viewchrome.RenderPaneBox(
-			theme,
-			active,
-			state.Width,
-			state.Height,
-			viewhelpers.StringsJoin(lines),
-		)
-	}
-	visibleRows, selectedVisibleIdx := settingsmeta.GroupedVisibleRows(
-		indices,
-		cur,
-		func(idx int) string { return rows[idx].Section },
-		func(idx int) string {
-			return fmt.Sprintf("%-24s %s", rows[idx].Label, rows[idx].Value)
-		},
-	)
-	inner := state.Height - 5
-	inner = max(inner, 1)
-	start, end := viewchrome.ListWindow(selectedVisibleIdx, len(visibleRows), inner)
-	if start > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
-	}
-	for i := start; i < end; i++ {
-		row := visibleRows[i]
-		if row.Header {
-			if row.Danger {
-				lines = append(lines, theme.StyleError.Render(strings.ToUpper(row.Text)))
-			} else {
-				lines = append(lines, theme.StyleHeader.Render(strings.ToUpper(row.Text)))
-			}
-			continue
+	cursor := min(max(0, state.Cursors["settings"]), max(0, len(indices)-1))
+	listWidth, detailWidth := viewchrome.LogPaneWidths(state.Width)
+
+	var body []string
+	switch {
+	case state.Settings == nil:
+		body = []string{theme.StyleDim.Render("Loading settings…")}
+	case len(indices) == 0:
+		body = []string{theme.StyleDim.Render("No settings match the current filter")}
+	default:
+		labels := make([]string, 0, len(indices))
+		for _, idx := range indices {
+			labels = append(labels, rows[idx].Label)
 		}
-		switch {
-		case row.SelectableAt == cur && active:
-			if row.Danger {
-				lines = append(
-					lines,
-					theme.StyleError.Render(viewchrome.SelectionCursor+" "+row.Text),
-				)
-			} else {
-				lines = append(lines, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+row.Text))
-			}
-		case row.SelectableAt == cur:
-			if row.Danger {
-				lines = append(lines, theme.StyleError.Render("  "+row.Text))
-			} else {
-				lines = append(lines, theme.StyleSelected.Render("  "+row.Text))
-			}
-		default:
-			if row.Danger {
-				lines = append(lines, theme.StyleError.Render("  "+row.Text))
-			} else {
-				lines = append(lines, theme.StyleNormal.Render("  "+row.Text))
-			}
+		column := viewchrome.LabelColumn(labels, 24)
+		groupRows := make([]viewchrome.GroupRow, 0, len(indices))
+		for _, idx := range indices {
+			row := rows[idx]
+			groupRows = append(groupRows, viewchrome.GroupRow{
+				Group: row.Section, Danger: row.Section == "Danger",
+				Line: fmt.Sprintf("%-*s  %s", column, row.Label, row.Value),
+			})
 		}
+		body = viewchrome.GroupList(theme, groupRows, cursor, listWidth-1, state.Height-1)
 	}
-	if remaining := len(visibleRows) - end; remaining > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
+	list := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: "Settings", Meta: fmt.Sprint(len(indices)), Focused: true,
+		Width: listWidth, Height: state.Height, Lines: body,
+	})
+	if detailWidth == 0 {
+		return list
 	}
-	return viewchrome.RenderPaneBox(
-		theme,
-		active,
-		state.Width,
-		state.Height,
-		viewhelpers.StringsJoin(lines),
-	)
+	title, lines := "Detail", []string{}
+	if len(indices) > 0 && state.Settings != nil {
+		row := rows[indices[cursor]]
+		title = row.Label
+		lines = viewchrome.HelpLines(theme, settingsHelp[row.Label], strings.TrimSpace(row.Value), detailWidth-2)
+	}
+	detail := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: title, Width: detailWidth, Height: state.Height, Lines: lines,
+	})
+	return viewchrome.JoinColumns(theme, state.Height, list, detail)
 }

@@ -557,7 +557,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"UPDATES", "Update Channel", "Habit Sort", "RECOVERY", "Away Mode"} {
+	for _, want := range []string{"── Updates", "Update Channel", "Habit Sort", "── Recovery", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -595,7 +595,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 
 	state.Cursors["settings"] = 17
 	rendered = support.RenderSettings(state)
-	for _, want := range []string{"DANGER", "Wipe Runtime Data", "Destructive"} {
+	for _, want := range []string{"── Danger", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
