@@ -3,6 +3,7 @@ package viewtypes
 import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/tui/scope"
 
 	"github.com/charmbracelet/lipgloss"
 )
@@ -34,9 +35,13 @@ type Theme struct {
 }
 
 type ContentState struct {
-	View                string
-	Pane                string
-	SelectedIssueAdhoc  bool
+	View               string
+	Pane               string
+	SelectedIssueAdhoc bool
+	// BrowseScope is the Issues tab's scope tree selection; AllStreams and AllHabits feed it.
+	BrowseScope         scope.Scope
+	AllStreams          []api.Stream
+	AllHabits           []api.HabitWithMeta
 	Width               int
 	Height              int
 	Cursors             map[string]int

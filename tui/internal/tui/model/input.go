@@ -36,6 +36,9 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Streams:        m.streams,
 		Issues:         m.dailyIssuesForSelection(),
 		Habits:         m.habits,
+		AllHabits:      m.allHabits,
+		AllStreams:     m.allStreams,
+		BrowseScope:    m.browseScope,
 		AllIssues:      m.allIssues,
 		DueHabits:      m.dueHabits,
 		MomentumCards:  m.momentumCards,
@@ -127,6 +130,9 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	moved := state.ActivePane != m.pane ||
 		state.Cursor[PaneIssues] != m.cursor[PaneIssues] || state.Cursor[PaneHabits] != m.cursor[PaneHabits]
 	m.dailyDetailDay = state.DailyDetailDay && !moved
+	if uistate.TabForView(state.ActiveView) == uistate.TabIssues && uistate.TabForView(m.view) != uistate.TabIssues {
+		m.enterIssuesTab()
+	}
 	m.view = state.ActiveView
 	m.pane = state.ActivePane
 	m.cursor = maps.Clone(state.Cursor)

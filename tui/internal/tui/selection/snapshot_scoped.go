@@ -12,29 +12,29 @@ import (
 	issuecore "crona/tui/internal/tui/views/issuecore"
 )
 
+// buildDefaultScopedIssues is the Issues view's list: every issue within the browse scope.
 func buildDefaultScopedIssues(s Snapshot) []api.IssueWithMeta {
-	if s.Context == nil {
+	if s.BrowseScope.IsAll() {
 		return s.AllIssues
 	}
-	if s.Context.StreamID != nil {
-		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
-		for _, issue := range s.AllIssues {
-			if issue.StreamID == *s.Context.StreamID {
-				out = append(out, issue)
-			}
+	out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
+	for _, issue := range s.AllIssues {
+		if s.BrowseScope.Contains(issue.RepoID, issue.StreamID) {
+			out = append(out, issue)
 		}
-		return out
 	}
-	if s.Context.RepoID != nil {
-		out := make([]api.IssueWithMeta, 0, len(s.AllIssues))
-		for _, issue := range s.AllIssues {
-			if issue.RepoID == *s.Context.RepoID {
-				out = append(out, issue)
-			}
+	return out
+}
+
+// ScopedHabits are the habit definitions within the browse scope.
+func ScopedHabits(s Snapshot) []api.HabitWithMeta {
+	out := make([]api.HabitWithMeta, 0, len(s.AllHabits))
+	for _, habit := range s.AllHabits {
+		if s.BrowseScope.Contains(habit.RepoID, habit.StreamID) {
+			out = append(out, habit)
 		}
-		return out
 	}
-	return s.AllIssues
+	return out
 }
 
 func buildFilteredDueHabits(s Snapshot) []api.HabitDailyItem {

@@ -32,6 +32,27 @@ func LoadStreams(c *api.Client, repoID int64) tea.Cmd {
 	}
 }
 
+// LoadAllStreams lists every repo's streams.
+func LoadAllStreams(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		repos, err := c.ListRepos()
+		if err != nil {
+			logger.Errorf("loadAllStreams: %v", err)
+			return ErrMsg{Err: err}
+		}
+		streams := []api.Stream{}
+		for _, repo := range repos {
+			repoStreams, err := c.ListStreams(repo.ID)
+			if err != nil {
+				logger.Errorf("loadAllStreams(%d): %v", repo.ID, err)
+				return ErrMsg{Err: err}
+			}
+			streams = append(streams, repoStreams...)
+		}
+		return AllStreamsLoadedMsg{Streams: streams}
+	}
+}
+
 func LoadAllHabits(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		habits, err := c.ListAllHabits()

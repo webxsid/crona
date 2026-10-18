@@ -48,6 +48,7 @@ type EventDeps struct {
 	LoadIssuesSelecting      func(streamID, selectedIssueID int64) tea.Cmd
 	LoadHabits               func(streamID int64) tea.Cmd
 	LoadAllHabits            func() tea.Cmd
+	LoadAllStreams           func() tea.Cmd
 	LoadAllIssues            func() tea.Cmd
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
 	LoadDailySummary         func(date string) tea.Cmd
@@ -74,10 +75,14 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 	case "repo.created", "repo.updated", "repo.deleted":
 		return state, deps.LoadRepos()
 	case "stream.created", "stream.updated", "stream.deleted":
-		if state.Context != nil && state.Context.RepoID != nil {
-			return state, deps.LoadStreams(*state.Context.RepoID)
+		var all tea.Cmd
+		if deps.LoadAllStreams != nil {
+			all = deps.LoadAllStreams()
 		}
-		return state, nil
+		if state.Context != nil && state.Context.RepoID != nil {
+			return state, tea.Batch(deps.LoadStreams(*state.Context.RepoID), all)
+		}
+		return state, all
 	case "issue.created", "issue.updated", "issue.deleted":
 		cmds := []tea.Cmd{
 			deps.LoadDailySummary(state.CurrentDate),

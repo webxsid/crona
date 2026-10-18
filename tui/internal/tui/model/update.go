@@ -248,6 +248,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		Issues:                  m.issues,
 		Habits:                  m.habits,
 		AllHabits:               m.allHabits,
+		AllStreams:              m.allStreams,
 		HabitStreakDefs:         m.habitStreakDefs,
 		MomentumCards:           m.momentumCards,
 		AllIssues:               m.allIssues,
@@ -342,6 +343,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.issues = state.Issues
 	m.habits = state.Habits
 	m.allHabits = state.AllHabits
+	m.allStreams = state.AllStreams
 	m.habitStreakDefs = state.HabitStreakDefs
 	m.momentumCards = state.MomentumCards
 	m.allIssues = state.AllIssues
@@ -505,12 +507,13 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadMomentumFocus: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumFocusWindow(m.client, date, windowDays)
 		},
-		LoadRepos:     func() tea.Cmd { return commands.LoadRepos(m.client) },
-		LoadAllIssues: func() tea.Cmd { return commands.LoadAllIssues(m.client) },
-		LoadAllHabits: func() tea.Cmd { return commands.LoadAllHabits(m.client) },
-		LoadStreams:   func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
-		LoadIssues:    func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
-		LoadHabits:    func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
+		LoadRepos:      func() tea.Cmd { return commands.LoadRepos(m.client) },
+		LoadAllIssues:  func() tea.Cmd { return commands.LoadAllIssues(m.client) },
+		LoadAllHabits:  func() tea.Cmd { return commands.LoadAllHabits(m.client) },
+		LoadAllStreams: func() tea.Cmd { return commands.LoadAllStreams(m.client) },
+		LoadStreams:    func(id int64) tea.Cmd { return commands.LoadStreams(m.client, id) },
+		LoadIssues:     func(id int64) tea.Cmd { return commands.LoadIssues(m.client, id) },
+		LoadHabits:     func(id int64) tea.Cmd { return commands.LoadHabits(m.client, id) },
 		LoadHabitStreakDefinitions: func() tea.Cmd {
 			return commands.LoadHabitStreakDefinitions(m.client)
 		},

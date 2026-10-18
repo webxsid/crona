@@ -27,6 +27,7 @@ type MessageState struct {
 	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
 	Streams                 []api.Stream
+	AllStreams              []api.Stream
 	Issues                  []api.Issue
 	Habits                  []api.Habit
 	AllHabits               []api.HabitWithMeta
@@ -124,6 +125,7 @@ type MessageDeps struct {
 	LoadIssues                 func(int64) tea.Cmd
 	LoadHabits                 func(int64) tea.Cmd
 	LoadAllHabits              func() tea.Cmd
+	LoadAllStreams             func() tea.Cmd
 	LoadHabitStreakDefinitions func() tea.Cmd
 	LoadMomentumRange          func(string, int) tea.Cmd
 	LoadMomentumFocus          func(string, int) tea.Cmd
@@ -181,6 +183,13 @@ func HandleMessage(
 		if deps.ClampFiltered != nil {
 			deps.ClampFiltered(&state, uistate.PaneRepos)
 		}
+		// The scope tree needs every repo's streams, so they follow the repos.
+		if deps.LoadAllStreams != nil {
+			return state, deps.LoadAllStreams(), true
+		}
+		return state, nil, true
+	case commands.AllStreamsLoadedMsg:
+		state.AllStreams = msg.Streams
 		return state, nil, true
 	case commands.StreamsLoadedMsg:
 		state.Streams = msg.Streams

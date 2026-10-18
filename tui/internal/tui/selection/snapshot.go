@@ -1,6 +1,7 @@
 package selection
 
 import (
+	"crona/tui/internal/tui/scope"
 	"fmt"
 	"strings"
 
@@ -29,6 +30,9 @@ type Snapshot struct {
 	Streams             []api.Stream
 	Issues              []api.Issue
 	Habits              []api.Habit
+	AllHabits           []api.HabitWithMeta
+	AllStreams          []api.Stream
+	BrowseScope         scope.Scope
 	MomentumCards       []api.MomentumCard
 	AllIssues           []api.IssueWithMeta
 	DueHabits           []api.HabitDailyItem

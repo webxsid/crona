@@ -1,6 +1,7 @@
 package model
 
 import (
+	"crona/tui/internal/tui/scope"
 	"fmt"
 	"slices"
 	"strings"
@@ -97,6 +98,11 @@ func (m Model) nextSubTabView(dir int) View {
 
 func nextPane(view View, current Pane, dir int) Pane {
 	return uistate.NextPane(view, current, dir)
+}
+
+// enterIssuesTab starts the scope tree on the checked-out context.
+func (m *Model) enterIssuesTab() {
+	m.browseScope = scope.FromContext(m.context)
 }
 
 func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {

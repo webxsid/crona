@@ -1,6 +1,7 @@
 package model
 
 import (
+	"crona/tui/internal/tui/scope"
 	"time"
 
 	sharedposthog "crona/shared/posthog"
@@ -108,11 +109,14 @@ type Model struct {
 	opsLimitPinned bool
 
 	// data
-	repos        []api.Repo
-	streams      []api.Stream
-	issues       []api.Issue // context-filtered (by active streamId)
-	habits       []api.Habit
-	allHabits    []api.HabitWithMeta
+	repos      []api.Repo
+	streams    []api.Stream
+	issues     []api.Issue // context-filtered (by active streamId)
+	habits     []api.Habit
+	allHabits  []api.HabitWithMeta
+	allStreams []api.Stream
+	// browseScope is the Issues tab's scope tree selection, separate from the checked-out context.
+	browseScope  scope.Scope
 	allIssues    []api.IssueWithMeta
 	dueHabits    []api.HabitDailyItem
 	dailySummary *api.DailyIssueSummary

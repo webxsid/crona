@@ -101,6 +101,8 @@ func NewDefaultScopeModel(allIssues []api.IssueWithMeta, context *api.ActiveCont
 		allIssues: allIssues,
 		context:   context,
 	}
+	// As if the Issues tab was just entered: the scope starts on the checked-out context.
+	model.enterIssuesTab()
 	return model
 }
 
