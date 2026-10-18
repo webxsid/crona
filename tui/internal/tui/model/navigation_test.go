@@ -136,7 +136,6 @@ func TestProtectedRestKeepsSettingsReachable(t *testing.T) {
 func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
 	views := (Model{}).availableViews()
 	want := []View{
-		ViewSummary,
 		ViewDaily,
 		ViewRollup,
 		ViewMomentum,
@@ -161,8 +160,8 @@ func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
 			t.Fatalf("view order mismatch at %d: got %q want %q (%#v)", i, views[i], want[i], views)
 		}
 	}
-	if views[0] != uistate.ViewSummary {
-		t.Fatalf("expected summary to be first sidebar navigation target, got %q", views[0])
+	if views[0] != uistate.ViewDaily {
+		t.Fatalf("expected daily to be first sidebar navigation target, got %q", views[0])
 	}
 }
 

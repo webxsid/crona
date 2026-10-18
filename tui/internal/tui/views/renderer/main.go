@@ -15,7 +15,6 @@ import (
 	rollup "crona/tui/internal/tui/views/rollup"
 	sessions "crona/tui/internal/tui/views/sessions"
 	settings "crona/tui/internal/tui/views/settings"
-	summaryview "crona/tui/internal/tui/views/summary"
 	support "crona/tui/internal/tui/views/support"
 	types "crona/tui/internal/tui/views/types"
 	updates "crona/tui/internal/tui/views/updates"
@@ -30,8 +29,6 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return issues.Render(theme, state)
 	case "daily":
 		return daily.Render(theme, state)
-	case "summary":
-		return summaryview.Render(theme, state)
 	case "rollup":
 		return rollup.Render(theme, state)
 	case "momentum":
@@ -71,8 +68,6 @@ func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 		if state.HistoricalAwayDate == "" {
 			return daily.SubTabMeta(theme, state, room)
 		}
-	case "summary":
-		return viewcalendar.DateNav(theme, state.SummaryDate, "", state.Settings, state.WeekStart, room)
 	case "momentum":
 		return viewcalendar.DateNav(theme, state.MomentumDate, "", state.Settings, state.WeekStart, room)
 	case "wellbeing":

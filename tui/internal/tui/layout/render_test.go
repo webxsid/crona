@@ -52,7 +52,7 @@ func plainLines(rendered string) []string {
 
 func TestRenderTabLineMarksActiveTab(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 36)
-	state.SubTabs = []uistate.View{uistate.ViewDaily, uistate.ViewSummary}
+	state.SubTabs = []uistate.View{uistate.ViewDaily, uistate.ViewSessionActive}
 	lines := plainLines(Render(state))
 	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "5 System") {
 		t.Fatalf("expected tab line with all tabs, got %q", lines[0])
@@ -97,7 +97,7 @@ func TestRenderSubTabLineCarriesDailyDate(t *testing.T) {
 }
 
 func TestRenderSubTabLineCarriesDateOnDatedViews(t *testing.T) {
-	for _, view := range []uistate.View{uistate.ViewSummary, uistate.ViewMomentum, uistate.ViewWellbeing, uistate.ViewRollup} {
+	for _, view := range []uistate.View{uistate.ViewMomentum, uistate.ViewWellbeing, uistate.ViewRollup} {
 		state := shellStateForTest(view, 140, 36)
 		state.ContentState.DashboardDate = "2026-05-27"
 		state.ContentState.SummaryDate = "2026-05-27"

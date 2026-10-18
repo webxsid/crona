@@ -373,31 +373,12 @@ func newRouter(deps Deps) *router {
 			return s, cmd, handled
 		},
 	)
-	r.RegisterView(
-		uistate.ViewSummary,
-		",",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
-	)
-	r.RegisterView(
-		uistate.ViewSummary,
-		".",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
-	)
-	r.RegisterView(
-		uistate.ViewSummary,
-		"g",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
-	)
-	r.RegisterView(
-		uistate.ViewSummary,
-		"c",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if deps.OpenSummaryCalendar == nil {
-				return s, nil, false
-			}
-			return s, nil, deps.OpenSummaryCalendar(&s)
-		},
-	)
+	r.RegisterView(uistate.ViewDaily, "C", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenSummaryCalendar == nil {
+			return s, nil, false
+		}
+		return s, nil, deps.OpenSummaryCalendar(&s)
+	})
 	r.RegisterView(uistate.ViewDaily, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if deps.OpenDaySummary != nil && deps.OpenDaySummary(&s) {
 			return s, nil, true

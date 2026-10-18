@@ -8,48 +8,35 @@ import (
 	"crona/tui/internal/api"
 	types "crona/tui/internal/tui/views/types"
 
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestRenderOwnsResponsiveSummaryLayout(t *testing.T) {
-	state := summaryTestState()
-	for _, width := range []int{64, 120} {
-		state.Width = width
-		rendered := ansi.Strip(Render(types.Theme{}, state))
-		for _, want := range []string{"Summary", "At a glance", "Agenda", "Issues", "Habits", "Signals", "Accountability", "Wellbeing", "Momentum"} {
-			if !strings.Contains(rendered, want) {
-				t.Fatalf("width %d: expected %q in summary:\n%s", width, want, rendered)
-			}
-		}
-		if strings.Contains(rendered, "Daily Dashboard") {
-			t.Fatalf("width %d: summary must not reuse dashboard presentation", width)
-		}
-	}
-}
-
-func TestRenderHistoricalSummaryOmitsLiveTimer(t *testing.T) {
-	state := summaryTestState()
-	state.SummaryDate = "2020-01-02"
-	state.SummarySnapshot.Date = state.SummaryDate
-	rendered := ansi.Strip(Render(types.Theme{}, state))
-	if !strings.Contains(rendered, "Historical") {
-		t.Fatalf("expected historical label, got:\n%s", rendered)
-	}
-	if strings.Contains(rendered, "RUNNING") {
-		t.Fatalf("historical summary must not show current timer, got:\n%s", rendered)
-	}
-}
-
-func TestRenderSummaryIncludesStatsMetrics(t *testing.T) {
+func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 	state := summaryTestState()
 	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 82, Level: sharedtypes.FocusScoreLevelStrong, Reason: sharedtypes.FocusScoreReasonBalanced, TargetWorkedSeconds: 3600}
 	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 2400, RestSeconds: 600, SessionCount: 3, TotalIssues: 4, CompletedIssues: 2, AbandonedIssues: 1, HabitDueCount: 3, HabitCompletedCount: 2, HabitFailedCount: 1}
-	rendered := ansi.Strip(Render(types.Theme{}, state))
+	rendered := ansi.Strip(strings.Join(DayLines(types.Theme{}, state, 100), "\n"))
 	for _, want := range []string{"Stats", "Focus 82/100", "worked 40m", "rest 10m", "issues  completed 2", "habits  done 2"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
+	}
+}
+
+func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
+	rendered := ansi.Strip(strings.Join(DayLines(types.Theme{}, summaryTestState(), 100), "\n"))
+	for _, want := range []string{"Accountability", "100% score", "Wellbeing", "mood 4/5", "Momentum", "focus 3"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
+		}
+	}
+}
+
+func TestDayLinesWaitForTheShownDate(t *testing.T) {
+	state := summaryTestState()
+	state.SummaryDate = "2026-07-29"
+	if got := ansi.Strip(strings.Join(DayLines(types.Theme{}, state, 100), "\n")); got != "Loading summary…" {
+		t.Fatalf("expected a loading line for another day's snapshot, got %q", got)
 	}
 }
 
@@ -95,47 +82,5 @@ func summaryTestState() types.ContentState {
 			CheckIn: &api.DailyCheckIn{Date: "2026-07-28", Mood: 4, Energy: 3},
 			Streaks: &api.StreakSummary{CurrentFocusDays: 3, CurrentCheckInDays: 4, CurrentHabitDays: 2},
 		},
-	}
-}
-
-func TestSummaryHasNoBorders(t *testing.T) {
-	state := summaryTestState()
-	state.Width, state.Height = 120, 40
-	bordered := lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder())
-	theme := types.Theme{StyleActive: bordered, StyleInactive: bordered}
-	if rendered := Render(theme, state); strings.ContainsAny(rendered, "╭╰") {
-		t.Fatalf("expected no box borders, got:\n%s", ansi.Strip(rendered))
-	}
-}
-
-func TestSummaryFitsFrame(t *testing.T) {
-	for _, size := range [][2]int{{60, 18}, {200, 47}} {
-		state := summaryTestState()
-		state.Width, state.Height = size[0], size[1]
-		lines := strings.Split(Render(types.Theme{}, state), "\n")
-		if len(lines) != size[1] {
-			t.Fatalf("%dx%d: got %d lines", size[0], size[1], len(lines))
-		}
-		for i, line := range lines {
-			if got := ansi.StringWidth(line); got > size[0] {
-				t.Fatalf("%dx%d: line %d width %d", size[0], size[1], i, got)
-			}
-		}
-	}
-}
-
-func TestSummaryScrollReachesEnd(t *testing.T) {
-	state := summaryTestState()
-	state.Width, state.Height = 80, 24
-	found := false
-	for offset := 0; offset <= PaneLineCount(state); offset++ {
-		state.Cursors = map[string]int{"summary": offset}
-		if strings.Contains(ansi.Strip(Render(types.Theme{}, state)), "Momentum") {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Fatal("expected Momentum to be reachable by scrolling at 80x24")
 	}
 }

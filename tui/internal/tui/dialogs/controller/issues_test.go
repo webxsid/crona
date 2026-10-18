@@ -1,6 +1,8 @@
 package controller
 
 import (
+	uistate "crona/tui/internal/tui/state"
+	"slices"
 	"strings"
 	"testing"
 
@@ -295,5 +297,12 @@ func TestDueDateCalendarStylesOnlyIssuePolicyDates(t *testing.T) {
 	rollupGrid := PopulateDatePresentation(theme, rollup, "2026-04-20").DateGrid
 	if strings.Contains(rollupGrid, redCell) {
 		t.Fatalf("expected rollup calendar not to use due-date rest styling, got %q", rollupGrid)
+	}
+}
+
+func TestViewJumpHasNoSummary(t *testing.T) {
+	state := OpenViewJump(State{}, uistate.ViewOrder())
+	if slices.Contains(state.ChoiceValues, "summary") {
+		t.Fatalf("expected no Summary in the jump menu, got %q", state.ChoiceValues)
 	}
 }

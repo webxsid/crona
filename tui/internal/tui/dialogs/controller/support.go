@@ -34,12 +34,6 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 			Detail: "Protected-mode shell when away or rest mode is active.",
 		},
 		{
-			Key:    "g",
-			Label:  "Summary",
-			Value:  "summary",
-			Detail: "Read-only day snapshot with context, signals, and streaks.",
-		},
-		{
 			Key:    "d",
 			Label:  "Daily",
 			Value:  "daily",

@@ -14,7 +14,6 @@ import (
 	"crona/tui/internal/tui/terminaltitle"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	rollupview "crona/tui/internal/tui/views/rollup"
-	summaryview "crona/tui/internal/tui/views/summary"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textarea"
@@ -28,7 +27,6 @@ type View = uistate.View
 
 const (
 	ViewAway           = uistate.ViewAway
-	ViewSummary        = uistate.ViewSummary
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
 	ViewRollup         = uistate.ViewRollup
@@ -54,7 +52,6 @@ const (
 	PaneStreams          = uistate.PaneStreams
 	PaneIssues           = uistate.PaneIssues
 	PaneHabits           = uistate.PaneHabits
-	PaneSummary          = uistate.PaneSummary
 	PaneRollupDays       = uistate.PaneRollupDays
 	PaneRollupBreakdown  = uistate.PaneRollupBreakdown
 	PaneSessions         = uistate.PaneSessions
@@ -455,12 +452,6 @@ func (m *Model) clamp(p Pane, max int) {
 }
 
 func (m *Model) listLen(p Pane) int {
-	if p == PaneSummary {
-		snapshot := m.selectionSnapshot()
-		activeIssue := selectionpkg.ActiveIssue(snapshot)
-		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
-		return summaryview.PaneLineCount(state)
-	}
 	if p == PaneRollupDays {
 		if m.dashboardWindow == nil {
 			return 0

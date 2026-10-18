@@ -7,7 +7,7 @@ import (
 
 func TestEveryViewBelongsToExactlyOneTab(t *testing.T) {
 	all := []View{
-		ViewAway, ViewSummary, ViewDefault, ViewDaily, ViewRollup, ViewMomentum, ViewMeta,
+		ViewAway, ViewDefault, ViewDaily, ViewRollup, ViewMomentum, ViewMeta,
 		ViewSessionHistory, ViewHabitHistory, ViewSessionActive, ViewOps, ViewWellbeing,
 		ViewReports, ViewConfig, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport,
 	}
@@ -47,5 +47,18 @@ func TestTabOrderAndInsightsViews(t *testing.T) {
 	}
 	if got := ViewLabel(ViewSessionHistory); got != "Sessions" {
 		t.Fatalf("ViewLabel(session_history) = %q, want Sessions", got)
+	}
+}
+
+func TestTodayTabHasNoSummary(t *testing.T) {
+	got := TabViews(TabToday)
+	want := []View{ViewDaily, ViewSessionActive, ViewAway}
+	if len(got) != len(want) {
+		t.Fatalf("Today views = %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("Today views = %v, want %v", got, want)
+		}
 	}
 }

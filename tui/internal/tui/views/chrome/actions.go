@@ -73,6 +73,12 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export data"),
 		)
 	}
+	if state.View == "daily" {
+		actions = append(actions,
+			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day"),
+			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
+		)
+	}
 	if state.View == "daily" || state.View == "wellbeing" {
 		actions = append(actions, checkInAction(theme))
 		actions = append(actions, awayAction(theme, false))
@@ -154,14 +160,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[0]") + theme.StyleDim.Render(" reset window"),
 			checkInAction(theme),
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
-		}
-	}
-	if state.View == "summary" {
-		return []string{
-			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" calendar"),
-			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
-			theme.StyleHeader.Render("[↑/↓]") + theme.StyleDim.Render(" scroll"),
 		}
 	}
 	if state.View == "momentum" {

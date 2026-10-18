@@ -42,13 +42,6 @@ func TestContextualActionsUseCheckInAndAwayLabels(t *testing.T) {
 		t.Fatalf("expected wellbeing contextual actions to advertise check-in, got %q", wellbeing)
 	}
 
-	summary := strings.Join(ContextualActions(Theme{}, ActionsState{View: "summary"}), "\n")
-	for _, want := range []string{"[,/.]", "[g]", "date", "today"} {
-		if !strings.Contains(summary, want) {
-			t.Fatalf("expected summary contextual actions to contain %q, got %q", want, summary)
-		}
-	}
-
 	away := strings.Join(ContextualActions(Theme{}, ActionsState{
 		View:           "away",
 		RestModeActive: true,
@@ -189,6 +182,15 @@ func TestRollupActionsHintSharedDateKeys(t *testing.T) {
 	for _, unwanted := range []string{"[←/→]", "[S/E]"} {
 		if strings.Contains(actions, unwanted) {
 			t.Fatalf("expected rollup actions to drop %q, got %q", unwanted, actions)
+		}
+	}
+}
+
+func TestDailyActionsHintDayAndCalendar(t *testing.T) {
+	actions := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
+	for _, want := range []string{"[S] day", "[C] calendar"} {
+		if !strings.Contains(actions, want) {
+			t.Fatalf("expected Daily actions to include %q, got %q", want, actions)
 		}
 	}
 }

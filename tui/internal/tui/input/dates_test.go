@@ -10,7 +10,6 @@ import (
 
 var datedViews = []uistate.View{
 	uistate.ViewDaily,
-	uistate.ViewSummary,
 	uistate.ViewMomentum,
 	uistate.ViewWellbeing,
 	uistate.ViewRollup,
@@ -79,5 +78,15 @@ func TestRollupWindowPresets(t *testing.T) {
 	s, _ = Handle(s, runeKey('0'), deps)
 	if s.RollupWindowDays != 7 || loaded != [2]string{"2026-07-24", "2026-07-30"} {
 		t.Fatalf("expected 0 to reset to a 7-day rollup, got %d %v", s.RollupWindowDays, loaded)
+	}
+}
+
+func TestDailyCOpensCalendar(t *testing.T) {
+	opened := false
+	deps := dateDeps(new(int))
+	deps.OpenSummaryCalendar = func(*State) bool { opened = true; return true }
+	Handle(State{ActiveView: uistate.ViewDaily, ActivePane: uistate.PaneIssues}, runeKey('C'), deps)
+	if !opened {
+		t.Fatal("expected C on Daily to open the calendar")
 	}
 }

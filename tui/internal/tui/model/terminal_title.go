@@ -86,8 +86,6 @@ func terminalViewTitle(view View) string {
 	switch view {
 	case ViewAway:
 		return "Away"
-	case ViewSummary:
-		return "Summary"
 	case ViewDefault:
 		return "Issues"
 	case ViewDaily:

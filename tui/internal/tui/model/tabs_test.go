@@ -19,7 +19,7 @@ func TestVisibleTabsWhenIdle(t *testing.T) {
 	if got := m.visibleTabs(); !slices.Equal(got, uistate.TabOrder()) {
 		t.Fatalf("visibleTabs() = %v, want all tabs", got)
 	}
-	want := []View{ViewDaily, ViewSummary}
+	want := []View{ViewDaily}
 	if got := m.visibleTabViews(uistate.TabToday); !slices.Equal(got, want) {
 		t.Fatalf("visibleTabViews(today) = %v, want %v", got, want)
 	}
@@ -143,7 +143,7 @@ func TestDailyContentStateCarriesModelFilterIndices(t *testing.T) {
 }
 
 func TestContentStateSharesOneDate(t *testing.T) {
-	for _, view := range []View{ViewDaily, ViewSummary, ViewMomentum, ViewWellbeing, ViewRollup} {
+	for _, view := range []View{ViewDaily, ViewMomentum, ViewWellbeing, ViewRollup} {
 		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}, date: "2026-05-01"}
 		state := m.layoutState().ContentState
 		for name, got := range map[string]string{
