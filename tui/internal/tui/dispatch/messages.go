@@ -210,10 +210,20 @@ func HandleMessage(
 		state.HabitStreakDefs = msg.Definitions
 		return state, nil, true
 	case commands.MomentumRangeLoadedMsg:
+		selected := ""
+		if visible := visibleMomentumCards(state); len(visible) > 0 && state.Cursor != nil {
+			selected = visible[min(max(0, state.Cursor[uistate.PaneMomentumCards]), len(visible)-1)].Definition.ID
+		}
 		state.MomentumCards = slices.Clone(msg.Cards)
 		slices.SortStableFunc(state.MomentumCards, func(a, b api.MomentumCard) int {
 			return cmp.Compare(boolRank(!a.Definition.Enabled), boolRank(!b.Definition.Enabled))
 		})
+		// Toggling a momentum moves it between the active and inactive groups; keep it selected.
+		if selected != "" {
+			if i := slices.IndexFunc(visibleMomentumCards(state), func(card api.MomentumCard) bool { return card.Definition.ID == selected }); i >= 0 {
+				state.Cursor[uistate.PaneMomentumCards] = i
+			}
+		}
 		if deps.ClampFiltered != nil {
 			deps.ClampFiltered(&state, uistate.PaneMomentumCards)
 		}
@@ -920,4 +930,19 @@ func boolRank(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// visibleMomentumCards are the cards the list filter keeps, as the cursor indexes them.
+func visibleMomentumCards(state MessageState) []api.MomentumCard {
+	query := strings.ToLower(strings.TrimSpace(state.Filters[uistate.PaneMomentumCards]))
+	if query == "" {
+		return state.MomentumCards
+	}
+	out := []api.MomentumCard{}
+	for _, card := range state.MomentumCards {
+		if strings.Contains(strings.ToLower(card.Definition.Name), query) {
+			out = append(out, card)
+		}
+	}
+	return out
 }

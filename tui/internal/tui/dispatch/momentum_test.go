@@ -39,3 +39,18 @@ func TestMomentumCardsLoadStillClamps(t *testing.T) {
 		t.Fatalf("expected the momentum cursor to be clamped")
 	}
 }
+
+func TestMomentumCardsLoadKeepsSelectionOnToggledCard(t *testing.T) {
+	a, b, c := momentumCard("A", true), momentumCard("B", true), momentumCard("C", true)
+	a.Definition.ID, b.Definition.ID, c.Definition.ID = "a", "b", "c"
+	state := MessageState{
+		MomentumCards: []api.MomentumCard{a, b, c},
+		Cursor:        map[uistate.Pane]int{uistate.PaneMomentumCards: 0},
+		Filters:       map[uistate.Pane]string{},
+	}
+	a.Definition.Enabled = false
+	state, _, _ = HandleMessage(state, commands.MomentumRangeLoadedMsg{Cards: []api.MomentumCard{a, b, c}}, MessageDeps{})
+	if got := state.Cursor[uistate.PaneMomentumCards]; got != 2 {
+		t.Fatalf("expected the cursor to follow the disabled card to row 2, got %d", got)
+	}
+}
