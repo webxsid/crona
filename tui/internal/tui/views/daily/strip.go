@@ -103,9 +103,9 @@ func dayWeek(theme types.Theme, state types.ContentState) []string {
 	return lines
 }
 
-// SubTabMeta is the right side of Daily's sub-tab line: the shown date and its week,
-// flanked by the date-navigation keys written out as in the status line. Within room it
-// drops the key words first, then the keys, then the week, so the date always shows.
+// SubTabMeta is Daily's date navigation for the date row: the shown date and its week,
+// flanked by the date-navigation keys. Within room it drops the key words first, then the
+// keys, then the week, so the date always shows.
 func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 	return viewcalendar.DateNav(theme, dailyDate(state), "", state.Settings, state.WeekStart, room)
 }

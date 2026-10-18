@@ -1220,7 +1220,7 @@ func TestDailyStripShowsTotalsOnLargeScreens(t *testing.T) {
 	}
 
 	rendered := strings.Join(strings.Fields(ansi.Strip(support.RenderDaily(state))), " ") +
-		ansi.Strip(viewrenderer.SubTabMeta(support.Theme(), state, 80))
+		ansi.Strip(viewrenderer.DateNav(support.Theme(), state, 80))
 	for _, want := range []string{"Tasks 0/1", "Habits 0/1", "W12"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the day strip to include %q, got %q", want, rendered)

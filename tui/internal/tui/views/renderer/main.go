@@ -4,6 +4,7 @@ import (
 	alerts "crona/tui/internal/tui/views/alerts"
 	away "crona/tui/internal/tui/views/away"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
+	viewchrome "crona/tui/internal/tui/views/chrome"
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	habits "crona/tui/internal/tui/views/habits"
@@ -60,14 +61,20 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 	}
 }
 
-// SubTabMeta is the view's text for the right end of the sub-tab line, if it has any,
-// fitted within room cells.
-func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
+// HasDateRow reports whether the view shows the shared date's header row.
+func HasDateRow(state types.ContentState) bool {
+	switch state.View {
+	case "daily", "momentum", "wellbeing", "rollup":
+		return true
+	}
+	return false
+}
+
+// DateNav is the shared date's navigation for the date row, shortened to fit room.
+func DateNav(theme types.Theme, state types.ContentState, room int) string {
 	switch state.View {
 	case "daily":
-		if state.HistoricalAwayDate == "" {
-			return daily.SubTabMeta(theme, state, room)
-		}
+		return daily.SubTabMeta(theme, state, room)
 	case "momentum":
 		return viewcalendar.DateNav(theme, state.MomentumDate, "", state.Settings, state.WeekStart, room)
 	case "wellbeing":
@@ -76,4 +83,17 @@ func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 		return viewcalendar.DateNav(theme, state.RollupEndDate, state.RollupStartDate, state.Settings, state.WeekStart, room)
 	}
 	return ""
+}
+
+// DateRowKeys are the view's own date keys, shown at the right end of the date row.
+func DateRowKeys(theme types.Theme, state types.ContentState) []string {
+	switch state.View {
+	case "daily":
+		return []string{viewchrome.KeyHint(theme, "C", "calendar")}
+	case "rollup":
+		return []string{viewchrome.KeyHint(theme, "E", "calendar"), viewchrome.KeyHint(theme, "+/-/0", "window")}
+	case "momentum", "wellbeing":
+		return []string{viewchrome.KeyHint(theme, "+/-/0", "window")}
+	}
+	return nil
 }

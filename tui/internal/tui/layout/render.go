@@ -118,6 +118,9 @@ func Render(state State) string {
 	if subTabs := renderSubTabLine(state); subTabs != "" {
 		parts = append(parts, subTabs)
 	}
+	if dateRow := renderDateRow(state); dateRow != "" {
+		parts = append(parts, dateRow)
+	}
 	content := clipViewportString(
 		viewrenderer.RenderContent(ViewTheme(), state.ContentState),
 		state.Width,
@@ -182,7 +185,7 @@ func renderTabLine(state State) string {
 		if !slices.Contains(state.Tabs, tab) {
 			continue
 		}
-		label := fmt.Sprintf("%d %s", i+1, uistate.TabLabel(tab))
+		label := fmt.Sprintf("[%d] %s", i+1, uistate.TabLabel(tab))
 		if tab == uistate.TabForView(state.View) {
 			parts = append(parts, chrome.StyleCursor.Render(label))
 		} else {
@@ -215,6 +218,7 @@ func contextLabel(repo, stream string) string {
 	}
 }
 
+// renderSubTabLine lists the tab's views between the [ and ] keys that cycle them.
 func renderSubTabLine(state State) string {
 	if len(state.SubTabs) < 2 {
 		return ""
@@ -228,13 +232,24 @@ func renderSubTabLine(state State) string {
 			parts = append(parts, chrome.StyleDim.Render(label))
 		}
 	}
-	left := " " + strings.Join(parts, chrome.StyleDim.Render(" · "))
-	// The view's meta takes the room beside the sub-tabs, a gap and a right margin aside.
-	right := viewrenderer.SubTabMeta(ViewTheme(), state.ContentState, state.Width-ansi.StringWidth(left)-3)
-	if right == "" {
-		return left
+	key := func(k string) string { return chrome.StyleHeader.Render("[" + k + "]") }
+	return " " + key("[") + " " + strings.Join(parts, chrome.StyleDim.Render(" · ")) + " " + key("]")
+}
+
+// renderDateRow is a dated view's header row: the shared date's navigation on the left and
+// the view's own date keys on the right, which give way first when narrow.
+func renderDateRow(state State) string {
+	if !viewrenderer.HasDateRow(state.ContentState) {
+		return ""
 	}
-	return joinEnds(left, right+" ", state.Width)
+	theme := ViewTheme()
+	full := viewrenderer.DateNav(theme, state.ContentState, state.Width)
+	keys := viewchrome.FitHints(viewrenderer.DateRowKeys(theme, state.ContentState), state.Width-ansi.StringWidth(full)-6)
+	nav := viewrenderer.DateNav(theme, state.ContentState, state.Width-ansi.StringWidth(keys)-4)
+	if keys == "" {
+		return " " + nav
+	}
+	return joinEnds(" "+nav, keys+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {
@@ -404,6 +419,9 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 func ContentHeight(state State) int {
 	rows := 2
 	if len(state.SubTabs) >= 2 {
+		rows++
+	}
+	if viewrenderer.HasDateRow(state.ContentState) {
 		rows++
 	}
 	return max(4, state.Height-rows)

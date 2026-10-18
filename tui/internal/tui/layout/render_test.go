@@ -54,7 +54,7 @@ func TestRenderTabLineMarksActiveTab(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 36)
 	state.SubTabs = []uistate.View{uistate.ViewDaily, uistate.ViewSessionActive}
 	lines := plainLines(Render(state))
-	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "5 System") {
+	if !strings.Contains(lines[0], "[1] Today") || !strings.Contains(lines[0], "[5] System") {
 		t.Fatalf("expected tab line with all tabs, got %q", lines[0])
 	}
 	if !strings.Contains(lines[0], "crona › tui") {
@@ -74,8 +74,8 @@ func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
 	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Wellbeing") {
 		t.Fatalf("expected sub-tab line, got %q", lines[1])
 	}
-	if got := ContentHeight(state); got != 36-3 {
-		t.Fatalf("expected content height 33 with sub-tabs, got %d", got)
+	if got := ContentHeight(state); got != 36-4 {
+		t.Fatalf("expected content height 32 with sub-tabs and the date row, got %d", got)
 	}
 	ops := shellStateForTest(uistate.ViewOps, 120, 36)
 	ops.SubTabs = []uistate.View{uistate.ViewOps}
@@ -84,42 +84,65 @@ func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
 	}
 }
 
-func TestRenderSubTabLineCarriesDailyDate(t *testing.T) {
-	state := shellStateForTest(uistate.ViewDaily, 120, 36)
+func datedShellState(view uistate.View, width, height int) State {
+	state := shellStateForTest(view, width, height)
 	state.ContentState.DashboardDate = "2026-05-27"
-	line := plainLines(Render(state))[1]
-	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.HasSuffix(strings.TrimRight(line, " "), "next [.]") {
-		t.Fatalf("expected sub-tabs left and the date keys right, got %q", line)
-	}
-	if !strings.Contains(line, "W22") || ansi.StringWidth(line) != 120 {
-		t.Fatalf("expected the Daily week on a full-width sub-tab line, got %q", line)
+	state.ContentState.SummaryDate = "2026-05-27"
+	state.ContentState.MomentumDate = "2026-05-27"
+	state.ContentState.WellbeingDate = "2026-05-27"
+	state.ContentState.RollupStartDate = "2026-05-21"
+	state.ContentState.RollupEndDate = "2026-05-27"
+	return state
+}
+
+func TestRenderTabLineNumbersTabs(t *testing.T) {
+	line := plainLines(Render(shellStateForTest(uistate.ViewDaily, 120, 36)))[0]
+	for _, want := range []string{"[1] Today", "[2] Issues", "[5] System"} {
+		if !strings.Contains(line, want) {
+			t.Fatalf("expected %q on the tab line, got %q", want, line)
+		}
 	}
 }
 
-func TestRenderSubTabLineCarriesDateOnDatedViews(t *testing.T) {
-	for _, view := range []uistate.View{uistate.ViewMomentum, uistate.ViewWellbeing, uistate.ViewRollup} {
-		state := shellStateForTest(view, 140, 36)
-		state.ContentState.DashboardDate = "2026-05-27"
-		state.ContentState.SummaryDate = "2026-05-27"
-		state.ContentState.MomentumDate = "2026-05-27"
-		state.ContentState.WellbeingDate = "2026-05-27"
-		state.ContentState.RollupStartDate = "2026-05-21"
-		state.ContentState.RollupEndDate = "2026-05-27"
-		line := plainLines(Render(state))[1]
-		if !strings.HasSuffix(strings.TrimRight(line, " "), "next [.]") || !strings.Contains(line, "2026-05-27") {
-			t.Fatalf("%s: expected the shared date and its keys on the sub-tab line, got %q", view, line)
+func TestRenderSubTabLineFramedByKeys(t *testing.T) {
+	line := strings.TrimRight(plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[1], " ")
+	if !strings.HasPrefix(strings.TrimSpace(line), "[[] Daily") || !strings.HasSuffix(line, "[]]") {
+		t.Fatalf("expected the sub-tabs framed by [ and ], got %q", line)
+	}
+	if strings.Contains(line, "2026-05-27") {
+		t.Fatalf("expected the date off the sub-tab line, got %q", line)
+	}
+}
+
+func TestRenderDateRowOnDatedViews(t *testing.T) {
+	for view, keys := range map[uistate.View]string{
+		uistate.ViewDaily:     "[C] calendar",
+		uistate.ViewMomentum:  "[+/-/0] window",
+		uistate.ViewWellbeing: "[+/-/0] window",
+		uistate.ViewRollup:    "[+/-/0] window",
+	} {
+		line := plainLines(Render(datedShellState(view, 140, 36)))[2]
+		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") || !strings.Contains(line, keys) {
+			t.Fatalf("%s: expected the date row with %q, got %q", view, keys, line)
 		}
 		if view == uistate.ViewRollup && !strings.Contains(line, "2026-05-21") {
-			t.Fatalf("rollup: expected its start date on the sub-tab line, got %q", line)
+			t.Fatalf("rollup: expected its range start on the date row, got %q", line)
 		}
+	}
+	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[2]; strings.Contains(line, "next [.]") {
+		t.Fatalf("expected no date row on Settings, got %q", line)
 	}
 }
 
-func TestRenderSubTabLineKeepsDailyDateWhenNarrow(t *testing.T) {
-	state := shellStateForTest(uistate.ViewDaily, 70, 30)
-	state.ContentState.DashboardDate = "2026-05-27"
-	if line := plainLines(Render(state))[1]; !strings.Contains(line, "2026-05-27") {
-		t.Fatalf("expected the date kept on a narrow sub-tab line, got %q", line)
+func TestRenderDateRowKeepsDateWhenNarrow(t *testing.T) {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 70, 30)))[2]; !strings.Contains(line, "2026-05-27") {
+		t.Fatalf("expected the date kept on a narrow date row, got %q", line)
+	}
+}
+
+func TestContentHeightCountsDateRow(t *testing.T) {
+	if got := ContentHeight(datedShellState(uistate.ViewDaily, 120, 36)); got != 36-4 {
+		t.Fatalf("expected tabs, sub-tabs, date row and status to take 4 rows, got content %d", got)
 	}
 }
 
@@ -129,7 +152,7 @@ func TestRenderTimerActiveShowsOnlyAllowedTabs(t *testing.T) {
 	state.Tabs = []uistate.Tab{uistate.TabToday, uistate.TabLog}
 	state.SubTabs = []uistate.View{uistate.ViewSessionActive}
 	lines := plainLines(Render(state))
-	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "4 Log") {
+	if !strings.Contains(lines[0], "[1] Today") || !strings.Contains(lines[0], "[4] Log") {
 		t.Fatalf("expected today and log tabs, got %q", lines[0])
 	}
 	if strings.Contains(lines[0], "Insights") {
@@ -160,7 +183,7 @@ func TestRenderMinimumSize(t *testing.T) {
 		}
 	}
 	rendered := Render(shellStateForTest(uistate.ViewDaily, 60, 20))
-	if !strings.Contains(ansi.Strip(rendered), "1 Today") {
+	if !strings.Contains(ansi.Strip(rendered), "[1] Today") {
 		t.Fatal("expected shell at 60x20")
 	}
 }
@@ -312,11 +335,13 @@ func TestRenderTabLineKeepsTabsWithLongContext(t *testing.T) {
 	state.RepoName = "crona-monorepo"
 	state.StreamName = "feature/tui-layout-redesign-long-name"
 	line := plainLines(Render(state))[0]
-	if !strings.Contains(line, "5 System") {
+	if !strings.Contains(line, "[5] System") {
 		t.Fatalf("expected all tabs to survive a long context, got %q", line)
 	}
-	if !strings.Contains(line, "crona") {
-		t.Fatalf("expected truncated context to remain visible, got %q", line)
+	// The numbered tabs fill the minimum width; the context shows once there is room.
+	state.Width = 80
+	if line := plainLines(Render(state))[0]; !strings.Contains(line, "crona") {
+		t.Fatalf("expected truncated context to remain visible at 80, got %q", line)
 	}
 }
 
