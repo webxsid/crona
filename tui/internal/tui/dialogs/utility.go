@@ -7,7 +7,6 @@ import (
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
-
 )
 
 func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
@@ -17,33 +16,8 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderConfirmDelete(theme, state)
 	case "confirm_wipe":
 		return renderConfirmWipe(theme, state)
-	case "pick_date":
-		rows := []string{
-			theme.StylePaneTitle.Render(state.DateTitle),
-			"",
-			theme.StyleHeader.Render(state.DateHeader),
-			theme.StyleDim.Render(state.DateMonth),
-			"",
-			state.DateGrid,
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[h/j/k/l] move   [,/.] month   [enter] choose   [c] clear   [esc] back",
-		)
-		return modal(theme, state.Width, 46, theme.ColorCyan, rows)
-	case "summary_calendar":
-		rows := []string{
-			theme.StylePaneTitle.Render("Summary Calendar"),
-			"",
-			theme.StyleHeader.Render(helperpkg.FormatDisplayDate(state.DateCursorValue, nil)),
-			theme.StyleDim.Render(state.DateMonth),
-			"",
-			state.DateGrid,
-		}
-		rows = appendDialogFooter(theme, state, rows, "[←/→/↑/↓] move   [,/.] month   [g] today   [enter] choose   [esc] back")
-		return modal(theme, state.Width, 100, theme.ColorCyan, rows)
+	case "pick_date", "summary_calendar":
+		return renderDateGrid(theme, state)
 	case "create_checkin", "edit_checkin":
 		return renderCheckInForm(theme, state, displayDate)
 	case "export_report", "export_summary_period":

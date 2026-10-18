@@ -59,3 +59,27 @@ func TestConfirmAndListDialogs(t *testing.T) {
 		}
 	}
 }
+
+func TestDateGridDialogs(t *testing.T) {
+	due := "2026-10-20"
+	pick := controllerpkg.OpenDatePicker(controllerpkg.State{}, "create_issue_default", 0, 5, &due, "2026-10-18")
+	pick = controllerpkg.PopulateDatePresentation(controllerpkg.Theme{}, pick, "2026-10-18")
+	summary := controllerpkg.OpenSummaryCalendar(controllerpkg.State{}, "2026-10-18")
+	summary.Width = 120
+	summary = controllerpkg.PopulateSummaryCalendarPresentation(controllerpkg.Theme{}, summary, "2026-10-18")
+	cases := []formCase{
+		{name: "pick_date", state: pick, title: "Pick Due Date", context: "October 2026"},
+		{name: "summary_calendar", state: summary, title: "Summary Calendar", context: "October 2026"},
+	}
+	for _, c := range cases {
+		out := assertListChrome(t, c)
+		for _, want := range []string{"Mo", "enter choose", ",/. month"} {
+			if !strings.Contains(out, want) {
+				t.Errorf("%s lacks %q:\n%s", c.name, want, out)
+			}
+		}
+		if strings.Contains(out, "(Optional)") {
+			t.Errorf("%s keeps (Optional) in its title:\n%s", c.name, out)
+		}
+	}
+}

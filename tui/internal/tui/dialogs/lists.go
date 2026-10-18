@@ -116,3 +116,18 @@ func titleWords(kind string) string {
 	}
 	return strings.Join(words, " ")
 }
+
+// renderDateGrid draws the due-date picker and the summary calendar: the selected day, then
+// the month grid, with the month in the top border.
+func renderDateGrid(theme Theme, state controllerpkg.State) string {
+	body := []string{theme.StyleHeader.Render(state.DateHeader), ""}
+	body = append(body, strings.Split(state.DateGrid, "\n")...)
+	hints := []string{"h/j/k/l move", ",/. month", "c clear"}
+	if state.Kind == "summary_calendar" {
+		hints = []string{"←/→/↑/↓ move", ",/. month", "g today"}
+	}
+	return renderListDialog(theme, state, listDialog{
+		title: fallback(state.DateTitle, "Pick Date"), context: state.DateMonth, body: body, focus: -1,
+		primary: "enter choose", hints: hints,
+	})
+}
