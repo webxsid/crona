@@ -2,6 +2,7 @@ package selection
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -93,27 +94,58 @@ func habitHistorySummary(entry api.HabitCompletion, settings *api.CoreSettings) 
 
 func buildDailyScopedIssues(s Snapshot) []api.Issue {
 	anchorDate := dailyAnchorDate(s)
-	out := make([]api.Issue, 0)
+	issues := make([]api.Issue, 0, len(s.AllIssues))
 	for _, issue := range s.AllIssues {
-		if !issueMatchesDailyContext(issue, s.Context) {
-			continue
+		if issueMatchesDailyContext(issue, s.Context) {
+			issues = append(issues, issue.Issue)
 		}
-		switch s.DailyTaskSection {
-		case uistate.DailyTaskSectionPinned:
-			if dailyIssuePinned(issue.Issue, anchorDate) {
-				out = append(out, issue.Issue)
+	}
+	out := make([]api.Issue, 0)
+	switch s.DailyTaskSection {
+	case uistate.DailyTaskSectionOverdue:
+		for _, issue := range issues {
+			if dailyIssueOverdue(issue, anchorDate) {
+				out = append(out, issue)
 			}
-		case uistate.DailyTaskSectionOverdue:
-			if dailyIssueOverdue(issue.Issue, anchorDate) {
-				out = append(out, issue.Issue)
+		}
+	case uistate.DailyTaskSectionUpcoming:
+		for _, issue := range issues {
+			if dailyIssueUpcoming(issue, anchorDate) {
+				out = append(out, issue)
 			}
-		default:
-			if dailyIssueToday(issue.Issue, anchorDate) {
-				out = append(out, issue.Issue)
+		}
+		sort.SliceStable(out, func(i, j int) bool {
+			return strings.TrimSpace(*out[i].TodoForDate) < strings.TrimSpace(*out[j].TodoForDate)
+		})
+	default:
+		// Open pinned tasks lead whatever their date, then the rest planned for the day.
+		for _, issue := range issues {
+			if dailyIssuePinned(issue) {
+				out = append(out, issue)
+			}
+		}
+		for _, issue := range issues {
+			if !dailyIssuePinned(issue) && dailyIssueToday(issue, anchorDate) {
+				out = append(out, issue)
 			}
 		}
 	}
 	return out
+}
+
+// dailyUpcomingDays is how far ahead the Upcoming tab looks from the shown date.
+const dailyUpcomingDays = 7
+
+func dailyIssueUpcoming(issue api.Issue, anchorDate string) bool {
+	if isClosedDailyIssue(issue) || issue.TodoForDate == nil {
+		return false
+	}
+	anchor, err := time.Parse("2006-01-02", anchorDate)
+	if err != nil {
+		return false
+	}
+	due := strings.TrimSpace(*issue.TodoForDate)
+	return due > anchorDate && due <= anchor.AddDate(0, 0, dailyUpcomingDays).Format("2006-01-02")
 }
 
 func dailyAnchorDate(s Snapshot) string {
@@ -162,11 +194,9 @@ func dailyIssueToday(issue api.Issue, anchorDate string) bool {
 	return due == anchorDate
 }
 
-func dailyIssuePinned(issue api.Issue, anchorDate string) bool {
-	if !issue.PinnedDaily {
-		return false
-	}
-	return !dailyIssueOverdue(issue, anchorDate)
+// dailyIssuePinned reports whether an issue leads Daily's Planned tab: pinned and still open.
+func dailyIssuePinned(issue api.Issue) bool {
+	return issue.PinnedDaily && !isClosedDailyIssue(issue)
 }
 
 func rawIndexForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {

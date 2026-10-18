@@ -58,9 +58,9 @@ const (
 type DailyTaskSection string
 
 const (
-	DailyTaskSectionPlanned DailyTaskSection = "planned"
-	DailyTaskSectionPinned  DailyTaskSection = "pinned"
-	DailyTaskSectionOverdue DailyTaskSection = "overdue"
+	DailyTaskSectionPlanned  DailyTaskSection = "planned"
+	DailyTaskSectionOverdue  DailyTaskSection = "overdue"
+	DailyTaskSectionUpcoming DailyTaskSection = "upcoming"
 )
 
 var viewOrder = []View{

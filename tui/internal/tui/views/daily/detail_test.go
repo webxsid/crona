@@ -101,7 +101,7 @@ func TestDetailFollowsModelFilteredHabitCursor(t *testing.T) {
 
 func TestDailyTrustsModelTaskSection(t *testing.T) {
 	state := dailyState(130, 30)
-	state.DailyTaskSection = "pinned"
+	state.DailyTaskSection = "planned"
 	yesterday := "2026-05-26"
 	state.DailyIssues = []api.Issue{
 		{ID: 1, Title: "Closed pinned task", Status: "done", PinnedDaily: true, TodoForDate: &yesterday},

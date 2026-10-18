@@ -35,7 +35,7 @@ Five tabs replace eighteen sidebar entries.
 
 | Tab | Key | Contains | Replaces |
 | --- | --- | --- | --- |
-| Today | `1` | Session strip (when a timer runs), today's issues (planned/pinned/overdue), due habits, day summary metrics | Daily, Summary, Session Active |
+| Today | `1` | Session strip (when a timer runs), today's issues (Planned with pinned first / Overdue / Upcoming), due habits, day summary metrics | Daily, Summary, Session Active |
 | Issues | `2` | Issue list with repo → stream scope drill-down; repos, streams and habits managed in place | Issues (Default), Meta |
 | Insights | `3` | Sub-tabs: Rollup, Momentum, Wellbeing | Rollup, Momentum, Wellbeing |
 | Log | `4` | Sub-tabs: Sessions, Habits, Ops | Session History, Habit History, Ops |
@@ -48,6 +48,7 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 ### Today tab
 
 - With **no timer**: an htop-style **day strip** of aligned columns — stacked Tasks and Habits meters (count, bar, worked/estimate), then check-in signals (Mood/Energy/Sleep) and streaks (Focus/Check-ins) when present. The shown week (weekday names over day numbers, selected day and today highlighted) is pinned to the strip's right end, directly under the sub-tab line's date navigation: `[g] today   [,] prev  <date> · W<nn>  next [.]`, which shortens to `[g]  [,] <date> · W<nn> [.]`, then the date and week, then the date alone when the line is narrow. When narrow, streaks drop first, then the week, then the signals; rows drop from the bottom when short, and a one-row strip has no week.
+- Tasks has three tabs (`←/→`): **Planned** — open pinned tasks first under a `Pinned N` heading (any date, dated ones tagged), then the day's tasks under `Planned N`; headings only appear when something is pinned — **Overdue** (open, dated before the shown day) and **Upcoming** (open, dated within the next 7 days, by date). At most 5 open tasks can be pinned (`MaxPinnedDailyIssues`, enforced by the daemon), so pinned keeps meaning priority.
 - Tasks always renders as the two-line list (title and date, then context | worked/estimate | status) at every width; there is no table layout. A long title is truncated before its date.
 - Below the strip, **Tasks** and **Habits** each hold half the height, so neither moves as the other's content changes. Habits renders one htop-style meter row per habit at every width, the same whether focused or not: checkbox and name, status, a bar of logged minutes against the target, and `logged / target`. The bar, then the status, drop when narrow. Habit rows carry no momentum data — habits and momentums are many-to-many with mixed cadences.
 - On wide screens a **detail pane** sits right of the lists (list │ detail, weights 3:2). It shows the selected task (or habit, when Habits is focused — including each enabled habit momentum it feeds: cadence, current period count/target, ladder, current and best streak). The detail pane holds no calendar; the week lives in the strip. On medium and narrow screens the detail pane is hidden; `enter` opens details as today.

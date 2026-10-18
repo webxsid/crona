@@ -84,6 +84,26 @@ func renderCompactDailyIssueList(
 ) []string {
 	inner := sectionBodyRows(height, lines)
 	availableRows := inner
+	// On Planned, open pinned tasks lead under their own heading; the heading of the first
+	// visible group takes a row, later headings take the blank row between items.
+	pinnedCount := dailyPinnedCount(state, sources)
+	if pinnedCount > 0 {
+		availableRows--
+	}
+	groupOf := func(rawIdx int) int {
+		if rawIdx < pinnedCount {
+			return 0
+		}
+		return 1
+	}
+	groupSize := [2]int{}
+	for _, rawIdx := range indices {
+		groupSize[groupOf(rawIdx)]++
+	}
+	heading := func(group int) string {
+		name := [2]string{"Pinned", "Planned"}[group]
+		return theme.StyleDim.Bold(true).Render(fmt.Sprintf("%s %d", name, groupSize[group]))
+	}
 	// Each item is a title row and a meta row, with a divider between items.
 	itemSlots := max(1, (availableRows+1)/3)
 	start, end := viewchrome.ListWindow(cur, total, itemSlots)
@@ -99,7 +119,12 @@ func renderCompactDailyIssueList(
 		lines = append(lines, base.MoreAbove(theme, start))
 	}
 	for idx, rawIdx := range indices[start:end] {
-		if idx > 0 {
+		switch {
+		case pinnedCount > 0 && idx == 0:
+			lines = append(lines, heading(groupOf(rawIdx)))
+		case pinnedCount > 0 && groupOf(rawIdx) != groupOf(indices[start+idx-1]):
+			lines = append(lines, heading(groupOf(rawIdx)))
+		case idx > 0:
 			lines = append(lines, "")
 		}
 		issue := issues[rawIdx]
@@ -218,7 +243,9 @@ func renderCompactDailyIssueMeta(
 }
 
 func compactDailyIssueDate(state types.ContentState, issue issuecore.APIIssue) string {
-	if state.DailyTaskSection == "planned" {
+	// On Planned only pinned tasks can sit on another day, so only they carry a date.
+	if state.DailyTaskSection == "planned" &&
+		(issue.TodoForDate == nil || strings.TrimSpace(*issue.TodoForDate) == dailyDate(state)) {
 		return ""
 	}
 	return issuecore.IssueDateLabel(
@@ -243,8 +270,8 @@ func dailyTaskTitle(theme types.Theme, section string) string {
 		label string
 	}{
 		{key: "planned", label: "Planned"},
-		{key: "pinned", label: "Pinned"},
 		{key: "overdue", label: "Overdue"},
+		{key: "upcoming", label: "Upcoming"},
 	}
 	parts := []string{}
 	for _, opt := range options {
@@ -261,13 +288,29 @@ func dailyTaskTitle(theme types.Theme, section string) string {
 
 func dailyTaskEmptyMessage(section string) string {
 	switch section {
-	case "pinned":
-		return "No pinned tasks in this scope"
+	case "upcoming":
+		return "Nothing due in the next 7 days"
 	case "overdue":
 		return "No overdue tasks in this scope"
 	default:
 		return "No planned tasks for this date"
 	}
+}
+
+// dailyPinnedCount is how many leading tasks on Planned are open pinned ones; the model
+// orders them first.
+func dailyPinnedCount(state types.ContentState, sources []api.Issue) int {
+	if state.DailyTaskSection != "planned" {
+		return 0
+	}
+	count := 0
+	for _, issue := range sources {
+		if !issue.PinnedDaily || issue.Status == "done" || issue.Status == "abandoned" {
+			break
+		}
+		count++
+	}
+	return count
 }
 
 // filteredDailyIssues is the model's section-scoped task list; the view never re-scopes it.

@@ -57,7 +57,7 @@ func TestRenderIssuesKeepsDateVisibleWhenTitleTruncates(t *testing.T) {
 		Filters: map[string]string{
 			"issues": "",
 		},
-		DailyTaskSection: "pinned",
+		DailyTaskSection: "overdue",
 		DailyIssues: []api.Issue{{
 			ID:          1,
 			Title:       "A very long issue title that should be truncated before its date is rendered because it exceeds the width",
@@ -153,4 +153,52 @@ func normalizeTableLine(line string) string {
 	line = strings.TrimPrefix(line, "  ")
 	line = strings.TrimLeft(line, " ")
 	return line
+}
+
+func groupedPlannedState(width int) types.ContentState {
+	state := dailyState(width, 30)
+	state.DailyTaskSection = "planned"
+	state.DailyIssues = []api.Issue{
+		{ID: 1, Title: "Ship release notes", Status: "ready", PinnedDaily: true, TodoForDate: new("2026-05-25")},
+		{ID: 2, Title: "Fix sync conflict", Status: "ready", PinnedDaily: true},
+		{ID: 3, Title: "Plan errands", Status: "planned", TodoForDate: new(state.DashboardDate)},
+	}
+	return state
+}
+
+func TestPlannedTabGroupsPinnedAbovePlanned(t *testing.T) {
+	for _, width := range []int{80, 160} {
+		plain := ansi.Strip(renderIssues(testTheme(), groupedPlannedState(width), width, 20))
+		pinned, planned := strings.Index(plain, "Pinned 2"), strings.Index(plain, "Planned 1")
+		if pinned < 0 || planned < 0 || pinned > strings.Index(plain, "Ship release notes") ||
+			planned < strings.Index(plain, "Fix sync conflict") || planned > strings.Index(plain, "Plan errands") {
+			t.Fatalf("width %d: expected Pinned 2 then its tasks, then Planned 1, got %q", width, plain)
+		}
+	}
+}
+
+func TestPlannedTabTagsPinnedTaskDates(t *testing.T) {
+	plain := ansi.Strip(renderIssues(testTheme(), groupedPlannedState(80), 80, 20))
+	assertContainsLine(t, strings.Split(plain, "\n"), "Ship release notes", "[")
+	assertContainsLine(t, strings.Split(plain, "\n"), "Plan errands", "Plan errands")
+	for _, line := range strings.Split(plain, "\n") {
+		if strings.Contains(line, "Plan errands") && strings.Contains(line, "[") {
+			t.Fatalf("expected no date on a task planned for the shown day, got %q", line)
+		}
+	}
+}
+
+func TestPlannedTabWithoutPinsHasNoHeadings(t *testing.T) {
+	state := groupedPlannedState(80)
+	state.DailyIssues = state.DailyIssues[2:]
+	if plain := ansi.Strip(renderIssues(testTheme(), state, 80, 20)); strings.Contains(plain, "Pinned 0") || strings.Contains(plain, "Planned 1") {
+		t.Fatalf("expected no group headings without pinned tasks, got %q", plain)
+	}
+}
+
+func TestTaskTabsAreTodayOverdueUpcoming(t *testing.T) {
+	plain := ansi.Strip(dailyTaskTitle(testTheme(), "planned"))
+	if fieldsOf(plain) != "Planned Overdue Upcoming" {
+		t.Fatalf("expected Planned / Overdue / Upcoming tabs, got %q", plain)
+	}
 }

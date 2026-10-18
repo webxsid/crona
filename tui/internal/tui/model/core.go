@@ -85,8 +85,8 @@ const (
 	DefaultIssueSectionOpen      = uistate.DefaultIssueSectionOpen
 	DefaultIssueSectionCompleted = uistate.DefaultIssueSectionCompleted
 	DailyTaskSectionPlanned      = uistate.DailyTaskSectionPlanned
-	DailyTaskSectionPinned       = uistate.DailyTaskSectionPinned
 	DailyTaskSectionOverdue      = uistate.DailyTaskSectionOverdue
+	DailyTaskSectionUpcoming     = uistate.DailyTaskSectionUpcoming
 )
 
 // ---------- Model ----------

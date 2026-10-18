@@ -69,8 +69,8 @@ func handleCycleIssueSection(s State, deps Deps, dir int) (tea.Model, tea.Cmd, b
 	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 		sections := []uistate.DailyTaskSection{
 			uistate.DailyTaskSectionPlanned,
-			uistate.DailyTaskSectionPinned,
 			uistate.DailyTaskSectionOverdue,
+			uistate.DailyTaskSectionUpcoming,
 		}
 		next := nextIndex(s.DailyTaskSection, sections, dir)
 		deps.SetDailyTaskSection(&s, sections[next])

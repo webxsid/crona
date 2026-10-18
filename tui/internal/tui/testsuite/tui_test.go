@@ -1352,18 +1352,23 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	planned.DailyTaskSection = "planned"
 	plannedRendered := renderModelScopedDaily(planned)
 	plannedStripped := ansi.Strip(plannedRendered)
-	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Today task", "Pinned toda"} {
+	for _, want := range []string{"Tasks", "Planned", "Overdue", "Upcoming", "Today task", "Pinned toda", "Pinned futu", "Pinned over"} {
 		if !strings.Contains(plannedStripped, want) {
 			t.Fatalf("expected planned section to contain %q, got %q", want, plannedStripped)
 		}
 	}
-	for _, unwanted := range []string{"Old task", "Pinned future task", "Pinned overdue task"} {
-		if strings.Contains(plannedStripped, unwanted) {
-			t.Fatalf("expected planned section to hide %q, got %q", unwanted, plannedStripped)
-		}
+	if strings.Contains(plannedStripped, "Old task") {
+		t.Fatalf("expected planned section to hide older tasks, got %q", plannedStripped)
 	}
 	if !strings.Contains(plannedRendered, support.Theme().StyleSelected.Render("Planned")) {
 		t.Fatalf("expected planned section header to highlight Planned, got %q", plannedRendered)
+	}
+	// Open pinned tasks lead, under their own heading, whatever their date.
+	if strings.Index(plannedStripped, "Pinned over") > strings.Index(plannedStripped, "Today task") {
+		t.Fatalf("expected pinned tasks above planned ones, got %q", plannedStripped)
+	}
+	if strings.Count(plannedStripped, "Today task") != 1 || strings.Count(plannedStripped, "Pinned toda") != 1 {
+		t.Fatalf("expected each task once, got %q", plannedStripped)
 	}
 
 	past := base
@@ -1405,29 +1410,11 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 		)
 	}
 
-	pinned := base
-	pinned.DailyTaskSection = "pinned"
-	pinnedRendered := renderModelScopedDaily(pinned)
-	pinnedStripped := ansi.Strip(pinnedRendered)
-	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned futu", "Pinned toda"} {
-		if !strings.Contains(pinnedStripped, want) {
-			t.Fatalf("expected pinned section to contain %q, got %q", want, pinnedStripped)
-		}
-	}
-	for _, unwanted := range []string{"Old task", "Today task", "Pinned overdue task"} {
-		if strings.Contains(pinnedStripped, unwanted) {
-			t.Fatalf("expected pinned section to hide %q, got %q", unwanted, pinnedStripped)
-		}
-	}
-	if !strings.Contains(pinnedRendered, support.Theme().StyleSelected.Render("Pinned")) {
-		t.Fatalf("expected pinned section header to highlight Pinned, got %q", pinnedRendered)
-	}
-
 	overdue := base
 	overdue.DailyTaskSection = "overdue"
 	overdueRendered := renderModelScopedDaily(overdue)
 	overdueStripped := ansi.Strip(overdueRendered)
-	for _, want := range []string{"Tasks", "Planned", "Pinned", "Overdue", "Pinned over"} {
+	for _, want := range []string{"Tasks", "Planned", "Overdue", "Upcoming", "Pinned over"} {
 		if !strings.Contains(overdueStripped, want) {
 			t.Fatalf("expected overdue section to contain %q, got %q", want, overdueStripped)
 		}
@@ -1439,6 +1426,47 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	}
 	if !strings.Contains(overdueRendered, support.Theme().StyleSelected.Render("Overdue")) {
 		t.Fatalf("expected overdue section header to highlight Overdue, got %q", overdueRendered)
+	}
+
+	upcoming := base
+	upcoming.DailyTaskSection = "upcoming"
+	upcomingRendered := renderModelScopedDaily(upcoming)
+	upcomingStripped := ansi.Strip(upcomingRendered)
+	if !strings.Contains(upcomingStripped, "Pinned futu") {
+		t.Fatalf("expected upcoming section to show the task due in 3 days, got %q", upcomingStripped)
+	}
+	for _, unwanted := range []string{"Old task", "Today task", "Pinned overdue task", "Pinned today task"} {
+		if strings.Contains(upcomingStripped, unwanted) {
+			t.Fatalf("expected upcoming section to hide %q, got %q", unwanted, upcomingStripped)
+		}
+	}
+	if !strings.Contains(upcomingRendered, support.Theme().StyleSelected.Render("Upcoming")) {
+		t.Fatalf("expected upcoming section header to highlight Upcoming, got %q", upcomingRendered)
+	}
+}
+
+func TestDailyUpcomingCoversTheNextSevenDays(t *testing.T) {
+	issue := func(id int64, title, date, status string) api.IssueWithMeta {
+		return api.IssueWithMeta{Issue: api.Issue{ID: id, Title: title, Status: sharedtypes.IssueStatus(status), TodoForDate: new(date)}}
+	}
+	scoped := selectionpkg.DailyScopedIssues(selectionpkg.Snapshot{
+		View:             uistate.ViewDaily,
+		DailyTaskSection: uistate.DailyTaskSectionUpcoming,
+		DashboardDate:    "2026-04-30",
+		AllIssues: []api.IssueWithMeta{
+			issue(1, "In a week", "2026-05-07", "ready"),
+			issue(2, "Tomorrow", "2026-05-01", "ready"),
+			issue(3, "Too far", "2026-05-08", "ready"),
+			issue(4, "Done early", "2026-05-02", "done"),
+			issue(5, "Today", "2026-04-30", "ready"),
+		},
+	})
+	got := []string{}
+	for _, issue := range scoped {
+		got = append(got, issue.Title)
+	}
+	if strings.Join(got, ",") != "Tomorrow,In a week" {
+		t.Fatalf("expected open tasks of the next 7 days by date, got %v", got)
 	}
 }
 

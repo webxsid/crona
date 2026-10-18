@@ -124,8 +124,8 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 }
 
 func (m *Model) setDailyTaskSection(section DailyTaskSection) {
-	if section != DailyTaskSectionPlanned && section != DailyTaskSectionPinned &&
-		section != DailyTaskSectionOverdue {
+	if section != DailyTaskSectionPlanned && section != DailyTaskSectionOverdue &&
+		section != DailyTaskSectionUpcoming {
 		section = DailyTaskSectionPlanned
 	}
 	m.dailyTaskSection = section
