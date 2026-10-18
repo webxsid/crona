@@ -138,7 +138,13 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	if !strings.Contains(lineContaining(rendered, "[18] May 4-10"), "█") {
 		t.Fatalf("expected missed bucket row to show a partial fill, got %q", rendered)
 	}
-	overflowLine := lineContaining(rendered, "13/10")
+	// The footnote repeats the ratio above the bucket table; the table row comes last.
+	overflowLine := ""
+	for line := range strings.SplitSeq(rendered, "\n") {
+		if strings.Contains(line, "13/10") {
+			overflowLine = line
+		}
+	}
 	if overflowLine == "" {
 		t.Fatalf("expected overflow row in render, got %q", rendered)
 	}
@@ -157,8 +163,8 @@ func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
 	if !strings.Contains(rendered, "Latest bucket:") {
 		t.Fatalf("expected latest bucket summary in render, got %q", rendered)
 	}
-	if strings.ContainsFunc(rendered, func(r rune) bool { return r >= 0x2800 && r <= 0x28FF }) {
-		t.Fatalf("did not expect braille output in render, got %q", rendered)
+	if !strings.ContainsFunc(rendered, func(r rune) bool { return r >= 0x2800 && r <= 0x28FF }) {
+		t.Fatalf("expected the chart drawn in braille, got %q", rendered)
 	}
 }
 
@@ -536,15 +542,16 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 		strings.Contains(rendered, "Scale  low") {
 		t.Fatalf("expected daily square grid to avoid calendar headers and scale, got %q", rendered)
 	}
-	if strings.Contains(rendered, "┆") || strings.Contains(rendered, "W1") ||
-		strings.Contains(rendered, "May 4-10") {
-		t.Fatalf("expected daily square grid to avoid bucket bars, got %q", rendered)
+	// The bucket table draws bars of its own, so check the chart alone.
+	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"); strings.Contains(chart, "┆") || strings.Contains(chart, "W1") ||
+		strings.Contains(chart, "May 4-10") {
+		t.Fatalf("expected daily square grid to avoid bucket bars, got %q", chart)
 	}
 	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
 		t.Fatalf("expected filled and empty squares in render, got %q", rendered)
 	}
 	// The list's sparkline draws bars too, so check the chart alone.
-	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30), "\n"); strings.Contains(chart, "█") || strings.Contains(chart, "┆") ||
+	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"); strings.Contains(chart, "█") || strings.Contains(chart, "┆") ||
 		strings.Contains(chart, "May 4-10") {
 		t.Fatalf("expected binary daily habit to stay on the square grid, got %q", chart)
 	}

@@ -15,6 +15,10 @@ import (
 const (
 	minListWidth = 40
 	maxListWidth = 56
+	// minBucketsWidth is the wide layout's bucket column floor; it takes 2/5 beside the list.
+	minBucketsWidth = 44
+	// wideMinHeight is the shortest screen that gives buckets their own column.
+	wideMinHeight = 24
 )
 
 // listWidthFor gives the list 3/10 of the screen, between the floor and the cap.
@@ -41,24 +45,38 @@ func Render(theme types.Theme, state types.ContentState) string {
 	}
 	listWidth := listWidthFor(state.Width)
 	list := renderList(theme, cards, cursor, listWidth, height, fmt.Sprintf("%d", len(cards)))
-	detailWidth := state.Width - listWidth - 3
-	var detail string
-	if len(cards) == 0 {
-		detail = viewchrome.RenderSection(theme, viewchrome.Section{Title: "Momentum", Width: detailWidth, Height: height})
-	} else {
-		card := cards[cursor]
-		toggle := "disable"
-		if !card.Definition.Enabled {
-			toggle = "enable"
-		}
-		meta := viewchrome.FitHints([]string{viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "x", toggle)}, max(0, detailWidth-len(card.Definition.Name)-4))
-		titleStyle := theme.StyleHeader.Bold(true)
-		detail = viewchrome.RenderSection(theme, viewchrome.Section{
-			Title: card.Definition.Name, Meta: meta, TitleStyle: &titleStyle, Width: detailWidth, Height: height,
-			Lines: DetailLines(theme, card, detailWidth-2, height-1),
-		})
+	wide := viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide && height >= wideMinHeight
+	bucketsWidth := 0
+	if wide {
+		bucketsWidth = max(minBucketsWidth, (state.Width-listWidth-6)*2/5)
 	}
-	return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail)), "\n")
+	detailWidth := state.Width - listWidth - 3
+	if wide {
+		detailWidth -= bucketsWidth + 3
+	}
+	if len(cards) == 0 {
+		detail := viewchrome.RenderSection(theme, viewchrome.Section{Title: "Momentum", Width: detailWidth, Height: height})
+		return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail)), "\n")
+	}
+	card := cards[cursor]
+	toggle := "disable"
+	if !card.Definition.Enabled {
+		toggle = "enable"
+	}
+	meta := viewchrome.FitHints([]string{viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "x", toggle)}, max(0, detailWidth-len(card.Definition.Name)-4))
+	titleStyle := theme.StyleHeader.Bold(true)
+	detail := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: card.Definition.Name, Meta: meta, TitleStyle: &titleStyle, Width: detailWidth, Height: height,
+		Lines: DetailLines(theme, card, detailWidth-2, height-1, !wide),
+	})
+	if !wide {
+		return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail)), "\n")
+	}
+	buckets := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: "Buckets", Meta: fmt.Sprintf("%d", len(card.Series)), Width: bucketsWidth, Height: height,
+		Lines: BucketLines(theme, card, bucketsWidth-2),
+	})
+	return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail, buckets)), "\n")
 }
 
 // visibleCards are the momentums the list filter keeps, in load order.

@@ -27,22 +27,6 @@ func momentumCardTargetLabel(def sharedtypes.HabitStreakDefinition) string {
 	}
 }
 
-func renderMomentumSeries(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) string {
-	if sharedtypes.NormalizeHabitStreakPeriod(def.Period) == sharedtypes.HabitStreakPeriodDay {
-		if momentumDailySeriesUsesSquares(def, series) {
-			return renderMomentumDailySquares(theme, series, width, enabled)
-		}
-		return renderMomentumDailyDistribution(theme, def, series, width, enabled)
-	}
-	return renderMomentumBucketTimeline(theme, def, series, width, enabled)
-}
-
 func momentumDailySeriesUsesSquares(
 	def sharedtypes.HabitStreakDefinition,
 	series []sharedtypes.MomentumSeriesPoint,
@@ -118,55 +102,6 @@ func momentumSeriesFootnote(
 	return strings.Join(parts, " · ")
 }
 
-func renderMomentumBucketTimeline(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) string {
-	if len(series) == 0 {
-		return theme.StyleDim.Render("no data")
-	}
-	if width < 1 {
-		return theme.StyleDim.Render("no data")
-	}
-
-	scaleMax := momentumSeriesScale(series)
-	labelWidth := max(10, min(16, width/4))
-	ratioWidth := 7
-	statusWidth := 7
-	spacerWidth := 4
-	barWidth := width - labelWidth - ratioWidth - statusWidth - spacerWidth
-	if barWidth < 8 {
-		barWidth = max(4, width-ratioWidth-statusWidth-spacerWidth-6)
-		labelWidth = max(6, width-ratioWidth-statusWidth-spacerWidth-barWidth)
-	}
-
-	labelWidth = max(6, labelWidth)
-	barWidth = max(4, barWidth)
-
-	rows := make([]string, 0, len(series))
-	for _, point := range series {
-		rows = append(
-			rows,
-			renderMomentumBucketRow(
-				theme,
-				def,
-				point,
-				labelWidth,
-				ratioWidth,
-				statusWidth,
-				barWidth,
-				scaleMax,
-				enabled,
-			),
-		)
-	}
-	rowSeparator := "\n"
-	return strings.Join(rows, rowSeparator)
-}
-
 func renderMomentumDailySquares(
 	theme types.Theme,
 	series []sharedtypes.MomentumSeriesPoint,
@@ -181,117 +116,6 @@ func renderMomentumDailySquares(
 		return theme.StyleDim.Render("no data")
 	}
 	return strings.Join(rows, "\n")
-}
-
-type momentumChartCell struct {
-	bar      bool
-	barColor lipgloss.Color
-}
-
-func renderMomentumDailyDistribution(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) string {
-	rows := momentumDailyDistributionRows(theme, def, series, width, enabled)
-	if len(rows) == 0 {
-		return theme.StyleDim.Render("no data")
-	}
-	return strings.Join(rows, "\n")
-}
-
-func momentumDailyDistributionRows(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) []string {
-	if len(series) == 0 || width < 1 {
-		return nil
-	}
-
-	chartHeight := 7
-	seriesMax := momentumSeriesScale(series)
-	seriesMax = max(seriesMax, 1)
-	yLabelWidth := 5
-	axisMax := seriesMax
-	tickRows, tickLabels := momentumChartTicks(seriesMax, chartHeight, def)
-	if sharedtypes.NormalizeMomentumTargetKind(
-		def.TargetKind,
-	) == sharedtypes.MomentumTargetKindContext {
-		ctxAxis := momentumContextAxis(seriesMax)
-		axisMax = ctxAxis.MaxAxis
-		yLabelWidth = ctxAxis.LabelWidth
-		tickRows, tickLabels = momentumContextTickRows(
-			axisMax,
-			chartHeight,
-			ctxAxis.Step,
-			ctxAxis.Format,
-		)
-	}
-	chartWidth := max(12, width-yLabelWidth-2)
-
-	grid := make([][]momentumChartCell, chartHeight)
-	for y := range grid {
-		grid[y] = make([]momentumChartCell, chartWidth)
-	}
-
-	sharedTarget, sharedTargetOK := momentumSharedTarget(series)
-	xPositions := momentumXPositions(len(series), chartWidth)
-	for i, point := range series {
-		x := xPositions[i]
-		barStatus := momentumStatusForPoint(point, enabled)
-		barPalette := momentumVerticalPalette(theme, def, barStatus, enabled)
-		barRamp := viewhelpers.GradientRamp(barPalette.Start, barPalette.End, chartHeight)
-		barRow := momentumChartValueRow(point.Count, axisMax, chartHeight)
-
-		for y := barRow; y < chartHeight; y++ {
-			grid[y][x].bar = true
-			grid[y][x].barColor = viewhelpers.GradientColorAt(barRamp, y)
-		}
-	}
-
-	targetRow := -1
-	if sharedTargetOK {
-		targetRow = momentumChartValueRow(sharedTarget, axisMax, chartHeight)
-	}
-	lines := make([]string, 0, chartHeight+2)
-	lineStyle := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true)
-	axisStyle := lipgloss.NewStyle().Foreground(theme.ColorDim)
-	for row := range chartHeight {
-		label := strings.Repeat(" ", yLabelWidth)
-		if tick, ok := tickLabels[row]; ok {
-			label = fmt.Sprintf("%*s", yLabelWidth, tick)
-		}
-		var b strings.Builder
-		for col := range chartWidth {
-			cell := grid[row][col]
-			switch {
-			case row == targetRow:
-				b.WriteString(lineStyle.Render("─"))
-			case cell.bar:
-				barStyle := lipgloss.NewStyle().Foreground(cell.barColor)
-				if !enabled {
-					barStyle = theme.StyleDim
-				}
-				b.WriteString(barStyle.Render("█"))
-			case tickRows[row]:
-				b.WriteString(axisStyle.Render("┈"))
-			default:
-				b.WriteRune(' ')
-			}
-		}
-		lines = append(lines, fmt.Sprintf("%s │%s", theme.StyleDim.Render(label), b.String()))
-	}
-	lines = append(
-		lines,
-		fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)),
-	)
-	lines = append(lines, momentumChartXAxis(theme, series, yLabelWidth+2, chartWidth, xPositions))
-	return lines
 }
 
 type momentumContextAxisSpec struct {
@@ -365,87 +189,18 @@ func momentumContextTickRows(
 }
 
 func momentumSharedTarget(series []sharedtypes.MomentumSeriesPoint) (int, bool) {
-	if len(series) == 0 {
-		return 0, false
-	}
-	target := series[0].Target
-	for _, point := range series[1:] {
-		if point.Target != target || point.Skipped {
+	// Skipped buckets carry no target of their own, so they don't break a shared one.
+	target, found := 0, false
+	for _, point := range series {
+		if point.Skipped {
+			continue
+		}
+		if found && point.Target != target {
 			return 0, false
 		}
+		target, found = point.Target, true
 	}
-	return target, true
-}
-
-func momentumVerticalPalette(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	status string,
-	enabled bool,
-) viewhelpers.GradientBarPalette {
-	if !enabled {
-		return viewhelpers.GradientBarPalette{
-			Start: theme.ColorDim,
-			End:   theme.ColorDim,
-			Track: theme.ColorDim,
-		}
-	}
-	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
-	case sharedtypes.MomentumTargetKindContext:
-		switch status {
-		case "met":
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullGreen,
-				End:   theme.ColorCyan,
-				Track: theme.ColorDim,
-			}
-		case "near":
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullGreen,
-				End:   theme.ColorYellow,
-				Track: theme.ColorDim,
-			}
-		default:
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullRed,
-				End:   theme.ColorOrange,
-				Track: theme.ColorDim,
-			}
-		}
-	default:
-		switch status {
-		case "met":
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullGreen,
-				End:   theme.ColorGreen,
-				Track: theme.ColorDim,
-			}
-		case "near":
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullGreen,
-				End:   theme.ColorYellow,
-				Track: theme.ColorDim,
-			}
-		default:
-			return viewhelpers.GradientBarPalette{
-				Start: theme.ColorDullRed,
-				End:   theme.ColorOrange,
-				Track: theme.ColorDim,
-			}
-		}
-	}
-}
-
-func momentumXPositions(points int, chartWidth int) []int {
-	out := make([]int, points)
-	if points == 1 {
-		out[0] = min(chartWidth-1, chartWidth/2)
-		return out
-	}
-	for i := range points {
-		out[i] = int(math.Round(float64(i) * float64(chartWidth-1) / float64(points-1)))
-	}
-	return out
+	return target, found
 }
 
 func momentumChartValueRow(value, maxAxis, chartHeight int) int {
@@ -574,27 +329,6 @@ func momentumDailySquareCell(
 		return lipgloss.NewStyle().Foreground(theme.ColorDullGreen).Bold(true).Render("■")
 	}
 	return lipgloss.NewStyle().Foreground(theme.ColorRed).Render("□")
-}
-
-func renderMomentumBucketRow(
-	theme types.Theme,
-	def sharedtypes.HabitStreakDefinition,
-	point sharedtypes.MomentumSeriesPoint,
-	labelWidth, ratioWidth, statusWidth, barWidth, scaleMax int,
-	enabled bool,
-) string {
-	label := padRight(
-		viewhelpers.Truncate(momentumDisplayLabel(point), labelWidth),
-		labelWidth,
-	)
-	ratioText := padRight(
-		momentumRatioText(point, def),
-		ratioWidth,
-	)
-	status := momentumStatusForPoint(point, enabled)
-	statusText := momentumStatusStyle(theme, status).Render(padRight(status, statusWidth))
-	bar := momentumBucketBar(theme, point, barWidth, enabled, scaleMax)
-	return strings.Join([]string{label, ratioText, statusText, bar}, "  ")
 }
 
 func momentumDisplayLabel(point sharedtypes.MomentumSeriesPoint) string {
