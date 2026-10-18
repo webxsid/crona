@@ -7,7 +7,6 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/x/ansi"
@@ -24,110 +23,6 @@ func exportCategoryTitle(category string) string {
 	default:
 		return "Narrative Reports"
 	}
-}
-
-func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
-	steps := []string{"Streaks", "Weekdays", "Dates", "Review"}
-	progress := make([]string, 0, len(steps))
-	for i, step := range steps {
-		label := fmt.Sprintf("%d.%s", i+1, step)
-		if i == state.ProtectionStep {
-			progress = append(progress, theme.StyleCursor.Render(label))
-			continue
-		}
-		progress = append(progress, theme.StyleDim.Render(label))
-	}
-	rows := []string{
-		theme.StylePaneTitle.Render("Rest & Streak Protection"),
-		"",
-		strings.Join(progress, "   "),
-		"",
-	}
-	switch state.ProtectionStep {
-	case 0:
-		rows = append(rows, theme.StyleDim.Render("Select which streaks are protected"))
-		for i, kind := range sharedtypes.AvailableStreakKinds() {
-			label := "Focus Days"
-			if kind == sharedtypes.StreakKindCheckInDays {
-				label = "Check-In Days"
-			}
-			prefix := "[ ] "
-			if hasStreakKind(state.ProtectionStreaks, kind) {
-				prefix = "[x] "
-			}
-			line := prefix + label
-			if i == state.ProtectionCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render("  "+line))
-			}
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[↑/↓] move   [space] toggle   [a] all   [c] none   [tab] next",
-		)
-	case 1:
-		rows = append(rows, theme.StyleDim.Render("Select default rest weekdays"))
-		labels := []string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
-		for i, label := range labels {
-			prefix := "[ ] "
-			if slices.Contains(state.ProtectionWeekdays, i) {
-				prefix = "[x] "
-			}
-			line := prefix + label
-			if i == state.ProtectionCursor {
-				rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
-			} else {
-				rows = append(rows, theme.StyleNormal.Render("  "+line))
-			}
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[↑/↓] move   [space] toggle   [c] clear   [tab] next",
-		)
-	case 2:
-		rows = append(rows, theme.StyleDim.Render("Manage one-off rest dates"))
-		if len(state.ProtectionDates) == 0 {
-			rows = append(rows, theme.StyleDim.Render("No rest dates added"))
-		} else {
-			for i, value := range state.ProtectionDates {
-				line := value
-				if i == state.ProtectionCursor {
-					rows = append(rows, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
-				} else {
-					rows = append(rows, theme.StyleNormal.Render("  "+line))
-				}
-			}
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[a] add date   [D] remove selected   [tab] next",
-		)
-	case 3:
-		rows = append(rows,
-			theme.StyleDim.Render("Protected Streaks"),
-			theme.StyleHeader.Render(fallback(streakKindsSummary(state.ProtectionStreaks), "None")),
-			"",
-			theme.StyleDim.Render("Rest Weekdays"),
-			theme.StyleHeader.Render(weekdaysSummary(state.ProtectionWeekdays)),
-			"",
-			theme.StyleDim.Render("Rest Dates"),
-			theme.StyleHeader.Render(restDatesSummary(state.ProtectionDates)),
-		)
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			dialogSubmitHint(state, "save")+"   [shift+tab] back   [esc] cancel",
-		)
-	}
-	return modal(theme, state.Width, 76, theme.ColorCyan, rows)
 }
 
 func hasStreakKind(values []sharedtypes.StreakKind, target sharedtypes.StreakKind) bool {

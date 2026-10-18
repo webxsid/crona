@@ -203,7 +203,7 @@ func toggleLine(selected, enabled bool, label string) string {
 	if selected {
 		prefix = viewchrome.SelectionCursor + " "
 	}
-	return prefix + toggleLabel(enabled, label)
+	return prefix + checkbox(enabled, label)
 }
 
 func reviewChoiceLine(selected bool, label string) string {

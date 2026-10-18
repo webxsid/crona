@@ -36,8 +36,8 @@ func assertListChrome(t *testing.T, c formCase) string {
 			break
 		}
 	}
-	if !strings.HasSuffix(last, "esc cancel") {
-		t.Errorf("%s: footer ends %q, want esc cancel", c.name, last)
+	if !strings.HasSuffix(last, "esc cancel") && !strings.HasSuffix(last, "esc back") {
+		t.Errorf("%s: footer ends %q, want esc cancel or esc back", c.name, last)
 	}
 	return out
 }

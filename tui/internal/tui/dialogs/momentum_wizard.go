@@ -19,15 +19,6 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 	momentumMode := isMomentumDialogKind(state.Kind)
 	steps := habitStreakWizardSteps(state.Kind)
 	active := min(max(0, state.HabitStreakStep-1), len(steps)-1)
-	strip := make([]string, 0, len(steps))
-	for i, step := range steps {
-		label := fmt.Sprintf(" %d %s ", i+1, step)
-		if i == active {
-			strip = append(strip, theme.StyleSelected.Render(label))
-		} else {
-			strip = append(strip, theme.StyleDim.Render(label))
-		}
-	}
 	title := "Habit Streaks"
 	if momentumMode {
 		title = "New Momentum"
@@ -35,12 +26,12 @@ func renderHabitStreakDialog(theme Theme, state controllerpkg.State) string {
 			title = "Edit Momentum"
 		}
 	}
-	body := []string{strings.Join(strip, " "), ""}
+	body := []string{stepStrip(theme, steps, active), ""}
 	submit := "ctrl+s save streak"
 	if momentumMode {
 		submit = "ctrl+s save momentum"
 	}
-	d := listDialog{title: title, context: fmt.Sprintf("%d/%d %s", active+1, len(steps), steps[active]), focus: -1}
+	d := listDialog{wide: true, title: title, context: stepContext(steps, active), focus: -1}
 	switch steps[active] {
 	case "Kind":
 		d.body, d.focus = momentumKindStep(theme, state, body)

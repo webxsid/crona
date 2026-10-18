@@ -32,14 +32,19 @@ type listDialog struct {
 	danger         bool
 	border         lipgloss.Color
 	esc            string
-	body           []string
-	focus          int
-	primary        string
-	hints          []string
+	// wide pins the frame to the form width, so a wizard keeps one width across steps.
+	wide    bool
+	body    []string
+	focus   int
+	primary string
+	hints   []string
 }
 
 func renderListDialog(theme Theme, state controllerpkg.State, d listDialog) string {
 	inner := FrameInner(state.Width, d.body)
+	if d.wide {
+		inner = formInner(state.Width)
+	}
 	esc := d.esc
 	if esc == "" {
 		esc = "esc cancel"
