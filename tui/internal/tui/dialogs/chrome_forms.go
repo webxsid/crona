@@ -59,9 +59,6 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	if state.Kind == "create_issue_default" {
 		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
 	}
-	if state.Kind == "create_issue_meta" {
-		rows = append(rows, staticRow(Field(theme, "Repo", column, fallback(state.RepoName, "-"), false), Field(theme, "Stream", column, fallback(state.StreamName, "-"), false)))
-	}
 	if state.AdhocTimer {
 		rows = append(rows, fieldRow(at("summary"), Field(theme, "Summary", column, bareInput(state.Inputs[5], full, "required"), focused("summary"))))
 	}
