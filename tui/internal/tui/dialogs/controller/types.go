@@ -92,6 +92,8 @@ type State struct {
 	DueDateRestDates               []string
 	DueDateAwayDates               []string
 	RepoSelectorLabel              string
+	RepoOptionLabels               []string
+	StreamOptionLabels             []string
 	StreamSelectorLabel            string
 	ViewTitle                      string
 	ViewName                       string

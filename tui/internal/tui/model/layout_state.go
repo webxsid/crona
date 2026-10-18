@@ -168,6 +168,8 @@ func (m Model) dialogRenderState() dialogstate.State {
 	state := m.dialogState()
 	state.Width = m.width
 	if m.dialog == "create_issue_default" || m.dialog == "create_habit" {
+		state.RepoOptionLabels = optionLabels(dialogstate.DefaultRepoOptions(m.dialogInputs, m.repos))
+		state.StreamOptionLabels = optionLabels(dialogstate.DefaultStreamOptions(m.dialogInputs, m.dialogRepoIndex, m.repos, m.allIssues, m.streams, m.context))
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.DefaultIssueDialogLabels(
 			m.dialogInputs,
 			m.dialogRepoIndex,
@@ -190,6 +192,8 @@ func (m Model) dialogRenderState() dialogstate.State {
 		)
 	}
 	if m.dialog == "checkout_context" {
+		state.RepoOptionLabels = optionLabels(dialogstate.CheckoutRepoOptions(m.dialogInputs, m.repos))
+		state.StreamOptionLabels = optionLabels(dialogstate.CheckoutStreamOptions(m.dialogInputs, m.dialogRepoIndex, m.repos, m.allIssues, m.streams, m.context))
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.CheckoutDialogLabels(
 			m.dialogInputs,
 			m.dialogRepoIndex,
@@ -280,4 +284,13 @@ func currentBrewFormula() string {
 		return "crona-beta"
 	}
 	return "crona"
+}
+
+// optionLabels are the labels a dialog picker lists, in option order.
+func optionLabels(options []dialogstate.SelectorOption) []string {
+	labels := make([]string, len(options))
+	for i, option := range options {
+		labels[i] = option.Label
+	}
+	return labels
 }
