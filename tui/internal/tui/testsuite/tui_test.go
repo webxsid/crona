@@ -915,7 +915,7 @@ func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[o]", "feedback & roadmap", "[r]", "open releases", "[g]", "open documentation", "[c]", "copy diagnostics", "[b]", "generate bundle"} {
+	for _, want := range []string{"[o]", "feedback & roadmap", "[r]", "open releases", "[g]", "open documentation", "[c]", "copy diagnostics", "[b]", "generate bundle", "[enter]", "run selected"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}

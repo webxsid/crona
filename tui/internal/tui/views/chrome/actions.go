@@ -286,6 +286,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open documentation"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
 			theme.StyleHeader.Render("[b]") + theme.StyleDim.Render(" generate bundle"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" run selected"),
 		}
 	}
 	if state.View == "alerts" {

@@ -166,3 +166,21 @@ func TestSupportActionOrderMatchesInput(t *testing.T) {
 		t.Fatalf("expected the view and input to list the same actions, got %v vs %v", keys, input.SupportActionKeys())
 	}
 }
+
+func TestSystemBottomRowsGlobalsOnly(t *testing.T) {
+	for _, tc := range []struct {
+		view View
+		pane Pane
+	}{{ViewSettings, PaneSettings}, {ViewAlerts, PaneAlerts}, {ViewReports, PaneExportReports}, {ViewConfig, PaneConfig}, {ViewUpdates, PaneIssues}, {ViewSupport, PaneIssues}} {
+		m := Model{view: tc.view, pane: tc.pane, width: 200, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+		row := bottomRow(m)
+		if !strings.Contains(row, "[?] all keys") {
+			t.Fatalf("%s: expected [?] all keys, got %q", tc.view, row)
+		}
+		for _, unwanted := range []string{"[enter]", "[e]", "[r]", "[o]", "[←/→]"} {
+			if strings.Contains(row, unwanted) {
+				t.Fatalf("%s: expected %q off the bottom row, got %q", tc.view, unwanted, row)
+			}
+		}
+	}
+}

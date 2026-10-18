@@ -57,7 +57,8 @@ func (m Model) layoutState() layoutpkg.State {
 		),
 	})
 	switch view {
-	case ViewDaily, ViewDefault, ViewHabitList, ViewReview, ViewMomentum, ViewSessionHistory, ViewHabitHistory, ViewOps:
+	case ViewDaily, ViewDefault, ViewHabitList, ViewReview, ViewMomentum, ViewSessionHistory, ViewHabitHistory, ViewOps,
+		ViewSettings, ViewAlerts, ViewReports, ViewConfig, ViewUpdates, ViewSupport:
 		// These panes show their own keys.
 		paneActions = nil
 	}
