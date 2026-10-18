@@ -40,6 +40,9 @@ func FrameInner(screenWidth int, content []string) int {
 		}
 	}
 	inner := min(max(widest, frameMinInner), frameMaxInner)
+	if screenWidth <= 0 {
+		return inner
+	}
 	return max(1, min(inner, screenWidth-8-frameChrome))
 }
 

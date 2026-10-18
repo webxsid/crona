@@ -60,8 +60,8 @@ func DialogMonth(state State, currentDate string) time.Time {
 }
 
 func renderCalendarGrid(theme Theme, monthStart, selected time.Time, state State) string {
-	headers := []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
-	lines := []string{strings.Join(headers, "  ")}
+	headers := []string{" Mo ", " Tu ", " We ", " Th ", " Fr ", " Sa ", " Su "}
+	lines := []string{strings.Join(headers, " ")}
 	offset := (int(monthStart.Weekday()) + 6) % 7
 	gridStart := monthStart.AddDate(0, 0, -offset)
 	for week := range 6 {

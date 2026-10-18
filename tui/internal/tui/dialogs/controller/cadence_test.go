@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"strings"
 	"testing"
 
 	sharedtypes "crona/shared/types"
@@ -116,4 +117,13 @@ func TestReminderCadence(t *testing.T) {
 	}
 	state, _, _ = press(state, keyRight)
 	tabs(t, state, keyTab, 2, 1, 0)
+}
+
+func TestDateGridHeaderLinesUpWithDays(t *testing.T) {
+	due := "2026-10-20"
+	state := PopulateDatePresentation(Theme{}, OpenDatePicker(State{}, "", 0, 0, &due, "2026-10-18"), "2026-10-18")
+	lines := strings.Split(state.DateGrid, "\n")
+	if lines[0] != " Mo   Tu   We   Th   Fr   Sa   Su " {
+		t.Fatalf("header %q does not match the 5-cell day stride of %q", lines[0], lines[1])
+	}
 }
