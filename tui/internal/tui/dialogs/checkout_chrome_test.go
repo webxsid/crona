@@ -11,12 +11,12 @@ func TestCheckoutChrome(t *testing.T) {
 	state := issueState("checkout_context", 0, 120, 36)
 	state.RepoSelectorLabel, state.StreamSelectorLabel = "OSS", "cli"
 	text := ansi.Strip(renderRepoStreamDialog(testTheme(), state))
-	if !strings.Contains(text, "╭─ Checkout Context") || strings.Contains(text, "[ > ") || !strings.Contains(text, "▶ OSS") || !strings.Contains(text, "Work") {
+	if !strings.Contains(text, "╭─ Checkout Context") || strings.Contains(text, "[ > ") || !strings.Contains(text, "‹ OSS ›") {
 		t.Fatalf("expected the chrome with repo options, got\n%s", text)
 	}
 	streamLine := false
 	for _, line := range strings.Split(text, "\n") {
-		streamLine = streamLine || (strings.Contains(line, "Stream") && strings.Contains(line, "cli ▾"))
+		streamLine = streamLine || (strings.Contains(line, "Stream") && strings.Contains(line, "‹ cli ›"))
 	}
 	if !streamLine {
 		t.Fatalf("expected a collapsed stream picker, got\n%s", text)

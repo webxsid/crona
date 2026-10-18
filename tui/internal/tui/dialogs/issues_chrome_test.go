@@ -25,7 +25,9 @@ func issueState(kind string, focus, width, height int) controllerpkg.State {
 	}
 }
 
-func issueText(state controllerpkg.State) string { return ansi.Strip(renderIssueDialog(testTheme(), state)) }
+func issueText(state controllerpkg.State) string {
+	return ansi.Strip(renderIssueDialog(testTheme(), state))
+}
 
 func TestNewIssueChrome(t *testing.T) {
 	text := issueText(issueState("create_issue_default", 2, 120, 40))
@@ -46,10 +48,22 @@ func TestNewIssueChrome(t *testing.T) {
 	}
 }
 
-func TestNewIssuePickerFocused(t *testing.T) {
+func TestNewIssuePickersAtBottom(t *testing.T) {
 	text := issueText(issueState("create_issue_default", 0, 120, 40))
-	if !strings.Contains(text, "▶ OSS") || !strings.Contains(text, "Work") || !strings.Contains(text, "Home") {
-		t.Fatalf("expected the repo options listed, got\n%s", text)
+	estimate, repo := strings.Index(text, "Estimate"), strings.Index(text, "‹ OSS ›")
+	if estimate < 0 || repo < estimate {
+		t.Fatalf("expected the repo picker below Estimate, got\n%s", text)
+	}
+}
+
+func TestNewIssueHeightIsStable(t *testing.T) {
+	height := -1
+	for focus := 0; focus <= 5; focus++ {
+		n := len(strings.Split(issueText(issueState("create_issue_default", focus, 120, 40)), "\n"))
+		if height >= 0 && n != height {
+			t.Fatalf("focus %d: height %d, expected %d", focus, n, height)
+		}
+		height = n
 	}
 }
 
@@ -82,20 +96,6 @@ func TestNewIssuePairFitsTypedEstimate(t *testing.T) {
 			t.Fatalf("expected the estimate whole, got %q", line)
 		}
 	}
-}
-
-func TestNewIssueEmptyDescriptionCollapses(t *testing.T) {
-	text := issueText(issueState("create_issue_default", 2, 120, 40))
-	lines := strings.Split(text, "\n")
-	for i, line := range lines {
-		if strings.Contains(line, "Description") {
-			if !strings.Contains(line, "optional") {
-				t.Fatalf("expected an empty unfocused description on one line, got %q", lines[i:i+2])
-			}
-			return
-		}
-	}
-	t.Fatalf("no description line in\n%s", text)
 }
 
 func TestNewIssueStackedPairAligns(t *testing.T) {

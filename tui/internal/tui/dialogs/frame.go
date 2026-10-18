@@ -15,8 +15,6 @@ const (
 	frameMaxInner = 76
 	// frameChrome is the border and padding around the inner width: 1+2 a side.
 	frameChrome = 6
-	// pickerShown is how many picker options a focused picker lists.
-	pickerShown = 5
 )
 
 // FrameSpec is one dialog: its border title and context, body lines and key footer.
@@ -157,11 +155,17 @@ func FieldPair(left, right string, inner int) []string {
 	return []string{left + strings.Repeat(" ", max(2, half-ansi.StringWidth(left))) + right}
 }
 
-// Textarea is a label row over the body, indented by 2.
+// Textarea is the label on the body's first row and a dim ┊ gutter on the rest, at the
+// body's own fixed height.
 func Textarea(theme Theme, label string, column int, body string, focused bool, inner int) []string {
-	lines := []string{Field(theme, label, column, "", focused)}
-	for _, line := range strings.Split(body, "\n") {
-		lines = append(lines, "  "+ansi.Truncate(line, max(1, inner-2), ""))
+	lines := []string{}
+	for i, line := range strings.Split(body, "\n") {
+		line = theme.StyleDim.Render("┊ ") + ansi.Truncate(line, max(1, inner-column-4), "")
+		if i == 0 {
+			lines = append(lines, Field(theme, label, column, line, focused))
+			continue
+		}
+		lines = append(lines, strings.Repeat(" ", column+2)+line)
 	}
 	return lines
 }
@@ -178,33 +182,27 @@ type PickerSpec struct {
 	Placeholder string
 }
 
-// Picker shows `label  current ▾` collapsed, or the filter input over up to 5 matches.
+// Picker is one fixed row: `label  ‹ current ›  i/n`, plus the filter input while focused.
+// It never grows, so moving through a dialog does not change its height.
 func Picker(theme Theme, spec PickerSpec) []string {
-	if !spec.Focused || len(spec.Options) == 0 {
-		value := theme.StyleDim.Render(spec.Placeholder)
-		if spec.Current != "" && len(spec.Options) > 0 {
-			value = spec.Current + theme.StyleDim.Render(" ▾")
+	value := theme.StyleDim.Render(spec.Placeholder)
+	if len(spec.Options) > 0 {
+		selected := min(max(0, spec.Selected), len(spec.Options)-1)
+		current := spec.Current
+		if current == "" {
+			current = spec.Options[selected]
 		}
+		arrows := theme.StyleDim
 		if spec.Focused {
-			value = spec.Input + "  " + value
+			arrows = theme.StyleHeader
 		}
-		return []string{Field(theme, spec.Label, spec.Column, value, spec.Focused)}
+		value = arrows.Render("‹ ") + current + arrows.Render(" ›") +
+			theme.StyleDim.Render(fmt.Sprintf("  %d/%d", selected+1, len(spec.Options)))
 	}
-	lines := []string{Field(theme, spec.Label, spec.Column, spec.Input, true)}
-	indent := strings.Repeat(" ", spec.Column+2)
-	selected := min(max(0, spec.Selected), len(spec.Options)-1)
-	start, end := viewchrome.ListWindow(selected, len(spec.Options), pickerShown)
-	for i := start; i < end; i++ {
-		if i == selected {
-			lines = append(lines, indent+theme.StyleCursor.Render("▶ "+spec.Options[i]))
-			continue
-		}
-		lines = append(lines, indent+theme.StyleDim.Render("  "+spec.Options[i]))
+	if spec.Focused {
+		value += theme.StyleDim.Render("    filter: ") + spec.Input
 	}
-	if more := len(spec.Options) - (end - start); more > 0 {
-		lines = append(lines, indent+theme.StyleDim.Render(fmt.Sprintf("  +%d more", more)))
-	}
-	return lines
+	return []string{Field(theme, spec.Label, spec.Column, value, spec.Focused)}
 }
 
 // Choice is one fixed option: its key, label and the help shown while it is selected.

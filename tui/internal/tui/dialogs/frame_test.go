@@ -75,16 +75,15 @@ func TestFieldPairFallsBack(t *testing.T) {
 	}
 }
 
-func TestPickerListOnlyWhenFocused(t *testing.T) {
-	options := []string{"a", "b", "c", "d", "e", "f", "g"}
-	unfocused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Current: "b", Options: options, Selected: 1})
-	if len(unfocused) != 1 || !strings.HasSuffix(ansi.Strip(unfocused[0]), "b ▾") {
-		t.Fatalf("expected one collapsed line, got %q", unfocused)
+func TestPickerIsOneRow(t *testing.T) {
+	options := []string{"OSS", "Personal", "Work"}
+	unfocused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Current: "Work", Options: options, Selected: 2})
+	if len(unfocused) != 1 || !strings.Contains(ansi.Strip(unfocused[0]), "‹ Work ›  3/3") || strings.Contains(ansi.Strip(unfocused[0]), "filter") {
+		t.Fatalf("expected one collapsed row, got %q", unfocused)
 	}
-	focused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Focused: true, Input: "flt", Current: "b", Options: options, Selected: 1})
-	text := ansi.Strip(strings.Join(focused, "\n"))
-	if len(focused) != 7 || !strings.Contains(text, "▶ b") || !strings.Contains(text, "+2 more") || !strings.Contains(text, "flt") {
-		t.Fatalf("expected input, 5 options and +2 more, got\n%s", text)
+	focused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Focused: true, Input: "wo", Current: "Work", Options: options, Selected: 2})
+	if len(focused) != 1 || !strings.Contains(ansi.Strip(focused[0]), "‹ Work ›  3/3") || !strings.Contains(ansi.Strip(focused[0]), "filter: wo") {
+		t.Fatalf("expected one row with the filter, got %q", focused)
 	}
 }
 
