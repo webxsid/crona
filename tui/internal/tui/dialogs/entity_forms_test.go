@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 
 	"github.com/charmbracelet/x/ansi"
@@ -112,5 +113,39 @@ func TestNewHabitShortTerminal(t *testing.T) {
 	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
 	if !strings.Contains(out, "Target") || !strings.Contains(out, "esc cancel") {
 		t.Fatalf("expected Target and esc cancel visible:\n%s", out)
+	}
+}
+
+func TestRemainingEntityForms(t *testing.T) {
+	note := controllerpkg.OpenIssueStatusNote(controllerpkg.State{}, 1, 2, "blocked", "Why is it blocked?", true)
+	note.ViewName = "Fix alerts"
+	cases := []formCase{
+		{"issue_status_note", note, "Block Issue", "Fix alerts", 1},
+		{"create_checkin", controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"), "New Check-In", "", 6},
+		{"edit_checkin", controllerpkg.OpenEditCheckIn(controllerpkg.State{}, nil, "2026-10-18"), "Edit Check-In", "", 6},
+		{"complete_habit", controllerpkg.OpenHabitCompletion(controllerpkg.State{}, 1, "2026-10-18", nil, nil), "Habit Log", "2026-10-18", 2},
+		{"create_alert_reminder", controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), "Add Check-In Reminder", "", 2},
+		{"edit_alert_reminder", controllerpkg.OpenEditAlertReminder(controllerpkg.State{}, sharedtypes.AlertReminder{TimeHHMM: "20:00"}), "Edit Check-In Reminder", "", 2},
+	}
+	for _, c := range cases {
+		assertFormChrome(t, c)
+		assertHeightStable(t, c)
+	}
+}
+
+func TestCheckInShortTerminal(t *testing.T) {
+	state := sized(controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"), 60, 20)
+	state.FocusIdx = 5
+	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
+	if !strings.Contains(out, "Notes") || !strings.Contains(out, "esc cancel") {
+		t.Fatalf("expected Notes and esc cancel visible:\n%s", out)
+	}
+}
+
+func TestEntityFormErrorVisible(t *testing.T) {
+	state := sized(controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"), 60, 20)
+	state.ErrorMessage = "Mood must be 1-5"
+	if out := ansi.Strip(Render(testTheme(), state)); !strings.Contains(out, "Mood must be 1-5") {
+		t.Fatalf("expected the error visible:\n%s", out)
 	}
 }

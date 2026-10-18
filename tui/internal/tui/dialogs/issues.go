@@ -65,23 +65,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 		}
 		return modal(theme, state.Width, 64, theme.ColorYellow, rows)
 	case "issue_status_note":
-		title := map[string]string{"blocked": "Block Issue", "in_review": "Send To Review", "done": "Complete Issue", "abandoned": "Abandon Issue"}[state.IssueStatus]
-		if title == "" {
-			title = "Status Note"
-		}
-		rows := []string{
-			theme.StylePaneTitle.Render(title),
-			"",
-			theme.StyleDim.Render(state.StatusLabel),
-			state.Inputs[0].View(),
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[tab] next   "+dialogSubmitHint(state, "set")+"   [esc] cancel",
-		)
-		return modal(theme, state.Width, 60, theme.ColorYellow, rows)
+		return renderStatusNote(theme, state)
 	default:
 		return ""
 	}
@@ -216,6 +200,25 @@ func renderEditIssue(theme Theme, state controllerpkg.State) string {
 				Field(theme, "Due", dueColumn, bareInput(state.Inputs[2], half, "YYYY-MM-DD"), state.FocusIdx == 3),
 				2, 3, inner,
 			),
+		},
+	})
+}
+
+// renderStatusNote draws the note asked for when an issue changes status; its prompt
+// (StatusLabel) is the placeholder, since prompts are too long for the label column.
+func renderStatusNote(theme Theme, state controllerpkg.State) string {
+	title := map[string]string{"blocked": "Block Issue", "in_review": "Send To Review", "done": "Complete Issue", "abandoned": "Abandon Issue"}[state.IssueStatus]
+	if title == "" {
+		title = "Status Note"
+	}
+	inner := formInner(state.Width)
+	full, _ := formColumns(inner, len("Note"))
+	return renderForm(theme, state, FormSpec{
+		Title: title, Context: state.ViewName, Border: theme.ColorYellow, FocusCount: 1,
+		Primary: plainHint(dialogSubmitHint(state, "set")),
+		Hints:   func(int) []string { return []string{"tab next"} },
+		Rows: []FormRow{
+			fieldRow(0, Field(theme, "Note", len("Note"), bareInput(state.Inputs[0], full, fallback(state.StatusLabel, "optional")), true)),
 		},
 	})
 }

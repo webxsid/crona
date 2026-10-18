@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -71,40 +70,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, "[←/→/↑/↓] move   [,/.] month   [g] today   [enter] choose   [esc] back")
 		return modal(theme, state.Width, 100, theme.ColorCyan, rows)
 	case "create_checkin", "edit_checkin":
-		title := "New Check-In"
-		border := theme.ColorCyan
-		hint := "[tab] next field   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
-		if state.Kind == "edit_checkin" {
-			title = "Edit Check-In"
-			border = theme.ColorYellow
-		}
-		rows := []string{
-			theme.StylePaneTitle.Render(title),
-			"",
-			theme.StyleDim.Render("Date"),
-			theme.StyleHeader.Render(displayDate),
-			"",
-			theme.StyleDim.Render("Mood"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Energy"),
-			state.Inputs[1].View(),
-			"",
-			theme.StyleDim.Render("Sleep Duration"),
-			state.Inputs[2].View(),
-			"",
-			theme.StyleDim.Render("Sleep Score"),
-			state.Inputs[3].View(),
-			"",
-			theme.StyleDim.Render("Screen Time"),
-			state.Inputs[4].View(),
-			"",
-			theme.StyleDim.Render("Notes"),
-			state.Inputs[5].View(),
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, hint)
-		return modal(theme, state.Width, 68, border, rows)
+		return renderCheckInForm(theme, state, displayDate)
 	case "export_report", "export_summary_period":
 		rows := []string{
 			theme.StylePaneTitle.Render("Export Report"),
@@ -294,37 +260,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 	case "onboarding":
 		return renderOnboardingScreen(theme, state)
 	case "create_alert_reminder", "edit_alert_reminder":
-		title := "Add Check-In Reminder"
-		if state.ReminderKind == sharedtypes.AlertReminderKindDailyPlan {
-			title = "Add Plan-the-Day Reminder"
-		}
-		border := theme.ColorCyan
-		if state.Kind == "edit_alert_reminder" {
-			title = "Edit Check-In Reminder"
-			if state.ReminderKind == sharedtypes.AlertReminderKindDailyPlan {
-				title = "Edit Plan-the-Day Reminder"
-			}
-			border = theme.ColorYellow
-		}
-		rows := []string{
-			theme.StylePaneTitle.Render(title),
-			"",
-			theme.StyleDim.Render("Schedule"),
-			dialogInputView(state, 0),
-			"",
-			theme.StyleDim.Render("Time"),
-			dialogInputView(state, 1),
-			"",
-			theme.StyleDim.Render("Use daily, weekdays, or weekday lists like mon,wed,fri."),
-			theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00."),
-		}
-		rows = appendDialogFooter(
-			theme,
-			state,
-			rows,
-			"[tab] next field   "+dialogSubmitHint(state, "save")+"   [esc] cancel",
-		)
-		return modal(theme, state.Width, 72, border, rows)
+		return renderReminderForm(theme, state)
 	case "edit_frozen_streaks":
 		rows := []string{
 			theme.StylePaneTitle.Render("Frozen Streaks"),
@@ -493,32 +429,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, footer)
 		return modal(theme, state.Width, 68, theme.ColorCyan, rows)
 	case "complete_habit":
-		title := "Habit Log"
-		if strings.TrimSpace(state.ViewTitle) != "" {
-			title = state.ViewTitle
-		}
-		rows := []string{
-			theme.StylePaneTitle.Render(title),
-			"",
-			theme.StyleDim.Render("Date"),
-			theme.StyleHeader.Render(state.CheckInDate),
-			"",
-			theme.StyleDim.Render("Duration (Optional)"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Notes (Optional)"),
-			state.Description.View(),
-			"",
-		}
-		hint := "[tab] next   " + dialogSubmitHint(state, "save") + "   [esc] cancel"
-		if state.FocusIdx == state.DescriptionIndex {
-			hint = "[enter] newline in notes   [tab] next   " + dialogSubmitHint(
-				state,
-				"save",
-			) + "   [esc] cancel"
-		}
-		rows = appendDialogFooter(theme, state, rows, hint)
-		return modal(theme, state.Width, 68, theme.ColorGreen, rows)
+		return renderHabitLogForm(theme, state)
 	default:
 		return ""
 	}
