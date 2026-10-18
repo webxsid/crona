@@ -8,6 +8,7 @@ import (
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -29,6 +30,8 @@ func selectList(theme Theme, items []string, cursor int) []string {
 type listDialog struct {
 	title, context string
 	danger         bool
+	border         lipgloss.Color
+	esc            string
 	body           []string
 	focus          int
 	primary        string
@@ -37,9 +40,13 @@ type listDialog struct {
 
 func renderListDialog(theme Theme, state controllerpkg.State, d listDialog) string {
 	inner := FrameInner(state.Width, d.body)
+	esc := d.esc
+	if esc == "" {
+		esc = "esc cancel"
+	}
 	return Frame(theme, FrameSpec{
-		Title: d.title, Context: d.context, Danger: d.danger, Body: d.body,
-		Footer:      withError(theme, state, Footer(theme, d.primary, d.hints, inner)),
+		Title: d.title, Context: d.context, Danger: d.danger, Border: d.border, Body: d.body,
+		Footer:      withError(theme, state, footerWithEsc(theme, d.primary, d.hints, esc, inner)),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: d.focus, Inner: inner,
 	})
 }

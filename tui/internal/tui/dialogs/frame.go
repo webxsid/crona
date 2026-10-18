@@ -240,7 +240,22 @@ func Choices(theme Theme, choices []Choice, selected, inner int) []string {
 
 // Footer packs the primary action, the other hints and `esc cancel` into whole-hint lines.
 func Footer(theme Theme, primary string, hints []string, inner int) []string {
-	all := append(append([]string{primary}, hints...), "esc cancel")
+	return footerWithEsc(theme, primary, hints, "esc cancel", inner)
+}
+
+// footerWithEsc is Footer with its own closing hint, such as `esc close` on a detail view;
+// an empty primary leaves just the hints.
+func footerWithEsc(theme Theme, primary string, hints []string, esc string, inner int) []string {
+	if primary == "" && len(hints) > 0 {
+		primary, hints = hints[0], hints[1:]
+	} else if primary == "" {
+		primary = esc
+		esc = ""
+	}
+	all := append([]string{primary}, hints...)
+	if esc != "" {
+		all = append(all, esc)
+	}
 	lines := viewchrome.PackHints(all, inner)
 	for i, line := range lines {
 		if i == 0 && strings.HasPrefix(line, primary) {
