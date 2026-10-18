@@ -47,7 +47,7 @@ func TestRollupBottomRowDropsDateKeys(t *testing.T) {
 func TestHelpSheetListsNavigationKeys(t *testing.T) {
 	m := Model{view: ViewDaily, pane: PaneIssues, cursor: map[Pane]int{}, filters: map[Pane]string{}}
 	body := ansi.Strip(m.openHelpDialog().dialogState().ViewBody)
-	for _, want := range []string{"Navigation", "[1-5] tabs", "[[/]] sub-tabs", "[,/.] date", "[g] today", "[S] day", "[C] calendar"} {
+	for _, want := range []string{"Navigation", "[1-5] tabs", "[[/]] sub-tabs", "[,/.] date", "[g] today", "[S] day summary", "[C] calendar"} {
 		if !strings.Contains(body, want) {
 			t.Fatalf("expected the help sheet to list %q, got %q", want, body)
 		}

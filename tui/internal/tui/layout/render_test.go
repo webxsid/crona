@@ -375,7 +375,7 @@ func TestTabLineContextRepoOnly(t *testing.T) {
 }
 
 func TestNarrowDailyDateRowOffersDayKey(t *testing.T) {
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; !strings.Contains(line, "[S] day") {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; !strings.HasPrefix(line, " [S] day summary") {
 		t.Fatalf("expected [S] day on the date row without a detail pane, got %q", line)
 	}
 	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(line, "[S]") {
@@ -385,5 +385,25 @@ func TestNarrowDailyDateRowOffersDayKey(t *testing.T) {
 	away.ContentState.HistoricalAwayDate = "2026-05-27"
 	if line := plainLines(Render(away))[2]; strings.Contains(line, "[S]") {
 		t.Fatalf("expected no [S] on a historical away date, got %q", line)
+	}
+}
+
+func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
+	for view, calendar := range map[uistate.View]string{uistate.ViewDaily: "[C] calendar", uistate.ViewRollup: "[E] calendar"} {
+		line := plainLines(Render(datedShellState(view, 160, 36)))[2]
+		at := -1
+		for _, want := range []string{calendar, "[g] today", "[,] prev", "2026-05-27", "next [.]"} {
+			next := strings.Index(line, want)
+			if next <= at {
+				t.Fatalf("%s: expected %q after the previous key, got %q", view, want, line)
+			}
+			at = next
+		}
+		if !strings.HasSuffix(line, "next [.] ") {
+			t.Fatalf("%s: expected the navigation one cell from the right edge, got %q", view, line)
+		}
+	}
+	if line := plainLines(Render(datedShellState(uistate.ViewRollup, 160, 36)))[2]; !strings.HasPrefix(line, " [+/-/0] window") {
+		t.Fatalf("expected the window key at the left, got %q", line)
 	}
 }

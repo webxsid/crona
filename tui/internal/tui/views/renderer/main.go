@@ -86,19 +86,26 @@ func DateNav(theme types.Theme, state types.ContentState, room int) string {
 	return ""
 }
 
-// DateRowKeys are the view's own date keys, shown at the right end of the date row.
+// DateCalendarKey opens the view's date picker; it leads the date navigation.
+func DateCalendarKey(theme types.Theme, state types.ContentState) string {
+	switch state.View {
+	case "daily":
+		return viewchrome.KeyHint(theme, "C", "calendar")
+	case "rollup":
+		return viewchrome.KeyHint(theme, "E", "calendar")
+	}
+	return ""
+}
+
+// DateRowKeys are the view's other date-row keys, shown at the left end of the date row.
 func DateRowKeys(theme types.Theme, state types.ContentState) []string {
 	switch state.View {
 	case "daily":
-		keys := []string{viewchrome.KeyHint(theme, "C", "calendar")}
 		// Without a detail pane, the day summary's key sits here instead.
 		if state.HistoricalAwayDate == "" && viewhelpers.ClassFor(state.Width) != viewhelpers.WidthWide {
-			keys = append([]string{viewchrome.KeyHint(theme, "S", "day")}, keys...)
+			return []string{viewchrome.KeyHint(theme, "S", "day summary")}
 		}
-		return keys
-	case "rollup":
-		return []string{viewchrome.KeyHint(theme, "E", "calendar"), viewchrome.KeyHint(theme, "+/-/0", "window")}
-	case "momentum", "wellbeing":
+	case "rollup", "momentum", "wellbeing":
 		return []string{viewchrome.KeyHint(theme, "+/-/0", "window")}
 	}
 	return nil

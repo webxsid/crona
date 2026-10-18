@@ -242,14 +242,16 @@ func renderDateRow(state State) string {
 	if !viewrenderer.HasDateRow(state.ContentState) {
 		return ""
 	}
+	// Navigation sits at the right, over the day strip's week, led by the calendar key; the
+	// view's other keys sit at the left and give way first, then the calendar key.
 	theme := ViewTheme()
-	full := viewrenderer.DateNav(theme, state.ContentState, state.Width)
-	keys := viewchrome.FitHints(viewrenderer.DateRowKeys(theme, state.ContentState), state.Width-ansi.StringWidth(full)-6)
-	nav := viewrenderer.DateNav(theme, state.ContentState, state.Width-ansi.StringWidth(keys)-4)
-	if keys == "" {
-		return " " + nav
+	nav := viewrenderer.DateNav(theme, state.ContentState, state.Width-2)
+	if calendar := viewrenderer.DateCalendarKey(theme, state.ContentState); calendar != "" &&
+		ansi.StringWidth(calendar)+2+ansi.StringWidth(nav) <= state.Width-2 {
+		nav = calendar + "  " + nav
 	}
-	return joinEnds(" "+nav, keys+" ", state.Width)
+	keys := viewchrome.FitHints(viewrenderer.DateRowKeys(theme, state.ContentState), state.Width-ansi.StringWidth(nav)-5)
+	return joinEnds(" "+keys, nav+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {

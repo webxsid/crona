@@ -37,9 +37,9 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	if lines == nil {
 		lines = []string{theme.StyleDim.Render("Nothing selected")}
 	}
-	dayKey := viewchrome.KeyHint(theme, "S", "day")
+	dayKey := viewchrome.KeyHint(theme, "S", "day summary")
 	if state.DailyDetailDay {
-		dayKey = viewchrome.KeyHint(theme, "S", "selection")
+		dayKey = viewchrome.KeyHint(theme, "S", "show selection")
 	}
 	titleStyle := theme.StyleHeader.Bold(true)
 	return viewchrome.RenderSection(theme, viewchrome.Section{

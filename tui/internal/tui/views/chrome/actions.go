@@ -66,7 +66,7 @@ func DateActions(theme Theme, view string) []string {
 	switch view {
 	case "daily":
 		return append(actions,
-			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day"),
+			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day summary"),
 			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
 		)
 	case "rollup":

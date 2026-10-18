@@ -92,12 +92,12 @@ func TestHabitsPaneOffersNewHabitAndActionLine(t *testing.T) {
 
 func TestDetailTitleOffersDayKey(t *testing.T) {
 	state := detailState()
-	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] day") {
-		t.Fatalf("expected [S] day in the detail title row, got %q", rendered)
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] day summary") {
+		t.Fatalf("expected [S] day summary in the detail title row, got %q", rendered)
 	}
 	state.DailyDetailDay = true
-	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] selection") {
-		t.Fatalf("expected [S] selection while the day shows, got %q", rendered)
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] show selection") {
+		t.Fatalf("expected [S] show selection while the day shows, got %q", rendered)
 	}
 }
 
