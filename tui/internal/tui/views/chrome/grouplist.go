@@ -48,7 +48,7 @@ func HelpLines(theme Theme, help RowHelp, current string, width int) []string {
 	width = max(1, width)
 	lines := []string{}
 	if help.Description != "" {
-		lines = append(lines, strings.Split(ansi.Wordwrap(help.Description, width, ""), "\n")...)
+		lines = append(lines, strings.Split(ansi.Wrap(help.Description, width, ""), "\n")...)
 		lines = append(lines, "")
 	}
 	if len(help.Options) > 0 {
@@ -59,7 +59,7 @@ func HelpLines(theme Theme, help RowHelp, current string, width int) []string {
 			}
 			lines = append(lines, mark+ansi.Truncate(option, max(1, width-2), "…"))
 		}
-	} else {
+	} else if current != "" {
 		lines = append(lines, strings.Split(ansi.Hardwrap(current, width, false), "\n")...)
 	}
 	if len(help.Keys) > 0 {

@@ -16,88 +16,74 @@ func newView() viewui.View {
 		Panes: []viewui.Pane{
 			viewui.NewRenderPane("config", true, renderView),
 		},
+		RenderFunc: renderView,
 	}
 }
 
+// renderView lays Config out as a grouped list beside the selected item's detail.
 func renderView(theme types.Theme, state types.ContentState) string {
-	active := state.Pane == "config"
-	cur := state.Cursors["config"]
-	items := configItems(state.ExportAssets)
-	indices := viewhelpers.FilteredStrings(items, state.Filters["config"])
-	total := len(indices)
-	lines := []string{
-		theme.StylePaneTitle.Render("Report Config"),
-		viewchrome.RenderPaneActionLine(
-			theme,
-			viewchrome.ContextualActions(
-				theme,
-				viewchrome.ActionsState{View: state.View, Pane: state.Pane},
-			),
-			state.Width-6,
-		),
-	}
-	if state.ExportAssets == nil {
-		lines = append(lines, theme.StyleDim.Render("Loading export assets..."))
-		return viewchrome.RenderPaneBox(
-			theme,
-			active,
-			state.Width,
-			state.Height,
-			viewhelpers.StringsJoin(lines),
-		)
-	}
-	if total == 0 {
-		lines = append(lines, theme.StyleDim.Render("No config items match the current filter"))
-		return viewchrome.RenderPaneBox(
-			theme,
-			active,
-			state.Width,
-			state.Height,
-			viewhelpers.StringsJoin(lines),
-		)
-	}
-	sections := configitems.BuildSections(state.ExportAssets)
-	sectionByIndex := make(map[int]string, len(items))
-	rawIdx := 0
-	for _, section := range sections {
-		for range section.Items {
-			sectionByIndex[rawIdx] = section.Title
-			rawIdx++
+	indices := viewhelpers.FilteredStrings(configItems(state.ExportAssets), state.Filters["config"])
+	cursor := min(max(0, state.Cursors["config"]), max(0, len(indices)-1))
+	listWidth, detailWidth := viewchrome.LogPaneWidths(state.Width)
+	items, groups := []configitems.Item{}, []string{}
+	for _, section := range configitems.BuildSections(state.ExportAssets) {
+		for _, item := range section.Items {
+			items = append(items, item)
+			groups = append(groups, section.Title)
 		}
 	}
-	visibleRows, selectedVisibleIdx := groupedConfigRows(indices, cur, sectionByIndex, items)
-	inner := viewchrome.RemainingPaneHeight(state.Height, lines)
-	start, end := viewchrome.ListWindow(selectedVisibleIdx, len(visibleRows), inner)
-	if start > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
-	}
-	for i := start; i < end; i++ {
-		row := visibleRows[i]
-		if row.Header {
-			lines = append(lines, theme.StyleHeader.Render(strings.ToUpper(row.Text)))
-			continue
+
+	var body []string
+	switch {
+	case state.ExportAssets == nil:
+		body = []string{theme.StyleDim.Render("Loading…")}
+	case len(indices) == 0:
+		body = []string{theme.StyleDim.Render("No config items match the current filter")}
+	default:
+		labels := make([]string, 0, len(indices))
+		for _, idx := range indices {
+			labels = append(labels, items[idx].Label)
 		}
-		lines = append(
-			lines,
-			viewchrome.RenderPaneRowStyled(
-				theme,
-				row.SelectableAt,
-				cur,
-				active,
-				row.Text,
-				nil,
-				state.Width,
-			),
-		)
+		column := viewchrome.LabelColumn(labels, 24)
+		rows := make([]viewchrome.GroupRow, 0, len(indices))
+		for _, idx := range indices {
+			rows = append(rows, viewchrome.GroupRow{
+				Group: groups[idx], Line: fmt.Sprintf("%-*s  %s", column, items[idx].Label, items[idx].Value),
+			})
+		}
+		body = viewchrome.GroupList(theme, rows, cursor, listWidth-1, state.Height-1)
 	}
-	if remaining := len(visibleRows) - end; remaining > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
+	list := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: "Config", Meta: viewchrome.KeyHint(theme, "R", "rescan tools"), Focused: true,
+		Width: listWidth, Height: state.Height, Lines: body,
+	})
+	if detailWidth == 0 {
+		return list
 	}
-	return viewchrome.RenderPaneBox(
-		theme,
-		active,
-		state.Width,
-		state.Height,
-		viewhelpers.StringsJoin(lines),
-	)
+	title, lines := "Detail", []string{}
+	if state.ExportAssets != nil && len(indices) > 0 {
+		item := items[indices[cursor]]
+		title = item.Label
+		lines = viewchrome.HelpLines(theme, viewchrome.RowHelp{
+			Description: strings.TrimSpace(item.DetailBody), Keys: itemKeys(item),
+		}, "", detailWidth-2)
+	}
+	detail := viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: title, Width: detailWidth, Height: state.Height, Lines: lines,
+	})
+	return viewchrome.JoinColumns(theme, state.Height, list, detail)
+}
+
+func itemKeys(item configitems.Item) []string {
+	keys := []string{}
+	if item.Editable {
+		keys = append(keys, "[e] edit or open")
+	}
+	if item.Mutable {
+		keys = append(keys, "[c/space] change")
+	}
+	if item.Resettable {
+		keys = append(keys, "[r] reset")
+	}
+	return keys
 }

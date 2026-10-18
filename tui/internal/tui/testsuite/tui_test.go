@@ -940,7 +940,7 @@ func TestConfigViewShowsSeparateICSExportDirectory(t *testing.T) {
 		},
 	}
 	rendered := support.RenderConfig(state)
-	for _, want := range []string{"DIRECTORIES", "Reports directory", "ICS export directory", "/tmp/calendar", "RUNTIME", "PDF renderer"} {
+	for _, want := range []string{"── Directories", "Reports directory", "ICS export directory", "/tmp/calendar", "── Runtime", "PDF renderer"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected config view to contain %q, got %q", want, rendered)
 		}
