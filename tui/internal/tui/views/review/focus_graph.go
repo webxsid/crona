@@ -8,161 +8,81 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/tui/views/charts"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-type focusCell struct {
-	bar     bool
-	line    bool
-	lineTop bool
+// hourSteps are the hour tick spacings the focus axis picks from.
+var hourSteps = []float64{1, 2, 3, 4, 6, 8, 12, 24}
+
+// hourAxis rounds the busiest day up to the axis top, with at most 4 even steps above 0.
+func hourAxis(hours float64) (top, step float64) {
+	for _, step = range hourSteps {
+		if math.Ceil(hours/step) <= 4 {
+			break
+		}
+	}
+	return max(1, math.Ceil(hours/step)) * step, step
 }
 
-func renderFocusGraph(
-	theme types.Theme,
-	days []api.DailyMetricsDay,
-	width int,
-	height int,
-) []string {
-	if len(days) == 0 || width < 24 || height < 6 {
-		return []string{theme.StyleDim.Render("No focus data")}
-	}
-
-	yLabelWidth := 5
-	chartWidth := max(12, width-yLabelWidth-2)
-	chartHeight := max(4, height-2)
-
-	estimated := make([]float64, 0, len(days))
-	actual := make([]float64, 0, len(days))
-	maxValue := 1.0
+// renderFocusBars draws each day's logged hours as a braille bar in its slot and the day's
+// estimate as a dotted tick across it, at exactly rows lines with hour ticks in the gutter.
+func renderFocusBars(theme types.Theme, days []api.DailyMetricsDay, starts []int, barWidth, width, rows int) []string {
+	busiest := 0.0
 	for _, day := range days {
-		est := float64(day.TotalEstimatedMinutes) / 60.0
-		act := float64(day.WorkedSeconds) / 3600.0
-		estimated = append(estimated, est)
-		actual = append(actual, act)
-		maxValue = math.Max(maxValue, math.Max(est, act))
+		busiest = max(busiest, float64(day.WorkedSeconds)/3600, float64(day.TotalEstimatedMinutes)/60)
 	}
-	maxAxis := math.Ceil(maxValue)
-	if maxAxis < 1 {
-		maxAxis = 1
-	}
+	top, step := hourAxis(busiest)
+	dots := func(hours float64) int { return int(math.Round(hours / top * float64(rows*4))) }
 
-	grid := make([][]focusCell, chartHeight)
-	for y := range grid {
-		grid[y] = make([]focusCell, chartWidth)
-	}
-
-	xPositions := focusXPositions(len(days), chartWidth)
-	for i, value := range actual {
-		x := xPositions[i]
-		row := focusValueRow(value, maxAxis, chartHeight)
-		for y := row; y < chartHeight; y++ {
-			grid[y][x].bar = true
+	grid := make([][]string, rows)
+	for row := range grid {
+		grid[row] = make([]string, width)
+		for col := range grid[row] {
+			grid[row][col] = " "
 		}
 	}
-	for i, value := range estimated {
-		x := xPositions[i]
-		row := focusValueRow(value, maxAxis, chartHeight)
-		grid[row][x].line = true
-		grid[row][x].lineTop = true
-		if x > 0 {
-			grid[row][x-1].line = true
+	ramp := viewhelpers.GradientRamp(theme.ColorDullGreen, theme.ColorCyan, rows)
+	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true)
+	for i, day := range days {
+		if i >= len(starts) {
+			break
 		}
-	}
-
-	tickRows, tickLabels := focusTicks(maxAxis, chartHeight)
-	lines := make([]string, 0, chartHeight+2)
-	barRamp := viewhelpers.GradientRamp(theme.ColorDullGreen, theme.ColorCyan, chartHeight)
-	lineStyle := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true)
-	axisStyle := lipgloss.NewStyle().Foreground(theme.ColorDim)
-
-	for row := range chartHeight {
-		label := "    "
-		if tick, ok := tickLabels[row]; ok {
-			label = fmt.Sprintf("%4s", tick)
-		}
-		var b strings.Builder
-		for col := range chartWidth {
-			cell := grid[row][col]
-			switch {
-			case cell.lineTop:
-				b.WriteString(lineStyle.Render("─"))
-			case cell.line:
-				b.WriteString(lineStyle.Render("╌"))
-			case cell.bar:
-				b.WriteString(
-					lipgloss.NewStyle().
-						Foreground(viewhelpers.GradientColorAt(barRamp, row)).
-						Render("█"),
-				)
-			case tickRows[row]:
-				b.WriteString(axisStyle.Render("┈"))
-			default:
-				b.WriteRune(' ')
+		height := min(rows*4, dots(float64(day.WorkedSeconds)/3600))
+		for row := range rows {
+			if fill := height - (rows-1-row)*4; fill > 0 {
+				style := lipgloss.NewStyle().Foreground(viewhelpers.GradientColorAt(ramp, row))
+				for col := starts[i]; col < starts[i]+barWidth; col++ {
+					grid[row][col] = style.Render(charts.Column(fill))
+				}
 			}
 		}
-		lines = append(lines, fmt.Sprintf("%s │%s", theme.StyleDim.Render(label), b.String()))
+		if day.TotalEstimatedMinutes > 0 {
+			level := min(rows*4, max(1, dots(float64(day.TotalEstimatedMinutes)/60)))
+			row := rows - 1 - (level-1)/4
+			for col := max(0, starts[i]-1); col < min(width, starts[i]+barWidth+1); col++ {
+				grid[row][col] = estimate.Render(charts.DotRow((level - 1) % 4))
+			}
+		}
 	}
-	lines = append(
-		lines,
-		fmt.Sprintf("%s └%s", strings.Repeat(" ", yLabelWidth), strings.Repeat("─", chartWidth)),
-	)
-	lines = append(lines, renderFocusXAxis(theme, days, yLabelWidth+2, chartWidth, xPositions))
+
+	labels := map[int]string{}
+	for value := 0.0; value <= top; value += step {
+		labels[rows-1-int(math.Round(value/top*float64(rows-1)))] = fmt.Sprintf("%gh", value)
+	}
+	lines := make([]string, 0, rows)
+	for row := range rows {
+		lines = append(lines, gutterLine(theme, labels[row], strings.Join(grid[row], "")))
+	}
 	return lines
 }
 
-func focusXPositions(points int, chartWidth int) []int {
-	out := make([]int, points)
-	if points == 1 {
-		out[0] = min(chartWidth-1, chartWidth/2)
-		return out
-	}
-	for i := range points {
-		out[i] = int(math.Round(float64(i) * float64(chartWidth-1) / float64(points-1)))
-	}
-	return out
-}
-
-func focusValueRow(value, maxAxis float64, chartHeight int) int {
-	if maxAxis <= 0 {
-		return chartHeight - 1
-	}
-	row := chartHeight - 1 - int(math.Round(clampFocus(value/maxAxis)*float64(chartHeight-1)))
-	if row < 0 {
-		return 0
-	}
-	if row >= chartHeight {
-		return chartHeight - 1
-	}
-	return row
-}
-
-func focusTicks(maxAxis float64, chartHeight int) (map[int]bool, map[int]string) {
-	rows := map[int]bool{}
-	labels := map[int]string{}
-	steps := min(chartHeight, 5)
-	steps = max(steps, 2)
-	seen := map[int]bool{}
-	for i := 0; i < steps; i++ {
-		value := maxAxis * (1 - float64(i)/float64(steps-1))
-		row := int(math.Round(float64(i) * float64(chartHeight-1) / float64(steps-1)))
-
-		row = min(chartHeight-1, max(0, row))
-		if seen[row] {
-			continue
-		}
-		seen[row] = true
-		rows[row] = true
-		labels[row] = fmt.Sprintf("%.0fh", value)
-	}
-	return rows, labels
-}
-
 func renderFocusLegend(theme types.Theme, state types.ContentState) string {
-	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render("╌")
-	actual := lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render("█")
+	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render(charts.DotRow(1))
+	actual := lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render(charts.Column(4))
 	estimateText := "estimated -"
 	loggedText := "logged -"
 	if state.GoalProgress != nil {
@@ -172,42 +92,6 @@ func renderFocusLegend(theme types.Theme, state types.ContentState) string {
 		loggedText = "logged " + compactHoursFromSeconds(state.GoalProgress.TotalActualSeconds)
 	}
 	return fmt.Sprintf("%s %s   %s %s", estimate, estimateText, actual, loggedText)
-}
-
-func renderFocusXAxis(
-	theme types.Theme,
-	days []api.DailyMetricsDay,
-	leftPad int,
-	chartWidth int,
-	xPositions []int,
-) string {
-	if len(days) == 0 {
-		return ""
-	}
-	runes := make([]rune, chartWidth)
-	for i := range runes {
-		runes[i] = ' '
-	}
-	samples := []int{0}
-	if len(days) > 1 {
-		samples = append(samples, len(days)/3, (2*len(days))/3, len(days)-1)
-	}
-	seen := map[int]bool{}
-	for _, idx := range samples {
-		if idx < 0 || idx >= len(days) || seen[idx] {
-			continue
-		}
-		seen[idx] = true
-		label := shortFocusDate(days[idx].Date)
-		x := xPositions[idx]
-		start := max(0, min(x-len(label)/2, chartWidth-len(label)))
-		for i, r := range label {
-			if start+i >= 0 && start+i < len(runes) {
-				runes[start+i] = r
-			}
-		}
-	}
-	return strings.Repeat(" ", leftPad) + theme.StyleDim.Render(string(runes))
 }
 
 func renderFocusSubtitle(state types.ContentState, width int) string {
@@ -278,16 +162,6 @@ func shortFocusDate(date string) string {
 		return date
 	}
 	return parsed.Format("Jan 2")
-}
-
-func clampFocus(value float64) float64 {
-	if value < 0 {
-		return 0
-	}
-	if value > 1 {
-		return 1
-	}
-	return value
 }
 
 func truncateFocusLine(value string, width int) string {

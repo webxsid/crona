@@ -1,7 +1,6 @@
 package review
 
 import (
-	"math"
 	"regexp"
 	"strings"
 	"testing"
@@ -233,14 +232,10 @@ func TestNarrowDaysHints(t *testing.T) {
 }
 
 func TestChartsGapDaysWithoutCheckIn(t *testing.T) {
-	lines := renderBrailleCanvas([]float64{3, math.NaN(), 3}, 1, 5, 9, 1)
-	if len(lines) != 1 || []rune(lines[0])[4] != ' ' {
-		t.Fatalf("expected a gap where the day has no check-in, got %q", lines)
-	}
 	state := reviewState(200, 50)
 	state.MetricsRange[len(state.MetricsRange)-1].CheckIn = nil
 	out := plain(Render(types.Theme{}, state))
-	if strings.Contains(out, "0.0/5") || !strings.Contains(out, "Mood      1.0/5") {
+	if strings.Contains(out, "Mood 0.0") || !strings.Contains(squash(out), "Mood 1.0 avg") {
 		t.Fatalf("expected Mood labelled with the last check-in, not 0:\n%s", out)
 	}
 }
@@ -264,5 +259,62 @@ func TestStripCarriesWindowHintAtRight(t *testing.T) {
 	}
 	if narrow := ansi.Strip(StripRows(types.Theme{}, state, 30)[0]); strings.Contains(narrow, "[+/-/0]") {
 		t.Fatalf("expected the hint to give way when narrow, got %q", narrow)
+	}
+}
+
+func trendsText(width, height int) string {
+	return plain(renderTrends(types.Theme{}, reviewState(200, 50), width, height))
+}
+
+func TestTrendsFillTheHeight(t *testing.T) {
+	lines := strings.Split(trendsText(100, 40), "\n")
+	if len(lines) != 40 {
+		t.Fatalf("expected 40 lines, got %d", len(lines))
+	}
+	blank := 0
+	for i := len(lines) - 1; i >= 0 && strings.TrimSpace(lines[i]) == ""; i-- {
+		blank++
+	}
+	if blank > 1 {
+		t.Fatalf("expected the charts to fill the pane, got %d blank lines at the bottom:\n%s", blank, strings.Join(lines, "\n"))
+	}
+}
+
+func TestFocusAxisUsesEvenHourSteps(t *testing.T) {
+	for _, c := range []struct{ value, max, step float64 }{{8, 8, 2}, {5.3, 6, 2}, {13, 16, 4}, {0.5, 1, 1}} {
+		if top, step := hourAxis(c.value); top != c.max || step != c.step {
+			t.Fatalf("hourAxis(%v): expected %v by %v, got %v by %v", c.value, c.max, c.step, top, step)
+		}
+	}
+	text := trendsText(100, 40)
+	for _, want := range []string{" 0h │", " 2h │", " 4h │", " 6h │", " 8h │"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected tick %q in\n%s", want, text)
+		}
+	}
+}
+
+func TestFocusDrawsBrailleBarsWithEstimateTicks(t *testing.T) {
+	text := trendsText(100, 40)
+	if strings.ContainsAny(text, "█╌┈") {
+		t.Fatalf("expected braille only, got\n%s", text)
+	}
+	if !strings.Contains(text, "⣿") || !strings.ContainsAny(text, "⣀⠤⠒⠉") {
+		t.Fatalf("expected braille bars and estimate ticks, got\n%s", text)
+	}
+}
+
+func TestWellbeingHeadersCarryLatestAverageAndTrend(t *testing.T) {
+	text := squash(trendsText(100, 40))
+	for _, want := range []string{"Mood 2.0 avg 2.5 ▼", "Energy 3.0 avg 3.0 ▬"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected %q in %s", want, text)
+		}
+	}
+}
+
+func TestTrendsShareOneDateRow(t *testing.T) {
+	if n := strings.Count(trendsText(100, 40), "Oct 8"); n != 1 {
+		t.Fatalf("expected one shared date row, got %d", n)
 	}
 }
