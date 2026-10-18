@@ -7,6 +7,52 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.10.0-beta.2] - 2026-10-18
+
+Crona v1.10.0-beta.2 redesigns the terminal UI around numbered tabs, a shared date row, and consistent dialogs, and makes the active session view show where a timer stands.
+
+### Layout and navigation
+
+- The sidebar shell is replaced by a tab line (`[1] Today`, `[2] Issues`, `[3] Insights`, `[4] Log`, `[5] System`) and a status line. Number keys switch tabs, and sub-tabs cycle within them.
+- The tab line carries the Crona mark, the active repo and stream, and the app version. On narrow terminals the mark, context and version give way so the tabs always stay visible.
+- Every dated view shares one date row, led by its calendar key.
+- The status line shows the focused pane's keys first, followed by the global ones.
+- Views are drawn as borderless sections that adapt to the terminal width.
+
+### Views
+
+- **Today** is laid out as a day strip with the score and plan, side-by-side Tasks and Habits, and a detail pane for the selection. Summary is folded into Today, and Planned leads with pinned tasks and adds Upcoming.
+- **Issues** browses every repo and stream in a scope tree, with its keys inside the panes.
+- **Habits** is a sub-tab of its own, and the Meta view is gone.
+- **Review** replaces Rollup and Wellbeing, with a strip, a day list, trends, time breakdowns and a detail pane. Trends share one date row, and the day and time views open as dialogs on narrow screens.
+- **Momentum** is laid out as a strip, a list and a detail pane, with a braille chart, a bucket table, and a weekday calendar for daily yes/no momentums.
+- **Log** (Sessions, Ops and Habits) and **System** (Settings, Config, Alerts, Reports, Updates and Support) use a strip, a day-grouped or grouped list, and a detail pane.
+
+### Dialogs
+
+- Every dialog uses one frame: the title and context in the border, aligned fields, and a footer of keys with the primary action first. Dialogs keep a fixed height while you move between fields.
+- `Tab` and `Shift+Tab` are the only keys that move between fields.
+- Habit and reminder cadence is picked from Daily, Weekdays or Custom days, instead of being typed. For custom days, toggle Mon–Sun with `Space`.
+- Habit forms stack Cadence, Days and Target, and `Tab` skips Days unless Custom days is chosen.
+- Wizards keep one width across their steps.
+
+### Active session
+
+- The session view is one centred panel. The header names the kind and phase (for example `Pomodoro · Focus 2 of 4`) with the repo and stream. Cycle dots, time left, the next phase and the end time sit under the clock.
+- The issue sits under the clock with its description and worked time against the estimate. Stopwatch sessions show no progress bar.
+- Away from the session view, the status line leads with a session chip (phase and cycle, clock, issue, worked / estimate) and keeps the pane's keys beside it. The engine shows only when it is degraded.
+- Countdown timers and the last phase of a Pomodoro no longer advertise a next phase that will not happen.
+
+### Fixes
+
+- Deleting an ad hoc issue now removes it, including from Today.
+- Pinning is capped at five open issues; closed pinned issues do not count.
+- Bursts of changes, such as a data import or seed, no longer flood the daemon with reloads. The TUI gathers them into one refresh, and Review reloads its window when you open it.
+
+### Compatibility
+
+The local IPC protocol advances to `1.7`. Timer state gains `hardLimitCycles`, `completedWorkCycles`, `issueWorkedSeconds` and `issueCompletedSessions`, and `nextSegmentType` is omitted when a timed session ends with its current segment. Clients should require protocol `1.7` before relying on these fields. No storage migration is required.
+
 ## [1.10.0-beta.1] - 2026-10-08
 
 Crona v1.10.0-beta.1 adds ad hoc timers with end-of-session attribution and configurable management of completed session history.
