@@ -21,7 +21,7 @@ func TestRenderHabitHistoryShowsSelectedHabitAndCompletionDetails(t *testing.T) 
 	state := viewtypes.ContentState{
 		View:   "habit_history",
 		Pane:   "habit_history",
-		Width:  96,
+		Width:  120,
 		Height: 24,
 		Cursors: map[string]int{
 			"habit_history": 0,
@@ -69,16 +69,13 @@ func TestRenderHabitHistoryShowsSelectedHabitAndCompletionDetails(t *testing.T) 
 
 	rendered := habitviews.Render(layoutpkg.ViewTheme(), state)
 	for _, want := range []string{
-		"Habit History",
-		"Recent habit activity in Core > Backend",
 		"2026-04-04",
 		"Inbox Zero",
-		"Core > Backend",
+		"Core › Backend",
 		"completed",
-		"failed",
+		"1 failed",
 		"30m",
-		"kept the stre...",
-		"[enter] open details dialog",
+		notes,
 	} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected habit history render to contain %q, got %q", want, rendered)
