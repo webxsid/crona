@@ -256,7 +256,9 @@ func renderStatusLine(state State) string {
 	actions := append(append([]string{}, state.PaneActions...), state.GlobalActions...)
 	left := strings.Join(actions, "   ")
 	if state.TimerActive {
-		left = viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState)
+		if chip := viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState); chip != "" {
+			left = chip + "   " + left
+		}
 	}
 	right := chrome.StyleHeader.Render("[?]") + chrome.StyleDim.Render(" all keys  ctrl+c quit")
 	if state.StatusMsg != "" {

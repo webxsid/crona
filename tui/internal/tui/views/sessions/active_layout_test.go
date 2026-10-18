@@ -101,3 +101,16 @@ func TestActiveSessionCentresItsContentVertically(t *testing.T) {
 		t.Fatalf("expected centred content, %d blank above and %d below:\n%s", above, below, strings.Join(lines, "\n"))
 	}
 }
+
+func TestPomodoroShowsCycleProgress(t *testing.T) {
+	state := layoutState(true)
+	state.Timer.HardLimitKind = sharedtypes.TimerHardLimitKindPomodoro
+	state.Timer.HardLimitCycles, state.Timer.CompletedWorkCycles = 4, 1
+	state.Timer.IssueWorkedSeconds = 1200
+	rendered := ansi.Strip(renderActiveView(types.Theme{}, state))
+	for _, want := range []string{"Pomodoro · Focus 2 of 4", "● ◉ ○ ○", "Worked 20m / est. 35m"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("missing %q:\n%s", want, rendered)
+		}
+	}
+}

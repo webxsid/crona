@@ -8,8 +8,8 @@ import (
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 type HeaderState struct {
@@ -23,109 +23,79 @@ type HeaderState struct {
 	UpdateStatus  *api.UpdateStatus
 }
 
+// HeaderSessionLine is the status bar's session chip: phase and cycle, the clock, the issue
+// and its worked time against the estimate. The session view already shows all of it, so
+// there the chip is empty. The engine shows only when it is not ok.
 func HeaderSessionLine(theme Theme, state HeaderState) string {
-	if state.Timer == nil || state.Timer.State == "idle" {
+	if state.Timer == nil || state.Timer.State == "idle" || state.View == "session_active" {
 		return ""
 	}
-	return viewhelpers.Truncate(
-		headerSessionSummary(theme, state)+"  ·  "+headerSecondary(theme, state),
-		max(20, state.Width-4),
-	)
-}
-
-func headerSessionSummary(theme Theme, state HeaderState) string {
-	if state.Timer == nil || state.Timer.State == "idle" {
-		return ""
-	}
-
+	timer := state.Timer
 	now := time.Now()
-	total := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
-	if state.Timer.HardLimitActive && !state.Timer.HardLimitExpired {
-		if remaining, _, ok := helperpkg.DerivedHardLimitSegmentRemainingSeconds(
-			state.Timer,
-			state.Elapsed,
-			now,
-		); ok {
-			total = remaining
+	clock := helperpkg.DerivedSegmentElapsedSeconds(timer, state.Elapsed, now)
+	if timer.HardLimitActive && !timer.HardLimitExpired {
+		if remaining, _, ok := helperpkg.DerivedHardLimitSegmentRemainingSeconds(timer, state.Elapsed, now); ok {
+			clock = remaining
 		}
-	} else if state.Timer.State == "paused" {
-		total = helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
 	}
-	stateText := "WORK"
-	stateColor := theme.ColorGreen
-	if state.Timer.HardLimitExpired {
-		stateText = "LIMIT"
-		stateColor = theme.ColorYellow
-	} else if state.Timer.HardLimitActive {
-		stateText = "LIMIT"
-		stateColor = theme.ColorYellow
-	} else if state.Timer.State == "ready" {
-		stateText = "READY"
-		stateColor = theme.ColorYellow
-	} else if state.Timer.State == "paused" {
-		stateText = "PAUSED"
-		stateColor = theme.ColorYellow
-	}
-	if state.Timer.State == "ready" && !state.Timer.HardLimitActive &&
-		state.Timer.ReadySegmentType != nil &&
-		*state.Timer.ReadySegmentType != "" {
-		stateText = "READY:" + strings.ToUpper(string(*state.Timer.ReadySegmentType))
-	} else if state.Timer.SegmentType != nil && *state.Timer.SegmentType != "" && *state.Timer.SegmentType != "work" {
-		stateText = strings.ToUpper(string(*state.Timer.SegmentType))
-		stateColor = theme.ColorYellow
-	}
-
+	phase, color := sessionPhase(theme, timer)
 	parts := []string{
-		LipStyle(theme, stateColor).Render(stateText),
-		theme.StyleHeader.Render(viewhelpers.FormatClockText(total)),
+		LipStyle(theme, color).Render(phase),
+		theme.StyleHeader.Render(viewhelpers.FormatClockText(clock)),
 	}
-
-	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(
-		state.IssueSessions,
-	)
-	parts = append(parts, theme.StyleDim.Render(fmt.Sprintf("sessions:%d", completedSessions)))
-
-	if issue := activeIssueWithMeta(state); issue != nil && issue.EstimateMinutes != nil {
-		workElapsed := helperpkg.DerivedSegmentElapsedSeconds(state.Timer, state.Elapsed, now)
-		parts = append(
-			parts,
-			theme.StyleDim.Render(
-				sessionmeta.FormatEstimateProgress(
-					priorWorkedSeconds+workElapsed,
-					*issue.EstimateMinutes,
-				),
-			),
-		)
+	if issue := activeIssueWithMeta(state); issue != nil {
+		parts = append(parts, viewhelpers.Truncate(issue.Title, 40))
+		worked := helperpkg.DerivedSegmentElapsedSeconds(timer, state.Elapsed, now)
+		if timer.SegmentType != nil && *timer.SegmentType != "work" {
+			worked = 0
+		}
+		label := helperpkg.FormatCompactDurationMinutes((timer.IssueWorkedSeconds + worked) / 60)
+		if issue.EstimateMinutes != nil && *issue.EstimateMinutes > 0 {
+			label += " / est. " + helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes)
+		}
+		parts = append(parts, theme.StyleDim.Render(label))
+	} else if timer.Adhoc {
+		parts = append(parts, theme.StyleDim.Render("ad hoc"))
 	}
-
+	if chip := healthChip(state.Health); chip != "" {
+		parts = append(parts, LipStyle(theme, theme.ColorYellow).Render(chip))
+	}
 	return strings.Join(parts, theme.StyleDim.Render("  ·  "))
 }
 
-func headerSecondary(theme Theme, state HeaderState) string {
-	parts := []string{}
-	if state.Timer != nil && state.Timer.State != "idle" {
-		parts = append(parts, healthChip(state.Health))
-		if issue := activeIssueWithMeta(state); issue != nil {
-			parts = append(
-				parts,
-				"status:"+issuecore.IssueStatusStyle(theme, string(issue.Status)).
-					Render(strings.ToUpper(issuecore.PlainIssueStatus(string(issue.Status)))),
-			)
-		}
-	} else if state.View == "daily" || state.View == "review" {
-		parts = append(parts, healthChip(state.Health))
+// sessionPhase names the timer's phase for the chip, with the pomodoro cycle when known.
+func sessionPhase(theme Theme, timer *api.TimerState) (string, lipgloss.Color) {
+	switch {
+	case timer.HardLimitExpired:
+		return "DONE", theme.ColorYellow
+	case timer.State == "ready":
+		return "READY", theme.ColorYellow
+	case timer.State == "paused":
+		return "PAUSED", theme.ColorYellow
 	}
-	return strings.Join(compactNonEmpty(parts), "  ·  ")
+	segment := "work"
+	if timer.SegmentType != nil {
+		segment = string(*timer.SegmentType)
+	}
+	switch segment {
+	case "short_break":
+		return "BREAK", theme.ColorCyan
+	case "long_break":
+		return "LONG BREAK", theme.ColorMagenta
+	case "rest":
+		return "REST", theme.ColorYellow
+	}
+	if timer.HardLimitCycles > 0 {
+		return fmt.Sprintf("FOCUS %d/%d", min(timer.CompletedWorkCycles+1, timer.HardLimitCycles), timer.HardLimitCycles), theme.ColorGreen
+	}
+	return "FOCUS", theme.ColorGreen
 }
 
 func healthChip(health *api.Health) string {
-	if health == nil {
-		return "engine: checking"
+	if health == nil || (health.OK == 1 && health.DB) {
+		return ""
 	}
-	if health.OK == 1 && health.DB {
-		return "engine: ok"
-	}
-	return "engine: degraded"
+	return "engine degraded"
 }
 
 func activeIssueWithMeta(state HeaderState) *api.IssueWithMeta {

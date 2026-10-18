@@ -79,6 +79,9 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	}
 	if hardLimit && state.Timer.State != "ready" {
 		timerTitle = strings.TrimSuffix(timerTitle, " Session") + " · " + phaseLabel(seg)
+		if seg == "work" && state.Timer.HardLimitCycles > 0 {
+			timerTitle += fmt.Sprintf(" %d of %d", min(state.Timer.CompletedWorkCycles+1, state.Timer.HardLimitCycles), state.Timer.HardLimitCycles)
+		}
 	} else if !hardLimit {
 		phase := phaseLabel(seg)
 		if state.Timer.State == "ready" {
@@ -107,10 +110,13 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	if label := sessionEndsAtLabel(state, now); label != "" {
 		status = append(status, strings.Replace(label, "Ends At", "ends at", 1))
 	}
+	if dots := cycleDots(state.Timer, seg); dots != "" {
+		below = append(below, "", lipgloss.NewStyle().Foreground(stateColor).Render(dots))
+	}
 	if len(status) > 0 {
 		below = append(below, "", lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(strings.Join(status, "  ·  ")))
 	}
-	priorWorkedSeconds, _ := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)
+	priorWorkedSeconds := state.Timer.IssueWorkedSeconds
 	below = append(below, "", "")
 	below = append(below, sessionIssueLines(theme, activeIssue, state.Timer.Adhoc, priorWorkedSeconds+workElapsedSeconds, centerWidth)...)
 	below = append(below, "", theme.StyleDim.Render(timerHint))
@@ -133,6 +139,25 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		Height:     totalH,
 		Lines:      body,
 	})
+}
+
+// cycleDots is the pomodoro's cycles: ● finished, ◉ in focus now, ○ to come.
+func cycleDots(timer *api.TimerState, segment string) string {
+	if timer == nil || timer.HardLimitCycles <= 0 {
+		return ""
+	}
+	dots := make([]string, timer.HardLimitCycles)
+	for i := range dots {
+		switch {
+		case i < timer.CompletedWorkCycles:
+			dots[i] = "●"
+		case i == timer.CompletedWorkCycles && segment == "work":
+			dots[i] = "◉"
+		default:
+			dots[i] = "○"
+		}
+	}
+	return strings.Join(dots, " ")
 }
 
 // phaseLabel names a segment for the header: Focus, Short break, Long break, Rest, Paused.
