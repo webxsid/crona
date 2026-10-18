@@ -577,6 +577,7 @@ func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) t
 		cmds := []tea.Cmd{
 			LoadAllIssues(c),
 			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
 			RequestRollupRefresh(),
 			LoadContext(c),
 			LoadTimer(c),

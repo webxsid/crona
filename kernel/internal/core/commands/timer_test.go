@@ -1624,3 +1624,44 @@ func mustMakeIssuePlanned(
 		t.Fatalf("mark issue planned: %v", err)
 	}
 }
+
+func TestDeleteKeptAdhocIssueRemovesIt(t *testing.T) {
+	ctx := context.Background()
+	now := "2026-05-24T10:00:00Z"
+	coreCtx, service, _ := newTimerTestContext(t, func() string { return now })
+	if _, err := service.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true}); err != nil {
+		t.Fatalf("start adhoc timer: %v", err)
+	}
+	commit := "throwaway"
+	if _, err := service.End(ctx, SessionEndInput{
+		CommitMessage:   &commit,
+		AdhocResolution: sharedtypes.AdhocSessionResolutionKeep,
+	}); err != nil {
+		t.Fatalf("end and keep adhoc: %v", err)
+	}
+	listed, err := coreCtx.Issues.ListAll(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list all issues: %v", err)
+	}
+	var id int64
+	for _, issue := range listed {
+		if issue.Title == commit {
+			id = issue.ID
+		}
+	}
+	if id == 0 {
+		t.Fatalf("kept ad hoc issue missing: %+v", listed)
+	}
+	if err := DeleteIssue(ctx, coreCtx, id); err != nil {
+		t.Fatalf("DeleteIssue(ad hoc) = %v", err)
+	}
+	listed, err = coreCtx.Issues.ListAll(ctx, coreCtx.UserID)
+	if err != nil {
+		t.Fatalf("list all issues: %v", err)
+	}
+	for _, issue := range listed {
+		if issue.ID == id {
+			t.Fatalf("deleted ad hoc issue still listed: %+v", issue)
+		}
+	}
+}

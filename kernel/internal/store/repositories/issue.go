@@ -577,7 +577,6 @@ func (r *IssueRepository) SoftDelete(
 		Where("public_id = ?", issueID).
 		Where("user_id = ?", userID).
 		Where("is_reserved = 0").
-		Where("adhoc = 0").
 		Where("deleted_at IS NULL").
 		Set("deleted_at = ?", now).
 		Set("updated_at = ?", now).
