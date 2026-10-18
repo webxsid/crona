@@ -50,3 +50,11 @@ func TestUpdatesNoBox(t *testing.T) {
 		t.Fatalf("expected no box and keys in the header, got\n%s", got)
 	}
 }
+
+func TestUpdatesNotesWrapInPane(t *testing.T) {
+	state := updatesState(120, 36, false)
+	state.UpdateStatus.ReleaseNotes = ""
+	if got := render(state); !strings.Contains(got, "release.") {
+		t.Fatalf("expected the empty-notes message wrapped whole, got\n%s", got)
+	}
+}

@@ -36,7 +36,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	notesTitle := "Release Notes"
 	if state.UpdateStatus != nil {
 		notesTitle = releaseNotesSectionTitle(state.UpdateStatus)
-		notes = releaseNotesExcerptLines(theme, state.UpdateStatus.ReleaseNotes, max(1, max(notesWidth, listWidth)-2))
+		notesInner := listWidth
+		if notesWidth > 0 {
+			notesInner = notesWidth
+		}
+		notes = wrapLines(releaseNotesExcerptLines(theme, state.UpdateStatus.ReleaseNotes, max(1, notesInner-2)), max(1, notesInner-2))
 	}
 	diagnostics := []string{}
 	if state.UpdateDiagnosticsExpanded && state.UpdateStatus != nil {
