@@ -14,24 +14,7 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	case "create_issue_meta", "create_issue_default":
 		return renderIssueCreate(theme, state)
 	case "edit_issue":
-		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
-			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
-			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[2].View(),
-		)
-		rows := []string{
-			theme.StylePaneTitle.Render("Edit Issue"),
-			"",
-			theme.StyleDim.Render("Title"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-			"",
-			schedulingRow,
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save"))
-		return modal(theme, state.Width, issueDialogWidth, theme.ColorYellow, rows)
+		return renderEditIssue(theme, state)
 	case "issue_status":
 		contextRow := renderIssueContextColumns(
 			theme,
@@ -202,4 +185,37 @@ func renderDefaultIssueContextColumns(
 		renderSelector(theme, state, state.StreamSelectorLabel, state.FocusIdx == 1),
 	}, "\n"))
 	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
+}
+
+// renderEditIssue draws Edit Issue: New Issue's fields without the pickers.
+func renderEditIssue(theme Theme, state controllerpkg.State) string {
+	inner := formInner(state.Width)
+	column := len("Description")
+	full, half := formColumns(inner, column)
+	dueColumn := len("Due")
+	if inner < 56 {
+		dueColumn = column
+	}
+	return renderForm(theme, state, FormSpec{
+		Title: "Edit Issue", Context: repoStreamContext(state), Border: theme.ColorYellow, FocusCount: 4,
+		Primary: plainHint(dialogSubmitHint(state, "save")),
+		Hints: func(focus int) []string {
+			switch focus {
+			case 1:
+				return []string{"tab next", "enter newline"}
+			case 3:
+				return []string{"tab next", "ctrl+e calendar", "g today"}
+			}
+			return []string{"tab next"}
+		},
+		Rows: []FormRow{
+			fieldRow(0, Field(theme, "Title", column, bareInput(state.Inputs[0], full, "required"), state.FocusIdx == 0)),
+			textareaRow(1, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == 1, inner)),
+			pairRow(
+				Field(theme, "Estimate", column, bareInput(state.Inputs[1], half, "45m, 1h30m"), state.FocusIdx == 2),
+				Field(theme, "Due", dueColumn, bareInput(state.Inputs[2], half, "YYYY-MM-DD"), state.FocusIdx == 3),
+				2, 3, inner,
+			),
+		},
+	})
 }

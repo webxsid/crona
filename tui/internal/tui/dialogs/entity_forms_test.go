@@ -77,3 +77,40 @@ func TestRepoStreamForms(t *testing.T) {
 		assertHeightStable(t, c)
 	}
 }
+
+func habitEditState() controllerpkg.State {
+	target := 20
+	return controllerpkg.OpenEditHabit(controllerpkg.State{}, 3, 2, "Read", nil, "daily", &target, true)
+}
+
+func TestHabitAndEditIssueForms(t *testing.T) {
+	create := controllerpkg.OpenCreateHabit(controllerpkg.State{})
+	create.RepoName, create.StreamName = "OSS", "cli"
+	cases := []formCase{
+		{"create_habit", create, "New Habit", "OSS › cli", 6},
+		{"edit_habit", habitEditState(), "Edit Habit", "", 4},
+		{"edit_issue", controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil), "Edit Issue", "", 4},
+	}
+	for _, c := range cases {
+		assertFormChrome(t, c)
+		assertHeightStable(t, c)
+	}
+}
+
+func TestEditIssueDueKeepsTodayHint(t *testing.T) {
+	state := sized(controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil), 120, 36)
+	state.FocusIdx = 3
+	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
+	if !strings.Contains(out, "g today") {
+		t.Fatalf("expected g today on Due:\n%s", out)
+	}
+}
+
+func TestNewHabitShortTerminal(t *testing.T) {
+	state := sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 60, 20)
+	state.FocusIdx = 5
+	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
+	if !strings.Contains(out, "Target") || !strings.Contains(out, "esc cancel") {
+		t.Fatalf("expected Target and esc cancel visible:\n%s", out)
+	}
+}

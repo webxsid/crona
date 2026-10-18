@@ -19,75 +19,59 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	case "checkout_context":
 		return renderCheckoutContext(theme, state)
 	case "create_habit":
-		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, 92)
-		rows := []string{
-			theme.StylePaneTitle.Render("New Habit"),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[2].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-			"",
-			theme.StyleDim.Render("Schedule"),
-			state.Inputs[3].View(),
-			"",
-			theme.StyleDim.Render("Target Duration (Optional)"),
-			state.Inputs[4].View(),
-			"",
-			contextRow,
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, habitDialogHint(state, "create"))
-		return modal(theme, state.Width, 92, theme.ColorCyan, rows)
+		return renderHabitForm(theme, state, true)
 	case "edit_habit":
-		rows := []string{
-			theme.StylePaneTitle.Render("Edit Habit"),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-			"",
-			theme.StyleDim.Render("Schedule"),
-			state.Inputs[1].View(),
-			"",
-			theme.StyleDim.Render("Target Duration (Optional)"),
-			state.Inputs[2].View(),
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, habitDialogHint(state, "save"))
-		return modal(theme, state.Width, 68, theme.ColorYellow, rows)
+		return renderHabitForm(theme, state, false)
 	default:
 		return ""
 	}
 }
 
-func habitDialogHint(state controllerpkg.State, submitLabel string) string {
-	if state.Kind == "create_habit" {
-		switch state.FocusIdx {
-		case 0, 1:
-			return "[type] filter   [←/→] choose   [tab] move   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		case 3:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		default:
-			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+// renderHabitForm draws New Habit (with Repo/Stream pickers at the bottom) and Edit Habit.
+func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string {
+	inner := formInner(state.Width)
+	column := len("Description")
+	full, half := formColumns(inner, column)
+	pairColumn := len("Target")
+	if inner < 56 {
+		pairColumn = column
+	}
+	name, schedule, target := 0, 1, 2
+	if create {
+		name, schedule, target = 2, 3, 4
+	}
+	focusOf := func(input int) int {
+		if input >= state.DescriptionIndex {
+			return input + 1
 		}
+		return input
 	}
-	if state.FocusIdx == state.DescriptionIndex {
-		return "[enter] newline   [tab] next   " + dialogSubmitHint(
-			state,
-			submitLabel,
-		) + "   [esc] cancel"
+	focused := func(input int) bool { return state.FocusIdx == focusOf(input) }
+	rows := []FormRow{
+		fieldRow(focusOf(name), Field(theme, "Name", column, bareInput(state.Inputs[name], full, "required"), focused(name))),
+		textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
+		pairRow(
+			Field(theme, "Schedule", column, bareInput(state.Inputs[schedule], half, "daily, weekdays, mon,wed"), focused(schedule)),
+			Field(theme, "Target", pairColumn, bareInput(state.Inputs[target], half, "optional"), focused(target)),
+			focusOf(schedule), focusOf(target), inner,
+		),
 	}
-	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+	title, border, submit, count := "Edit Habit", theme.ColorYellow, "save", 4
+	if create {
+		title, border, submit, count = "New Habit", "", "create", 6
+		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
+	}
+	textarea := textareaHints(state.DescriptionIndex)
+	return renderForm(theme, state, FormSpec{
+		Title: title, Context: repoStreamContext(state), Border: border, Rows: rows, FocusCount: count,
+		Primary: plainHint(dialogSubmitHint(state, submit)),
+		Hints: func(focus int) []string {
+			if create && focus <= 1 {
+				return []string{"tab next", "type filter", "←/→ choose"}
+			}
+			return textarea(focus)
+		},
+	})
 }
 
 // renderNameDescriptionForm draws the repo and stream forms: Name, then Description.
