@@ -27,6 +27,8 @@ type FrameSpec struct {
 	Body, Footer              []string
 	ScreenWidth, ScreenHeight int
 	Focus                     int
+	// Inner, when set, fixes the inner width (still clamped) for forms that lay out to it.
+	Inner int
 }
 
 // FrameInner is the inner width a frame on this screen gives content of these lines.
@@ -45,6 +47,9 @@ func FrameInner(screenWidth int, content []string) int {
 // the top edge, padded body and footer, cut around Focus when taller than the screen.
 func Frame(theme Theme, spec FrameSpec) string {
 	inner := FrameInner(spec.ScreenWidth, append(append([]string{}, spec.Body...), spec.Footer...))
+	if spec.Inner > 0 {
+		inner = FrameInner(spec.ScreenWidth, []string{strings.Repeat(" ", spec.Inner)})
+	}
 	body, footer := wrapAll(spec.Body, inner), wrapAll(spec.Footer, inner)
 	focus := spec.Focus
 	if focus >= 0 {

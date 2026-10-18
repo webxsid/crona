@@ -11,69 +11,8 @@ import (
 func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	const issueDialogWidth = 92
 	switch state.Kind {
-	case "create_issue_meta":
-		contextRow := renderIssueContextColumns(
-			theme,
-			state.Width,
-			issueDialogWidth,
-			state.RepoName,
-			state.StreamName,
-		)
-		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
-			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),
-			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[2].View(),
-		)
-		rows := []string{
-			theme.StylePaneTitle.Render("New Issue"),
-			"",
-			theme.StyleDim.Render("Title"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-			"",
-			schedulingRow,
-			"",
-			contextRow,
-			"",
-		}
-		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
-		return formModal(theme, state, issueDialogWidth, rows)
-	case "create_issue_default":
-		contextRow := renderDefaultIssueContextColumns(theme, state, state.Width, issueDialogWidth)
-		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
-			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[3].View(),
-			theme.StyleDim.Render("Due (Optional)")+"\n"+state.Inputs[4].View(),
-		)
-		title := "New Issue"
-		if state.PromotingAdhoc {
-			title = "Convert Ad hoc Issue"
-		}
-		if state.AdhocTimer {
-			title = "Create Issue & Finish Session"
-		}
-		rows := []string{theme.StylePaneTitle.Render(title)}
-		if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
-		}
-		rows = append(rows,
-			"",
-			theme.StyleDim.Render("Title"),
-			state.Inputs[2].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-			"",
-			schedulingRow,
-			"",
-			contextRow,
-		)
-		if state.AdhocTimer {
-			rows = append(rows, "", theme.StyleDim.Render("Session summary (required)"), state.Inputs[5].View())
-		}
-		rows = append(rows, "")
-		rows = appendDialogFooter(theme, state, rows, issueDialogHint(state, "save & close"))
-		return formModal(theme, state, issueDialogWidth, rows)
+	case "create_issue_meta", "create_issue_default":
+		return renderIssueCreate(theme, state)
 	case "edit_issue":
 		schedulingRow := renderInputColumns(state.Width, issueDialogWidth,
 			theme.StyleDim.Render("Estimate (Optional)")+"\n"+state.Inputs[1].View(),

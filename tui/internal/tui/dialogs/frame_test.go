@@ -108,3 +108,10 @@ func TestFooterNeverSplits(t *testing.T) {
 		t.Fatalf("expected primary first and esc last, got\n%s", text)
 	}
 }
+
+func TestFrameHonoursInner(t *testing.T) {
+	top := plain(Frame(Theme{}, FrameSpec{Title: "T", Inner: 70, Body: []string{"x"}, ScreenWidth: 200, ScreenHeight: 40, Focus: -1}))[0]
+	if got := ansi.StringWidth(top); got != 76 {
+		t.Fatalf("expected inner 70 plus chrome, got %d", got)
+	}
+}

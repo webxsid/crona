@@ -334,7 +334,7 @@ func TestShortConversionFormKeepsActiveFieldAndErrorVisible(t *testing.T) {
 	for i := 0; i < 6; i++ {
 		state.ErrorMessage = "Choose a repo and stream"
 		rendered := renderIssueDialog(Theme{}, state)
-		for _, want := range []string{"Convert Ad hoc Issue", "[ctrl+s] convert issue", "Choose a repo and stream"} {
+		for _, want := range []string{"Convert Ad hoc Issue", "ctrl+s convert issue", "Choose a repo and stream"} {
 			if !strings.Contains(rendered, want) {
 				t.Fatalf("focus %d missing %q: %s", state.FocusIdx, want, rendered)
 			}
@@ -343,7 +343,11 @@ func TestShortConversionFormKeepsActiveFieldAndErrorVisible(t *testing.T) {
 			t.Fatalf("focus %d height %d", state.FocusIdx, h)
 		}
 		for _, input := range state.Inputs {
-			needle := []rune(strings.TrimSpace(ansi.Strip(input.View())))
+			text := input.Value()
+			if text == "" {
+				continue // placeholders are restyled; TestNewIssueShortTerminal covers empty fields
+			}
+			needle := []rune(strings.TrimSpace(text))
 			if len(needle) > 12 {
 				needle = needle[:12]
 			}
