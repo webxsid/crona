@@ -96,6 +96,7 @@ func (m Model) viewContentState(
 		Streams:                   m.streams,
 		Issues:                    m.issues,
 		DailyIssues:               dailyIssues,
+		DailyPlannedIssues:        selectionpkg.DailySectionIssues(snapshot, DailyTaskSectionPlanned),
 		Habits:                    m.habits,
 		AllIssues:                 m.allIssues,
 		DefaultIssues:             defaultIssues,

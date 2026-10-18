@@ -162,3 +162,21 @@ func TestContentStateSharesOneDate(t *testing.T) {
 		}
 	}
 }
+
+func TestContentStatePlannedIssuesIgnoreTab(t *testing.T) {
+	date := "2026-05-01"
+	past := "2026-04-20"
+	issues := []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 1, Title: "Today", Status: "planned", TodoForDate: &date}},
+		{Issue: api.Issue{ID: 2, Title: "Late", Status: "planned", TodoForDate: &past}},
+	}
+	m := Model{view: ViewDaily, pane: PaneIssues, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{},
+		date: date, allIssues: issues, dailyTaskSection: DailyTaskSectionOverdue}
+	state := m.layoutState().ContentState
+	if len(state.DailyIssues) != 1 || state.DailyIssues[0].ID != 2 {
+		t.Fatalf("expected the Overdue tab's list, got %+v", state.DailyIssues)
+	}
+	if len(state.DailyPlannedIssues) != 1 || state.DailyPlannedIssues[0].ID != 1 {
+		t.Fatalf("expected Planned issues kept for the strip, got %+v", state.DailyPlannedIssues)
+	}
+}

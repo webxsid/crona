@@ -1134,6 +1134,14 @@ func TestDailySummaryShowsBarsAtHeight55AndAbove(t *testing.T) {
 				EstimateMinutes: &estimate,
 			},
 		},
+		DailyPlannedIssues: []api.Issue{
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
+		},
 		DueHabits: []api.HabitDailyItem{
 			{
 				HabitWithMeta: api.HabitWithMeta{
@@ -1182,6 +1190,14 @@ func TestDailyStripShowsTotalsOnLargeScreens(t *testing.T) {
 			},
 		},
 		DailyIssues: []api.Issue{
+			{
+				ID:              1,
+				Title:           "Add keyboard-first command palette",
+				Status:          "planned",
+				EstimateMinutes: &estimate,
+			},
+		},
+		DailyPlannedIssues: []api.Issue{
 			{
 				ID:              1,
 				Title:           "Add keyboard-first command palette",

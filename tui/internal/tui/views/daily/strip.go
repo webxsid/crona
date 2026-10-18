@@ -103,7 +103,7 @@ func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) []string {
 	resolved, estimate := 0, 0
 	statusCounts := map[string]int{}
-	for _, issue := range state.DailyIssues {
+	for _, issue := range state.DailyPlannedIssues {
 		statusCounts[string(issue.Status)]++
 		if issue.EstimateMinutes != nil {
 			estimate += *issue.EstimateMinutes
@@ -126,7 +126,7 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 		worked = state.DailySummary.WorkedSeconds
 	}
 	values := []string{
-		fmt.Sprintf("%d/%d", resolved, len(state.DailyIssues)),
+		fmt.Sprintf("%d/%d", resolved, len(state.DailyPlannedIssues)),
 		fmt.Sprintf("%d/%d", habitsDone, len(state.DueHabits)),
 	}
 	valueWidth := max(len(values[0]), len(values[1]))

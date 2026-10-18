@@ -145,6 +145,12 @@ func DailyScopedIssues(s Snapshot) []api.Issue {
 	return buildDailyScopedIssues(s)
 }
 
+// DailySectionIssues is one Daily task section's list, whichever section the snapshot shows.
+func DailySectionIssues(s Snapshot, section uistate.DailyTaskSection) []api.Issue {
+	s.DailyTaskSection = section
+	return buildDailyScopedIssues(s)
+}
+
 func PaneItems(s Snapshot, pane uistate.Pane) []string {
 	if items, ok := s.paneItemsCache[pane]; ok {
 		return items

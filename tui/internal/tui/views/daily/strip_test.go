@@ -1,6 +1,7 @@
 package daily
 
 import (
+	"crona/tui/internal/api"
 	"fmt"
 	"strings"
 	"testing"
@@ -176,5 +177,16 @@ func TestSubTabMetaShortensToFit(t *testing.T) {
 	}
 	if got := ansi.Strip(SubTabMeta(testTheme(), state, 30)); !strings.Contains(got, "[,]") || !strings.Contains(got, "[.]") {
 		t.Fatalf("expected the keys kept before the words drop out, got %q", got)
+	}
+}
+
+func TestDayStripTasksFollowPlannedWhateverTheTab(t *testing.T) {
+	state := dailySummaryTestState()
+	state.DailyTaskSection = "overdue"
+	state.DailyIssues = []api.Issue{{ID: 90, Title: "Old", Status: "planned"}, {ID: 91, Title: "Older", Status: "planned"}}
+	state.DailyPlannedIssues = []api.Issue{{ID: 1, Title: "Today", Status: "done"}}
+	rows := dayStripRows(testTheme(), state, 160, dayStripMaxRows)
+	if got := fieldsOf(rows[0]); !strings.HasPrefix(got, "Tasks 1/1") {
+		t.Fatalf("expected the Tasks meter to count Planned, not the Overdue tab, got %q", rows[0])
 	}
 }

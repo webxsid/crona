@@ -69,6 +69,8 @@ type ContentState struct {
 	Streams     []api.Stream
 	Issues      []api.Issue
 	DailyIssues []api.Issue
+	// DailyPlannedIssues is the Planned section whatever tab is shown; the strip counts it.
+	DailyPlannedIssues []api.Issue
 	// DailyIssueIndices and DailyHabitIndices are the model's text-filtered raw indices into
 	// DailyIssues and DueHabits; the pane cursors are positions in these lists.
 	DailyIssueIndices         []int

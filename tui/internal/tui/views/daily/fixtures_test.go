@@ -34,6 +34,14 @@ func dailySummaryTestState() types.ContentState {
 				EstimateMinutes: new(55),
 			},
 		},
+		DailyPlannedIssues: []api.Issue{
+			{
+				ID:              1,
+				Title:           "Ship momentum block",
+				Status:          "done",
+				EstimateMinutes: new(55),
+			},
+		},
 		DueHabits: []api.HabitDailyItem{
 			{
 				HabitWithMeta: api.HabitWithMeta{
