@@ -222,3 +222,34 @@ func TestDetailShowsDaySummaryWhenToggled(t *testing.T) {
 		t.Fatalf("expected the selection replaced by the Day summary, got %q", rendered)
 	}
 }
+
+func TestDefinitionHabitStatus(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		active bool
+		status string
+		want   string
+	}{
+		{"paused", false, "", "paused"}, {"off schedule", true, "", "not due today"},
+		{"due", true, "due", "due"}, {"paused completed today", false, "completed", "completed"}, {"completed", true, "completed", "completed"}, {"failed", true, "failed", "failed"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			habit := api.HabitWithMeta{Habit: api.Habit{ID: 10, Active: tc.active}}
+			state := types.ContentState{}
+			if tc.status != "" {
+				state.DueHabits = []api.HabitDailyItem{{HabitWithMeta: habit, Status: sharedtypes.HabitCompletionStatus(tc.status)}}
+			}
+			got := ansi.Strip(strings.Join(HabitDetailLines(testTheme(), state, habit, 80), "\n"))
+			if status := strings.Join(strings.Fields(strings.Split(got, "\n")[0]), " "); status != "status "+tc.want {
+				t.Fatalf("wanted %q: %s", tc.want, got)
+			}
+		})
+	}
+}
+
+func TestDailyHabitZeroStatusRemainsDue(t *testing.T) {
+	lines := habitDetailLines(testTheme(), types.ContentState{}, api.HabitDailyItem{}, 80)
+	if got := strings.Join(strings.Fields(ansi.Strip(lines[0])), " "); got != "status due" {
+		t.Fatal(got)
+	}
+}

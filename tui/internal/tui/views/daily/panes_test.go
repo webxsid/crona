@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
-	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -145,14 +144,6 @@ func TestRenderIssuesUsesCompactListLayoutBelowBreakpoint(t *testing.T) {
 			t.Fatalf("expected list layout to omit table header %q, got %q", unwanted, rendered)
 		}
 	}
-}
-
-func normalizeTableLine(line string) string {
-	line = strings.TrimLeft(line, " ")
-	line = strings.TrimPrefix(line, viewchrome.SelectionCursor+" ")
-	line = strings.TrimPrefix(line, "  ")
-	line = strings.TrimLeft(line, " ")
-	return line
 }
 
 func groupedPlannedState(width int) types.ContentState {

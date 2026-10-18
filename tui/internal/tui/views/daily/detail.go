@@ -119,6 +119,10 @@ func habitDetailLines(theme types.Theme, state types.ContentState, habit api.Hab
 	case "failed":
 		status = "failed"
 	}
+	return habitDetailWithStatus(theme, state, habit, width, status)
+}
+
+func habitDetailWithStatus(theme types.Theme, state types.ContentState, habit api.HabitDailyItem, width int, status string) []string {
 	fields := []detailEntry{{"status", theme.StyleNormal.Render(status)}}
 	if habit.DurationMinutes != nil {
 		fields = append(fields, detailEntry{"logged", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))})
@@ -276,12 +280,14 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 
 // HabitDetailLines reuses the daily detail fields for a habit definition.
 func HabitDetailLines(theme types.Theme, state types.ContentState, habit api.HabitWithMeta, width int) []string {
-	item := api.HabitDailyItem{HabitWithMeta: habit}
 	for _, due := range state.DueHabits {
 		if due.ID == habit.ID {
-			item = due
-			break
+			return habitDetailLines(theme, state, due, width)
 		}
 	}
-	return habitDetailLines(theme, state, item, width)
+	status := "not due today"
+	if !habit.Active {
+		status = "paused"
+	}
+	return habitDetailWithStatus(theme, state, api.HabitDailyItem{HabitWithMeta: habit}, width, status)
 }

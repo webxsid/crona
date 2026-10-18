@@ -121,9 +121,11 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		if target == ViewHabitHistory {
 			return next.enterHabitHistoryViewFromSelection()
 		}
+		previous := next.view
 		next.view = target
 		next.pane = uistate.DefaultPane(target)
-		return next, nil
+		next.initializeIssuesTransition(previous)
+		return next, next.issuesTransitionRefresh(previous)
 	case "continue_focus_fresh":
 		return next.openFocusSessionFromIssue(action.RepoID, action.StreamID, action.IssueID), nil
 	case "manual_session":

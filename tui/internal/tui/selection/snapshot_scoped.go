@@ -206,9 +206,9 @@ func rawIndexForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {
 		case uistate.ViewDefault:
 			scoped := DefaultScopedIssues(s)
 			ordered := issuecore.PrioritizedDefaultIssueIndices(scoped, s.Filters[pane], s.Settings)
-			for rawIdx, scopedIdx := range ordered {
+			for _, scopedIdx := range ordered {
 				if scoped[scopedIdx].ID == issueID {
-					return rawIdx
+					return scopedIdx
 				}
 			}
 		case uistate.ViewDaily:

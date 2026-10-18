@@ -12,7 +12,6 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
 	selectionpkg "crona/tui/internal/tui/selection"
-	uistate "crona/tui/internal/tui/state"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	"time"
 
@@ -85,9 +84,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.Dialog,
 			)
 			next := m.applyInputState(state)
-			if uistate.TabForView(next.view) == uistate.TabIssues && (uistate.TabForView(m.view) != uistate.TabIssues || next.view == ViewHabitList && m.view != ViewHabitList) {
-				cmd = batchCmds(cmd, commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
-			}
+			cmd = batchCmds(cmd, next.issuesTransitionRefresh(m.view))
 			return next, batchCmds(touch, cmd)
 		}
 	}

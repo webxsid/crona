@@ -119,8 +119,37 @@ func (m *Model) browseToScopeCursor() {
 	if cur := m.cursor[PaneScope]; cur >= 0 && cur < len(nodes) {
 		m.browseScope = nodes[cur].Scope
 	}
-	m.clamp(PaneIssues, len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)))
-	m.clamp(PaneHabits, len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneHabits)))
+	m.clampIssuesTabLists()
+}
+
+// clampIssuesTabLists derives each list from its own view, independent of focus.
+func (m *Model) clampIssuesTabLists() {
+	snapshot := m.selectionSnapshot()
+	snapshot.View = ViewDefault
+	m.clamp(PaneIssues, len(selectionpkg.FilteredIndices(snapshot, PaneIssues)))
+	snapshot.View = ViewHabitList
+	m.clamp(PaneHabits, len(selectionpkg.FilteredIndices(snapshot, PaneHabits)))
+	m.cursor[PaneIssues] = max(0, m.cursor[PaneIssues])
+	m.cursor[PaneHabits] = max(0, m.cursor[PaneHabits])
+}
+
+func (m *Model) initializeIssuesTransition(previous View) {
+	if uistate.TabForView(m.view) != uistate.TabIssues {
+		return
+	}
+	entering := uistate.TabForView(previous) != uistate.TabIssues
+	if entering {
+		m.enterIssuesTab()
+	}
+	m.clampIssuesTabLists()
+}
+
+func (m Model) issuesTransitionRefresh(previous View) tea.Cmd {
+	entering := uistate.TabForView(m.view) == uistate.TabIssues && uistate.TabForView(previous) != uistate.TabIssues
+	if entering || m.view == ViewHabitList && previous != ViewHabitList {
+		return commands.LoadTodayHabits(m.client, m.currentLogicalDate())
+	}
+	return nil
 }
 
 // reconcileBrowseScope keeps the tree's cursor on the browsed node once all streams are

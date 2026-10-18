@@ -130,7 +130,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	moved := state.ActivePane != m.pane ||
 		state.Cursor[PaneIssues] != m.cursor[PaneIssues] || state.Cursor[PaneHabits] != m.cursor[PaneHabits]
 	m.dailyDetailDay = state.DailyDetailDay && !moved
-	entering := uistate.TabForView(state.ActiveView) == uistate.TabIssues && uistate.TabForView(m.view) != uistate.TabIssues
+	previousView := m.view
 	scopeMoved := state.ActivePane == PaneScope && state.Cursor[PaneScope] != m.cursor[PaneScope]
 	m.view = state.ActiveView
 	m.pane = state.ActivePane
@@ -138,12 +138,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	if m.cursor == nil {
 		m.cursor = map[Pane]int{}
 	}
-	switch {
-	case entering:
-		m.enterIssuesTab()
-	case scopeMoved:
-		m.browseToScopeCursor()
-	}
+
 	if MomentumTab(state.MomentumTab) == MomentumTabFocus {
 		m.momentumHistoryCursor = state.Cursor[PaneMomentumCards]
 	} else if state.Cursor != nil {
@@ -178,6 +173,13 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.alertReminders = state.AlertReminders
 	m.exportAssets = state.ExportAssets
 	m.dailyCheckIn = state.DailyCheckIn
+	if uistate.TabForView(m.view) == uistate.TabIssues {
+		if uistate.TabForView(previousView) == uistate.TabIssues && scopeMoved {
+			m.browseToScopeCursor()
+		}
+		m.initializeIssuesTransition(previousView)
+	}
+
 	return m
 }
 
