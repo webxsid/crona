@@ -13,6 +13,7 @@ import (
 	"crona/tui/internal/tui/scope"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -934,15 +935,5 @@ func boolRank(b bool) int {
 
 // visibleMomentumCards are the cards the list filter keeps, as the cursor indexes them.
 func visibleMomentumCards(state MessageState) []api.MomentumCard {
-	query := strings.ToLower(strings.TrimSpace(state.Filters[uistate.PaneMomentumCards]))
-	if query == "" {
-		return state.MomentumCards
-	}
-	out := []api.MomentumCard{}
-	for _, card := range state.MomentumCards {
-		if strings.Contains(strings.ToLower(card.Definition.Name), query) {
-			out = append(out, card)
-		}
-	}
-	return out
+	return viewhelpers.VisibleMomentumCards(state.MomentumCards, state.Filters[uistate.PaneMomentumCards])
 }

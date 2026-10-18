@@ -81,17 +81,7 @@ func Render(theme types.Theme, state types.ContentState) string {
 
 // visibleCards are the momentums the list filter keeps, in load order.
 func visibleCards(state types.ContentState) []sharedtypes.MomentumCard {
-	query := strings.ToLower(strings.TrimSpace(state.Filters["momentum_cards"]))
-	if query == "" {
-		return state.MomentumCards
-	}
-	out := []sharedtypes.MomentumCard{}
-	for _, card := range state.MomentumCards {
-		if strings.Contains(strings.ToLower(card.Definition.Name), query) {
-			out = append(out, card)
-		}
-	}
-	return out
+	return viewhelpers.VisibleMomentumCards(state.MomentumCards, state.Filters["momentum_cards"])
 }
 
 func renderList(theme types.Theme, cards []sharedtypes.MomentumCard, cursor, width, height int, meta string) string {
