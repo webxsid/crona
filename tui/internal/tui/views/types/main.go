@@ -58,6 +58,10 @@ type ContentState struct {
 	MomentumHistoryY    int
 	WellbeingDate       string
 	WellbeingWindowDays int
+	// ReviewWindowDays days end on ReviewWindowEnd; ReviewShowTime puts Time in Trends' slot.
+	ReviewWindowDays    int
+	ReviewWindowEnd     string
+	ReviewShowTime      bool
 	WeekStart           sharedtypes.WeekStart
 	DefaultIssueSection string
 	DailyTaskSection    string
