@@ -7,6 +7,36 @@ order: 6.5
 
 Here is what a normal workday looks like in Crona: see the day, choose the next issue, focus, then look back at what happened.
 
+## Beta interface preview
+
+These screenshots show the tabbed interface in v1.10.0-beta.1. The existing screenshots below document the earlier interface.
+
+### Today
+
+![Beta Today dashboard showing the Tasks and Habits panes and selected task details](/screenshots/beta/beta-today-dashboard.png)
+
+### Issues
+
+![Beta Issues view showing the scope tree, issue list, and selected issue details](/screenshots/beta/beta-issues-dashboard.png)
+
+### Review
+
+![Beta Review view showing the day list, focus and wellbeing trends, and selected day details](/screenshots/beta/beta-review-dashboard.png)
+
+### Momentum
+
+![Beta Momentum view showing the momentum list, history chart, and bucket table](/screenshots/beta/beta-momentum-dashboard.png)
+
+### Habits
+
+![Beta Habits view showing the habit list and selected habit details](/screenshots/beta/beta-habits-dashboard.png)
+
+### Focus session
+
+![Beta active Pomodoro focus session showing the countdown, phase bar, cycle dots, and issue details](/screenshots/beta/beta-active-session-focus.png)
+
+![Beta Pomodoro short break showing the countdown, phase bar, cycle dots, and issue details](/screenshots/beta/beta-active-session-break.png)
+
 ## 1. Summary: get your bearings
 
 The Summary view is the quick read-only entry point for a selected day. It combines focus time, issue and habit progress, daily-plan signals, check-in information, and Momentum without opening editing controls. Use `,` and `.` to move between dates, or `g` to return to today.

@@ -26,6 +26,26 @@ The repository is a Go monorepo with four main modules:
 
 ## Screenshots
 
+### Beta UI preview
+
+These captures show the v1.10.0-beta.1 interface.
+
+![Beta Today dashboard showing the task and habit panes with task details](docs/screenshots/beta/beta-today-dashboard.png)
+
+![Beta Issues view showing the scope tree, issue list, and selected issue details](docs/screenshots/beta/beta-issues-dashboard.png)
+
+![Beta Review view showing the day list, focus and wellbeing trends, and selected day details](docs/screenshots/beta/beta-review-dashboard.png)
+
+![Beta Momentum view showing the momentum list, history chart, and bucket table](docs/screenshots/beta/beta-momentum-dashboard.png)
+
+![Beta Habits view showing the habit list and selected habit details](docs/screenshots/beta/beta-habits-dashboard.png)
+
+![Beta active Pomodoro focus session showing the countdown, phase bar, cycle dots, and issue details](docs/screenshots/beta/beta-active-session-focus.png)
+
+![Beta Pomodoro short break showing the countdown, phase bar, cycle dots, and issue details](docs/screenshots/beta/beta-active-session-break.png)
+
+### Existing screenshots
+
 ![Daily dashboard showing planned issues, habits, and focus summary](docs/screenshots/daily-dashboard.png)
 
 ![Issues view showing scoped work and lifecycle status](docs/screenshots/issues.png)
