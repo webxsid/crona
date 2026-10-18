@@ -373,3 +373,17 @@ func TestTabLineContextRepoOnly(t *testing.T) {
 		t.Fatalf("expected repo-only context, got %q", line)
 	}
 }
+
+func TestNarrowDailyDateRowOffersDayKey(t *testing.T) {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; !strings.Contains(line, "[S] day") {
+		t.Fatalf("expected [S] day on the date row without a detail pane, got %q", line)
+	}
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(line, "[S]") {
+		t.Fatalf("expected [S] left to the detail pane when it shows, got %q", line)
+	}
+	away := datedShellState(uistate.ViewDaily, 120, 36)
+	away.ContentState.HistoricalAwayDate = "2026-05-27"
+	if line := plainLines(Render(away))[2]; strings.Contains(line, "[S]") {
+		t.Fatalf("expected no [S] on a historical away date, got %q", line)
+	}
+}

@@ -9,9 +9,6 @@ import (
 
 func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 	daily := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
-	if !strings.Contains(daily, "[1-5]") || !strings.Contains(daily, "tabs") {
-		t.Fatalf("expected global actions to advertise tabs, got %q", daily)
-	}
 	if !strings.Contains(daily, "[w]") || !strings.Contains(daily, "check-in") {
 		t.Fatalf("expected daily global actions to advertise check-in, got %q", daily)
 	}
@@ -154,12 +151,15 @@ func TestPaneActionsForSelectedAdhocIssueUseReadOnlyActions(t *testing.T) {
 	}
 }
 
-func TestGlobalActionsHintTabKeys(t *testing.T) {
-	actions := strings.Join(GlobalActions(Theme{}, ActionsState{View: "rollup"}), "\n")
+func TestNavigationActionsHintTabKeysOffTheBottomRow(t *testing.T) {
+	actions := strings.Join(NavigationActions(Theme{}, ActionsState{View: "rollup"}), "\n")
 	for _, want := range []string{"[1-5] tabs", "[[/]] sub-tabs"} {
 		if !strings.Contains(actions, want) {
-			t.Fatalf("expected global actions to include %q, got %q", want, actions)
+			t.Fatalf("expected navigation actions to include %q, got %q", want, actions)
 		}
+	}
+	if global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "rollup"}), "\n"); strings.Contains(global, "[1-5]") {
+		t.Fatalf("expected tab keys off the bottom row, got %q", global)
 	}
 }
 
@@ -186,8 +186,8 @@ func TestRollupActionsHintSharedDateKeys(t *testing.T) {
 	}
 }
 
-func TestDailyActionsHintDayAndCalendar(t *testing.T) {
-	actions := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily"}), "\n")
+func TestDailyDateActionsHintDayAndCalendar(t *testing.T) {
+	actions := strings.Join(DateActions(Theme{}, "daily"), "\n")
 	for _, want := range []string{"[S] day", "[C] calendar"} {
 		if !strings.Contains(actions, want) {
 			t.Fatalf("expected Daily actions to include %q, got %q", want, actions)

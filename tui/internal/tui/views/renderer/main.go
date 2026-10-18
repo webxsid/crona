@@ -8,6 +8,7 @@ import (
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	habits "crona/tui/internal/tui/views/habits"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issues "crona/tui/internal/tui/views/issues"
 	meta "crona/tui/internal/tui/views/meta"
 	momentumview "crona/tui/internal/tui/views/momentumview"
@@ -89,7 +90,12 @@ func DateNav(theme types.Theme, state types.ContentState, room int) string {
 func DateRowKeys(theme types.Theme, state types.ContentState) []string {
 	switch state.View {
 	case "daily":
-		return []string{viewchrome.KeyHint(theme, "C", "calendar")}
+		keys := []string{viewchrome.KeyHint(theme, "C", "calendar")}
+		// Without a detail pane, the day summary's key sits here instead.
+		if state.HistoricalAwayDate == "" && viewhelpers.ClassFor(state.Width) != viewhelpers.WidthWide {
+			keys = append([]string{viewchrome.KeyHint(theme, "S", "day")}, keys...)
+		}
+		return keys
 	case "rollup":
 		return []string{viewchrome.KeyHint(theme, "E", "calendar"), viewchrome.KeyHint(theme, "+/-/0", "window")}
 	case "momentum", "wellbeing":

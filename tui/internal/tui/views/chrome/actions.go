@@ -41,7 +41,8 @@ func segmentPtr(value string) *sharedtypes.SessionSegmentType {
 	return &segment
 }
 
-func GlobalActions(theme Theme, state ActionsState) []string {
+// NavigationActions move between tabs; they live on the help sheet, not the bottom row.
+func NavigationActions(theme Theme, state ActionsState) []string {
 	actions := []string{
 		theme.StyleHeader.Render("[1-5]") + theme.StyleDim.Render(" tabs"),
 		theme.StyleHeader.Render("[[/]]") + theme.StyleDim.Render(" sub-tabs"),
@@ -52,31 +53,71 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[f9]")+theme.StyleDim.Render(" beta support"),
 		)
 	}
+	return actions
+}
+
+// DateActions are a dated view's date keys, which the header's date row shows; the help
+// sheet lists them too.
+func DateActions(theme Theme, view string) []string {
+	actions := []string{
+		theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
+		theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
+	}
+	switch view {
+	case "daily":
+		return append(actions,
+			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day"),
+			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
+		)
+	case "rollup":
+		return append(actions,
+			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" calendar"),
+			theme.StyleHeader.Render("[+/-/0]")+theme.StyleDim.Render(" window"),
+		)
+	case "momentum", "wellbeing":
+		return append(actions, theme.StyleHeader.Render("[+/-/0]")+theme.StyleDim.Render(" window"))
+	}
+	return nil
+}
+
+// WithoutDateKeys drops the date keys a dated view's date row already shows.
+func WithoutDateKeys(actions []string) []string {
+	out := make([]string, 0, len(actions))
+	for _, action := range actions {
+		plain := ansi.Strip(action)
+		key, _, _ := strings.Cut(plain, " ")
+		switch {
+		case key == "[,/.]", key == "[g]", key == "[+/-/0]", key == "[+/-]", key == "[0]", plain == "[E] calendar":
+			continue
+		}
+		out = append(out, action)
+	}
+	return out
+}
+
+// GlobalActions are the bottom row's keys. Daily's task and habit keys live in its panes and
+// its date keys on the date row.
+func GlobalActions(theme Theme, state ActionsState) []string {
+	actions := []string{}
 	if tabLabel := tabActionLabel(state); tabLabel != "" {
 		actions = append(
 			actions,
 			theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel),
 		)
 	}
-	if supportsGlobalCreate(state.View) && !state.SelectedIssueAdhoc {
+	if supportsGlobalCreate(state.View) && state.View != "daily" && !state.SelectedIssueAdhoc {
 		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" create"))
 	}
 	if supportsGlobalContext(state.View) {
 		actions = append(
 			actions,
-			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" change context"),
+			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" context"),
 		)
 	}
 	if supportsGlobalExport(state.View) {
 		actions = append(
 			actions,
-			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export data"),
-		)
-	}
-	if state.View == "daily" {
-		actions = append(actions,
-			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day"),
-			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
+			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"),
 		)
 	}
 	if state.View == "daily" || state.View == "wellbeing" {

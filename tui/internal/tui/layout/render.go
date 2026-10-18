@@ -259,7 +259,7 @@ func renderStatusLine(state State) string {
 	if state.TimerActive {
 		left = viewchrome.HeaderSessionLine(ViewTheme(), state.HeaderState)
 	}
-	right := chrome.StyleDim.Render("? help  ctrl+c quit")
+	right := chrome.StyleHeader.Render("[?]") + chrome.StyleDim.Render(" all keys  ctrl+c quit")
 	if state.StatusMsg != "" {
 		style := chrome.StyleSelected
 		if state.StatusErr {

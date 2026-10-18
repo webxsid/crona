@@ -629,9 +629,10 @@ func (m Model) openHelpDialog() Model {
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
 	globalActions := viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions)
-	rows := []string{
-		"Global",
-	}
+	rows := []string{"Navigation"}
+	rows = append(rows, viewchrome.NavigationActions(theme, viewchrome.ActionsState{IsBetaBuild: m.isBetaBuild()})...)
+	rows = append(rows, viewchrome.DateActions(theme, string(m.view))...)
+	rows = append(rows, "", "Global")
 	rows = append(rows, globalActions...)
 	if len(paneActions) > 0 {
 		rows = append(rows, "", "Current View")

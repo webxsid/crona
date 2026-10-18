@@ -56,6 +56,13 @@ func (m Model) layoutState() layoutpkg.State {
 			kernelExecutablePath(m.kernelInfo),
 		),
 	})
+	switch view {
+	case ViewDaily:
+		// Daily's panes show their own keys.
+		paneActions = nil
+	case ViewMomentum, ViewWellbeing, ViewRollup:
+		paneActions = viewchrome.WithoutDateKeys(paneActions)
+	}
 	state := layoutpkg.State{
 		Width:               m.width,
 		Height:              m.height,

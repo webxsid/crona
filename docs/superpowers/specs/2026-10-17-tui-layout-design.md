@@ -75,7 +75,7 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 - **Top line (1 row)**: tabs left; active repo › stream right. Dev/beta markers and version move into the `?` help overlay and the System tab.
 - **Sub-tab line (1 row, only when the tab has sub-tabs)**: `Rollup · Momentum · Wellbeing`, with the active one highlighted. On every dated view (Daily, Rollup, Momentum, Wellbeing) its right end carries the shared date's navigation, `[g] today   [,] prev  <date> · W<nn>  next [.]`; Rollup puts its window start before the date (`<start> → <date>`). `,`/`.`/`g` move one shared date on all of these views; Rollup, Momentum and Wellbeing size their window with `+`/`-`/`0` (see `2026-10-18-tui-unified-date-design.md`).
 - **Content**: no outer borders. Sections are titled with a rule line `─ TITLE ───── right-aligned meta`. The focused section's title is highlighted in place of today's cyan border.
-- **Bottom status line (1 row)**: timer state (always visible when a timer runs, on every tab), context hints for the focused section, `?` help, and the status toast rendered inline on the right, replacing the floating toast overlay.
+- **Bottom status line (1 row)**: timer state (always visible when a timer runs, on every tab), global keys, `[?] all keys`, and the status toast rendered inline on the right, replacing the floating toast overlay. On Daily it holds globals only (`[tab]`, `[c]`, `[E]`, `[w]`, `[W]`); other views keep their section keys minus the date keys. Tab and sub-tab keys live on the `?` sheet (see `2026-10-18-tui-key-hints-design.md`).
 - **Dialogs**: unchanged centred modals, but width follows `min(content, maxWidth)` so they fit 60 columns.
 - **Minimum size**: 60×20. Below that, the existing "terminal too small" message.
 
@@ -91,7 +91,7 @@ Width classes, computed once per frame:
 | Medium | 100–159 | One primary column; strips and short sections stack around it |
 | Wide | ≥ 160 | Primary list │ detail pane for the selection (never peer lists side by side) |
 
-Rules: sections get stable heights — they do not resize as their content changes (Today splits Tasks/Habits evenly). Columns are only used for list │ detail. Key hints for the focused section live in the status line, not inside sections.
+Rules: sections get stable heights — they do not resize as their content changes (Today splits Tasks/Habits evenly). Columns are only used for list │ detail. Key hints for the focused section live in the status line, except on Daily, whose Tasks and Habits panes show their own keys (a create line, and an action line on the focused selection) and whose detail pane title offers `[S]`.
 
 Each tab declares its sections and a per-class arrangement. A new `layout/grid` helper turns an arrangement plus the content box into one `Box{W,H}` per section. Sections never compute their own position.
 

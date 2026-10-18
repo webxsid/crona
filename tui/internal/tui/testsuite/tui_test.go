@@ -711,7 +711,7 @@ func TestGlobalActionsOmitUpdatesShortcut(t *testing.T) {
 		UpdateVisible: true,
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[1-5]", "tabs"} {
+	for _, want := range []string{"[tab]", "next pane"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected global actions to contain %q, got %q", want, joined)
 		}
@@ -748,7 +748,7 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 	actions := viewchrome.DedupeActionKeys(global, pane)
 	joined := ansi.Strip(strings.Join(actions, " "))
 
-	for _, want := range []string{"[1-5]", "tabs"} {
+	for _, want := range []string{"[tab]", "next pane"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected deduped global actions to keep %q, got %q", want, joined)
 		}
@@ -758,7 +758,7 @@ func TestDedupeActionKeysRemovesPaneDuplicatesFromGlobalActions(t *testing.T) {
 			t.Fatalf("expected deduped global actions to drop %q, got %q", blocked, joined)
 		}
 	}
-	if !strings.Contains(joined, "[c] change context") {
+	if !strings.Contains(joined, "[c] context") {
 		t.Fatalf(
 			"expected deduped global actions to keep global-only context action, got %q",
 			joined,
@@ -780,8 +780,8 @@ func TestMetaRepoPaneShowsCheckoutAction(t *testing.T) {
 	}
 }
 
-func TestGlobalActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
-	actions := viewchrome.GlobalActions(support.Theme(), viewchrome.ActionsState{
+func TestNavigationActionsExposeBetaSupportShortcutOnBetaBuilds(t *testing.T) {
+	actions := viewchrome.NavigationActions(support.Theme(), viewchrome.ActionsState{
 		View:        "daily",
 		Pane:        "issues",
 		IsBetaBuild: true,
