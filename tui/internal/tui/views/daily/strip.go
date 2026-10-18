@@ -19,32 +19,49 @@ const (
 	dayStripColumnGap = "     "
 )
 
-// renderDayStrip is the htop-style header above the Daily lists: stacked Tasks and Habits
-// meters, then check-in signals and streaks as aligned columns. Columns that do not fit
-// the width are dropped from the right, streaks first.
+// dayStripMaxRows is the strip's full height: two meter rows and a third for Sleep.
+const dayStripMaxRows = 3
+
+// renderDayStrip is the htop-style header above the Daily lists at its full height.
 func renderDayStrip(theme types.Theme, state types.ContentState, width int) []string {
-	if width < 1 {
+	return dayStripRows(theme, state, width, dayStripMaxRows)
+}
+
+// dayStripRows renders at most maxRows of the strip: stacked Tasks and Habits meters, then
+// check-in signals and streaks as aligned columns, with the shown week pinned to the right
+// end under the sub-tab line's date. When space runs out, streaks go first, then the week,
+// then the signals.
+func dayStripRows(theme types.Theme, state types.ContentState, width, maxRows int) []string {
+	if width < 1 || maxRows < 1 {
 		return nil
 	}
 	columns := [][]string{dayMeterColumn(theme, state, true)}
 	if columnWidth(columns[0])+1 > width {
 		columns[0] = dayMeterColumn(theme, state, false)
 	}
-	for _, extra := range [][]string{daySignalColumn(theme, state), dayStreakColumn(theme, state)} {
-		if len(extra) == 0 {
-			continue
-		}
-		candidate := append(append([][]string{}, columns...), extra)
-		if stripWidth(candidate)+1 > width {
-			break
-		}
-		columns = candidate
+	if signals := daySignalColumn(theme, state); len(signals) > 0 && stripWidth(append(columns, signals))+1 <= width {
+		columns = append(columns, signals)
 	}
-	height := 0
+	week := []string(nil)
+	if maxRows >= 2 {
+		week = dayWeek(theme, state)
+	}
+	// The week sits right-aligned, so it costs its width plus a gap.
+	reserve := 0
+	if len(week) > 0 {
+		reserve = len(dayStripColumnGap) + columnWidth(week)
+		if stripWidth(columns)+reserve+2 > width {
+			week, reserve = nil, 0
+		}
+	}
+	if streaks := dayStreakColumn(theme, state); len(streaks) > 0 && stripWidth(append(columns, streaks))+reserve+2 <= width {
+		columns = append(columns, streaks)
+	}
+	height := len(week)
 	for _, column := range columns {
 		height = max(height, len(column))
 	}
-	rows := make([]string, height)
+	rows := make([]string, min(height, maxRows))
 	for i := range rows {
 		cells := make([]string, 0, len(columns))
 		for _, column := range columns {
@@ -54,9 +71,27 @@ func renderDayStrip(theme types.Theme, state types.ContentState, width int) []st
 			}
 			cells = append(cells, padCells(cell, columnWidth(column)))
 		}
-		rows[i] = padCells(" "+strings.TrimRight(strings.Join(cells, dayStripColumnGap), " "), width)
+		left := " " + strings.TrimRight(strings.Join(cells, dayStripColumnGap), " ")
+		if i < len(week) {
+			right := padCells(week[i], columnWidth(week)) + " "
+			left += strings.Repeat(" ", max(0, width-ansi.StringWidth(left)-ansi.StringWidth(right))) + right
+		}
+		rows[i] = padCells(left, width)
 	}
 	return rows
+}
+
+// dayWeek is the shown date's week as weekday names over day numbers.
+func dayWeek(theme types.Theme, state types.ContentState) []string {
+	lines, ok := viewcalendar.WeekRow(theme, viewcalendar.Selection{
+		SelectedDate: dailyDate(state),
+		WeekStart:    state.WeekStart,
+		AwayDates:    state.AwayDates(),
+	})
+	if !ok {
+		return nil
+	}
+	return lines
 }
 
 // SubTabMeta is the right side of Daily's sub-tab line: the shown date, its week and the

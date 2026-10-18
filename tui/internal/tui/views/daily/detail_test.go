@@ -69,18 +69,9 @@ func TestDetailEmptySelection(t *testing.T) {
 	}
 }
 
-func TestDetailShowsCalendarWhenTall(t *testing.T) {
-	state := detailState()
-	tall := ansi.Strip(renderDetail(testTheme(), state, 70, 40))
-	if !strings.Contains(tall, "Mo Tu We Th Fr Sa Su") {
-		t.Fatalf("expected calendar in a tall detail pane, got %q", tall)
-	}
-	short := ansi.Strip(renderDetail(testTheme(), state, 70, 12))
-	if strings.Contains(short, "Mo Tu We Th Fr Sa Su") {
-		t.Fatalf("expected no calendar in a short detail pane, got %q", short)
-	}
-	if lines := strings.Split(short, "\n"); len(lines) != 12 {
-		t.Fatalf("expected 12 rows, got %d", len(lines))
+func TestDetailHasNoCalendar(t *testing.T) {
+	if rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 40)); strings.Contains(rendered, "Mo Tu We") {
+		t.Fatalf("expected the calendar to live in the strip, got %q", rendered)
 	}
 }
 
@@ -119,28 +110,6 @@ func TestDailyTrustsModelTaskSection(t *testing.T) {
 	state.Cursors["issues"] = 0
 	if detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(detail, "Closed pinned task") {
 		t.Fatalf("expected the model's first pinned task selected, got %q", detail)
-	}
-}
-
-func TestDetailCalendarStaysPutAcrossSelections(t *testing.T) {
-	state := detailState()
-	long := strings.Repeat("A long note that wraps over several rows. ", 30)
-	state.DailyIssues[1].Notes = &long
-	rows := map[int]int{}
-	for _, cur := range []int{0, 1} {
-		state.Cursors["issues"] = cur
-		rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 34))
-		rows[cur] = rowOf(t, rendered, "Mo Tu We Th Fr Sa Su")
-		if lines := strings.Split(rendered, "\n"); len(lines) != 34 {
-			t.Fatalf("cursor %d: expected 34 rows, got %d", cur, len(lines))
-		}
-	}
-	if rows[0] != rows[1] {
-		t.Fatalf("expected the calendar on the same row for both selections, got %v", rows)
-	}
-	state.Cursors["issues"] = 1
-	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 34)); !strings.Contains(rendered, "…") {
-		t.Fatalf("expected overflowing detail to end in …, got %q", rendered)
 	}
 }
 

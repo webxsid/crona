@@ -1524,7 +1524,7 @@ func TestDailyIssueActionLineCompactsOnNarrowWidths(t *testing.T) {
 	}
 }
 
-func TestDailyDetailKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
+func TestDailyStripShowsWeekAtMediumHeights(t *testing.T) {
 	target := 15
 	state := views.ContentState{
 		View:   "daily",
@@ -1557,9 +1557,9 @@ func TestDailyDetailKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 	}
 
 	rendered := support.RenderDaily(state)
-	for _, want := range []string{"April 2026", "Wk  Mo Tu We Th Fr Sa Su", "30"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected medium-height daily summary to include %q, got %q", want, rendered)
+	for _, want := range []string{"Mo Tu We Th Fr Sa Su", "27 28 29 30  1  2  3"} {
+		if !strings.Contains(ansi.Strip(rendered), want) {
+			t.Fatalf("expected the medium-height daily strip to include %q, got %q", want, rendered)
 		}
 	}
 	if got := lipgloss.Height(rendered); got > state.Height {
@@ -1567,7 +1567,7 @@ func TestDailyDetailKeepsCalendarVisibleAtMediumHeights(t *testing.T) {
 	}
 }
 
-func TestDailyDetailShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
+func TestDailyStripShowsWeekWhenWideEvenAtShortHeights(t *testing.T) {
 	target := 15
 	state := views.ContentState{
 		View:   "daily",
@@ -1600,9 +1600,9 @@ func TestDailyDetailShowsCalendarWhenWideEvenAtShortHeights(t *testing.T) {
 	}
 
 	rendered := support.RenderDaily(state)
-	for _, want := range []string{"April 2026", "Wk  Mo Tu We Th Fr Sa Su"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected short wide daily summary to include %q, got %q", want, rendered)
+	for _, want := range []string{"Mo Tu We Th Fr Sa Su", "27 28 29 30  1  2  3"} {
+		if !strings.Contains(ansi.Strip(rendered), want) {
+			t.Fatalf("expected the short wide daily strip to include %q, got %q", want, rendered)
 		}
 	}
 	if got := lipgloss.Height(rendered); got > state.Height {

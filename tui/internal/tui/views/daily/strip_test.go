@@ -129,3 +129,29 @@ func TestSubTabMetaShowsDateWeekAndKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestDayStripShowsCurrentWeekAtRightEnd(t *testing.T) {
+	rows := stripRows(160)
+	for i, want := range []string{"Mo Tu We Th Fr Sa Su", "25 26 27 28 29 30 31"} {
+		row := strings.TrimRight(rows[i], " ")
+		if !strings.HasSuffix(row, want) || ansi.StringWidth(row) != 159 {
+			t.Fatalf("expected row %d to end with %q one cell from the edge, got %q", i, want, rows[i])
+		}
+	}
+}
+
+func TestDayStripKeepsWeekOverStreaks(t *testing.T) {
+	joined := strings.Join(stripRows(100), "\n")
+	if !strings.Contains(joined, "Mo Tu We") || strings.Contains(joined, "Check-ins") {
+		t.Fatalf("expected the week kept and streaks dropped at 100, got %q", joined)
+	}
+}
+
+func TestDayStripDropsWeekWhenNarrowOrOneRow(t *testing.T) {
+	if joined := strings.Join(stripRows(60), "\n"); strings.Contains(joined, "Mo Tu") {
+		t.Fatalf("expected no week at 60 columns, got %q", joined)
+	}
+	if rows := dayStripRows(testTheme(), dailySummaryTestState(), 160, 1); len(rows) != 1 || strings.Contains(ansi.Strip(rows[0]), "Mo Tu") {
+		t.Fatalf("expected a one-row strip without the week, got %q", rows)
+	}
+}

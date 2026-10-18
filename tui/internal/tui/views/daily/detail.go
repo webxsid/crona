@@ -8,7 +8,6 @@ import (
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
-	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	momentumhelpers "crona/tui/internal/tui/views/momentum"
@@ -18,11 +17,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// detailSelectionMinRows is the room the selection keeps above the calendar.
-const detailSelectionMinRows = 8
-
-// renderDetail shows the focused pane's selection, with the month calendar pinned to the
-// bottom when it fits, so the calendar never moves as the selection changes.
+// renderDetail shows the focused pane's selection.
 func renderDetail(theme types.Theme, state types.ContentState, width, height int) string {
 	bodyWidth := max(1, width-2)
 	var lines []string
@@ -35,17 +30,6 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	}
 	if len(lines) == 0 {
 		lines = []string{theme.StyleDim.Render("Nothing selected")}
-	}
-	body := height - 1
-	if calendar := detailCalendar(theme, state, bodyWidth, body-detailSelectionMinRows-1); len(calendar) > 0 {
-		top := body - len(calendar) - 1
-		if len(lines) > top {
-			lines = append(lines[:top-1:top-1], theme.StyleDim.Render("…"))
-		}
-		for len(lines) < top {
-			lines = append(lines, "")
-		}
-		lines = append(append(lines, ""), calendar...)
 	}
 	return dailySection(theme, "Selected", "", false, width, height, lines)
 }
@@ -196,21 +180,4 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 		lines[i] = style.Render(strings.TrimRight(line, " "))
 	}
 	return lines
-}
-
-func detailCalendar(theme types.Theme, state types.ContentState, width, maxLines int) []string {
-	rawDate := dailyDate(state)
-	if maxLines < 1 {
-		return nil
-	}
-	if _, ok := viewcalendar.ParseDate(rawDate); !ok {
-		return nil
-	}
-	for _, mode := range []viewcalendar.Mode{viewcalendar.ModeMonth, viewcalendar.ModeWeek} {
-		lines := renderCalendarForMode(theme, rawDate, state.WeekStart, maxLines, mode, state.AwayDates())
-		if len(lines) > 0 && len(lines) <= maxLines && viewcalendar.MaxLineWidth(lines) <= width {
-			return lines
-		}
-	}
-	return nil
 }

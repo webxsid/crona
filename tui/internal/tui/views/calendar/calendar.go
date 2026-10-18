@@ -198,6 +198,40 @@ func renderWeek(
 	return Window(lines, anchor, selection.MaxLines, weekStart)
 }
 
+// WeekRow is the selection's week as two lines: the weekday names and the day numbers,
+// with the selected day, today and away days styled as in the full calendar.
+func WeekRow(theme types.Theme, selection Selection) ([]string, bool) {
+	selected, ok := parseISODate(selection.SelectedDate)
+	if !ok {
+		return nil, false
+	}
+	today, ok := parseISODate(selection.Today)
+	if !ok {
+		today, _ = parseISODate(time.Now().Format("2006-01-02"))
+	}
+	weekStart := sharedtypes.NormalizeWeekStart(selection.WeekStart)
+	rowStart := shareddatefmt.StartOfWeek(selected, weekStart)
+	cellStyles := newDateCellStyles(theme)
+	cells := make([]string, 0, 7)
+	for day := range 7 {
+		current := rowStart.AddDate(0, 0, day)
+		cells = append(cells, renderDateCell(
+			theme,
+			current,
+			sameDay(current, selected),
+			sameDay(current, today),
+			false,
+			theme.StyleNormal,
+			cellStyles,
+			selection.AwayDates,
+		))
+	}
+	return []string{
+		theme.StyleDim.Render(compactWeekHeader(weekStart)),
+		strings.Join(cells, " "),
+	}, true
+}
+
 type dateCellStyles struct {
 	selected lipgloss.Style
 	today    lipgloss.Style

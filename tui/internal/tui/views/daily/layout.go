@@ -19,10 +19,11 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		return viewaway.RenderHistorical(theme, state)
 	}
 	width, height := state.Width, state.Height
-	strip := renderDayStrip(theme, state, width)
-	for len(strip) > 1 && height-len(strip) < dailyMinBodyRows {
-		strip = strip[:len(strip)-1]
+	stripRows := dayStripMaxRows
+	for stripRows > 1 && height-stripRows < dailyMinBodyRows {
+		stripRows--
 	}
+	strip := dayStripRows(theme, state, width, stripRows)
 	rest := height - len(strip)
 
 	listW := width
