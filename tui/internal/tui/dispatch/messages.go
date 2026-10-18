@@ -1,7 +1,9 @@
 package dispatch
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -210,7 +212,10 @@ func HandleMessage(
 		state.HabitStreakDefs = msg.Definitions
 		return state, nil, true
 	case commands.MomentumRangeLoadedMsg:
-		state.MomentumCards = msg.Cards
+		state.MomentumCards = slices.Clone(msg.Cards)
+		slices.SortStableFunc(state.MomentumCards, func(a, b api.MomentumCard) int {
+			return cmp.Compare(boolRank(!a.Definition.Enabled), boolRank(!b.Definition.Enabled))
+		})
 		if deps.ClampFiltered != nil {
 			deps.ClampFiltered(&state, uistate.PaneMomentumCards)
 		}
@@ -920,4 +925,11 @@ func staleReviewDays(state MessageState, deps MessageDeps, days []api.DailyMetri
 		}
 	}
 	return false
+}
+
+func boolRank(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
