@@ -10,6 +10,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/commands"
 	helperpkg "crona/tui/internal/tui/helpers"
+	layoutpkg "crona/tui/internal/tui/layout"
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
@@ -270,6 +271,11 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 	return m, false
 }
 
+// viewEntityBodyWidth is the text width inside the view_entity modal (76 wide, padded 3 a side).
+func viewEntityBodyWidth(width int) int {
+	return max(24, min(width-8, 76)-6)
+}
+
 func (m Model) openSelectedViewDialog() (Model, bool) {
 	snapshot := m.selectionSnapshot()
 	switch m.pane {
@@ -363,9 +369,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			"Description",
 			optionalText(issue.Description),
 		}
-		if issue.Notes != nil && strings.TrimSpace(*issue.Notes) != "" {
-			body = append(body, "", "Notes", strings.TrimSpace(*issue.Notes))
-		}
+		body = append(body, issuecore.NotesLines(layoutpkg.ViewTheme(), m.settings, issue.Notes, viewEntityBodyWidth(m.width))...)
 		body = append(
 			body,
 			"",

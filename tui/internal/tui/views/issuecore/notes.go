@@ -1,4 +1,4 @@
-package daily
+package issuecore
 
 import (
 	"fmt"
@@ -8,9 +8,8 @@ import (
 
 	shareddatefmt "crona/shared/datefmt"
 	"crona/tui/internal/api"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	types "crona/tui/internal/tui/views/types"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -46,8 +45,9 @@ func splitIssueNotes(text string) ([]string, []issueNoteEntry) {
 	return free, entries
 }
 
-// issueNotesLines renders an issue's notes as the free text, then its status history.
-func issueNotesLines(theme types.Theme, settings *api.CoreSettings, text *string, width int) []string {
+// NotesLines renders an issue's notes as a "Notes" section of free text, then a "History"
+// section of the status changes the daemon appended, each led by a blank row.
+func NotesLines(theme Theme, settings *api.CoreSettings, text *string, width int) []string {
 	if text == nil || strings.TrimSpace(*text) == "" {
 		return nil
 	}
@@ -55,7 +55,8 @@ func issueNotesLines(theme types.Theme, settings *api.CoreSettings, text *string
 	freeText := strings.TrimSpace(strings.Join(free, "\n"))
 	var lines []string
 	if freeText != "" {
-		lines = append(lines, detailText(theme, "Notes", &freeText, width)...)
+		lines = append(lines, "", theme.StyleDim.Bold(true).Render("Notes"))
+		lines = append(lines, wrapNotes(theme.StyleNormal, freeText, width)...)
 	}
 	if len(entries) == 0 {
 		return lines
@@ -68,7 +69,7 @@ func issueNotesLines(theme types.Theme, settings *api.CoreSettings, text *string
 	for _, entry := range entries[:min(len(entries), issueHistoryLimit)] {
 		local := entry.at.Local()
 		row := theme.StyleDim.Render(shareddatefmt.FormatDate(local, settings)+"  "+local.Format("15:04")) + "  " +
-			theme.StyleNormal.Render(issuecore.PlainIssueStatus(entry.from)+" → ") + issueStatusText(theme, entry.to)
+			theme.StyleNormal.Render(PlainIssueStatus(entry.from)+" → ") + issueStatusText(theme, entry.to)
 		note := entry.note
 		if written[note] {
 			note = ""
@@ -80,7 +81,7 @@ func issueNotesLines(theme types.Theme, settings *api.CoreSettings, text *string
 			lines = append(lines, row+"  "+theme.StyleDim.Render(note))
 		default:
 			lines = append(lines, row)
-			for _, wrapped := range wrapDetail(theme.StyleDim, note, width-2) {
+			for _, wrapped := range wrapNotes(theme.StyleDim, note, width-2) {
 				lines = append(lines, "  "+wrapped)
 			}
 		}
@@ -91,10 +92,19 @@ func issueNotesLines(theme types.Theme, settings *api.CoreSettings, text *string
 	return lines
 }
 
-func issueStatusText(theme types.Theme, status string) string {
+func issueStatusText(theme Theme, status string) string {
 	style := theme.StyleNormal
-	if s := issuecore.IssueStatusStyle(theme, status); s != nil {
+	if s := IssueStatusStyle(theme, status); s != nil {
 		style = *s
 	}
-	return style.Render(issuecore.PlainIssueStatus(status))
+	return style.Render(PlainIssueStatus(status))
+}
+
+func wrapNotes(style lipgloss.Style, text string, width int) []string {
+	wrapped := lipgloss.NewStyle().Width(max(8, width)).Render(text)
+	lines := strings.Split(wrapped, "\n")
+	for i, line := range lines {
+		lines[i] = style.Render(strings.TrimRight(line, " "))
+	}
+	return lines
 }

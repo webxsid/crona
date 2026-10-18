@@ -8,6 +8,8 @@ import (
 	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestOpenSelectedViewDialogIncludesWorkedEstimate(t *testing.T) {
@@ -53,6 +55,32 @@ func TestOpenSelectedViewDialogIncludesWorkedEstimate(t *testing.T) {
 			"expected dialog body to include worked/estimate summary, got %q",
 			next.dialogViewBody,
 		)
+	}
+}
+
+func TestIssueDetailsDialogSplitsNotesAndHistory(t *testing.T) {
+	notes := "Keep the window open.\n[2026-10-14T09:00:00Z] planned -> ready: Keep the window open."
+	issue := api.Issue{ID: 1, Title: "Window", Status: "ready", Notes: &notes}
+	m := Model{
+		width:     120,
+		view:      ViewDefault,
+		pane:      PaneIssues,
+		cursor:    map[Pane]int{PaneIssues: 0},
+		issues:    []api.Issue{issue},
+		allIssues: []api.IssueWithMeta{{Issue: issue, RepoName: "Core", StreamName: "TUI"}},
+	}
+	next, ok := m.openSelectedViewDialog()
+	if !ok {
+		t.Fatal("expected issue details dialog to open")
+	}
+	body := ansi.Strip(next.dialogViewBody)
+	for _, want := range []string{"Notes\nKeep the window open.", "History\n", "planned → ready"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected %q in the dialog body, got %q", want, body)
+		}
+	}
+	if strings.Contains(body, "[2026-10-14") || strings.Count(body, "Keep the window open.") != 1 {
+		t.Fatalf("expected the raw entry replaced and its repeated note hidden, got %q", body)
 	}
 }
 

@@ -96,7 +96,7 @@ func issueDetailLines(theme types.Theme, state types.ContentState, issue api.Iss
 	}
 	lines := detailDescription(theme, issue.Description, width)
 	lines = append(lines, detailGrid(theme, fields, width)...)
-	lines = append(lines, issueNotesLines(theme, state.Settings, issue.Notes, width)...)
+	lines = append(lines, issuecore.NotesLines(theme, state.Settings, issue.Notes, width)...)
 	return append(lines, momentumLines(theme, issueMomentums(state, repoID, issue.StreamID), width)...)
 }
 

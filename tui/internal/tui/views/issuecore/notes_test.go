@@ -1,4 +1,4 @@
-package daily
+package issuecore
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 func plainNotes(text string, width int) []string {
-	lines := issueNotesLines(testTheme(), nil, &text, width)
+	lines := NotesLines(Theme{}, nil, &text, width)
 	for i, line := range lines {
 		lines[i] = strings.TrimRight(ansi.Strip(line), " ")
 	}
