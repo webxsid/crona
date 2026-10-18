@@ -1,63 +1,21 @@
 package dialogs
 
-import controllerpkg "crona/tui/internal/tui/dialogs/controller"
+import (
+	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+
+	"github.com/charmbracelet/lipgloss"
+)
 
 func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {
 	case "create_repo":
-		rows := []string{
-			theme.StylePaneTitle.Render("New Repo"),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-		}
-		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "create"))
-		return modal(theme, state.Width, 56, theme.ColorCyan, rows)
+		return renderNameDescriptionForm(theme, state, "New Repo", "", "", "create")
 	case "edit_repo":
-		rows := []string{
-			theme.StylePaneTitle.Render("Edit Repo"),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-		}
-		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "save"))
-		return modal(theme, state.Width, 56, theme.ColorYellow, rows)
+		return renderNameDescriptionForm(theme, state, "Edit Repo", "", theme.ColorYellow, "save")
 	case "create_stream":
-		rows := []string{
-			theme.StylePaneTitle.Render("New Stream"),
-			"",
-			theme.StyleDim.Render("Repo"),
-			theme.StyleHeader.Render(state.RepoName),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-		}
-		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "create"))
-		return modal(theme, state.Width, 56, theme.ColorCyan, rows)
+		return renderNameDescriptionForm(theme, state, "New Stream", state.RepoName, "", "create")
 	case "edit_stream":
-		rows := []string{
-			theme.StylePaneTitle.Render("Edit Stream"),
-			"",
-			theme.StyleDim.Render("Repo"),
-			theme.StyleHeader.Render(state.RepoName),
-			"",
-			theme.StyleDim.Render("Name"),
-			state.Inputs[0].View(),
-			"",
-			theme.StyleDim.Render("Description (Optional)"),
-			state.Description.View(),
-		}
-		rows = appendDialogFooter(theme, state, rows, nameDescriptionHint(state, "save"))
-		return modal(theme, state.Width, 56, theme.ColorYellow, rows)
+		return renderNameDescriptionForm(theme, state, "Edit Stream", state.RepoName, theme.ColorYellow, "save")
 	case "checkout_context":
 		return renderCheckoutContext(theme, state)
 	case "create_habit":
@@ -106,16 +64,6 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	}
 }
 
-func nameDescriptionHint(state controllerpkg.State, submitLabel string) string {
-	if state.FocusIdx == state.DescriptionIndex {
-		return "[enter] newline   [tab] next   " + dialogSubmitHint(
-			state,
-			submitLabel,
-		) + "   [esc] cancel"
-	}
-	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
-}
-
 func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 	if state.Kind == "create_habit" {
 		switch state.FocusIdx {
@@ -140,4 +88,30 @@ func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 		) + "   [esc] cancel"
 	}
 	return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
+}
+
+// renderNameDescriptionForm draws the repo and stream forms: Name, then Description.
+func renderNameDescriptionForm(theme Theme, state controllerpkg.State, title, context string, border lipgloss.Color, submit string) string {
+	inner := formInner(state.Width)
+	column := len("Description")
+	full, _ := formColumns(inner, column)
+	return renderForm(theme, state, FormSpec{
+		Title: title, Context: context, Border: border, FocusCount: 2,
+		Primary: plainHint(dialogSubmitHint(state, submit)),
+		Hints:   textareaHints(state.DescriptionIndex),
+		Rows: []FormRow{
+			fieldRow(0, Field(theme, "Name", column, bareInput(state.Inputs[0], full, "required"), state.FocusIdx == 0)),
+			textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
+		},
+	})
+}
+
+// textareaHints is `tab next`, plus `enter newline` while the textarea is focused.
+func textareaHints(descriptionIndex int) func(int) []string {
+	return func(focus int) []string {
+		if focus == descriptionIndex {
+			return []string{"tab next", "enter newline"}
+		}
+		return []string{"tab next"}
+	}
 }
