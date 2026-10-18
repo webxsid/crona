@@ -229,7 +229,7 @@ func TestRenderUsesContextLabelAndDurationValues(t *testing.T) {
 	if !strings.Contains(rendered, "All · 2 contexts, 2h each") {
 		t.Fatalf("expected context meta to use duration-based target text, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "1h/2h") {
+	if !strings.Contains(rendered, "target 2h") || !strings.Contains(rendered, " 1h ") {
 		t.Fatalf("expected context ratio to render as compact duration, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "Latest bucket: 3h/2h met") {
@@ -496,7 +496,8 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	if body := strings.Join(strings.Split(rendered, "\n")[2:], "\n"); strings.Contains(body, "missed") || strings.Contains(body, "met") {
 		t.Fatalf("expected disabled momentum to avoid live status labels, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "1/3") || !strings.Contains(rendered, "3/3") {
+	// The bucket table states the shared target once, then each bucket's count.
+	if !strings.Contains(rendered, "paused · target 3") || !strings.Contains(rendered, " 1 ") || !strings.Contains(rendered, " 3 ") {
 		t.Fatalf("expected disabled momentum to keep historical counts, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "Momentum disabled") {

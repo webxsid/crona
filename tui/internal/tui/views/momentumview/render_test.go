@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	types "crona/tui/internal/tui/views/types"
@@ -164,37 +165,6 @@ func TestWideGivesBucketsTheirOwnColumn(t *testing.T) {
 	}
 }
 
-func TestBucketLinesNewestFirstWithNotes(t *testing.T) {
-	card := labelledCard("Deep work", "Oct 1", "Oct 2", "Oct 3")
-	card.Series[0].Skipped = true
-	card.Series[1].ProtectedDayCount = 2
-	card.Series[2].OriginalTarget = 5
-	text := plain(strings.Join(BucketLines(types.Theme{}, card, 70), "\n"))
-	if strings.Index(text, "Oct 3") > strings.Index(text, "Oct 1") {
-		t.Fatalf("expected the newest bucket first, got\n%s", text)
-	}
-	for _, want := range []string{"skipped", "protected 2d", "prorated from 5"} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("expected %q in\n%s", want, text)
-		}
-	}
-	for _, line := range BucketLines(types.Theme{}, card, 70) {
-		if w := ansi.StringWidth(line); w > 70 {
-			t.Fatalf("expected rows within 70 cells, got %d", w)
-		}
-	}
-}
-
-func TestBucketLinesKeepBarsWithinNarrowColumn(t *testing.T) {
-	card := labelledCard("Deep work", "Oct 1")
-	card.Series[0].Count = 13
-	card.Series[0].Target = 10
-	line := plain(BucketLines(types.Theme{}, card, 42)[0])
-	if strings.Contains(line, "…") || !strings.Contains(line, "13/10") || !strings.Contains(line, "┆") {
-		t.Fatalf("expected a whole row with its bar in 42 cells, got %q", line)
-	}
-}
-
 func TestPairedHeaderKeepsLongTargets(t *testing.T) {
 	card := momentumTestCard("Deep work", "W1")
 	card.Definition.TargetKind = sharedtypes.MomentumTargetKindContext
@@ -204,10 +174,68 @@ func TestPairedHeaderKeepsLongTargets(t *testing.T) {
 	}
 }
 
-func TestBucketNotesDoNotRepeatSkipped(t *testing.T) {
-	card := labelledCard("Deep work", "Oct 1")
+// dailyCard has one daily bucket per count, from Sun 11 Oct 2026, against a target of 4.
+func dailyCard(counts ...int) sharedtypes.MomentumCard {
+	card := labelledCard("Deep work")
+	card.Series = dailyMomentumSeries(time.Date(2026, 10, 11, 0, 0, 0, 0, time.UTC), counts, 4)
+	return card
+}
+
+func TestBucketLinesOpenWithSummary(t *testing.T) {
+	head := plain(BucketLines(types.Theme{}, dailyCard(4, 2, 6), 60)[0])
+	if head != "target 4 · met 2 of 3 · avg 4" {
+		t.Fatalf("expected the summary line, got %q", head)
+	}
+}
+
+func TestBucketRowsUseMarksWeekdaysAndBareCounts(t *testing.T) {
+	text := plain(strings.Join(BucketLines(types.Theme{}, dailyCard(4, 2, 6), 60), "\n"))
+	for _, want := range []string{"✓ Tue 13  6 ", "✗ Mon 12  2 ", "✓ Sun 11  4 "} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected %q in\n%s", want, text)
+		}
+	}
+	if strings.Contains(text, "/4") || strings.Contains(text, "missed") {
+		t.Fatalf("expected no repeated target or status words, got\n%s", text)
+	}
+	if strings.Index(text, "Tue 13") > strings.Index(text, "Sun 11") {
+		t.Fatalf("expected the newest bucket first, got\n%s", text)
+	}
+}
+
+func TestBucketBarsFillTheColumn(t *testing.T) {
+	for _, line := range BucketLines(types.Theme{}, dailyCard(4, 2, 6), 60)[1:] {
+		if w := ansi.StringWidth(line); w != 60 && !strings.HasPrefix(plain(line), "──") {
+			t.Fatalf("expected rows to fill 60 cells, got %d: %q", w, plain(line))
+		}
+	}
+}
+
+func TestBucketLinesBreakWeeks(t *testing.T) {
+	text := plain(strings.Join(BucketLines(types.Theme{}, dailyCard(4, 2, 6), 60), "\n"))
+	w41, w42 := strings.Index(text, "W41"), strings.Index(text, "W42")
+	mon, sun := strings.Index(text, "Mon 12"), strings.Index(text, "Sun 11")
+	if w42 < 0 || w41 < 0 || !(w42 < mon && mon < w41 && w41 < sun) {
+		t.Fatalf("expected W42 over Mon 12 and W41 over Sun 11, got\n%s", text)
+	}
+}
+
+func TestBucketLinesShowExceptions(t *testing.T) {
+	card := dailyCard(4, 2, 6)
 	card.Series[0].Skipped = true
-	if line := plain(BucketLines(types.Theme{}, card, 80)[0]); strings.Count(line, "skipped") != 1 {
-		t.Fatalf("expected skipped once, got %q", line)
+	card.Series[0].ProtectedDayCount = 1
+	card.Series[1].Target, card.Series[1].OriginalTarget = 3, 4
+	text := plain(strings.Join(BucketLines(types.Theme{}, card, 60), "\n"))
+	for _, want := range []string{"· Sun 11  skip  protected 1d", "Mon 12  2/3"} {
+		if !strings.Contains(squash(text), squash(want)) {
+			t.Fatalf("expected %q in\n%s", want, text)
+		}
+	}
+}
+
+func TestBucketLinesWithoutWeeksForWeeklyBuckets(t *testing.T) {
+	text := plain(strings.Join(BucketLines(types.Theme{}, momentumTestCard("Deep work", "W1", "W2"), 60), "\n"))
+	if strings.Contains(text, "──") {
+		t.Fatalf("expected no week rules for weekly buckets, got\n%s", text)
 	}
 }

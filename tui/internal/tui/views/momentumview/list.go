@@ -50,9 +50,12 @@ func latestStatus(card sharedtypes.MomentumCard) string {
 	return momentumStatusForPoint(card.Series[len(card.Series)-1], true)
 }
 
+// statusMarks are the one-glyph forms of bucket statuses; paused stays a word.
+var statusMarks = map[string]string{"met": "✓", "near": "◐", "missed": "✗", "skipped": "·", "paused": "paused"}
+
 func statusMark(theme types.Theme, card sharedtypes.MomentumCard) string {
 	status := latestStatus(card)
-	mark := map[string]string{"met": "✓", "near": "◐", "missed": "✗", "skipped": "·", "paused": "paused"}[status]
+	mark := statusMarks[status]
 	if mark == "" {
 		return ""
 	}

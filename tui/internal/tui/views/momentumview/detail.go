@@ -3,6 +3,7 @@ package momentumview
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	sharedtypes "crona/shared/types"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -20,6 +21,9 @@ const (
 	minChartRows = 8
 	// maxBucketLabel fits a week's label, "[25] Jun 22-28".
 	maxBucketLabel = 14
+	// minBucketBar is the shortest bar a row keeps before it drops its notes.
+	minBucketBar = 12
+	isoDate      = "2006-01-02"
 )
 
 // DetailLines is the momentum's settings, then its chart, which fills the room left; with
@@ -112,32 +116,105 @@ func chartLines(theme types.Theme, card sharedtypes.MomentumCard, width, height 
 	return append(lines, footnote)
 }
 
-// BucketLines lists the momentum's buckets newest first: date, count of target, status,
-// a bar on the shared scale, and notes on protected days and prorated targets.
+// BucketLines is a summary line, then the momentum's buckets newest first: a status mark,
+// the bucket, its count and a bar that fills the width. The target is stated once when it
+// is shared, so only a bucket with its own target repeats it; daily buckets break by week.
 func BucketLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []string {
 	def, series := card.Definition, card.Series
-	scale := momentumSeriesScale(series)
-	labelWidth, ratioWidth := 6, 5
-	for _, point := range series {
-		labelWidth = max(labelWidth, min(maxBucketLabel, ansi.StringWidth(momentumDisplayLabel(point))))
-		ratioWidth = max(ratioWidth, ansi.StringWidth(momentumRatioText(point, def)))
+	shared, hasShared := momentumSharedTarget(series)
+	daily := sharedtypes.NormalizeHabitStreakPeriod(def.Period) == sharedtypes.HabitStreakPeriodDay
+	lines := []string{theme.StyleDim.Render(ansi.Truncate(bucketSummary(def, series, shared, hasShared), width, "…"))}
+
+	labels := make([]string, len(series))
+	counts := make([]string, len(series))
+	labelWidth, countWidth := 0, 0
+	for i, point := range series {
+		labels[i] = bucketLabel(point, daily)
+		counts[i] = bucketCount(point, def, shared, hasShared)
+		labelWidth = max(labelWidth, min(maxBucketLabel, ansi.StringWidth(labels[i])))
+		countWidth = max(countWidth, ansi.StringWidth(counts[i]))
 	}
-	// The label, ratio, status and gaps leave the bar the rest, 4 to 16 cells.
-	barWidth := max(4, min(16, width-labelWidth-ratioWidth-7-6))
-	lines := make([]string, 0, len(series))
+	scale := momentumSeriesScale(series)
+	week := ""
 	for i := len(series) - 1; i >= 0; i-- {
 		point := series[i]
+		if daily {
+			if day, err := time.Parse(isoDate, point.BucketKey); err == nil {
+				_, w := day.ISOWeek()
+				if label := fmt.Sprintf("W%d", w); label != week {
+					week = label
+					rule := "── " + label + " "
+					lines = append(lines, theme.StyleDim.Render(rule+strings.Repeat("─", max(0, width-ansi.StringWidth(rule)))))
+				}
+			}
+		}
 		status := momentumStatusForPoint(point, def.Enabled)
-		row := padRight(viewhelpers.Truncate(momentumDisplayLabel(point), labelWidth), labelWidth) + "  " +
-			padRight(momentumRatioText(point, def), ratioWidth) + "  " +
-			momentumStatusStyle(theme, status).Render(padRight(status, 7)) + "  " +
-			momentumBucketBar(theme, point, barWidth, def.Enabled, scale)
-		if notes := bucketNotes(point, def); notes != "" {
-			row += "  " + theme.StyleDim.Render(notes)
+		row := momentumStatusStyle(theme, status).Render(statusMarks[status]) + " " +
+			padRight(ansi.Truncate(labels[i], labelWidth, "…"), labelWidth) + "  " +
+			padRight(counts[i], countWidth) + "  "
+		room := max(1, width-ansi.StringWidth(row))
+		notes := bucketNotes(point, def)
+		switch {
+		case point.Skipped:
+			row += theme.StyleDim.Render(padRight(notes, room))
+		case notes != "" && room-len(notes)-2 >= minBucketBar:
+			row += momentumBucketBar(theme, point, room-len(notes)-2, def.Enabled, scale) + "  " + theme.StyleDim.Render(notes)
+		default:
+			row += momentumBucketBar(theme, point, room, def.Enabled, scale)
 		}
 		lines = append(lines, ansi.Truncate(row, width, "…"))
 	}
 	return lines
+}
+
+// bucketSummary is the table's opening line: the shared target, buckets met, and the mean.
+func bucketSummary(def sharedtypes.HabitStreakDefinition, series []sharedtypes.MomentumSeriesPoint, shared int, hasShared bool) string {
+	met, counted, total := 0, 0, 0
+	for _, point := range series {
+		if point.Skipped {
+			continue
+		}
+		counted++
+		total += point.Count
+		if momentumStatusForPoint(point, true) == "met" {
+			met++
+		}
+	}
+	parts := []string{}
+	if !def.Enabled {
+		parts = append(parts, "paused")
+	}
+	if hasShared {
+		parts = append(parts, "target "+momentumValueDisplay(shared, def))
+	}
+	if def.Enabled {
+		parts = append(parts, fmt.Sprintf("met %d of %d", met, counted))
+	}
+	if counted > 0 {
+		parts = append(parts, "avg "+momentumValueDisplay(total/counted, def))
+	}
+	return strings.Join(parts, " · ")
+}
+
+// bucketLabel is a daily bucket's weekday and day, or the bucket's own label.
+func bucketLabel(point sharedtypes.MomentumSeriesPoint, daily bool) string {
+	if daily {
+		if day, err := time.Parse(isoDate, point.BucketKey); err == nil {
+			return day.Format("Mon 2")
+		}
+	}
+	return momentumDisplayLabel(point)
+}
+
+// bucketCount is the bucket's count, with its target only when it differs from the shared one.
+func bucketCount(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition, shared int, hasShared bool) string {
+	if point.Skipped {
+		return "skip"
+	}
+	if hasShared && point.Target == shared {
+		return momentumValueDisplay(point.Count, def)
+	}
+	return momentumRatioText(point, def)
 }
 
 func bucketNotes(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition) string {
