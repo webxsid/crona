@@ -49,18 +49,15 @@ func TestDayStripStacksTasksOverHabits(t *testing.T) {
 
 func TestDayStripAlignsSignalsAndStreaksInColumns(t *testing.T) {
 	rows := stripRows(160)
-	if len(rows) != 3 {
-		t.Fatalf("expected 3 strip rows, got %d: %q", len(rows), rows)
+	if len(rows) != 2 {
+		t.Fatalf("expected 2 strip rows, got %d: %q", len(rows), rows)
 	}
-	for _, col := range [][]string{{"Mood", "Energy", "Sleep"}, {"Focus", "Check-ins"}} {
-		at := cellIndex(rows[0], col[0])
-		for i, label := range col {
-			if got := cellIndex(rows[i], label); got != at || at < 0 {
-				t.Fatalf("expected %q at column %d on row %d, got %d: %q", label, at, i, got, rows)
-			}
+	for _, pair := range [][2]string{{"Mood", "Focus"}, {"Energy", "Check-ins"}} {
+		if at := cellIndex(rows[0], pair[0]); at < 0 || cellIndex(rows[1], pair[1]) != at {
+			t.Fatalf("expected %q over %q in one column, got %q", pair[0], pair[1], rows)
 		}
 	}
-	for i, want := range []string{"Mood 4/5 Focus 1d best 3d", "Energy 3/5 Check-ins 2d best 5d", "Sleep 7h30m"} {
+	for i, want := range []string{"Mood 4/5 Energy 3/5 Sleep 7h30m", "Focus 1d best 3d Check-ins 2d best 5d"} {
 		if !strings.Contains(fieldsOf(rows[i]), want) {
 			t.Fatalf("expected row %d to contain %q, got %q", i, want, rows[i])
 		}
@@ -71,10 +68,8 @@ func TestDayStripSignalsAverageWithoutCheckIn(t *testing.T) {
 	state := dailySummaryTestState()
 	state.DailyCheckIn = nil
 	rows := renderDayStrip(testTheme(), state, 160)
-	for i, want := range []string{"Mood avg 3.1/5", "Energy avg 3.8/5", "Sleep avg 6h15m"} {
-		if !strings.Contains(fieldsOf(ansi.Strip(rows[i])), want) {
-			t.Fatalf("expected row %d to contain %q, got %q", i, want, ansi.Strip(rows[i]))
-		}
+	if want := "Mood avg 3.1/5 Energy avg 3.8/5 Sleep avg 6h15m"; !strings.Contains(fieldsOf(ansi.Strip(rows[0])), want) {
+		t.Fatalf("expected row 0 to contain %q, got %q", want, ansi.Strip(rows[0]))
 	}
 }
 
@@ -96,10 +91,10 @@ func TestDayStripLeavesDateToSubTabLine(t *testing.T) {
 	}
 }
 
-func TestDayStripDropsStreaksThenSignalsWhenNarrow(t *testing.T) {
+func TestDayStripDropsRightmostColumnsWhenNarrow(t *testing.T) {
 	medium := strings.Join(stripRows(72), "\n")
-	if strings.Contains(medium, "Check-ins") || !strings.Contains(medium, "Mood") {
-		t.Fatalf("expected streaks dropped before signals at 72, got %q", medium)
+	if !strings.Contains(medium, "Mood") || !strings.Contains(medium, "Focus") || strings.Contains(medium, "Energy") {
+		t.Fatalf("expected only the first signal column at 72, got %q", medium)
 	}
 	if narrow := stripRows(48); len(narrow) != 2 || strings.Contains(strings.Join(narrow, ""), "Mood") {
 		t.Fatalf("expected meters only at 48, got %q", narrow)
@@ -143,10 +138,10 @@ func TestDayStripShowsCurrentWeekAtRightEnd(t *testing.T) {
 	}
 }
 
-func TestDayStripKeepsWeekOverStreaks(t *testing.T) {
+func TestDayStripKeepsWeekOverLaterColumns(t *testing.T) {
 	joined := strings.Join(stripRows(100), "\n")
-	if !strings.Contains(joined, "Mo Tu We") || strings.Contains(joined, "Check-ins") {
-		t.Fatalf("expected the week kept and streaks dropped at 100, got %q", joined)
+	if !strings.Contains(joined, "Mo Tu We") || !strings.Contains(joined, "Mood") || strings.Contains(joined, "Sleep") {
+		t.Fatalf("expected the week and first column kept, later columns dropped at 100, got %q", joined)
 	}
 }
 

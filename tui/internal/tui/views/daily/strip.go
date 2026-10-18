@@ -18,43 +18,53 @@ const (
 	dayStripColumnGap = "     "
 )
 
-// dayStripMaxRows is the strip's full height: two meter rows and a third for Sleep.
-const dayStripMaxRows = 3
+// dayStripMaxRows is the strip's full height: the Tasks and Habits meter rows.
+const dayStripMaxRows = 2
 
 // renderDayStrip is the htop-style header above the Daily lists at its full height.
 func renderDayStrip(theme types.Theme, state types.ContentState, width int) []string {
 	return dayStripRows(theme, state, width, dayStripMaxRows)
 }
 
-// dayStripRows renders at most maxRows of the strip: stacked Tasks and Habits meters, then
-// check-in signals and streaks as aligned columns, with the shown week pinned to the right
-// end under the sub-tab line's date. When space runs out, streaks go first, then the week,
-// then the signals.
+// dayStripRows renders at most maxRows of the strip: Tasks over Habits meters, then columns
+// pairing a check-in signal over a streak (Mood over Focus, Energy over Check-ins, then
+// Sleep), with the shown week pinned to the right end under the sub-tab line's date. When
+// space runs out the rightmost columns go first, then the week, then the rest of the columns.
 func dayStripRows(theme types.Theme, state types.ContentState, width, maxRows int) []string {
 	if width < 1 || maxRows < 1 {
 		return nil
 	}
-	columns := [][]string{dayMeterColumn(theme, state, true)}
-	if columnWidth(columns[0])+1 > width {
-		columns[0] = dayMeterColumn(theme, state, false)
+	meters := dayMeterColumn(theme, state, true)
+	if columnWidth(meters)+1 > width {
+		meters = dayMeterColumn(theme, state, false)
 	}
-	if signals := daySignalColumn(theme, state); len(signals) > 0 && stripWidth(append(columns, signals))+1 <= width {
-		columns = append(columns, signals)
+	grid := dayGridColumns(theme, state)
+	// fill adds grid columns left to right while they fit beside reserve cells.
+	fill := func(reserve int) [][]string {
+		columns := [][]string{meters}
+		for _, column := range grid {
+			if stripWidth(append(columns, column))+reserve+1 > width {
+				break
+			}
+			columns = append(columns, column)
+		}
+		return columns
 	}
 	week := []string(nil)
 	if maxRows >= 2 {
 		week = dayWeek(theme, state)
 	}
-	// The week sits right-aligned, so it costs its width plus a gap.
-	reserve := 0
+	columns := fill(0)
 	if len(week) > 0 {
-		reserve = len(dayStripColumnGap) + columnWidth(week)
-		if stripWidth(columns)+reserve+2 > width {
-			week, reserve = nil, 0
+		// The week sits right-aligned, so it costs its width, a gap and the edge cell.
+		reserve := len(dayStripColumnGap) + columnWidth(week) + 1
+		withWeek := fill(reserve)
+		switch {
+		case stripWidth(withWeek)+reserve+1 > width, len(withWeek) == 1 && len(grid) > 0:
+			week = nil
+		default:
+			columns = withWeek
 		}
-	}
-	if streaks := dayStreakColumn(theme, state); len(streaks) > 0 && stripWidth(append(columns, streaks))+reserve+2 <= width {
-		columns = append(columns, streaks)
 	}
 	height := len(week)
 	for _, column := range columns {
@@ -151,37 +161,47 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 	}
 }
 
-func daySignalColumn(theme types.Theme, state types.ContentState) []string {
-	column := []string{}
-	for _, signal := range []struct{ name, value string }{
+// dayGridColumns pairs each check-in signal (top row) with a streak (bottom row) in one
+// aligned column; a column with neither is left out.
+func dayGridColumns(theme types.Theme, state types.ContentState) [][]string {
+	type cell struct{ label, value string }
+	top := []cell{
 		{"Mood", signalMoodValue(state)},
 		{"Energy", signalEnergyValue(state)},
 		{"Sleep", signalSleepValue(state)},
-	} {
-		if signal.value == "" {
+	}
+	bottom := []cell{}
+	if streaks := state.DailyStreaks; streaks != nil {
+		bottom = []cell{
+			{"Focus", fmt.Sprintf("%dd  ", streaks.CurrentFocusDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestFocusDays))},
+			{"Check-ins", fmt.Sprintf("%dd  ", streaks.CurrentCheckInDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestCheckInDays))},
+		}
+	}
+	columns := [][]string{}
+	for i := range top {
+		pair := []cell{top[i]}
+		if i < len(bottom) {
+			pair = append(pair, bottom[i])
+		}
+		labelWidth := 0
+		for _, c := range pair {
+			if c.value != "" {
+				labelWidth = max(labelWidth, len(c.label))
+			}
+		}
+		if labelWidth == 0 {
 			continue
 		}
-		column = append(column, theme.StyleHeader.Render(padCells(signal.name, 6))+"  "+
-			theme.StyleNormal.Render(strings.TrimPrefix(signal.value, "today ")))
+		column := make([]string, len(pair))
+		for row, c := range pair {
+			if c.value != "" {
+				column[row] = theme.StyleHeader.Render(padCells(c.label, labelWidth)) + "  " +
+					theme.StyleNormal.Render(strings.TrimPrefix(c.value, "today "))
+			}
+		}
+		columns = append(columns, column)
 	}
-	return column
-}
-
-func dayStreakColumn(theme types.Theme, state types.ContentState) []string {
-	streaks := state.DailyStreaks
-	if streaks == nil {
-		return nil
-	}
-	current := []string{fmt.Sprintf("%dd", streaks.CurrentFocusDays), fmt.Sprintf("%dd", streaks.CurrentCheckInDays)}
-	currentWidth := max(len(current[0]), len(current[1]))
-	row := func(label, now string, best int) string {
-		return theme.StyleHeader.Render(padCells(label, 9)) + "  " + theme.StyleNormal.Render(padCells(now, currentWidth)) +
-			"  " + theme.StyleDim.Render(fmt.Sprintf("best %dd", best))
-	}
-	return []string{
-		row("Focus", current[0], streaks.LongestFocusDays),
-		row("Check-ins", current[1], streaks.LongestCheckInDays),
-	}
+	return columns
 }
 
 func columnWidth(column []string) int {
