@@ -202,7 +202,7 @@ func TestCadenceRowsStackAboveTarget(t *testing.T) {
 			last = "Time"
 		}
 		cadence, days, end := row("Cadence"), row("Days"), row(last)
-		if !(cadence >= 0 && days == cadence+1 && end == days+1) {
+		if cadence < 0 || days != cadence+1 || end != days+1 {
 			t.Errorf("%s: Cadence %d, Days %d, %s %d; want consecutive rows\n%s", state.Kind, cadence, days, last, end, strings.Join(lines, "\n"))
 		}
 	}

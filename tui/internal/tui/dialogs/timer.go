@@ -6,8 +6,6 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 // timerMetaRows splits renderTimerMeta's rows into body lines.
@@ -179,7 +177,7 @@ func renderPomodoro(theme Theme, state controllerpkg.State) string {
 // renderCountdownForm draws Timer Session and Extend Timer Session: one duration field.
 func renderCountdownForm(theme Theme, state controllerpkg.State) string {
 	column := len("Focus")
-	title, label, help, primary, border := "Timer Session", "Focus", "Single countdown. No breaks. Reuses the hard-limit session completion flow.", "start", lipgloss.Color(theme.ColorGreen)
+	title, label, help, primary, border := "Timer Session", "Focus", "Single countdown. No breaks. Reuses the hard-limit session completion flow.", "start", theme.ColorGreen
 	rows := []FormRow{}
 	if state.Kind == "timer_countdown_extend" {
 		title, label, help, primary, border = "Extend Timer Session", "Add", "Adds time to the current countdown. No breaks or cycles.", "extend", ""
@@ -262,7 +260,7 @@ func renderManualSession(theme Theme, state controllerpkg.State) string {
 }
 
 func renderIssueSessionTransition(theme Theme, state controllerpkg.State) string {
-	title, message, border := "End Session?", "Mark this issue and end the active session?", lipgloss.Color(theme.ColorYellow)
+	title, message, border := "End Session?", "Mark this issue and end the active session?", theme.ColorYellow
 	switch state.IssueStatus {
 	case "done":
 		title, message, border = "Complete Issue", "Mark the issue done and end the active session.", theme.ColorGreen

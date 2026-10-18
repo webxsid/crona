@@ -109,13 +109,3 @@ func activeIssueWithMeta(state HeaderState) *api.IssueWithMeta {
 	}
 	return nil
 }
-
-func compactNonEmpty(parts []string) []string {
-	out := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if strings.TrimSpace(part) != "" {
-			out = append(out, part)
-		}
-	}
-	return out
-}

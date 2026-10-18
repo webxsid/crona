@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/views/charts"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -85,52 +84,6 @@ func renderFocusLegend(theme types.Theme, state types.ContentState) string {
 	return fmt.Sprintf("%s %s   %s %s", estimate, estimateText, actual, loggedText)
 }
 
-func renderFocusSubtitle(state types.ContentState, width int) string {
-	line := "logged bars with estimated reference line"
-	focusText := ""
-	if state.WeeklyFocusScore != nil {
-		focusText = fmt.Sprintf(
-			"   focus %d/100   %s",
-			state.WeeklyFocusScore.Score,
-			focusReasonText(state.WeeklyFocusScore.Reason),
-		)
-	}
-	if state.GoalProgress != nil {
-		diffSeconds := state.GoalProgress.TotalActualSeconds - (state.GoalProgress.TotalEstimateMinutes * 60)
-		status := "on target"
-		switch {
-		case diffSeconds > 0:
-			status = "over estimate"
-		case diffSeconds < 0:
-			status = "under estimate"
-		}
-		line = fmt.Sprintf(
-			"logged bars with estimate line%s   delta %s   %s",
-			focusText,
-			signedCompactHoursFromSeconds(diffSeconds),
-			status,
-		)
-	} else if focusText != "" {
-		line = "logged bars with estimate line" + focusText
-	}
-	return truncateFocusLine(line, width)
-}
-
-func focusReasonText(reason sharedtypes.FocusScoreReason) string {
-	switch reason {
-	case sharedtypes.FocusScoreReasonNoActivity:
-		return "ready to begin"
-	case sharedtypes.FocusScoreReasonUnderTarget:
-		return "build momentum"
-	case sharedtypes.FocusScoreReasonNeedsBreaks:
-		return "take a break"
-	case sharedtypes.FocusScoreReasonOverextended:
-		return "overextended"
-	default:
-		return "steady rhythm"
-	}
-}
-
 func compactHoursFromMinutes(minutes int) string {
 	return fmt.Sprintf("%.1fh", float64(minutes)/60.0)
 }
@@ -139,29 +92,10 @@ func compactHoursFromSeconds(seconds int) string {
 	return fmt.Sprintf("%.1fh", float64(seconds)/3600.0)
 }
 
-func signedCompactHoursFromSeconds(seconds int) string {
-	sign := ""
-	if seconds > 0 {
-		sign = "+"
-	}
-	return sign + compactHoursFromSeconds(seconds)
-}
-
 func shortFocusDate(date string) string {
 	parsed, err := time.Parse("2006-01-02", date)
 	if err != nil {
 		return date
 	}
 	return parsed.Format("Jan 2")
-}
-
-func truncateFocusLine(value string, width int) string {
-	if lipgloss.Width(value) <= width {
-		return value
-	}
-	runes := []rune(value)
-	if width <= 1 {
-		return string(runes[:max(0, min(len(runes), width))])
-	}
-	return string(runes[:max(0, min(len(runes), width-1))]) + "…"
 }

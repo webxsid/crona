@@ -51,7 +51,7 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 		fieldRow(days, daysField(theme, state, column, days)),
 		fieldRow(focusOf(target), Field(theme, "Target", column, bareInput(state.Inputs[target], full, "optional"), focused(target))),
 	}
-	title, border, submit := "Edit Habit", lipgloss.Color(theme.ColorYellow), "save"
+	title, border, submit := "Edit Habit", theme.ColorYellow, "save"
 	if create {
 		title, border, submit = "New Habit", "", "create"
 		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))

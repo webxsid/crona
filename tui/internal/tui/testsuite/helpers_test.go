@@ -94,23 +94,3 @@ func assertCompactDefault(t *testing.T, rendered string, height int) {
 		t.Fatalf("default compact view height %d exceeds allocated height %d", got, height)
 	}
 }
-
-func assertCompactWellbeing(t *testing.T, rendered string, height int) {
-	t.Helper()
-	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Wellbeing") || !strings.Contains(plain, "2026-03-19") {
-		t.Fatalf("expected compact wellbeing header")
-	}
-	if !strings.Contains(plain, "[,/.]") && !strings.Contains(plain, "[w]") {
-		t.Fatalf("expected action hints in compact wellbeing view")
-	}
-	if !strings.Contains(plain, "No check-in recorded for this date") {
-		t.Fatalf("expected current day summary in compact wellbeing view")
-	}
-	if strings.Contains(plain, "Metrics Window") || strings.Contains(plain, "Details") {
-		t.Fatalf("expected compact wellbeing to use single-pane tab rendering")
-	}
-	if got := lipgloss.Height(rendered); got > height {
-		t.Fatalf("wellbeing compact view height %d exceeds allocated height %d", got, height)
-	}
-}

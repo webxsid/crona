@@ -3,7 +3,6 @@ package dispatch
 import (
 	"encoding/json"
 	"slices"
-	"time"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -360,14 +359,6 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 	default:
 		return state, nil
 	}
-}
-
-func shiftISODate(date string, days int) string {
-	parsed, err := time.Parse(time.DateOnly, date)
-	if err != nil {
-		return date
-	}
-	return parsed.AddDate(0, 0, days).Format(time.DateOnly)
 }
 
 func settingsKeysAffectStreaks(keys []sharedtypes.CoreSettingsKey) bool {

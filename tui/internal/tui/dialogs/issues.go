@@ -1,14 +1,8 @@
 package dialogs
 
-import (
-	"strings"
-
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	"github.com/charmbracelet/lipgloss"
-)
+import controllerpkg "crona/tui/internal/tui/dialogs/controller"
 
 func renderIssueDialog(theme Theme, state controllerpkg.State) string {
-	const issueDialogWidth = 92
 	switch state.Kind {
 	case "create_issue_meta", "create_issue_default":
 		return renderIssueCreate(theme, state)
@@ -20,31 +14,6 @@ func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 		return renderStatusNote(theme, state)
 	default:
 		return ""
-	}
-}
-
-func issueDialogHint(state controllerpkg.State, submitLabel string) string {
-	if state.Kind == "create_issue_default" || state.Kind == "create_issue_meta" {
-		return issueCreateHint(state)
-	}
-	switch state.Kind {
-	case "edit_issue":
-		switch state.FocusIdx {
-		case 1:
-			return "[enter] newline   [tab] next   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		case 3:
-			return "[ctrl+e] calendar   [g] today   [tab] next   " + dialogSubmitHint(
-				state,
-				submitLabel,
-			) + "   [esc] cancel"
-		default:
-			return "[tab] next   " + dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
-		}
-	default:
-		return dialogSubmitHint(state, submitLabel) + "   [esc] cancel"
 	}
 }
 
@@ -78,49 +47,6 @@ func issueCreateHint(state controllerpkg.State) string {
 		}
 	}
 	return static + "\n" + context
-}
-
-func renderIssueContextColumns(
-	theme Theme,
-	width, maxWidth int,
-	repoName, streamName string,
-) string {
-	contentWidth := min(width-8, maxWidth) - 8
-	contentWidth = max(28, contentWidth)
-	colWidth := (contentWidth - 2) / 2
-	colWidth = max(colWidth, 12)
-	repoCol := lipgloss.NewStyle().Width(colWidth).Render(
-		theme.StyleDim.Render("Repo") + "\n" + theme.StyleHeader.Render(fallback(repoName, "-")),
-	)
-	streamCol := lipgloss.NewStyle().Width(colWidth).Render(
-		theme.StyleDim.Render("Stream") +
-			"\n" + theme.StyleHeader.Render(fallback(streamName, "-")),
-	)
-	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
-}
-
-func renderDefaultIssueContextColumns(
-	theme Theme,
-	state controllerpkg.State,
-	width, maxWidth int,
-) string {
-	contentWidth := min(width-8, maxWidth) - 8
-	contentWidth = max(28, contentWidth)
-	colWidth := (contentWidth - 2) / 2
-	colWidth = max(colWidth, 12)
-	repoCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
-		theme.StyleDim.Render("Repo"),
-		state.Inputs[0].View(),
-		"",
-		renderSelector(theme, state, state.RepoSelectorLabel, state.FocusIdx == 0),
-	}, "\n"))
-	streamCol := lipgloss.NewStyle().Width(colWidth).Render(strings.Join([]string{
-		theme.StyleDim.Render("Stream"),
-		state.Inputs[1].View(),
-		"",
-		renderSelector(theme, state, state.StreamSelectorLabel, state.FocusIdx == 1),
-	}, "\n"))
-	return lipgloss.JoinHorizontal(lipgloss.Top, repoCol, "  ", streamCol)
 }
 
 // renderEditIssue draws Edit Issue: New Issue's fields without the pickers.

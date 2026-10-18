@@ -6,9 +6,7 @@ import (
 	"strings"
 
 	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -69,16 +67,6 @@ func restDatesSummary(values []string) string {
 		return values[0]
 	}
 	return fmt.Sprintf("%s +%d", values[0], len(values)-1)
-}
-
-func dialogInputView(state controllerpkg.State, idx int) string {
-	if idx >= 0 && idx < len(state.Inputs) {
-		return state.Inputs[idx].View()
-	}
-	input := textinput.New()
-	input.Width = 56
-	input.Placeholder = "<missing input>"
-	return input.View()
 }
 
 func renderViewEntityBody(theme Theme, body string) string {

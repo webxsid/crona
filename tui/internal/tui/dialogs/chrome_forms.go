@@ -8,9 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 )
 
-// issueFormInner is the inner width New Issue lays its fields out to.
-const issueFormInner = 72
-
 // renderIssueCreate draws New Issue (and its ad hoc variants) with the dialog chrome.
 // create_issue_default focuses Repo, Stream, Title, Description, Estimate, Due, Summary;
 // create_issue_meta focuses Title, Description, Estimate, Due.

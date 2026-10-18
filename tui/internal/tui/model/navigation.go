@@ -434,23 +434,6 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 	return m, false
 }
 
-func rollupDayNarrative(day api.DashboardWindowDay) string {
-	switch day.Status {
-	case "done":
-		return "Planned work was completed inside this day."
-	case "missed":
-		return "Planned work fell through and ended in failure or miss."
-	case "carry_over":
-		return "Some planned work rolled forward from an earlier day."
-	case "mixed":
-		return "This day had a mix of completed, missed, or carried work."
-	case "planned":
-		return "Planned work existed, but it was not completed in this window."
-	default:
-		return "No tracked plan activity for this day."
-	}
-}
-
 func optionalText(text *string) string {
 	if text == nil || strings.TrimSpace(*text) == "" {
 		return "-"
@@ -620,12 +603,4 @@ func (m Model) currentWeekStart() sharedtypes.WeekStart {
 		return sharedtypes.WeekStartMonday
 	}
 	return sharedtypes.NormalizeWeekStart(m.settings.WeekStart)
-}
-
-func shiftISODate(date string, days int) string {
-	t, err := time.Parse("2006-01-02", date)
-	if err != nil {
-		return date
-	}
-	return t.AddDate(0, 0, days).Format("2006-01-02")
 }

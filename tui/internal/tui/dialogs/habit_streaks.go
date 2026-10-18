@@ -29,13 +29,6 @@ func isMomentumDialogKind(kind string) bool {
 	}
 }
 
-func habitStreakDialogTitle(momentumMode bool) string {
-	if momentumMode {
-		return "Momentum"
-	}
-	return "Habit Streaks"
-}
-
 func habitStreakPeriodLabel(period sharedtypes.HabitStreakPeriod) string {
 	switch sharedtypes.NormalizeHabitStreakPeriod(period) {
 	case sharedtypes.HabitStreakPeriodWeek:
@@ -84,15 +77,6 @@ func habitStreakTargetLabel(def sharedtypes.HabitStreakDefinition) string {
 		return "Contexts"
 	default:
 		return "Habits"
-	}
-}
-
-func habitStreakMatchTypeLabel(def sharedtypes.HabitStreakDefinition) string {
-	switch sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) {
-	case sharedtypes.MomentumTargetKindContext:
-		return "Matching contexts"
-	default:
-		return "Matching habits"
 	}
 }
 

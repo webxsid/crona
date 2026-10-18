@@ -78,32 +78,3 @@ func progressStyle(theme types.Theme, bias string, status string) lipgloss.Style
 		return lipgloss.NewStyle().Foreground(theme.ColorWhite)
 	}
 }
-
-func prettyWindowStatus(status string) string {
-	switch status {
-	case "done":
-		return "done"
-	case "missed":
-		return "missed"
-	case "carry_over":
-		return "carry over"
-	case "planned":
-		return "planned"
-	case "mixed":
-		return "mixed"
-	default:
-		return "no activity"
-	}
-}
-
-func padStatus(value string, width int) string {
-	current := lipgloss.Width(value)
-	if current >= width {
-		return value
-	}
-	return value + strings.Repeat(" ", width-current)
-}
-
-func itoa(v int) string {
-	return fmt.Sprintf("%d", v)
-}

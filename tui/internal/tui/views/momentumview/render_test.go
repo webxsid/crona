@@ -215,7 +215,7 @@ func TestBucketLinesBreakWeeks(t *testing.T) {
 	text := plain(strings.Join(BucketLines(types.Theme{}, dailyCard(4, 2, 6), 60), "\n"))
 	w41, w42 := strings.Index(text, "W41"), strings.Index(text, "W42")
 	mon, sun := strings.Index(text, "Mon 12"), strings.Index(text, "Sun 11")
-	if w42 < 0 || w41 < 0 || !(w42 < mon && mon < w41 && w41 < sun) {
+	if w42 < 0 || w41 < 0 || w42 >= mon || mon >= w41 || w41 >= sun {
 		t.Fatalf("expected W42 over Mon 12 and W41 over Sun 11, got\n%s", text)
 	}
 }

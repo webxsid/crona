@@ -5,6 +5,7 @@ package e2e
 import (
 	"strings"
 	"testing"
+	"time"
 
 	shareddto "crona/shared/dto"
 	"crona/shared/protocol"
@@ -32,6 +33,9 @@ func TestSessionDetailAndAmendFlowOverIPC(t *testing.T) {
 	if timer.SessionID == nil || *timer.SessionID == "" {
 		t.Fatalf("expected active session id, got %+v", timer)
 	}
+	// Session timestamps are recorded at RFC3339 second precision. Let the session
+	// cross a second boundary so the ended session has a valid editable time range.
+	time.Sleep(1100 * time.Millisecond)
 
 	errMessage := kernel.callError(t, protocol.MethodSessionAmendNote, shareddto.AmendSessionNoteRequest{
 		ID:   timer.SessionID,
