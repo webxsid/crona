@@ -171,3 +171,19 @@ func TestIssuesCardActionsWithAppStyles(t *testing.T) {
 		t.Fatalf("app styles: action row %q", line)
 	}
 }
+
+func TestIssuesListHintsRequireListFocus(t *testing.T) {
+	for _, height := range []int{6, 40} {
+		state := issuesState(120, height)
+		state.Pane = "scope"
+		rendered := ansi.Strip(renderIssues(types.Theme{}, state, 93, height))
+		for _, hint := range []string{"[a]", "[A]", "[←/→]"} {
+			if strings.Contains(rendered, hint) {
+				t.Errorf("unfocused list height %d shows %s: %q", height, hint, rendered)
+			}
+		}
+		if !strings.Contains(squash(rendered), "Open Done") {
+			t.Errorf("unfocused selector missing at height %d: %q", height, rendered)
+		}
+	}
+}

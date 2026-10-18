@@ -427,6 +427,9 @@ func (m Model) enterHabitHistoryViewFromSelection() (Model, tea.Cmd) {
 
 func (m Model) openCreateIssueDefaultDialog() Model {
 	snapshot := m.dialogSnapshot()
+	if m.view != ViewDefault {
+		return m.withDialogState(snapshot.OpenCreateIssueDefault())
+	}
 	context := &api.ActiveContext{}
 	for _, repo := range m.repos {
 		if repo.ID == m.browseScope.RepoID {

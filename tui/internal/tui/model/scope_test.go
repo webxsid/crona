@@ -170,3 +170,20 @@ func TestCreateIssueDefaultsToBrowseScope(t *testing.T) {
 		t.Fatalf("defaults %q / %q", got.dialogInputs[0].Value(), got.dialogInputs[1].Value())
 	}
 }
+
+func TestDailyCreateIssueDefaultsToCheckout(t *testing.T) {
+	for _, browse := range []scope.Scope{{}, {RepoID: 1, StreamID: 4}} {
+		m := scopeModel(3)
+		m.view, m.pane = ViewDaily, PaneIssues
+		repoName, streamName := "crona", "tui"
+		m.context.RepoName, m.context.StreamName = &repoName, &streamName
+		m.browseScope = browse
+		got, _ := press(m, "a")
+		if got.dialog != "create_issue_default" {
+			t.Fatalf("browse %+v: dialog %q", browse, got.dialog)
+		}
+		if got.dialogInputs[0].Value() != "crona" || got.dialogInputs[1].Value() != "tui" {
+			t.Errorf("browse %+v: Daily defaults %q / %q, want crona / tui", browse, got.dialogInputs[0].Value(), got.dialogInputs[1].Value())
+		}
+	}
+}

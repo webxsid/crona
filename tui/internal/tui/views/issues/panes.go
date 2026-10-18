@@ -30,8 +30,11 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		open, done = theme.StyleDim.Render("Open"), theme.StyleSelectedInverse.Render("Done")
 	}
 	selector := open + "  " + done
-	lines := []string{selector, newIssueLine(theme, state, width-2)}
-	if height < 8 {
+	lines := []string{selector}
+	if active {
+		lines = append(lines, newIssueLine(theme, state, width-2))
+	}
+	if active && height < 8 {
 		room := width - 2 - ansi.StringWidth(selector) - 3
 		if keys := newIssueLine(theme, state, room); keys != "" {
 			selector += "   " + keys
@@ -95,5 +98,9 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", len(indices)-end)))
 		}
 	}
-	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Issues", Meta: fmt.Sprintf("%d  [←/→]", len(indices)), Focused: active, Width: width, Height: height, Lines: lines})
+	meta := fmt.Sprintf("%d", len(indices))
+	if active {
+		meta += "  [←/→]"
+	}
+	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Issues", Meta: meta, Focused: active, Width: width, Height: height, Lines: lines})
 }
