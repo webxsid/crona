@@ -88,11 +88,19 @@ func TestRenderSubTabLineCarriesDailyDate(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 36)
 	state.ContentState.DashboardDate = "2026-05-27"
 	line := plainLines(Render(state))[1]
-	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.HasSuffix(strings.TrimRight(line, " "), ",/. g") {
+	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.HasSuffix(strings.TrimRight(line, " "), "[g] today") {
 		t.Fatalf("expected sub-tabs left and the date keys right, got %q", line)
 	}
 	if !strings.Contains(line, "W22") || ansi.StringWidth(line) != 120 {
 		t.Fatalf("expected the Daily week on a full-width sub-tab line, got %q", line)
+	}
+}
+
+func TestRenderSubTabLineKeepsDailyDateWhenNarrow(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 70, 30)
+	state.ContentState.DashboardDate = "2026-05-27"
+	if line := plainLines(Render(state))[1]; !strings.Contains(line, "2026-05-27") {
+		t.Fatalf("expected the date kept on a narrow sub-tab line, got %q", line)
 	}
 }
 

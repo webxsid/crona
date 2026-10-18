@@ -229,9 +229,9 @@ func renderSubTabLine(state State) string {
 		}
 	}
 	left := " " + strings.Join(parts, chrome.StyleDim.Render(" · "))
-	right := viewrenderer.SubTabMeta(ViewTheme(), state.ContentState)
-	// The view's meta only shows when it fits whole beside the sub-tabs.
-	if right == "" || ansi.StringWidth(left)+ansi.StringWidth(right)+3 > state.Width {
+	// The view's meta takes the room beside the sub-tabs, a gap and a right margin aside.
+	right := viewrenderer.SubTabMeta(ViewTheme(), state.ContentState, state.Width-ansi.StringWidth(left)-3)
+	if right == "" {
 		return left
 	}
 	return joinEnds(left, right+" ", state.Width)

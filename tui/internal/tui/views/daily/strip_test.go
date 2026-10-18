@@ -118,11 +118,13 @@ func TestDayStripFitsWidth(t *testing.T) {
 func TestSubTabMetaShowsDateWeekAndKeys(t *testing.T) {
 	state := dailySummaryTestState()
 	date, _ := viewcalendar.ParseDate("2026-05-27")
-	got := ansi.Strip(SubTabMeta(testTheme(), state))
+	got := ansi.Strip(SubTabMeta(testTheme(), state, 80))
 	for _, want := range []string{
 		helperpkg.FormatDisplayDate("2026-05-27", nil),
 		fmt.Sprintf("W%02d", viewcalendar.WeekNumber(date, state.WeekStart)),
-		",/. g",
+		"[,] prev",
+		"next [.]",
+		"[g] today",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("expected sub-tab meta to contain %q, got %q", want, got)
@@ -153,5 +155,19 @@ func TestDayStripDropsWeekWhenNarrowOrOneRow(t *testing.T) {
 	}
 	if rows := dayStripRows(testTheme(), dailySummaryTestState(), 160, 1); len(rows) != 1 || strings.Contains(ansi.Strip(rows[0]), "Mo Tu") {
 		t.Fatalf("expected a one-row strip without the week, got %q", rows)
+	}
+}
+
+func TestSubTabMetaShortensToFit(t *testing.T) {
+	state := dailySummaryTestState()
+	date := helperpkg.FormatDisplayDate("2026-05-27", nil)
+	for _, room := range []int{60, 40, 30, 20} {
+		got := ansi.Strip(SubTabMeta(testTheme(), state, room))
+		if ansi.StringWidth(got) > room || !strings.Contains(got, date) {
+			t.Fatalf("room %d: expected the date within the room, got %q", room, got)
+		}
+	}
+	if got := ansi.Strip(SubTabMeta(testTheme(), state, 30)); !strings.Contains(got, "[,]") || !strings.Contains(got, "[.]") {
+		t.Fatalf("expected the keys kept before the words drop out, got %q", got)
 	}
 }

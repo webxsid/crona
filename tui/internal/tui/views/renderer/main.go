@@ -62,10 +62,11 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 	}
 }
 
-// SubTabMeta is the view's text for the right end of the sub-tab line, if it has any.
-func SubTabMeta(theme types.Theme, state types.ContentState) string {
+// SubTabMeta is the view's text for the right end of the sub-tab line, if it has any,
+// fitted within room cells.
+func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 	if state.View == "daily" && state.HistoricalAwayDate == "" {
-		return daily.SubTabMeta(theme, state)
+		return daily.SubTabMeta(theme, state, room)
 	}
 	return ""
 }
