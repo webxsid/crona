@@ -10,7 +10,6 @@ import (
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/x/ansi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -70,62 +69,7 @@ func renderSessionDialog(theme Theme, state controllerpkg.State) string {
 		rows = appendDialogFooter(theme, state, rows, "[↑/↓] move   [enter] choose   [esc] back")
 		return modal(theme, state.Width, 72, theme.ColorCyan, rows)
 	case "adhoc_issue_picker":
-		rows := []string{theme.StylePaneTitle.Render(state.ViewTitle)}
-		if state.ViewName != "" {
-			rows = append(rows, "", theme.StyleDim.Render(state.ViewName))
-		}
-		tabLabels := []string{"Due today", "Overdue", "Pinned", "All"}
-		tabs := make([]string, 0, len(tabLabels))
-		for i, label := range tabLabels {
-			label += fmt.Sprintf(" %d", state.AdhocIssueTabCounts[i])
-			if i == state.AdhocIssueTab {
-				tabs = append(tabs, theme.StyleSelected.Render("["+label+"]"))
-			} else {
-				tabs = append(tabs, theme.StyleDim.Render(label))
-			}
-		}
-		rows = append(rows, "", strings.Join(tabs, "   "))
-		contentWidth := max(12, min(state.Width-8, 92)-6)
-		header := strings.Join(rows, "\n")
-		footer := "[←/→] tab   [↑/↓] move   [enter] continue   [esc] back"
-		footerHeight := lipgloss.Height(lipgloss.NewStyle().Width(contentWidth).Render(footer))
-		available := 30
-		if state.Height > 0 {
-			available = max(3, state.Height-6-lipgloss.Height(lipgloss.NewStyle().Width(contentWidth).Render(header))-footerHeight-4)
-		}
-		count := max(1, available/3)
-		first := max(0, state.ChoiceCursor-count+1)
-		last := min(len(state.ChoiceItems), first+count)
-		for i := first; i < last; i++ {
-			item := ansi.Truncate(strings.ReplaceAll(state.ChoiceItems[i], "\n", " "), contentWidth-2, "…")
-			if i == state.ChoiceCursor {
-				rows = append(rows, "", theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+item))
-			} else {
-				rows = append(rows, "", theme.StyleNormal.Render("  "+item))
-			}
-			if i < len(state.ChoiceDetails) {
-				rows = append(rows, theme.StyleDim.Render("  "+ansi.Truncate(state.ChoiceDetails[i], contentWidth-2, "…")))
-			}
-		}
-		if len(state.ChoiceItems) > 0 {
-			position := fmt.Sprintf("Issue %d of %d", state.ChoiceCursor+1, len(state.ChoiceItems))
-			if first > 0 {
-				position += " · ↑ more"
-			}
-			if last < len(state.ChoiceItems) {
-				position += " · ↓ more"
-			}
-			rows = append(rows, "", theme.StyleDim.Render(position))
-		}
-		if len(state.AdhocIssueIDs) == 0 {
-			if state.AdhocIssueTabCounts[3] == 0 {
-				rows = append(rows, "", theme.StyleDim.Render("No eligible issues are available."))
-			} else {
-				rows = append(rows, "", theme.StyleDim.Render("No issues in this tab. Switch tabs to see other eligible issues."))
-			}
-		}
-		rows = appendDialogFooter(theme, state, rows, footer)
-		return modal(theme, state.Width, 92, theme.ColorCyan, rows)
+		return renderAdhocIssuePicker(theme, state)
 	case "adhoc_new_issue":
 		rows := []string{theme.StylePaneTitle.Render(state.ViewTitle)}
 		if state.ViewName != "" {

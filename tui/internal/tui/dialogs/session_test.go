@@ -74,8 +74,8 @@ func TestAdhocIssuePickerShowsTabsAndExplainsAttachment(t *testing.T) {
 		"Pinned 3",
 		"Fix login flow",
 		"Atlas / Web · in progress",
-		"[←/→] tab",
-		"[enter] continue",
+		"←/→ tab",
+		"enter continue",
 	} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("issue picker is missing %q: %q", want, rendered)
@@ -303,7 +303,7 @@ func TestAdhocPickerKeepsSelectionAndFooterVisible(t *testing.T) {
 			state.AdhocIssueIDs = append(state.AdhocIssueIDs, int64(i+1))
 		}
 		rendered := renderSessionDialog(Theme{}, state)
-		for _, want := range []string{"Issue 39", "Issue 40 of 60", "[enter] continue", "↑ more", "↓ more"} {
+		for _, want := range []string{"Issue 39", "40 of 60", "enter continue", "↑ more", "↓ more"} {
 			if !strings.Contains(rendered, want) {
 				t.Fatalf("size %v missing %q: %s", size, want, rendered)
 			}

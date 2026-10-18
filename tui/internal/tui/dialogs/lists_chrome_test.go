@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	uistate "crona/tui/internal/tui/state"
 
@@ -81,5 +83,33 @@ func TestDateGridDialogs(t *testing.T) {
 		if strings.Contains(out, "(Optional)") {
 			t.Errorf("%s keeps (Optional) in its title:\n%s", c.name, out)
 		}
+	}
+}
+
+func adhocPicker(tab int) controllerpkg.State {
+	today, past := "2026-10-18", "2026-10-10"
+	issues := []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 1, Title: "Fix alerts", Status: sharedtypes.IssueStatusInProgress, TodoForDate: &today}, RepoName: "OSS", StreamName: "cli"},
+		{Issue: api.Issue{ID: 2, Title: "Write docs", Status: sharedtypes.IssueStatusInProgress, TodoForDate: &today}, RepoName: "OSS", StreamName: "docs"},
+		{Issue: api.Issue{ID: 3, Title: "Old bug", Status: sharedtypes.IssueStatusInProgress, TodoForDate: &past}, RepoName: "Work", StreamName: "api"},
+	}
+	state := controllerpkg.State{Kind: "adhoc_issue_picker", AdhocIssueTab: tab}
+	return controllerpkg.OpenAdhocIssuePicker(state, issues, "2026-10-18")
+}
+
+func TestAdhocIssuePickerChrome(t *testing.T) {
+	out := assertListChrome(t, formCase{name: "adhoc_issue_picker", state: adhocPicker(0), title: "Attach to Issue"})
+	for _, want := range []string{"Due today 2", "Overdue 1", "▶ Fix alerts", "enter continue", "←/→ tab"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("adhoc picker lacks %q:\n%s", want, out)
+		}
+	}
+	height := -1
+	for tab := 0; tab < 4; tab++ {
+		got := len(strings.Split(Render(testTheme(), sized(adhocPicker(tab), 120, 36)), "\n"))
+		if height >= 0 && got != height {
+			t.Errorf("tab %d height %d, want %d", tab, got, height)
+		}
+		height = got
 	}
 }

@@ -1,11 +1,14 @@
 package dialogs
 
 import (
+	"fmt"
 	"strings"
 
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	issuecore "crona/tui/internal/tui/views/issuecore"
+
+	"github.com/charmbracelet/x/ansi"
 )
 
 // selectList draws a list with ▶ on the cursor row.
@@ -130,4 +133,67 @@ func renderDateGrid(theme Theme, state controllerpkg.State) string {
 		title: fallback(state.DateTitle, "Pick Date"), context: state.DateMonth, body: body, focus: -1,
 		primary: "enter choose", hints: hints,
 	})
+}
+
+// renderAdhocIssuePicker draws Attach to Issue: section tabs, then two-line issue rows. The
+// list is padded to the fullest tab, so switching tabs never changes the dialog's height.
+func renderAdhocIssuePicker(theme Theme, state controllerpkg.State) string {
+	body := []string{}
+	if state.ViewName != "" {
+		body = append(body, theme.StyleDim.Render(state.ViewName), "")
+	}
+	tabs := []string{}
+	for i, label := range []string{"Due today", "Overdue", "Pinned", "All"} {
+		label = fmt.Sprintf("%s %d", label, state.AdhocIssueTabCounts[i])
+		if i == state.AdhocIssueTab {
+			tabs = append(tabs, theme.StyleSelected.Render(" "+label+" "))
+		} else {
+			tabs = append(tabs, theme.StyleDim.Render(" "+label+" "))
+		}
+	}
+	body = append(body, strings.Join(tabs, " "), "")
+	width := FrameInner(state.Width, []string{strings.Repeat(" ", frameMaxInner)}) - 2
+	start, focus := len(body), -1
+	for i, item := range state.ChoiceItems {
+		if i > 0 {
+			body = append(body, "")
+		}
+		if i == state.ChoiceCursor {
+			focus = len(body)
+		}
+		body = append(body, selectList(theme, []string{ansi.Truncate(strings.ReplaceAll(item, "\n", " "), width, "…")}, boolIndex(i == state.ChoiceCursor))...)
+		if i < len(state.ChoiceDetails) {
+			body = append(body, theme.StyleDim.Render("  "+ansi.Truncate(state.ChoiceDetails[i], width, "…")))
+		}
+	}
+	if len(state.ChoiceItems) == 0 {
+		message := "No issues in this tab. Switch tabs to see other eligible issues."
+		if state.AdhocIssueTabCounts[3] == 0 {
+			message = "No eligible issues are available."
+		}
+		body = append(body, theme.StyleDim.Render(message))
+	}
+	fullest := 0
+	for _, count := range state.AdhocIssueTabCounts {
+		fullest = max(fullest, count)
+	}
+	for len(body) < start+max(1, fullest*3-1) {
+		body = append(body, "")
+	}
+	context := ""
+	if len(state.ChoiceItems) > 0 {
+		context = fmt.Sprintf("%d of %d", state.ChoiceCursor+1, len(state.ChoiceItems))
+	}
+	return renderListDialog(theme, state, listDialog{
+		title: fallback(state.ViewTitle, "Attach to Issue"), context: context, body: body, focus: focus,
+		primary: "enter continue", hints: []string{"←/→ tab", "↑/↓ move"},
+	})
+}
+
+// boolIndex is 0 when on (selectList's cursor on the single row) and -1 otherwise.
+func boolIndex(on bool) int {
+	if on {
+		return 0
+	}
+	return -1
 }
