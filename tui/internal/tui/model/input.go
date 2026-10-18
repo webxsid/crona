@@ -114,6 +114,7 @@ func (m Model) inputState() inputpkg.State {
 		UpdateStatus:              m.updateStatus,
 		UpdateChecking:            m.updateChecking,
 		UpdateDiagnosticsExpanded: m.updateDiagnosticsExpanded,
+		SupportCursor:             m.supportCursor,
 		CurrentExecutable:         m.currentExecutablePath,
 		RunningIsBeta:             m.isBetaBuild(),
 		Settings:                  m.settings,
@@ -166,6 +167,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.updateStatus = state.UpdateStatus
 	m.updateChecking = state.UpdateChecking
 	m.updateDiagnosticsExpanded = state.UpdateDiagnosticsExpanded
+	m.supportCursor = state.SupportCursor
 	m.currentExecutablePath = state.CurrentExecutable
 	m.settings = state.Settings
 	m.alertStatus = state.AlertStatus

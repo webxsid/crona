@@ -43,6 +43,7 @@ type State struct {
 	UpdateStatus              *api.UpdateStatus
 	UpdateChecking            bool
 	UpdateDiagnosticsExpanded bool
+	SupportCursor             int
 	CurrentExecutable         string
 	RunningIsBeta             bool
 	Settings                  *api.CoreSettings
@@ -560,41 +561,24 @@ func newRouter(deps Deps) *router {
 			return s, nil, true
 		},
 	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"o",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportFeedbackRoadmapURL(), true
-		},
-	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"r",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportReleasesURL(), true
-		},
-	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"g",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.OpenSupportDocumentationURL(), true
-		},
-	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"c",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.CopySupportDiagnostics(s), true
-		},
-	)
-	r.RegisterView(
-		uistate.ViewSupport,
-		"b",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, deps.GenerateSupportBundle(s), true
-		},
-	)
+	for _, action := range supportActions {
+		run := action.run
+		r.RegisterView(uistate.ViewSupport, action.key, func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return s, run(s, deps), true
+		})
+	}
+	r.RegisterView(uistate.ViewSupport, "up", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		s.SupportCursor = max(0, s.SupportCursor-1)
+		return s, nil, true
+	})
+	r.RegisterView(uistate.ViewSupport, "down", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		s.SupportCursor = min(len(supportActions)-1, s.SupportCursor+1)
+		return s, nil, true
+	})
+	r.RegisterView(uistate.ViewSupport, "enter", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		action := supportActions[min(max(0, s.SupportCursor), len(supportActions)-1)]
+		return s, action.run(s, deps), true
+	})
 	r.RegisterView(
 		uistate.ViewMomentum,
 		"+",

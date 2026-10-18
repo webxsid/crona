@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
+	"crona/tui/internal/tui/input"
 	layoutpkg "crona/tui/internal/tui/layout"
+	supportview "crona/tui/internal/tui/views/support"
 
 	"github.com/charmbracelet/x/ansi"
 )
@@ -152,5 +154,15 @@ func TestLogBottomRowsGlobalsOnly(t *testing.T) {
 				t.Fatalf("%s: expected %q off the bottom row, got %q", tc.view, unwanted, row)
 			}
 		}
+	}
+}
+
+func TestSupportActionOrderMatchesInput(t *testing.T) {
+	keys := []string{}
+	for _, action := range supportview.Actions() {
+		keys = append(keys, action.Key)
+	}
+	if strings.Join(keys, ",") != strings.Join(input.SupportActionKeys(), ",") {
+		t.Fatalf("expected the view and input to list the same actions, got %v vs %v", keys, input.SupportActionKeys())
 	}
 }

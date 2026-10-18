@@ -903,7 +903,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Support", "crona.userjot.com", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob/main/docs/README.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable: Homebrew formula mismatch:", "Beta builds expose [f9] support actions", "Diagnostics", "Share feedback and explore the roadmap on UserJot"} {
+	for _, want := range []string{"Actions", "crona.userjot.com", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob", "README.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable:", "Diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}

@@ -156,6 +156,7 @@ type Model struct {
 	updateStatus              *api.UpdateStatus
 	updateChecking            bool
 	updateDiagnosticsExpanded bool
+	supportCursor             int
 	currentExecutablePath     string
 	settings                  *api.CoreSettings
 	habitStreakDefs           []api.HabitStreakDefinition

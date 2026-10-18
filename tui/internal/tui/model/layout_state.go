@@ -131,6 +131,7 @@ func (m Model) viewContentState(
 		UpdateChecking:            m.updateChecking,
 		UpdateInstallAvailable:    m.selfUpdateInstallAvailable(),
 		UpdateDiagnosticsExpanded: m.updateDiagnosticsExpanded,
+		SupportCursor:             m.supportCursor,
 		UpdateCommand: updateCommand(
 			m.updateStatus,
 			m.currentExecutablePath,

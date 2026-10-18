@@ -128,6 +128,7 @@ type ContentState struct {
 	UpdateChecking            bool
 	UpdateInstallAvailable    bool
 	UpdateDiagnosticsExpanded bool
+	SupportCursor             int
 	UpdateCommand             string
 	UpdateManualReason        string
 	TUIExecutablePath         string
