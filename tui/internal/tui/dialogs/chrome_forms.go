@@ -19,8 +19,9 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	column := len("Description")
 	full := inner - column - 3
 	half := inner/2 - column - 6
+	dueColumn := len("Due")
 	if inner < 56 {
-		half = full
+		half, dueColumn = full, column
 	}
 	title, estimate, due := 0, 1, 2
 	focusOf := map[string]int{"title": 0, "description": 1, "estimate": 2, "due": 3}
@@ -61,10 +62,14 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		body = append(body, "")
 	}
 	add("title", Field(theme, "Title", column, bareInput(state.Inputs[title], full, "required"), focused("title")))
-	add("description", Textarea(theme, "Description", column, bareTextarea(state), focused("description"), inner)...)
+	if !focused("description") && strings.TrimSpace(state.Description.Value()) == "" {
+		body = append(body, Field(theme, "Description", column, theme.StyleDim.Render("optional"), false))
+	} else {
+		add("description", Textarea(theme, "Description", column, bareTextarea(state), focused("description"), inner)...)
+	}
 	pair := FieldPair(
 		Field(theme, "Estimate", column, bareInput(state.Inputs[estimate], half, "45m, 1h30m"), focused("estimate")),
-		Field(theme, "Due", len("Due"), bareInput(state.Inputs[due], half, "YYYY-MM-DD"), focused("due")),
+		Field(theme, "Due", dueColumn, bareInput(state.Inputs[due], half, "YYYY-MM-DD"), focused("due")),
 		inner,
 	)
 	if focused("due") && len(pair) > 1 {

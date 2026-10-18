@@ -83,3 +83,33 @@ func TestNewIssuePairFitsTypedEstimate(t *testing.T) {
 		}
 	}
 }
+
+func TestNewIssueEmptyDescriptionCollapses(t *testing.T) {
+	text := issueText(issueState("create_issue_default", 2, 120, 40))
+	lines := strings.Split(text, "\n")
+	for i, line := range lines {
+		if strings.Contains(line, "Description") {
+			if !strings.Contains(line, "optional") {
+				t.Fatalf("expected an empty unfocused description on one line, got %q", lines[i:i+2])
+			}
+			return
+		}
+	}
+	t.Fatalf("no description line in\n%s", text)
+}
+
+func TestNewIssueStackedPairAligns(t *testing.T) {
+	text := issueText(issueState("create_issue_default", 2, 60, 40))
+	var estimate, due int
+	for _, line := range strings.Split(text, "\n") {
+		if i := strings.Index(line, "45m"); i >= 0 {
+			estimate = i
+		}
+		if i := strings.Index(line, "YYYY-MM-DD"); i >= 0 {
+			due = i
+		}
+	}
+	if estimate == 0 || estimate != due {
+		t.Fatalf("expected stacked values aligned, got %d and %d in\n%s", estimate, due, text)
+	}
+}
