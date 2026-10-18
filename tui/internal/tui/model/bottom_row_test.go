@@ -136,3 +136,21 @@ func TestMomentumBottomRowIsGlobalsOnly(t *testing.T) {
 		t.Fatalf("expected the help key on the bottom row, got %q", row)
 	}
 }
+
+func TestLogBottomRowsGlobalsOnly(t *testing.T) {
+	for _, tc := range []struct {
+		view View
+		pane Pane
+	}{{ViewSessionHistory, PaneSessions}, {ViewHabitHistory, PaneHabitHistory}, {ViewOps, PaneOps}} {
+		m := Model{view: tc.view, pane: tc.pane, width: 200, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+		row := bottomRow(m)
+		if !strings.Contains(row, "[?] all keys") {
+			t.Fatalf("%s: expected [?] all keys on the bottom row, got %q", tc.view, row)
+		}
+		for _, unwanted := range []string{"[enter]", "[+]", "[-]", "[+/-]"} {
+			if strings.Contains(row, unwanted) {
+				t.Fatalf("%s: expected %q off the bottom row, got %q", tc.view, unwanted, row)
+			}
+		}
+	}
+}
