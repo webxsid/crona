@@ -75,10 +75,10 @@ const (
 	// trendGutter fits the widest axis label, "100%".
 	trendGutter = 4
 	// minMetricRows is the shortest wellbeing chart; below it the last chart drops.
-	minMetricRows = 3
+	minMetricRows = 2
 )
 
-// renderTrends stacks the focus bars and the mood, energy and recovery lines over one shared
+// renderTrends stacks the focus bars and the mood, energy and recovery bars over one shared
 // date row. Every chart places a day at the same column, focus takes about 2/5 of the height,
 // and the wellbeing charts split the rest, dropping from the bottom while too short.
 func renderTrends(theme types.Theme, state types.ContentState, width, height int) string {
@@ -105,7 +105,7 @@ func renderTrends(theme types.Theme, state types.ContentState, width, height int
 	lines = append(lines, renderFocusBars(theme, days, starts, barWidth, chartWidth, focusRows)...)
 	for _, metric := range metrics {
 		lines = append(lines, "", metricHeader(theme, metric))
-		lines = append(lines, metricLines(theme, metric, centers, chartWidth, metricRows)...)
+		lines = append(lines, metricLines(theme, metric, starts, barWidth, chartWidth, metricRows)...)
 	}
 	lines = append(lines, strings.Repeat(" ", trendGutter)+" └"+strings.Repeat("─", chartWidth))
 	lines = append(lines, trendDates(theme, days, centers, chartWidth))
@@ -143,20 +143,30 @@ func metricHeader(theme types.Theme, metric metricSeries) string {
 	return header + metric.format(latest) + "  " + theme.StyleDim.Render("avg "+metric.format(avg)) + "  " + mark
 }
 
-// metricLines is the metric's line on its fixed scale, labelled at the top and bottom.
-func metricLines(theme types.Theme, metric metricSeries, centers []int, width, rows int) []string {
-	values := metric.values[:min(len(metric.values), len(centers))]
-	color := lipgloss.NewStyle().Foreground(metric.color).Bold(true)
+// metricLines is the metric's days as short bars in the focus columns, rising from zero to
+// the scale's top; a day without a value is a dim dot.
+func metricLines(theme types.Theme, metric metricSeries, starts []int, barWidth, width, rows int) []string {
+	values := metric.values[:min(len(metric.values), len(starts))]
+	color := lipgloss.NewStyle().Foreground(metric.color)
+	grid := charts.BarGrid(values, starts, barWidth, width, rows, metric.max)
 	out := make([]string, 0, rows)
-	for i, row := range charts.Line(values, centers, metric.min, metric.max, width, rows) {
-		label := ""
-		switch i {
-		case 0:
-			label = metric.format(metric.max)
-		case rows - 1:
-			label = metric.format(metric.min)
+	for row := range grid {
+		var b strings.Builder
+		for _, cell := range grid[row] {
+			switch cell {
+			case " ":
+				b.WriteString(cell)
+			case "·":
+				b.WriteString(theme.StyleDim.Render(cell))
+			default:
+				b.WriteString(color.Render(cell))
+			}
 		}
-		out = append(out, gutterLine(theme, label, color.Render(row)))
+		label := ""
+		if row == 0 {
+			label = metric.format(metric.max)
+		}
+		out = append(out, gutterLine(theme, label, b.String()))
 	}
 	return out
 }

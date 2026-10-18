@@ -1,10 +1,7 @@
 // Package charts draws braille chart pieces shared by the Insights views.
 package charts
 
-import (
-	"math"
-	"strings"
-)
+import "math"
 
 // dotRows are a cell's dot pairs from the bottom up; each pair spans both dot columns.
 var dotRows = []rune{0x40 | 0x80, 0x04 | 0x20, 0x02 | 0x10, 0x01 | 0x08}
@@ -39,104 +36,45 @@ func Slots(n, width int) ([]int, int) {
 	return starts, barWidth
 }
 
-// Line draws values as a braille line across rows lines of width cells: each value sits at
-// its column in xs, scaled between lo and hi; neighbours are joined and a NaN leaves a gap.
-func Line(values []float64, xs []int, lo, hi float64, width, rows int) []string {
-	if width < 1 || rows < 1 {
-		return nil
+var blocks = []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"}
+
+// Block is a cell filled from the bottom in eighths, 0 to 8.
+func Block(eighths int) string {
+	return blocks[min(8, max(0, eighths))]
+}
+
+// BarGrid draws values as solid bars, top row first, rows lines of width cells: each value
+// fills its slot from starts with barWidth cells, scaled so top fills every row. A NaN
+// value leaves a dot on the bottom row; empty cells are spaces.
+func BarGrid(values []float64, starts []int, barWidth, width, rows int, top float64) [][]string {
+	grid := make([][]string, rows)
+	for row := range grid {
+		grid[row] = make([]string, width)
+		for col := range grid[row] {
+			grid[row][col] = " "
+		}
 	}
-	pw, ph := width*2, rows*4
-	pixels := make([][]bool, ph)
-	for y := range pixels {
-		pixels[y] = make([]bool, pw)
+	if rows < 1 || top <= 0 {
+		return grid
 	}
-	span := hi - lo
-	if span <= 0 {
-		span = 1
-	}
-	point := func(i int) (int, int) {
-		norm := math.Min(1, math.Max(0, (values[i]-lo)/span))
-		return min(pw-1, xs[i]*2), int(math.Round((1 - norm) * float64(ph-1)))
-	}
-	for i := range values {
-		if math.IsNaN(values[i]) {
+	for i, value := range values {
+		if i >= len(starts) {
+			break
+		}
+		if math.IsNaN(value) {
+			grid[rows-1][min(width-1, starts[i]+(barWidth-1)/2)] = "·"
 			continue
 		}
-		x, y := point(i)
-		set(pixels, x, y)
-		set(pixels, x+1, y)
-		if i+1 < len(values) && !math.IsNaN(values[i+1]) {
-			nx, ny := point(i + 1)
-			line(pixels, x+1, y, nx, ny)
-		}
-	}
-	out := make([]string, rows)
-	for row := range rows {
-		var b strings.Builder
-		for col := range width {
-			bits := rune(0)
-			for dy := range 4 {
-				for dx := range 2 {
-					if pixels[row*4+dy][col*2+dx] {
-						bits |= brailleBit(dx, dy)
-					}
-				}
+		eighths := min(rows*8, int(math.Round(value/top*float64(rows*8))))
+		for row := range rows {
+			fill := eighths - (rows-1-row)*8
+			if fill <= 0 {
+				continue
 			}
-			if bits == 0 {
-				b.WriteRune(' ')
-			} else {
-				b.WriteRune(0x2800 + bits)
+			for col := starts[i]; col < min(width, starts[i]+barWidth); col++ {
+				grid[row][col] = Block(fill)
 			}
 		}
-		out[row] = b.String()
 	}
-	return out
-}
-
-// brailleBit is the dot for column dx (0 left) and row dy (0 top) of a cell.
-func brailleBit(dx, dy int) rune {
-	if dy == 3 {
-		return []rune{0x40, 0x80}[dx]
-	}
-	return rune(1<<dy) << (3 * dx)
-}
-
-func set(pixels [][]bool, x, y int) {
-	if y >= 0 && y < len(pixels) && x >= 0 && x < len(pixels[y]) {
-		pixels[y][x] = true
-	}
-}
-
-// line sets the pixels between two points (Bresenham).
-func line(pixels [][]bool, x0, y0, x1, y1 int) {
-	dx, dy := abs(x1-x0), -abs(y1-y0)
-	sx, sy := sign(x1-x0), sign(y1-y0)
-	err := dx + dy
-	for {
-		set(pixels, x0, y0)
-		if x0 == x1 && y0 == y1 {
-			return
-		}
-		e2 := 2 * err
-		if e2 >= dy {
-			err += dy
-			x0 += sx
-		}
-		if e2 <= dx {
-			err += dx
-			y0 += sy
-		}
-	}
-}
-
-func abs(v int) int { return max(v, -v) }
-
-func sign(v int) int {
-	switch {
-	case v > 0:
-		return 1
-	case v < 0:
-		return -1
-	}
-	return 0
+	return grid
 }

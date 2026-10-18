@@ -32,21 +32,18 @@ func TestSlotsCentreBarsAndWidenWhenFew(t *testing.T) {
 	}
 }
 
-func TestLineJoinsPointsAndGapsMissingDays(t *testing.T) {
-	// Three points at cells 1, 4 and 7 of 9; the middle one is missing.
-	lines := Line([]float64{3, math.NaN(), 3}, []int{1, 4, 7}, 1, 5, 9, 2)
-	if len(lines) != 2 {
-		t.Fatalf("expected 2 rows, got %d", len(lines))
-	}
-	row := []rune(strings.Join(lines, ""))
-	if row[4] != ' ' && row[4] != '⠀' && []rune(lines[1])[4] != ' ' {
-		t.Fatalf("expected a gap at the missing day, got %q", lines)
-	}
-	joined := Line([]float64{1, 5}, []int{1, 7}, 1, 5, 9, 2)
-	top, bottom := []rune(joined[0]), []rune(joined[1])
-	for col := 1; col <= 7; col++ {
-		if top[col] == ' ' && bottom[col] == ' ' {
-			t.Fatalf("expected the line unbroken from day to day, gap at %d in %q", col, joined)
+func TestBlockStepsInEighths(t *testing.T) {
+	for eighths, want := range []string{" ", "▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"} {
+		if got := Block(eighths); got != want {
+			t.Fatalf("%d eighths: expected %q, got %q", eighths, want, got)
 		}
+	}
+}
+
+func TestBarGridStacksBlocksAndMarksMissing(t *testing.T) {
+	// Two rows give 16 eighths: 10 of 16 is a full bottom cell and a ▂ above it.
+	grid := BarGrid([]float64{10, math.NaN()}, []int{0, 3}, 2, 5, 2, 16)
+	if strings.Join(grid[0], "") != "▂▂   " || strings.Join(grid[1], "") != "██ · " {
+		t.Fatalf("expected a stacked bar and a dot for the missing day, got %q", grid)
 	}
 }

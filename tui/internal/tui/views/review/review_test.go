@@ -159,11 +159,11 @@ func TestShortHeightFoldsTrends(t *testing.T) {
 	if out := plain(Render(types.Theme{}, reviewState(200, 22))); strings.Contains(out, "Trends") {
 		t.Fatalf("expected no Trends at height 22")
 	}
-	short := plain(Render(types.Theme{}, reviewState(200, 28)))
+	short := plain(Render(types.Theme{}, reviewState(200, 24)))
 	tall := plain(Render(types.Theme{}, reviewState(200, 50)))
 	recovery := regexp.MustCompile(`Recovery\s+\d+%`)
 	if !strings.Contains(short, "Trends") || recovery.MatchString(short) || !recovery.MatchString(tall) {
-		t.Fatalf("expected Trends at 28 with fewer charts than at 50 (Recovery only when tall)")
+		t.Fatalf("expected Trends at 24 with fewer charts than at 50 (Recovery only when tall)")
 	}
 }
 
@@ -294,13 +294,40 @@ func TestFocusAxisUsesEvenHourSteps(t *testing.T) {
 	}
 }
 
-func TestFocusDrawsBrailleBarsWithEstimateTicks(t *testing.T) {
+func TestTrendsDrawSolidBarsWithEstimateTicks(t *testing.T) {
 	text := trendsText(100, 40)
-	if strings.ContainsAny(text, "█╌┈") {
-		t.Fatalf("expected braille only, got\n%s", text)
+	if strings.ContainsFunc(text, func(r rune) bool { return r >= 0x2800 && r <= 0x28FF }) {
+		t.Fatalf("expected solid bars, not braille, got\n%s", text)
 	}
-	if !strings.Contains(text, "⣿") || !strings.ContainsAny(text, "⣀⠤⠒⠉") {
-		t.Fatalf("expected braille bars and estimate ticks, got\n%s", text)
+	if !strings.Contains(text, "█") || !strings.Contains(text, "╌") {
+		t.Fatalf("expected bars and estimate ticks, got\n%s", text)
+	}
+}
+
+func TestWellbeingBarsShareFocusColumns(t *testing.T) {
+	lines := strings.Split(trendsText(100, 40), "\n")
+	firstBar := func(line string) int {
+		return strings.IndexFunc(line, func(r rune) bool { return strings.ContainsRune("▁▂▃▄▅▆▇█", r) })
+	}
+	focus, energy := -1, -1
+	for i, line := range lines {
+		if strings.Contains(line, " 0h │") {
+			focus = firstBar(line)
+		}
+		if strings.Contains(line, "Energy") && i+1 < len(lines) {
+			for _, row := range lines[i+1:] {
+				if at := firstBar(row); at >= 0 {
+					energy = at
+					break
+				}
+			}
+		}
+	}
+	if focus < 0 || focus != energy {
+		t.Fatalf("expected Energy's first bar under Focus's, got %d and %d", focus, energy)
+	}
+	if !strings.Contains(strings.Join(lines, "\n"), "·") {
+		t.Fatalf("expected a dot for the day without a check-in")
 	}
 }
 

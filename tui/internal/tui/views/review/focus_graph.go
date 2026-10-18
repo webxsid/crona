@@ -28,44 +28,35 @@ func hourAxis(hours float64) (top, step float64) {
 	return max(1, math.Ceil(hours/step)) * step, step
 }
 
-// renderFocusBars draws each day's logged hours as a braille bar in its slot and the day's
-// estimate as a dotted tick across it, at exactly rows lines with hour ticks in the gutter.
+// renderFocusBars draws each day's logged hours as a solid bar in its slot and the day's
+// estimate as a dashed tick across it, at exactly rows lines with hour ticks in the gutter.
 func renderFocusBars(theme types.Theme, days []api.DailyMetricsDay, starts []int, barWidth, width, rows int) []string {
 	busiest := 0.0
-	for _, day := range days {
-		busiest = max(busiest, float64(day.WorkedSeconds)/3600, float64(day.TotalEstimatedMinutes)/60)
+	logged := make([]float64, len(days))
+	for i, day := range days {
+		logged[i] = float64(day.WorkedSeconds) / 3600
+		busiest = max(busiest, logged[i], float64(day.TotalEstimatedMinutes)/60)
 	}
 	top, step := hourAxis(busiest)
-	dots := func(hours float64) int { return int(math.Round(hours / top * float64(rows*4))) }
-
-	grid := make([][]string, rows)
+	grid := charts.BarGrid(logged, starts, barWidth, width, rows, top)
+	ramp := viewhelpers.GradientRamp(theme.ColorDullGreen, theme.ColorCyan, rows)
 	for row := range grid {
-		grid[row] = make([]string, width)
-		for col := range grid[row] {
-			grid[row][col] = " "
+		style := lipgloss.NewStyle().Foreground(viewhelpers.GradientColorAt(ramp, row))
+		for col, cell := range grid[row] {
+			if cell != " " {
+				grid[row][col] = style.Render(cell)
+			}
 		}
 	}
-	ramp := viewhelpers.GradientRamp(theme.ColorDullGreen, theme.ColorCyan, rows)
-	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true)
+	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render("╌")
 	for i, day := range days {
-		if i >= len(starts) {
-			break
+		if i >= len(starts) || day.TotalEstimatedMinutes <= 0 {
+			continue
 		}
-		height := min(rows*4, dots(float64(day.WorkedSeconds)/3600))
-		for row := range rows {
-			if fill := height - (rows-1-row)*4; fill > 0 {
-				style := lipgloss.NewStyle().Foreground(viewhelpers.GradientColorAt(ramp, row))
-				for col := starts[i]; col < starts[i]+barWidth; col++ {
-					grid[row][col] = style.Render(charts.Column(fill))
-				}
-			}
-		}
-		if day.TotalEstimatedMinutes > 0 {
-			level := min(rows*4, max(1, dots(float64(day.TotalEstimatedMinutes)/60)))
-			row := rows - 1 - (level-1)/4
-			for col := max(0, starts[i]-1); col < min(width, starts[i]+barWidth+1); col++ {
-				grid[row][col] = estimate.Render(charts.DotRow((level - 1) % 4))
-			}
+		eighths := max(1, int(math.Round(float64(day.TotalEstimatedMinutes)/60/top*float64(rows*8))))
+		row := max(0, rows-1-(eighths-1)/8)
+		for col := max(0, starts[i]-1); col < min(width, starts[i]+barWidth+1); col++ {
+			grid[row][col] = estimate
 		}
 	}
 
@@ -81,8 +72,8 @@ func renderFocusBars(theme types.Theme, days []api.DailyMetricsDay, starts []int
 }
 
 func renderFocusLegend(theme types.Theme, state types.ContentState) string {
-	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render(charts.DotRow(1))
-	actual := lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render(charts.Column(4))
+	estimate := lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render("╌")
+	actual := lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render("█")
 	estimateText := "estimated -"
 	loggedText := "logged -"
 	if state.GoalProgress != nil {
