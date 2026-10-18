@@ -11,21 +11,41 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
+func dayText(state types.ContentState, width int) string {
+	return ansi.Strip(strings.Join(DayLines(types.Theme{}, state, width), "\n"))
+}
+
+func squash(s string) string { return strings.Join(strings.Fields(s), " ") }
+
 func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 	state := summaryTestState()
 	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 82, Level: sharedtypes.FocusScoreLevelStrong, Reason: sharedtypes.FocusScoreReasonBalanced, TargetWorkedSeconds: 3600}
 	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 2400, RestSeconds: 600, SessionCount: 3, TotalIssues: 4, CompletedIssues: 2, AbandonedIssues: 1, HabitDueCount: 3, HabitCompletedCount: 2, HabitFailedCount: 1}
-	rendered := ansi.Strip(strings.Join(DayLines(types.Theme{}, state, 100), "\n"))
-	for _, want := range []string{"Stats", "Focus 82/100", "worked 40m", "rest 10m", "issues  completed 2", "habits  done 2"} {
-		if !strings.Contains(rendered, want) {
+	rendered := dayText(state, 42)
+	for _, want := range []string{"Stats", "Focus 82/100 Strong", "Worked 40m of 1h", "Rest 10m", "Sessions 3", "Issues 2 of 4 done · 1 abandoned", "Habits 2 of 3 done · 1 failed"} {
+		if !strings.Contains(squash(rendered), want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
 	}
 }
 
+func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
+	state := summaryTestState()
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 52, Level: sharedtypes.FocusScoreLevelOverextended, Reason: "overextended", TargetWorkedSeconds: 21600}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 6660, SessionCount: 2, TotalIssues: 4, CompletedIssues: 1, HabitDueCount: 5, HabitCompletedCount: 4}
+	for _, line := range DayLines(types.Theme{}, state, 42) {
+		if w := ansi.StringWidth(line); w > 42 || strings.Contains(line, "…") {
+			t.Fatalf("expected every line whole within 42 cells, got %d: %q", w, ansi.Strip(line))
+		}
+	}
+	if n := strings.Count(strings.ToLower(dayText(state, 42)), "overextended"); n != 1 {
+		t.Fatalf("expected the focus level once, got %d", n)
+	}
+}
+
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
-	rendered := ansi.Strip(strings.Join(DayLines(types.Theme{}, summaryTestState(), 100), "\n"))
-	for _, want := range []string{"Accountability", "100% score", "Wellbeing", "mood 4/5", "Momentum", "focus 3"} {
+	rendered := squash(dayText(summaryTestState(), 42))
+	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Mood 4/5", "Energy 3/5", "Momentum", "Focus 3 days", "Check-ins 4 days", "Habits 2 days"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}

@@ -51,7 +51,7 @@ func TestDetailFollowsHabitsFocus(t *testing.T) {
 	state.Cursors["habits"] = 1
 	target := 20
 	state.DueHabits[1].TargetMinutes = &target
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))), " ")
 	if !strings.Contains(rendered, "Read") {
 		t.Fatalf("expected selected habit details, got %q", rendered)
 	}
@@ -64,7 +64,7 @@ func TestDetailFollowsHabitsFocus(t *testing.T) {
 func TestDetailEmptySelection(t *testing.T) {
 	state := detailState()
 	state.DailyIssues = nil
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))), " ")
 	if !strings.Contains(rendered, "Nothing selected") {
 		t.Fatalf("expected empty-selection hint, got %q", rendered)
 	}
@@ -128,7 +128,7 @@ func TestDetailHabitListsTheMomentumsItFeeds(t *testing.T) {
 		{Definition: api.HabitStreakDefinition{ID: "other", Name: "Other habit", Enabled: true, HabitIDs: []int64{1}}},
 		{Definition: api.HabitStreakDefinition{ID: "off", Name: "Paused", Enabled: false, HabitIDs: []int64{2}}},
 	}
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))), " ")
 	lines := strings.Split(rendered, "\n")
 	assertContainsLine(t, lines, "Fitness", "weekly")
 	assertContainsLine(t, lines, "Fitness", "2/3")
@@ -212,7 +212,7 @@ func TestDetailShowsDaySummaryWhenToggled(t *testing.T) {
 		Focus:   &api.FocusScoreSummary{Score: 72},
 		Metrics: &api.DailyMetricsDay{Date: "2026-05-27", WorkedSeconds: 3600},
 	}
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))), " ")
 	for _, want := range []string{"─ Day", "Focus 72/100", "Accountability", "Wellbeing"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)

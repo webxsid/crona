@@ -193,7 +193,7 @@ func TestDaySummaryKeyTogglesOnWideAndOpensDialogWhenNarrow(t *testing.T) {
 	if narrow.dailyDetailDay || narrow.dialog != "view_entity" || narrow.dialogViewTitle != "Day" {
 		t.Fatalf("expected a Day dialog when narrow, got day=%v dialog=%q title=%q", narrow.dailyDetailDay, narrow.dialog, narrow.dialogViewTitle)
 	}
-	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(body, "Focus 72/100") {
+	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(strings.Join(strings.Fields(body), " "), "Focus 72/100") {
 		t.Fatalf("expected the Day summary in the dialog, got %q", body)
 	}
 }
