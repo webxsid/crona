@@ -1,9 +1,11 @@
 package model
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/commands"
 	"crona/tui/internal/tui/scope"
@@ -125,5 +127,21 @@ func TestReloadScopedHabitsClampsSelection(t *testing.T) {
 	loaded, _ := m.update(commands.AllHabitsLoadedMsg{Habits: []api.HabitWithMeta{{Habit: api.Habit{ID: 1, StreamID: 2, Name: "Walk"}, RepoID: 1}}})
 	if got := loaded.(Model).cursor[PaneHabits]; got != 0 {
 		t.Fatalf("reloaded habit cursor = %d, want 0", got)
+	}
+}
+
+func TestDayStartAcceptsNewTodayHabitsBeforeHealthReload(t *testing.T) {
+	m := scopeModel(1)
+	m.view, m.pane, m.date = ViewDaily, PaneHabits, "2026-08-01"
+	m.health = &api.Health{CurrentDate: "2026-08-09"}
+	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{DateBefore: "2026-08-09", LogicalDate: "2026-08-10"})
+	next, _ := m.handleKernelEvent(api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
+	loaded, _ := next.update(commands.TodayHabitsLoadedMsg{Date: "2026-08-10", Habits: []api.HabitDailyItem{{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 1}}}}})
+	got := loaded.(Model)
+	if len(got.todayHabits) != 1 || got.currentLogicalDate() != "2026-08-10" || got.currentDate() != "2026-08-01" {
+		t.Fatalf("rollover: today %s, displayed %s, habits %+v", got.currentLogicalDate(), got.currentDate(), got.todayHabits)
+	}
+	if m.health.CurrentDate != "2026-08-09" {
+		t.Fatalf("rollover mutated previous model health: %+v", m.health)
 	}
 }

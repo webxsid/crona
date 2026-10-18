@@ -533,9 +533,8 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabitStreakDefinitions: func() tea.Cmd {
 			return commands.LoadHabitStreakDefinitions(m.client)
 		},
-		LoadDueHabits: func(date string) tea.Cmd {
-			return tea.Batch(commands.LoadDueHabits(m.client, date), commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
-		},
+		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadTodayHabits:  func(date string) tea.Cmd { return commands.LoadTodayHabits(m.client, date) },
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadSummarySnapshot: func(date string) tea.Cmd {
 			return commands.LoadSummarySnapshot(m.client, date)

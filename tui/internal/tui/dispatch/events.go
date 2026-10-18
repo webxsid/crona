@@ -54,6 +54,7 @@ type EventDeps struct {
 	LoadDailySummary         func(date string) tea.Cmd
 	LoadDailyPlan            func(date string) tea.Cmd
 	LoadDueHabits            func(date string) tea.Cmd
+	LoadTodayHabits          func(date string) tea.Cmd
 	LoadDailyStreaks         func(date string) tea.Cmd
 	LoadHabitHistory         func(*api.ActiveContext, *int64) tea.Cmd
 	LoadWellbeing            func(date string, windowDays int) tea.Cmd
@@ -112,6 +113,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
 			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 			deps.LoadAllHabits(),
+		}
+		if deps.LoadTodayHabits != nil {
+			cmds = append(cmds, deps.LoadTodayHabits(state.Today))
 		}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds, deps.LoadHabits(*state.Context.StreamID))
@@ -303,6 +307,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		if err := json.Unmarshal(event.Payload, &payload); err != nil || payload.LogicalDate == "" {
 			return state, nil
 		}
+		state.Today = payload.LogicalDate
 		// The shared date follows the new day only when it was on the old one.
 		if state.Date != "" && state.Date == payload.DateBefore {
 			state.Date = payload.LogicalDate
@@ -322,6 +327,9 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadWellbeing(date, state.WellbeingWindowDays),
 			deps.LoadMomentumRange(date, state.MomentumWindowDays),
 			deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)),
+		}
+		if deps.LoadTodayHabits != nil {
+			cmds = append(cmds, deps.LoadTodayHabits(payload.LogicalDate))
 		}
 		if deps.LoadSummarySnapshot != nil {
 			cmds = append(cmds, deps.LoadSummarySnapshot(date))

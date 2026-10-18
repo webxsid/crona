@@ -168,6 +168,7 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		TimerTickSeq:           m.timerTickSeq,
 		Date:                   m.date,
 		CurrentDate:            m.currentDate(),
+		Today:                  m.currentLogicalDate(),
 		RollupWindowDays:       m.currentRollupWindowDays(),
 		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
 		MomentumWindowDays:     m.currentMomentumWindowDays(),
@@ -189,6 +190,14 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
 	m.date = state.Date
+	if state.Today != "" && state.Today != m.currentLogicalDate() {
+		health := api.Health{}
+		if m.health != nil {
+			health = *m.health
+		}
+		health.CurrentDate = state.Today
+		m.health = &health
+	}
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	return m
 }
@@ -212,9 +221,8 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		},
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadDailyPlan:    func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
-		LoadDueHabits: func(date string) tea.Cmd {
-			return tea.Batch(commands.LoadDueHabits(m.client, date), commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
-		},
+		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadTodayHabits:  func(date string) tea.Cmd { return commands.LoadTodayHabits(m.client, date) },
 		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)

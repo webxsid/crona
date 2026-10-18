@@ -133,6 +133,7 @@ type MessageDeps struct {
 	LoadMomentumRange          func(string, int) tea.Cmd
 	LoadMomentumFocus          func(string, int) tea.Cmd
 	LoadDueHabits              func(string) tea.Cmd
+	LoadTodayHabits            func(string) tea.Cmd
 	LoadDailySummary           func(string) tea.Cmd
 	LoadSummarySnapshot        func(string) tea.Cmd
 	LoadDailyStreaks           func(string) tea.Cmd
@@ -800,6 +801,9 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadExportAssets(),
 		deps.LoadExportReports(),
 	)
+	if deps.LoadTodayHabits != nil && state.Health != nil {
+		cmds = append(cmds, deps.LoadTodayHabits(state.Health.CurrentDate))
+	}
 	if deps.LoadSummarySnapshot != nil {
 		cmds = append(cmds, deps.LoadSummarySnapshot(date))
 	}
@@ -834,6 +838,9 @@ func applyLogicalDate(state *MessageState, date, previousDate string, deps Messa
 		deps.LoadWellbeing(shown, state.WellbeingWindowDays),
 		deps.LoadMomentumRange(shown, state.MomentumWindowDays),
 		deps.LoadRollupSummaries(rollupRange(shown, state.RollupWindowDays)),
+	}
+	if deps.LoadTodayHabits != nil {
+		cmds = append(cmds, deps.LoadTodayHabits(date))
 	}
 	if deps.LoadSummarySnapshot != nil {
 		cmds = append(cmds, deps.LoadSummarySnapshot(shown))
