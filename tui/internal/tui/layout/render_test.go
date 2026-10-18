@@ -374,9 +374,10 @@ func TestTabLineContextRepoOnly(t *testing.T) {
 	}
 }
 
-func TestNarrowDailyDateRowOffersDayKey(t *testing.T) {
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; !strings.HasPrefix(line, " [S] day summary") {
-		t.Fatalf("expected [S] day on the date row without a detail pane, got %q", line)
+func TestDailyDateRowLeavesDayKeyOff(t *testing.T) {
+	// The bottom row offers [S] when no detail pane shows; the date row never does.
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; strings.Contains(line, "[S]") {
+		t.Fatalf("expected [S] off the date row, got %q", line)
 	}
 	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(line, "[S]") {
 		t.Fatalf("expected [S] left to the detail pane when it shows, got %q", line)

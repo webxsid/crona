@@ -146,3 +146,17 @@ func TestTaskActionLineKeepsWholeHints(t *testing.T) {
 		}
 	}
 }
+
+func TestDetailTitleTruncatesToKeepDayKey(t *testing.T) {
+	state := detailState()
+	state.DailyIssues[1].Title = strings.Repeat("Very long task title ", 6)
+	for _, width := range []int{40, 70} {
+		header := strings.Split(ansi.Strip(renderDetail(testTheme(), state, width, 30)), "\n")[0]
+		if !strings.Contains(header, "Very long") || !strings.Contains(header, "…") || !strings.HasSuffix(header, "[S] day summary") {
+			t.Fatalf("width %d: expected a truncated title and the day key, got %q", width, header)
+		}
+		if got := ansi.StringWidth(header); got != width {
+			t.Fatalf("width %d: header is %d cells: %q", width, got, header)
+		}
+	}
+}

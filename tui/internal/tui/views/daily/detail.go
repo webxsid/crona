@@ -41,6 +41,8 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	if state.DailyDetailDay {
 		dayKey = viewchrome.KeyHint(theme, "S", "show selection")
 	}
+	// A long title gives way so the key always fits: lead, padded title, a fill cell, meta.
+	title = ansi.Truncate(title, max(1, width-5-ansi.StringWidth(dayKey)), "…")
 	titleStyle := theme.StyleHeader.Bold(true)
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title:      title,

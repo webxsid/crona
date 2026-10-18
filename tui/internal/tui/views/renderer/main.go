@@ -8,7 +8,6 @@ import (
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	habits "crona/tui/internal/tui/views/habits"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issues "crona/tui/internal/tui/views/issues"
 	meta "crona/tui/internal/tui/views/meta"
 	momentumview "crona/tui/internal/tui/views/momentumview"
@@ -100,11 +99,6 @@ func DateCalendarKey(theme types.Theme, state types.ContentState) string {
 // DateRowKeys are the view's other date-row keys, shown at the left end of the date row.
 func DateRowKeys(theme types.Theme, state types.ContentState) []string {
 	switch state.View {
-	case "daily":
-		// Without a detail pane, the day summary's key sits here instead.
-		if state.HistoricalAwayDate == "" && viewhelpers.ClassFor(state.Width) != viewhelpers.WidthWide {
-			return []string{viewchrome.KeyHint(theme, "S", "day summary")}
-		}
 	case "rollup", "momentum", "wellbeing":
 		return []string{viewchrome.KeyHint(theme, "+/-/0", "window")}
 	}
