@@ -102,7 +102,7 @@ func chartLines(theme types.Theme, card sharedtypes.MomentumCard, width, height 
 	switch {
 	case rows <= 0:
 	case sharedtypes.NormalizeHabitStreakPeriod(def.Period) == sharedtypes.HabitStreakPeriodDay && momentumDailySeriesUsesSquares(def, card.Series):
-		chart = strings.Split(renderMomentumDailySquares(theme, card.Series, width, def.Enabled), "\n")
+		chart = calendarLines(theme, card.Series, width, rows, def.Enabled)
 	default:
 		chart = renderMomentumBars(theme, def, card.Series, width, rows, def.Enabled)
 	}

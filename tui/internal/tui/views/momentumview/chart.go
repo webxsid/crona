@@ -102,22 +102,6 @@ func momentumSeriesFootnote(
 	return strings.Join(parts, " · ")
 }
 
-func renderMomentumDailySquares(
-	theme types.Theme,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) string {
-	if len(series) == 0 || width < 1 {
-		return theme.StyleDim.Render("no data")
-	}
-	rows := momentumDailySquareRows(theme, series, width, enabled)
-	if len(rows) == 0 {
-		return theme.StyleDim.Render("no data")
-	}
-	return strings.Join(rows, "\n")
-}
-
 type momentumContextAxisSpec struct {
 	MaxAxis    int
 	Step       int
@@ -283,52 +267,6 @@ func momentumChartXAxis(
 		}
 	}
 	return strings.Repeat(" ", leftPad) + theme.StyleDim.Render(string(runes))
-}
-
-func momentumDailySquareRows(
-	theme types.Theme,
-	series []sharedtypes.MomentumSeriesPoint,
-	width int,
-	enabled bool,
-) []string {
-	rows := make([]string, 0, len(series)/max(1, width)+2)
-	row := ""
-	for _, point := range series {
-		cell := momentumDailySquareCell(theme, point, enabled)
-		cellWidth := lipgloss.Width(cell)
-		if cellWidth <= 0 {
-			cellWidth = 1
-		}
-		if row != "" && lipgloss.Width(row)+1+cellWidth > width {
-			rows = append(rows, row)
-			row = ""
-		}
-		if row != "" {
-			row += " "
-		}
-		row += cell
-	}
-	if strings.TrimSpace(row) != "" {
-		rows = append(rows, row)
-	}
-	return rows
-}
-
-func momentumDailySquareCell(
-	theme types.Theme,
-	point sharedtypes.MomentumSeriesPoint,
-	enabled bool,
-) string {
-	if !enabled {
-		if point.Count > 0 || point.MetTarget {
-			return theme.StyleDim.Render("■")
-		}
-		return theme.StyleDim.Render("□")
-	}
-	if point.Count > 0 || point.MetTarget {
-		return lipgloss.NewStyle().Foreground(theme.ColorDullGreen).Bold(true).Render("■")
-	}
-	return lipgloss.NewStyle().Foreground(theme.ColorRed).Render("□")
 }
 
 func momentumDisplayLabel(point sharedtypes.MomentumSeriesPoint) string {

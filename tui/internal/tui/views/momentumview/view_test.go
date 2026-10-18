@@ -10,6 +10,7 @@ import (
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestRenderUsesBucketTimelineAndWideCard(t *testing.T) {
@@ -505,7 +506,7 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	}
 }
 
-func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
+func TestRenderUsesCalendarOnlyForBinaryDailyHabit(t *testing.T) {
 	state := types.ContentState{
 		View:   "momentum",
 		Pane:   "momentum_cards",
@@ -539,22 +540,13 @@ func TestRenderUsesSquareGridOnlyForBinaryDailyHabit(t *testing.T) {
 	if !strings.Contains(rendered, "5d now · best 6d") {
 		t.Fatalf("expected daily header in render, got %q", rendered)
 	}
-	if strings.Contains(rendered, "Mon Tue Wed Thu Fri Sat Sun") ||
-		strings.Contains(rendered, "Scale  low") {
-		t.Fatalf("expected daily square grid to avoid calendar headers and scale, got %q", rendered)
+	// A binary daily habit draws a calendar of weeks, not bars on a scale.
+	chart := ansi.Strip(strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"))
+	if !strings.Contains(chart, "Mon") || !strings.Contains(chart, "Sun") || !strings.Contains(chart, "hit") {
+		t.Fatalf("expected a weekday calendar with hit counts, got %q", chart)
 	}
-	// The bucket table draws bars of its own, so check the chart alone.
-	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"); strings.Contains(chart, "┆") || strings.Contains(chart, "W1") ||
-		strings.Contains(chart, "May 4-10") {
-		t.Fatalf("expected daily square grid to avoid bucket bars, got %q", chart)
-	}
-	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
-		t.Fatalf("expected filled and empty squares in render, got %q", rendered)
-	}
-	// The list's sparkline draws bars too, so check the chart alone.
-	if chart := strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"); strings.Contains(chart, "█") || strings.Contains(chart, "┆") ||
-		strings.Contains(chart, "May 4-10") {
-		t.Fatalf("expected binary daily habit to stay on the square grid, got %q", chart)
+	if strings.Contains(chart, "┆") || strings.Contains(chart, "May 4-10") || strings.ContainsFunc(chart, func(r rune) bool { return r > 0x2800 && r <= 0x28FF }) {
+		t.Fatalf("expected no bucket bars or braille in the calendar, got %q", chart)
 	}
 }
 
@@ -606,27 +598,6 @@ func TestRenderUsesCountDistributionForMultiHabitAnyDaily(t *testing.T) {
 	}
 	if !strings.Contains(rendered, "Latest bucket: 2/1 met") {
 		t.Fatalf("expected count-based footnote in multi-habit daily render, got %q", rendered)
-	}
-}
-
-func TestMomentumDailySquaresWrapByWidth(t *testing.T) {
-	series := dailyMomentumSeries(
-		time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
-		[]int{1, 0, 1, 1, 0, 1, 1, 1, 0, 1},
-		1,
-	)
-	rows := momentumDailySquareRows(testTheme(), series, 5, true)
-	if len(rows) < 2 {
-		t.Fatalf("expected wrapped rows for narrow width, got %v", rows)
-	}
-	for _, row := range rows {
-		if lipgloss.Width(row) > 5 {
-			t.Fatalf("expected wrapped row width to stay within limit, got %q", row)
-		}
-	}
-	joined := strings.Join(rows, "\n")
-	if !strings.Contains(joined, "■") || !strings.Contains(joined, "□") {
-		t.Fatalf("expected wrapped square grid to include filled and empty squares, got %q", joined)
 	}
 }
 
@@ -696,27 +667,6 @@ func TestMomentumBucketBarUsesSharedScale(t *testing.T) {
 			"expected overflow bar to render more fill than the exact-target bar, got exact=%q overflow=%q",
 			exact,
 			overflow,
-		)
-	}
-}
-
-func TestMomentumDailySquaresStayCompactWhenNarrow(t *testing.T) {
-	series := dailyMomentumSeries(
-		time.Date(2026, 5, 4, 0, 0, 0, 0, time.UTC),
-		[]int{0, 1, 1, 1, 0, 1, 1},
-		1,
-	)
-	rendered := renderMomentumDailySquares(testTheme(), series, 20, true)
-	if strings.Contains(rendered, "Scale") || strings.Contains(rendered, "Mon Tue") {
-		t.Fatalf(
-			"did not expect calendar headers or scale in daily square render, got %q",
-			rendered,
-		)
-	}
-	if !strings.Contains(rendered, "■") || !strings.Contains(rendered, "□") {
-		t.Fatalf(
-			"expected daily square render to include filled and empty squares, got %q",
-			rendered,
 		)
 	}
 }
