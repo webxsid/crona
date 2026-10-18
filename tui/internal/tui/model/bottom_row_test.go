@@ -32,7 +32,6 @@ func TestDailyBottomRowIsGlobalsOnly(t *testing.T) {
 	}
 }
 
-
 func TestHelpSheetListsNavigationKeys(t *testing.T) {
 	m := Model{view: ViewDaily, pane: PaneIssues, cursor: map[Pane]int{}, filters: map[Pane]string{}}
 	body := ansi.Strip(m.openHelpDialog().dialogState().ViewBody)

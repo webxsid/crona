@@ -29,16 +29,17 @@ func metricTrendValues(days []api.DailyMetricsDay, fn func(api.DailyMetricsDay) 
 	return values
 }
 
+// metricMoodValue is NaN without a check-in, so the chart leaves a gap.
 func metricMoodValue(day api.DailyMetricsDay) float64 {
 	if day.CheckIn == nil {
-		return 0
+		return math.NaN()
 	}
 	return float64(day.CheckIn.Mood)
 }
 
 func metricEnergyValue(day api.DailyMetricsDay) float64 {
 	if day.CheckIn == nil {
-		return 0
+		return math.NaN()
 	}
 	return float64(day.CheckIn.Energy)
 }
@@ -68,10 +69,12 @@ func renderMetricCanvas(
 		return []string{theme.StyleHeader.Render(metric.name), theme.StyleDim.Render("no data")}
 	}
 	label := theme.StyleHeader.Render(metric.name)
-	latest := metric.values[len(metric.values)-1]
-	latestLabel := "-"
-	if metric.formatLatest != nil {
-		latestLabel = metric.formatLatest(latest)
+	latestLabel := "–"
+	for i := len(metric.values) - 1; i >= 0; i-- {
+		if !math.IsNaN(metric.values[i]) && metric.formatLatest != nil {
+			latestLabel = metric.formatLatest(metric.values[i])
+			break
+		}
 	}
 	meta := theme.StyleDim.Render(latestLabel)
 	graph := renderBrailleCanvas(metric.values, metric.min, metric.max, chartWidth, rowHeight)
@@ -112,8 +115,9 @@ func renderBrailleCanvas(values []float64, minValue, maxValue float64, width, he
 
 		idx = max(0, min(idx, len(values)-1))
 
-		if idx >= len(values) {
-			idx = len(values) - 1
+		if math.IsNaN(values[idx]) {
+			prevX, prevY = -1, -1
+			continue
 		}
 		norm := clamp01((values[idx] - minValue) / span)
 		y := int(math.Round((1 - norm) * float64(pixelHeight-1)))

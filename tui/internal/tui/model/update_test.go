@@ -80,7 +80,6 @@ func TestTimerActivityTouchCmdOnlyForActiveTimerAndThrottles(t *testing.T) {
 	}
 }
 
-
 func TestDialogModeIgnoresQAndCtrlCStillQuits(t *testing.T) {
 	model := Model{}.withDialogState(dialogstate.State{Kind: "onboarding"})
 
@@ -520,4 +519,3 @@ func TestHardLimitDialogRefreshesFromTimerSnapshot(t *testing.T) {
 		)
 	}
 }
-

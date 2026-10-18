@@ -89,7 +89,10 @@ type Deps struct {
 	OpenSummaryCalendar      func(*State) bool
 	// OpenDaySummary opens the Day summary as a dialog when Daily has no detail pane, and
 	// reports whether it did.
-	OpenDaySummary                  func(*State) bool
+	OpenDaySummary func(*State) bool
+	// OpenReviewDialog opens Review's "day" or "time" as a dialog on narrow screens, where
+	// neither has a pane, and reports whether it did.
+	OpenReviewDialog                func(*State, string) bool
 	OpenHelpDialog                  func(*State) bool
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
@@ -645,7 +648,16 @@ func newRouter(deps Deps) *router {
 		return handleReviewStepDay(s, deps, 1)
 	})
 	r.RegisterView(uistate.ViewReview, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenReviewDialog != nil && deps.OpenReviewDialog(&s, "time") {
+			return s, nil, true
+		}
 		return handleToggleReviewTime(s, deps)
+	})
+	r.RegisterView(uistate.ViewReview, "enter", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenReviewDialog != nil {
+			deps.OpenReviewDialog(&s, "day")
+		}
+		return s, nil, true
 	})
 	r.RegisterView(uistate.ViewReview, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)

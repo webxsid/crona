@@ -4,6 +4,9 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
+
 	uistate "crona/tui/internal/tui/state"
 	viewtypes "crona/tui/internal/tui/views/types"
 )
@@ -67,6 +70,57 @@ func TestReviewBottomRowGlobalsOnly(t *testing.T) {
 	for _, unwanted := range []string{"[enter]", "[,/.]", "[+/-/0]", "[S]"} {
 		if strings.Contains(row, unwanted) {
 			t.Fatalf("expected %q off the bottom row, got %q", unwanted, row)
+		}
+	}
+}
+
+func pressReview(m Model, key tea.KeyMsg) Model {
+	next, _ := m.Update(key)
+	return next.(Model)
+}
+
+func TestNarrowReviewEnterOpensDayDialog(t *testing.T) {
+	m := reviewModel()
+	m.width = 80
+	m = pressReview(m, tea.KeyMsg{Type: tea.KeyEnter})
+	if m.dialogState().Kind != "view_entity" || !strings.Contains(m.dialogState().ViewTitle, "Day") {
+		t.Fatalf("expected the day dialog, got %q %q", m.dialogState().Kind, m.dialogState().ViewTitle)
+	}
+	wide := pressReview(reviewModel(), tea.KeyMsg{Type: tea.KeyEnter})
+	if wide.dialogState().Kind != "" {
+		t.Fatalf("expected no dialog on enter when the detail is visible, got %q", wide.dialogState().Kind)
+	}
+}
+
+func TestNarrowReviewSOpensTimeDialog(t *testing.T) {
+	m := reviewModel()
+	m.width = 80
+	m = pressReview(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'S'}})
+	if m.dialogState().Kind != "view_entity" || !strings.Contains(m.dialogState().ViewTitle, "Time") || m.reviewShowTime {
+		t.Fatalf("expected the Time dialog without toggling, got %q %q show=%t", m.dialogState().Kind, m.dialogState().ViewTitle, m.reviewShowTime)
+	}
+}
+
+func TestReviewDialogSurvivesResize(t *testing.T) {
+	m := reviewModel()
+	m.width = 80
+	m = pressReview(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'S'}})
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 200, Height: 40})
+	m = next.(Model)
+	if lines := strings.Split(m.View(), "\n"); len(lines) > 40 {
+		t.Fatalf("expected the screen to fit after resize, got %d lines", len(lines))
+	}
+	m = pressReview(m, tea.KeyMsg{Type: tea.KeyEsc})
+	if m.dialogState().Kind != "" {
+		t.Fatalf("expected esc to close the dialog after resize")
+	}
+}
+
+func TestHelpListsReviewKeys(t *testing.T) {
+	body := ansi.Strip(reviewModel().openHelpDialog().dialogState().ViewBody)
+	for _, want := range []string{"[S] trends/time", "[w] check-in", "[+/-/0] window", "[↑/↓] day"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("expected the help sheet to list %q", want)
 		}
 	}
 }

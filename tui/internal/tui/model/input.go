@@ -248,6 +248,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenReviewDialog: func(state *inputpkg.State, kind string) bool {
+			next := m.applyInputState(*state)
+			if viewhelpers.ClassFor(next.width) != viewhelpers.WidthNarrow {
+				return false
+			}
+			next = next.openReviewDialog(kind)
+			*state = next.inputState()
+			return true
+		},
 		OpenSummaryCalendar: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.withDialogState(next.dialogSnapshot().OpenSummaryCalendar())

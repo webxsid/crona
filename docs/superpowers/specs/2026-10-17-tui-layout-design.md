@@ -37,7 +37,7 @@ Five tabs replace eighteen sidebar entries.
 | --- | --- | --- | --- |
 | Today | `1` | Session strip (when a timer runs), today's issues (Planned with pinned first / Overdue / Upcoming), due habits, the day's score and plan in the strip, `S` Day summary (detail pane, or a dialog when narrow), `C` scored calendar | Daily, Session Active, Away |
 | Issues | `2` | Issues and Habits sub-tabs with shared repo/stream browse scope | Issues (Default), Meta |
-| Insights | `3` | Sub-tabs: Rollup, Momentum, Wellbeing | Rollup, Momentum, Wellbeing |
+| Insights | `3` | Sub-tabs: Review, Momentum (Review merges Rollup and Wellbeing; see `2026-10-18-tui-insights-review-design.md`) | Rollup, Momentum, Wellbeing |
 | Log | `4` | Sub-tabs: Sessions, Habits, Ops | Session History, Habit History, Ops |
 | System | `5` | Sub-tabs: Settings, Alerts, Export (reports + config), Updates, Support | Settings, Alerts, Reports, Config, Updates, Support |
 
@@ -76,7 +76,7 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 ```
 
 - **Top line (1 row)**: tabs left; active repo › stream right. Dev/beta markers and version move into the `?` help overlay and the System tab.
-- **Sub-tab line (1 row, only when the tab has sub-tabs)**: `Rollup · Momentum · Wellbeing`, with the active one highlighted. On every dated view (Daily, Rollup, Momentum, Wellbeing) its right end carries the shared date's navigation, `[g] today   [,] prev  <date> · W<nn>  next [.]`; Rollup puts its window start before the date (`<start> → <date>`). `,`/`.`/`g` move one shared date on all of these views; Rollup, Momentum and Wellbeing size their window with `+`/`-`/`0` (see `2026-10-18-tui-unified-date-design.md`).
+- **Sub-tab line (1 row, only when the tab has sub-tabs)**: `Review · Momentum`, with the active one highlighted. On every dated view (Daily, Review, Momentum) its right end carries the shared date's navigation, `[g] today   [,] prev  <date> · W<nn>  next [.]`; Review puts its window start before the date (`<start> → <date>`). `,`/`.`/`g` move one shared date on all of these views; Review and Momentum size their window with `+`/`-`/`0` (see `2026-10-18-tui-unified-date-design.md`).
 - **Content**: no outer borders. Sections are titled with a rule line `─ TITLE ───── right-aligned meta`. The focused section's title is highlighted in place of today's cyan border.
 - **Bottom status line (1 row)**: timer state (always visible when a timer runs, on every tab), global keys, `[?] all keys`, and the status toast rendered inline on the right, replacing the floating toast overlay. On Daily it holds globals only (`[tab]`, `[c]`, `[E]`, `[w]`, `[W]`); other views keep their section keys minus the date keys. Tab and sub-tab keys live on the `?` sheet (see `2026-10-18-tui-key-hints-design.md`).
 - **Dialogs**: unchanged centred modals, but width follows `min(content, maxWidth)` so they fit 60 columns.

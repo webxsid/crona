@@ -1,6 +1,7 @@
 package review
 
 import (
+	"math"
 	"regexp"
 	"strings"
 	"testing"
@@ -197,5 +198,28 @@ func TestRenderExactSize(t *testing.T) {
 				t.Fatalf("%v: line %d is %d cells: %q", size, i, w, plain(line))
 			}
 		}
+	}
+}
+
+func TestNarrowDaysHints(t *testing.T) {
+	narrow := plain(Render(types.Theme{}, reviewState(80, 30)))
+	if !strings.Contains(narrow, "[enter] day") || !strings.Contains(narrow, "[S] time") {
+		t.Fatalf("expected narrow Days hints:\n%s", narrow)
+	}
+	if wide := plain(Render(types.Theme{}, reviewState(200, 50))); strings.Contains(wide, "[enter]") {
+		t.Fatalf("expected no [enter] hint when the detail is visible")
+	}
+}
+
+func TestChartsGapDaysWithoutCheckIn(t *testing.T) {
+	lines := renderBrailleCanvas([]float64{3, math.NaN(), 3}, 1, 5, 9, 1)
+	if len(lines) != 1 || []rune(lines[0])[4] != ' ' {
+		t.Fatalf("expected a gap where the day has no check-in, got %q", lines)
+	}
+	state := reviewState(200, 50)
+	state.MetricsRange[len(state.MetricsRange)-1].CheckIn = nil
+	out := plain(Render(types.Theme{}, state))
+	if strings.Contains(out, "0.0/5") || !strings.Contains(out, "Mood      1.0/5") {
+		t.Fatalf("expected Mood labelled with the last check-in, not 0:\n%s", out)
 	}
 }
