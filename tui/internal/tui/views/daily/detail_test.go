@@ -143,3 +143,32 @@ func TestDetailCalendarStaysPutAcrossSelections(t *testing.T) {
 		t.Fatalf("expected overflowing detail to end in …, got %q", rendered)
 	}
 }
+
+func TestDetailHabitListsTheMomentumsItFeeds(t *testing.T) {
+	state := detailState()
+	state.Pane = "habits"
+	state.Cursors["habits"] = 1 // Read, habit ID 2
+	state.MomentumCards = []api.MomentumCard{
+		{
+			Definition: api.HabitStreakDefinition{ID: "fit", Name: "Fitness", Enabled: true, Period: "week", RequiredCount: 3, HabitIDs: []int64{1, 2}},
+			Current:    4,
+			Longest:    9,
+			Series:     []api.MomentumSeriesPoint{{Count: 1, Target: 3}, {Count: 2, Target: 3}},
+		},
+		{Definition: api.HabitStreakDefinition{ID: "other", Name: "Other habit", Enabled: true, HabitIDs: []int64{1}}},
+		{Definition: api.HabitStreakDefinition{ID: "off", Name: "Paused", Enabled: false, HabitIDs: []int64{2}}},
+	}
+	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	lines := strings.Split(rendered, "\n")
+	assertContainsLine(t, lines, "Fitness", "weekly")
+	assertContainsLine(t, lines, "Fitness", "2/3")
+	assertContainsLine(t, lines, "Fitness", "4w best 9w")
+	for _, absent := range []string{"Other habit", "Paused"} {
+		if strings.Contains(rendered, absent) {
+			t.Fatalf("expected %q left out of the detail, got %q", absent, rendered)
+		}
+	}
+	if !strings.Contains(rendered, "Momentum") {
+		t.Fatalf("expected a Momentum heading, got %q", rendered)
+	}
+}

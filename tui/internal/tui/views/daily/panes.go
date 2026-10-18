@@ -384,45 +384,89 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
-	if width >= habitCardMinWidth && height-1 >= habitCardHeight {
-		lines = habitCards(theme, state, indices, cur, active, width-1, height-1)
-		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
-	}
-	if !active {
-		lines = habitChips(theme, state, indices, width-2)
-		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
-	}
 	inner := sectionBodyRows(height, lines)
 	start, end := listWindow(cur, total, inner)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
+	nameWidth := 0
+	for _, idx := range indices {
+		nameWidth = max(nameWidth, ansi.StringWidth(state.DueHabits[idx].Name))
+	}
 	for i := start; i < end; i++ {
-		habit := state.DueHabits[indices[i]]
-		status, style := habitMark(theme, habit)
-		duration := ""
-		if habit.DurationMinutes != nil {
-			duration = "  " + helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes)
-		} else if habit.TargetMinutes != nil {
-			duration = "  target " + helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes)
-		}
-		lines = append(
-			lines,
-			viewchrome.RenderPaneRowStyled(
-				theme,
-				i,
-				cur,
-				active,
-				fmt.Sprintf("%s %s%s", status, habit.Name, duration),
-				&style,
-				width,
-			),
-		)
+		lines = append(lines, habitRow(theme, state.DueHabits[indices[i]], nameWidth, width-1, i == cur, active))
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+}
+
+const habitRowBarWidth = 10
+
+// habitRow is one habit as an htop-style meter: checkbox and name, status, a bar of logged
+// minutes against the target, and the minutes. The bar, then the status, give way when narrow.
+func habitRow(theme types.Theme, habit api.HabitDailyItem, nameWidth, width int, selected, active bool) string {
+	mark, style := habitMark(theme, habit)
+	status := "due"
+	switch habit.Status {
+	case "completed":
+		status = "done"
+	case "failed":
+		status = "failed"
+	}
+	cursor := "  "
+	if selected && active {
+		cursor = viewchrome.SelectionCursor + " "
+		style = style.Bold(true)
+	}
+	name := style.Render(mark + " " + padCells(habit.Name, min(nameWidth, max(8, width/2))))
+	minutes := theme.StyleDim.Render(habitMinutesText(habit))
+	for _, parts := range [][]string{
+		{name, theme.StyleDim.Render(padCells(status, 6)), habitMeter(theme, habit), minutes},
+		{name, theme.StyleDim.Render(padCells(status, 6)), minutes},
+		{name, minutes},
+	} {
+		if line := cursor + strings.Join(parts, "  "); ansi.StringWidth(line) <= width {
+			return line
+		}
+	}
+	return viewhelpers.TruncateANSI(cursor+name, width)
+}
+
+func habitMinutesText(habit api.HabitDailyItem) string {
+	logged := "-"
+	if habit.DurationMinutes != nil {
+		logged = helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes)
+	}
+	if habit.TargetMinutes == nil {
+		if logged == "-" {
+			return ""
+		}
+		return logged
+	}
+	return logged + " / " + helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes)
+}
+
+// habitMeter fills with logged minutes against the target; a completed habit without a
+// target reads as full.
+func habitMeter(theme types.Theme, habit api.HabitDailyItem) string {
+	filled := 0
+	switch {
+	case habit.TargetMinutes != nil && *habit.TargetMinutes > 0 && habit.DurationMinutes != nil:
+		filled = min(habitRowBarWidth, *habit.DurationMinutes*habitRowBarWidth / *habit.TargetMinutes)
+	case habit.Status == "completed":
+		filled = habitRowBarWidth
+	}
+	color := theme.ColorYellow
+	switch habit.Status {
+	case "completed":
+		color = theme.ColorGreen
+	case "failed":
+		color = theme.ColorRed
+	}
+	return lipgloss.NewStyle().Foreground(color).Render(strings.Repeat("█", filled)) +
+		theme.StyleDim.Render(strings.Repeat("░", habitRowBarWidth-filled))
 }
 
 // habitMark is a habit's checkbox and the colour its row is drawn in.
@@ -435,129 +479,6 @@ func habitMark(theme types.Theme, habit api.HabitDailyItem) (string, lipgloss.St
 	default:
 		return "[ ]", theme.StyleNormal
 	}
-}
-
-const (
-	// habitCardMinWidth is the section width from which habits render as a card grid.
-	habitCardMinWidth = 90
-	// habitCardSlot is the width one card wants; it sets how many fit in a row (2-4).
-	habitCardSlot   = 32
-	habitCardHeight = 4
-)
-
-// habitCards lays habits out as a grid of bordered cards, 2-4 per row by width, scrolled
-// by card row so the cursor's card stays visible. The grid is the same focused or not.
-func habitCards(
-	theme types.Theme,
-	state types.ContentState,
-	indices []int,
-	cur int,
-	active bool,
-	width, budget int,
-) []string {
-	perRow := min(4, max(2, (width+1)/habitCardSlot))
-	cardW := (width - (perRow - 1)) / perRow
-	rows := (len(indices) + perRow - 1) / perRow
-	curRow := min(max(0, cur), len(indices)-1) / perRow
-	start, end := viewchrome.ListWindow(curRow, rows, max(1, budget/habitCardHeight))
-	for range 2 {
-		markers := 0
-		if start > 0 {
-			markers++
-		}
-		if end < rows {
-			markers++
-		}
-		start, end = viewchrome.ListWindow(curRow, rows, max(1, (budget-markers)/habitCardHeight))
-	}
-	lines := []string{}
-	if start > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start*perRow)))
-	}
-	for row := start; row < end; row++ {
-		cards := []string{}
-		for pos := row * perRow; pos < min(len(indices), (row+1)*perRow); pos++ {
-			cards = append(cards, habitCard(theme, state.DueHabits[indices[pos]], cardW, active && pos == cur))
-		}
-		lines = append(lines, strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, intersperse(cards, " ")...), "\n")...)
-	}
-	if remaining := len(indices) - end*perRow; remaining > 0 {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
-	}
-	return lines
-}
-
-func habitCard(theme types.Theme, habit api.HabitDailyItem, width int, selected bool) string {
-	inner := max(1, width-4)
-	mark, style := habitMark(theme, habit)
-	name := habit.Name
-	border := theme.ColorDim
-	if selected {
-		name = viewchrome.SelectionCursor + " " + name
-		style = style.Bold(true)
-		border = theme.ColorCyan
-	}
-	status := "due"
-	minutes := habit.TargetMinutes
-	switch habit.Status {
-	case "completed":
-		status = "done"
-		if habit.DurationMinutes != nil {
-			minutes = habit.DurationMinutes
-		}
-	case "failed":
-		status = "failed"
-	}
-	detail := style.Render(mark + " " + status)
-	if minutes != nil {
-		detail += "  " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*minutes))
-	}
-	body := style.Render(viewhelpers.TruncateANSI(name, inner)) + "\n" + viewhelpers.TruncateANSI(detail, inner)
-	return lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(border).
-		Padding(0, 1).
-		Width(width - 2).
-		Render(body)
-}
-
-func intersperse(items []string, sep string) []string {
-	out := make([]string, 0, len(items)*2)
-	for i, item := range items {
-		if i > 0 {
-			out = append(out, sep)
-		}
-		out = append(out, item)
-	}
-	return out
-}
-
-// habitChips lays the unfocused habits out as wrapped inline chips, so Habits reads as a
-// different kind of thing from the Tasks list above it.
-func habitChips(theme types.Theme, state types.ContentState, indices []int, width int) []string {
-	const gap = "   "
-	lines := []string{}
-	line := ""
-	for _, idx := range indices {
-		habit := state.DueHabits[idx]
-		status, style := habitMark(theme, habit)
-		chip := style.Render(status + " " + habit.Name)
-		if habit.DurationMinutes != nil {
-			chip += " " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))
-		} else if habit.TargetMinutes != nil {
-			chip += " " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes))
-		}
-		chip = viewhelpers.TruncateANSI(chip, max(1, width))
-		if line != "" && ansi.StringWidth(line+gap+chip) > width {
-			lines = append(lines, line)
-			line = ""
-		}
-		if line != "" {
-			line += gap
-		}
-		line += chip
-	}
-	return append(lines, line)
 }
 
 // listWindow picks the visible items for budget rows, reserving a row for each ↑/↓ marker.

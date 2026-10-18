@@ -1,12 +1,17 @@
 package daily
 
 import (
+	"fmt"
+	"slices"
 	"strings"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
+	momentumhelpers "crona/tui/internal/tui/views/momentum"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
 
@@ -115,8 +120,47 @@ func habitDetailLines(theme types.Theme, state types.ContentState, habit api.Hab
 	if meta := strings.TrimSpace(detailContext(habit.RepoName, habit.StreamName)); meta != "-" {
 		lines = append(lines, detailField(theme, "context", theme.StyleNormal.Render(meta)))
 	}
+	lines = append(lines, habitMomentumLines(theme, state, habit.ID, width)...)
 	lines = append(lines, detailText(theme, "Description", habit.Description, width)...)
 	return append(lines, detailText(theme, "Notes", habit.Notes, width)...)
+}
+
+// habitMomentumLines lists the enabled habit momentums this habit feeds, one per line:
+// cadence, the current period's count against its target, the ladder and the streak.
+func habitMomentumLines(theme types.Theme, state types.ContentState, habitID int64, width int) []string {
+	cards := []sharedtypes.MomentumCard{}
+	nameWidth := 0
+	for _, card := range state.MomentumCards {
+		def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
+		if def.Enabled && def.TargetKind == sharedtypes.MomentumTargetKindHabit && slices.Contains(def.HabitIDs, habitID) {
+			card.Definition = def
+			cards = append(cards, card)
+			nameWidth = max(nameWidth, lipgloss.Width(def.Name))
+		}
+	}
+	lines := []string{}
+	for _, card := range cards {
+		def := card.Definition
+		unit := momentumhelpers.Unit(def.Period)
+		parts := []string{
+			theme.StyleNormal.Render(padCells(def.Name, min(nameWidth, max(8, width/3)))),
+			theme.StyleDim.Render(padCells(momentumhelpers.CadenceLabel(def.Period), 7)),
+		}
+		if len(card.Series) > 0 {
+			point := card.Series[len(card.Series)-1]
+			parts = append(parts, theme.StyleNormal.Render(padCells(fmt.Sprintf("%d/%d", point.Count, point.Target), 5)))
+		}
+		parts = append(parts,
+			momentumhelpers.Ladder(theme, def.Period, card.Current, card.Longest),
+			theme.StyleNormal.Render(momentumhelpers.FormatLength(card.Current, unit))+
+				theme.StyleDim.Render(" best "+momentumhelpers.FormatLength(card.Longest, unit)),
+		)
+		lines = append(lines, viewhelpers.TruncateANSI(strings.Join(parts, "  "), width))
+	}
+	if len(lines) == 0 {
+		return nil
+	}
+	return append([]string{"", theme.StyleDim.Bold(true).Render("Momentum")}, lines...)
 }
 
 func detailField(theme types.Theme, label, value string) string {

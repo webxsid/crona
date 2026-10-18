@@ -37,10 +37,7 @@ func rowOf(t *testing.T, rendered, needle string) int {
 
 func TestDailyHasNoBorders(t *testing.T) {
 	for _, width := range []int{80, 120, 200} {
-		// Habit cards are the one boxed element, so leave them out here.
-		state := dailyState(width, 40)
-		state.DueHabits = nil
-		rendered := renderView(testTheme(), state)
+		rendered := renderView(testTheme(), dailyState(width, 40))
 		if strings.ContainsAny(rendered, "╭╰") {
 			t.Fatalf("width %d: expected no box borders, got %q", width, ansi.Strip(rendered))
 		}
@@ -85,17 +82,6 @@ func TestDailySplitsTasksAndHabitsEvenly(t *testing.T) {
 	}
 }
 
-func TestDailyHabitsAreChipsUntilFocused(t *testing.T) {
-	state := dailyState(80, 40)
-	assertContainsLine(t, strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"), "[ ] Walk", "[ ] Read")
-	state.Pane = "habits"
-	for _, line := range strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n") {
-		if strings.Contains(line, "Walk") && strings.Contains(line, "Read") {
-			t.Fatalf("expected focused habits as a vertical list, got %q", line)
-		}
-	}
-}
-
 func cardHabits(state types.ContentState, n int) types.ContentState {
 	state.DueHabits = nil
 	for i := range n {
@@ -106,27 +92,51 @@ func cardHabits(state types.ContentState, n int) types.ContentState {
 	return state
 }
 
-func TestDailyHabitsAreCardsWhenRoomy(t *testing.T) {
-	state := cardHabits(dailyState(130, 40), 6)
-	unfocused := ansi.Strip(renderHabits(testTheme(), state, 130, 14))
-	if !strings.Contains(unfocused, "╭") {
-		t.Fatalf("expected habit cards at 130 columns, got %q", unfocused)
+func meterHabitState(width int) types.ContentState {
+	state := dailyState(width, 40)
+	target, logged := 10, 15
+	state.DueHabits = []api.HabitDailyItem{
+		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 1, Name: "Walk", TargetMinutes: &target}}},
+		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 2, Name: "Journal", TargetMinutes: &target}}, Status: "completed", DurationMinutes: &logged},
+		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 3, Name: "Morning Walk"}}, Status: "failed"},
 	}
-	state.Pane = "habits"
-	focused := ansi.Strip(renderHabits(testTheme(), state, 130, 14))
-	if rowOf(t, focused, "Habit 00") != rowOf(t, unfocused, "Habit 00") || rowOf(t, focused, "Habit 01") != rowOf(t, focused, "Habit 00") {
-		t.Fatalf("expected the same card grid focused and unfocused, got %q / %q", unfocused, focused)
+	return state
+}
+
+func TestDailyHabitRowsShowStatusBarAndMinutes(t *testing.T) {
+	lines := strings.Split(ansi.Strip(renderHabits(testTheme(), meterHabitState(130), 130, 10)), "\n")
+	assertContainsLine(t, lines, "[x] Journal", "15m / 10m")
+	assertContainsLine(t, lines, "[x] Journal", "█")
+	assertContainsLine(t, lines, "[ ] Walk", "- / 10m")
+	assertContainsLine(t, lines, "[!] Morning Walk", "failed")
+	walk, journal := lines[rowOf(t, strings.Join(lines, "\n"), "Walk")], lines[rowOf(t, strings.Join(lines, "\n"), "Journal")]
+	if cellIndex(walk, "due") != cellIndex(journal, "done") || cellIndex(walk, "due") < 0 {
+		t.Fatalf("expected the status column aligned, got %q / %q", walk, journal)
 	}
 }
 
-func TestDailyHabitCardsPerRowFollowWidth(t *testing.T) {
-	for width, want := range map[int]int{90: 2, 100: 3, 130: 4, 200: 4} {
-		state := cardHabits(dailyState(width, 40), 6)
-		lines := strings.Split(ansi.Strip(renderHabits(testTheme(), state, width, 14)), "\n")
-		if got := strings.Count(lines[1], "╭"); got != want {
-			t.Fatalf("width %d: expected %d cards per row, got %d: %q", width, want, got, lines[1])
+func TestDailyHabitRowsSameFocusedOrNot(t *testing.T) {
+	state := meterHabitState(130)
+	unfocused := ansi.Strip(renderHabits(testTheme(), state, 130, 10))
+	state.Pane = "habits"
+	focused := ansi.Strip(renderHabits(testTheme(), state, 130, 10))
+	for _, name := range []string{"Walk", "Journal", "Morning Walk"} {
+		if rowOf(t, focused, name) != rowOf(t, unfocused, name) {
+			t.Fatalf("expected %q on the same row focused or not", name)
 		}
-		for i, line := range lines {
+	}
+	if strings.Contains(unfocused, "▶") || !strings.Contains(focused, "▶") {
+		t.Fatalf("expected the cursor only when focused, got %q / %q", unfocused, focused)
+	}
+}
+
+func TestDailyHabitRowsFitNarrowWidths(t *testing.T) {
+	for _, width := range []int{40, 60, 90} {
+		rendered := ansi.Strip(renderHabits(testTheme(), meterHabitState(width), width, 10))
+		if !strings.Contains(rendered, "Morning Walk") {
+			t.Fatalf("width %d: expected habit names kept, got %q", width, rendered)
+		}
+		for i, line := range strings.Split(rendered, "\n") {
 			if w := ansi.StringWidth(line); w != width {
 				t.Fatalf("width %d: row %d is %d cells: %q", width, i, w, line)
 			}
@@ -134,49 +144,12 @@ func TestDailyHabitCardsPerRowFollowWidth(t *testing.T) {
 	}
 }
 
-func TestDailyHabitCardsMarkFocusedSelection(t *testing.T) {
+func TestDailyHabitRowsMarkFocusedSelection(t *testing.T) {
 	state := cardHabits(dailyState(130, 40), 6)
 	state.Pane = "habits"
 	state.Cursors["habits"] = 5
 	rendered := ansi.Strip(renderHabits(testTheme(), state, 130, 14))
 	assertContainsLine(t, strings.Split(rendered, "\n"), "▶", "Habit 05")
-	if strings.Count(rendered, "▶") != 1 {
-		t.Fatalf("expected one selected card, got %q", rendered)
-	}
-}
-
-func TestDailyHabitCardsScrollToCursor(t *testing.T) {
-	state := cardHabits(dailyState(130, 40), 30)
-	state.Pane = "habits"
-	state.Cursors["habits"] = 29
-	rendered := ansi.Strip(renderHabits(testTheme(), state, 130, 10))
-	if !strings.Contains(rendered, "Habit 29") || !strings.Contains(rendered, "↑") {
-		t.Fatalf("expected the last card and a ↑ marker, got %q", rendered)
-	}
-	if lines := strings.Split(rendered, "\n"); len(lines) != 10 {
-		t.Fatalf("expected 10 rows, got %d", len(lines))
-	}
-}
-
-func TestDailyHabitChipsWrap(t *testing.T) {
-	state := dailyState(60, 40)
-	state.DueHabits = nil
-	for i := range 12 {
-		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
-			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
-		})
-	}
-	rendered := ansi.Strip(renderHabits(testTheme(), state, 60, 10))
-	for _, want := range []string{"Habit 00", "Habit 11"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected wrapped chips to include %q, got %q", want, rendered)
-		}
-	}
-	for i, line := range strings.Split(rendered, "\n") {
-		if w := ansi.StringWidth(line); w != 60 {
-			t.Fatalf("row %d is %d cells: %q", i, w, line)
-		}
-	}
 }
 
 func TestDailyCompactTasksHaveNoDashDividers(t *testing.T) {
