@@ -120,7 +120,8 @@ func TestDailyHabitRowsSameFocusedOrNot(t *testing.T) {
 	unfocused := ansi.Strip(renderHabits(testTheme(), state, 130, 10))
 	state.Pane = "habits"
 	focused := ansi.Strip(renderHabits(testTheme(), state, 130, 10))
-	for _, name := range []string{"Walk", "Journal", "Morning Walk"} {
+	// Rows below the selection shift for its action line; the selection itself stays put.
+	for _, name := range []string{"[ ] Walk"} {
 		if rowOf(t, focused, name) != rowOf(t, unfocused, name) {
 			t.Fatalf("expected %q on the same row focused or not", name)
 		}
@@ -156,16 +157,6 @@ func TestDailyCompactTasksHaveNoDashDividers(t *testing.T) {
 	rendered := ansi.Strip(renderIssues(testTheme(), manyIssues(dailyState(80, 30), 3), 80, 20))
 	if strings.Contains(rendered, "----") {
 		t.Fatalf("expected no dash dividers between tasks, got %q", rendered)
-	}
-}
-
-func TestDailyNoActionRowsInSections(t *testing.T) {
-	for _, pane := range []string{"issues", "habits"} {
-		state := dailyState(120, 40)
-		state.Pane = pane
-		if rendered := ansi.Strip(renderView(testTheme(), state)); strings.Contains(rendered, "[enter]") {
-			t.Fatalf("%s focused: expected key hints to live in the status line, got %q", pane, rendered)
-		}
 	}
 }
 
@@ -270,6 +261,7 @@ func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
 	for _, width := range []int{80, 130} {
 		state := manyIssues(dailyState(width, 30), 1)
 		state.DailyIssues[0].RepoName, state.DailyIssues[0].StreamName = "crona", "core"
+		state.Pane = "habits" // unfocused, so the card keeps its meta line
 		if rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20)); !strings.Contains(rendered, "crona") || !strings.Contains(rendered, "core") {
 			t.Fatalf("width %d: expected the issue's own repo and stream, got %q", width, rendered)
 		}

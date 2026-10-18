@@ -27,7 +27,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
 	meta := fmt.Sprintf("%d  [←/→]", total)
-	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection)}
+	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), newItemLine(theme, "new task")}
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return dailySection(theme, "Tasks", meta, active, width, height, lines)
@@ -151,19 +151,23 @@ func renderCompactDailyIssueList(
 				compactDailyIssueDate(state, issue),
 				string(issue.Status),
 			),
-			renderCompactDailyIssueMeta(
-				theme,
-				width,
-				start+idx,
-				cur,
-				active,
-				repoName,
-				streamName,
-				workedSeconds,
-				issue.EstimateMinutes,
-				string(issue.Status),
-			),
 		)
+		if start+idx == cur && active {
+			lines = append(lines, taskActionLine(theme, state, width))
+			continue
+		}
+		lines = append(lines, renderCompactDailyIssueMeta(
+			theme,
+			width,
+			start+idx,
+			cur,
+			active,
+			repoName,
+			streamName,
+			workedSeconds,
+			issue.EstimateMinutes,
+			string(issue.Status),
+		))
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, base.MoreBelow(theme, remaining))
@@ -349,12 +353,16 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		}
 	}
 	meta := fmt.Sprintf("%d/%d", done, len(state.DueHabits))
-	lines := []string{}
+	lines := []string{newItemLine(theme, "new habit")}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
 	inner := sectionBodyRows(height, lines)
+	if active {
+		// The selected habit's action line takes a row of the list.
+		inner = max(1, inner-1)
+	}
 	start, end := listWindow(cur, total, inner)
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
@@ -365,6 +373,9 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	}
 	for i := start; i < end; i++ {
 		lines = append(lines, habitRow(theme, state.DueHabits[indices[i]], nameWidth, width-1, i == cur, active))
+		if i == cur && active {
+			lines = append(lines, habitActionLine(theme, state, width-1))
+		}
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))

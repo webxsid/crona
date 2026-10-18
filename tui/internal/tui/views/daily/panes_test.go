@@ -12,8 +12,8 @@ import (
 )
 
 func TestRenderIssuesUsesListAtEveryWidth(t *testing.T) {
+	// Unfocused, so the selected card keeps its meta line.
 	state := types.ContentState{
-		Pane:   "issues",
 		Width:  240,
 		Height: 20,
 		DailyIssues: []api.Issue{
@@ -75,8 +75,8 @@ func TestRenderIssuesKeepsDateVisibleWhenTitleTruncates(t *testing.T) {
 func TestRenderIssuesUsesCompactListLayoutBelowBreakpoint(t *testing.T) {
 	todo := "2099-03-20"
 	todo2 := "2099-03-21"
+	// Unfocused, so the selected card keeps its meta line.
 	state := types.ContentState{
-		Pane:   "issues",
 		Width:  70,
 		Height: 20,
 		DailyIssues: []api.Issue{
