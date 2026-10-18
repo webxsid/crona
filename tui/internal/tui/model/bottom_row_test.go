@@ -84,3 +84,56 @@ func TestNarrowDailyBottomRowOffersDayKey(t *testing.T) {
 		t.Fatalf("expected no [S] on a historical away date, got %q", row)
 	}
 }
+
+func TestIssuesBottomRowIsGlobalsOnly(t *testing.T) {
+	t.Parallel()
+	testIssuesTabBottomRow(t, ViewDefault, PaneIssues)
+}
+
+func TestHabitsBottomRowIsGlobalsOnly(t *testing.T) {
+	t.Parallel()
+	testIssuesTabBottomRow(t, ViewHabitList, PaneHabits)
+}
+
+func testIssuesTabBottomRow(t *testing.T, view View, list Pane) {
+	t.Helper()
+	for _, pane := range []Pane{PaneScope, list} {
+		for _, width := range []int{60, 120, 200} {
+			m := Model{view: view, pane: pane, width: width, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+			row := bottomRow(m)
+			if pane == PaneScope && strings.Contains(row, "[c] context") {
+				t.Errorf("bottomRow(%s, scope, %d) = %q, want context hidden", view, width, row)
+			}
+			if !strings.Contains(row, "[tab] next pane") {
+				t.Errorf("bottomRow(%s, %s, %d) = %q, want next-pane hint", view, pane, width, row)
+			}
+			if !strings.Contains(row, "[?] all keys") {
+				t.Errorf("bottomRow(%s, %s, %d) = %q, want all keys hint", view, pane, width, row)
+			}
+			for _, unwanted := range []string{"[s]", "[c] check out", "[a]", "[S]", "open/resolved"} {
+				if strings.Contains(row, unwanted) {
+					t.Errorf("bottomRow(%s, %s, %d) = %q, want no %q", view, pane, width, row, unwanted)
+				}
+			}
+		}
+	}
+}
+
+func TestHelpSheetListsScopeKeys(t *testing.T) {
+	t.Parallel()
+	for _, view := range []View{ViewDefault, ViewHabitList} {
+		list := PaneIssues
+		if view == ViewHabitList {
+			list = PaneHabits
+		}
+		for _, pane := range []Pane{PaneScope, list} {
+			m := Model{view: view, pane: pane, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+			body := ansi.Strip(m.openHelpDialog().dialogState().ViewBody)
+			for _, want := range []string{"Current View", "Scope", "[c] check out", "[a] new repo", "[a] new stream", "[enter] open", "[e] edit", "[m] log"} {
+				if !strings.Contains(body, want) {
+					t.Errorf("openHelpDialog(%s, %s) = %q, want %q", view, pane, body, want)
+				}
+			}
+		}
+	}
+}

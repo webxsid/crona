@@ -26,7 +26,7 @@ Every existing capability stays reachable. Views may be merged or regrouped; fun
 | Daily | Daily, Summary, Issues, Active Session |
 | Weekly | Rollup, Momentum, Wellbeing |
 | Rarely | Ops, Session History (mostly editing), Support |
-| Task-specific | Meta, Reports, Config, Settings, Alerts, Updates, Habit History |
+| Task-specific | Reports, Config, Settings, Alerts, Updates, Habit History |
 | Automatic | Away (rest day or away mode) |
 
 ## Information architecture
@@ -36,7 +36,7 @@ Five tabs replace eighteen sidebar entries.
 | Tab | Key | Contains | Replaces |
 | --- | --- | --- | --- |
 | Today | `1` | Session strip (when a timer runs), today's issues (Planned with pinned first / Overdue / Upcoming), due habits, the day's score and plan in the strip, `S` Day summary (detail pane, or a dialog when narrow), `C` scored calendar | Daily, Session Active, Away |
-| Issues | `2` | Issue list with repo → stream scope drill-down; repos, streams and habits managed in place | Issues (Default), Meta |
+| Issues | `2` | Issues and Habits sub-tabs with shared repo/stream browse scope | Issues (Default), Meta |
 | Insights | `3` | Sub-tabs: Rollup, Momentum, Wellbeing | Rollup, Momentum, Wellbeing |
 | Log | `4` | Sub-tabs: Sessions, Habits, Ops | Session History, Habit History, Ops |
 | System | `5` | Sub-tabs: Settings, Alerts, Export (reports + config), Updates, Support | Settings, Alerts, Reports, Config, Updates, Support |
@@ -59,9 +59,12 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 
 ### Issues tab
 
-- One list, scoped by a breadcrumb: `all › repo › stream`. `enter` on a repo/stream row drills in; `backspace` goes up.
-- At repo or stream scope, the list shows child streams/habits as group headers, so Meta's four panes collapse into one navigable tree-list.
-- Open/Completed sections stay, switched with `tab` (already bound; today's `1`/`2` are dropped).
+- Sub-tabs are **Issues · Habits**; Meta is removed. Both share browse scope independent of checkout, reset to checkout on entering Issues.
+- A two-row summary strip counts the browse scope. At ≥160 columns, Scope, list and detail sit side by side; medium drops detail; below 100 columns Scope becomes one focusable row.
+- Scope lists All, repos and streams, with counts and checkout dots. Moving browses; `c` checks out. Scope offers create, open, edit and guarded delete keys inside its focused pane.
+- `tab` cycles Scope/list focus. In Issues, `←/→` switches Open/Done. Habits lists all definitions in scope. Create defaults follow browse scope.
+- Selected-card actions and create hints live inside focused panes; the bottom row contains globals only, with no duplicate create/status/checkout keys or day-summary key. The `?` sheet lists scope and list keys under Current View.
+- Detailed requirements: [Issues tab design](2026-10-18-tui-issues-tab-design.md).
 
 ## Shell (chrome)
 
@@ -124,8 +127,8 @@ Each visual implements `Render(box Box) []string` and picks the richest tier tha
 Per-view digit bindings move off digits:
 
 - Daily `1`/`2` (issues/habits panes) → `tab`.
-- Issues `1`/`2` (open/completed) → `tab` (already toggles them; `o` is taken by open-selection).
-- Meta `1`–`4` → drill-down.
+- Issues `1`/`2` (open/completed) → `←/→` on the list; `tab` cycles Scope/list focus.
+- Meta `1`–`4` → Scope/list focus with `tab`; habits move to the Habits sub-tab.
 - Config, Settings, Alerts, Reports, Scratch `1` (focus the only pane) → dropped as redundant.
 
 Keymap profiles: `key_registry` gains a `Profile` (default only, for now) that maps logical actions (`nav.down`, `tab.next`, `section.next`, …) to keys. Handlers register against actions, not raw keys, so a later vim profile only adds a mapping table.
@@ -149,7 +152,7 @@ The shell and views can change in independent steps, each releasable:
 1. Shell swap: tab line + status line + inline toast, sidebar removed, existing views mapped onto tabs/sub-tabs as-is; lower the minimum size.
 2. Responsive grid and borderless section headers across views.
 3. Today merge (Daily + Summary + Session strip) and the timer-lock relaxation.
-4. Issues merge (Meta drill-down).
+4. Issues scope tree and Habits sub-tab (Meta removed).
 5. Tiered charts and zoom.
 6. Command palette and keymap profile indirection.
 

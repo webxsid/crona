@@ -648,7 +648,53 @@ func (m Model) openHelpDialog() Model {
 		UpdateVisible:          viewruntime.ShouldShowUpdatesView(m.updateStatus),
 		UpdateInstallAvailable: m.selfUpdateInstallAvailable(),
 	})
+	if m.view == ViewDefault || m.view == ViewHabitList {
+		paneActions = []string{
+			"Scope (tab to focus; All has create only)",
+			viewchrome.KeyHint(theme, "↑/↓", "move scope"),
+			viewchrome.KeyHint(theme, "←/→", "step scope"),
+			viewchrome.KeyHint(theme, "c", "check out"),
+			viewchrome.KeyHint(theme, "enter", "open scope"),
+			viewchrome.KeyHint(theme, "e", "edit scope"),
+			viewchrome.KeyHint(theme, "a", "new repo (All)"),
+			viewchrome.KeyHint(theme, "a", "new stream (repo/stream)"),
+		}
+		timerIdle := chromeState.TimerState == "" || chromeState.TimerState == "idle"
+		if timerIdle {
+			paneActions = append(paneActions, viewchrome.KeyHint(theme, "D", "delete scope"))
+		}
+		if m.view == ViewDefault {
+			paneActions = append(paneActions, "", "Issues (tab to focus)",
+				viewchrome.KeyHint(theme, "↑/↓", "select issue"),
+				viewchrome.KeyHint(theme, "←/→", "Open/Done"),
+				viewchrome.KeyHint(theme, "a", "new issue"),
+				viewchrome.KeyHint(theme, "enter", "open"))
+			if hasSelectedIssue && selectedIssue.Adhoc {
+				if timerIdle {
+					paneActions = append(paneActions, viewchrome.KeyHint(theme, "e", "convert"))
+				}
+			} else {
+				paneActions = append(paneActions, viewchrome.KeyHint(theme, "s", "status"), viewchrome.KeyHint(theme, "d", "due"), viewchrome.KeyHint(theme, "P", "pin"))
+				if timerIdle {
+					paneActions = append(paneActions, viewchrome.KeyHint(theme, "f", "focus"), viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "D", "delete"))
+				}
+			}
+			if timerIdle {
+				paneActions = append(paneActions, viewchrome.KeyHint(theme, "A", "ad hoc"))
+			}
+		} else {
+			paneActions = append(paneActions, "", "Habits (tab to focus)",
+				viewchrome.KeyHint(theme, "↑/↓", "select habit"), viewchrome.KeyHint(theme, "a", "new habit"),
+				viewchrome.KeyHint(theme, "enter", "open"), viewchrome.KeyHint(theme, "e", "edit"))
+			if timerIdle {
+				paneActions = append(paneActions, viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "D", "delete"))
+			}
+		}
+	}
 	globalActions := viewchrome.DedupeActionKeys(chromeState.GlobalActions, paneActions)
+	if m.view == ViewDefault || m.view == ViewHabitList {
+		globalActions = chromeState.GlobalActions
+	}
 	rows := []string{"Navigation"}
 	rows = append(rows, viewchrome.NavigationActions(theme, viewchrome.ActionsState{IsBetaBuild: m.isBetaBuild()})...)
 	rows = append(rows, viewchrome.DateActions(theme, string(m.view))...)

@@ -105,10 +105,10 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[tab]")+theme.StyleDim.Render(" "+tabLabel),
 		)
 	}
-	if supportsGlobalCreate(state.View) && state.View != "daily" && !state.SelectedIssueAdhoc {
+	if supportsGlobalCreate(state.View) && !state.SelectedIssueAdhoc {
 		actions = append(actions, theme.StyleHeader.Render("[a]")+theme.StyleDim.Render(" create"))
 	}
-	if supportsGlobalContext(state.View) {
+	if supportsGlobalContext(state.View) && state.Pane != string(uistate.PaneScope) {
 		actions = append(
 			actions,
 			theme.StyleHeader.Render("[c]")+theme.StyleDim.Render(" context"),
@@ -131,6 +131,12 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 }
 
 func ContextualActions(theme Theme, state ActionsState) []string {
+	if state.Pane == string(uistate.PaneScope) ||
+		(state.View == string(uistate.ViewDefault) && state.Pane == string(uistate.PaneIssues)) ||
+		(state.View == string(uistate.ViewHabitList) && state.Pane == string(uistate.PaneHabits)) {
+		return nil
+	}
+
 	if state.RestModeActive && state.View == "away" {
 		if state.AwayModeActive {
 			return []string{
@@ -433,7 +439,7 @@ func timerActionSegmentLabel(segment string) string {
 }
 
 func supportsGlobalCreate(view string) bool {
-	return view == "default" || view == "daily" || view == "momentum"
+	return view == "momentum"
 }
 
 func supportsGlobalContext(view string) bool {
@@ -505,9 +511,6 @@ func DedupeActionKeys(actions []string, suppress []string) []string {
 }
 
 func tabActionLabel(state ActionsState) string {
-	if state.View == string(uistate.ViewDefault) && state.Pane == string(uistate.PaneIssues) {
-		return "open/resolved"
-	}
 	if len(uistate.ViewPanes(uistate.View(state.View))) > 1 {
 		return "next pane"
 	}
