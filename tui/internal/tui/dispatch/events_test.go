@@ -66,8 +66,8 @@ func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
 	deps := testEventDeps()
 	deps.LoadSettings = trackedEventCommand(called, "settings")
 	deps.LoadDailyStreaks = func(string) tea.Cmd { return trackedEventCommand(called, "daily")() }
-	deps.LoadWellbeing = func(string, int) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
-	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	deps.LoadWellbeing = func(string) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
+	deps.LoadReviewWindow = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	deps.LoadMomentumRange = func(string, int) tea.Cmd { return trackedEventCommand(called, "momentum")() }
 	payload, err := json.Marshal(sharedtypes.SettingsChangedPayload{
 		Keys: []sharedtypes.CoreSettingsKey{sharedtypes.CoreSettingsKeyAwayDates},
@@ -76,9 +76,8 @@ func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
 		t.Fatalf("marshal settings event: %v", err)
 	}
 	state := EventState{
-		CurrentDate:         "2026-08-09",
-		MomentumWindowDays:  30,
-		WellbeingWindowDays: 7,
+		CurrentDate:        "2026-08-09",
+		MomentumWindowDays: 30,
 	}
 	_, cmd := HandleEvent(state, deps, api.KernelEvent{
 		Type:    sharedtypes.EventTypeSettingsChanged,
@@ -103,11 +102,11 @@ func TestDayStartReloadsAllDateScopedSurfaces(t *testing.T) {
 	deps.LoadDailyPlan = func(string) tea.Cmd { return trackedEventCommand(called, "plan")() }
 	deps.LoadDueHabits = func(string) tea.Cmd { return trackedEventCommand(called, "due")() }
 	deps.LoadDailyStreaks = func(string) tea.Cmd { return trackedEventCommand(called, "streaks")() }
-	deps.LoadWellbeing = func(string, int) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
+	deps.LoadWellbeing = func(string) tea.Cmd { return trackedEventCommand(called, "wellbeing")() }
 	deps.LoadMomentumRange = func(string, int) tea.Cmd { return trackedEventCommand(called, "momentum")() }
-	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	deps.LoadReviewWindow = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10"})
-	_, cmd := HandleEvent(EventState{WellbeingWindowDays: 7, MomentumWindowDays: 30}, deps, api.KernelEvent{
+	_, cmd := HandleEvent(EventState{MomentumWindowDays: 30}, deps, api.KernelEvent{
 		Type: sharedtypes.EventTypeDayStart, Payload: payload,
 	})
 	if cmd == nil {
@@ -230,9 +229,9 @@ func testEventDeps() EventDeps {
 		LoadDueHabits:            func(string) tea.Cmd { return noop() },
 		LoadDailyStreaks:         func(string) tea.Cmd { return noop() },
 		LoadHabitHistory:         func(*api.ActiveContext, *int64) tea.Cmd { return noop() },
-		LoadWellbeing:            func(string, int) tea.Cmd { return noop() },
+		LoadWellbeing:            func(string) tea.Cmd { return noop() },
 		LoadMomentumRange:        func(string, int) tea.Cmd { return noop() },
-		LoadRollupSummaries:      func(string, string) tea.Cmd { return noop() },
+		LoadReviewWindow:         func(string, string) tea.Cmd { return noop() },
 		LoadSessionHistoryFor200: func(EventState) tea.Cmd { return noop() },
 		LoadContext:              noop,
 		LoadTimer:                noop,
@@ -254,7 +253,7 @@ func TestHistoryChangedRefreshesTotals(t *testing.T) {
 	deps.LoadAllIssues = trackedEventCommand(called, "issues")
 	deps.LoadDailySummary = func(string) tea.Cmd { return trackedEventCommand(called, "daily")() }
 	deps.LoadSummarySnapshot = func(string) tea.Cmd { return trackedEventCommand(called, "summary")() }
-	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
+	deps.LoadReviewWindow = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	deps.LoadIssueSessions = func(int64) tea.Cmd { return trackedEventCommand(called, "issue sessions")() }
 	_, cmd := HandleEvent(EventState{Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDate: "2026-05-24"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
 	if cmd == nil {

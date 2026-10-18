@@ -8,14 +8,13 @@ const (
 	ViewAway           View = "away"
 	ViewDefault        View = "default"
 	ViewDaily          View = "daily"
-	ViewRollup         View = "rollup"
+	ViewReview         View = "review"
 	ViewMomentum       View = "momentum"
 	ViewHabitList      View = "habit_list"
 	ViewSessionHistory View = "session_history"
 	ViewHabitHistory   View = "habit_history"
 	ViewSessionActive  View = "session_active"
 	ViewOps            View = "ops"
-	ViewWellbeing      View = "wellbeing"
 	ViewReports        View = "reports"
 	ViewConfig         View = "config"
 	ViewSettings       View = "settings"
@@ -27,24 +26,20 @@ const (
 type Pane string
 
 const (
-	PaneRepos            Pane = "repos"
-	PaneStreams          Pane = "streams"
-	PaneScope            Pane = "scope"
-	PaneIssues           Pane = "issues"
-	PaneHabits           Pane = "habits"
-	PaneRollupDays       Pane = "rollup_days"
-	PaneRollupBreakdown  Pane = "rollup_breakdown"
-	PaneSessions         Pane = "sessions"
-	PaneHabitHistory     Pane = "habit_history"
-	PaneMomentumCards    Pane = "momentum_cards"
-	PaneOps              Pane = "ops"
-	PaneExportReports    Pane = "export_reports"
-	PaneConfig           Pane = "config"
-	PaneSettings         Pane = "settings"
-	PaneAlerts           Pane = "alerts"
-	PaneWellbeingSummary Pane = "wellbeing_summary"
-	PaneWellbeingTrends  Pane = "wellbeing_trends"
-	PaneWellbeingDetails Pane = "wellbeing_details"
+	PaneRepos         Pane = "repos"
+	PaneStreams       Pane = "streams"
+	PaneScope         Pane = "scope"
+	PaneIssues        Pane = "issues"
+	PaneHabits        Pane = "habits"
+	PaneReviewDays    Pane = "review_days"
+	PaneSessions      Pane = "sessions"
+	PaneHabitHistory  Pane = "habit_history"
+	PaneMomentumCards Pane = "momentum_cards"
+	PaneOps           Pane = "ops"
+	PaneExportReports Pane = "export_reports"
+	PaneConfig        Pane = "config"
+	PaneSettings      Pane = "settings"
+	PaneAlerts        Pane = "alerts"
 )
 
 type DefaultIssueSection string
@@ -64,9 +59,8 @@ const (
 
 var viewOrder = []View{
 	ViewDaily,
-	ViewRollup,
+	ViewReview,
 	ViewMomentum,
-	ViewWellbeing,
 	ViewDefault,
 	ViewHabitList,
 	ViewOps,
@@ -84,14 +78,13 @@ var viewPanes = map[View][]Pane{
 	ViewAway:           {},
 	ViewDefault:        {PaneScope, PaneIssues},
 	ViewDaily:          {PaneIssues, PaneHabits},
-	ViewRollup:         {PaneRollupDays, PaneRollupBreakdown},
+	ViewReview:         {PaneReviewDays},
 	ViewMomentum:       {PaneMomentumCards},
 	ViewHabitList:      {PaneScope, PaneHabits},
 	ViewSessionHistory: {PaneSessions},
 	ViewHabitHistory:   {PaneHabitHistory},
 	ViewSessionActive:  {},
 	ViewOps:            {PaneOps},
-	ViewWellbeing:      {PaneWellbeingSummary, PaneWellbeingTrends, PaneWellbeingDetails},
 	ViewReports:        {PaneExportReports},
 	ViewConfig:         {PaneConfig},
 	ViewSettings:       {PaneSettings},
@@ -104,14 +97,13 @@ var viewDefaultPane = map[View]Pane{
 	ViewAway:           PaneIssues,
 	ViewDefault:        PaneIssues,
 	ViewDaily:          PaneIssues,
-	ViewRollup:         PaneRollupDays,
+	ViewReview:         PaneReviewDays,
 	ViewMomentum:       PaneMomentumCards,
 	ViewHabitList:      PaneHabits,
 	ViewSessionHistory: PaneSessions,
 	ViewHabitHistory:   PaneHabitHistory,
 	ViewSessionActive:  PaneIssues,
 	ViewOps:            PaneOps,
-	ViewWellbeing:      PaneWellbeingSummary,
 	ViewReports:        PaneExportReports,
 	ViewConfig:         PaneConfig,
 	ViewSettings:       PaneSettings,

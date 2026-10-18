@@ -69,9 +69,9 @@ func TestRenderTabLineMarksActiveTab(t *testing.T) {
 }
 
 func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
-	state := shellStateForTest(uistate.ViewRollup, 120, 36)
+	state := shellStateForTest(uistate.ViewReview, 120, 36)
 	lines := plainLines(Render(state))
-	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Wellbeing") {
+	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Review") {
 		t.Fatalf("expected sub-tab line, got %q", lines[1])
 	}
 	if got := ContentHeight(state); got != 36-4 {
@@ -116,17 +116,16 @@ func TestRenderSubTabLineFramedByKeys(t *testing.T) {
 
 func TestRenderDateRowOnDatedViews(t *testing.T) {
 	for view, keys := range map[uistate.View]string{
-		uistate.ViewDaily:     "[C] calendar",
-		uistate.ViewMomentum:  "[+/-/0] window",
-		uistate.ViewWellbeing: "[+/-/0] window",
-		uistate.ViewRollup:    "[+/-/0] window",
+		uistate.ViewDaily:    "[C] calendar",
+		uistate.ViewMomentum: "[+/-/0] window",
+		uistate.ViewReview:   "[+/-/0] window",
 	} {
 		line := plainLines(Render(datedShellState(view, 140, 36)))[2]
 		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") || !strings.Contains(line, keys) {
 			t.Fatalf("%s: expected the date row with %q, got %q", view, keys, line)
 		}
-		if view == uistate.ViewRollup && !strings.Contains(line, "2026-05-21") {
-			t.Fatalf("rollup: expected its range start on the date row, got %q", line)
+		if view == uistate.ViewReview && !strings.Contains(line, "2026-05-21") {
+			t.Fatalf("review: expected its range start on the date row, got %q", line)
 		}
 	}
 	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[2]; strings.Contains(line, "next [.]") {
@@ -390,7 +389,7 @@ func TestDailyDateRowLeavesDayKeyOff(t *testing.T) {
 }
 
 func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
-	for view, calendar := range map[uistate.View]string{uistate.ViewDaily: "[C] calendar", uistate.ViewRollup: "[E] calendar"} {
+	for view, calendar := range map[uistate.View]string{uistate.ViewDaily: "[C] calendar", uistate.ViewReview: "[E] calendar"} {
 		line := plainLines(Render(datedShellState(view, 160, 36)))[2]
 		at := -1
 		for _, want := range []string{calendar, "[g] today", "[,] prev", "2026-05-27", "next [.]"} {
@@ -404,7 +403,7 @@ func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
 			t.Fatalf("%s: expected the navigation one cell from the right edge, got %q", view, line)
 		}
 	}
-	if line := plainLines(Render(datedShellState(uistate.ViewRollup, 160, 36)))[2]; !strings.HasPrefix(line, " [+/-/0] window") {
+	if line := plainLines(Render(datedShellState(uistate.ViewReview, 160, 36)))[2]; !strings.HasPrefix(line, " [+/-/0] window") {
 		t.Fatalf("expected the window key at the left, got %q", line)
 	}
 }

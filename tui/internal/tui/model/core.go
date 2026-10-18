@@ -14,8 +14,6 @@ import (
 	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/terminaltitle"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
-	rollupview "crona/tui/internal/tui/views/rollup"
-	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -30,14 +28,13 @@ const (
 	ViewAway           = uistate.ViewAway
 	ViewDefault        = uistate.ViewDefault
 	ViewDaily          = uistate.ViewDaily
-	ViewRollup         = uistate.ViewRollup
+	ViewReview         = uistate.ViewReview
 	ViewMomentum       = uistate.ViewMomentum
 	ViewHabitList      = uistate.ViewHabitList
 	ViewSessionHistory = uistate.ViewSessionHistory
 	ViewHabitHistory   = uistate.ViewHabitHistory
 	ViewSessionActive  = uistate.ViewSessionActive
 	ViewOps            = uistate.ViewOps
-	ViewWellbeing      = uistate.ViewWellbeing
 	ViewReports        = uistate.ViewReports
 	ViewConfig         = uistate.ViewConfig
 	ViewSettings       = uistate.ViewSettings
@@ -49,24 +46,20 @@ const (
 type Pane = uistate.Pane
 
 const (
-	PaneRepos            = uistate.PaneRepos
-	PaneStreams          = uistate.PaneStreams
-	PaneScope            = uistate.PaneScope
-	PaneIssues           = uistate.PaneIssues
-	PaneHabits           = uistate.PaneHabits
-	PaneRollupDays       = uistate.PaneRollupDays
-	PaneRollupBreakdown  = uistate.PaneRollupBreakdown
-	PaneSessions         = uistate.PaneSessions
-	PaneHabitHistory     = uistate.PaneHabitHistory
-	PaneMomentumCards    = uistate.PaneMomentumCards
-	PaneOps              = uistate.PaneOps
-	PaneExportReports    = uistate.PaneExportReports
-	PaneConfig           = uistate.PaneConfig
-	PaneSettings         = uistate.PaneSettings
-	PaneAlerts           = uistate.PaneAlerts
-	PaneWellbeingSummary = uistate.PaneWellbeingSummary
-	PaneWellbeingTrends  = uistate.PaneWellbeingTrends
-	PaneWellbeingDetails = uistate.PaneWellbeingDetails
+	PaneRepos         = uistate.PaneRepos
+	PaneStreams       = uistate.PaneStreams
+	PaneScope         = uistate.PaneScope
+	PaneIssues        = uistate.PaneIssues
+	PaneHabits        = uistate.PaneHabits
+	PaneReviewDays    = uistate.PaneReviewDays
+	PaneSessions      = uistate.PaneSessions
+	PaneHabitHistory  = uistate.PaneHabitHistory
+	PaneMomentumCards = uistate.PaneMomentumCards
+	PaneOps           = uistate.PaneOps
+	PaneExportReports = uistate.PaneExportReports
+	PaneConfig        = uistate.PaneConfig
+	PaneSettings      = uistate.PaneSettings
+	PaneAlerts        = uistate.PaneAlerts
 )
 
 type DefaultIssueSection = uistate.DefaultIssueSection
@@ -124,15 +117,17 @@ type Model struct {
 	dailySummary *api.DailyIssueSummary
 	dailyPlan    *api.DailyPlan
 	// date is the shared date every dated view shows; "" follows the logical today.
-	date             string
-	rollupWindowDays int
+	date string
+	// reviewWindowDays end on reviewWindowEnd; reviewShowTime puts Time in Trends' slot.
+	reviewWindowDays int
+	reviewWindowEnd  string
+	reviewShowTime   bool
 	summarySnapshot  *api.SummarySnapshot
 	// dailyDetailDay shows the Day summary in Daily's detail pane until the selection moves.
 	dailyDetailDay            bool
 	momentumWindowDays        int
 	momentumTab               MomentumTab
 	momentumHistoryCursor     int
-	wellbeingWindowDays       int
 	dailyCheckIn              *api.DailyCheckIn
 	metricsRange              []api.DailyMetricsDay
 	metricsRollup             *api.MetricsRollup
@@ -331,48 +326,37 @@ func New(
 		dailyTaskSection:    DailyTaskSectionPlanned,
 		momentumTab:         MomentumTabCustom,
 		cursor: map[Pane]int{
-			PaneRepos:            0,
-			PaneStreams:          0,
-			PaneIssues:           0,
-			PaneHabits:           0,
-			PaneRollupDays:       0,
-			PaneRollupBreakdown:  0,
-			PaneSessions:         0,
-			PaneHabitHistory:     0,
-			PaneMomentumCards:    0,
-			PaneOps:              0,
-			PaneExportReports:    0,
-			PaneConfig:           0,
-			PaneSettings:         0,
-			PaneAlerts:           0,
-			PaneWellbeingSummary: 0,
-			PaneWellbeingTrends:  0,
-			PaneWellbeingDetails: 0,
+			PaneRepos:         0,
+			PaneStreams:       0,
+			PaneIssues:        0,
+			PaneHabits:        0,
+			PaneSessions:      0,
+			PaneHabitHistory:  0,
+			PaneMomentumCards: 0,
+			PaneOps:           0,
+			PaneExportReports: 0,
+			PaneConfig:        0,
+			PaneSettings:      0,
+			PaneAlerts:        0,
 		},
 		filters: map[Pane]string{
-			PaneRepos:            "",
-			PaneStreams:          "",
-			PaneIssues:           "",
-			PaneHabits:           "",
-			PaneRollupDays:       "",
-			PaneRollupBreakdown:  "",
-			PaneSessions:         "",
-			PaneHabitHistory:     "",
-			PaneMomentumCards:    "",
-			PaneOps:              "",
-			PaneExportReports:    "",
-			PaneConfig:           "",
-			PaneSettings:         "",
-			PaneAlerts:           "",
-			PaneWellbeingSummary: "",
-			PaneWellbeingTrends:  "",
-			PaneWellbeingDetails: "",
+			PaneRepos:         "",
+			PaneStreams:       "",
+			PaneIssues:        "",
+			PaneHabits:        "",
+			PaneSessions:      "",
+			PaneHabitHistory:  "",
+			PaneMomentumCards: "",
+			PaneOps:           "",
+			PaneExportReports: "",
+			PaneConfig:        "",
+			PaneSettings:      "",
+			PaneAlerts:        "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},
 		terminalTitleEnabled:  true,
 		momentumWindowDays:    30,
-		wellbeingWindowDays:   7,
 	}
 	model.lastTerminalTitle = terminaltitle.Sanitize(model.terminalTitle())
 	logger.Infof(
@@ -415,16 +399,8 @@ func (m Model) Init() tea.Cmd {
 		commands.LoadDailySummary(m.client, ""),
 		commands.LoadSummarySnapshot(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailyStreaks(m.client, time.Now().Format("2006-01-02")),
-		commands.LoadWellbeingWindow(
-			m.client,
-			time.Now().Format("2006-01-02"),
-			m.currentWellbeingWindowDays(),
-		),
-		commands.LoadRollupSummaries(
-			m.client,
-			shiftISODate(time.Now().Format("2006-01-02"), -6),
-			time.Now().Format("2006-01-02"),
-		),
+		commands.LoadWellbeingDay(m.client, time.Now().Format("2006-01-02")),
+		m.reloadReview(),
 		loadSessionHistoryForModel(m, 200),
 		commands.LoadOps(m.client, m.currentOpsLimit()),
 		commands.LoadContext(m.client),
@@ -459,24 +435,6 @@ func (m *Model) clamp(p Pane, max int) {
 }
 
 func (m *Model) listLen(p Pane) int {
-	if p == PaneRollupDays {
-		if m.dashboardWindow == nil {
-			return 0
-		}
-		return len(m.dashboardWindow.Days)
-	}
-	if p == PaneRollupBreakdown {
-		snapshot := m.selectionSnapshot()
-		activeIssue := selectionpkg.ActiveIssue(snapshot)
-		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
-		return rollupview.PaneLineCount(state, string(p))
-	}
-	if p == PaneWellbeingSummary || p == PaneWellbeingTrends || p == PaneWellbeingDetails {
-		snapshot := m.selectionSnapshot()
-		activeIssue := selectionpkg.ActiveIssue(snapshot)
-		state := m.viewContentState(m.mainContentWidth(), m.contentHeight(), snapshot, activeIssue)
-		return wellbeingview.PaneLineCount(state, string(p))
-	}
 	if p == PaneMomentumCards {
 		if m.currentMomentumTab() == MomentumTabFocus {
 			return len(m.momentumMetricsRange)

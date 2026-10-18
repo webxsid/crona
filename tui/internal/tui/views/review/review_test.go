@@ -178,13 +178,6 @@ func TestChartsSqueezeManyPoints(t *testing.T) {
 	_ = Render(types.Theme{}, state)
 }
 
-func TestDetailTitleMetaHints(t *testing.T) {
-	out := plain(Render(types.Theme{}, reviewState(200, 50)))
-	if !strings.Contains(out, "[w] check-in") || !strings.Contains(out, "[W] away") {
-		t.Fatalf("expected check-in keys in the detail title")
-	}
-}
-
 func TestHistoricalAwayDate(t *testing.T) {
 	state := reviewState(120, 36)
 	state.HistoricalAwayDate = "2026-10-14"

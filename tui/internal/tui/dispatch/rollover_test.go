@@ -14,15 +14,15 @@ import (
 func rolloverMessageDeps(loaded *string) MessageDeps {
 	noop := func() tea.Cmd { return func() tea.Msg { return nil } }
 	return MessageDeps{
-		LoadAllIssues:       noop,
-		LoadAllHabits:       noop,
-		LoadDailySummary:    func(date string) tea.Cmd { *loaded = date; return noop() },
-		LoadDailyPlan:       func(string) tea.Cmd { return noop() },
-		LoadDueHabits:       func(string) tea.Cmd { return noop() },
-		LoadDailyStreaks:    func(string) tea.Cmd { return noop() },
-		LoadWellbeing:       func(string, int) tea.Cmd { return noop() },
-		LoadMomentumRange:   func(string, int) tea.Cmd { return noop() },
-		LoadRollupSummaries: func(string, string) tea.Cmd { return noop() },
+		LoadAllIssues:     noop,
+		LoadAllHabits:     noop,
+		LoadDailySummary:  func(date string) tea.Cmd { *loaded = date; return noop() },
+		LoadDailyPlan:     func(string) tea.Cmd { return noop() },
+		LoadDueHabits:     func(string) tea.Cmd { return noop() },
+		LoadDailyStreaks:  func(string) tea.Cmd { return noop() },
+		LoadWellbeing:     func(string) tea.Cmd { return noop() },
+		LoadMomentumRange: func(string, int) tea.Cmd { return noop() },
+		LoadReviewWindow:  func(string, string) tea.Cmd { return noop() },
 	}
 }
 
@@ -73,15 +73,15 @@ func TestDayStartRollover(t *testing.T) {
 	}
 }
 
-func TestRollupRefreshUsesSharedDateAndWindow(t *testing.T) {
+func TestReviewRefreshUsesSharedDateAndWindow(t *testing.T) {
 	var start, end string
 	deps := MessageDeps{
-		CurrentDate:         func(s MessageState) string { return s.Date },
-		LoadRollupSummaries: func(s, e string) tea.Cmd { start, end = s, e; return func() tea.Msg { return nil } },
+		CurrentDate:      func(s MessageState) string { return s.Date },
+		LoadReviewWindow: func(s, e string) tea.Cmd { start, end = s, e; return func() tea.Msg { return nil } },
 	}
-	_, cmd, handled := HandleMessage(MessageState{Date: "2026-08-10", RollupWindowDays: 30}, commands.RequestRollupRefresh()(), deps)
+	_, cmd, handled := HandleMessage(MessageState{Date: "2026-08-10", ReviewWindowDays: 30}, commands.RequestRollupRefresh()(), deps)
 	if !handled || cmd == nil || start != "2026-07-12" || end != "2026-08-10" {
-		t.Fatalf("expected Rollup reloaded on 2026-07-12..2026-08-10, got %q..%q", start, end)
+		t.Fatalf("expected Review reloaded on 2026-07-12..2026-08-10, got %q..%q", start, end)
 	}
 }
 

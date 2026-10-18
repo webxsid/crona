@@ -12,7 +12,6 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
 	selectionpkg "crona/tui/internal/tui/selection"
-	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -253,7 +252,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DefaultIssueSection:     m.defaultIssueSection,
 		BrowseScope:             m.browseScope,
 		Date:                    m.date,
-		RollupWindowDays:        m.rollupWindowDays,
+		ReviewWindowDays:        m.reviewWindowDays,
+		ReviewWindowEnd:         m.reviewWindowEnd,
 		Cursor:                  m.cursor,
 		Filters:                 m.filters,
 		Repos:                   m.repos,
@@ -271,7 +271,6 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		MomentumWindowDays:      m.currentMomentumWindowDays(),
 		MomentumTab:             string(m.currentMomentumTab()),
 		MomentumHistoryY:        m.momentumHistoryCursor,
-		WellbeingWindowDays:     m.currentWellbeingWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
 		MetricsRollup:           m.metricsRollup,
@@ -364,11 +363,12 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dailySummary = state.DailySummary
 	m.dailyPlan = state.DailyPlan
 	m.date = state.Date
-	m.rollupWindowDays = state.RollupWindowDays
+	m.reviewWindowDays = state.ReviewWindowDays
+	m.reviewWindowEnd = state.ReviewWindowEnd
+	m = m.anchorReviewWindow()
 	m.momentumWindowDays = state.MomentumWindowDays
 	m.momentumTab = MomentumTab(state.MomentumTab)
 	m.momentumHistoryCursor = state.MomentumHistoryY
-	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
 	m.metricsRollup = state.MetricsRollup
@@ -491,29 +491,10 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next = next.withDialogState(next.dialogSnapshot().OpenOnboarding())
 			*state = next.dispatchMessageState()
 		},
-		AnchorWellbeingScroll: func(state *dispatchpkg.MessageState, pane Pane) {
-			next := m.applyDispatchMessageState(*state)
-			snapshot := next.selectionSnapshot()
-			count := wellbeingview.PaneLineCount(
-				next.viewContentState(
-					next.mainContentWidth(),
-					next.contentHeight(),
-					snapshot,
-					selectionpkg.ActiveIssue(snapshot),
-				),
-				string(pane),
-			)
-			if count > 0 {
-				if current := next.cursor[pane]; current <= 0 {
-					next.cursor[pane] = count - 1
-				}
-			}
-			*state = next.dispatchMessageState()
-		},
 		CurrentDate: func(state dispatchpkg.MessageState) string {
 			return m.applyDispatchMessageState(state).currentDate()
 		},
-		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadReviewWindow: func(start, end string) tea.Cmd { return commands.LoadReviewWindow(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)
 		},
@@ -536,10 +517,8 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadSummarySnapshot: func(date string) tea.Cmd {
 			return commands.LoadSummarySnapshot(m.client, date)
 		},
-		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
-		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
-			return commands.LoadWellbeingWindow(m.client, date, windowDays)
-		},
+		LoadDailyStreaks:  func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
+		LoadWellbeing:     func(date string) tea.Cmd { return commands.LoadWellbeingDay(m.client, date) },
 		LoadDailyPlan:     func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
 		LoadExportAssets:  func() tea.Cmd { return commands.LoadExportAssets(m.client) },
 		LoadExportReports: func() tea.Cmd { return commands.LoadExportReports(m.client) },

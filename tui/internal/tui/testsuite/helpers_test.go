@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
 	"crona/tui/internal/tui/views"
 
 	"github.com/charmbracelet/lipgloss"
@@ -73,73 +72,6 @@ func compactDefaultState(height int) views.ContentState {
 			},
 		},
 		Context: &api.ActiveContext{},
-	}
-}
-
-func compactWellbeingState(height int) views.ContentState {
-	avgMood, avgEnergy := 4.0, 3.7
-	return views.ContentState{
-		View:          "wellbeing",
-		Pane:          string(uistate.PaneWellbeingSummary),
-		Width:         92,
-		Height:        height,
-		WellbeingDate: "2026-03-19",
-		DailyPlan: &api.DailyPlan{
-			Date: "2026-03-19",
-			Summary: api.DailyPlanAccountabilitySummary{
-				PlannedCount:         3,
-				CompletedCount:       1,
-				FailedCount:          1,
-				PendingRollbackCount: 1,
-				AccountabilityScore:  2.6,
-				DelayedIssueCount:    1,
-			},
-			Entries: []api.DailyPlanEntry{
-				{
-					ID:          "1",
-					Date:        "2026-03-19",
-					IssueID:     1,
-					Status:      "completed",
-					CommittedAt: "2026-03-19T08:00:00Z",
-				},
-				{
-					ID:            "2",
-					Date:          "2026-03-19",
-					IssueID:       2,
-					Status:        "failed",
-					CommittedAt:   "2026-03-19T08:00:00Z",
-					FailureReason: new(api.DailyPlanFailureReason("moved")),
-				},
-				{
-					ID:               "3",
-					Date:             "2026-03-19",
-					IssueID:          3,
-					Status:           "planned",
-					CommittedAt:      "2026-03-19T08:00:00Z",
-					PendingFailureAt: new("2026-03-19T10:00:00Z"),
-				},
-			},
-		},
-		MetricsRollup: &api.MetricsRollup{
-			Days:          7,
-			CheckInDays:   6,
-			FocusDays:     1,
-			WorkedSeconds: 4956,
-			RestSeconds:   2,
-			AverageMood:   &avgMood,
-			AverageEnergy: &avgEnergy,
-			LatestBurnout: &api.BurnoutIndicator{
-				Level:   "low",
-				Score:   31,
-				Factors: map[string]float64{"workloadPressure": 0.22, "recoveryBreaks": -0.14},
-			},
-		},
-		Streaks: &api.StreakSummary{
-			CurrentCheckInDays: 0,
-			LongestCheckInDays: 6,
-			CurrentFocusDays:   0,
-			LongestFocusDays:   1,
-		},
 	}
 }
 

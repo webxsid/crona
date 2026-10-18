@@ -166,7 +166,7 @@ func handleOpenExportDaily(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleOpenCheckIn(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing) ||
+	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewReview) ||
 		s.Dialog != "" {
 		return s, nil, false
 	}
@@ -184,8 +184,7 @@ func shouldOpenContextDialog(view uistate.View) bool {
 	case uistate.ViewDefault,
 		uistate.ViewDaily,
 		uistate.ViewHabitList,
-		uistate.ViewRollup,
-		uistate.ViewWellbeing,
+		uistate.ViewReview,
 		uistate.ViewReports,
 		uistate.ViewOps,
 		uistate.ViewSessionHistory,
@@ -201,7 +200,6 @@ func supportsGlobalExport(view uistate.View) bool {
 	case uistate.ViewDefault,
 		uistate.ViewDaily,
 		uistate.ViewHabitList,
-		uistate.ViewWellbeing,
 		uistate.ViewReports:
 		return true
 	default:

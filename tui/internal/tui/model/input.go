@@ -96,11 +96,12 @@ func (m Model) inputState() inputpkg.State {
 		DailyTaskSection:          m.dailyTaskSection,
 		DailyDetailDay:            m.dailyDetailDay,
 		Date:                      m.date,
-		RollupWindowDays:          m.rollupWindowDays,
+		ReviewWindowDays:          m.reviewWindowDays,
+		ReviewWindowEnd:           m.reviewWindowEnd,
+		ReviewShowTime:            m.reviewShowTime,
 		MomentumWindowDays:        m.currentMomentumWindowDays(),
 		MomentumTab:               string(m.currentMomentumTab()),
 		MomentumHistoryY:          m.momentumHistoryCursor,
-		WellbeingWindowDays:       m.currentWellbeingWindowDays(),
 		Dialog:                    m.dialog,
 		DialogState:               m.dialogState(),
 		HelpOpen:                  m.helpOpen,
@@ -148,9 +149,11 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dailyTaskSection = state.DailyTaskSection
 	m.date = state.Date
-	m.rollupWindowDays = state.RollupWindowDays
+	m.reviewWindowDays = state.ReviewWindowDays
+	m.reviewWindowEnd = state.ReviewWindowEnd
+	m = m.anchorReviewWindow()
+	m.reviewShowTime = state.ReviewShowTime
 	m.momentumWindowDays = state.MomentumWindowDays
-	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m = m.withDialogState(state.DialogState)
 	if state.DialogState.Kind == "" {
 		m.dialog = state.Dialog
@@ -226,12 +229,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 		CurrentDate:         func(state inputpkg.State) string { return m.applyInputState(state).currentDate() },
 		CurrentLogicalDate:  func(state inputpkg.State) string { return m.applyInputState(state).currentLogicalDate() },
 		ReloadDateSurfaces:  func(state inputpkg.State) tea.Cmd { return m.applyInputState(state).reloadDateSurfaces() },
-		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadReviewWindow:    func(start, end string) tea.Cmd { return commands.LoadReviewWindow(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)
-		},
-		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
-			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},
 		OpenCheckInDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

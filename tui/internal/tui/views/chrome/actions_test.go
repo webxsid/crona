@@ -16,12 +16,12 @@ func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 		t.Fatalf("expected daily global actions to advertise away on W, got %q", daily)
 	}
 
-	wellbeing := strings.Join(GlobalActions(Theme{}, ActionsState{View: "wellbeing"}), "\n")
+	wellbeing := strings.Join(GlobalActions(Theme{}, ActionsState{View: "review"}), "\n")
 	if !strings.Contains(wellbeing, "[w]") || !strings.Contains(wellbeing, "check-in") {
-		t.Fatalf("expected wellbeing global actions to advertise check-in on w, got %q", wellbeing)
+		t.Fatalf("expected review global actions to advertise check-in on w, got %q", wellbeing)
 	}
 	if !strings.Contains(wellbeing, "[W]") || !strings.Contains(wellbeing, "away") {
-		t.Fatalf("expected wellbeing global actions to advertise away on W, got %q", wellbeing)
+		t.Fatalf("expected review global actions to advertise away on W, got %q", wellbeing)
 	}
 
 	away := strings.Join(
@@ -34,9 +34,9 @@ func TestGlobalActionsUseCheckInAndAwayLabels(t *testing.T) {
 }
 
 func TestContextualActionsUseCheckInAndAwayLabels(t *testing.T) {
-	wellbeing := strings.Join(ContextualActions(Theme{}, ActionsState{View: "wellbeing"}), "\n")
+	wellbeing := strings.Join(ContextualActions(Theme{}, ActionsState{View: "review"}), "\n")
 	if !strings.Contains(wellbeing, "[w]") || !strings.Contains(wellbeing, "check-in") {
-		t.Fatalf("expected wellbeing contextual actions to advertise check-in, got %q", wellbeing)
+		t.Fatalf("expected review contextual actions to advertise check-in, got %q", wellbeing)
 	}
 
 	away := strings.Join(ContextualActions(Theme{}, ActionsState{
@@ -152,13 +152,13 @@ func TestPaneActionsForSelectedAdhocIssueUseReadOnlyActions(t *testing.T) {
 }
 
 func TestNavigationActionsHintTabKeysOffTheBottomRow(t *testing.T) {
-	actions := strings.Join(NavigationActions(Theme{}, ActionsState{View: "rollup"}), "\n")
+	actions := strings.Join(NavigationActions(Theme{}, ActionsState{View: "review"}), "\n")
 	for _, want := range []string{"[1-5] tabs", "[[/]] sub-tabs"} {
 		if !strings.Contains(actions, want) {
 			t.Fatalf("expected navigation actions to include %q, got %q", want, actions)
 		}
 	}
-	if global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "rollup"}), "\n"); strings.Contains(global, "[1-5]") {
+	if global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "review"}), "\n"); strings.Contains(global, "[1-5]") {
 		t.Fatalf("expected tab keys off the bottom row, got %q", global)
 	}
 }
@@ -172,16 +172,16 @@ func TestGlobalActionsOmitShellHints(t *testing.T) {
 	}
 }
 
-func TestRollupActionsHintSharedDateKeys(t *testing.T) {
-	actions := strings.Join(ContextualActions(Theme{}, ActionsState{View: "rollup"}), "\n")
-	for _, want := range []string{"[,/.] date", "[g] today", "[+/-/0] window", "[E] calendar"} {
+func TestReviewActionsHintSharedDateKeys(t *testing.T) {
+	actions := strings.Join(ContextualActions(Theme{}, ActionsState{View: "review"}), "\n")
+	for _, want := range []string{"[,/.] date", "[g] today", "[+/-/0] window", "[E] calendar", "[S] trends/time", "[↑/↓] day"} {
 		if !strings.Contains(actions, want) {
-			t.Fatalf("expected rollup actions to include %q, got %q", want, actions)
+			t.Fatalf("expected review actions to include %q, got %q", want, actions)
 		}
 	}
 	for _, unwanted := range []string{"[←/→]", "[S/E]"} {
 		if strings.Contains(actions, unwanted) {
-			t.Fatalf("expected rollup actions to drop %q, got %q", unwanted, actions)
+			t.Fatalf("expected review actions to drop %q, got %q", unwanted, actions)
 		}
 	}
 }

@@ -32,18 +32,6 @@ func TestDailyBottomRowIsGlobalsOnly(t *testing.T) {
 	}
 }
 
-func TestRollupBottomRowDropsDateKeys(t *testing.T) {
-	m := Model{view: ViewRollup, pane: PaneRollupDays, width: 200, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
-	row := bottomRow(m)
-	if !strings.Contains(row, "[enter]") {
-		t.Fatalf("expected Rollup's own keys kept, got %q", row)
-	}
-	for _, unwanted := range []string{"[,/.]", "[g]", "[+/-/0]", "[E] calendar", "[1-5]"} {
-		if strings.Contains(row, unwanted) {
-			t.Fatalf("expected %q off the bottom row, got %q", unwanted, row)
-		}
-	}
-}
 
 func TestHelpSheetListsNavigationKeys(t *testing.T) {
 	m := Model{view: ViewDaily, pane: PaneIssues, cursor: map[Pane]int{}, filters: map[Pane]string{}}
@@ -56,7 +44,7 @@ func TestHelpSheetListsNavigationKeys(t *testing.T) {
 }
 
 func TestModelContentHeightCountsDateRow(t *testing.T) {
-	for _, view := range []View{ViewDaily, ViewRollup, ViewMomentum, ViewWellbeing} {
+	for _, view := range []View{ViewDaily, ViewReview, ViewMomentum} {
 		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}}
 		state := m.layoutState()
 		want := layoutpkg.ContentHeight(state)

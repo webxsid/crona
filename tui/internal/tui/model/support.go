@@ -15,7 +15,7 @@ func (m Model) supportDiagnosticsInput() helperpkg.SupportDiagnosticsInput {
 		Width:               m.width,
 		Height:              m.height,
 		Date:                m.currentDate(),
-		RollupWindowDays:    m.currentRollupWindowDays(),
+		ReviewWindowDays:    m.reviewWindowDays,
 		ReposCount:          len(m.repos),
 		StreamsCount:        len(m.streams),
 		IssuesCount:         len(m.issues),

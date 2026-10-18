@@ -69,12 +69,12 @@ func DateActions(theme Theme, view string) []string {
 			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day summary"),
 			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
 		)
-	case "rollup":
+	case "review":
 		return append(actions,
 			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" calendar"),
 			theme.StyleHeader.Render("[+/-/0]")+theme.StyleDim.Render(" window"),
 		)
-	case "momentum", "wellbeing":
+	case "momentum":
 		return append(actions, theme.StyleHeader.Render("[+/-/0]")+theme.StyleDim.Render(" window"))
 	}
 	return nil
@@ -120,7 +120,7 @@ func GlobalActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[E]")+theme.StyleDim.Render(" export"),
 		)
 	}
-	if state.View == "daily" || state.View == "wellbeing" {
+	if state.View == "daily" || state.View == "review" {
 		actions = append(actions, checkInAction(theme))
 		actions = append(actions, awayAction(theme, false))
 	}
@@ -199,16 +199,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 		}
 	}
-	if state.View == "wellbeing" {
-		return []string{
-			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
-			theme.StyleHeader.Render("[+/-]") + theme.StyleDim.Render(" window"),
-			theme.StyleHeader.Render("[0]") + theme.StyleDim.Render(" reset window"),
-			checkInAction(theme),
-			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
-		}
-	}
 	if state.View == "momentum" {
 		return []string{
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create momentum"),
@@ -221,9 +211,12 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[+/-/0]") + theme.StyleDim.Render(" window"),
 		}
 	}
-	if state.View == "rollup" {
+	if state.View == "review" {
 		return []string{
-			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open day details"),
+			theme.StyleHeader.Render("[↑/↓]") + theme.StyleDim.Render(" day"),
+			theme.StyleHeader.Render("[S]") + theme.StyleDim.Render(" trends/time"),
+			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" day (narrow)"),
+			checkInAction(theme),
 			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
 			theme.StyleHeader.Render("[E]") + theme.StyleDim.Render(" calendar"),
@@ -447,8 +440,7 @@ func supportsGlobalContext(view string) bool {
 	case "default",
 		"daily",
 		"habit_list",
-		"rollup",
-		"wellbeing",
+		"review",
 		"reports",
 		"ops",
 		"session_history",
@@ -461,7 +453,7 @@ func supportsGlobalContext(view string) bool {
 
 func supportsGlobalExport(view string) bool {
 	switch view {
-	case "default", "daily", "habit_list", "wellbeing", "reports":
+	case "default", "daily", "habit_list", "reports":
 		return true
 	default:
 		return false

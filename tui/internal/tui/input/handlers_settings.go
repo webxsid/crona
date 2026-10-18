@@ -385,7 +385,7 @@ func (s State) FilterState(pane uistate.Pane) string {
 }
 
 func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewWellbeing && s.ActiveView != uistate.ViewAway) ||
+	if (s.ActiveView != uistate.ViewDaily && s.ActiveView != uistate.ViewReview && s.ActiveView != uistate.ViewAway) ||
 		s.Settings == nil {
 		return s, nil, false
 	}

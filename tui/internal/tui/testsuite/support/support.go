@@ -12,12 +12,11 @@ import (
 	dailyview "crona/tui/internal/tui/views/daily"
 	issuesview "crona/tui/internal/tui/views/issues"
 	reportsview "crona/tui/internal/tui/views/reports"
-	rollupview "crona/tui/internal/tui/views/rollup"
+	reviewview "crona/tui/internal/tui/views/review"
 	settingsview "crona/tui/internal/tui/views/settings"
 	supportview "crona/tui/internal/tui/views/support"
 	viewtypes "crona/tui/internal/tui/views/types"
 	updatesview "crona/tui/internal/tui/views/updates"
-	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
@@ -26,10 +25,7 @@ func Theme() viewtypes.Theme { return layoutpkg.ViewTheme() }
 
 func RenderDaily(state viewtypes.ContentState) string   { return dailyview.Render(Theme(), state) }
 func RenderDefault(state viewtypes.ContentState) string { return issuesview.Render(Theme(), state) }
-func RenderRollup(state viewtypes.ContentState) string  { return rollupview.Render(Theme(), state) }
-func RenderWellbeing(state viewtypes.ContentState) string {
-	return wellbeingview.Render(Theme(), state)
-}
+func RenderReview(state viewtypes.ContentState) string  { return reviewview.Render(Theme(), state) }
 
 func RenderReports(
 	state viewtypes.ContentState,

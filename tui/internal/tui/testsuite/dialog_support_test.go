@@ -37,8 +37,7 @@ func TestViewJumpDialogUsesUniqueMnemonicKeys(t *testing.T) {
 	state := dialogs.OpenViewJump(dialogs.State{}, []uistate.View{
 		uistate.ViewAway,
 		uistate.ViewDaily,
-		uistate.ViewRollup,
-		uistate.ViewWellbeing,
+		uistate.ViewReview,
 		uistate.ViewMomentum,
 		uistate.ViewReports,
 		uistate.ViewConfig,

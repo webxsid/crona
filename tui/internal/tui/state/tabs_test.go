@@ -7,8 +7,8 @@ import (
 
 func TestEveryViewBelongsToExactlyOneTab(t *testing.T) {
 	all := []View{
-		ViewAway, ViewDefault, ViewDaily, ViewRollup, ViewMomentum, ViewHabitList,
-		ViewSessionHistory, ViewHabitHistory, ViewSessionActive, ViewOps, ViewWellbeing,
+		ViewAway, ViewDefault, ViewDaily, ViewReview, ViewMomentum, ViewHabitList,
+		ViewSessionHistory, ViewHabitHistory, ViewSessionActive, ViewOps,
 		ViewReports, ViewConfig, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport,
 	}
 	seen := map[View]Tab{}
@@ -38,7 +38,7 @@ func TestTabOrderAndInsightsViews(t *testing.T) {
 	if got := TabOrder(); !slices.Equal(got, wantOrder) {
 		t.Fatalf("TabOrder() = %v, want %v", got, wantOrder)
 	}
-	wantInsights := []View{ViewRollup, ViewMomentum, ViewWellbeing}
+	wantInsights := []View{ViewReview, ViewMomentum}
 	if got := TabViews(TabInsights); !slices.Equal(got, wantInsights) {
 		t.Fatalf("TabViews(insights) = %v, want %v", got, wantInsights)
 	}

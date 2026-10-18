@@ -90,8 +90,8 @@ func terminalViewTitle(view View) string {
 		return "Issues"
 	case ViewDaily:
 		return "Daily"
-	case ViewRollup:
-		return "Rollup"
+	case ViewReview:
+		return "Review"
 	case ViewHabitList:
 		return "Habits"
 	case ViewSessionHistory:
@@ -102,8 +102,6 @@ func terminalViewTitle(view View) string {
 		return "Session"
 	case ViewOps:
 		return "Ops"
-	case ViewWellbeing:
-		return "Wellbeing"
 	case ViewReports:
 		return "Reports"
 	case ViewConfig:

@@ -23,12 +23,14 @@ type State struct {
 	// DailyDetailDay shows the Day summary in Daily's detail pane instead of the selection.
 	DailyDetailDay bool
 	// Date is the one date every dated view shows; "" means the logical today.
-	Date                      string
-	RollupWindowDays          int
+	Date             string
+	ReviewWindowDays int
+	// ReviewWindowEnd anchors Review's window; ReviewShowTime puts Time in Trends' slot.
+	ReviewWindowEnd           string
+	ReviewShowTime            bool
 	MomentumWindowDays        int
 	MomentumTab               string
 	MomentumHistoryY          int
-	WellbeingWindowDays       int
 	Dialog                    string
 	DialogState               dialogstate.State
 	HelpOpen                  bool
@@ -78,12 +80,11 @@ type Deps struct {
 	LoadSummarySnapshot      func(string) tea.Cmd
 	LoadDailyStreaks         func(string) tea.Cmd
 	LoadDueHabits            func(string) tea.Cmd
-	LoadRollupSummaries      func(string, string) tea.Cmd
+	LoadReviewWindow         func(string, string) tea.Cmd
 	LoadMomentumRange        func(string, int) tea.Cmd
 	CreateMomentumDefinition func(api.HabitStreakDefinition, string, string, int) tea.Cmd
 	UpdateMomentumDefinition func(api.HabitStreakDefinition, string, string, int) tea.Cmd
 	DeleteMomentumDefinition func(string, string, string, int) tea.Cmd
-	LoadWellbeing            func(string, int) tea.Cmd
 	OpenCheckInDialog        func(*State) bool
 	OpenSummaryCalendar      func(*State) bool
 	// OpenDaySummary opens the Day summary as a dialog when Daily has no detail pane, and
@@ -403,7 +404,6 @@ func newRouter(deps Deps) *router {
 	for _, view := range []uistate.View{
 		uistate.ViewDefault,
 		uistate.ViewHabitList,
-		uistate.ViewWellbeing,
 		uistate.ViewReports,
 	} {
 		r.RegisterView(view, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
@@ -594,13 +594,6 @@ func newRouter(deps Deps) *router {
 			return s, deps.GenerateSupportBundle(s), true
 		},
 	)
-	keyregistry.RegisterWellbeing(
-		r,
-		uistate.ViewWellbeing,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
-	)
 	r.RegisterView(
 		uistate.ViewMomentum,
 		"+",
@@ -629,57 +622,37 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
 	)
-	r.RegisterView(
-		uistate.ViewWellbeing,
-		"+",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return handleShiftWellbeingWindow(s, deps, 1)
-		},
-	)
-	r.RegisterView(
-		uistate.ViewWellbeing,
-		"-",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return handleShiftWellbeingWindow(s, deps, -1)
-		},
-	)
-	r.RegisterView(
-		uistate.ViewWellbeing,
-		"0",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return handleResetWellbeingWindow(s, deps)
-		},
-	)
 	keyregistry.RegisterRollup(
 		r,
-		uistate.ViewRollup,
+		uistate.ViewReview,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupWindow(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupWindow(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetRollupWindow(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftReviewWindow(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftReviewWindow(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetReviewWindow(s, deps) },
 	)
-	r.RegisterView(uistate.ViewRollup, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+	r.RegisterView(uistate.ViewReview, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if deps.OpenDateDialog(&s) {
 			return s, nil, true
 		}
 		return s, nil, false
 	})
-	r.RegisterView(
-		uistate.ViewWellbeing,
-		"w",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return handleOpenCheckIn(s, deps)
-		},
-	)
-	r.RegisterView(
-		uistate.ViewWellbeing,
-		"W",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return handleToggleAwayMode(s, deps)
-		},
-	)
+	r.RegisterView(uistate.ViewReview, "up", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleReviewStepDay(s, deps, -1)
+	})
+	r.RegisterView(uistate.ViewReview, "down", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleReviewStepDay(s, deps, 1)
+	})
+	r.RegisterView(uistate.ViewReview, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleToggleReviewTime(s, deps)
+	})
+	r.RegisterView(uistate.ViewReview, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleOpenCheckIn(s, deps)
+	})
+	r.RegisterView(uistate.ViewReview, "W", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleToggleAwayMode(s, deps)
+	})
 	keyregistry.RegisterOps(
 		r,
 		uistate.ViewOps,

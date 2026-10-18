@@ -87,15 +87,8 @@ func TimeLines(theme types.Theme, state types.ContentState, width int) []string 
 	return append(lines, renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
 }
 
-// renderDetail shows the selected day; meta is the medium layout's swap key, else the
-// check-in keys.
+// renderDetail shows the selected day; meta is the medium layout's swap key.
 func renderDetail(theme types.Theme, state types.ContentState, width, height int, meta string) string {
-	if meta == "" {
-		meta = viewchrome.FitHints([]string{
-			viewchrome.KeyHint(theme, "w", "check-in"),
-			viewchrome.KeyHint(theme, "W", "away"),
-		}, max(0, width-14))
-	}
 	titleStyle := theme.StyleHeader.Bold(true)
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: dayTitle(state.DashboardDate), Meta: meta, TitleStyle: &titleStyle,

@@ -254,17 +254,6 @@ func (m Model) selectedMomentumCard() (*api.MomentumCard, bool) {
 	return selectionpkg.SelectedMomentumCard(m.selectionSnapshot())
 }
 
-func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
-	if m.view != ViewRollup || m.pane != PaneRollupDays || m.dashboardWindow == nil {
-		return nil, false
-	}
-	cur := m.cursor[PaneRollupDays]
-	if cur < 0 || cur >= len(m.dashboardWindow.Days) {
-		return nil, false
-	}
-	return &m.dashboardWindow.Days[cur], true
-}
-
 func (m Model) openSelectedEditDialog() (Model, bool) {
 	switch m.pane {
 	case PaneScope:
@@ -348,28 +337,6 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		}, "   ")
 		body := strings.Join([]string{"Description", optionalText(stream.Description)}, "\n")
 		return m.openViewEntityDialog("Stream", node.Name, meta, body), true
-	case PaneRollupDays:
-		if day, ok := m.selectedRollupDay(); ok {
-			meta := strings.Join([]string{
-				fmt.Sprintf("Status %s", strings.ReplaceAll(string(day.Status), "_", " ")),
-				fmt.Sprintf("Planned %d", day.PlannedCount),
-				fmt.Sprintf("Done %d", day.CompletedCount),
-				fmt.Sprintf("Failed %d", day.FailedCount),
-				fmt.Sprintf("Carry %d", day.CarryOverCount),
-			}, "   ")
-			body := strings.Join([]string{
-				"Rollup Day",
-				day.Date,
-				"",
-				"Accountability",
-				fmt.Sprintf("%.1f", day.AccountabilityScore),
-				"",
-				"Summary",
-				rollupDayNarrative(*day),
-			}, "\n")
-			return m.openViewEntityDialog("Rollup Day", day.Date, meta, body), true
-		}
-		return m, false
 	case PaneIssues:
 		issue, ok := m.selectedIssueRecord()
 		if !ok {
@@ -604,11 +571,22 @@ func (m Model) currentLogicalDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
-func (m Model) currentRollupWindowDays() int {
-	if m.rollupWindowDays < 1 {
-		return 7
-	}
-	return m.rollupWindowDays
+// reviewRange is Review's window: reviewWindowDays ending on its anchor, carried along
+// when the shared date leaves it.
+func (m Model) reviewRange() (string, string) {
+	return uistate.ReviewRange(m.currentDate(), m.reviewWindowEnd, m.reviewWindowDays)
+}
+
+// reloadReview loads Review's whole window.
+func (m Model) reloadReview() tea.Cmd {
+	start, end := m.reviewRange()
+	return commands.LoadReviewWindow(m.client, start, end)
+}
+
+// anchorReviewWindow pins Review's window where the shared date now leaves it.
+func (m Model) anchorReviewWindow() Model {
+	_, m.reviewWindowEnd = m.reviewRange()
+	return m
 }
 
 // reloadDateSurfaces reloads every surface bound to the shared date.
@@ -621,14 +599,9 @@ func (m Model) reloadDateSurfaces() tea.Cmd {
 		commands.LoadDailyStreaks(m.client, date),
 		commands.LoadSummarySnapshot(m.client, date),
 		commands.LoadMomentumRange(m.client, date, m.currentMomentumWindowDays()),
-		commands.LoadWellbeingWindow(m.client, date, m.currentWellbeingWindowDays()),
-		commands.LoadRollupSummaries(m.client, m.currentRollupStartDate(), date),
+		commands.LoadWellbeingDay(m.client, date),
+		m.reloadReview(),
 	)
-}
-
-// currentRollupStartDate opens the Rollup window that ends on the shared date.
-func (m Model) currentRollupStartDate() string {
-	return shiftISODate(m.currentDate(), -(m.currentRollupWindowDays() - 1))
 }
 
 func (m Model) currentMomentumWindowDays() int {
@@ -647,13 +620,6 @@ func (m Model) momentumCursorForView() int {
 		return m.momentumHistoryCursor
 	}
 	return m.cursor[PaneMomentumCards]
-}
-
-func (m Model) currentWellbeingWindowDays() int {
-	if m.wellbeingWindowDays < 1 {
-		return 7
-	}
-	return m.wellbeingWindowDays
 }
 
 func (m Model) currentWeekStart() sharedtypes.WeekStart {

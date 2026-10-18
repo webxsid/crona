@@ -270,7 +270,7 @@ func TestHistoryMutationMessagesRefreshTotals(t *testing.T) {
 			LoadAllIssues:            func() tea.Cmd { return track("issues") },
 			LoadDailySummary:         func(string) tea.Cmd { return track("daily") },
 			LoadSummarySnapshot:      func(string) tea.Cmd { return track("summary") },
-			LoadRollupSummaries:      func(string, string) tea.Cmd { return track("rollup") },
+			LoadReviewWindow:         func(string, string) tea.Cmd { return track("rollup") },
 		}
 		_, _, handled := HandleMessage(MessageState{}, msg, deps)
 		if !handled {

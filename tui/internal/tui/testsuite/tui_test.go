@@ -270,61 +270,6 @@ func TestDailyViewDoesNotRenderRollupTelemetry(t *testing.T) {
 	}
 }
 
-func TestRollupViewRendersExplicitRangeAndDailyStatuses(t *testing.T) {
-	state := views.ContentState{
-		View:   "rollup",
-		Pane:   "rollup_days",
-		Width:  96,
-		Height: 40,
-		Cursors: map[string]int{
-			"rollup_days": 1,
-		},
-		Filters: map[string]string{
-			"rollup_days": "",
-		},
-		RollupStartDate: "2026-03-26",
-		RollupEndDate:   "2026-04-01",
-		DashboardWindow: &api.DashboardWindowSummary{
-			PlannedCount:   6,
-			CompletedCount: 3,
-			MissedCount:    1,
-			CarryOverCount: 1,
-			Days: []api.DashboardWindowDay{
-				{Date: "2026-03-30", Status: "planned"},
-				{Date: "2026-03-31", Status: "done"},
-				{Date: "2026-04-01", Status: "carry_over"},
-			},
-		},
-		WeeklyFocusScore: &api.FocusScoreSummary{
-			Score:         79,
-			Level:         "strong",
-			WorkedSeconds: 4200,
-		},
-		GoalProgress: &api.GoalProgressSummary{
-			TotalEstimateMinutes: 240,
-			TotalActualSeconds:   7200,
-			EstimatedItems:       2,
-			AverageDeltaMinutes:  12,
-			AverageDeltaPercent:  18,
-			EstimateBias:         "under",
-			Rows:                 []api.GoalProgressRow{{Status: "on_track"}},
-		},
-		RepoDistribution: &api.TimeDistributionSummary{
-			Rows: []api.TimeDistributionRow{{Label: "Work", Percent: 58, WorkedSeconds: 4200}},
-		},
-		SegmentDistribution: &api.TimeDistributionSummary{
-			Rows: []api.TimeDistributionRow{{Label: "Focus", Percent: 81, WorkedSeconds: 5400}},
-		},
-	}
-
-	rendered := support.RenderRollup(state)
-	for _, want := range []string{"Rollup Dashboard", "Range  2026-03-26 -> 2026-04-01", "Estimate Bias", "2026-03-31", "carry over", "Repos", "Work  58%  01:10:00"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected rollup dashboard to contain %q, got %q", want, rendered)
-		}
-	}
-}
-
 func TestResolvedIssuesShowResolutionDateInsteadOfDueLabel(t *testing.T) {
 	estimate1, estimate2, estimate3 := 60, 35, 25
 	due := "2026-03-19"
@@ -999,58 +944,6 @@ func TestConfigViewShowsSeparateICSExportDirectory(t *testing.T) {
 	}
 }
 
-func TestWellbeingViewShowsRecentActivityHeatmap(t *testing.T) {
-	mood, energy := 4.0, 3.5
-	state := views.ContentState{
-		View:          "wellbeing",
-		Pane:          "issues",
-		Width:         92,
-		Height:        48,
-		WellbeingDate: "2026-03-19",
-		MetricsRollup: &api.MetricsRollup{
-			Days:          7,
-			CheckInDays:   5,
-			FocusDays:     4,
-			WorkedSeconds: 7200,
-			RestSeconds:   1800,
-			SessionCount:  6,
-			AverageMood:   &mood,
-			AverageEnergy: &energy,
-		},
-		MetricsRange: []api.DailyMetricsDay{
-			{
-				Date:          "2026-03-13",
-				CheckIn:       &api.DailyCheckIn{Date: "2026-03-13"},
-				SessionCount:  1,
-				WorkedSeconds: 1200,
-			},
-			{Date: "2026-03-14", SessionCount: 2, WorkedSeconds: 3600},
-			{
-				Date:          "2026-03-15",
-				CheckIn:       &api.DailyCheckIn{Date: "2026-03-15"},
-				SessionCount:  3,
-				WorkedSeconds: 5400,
-			},
-			{Date: "2026-03-16"},
-			{Date: "2026-03-17", CheckIn: &api.DailyCheckIn{Date: "2026-03-17"}},
-			{Date: "2026-03-18", SessionCount: 1, WorkedSeconds: 2400},
-			{
-				Date:          "2026-03-19",
-				CheckIn:       &api.DailyCheckIn{Date: "2026-03-19"},
-				SessionCount:  4,
-				WorkedSeconds: 7200,
-			},
-		},
-	}
-
-	rendered := support.RenderWellbeing(state)
-	for _, want := range []string{"Activity", "low .:-=+*# high", "Mood", "Worked"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected wellbeing view to contain %q, got %q", want, rendered)
-		}
-	}
-}
-
 func TestExportReportsViewShowsReportKindsAndScopeLabels(t *testing.T) {
 	state := views.ContentState{
 		View:   "reports",
@@ -1516,17 +1409,17 @@ func TestGlobalActionLineStandardizesContextAndExport(t *testing.T) {
 			dailyIssueActions,
 		)
 	}
-	wellbeingActions := strings.Join(
+	reviewActions := strings.Join(
 		viewchrome.GlobalActions(
 			theme,
-			viewchrome.ActionsState{View: "wellbeing", Pane: "wellbeing_summary"},
+			viewchrome.ActionsState{View: "review", Pane: "review_days"},
 		),
 		" ",
 	)
-	if !strings.Contains(wellbeingActions, "[c]") || !strings.Contains(wellbeingActions, "[E]") {
+	if !strings.Contains(reviewActions, "[c]") || strings.Contains(reviewActions, "[E] export") {
 		t.Fatalf(
-			"expected wellbeing global actions to expose context and export, got %q",
-			wellbeingActions,
+			"expected Review global actions to expose context but not export ([E] is its calendar), got %q",
+			reviewActions,
 		)
 	}
 }
@@ -1637,48 +1530,6 @@ func TestDailyStripShowsWeekWhenWideEvenAtShortHeights(t *testing.T) {
 	}
 	if got := lipgloss.Height(rendered); got > state.Height {
 		t.Fatalf("daily view height %d exceeds allocated height %d", got, state.Height)
-	}
-}
-
-func TestRollupSummaryShowsRangeCalendarWhenWide(t *testing.T) {
-	state := views.ContentState{
-		View:            "rollup",
-		Pane:            "rollup_days",
-		Width:           140,
-		Height:          34,
-		RollupStartDate: "2026-03-17",
-		RollupEndDate:   "2026-03-23",
-		Cursors: map[string]int{
-			"rollup_days": 0,
-		},
-	}
-
-	rendered := ansi.Strip(support.RenderRollup(state))
-	for _, want := range []string{"Rollup Dashboard", "March 2026", "Range W12-W13", "Wk  Mo Tu We Th Fr Sa Su"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected rollup summary calendar to include %q, got %q", want, rendered)
-		}
-	}
-}
-
-func TestWellbeingSummaryShowsMetricsWindowCalendarWhenWide(t *testing.T) {
-	state := views.ContentState{
-		View:          "wellbeing",
-		Pane:          "wellbeing_summary",
-		Width:         140,
-		Height:        44,
-		WellbeingDate: "2026-03-19",
-		Cursors: map[string]int{
-			"wellbeing_summary": 0,
-		},
-		Filters: map[string]string{},
-	}
-
-	rendered := ansi.Strip(support.RenderWellbeing(state))
-	for _, want := range []string{"Wellbeing", "March 2026", "Range W11-W12", "Wk  Mo Tu We Th Fr Sa Su"} {
-		if !strings.Contains(rendered, want) {
-			t.Fatalf("expected wellbeing summary calendar to include %q, got %q", want, rendered)
-		}
 	}
 }
 

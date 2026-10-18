@@ -546,8 +546,9 @@ func WaitForEvent(ch <-chan api.KernelEvent) tea.Cmd {
 	}
 }
 
+// LoadWellbeing reloads the date's wellbeing and then Review's window around it.
 func LoadWellbeing(c *api.Client, date string) tea.Cmd {
-	return LoadWellbeingWindow(c, date, 7)
+	return tea.Batch(LoadWellbeingDay(c, date), RequestRollupRefresh())
 }
 
 func LoadDailyStreaks(c *api.Client, date string) tea.Cmd {
@@ -561,26 +562,25 @@ func LoadDailyStreaks(c *api.Client, date string) tea.Cmd {
 	}
 }
 
-func LoadWellbeingWindow(c *api.Client, date string, windowDays int) tea.Cmd {
-	if windowDays < 1 {
-		windowDays = 7
-	}
-	if windowDays > 30 {
-		windowDays = 30
-	}
-	start := shiftISODate(date, -(windowDays - 1))
+// LoadWellbeingDay loads the date's plan, check-in and lifetime streaks.
+func LoadWellbeingDay(c *api.Client, date string) tea.Cmd {
 	return tea.Batch(
 		LoadDailyPlan(c, date),
 		LoadDailyCheckIn(c, date),
-		LoadMetricsRange(c, start, date),
-		LoadMetricsRollup(c, start, date),
 		LoadMetricsLifetimeStreaks(c, date),
-		RequestRollupRefresh(),
 	)
 }
 
-// RequestRollupRefresh asks the model to reload Rollup over its own range, which only it
-// knows: the shared date and Rollup's window.
+// LoadReviewWindow loads everything Review shows over start..end.
+func LoadReviewWindow(c *api.Client, start, end string) tea.Cmd {
+	return tea.Batch(
+		LoadRollupSummaries(c, start, end),
+		LoadMetricsRange(c, start, end),
+		LoadMetricsRollup(c, start, end),
+	)
+}
+
+// RequestRollupRefresh asks the model to reload Review's window, which only it knows.
 func RequestRollupRefresh() tea.Cmd {
 	return func() tea.Msg { return RollupRefreshRequestedMsg{} }
 }

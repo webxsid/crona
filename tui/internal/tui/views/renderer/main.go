@@ -13,13 +13,12 @@ import (
 	momentumview "crona/tui/internal/tui/views/momentumview"
 	ops "crona/tui/internal/tui/views/ops"
 	reports "crona/tui/internal/tui/views/reports"
-	rollup "crona/tui/internal/tui/views/rollup"
+	review "crona/tui/internal/tui/views/review"
 	sessions "crona/tui/internal/tui/views/sessions"
 	settings "crona/tui/internal/tui/views/settings"
 	support "crona/tui/internal/tui/views/support"
 	types "crona/tui/internal/tui/views/types"
 	updates "crona/tui/internal/tui/views/updates"
-	wellbeing "crona/tui/internal/tui/views/wellbeing"
 )
 
 func RenderContent(theme types.Theme, state types.ContentState) string {
@@ -30,8 +29,8 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return issues.Render(theme, state)
 	case "daily":
 		return daily.Render(theme, state)
-	case "rollup":
-		return rollup.Render(theme, state)
+	case "review":
+		return review.Render(theme, state)
 	case "momentum":
 		return momentumview.Render(theme, state)
 	case "habit_list":
@@ -42,8 +41,6 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return habits.Render(theme, state)
 	case "ops":
 		return ops.Render(theme, state)
-	case "wellbeing":
-		return wellbeing.Render(theme, state)
 	case "config":
 		return config.Render(theme, state)
 	case "reports":
@@ -64,7 +61,7 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 // HasDateRow reports whether the view shows the shared date's header row.
 func HasDateRow(state types.ContentState) bool {
 	switch state.View {
-	case "daily", "momentum", "wellbeing", "rollup":
+	case "daily", "momentum", "review":
 		return true
 	}
 	return false
@@ -77,9 +74,7 @@ func DateNav(theme types.Theme, state types.ContentState, room int) string {
 		return daily.SubTabMeta(theme, state, room)
 	case "momentum":
 		return viewcalendar.DateNav(theme, state.MomentumDate, "", state.Settings, state.WeekStart, room)
-	case "wellbeing":
-		return viewcalendar.DateNav(theme, state.WellbeingDate, "", state.Settings, state.WeekStart, room)
-	case "rollup":
+	case "review":
 		return viewcalendar.DateNav(theme, state.RollupEndDate, state.RollupStartDate, state.Settings, state.WeekStart, room)
 	}
 	return ""
@@ -90,7 +85,7 @@ func DateCalendarKey(theme types.Theme, state types.ContentState) string {
 	switch state.View {
 	case "daily":
 		return viewchrome.KeyHint(theme, "C", "calendar")
-	case "rollup":
+	case "review":
 		return viewchrome.KeyHint(theme, "E", "calendar")
 	}
 	return ""
@@ -99,7 +94,7 @@ func DateCalendarKey(theme types.Theme, state types.ContentState) string {
 // DateRowKeys are the view's other date-row keys, shown at the left end of the date row.
 func DateRowKeys(theme types.Theme, state types.ContentState) []string {
 	switch state.View {
-	case "rollup", "momentum", "wellbeing":
+	case "review", "momentum":
 		return []string{viewchrome.KeyHint(theme, "+/-/0", "window")}
 	}
 	return nil

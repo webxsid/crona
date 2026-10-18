@@ -35,7 +35,7 @@ func TestInputDepsOpenCheckInDialogUsesCreateForMissingCheckIn(t *testing.T) {
 	}
 }
 
-func TestInputDepsOpenCheckInDialogUsesSharedDateOnWellbeingView(t *testing.T) {
+func TestInputDepsOpenCheckInDialogUsesSharedDateOnReviewView(t *testing.T) {
 	m := Model{
 		date: "2026-05-28",
 		dailyCheckIn: &api.DailyCheckIn{
@@ -43,7 +43,7 @@ func TestInputDepsOpenCheckInDialogUsesSharedDateOnWellbeingView(t *testing.T) {
 		},
 	}
 	state := inputpkg.State{
-		ActiveView: uistate.ViewWellbeing,
+		ActiveView: uistate.ViewReview,
 		Date:       "2026-05-28",
 		DailyCheckIn: &api.DailyCheckIn{
 			Date: "2026-05-28",
@@ -51,14 +51,14 @@ func TestInputDepsOpenCheckInDialogUsesSharedDateOnWellbeingView(t *testing.T) {
 	}
 
 	if !m.inputDeps().OpenCheckInDialog(&state) {
-		t.Fatal("expected wellbeing check-in dialog to open")
+		t.Fatal("expected Review check-in dialog to open")
 	}
 	if state.DialogState.Kind != "edit_checkin" {
 		t.Fatalf("expected edit_checkin dialog, got %q", state.DialogState.Kind)
 	}
 	if state.DialogState.CheckInDate != "2026-05-28" {
 		t.Fatalf(
-			"expected wellbeing check-in dialog date to use wellbeing date, got %q",
+			"expected Review check-in dialog date to use wellbeing date, got %q",
 			state.DialogState.CheckInDate,
 		)
 	}

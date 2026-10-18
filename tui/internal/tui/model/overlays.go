@@ -169,8 +169,8 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		Date:                   m.date,
 		CurrentDate:            m.currentDate(),
 		Today:                  m.currentLogicalDate(),
-		RollupWindowDays:       m.currentRollupWindowDays(),
-		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
+		ReviewWindowDays:       m.reviewWindowDays,
+		ReviewWindowEnd:        m.reviewWindowEnd,
 		MomentumWindowDays:     m.currentMomentumWindowDays(),
 		CurrentOpsLim:          m.currentOpsLimit(),
 	}
@@ -198,7 +198,6 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 		health.CurrentDate = state.Today
 		m.health = &health
 	}
-	m.wellbeingWindowDays = state.WellbeingWindowDays
 	return m
 }
 
@@ -227,13 +226,11 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)
 		},
-		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
-			return commands.LoadWellbeingWindow(m.client, date, windowDays)
-		},
+		LoadWellbeing: func(date string) tea.Cmd { return commands.LoadWellbeingDay(m.client, date) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)
 		},
-		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadReviewWindow: func(start, end string) tea.Cmd { return commands.LoadReviewWindow(m.client, start, end) },
 		LoadSessionHistoryFor200: func(state dispatchpkg.EventState) tea.Cmd {
 			return commands.LoadSessionHistory(
 				m.client,

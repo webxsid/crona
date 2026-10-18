@@ -137,9 +137,8 @@ func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
 	views := (Model{}).availableViews()
 	want := []View{
 		ViewDaily,
-		ViewRollup,
+		ViewReview,
 		ViewMomentum,
-		ViewWellbeing,
 		ViewDefault,
 		ViewHabitList,
 		ViewOps,

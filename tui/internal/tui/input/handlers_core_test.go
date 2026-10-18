@@ -41,7 +41,7 @@ func TestHandleOpenCheckInUsesSharedDateOnDaily(t *testing.T) {
 func TestHandleOpenCheckInUsesSharedDateOnWellbeing(t *testing.T) {
 	called := false
 	state := State{
-		ActiveView: uistate.ViewWellbeing,
+		ActiveView: uistate.ViewReview,
 		Date:       "2026-05-28",
 	}
 
@@ -107,7 +107,7 @@ func TestHandleOpenCheckInRejectsOtherViews(t *testing.T) {
 func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
 	checkInCalled := false
 	checkInState := State{
-		ActiveView: uistate.ViewWellbeing,
+		ActiveView: uistate.ViewReview,
 		Date:       "2026-05-28",
 	}
 
@@ -129,7 +129,7 @@ func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
 	}
 
 	awayState := State{
-		ActiveView: uistate.ViewWellbeing,
+		ActiveView: uistate.ViewReview,
 		Settings:   &api.CoreSettings{AwayModeEnabled: false},
 	}
 	next, _ = Handle(awayState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'W'}}, Deps{

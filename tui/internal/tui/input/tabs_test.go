@@ -18,7 +18,7 @@ func TestDigitSwitchesTab(t *testing.T) {
 		DefaultPane: uistate.DefaultPane,
 		TabTargetView: func(_ State, tab uistate.Tab) (uistate.View, bool) {
 			requested = tab
-			return uistate.ViewRollup, true
+			return uistate.ViewReview, true
 		},
 	}
 	next, _ := Handle(
@@ -29,7 +29,7 @@ func TestDigitSwitchesTab(t *testing.T) {
 	if requested != uistate.TabInsights {
 		t.Fatalf("expected 3 to request insights, got %q", requested)
 	}
-	if next.ActiveView != uistate.ViewRollup || next.ActivePane != uistate.PaneRollupDays {
+	if next.ActiveView != uistate.ViewReview || next.ActivePane != uistate.PaneReviewDays {
 		t.Fatalf("expected rollup/rollup_days, got %q/%q", next.ActiveView, next.ActivePane)
 	}
 }
@@ -58,7 +58,7 @@ func TestBracketCyclesSubTab(t *testing.T) {
 		},
 	}
 	next, _ := Handle(
-		State{ActiveView: uistate.ViewRollup, ActivePane: uistate.PaneRollupDays},
+		State{ActiveView: uistate.ViewReview, ActivePane: uistate.PaneReviewDays},
 		runeKey(']'),
 		deps,
 	)

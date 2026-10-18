@@ -41,15 +41,9 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 		},
 		{
 			Key:    "r",
-			Label:  "Rollup",
-			Value:  "rollup",
-			Detail: "Range summaries and drill-down day details.",
-		},
-		{
-			Key:    "w",
-			Label:  "Wellbeing",
-			Value:  "wellbeing",
-			Detail: "Check-ins, burnout signals, and trends.",
+			Label:  "Review",
+			Value:  "review",
+			Detail: "Day-by-day work and wellbeing over a window, with trends and time.",
 		},
 		{
 			Key:    "u",

@@ -163,26 +163,6 @@ func TestTinyAndCompactModes(t *testing.T) {
 				assertCompactDefault(t, rendered, height)
 			},
 		},
-		{
-			name:   "wellbeing 36",
-			height: 36,
-			render: func(height int) string {
-				return support.RenderWellbeing(compactWellbeingState(height))
-			},
-			assert: func(t *testing.T, rendered string, height int) {
-				assertCompactWellbeing(t, rendered, height)
-			},
-		},
-		{
-			name:   "wellbeing 30",
-			height: 30,
-			render: func(height int) string {
-				return support.RenderWellbeing(compactWellbeingState(height))
-			},
-			assert: func(t *testing.T, rendered string, height int) {
-				assertCompactWellbeing(t, rendered, height)
-			},
-		},
 	}
 
 	for _, tt := range tests {

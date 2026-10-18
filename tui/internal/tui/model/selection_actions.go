@@ -85,7 +85,7 @@ func (m Model) handleInputCreateAction() Model {
 		return m.openCreateHabitDialog(0, streamName, repoName)
 	}
 
-	if m.view == ViewWellbeing {
+	if m.view == ViewReview {
 		return m.openCreateCheckInDialog()
 	}
 	return m
@@ -125,7 +125,7 @@ func (m Model) handleInputOpenEditor() (Model, tea.Cmd, bool) {
 		}
 		return m, nil, true
 	}
-	if m.view == ViewWellbeing {
+	if m.view == ViewReview {
 		if m.dailyCheckIn == nil {
 			m = m.openCreateCheckInDialog()
 		} else {
@@ -179,7 +179,7 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 
 func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 	snapshot := m.selectionSnapshot()
-	if m.view == ViewWellbeing {
+	if m.view == ViewReview {
 		if m.dailyCheckIn == nil {
 			return m, m.setStatus("No check-in to delete for this date", true), true
 		}

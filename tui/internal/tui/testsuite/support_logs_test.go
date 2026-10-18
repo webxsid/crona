@@ -31,7 +31,7 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 		Width:            100,
 		Height:           30,
 		Date:             "2026-04-02",
-		RollupWindowDays: 7,
+		ReviewWindowDays: 7,
 		Context: &api.ActiveContext{
 			RepoName:   &repoName,
 			StreamName: &streamName,

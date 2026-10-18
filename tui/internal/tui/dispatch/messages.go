@@ -25,7 +25,8 @@ type MessageState struct {
 	BrowseScope         scope.Scope
 	// Date is the shared date every dated view shows; "" follows the logical today.
 	Date                    string
-	RollupWindowDays        int
+	ReviewWindowDays        int
+	ReviewWindowEnd         string
 	Cursor                  map[uistate.Pane]int
 	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
@@ -43,7 +44,6 @@ type MessageState struct {
 	MomentumWindowDays      int
 	MomentumTab             string
 	MomentumHistoryY        int
-	WellbeingWindowDays     int
 	DailyCheckIn            *api.DailyCheckIn
 	MetricsRange            []api.DailyMetricsDay
 	MetricsRollup           *api.MetricsRollup
@@ -120,7 +120,6 @@ type MessageDeps struct {
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
 	OpenOnboardingDialog       func(*MessageState)
-	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
 	CurrentDate                func(MessageState) string
 	LoadRepos                  func() tea.Cmd
 	LoadAllIssues              func() tea.Cmd
@@ -137,8 +136,8 @@ type MessageDeps struct {
 	LoadDailySummary           func(string) tea.Cmd
 	LoadSummarySnapshot        func(string) tea.Cmd
 	LoadDailyStreaks           func(string) tea.Cmd
-	LoadWellbeing              func(string, int) tea.Cmd
-	LoadRollupSummaries        func(string, string) tea.Cmd
+	LoadWellbeing              func(date string) tea.Cmd
+	LoadReviewWindow           func(string, string) tea.Cmd
 	LoadDailyPlan              func(string) tea.Cmd
 	LoadExportAssets           func() tea.Cmd
 	LoadExportReports          func() tea.Cmd
@@ -270,17 +269,17 @@ func HandleMessage(
 		return state, nil, true
 	case commands.DailyCheckInLoadedMsg:
 		state.DailyCheckIn = msg.CheckIn
-		if deps.AnchorWellbeingScroll != nil {
-			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingSummary)
-		}
 		return state, nil, true
 	case commands.MetricsRangeLoadedMsg:
-		state.MetricsRange = msg.Days
-		if deps.AnchorWellbeingScroll != nil {
-			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
+		if staleReviewDays(state, deps, msg.Days) {
+			return state, nil, true
 		}
+		state.MetricsRange = msg.Days
 		return state, nil, true
 	case commands.RollupMetricsRangeLoadedMsg:
+		if staleReviewDays(state, deps, msg.Days) {
+			return state, nil, true
+		}
 		state.RollupMetricsRange = msg.Days
 		return state, nil, true
 	case commands.MomentumMetricsRangeLoadedMsg:
@@ -297,10 +296,10 @@ func HandleMessage(
 		}
 		return state, nil, true
 	case commands.MetricsRollupLoadedMsg:
-		state.MetricsRollup = msg.Rollup
-		if deps.AnchorWellbeingScroll != nil {
-			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingTrends)
+		if msg.Rollup != nil && staleReviewRange(state, deps, msg.Rollup.StartDate, msg.Rollup.EndDate) {
+			return state, nil, true
 		}
+		state.MetricsRollup = msg.Rollup
 		return state, nil, true
 	case commands.RollupMetricsRollupLoadedMsg:
 		state.RollupMetricsRollup = msg.Rollup
@@ -315,8 +314,11 @@ func HandleMessage(
 		state.DailyStreaks = msg.Streaks
 		return state, nil, true
 	case commands.RollupRefreshRequestedMsg:
-		return state, deps.LoadRollupSummaries(rollupRange(deps.CurrentDate(state), state.RollupWindowDays)), true
+		return state, deps.LoadReviewWindow(uistate.ReviewRange(deps.CurrentDate(state), state.ReviewWindowEnd, state.ReviewWindowDays)), true
 	case commands.DashboardWindowLoadedMsg:
+		if msg.Summary != nil && staleReviewRange(state, deps, msg.Summary.StartDate, msg.Summary.EndDate) {
+			return state, nil, true
+		}
 		state.DashboardWindow = msg.Summary
 		return state, nil, true
 	case commands.FocusScoreLoadedMsg:
@@ -401,7 +403,7 @@ func HandleMessage(
 				deps.ClampFiltered(&state, uistate.PaneHabits)
 			}
 		}
-		cmds := []tea.Cmd{deps.LoadRollupSummaries(rollupRange(deps.CurrentDate(state), state.RollupWindowDays))}
+		cmds := []tea.Cmd{deps.LoadReviewWindow(uistate.ReviewRange(deps.CurrentDate(state), state.ReviewWindowEnd, state.ReviewWindowDays))}
 		if state.View == uistate.ViewHabitHistory {
 			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
 		}
@@ -547,7 +549,7 @@ func HandleMessage(
 		if deps.CurrentDate(state) == strings.TrimSpace(msg.Date) {
 			cmds = append(cmds, deps.LoadDailySummary(msg.Date))
 			cmds = append(cmds, deps.LoadDailyStreaks(msg.Date))
-			cmds = append(cmds, deps.LoadWellbeing(msg.Date, state.WellbeingWindowDays))
+			cmds = append(cmds, deps.LoadWellbeing(msg.Date))
 		}
 		return state, tea.Batch(cmds...), true
 	case commands.IssuePinnedDailyChangedMsg:
@@ -788,8 +790,8 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadDueHabits(date),
 		deps.LoadDailySummary(date),
 		deps.LoadDailyStreaks(date),
-		deps.LoadWellbeing(date, state.WellbeingWindowDays),
-		deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)),
+		deps.LoadWellbeing(date),
+		deps.LoadReviewWindow(uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)),
 		deps.LoadSessionHistoryFor200(state),
 		deps.LoadOps(deps.CurrentOpsLimit(state)),
 		deps.LoadContext(),
@@ -810,17 +812,6 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 	return tea.Batch(cmds...)
 }
 
-// defaultRollupWindowDays is Rollup's window when none has been chosen.
-const defaultRollupWindowDays = 7
-
-// rollupRange is the Rollup window that ends on date.
-func rollupRange(date string, windowDays int) (string, string) {
-	if windowDays < 1 {
-		windowDays = defaultRollupWindowDays
-	}
-	return shiftISODate(date, -(windowDays - 1)), date
-}
-
 // applyLogicalDate moves the shared date to the new logical today when it was on the
 // previous one (or unset), so a user looking at another day stays there.
 func applyLogicalDate(state *MessageState, date, previousDate string, deps MessageDeps) tea.Cmd {
@@ -835,9 +826,9 @@ func applyLogicalDate(state *MessageState, date, previousDate string, deps Messa
 		deps.LoadDailyPlan(shown),
 		deps.LoadDueHabits(shown),
 		deps.LoadDailyStreaks(shown),
-		deps.LoadWellbeing(shown, state.WellbeingWindowDays),
+		deps.LoadWellbeing(shown),
 		deps.LoadMomentumRange(shown, state.MomentumWindowDays),
-		deps.LoadRollupSummaries(rollupRange(shown, state.RollupWindowDays)),
+		deps.LoadReviewWindow(uistate.ReviewRange(shown, state.ReviewWindowEnd, state.ReviewWindowDays)),
 	}
 	if deps.LoadTodayHabits != nil {
 		cmds = append(cmds, deps.LoadTodayHabits(date))
@@ -886,14 +877,47 @@ func historyRefreshCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) t
 	if deps.LoadDailyStreaks != nil {
 		cmds = append(cmds, deps.LoadDailyStreaks(date))
 	}
-	if deps.LoadRollupSummaries != nil {
-		cmds = append(cmds, deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)))
+	if deps.LoadReviewWindow != nil {
+		cmds = append(cmds, deps.LoadReviewWindow(uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)))
 	}
 	if deps.LoadWellbeing != nil {
-		cmds = append(cmds, deps.LoadWellbeing(date, state.WellbeingWindowDays))
+		cmds = append(cmds, deps.LoadWellbeing(date))
 	}
 	if deps.LoadMomentumRange != nil {
 		cmds = append(cmds, deps.LoadMomentumRange(date, state.MomentumWindowDays))
 	}
 	return tea.Batch(cmds...)
+}
+
+// reviewWindow is Review's current window, or ok false while the shared date is unknown.
+func reviewWindow(state MessageState, deps MessageDeps) (start, end string, ok bool) {
+	date := state.Date
+	if deps.CurrentDate != nil {
+		date = deps.CurrentDate(state)
+	}
+	if date == "" {
+		return "", "", false
+	}
+	start, end = uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)
+	return start, end, true
+}
+
+// staleReviewRange reports a result loaded for a window Review has since left.
+func staleReviewRange(state MessageState, deps MessageDeps, start, end string) bool {
+	wantStart, wantEnd, ok := reviewWindow(state, deps)
+	return ok && start != "" && (start != wantStart || end != wantEnd)
+}
+
+// staleReviewDays reports per-day results with a day outside Review's window.
+func staleReviewDays(state MessageState, deps MessageDeps, days []api.DailyMetricsDay) bool {
+	start, end, ok := reviewWindow(state, deps)
+	if !ok {
+		return false
+	}
+	for _, day := range days {
+		if day.Date < start || day.Date > end {
+			return true
+		}
+	}
+	return false
 }

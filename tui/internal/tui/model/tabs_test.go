@@ -55,19 +55,19 @@ func TestProtectedRestTabViews(t *testing.T) {
 }
 
 func TestNextSubTabViewWraps(t *testing.T) {
-	m := Model{view: ViewWellbeing}
-	if got := m.nextSubTabView(1); got != ViewRollup {
-		t.Fatalf("nextSubTabView(1) = %q, want rollup", got)
+	m := Model{view: ViewMomentum}
+	if got := m.nextSubTabView(1); got != ViewReview {
+		t.Fatalf("nextSubTabView(1) = %q, want review", got)
 	}
-	if got := m.nextSubTabView(-1); got != ViewMomentum {
-		t.Fatalf("nextSubTabView(-1) = %q, want momentum", got)
+	if got := m.nextSubTabView(-1); got != ViewReview {
+		t.Fatalf("nextSubTabView(-1) = %q, want review", got)
 	}
 }
 
 func TestTabTargetViewKeepsCurrentViewInTab(t *testing.T) {
-	m := Model{view: ViewWellbeing}
-	if got, ok := m.tabTargetView(uistate.TabInsights); !ok || got != ViewWellbeing {
-		t.Fatalf("tabTargetView(insights) = %q,%t, want wellbeing", got, ok)
+	m := Model{view: ViewMomentum}
+	if got, ok := m.tabTargetView(uistate.TabInsights); !ok || got != ViewMomentum {
+		t.Fatalf("tabTargetView(insights) = %q,%t, want momentum", got, ok)
 	}
 	if got, ok := m.tabTargetView(uistate.TabLog); !ok || got != ViewSessionHistory {
 		t.Fatalf("tabTargetView(log) = %q,%t, want session_history", got, ok)
@@ -143,7 +143,7 @@ func TestDailyContentStateCarriesModelFilterIndices(t *testing.T) {
 }
 
 func TestContentStateSharesOneDate(t *testing.T) {
-	for _, view := range []View{ViewDaily, ViewMomentum, ViewWellbeing, ViewRollup} {
+	for _, view := range []View{ViewDaily, ViewMomentum, ViewReview} {
 		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}, date: "2026-05-01"}
 		state := m.layoutState().ContentState
 		for name, got := range map[string]string{
@@ -158,7 +158,7 @@ func TestContentStateSharesOneDate(t *testing.T) {
 			}
 		}
 		if state.RollupStartDate != "2026-04-25" {
-			t.Fatalf("%s: expected a 7-day rollup ending on the shared date, got start %q", view, state.RollupStartDate)
+			t.Fatalf("%s: expected a 7-day Review window ending on the shared date, got start %q", view, state.RollupStartDate)
 		}
 	}
 }
