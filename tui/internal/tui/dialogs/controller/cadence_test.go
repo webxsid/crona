@@ -1,0 +1,113 @@
+package controller
+
+import (
+	"testing"
+
+	sharedtypes "crona/shared/types"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
+
+func press(state State, keys ...tea.KeyMsg) (State, *Action, string) {
+	var action *Action
+	status := ""
+	for _, key := range keys {
+		state, action, status = Update(state, UpdateContext{}, "2026-10-18", key)
+	}
+	return state, action, status
+}
+
+var (
+	keyRight = tea.KeyMsg{Type: tea.KeyRight}
+	keyLeft  = tea.KeyMsg{Type: tea.KeyLeft}
+	keyTab   = tea.KeyMsg{Type: tea.KeyTab}
+	keySpace = tea.KeyMsg{Type: tea.KeySpace, Runes: []rune{' '}}
+	keySave  = tea.KeyMsg{Type: tea.KeyCtrlS}
+)
+
+func editHabit(schedule string) State {
+	return OpenEditHabit(State{}, 3, 2, "Read", nil, schedule, nil, true)
+}
+
+func TestHabitCadenceCyclesWithArrows(t *testing.T) {
+	state := OpenCreateHabit(State{})
+	state.FocusIdx = 4
+	state = SyncDialogFocus(state)
+	state, _, _ = press(state, keyRight)
+	if got := state.Inputs[3].Value(); got != "weekdays" || state.CadenceIdx != 1 {
+		t.Fatalf("right: schedule %q idx %d, want weekdays/1", got, state.CadenceIdx)
+	}
+	state, _, _ = press(state, keyLeft, keyLeft)
+	if state.CadenceIdx != 2 {
+		t.Fatalf("left wraps to Custom days, got %d", state.CadenceIdx)
+	}
+}
+
+func TestHabitCadenceIgnoresTyping(t *testing.T) {
+	state := editHabit("daily")
+	state.FocusIdx = 2
+	state = SyncDialogFocus(state)
+	state, _, _ = press(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	if got := state.Inputs[1].Value(); got != "daily" {
+		t.Fatalf("typing changed the cadence to %q", got)
+	}
+}
+
+func TestHabitEditOpensOnItsCustomDays(t *testing.T) {
+	state := editHabit("mon,wed")
+	if state.CadenceIdx != 2 || len(state.CadenceDays) != 2 {
+		t.Fatalf("cadence %d days %v, want custom mon,wed", state.CadenceIdx, state.CadenceDays)
+	}
+	state.FocusIdx = 4
+	state.CadenceCursor = 0
+	state = SyncDialogFocus(state)
+	state, _, _ = press(state, keyRight, keySpace)
+	if got := state.Inputs[1].Value(); got != "mon,tue,wed" {
+		t.Fatalf("toggling Tue gave %q", got)
+	}
+}
+
+func TestHabitTabSkipsDaysUnlessCustom(t *testing.T) {
+	state := editHabit("daily")
+	state.FocusIdx = 3
+	if next, _, _ := press(state, keyTab); next.FocusIdx != 0 {
+		t.Fatalf("daily: tab from Target went to %d, want 0", next.FocusIdx)
+	}
+	state = editHabit("mon")
+	state.FocusIdx = 3
+	if next, _, _ := press(state, keyTab); next.FocusIdx != 4 {
+		t.Fatalf("custom: tab from Target went to %d, want Days (4)", next.FocusIdx)
+	}
+}
+
+func TestCustomCadenceNeedsADay(t *testing.T) {
+	state := editHabit("mon")
+	state.FocusIdx = 4
+	state.CadenceCursor = 0
+	state, _, _ = press(state, keySpace)
+	_, action, status := press(state, keySave)
+	if action != nil || status != "Pick at least one day" {
+		t.Fatalf("got action %+v status %q", action, status)
+	}
+}
+
+func TestHabitSavesItsCadence(t *testing.T) {
+	_, action, _ := press(editHabit("tue,thu"), keySave)
+	if action == nil || action.Status != "weekly" || len(action.Weekdays) != 2 {
+		t.Fatalf("got %+v", action)
+	}
+}
+
+func TestReminderCadence(t *testing.T) {
+	state := OpenEditAlertReminder(State{}, sharedtypes.AlertReminder{
+		ScheduleType: sharedtypes.AlertReminderScheduleWeekly, Weekdays: []int{1, 2, 3, 4, 5}, TimeHHMM: "20:00",
+	})
+	if state.CadenceIdx != 1 {
+		t.Fatalf("weekdays reminder opened on cadence %d", state.CadenceIdx)
+	}
+	state, _, _ = press(state, keyRight)
+	state.FocusIdx = 1
+	if next, _, _ := press(state, keyTab); next.FocusIdx != 2 {
+		t.Fatalf("custom reminder: tab from Time went to %d, want Days (2)", next.FocusIdx)
+	}
+}

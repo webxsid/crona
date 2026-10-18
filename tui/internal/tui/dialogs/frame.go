@@ -204,7 +204,7 @@ func Picker(theme Theme, spec PickerSpec) []string {
 		value = arrows.Render("‹ ") + current + arrows.Render(" ›") +
 			theme.StyleDim.Render(fmt.Sprintf("  %d/%d", selected+1, len(spec.Options)))
 	}
-	if spec.Focused {
+	if spec.Focused && spec.Input != "" {
 		value += theme.StyleDim.Render("    filter: ") + spec.Input
 	}
 	return []string{Field(theme, spec.Label, spec.Column, value, spec.Focused)}

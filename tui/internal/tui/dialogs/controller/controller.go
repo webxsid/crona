@@ -1700,6 +1700,9 @@ func updateIssueSessionTransition(
 }
 
 func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action, string) {
+	if next, ok := updateCadenceKey(state, msg.String()); ok {
+		return next, nil, ""
+	}
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -1712,6 +1715,9 @@ func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action
 		name := strings.TrimSpace(state.Inputs[0].Value())
 		if name == "" {
 			return state, nil, "Habit name is required"
+		}
+		if cadenceMissingDays(state) {
+			return state, nil, "Pick at least one day"
 		}
 		scheduleType, weekdays, err := ParseHabitSchedule(state.Inputs[1].Value())
 		if err != nil {
@@ -1751,6 +1757,9 @@ func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action
 }
 
 func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+	if next, ok := updateCadenceKey(state, msg.String()); ok {
+		return next, nil, ""
+	}
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -1826,6 +1835,9 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 		name := strings.TrimSpace(state.Inputs[2].Value())
 		if repoName == "" || streamName == "" || name == "" {
 			return state, nil, "Repo, stream, and habit name are required"
+		}
+		if cadenceMissingDays(state) {
+			return state, nil, "Pick at least one day"
 		}
 		scheduleType, weekdays, err := ParseHabitSchedule(state.Inputs[3].Value())
 		if err != nil {

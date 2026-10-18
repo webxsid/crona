@@ -199,7 +199,7 @@ func OpenCreateHabit(state State) State {
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = 3
 	state.FocusIdx = 2
-	return SyncDialogFocus(state)
+	return SyncDialogFocus(initCadence(state))
 }
 
 func OpenEditHabit(
@@ -243,7 +243,7 @@ func OpenEditHabit(
 	state.HabitID = habitID
 	state.StreamID = streamID
 	state.StatusLabel = map[bool]string{true: "active", false: "inactive"}[active]
-	return state
+	return initCadence(state)
 }
 
 func OpenHabitCompletion(

@@ -66,25 +66,75 @@ func renderReminderForm(theme Theme, state controllerpkg.State) string {
 		}
 	}
 	inner := formInner(state.Width)
-	column := len("Schedule")
+	column := len("Cadence")
 	_, half := formColumns(inner, column)
 	timeColumn := len("Time")
 	if inner < 56 {
 		timeColumn = column
 	}
 	return renderForm(theme, state, FormSpec{
-		Title: title, Border: border, FocusCount: 2,
-		Primary: plainHint(dialogSubmitHint(state, "save")), Hints: tabNextHints,
+		Title: title, Border: border, FocusCount: 3,
+		Primary: plainHint(dialogSubmitHint(state, "save")),
+		Hints: func(focus int) []string {
+			if hints := cadenceHints(state, focus); hints != nil {
+				return hints
+			}
+			return tabNextHints(focus)
+		},
 		Rows: []FormRow{
 			pairRow(
-				Field(theme, "Schedule", column, bareInput(state.Inputs[0], half, "daily"), state.FocusIdx == 0),
+				cadenceField(theme, state, column, 0),
 				Field(theme, "Time", timeColumn, bareInput(state.Inputs[1], half, "HH:MM"), state.FocusIdx == 1),
 				0, 1, inner,
 			),
-			staticRow("",
-				theme.StyleDim.Render("Use daily, weekdays, or weekday lists like mon,wed,fri."),
-				theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00."),
-			),
+			fieldRow(2, daysField(theme, state, column, 2)),
+			staticRow("", theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00.")),
 		},
 	})
+}
+
+// cadenceField is the one-row Daily / Weekdays / Custom days picker.
+func cadenceField(theme Theme, state controllerpkg.State, column, focus int) string {
+	return Picker(theme, PickerSpec{
+		Label: "Cadence", Column: column, Focused: state.FocusIdx == focus,
+		Options: controllerpkg.CadenceLabels, Selected: state.CadenceIdx,
+	})[0]
+}
+
+// daysField is the Mo–Su row: ticked days in brackets, the cursor accented while focused,
+// and the whole row dim unless Custom days is chosen.
+func daysField(theme Theme, state controllerpkg.State, column, focus int) string {
+	custom := state.CadenceIdx == len(controllerpkg.CadenceLabels)-1
+	focused := custom && state.FocusIdx == focus
+	ticked := map[int]bool{}
+	for _, day := range state.CadenceDays {
+		ticked[day] = true
+	}
+	cells := []string{}
+	for i, name := range []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"} {
+		cell := " " + name + " "
+		if ticked[(i+1)%7] {
+			cell = "[" + name + "]"
+		}
+		switch {
+		case !custom:
+			cell = theme.StyleDim.Render(cell)
+		case focused && i == state.CadenceCursor:
+			cell = theme.StyleCursor.Render(cell)
+		}
+		cells = append(cells, cell)
+	}
+	return Field(theme, "Days", column, strings.Join(cells, ""), focused)
+}
+
+// cadenceHints are the extra keys while the cadence picker or Days row is focused.
+func cadenceHints(state controllerpkg.State, focus int) []string {
+	cadence, days, _, _ := controllerpkg.CadenceLayout(state)
+	switch focus {
+	case cadence:
+		return []string{"tab next", "←/→ choose"}
+	case days:
+		return []string{"tab next", "←/→ move", "space toggle"}
+	}
+	return nil
 }

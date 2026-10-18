@@ -88,8 +88,8 @@ func TestHabitAndEditIssueForms(t *testing.T) {
 	create := controllerpkg.OpenCreateHabit(controllerpkg.State{})
 	create.RepoName, create.StreamName = "OSS", "cli"
 	cases := []formCase{
-		{"create_habit", create, "New Habit", "OSS › cli", 6},
-		{"edit_habit", habitEditState(), "Edit Habit", "", 4},
+		{"create_habit", create, "New Habit", "OSS › cli", 7},
+		{"edit_habit", habitEditState(), "Edit Habit", "", 5},
 		{"edit_issue", controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil), "Edit Issue", "", 4},
 	}
 	for _, c := range cases {
@@ -124,8 +124,8 @@ func TestRemainingEntityForms(t *testing.T) {
 		{"create_checkin", controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"), "New Check-In", "", 6},
 		{"edit_checkin", controllerpkg.OpenEditCheckIn(controllerpkg.State{}, nil, "2026-10-18"), "Edit Check-In", "", 6},
 		{"complete_habit", controllerpkg.OpenHabitCompletion(controllerpkg.State{}, 1, "2026-10-18", nil, nil), "Habit Log", "2026-10-18", 2},
-		{"create_alert_reminder", controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), "Add Check-In Reminder", "", 2},
-		{"edit_alert_reminder", controllerpkg.OpenEditAlertReminder(controllerpkg.State{}, sharedtypes.AlertReminder{TimeHHMM: "20:00"}), "Edit Check-In Reminder", "", 2},
+		{"create_alert_reminder", controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), "Add Check-In Reminder", "", 3},
+		{"edit_alert_reminder", controllerpkg.OpenEditAlertReminder(controllerpkg.State{}, sharedtypes.AlertReminder{TimeHHMM: "20:00"}), "Edit Check-In Reminder", "", 3},
 	}
 	for _, c := range cases {
 		assertFormChrome(t, c)
@@ -158,5 +158,25 @@ func TestFormPairsFitTheirPlaceholders(t *testing.T) {
 	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
 	if !strings.Contains(reminder, "Time  20:00") {
 		t.Errorf("time label not tight to its value:\n%s", reminder)
+	}
+}
+
+func TestCadenceRows(t *testing.T) {
+	daily := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)))
+	for _, want := range []string{"Cadence", "‹ Daily ›", "Days", "Mo  Tu  We"} {
+		if !strings.Contains(daily, want) {
+			t.Errorf("new habit lacks %q:\n%s", want, daily)
+		}
+	}
+	if strings.Contains(daily, "Schedule") || strings.Contains(daily, "filter:") {
+		t.Errorf("new habit keeps the typed schedule:\n%s", daily)
+	}
+	custom := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenEditHabit(controllerpkg.State{}, 3, 2, "Read", nil, "tue,thu", nil, true), 120, 36)))
+	if !strings.Contains(custom, "‹ Custom days ›") || !strings.Contains(custom, "[Tu]") || !strings.Contains(custom, "[Th]") {
+		t.Errorf("custom habit should tick Tu and Th:\n%s", custom)
+	}
+	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
+	if !strings.Contains(reminder, "‹ Daily ›") || strings.Contains(reminder, "weekday lists") {
+		t.Errorf("reminder should use the cadence picker without the typing help:\n%s", reminder)
 	}
 }

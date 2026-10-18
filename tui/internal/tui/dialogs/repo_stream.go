@@ -51,14 +51,16 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 		fieldRow(focusOf(name), Field(theme, "Name", column, bareInput(state.Inputs[name], full, "required"), focused(name))),
 		textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
 		pairRow(
-			Field(theme, "Schedule", column, bareInput(state.Inputs[schedule], half, "daily, weekdays"), focused(schedule)),
+			cadenceField(theme, state, column, focusOf(schedule)),
 			Field(theme, "Target", pairColumn, bareInput(state.Inputs[target], half, "optional"), focused(target)),
 			focusOf(schedule), focusOf(target), inner,
 		),
 	}
-	title, border, submit, count := "Edit Habit", theme.ColorYellow, "save", 4
+	_, days, count, _ := controllerpkg.CadenceLayout(state)
+	rows = append(rows, fieldRow(days, daysField(theme, state, column, days)))
+	title, border, submit := "Edit Habit", lipgloss.Color(theme.ColorYellow), "save"
 	if create {
-		title, border, submit, count = "New Habit", "", "create", 6
+		title, border, submit = "New Habit", "", "create"
 		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
 	}
 	textarea := textareaHints(state.DescriptionIndex)
@@ -68,6 +70,9 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 		Hints: func(focus int) []string {
 			if create && focus <= 1 {
 				return []string{"tab next", "type filter", "←/→ choose"}
+			}
+			if hints := cadenceHints(state, focus); hints != nil {
+				return hints
 			}
 			return textarea(focus)
 		},

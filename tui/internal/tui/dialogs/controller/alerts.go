@@ -28,7 +28,7 @@ func OpenCreateAlertReminder(state State, kind sharedtypes.AlertReminderKind) St
 	state.ReminderKind = kind
 	state.Inputs = inputs
 	state.FocusIdx = 0
-	return SyncDialogFocus(state)
+	return SyncDialogFocus(initCadence(state))
 }
 
 func OpenEditAlertReminder(state State, reminder sharedtypes.AlertReminder) State {
@@ -39,10 +39,13 @@ func OpenEditAlertReminder(state State, reminder sharedtypes.AlertReminder) Stat
 	next.Inputs[0].SetValue(formatReminderSchedule(reminder))
 	next.Inputs[1].SetValue(strings.TrimSpace(reminder.TimeHHMM))
 	next.FocusIdx = 0
-	return SyncDialogFocus(next)
+	return SyncDialogFocus(initCadence(next))
 }
 
 func updateAlertReminder(state State, msg tea.KeyMsg) (State, *Action, string) {
+	if next, ok := updateCadenceKey(state, msg.String()); ok {
+		return next, nil, ""
+	}
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -55,6 +58,9 @@ func updateAlertReminder(state State, msg tea.KeyMsg) (State, *Action, string) {
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
 	default:
 		if isDialogSubmitKey(state, msg.String()) {
+			if cadenceMissingDays(state) {
+				return state, nil, "Pick at least one day"
+			}
 			scheduleType, weekdays, err := parseAlertReminderSchedule(state.Inputs[0].Value())
 			if err != nil {
 				return state, nil, err.Error()
