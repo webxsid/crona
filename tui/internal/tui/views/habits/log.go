@@ -29,17 +29,7 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 	strip := viewchrome.StripRows(habitLogStrip(state.HabitHistory), width)
 	paneHeight := max(1, height-len(strip)-1)
 
-	detailWidth := 0
-	switch {
-	case width >= 160:
-		detailWidth = max(44, (width-6)*2/5)
-	case width >= 100:
-		detailWidth = max(40, (width-3)*2/5)
-	}
-	listWidth := width
-	if detailWidth > 0 {
-		listWidth = width - detailWidth - 3
-	}
+	listWidth, detailWidth := viewchrome.LogPaneWidths(width)
 	list := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: "Habits", Meta: fmt.Sprint(len(entries)), Focused: true,
 		Width: listWidth, Height: paneHeight,

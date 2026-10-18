@@ -94,3 +94,16 @@ func StripRows(groups [][2]string, width int) []string {
 	}
 	return rows
 }
+
+// LogPaneWidths splits a Log sub-tab into list and detail widths; detail is 0 when narrow.
+func LogPaneWidths(width int) (list, detail int) {
+	switch {
+	case width >= 160:
+		detail = max(44, (width-6)*2/5)
+	case width >= 100:
+		detail = max(40, (width-3)*2/5)
+	default:
+		return width, 0
+	}
+	return width - detail - 3, detail
+}
