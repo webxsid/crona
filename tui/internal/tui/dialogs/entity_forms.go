@@ -68,13 +68,17 @@ func renderReminderForm(theme Theme, state controllerpkg.State) string {
 	inner := formInner(state.Width)
 	column := len("Schedule")
 	_, half := formColumns(inner, column)
+	timeColumn := len("Time")
+	if inner < 56 {
+		timeColumn = column
+	}
 	return renderForm(theme, state, FormSpec{
 		Title: title, Border: border, FocusCount: 2,
 		Primary: plainHint(dialogSubmitHint(state, "save")), Hints: tabNextHints,
 		Rows: []FormRow{
 			pairRow(
 				Field(theme, "Schedule", column, bareInput(state.Inputs[0], half, "daily"), state.FocusIdx == 0),
-				Field(theme, "Time", column, bareInput(state.Inputs[1], half, "HH:MM"), state.FocusIdx == 1),
+				Field(theme, "Time", timeColumn, bareInput(state.Inputs[1], half, "HH:MM"), state.FocusIdx == 1),
 				0, 1, inner,
 			),
 			staticRow("",

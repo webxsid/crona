@@ -149,3 +149,14 @@ func TestEntityFormErrorVisible(t *testing.T) {
 		t.Fatalf("expected the error visible:\n%s", out)
 	}
 }
+
+func TestFormPairsFitTheirPlaceholders(t *testing.T) {
+	habit := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)))
+	if strings.Contains(habit, "…") {
+		t.Errorf("schedule placeholder truncated:\n%s", habit)
+	}
+	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
+	if !strings.Contains(reminder, "Time  20:00") {
+		t.Errorf("time label not tight to its value:\n%s", reminder)
+	}
+}

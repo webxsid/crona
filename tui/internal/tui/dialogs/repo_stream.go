@@ -51,7 +51,7 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 		fieldRow(focusOf(name), Field(theme, "Name", column, bareInput(state.Inputs[name], full, "required"), focused(name))),
 		textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
 		pairRow(
-			Field(theme, "Schedule", column, bareInput(state.Inputs[schedule], half, "daily, weekdays, mon,wed"), focused(schedule)),
+			Field(theme, "Schedule", column, bareInput(state.Inputs[schedule], half, "daily, weekdays"), focused(schedule)),
 			Field(theme, "Target", pairColumn, bareInput(state.Inputs[target], half, "optional"), focused(target)),
 			focusOf(schedule), focusOf(target), inner,
 		),
