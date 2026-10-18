@@ -65,7 +65,8 @@ func BarGrid(values []float64, starts []int, barWidth, width, rows int, top floa
 			grid[rows-1][min(width-1, starts[i]+(barWidth-1)/2)] = "·"
 			continue
 		}
-		eighths := min(rows*8, int(math.Round(value/top*float64(rows*8))))
+		// A known value always shows: zero draws a one-eighth floor line.
+		eighths := max(1, min(rows*8, int(math.Round(value/top*float64(rows*8)))))
 		for row := range rows {
 			fill := eighths - (rows-1-row)*8
 			if fill <= 0 {

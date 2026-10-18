@@ -47,3 +47,10 @@ func TestBarGridStacksBlocksAndMarksMissing(t *testing.T) {
 		t.Fatalf("expected a stacked bar and a dot for the missing day, got %q", grid)
 	}
 }
+
+func TestBarGridDrawsZeroAsFloor(t *testing.T) {
+	grid := BarGrid([]float64{0, 0.001}, []int{0, 3}, 2, 5, 2, 1)
+	if grid[1][0] != "▁" || grid[1][1] != "▁" || grid[1][3] != "▁" || grid[0][0] != " " {
+		t.Fatalf("expected zero to draw a single floor line, got %q", grid)
+	}
+}
