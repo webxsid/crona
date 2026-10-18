@@ -370,12 +370,6 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			optionalText(issue.Description),
 		}
 		body = append(body, issuecore.NotesLines(layoutpkg.ViewTheme(), m.settings, issue.Notes, viewEntityBodyWidth(m.width))...)
-		body = append(
-			body,
-			"",
-			"Worked / est.",
-			issuecore.IssueWorkedEstimateLabel(spentSeconds, issue.EstimateMinutes),
-		)
 		dialog := m.dialogSnapshot().OpenViewEntity(
 			"Issue",
 			issue.Title,

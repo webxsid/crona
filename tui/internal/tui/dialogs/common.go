@@ -22,6 +22,11 @@ const (
 	dialogValuePrompt         = "> "
 )
 
+// modalTextWidth is the text width inside a modal of maxWidth (padded 3 a side).
+func modalTextWidth(width, maxWidth int) int {
+	return min(width-8, maxWidth) - 6
+}
+
 func modal(theme Theme, width, maxWidth int, border lipgloss.Color, rows []string) string {
 	return lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).

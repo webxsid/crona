@@ -397,7 +397,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
 		}
 		if state.ViewMeta != "" {
-			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
+			rows = append(rows, renderViewMeta(theme, state.ViewMeta, modalTextWidth(state.Width, 76))...)
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		footer := "[enter/esc] close"
@@ -416,7 +416,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
 		}
 		if state.ViewMeta != "" {
-			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
+			rows = append(rows, renderViewMeta(theme, state.ViewMeta, modalTextWidth(state.Width, 88))...)
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		rows = append(rows, "", theme.StyleDim.Render("Contributors"))
@@ -455,7 +455,7 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
 		}
 		if state.ViewMeta != "" {
-			rows = append(rows, renderViewMeta(theme, state.ViewMeta)...)
+			rows = append(rows, renderViewMeta(theme, state.ViewMeta, modalTextWidth(state.Width, 76))...)
 		}
 		rows = append(rows, "", renderViewEntityBody(theme, state.ViewBody))
 		rows = appendDialogFooter(
