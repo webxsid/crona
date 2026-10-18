@@ -352,3 +352,22 @@ func TestMomentumDeleteSelectionOpensConfirmDialog(t *testing.T) {
 		)
 	}
 }
+
+func TestMomentumEnterOpensDialogAtAnyWidth(t *testing.T) {
+	for _, width := range []int{60, 200} {
+		model := Model{
+			view:               ViewMomentum,
+			pane:               PaneMomentumCards,
+			width:              width,
+			date:               "2026-06-19",
+			momentumWindowDays: 30,
+			cursor:             map[Pane]int{PaneMomentumCards: 0},
+			momentumCards: []api.MomentumCard{{
+				Definition: sharedtypes.HabitStreakDefinition{ID: "momentum-1", Name: "Focus", Period: sharedtypes.HabitStreakPeriodDay},
+			}},
+		}
+		if _, cmd, handled := model.handleInputEnter(); !handled || cmd == nil {
+			t.Fatalf("width %d: expected enter to load the details dialog", width)
+		}
+	}
+}

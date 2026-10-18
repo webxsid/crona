@@ -206,9 +206,6 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 			theme.StyleHeader.Render("[x]") + theme.StyleDim.Render(" toggle enabled"),
-			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
-			theme.StyleHeader.Render("[+/-/0]") + theme.StyleDim.Render(" window"),
 		}
 	}
 	if state.View == "review" {

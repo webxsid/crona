@@ -194,3 +194,24 @@ func TestDailyDateActionsHintDayAndCalendar(t *testing.T) {
 		}
 	}
 }
+
+func TestMomentumActionsOmitDateKeys(t *testing.T) {
+	actions := strings.Join(ContextualActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}), "\n")
+	if !strings.Contains(actions, "[D] delete") {
+		t.Fatalf("expected the help sheet to keep delete, got %q", actions)
+	}
+	for _, unwanted := range []string{"[,/.]", "[g]", "[+/-/0]"} {
+		if strings.Contains(actions, unwanted) {
+			t.Fatalf("expected %q only on the date row, got %q", unwanted, actions)
+		}
+	}
+}
+
+func TestMomentumBottomRowGlobalOnly(t *testing.T) {
+	global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}), "\n")
+	for _, unwanted := range []string{"[e]", "[x]", "[D]"} {
+		if strings.Contains(global, unwanted) {
+			t.Fatalf("expected no %q on the bottom row, got %q", unwanted, global)
+		}
+	}
+}
