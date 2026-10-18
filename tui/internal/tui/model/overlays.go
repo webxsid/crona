@@ -212,7 +212,9 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		},
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadDailyPlan:    func(date string) tea.Cmd { return commands.LoadDailyPlan(m.client, date) },
-		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDueHabits: func(date string) tea.Cmd {
+			return tea.Batch(commands.LoadDueHabits(m.client, date), commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
+		},
 		LoadDailyStreaks: func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
 		LoadHabitHistory: func(ctx *api.ActiveContext, selectedID *int64) tea.Cmd {
 			return commands.LoadHabitHistory(m.client, ctx, selectedID)

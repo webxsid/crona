@@ -27,6 +27,9 @@ func (m Model) viewContentState(
 	dailyIssues := selectionpkg.DailyScopedIssues(snapshot)
 	defaultIssues := selectionpkg.DefaultScopedIssues(snapshot)
 	dueHabits := selectionpkg.FilteredDueHabits(snapshot)
+	if m.view == ViewHabitList {
+		dueHabits = m.todayHabits
+	}
 	selectedIssue, hasSelectedIssue := selectionpkg.SelectedIssue(snapshot)
 	state := viewtypes.ContentState{
 		View:                string(m.view),
@@ -99,6 +102,7 @@ func (m Model) viewContentState(
 		DailyPlannedIssues:        selectionpkg.DailySectionIssues(snapshot, DailyTaskSectionPlanned),
 		Habits:                    m.habits,
 		AllHabits:                 m.allHabits,
+		ScopedHabits:              selectionpkg.ScopedHabits(snapshot),
 		AllStreams:                m.allStreams,
 		BrowseScope:               m.browseScope,
 		AllIssues:                 m.allIssues,

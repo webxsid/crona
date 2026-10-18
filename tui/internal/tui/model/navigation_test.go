@@ -141,7 +141,7 @@ func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
 		ViewMomentum,
 		ViewWellbeing,
 		ViewDefault,
-		ViewMeta,
+		ViewHabitList,
 		ViewOps,
 		ViewReports,
 		ViewConfig,

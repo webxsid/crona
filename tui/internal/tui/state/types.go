@@ -10,7 +10,7 @@ const (
 	ViewDaily          View = "daily"
 	ViewRollup         View = "rollup"
 	ViewMomentum       View = "momentum"
-	ViewMeta           View = "meta"
+	ViewHabitList      View = "habit_list"
 	ViewSessionHistory View = "session_history"
 	ViewHabitHistory   View = "habit_history"
 	ViewSessionActive  View = "session_active"
@@ -68,7 +68,7 @@ var viewOrder = []View{
 	ViewMomentum,
 	ViewWellbeing,
 	ViewDefault,
-	ViewMeta,
+	ViewHabitList,
 	ViewOps,
 	ViewReports,
 	ViewConfig,
@@ -86,7 +86,7 @@ var viewPanes = map[View][]Pane{
 	ViewDaily:          {PaneIssues, PaneHabits},
 	ViewRollup:         {PaneRollupDays, PaneRollupBreakdown},
 	ViewMomentum:       {PaneMomentumCards},
-	ViewMeta:           {PaneRepos, PaneStreams, PaneIssues, PaneHabits},
+	ViewHabitList:      {PaneScope, PaneHabits},
 	ViewSessionHistory: {PaneSessions},
 	ViewHabitHistory:   {PaneHabitHistory},
 	ViewSessionActive:  {},
@@ -106,7 +106,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewDaily:          PaneIssues,
 	ViewRollup:         PaneRollupDays,
 	ViewMomentum:       PaneMomentumCards,
-	ViewMeta:           PaneRepos,
+	ViewHabitList:      PaneHabits,
 	ViewSessionHistory: PaneSessions,
 	ViewHabitHistory:   PaneHabitHistory,
 	ViewSessionActive:  PaneIssues,

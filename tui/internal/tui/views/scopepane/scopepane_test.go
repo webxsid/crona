@@ -62,7 +62,7 @@ func TestScopeActionLineOnlyWhenFocused(t *testing.T) {
 
 func TestScopeCreateLine(t *testing.T) {
 	for cursor, want := range map[int]string{0: "[a] new repo", 1: "[a] new stream", 2: "[a] new stream", 4: "[a] new stream"} {
-		joined := strings.Join(plainRows(Render(types.Theme{}, treeState(cursor, "issues"), treeCounts, 30, 14)), "\n")
+		joined := strings.Join(plainRows(Render(types.Theme{}, treeState(cursor, "scope"), treeCounts, 30, 14)), "\n")
 		if !strings.Contains(joined, want) {
 			t.Fatalf("cursor %d: expected %q, got %q", cursor, want, joined)
 		}
@@ -84,5 +84,17 @@ func TestIssueCountsOpenPerNode(t *testing.T) {
 	})
 	if counts[scope.Scope{}] != 2 || counts[scope.Scope{RepoID: 1}] != 1 || counts[scope.Scope{RepoID: 1, StreamID: 2}] != 1 || counts[scope.Scope{RepoID: 3, StreamID: 5}] != 1 {
 		t.Fatalf("got %+v", counts)
+	}
+}
+
+func TestScopeHintsHonorFocusAndTimer(t *testing.T) {
+	state := treeState(1, "issues")
+	if strings.Contains(Render(types.Theme{}, state, treeCounts, 80, 14), "[a]") {
+		t.Fatal("unfocused create hint")
+	}
+	state.Pane = "scope"
+	state.Timer = &api.TimerState{State: "running"}
+	if strings.Contains(Render(types.Theme{}, state, treeCounts, 80, 14), "[D]") {
+		t.Fatal("timer guarded delete hint")
 	}
 }

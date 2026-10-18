@@ -202,6 +202,9 @@ func HandleMessage(
 		return state, nil, true
 	case commands.AllHabitsLoadedMsg:
 		state.AllHabits = msg.Habits
+		if state.View == uistate.ViewHabitList && deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneHabits)
+		}
 		return state, nil, true
 	case commands.HabitStreakDefinitionsLoadedMsg:
 		state.HabitStreakDefs = msg.Definitions
@@ -214,7 +217,7 @@ func HandleMessage(
 		return state, nil, true
 	case commands.IssuesLoadedMsg:
 		state.Issues = msg.Issues
-		if state.View == uistate.ViewDaily || state.View == uistate.ViewMeta {
+		if state.View == uistate.ViewDaily {
 			if !restoreIssueCursorByID(&state, uistate.PaneIssues, msg.SelectedIssueID) {
 				if deps.ClampFiltered != nil {
 					deps.ClampFiltered(&state, uistate.PaneIssues)

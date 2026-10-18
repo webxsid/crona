@@ -72,9 +72,9 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 		{Key: "i", Label: "Issues", Value: "default", Detail: "Primary workspace issue list."},
 		{
 			Key:    "m",
-			Label:  "Meta",
-			Value:  "meta",
-			Detail: "Repos, streams, issues, and habits by hierarchy.",
+			Label:  "Habits",
+			Value:  "habit_list",
+			Detail: "Habit definitions in the browse scope.",
 		},
 		{Key: "o", Label: "Ops", Value: "ops", Detail: "Recent operation log."},
 		{

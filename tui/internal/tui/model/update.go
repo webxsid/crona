@@ -12,6 +12,7 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
 	selectionpkg "crona/tui/internal/tui/selection"
+	uistate "crona/tui/internal/tui/state"
 	wellbeingview "crona/tui/internal/tui/views/wellbeing"
 	"time"
 
@@ -83,10 +84,19 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.ActivePane,
 				state.Dialog,
 			)
-			return m.applyInputState(state), batchCmds(touch, cmd)
+			next := m.applyInputState(state)
+			if uistate.TabForView(next.view) == uistate.TabIssues && (uistate.TabForView(m.view) != uistate.TabIssues || next.view == ViewHabitList && m.view != ViewHabitList) {
+				cmd = batchCmds(cmd, commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
+			}
+			return next, batchCmds(touch, cmd)
 		}
 	}
 	switch msg := msg.(type) {
+	case commands.TodayHabitsLoadedMsg:
+		if msg.Date == m.currentLogicalDate() {
+			m.todayHabits = msg.Habits
+		}
+		return m, nil
 	case commands.IssueCreatedMsg:
 		refresh := tea.Batch(
 			commands.LoadRepos(m.client),
@@ -523,7 +533,9 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		LoadHabitStreakDefinitions: func() tea.Cmd {
 			return commands.LoadHabitStreakDefinitions(m.client)
 		},
-		LoadDueHabits:    func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDueHabits: func(date string) tea.Cmd {
+			return tea.Batch(commands.LoadDueHabits(m.client, date), commands.LoadTodayHabits(m.client, m.currentLogicalDate()))
+		},
 		LoadDailySummary: func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
 		LoadSummarySnapshot: func(date string) tea.Cmd {
 			return commands.LoadSummarySnapshot(m.client, date)

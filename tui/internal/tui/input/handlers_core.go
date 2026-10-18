@@ -117,12 +117,7 @@ func handleContextCheckout(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	if s.ActivePane == uistate.PaneScope {
 		return s, deps.Checkout(&s), true
 	}
-	if s.ActiveView == uistate.ViewMeta {
-		switch s.ActivePane {
-		case uistate.PaneRepos, uistate.PaneStreams:
-			return s, deps.Checkout(&s), true
-		}
-	}
+
 	if shouldOpenContextDialog(s.ActiveView) {
 		deps.OpenCheckoutContextDialog(&s)
 		return s, nil, true
@@ -188,7 +183,7 @@ func shouldOpenContextDialog(view uistate.View) bool {
 	switch view {
 	case uistate.ViewDefault,
 		uistate.ViewDaily,
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.ViewRollup,
 		uistate.ViewWellbeing,
 		uistate.ViewReports,
@@ -205,7 +200,7 @@ func supportsGlobalExport(view uistate.View) bool {
 	switch view {
 	case uistate.ViewDefault,
 		uistate.ViewDaily,
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.ViewWellbeing,
 		uistate.ViewReports:
 		return true

@@ -73,40 +73,18 @@ func (m Model) handleInputCreateAction() Model {
 			return m.openCreateHabitDialog(0, streamName, repoName)
 		}
 	}
-	if m.view == ViewMeta {
-		switch m.pane {
-		case PaneRepos:
-			return m.openCreateRepoDialog()
-		case PaneStreams:
-			repoID, repoName, ok := m.selectedMetaRepo()
-			if !ok {
-				m.setStatus("Select or checkout a repo first", true)
-				return m
-			}
-			return m.openCreateStreamDialog(repoID, repoName)
-		case PaneIssues:
-			streamID, streamName, repoName, ok := m.selectedMetaStream()
-			if !ok {
-				m.setStatus("Select or checkout a stream first", true)
-				return m
-			}
-			return m.openCreateIssueMetaDialog(streamID, streamName, repoName)
-		case PaneHabits:
-			streamID, streamName, repoName, ok := m.selectedMetaStream()
-			if ok {
-				return m.openCreateHabitDialog(streamID, streamName, repoName)
-			}
-			repoName = "-"
-			if m.context != nil && m.context.RepoName != nil && *m.context.RepoName != "" {
-				repoName = *m.context.RepoName
-			}
-			streamName = "-"
-			if m.context != nil && m.context.StreamName != nil && *m.context.StreamName != "" {
-				streamName = *m.context.StreamName
-			}
-			return m.openCreateHabitDialog(0, streamName, repoName)
+	if m.view == ViewHabitList && m.pane == PaneHabits {
+		context := m.browseActiveContext()
+		repoName, streamName := "", ""
+		if context.RepoName != nil {
+			repoName = *context.RepoName
 		}
+		if context.StreamName != nil {
+			streamName = *context.StreamName
+		}
+		return m.openCreateHabitDialog(0, streamName, repoName)
 	}
+
 	if m.view == ViewWellbeing {
 		return m.openCreateCheckInDialog()
 	}

@@ -43,7 +43,7 @@ func TestViewJumpDialogUsesUniqueMnemonicKeys(t *testing.T) {
 		uistate.ViewReports,
 		uistate.ViewConfig,
 		uistate.ViewDefault,
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.ViewOps,
 		uistate.ViewSettings,
 		uistate.ViewAlerts,

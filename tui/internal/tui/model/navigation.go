@@ -120,6 +120,7 @@ func (m *Model) browseToScopeCursor() {
 		m.browseScope = nodes[cur].Scope
 	}
 	m.clamp(PaneIssues, len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)))
+	m.clamp(PaneHabits, len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneHabits)))
 }
 
 // reconcileBrowseScope keeps the tree's cursor on the browsed node once all streams are
@@ -176,14 +177,6 @@ func (m *Model) setDailyTaskSection(section DailyTaskSection) {
 	snapshot := m.selectionSnapshot()
 	indices := selectionpkg.FilteredIndices(snapshot, PaneIssues)
 	m.clamp(PaneIssues, len(indices))
-}
-
-func (m Model) selectedMetaRepo() (int64, string, bool) {
-	return selectionpkg.SelectedMetaRepo(m.selectionSnapshot())
-}
-
-func (m Model) selectedMetaStream() (int64, string, string, bool) {
-	return selectionpkg.SelectedMetaStream(m.selectionSnapshot())
 }
 
 func (m Model) selectedIssueRecord() (*api.Issue, bool) {
@@ -244,7 +237,6 @@ func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
 }
 
 func (m Model) openSelectedEditDialog() (Model, bool) {
-	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneScope:
 		node, ok := m.selectedScopeNode()
@@ -255,21 +247,6 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 			return m.openEditRepoDialog(node.Scope.RepoID, node.Name), true
 		}
 		return m.openEditStreamDialog(node.Scope.StreamID, node.Scope.RepoID, node.Name, m.repoNameByID(node.Scope.RepoID)), true
-	case PaneRepos:
-		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
-			return m.openEditRepoDialog(repoID, repoName), true
-		}
-	case PaneStreams:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
-		if rawIdx >= 0 && rawIdx < len(m.streams) {
-			stream := m.streams[rawIdx]
-			return m.openEditStreamDialog(
-				stream.ID,
-				stream.RepoID,
-				stream.Name,
-				m.repoNameByID(stream.RepoID),
-			), true
-		}
 	case PaneIssues:
 		if issue, ok := m.selectedIssueRecord(); ok {
 			if issue.Adhoc {
@@ -364,42 +341,6 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			return m.openViewEntityDialog("Rollup Day", day.Date, meta, body), true
 		}
 		return m, false
-	case PaneRepos:
-		if m.view != ViewMeta {
-			return m, false
-		}
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneRepos)
-		if rawIdx >= 0 && rawIdx < len(m.repos) {
-			repo := m.repos[rawIdx]
-			body := strings.Join([]string{
-				"Description",
-				optionalText(repo.Description),
-			}, "\n")
-			return m.openViewEntityDialog(
-				"Repo",
-				repo.Name,
-				fmt.Sprintf("ID %d", repo.ID),
-				body,
-			), true
-		}
-	case PaneStreams:
-		if m.view != ViewMeta {
-			return m, false
-		}
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
-		if rawIdx >= 0 && rawIdx < len(m.streams) {
-			stream := m.streams[rawIdx]
-			meta := strings.Join([]string{
-				fmt.Sprintf("Repo %s", m.repoNameByID(stream.RepoID)),
-				fmt.Sprintf("Visibility %s", stream.Visibility),
-				fmt.Sprintf("ID %d", stream.ID),
-			}, "   ")
-			body := strings.Join([]string{
-				"Description",
-				optionalText(stream.Description),
-			}, "\n")
-			return m.openViewEntityDialog("Stream", stream.Name, meta, body), true
-		}
 	case PaneIssues:
 		issue, ok := m.selectedIssueRecord()
 		if !ok {
@@ -445,7 +386,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 		}
 		return m.withDialogState(dialog), true
 	case PaneHabits:
-		if m.view == ViewMeta {
+		if m.view == ViewHabitList {
 			if habit, ok := m.selectedHabitRecord(); ok {
 				meta := []string{
 					fmt.Sprintf(
@@ -557,7 +498,6 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 	if m.timer != nil && m.timer.State != "idle" {
 		return m.withStatus("Stop the active session before deleting work items", true), true
 	}
-	snapshot := m.selectionSnapshot()
 	switch m.pane {
 	case PaneScope:
 		node, ok := m.selectedScopeNode()
@@ -570,18 +510,6 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 		next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", node.Scope.StreamID), node.Name)
 		next.dialogRepoID = node.Scope.RepoID
 		return next, true
-	case PaneRepos:
-		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
-			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", repoID), repoName), true
-		}
-	case PaneStreams:
-		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneStreams)
-		if rawIdx >= 0 && rawIdx < len(m.streams) {
-			stream := m.streams[rawIdx]
-			next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", stream.ID), stream.Name)
-			next.dialogRepoID = stream.RepoID
-			return next, true
-		}
 	case PaneIssues:
 		if issue, ok := m.selectedIssueRecord(); ok {
 			next := m.openConfirmDeleteEntity("issue", fmt.Sprintf("%d", issue.ID), issue.Title)

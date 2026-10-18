@@ -273,3 +273,15 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 	}
 	return lines
 }
+
+// HabitDetailLines reuses the daily detail fields for a habit definition.
+func HabitDetailLines(theme types.Theme, state types.ContentState, habit api.HabitWithMeta, width int) []string {
+	item := api.HabitDailyItem{HabitWithMeta: habit}
+	for _, due := range state.DueHabits {
+		if due.ID == habit.ID {
+			item = due
+			break
+		}
+	}
+	return habitDetailLines(theme, state, item, width)
+}

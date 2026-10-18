@@ -7,7 +7,7 @@ import (
 
 func TestEveryViewBelongsToExactlyOneTab(t *testing.T) {
 	all := []View{
-		ViewAway, ViewDefault, ViewDaily, ViewRollup, ViewMomentum, ViewMeta,
+		ViewAway, ViewDefault, ViewDaily, ViewRollup, ViewMomentum, ViewHabitList,
 		ViewSessionHistory, ViewHabitHistory, ViewSessionActive, ViewOps, ViewWellbeing,
 		ViewReports, ViewConfig, ViewSettings, ViewAlerts, ViewUpdates, ViewSupport,
 	}
@@ -60,5 +60,17 @@ func TestTodayTabHasNoSummary(t *testing.T) {
 		if got[i] != want[i] {
 			t.Fatalf("Today views = %v, want %v", got, want)
 		}
+	}
+}
+
+func TestIssuesTabSubTabs(t *testing.T) {
+	if got := TabViews(TabIssues); !slices.Equal(got, []View{ViewDefault, View("habit_list")}) {
+		t.Fatalf("Issues tabs = %v", got)
+	}
+	if ViewLabel(View("habit_list")) != "Habits" {
+		t.Fatal("missing Habits label")
+	}
+	if len(ViewPanes(View("meta"))) > 0 {
+		t.Fatal("Meta still registered")
 	}
 }

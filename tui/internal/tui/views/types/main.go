@@ -42,6 +42,7 @@ type ContentState struct {
 	BrowseScope         scope.Scope
 	AllStreams          []api.Stream
 	AllHabits           []api.HabitWithMeta
+	ScopedHabits        []api.HabitWithMeta
 	Width               int
 	Height              int
 	Cursors             map[string]int

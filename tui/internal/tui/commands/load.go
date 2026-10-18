@@ -219,6 +219,17 @@ func LoadDueHabits(c *api.Client, date string) tea.Cmd {
 	}
 }
 
+// LoadTodayHabits loads today's habit status without changing Daily's selected date.
+func LoadTodayHabits(c *api.Client, date string) tea.Cmd {
+	return func() tea.Msg {
+		habits, err := c.ListDueHabits(date)
+		if err != nil {
+			return ErrMsg{Err: err}
+		}
+		return TodayHabitsLoadedMsg{Date: date, Habits: habits}
+	}
+}
+
 func LoadDailySummary(c *api.Client, date string) tea.Cmd {
 	return func() tea.Msg {
 		summary, err := c.GetDailySummary(date)

@@ -362,10 +362,6 @@ func (m Model) openEditStreamDialog(streamID, repoID int64, streamName, repoName
 	)
 }
 
-func (m Model) openCreateIssueMetaDialog(streamID int64, streamName, repoName string) Model {
-	return m.withDialogState(m.dialogSnapshot().OpenCreateIssueMeta(streamID, streamName, repoName))
-}
-
 func (m Model) openCreateHabitDialog(streamID int64, streamName, repoName string) Model {
 	return m.withDialogState(m.dialogSnapshot().OpenCreateHabit(streamID, streamName, repoName))
 }
@@ -430,6 +426,11 @@ func (m Model) openCreateIssueDefaultDialog() Model {
 	if m.view != ViewDefault {
 		return m.withDialogState(snapshot.OpenCreateIssueDefault())
 	}
+	snapshot.Context = m.browseActiveContext()
+	return m.withDialogState(snapshot.OpenCreateIssueDefault())
+}
+
+func (m Model) browseActiveContext() *api.ActiveContext {
 	context := &api.ActiveContext{}
 	for _, repo := range m.repos {
 		if repo.ID == m.browseScope.RepoID {
@@ -445,8 +446,7 @@ func (m Model) openCreateIssueDefaultDialog() Model {
 			break
 		}
 	}
-	snapshot.Context = context
-	return m.withDialogState(snapshot.OpenCreateIssueDefault())
+	return context
 }
 
 func (m Model) openCheckoutContextDialog() Model {

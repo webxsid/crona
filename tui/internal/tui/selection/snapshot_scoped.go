@@ -218,12 +218,6 @@ func rawIndexForIssueID(s Snapshot, pane uistate.Pane, issueID int64) int {
 					return i
 				}
 			}
-		case uistate.ViewMeta:
-			for i, issue := range s.Issues {
-				if issue.ID == issueID {
-					return i
-				}
-			}
 		}
 	}
 	return -1

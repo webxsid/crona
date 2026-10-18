@@ -303,10 +303,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 
 	switch state.Pane {
 	case "repos", "streams":
-		contextLabel := " checkout"
-		if state.View != "meta" {
-			contextLabel = " change context"
-		}
+		contextLabel := " change context"
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open details dialog"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(contextLabel),
@@ -375,13 +372,15 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			}
 			return actions
 		}
-		return []string{
+		actions := []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open habit details"),
 			theme.StyleHeader.Render("[a]") + theme.StyleDim.Render(" create habit"),
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
-			theme.StyleHeader.Render("[m]") + theme.StyleDim.Render(" log completion"),
-			theme.StyleHeader.Render("[D]") + theme.StyleDim.Render(" delete"),
 		}
+		if state.TimerState == "" || state.TimerState == "idle" {
+			actions = append(actions, theme.StyleHeader.Render("[D]")+theme.StyleDim.Render(" delete"), theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"))
+		}
+		return actions
 	case "ops":
 		return []string{
 			theme.StyleHeader.Render("[+]") + theme.StyleDim.Render(" more"),
@@ -441,7 +440,7 @@ func supportsGlobalContext(view string) bool {
 	switch view {
 	case "default",
 		"daily",
-		"meta",
+		"habit_list",
 		"rollup",
 		"wellbeing",
 		"reports",
@@ -456,7 +455,7 @@ func supportsGlobalContext(view string) bool {
 
 func supportsGlobalExport(view string) bool {
 	switch view {
-	case "default", "daily", "meta", "wellbeing", "reports":
+	case "default", "daily", "habit_list", "wellbeing", "reports":
 		return true
 	default:
 		return false

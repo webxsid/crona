@@ -402,7 +402,7 @@ func newRouter(deps Deps) *router {
 	}
 	for _, view := range []uistate.View{
 		uistate.ViewDefault,
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.ViewWellbeing,
 		uistate.ViewReports,
 	} {
@@ -411,34 +411,22 @@ func newRouter(deps Deps) *router {
 		})
 	}
 	// The Issues tab's scope tree edits its repo or stream with e, whatever the timer.
+	for _, view := range []uistate.View{uistate.ViewDefault, uistate.ViewHabitList} {
+		r.RegisterPane(
+			view,
+			uistate.PaneScope,
+			"e",
+			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+				if s.ProtectedModeActive {
+					return s, nil, false
+				}
+				cmd, handled := deps.OpenEditorAction(&s)
+				return s, cmd, handled
+			},
+		)
+	}
 	r.RegisterPane(
-		uistate.ViewDefault,
-		uistate.PaneScope,
-		"e",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
-				return s, nil, false
-			}
-			cmd, handled := deps.OpenEditorAction(&s)
-			return s, cmd, handled
-		},
-	)
-	keyregistry.RegisterMeta(
-		r,
-		uistate.ViewMeta,
-		uistate.PaneRepos,
-		uistate.PaneStreams,
-		uistate.PaneIssues,
-		uistate.PaneHabits,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			if s.ProtectedModeActive {
-				return s, nil, false
-			}
-			return handleContextCheckout(s, deps)
-		},
-	)
-	r.RegisterPane(
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.PaneHabits,
 		"e",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
@@ -447,7 +435,7 @@ func newRouter(deps Deps) *router {
 		},
 	)
 	r.RegisterPane(
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.PaneHabits,
 		"f",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
@@ -455,22 +443,17 @@ func newRouter(deps Deps) *router {
 		},
 	)
 	r.RegisterPane(
-		uistate.ViewMeta,
+		uistate.ViewHabitList,
 		uistate.PaneHabits,
 		"m",
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.Timer != nil && s.Timer.State != "idle" {
+				return s, nil, false
+			}
 			if deps.OpenHabitLogAction != nil {
 				cmd, handled := deps.OpenHabitLogAction(&s)
 				return s, cmd, handled
 			}
-			return s, nil, false
-		},
-	)
-	r.RegisterPane(
-		uistate.ViewMeta,
-		uistate.PaneHabits,
-		"y",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			return s, nil, false
 		},
 	)

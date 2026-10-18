@@ -58,8 +58,8 @@ func (m Model) layoutState() layoutpkg.State {
 		),
 	})
 	switch view {
-	case ViewDaily:
-		// Daily's panes show their own keys.
+	case ViewDaily, ViewHabitList:
+		// These panes show their own keys.
 		paneActions = nil
 	case ViewMomentum, ViewWellbeing, ViewRollup:
 		paneActions = viewchrome.WithoutDateKeys(paneActions)

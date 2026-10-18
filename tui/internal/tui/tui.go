@@ -13,7 +13,7 @@ type Pane = modelpkg.Pane
 const (
 	ViewDefault        = modelpkg.ViewDefault
 	ViewDaily          = modelpkg.ViewDaily
-	ViewMeta           = modelpkg.ViewMeta
+	ViewHabitList      = modelpkg.ViewHabitList
 	ViewSessionHistory = modelpkg.ViewSessionHistory
 	ViewSessionActive  = modelpkg.ViewSessionActive
 	ViewOps            = modelpkg.ViewOps

@@ -40,6 +40,12 @@ type AllIssuesLoadedMsg struct {
 	SelectedIssueID *int64
 }
 type DueHabitsLoadedMsg struct{ Habits []api.HabitDailyItem }
+
+// TodayHabitsLoadedMsg keeps the undated Habits summary separate from Daily.
+type TodayHabitsLoadedMsg struct {
+	Date   string
+	Habits []api.HabitDailyItem
+}
 type DailySummaryLoadedMsg struct{ Summary *api.DailyIssueSummary }
 type DailyPlanLoadedMsg struct{ Plan *api.DailyPlan }
 type DailyCheckInLoadedMsg struct{ CheckIn *api.DailyCheckIn }

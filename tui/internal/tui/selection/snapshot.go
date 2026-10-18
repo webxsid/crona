@@ -258,8 +258,8 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			}
 			break
 		}
-		items = make([]string, 0, len(s.Habits))
-		for _, habit := range s.Habits {
+		items = make([]string, 0, len(ScopedHabits(s)))
+		for _, habit := range ScopedHabits(s) {
 			items = append(items, habit.Name)
 		}
 	case uistate.PaneMomentumCards:
@@ -381,21 +381,6 @@ func FilteredCursorForHabitHistoryID(s Snapshot, pane uistate.Pane, habitHistory
 	return -1
 }
 
-func SelectedMetaRepo(s Snapshot) (int64, string, bool) {
-	if s.View != uistate.ViewMeta {
-		return 0, "", false
-	}
-	rawIdx := FilteredIndexAtCursor(s, uistate.PaneRepos)
-	if rawIdx >= 0 && rawIdx < len(s.Repos) {
-		return s.Repos[rawIdx].ID, s.Repos[rawIdx].Name, true
-	}
-	if s.Context != nil && s.Context.RepoID != nil {
-		return *s.Context.RepoID, helperpkg.FirstNonEmpty(s.Context.RepoName, nil), true
-	}
-	return 0, "", false
-}
-
-// SelectedScopeNode is the scope tree's node under its cursor, while the tree has focus.
 func SelectedScopeNode(s Snapshot) (scope.Node, bool) {
 	if s.Pane != uistate.PaneScope {
 		return scope.Node{}, false
@@ -418,28 +403,6 @@ func SelectedMomentumCard(s Snapshot) (*api.MomentumCard, bool) {
 	}
 	card := s.MomentumCards[rawIdx]
 	return &card, true
-}
-
-func SelectedMetaStream(s Snapshot) (int64, string, string, bool) {
-	if s.View != uistate.ViewMeta {
-		return 0, "", "", false
-	}
-	rawIdx := FilteredIndexAtCursor(s, uistate.PaneStreams)
-	if rawIdx >= 0 && rawIdx < len(s.Streams) {
-		stream := s.Streams[rawIdx]
-		return stream.ID, stream.Name, RepoNameByID(s, stream.RepoID), true
-	}
-	if s.Context != nil && s.Context.StreamID != nil {
-		repoName := "-"
-		if s.Context.RepoName != nil {
-			repoName = *s.Context.RepoName
-		}
-		return *s.Context.StreamID, helperpkg.FirstNonEmpty(
-			s.Context.StreamName,
-			nil,
-		), repoName, true
-	}
-	return 0, "", "", false
 }
 
 func SelectedIssue(s Snapshot) (*api.Issue, bool) {
@@ -466,13 +429,6 @@ func SelectedIssue(s Snapshot) (*api.Issue, bool) {
 			return nil, false
 		}
 		copy := issues[rawIdx]
-		return &copy, true
-	case uistate.ViewMeta:
-		rawIdx := FilteredIndexAtCursor(s, uistate.PaneIssues)
-		if rawIdx < 0 || rawIdx >= len(s.Issues) {
-			return nil, false
-		}
-		copy := s.Issues[rawIdx]
 		return &copy, true
 	default:
 		return nil, false
@@ -502,14 +458,15 @@ func SelectedIssueDetail(s Snapshot) (IssueSelection, bool) {
 }
 
 func SelectedHabit(s Snapshot) (*api.Habit, bool) {
-	if s.Pane != uistate.PaneHabits || s.View != uistate.ViewMeta {
+	if s.Pane != uistate.PaneHabits || s.View != uistate.ViewHabitList {
 		return nil, false
 	}
 	rawIdx := FilteredIndexAtCursor(s, uistate.PaneHabits)
-	if rawIdx < 0 || rawIdx >= len(s.Habits) {
+	habits := ScopedHabits(s)
+	if rawIdx < 0 || rawIdx >= len(habits) {
 		return nil, false
 	}
-	copy := s.Habits[rawIdx]
+	copy := habits[rawIdx].Habit
 	return &copy, true
 }
 

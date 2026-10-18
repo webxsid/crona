@@ -37,13 +37,15 @@ func Render(theme types.Theme, state types.ContentState, counts map[scope.Scope]
 	for i := start; i < end; i++ {
 		lines = append(lines, nodeRow(theme, nodes[i], counts[nodes[i].Scope], isChecked(nodes[i], checked), focused && i == cur, i == cur, rowWidth))
 		if focused && i == cur && !nodes[i].Scope.IsAll() {
-			lines = append(lines, "    "+viewchrome.FitHints(nodeActions(theme), rowWidth-4))
+			lines = append(lines, "    "+viewchrome.FitHints(nodeActions(theme, state), rowWidth-4))
 		}
 	}
 	if end < len(nodes) {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", len(nodes)-end)))
 	}
-	lines = append(lines, createLine(theme, nodes[cur]))
+	if focused {
+		lines = append(lines, createLine(theme, nodes[cur]))
+	}
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: "Scope", Focused: focused, Width: width, Height: height, Lines: lines,
 	})
@@ -123,13 +125,12 @@ func nodeRow(theme types.Theme, node scope.Node, count int, checked, cursor, sel
 	return style.Render(name) + strings.Repeat(" ", max(1, width-ansi.StringWidth(name)-ansi.StringWidth(right))) + right
 }
 
-func nodeActions(theme types.Theme) []string {
-	return []string{
-		viewchrome.KeyHint(theme, "c", "check out"),
-		viewchrome.KeyHint(theme, "e", "edit"),
-		viewchrome.KeyHint(theme, "D", "delete"),
-		viewchrome.KeyHint(theme, "enter", "open"),
+func nodeActions(theme types.Theme, state types.ContentState) []string {
+	actions := []string{viewchrome.KeyHint(theme, "c", "check out"), viewchrome.KeyHint(theme, "e", "edit")}
+	if state.Timer == nil || state.Timer.State == "idle" {
+		actions = append(actions, viewchrome.KeyHint(theme, "D", "delete"))
 	}
+	return append(actions, viewchrome.KeyHint(theme, "enter", "open"))
 }
 
 func createLine(theme types.Theme, node scope.Node) string {

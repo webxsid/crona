@@ -32,7 +32,7 @@ const (
 	ViewDaily          = uistate.ViewDaily
 	ViewRollup         = uistate.ViewRollup
 	ViewMomentum       = uistate.ViewMomentum
-	ViewMeta           = uistate.ViewMeta
+	ViewHabitList      = uistate.ViewHabitList
 	ViewSessionHistory = uistate.ViewSessionHistory
 	ViewHabitHistory   = uistate.ViewHabitHistory
 	ViewSessionActive  = uistate.ViewSessionActive
@@ -120,6 +120,7 @@ type Model struct {
 	browseScope  scope.Scope
 	allIssues    []api.IssueWithMeta
 	dueHabits    []api.HabitDailyItem
+	todayHabits  []api.HabitDailyItem
 	dailySummary *api.DailyIssueSummary
 	dailyPlan    *api.DailyPlan
 	// date is the shared date every dated view shows; "" follows the logical today.
@@ -410,6 +411,7 @@ func (m Model) Init() tea.Cmd {
 		),
 		commands.LoadAllIssues(m.client),
 		commands.LoadDueHabits(m.client, time.Now().Format("2006-01-02")),
+		commands.LoadTodayHabits(m.client, m.currentLogicalDate()),
 		commands.LoadDailySummary(m.client, ""),
 		commands.LoadSummarySnapshot(m.client, time.Now().Format("2006-01-02")),
 		commands.LoadDailyStreaks(m.client, time.Now().Format("2006-01-02")),

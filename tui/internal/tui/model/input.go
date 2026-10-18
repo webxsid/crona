@@ -461,9 +461,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 			if !ok {
 				return nil, false
 			}
+			date := next.currentDate()
+			if next.view == ViewHabitList {
+				date = next.currentLogicalDate()
+			}
 			next = next.openHabitCompletionDialog(
 				habit.ID,
-				next.currentDate(),
+				date,
 				habit.TargetMinutes,
 				nil,
 			)
