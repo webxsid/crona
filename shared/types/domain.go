@@ -1367,6 +1367,14 @@ type TimerState struct {
 	HardLimitBreakSeconds          int                 `json:"hardLimitBreakSeconds,omitempty"`
 	HardLimitLongBreakSeconds      int                 `json:"hardLimitLongBreakSeconds,omitempty"`
 	HardLimitCyclesBeforeLongBreak int                 `json:"hardLimitCyclesBeforeLongBreak,omitempty"`
+	// HardLimitCycles is a pomodoro session's planned focus cycles; 0 for other sessions.
+	HardLimitCycles int `json:"hardLimitCycles,omitempty"`
+	// CompletedWorkCycles counts the session's finished focus segments.
+	CompletedWorkCycles int `json:"completedWorkCycles,omitempty"`
+	// IssueWorkedSeconds and IssueCompletedSessions cover the issue's ended sessions,
+	// not the active one.
+	IssueWorkedSeconds     int `json:"issueWorkedSeconds,omitempty"`
+	IssueCompletedSessions int `json:"issueCompletedSessions,omitempty"`
 }
 
 type Op struct {
@@ -1711,4 +1719,22 @@ type CalendarExportResult struct {
 	IssuesFilePath   string             `json:"issuesFilePath"`
 	SessionsFilePath string             `json:"sessionsFilePath"`
 	Assets           ExportAssetStatus  `json:"assets"`
+}
+
+// InferPomodoroCycles recovers a pomodoro's planned focus cycles from its total length.
+func InferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int) int {
+	if totalSeconds <= 0 || focusSeconds <= 0 || breakSeconds <= 0 {
+		return 1
+	}
+	perCycle := focusSeconds + breakSeconds
+	for cycles := 1; cycles <= 24; cycles++ {
+		candidate := cycles * perCycle
+		if longBreakSeconds > 0 && cyclesBeforeLongBreak > 0 {
+			candidate += (cycles / cyclesBeforeLongBreak) * (longBreakSeconds - breakSeconds)
+		}
+		if candidate == totalSeconds {
+			return cycles
+		}
+	}
+	return max(1, totalSeconds/perCycle)
 }

@@ -1,6 +1,7 @@
 package controller
 
 import (
+	sharedtypes "crona/shared/types"
 	"fmt"
 	"strconv"
 	"strings"
@@ -194,26 +195,7 @@ func pomodoroEstimatedTotalDuration(values pomodoroValues) string {
 func inferPomodoroCycles(
 	totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int,
 ) int {
-	if totalSeconds <= 0 || focusSeconds <= 0 {
-		return 1
-	}
-	if breakSeconds <= 0 {
-		return 1
-	}
-	perCycle := focusSeconds + breakSeconds
-	if perCycle <= 0 {
-		return 1
-	}
-	for cycles := 1; cycles <= 24; cycles++ {
-		candidate := cycles * perCycle
-		if longBreakSeconds > 0 && cyclesBeforeLongBreak > 0 {
-			candidate += (cycles / cyclesBeforeLongBreak) * (longBreakSeconds - breakSeconds)
-		}
-		if candidate == totalSeconds {
-			return cycles
-		}
-	}
-	return max(1, totalSeconds/perCycle)
+	return sharedtypes.InferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak)
 }
 
 func pomodoroExtendEstimatedTotalDuration(state State) string {

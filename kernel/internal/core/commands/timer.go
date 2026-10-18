@@ -50,6 +50,44 @@ func (t *TimerService) GetState(ctx context.Context) (sharedtypes.TimerState, er
 }
 
 func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, error) {
+	state, err := t.getBaseState(ctx)
+	if err != nil || state.SessionID == nil {
+		return state, err
+	}
+	return t.withProgress(ctx, state)
+}
+
+// withProgress adds the cycle counts and the issue's earlier work to a live timer state.
+func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.TimerState) (sharedtypes.TimerState, error) {
+	cycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, *state.SessionID)
+	if err != nil {
+		return state, err
+	}
+	state.CompletedWorkCycles = cycles
+	if state.HardLimitActive && sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro {
+		state.HardLimitCycles = sharedtypes.InferPomodoroCycles(
+			state.HardLimitTotalSeconds, state.HardLimitWorkSeconds, state.HardLimitBreakSeconds,
+			state.HardLimitLongBreakSeconds, state.HardLimitCyclesBeforeLongBreak,
+		)
+	}
+	if state.IssueID == nil {
+		return state, nil
+	}
+	sessions, err := t.ctx.Sessions.ListByIssue(ctx, *state.IssueID, t.ctx.UserID)
+	if err != nil {
+		return state, err
+	}
+	for _, session := range sessions {
+		if session.EndTime == nil || session.DurationSeconds == nil || session.ID == *state.SessionID {
+			continue
+		}
+		state.IssueWorkedSeconds += *session.DurationSeconds
+		state.IssueCompletedSessions++
+	}
+	return state, nil
+}
+
+func (t *TimerService) getBaseState(ctx context.Context) (sharedtypes.TimerState, error) {
 	now := t.ctx.Now()
 	activeSession, err := t.ctx.Sessions.GetActiveSession(ctx, t.ctx.UserID)
 	if err != nil {
