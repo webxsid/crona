@@ -106,6 +106,7 @@
   - `TestIssuesLayoutByWidth`: 200 → `Scope`, list, detail title; 120 → no detail; 80 → `Scope ‹` row, no tree.
   - `TestArrowsSwitchOpenDoneAndTabCyclesPanes`: on PaneIssues `right` → section completed, cursor 0; `tab` → PaneScope.
   - `TestDoneSectionListsOnlyClosed` (Review Focus 3): cursor in range after switching to an empty Done.
+  - `TestCreateIssueDefaultsToBrowseScope`: context stream `tui`, browse scope `crona › daemon`; `a` on PaneIssues → create dialog's repo/stream labels are `crona` / `daemon` (seed the dialog from an `ActiveContext` built from the browse scope).
 - [ ] **Step 2:** Run; expect FAIL.
 - [ ] **Step 3:** Implement. Cards reuse Daily's two-line shape (title + date; `context | worked/est | status`). Delete the bordered boxes, `RenderPaneActionLine` use and table rows.
 - [ ] **Step 4:** Run suite; expect PASS.
@@ -127,6 +128,7 @@
   - `TestIssuesTabSubTabs`: `TabViews(TabIssues) == {ViewDefault, ViewHabitList}`; label `Habits`.
   - `TestHabitStripTwoRows`: `Active 5  paused 1  due today 3` / `Done today 2  failed 0  best streak 12d` (counts from fixture), ≤2 rows, width-exact.
   - `TestHabitListCardsAndActions`: `[a] new habit`; card `Walk` then `crona › tui | weekdays | 30m`; focused selected card's second line `[enter] open  [e] edit  [D] delete  [m] log`; `[m]` and `[D]` hidden while a timer runs.
+  - `TestCreateHabitDefaultsToBrowseScope`: as for issues, via the `create_habit` dialog.
   - `TestHabitListKeysActOnScopedHabit`: `e` on the selected habit opens its edit dialog with that habit's ID.
   - `TestNoMetaView`: `grep`-equivalent — `uistate.ViewPanes` has no `"meta"` key; view-jump list and help sheet have no `Meta`.
 - [ ] **Step 2:** Run; expect FAIL.
