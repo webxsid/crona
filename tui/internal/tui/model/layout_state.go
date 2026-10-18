@@ -48,6 +48,7 @@ func (m Model) viewContentState(
 		WeekStart:           m.currentWeekStart(),
 		DefaultIssueSection: string(m.defaultIssueSection),
 		DailyTaskSection:    string(m.dailyTaskSection),
+		DailyDetailDay:      m.dailyDetailDay,
 		SessionHistoryTitle: helperpkg.SessionHistoryTitle(sessionIssueID, sessionIssue),
 		SessionHistoryMeta:  helperpkg.SessionHistorySubtitle(sessionIssueID, sessionIssue),
 		HabitHistoryTitle:   m.habitHistoryTitle,

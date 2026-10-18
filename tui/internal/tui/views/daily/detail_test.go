@@ -202,3 +202,23 @@ func TestDetailIssueListsTheContextMomentumsItFeeds(t *testing.T) {
 		}
 	}
 }
+
+func TestDetailShowsDaySummaryWhenToggled(t *testing.T) {
+	state := detailState()
+	state.DailyDetailDay = true
+	state.SummaryDate = "2026-05-27"
+	state.SummarySnapshot = &api.SummarySnapshot{
+		Date:    "2026-05-27",
+		Focus:   &api.FocusScoreSummary{Score: 72},
+		Metrics: &api.DailyMetricsDay{Date: "2026-05-27", WorkedSeconds: 3600},
+	}
+	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	for _, want := range []string{"─ Day", "Focus 72/100", "Accountability", "Wellbeing"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
+		}
+	}
+	if strings.Contains(rendered, "Fix sync conflict") {
+		t.Fatalf("expected the selection replaced by the Day summary, got %q", rendered)
+	}
+}

@@ -13,6 +13,7 @@ import (
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	momentumhelpers "crona/tui/internal/tui/views/momentum"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
+	viewsummary "crona/tui/internal/tui/views/summary"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -24,7 +25,9 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	bodyWidth := max(1, width-2)
 	title := "Selected"
 	var lines []string
-	if state.Pane == "habits" {
+	if state.DailyDetailDay {
+		title, lines = "Day", viewsummary.DayLines(theme, state, bodyWidth)
+	} else if state.Pane == "habits" {
 		if habit, ok := selectedDailyHabit(state); ok {
 			title, lines = habit.Name, habitDetailLines(theme, state, habit, bodyWidth)
 		}

@@ -121,9 +121,11 @@ type Model struct {
 	dailySummary *api.DailyIssueSummary
 	dailyPlan    *api.DailyPlan
 	// date is the shared date every dated view shows; "" follows the logical today.
-	date                      string
-	rollupWindowDays          int
-	summarySnapshot           *api.SummarySnapshot
+	date             string
+	rollupWindowDays int
+	summarySnapshot  *api.SummarySnapshot
+	// dailyDetailDay shows the Day summary in Daily's detail pane until the selection moves.
+	dailyDetailDay            bool
 	momentumWindowDays        int
 	momentumTab               MomentumTab
 	momentumHistoryCursor     int

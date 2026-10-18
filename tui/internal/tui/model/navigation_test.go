@@ -9,6 +9,7 @@ import (
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -162,5 +163,47 @@ func TestAvailableViewsFollowSidebarOrder(t *testing.T) {
 	}
 	if views[0] != uistate.ViewSummary {
 		t.Fatalf("expected summary to be first sidebar navigation target, got %q", views[0])
+	}
+}
+
+func daySummaryModel(width int) Model {
+	date := "2026-05-27"
+	issue := api.Issue{ID: 1, Title: "Today", Status: "planned", TodoForDate: &date}
+	return Model{
+		view: ViewDaily, pane: PaneIssues, width: width, height: 40, date: date,
+		cursor:          map[Pane]int{PaneIssues: 0, PaneHabits: 0},
+		filters:         map[Pane]string{},
+		allIssues:       []api.IssueWithMeta{{Issue: issue}, {Issue: api.Issue{ID: 2, Title: "Other", Status: "planned", TodoForDate: &date}}},
+		summarySnapshot: &api.SummarySnapshot{Date: date, Focus: &api.FocusScoreSummary{Score: 72}, Metrics: &api.DailyMetricsDay{Date: date}},
+	}
+}
+
+func pressKey(m Model, key rune) Model {
+	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{key}})
+	return next.(Model)
+}
+
+func TestDaySummaryKeyTogglesOnWideAndOpensDialogWhenNarrow(t *testing.T) {
+	wide := pressKey(daySummaryModel(200), 'S')
+	if !wide.dailyDetailDay || wide.dialog != "" {
+		t.Fatalf("expected S to show the Day summary in the pane, got day=%v dialog=%q", wide.dailyDetailDay, wide.dialog)
+	}
+	if back := pressKey(wide, 'S'); back.dailyDetailDay {
+		t.Fatal("expected a second S to return to the selection")
+	}
+	narrow := pressKey(daySummaryModel(120), 'S')
+	if narrow.dailyDetailDay || narrow.dialog != "view_entity" || narrow.dialogViewTitle != "Day" {
+		t.Fatalf("expected a Day dialog when narrow, got day=%v dialog=%q title=%q", narrow.dailyDetailDay, narrow.dialog, narrow.dialogViewTitle)
+	}
+	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(body, "Focus 72/100") {
+		t.Fatalf("expected the Day summary in the dialog, got %q", body)
+	}
+}
+
+func TestCursorMoveReturnsDetailToSelection(t *testing.T) {
+	m := pressKey(daySummaryModel(200), 'S')
+	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
+	if moved := next.(Model); moved.dailyDetailDay || moved.cursor[PaneIssues] != 1 {
+		t.Fatal("expected moving the cursor to return the pane to the selection")
 	}
 }

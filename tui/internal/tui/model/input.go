@@ -15,6 +15,7 @@ import (
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -90,6 +91,7 @@ func (m Model) inputState() inputpkg.State {
 		Filters:                   m.filters,
 		DefaultIssueSection:       m.defaultIssueSection,
 		DailyTaskSection:          m.dailyTaskSection,
+		DailyDetailDay:            m.dailyDetailDay,
 		Date:                      m.date,
 		RollupWindowDays:          m.rollupWindowDays,
 		MomentumWindowDays:        m.currentMomentumWindowDays(),
@@ -121,6 +123,10 @@ func (m Model) inputState() inputpkg.State {
 }
 
 func (m Model) applyInputState(state inputpkg.State) Model {
+	// Moving the selection returns Daily's detail pane from the Day summary to it.
+	moved := state.ActivePane != m.pane ||
+		state.Cursor[PaneIssues] != m.cursor[PaneIssues] || state.Cursor[PaneHabits] != m.cursor[PaneHabits]
+	m.dailyDetailDay = state.DailyDetailDay && !moved
 	m.view = state.ActiveView
 	m.pane = state.ActivePane
 	m.cursor = maps.Clone(state.Cursor)
@@ -214,6 +220,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 		OpenCheckInDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openCheckInDialogForDate(next.currentDate())
+			*state = next.inputState()
+			return true
+		},
+		OpenDaySummary: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			if viewhelpers.ClassFor(next.width) == viewhelpers.WidthWide {
+				return false
+			}
+			next = next.openDaySummaryDialog()
 			*state = next.inputState()
 			return true
 		},

@@ -20,6 +20,8 @@ type State struct {
 	Filters             map[uistate.Pane]string
 	DefaultIssueSection uistate.DefaultIssueSection
 	DailyTaskSection    uistate.DailyTaskSection
+	// DailyDetailDay shows the Day summary in Daily's detail pane instead of the selection.
+	DailyDetailDay bool
 	// Date is the one date every dated view shows; "" means the logical today.
 	Date                      string
 	RollupWindowDays          int
@@ -55,35 +57,38 @@ func (s State) Update(msg tea.Msg) (tea.Model, tea.Cmd) { return s, nil }
 func (s State) View() string                            { return "" }
 
 type Deps struct {
-	CloseEventStop                  func()
-	ShutdownKernel                  func() tea.Cmd
-	SeedDevData                     func() tea.Cmd
-	ClearDevData                    func() tea.Cmd
-	IsDevMode                       func(State) bool
-	TabTargetView                   func(State, uistate.Tab) (uistate.View, bool)
-	NextSubTabView                  func(State, int) uistate.View
-	DefaultPane                     func(uistate.View) uistate.Pane
-	NextPane                        func(uistate.View, uistate.Pane, int) uistate.Pane
-	SetDefaultIssueSection          func(*State, uistate.DefaultIssueSection)
-	SetDailyTaskSection             func(*State, uistate.DailyTaskSection)
-	ListLen                         func(State, uistate.Pane) int
-	LoadExportAssets                func() tea.Cmd
-	SetStatus                       func(*State, string, bool) tea.Cmd
-	CurrentDate                     func(State) string
-	CurrentLogicalDate              func(State) string
-	ReloadDateSurfaces              func(State) tea.Cmd
-	LoadDailySummary                func(string) tea.Cmd
-	LoadSummarySnapshot             func(string) tea.Cmd
-	LoadDailyStreaks                func(string) tea.Cmd
-	LoadDueHabits                   func(string) tea.Cmd
-	LoadRollupSummaries             func(string, string) tea.Cmd
-	LoadMomentumRange               func(string, int) tea.Cmd
-	CreateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
-	UpdateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
-	DeleteMomentumDefinition        func(string, string, string, int) tea.Cmd
-	LoadWellbeing                   func(string, int) tea.Cmd
-	OpenCheckInDialog               func(*State) bool
-	OpenSummaryCalendar             func(*State) bool
+	CloseEventStop           func()
+	ShutdownKernel           func() tea.Cmd
+	SeedDevData              func() tea.Cmd
+	ClearDevData             func() tea.Cmd
+	IsDevMode                func(State) bool
+	TabTargetView            func(State, uistate.Tab) (uistate.View, bool)
+	NextSubTabView           func(State, int) uistate.View
+	DefaultPane              func(uistate.View) uistate.Pane
+	NextPane                 func(uistate.View, uistate.Pane, int) uistate.Pane
+	SetDefaultIssueSection   func(*State, uistate.DefaultIssueSection)
+	SetDailyTaskSection      func(*State, uistate.DailyTaskSection)
+	ListLen                  func(State, uistate.Pane) int
+	LoadExportAssets         func() tea.Cmd
+	SetStatus                func(*State, string, bool) tea.Cmd
+	CurrentDate              func(State) string
+	CurrentLogicalDate       func(State) string
+	ReloadDateSurfaces       func(State) tea.Cmd
+	LoadDailySummary         func(string) tea.Cmd
+	LoadSummarySnapshot      func(string) tea.Cmd
+	LoadDailyStreaks         func(string) tea.Cmd
+	LoadDueHabits            func(string) tea.Cmd
+	LoadRollupSummaries      func(string, string) tea.Cmd
+	LoadMomentumRange        func(string, int) tea.Cmd
+	CreateMomentumDefinition func(api.HabitStreakDefinition, string, string, int) tea.Cmd
+	UpdateMomentumDefinition func(api.HabitStreakDefinition, string, string, int) tea.Cmd
+	DeleteMomentumDefinition func(string, string, string, int) tea.Cmd
+	LoadWellbeing            func(string, int) tea.Cmd
+	OpenCheckInDialog        func(*State) bool
+	OpenSummaryCalendar      func(*State) bool
+	// OpenDaySummary opens the Day summary as a dialog when Daily has no detail pane, and
+	// reports whether it did.
+	OpenDaySummary                  func(*State) bool
 	OpenHelpDialog                  func(*State) bool
 	ConfigChangeSelected            func(*State) tea.Cmd
 	OpenCheckoutContextDialog       func(*State) bool
@@ -393,6 +398,13 @@ func newRouter(deps Deps) *router {
 			return s, nil, deps.OpenSummaryCalendar(&s)
 		},
 	)
+	r.RegisterView(uistate.ViewDaily, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if deps.OpenDaySummary != nil && deps.OpenDaySummary(&s) {
+			return s, nil, true
+		}
+		s.DailyDetailDay = !s.DailyDetailDay
+		return s, nil, true
+	})
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)
 	})

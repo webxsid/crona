@@ -18,6 +18,7 @@ import (
 	uistate "crona/tui/internal/tui/state"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	viewsummary "crona/tui/internal/tui/views/summary"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -514,6 +515,12 @@ func (m Model) openDatePickerDialog(
 	return m.withDialogState(
 		m.dialogSnapshot().OpenDatePicker(parentDialog, issueID, inputIndex, initial),
 	)
+}
+
+// openDaySummaryDialog shows the Day summary as a dialog, for when Daily has no detail pane.
+func (m Model) openDaySummaryDialog() Model {
+	lines := viewsummary.DayLines(layoutpkg.ViewTheme(), m.layoutState().ContentState, viewEntityBodyWidth(m.width))
+	return m.openViewEntityDialog("Day", helperpkg.FormatDisplayDate(m.currentDate(), m.settings), "", strings.Join(lines, "\n"))
 }
 
 func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {

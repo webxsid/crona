@@ -62,6 +62,22 @@ func summaryRows(theme types.Theme, state types.ContentState) []string {
 	return splitRows(lines)
 }
 
+// DayLines is the Day summary at width: the day's focus stats, plan accountability,
+// check-in and streaks. It waits on the summary snapshot for the shown date.
+func DayLines(theme types.Theme, state types.ContentState, width int) []string {
+	snapshot := state.SummarySnapshot
+	if snapshot == nil || snapshot.Date != state.SummaryDate {
+		return []string{theme.StyleDim.Render("Loading summary…")}
+	}
+	lines := strings.Split(renderStats(theme, snapshot, width), "\n")
+	lines = append(lines, "")
+	lines = append(lines, renderPlan(theme, snapshot.Plan, width)...)
+	lines = append(lines, "")
+	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, width)...)
+	lines = append(lines, "")
+	return append(lines, renderStreaks(theme, snapshot.Streaks, width)...)
+}
+
 func PaneLineCount(state types.ContentState) int {
 	if state.SummarySnapshot == nil || state.SummarySnapshot.Date != state.SummaryDate {
 		return 1
