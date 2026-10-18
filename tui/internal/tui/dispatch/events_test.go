@@ -76,6 +76,7 @@ func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
 		t.Fatalf("marshal settings event: %v", err)
 	}
 	state := EventState{
+		View:               uistate.ViewReview,
 		CurrentDate:        "2026-08-09",
 		MomentumWindowDays: 30,
 	}
@@ -106,7 +107,7 @@ func TestDayStartReloadsAllDateScopedSurfaces(t *testing.T) {
 	deps.LoadMomentumRange = func(string, int) tea.Cmd { return trackedEventCommand(called, "momentum")() }
 	deps.LoadReviewWindow = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10"})
-	_, cmd := HandleEvent(EventState{MomentumWindowDays: 30}, deps, api.KernelEvent{
+	_, cmd := HandleEvent(EventState{View: uistate.ViewReview, MomentumWindowDays: 30}, deps, api.KernelEvent{
 		Type: sharedtypes.EventTypeDayStart, Payload: payload,
 	})
 	if cmd == nil {
@@ -255,7 +256,7 @@ func TestHistoryChangedRefreshesTotals(t *testing.T) {
 	deps.LoadSummarySnapshot = func(string) tea.Cmd { return trackedEventCommand(called, "summary")() }
 	deps.LoadReviewWindow = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	deps.LoadIssueSessions = func(int64) tea.Cmd { return trackedEventCommand(called, "issue sessions")() }
-	_, cmd := HandleEvent(EventState{Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDate: "2026-05-24"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
+	_, cmd := HandleEvent(EventState{View: uistate.ViewReview, Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDate: "2026-05-24"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
 	if cmd == nil {
 		t.Fatal("missing refresh")
 	}

@@ -36,7 +36,10 @@ type EventState struct {
 	ReviewWindowDays   int
 	ReviewWindowEnd    string
 	MomentumWindowDays int
-	CurrentOpsLim      int
+	// ReviewStale marks Review's window as changed while it was off screen; opening Review
+	// reloads it.
+	ReviewStale   bool
+	CurrentOpsLim int
 }
 
 type EventDeps struct {
@@ -70,7 +73,20 @@ type EventDeps struct {
 	TickAfter                func(seq int) tea.Cmd
 }
 
+// HandleEvent reloads what an event changed. Review's window is the costliest reload, so off
+// Review it is only marked stale, and loads when Review opens.
 func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (EventState, tea.Cmd) {
+	if state.View == uistate.ViewReview || deps.LoadReviewWindow == nil {
+		return handleEvent(state, deps, event)
+	}
+	stale := false
+	deps.LoadReviewWindow = func(string, string) tea.Cmd { stale = true; return nil }
+	state, cmd := handleEvent(state, deps, event)
+	state.ReviewStale = state.ReviewStale || stale
+	return state, cmd
+}
+
+func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (EventState, tea.Cmd) {
 	logger.Infof("kernel event: %s", event.Type)
 	switch event.Type {
 	case "repo.created", "repo.updated", "repo.deleted":

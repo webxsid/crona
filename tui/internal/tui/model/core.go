@@ -166,9 +166,11 @@ type Model struct {
 	timerTickSeq              int
 	pendingEvents             []api.KernelEvent
 	eventFlushScheduled       bool
-	lastTimerActivityTouch    time.Time
-	terminalTitleEnabled      bool
-	lastTerminalTitle         string
+	// reviewStale is set when data changed while Review was off screen.
+	reviewStale            bool
+	lastTimerActivityTouch time.Time
+	terminalTitleEnabled   bool
+	lastTerminalTitle      string
 
 	// terminal dimensions
 	width  int

@@ -174,7 +174,7 @@ type FlushEventsMsg struct{}
 
 // eventFlushDelay is how long data events gather before one reload handles them all, so a
 // burst (a seed, a sync) costs one reload per event type rather than one per event.
-const eventFlushDelay = 200 * time.Millisecond
+const eventFlushDelay = 500 * time.Millisecond
 
 // coalescesEvent is true for data events, whose handlers only reload. Timer, session and
 // context events carry state the UI applies at once.

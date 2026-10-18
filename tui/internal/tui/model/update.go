@@ -33,6 +33,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if tick := model.sessionPreviewTick(before, wasWide); tick != nil {
 			cmd = tea.Batch(cmd, tick)
 		}
+		if model.view == ViewReview && model.reviewStale {
+			model.reviewStale = false
+			cmd = tea.Batch(cmd, model.reloadReview())
+		}
 		return model.withTerminalTitle(cmd)
 	}
 	return next, cmd

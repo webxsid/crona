@@ -172,6 +172,7 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		ReviewWindowDays:       m.reviewWindowDays,
 		ReviewWindowEnd:        m.reviewWindowEnd,
 		MomentumWindowDays:     m.currentMomentumWindowDays(),
+		ReviewStale:            m.reviewStale,
 		CurrentOpsLim:          m.currentOpsLimit(),
 	}
 }
@@ -189,6 +190,7 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 	m.timer = state.Timer
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
+	m.reviewStale = state.ReviewStale
 	m.date = state.Date
 	if state.Today != "" && state.Today != m.currentLogicalDate() {
 		health := api.Health{}
