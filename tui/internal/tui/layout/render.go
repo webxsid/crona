@@ -1,6 +1,7 @@
 package layout
 
 import (
+	versionpkg "crona/shared/version"
 	"fmt"
 	"slices"
 	"strings"
@@ -192,15 +193,24 @@ func renderTabLine(state State) string {
 			parts = append(parts, chrome.StyleDim.Render(label))
 		}
 	}
-	left := " " + strings.Join(parts, "  ")
+	tabs := strings.Join(parts, "  ")
 	right := contextLabel(state.RepoName, state.StreamName)
 	if state.IsDevMode {
 		right += " · dev"
 	}
-	// The tabs are the only navigation indicator, so the context gives way first.
+	version := "v" + versionpkg.Current()
+	// The tabs are the only navigation indicator, so everything else gives way first: the
+	// mark, then the context (truncated), then the version.
+	left := " " + tabs
+	if mark := chrome.StyleHeader.Render(viewchrome.LogoTiny()) + "  "; ansi.StringWidth(left+mark)+2 <= state.Width {
+		left = " " + mark + tabs
+	}
 	room := state.Width - ansi.StringWidth(left) - 2
 	if room < 4 {
 		return joinEnds(left, "", state.Width)
+	}
+	if ansi.StringWidth(right)+3+len(version) <= room {
+		return joinEnds(left, chrome.StyleHeader.Render(right)+chrome.StyleDim.Render(" · "+version), state.Width)
 	}
 	right = ansi.Truncate(right, room, "…")
 	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)

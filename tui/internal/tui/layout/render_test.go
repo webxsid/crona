@@ -1,6 +1,7 @@
 package layout
 
 import (
+	versionpkg "crona/shared/version"
 	"strings"
 	"testing"
 
@@ -358,8 +359,8 @@ func TestStatusLineShowsPaneActionsFirst(t *testing.T) {
 func TestTabLineContextAll(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.RepoName, state.StreamName = "", ""
-	line := plainLines(Render(state))[0]
-	if !strings.HasSuffix(strings.TrimSpace(line), "All") || strings.Contains(line, "-") {
+	line := strings.TrimSuffix(strings.TrimSpace(plainLines(Render(state))[0]), " · v"+versionpkg.Current())
+	if !strings.HasSuffix(line, "All") || strings.Contains(line, "-") {
 		t.Fatalf("expected All context, got %q", line)
 	}
 }
@@ -367,7 +368,7 @@ func TestTabLineContextAll(t *testing.T) {
 func TestTabLineContextRepoOnly(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.StreamName = ""
-	line := strings.TrimSpace(plainLines(Render(state))[0])
+	line := strings.TrimSuffix(strings.TrimSpace(plainLines(Render(state))[0]), " · v"+versionpkg.Current())
 	if !strings.HasSuffix(line, "crona") || strings.Contains(line, "›") {
 		t.Fatalf("expected repo-only context, got %q", line)
 	}
