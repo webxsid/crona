@@ -164,7 +164,7 @@ func issueDialogHint(state State, submitLabel string) string {
 	case "create_issue_default":
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
+			return "[type] filter   [←/→] choose   [tab] move   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"

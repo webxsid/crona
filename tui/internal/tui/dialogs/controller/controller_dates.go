@@ -192,7 +192,7 @@ func summaryCalendarSetValidDate(state State, candidate, month time.Time, curren
 }
 
 func ternaryDir(key string) int {
-	if key == "shift+tab" || key == "up" {
+	if key == "shift+tab" {
 		return -1
 	}
 	return 1

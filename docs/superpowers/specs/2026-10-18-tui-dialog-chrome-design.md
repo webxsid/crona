@@ -97,7 +97,9 @@ dialog stay as they are.
   - context: the active repo › stream
 - **Context switcher** (`checkout_context`):
   - Repo and Stream pickers
-  - footer: `enter set context`, `c clear`, `↑/↓/tab move`, `esc cancel`
+  - footer: `enter set context`, `c clear`, `tab move`, `esc cancel`
+- **Field focus (rule):** only `tab` / `shift+tab` move between fields in a form dialog; `↑/↓` are
+  reserved for moving inside a list
 
 ## Out of scope
 

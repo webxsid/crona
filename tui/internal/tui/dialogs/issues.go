@@ -144,7 +144,7 @@ func issueCreateHint(state controllerpkg.State) string {
 	if state.Kind == "create_issue_default" {
 		switch state.FocusIdx {
 		case 0, 1:
-			context = "[type] filter   [←/→] choose   [↑/↓/tab] move   " + context
+			context = "[type] filter   [←/→] choose   [tab] move   " + context
 		case 3:
 			context = "[enter] newline   " + context
 		case 5:

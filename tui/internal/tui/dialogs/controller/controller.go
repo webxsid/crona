@@ -609,12 +609,12 @@ func updateSessionMessage(
 		return Close(state), nil, ""
 	case "ctrl+e":
 		return ToggleEndSessionAdvanced(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
+	case "tab", "shift+tab":
 		if len(state.Inputs) == 1 {
 			return state, nil, ""
 		}
 		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
+		if msg.String() == "shift+tab" {
 			dir = -1
 		}
 		state.FocusIdx = (state.FocusIdx + dir + len(state.Inputs)) % len(state.Inputs)
@@ -1141,10 +1141,10 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 				state.IssueWorkedSeconds,
 			), nil, ""
 		}
-	case "tab", "down":
+	case "tab":
 		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, 1)
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
-	case "shift+tab", "up":
+	case "shift+tab":
 		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, -1)
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
 	case "left":
@@ -1406,10 +1406,10 @@ func updateHardLimitExtend(state State, msg tea.KeyMsg) (State, *Action, string)
 		default:
 			return OpenHardLimitExpired(state, state.ViewName), nil, ""
 		}
-	case "tab", "down":
+	case "tab":
 		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, 1)
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
-	case "shift+tab", "up":
+	case "shift+tab":
 		state.FocusIdx = pomodoroNextFocusIdx(state, state.FocusIdx, -1)
 		return SyncDialogFocus(clearDialogError(state)), nil, ""
 	case "left":
@@ -1703,7 +1703,7 @@ func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
+	case "tab", "shift+tab":
 		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 4) % 4
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
@@ -1754,21 +1754,7 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
-		if (msg.String() == "down" || msg.String() == "up") &&
-			(state.FocusIdx == 0 || state.FocusIdx == 1) {
-			if state.FocusIdx == 0 {
-				state.RepoIndex = ShiftSelection(
-					state.RepoIndex,
-					len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
-					ternaryDir(msg.String()),
-				)
-				state.StreamIndex = 0
-			} else {
-				state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), ternaryDir(msg.String()))
-			}
-			return clearDialogError(state), nil, ""
-		}
+	case "tab", "shift+tab":
 		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 6) % 6
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""

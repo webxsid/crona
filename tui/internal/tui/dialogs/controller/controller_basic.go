@@ -42,9 +42,9 @@ func updateNameDescription(
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
+	case "tab", "shift+tab":
 		dir := 1
-		if msg.String() == "shift+tab" || msg.String() == "up" {
+		if msg.String() == "shift+tab" {
 			dir = -1
 		}
 		state.FocusIdx = (state.FocusIdx + dir + 2) % 2

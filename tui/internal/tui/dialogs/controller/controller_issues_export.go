@@ -117,21 +117,7 @@ func updateCreateIssueDefault(
 			state.Inputs[4].SetValue(currentDate)
 			return state, nil, ""
 		}
-	case "tab", "shift+tab", "down", "up":
-		if (msg.String() == "down" || msg.String() == "up") &&
-			(state.FocusIdx == 0 || state.FocusIdx == 1) {
-			if state.FocusIdx == 0 {
-				state.RepoIndex = ShiftSelection(
-					state.RepoIndex,
-					len(DefaultRepoOptions(state.Inputs, ctx.Repos)),
-					ternaryDir(msg.String()),
-				)
-				state.StreamIndex = 0
-			} else {
-				state.StreamIndex = ShiftSelection(state.StreamIndex, len(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)), ternaryDir(msg.String()))
-			}
-			return state, nil, ""
-		}
+	case "tab", "shift+tab":
 		state.FocusIdx = shiftDefaultIssueFocus(state.FocusIdx, ternaryDir(msg.String()), state.AdhocTimer)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
@@ -335,7 +321,7 @@ func updateCheckoutContext(
 		return Close(state), nil, ""
 	case "c":
 		return Close(state), &Action{Kind: "checkout_context"}, ""
-	case "tab", "shift+tab", "down", "up":
+	case "tab", "shift+tab":
 		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 2) % 2
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
@@ -522,7 +508,7 @@ func updateMultiInputIssue(
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
-	case "tab", "shift+tab", "down", "up":
+	case "tab", "shift+tab":
 		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + inputCount) % inputCount
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
@@ -772,7 +758,7 @@ func updateExportSummaryRange(state State, msg tea.KeyMsg) (State, *Action, stri
 	switch msg.String() {
 	case "esc":
 		return OpenExportReportChoices(state, "summary"), nil, ""
-	case "tab", "shift+tab", "up", "down":
+	case "tab", "shift+tab":
 		if len(state.Inputs) == 2 {
 			state.Inputs[state.FocusIdx].Blur()
 			state.FocusIdx = 1 - state.FocusIdx

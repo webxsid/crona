@@ -120,7 +120,7 @@ func habitDialogHint(state controllerpkg.State, submitLabel string) string {
 	if state.Kind == "create_habit" {
 		switch state.FocusIdx {
 		case 0, 1:
-			return "[type] filter   [←/→] choose   [↑/↓/tab] move   " + dialogSubmitHint(
+			return "[type] filter   [←/→] choose   [tab] move   " + dialogSubmitHint(
 				state,
 				submitLabel,
 			) + "   [esc] cancel"

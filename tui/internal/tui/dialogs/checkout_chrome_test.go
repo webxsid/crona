@@ -23,7 +23,10 @@ func TestCheckoutChrome(t *testing.T) {
 	}
 	state.Width = 60
 	narrow := ansi.Strip(renderRepoStreamDialog(testTheme(), state))
-	for _, hint := range []string{"enter set context", "c clear", "↑/↓/tab move", "esc cancel"} {
+	for _, hint := range []string{"enter set context", "c clear", "tab move", "esc cancel"} {
+		if strings.Contains(narrow, "↑/↓") {
+			t.Fatalf("footer still advertises ↑/↓:\n%s", narrow)
+		}
 		if !strings.Contains(narrow, hint) {
 			t.Fatalf("expected %q whole at width 60, got\n%s", hint, narrow)
 		}

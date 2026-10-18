@@ -172,7 +172,7 @@ func renderCheckoutContext(theme Theme, state controllerpkg.State) string {
 		Current: state.StreamSelectorLabel, Options: state.StreamOptionLabels, Selected: state.StreamIndex,
 		Placeholder: state.StreamSelectorLabel,
 	})...)
-	footer := Footer(theme, "enter set context", []string{"c clear", "↑/↓/tab move", "type filter", "←/→ choose"}, inner)
+	footer := Footer(theme, "enter set context", []string{"c clear", "tab move", "type filter", "←/→ choose"}, inner)
 	return Frame(theme, FrameSpec{
 		Title: "Checkout Context", Body: body, Footer: withError(theme, state, footer),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focus, Inner: inner,
