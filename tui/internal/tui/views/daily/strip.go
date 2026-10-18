@@ -162,7 +162,8 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 }
 
 // dayGridColumns pairs each check-in signal (top row) with a streak (bottom row) in one
-// aligned column; a column with neither is left out.
+// aligned column, then the day's focus score over its plan accountability; a column with
+// neither value is left out.
 func dayGridColumns(theme types.Theme, state types.ContentState) [][]string {
 	type cell struct{ label, value string }
 	top := []cell{
@@ -170,11 +171,19 @@ func dayGridColumns(theme types.Theme, state types.ContentState) [][]string {
 		{"Energy", signalEnergyValue(state)},
 		{"Sleep", signalSleepValue(state)},
 	}
-	bottom := []cell{}
+	bottom := []cell{{"Focus", ""}, {"Check-ins", ""}, {"", ""}, {"Plan", ""}}
 	if streaks := state.DailyStreaks; streaks != nil {
-		bottom = []cell{
-			{"Focus", fmt.Sprintf("%dd  ", streaks.CurrentFocusDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestFocusDays))},
-			{"Check-ins", fmt.Sprintf("%dd  ", streaks.CurrentCheckInDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestCheckInDays))},
+		bottom[0].value = fmt.Sprintf("%dd  ", streaks.CurrentFocusDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestFocusDays))
+		bottom[1].value = fmt.Sprintf("%dd  ", streaks.CurrentCheckInDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestCheckInDays))
+	}
+	// The day's headline scores come from the summary snapshot, once it is the shown date's.
+	top = append(top, cell{"Score", ""})
+	if snapshot := state.SummarySnapshot; snapshot != nil && snapshot.Date == state.SummaryDate {
+		if snapshot.Focus != nil {
+			top[3].value = fmt.Sprintf("%d/100", snapshot.Focus.Score)
+		}
+		if snapshot.Plan != nil && strings.TrimSpace(snapshot.Plan.Date) != "" {
+			bottom[3].value = fmt.Sprintf("%.0f%%", snapshot.Plan.Summary.AccountabilityScore)
 		}
 	}
 	columns := [][]string{}

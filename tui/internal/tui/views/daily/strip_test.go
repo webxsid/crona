@@ -1,6 +1,7 @@
 package daily
 
 import (
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	"fmt"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
+	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )
@@ -183,5 +185,31 @@ func TestDayStripTasksFollowPlannedWhateverTheTab(t *testing.T) {
 	rows := dayStripRows(testTheme(), state, 160, dayStripMaxRows)
 	if got := fieldsOf(rows[0]); !strings.HasPrefix(got, "Tasks 1/1") {
 		t.Fatalf("expected the Tasks meter to count Planned, not the Overdue tab, got %q", rows[0])
+	}
+}
+
+func scoredState(snapshotDate string) types.ContentState {
+	state := dailySummaryTestState()
+	state.SummaryDate = "2026-05-27"
+	state.SummarySnapshot = &api.SummarySnapshot{
+		Date:  snapshotDate,
+		Focus: &api.FocusScoreSummary{Score: 72},
+		Plan:  &api.DailyPlan{Date: snapshotDate, Summary: sharedtypes.DailyPlanAccountabilitySummary{AccountabilityScore: 80}},
+	}
+	return state
+}
+
+func TestDayStripShowsScoreOverPlan(t *testing.T) {
+	rows := dayStripRows(testTheme(), scoredState("2026-05-27"), 200, dayStripMaxRows)
+	top, bottom := ansi.Strip(rows[0]), ansi.Strip(rows[1])
+	if !strings.Contains(fieldsOf(top), "Score 72/100") || !strings.Contains(fieldsOf(bottom), "Plan 80%") {
+		t.Fatalf("expected Score over Plan, got %q / %q", top, bottom)
+	}
+	if cellIndex(top, "Score") != cellIndex(bottom, "Plan") {
+		t.Fatalf("expected Score and Plan in one column, got %q / %q", top, bottom)
+	}
+	stale := strings.Join(dayStripRows(testTheme(), scoredState("2026-05-26"), 200, dayStripMaxRows), "\n")
+	if strings.Contains(stale, "Score") || strings.Contains(stale, "Plan") {
+		t.Fatalf("expected no score for another day's snapshot, got %q", ansi.Strip(stale))
 	}
 }
