@@ -426,7 +426,24 @@ func (m Model) enterHabitHistoryViewFromSelection() (Model, tea.Cmd) {
 }
 
 func (m Model) openCreateIssueDefaultDialog() Model {
-	return m.withDialogState(m.dialogSnapshot().OpenCreateIssueDefault())
+	snapshot := m.dialogSnapshot()
+	context := &api.ActiveContext{}
+	for _, repo := range m.repos {
+		if repo.ID == m.browseScope.RepoID {
+			context.RepoID = &repo.ID
+			context.RepoName = &repo.Name
+			break
+		}
+	}
+	for _, stream := range m.allStreams {
+		if stream.ID == m.browseScope.StreamID && stream.RepoID == m.browseScope.RepoID {
+			context.StreamID = &stream.ID
+			context.StreamName = &stream.Name
+			break
+		}
+	}
+	snapshot.Context = context
+	return m.withDialogState(snapshot.OpenCreateIssueDefault())
 }
 
 func (m Model) openCheckoutContextDialog() Model {

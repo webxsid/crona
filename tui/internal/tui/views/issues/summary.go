@@ -2,134 +2,61 @@ package issues
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	helperpkg "crona/tui/internal/tui/helpers"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	contextmeta "crona/tui/internal/tui/views/contextmeta"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
-	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
-func renderSummary(theme types.Theme, state types.ContentState, height int) string {
-	topH, bottomH := viewhelpers.SplitVertical(height, 3, 3, height/2)
-	row1Left, row1Right := viewhelpers.SplitHorizontal(state.Width, 28, 28, state.Width/2)
-	row2Left, row2Right := viewhelpers.SplitHorizontal(state.Width, 28, 28, state.Width/2)
-	row1 := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		renderStatCard(
-			theme,
-			"Open",
-			openSummary(state),
-			"active workload",
-			theme.ColorYellow,
-			row1Left,
-			topH,
-		),
-		renderStatCard(
-			theme,
-			"Closed",
-			closedSummary(state),
-			"done + abandoned",
-			theme.ColorCyan,
-			row1Right,
-			topH,
-		),
-	)
-	row2 := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		renderStatCard(
-			theme,
-			"Due",
-			dueSummary(state),
-			"today vs overdue",
-			theme.ColorGreen,
-			row2Left,
-			bottomH,
-		),
-		renderStatCard(
-			theme,
-			"Estimate",
-			estimateSummary(state),
-			"current issue load",
-			theme.ColorMagenta,
-			row2Right,
-			bottomH,
-		),
-	)
-	return lipgloss.JoinVertical(lipgloss.Left, row1, row2)
-}
-
-func renderCompactSummary(theme types.Theme, state types.ContentState, height int) string {
-	lines := []string{
-		fmt.Sprintf(
-			"%s  %s",
-			theme.StylePaneTitle.Render("Default Dashboard"),
-			theme.StyleHeader.Render(contextmeta.DefaultScopeLabel(state.Context)),
-		),
-		viewhelpers.Truncate(openSummary(state), state.Width-6),
-		viewhelpers.Truncate(closedSummary(state), state.Width-6),
-		viewhelpers.Truncate(dueSummary(state), state.Width-6),
-		viewhelpers.Truncate(estimateSummary(state), state.Width-6),
+// StripRows renders the scope summary in two width-exact rows, dropping rightmost groups first.
+func StripRows(theme types.Theme, state types.ContentState, width int) []string {
+	if width <= 0 {
+		return []string{"", ""}
 	}
-	return viewchrome.RenderPaneBox(
-		theme,
-		false,
-		state.Width,
-		height,
-		viewhelpers.StringsJoin(lines),
-	)
-}
-
-func renderStatCard(
-	theme types.Theme,
-	label, value, hint string,
-	border lipgloss.Color,
-	width, height int,
-) string {
-	body := []string{
-		theme.StyleDim.Render(label),
-		lipStyle(theme, border).Render(value),
-		theme.StyleDim.Render(hint),
-	}
-	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.RoundedBorder()).
-		BorderForeground(border).
-		Padding(0, 1).
-		Width(width - 2).
-		Height(height - 2).
-		Render(viewhelpers.StringsJoin(body))
-}
-
-func openSummary(state types.ContentState) string {
-	open, inProgress, blocked := 0, 0, 0
+	counts := map[string]int{}
+	open, closed := 0, 0
 	for _, issue := range state.DefaultIssues {
-		switch issue.Status {
-		case "done", "abandoned":
-			continue
-		case "in_progress":
-			inProgress++
-		case "blocked":
-			blocked++
-		}
-		open++
-	}
-	return fmt.Sprintf("open %d  in progress %d  blocked %d", open, inProgress, blocked)
-}
-
-func closedSummary(state types.ContentState) string {
-	done, abandoned := 0, 0
-	for _, issue := range state.DefaultIssues {
-		switch issue.Status {
-		case "done":
-			done++
-		case "abandoned":
-			abandoned++
+		counts[string(issue.Status)]++
+		if issue.Status == "done" || issue.Status == "abandoned" {
+			closed++
+		} else {
+			open++
 		}
 	}
-	return fmt.Sprintf("done %d  abandoned %d", done, abandoned)
+	bar := func(n int) string {
+		filled := 0
+		if open+closed > 0 {
+			filled = n * 10 / (open + closed)
+		}
+		return theme.StyleHeader.Render(strings.Repeat("█", filled)) + theme.StyleDim.Render(strings.Repeat("░", 10-filled))
+	}
+	groups := [][2]string{
+		{fmt.Sprintf("Open %d  %s", open, bar(open)), fmt.Sprintf("Closed %d  %s", closed, bar(closed))},
+		{fmt.Sprintf("in progress %d  blocked %d", counts["in_progress"], counts["blocked"]), fmt.Sprintf("done %d  abandoned %d", counts["done"], counts["abandoned"])},
+		{"Due  " + dueSummary(state), estimateSummary(state)},
+	}
+	rows := []string{"", ""}
+	for _, group := range groups {
+		columnWidth := max(ansi.StringWidth(group[0]), ansi.StringWidth(group[1]))
+		gap := ""
+		if rows[0] != "" {
+			gap = "   "
+		}
+		if ansi.StringWidth(rows[0])+len(gap)+columnWidth > width {
+			break
+		}
+		for i := range rows {
+			rows[i] += gap + group[i] + strings.Repeat(" ", columnWidth-ansi.StringWidth(group[i]))
+		}
+	}
+	for i := range rows {
+		rows[i] = ansi.Truncate(rows[i], width, "")
+		rows[i] += strings.Repeat(" ", width-ansi.StringWidth(rows[i]))
+	}
+	return rows
 }
 
 func dueSummary(state types.ContentState) string {
@@ -160,29 +87,8 @@ func estimateSummary(state types.ContentState) string {
 		scoped++
 	}
 	return fmt.Sprintf(
-		"estimated %s  scoped %d",
+		"Est. %s over %d issues",
 		helperpkg.FormatCompactDurationMinutes(estimated),
 		scoped,
 	)
-}
-
-func lipStyle(theme types.Theme, color any) styleLike {
-	return styleLike{theme: theme, color: color}
-}
-
-type styleLike struct {
-	theme types.Theme
-	color any
-}
-
-func (s styleLike) Render(text string) string {
-	return newStyle(s.color).Render(text)
-}
-
-func newStyle(color any) lipgloss.Style {
-	style := lipgloss.NewStyle().Bold(true)
-	if c, ok := color.(lipgloss.Color); ok {
-		style = style.Foreground(c)
-	}
-	return style
 }

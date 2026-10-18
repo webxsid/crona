@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/commands"
+	"crona/tui/internal/tui/scope"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 
@@ -15,11 +16,13 @@ import (
 )
 
 type MessageState struct {
-	Width            int
-	Height           int
-	View             uistate.View
-	Pane             uistate.Pane
-	DailyTaskSection uistate.DailyTaskSection
+	Width               int
+	Height              int
+	View                uistate.View
+	Pane                uistate.Pane
+	DailyTaskSection    uistate.DailyTaskSection
+	DefaultIssueSection uistate.DefaultIssueSection
+	BrowseScope         scope.Scope
 	// Date is the shared date every dated view shows; "" follows the logical today.
 	Date                    string
 	RollupWindowDays        int
@@ -751,18 +754,20 @@ func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot
 		dailySection = uistate.DailyTaskSectionPlanned
 	}
 	return selectionpkg.PrepareSnapshot(selectionpkg.Snapshot{
-		View:             state.View,
-		Pane:             state.Pane,
-		DailyTaskSection: dailySection,
-		DashboardDate:    messageStateDate(state),
-		Cursors:          state.Cursor,
-		Filters:          state.Filters,
-		Context:          state.Context,
-		Timer:            state.Timer,
-		Settings:         state.Settings,
-		AllIssues:        state.AllIssues,
-		Issues:           state.Issues,
-		HabitHistory:     state.HabitHistory,
+		View:                state.View,
+		Pane:                state.Pane,
+		DailyTaskSection:    dailySection,
+		DefaultIssueSection: state.DefaultIssueSection,
+		BrowseScope:         state.BrowseScope,
+		DashboardDate:       messageStateDate(state),
+		Cursors:             state.Cursor,
+		Filters:             state.Filters,
+		Context:             state.Context,
+		Timer:               state.Timer,
+		Settings:            state.Settings,
+		AllIssues:           state.AllIssues,
+		Issues:              state.Issues,
+		HabitHistory:        state.HabitHistory,
 	})
 }
 

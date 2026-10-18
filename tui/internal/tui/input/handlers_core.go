@@ -45,27 +45,16 @@ func enterView(s State, deps Deps, view uistate.View) (tea.Model, tea.Cmd, bool)
 }
 
 func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	if s.ActiveView == uistate.ViewDefault && s.ActivePane == uistate.PaneIssues {
-		if dir >= 0 {
-			if s.DefaultIssueSection == uistate.DefaultIssueSectionOpen {
-				deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionCompleted)
-			} else {
-				deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionOpen)
-			}
-		} else {
-			if s.DefaultIssueSection == uistate.DefaultIssueSectionCompleted {
-				deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionOpen)
-			} else {
-				deps.SetDefaultIssueSection(&s, uistate.DefaultIssueSectionCompleted)
-			}
-		}
-		return s, nil, true
-	}
 	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
 	return s, nil, true
 }
 
 func handleCycleIssueSection(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	if s.ActiveView == uistate.ViewDefault && s.ActivePane == uistate.PaneIssues {
+		sections := []uistate.DefaultIssueSection{uistate.DefaultIssueSectionOpen, uistate.DefaultIssueSectionCompleted}
+		deps.SetDefaultIssueSection(&s, sections[nextIndex(s.DefaultIssueSection, sections, dir)])
+		return s, nil, true
+	}
 	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 		sections := []uistate.DailyTaskSection{
 			uistate.DailyTaskSectionPlanned,

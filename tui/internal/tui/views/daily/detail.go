@@ -32,7 +32,7 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 			title, lines = habit.Name, habitDetailLines(theme, state, habit, bodyWidth)
 		}
 	} else if issue, ok := selectedDailyIssue(state); ok {
-		title, lines = issue.Title, issueDetailLines(theme, state, issue, bodyWidth)
+		title, lines = issue.Title, IssueDetailLines(theme, state, issue, bodyWidth)
 	}
 	if lines == nil {
 		lines = []string{theme.StyleDim.Render("Nothing selected")}
@@ -76,7 +76,8 @@ func selectedDailyHabit(state types.ContentState) (api.HabitDailyItem, bool) {
 // detailEntry is one labelled field in the detail grid.
 type detailEntry struct{ label, value string }
 
-func issueDetailLines(theme types.Theme, state types.ContentState, issue api.Issue, width int) []string {
+// IssueDetailLines renders the shared issue detail body.
+func IssueDetailLines(theme types.Theme, state types.ContentState, issue api.Issue, width int) []string {
 	repo, stream, worked := issue.RepoName, issue.StreamName, issue.WorkedSeconds
 	var repoID int64
 	if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil {

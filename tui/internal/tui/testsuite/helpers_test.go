@@ -146,14 +146,14 @@ func compactWellbeingState(height int) views.ContentState {
 func assertCompactDefault(t *testing.T, rendered string, height int) {
 	t.Helper()
 	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Default Dashboard") {
-		t.Fatalf("expected compact stats header in default view")
+	if !strings.Contains(plain, "Open ") {
+		t.Fatalf("expected two-row issue strip")
 	}
-	if !strings.Contains(plain, "Active Issues") {
-		t.Fatalf("expected primary issue list in compact default view")
+	if !strings.Contains(plain, "─ Issues") {
+		t.Fatalf("expected borderless issue list")
 	}
 	if !strings.Contains(plain, "Closed") {
-		t.Fatalf("expected compact completed footer in default view")
+		t.Fatalf("expected Closed count in issue strip")
 	}
 	if !strings.Contains(plain, "Add keyboard-first command palette") {
 		t.Fatalf("expected open issue rows in compact default view")

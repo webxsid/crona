@@ -67,3 +67,8 @@ func habitActionLine(theme types.Theme, state types.ContentState, width int) str
 	}
 	return "    " + viewchrome.FitHints(hints, width-4)
 }
+
+// TaskActionLine renders the selected issue card action hints.
+func TaskActionLine(theme types.Theme, state types.ContentState, width int) string {
+	return taskActionLine(theme, state, width)
+}

@@ -58,10 +58,11 @@ func TestTimerTickReloadsHardLimitAtZero(t *testing.T) {
 func TestAllIssuesLoadedRestoresCreatedIssueInDefaultView(t *testing.T) {
 	selectedID := int64(2)
 	state, _, handled := HandleMessage(MessageState{
-		View:    uistate.ViewDefault,
-		Pane:    uistate.PaneIssues,
-		Cursor:  map[uistate.Pane]int{uistate.PaneIssues: 0},
-		Filters: map[uistate.Pane]string{uistate.PaneIssues: ""},
+		View:                uistate.ViewDefault,
+		DefaultIssueSection: uistate.DefaultIssueSectionCompleted,
+		Pane:                uistate.PaneIssues,
+		Cursor:              map[uistate.Pane]int{uistate.PaneIssues: 0},
+		Filters:             map[uistate.Pane]string{uistate.PaneIssues: ""},
 		AllIssues: []api.IssueWithMeta{
 			{Issue: api.Issue{ID: 1, Title: "Alpha", Status: "planned"}},
 			{Issue: api.Issue{ID: 2, Title: "Bravo", Status: "done"}},
@@ -74,14 +75,14 @@ func TestAllIssuesLoadedRestoresCreatedIssueInDefaultView(t *testing.T) {
 		SelectedIssueID: &selectedID,
 	}, MessageDeps{
 		ClampFiltered: func(state *MessageState, pane uistate.Pane) {
-			state.Cursor[pane] = 0
+			state.Cursor[pane] = 99
 		},
 	})
 	if !handled {
 		t.Fatalf("expected all issues load to be handled")
 	}
-	if got := state.Cursor[uistate.PaneIssues]; got != 1 {
-		t.Fatalf("expected created issue to remain selected at cursor 1, got %d", got)
+	if got := state.Cursor[uistate.PaneIssues]; got != 0 {
+		t.Fatalf("expected created issue to remain selected at section cursor 0, got %d", got)
 	}
 }
 

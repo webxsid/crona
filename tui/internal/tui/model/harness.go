@@ -101,6 +101,12 @@ func NewDefaultScopeModel(allIssues []api.IssueWithMeta, context *api.ActiveCont
 		allIssues: allIssues,
 		context:   context,
 	}
+	if context != nil && context.RepoID != nil && context.RepoName != nil {
+		model.repos = []api.Repo{{ID: *context.RepoID, Name: *context.RepoName}}
+		if context.StreamID != nil && context.StreamName != nil {
+			model.allStreams = []api.Stream{{ID: *context.StreamID, RepoID: *context.RepoID, Name: *context.StreamName}}
+		}
+	}
 	// As if the Issues tab was just entered: the scope starts on the checked-out context.
 	model.enterIssuesTab()
 	return model

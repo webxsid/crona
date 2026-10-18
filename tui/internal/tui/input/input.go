@@ -224,7 +224,7 @@ func newRouter(deps Deps) *router {
 			if s.ActivePane == uistate.PaneScope {
 				return handleCursor(s, deps, -1)
 			}
-			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) && s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, -1)
 			}
 			return s, nil, false
@@ -233,7 +233,7 @@ func newRouter(deps Deps) *router {
 			if s.ActivePane == uistate.PaneScope {
 				return handleCursor(s, deps, 1)
 			}
-			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
+			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) && s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, 1)
 			}
 			return s, nil, false

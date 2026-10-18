@@ -6,6 +6,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/tui/commands"
 	"crona/tui/internal/tui/scope"
+	selectionpkg "crona/tui/internal/tui/selection"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -128,5 +129,44 @@ func TestScopeArrowsStepNodes(t *testing.T) {
 	next, _ = scopeModel(1).update(tea.KeyMsg{Type: tea.KeyLeft})
 	if got := next.(Model); got.cursor[PaneScope] != 0 || !got.browseScope.IsAll() {
 		t.Fatalf("expected ← to step to All, got %d", got.cursor[PaneScope])
+	}
+}
+
+func TestArrowsSwitchOpenDoneAndTabCyclesPanes(t *testing.T) {
+	m := scopeModel(1)
+	m.pane = PaneIssues
+	m.cursor[PaneIssues] = 2
+	next, _ := m.update(tea.KeyMsg{Type: tea.KeyRight})
+	got := next.(Model)
+	if got.defaultIssueSection != DefaultIssueSectionCompleted || got.cursor[PaneIssues] != 0 {
+		t.Fatalf("right: section %q cursor %d", got.defaultIssueSection, got.cursor[PaneIssues])
+	}
+	next, _ = got.update(tea.KeyMsg{Type: tea.KeyTab})
+	if got := next.(Model); got.pane != PaneScope {
+		t.Fatalf("tab: pane %q", got.pane)
+	}
+}
+
+func TestDoneSectionCursorInRange(t *testing.T) {
+	m := scopeModel(1)
+	m.pane = PaneIssues
+	m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 1, StreamID: 2, Status: "ready"}, RepoID: 1}}
+	m.cursor[PaneIssues] = 3
+	m.setDefaultIssueSection(DefaultIssueSectionCompleted)
+	if m.cursor[PaneIssues] != 0 || len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)) != 0 {
+		t.Fatalf("empty Done: cursor %d indices %v", m.cursor[PaneIssues], selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues))
+	}
+}
+
+func TestCreateIssueDefaultsToBrowseScope(t *testing.T) {
+	m := scopeModel(3)
+	m.pane = PaneIssues
+	m.browseScope = scope.Scope{RepoID: 1, StreamID: 4}
+	got, _ := press(m, "a")
+	if got.dialog != "create_issue_default" {
+		t.Fatalf("dialog %q", got.dialog)
+	}
+	if got.dialogInputs[0].Value() != "crona" || got.dialogInputs[1].Value() != "daemon" {
+		t.Fatalf("defaults %q / %q", got.dialogInputs[0].Value(), got.dialogInputs[1].Value())
 	}
 }

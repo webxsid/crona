@@ -1,147 +1,52 @@
 package issues
 
 import (
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	types "crona/tui/internal/tui/views/types"
+	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	viewchrome "crona/tui/internal/tui/views/chrome"
+	"crona/tui/internal/tui/views/daily"
+	"crona/tui/internal/tui/views/scopepane"
+	types "crona/tui/internal/tui/views/types"
 )
 
 func renderView(theme types.Theme, state types.ContentState) string {
-	openIndices, completedIndices := issuecore.SplitDefaultIssueIndices(
-		state.DefaultIssues,
-		state.Filters["issues"],
-		state.Settings,
-	)
-	if state.Height < 37 {
-		return renderCompactView(theme, state, openIndices, completedIndices)
+	if state.Width < 1 || state.Height < 1 {
+		return ""
 	}
-	summaryH := 9
-	if state.Height < 44 {
-		summaryH = 7
+	rows := StripRows(theme, state, state.Width)
+	rows = rows[:min(len(rows), state.Height)]
+	height := state.Height - len(rows)
+	if height == 0 {
+		return strings.Join(rows, "\n")
 	}
-	remainingHeight := max(8, state.Height-summaryH-1)
-	primaryPreferred := remainingHeight / 2
-	if state.DefaultIssueSection == "completed" {
-		completedH, priorityH := viewhelpers.SplitVertical(
-			remainingHeight,
-			6,
-			8,
-			remainingHeight*2/3,
-		)
-		if completedH > 6 {
-			completedH--
-			priorityH++
+	if state.Width < 100 {
+		rows = append(rows, scopepane.RenderRow(theme, state, state.Width))
+		if height > 1 {
+			rows = append(rows, renderIssues(theme, state, state.Width, height-1))
 		}
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			renderSummary(theme, state, summaryH),
-			renderIssuePane(
-				theme,
-				state,
-				"Active Issues",
-				"Due work and open issues",
-				openIndices,
-				0,
-				true,
-				priorityH,
-				"No open issues match the current filter",
-				false,
-			),
-			renderIssuePane(
-				theme,
-				state,
-				"Completed Issues",
-				"Done and abandoned, ready to revisit",
-				completedIndices,
-				len(openIndices),
-				false,
-				completedH,
-				"No done or abandoned issues",
-				true,
-			),
-		)
+		return strings.Join(rows, "\n")
 	}
-	priorityPreferred := remainingHeight * 2 / 3
-	priorityPreferred = max(priorityPreferred, primaryPreferred)
-	priorityH, completedH := viewhelpers.SplitVertical(remainingHeight, 8, 6, priorityPreferred)
-	if completedH > 6 {
-		completedH--
-		priorityH++
+	scopeWidth := 24
+	listWidth := state.Width - scopeWidth - 3
+	columns := []string{scopepane.Render(theme, state, scopepane.IssueCounts(state.AllIssues), scopeWidth, height)}
+	detailWidth := 0
+	if state.Width >= 160 {
+		detailWidth = (listWidth - 3) / 2
+		listWidth -= detailWidth + 3
 	}
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		renderSummary(theme, state, summaryH),
-		renderIssuePane(
-			theme,
-			state,
-			"Active Issues",
-			"Due work and open issues",
-			openIndices,
-			0,
-			true,
-			priorityH,
-			"No open issues match the current filter",
-			state.DefaultIssueSection != "completed",
-		),
-		renderIssuePane(
-			theme,
-			state,
-			"Completed Issues",
-			"Done and abandoned, ready to revisit",
-			completedIndices,
-			len(openIndices),
-			false,
-			completedH,
-			"No done or abandoned issues",
-			state.DefaultIssueSection == "completed",
-		),
-	)
-}
-
-func renderCompactView(
-	theme types.Theme,
-	state types.ContentState,
-	openIndices, completedIndices []int,
-) string {
-	summaryH := 6
-	footerH := 4
-	mainH := max(8, state.Height-summaryH-footerH-1)
-	mainTitle := "Active Issues"
-	mainSubtitle := "Due work and open issues"
-	mainIndices := openIndices
-	mainOffset := 0
-	mainEmpty := "No open issues match the current filter"
-	mainActive := state.DefaultIssueSection != "completed"
-	footerTitle := "Closed"
-	footerIndices := completedIndices
-
-	if state.DefaultIssueSection == "completed" {
-		mainTitle = "Completed Issues"
-		mainSubtitle = "Done and abandoned, ready to revisit"
-		mainIndices = completedIndices
-		mainOffset = len(openIndices)
-		mainEmpty = "No done or abandoned issues"
-		mainActive = true
-		footerTitle = "Open"
-		footerIndices = openIndices
+	columns = append(columns, renderIssues(theme, state, listWidth, height))
+	if detailWidth > 0 {
+		title := "Selected"
+		lines := []string{theme.StyleDim.Render("Nothing selected")}
+		indices := issueIndices(state)
+		cur := state.Cursors["issues"]
+		if cur >= 0 && cur < len(indices) {
+			issue := state.DefaultIssues[indices[cur]].Issue
+			title = issue.Title
+			lines = daily.IssueDetailLines(theme, state, issue, detailWidth-2)
+		}
+		columns = append(columns, viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Width: detailWidth, Height: height, Lines: lines}))
 	}
-
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		renderCompactSummary(theme, state, summaryH),
-		renderCompactIssuePane(
-			theme,
-			state,
-			mainTitle,
-			mainSubtitle,
-			mainIndices,
-			mainOffset,
-			mainEmpty,
-			mainActive,
-			mainH,
-		),
-		renderCompactFooter(theme, footerTitle, footerIndices, state, footerH),
-	)
+	rows = append(rows, viewchrome.JoinColumns(theme, height, columns...))
+	return strings.Join(rows, "\n")
 }

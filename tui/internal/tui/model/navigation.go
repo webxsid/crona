@@ -158,21 +158,7 @@ func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
 	if m.view != ViewDefault || m.pane != PaneIssues {
 		return
 	}
-	openIndices, completedIndices := issuecore.SplitDefaultIssueIndices(
-		m.allIssues,
-		m.filters[PaneIssues],
-		m.settings,
-	)
-	switch section {
-	case DefaultIssueSectionOpen:
-		if len(openIndices) > 0 {
-			m.cursor[PaneIssues] = 0
-		}
-	case DefaultIssueSectionCompleted:
-		if len(completedIndices) > 0 {
-			m.cursor[PaneIssues] = len(openIndices)
-		}
-	}
+	m.cursor[PaneIssues] = 0
 	snapshot := m.selectionSnapshot()
 	indices := selectionpkg.FilteredIndices(snapshot, PaneIssues)
 	m.clamp(PaneIssues, len(indices))

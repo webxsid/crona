@@ -243,6 +243,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		View:                    m.view,
 		Pane:                    m.pane,
 		DailyTaskSection:        m.dailyTaskSection,
+		DefaultIssueSection:     m.defaultIssueSection,
+		BrowseScope:             m.browseScope,
 		Date:                    m.date,
 		RollupWindowDays:        m.rollupWindowDays,
 		Cursor:                  m.cursor,
