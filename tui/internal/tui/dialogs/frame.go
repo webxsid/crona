@@ -20,8 +20,10 @@ const (
 // FrameSpec is one dialog: its border title and context, body lines and key footer.
 // Focus is the body line kept visible when the body is cut to fit; -1 means none.
 type FrameSpec struct {
-	Title, Context            string
-	Danger                    bool
+	Title, Context string
+	Danger         bool
+	// Border, when set, colours the border (cyan otherwise); Danger still wins.
+	Border                    lipgloss.Color
 	Body, Footer              []string
 	ScreenWidth, ScreenHeight int
 	Focus                     int
@@ -63,6 +65,9 @@ func Frame(theme Theme, spec FrameSpec) string {
 		}
 	}
 	border := lipgloss.NewStyle().Foreground(theme.ColorCyan)
+	if spec.Border != "" {
+		border = lipgloss.NewStyle().Foreground(spec.Border)
+	}
 	if spec.Danger {
 		border = lipgloss.NewStyle().Foreground(theme.ColorRed)
 	}

@@ -15,13 +15,12 @@ const issueFormInner = 72
 // create_issue_default focuses Repo, Stream, Title, Description, Estimate, Due, Summary;
 // create_issue_meta focuses Title, Description, Estimate, Due.
 func renderIssueCreate(theme Theme, state controllerpkg.State) string {
-	inner := FrameInner(state.Width, []string{strings.Repeat(" ", issueFormInner)})
+	inner := formInner(state.Width)
 	column := len("Description")
-	full := inner - column - 3
-	half := inner/2 - column - 6
+	full, half := formColumns(inner, column)
 	dueColumn := len("Due")
 	if inner < 56 {
-		half, dueColumn = full, column
+		dueColumn = column
 	}
 	title, estimate, due := 0, 1, 2
 	focusOf := map[string]int{"title": 0, "description": 1, "estimate": 2, "due": 3}
@@ -30,14 +29,13 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		focusOf = map[string]int{"repo": 0, "stream": 1, "title": 2, "description": 3, "estimate": 4, "due": 5, "summary": 6}
 	}
 	focused := func(name string) bool { idx, ok := focusOf[name]; return ok && state.FocusIdx == idx }
-
-	body, focusLine := []string{}, -1
-	add := func(name string, lines ...string) {
-		if focused(name) {
-			focusLine = len(body)
+	at := func(name string) int {
+		if idx, ok := focusOf[name]; ok {
+			return idx
 		}
-		body = append(body, lines...)
+		return -1
 	}
+
 	frameTitle := "New Issue"
 	if state.PromotingAdhoc {
 		frameTitle = "Convert Ad hoc Issue"
@@ -45,64 +43,63 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	if state.AdhocTimer {
 		frameTitle = "Create Issue & Finish Session"
 	}
+	rows := []FormRow{}
 	if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
-		body = append(body, theme.StyleDim.Render(state.ViewName), "")
+		rows = append(rows, staticRow(theme.StyleDim.Render(state.ViewName), ""))
 	}
-	add("title", Field(theme, "Title", column, bareInput(state.Inputs[title], full, "required"), focused("title")))
-	add("description", Textarea(theme, "Description", column, bareTextarea(state), focused("description"), inner)...)
-	pair := FieldPair(
-		Field(theme, "Estimate", column, bareInput(state.Inputs[estimate], half, "45m, 1h30m"), focused("estimate")),
-		Field(theme, "Due", dueColumn, bareInput(state.Inputs[due], half, "YYYY-MM-DD"), focused("due")),
-		inner,
+	rows = append(rows,
+		fieldRow(at("title"), Field(theme, "Title", column, bareInput(state.Inputs[title], full, "required"), focused("title"))),
+		textareaRow(at("description"), Textarea(theme, "Description", column, bareTextarea(state), focused("description"), inner)),
+		pairRow(
+			Field(theme, "Estimate", column, bareInput(state.Inputs[estimate], half, "45m, 1h30m"), focused("estimate")),
+			Field(theme, "Due", dueColumn, bareInput(state.Inputs[due], half, "YYYY-MM-DD"), focused("due")),
+			at("estimate"), at("due"), inner,
+		),
 	)
-	if focused("due") && len(pair) > 1 {
-		body = append(body, pair[0])
-		add("due", pair[1])
-	} else {
-		add("estimate", pair...)
-		if focused("due") {
-			focusLine = len(body) - 1
-		}
-	}
 	if state.Kind == "create_issue_default" {
-		body = append(body, "")
-		add("repo", Picker(theme, PickerSpec{
-			Label: "Repo", Column: column, Focused: focused("repo"), Input: bareInput(state.Inputs[0], full, "type to filter"),
-			Current: state.RepoSelectorLabel, Options: state.RepoOptionLabels, Selected: state.RepoIndex,
-			Placeholder: state.RepoSelectorLabel,
-		})...)
-		add("stream", Picker(theme, PickerSpec{
-			Label: "Stream", Column: column, Focused: focused("stream"), Input: bareInput(state.Inputs[1], full, "type to filter"),
-			Current: state.StreamSelectorLabel, Options: state.StreamOptionLabels, Selected: state.StreamIndex,
-			Placeholder: state.StreamSelectorLabel,
-		})...)
+		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
 	}
 	if state.Kind == "create_issue_meta" {
-		body = append(body, Field(theme, "Repo", column, fallback(state.RepoName, "-"), false), Field(theme, "Stream", column, fallback(state.StreamName, "-"), false))
+		rows = append(rows, staticRow(Field(theme, "Repo", column, fallback(state.RepoName, "-"), false), Field(theme, "Stream", column, fallback(state.StreamName, "-"), false)))
 	}
 	if state.AdhocTimer {
-		add("summary", Field(theme, "Summary", column, bareInput(state.Inputs[5], full, "required"), focused("summary")))
+		rows = append(rows, fieldRow(at("summary"), Field(theme, "Summary", column, bareInput(state.Inputs[5], full, "required"), focused("summary"))))
 	}
-	primary, hints := splitHints(issueCreateHint(state))
-	footer := Footer(theme, primary, hints, inner)
-	tallest := 0
-	for focus := 0; focus < len(focusOf); focus++ {
-		probe := state
-		probe.FocusIdx = focus
-		p, h := splitHints(issueCreateHint(probe))
-		tallest = max(tallest, len(Footer(theme, p, h, inner)))
-	}
-	for len(footer) < tallest {
-		footer = append(footer, "")
-	}
-	context := ""
-	if state.RepoName != "" && state.StreamName != "" {
-		context = state.RepoName + " › " + state.StreamName
-	}
-	return Frame(theme, FrameSpec{
-		Title: frameTitle, Context: context, Body: body, Footer: withError(theme, state, footer),
-		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focusLine, Inner: inner,
+	primary, _ := splitHints(issueCreateHint(state))
+	return renderForm(theme, state, FormSpec{
+		Title: frameTitle, Context: repoStreamContext(state), Rows: rows, Primary: primary, FocusCount: len(focusOf),
+		Hints: func(focus int) []string {
+			probe := state
+			probe.FocusIdx = focus
+			_, hints := splitHints(issueCreateHint(probe))
+			return hints
+		},
 	})
+}
+
+// repoPickerRow and streamPickerRow are the one-row Repo/Stream pickers on Inputs[0]/[1].
+func repoPickerRow(theme Theme, state controllerpkg.State, column, full, focus int) FormRow {
+	return FormRow{Lines: Picker(theme, PickerSpec{
+		Label: "Repo", Column: column, Focused: state.FocusIdx == focus, Input: bareInput(state.Inputs[0], full, "type to filter"),
+		Current: state.RepoSelectorLabel, Options: state.RepoOptionLabels, Selected: state.RepoIndex,
+		Placeholder: state.RepoSelectorLabel,
+	}), Focus: map[int]int{focus: 0}}
+}
+
+func streamPickerRow(theme Theme, state controllerpkg.State, column, full, focus int) FormRow {
+	return FormRow{Lines: Picker(theme, PickerSpec{
+		Label: "Stream", Column: column, Focused: state.FocusIdx == focus, Input: bareInput(state.Inputs[1], full, "type to filter"),
+		Current: state.StreamSelectorLabel, Options: state.StreamOptionLabels, Selected: state.StreamIndex,
+		Placeholder: state.StreamSelectorLabel,
+	}), Focus: map[int]int{focus: 0}}
+}
+
+// repoStreamContext is `repo › stream` when both are known.
+func repoStreamContext(state controllerpkg.State) string {
+	if state.RepoName != "" && state.StreamName != "" {
+		return state.RepoName + " › " + state.StreamName
+	}
+	return ""
 }
 
 // bareInput renders a text input without its prompt glyph at width cells, keeping its
