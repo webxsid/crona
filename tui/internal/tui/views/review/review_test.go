@@ -8,7 +8,6 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
-	viewaway "crona/tui/internal/tui/views/away"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -179,11 +178,33 @@ func TestChartsSqueezeManyPoints(t *testing.T) {
 	_ = Render(types.Theme{}, state)
 }
 
-func TestHistoricalAwayDate(t *testing.T) {
-	state := reviewState(120, 36)
+func TestHistoricalAwayDateKeepsStripAndDays(t *testing.T) {
+	for _, size := range [][2]int{{200, 50}, {120, 36}} {
+		state := reviewState(size[0], size[1])
+		state.HistoricalAwayDate = "2026-10-14"
+		out := plain(Render(types.Theme{}, state))
+		for _, want := range []string{"Worked", "─ Days ", "▶ Wed 14", "─ Away ", "rest and recover"} {
+			if !strings.Contains(out, want) {
+				t.Fatalf("%v: expected %q:\n%s", size, want, out)
+			}
+		}
+		for _, gone := range []string{"Trends", "─ Time ", "Wed 14 Oct", "[S]"} {
+			if strings.Contains(out, gone) {
+				t.Fatalf("%v: expected %q wiped on an away date", size, gone)
+			}
+		}
+		lines := strings.Split(Render(types.Theme{}, state), "\n")
+		if len(lines) != size[1] || ansi.StringWidth(lines[len(lines)-1]) != size[0] {
+			t.Fatalf("%v: expected an exact-size render", size)
+		}
+	}
+}
+
+func TestHistoricalAwayDayDialogLines(t *testing.T) {
+	state := reviewState(80, 30)
 	state.HistoricalAwayDate = "2026-10-14"
-	if Render(types.Theme{}, state) != viewaway.RenderHistorical(types.Theme{}, state) {
-		t.Fatalf("expected the away screen")
+	if joined := plain(strings.Join(DetailLines(types.Theme{}, state, 60), "\n")); !strings.Contains(joined, "rest and recover") || strings.Contains(joined, "Risk") {
+		t.Fatalf("expected only the away message for the day, got %q", joined)
 	}
 }
 

@@ -3,14 +3,17 @@
 package review
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
-	viewaway "crona/tui/internal/tui/views/away"
+	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewsummary "crona/tui/internal/tui/views/summary"
 	types "crona/tui/internal/tui/views/types"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -22,9 +25,6 @@ const (
 
 // Render shows the strip, the Days list, and the slots its width and height allow.
 func Render(theme types.Theme, state types.ContentState) string {
-	if state.HistoricalAwayDate != "" {
-		return viewaway.RenderHistorical(theme, state)
-	}
 	if state.Width < 1 || state.Height < 1 {
 		return ""
 	}
@@ -47,6 +47,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 		rows = append(rows, renderDays(theme, state, state.Width, height, meta))
 	case viewhelpers.WidthMedium:
 		secondWidth := state.Width - daysWidth - 3
+		if state.HistoricalAwayDate != "" {
+			rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), renderAway(theme, state, secondWidth, height)))
+			break
+		}
 		second := renderDetail(theme, state, secondWidth, height, viewchrome.KeyHint(theme, "S", "time"))
 		if state.ReviewShowTime {
 			second = renderTime(theme, state, secondWidth, height, viewchrome.KeyHint(theme, "S", "day"))
@@ -54,6 +58,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 		rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), second))
 	default:
 		middleWidth := state.Width - daysWidth - detailWidth - 6
+		if state.HistoricalAwayDate != "" {
+			rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), renderAway(theme, state, middleWidth+detailWidth+3, height)))
+			break
+		}
 		middle := renderTrends(theme, state, middleWidth, height)
 		if state.ReviewShowTime {
 			middle = renderTime(theme, state, middleWidth, height, viewchrome.KeyHint(theme, "S", "trends"))
@@ -96,8 +104,24 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	})
 }
 
-// DetailLines is the selected day's summary, then the window's risk and its drivers.
+// renderAway takes the place of the slots beside Days on a past away date, so the strip
+// and the day list stay put.
+func renderAway(theme types.Theme, state types.ContentState, width, height int) string {
+	lines := make([]string, max(0, (height-2)/2))
+	lines = append(lines, lipgloss.PlaceHorizontal(max(1, width-2), lipgloss.Center, theme.StyleHeader.Render(awayMessage(state))))
+	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Away", Width: width, Height: height, Lines: lines})
+}
+
+func awayMessage(state types.ContentState) string {
+	return fmt.Sprintf("You chose to rest and recover on %s.", helperpkg.FormatDisplayDate(state.HistoricalAwayDate, state.Settings))
+}
+
+// DetailLines is the selected day's summary, then the window's risk and its drivers; a past
+// away date shows only the away message.
 func DetailLines(theme types.Theme, state types.ContentState, width int) []string {
+	if state.HistoricalAwayDate != "" {
+		return []string{theme.StyleHeader.Render(awayMessage(state))}
+	}
 	lines := viewsummary.DayLines(theme, state, width)
 	burnout := latestBurnout(state)
 	if burnout == nil {
