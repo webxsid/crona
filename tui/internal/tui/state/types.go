@@ -29,6 +29,7 @@ type Pane string
 const (
 	PaneRepos            Pane = "repos"
 	PaneStreams          Pane = "streams"
+	PaneScope            Pane = "scope"
 	PaneIssues           Pane = "issues"
 	PaneHabits           Pane = "habits"
 	PaneRollupDays       Pane = "rollup_days"
@@ -81,7 +82,7 @@ var viewOrder = []View{
 
 var viewPanes = map[View][]Pane{
 	ViewAway:           {},
-	ViewDefault:        {PaneIssues},
+	ViewDefault:        {PaneScope, PaneIssues},
 	ViewDaily:          {PaneIssues, PaneHabits},
 	ViewRollup:         {PaneRollupDays, PaneRollupBreakdown},
 	ViewMomentum:       {PaneMomentumCards},

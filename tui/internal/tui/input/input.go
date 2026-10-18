@@ -221,12 +221,18 @@ func newRouter(deps Deps) *router {
 		"tab":       func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, 1) },
 		"shift+tab": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCyclePane(s, deps, -1) },
 		"left": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActivePane == uistate.PaneScope {
+				return handleCursor(s, deps, -1)
+			}
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, -1)
 			}
 			return s, nil, false
 		},
 		"right": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ActivePane == uistate.PaneScope {
+				return handleCursor(s, deps, 1)
+			}
 			if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, 1)
 			}
@@ -404,6 +410,19 @@ func newRouter(deps Deps) *router {
 			return handleOpenExportDaily(s, deps)
 		})
 	}
+	// The Issues tab's scope tree edits its repo or stream with e, whatever the timer.
+	r.RegisterPane(
+		uistate.ViewDefault,
+		uistate.PaneScope,
+		"e",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive {
+				return s, nil, false
+			}
+			cmd, handled := deps.OpenEditorAction(&s)
+			return s, cmd, handled
+		},
+	)
 	keyregistry.RegisterMeta(
 		r,
 		uistate.ViewMeta,

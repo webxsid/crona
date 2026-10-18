@@ -168,7 +168,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dispatchMessageDeps(),
 	)
 	if handled {
-		return m.applyDispatchMessageState(state), cmd
+		next := m.applyDispatchMessageState(state)
+		if _, ok := msg.(commands.AllStreamsLoadedMsg); ok {
+			next.reconcileBrowseScope()
+		}
+		return next, cmd
 	}
 	return m, nil
 }

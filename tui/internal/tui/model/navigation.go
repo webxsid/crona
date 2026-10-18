@@ -103,6 +103,51 @@ func nextPane(view View, current Pane, dir int) Pane {
 // enterIssuesTab starts the scope tree on the checked-out context.
 func (m *Model) enterIssuesTab() {
 	m.browseScope = scope.FromContext(m.context)
+	if m.cursor == nil {
+		m.cursor = map[Pane]int{}
+	}
+	m.cursor[PaneScope] = scope.IndexOf(m.scopeNodes(), m.browseScope)
+}
+
+func (m Model) scopeNodes() []scope.Node {
+	return scope.Nodes(m.repos, m.allStreams)
+}
+
+// browseToScopeCursor scopes the lists to the tree's node under its cursor.
+func (m *Model) browseToScopeCursor() {
+	nodes := m.scopeNodes()
+	if cur := m.cursor[PaneScope]; cur >= 0 && cur < len(nodes) {
+		m.browseScope = nodes[cur].Scope
+	}
+	m.clamp(PaneIssues, len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)))
+}
+
+// reconcileBrowseScope keeps the tree's cursor on the browsed node once all streams are
+// known, falling back to All when that repo or stream is gone.
+func (m *Model) reconcileBrowseScope() {
+	nodes := m.scopeNodes()
+	idx := scope.IndexOf(nodes, m.browseScope)
+	if nodes[idx].Scope != m.browseScope {
+		m.browseScope, idx = scope.Scope{}, 0
+	}
+	if m.cursor == nil {
+		m.cursor = map[Pane]int{}
+	}
+	m.cursor[PaneScope] = idx
+}
+
+// selectedScopeNode is the tree's node under its cursor while the tree has focus.
+func (m Model) selectedScopeNode() (scope.Node, bool) {
+	return selectionpkg.SelectedScopeNode(m.selectionSnapshot())
+}
+
+func (m Model) scopeStream(id int64) (api.Stream, bool) {
+	for _, stream := range m.allStreams {
+		if stream.ID == id {
+			return stream, true
+		}
+	}
+	return api.Stream{}, false
 }
 
 func (m *Model) setDefaultIssueSection(section DefaultIssueSection) {
@@ -215,6 +260,15 @@ func (m Model) selectedRollupDay() (*api.DashboardWindowDay, bool) {
 func (m Model) openSelectedEditDialog() (Model, bool) {
 	snapshot := m.selectionSnapshot()
 	switch m.pane {
+	case PaneScope:
+		node, ok := m.selectedScopeNode()
+		if !ok || node.Scope.IsAll() {
+			return m, false
+		}
+		if node.Scope.StreamID == 0 {
+			return m.openEditRepoDialog(node.Scope.RepoID, node.Name), true
+		}
+		return m.openEditStreamDialog(node.Scope.StreamID, node.Scope.RepoID, node.Name, m.repoNameByID(node.Scope.RepoID)), true
 	case PaneRepos:
 		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
 			return m.openEditRepoDialog(repoID, repoName), true
@@ -285,6 +339,23 @@ func viewEntityBodyWidth(width int) int {
 func (m Model) openSelectedViewDialog() (Model, bool) {
 	snapshot := m.selectionSnapshot()
 	switch m.pane {
+	case PaneScope:
+		node, ok := m.selectedScopeNode()
+		if !ok || node.Scope.IsAll() {
+			return m, false
+		}
+		if node.Scope.StreamID == 0 {
+			body := strings.Join([]string{"Description", optionalText(m.repoDescriptionByID(node.Scope.RepoID))}, "\n")
+			return m.openViewEntityDialog("Repo", node.Name, fmt.Sprintf("ID %d", node.Scope.RepoID), body), true
+		}
+		stream, _ := m.scopeStream(node.Scope.StreamID)
+		meta := strings.Join([]string{
+			fmt.Sprintf("Repo %s", m.repoNameByID(node.Scope.RepoID)),
+			fmt.Sprintf("Visibility %s", stream.Visibility),
+			fmt.Sprintf("ID %d", node.Scope.StreamID),
+		}, "   ")
+		body := strings.Join([]string{"Description", optionalText(stream.Description)}, "\n")
+		return m.openViewEntityDialog("Stream", node.Name, meta, body), true
 	case PaneRollupDays:
 		if day, ok := m.selectedRollupDay(); ok {
 			meta := strings.Join([]string{
@@ -502,6 +573,17 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 	}
 	snapshot := m.selectionSnapshot()
 	switch m.pane {
+	case PaneScope:
+		node, ok := m.selectedScopeNode()
+		if !ok || node.Scope.IsAll() {
+			return m, false
+		}
+		if node.Scope.StreamID == 0 {
+			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", node.Scope.RepoID), node.Name), true
+		}
+		next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", node.Scope.StreamID), node.Name)
+		next.dialogRepoID = node.Scope.RepoID
+		return next, true
 	case PaneRepos:
 		if repoID, repoName, ok := m.selectedMetaRepo(); ok {
 			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", repoID), repoName), true

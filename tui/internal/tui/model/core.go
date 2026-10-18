@@ -51,6 +51,7 @@ type Pane = uistate.Pane
 const (
 	PaneRepos            = uistate.PaneRepos
 	PaneStreams          = uistate.PaneStreams
+	PaneScope            = uistate.PaneScope
 	PaneIssues           = uistate.PaneIssues
 	PaneHabits           = uistate.PaneHabits
 	PaneRollupDays       = uistate.PaneRollupDays

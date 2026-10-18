@@ -56,6 +56,7 @@ func (m Model) viewContentState(
 		Cursors: map[string]int{
 			"repos":             m.cursor[PaneRepos],
 			"streams":           m.cursor[PaneStreams],
+			"scope":             m.cursor[PaneScope],
 			"issues":            m.cursor[PaneIssues],
 			"habits":            m.cursor[PaneHabits],
 			"habit_history":     m.cursor[PaneHabitHistory],

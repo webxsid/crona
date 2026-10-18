@@ -125,6 +125,9 @@ func handleIssueStatus(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleContextCheckout(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	if s.ActivePane == uistate.PaneScope {
+		return s, deps.Checkout(&s), true
+	}
 	if s.ActiveView == uistate.ViewMeta {
 		switch s.ActivePane {
 		case uistate.PaneRepos, uistate.PaneStreams:

@@ -17,6 +17,15 @@ import (
 func (m Model) checkout() (Model, tea.Cmd) {
 	snapshot := m.selectionSnapshot()
 	switch m.pane {
+	case PaneScope:
+		node, ok := m.selectedScopeNode()
+		switch {
+		case !ok || node.Scope.IsAll():
+		case node.Scope.StreamID != 0:
+			return m, commands.CheckoutStream(m.client, node.Scope.StreamID)
+		default:
+			return m, commands.CheckoutRepo(m.client, node.Scope.RepoID)
+		}
 	case PaneRepos:
 		rawIdx := selectionpkg.FilteredIndexAtCursor(snapshot, PaneRepos)
 		if rawIdx >= 0 && rawIdx < len(m.repos) {
@@ -39,6 +48,14 @@ func (m Model) handleInputCreateAction() Model {
 	}
 	if m.view == ViewDefault && m.pane == PaneIssues {
 		return m.openCreateIssueDefaultDialog()
+	}
+	if m.pane == PaneScope {
+		// On All, a new repo; on a repo or one of its streams, a new stream in that repo.
+		node, ok := m.selectedScopeNode()
+		if !ok || node.Scope.IsAll() {
+			return m.openCreateRepoDialog()
+		}
+		return m.openCreateStreamDialog(node.Scope.RepoID, m.repoNameByID(node.Scope.RepoID))
 	}
 	if m.view == ViewDaily {
 		switch m.pane {

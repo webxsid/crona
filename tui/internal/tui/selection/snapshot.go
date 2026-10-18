@@ -166,6 +166,10 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 		for _, repo := range s.Repos {
 			items = append(items, repo.Name)
 		}
+	case uistate.PaneScope:
+		for _, node := range scope.Nodes(s.Repos, s.AllStreams) {
+			items = append(items, node.Name)
+		}
 	case uistate.PaneStreams:
 		items = make([]string, 0, len(s.Streams))
 		for _, stream := range s.Streams {
@@ -388,6 +392,19 @@ func SelectedMetaRepo(s Snapshot) (int64, string, bool) {
 		return *s.Context.RepoID, helperpkg.FirstNonEmpty(s.Context.RepoName, nil), true
 	}
 	return 0, "", false
+}
+
+// SelectedScopeNode is the scope tree's node under its cursor, while the tree has focus.
+func SelectedScopeNode(s Snapshot) (scope.Node, bool) {
+	if s.Pane != uistate.PaneScope {
+		return scope.Node{}, false
+	}
+	nodes := scope.Nodes(s.Repos, s.AllStreams)
+	cur := s.Cursors[uistate.PaneScope]
+	if cur < 0 || cur >= len(nodes) {
+		return scope.Node{}, false
+	}
+	return nodes[cur], true
 }
 
 func SelectedMomentumCard(s Snapshot) (*api.MomentumCard, bool) {
