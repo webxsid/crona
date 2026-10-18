@@ -14,6 +14,16 @@ func newItemLine(theme types.Theme, label string) string {
 	return viewchrome.KeyHint(theme, "a", label)
 }
 
+// newTaskLine pairs the create key with the ad hoc timer, which needs no selected task;
+// the timer key shows only while no timer runs.
+func newTaskLine(theme types.Theme, state types.ContentState, width int) string {
+	hints := []string{newItemLine(theme, "new task")}
+	if timerIdle(state) {
+		hints = append(hints, viewchrome.KeyHint(theme, "A", "ad hoc"))
+	}
+	return viewchrome.FitHints(hints, width)
+}
+
 // taskActionLine stands in for the focused selected card's meta line. It offers what the
 // pane's key list did: keys that start or edit work only while no timer runs.
 func taskActionLine(theme types.Theme, state types.ContentState, width int) string {
@@ -33,7 +43,6 @@ func taskActionLine(theme types.Theme, state types.ContentState, width int) stri
 			viewchrome.KeyHint(theme, "e", "edit"),
 			viewchrome.KeyHint(theme, "D", "delete"),
 			viewchrome.KeyHint(theme, "m", "log"),
-			viewchrome.KeyHint(theme, "A", "ad hoc"),
 		)
 	}
 	return "  " + viewchrome.FitHints(hints, width-2)

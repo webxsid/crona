@@ -11,8 +11,13 @@ import (
 
 func TestTasksPaneOffersNewTaskLine(t *testing.T) {
 	rendered := ansi.Strip(renderIssues(testTheme(), detailState(), 80, 20))
-	if rowOf(t, rendered, "[a] new task") != rowOf(t, rendered, "Planned")+1 {
-		t.Fatalf("expected [a] new task on its own line under the selector, got %q", rendered)
+	if rowOf(t, rendered, "[a] new task  [A] ad hoc") != rowOf(t, rendered, "Planned")+1 {
+		t.Fatalf("expected [a] new task and [A] ad hoc on their own line under the selector, got %q", rendered)
+	}
+	state := detailState()
+	state.Pane = "issues"
+	if focused := ansi.Strip(renderIssues(testTheme(), state, 200, 20)); strings.Count(focused, "[A] ad hoc") != 1 {
+		t.Fatalf("expected [A] ad hoc only on the new-task line, not the card, got %q", focused)
 	}
 }
 
@@ -47,7 +52,7 @@ func TestTaskActionsHideTimerKeysWhileRunning(t *testing.T) {
 	if !strings.Contains(rendered, "[s] status") {
 		t.Fatalf("expected status kept while the timer runs, got %q", rendered)
 	}
-	for _, hidden := range []string{"[f] focus", "[e] edit", "[m] log"} {
+	for _, hidden := range []string{"[f] focus", "[e] edit", "[m] log", "[A] ad hoc"} {
 		if strings.Contains(rendered, hidden) {
 			t.Fatalf("expected %q hidden while the timer runs, got %q", hidden, rendered)
 		}

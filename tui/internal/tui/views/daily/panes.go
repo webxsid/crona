@@ -27,7 +27,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	total := len(indices)
 	base := viewui.PaneBase{Focused: active, Width: width, Height: height, Cursor: cur}
 	meta := fmt.Sprintf("%d  [←/→]", total)
-	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), newItemLine(theme, "new task")}
+	lines := []string{dailyTaskTitle(theme, state.DailyTaskSection), newTaskLine(theme, state, width-2)}
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return dailySection(theme, "Tasks", meta, active, width, height, lines)
