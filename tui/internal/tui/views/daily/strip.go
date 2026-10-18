@@ -108,8 +108,8 @@ func SubTabMeta(theme types.Theme, state types.ContentState, room int) string {
 	key := func(k string) string { return theme.StyleHeader.Render("[" + k + "]") }
 	dim := theme.StyleDim.Render
 	for _, candidate := range []string{
-		key(",") + dim(" prev  ") + dated + dim("  next ") + key(".") + "   " + key("g") + dim(" today"),
-		key(",") + " " + dated + " " + key(".") + "  " + key("g"),
+		key("g") + dim(" today   ") + key(",") + dim(" prev  ") + dated + dim("  next ") + key("."),
+		key("g") + "  " + key(",") + " " + dated + " " + key("."),
 		dated,
 		date,
 	} {

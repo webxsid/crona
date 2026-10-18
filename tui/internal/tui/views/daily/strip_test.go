@@ -158,6 +158,13 @@ func TestDayStripDropsWeekWhenNarrowOrOneRow(t *testing.T) {
 	}
 }
 
+func TestSubTabMetaLeadsWithToday(t *testing.T) {
+	got := ansi.Strip(SubTabMeta(testTheme(), dailySummaryTestState(), 80))
+	if !strings.HasPrefix(got, "[g] today") || !strings.HasSuffix(got, "next [.]") {
+		t.Fatalf("expected [g] today first and next [.] last, got %q", got)
+	}
+}
+
 func TestSubTabMetaShortensToFit(t *testing.T) {
 	state := dailySummaryTestState()
 	date := helperpkg.FormatDisplayDate("2026-05-27", nil)
