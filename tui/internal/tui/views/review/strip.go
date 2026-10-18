@@ -7,8 +7,6 @@ import (
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
-
-	"github.com/charmbracelet/x/ansi"
 )
 
 // StripRows sums the window: work over wellbeing, column groups dropped right-first.
@@ -60,25 +58,7 @@ func stripRows(theme types.Theme, state types.ContentState, width int) []string 
 		{label("Plan") + " " + plan, label("Check-ins") + " " + checkIns},
 		{outcome, label("Risk") + " " + risk},
 	}
-	rows := []string{"", ""}
-	for _, group := range groups {
-		columnWidth := max(ansi.StringWidth(group[0]), ansi.StringWidth(group[1]))
-		gap := ""
-		if rows[0] != "" {
-			gap = "   "
-		}
-		if ansi.StringWidth(rows[0])+len(gap)+columnWidth > width {
-			break
-		}
-		for i := range rows {
-			rows[i] += gap + group[i] + strings.Repeat(" ", columnWidth-ansi.StringWidth(group[i]))
-		}
-	}
-	for i := range rows {
-		rows[i] = ansi.Truncate(rows[i], width, "")
-		rows[i] += strings.Repeat(" ", width-ansi.StringWidth(rows[i]))
-	}
-	return rows
+	return viewchrome.StripRows(groups, width)
 }
 
 func scoreBar(theme types.Theme, score int) string {

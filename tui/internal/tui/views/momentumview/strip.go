@@ -2,12 +2,9 @@ package momentumview
 
 import (
 	"fmt"
-	"strings"
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	types "crona/tui/internal/tui/views/types"
-
-	"github.com/charmbracelet/x/ansi"
 )
 
 // StripRows sums the momentums: counts over streaks, column groups dropped right-first.
@@ -42,23 +39,5 @@ func stripRows(theme types.Theme, state types.ContentState, width int) []string 
 		{fmt.Sprintf("%s %d  inactive %d", label("Active"), active, inactive), label("Best streak") + "  " + best},
 		{fmt.Sprintf("%s  met %d  near %d  missed %d", label("Latest"), counts["met"], counts["near"], counts["missed"]), label("Longest ever") + "  " + longest},
 	}
-	rows := []string{"", ""}
-	for _, group := range groups {
-		columnWidth := max(ansi.StringWidth(group[0]), ansi.StringWidth(group[1]))
-		gap := ""
-		if rows[0] != "" {
-			gap = "   "
-		}
-		if rows[0] != "" && ansi.StringWidth(rows[0])+len(gap)+columnWidth > width {
-			break
-		}
-		for i := range rows {
-			rows[i] += gap + group[i] + strings.Repeat(" ", columnWidth-ansi.StringWidth(group[i]))
-		}
-	}
-	for i := range rows {
-		rows[i] = ansi.Truncate(rows[i], width, "")
-		rows[i] += strings.Repeat(" ", width-ansi.StringWidth(rows[i]))
-	}
-	return rows
+	return viewchrome.StripRows(groups, width)
 }
