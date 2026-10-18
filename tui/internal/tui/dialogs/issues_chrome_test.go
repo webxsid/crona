@@ -72,3 +72,14 @@ func TestNewIssueShortTerminal(t *testing.T) {
 		t.Fatalf("expected the dialog within the screen, got %d lines", n)
 	}
 }
+
+func TestNewIssuePairFitsTypedEstimate(t *testing.T) {
+	state := issueState("create_issue_default", 4, 120, 40)
+	state.Inputs[3].SetValue("1h30m")
+	state.Inputs[3].Focus()
+	for _, line := range strings.Split(issueText(state), "\n") {
+		if strings.Contains(line, "Estimate") && (strings.Contains(line, "…") || !strings.Contains(line, "1h30m")) {
+			t.Fatalf("expected the estimate whole, got %q", line)
+		}
+	}
+}

@@ -18,7 +18,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	inner := FrameInner(state.Width, []string{strings.Repeat(" ", issueFormInner)})
 	column := len("Description")
 	full := inner - column - 3
-	half := inner/2 - column - 4
+	half := inner/2 - column - 6
 	if inner < 56 {
 		half = full
 	}
