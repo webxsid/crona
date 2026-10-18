@@ -11,66 +11,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestRenderIssuesShowsWorkedSuffixAboveBreakpoint(t *testing.T) {
-	state := types.ContentState{
-		Pane:   "issues",
-		Width:  240,
-		Height: 20,
-		Filters: map[string]string{
-			"issues": "",
-		},
-		DailyIssues: []api.Issue{
-			{
-				ID:              1,
-				Title:           "Investigate timer display",
-				Status:          "in_progress",
-				WorkedSeconds:   4500,
-				EstimateMinutes: new(25),
-			},
-		},
-	}
-
-	rendered := renderIssues(types.Theme{}, state, 240, 20)
-	plain := ansi.Strip(rendered)
-	if !strings.Contains(plain, "Worked") {
-		t.Fatalf("expected worked column header to render, got %q", rendered)
-	}
-	if !strings.Contains(plain, "1h15m") {
-		t.Fatalf("expected worked seconds to render in the spent column, got %q", rendered)
-	}
-	lines := strings.Split(plain, "\n")
-	var headerLine, rowLine string
-	for _, line := range lines {
-		if strings.Contains(line, "Status") && strings.Contains(line, "Est.") &&
-			strings.Contains(line, "Worked") {
-			headerLine = line
-		}
-		if strings.Contains(line, "in progress") {
-			rowLine = line
-		}
-	}
-	if headerLine == "" || rowLine == "" {
-		t.Fatalf("expected header and row lines in %q", plain)
-	}
-	headerLine = normalizeTableLine(headerLine)
-	rowLine = normalizeTableLine(rowLine)
-	if strings.Index(headerLine, "Status") != strings.Index(rowLine, "in progress") {
-		t.Fatalf(
-			"expected status header and value to align, got header %q row %q",
-			headerLine,
-			rowLine,
-		)
-	}
-	if strings.Index(headerLine, "Worked") != strings.Index(rowLine, "1h15m") {
-		t.Fatalf(
-			"expected worked header and value to align, got header %q row %q",
-			headerLine,
-			rowLine,
-		)
-	}
-}
-
-func TestRenderIssuesUsesWideTableAboveBreakpoint(t *testing.T) {
+func TestRenderIssuesUsesListAtEveryWidth(t *testing.T) {
 	state := types.ContentState{
 		Pane:   "issues",
 		Width:  240,
@@ -96,43 +37,38 @@ func TestRenderIssuesUsesWideTableAboveBreakpoint(t *testing.T) {
 		Filters: map[string]string{"issues": ""},
 	}
 
-	rendered := renderIssues(types.Theme{}, state, 240, 20)
-	plain := ansi.Strip(rendered)
-	for _, want := range []string{"Worked", "Repo", "Stream", "Core", "TUI", "1h15m"} {
-		if !strings.Contains(plain, want) {
-			t.Fatalf("expected wide daily issue table to contain %q, got %q", want, rendered)
-		}
+	plain := ansi.Strip(renderIssues(types.Theme{}, state, 240, 20))
+	if !strings.Contains(plain, "Core > TUI | 1h15m / 25m | in progress") {
+		t.Fatalf("expected the two-line list at 240 columns, got %q", plain)
 	}
-	for _, unwanted := range []string{" | "} {
+	for _, unwanted := range []string{"Worked", "Repo", "Stream", "Est."} {
 		if strings.Contains(plain, unwanted) {
-			t.Fatalf(
-				"expected wide daily issue table to avoid compact separators, got %q",
-				rendered,
-			)
+			t.Fatalf("expected no table header %q, got %q", unwanted, plain)
 		}
 	}
 }
 
-func TestRenderIssuesKeepsDateVisibleWhenWideTitleTruncates(t *testing.T) {
+func TestRenderIssuesKeepsDateVisibleWhenTitleTruncates(t *testing.T) {
 	todo := "2099-03-20"
 	state := types.ContentState{
 		Pane:   "issues",
-		Width:  240,
+		Width:  80,
 		Height: 20,
 		Filters: map[string]string{
 			"issues": "",
 		},
+		DailyTaskSection: "pinned",
 		DailyIssues: []api.Issue{{
 			ID:          1,
-			Title:       "A very long issue title that should be truncated before its date is rendered because it exceeds the available issue column width by a significant amount",
+			Title:       "A very long issue title that should be truncated before its date is rendered because it exceeds the width",
 			Status:      "planned",
 			TodoForDate: &todo,
 		}},
 	}
 
-	plain := ansi.Strip(renderIssues(types.Theme{}, state, 240, 20))
-	if !strings.Contains(plain, "Date") || !strings.Contains(plain, "due 2099-03-20") {
-		t.Fatalf("renderIssues(long title with date) = %q, want a visible Date field", plain)
+	plain := ansi.Strip(renderIssues(types.Theme{}, state, 80, 20))
+	if !strings.Contains(plain, "due 2099-03-20]") || !strings.Contains(plain, "…") {
+		t.Fatalf("expected a truncated title with its date kept, got %q", plain)
 	}
 }
 

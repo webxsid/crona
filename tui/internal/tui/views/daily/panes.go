@@ -16,11 +16,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/evertras/bubble-table/table"
 )
-
-// dailyIssueTableMinWidth is the section width below which tasks render as two-line items.
-const dailyIssueTableMinWidth = 120
 
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
 	active := state.Pane == "issues"
@@ -36,92 +32,20 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
 		return dailySection(theme, "Tasks", meta, active, width, height, lines)
 	}
-	if width < dailyIssueTableMinWidth {
-		lines = renderCompactDailyIssueList(
-			theme,
-			state,
-			width,
-			height,
-			base,
-			lines,
-			issues,
-			sources,
-			indices,
-			total,
-			cur,
-			active,
-		)
-		return dailySection(theme, "Tasks", meta, active, width, height, lines)
-	}
-	layout := issuecore.IssueTableLayoutForWidth(width)
-	if state.DailyTaskSection != "planned" {
-		layout = issuecore.IssueTableLayoutForWidthWithDate(width)
-	}
-	inner := sectionBodyRows(height, lines)
-	// The table adds a column-header row above the issue rows.
-	start, end := listWindow(cur, total, inner-1)
-	if start > 0 {
-		lines = append(lines, base.MoreAbove(theme, start))
-	}
-	tableRows := make([]table.Row, 0, end-start)
-	for offset, rawIdx := range indices[start:end] {
-		pos := start + offset
-		issue := issues[rawIdx]
-		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
-		repoName, streamName := dailyIssueContext(sources[rawIdx])
-		workedSeconds := issue.WorkedSeconds
-		if meta != nil {
-			repoName = meta.RepoName
-			streamName = meta.StreamName
-			if workedSeconds <= 0 && meta.WorkedSeconds > 0 {
-				workedSeconds = meta.WorkedSeconds
-			}
-		}
-		title := issue.Title
-		rowStyle := lipgloss.NewStyle()
-		if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
-			rowStyle = *statusStyle
-		}
-		if pos == cur && active {
-			rowStyle = rowStyle.Bold(true)
-		}
-		cursor := " "
-		if pos == cur && active {
-			cursor = viewchrome.SelectionCursor
-		}
-		tableRows = append(
-			tableRows,
-			issuecore.IssueTableRow(cursor, issuecore.IssueTableData{
-				Issue:    title,
-				Status:   issuecore.PlainIssueStatus(string(issue.Status)),
-				Estimate: issuecore.IssueEstimateLabel(issue.EstimateMinutes),
-				Worked:   issuecore.IssueWorkedLabel(workedSeconds),
-				Repo:     repoName,
-				Stream:   streamName,
-				Date: issuecore.IssueDateLabel(
-					issue.Status,
-					issue.TodoForDate,
-					issue.CompletedAt,
-					issue.AbandonedAt,
-					state.Settings,
-				),
-				Context: issuecore.IssueContextLabel(repoName, streamName),
-				Effort: issuecore.IssueWorkedEstimateCompactLabel(
-					workedSeconds,
-					issue.EstimateMinutes,
-				),
-			}, rowStyle),
-		)
-	}
-	tablePane := viewui.TablePane{
-		Columns:     issuecore.IssueTableColumns(layout),
-		Rows:        tableRows,
-		HeaderStyle: theme.StyleDim,
-	}
-	lines = append(lines, tablePane.View())
-	if remaining := total - end; remaining > 0 {
-		lines = append(lines, base.MoreBelow(theme, remaining))
-	}
+	lines = renderCompactDailyIssueList(
+		theme,
+		state,
+		width,
+		height,
+		base,
+		lines,
+		issues,
+		sources,
+		indices,
+		total,
+		cur,
+		active,
+	)
 	return dailySection(theme, "Tasks", meta, active, width, height, lines)
 }
 
@@ -252,10 +176,13 @@ func renderCompactDailyIssueTitle(
 	if i == cur && active {
 		cursor = viewchrome.SelectionCursor
 	}
+	// A long title gives way before its date does.
+	room := max(18, width-4)
 	if date != "" {
-		title += "  " + dateField(date)
+		field := "  " + dateField(date)
+		title = ansi.Truncate(title, max(8, room-ansi.StringWidth(field)), "…") + field
 	}
-	line := viewhelpers.TruncateANSI(title, max(18, width-4))
+	line := viewhelpers.TruncateANSI(title, room)
 	line = rowStyle.Render(line)
 	if i == cur && active {
 		return theme.StyleCursor.Render(cursor + " " + line)

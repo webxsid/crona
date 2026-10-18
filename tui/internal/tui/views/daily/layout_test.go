@@ -248,7 +248,7 @@ func TestDailyHabitsCursorVisibleAtEnd(t *testing.T) {
 	}
 }
 
-func TestDailyTableCursorVisibleAtEnd(t *testing.T) {
+func TestDailyWideListCursorVisibleAtEnd(t *testing.T) {
 	state := manyIssues(dailyState(240, 24), 30)
 	state.Cursors["issues"] = 29
 	rendered := ansi.Strip(renderIssues(testTheme(), state, 240, 24))
