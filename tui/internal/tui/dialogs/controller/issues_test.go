@@ -258,7 +258,7 @@ func TestDirectIssueDueDatePickerRejectsInvalidSelection(t *testing.T) {
 }
 
 func TestDueDatePolicyDoesNotApplyToOtherCalendars(t *testing.T) {
-	for _, parent := range []string{"rollup_start", "rollup_end", "edit_rest_protection"} {
+	for _, parent := range []string{"shared_date", "edit_rest_protection"} {
 		state := State{Parent: parent, DueDateToday: "2026-04-20"}
 		if isIssueDueDatePicker(state) {
 			t.Fatalf("expected %q calendar to remain outside due-date policy", parent)
@@ -291,7 +291,7 @@ func TestDueDateCalendarStylesOnlyIssuePolicyDates(t *testing.T) {
 	}
 	rollup := issue
 	rollup.IssueID = 0
-	rollup.Parent = "rollup_start"
+	rollup.Parent = "shared_date"
 	rollupGrid := PopulateDatePresentation(theme, rollup, "2026-04-20").DateGrid
 	if strings.Contains(rollupGrid, redCell) {
 		t.Fatalf("expected rollup calendar not to use due-date rest styling, got %q", rollupGrid)

@@ -179,10 +179,10 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "rollup" {
 		return []string{
 			theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" open day details"),
-			theme.StyleHeader.Render("[S/E]") + theme.StyleDim.Render(" calendar"),
-			theme.StyleHeader.Render("[←/→]") + theme.StyleDim.Render(" change start"),
-			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" change end"),
-			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" weekly"),
+			theme.StyleHeader.Render("[,/.]") + theme.StyleDim.Render(" date"),
+			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" today"),
+			theme.StyleHeader.Render("[E]") + theme.StyleDim.Render(" calendar"),
+			theme.StyleHeader.Render("[+/-/0]") + theme.StyleDim.Render(" window"),
 		}
 	}
 	if state.View == "config" {

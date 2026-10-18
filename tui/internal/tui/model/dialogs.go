@@ -49,9 +49,9 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		DaemonTimezone:       healthTimezone(m.health),
 		HabitStreakDefs:      m.habitStreakDefs,
 		AlertReminders:       m.alertReminders,
-		CurrentDashboardDate: m.currentDashboardDate(),
-		CurrentSummaryDate:   m.currentSummaryDate(),
-		CurrentWellbeingDate: m.currentWellbeingDate(),
+		CurrentDashboardDate: m.currentDate(),
+		CurrentSummaryDate:   m.currentDate(),
+		CurrentWellbeingDate: m.currentDate(),
 		HasActiveTimer:       m.timer != nil && m.timer.State != "idle",
 		AvailableViews:       m.jumpAvailableViews(),
 	}
@@ -83,12 +83,12 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 			return next, next.setStatus("Ad hoc issue is no longer available", true)
 		}
 		return next.withDialogState(next.dialogSnapshot().OpenPromoteAdhocIssue(*issue)), nil
-	case "set_summary_date":
+	case "set_summary_date", "set_shared_date":
 		if action.DueDate == nil || strings.TrimSpace(*action.DueDate) == "" {
 			return next, nil
 		}
-		next.summaryDate = strings.TrimSpace(*action.DueDate)
-		return next, commands.LoadSummarySnapshot(next.client, next.summaryDate)
+		next.date = strings.TrimSpace(*action.DueDate)
+		return next, next.reloadDateSurfaces()
 	case "load_summary_calendar_month":
 		return next, commands.LoadSummaryCalendarScores(next.client, action.StartDate, action.EndDate)
 	case "jump_view":
@@ -322,7 +322,7 @@ func (m Model) openManualSessionFromIssue(repoID, streamID, issueID int64) Model
 			issueID,
 			target.title,
 			target.estimateMinutes,
-			m.currentDashboardDate(),
+			m.currentDate(),
 		)
 	}
 	meta, ok := m.issueMetaByID(issueID)
@@ -336,7 +336,7 @@ func (m Model) openManualSessionFromIssue(repoID, streamID, issueID int64) Model
 		issueID,
 		issueLabel,
 		estimateMinutes,
-		m.currentDashboardDate(),
+		m.currentDate(),
 	)
 }
 
@@ -922,11 +922,8 @@ func (m Model) dialogRuntimeState() dialogruntime.State {
 	return dialogruntime.State{
 		Context:               m.context,
 		Repos:                 m.repos,
-		DashboardDate:         m.currentDashboardDate(),
-		MomentumDate:          m.currentMomentumDate(),
+		Date:                  m.currentDate(),
 		MomentumWindowDays:    m.currentMomentumWindowDays(),
-		RollupStartDate:       m.currentRollupStartDate(),
-		RollupEndDate:         m.currentRollupEndDate(),
 		CurrentExecutablePath: m.currentExecutablePath,
 		KernelExecutablePath:  kernelExecutablePath(m.kernelInfo),
 		KernelInfo:            m.kernelInfo,
@@ -1141,18 +1138,6 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		SetIssueTodoDate: func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.SetIssueTodoDate(m.client, issueID, date, streamID, dashboardDate)
-		},
-		SetRollupStartDate: func(date, currentEnd string) tea.Cmd {
-			if date > currentEnd {
-				currentEnd = date
-			}
-			return commands.SetRollupRange(date, currentEnd)
-		},
-		SetRollupEndDate: func(currentStart, date string) tea.Cmd {
-			if currentStart > date {
-				currentStart = date
-			}
-			return commands.SetRollupRange(currentStart, date)
 		},
 		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },

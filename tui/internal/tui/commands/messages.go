@@ -60,10 +60,6 @@ type DistributionLoadedMsg struct {
 	Summary *api.TimeDistributionSummary
 }
 type GoalProgressLoadedMsg struct{ Summary *api.GoalProgressSummary }
-type RollupRangeChangedMsg struct {
-	Start string
-	End   string
-}
 type ExportAssetsLoadedMsg struct{ Assets *api.ExportAssetStatus }
 type ExportReportsLoadedMsg struct{ Reports []api.ExportReportFile }
 type ExportReportDeletedMsg struct{ Name string }

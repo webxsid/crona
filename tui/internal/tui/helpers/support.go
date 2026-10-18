@@ -115,10 +115,8 @@ type SupportDiagnosticsInput struct {
 	Pane                string
 	Width               int
 	Height              int
-	DashboardDate       string
-	RollupStartDate     string
-	RollupEndDate       string
-	WellbeingDate       string
+	Date                string
+	RollupWindowDays    int
 	ReposCount          int
 	StreamsCount        int
 	IssuesCount         int
@@ -150,10 +148,8 @@ func SupportDiagnosticsReport(input SupportDiagnosticsInput) string {
 		fmt.Sprintf("view=%s", fallbackSupport(input.View, "-")),
 		fmt.Sprintf("pane=%s", fallbackSupport(input.Pane, "-")),
 		fmt.Sprintf("size=%dx%d", input.Width, input.Height),
-		fmt.Sprintf("dashboard_date=%s", fallbackSupport(input.DashboardDate, "-")),
-		fmt.Sprintf("rollup_start=%s", fallbackSupport(input.RollupStartDate, "-")),
-		fmt.Sprintf("rollup_end=%s", fallbackSupport(input.RollupEndDate, "-")),
-		fmt.Sprintf("wellbeing_date=%s", fallbackSupport(input.WellbeingDate, "-")),
+		fmt.Sprintf("date=%s", fallbackSupport(input.Date, "-")),
+		fmt.Sprintf("rollup_window_days=%d", input.RollupWindowDays),
 		"",
 		"[runtime]",
 		fmt.Sprintf("tui_path=%s", fallbackSupport(strings.TrimSpace(input.TUIPath), "-")),

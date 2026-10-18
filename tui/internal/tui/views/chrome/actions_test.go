@@ -178,3 +178,17 @@ func TestGlobalActionsOmitShellHints(t *testing.T) {
 		}
 	}
 }
+
+func TestRollupActionsHintSharedDateKeys(t *testing.T) {
+	actions := strings.Join(ContextualActions(Theme{}, ActionsState{View: "rollup"}), "\n")
+	for _, want := range []string{"[,/.] date", "[g] today", "[+/-/0] window", "[E] calendar"} {
+		if !strings.Contains(actions, want) {
+			t.Fatalf("expected rollup actions to include %q, got %q", want, actions)
+		}
+	}
+	for _, unwanted := range []string{"[←/→]", "[S/E]"} {
+		if strings.Contains(actions, unwanted) {
+			t.Fatalf("expected rollup actions to drop %q, got %q", unwanted, actions)
+		}
+	}
+}

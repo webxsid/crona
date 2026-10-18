@@ -8,34 +8,68 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func handleShiftRollupStartDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
-	start := shiftInputISODate(deps.CurrentRollupStartDate(s), delta)
-	end := deps.CurrentRollupEndDate(s)
-
-	start = min(start, end)
-
-	s.RollupStartDate = start
-	s.RollupEndDate = end
-	return s, deps.LoadRollupSummaries(start, end), true
+// handleShiftDate moves the one shared date every dated view shows and reloads them all.
+func handleShiftDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.Date = navigationutil.ShiftISODate(deps.CurrentDate(s), dir)
+	return s, deps.ReloadDateSurfaces(s), true
 }
 
-func handleShiftRollupEndDate(s State, deps Deps, delta int) (tea.Model, tea.Cmd, bool) {
-	end := shiftInputISODate(deps.CurrentRollupEndDate(s), delta)
-	start := deps.CurrentRollupStartDate(s)
-
-	start = min(start, end)
-
-	s.RollupStartDate = start
-	s.RollupEndDate = end
-	return s, deps.LoadRollupSummaries(start, end), true
+// handleResetDate returns the shared date to the daemon's logical today.
+func handleResetDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.Date = deps.CurrentLogicalDate(s)
+	return s, deps.ReloadDateSurfaces(s), true
 }
 
-func handleResetRollupRange(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	end := time.Now().Format("2006-01-02")
-	start := shiftInputISODate(end, -6)
-	s.RollupStartDate = start
-	s.RollupEndDate = end
-	return s, deps.LoadRollupSummaries(start, end), true
+var (
+	momentumWindowDaysPresets  = []int{7, 14, 30, 90}
+	wellbeingWindowDaysPresets = []int{7, 14, 21, 30}
+	rollupWindowDaysPresets    = []int{7, 14, 30, 90}
+)
+
+const (
+	defaultMomentumWindowDays  = 30
+	defaultWellbeingWindowDays = 7
+	defaultRollupWindowDays    = 7
+)
+
+func handleShiftMomentumWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.MomentumWindowDays = shiftWindowDays(momentumWindowDaysPresets, s.MomentumWindowDays, defaultMomentumWindowDays, dir)
+	return s, deps.LoadMomentumRange(deps.CurrentDate(s), s.MomentumWindowDays), true
+}
+
+func handleResetMomentumWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.MomentumWindowDays = defaultMomentumWindowDays
+	return s, deps.LoadMomentumRange(deps.CurrentDate(s), s.MomentumWindowDays), true
+}
+
+func handleShiftWellbeingWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.WellbeingWindowDays = shiftWindowDays(wellbeingWindowDaysPresets, s.WellbeingWindowDays, defaultWellbeingWindowDays, dir)
+	return s, deps.LoadWellbeing(deps.CurrentDate(s), s.WellbeingWindowDays), true
+}
+
+func handleResetWellbeingWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.WellbeingWindowDays = defaultWellbeingWindowDays
+	return s, deps.LoadWellbeing(deps.CurrentDate(s), s.WellbeingWindowDays), true
+}
+
+func handleShiftRollupWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	s.RollupWindowDays = shiftWindowDays(rollupWindowDaysPresets, s.RollupWindowDays, defaultRollupWindowDays, dir)
+	return s, loadRollupWindow(s, deps), true
+}
+
+func handleResetRollupWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	s.RollupWindowDays = defaultRollupWindowDays
+	return s, loadRollupWindow(s, deps), true
+}
+
+// loadRollupWindow loads the rollup range that ends on the shared date.
+func loadRollupWindow(s State, deps Deps) tea.Cmd {
+	end := deps.CurrentDate(s)
+	days := s.RollupWindowDays
+	if days < 1 {
+		days = defaultRollupWindowDays
+	}
+	return deps.LoadRollupSummaries(shiftInputISODate(end, -(days-1)), end)
 }
 
 func shiftInputISODate(date string, days int) string {
@@ -46,142 +80,24 @@ func shiftInputISODate(date string, days int) string {
 	return t.AddDate(0, 0, days).Format("2006-01-02")
 }
 
-func handleShiftDailyDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.DashboardDate = navigationutil.ShiftISODate(deps.CurrentDashboardDate(s), dir)
-	return s, tea.Batch(
-		deps.LoadDailySummary(s.DashboardDate),
-		deps.LoadDailyStreaks(s.DashboardDate),
-		deps.LoadDueHabits(s.DashboardDate),
-	), true
-}
-
-func handleResetDailyDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.DashboardDate = ""
-	return s, tea.Batch(
-		deps.LoadDailySummary(""),
-		deps.LoadDailyStreaks(deps.CurrentDashboardDate(s)),
-		deps.LoadDueHabits(deps.CurrentDashboardDate(s)),
-	), true
-}
-
-func handleShiftSummaryDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.SummaryDate = navigationutil.ShiftISODate(deps.CurrentSummaryDate(s), dir)
-	return s, deps.LoadSummarySnapshot(s.SummaryDate), true
-}
-
-func handleResetSummaryDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.SummaryDate = time.Now().Format("2006-01-02")
-	return s, deps.LoadSummarySnapshot(s.SummaryDate), true
-}
-
-func handleShiftMomentumDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.MomentumDate = navigationutil.ShiftISODate(deps.CurrentMomentumDate(s), dir)
-	return s, deps.LoadMomentumRange(s.MomentumDate, s.MomentumWindowDays), true
-}
-
-func handleResetMomentumDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.MomentumDate = ""
-	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
-}
-
-var momentumWindowDaysPresets = []int{7, 14, 30, 90}
-
-func handleShiftMomentumWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.MomentumWindowDays = shiftMomentumWindowDays(s.MomentumWindowDays, dir)
-	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
-}
-
-func handleResetMomentumWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.MomentumWindowDays = 30
-	return s, deps.LoadMomentumRange(deps.CurrentMomentumDate(s), s.MomentumWindowDays), true
-}
-
-func shiftMomentumWindowDays(current, dir int) int {
+// shiftWindowDays steps current to the neighbouring preset in dir, snapping values that
+// are not presets to the nearest one first.
+func shiftWindowDays(presets []int, current, fallback, dir int) int {
 	if current < 1 {
-		current = 30
+		current = fallback
 	}
-	if current > momentumWindowDaysPresets[len(momentumWindowDaysPresets)-1] {
-		current = momentumWindowDaysPresets[len(momentumWindowDaysPresets)-1]
-	}
-	idx := -1
-	for i, days := range momentumWindowDaysPresets {
-		if days == current {
+	current = min(current, presets[len(presets)-1])
+	idx := len(presets) - 1
+	for i, days := range presets {
+		if current <= days {
 			idx = i
 			break
 		}
 	}
-	if idx < 0 {
-		idx = 0
-		for i, days := range momentumWindowDaysPresets {
-			if current < days {
-				idx = i
-				break
-			}
-			idx = i
-		}
+	if presets[idx] == current {
+		idx += dir
+	} else if dir < 0 {
+		idx--
 	}
-	idx += dir
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(momentumWindowDaysPresets) {
-		idx = len(momentumWindowDaysPresets) - 1
-	}
-	return momentumWindowDaysPresets[idx]
-}
-
-func handleShiftWellbeingDate(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.WellbeingDate = navigationutil.ShiftISODate(deps.CurrentWellbeingDate(s), dir)
-	return s, deps.LoadWellbeing(s.WellbeingDate, s.WellbeingWindowDays), true
-}
-
-func handleResetWellbeingDate(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.WellbeingDate = ""
-	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
-}
-
-var wellbeingWindowDaysPresets = []int{7, 14, 21, 30}
-
-func handleShiftWellbeingWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.WellbeingWindowDays = shiftWellbeingWindowDays(s.WellbeingWindowDays, dir)
-	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
-}
-
-func handleResetWellbeingWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
-	s.WellbeingWindowDays = 7
-	return s, deps.LoadWellbeing(deps.CurrentWellbeingDate(s), s.WellbeingWindowDays), true
-}
-
-func shiftWellbeingWindowDays(current, dir int) int {
-	if current < 1 {
-		current = 7
-	}
-	if current > wellbeingWindowDaysPresets[len(wellbeingWindowDaysPresets)-1] {
-		current = wellbeingWindowDaysPresets[len(wellbeingWindowDaysPresets)-1]
-	}
-	idx := -1
-	for i, days := range wellbeingWindowDaysPresets {
-		if days == current {
-			idx = i
-			break
-		}
-	}
-	if idx < 0 {
-		idx = 0
-		for i, days := range wellbeingWindowDaysPresets {
-			if current < days {
-				idx = i
-				break
-			}
-			idx = i
-		}
-	}
-	idx += dir
-	if idx < 0 {
-		idx = 0
-	}
-	if idx >= len(wellbeingWindowDaysPresets) {
-		idx = len(wellbeingWindowDaysPresets) - 1
-	}
-	return wellbeingWindowDaysPresets[idx]
+	return presets[max(0, min(len(presets)-1, idx))]
 }

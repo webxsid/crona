@@ -26,7 +26,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		DailyTaskSection:    m.dailyTaskSection,
 		PreferActiveIssue: m.timer != nil && m.timer.State != "idle" &&
 			m.view == ViewSessionActive,
-		DashboardDate:  m.currentDashboardDate(),
+		DashboardDate:  m.currentDate(),
 		Cursors:        m.cursor,
 		Filters:        m.filters,
 		Context:        m.context,
@@ -90,15 +90,11 @@ func (m Model) inputState() inputpkg.State {
 		Filters:                   m.filters,
 		DefaultIssueSection:       m.defaultIssueSection,
 		DailyTaskSection:          m.dailyTaskSection,
-		DashboardDate:             m.dashboardDate,
-		SummaryDate:               m.currentSummaryDate(),
-		RollupStartDate:           m.rollupStartDate,
-		RollupEndDate:             m.rollupEndDate,
-		MomentumDate:              m.momentumDate,
+		Date:                      m.date,
+		RollupWindowDays:          m.rollupWindowDays,
 		MomentumWindowDays:        m.currentMomentumWindowDays(),
 		MomentumTab:               string(m.currentMomentumTab()),
 		MomentumHistoryY:          m.momentumHistoryCursor,
-		WellbeingDate:             m.wellbeingDate,
 		WellbeingWindowDays:       m.currentWellbeingWindowDays(),
 		Dialog:                    m.dialog,
 		DialogState:               m.dialogState(),
@@ -136,13 +132,9 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	m.filters = state.Filters
 	m.defaultIssueSection = state.DefaultIssueSection
 	m.dailyTaskSection = state.DailyTaskSection
-	m.dashboardDate = state.DashboardDate
-	m.summaryDate = state.SummaryDate
-	m.rollupStartDate = state.RollupStartDate
-	m.rollupEndDate = state.RollupEndDate
-	m.momentumDate = state.MomentumDate
+	m.date = state.Date
+	m.rollupWindowDays = state.RollupWindowDays
 	m.momentumWindowDays = state.MomentumWindowDays
-	m.wellbeingDate = state.WellbeingDate
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m = m.withDialogState(state.DialogState)
 	if state.DialogState.Kind == "" {
@@ -205,36 +197,23 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return cmd
 		},
-		LoadDailySummary:     func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
-		LoadSummarySnapshot:  func(date string) tea.Cmd { return commands.LoadSummarySnapshot(m.client, date) },
-		LoadDueHabits:        func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
-		LoadDailyStreaks:     func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
-		CurrentDashboardDate: func(state inputpkg.State) string { return m.applyInputState(state).currentDashboardDate() },
-		CurrentSummaryDate:   func(state inputpkg.State) string { return m.applyInputState(state).currentSummaryDate() },
-		LoadRollupSummaries:  func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
+		LoadDailySummary:    func(date string) tea.Cmd { return commands.LoadDailySummary(m.client, date) },
+		LoadSummarySnapshot: func(date string) tea.Cmd { return commands.LoadSummarySnapshot(m.client, date) },
+		LoadDueHabits:       func(date string) tea.Cmd { return commands.LoadDueHabits(m.client, date) },
+		LoadDailyStreaks:    func(date string) tea.Cmd { return commands.LoadDailyStreaks(m.client, date) },
+		CurrentDate:         func(state inputpkg.State) string { return m.applyInputState(state).currentDate() },
+		CurrentLogicalDate:  func(state inputpkg.State) string { return m.applyInputState(state).currentLogicalDate() },
+		ReloadDateSurfaces:  func(state inputpkg.State) tea.Cmd { return m.applyInputState(state).reloadDateSurfaces() },
+		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadMomentumRange(m.client, date, windowDays)
-		},
-		CurrentMomentumDate: func(state inputpkg.State) string {
-			return m.applyInputState(state).currentMomentumDate()
-		},
-		CurrentRollupStartDate: func(state inputpkg.State) string {
-			return m.applyInputState(state).currentRollupStartDate()
-		},
-		CurrentRollupEndDate: func(state inputpkg.State) string {
-			return m.applyInputState(state).currentRollupEndDate()
 		},
 		LoadWellbeing: func(date string, windowDays int) tea.Cmd {
 			return commands.LoadWellbeingWindow(m.client, date, windowDays)
 		},
-		CurrentWellbeingDate: func(state inputpkg.State) string { return m.applyInputState(state).currentWellbeingDate() },
 		OpenCheckInDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
-			date := next.currentDashboardDate()
-			if next.view == ViewWellbeing {
-				date = next.currentWellbeingDate()
-			}
-			next = next.openCheckInDialogForDate(date)
+			next = next.openCheckInDialogForDate(next.currentDate())
 			*state = next.inputState()
 			return true
 		},
@@ -389,17 +368,17 @@ func (m Model) inputDeps() inputpkg.Deps {
 			snapshot := next.selectionSnapshot()
 			if issue, ok := selectionpkg.SelectedIssueDetail(snapshot); ok {
 				date := ""
-				if issue.TodoForDate != nil && *issue.TodoForDate == next.currentDashboardDate() {
+				if issue.TodoForDate != nil && *issue.TodoForDate == next.currentDate() {
 					date = ""
 				} else {
-					date = next.currentDashboardDate()
+					date = next.currentDate()
 				}
 				return commands.SetIssueTodoDate(
 					m.client,
 					issue.ID,
 					date,
 					issue.StreamID,
-					next.currentDashboardDate(),
+					next.currentDate(),
 				)
 			}
 			return nil
@@ -413,7 +392,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 					issue.ID,
 					issue.PinnedDaily,
 					issue.StreamID,
-					next.currentDashboardDate(),
+					next.currentDate(),
 				)
 			}
 			return nil
@@ -455,7 +434,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			next = next.openHabitCompletionDialog(
 				habit.ID,
-				next.currentDashboardDate(),
+				next.currentDate(),
 				habit.TargetMinutes,
 				nil,
 			)
@@ -528,7 +507,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 				if habit, ok := next.selectedDailyHabitRecord(); ok {
 					next = next.openHabitCompletionDialog(
 						habit.ID,
-						next.currentDashboardDate(),
+						next.currentDate(),
 						habit.DurationMinutes,
 						habit.Notes,
 					)
@@ -675,24 +654,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
-		OpenRollupStartDateDialog: func(state *inputpkg.State) bool {
+		OpenDateDialog: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			next = next.openDatePickerDialog(
-				"rollup_start",
+				"shared_date",
 				0,
 				0,
-				dialogstate.ValueToPointer(next.currentRollupStartDate()),
-			)
-			*state = next.inputState()
-			return true
-		},
-		OpenRollupEndDateDialog: func(state *inputpkg.State) bool {
-			next := m.applyInputState(*state)
-			next = next.openDatePickerDialog(
-				"rollup_end",
-				0,
-				0,
-				dialogstate.ValueToPointer(next.currentRollupEndDate()),
+				dialogstate.ValueToPointer(next.currentDate()),
 			)
 			*state = next.inputState()
 			return true

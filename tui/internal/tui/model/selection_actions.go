@@ -163,19 +163,19 @@ func (m Model) handleInputSetHabitFailed() (tea.Cmd, bool) {
 			return commands.UncompleteHabit(
 				m.client,
 				habit.ID,
-				m.currentDashboardDate(),
-				m.currentMomentumDate(),
+				m.currentDate(),
+				m.currentDate(),
 				m.currentMomentumWindowDays(),
 			), true
 		}
 		return commands.SetHabitStatus(
 			m.client,
 			habit.ID,
-			m.currentDashboardDate(),
+			m.currentDate(),
 			sharedtypes.HabitCompletionStatusFailed,
 			habit.DurationMinutes,
 			habit.Notes,
-			m.currentMomentumDate(),
+			m.currentDate(),
 			m.currentMomentumWindowDays(),
 		), true
 	}
@@ -188,7 +188,7 @@ func (m Model) handleInputDeleteSelection() (Model, tea.Cmd, bool) {
 		if m.dailyCheckIn == nil {
 			return m, m.setStatus("No check-in to delete for this date", true), true
 		}
-		m = m.openConfirmDeleteEntity("checkin", m.currentWellbeingDate(), "this check-in")
+		m = m.openConfirmDeleteEntity("checkin", m.currentDate(), "this check-in")
 		return m, nil, true
 	}
 	if m.view == ViewMomentum && m.currentMomentumTab() == MomentumTabCustom {
@@ -297,7 +297,7 @@ func (m Model) handleInputEnter() (Model, tea.Cmd, bool) {
 			return m, commands.LoadMomentumDetail(
 				m.client,
 				card.Definition.ID,
-				m.currentMomentumDate(),
+				m.currentDate(),
 				m.currentMomentumWindowDays(),
 			), true
 		}
@@ -377,8 +377,8 @@ func (m Model) handleInputToggleMomentum() (tea.Cmd, bool) {
 	return commands.UpdateMomentumDefinition(
 		m.client,
 		updated,
-		m.currentDashboardDate(),
-		m.currentMomentumDate(),
+		m.currentDate(),
+		m.currentDate(),
 		m.currentMomentumWindowDays(),
 	), true
 }
@@ -411,19 +411,19 @@ func (m Model) handleInputToggleHabitCompleted() (tea.Cmd, bool) {
 				return commands.UncompleteHabit(
 					m.client,
 					habit.ID,
-					m.currentDashboardDate(),
-					m.currentMomentumDate(),
+					m.currentDate(),
+					m.currentDate(),
 					m.currentMomentumWindowDays(),
 				), true
 			}
 			return commands.SetHabitStatus(
 				m.client,
 				habit.ID,
-				m.currentDashboardDate(),
+				m.currentDate(),
 				sharedtypes.HabitCompletionStatusCompleted,
 				nil,
 				nil,
-				m.currentMomentumDate(),
+				m.currentDate(),
 				m.currentMomentumWindowDays(),
 			), true
 		}

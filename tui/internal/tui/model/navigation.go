@@ -8,12 +8,15 @@ import (
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+	"crona/tui/internal/tui/commands"
 	helperpkg "crona/tui/internal/tui/helpers"
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m Model) availableViews() []View {
@@ -557,11 +560,12 @@ func (m Model) streamDescriptionByID(streamID int64) *string {
 	return nil
 }
 
-func (m Model) currentDashboardDate() string {
-	if m.dashboardDate != "" {
-		return m.dashboardDate
+// currentDate is the shared date every dated view shows; unset, it follows the logical today.
+func (m Model) currentDate() string {
+	if m.date != "" {
+		return m.date
 	}
-	return time.Now().Format("2006-01-02")
+	return m.currentLogicalDate()
 }
 
 func (m Model) currentLogicalDate() string {
@@ -571,39 +575,31 @@ func (m Model) currentLogicalDate() string {
 	return time.Now().Format("2006-01-02")
 }
 
-func (m Model) currentSummaryDate() string {
-	if m.summaryDate != "" {
-		return m.summaryDate
+func (m Model) currentRollupWindowDays() int {
+	if m.rollupWindowDays < 1 {
+		return 7
 	}
-	return time.Now().Format("2006-01-02")
+	return m.rollupWindowDays
 }
 
-func (m Model) currentRollupEndDate() string {
-	if m.rollupEndDate != "" {
-		return m.rollupEndDate
-	}
-	return time.Now().Format("2006-01-02")
+// reloadDateSurfaces reloads every surface bound to the shared date.
+func (m Model) reloadDateSurfaces() tea.Cmd {
+	date := m.currentDate()
+	return tea.Batch(
+		commands.LoadDailySummary(m.client, date),
+		commands.LoadDailyPlan(m.client, date),
+		commands.LoadDueHabits(m.client, date),
+		commands.LoadDailyStreaks(m.client, date),
+		commands.LoadSummarySnapshot(m.client, date),
+		commands.LoadMomentumRange(m.client, date, m.currentMomentumWindowDays()),
+		commands.LoadWellbeingWindow(m.client, date, m.currentWellbeingWindowDays()),
+		commands.LoadRollupSummaries(m.client, m.currentRollupStartDate(), date),
+	)
 }
 
+// currentRollupStartDate opens the Rollup window that ends on the shared date.
 func (m Model) currentRollupStartDate() string {
-	if m.rollupStartDate != "" {
-		return m.rollupStartDate
-	}
-	return shiftISODate(m.currentRollupEndDate(), -6)
-}
-
-func (m Model) currentWellbeingDate() string {
-	if m.wellbeingDate != "" {
-		return m.wellbeingDate
-	}
-	return time.Now().Format("2006-01-02")
-}
-
-func (m Model) currentMomentumDate() string {
-	if m.momentumDate != "" {
-		return m.momentumDate
-	}
-	return time.Now().Format("2006-01-02")
+	return shiftISODate(m.currentDate(), -(m.currentRollupWindowDays() - 1))
 }
 
 func (m Model) currentMomentumWindowDays() int {

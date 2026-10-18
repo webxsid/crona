@@ -11,20 +11,20 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func TestHandleOpenCheckInUsesDashboardDate(t *testing.T) {
+func TestHandleOpenCheckInUsesSharedDateOnDaily(t *testing.T) {
 	called := false
 	state := State{
-		ActiveView:    uistate.ViewDaily,
-		DashboardDate: "2026-05-27",
+		ActiveView: uistate.ViewDaily,
+		Date:       "2026-05-27",
 	}
 
 	_, _, handled := handleOpenCheckIn(state, Deps{
 		OpenCheckInDialog: func(s *State) bool {
 			called = true
-			if s.DashboardDate != "2026-05-27" {
+			if s.Date != "2026-05-27" {
 				t.Fatalf(
 					"expected daily check-in opener to preserve dashboard date, got %q",
-					s.DashboardDate,
+					s.Date,
 				)
 			}
 			return true
@@ -38,20 +38,20 @@ func TestHandleOpenCheckInUsesDashboardDate(t *testing.T) {
 	}
 }
 
-func TestHandleOpenCheckInUsesWellbeingDate(t *testing.T) {
+func TestHandleOpenCheckInUsesSharedDateOnWellbeing(t *testing.T) {
 	called := false
 	state := State{
-		ActiveView:    uistate.ViewWellbeing,
-		WellbeingDate: "2026-05-28",
+		ActiveView: uistate.ViewWellbeing,
+		Date:       "2026-05-28",
 	}
 
 	_, _, handled := handleOpenCheckIn(state, Deps{
 		OpenCheckInDialog: func(s *State) bool {
 			called = true
-			if s.WellbeingDate != "2026-05-28" {
+			if s.Date != "2026-05-28" {
 				t.Fatalf(
 					"expected wellbeing check-in opener to preserve wellbeing date, got %q",
-					s.WellbeingDate,
+					s.Date,
 				)
 			}
 			return true
@@ -107,15 +107,15 @@ func TestHandleOpenCheckInRejectsOtherViews(t *testing.T) {
 func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
 	checkInCalled := false
 	checkInState := State{
-		ActiveView:    uistate.ViewWellbeing,
-		WellbeingDate: "2026-05-28",
+		ActiveView: uistate.ViewWellbeing,
+		Date:       "2026-05-28",
 	}
 
 	next, _ := Handle(checkInState, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'w'}}, Deps{
 		OpenCheckInDialog: func(s *State) bool {
 			checkInCalled = true
-			if s.WellbeingDate != "2026-05-28" {
-				t.Fatalf("expected wellbeing w to preserve wellbeing date, got %q", s.WellbeingDate)
+			if s.Date != "2026-05-28" {
+				t.Fatalf("expected wellbeing w to preserve wellbeing date, got %q", s.Date)
 			}
 			s.Dialog = "checkin"
 			return true
@@ -144,8 +144,8 @@ func TestRouterRoutesWellbeingWToCheckInAndWAway(t *testing.T) {
 func TestRouterIgnoresWDuringConfiguredRestButStillAllowsManualAwayToggle(t *testing.T) {
 	restDate := time.Now().Format("2006-01-02")
 	restState := State{
-		ActiveView:    uistate.ViewDaily,
-		DashboardDate: restDate,
+		ActiveView: uistate.ViewDaily,
+		Date:       restDate,
 		Settings: &api.CoreSettings{
 			AwayModeEnabled:   false,
 			RestSpecificDates: []string{restDate},
@@ -160,8 +160,8 @@ func TestRouterIgnoresWDuringConfiguredRestButStillAllowsManualAwayToggle(t *tes
 	}
 
 	manualAwayState := State{
-		ActiveView:    uistate.ViewDaily,
-		DashboardDate: restDate,
+		ActiveView: uistate.ViewDaily,
+		Date:       restDate,
 		Settings: &api.CoreSettings{
 			AwayModeEnabled:   true,
 			RestSpecificDates: []string{restDate},

@@ -94,7 +94,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			commands.LoadIssuesSelecting(m.client, msg.StreamID, msg.Issue.ID),
 			commands.LoadAllIssuesSelecting(m.client, msg.Issue.ID),
 			commands.LoadDailySummary(m.client, ""),
-			commands.LoadDashboardSummaries(m.client, m.currentDashboardDate()),
+			commands.LoadDashboardSummaries(m.client, m.currentDate()),
 		)
 		switch msg.FollowUp {
 		case dialogstate.IssueCreateFollowUpMore:
@@ -145,7 +145,7 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.MomentumDetailFailedMsg:
 		return m, m.setStatus(msg.Err.Error(), true)
 	case commands.SummarySnapshotLoadedMsg:
-		if msg.Snapshot == nil || msg.Snapshot.Date != m.currentSummaryDate() {
+		if msg.Snapshot == nil || msg.Snapshot.Date != m.currentDate() {
 			return m, nil
 		}
 		m.summarySnapshot = msg.Snapshot
@@ -239,8 +239,8 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		View:                    m.view,
 		Pane:                    m.pane,
 		DailyTaskSection:        m.dailyTaskSection,
-		DashboardDate:           m.dashboardDate,
-		SummaryDate:             m.currentSummaryDate(),
+		Date:                    m.date,
+		RollupWindowDays:        m.rollupWindowDays,
 		Cursor:                  m.cursor,
 		Filters:                 m.filters,
 		Repos:                   m.repos,
@@ -254,13 +254,9 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DueHabits:               m.dueHabits,
 		DailySummary:            m.dailySummary,
 		DailyPlan:               m.dailyPlan,
-		RollupStartDate:         m.currentRollupStartDate(),
-		RollupEndDate:           m.currentRollupEndDate(),
-		MomentumDate:            m.currentMomentumDate(),
 		MomentumWindowDays:      m.currentMomentumWindowDays(),
 		MomentumTab:             string(m.currentMomentumTab()),
 		MomentumHistoryY:        m.momentumHistoryCursor,
-		WellbeingDate:           m.wellbeingDate,
 		WellbeingWindowDays:     m.currentWellbeingWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
@@ -352,15 +348,11 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dueHabits = state.DueHabits
 	m.dailySummary = state.DailySummary
 	m.dailyPlan = state.DailyPlan
-	m.dashboardDate = state.DashboardDate
-	m.summaryDate = state.SummaryDate
-	m.rollupStartDate = state.RollupStartDate
-	m.rollupEndDate = state.RollupEndDate
-	m.momentumDate = state.MomentumDate
+	m.date = state.Date
+	m.rollupWindowDays = state.RollupWindowDays
 	m.momentumWindowDays = state.MomentumWindowDays
 	m.momentumTab = MomentumTab(state.MomentumTab)
 	m.momentumHistoryCursor = state.MomentumHistoryY
-	m.wellbeingDate = state.WellbeingDate
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	m.dailyCheckIn = state.DailyCheckIn
 	m.metricsRange = state.MetricsRange
@@ -503,14 +495,8 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			}
 			*state = next.dispatchMessageState()
 		},
-		CurrentDashboardDate: func(state dispatchpkg.MessageState) string {
-			return m.applyDispatchMessageState(state).currentDashboardDate()
-		},
-		CurrentMomentumDate: func(state dispatchpkg.MessageState) string {
-			return m.applyDispatchMessageState(state).currentMomentumDate()
-		},
-		CurrentWellbeingDate: func(state dispatchpkg.MessageState) string {
-			return m.applyDispatchMessageState(state).currentWellbeingDate()
+		CurrentDate: func(state dispatchpkg.MessageState) string {
+			return m.applyDispatchMessageState(state).currentDate()
 		},
 		LoadRollupSummaries: func(start, end string) tea.Cmd { return commands.LoadRollupSummaries(m.client, start, end) },
 		LoadMomentumRange: func(date string, windowDays int) tea.Cmd {

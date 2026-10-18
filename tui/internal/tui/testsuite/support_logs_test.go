@@ -26,14 +26,12 @@ func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *
 	contextUpdated := "2026-04-02T11:45:00Z"
 
 	input := helperpkg.SupportDiagnosticsInput{
-		View:            "support",
-		Pane:            "support",
-		Width:           100,
-		Height:          30,
-		DashboardDate:   "2026-04-02",
-		RollupStartDate: "2026-03-27",
-		RollupEndDate:   "2026-04-02",
-		WellbeingDate:   "2026-04-02",
+		View:             "support",
+		Pane:             "support",
+		Width:            100,
+		Height:           30,
+		Date:             "2026-04-02",
+		RollupWindowDays: 7,
 		Context: &api.ActiveContext{
 			RepoName:   &repoName,
 			StreamName: &streamName,

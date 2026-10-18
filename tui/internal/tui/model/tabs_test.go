@@ -141,3 +141,24 @@ func TestDailyContentStateCarriesModelFilterIndices(t *testing.T) {
 		t.Fatalf("expected the model's filtered task indices, got %v (issues %d)", state.DailyIssueIndices, len(state.DailyIssues))
 	}
 }
+
+func TestContentStateSharesOneDate(t *testing.T) {
+	for _, view := range []View{ViewDaily, ViewSummary, ViewMomentum, ViewWellbeing, ViewRollup} {
+		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}, date: "2026-05-01"}
+		state := m.layoutState().ContentState
+		for name, got := range map[string]string{
+			"DashboardDate": state.DashboardDate,
+			"SummaryDate":   state.SummaryDate,
+			"MomentumDate":  state.MomentumDate,
+			"WellbeingDate": state.WellbeingDate,
+			"RollupEndDate": state.RollupEndDate,
+		} {
+			if got != "2026-05-01" {
+				t.Fatalf("%s: expected %s to be the shared date, got %q", view, name, got)
+			}
+		}
+		if state.RollupStartDate != "2026-04-25" {
+			t.Fatalf("%s: expected a 7-day rollup ending on the shared date, got start %q", view, state.RollupStartDate)
+		}
+	}
+}

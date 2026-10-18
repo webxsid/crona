@@ -15,13 +15,14 @@ import (
 )
 
 type MessageState struct {
-	Width                   int
-	Height                  int
-	View                    uistate.View
-	Pane                    uistate.Pane
-	DailyTaskSection        uistate.DailyTaskSection
-	DashboardDate           string
-	SummaryDate             string
+	Width            int
+	Height           int
+	View             uistate.View
+	Pane             uistate.Pane
+	DailyTaskSection uistate.DailyTaskSection
+	// Date is the shared date every dated view shows; "" follows the logical today.
+	Date                    string
+	RollupWindowDays        int
 	Cursor                  map[uistate.Pane]int
 	Filters                 map[uistate.Pane]string
 	Repos                   []api.Repo
@@ -35,13 +36,9 @@ type MessageState struct {
 	DueHabits               []api.HabitDailyItem
 	DailySummary            *api.DailyIssueSummary
 	DailyPlan               *api.DailyPlan
-	RollupStartDate         string
-	RollupEndDate           string
-	MomentumDate            string
 	MomentumWindowDays      int
 	MomentumTab             string
 	MomentumHistoryY        int
-	WellbeingDate           string
 	WellbeingWindowDays     int
 	DailyCheckIn            *api.DailyCheckIn
 	MetricsRange            []api.DailyMetricsDay
@@ -120,9 +117,7 @@ type MessageDeps struct {
 	OpenSupportBundleDialog    func(*MessageState, string, int64, string)
 	OpenOnboardingDialog       func(*MessageState)
 	AnchorWellbeingScroll      func(*MessageState, uistate.Pane)
-	CurrentDashboardDate       func(MessageState) string
-	CurrentMomentumDate        func(MessageState) string
-	CurrentWellbeingDate       func(MessageState) string
+	CurrentDate                func(MessageState) string
 	LoadRepos                  func() tea.Cmd
 	LoadAllIssues              func() tea.Cmd
 	LoadStreams                func(int64) tea.Cmd
@@ -253,18 +248,12 @@ func HandleMessage(
 		return state, nil, true
 	case commands.DailySummaryLoadedMsg:
 		state.DailySummary = msg.Summary
-		if state.DashboardDate == "" && msg.Summary != nil {
-			state.DashboardDate = msg.Summary.Date
-		}
 		return state, nil, true
 	case commands.DailyPlanLoadedMsg:
 		state.DailyPlan = msg.Plan
 		return state, nil, true
 	case commands.DailyCheckInLoadedMsg:
 		state.DailyCheckIn = msg.CheckIn
-		if state.DailyCheckIn != nil && state.WellbeingDate == "" {
-			state.WellbeingDate = state.DailyCheckIn.Date
-		}
 		if deps.AnchorWellbeingScroll != nil {
 			deps.AnchorWellbeingScroll(&state, uistate.PaneWellbeingSummary)
 		}
@@ -335,11 +324,6 @@ func HandleMessage(
 	case commands.GoalProgressLoadedMsg:
 		state.GoalProgress = msg.Summary
 		return state, nil, true
-	case commands.RollupRangeChangedMsg:
-		state.RollupStartDate = msg.Start
-		state.RollupEndDate = msg.End
-		state.Cursor[uistate.PaneRollupDays] = 0
-		return state, deps.LoadRollupSummaries(msg.Start, msg.End), true
 	case commands.ExportAssetsLoadedMsg:
 		state.ExportAssets = msg.Assets
 		if deps.ClampFiltered != nil {
@@ -399,7 +383,7 @@ func HandleMessage(
 				deps.ClampFiltered(&state, uistate.PaneHabits)
 			}
 		}
-		cmds := []tea.Cmd{deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate)}
+		cmds := []tea.Cmd{deps.LoadRollupSummaries(rollupRange(deps.CurrentDate(state), state.RollupWindowDays))}
 		if state.View == uistate.ViewHabitHistory {
 			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
 		}
@@ -455,7 +439,7 @@ func HandleMessage(
 			return state, nil, true
 		}
 		date := strings.TrimSpace(msg.Health.CurrentDate)
-		if previousDate == date && state.DashboardDate != "" {
+		if previousDate == date && state.Date != "" {
 			return state, nil, true
 		}
 		cmd := applyLogicalDate(&state, date, previousDate, deps)
@@ -542,11 +526,9 @@ func HandleMessage(
 		if state.Context != nil && state.Context.IssueID != nil && *state.Context.IssueID == msg.IssueID {
 			cmds = append(cmds, deps.LoadIssueSessions(msg.IssueID))
 		}
-		if deps.CurrentDashboardDate(state) == strings.TrimSpace(msg.Date) {
+		if deps.CurrentDate(state) == strings.TrimSpace(msg.Date) {
 			cmds = append(cmds, deps.LoadDailySummary(msg.Date))
 			cmds = append(cmds, deps.LoadDailyStreaks(msg.Date))
-		}
-		if deps.CurrentWellbeingDate(state) == strings.TrimSpace(msg.Date) {
 			cmds = append(cmds, deps.LoadWellbeing(msg.Date, state.WellbeingWindowDays))
 		}
 		return state, tea.Batch(cmds...), true
@@ -740,6 +722,18 @@ func habitHistoryScopeLabel(ctx *api.ActiveContext) string {
 	}
 }
 
+// messageStateDate resolves the shared date without deps: an unset date follows the
+// daemon's logical today, and selection falls back to the clock before health loads.
+func messageStateDate(state MessageState) string {
+	if state.Date != "" {
+		return state.Date
+	}
+	if state.Health != nil {
+		return strings.TrimSpace(state.Health.CurrentDate)
+	}
+	return ""
+}
+
 func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot {
 	dailySection := state.DailyTaskSection
 	if state.View == uistate.ViewDaily && dailySection == "" {
@@ -749,7 +743,7 @@ func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot
 		View:             state.View,
 		Pane:             state.Pane,
 		DailyTaskSection: dailySection,
-		DashboardDate:    state.DashboardDate,
+		DashboardDate:    messageStateDate(state),
 		Cursors:          state.Cursor,
 		Filters:          state.Filters,
 		Context:          state.Context,
@@ -762,19 +756,20 @@ func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot
 }
 
 func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.Cmd {
+	date := deps.CurrentDate(state)
 	cmds := make([]tea.Cmd, 0, len(extra)+20)
 	cmds = append(cmds, extra...)
 	cmds = append(cmds,
 		deps.LoadKernelInfo(),
 		deps.LoadRepos(),
 		deps.LoadHabitStreakDefinitions(),
-		deps.LoadMomentumRange(deps.CurrentMomentumDate(state), state.MomentumWindowDays),
+		deps.LoadMomentumRange(date, state.MomentumWindowDays),
 		deps.LoadAllIssues(),
-		deps.LoadDueHabits(deps.CurrentDashboardDate(state)),
-		deps.LoadDailySummary(state.DashboardDate),
-		deps.LoadDailyStreaks(deps.CurrentDashboardDate(state)),
-		deps.LoadWellbeing(deps.CurrentWellbeingDate(state), state.WellbeingWindowDays),
-		deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate),
+		deps.LoadDueHabits(date),
+		deps.LoadDailySummary(date),
+		deps.LoadDailyStreaks(date),
+		deps.LoadWellbeing(date, state.WellbeingWindowDays),
+		deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)),
 		deps.LoadSessionHistoryFor200(state),
 		deps.LoadOps(deps.CurrentOpsLimit(state)),
 		deps.LoadContext(),
@@ -787,38 +782,39 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadExportReports(),
 	)
 	if deps.LoadSummarySnapshot != nil {
-		cmds = append(cmds, deps.LoadSummarySnapshot(state.SummaryDate))
+		cmds = append(cmds, deps.LoadSummarySnapshot(date))
 	}
 	return tea.Batch(cmds...)
 }
 
+// defaultRollupWindowDays is Rollup's window when none has been chosen.
+const defaultRollupWindowDays = 7
+
+// rollupRange is the Rollup window that ends on date.
+func rollupRange(date string, windowDays int) (string, string) {
+	if windowDays < 1 {
+		windowDays = defaultRollupWindowDays
+	}
+	return shiftISODate(date, -(windowDays - 1)), date
+}
+
+// applyLogicalDate moves the shared date to the new logical today when it was on the
+// previous one (or unset), so a user looking at another day stays there.
 func applyLogicalDate(state *MessageState, date, previousDate string, deps MessageDeps) tea.Cmd {
-	if previousDate == "" || state.DashboardDate == "" || state.DashboardDate == previousDate {
-		state.DashboardDate = date
+	if previousDate == "" || state.Date == "" || state.Date == previousDate {
+		state.Date = date
 	}
-	if previousDate == "" || state.SummaryDate == "" || state.SummaryDate == previousDate {
-		state.SummaryDate = date
-	}
-	if previousDate == "" || state.RollupEndDate == "" || state.RollupEndDate == previousDate {
-		state.RollupEndDate = date
-		state.RollupStartDate = shiftISODate(date, -6)
-	}
-	if previousDate == "" || state.WellbeingDate == "" || state.WellbeingDate == previousDate {
-		state.WellbeingDate = date
-	}
-	if previousDate == "" || state.MomentumDate == "" || state.MomentumDate == previousDate {
-		state.MomentumDate = date
-	}
+	shown := state.Date
 	return tea.Batch(
 		deps.LoadAllIssues(),
 		deps.LoadAllHabits(),
-		deps.LoadDailySummary(date),
-		deps.LoadDailyPlan(date),
-		deps.LoadDueHabits(date),
-		deps.LoadDailyStreaks(date),
-		deps.LoadWellbeing(date, state.WellbeingWindowDays),
-		deps.LoadMomentumRange(date, state.MomentumWindowDays),
-		deps.LoadRollupSummaries(shiftISODate(date, -6), date),
+		deps.LoadDailySummary(shown),
+		deps.LoadDailyPlan(shown),
+		deps.LoadDueHabits(shown),
+		deps.LoadDailyStreaks(shown),
+		deps.LoadWellbeing(shown, state.WellbeingWindowDays),
+		deps.LoadMomentumRange(shown, state.MomentumWindowDays),
+		deps.LoadRollupSummaries(rollupRange(shown, state.RollupWindowDays)),
 	)
 }
 
@@ -832,6 +828,10 @@ func isExportDialog(kind string) bool {
 }
 
 func historyRefreshCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.Cmd {
+	date := state.Date
+	if deps.CurrentDate != nil {
+		date = deps.CurrentDate(state)
+	}
 	cmds := append([]tea.Cmd{}, extra...)
 	if deps.LoadSessionHistoryFor200 != nil {
 		cmds = append(cmds, deps.LoadSessionHistoryFor200(state))
@@ -848,22 +848,22 @@ func historyRefreshCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) t
 		}
 	}
 	if deps.LoadDailySummary != nil {
-		cmds = append(cmds, deps.LoadDailySummary(state.DashboardDate))
+		cmds = append(cmds, deps.LoadDailySummary(date))
 	}
 	if deps.LoadSummarySnapshot != nil {
-		cmds = append(cmds, deps.LoadSummarySnapshot(state.SummaryDate))
+		cmds = append(cmds, deps.LoadSummarySnapshot(date))
 	}
 	if deps.LoadDailyStreaks != nil {
-		cmds = append(cmds, deps.LoadDailyStreaks(state.DashboardDate))
+		cmds = append(cmds, deps.LoadDailyStreaks(date))
 	}
 	if deps.LoadRollupSummaries != nil {
-		cmds = append(cmds, deps.LoadRollupSummaries(state.RollupStartDate, state.RollupEndDate))
+		cmds = append(cmds, deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)))
 	}
 	if deps.LoadWellbeing != nil {
-		cmds = append(cmds, deps.LoadWellbeing(state.WellbeingDate, state.WellbeingWindowDays))
+		cmds = append(cmds, deps.LoadWellbeing(date, state.WellbeingWindowDays))
 	}
 	if deps.LoadMomentumRange != nil {
-		cmds = append(cmds, deps.LoadMomentumRange(state.MomentumDate, state.MomentumWindowDays))
+		cmds = append(cmds, deps.LoadMomentumRange(date, state.MomentumWindowDays))
 	}
 	return tea.Batch(cmds...)
 }

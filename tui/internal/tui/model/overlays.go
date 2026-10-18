@@ -1,8 +1,6 @@
 package model
 
 import (
-	"encoding/json"
-
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -168,13 +166,10 @@ func (m Model) dispatchEventState() dispatchpkg.EventState {
 		Timer:                  m.timer,
 		Elapsed:                m.elapsed,
 		TimerTickSeq:           m.timerTickSeq,
-		CurrentDash:            m.currentDashboardDate(),
-		CurrentSummary:         m.currentSummaryDate(),
-		CurrentRollupStart:     m.currentRollupStartDate(),
-		CurrentRollupEnd:       m.currentRollupEndDate(),
-		CurrentWell:            m.currentWellbeingDate(),
+		Date:                   m.date,
+		CurrentDate:            m.currentDate(),
+		RollupWindowDays:       m.currentRollupWindowDays(),
 		WellbeingWindowDays:    m.currentWellbeingWindowDays(),
-		CurrentMomentum:        m.currentMomentumDate(),
 		MomentumWindowDays:     m.currentMomentumWindowDays(),
 		CurrentOpsLim:          m.currentOpsLimit(),
 	}
@@ -193,6 +188,7 @@ func (m Model) applyDispatchEventState(state dispatchpkg.EventState) Model {
 	m.timer = state.Timer
 	m.elapsed = state.Elapsed
 	m.timerTickSeq = state.TimerTickSeq
+	m.date = state.Date
 	m.wellbeingWindowDays = state.WellbeingWindowDays
 	return m
 }
@@ -246,30 +242,6 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 	if event.Type == sharedtypes.EventTypeTimerHardLimitReached && next.dialog == "" {
 		label := next.terminalSessionTitle()
 		next = next.openHardLimitExpiredDialog(label)
-	}
-	if event.Type == sharedtypes.EventTypeDayStart {
-		var payload sharedtypes.DayBoundaryEventPayload
-		if err := json.Unmarshal(event.Payload, &payload); err == nil && payload.LogicalDate != "" {
-			date := payload.LogicalDate
-			previousDate := payload.DateBefore
-			if next.dashboardDate == "" || next.dashboardDate == previousDate {
-				next.dashboardDate = date
-			}
-			if next.summaryDate == "" || next.summaryDate == previousDate {
-				next.summaryDate = date
-			}
-			if next.rollupEndDate == "" || next.rollupEndDate == previousDate {
-				next.rollupEndDate = date
-				next.rollupStartDate = shiftISODate(date, -6)
-			}
-			if next.wellbeingDate == "" || next.wellbeingDate == previousDate {
-				next.wellbeingDate = date
-			}
-			if next.momentumDate == "" || next.momentumDate == previousDate {
-				next.momentumDate = date
-			}
-			return next, cmd
-		}
 	}
 	return next, cmd
 }

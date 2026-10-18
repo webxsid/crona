@@ -88,11 +88,11 @@ func TestAllIssuesLoadedRestoresCreatedIssueInDefaultView(t *testing.T) {
 func TestIssuesLoadedRestoresSelectedIssueInDailyView(t *testing.T) {
 	selectedID := int64(20)
 	state, _, handled := HandleMessage(MessageState{
-		View:          uistate.ViewDaily,
-		Pane:          uistate.PaneIssues,
-		DashboardDate: "2026-05-06",
-		Cursor:        map[uistate.Pane]int{uistate.PaneIssues: 0},
-		Filters:       map[uistate.Pane]string{uistate.PaneIssues: ""},
+		View:    uistate.ViewDaily,
+		Pane:    uistate.PaneIssues,
+		Date:    "2026-05-06",
+		Cursor:  map[uistate.Pane]int{uistate.PaneIssues: 0},
+		Filters: map[uistate.Pane]string{uistate.PaneIssues: ""},
 		Issues: []api.Issue{
 			{ID: 10, Title: "Alpha", Status: "planned", TodoForDate: new("2026-05-06")},
 			{ID: 20, Title: "Bravo", Status: "in_progress", TodoForDate: new("2026-05-06")},

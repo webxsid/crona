@@ -111,25 +111,22 @@ type Model struct {
 	opsLimitPinned bool
 
 	// data
-	repos                     []api.Repo
-	streams                   []api.Stream
-	issues                    []api.Issue // context-filtered (by active streamId)
-	habits                    []api.Habit
-	allHabits                 []api.HabitWithMeta
-	allIssues                 []api.IssueWithMeta
-	dueHabits                 []api.HabitDailyItem
-	dailySummary              *api.DailyIssueSummary
-	dailyPlan                 *api.DailyPlan
-	dashboardDate             string
-	summaryDate               string
+	repos        []api.Repo
+	streams      []api.Stream
+	issues       []api.Issue // context-filtered (by active streamId)
+	habits       []api.Habit
+	allHabits    []api.HabitWithMeta
+	allIssues    []api.IssueWithMeta
+	dueHabits    []api.HabitDailyItem
+	dailySummary *api.DailyIssueSummary
+	dailyPlan    *api.DailyPlan
+	// date is the shared date every dated view shows; "" follows the logical today.
+	date                      string
+	rollupWindowDays          int
 	summarySnapshot           *api.SummarySnapshot
-	rollupStartDate           string
-	rollupEndDate             string
-	momentumDate              string
 	momentumWindowDays        int
 	momentumTab               MomentumTab
 	momentumHistoryCursor     int
-	wellbeingDate             string
 	wellbeingWindowDays       int
 	dailyCheckIn              *api.DailyCheckIn
 	metricsRange              []api.DailyMetricsDay

@@ -13,13 +13,11 @@ import (
 )
 
 type State struct {
-	Context               *api.ActiveContext
-	Repos                 []api.Repo
-	DashboardDate         string
-	MomentumDate          string
+	Context *api.ActiveContext
+	Repos   []api.Repo
+	// Date is the shared date, resolved: dialogs default to it.
+	Date                  string
 	MomentumWindowDays    int
-	RollupStartDate       string
-	RollupEndDate         string
 	CurrentExecutablePath string
 	KernelExecutablePath  string
 	KernelInfo            *api.KernelInfo
@@ -68,8 +66,6 @@ type Deps struct {
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
-	SetRollupStartDate             func(date, currentEnd string) tea.Cmd
-	SetRollupEndDate               func(currentStart, date string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
 	OpenSupportFeedbackRoadmapURL  func() tea.Cmd
 	OpenSupportReleasesURL         func() tea.Cmd
@@ -125,7 +121,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Weekdays,
 			action.Estimate,
 			action.Active,
-			state.DashboardDate,
+			state.Date,
 		)
 	})
 	r.Register("create_issue_default", func(action dialogstate.Action) tea.Cmd {
@@ -140,7 +136,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	})
 	r.Register("promote_adhoc_issue", func(action dialogstate.Action) tea.Cmd {
 		return deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
-			action.Title, action.Description, action.Estimate, action.DueDate, state.DashboardDate)
+			action.Title, action.Description, action.Estimate, action.DueDate, state.Date)
 	})
 	r.Register("checkout_context", func(action dialogstate.Action) tea.Cmd {
 		return deps.CheckoutContext(
@@ -166,7 +162,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Description,
 			action.Estimate,
 			action.DueDate,
-			state.DashboardDate,
+			state.Date,
 		)
 	})
 	r.Register("complete_habit", func(action dialogstate.Action) tea.Cmd {
@@ -176,7 +172,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			sharedtypes.HabitCompletionStatusCompleted,
 			action.Estimate,
 			action.Note,
-			state.MomentumDate,
+			state.Date,
 			state.MomentumWindowDays,
 		)
 	})
@@ -205,8 +201,8 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		}
 		return deps.CreateMomentumDefinition(
 			action.HabitStreakDefs[0],
-			state.DashboardDate,
-			state.MomentumDate,
+			state.Date,
+			state.Date,
 			state.MomentumWindowDays,
 		)
 	})
@@ -219,8 +215,8 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		}
 		return deps.UpdateMomentumDefinition(
 			action.HabitStreakDefs[0],
-			state.DashboardDate,
-			state.MomentumDate,
+			state.Date,
+			state.Date,
 			state.MomentumWindowDays,
 		)
 	})
@@ -274,7 +270,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Status,
 			action.Note,
 			action.StreamID,
-			state.DashboardDate,
+			state.Date,
 		)
 	})
 	r.Register("amend_session", func(action dialogstate.Action) tea.Cmd {
@@ -305,7 +301,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		return deps.ExtendHardLimit(*action.TimerExtend)
 	})
 	r.Register("end_session", func(action dialogstate.Action) tea.Cmd {
-		return deps.EndFocusSession(action.StreamID, state.DashboardDate, action.Payload)
+		return deps.EndFocusSession(action.StreamID, state.Date, action.Payload)
 	})
 	r.Register("change_issue_status_and_end_session", func(action dialogstate.Action) tea.Cmd {
 		return deps.ChangeIssueStatusAndEndSession(
@@ -313,7 +309,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Status,
 			action.Note,
 			action.StreamID,
-			state.DashboardDate,
+			state.Date,
 			action.Payload,
 		)
 	})
@@ -322,21 +318,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		if action.DueDate != nil {
 			due = *action.DueDate
 		}
-		return deps.SetIssueTodoDate(action.IssueID, due, action.StreamID, state.DashboardDate)
-	})
-	r.Register("set_rollup_start_date", func(action dialogstate.Action) tea.Cmd {
-		date := state.RollupStartDate
-		if action.DueDate != nil {
-			date = *action.DueDate
-		}
-		return deps.SetRollupStartDate(date, state.RollupEndDate)
-	})
-	r.Register("set_rollup_end_date", func(action dialogstate.Action) tea.Cmd {
-		date := state.RollupEndDate
-		if action.DueDate != nil {
-			date = *action.DueDate
-		}
-		return deps.SetRollupEndDate(state.RollupStartDate, date)
+		return deps.SetIssueTodoDate(action.IssueID, due, action.StreamID, state.Date)
 	})
 	r.Register(
 		"wipe_runtime_data",
@@ -453,7 +435,7 @@ func patchSettingCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd 
 	if state.Context != nil && state.Context.StreamID != nil {
 		streamID = *state.Context.StreamID
 	}
-	return deps.PatchSetting(action.SettingKey, value, repoID, streamID, state.DashboardDate)
+	return deps.PatchSetting(action.SettingKey, value, repoID, streamID, state.Date)
 }
 
 func deleteCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
@@ -469,21 +451,21 @@ func deleteCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		return deps.DeleteIssue(
 			dialogstate.ParseNumericID(action.ID),
 			action.StreamID,
-			state.DashboardDate,
+			state.Date,
 		)
 	})
 	r.Register("habit", func(action dialogstate.Action) tea.Cmd {
 		return deps.DeleteHabit(
 			dialogstate.ParseNumericID(action.ID),
 			action.StreamID,
-			state.DashboardDate,
+			state.Date,
 		)
 	})
 	r.Register("momentum", func(action dialogstate.Action) tea.Cmd {
 		return deps.DeleteMomentumDefinition(
 			action.ID,
-			state.DashboardDate,
-			state.MomentumDate,
+			state.Date,
+			state.Date,
 			state.MomentumWindowDays,
 		)
 	})
@@ -518,21 +500,21 @@ func patchRestProtectionCmd(action dialogstate.Action, state State, deps Deps) t
 			action.StreakKinds,
 			repoID,
 			streamID,
-			state.DashboardDate,
+			state.Date,
 		),
 		deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyRestWeekdays,
 			action.IntList,
 			repoID,
 			streamID,
-			state.DashboardDate,
+			state.Date,
 		),
 		deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyRestSpecificDates,
 			action.RestDates,
 			repoID,
 			streamID,
-			state.DashboardDate,
+			state.Date,
 		),
 	)
 }

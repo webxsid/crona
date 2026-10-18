@@ -655,12 +655,6 @@ func LoadGoalProgress(c *api.Client, start, end string) tea.Cmd {
 	}
 }
 
-func SetRollupRange(start, end string) tea.Cmd {
-	return func() tea.Msg {
-		return RollupRangeChangedMsg{Start: start, End: end}
-	}
-}
-
 func shiftISODate(date string, days int) string {
 	t, err := time.Parse("2006-01-02", date)
 	if err != nil {

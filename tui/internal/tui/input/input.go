@@ -13,22 +13,19 @@ import (
 )
 
 type State struct {
-	ActiveView                uistate.View
-	ActivePane                uistate.Pane
-	ProtectedModeActive       bool
-	Cursor                    map[uistate.Pane]int
-	Filters                   map[uistate.Pane]string
-	DefaultIssueSection       uistate.DefaultIssueSection
-	DailyTaskSection          uistate.DailyTaskSection
-	DashboardDate             string
-	SummaryDate               string
-	RollupStartDate           string
-	RollupEndDate             string
-	MomentumDate              string
+	ActiveView          uistate.View
+	ActivePane          uistate.Pane
+	ProtectedModeActive bool
+	Cursor              map[uistate.Pane]int
+	Filters             map[uistate.Pane]string
+	DefaultIssueSection uistate.DefaultIssueSection
+	DailyTaskSection    uistate.DailyTaskSection
+	// Date is the one date every dated view shows; "" means the logical today.
+	Date                      string
+	RollupWindowDays          int
 	MomentumWindowDays        int
 	MomentumTab               string
 	MomentumHistoryY          int
-	WellbeingDate             string
 	WellbeingWindowDays       int
 	Dialog                    string
 	DialogState               dialogstate.State
@@ -72,22 +69,19 @@ type Deps struct {
 	ListLen                         func(State, uistate.Pane) int
 	LoadExportAssets                func() tea.Cmd
 	SetStatus                       func(*State, string, bool) tea.Cmd
+	CurrentDate                     func(State) string
+	CurrentLogicalDate              func(State) string
+	ReloadDateSurfaces              func(State) tea.Cmd
 	LoadDailySummary                func(string) tea.Cmd
 	LoadSummarySnapshot             func(string) tea.Cmd
 	LoadDailyStreaks                func(string) tea.Cmd
 	LoadDueHabits                   func(string) tea.Cmd
-	CurrentDashboardDate            func(State) string
-	CurrentSummaryDate              func(State) string
 	LoadRollupSummaries             func(string, string) tea.Cmd
 	LoadMomentumRange               func(string, int) tea.Cmd
-	CurrentMomentumDate             func(State) string
 	CreateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
 	UpdateMomentumDefinition        func(api.HabitStreakDefinition, string, string, int) tea.Cmd
 	DeleteMomentumDefinition        func(string, string, string, int) tea.Cmd
-	CurrentRollupStartDate          func(State) string
-	CurrentRollupEndDate            func(State) string
 	LoadWellbeing                   func(string, int) tea.Cmd
-	CurrentWellbeingDate            func(State) string
 	OpenCheckInDialog               func(*State) bool
 	OpenSummaryCalendar             func(*State) bool
 	OpenHelpDialog                  func(*State) bool
@@ -139,8 +133,7 @@ type Deps struct {
 	OpenEditDayBoundaryDialog       func(*State, sharedtypes.CoreSettingsKey) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
 	WipeRuntimeData                 func() tea.Cmd
-	OpenRollupStartDateDialog       func(*State) bool
-	OpenRollupEndDateDialog         func(*State) bool
+	OpenDateDialog                  func(*State) bool
 	OpenSupportFeedbackRoadmapURL   func() tea.Cmd
 	OpenSupportReleasesURL          func() tea.Cmd
 	OpenSupportDocumentationURL     func() tea.Cmd
@@ -337,9 +330,9 @@ func newRouter(deps Deps) *router {
 		uistate.ViewDaily,
 		uistate.PaneIssues,
 		uistate.PaneHabits,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDailyDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDailyDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDailyDate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleOpenExportDaily(s, deps) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			deps.OpenCheckoutContextDialog(&s)
@@ -378,17 +371,17 @@ func newRouter(deps Deps) *router {
 	r.RegisterView(
 		uistate.ViewSummary,
 		",",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftSummaryDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
 	)
 	r.RegisterView(
 		uistate.ViewSummary,
 		".",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftSummaryDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
 	)
 	r.RegisterView(
 		uistate.ViewSummary,
 		"g",
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetSummaryDate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
 	)
 	r.RegisterView(
 		uistate.ViewSummary,
@@ -609,9 +602,9 @@ func newRouter(deps Deps) *router {
 	keyregistry.RegisterWellbeing(
 		r,
 		uistate.ViewWellbeing,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftWellbeingDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetWellbeingDate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
 	)
 	r.RegisterView(
 		uistate.ViewMomentum,
@@ -637,9 +630,9 @@ func newRouter(deps Deps) *router {
 	keyregistry.RegisterWellbeing(
 		r,
 		uistate.ViewMomentum,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftMomentumDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftMomentumDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetMomentumDate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
 	)
 	r.RegisterView(
 		uistate.ViewWellbeing,
@@ -665,20 +658,15 @@ func newRouter(deps Deps) *router {
 	keyregistry.RegisterRollup(
 		r,
 		uistate.ViewRollup,
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupStartDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupEndDate(s, deps, -1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupEndDate(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetRollupRange(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftDate(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetDate(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupWindow(s, deps, 1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShiftRollupWindow(s, deps, -1) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleResetRollupWindow(s, deps) },
 	)
-	r.RegisterView(uistate.ViewRollup, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		if deps.OpenRollupStartDateDialog(&s) {
-			return s, nil, true
-		}
-		return s, nil, false
-	})
 	r.RegisterView(uistate.ViewRollup, "E", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		if deps.OpenRollupEndDateDialog(&s) {
+		if deps.OpenDateDialog(&s) {
 			return s, nil, true
 		}
 		return s, nil, false

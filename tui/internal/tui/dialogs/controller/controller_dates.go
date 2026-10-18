@@ -17,7 +17,7 @@ func updateDatePicker(
 ) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
-		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
+		if state.Parent == "shared_date" {
 			return Close(state), nil, ""
 		}
 		return closeDatePicker(state), nil, ""
@@ -39,19 +39,11 @@ func updateDatePicker(
 			state.ProtectionDates = normalizedDateList(append(state.ProtectionDates, selected))
 			return closeDatePicker(state), nil, ""
 		}
-		if state.Parent == "rollup_start" {
+		if state.Parent == "shared_date" {
 			return Close(
 					state,
 				), &Action{
-					Kind:    "set_rollup_start_date",
-					DueDate: ValueToPointer(selected),
-				}, ""
-		}
-		if state.Parent == "rollup_end" {
-			return Close(
-					state,
-				), &Action{
-					Kind:    "set_rollup_end_date",
+					Kind:    "set_shared_date",
 					DueDate: ValueToPointer(selected),
 				}, ""
 		}
@@ -73,7 +65,7 @@ func updateDatePicker(
 		if state.Parent == "edit_rest_protection" {
 			return closeDatePicker(state), nil, ""
 		}
-		if state.Parent == "rollup_start" || state.Parent == "rollup_end" {
+		if state.Parent == "shared_date" {
 			return Close(state), nil, ""
 		}
 		return Close(

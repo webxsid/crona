@@ -1,7 +1,6 @@
 package input
 
 import (
-	"strings"
 	"time"
 
 	sharedtypes "crona/shared/types"
@@ -35,7 +34,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			!s.Settings.ManageHistory,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "History Edit Window":
 		return s, deps.PatchSetting(
@@ -43,7 +42,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			min(max(s.Settings.ManageHistoryDays+dir, 0), 5),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Work Duration":
 		return s, deps.PatchSetting(
@@ -51,7 +50,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			max(s.Settings.WorkDurationMinutes+dir*5, 5),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Update Checks":
 		return s, deps.PatchSetting(
@@ -59,7 +58,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			!s.Settings.UpdateChecksEnabled,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Update Prompt":
 		return s, deps.PatchSetting(
@@ -67,7 +66,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			!s.Settings.UpdatePromptEnabled,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Update Channel":
 		return s, deps.PatchSetting(
@@ -75,7 +74,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextUpdateChannel(s.Settings.UpdateChannel, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Repo Sort":
 		return s, deps.PatchSetting(
@@ -83,7 +82,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextRepoSort(s.Settings.RepoSort, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Stream Sort":
 		return s, deps.PatchSetting(
@@ -91,7 +90,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextStreamSort(s.Settings.StreamSort, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Issue Sort":
 		return s, deps.PatchSetting(
@@ -99,7 +98,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextIssueSort(s.Settings.IssueSort, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Habit Sort":
 		return s, deps.PatchSetting(
@@ -107,7 +106,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextHabitSort(s.Settings.HabitSort, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Date Format":
 		return s, deps.PatchSetting(
@@ -115,7 +114,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextDateDisplayPreset(s.Settings.DateDisplayPreset, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Prompt Glyphs":
 		return s, deps.PatchSetting(
@@ -123,7 +122,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextPromptGlyphMode(s.Settings.PromptGlyphMode, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Week Start":
 		return s, deps.PatchSetting(
@@ -131,7 +130,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			nextWeekStart(s.Settings.WeekStart, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Away Mode":
 		return s, deps.PatchSetting(
@@ -139,7 +138,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			!s.Settings.AwayModeEnabled,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Rollback Window":
 		return s, deps.PatchSetting(
@@ -147,7 +146,7 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			max(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case "Start of Day", "End of Day":
 		if deps.OpenEditDayBoundaryDialog != nil {
@@ -231,7 +230,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			!s.Settings.BoundaryNotifications,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowSound:
 		return s, deps.PatchSetting(
@@ -239,7 +238,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			!s.Settings.BoundarySound,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowSoundPreset:
 		return s, deps.PatchSetting(
@@ -247,7 +246,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			nextAlertSoundPreset(s.Settings.AlertSoundPreset, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowUrgency:
 		return s, deps.PatchSetting(
@@ -255,7 +254,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			nextAlertUrgency(s.Settings.AlertUrgency, dir),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowLogoIcon:
 		return s, deps.PatchSetting(
@@ -263,7 +262,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			!s.Settings.AlertIconEnabled,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowInactivityAlerts:
 		return s, deps.PatchSetting(
@@ -271,7 +270,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			!s.Settings.InactivityAlerts,
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowInactivityAfter:
 		return s, deps.PatchSetting(
@@ -279,7 +278,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			clampAlertMinutes(s.Settings.InactivityThreshold+dir*15),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowInactivityRepeat:
 		return s, deps.PatchSetting(
@@ -287,7 +286,7 @@ func handleAdjustSelectedAlert(s State, deps Deps, dir int) (tea.Model, tea.Cmd,
 			clampAlertMinutes(s.Settings.InactivityRepeat+dir*15),
 			repoID,
 			streamID,
-			s.DashboardDate,
+			s.Date,
 		), true
 	case alertsmeta.RowTestNotification:
 		return s, deps.TestAlertNotification(), true
@@ -417,10 +416,7 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 		s.ActiveView = uistate.ViewDaily
 		s.ActivePane = uistate.DefaultPane(s.ActiveView)
 	}
-	date := s.DashboardDate
-	if s.ActiveView == uistate.ViewWellbeing && strings.TrimSpace(s.WellbeingDate) != "" {
-		date = s.WellbeingDate
-	}
+	date := s.Date
 	setAwayMode := deps.SetAwayMode
 	if setAwayMode == nil {
 		setAwayMode = func(enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {

@@ -35,15 +35,15 @@ func (m Model) viewContentState(
 		Width:               width,
 		Height:              height,
 		Elapsed:             m.elapsed,
-		DashboardDate:       m.dashboardDate,
-		SummaryDate:         m.currentSummaryDate(),
+		DashboardDate:       m.currentDate(),
+		SummaryDate:         m.currentDate(),
 		RollupStartDate:     m.currentRollupStartDate(),
-		RollupEndDate:       m.currentRollupEndDate(),
-		MomentumDate:        m.currentMomentumDate(),
+		RollupEndDate:       m.currentDate(),
+		MomentumDate:        m.currentDate(),
 		MomentumWindowDays:  m.currentMomentumWindowDays(),
 		MomentumTab:         string(m.currentMomentumTab()),
 		MomentumHistoryY:    m.momentumHistoryCursor,
-		WellbeingDate:       m.currentWellbeingDate(),
+		WellbeingDate:       m.currentDate(),
 		WellbeingWindowDays: m.currentWellbeingWindowDays(),
 		WeekStart:           m.currentWeekStart(),
 		DefaultIssueSection: string(m.defaultIssueSection),
@@ -147,7 +147,7 @@ func (m Model) viewContentState(
 		KernelInfo:           m.kernelInfo,
 		Settings:             m.settings,
 	}
-	selectedDate := m.currentDashboardDate()
+	selectedDate := m.currentDate()
 	if m.view == ViewDaily {
 		state.DailyIssueIndices = selectionpkg.FilteredIndices(snapshot, PaneIssues)
 		state.DailyHabitIndices = selectionpkg.FilteredIndices(snapshot, PaneHabits)
@@ -208,7 +208,7 @@ func (m Model) dialogRenderState() dialogstate.State {
 		state = dialogstate.PopulateDatePresentation(
 			dialogControllerTheme(layoutpkg.DialogTheme()),
 			state,
-			m.currentSummaryDate(),
+			m.currentDate(),
 		)
 	}
 	if m.dialog == "summary_calendar" {

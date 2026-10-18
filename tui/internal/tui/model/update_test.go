@@ -28,7 +28,7 @@ func TestIssuePanePreflightClearMessagesOpenRequestedDialog(t *testing.T) {
 			RepoName:   "Work",
 			StreamName: "app",
 		}},
-		dashboardDate: "2026-04-10",
+		date: "2026-04-10",
 	}
 
 	nextAny, _ := model.update(commands.IssueActionPreflightClearMsg{

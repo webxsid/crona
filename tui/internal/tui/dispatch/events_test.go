@@ -16,7 +16,7 @@ func TestTimerExtendedDismissesMatchingHardLimitDialog(t *testing.T) {
 		EventState{
 			Dialog:        "hard_limit_expired",
 			Timer:         &api.TimerState{SessionID: stringPtr("session-1")},
-			CurrentDash:   "2026-07-14",
+			CurrentDate:   "2026-07-14",
 			Cursor:        map[uistate.Pane]int{},
 			CurrentOpsLim: 50,
 		},
@@ -35,7 +35,7 @@ func TestTimerExtendedDismissesMatchingHardLimitDialog(t *testing.T) {
 func TestTimerActionEventsRefreshTimer(t *testing.T) {
 	for _, eventType := range []string{"timer.advance", "timer.defer_break"} {
 		state, cmd := HandleEvent(
-			EventState{CurrentDash: "2026-07-14", Cursor: map[uistate.Pane]int{}},
+			EventState{CurrentDate: "2026-07-14", Cursor: map[uistate.Pane]int{}},
 			testEventDeps(),
 			api.KernelEvent{Type: eventType},
 		)
@@ -76,9 +76,7 @@ func TestAwayDatesChangedReloadsStreakSurfaces(t *testing.T) {
 		t.Fatalf("marshal settings event: %v", err)
 	}
 	state := EventState{
-		CurrentDash:         "2026-08-09",
-		CurrentWell:         "2026-08-09",
-		CurrentMomentum:     "2026-08-09",
+		CurrentDate:         "2026-08-09",
 		MomentumWindowDays:  30,
 		WellbeingWindowDays: 7,
 	}
@@ -135,7 +133,7 @@ func TestTimerExtendedDismissesMatchingHardLimitEndSessionDialog(t *testing.T) {
 			Dialog:       "end_session",
 			DialogParent: "hard_limit_expired",
 			Timer:        &api.TimerState{SessionID: stringPtr("session-1")},
-			CurrentDash:  "2026-07-14",
+			CurrentDate:  "2026-07-14",
 			Cursor:       map[uistate.Pane]int{},
 		},
 		testEventDeps(),
@@ -152,7 +150,7 @@ func TestSessionEndedDismissesMatchingEndSessionDialog(t *testing.T) {
 		EventState{
 			Dialog:      "end_session",
 			Timer:       &api.TimerState{SessionID: stringPtr("session-1")},
-			CurrentDash: "2026-07-14",
+			CurrentDate: "2026-07-14",
 			Cursor:      map[uistate.Pane]int{},
 		},
 		testEventDeps(),
@@ -172,7 +170,7 @@ func TestSessionEventIgnoresDifferentSession(t *testing.T) {
 		EventState{
 			Dialog:      "hard_limit_expired",
 			Timer:       &api.TimerState{SessionID: stringPtr("session-1")},
-			CurrentDash: "2026-07-14",
+			CurrentDate: "2026-07-14",
 			Cursor:      map[uistate.Pane]int{},
 		},
 		testEventDeps(),
@@ -198,7 +196,7 @@ func TestHardLimitReachedEventCarriesCountdownKind(t *testing.T) {
 	state, _ := HandleEvent(
 		EventState{
 			Timer:         &api.TimerState{SessionID: stringPtr("session-1")},
-			CurrentDash:   "2026-07-14",
+			CurrentDate:   "2026-07-14",
 			Cursor:        map[uistate.Pane]int{},
 			CurrentOpsLim: 50,
 		},
@@ -258,7 +256,7 @@ func TestHistoryChangedRefreshesTotals(t *testing.T) {
 	deps.LoadSummarySnapshot = func(string) tea.Cmd { return trackedEventCommand(called, "summary")() }
 	deps.LoadRollupSummaries = func(string, string) tea.Cmd { return trackedEventCommand(called, "rollup")() }
 	deps.LoadIssueSessions = func(int64) tea.Cmd { return trackedEventCommand(called, "issue sessions")() }
-	_, cmd := HandleEvent(EventState{Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDash: "2026-05-24", CurrentSummary: "2026-05-23"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
+	_, cmd := HandleEvent(EventState{Context: &api.ActiveContext{IssueID: new(int64(1))}, CurrentDate: "2026-05-24"}, deps, sessionEvent(sharedtypes.EventTypeSessionHistoryChanged, "s"))
 	if cmd == nil {
 		t.Fatal("missing refresh")
 	}

@@ -28,15 +28,15 @@ type EventState struct {
 	Timer                  *api.TimerState
 	Elapsed                int
 	TimerTickSeq           int
-	CurrentDash            string
-	CurrentSummary         string
-	CurrentRollupStart     string
-	CurrentRollupEnd       string
-	CurrentWell            string
-	WellbeingWindowDays    int
-	CurrentMomentum        string
-	MomentumWindowDays     int
-	CurrentOpsLim          int
+	// Date is the stored shared date ("" follows today), CurrentDate the date it resolves
+	// to, and Today the logical today before this event.
+	Date                string
+	CurrentDate         string
+	Today               string
+	RollupWindowDays    int
+	WellbeingWindowDays int
+	MomentumWindowDays  int
+	CurrentOpsLim       int
 }
 
 type EventDeps struct {
@@ -80,8 +80,8 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, nil
 	case "issue.created", "issue.updated", "issue.deleted":
 		cmds := []tea.Cmd{
-			deps.LoadDailySummary(state.CurrentDash),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadDailySummary(state.CurrentDate),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		}
 		if state.Context != nil && state.Context.StreamID != nil {
 			if state.SelectedIssueID != nil {
@@ -101,11 +101,11 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(cmds...)
 	case "habit.created", "habit.updated", "habit.deleted", "habit.completed", "habit.uncompleted":
 		cmds := []tea.Cmd{
-			deps.LoadDueHabits(state.CurrentDash),
-			deps.LoadDailySummary(state.CurrentDash),
-			deps.LoadDailyStreaks(state.CurrentDash),
-			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadDueHabits(state.CurrentDate),
+			deps.LoadDailySummary(state.CurrentDate),
+			deps.LoadDailyStreaks(state.CurrentDate),
+			deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 			deps.LoadAllHabits(),
 		}
 		if state.Context != nil && state.Context.StreamID != nil {
@@ -117,20 +117,20 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":
 		return state, tea.Batch(
-			deps.LoadDailyStreaks(state.CurrentDash),
-			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadDailyStreaks(state.CurrentDate),
+			deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case sharedtypes.EventTypeSessionHistoryChanged:
 		cmds := []tea.Cmd{
-			deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDash),
-			deps.LoadSessionHistoryFor200(state), deps.LoadDailyStreaks(state.CurrentDash),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
-			deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
-			deps.LoadMomentumRange(state.CurrentMomentum, state.MomentumWindowDays),
+			deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDate),
+			deps.LoadSessionHistoryFor200(state), deps.LoadDailyStreaks(state.CurrentDate),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
+			deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
+			deps.LoadMomentumRange(state.CurrentDate, state.MomentumWindowDays),
 		}
 		if deps.LoadSummarySnapshot != nil {
-			cmds = append(cmds, deps.LoadSummarySnapshot(state.CurrentSummary))
+			cmds = append(cmds, deps.LoadSummarySnapshot(state.CurrentDate))
 		}
 		if state.Context != nil {
 			if state.Context.StreamID != nil {
@@ -146,8 +146,8 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadContext(),
 			deps.LoadSessionHistoryFor200(state),
-			deps.LoadDailyStreaks(state.CurrentDash),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadDailyStreaks(state.CurrentDate),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case "context.repo.changed",
 		"context.stream.changed",
@@ -157,7 +157,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		_ = json.Unmarshal(event.Payload, &payload)
 		cmds := []tea.Cmd{
 			deps.LoadContext(),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		}
 		if payload.RepoID != nil {
 			cmds = append(cmds, deps.LoadStreams(*payload.RepoID))
@@ -219,7 +219,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		state.Elapsed = 0
 		return state, tea.Batch(
 			deps.LoadTimer(),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case "timer.hard_limit_reached":
 		state.Elapsed = 0
@@ -249,7 +249,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(
 			deps.LoadTimer(),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case "timer.advance", "timer.defer_break", "timer.extended", "timer.break_deferred":
 		if shouldDismissDialogForSessionEvent(state, event, false) {
@@ -259,7 +259,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(
 			deps.LoadTimer(),
 			deps.LoadSessionHistoryFor200(state),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case "session.ended":
 		if shouldDismissDialogForSessionEvent(state, event, true) {
@@ -270,8 +270,8 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadTimer(),
 			deps.LoadContext(),
 			deps.LoadSessionHistoryFor200(state),
-			deps.LoadDailyStreaks(state.CurrentDash),
-			deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
+			deps.LoadDailyStreaks(state.CurrentDate),
+			deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
 		)
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
@@ -284,10 +284,10 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		if settingsKeysAffectStreaks(payload.Keys) {
 			cmds = append(
 				cmds,
-				deps.LoadDailyStreaks(state.CurrentDash),
-				deps.LoadWellbeing(state.CurrentWell, state.WellbeingWindowDays),
-				deps.LoadRollupSummaries(state.CurrentRollupStart, state.CurrentRollupEnd),
-				deps.LoadMomentumRange(state.CurrentMomentum, state.MomentumWindowDays),
+				deps.LoadDailyStreaks(state.CurrentDate),
+				deps.LoadWellbeing(state.CurrentDate, state.WellbeingWindowDays),
+				deps.LoadRollupSummaries(rollupRange(state.CurrentDate, state.RollupWindowDays)),
+				deps.LoadMomentumRange(state.CurrentDate, state.MomentumWindowDays),
 			)
 		}
 		return state, tea.Batch(cmds...)
@@ -298,7 +298,15 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		if err := json.Unmarshal(event.Payload, &payload); err != nil || payload.LogicalDate == "" {
 			return state, nil
 		}
-		date := payload.LogicalDate
+		// The shared date follows the new day only when it was on the old one.
+		if state.Date != "" && state.Date == payload.DateBefore {
+			state.Date = payload.LogicalDate
+		}
+		date := state.Date
+		if date == "" {
+			date = payload.LogicalDate
+		}
+		state.CurrentDate = date
 		cmds := []tea.Cmd{
 			deps.LoadAllIssues(),
 			deps.LoadAllHabits(),
@@ -308,7 +316,7 @@ func HandleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadDailyStreaks(date),
 			deps.LoadWellbeing(date, state.WellbeingWindowDays),
 			deps.LoadMomentumRange(date, state.MomentumWindowDays),
-			deps.LoadRollupSummaries(shiftISODate(date, -6), date),
+			deps.LoadRollupSummaries(rollupRange(date, state.RollupWindowDays)),
 		}
 		if state.Context != nil && state.Context.StreamID != nil {
 			cmds = append(cmds,

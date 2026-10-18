@@ -14,11 +14,11 @@ import (
 
 func TestInputDepsOpenCheckInDialogUsesCreateForMissingCheckIn(t *testing.T) {
 	m := Model{
-		dashboardDate: "2026-05-27",
+		date: "2026-05-27",
 	}
 	state := inputpkg.State{
-		ActiveView:    uistate.ViewDaily,
-		DashboardDate: "2026-05-27",
+		ActiveView: uistate.ViewDaily,
+		Date:       "2026-05-27",
 	}
 
 	if !m.inputDeps().OpenCheckInDialog(&state) {
@@ -35,18 +35,16 @@ func TestInputDepsOpenCheckInDialogUsesCreateForMissingCheckIn(t *testing.T) {
 	}
 }
 
-func TestInputDepsOpenCheckInDialogUsesWellbeingDateForWellbeingView(t *testing.T) {
+func TestInputDepsOpenCheckInDialogUsesSharedDateOnWellbeingView(t *testing.T) {
 	m := Model{
-		dashboardDate: "2026-05-27",
-		wellbeingDate: "2026-05-28",
+		date: "2026-05-28",
 		dailyCheckIn: &api.DailyCheckIn{
 			Date: "2026-05-28",
 		},
 	}
 	state := inputpkg.State{
-		ActiveView:    uistate.ViewWellbeing,
-		DashboardDate: "2026-05-27",
-		WellbeingDate: "2026-05-28",
+		ActiveView: uistate.ViewWellbeing,
+		Date:       "2026-05-28",
 		DailyCheckIn: &api.DailyCheckIn{
 			Date: "2026-05-28",
 		},
@@ -176,14 +174,14 @@ func TestDialogStatePreservesDayBoundarySettings(t *testing.T) {
 
 func TestInputDepsOpenCheckInDialogUsesEditForExistingCheckIn(t *testing.T) {
 	m := Model{
-		dashboardDate: "2026-05-27",
+		date: "2026-05-27",
 		dailyCheckIn: &api.DailyCheckIn{
 			Date: "2026-05-27",
 		},
 	}
 	state := inputpkg.State{
-		ActiveView:    uistate.ViewDaily,
-		DashboardDate: "2026-05-27",
+		ActiveView: uistate.ViewDaily,
+		Date:       "2026-05-27",
 		DailyCheckIn: &api.DailyCheckIn{
 			Date: "2026-05-27",
 		},
@@ -290,7 +288,7 @@ func TestMomentumEnterUsesDetailsInsteadOfEdit(t *testing.T) {
 		view:               ViewMomentum,
 		pane:               PaneMomentumCards,
 		momentumTab:        MomentumTabCustom,
-		momentumDate:       "2026-06-19",
+		date:               "2026-06-19",
 		momentumWindowDays: 30,
 		cursor: map[Pane]int{
 			PaneMomentumCards: 0,
