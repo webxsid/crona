@@ -47,9 +47,9 @@ func TestDailyHasNoBorders(t *testing.T) {
 func TestDailyStripThenTasksThenHabits(t *testing.T) {
 	for _, width := range []int{99, 120, 160} {
 		rendered := renderView(testTheme(), dailyState(width, 40))
-		first := strings.Split(ansi.Strip(rendered), "\n")[0]
-		if !strings.Contains(first, "Habits 0/2") {
-			t.Fatalf("width %d: expected the day strip on row 0, got %q", width, first)
+		lines := strings.Split(ansi.Strip(rendered), "\n")
+		if !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") || !strings.HasPrefix(fieldsOf(lines[1]), "Habits 0/2") {
+			t.Fatalf("width %d: expected the day strip on rows 0-1, got %q", width, lines[:2])
 		}
 		if rowOf(t, rendered, "─ Habits Due") <= rowOf(t, rendered, "─ Tasks") {
 			t.Fatalf("width %d: expected habits below tasks", width)
@@ -67,12 +67,57 @@ func TestDailyWideHasDetailPane(t *testing.T) {
 	}
 }
 
-func TestDailyHabitsSizedToContent(t *testing.T) {
-	rendered := renderView(testTheme(), dailyState(120, 60))
-	lines := strings.Split(ansi.Strip(rendered), "\n")
-	header := rowOf(t, rendered, "─ Habits Due")
-	if !strings.Contains(lines[header+2], "Read") || strings.TrimSpace(lines[header+3]) != "" {
-		t.Fatalf("expected Habits to hold just its two rows, got %q", lines[header:header+4])
+func TestDailySplitsTasksAndHabitsEvenly(t *testing.T) {
+	for _, width := range []int{80, 130, 200} {
+		for _, tasks := range []int{1, 3, 30} {
+			state := manyIssues(dailyState(width, 40), tasks)
+			rendered := renderView(testTheme(), state)
+			strip := len(renderDayStrip(testTheme(), state, width))
+			tasksH := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks")
+			habitsH := 40 - strip - tasksH
+			if tasksH-habitsH < 0 || tasksH-habitsH > 1 {
+				t.Fatalf("width %d, %d tasks: expected an even split, got tasks %d habits %d", width, tasks, tasksH, habitsH)
+			}
+		}
+	}
+}
+
+func TestDailyHabitsAreChipsUntilFocused(t *testing.T) {
+	state := dailyState(120, 40)
+	assertContainsLine(t, strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"), "[ ] Walk", "[ ] Read")
+	state.Pane = "habits"
+	for _, line := range strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n") {
+		if strings.Contains(line, "Walk") && strings.Contains(line, "Read") {
+			t.Fatalf("expected focused habits as a vertical list, got %q", line)
+		}
+	}
+}
+
+func TestDailyHabitChipsWrap(t *testing.T) {
+	state := dailyState(60, 40)
+	state.DueHabits = nil
+	for i := range 12 {
+		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
+			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+		})
+	}
+	rendered := ansi.Strip(renderHabits(testTheme(), state, 60, 10))
+	for _, want := range []string{"Habit 00", "Habit 11"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected wrapped chips to include %q, got %q", want, rendered)
+		}
+	}
+	for i, line := range strings.Split(rendered, "\n") {
+		if w := ansi.StringWidth(line); w != 60 {
+			t.Fatalf("row %d is %d cells: %q", i, w, line)
+		}
+	}
+}
+
+func TestDailyCompactTasksHaveNoDashDividers(t *testing.T) {
+	rendered := ansi.Strip(renderIssues(testTheme(), manyIssues(dailyState(80, 30), 3), 80, 20))
+	if strings.Contains(rendered, "----") {
+		t.Fatalf("expected no dash dividers between tasks, got %q", rendered)
 	}
 }
 
@@ -180,15 +225,6 @@ func TestDailyNarrowShowsSelectedTask(t *testing.T) {
 	rendered := ansi.Strip(renderView(testTheme(), state))
 	if !strings.Contains(rendered, "Issue number 29") {
 		t.Fatalf("expected selected task visible at 60x18, got %q", rendered)
-	}
-}
-
-func TestDailyShortTaskListKeepsHabitsClose(t *testing.T) {
-	for _, width := range []int{80, 130, 200} {
-		rendered := renderView(testTheme(), manyIssues(dailyState(width, 36), 3))
-		if gap := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks"); gap > 12 {
-			t.Fatalf("width %d: expected habits right below 3 tasks, gap %d rows", width, gap)
-		}
 	}
 }
 

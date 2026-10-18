@@ -84,6 +84,18 @@ func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
 	}
 }
 
+func TestRenderSubTabLineCarriesDailyDate(t *testing.T) {
+	state := shellStateForTest(uistate.ViewDaily, 120, 36)
+	state.ContentState.DashboardDate = "2026-05-27"
+	line := plainLines(Render(state))[1]
+	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.HasSuffix(strings.TrimRight(line, " "), ",/. g") {
+		t.Fatalf("expected sub-tabs left and the date keys right, got %q", line)
+	}
+	if !strings.Contains(line, "W22") || ansi.StringWidth(line) != 120 {
+		t.Fatalf("expected the Daily week on a full-width sub-tab line, got %q", line)
+	}
+}
+
 func TestRenderTimerActiveShowsOnlyAllowedTabs(t *testing.T) {
 	state := shellStateForTest(uistate.ViewSessionActive, 120, 36)
 	state.TimerActive = true

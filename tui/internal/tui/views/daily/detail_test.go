@@ -121,3 +121,25 @@ func TestDailyTrustsModelTaskSection(t *testing.T) {
 		t.Fatalf("expected the model's first pinned task selected, got %q", detail)
 	}
 }
+
+func TestDetailCalendarStaysPutAcrossSelections(t *testing.T) {
+	state := detailState()
+	long := strings.Repeat("A long note that wraps over several rows. ", 30)
+	state.DailyIssues[1].Notes = &long
+	rows := map[int]int{}
+	for _, cur := range []int{0, 1} {
+		state.Cursors["issues"] = cur
+		rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 34))
+		rows[cur] = rowOf(t, rendered, "Mo Tu We Th Fr Sa Su")
+		if lines := strings.Split(rendered, "\n"); len(lines) != 34 {
+			t.Fatalf("cursor %d: expected 34 rows, got %d", cur, len(lines))
+		}
+	}
+	if rows[0] != rows[1] {
+		t.Fatalf("expected the calendar on the same row for both selections, got %v", rows)
+	}
+	state.Cursors["issues"] = 1
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 34)); !strings.Contains(rendered, "…") {
+		t.Fatalf("expected overflowing detail to end in …, got %q", rendered)
+	}
+}

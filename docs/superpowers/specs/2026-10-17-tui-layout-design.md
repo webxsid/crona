@@ -47,9 +47,10 @@ Sub-tabs within a tab are switched with `[` / `]`. This reuses today's view-cycl
 
 ### Today tab
 
-- With **no timer**: a 1–2 row **day strip** (tasks resolved + worked/estimate bar, habits done + bar, date and week; a second row for check-in signals and streaks when present), then **Tasks** as the primary list taking all remaining height, then **Habits** sized to its content (capped at a third of the rows, half when focused).
-- On wide screens a **detail pane** sits right of the lists (list │ detail, weights 3:2). It shows the selected task (or habit, when Habits is focused) and, below it, the month calendar when there is room. On medium and narrow screens the detail pane is hidden; `enter` opens details as today.
-- Sections never stretch past their content except the primary list. Pattern taken from htop/k9s (header strip + one growing list) and lazygit/Posting (list │ detail), not peer columns.
+- With **no timer**: an htop-style **day strip** of aligned columns — stacked Tasks and Habits meters (count, bar, worked/estimate), then check-in signals (Mood/Energy/Sleep) and streaks (Focus/Check-ins) when present. Columns drop from the right (streaks first) when narrow; rows drop from the bottom when short. The date, week and `,/. g` sit at the right end of the sub-tab line.
+- Below the strip, **Tasks** and **Habits** each hold half the height, so neither moves as the other's content changes. Habits renders as wrapped inline chips (`[ ] Name 10m`) until focused, then as a vertical list with a cursor, so the two sections differ in shape at a glance.
+- On wide screens a **detail pane** sits right of the lists (list │ detail, weights 3:2). It shows the selected task (or habit, when Habits is focused), with the month calendar pinned to the bottom when there is room; overflowing detail ends in `…` so the calendar never moves. On medium and narrow screens the detail pane is hidden; `enter` opens details as today.
+- Pattern taken from htop/k9s (header strip over lists) and lazygit/Posting (list │ detail), not peer columns.
 - With an **active timer**: a session strip pins to the top of Today. It shows the issue, segment, elapsed/target, and progress bar, plus the session keys `p` pause, `r` resume, `x` stop and `z` advance. Below it, the issue and habit lists stay visible and navigable.
 - **Allowed during a timer** (a change from today's lock-out): `n` adds a note to the active session (existing `amend_session` dialog); `a` quick-captures a new issue (existing create-issue dialog, without starting it). Starting another issue with `f` keeps the existing `issue_session_transition` flow.
 - **Still locked during a timer**: tabs other than Today and Log, as today. Insights, Issues and System open after the session ends.
@@ -88,7 +89,7 @@ Width classes, computed once per frame:
 | Medium | 100–159 | One primary column; strips and short sections stack around it |
 | Wide | ≥ 160 | Primary list │ detail pane for the selection (never peer lists side by side) |
 
-Rules: exactly one section per tab (the primary list) absorbs spare height; every other section is sized to its content. Columns are only used for list │ detail. Key hints for the focused section live in the status line, not inside sections.
+Rules: sections get stable heights — they do not resize as their content changes (Today splits Tasks/Habits evenly). Columns are only used for list │ detail. Key hints for the focused section live in the status line, not inside sections.
 
 Each tab declares its sections and a per-class arrangement. A new `layout/grid` helper turns an arrangement plus the content box into one `Box{W,H}` per section. Sections never compute their own position.
 

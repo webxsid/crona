@@ -13,23 +13,65 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-const dayStripBarWidth = 10
+const (
+	dayStripBarWidth = 10
+	// dayStripColumnGap separates the meter, signal and streak columns.
+	dayStripColumnGap = "     "
+)
 
-// renderDayStrip is the htop-style header above the Daily lists: day totals with
-// inline bars and the date, plus a row of check-in signals and streaks when present.
+// renderDayStrip is the htop-style header above the Daily lists: stacked Tasks and Habits
+// meters, then check-in signals and streaks as aligned columns. Columns that do not fit
+// the width are dropped from the right, streaks first.
 func renderDayStrip(theme types.Theme, state types.ContentState, width int) []string {
 	if width < 1 {
 		return nil
 	}
-	rows := []string{dayTotalsRow(theme, state, width)}
-	if row := daySignalsRow(theme, state); row != "" {
-		rows = append(rows, padCells(" "+row, width))
+	columns := [][]string{dayMeterColumn(theme, state, true)}
+	if columnWidth(columns[0])+1 > width {
+		columns[0] = dayMeterColumn(theme, state, false)
+	}
+	for _, extra := range [][]string{daySignalColumn(theme, state), dayStreakColumn(theme, state)} {
+		if len(extra) == 0 {
+			continue
+		}
+		candidate := append(append([][]string{}, columns...), extra)
+		if stripWidth(candidate)+1 > width {
+			break
+		}
+		columns = candidate
+	}
+	height := 0
+	for _, column := range columns {
+		height = max(height, len(column))
+	}
+	rows := make([]string, height)
+	for i := range rows {
+		cells := make([]string, 0, len(columns))
+		for _, column := range columns {
+			cell := ""
+			if i < len(column) {
+				cell = column[i]
+			}
+			cells = append(cells, padCells(cell, columnWidth(column)))
+		}
+		rows[i] = padCells(" "+strings.TrimRight(strings.Join(cells, dayStripColumnGap), " "), width)
 	}
 	return rows
 }
 
-func dayTotalsRow(theme types.Theme, state types.ContentState, width int) string {
-	resolved, total, estimate := 0, len(state.DailyIssues), 0
+// SubTabMeta is the right side of Daily's sub-tab line: the shown date, its week and the
+// date-navigation keys.
+func SubTabMeta(theme types.Theme, state types.ContentState) string {
+	rawDate := dailyDate(state)
+	dated := helperpkg.FormatDisplayDate(rawDate, state.Settings)
+	if parsed, ok := viewcalendar.ParseDate(rawDate); ok && !displayPatternIncludesWeek(state.Settings) {
+		dated += fmt.Sprintf(" · W%02d", viewcalendar.WeekNumber(parsed, state.WeekStart))
+	}
+	return theme.StyleHeader.Render(dated) + "  " + theme.StyleDim.Render(",/. g")
+}
+
+func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) []string {
+	resolved, estimate := 0, 0
 	statusCounts := map[string]int{}
 	for _, issue := range state.DailyIssues {
 		statusCounts[string(issue.Status)]++
@@ -53,39 +95,82 @@ func dayTotalsRow(theme types.Theme, state types.ContentState, width int) string
 	if state.DailySummary != nil {
 		worked = state.DailySummary.WorkedSeconds
 	}
-
-	label := func(name string, done, of int) string {
-		return theme.StyleHeader.Render(name) + " " + theme.StyleNormal.Render(fmt.Sprintf("%d/%d", done, of))
+	values := []string{
+		fmt.Sprintf("%d/%d", resolved, len(state.DailyIssues)),
+		fmt.Sprintf("%d/%d", habitsDone, len(state.DueHabits)),
 	}
-	tasks := label("Tasks", resolved, total)
-	progress := theme.StyleDim.Render(issueProgressText(worked, estimate, true))
-	habits := label("Habits", habitsDone, len(state.DueHabits))
-	withBars := tasks + " " + renderIssueStatusBar(theme, statusCounts, dayStripBarWidth) + " " + progress +
-		"   " + habits + " " + renderHabitBar(theme, habitsDone, habitsFailed, len(state.DueHabits), dayStripBarWidth)
-	plain := tasks + " " + progress + "   " + habits
-
-	rawDate := dailyDate(state)
-	date := helperpkg.FormatDisplayDate(rawDate, state.Settings)
-	dated := date
-	if parsed, ok := viewcalendar.ParseDate(rawDate); ok && !displayPatternIncludesWeek(state.Settings) {
-		dated += fmt.Sprintf(" · W%02d", viewcalendar.WeekNumber(parsed, state.WeekStart))
-	}
-	navHint := "  " + theme.StyleDim.Render(",/. g")
-
-	// Richest combination that fits wins: bars go before the date's week and key hint.
-	for _, candidate := range [][2]string{
-		{withBars, dated + navHint},
-		{withBars, dated},
-		{plain, dated + navHint},
-		{plain, dated},
-		{plain, date},
-	} {
-		left, right := " "+candidate[0], theme.StyleHeader.Render(candidate[1])
-		if gap := width - ansi.StringWidth(left) - ansi.StringWidth(right); gap >= 2 {
-			return left + strings.Repeat(" ", gap) + right
+	valueWidth := max(len(values[0]), len(values[1]))
+	row := func(label, value, bar, tail string) string {
+		line := theme.StyleHeader.Render(padCells(label, 6)) + "  " + theme.StyleNormal.Render(padCells(value, valueWidth))
+		if bar != "" {
+			line += "  " + bar
 		}
+		if tail != "" {
+			line += "  " + tail
+		}
+		return line
 	}
-	return padCells(" "+plain, width)
+	tasksBar, habitsBar := "", ""
+	if withBars {
+		tasksBar = renderIssueStatusBar(theme, statusCounts, dayStripBarWidth)
+		habitsBar = renderHabitBar(theme, habitsDone, habitsFailed, len(state.DueHabits), dayStripBarWidth)
+	}
+	return []string{
+		row("Tasks", values[0], tasksBar, theme.StyleDim.Render(issueProgressText(worked, estimate, true))),
+		row("Habits", values[1], habitsBar, ""),
+	}
+}
+
+func daySignalColumn(theme types.Theme, state types.ContentState) []string {
+	column := []string{}
+	for _, signal := range []struct{ name, value string }{
+		{"Mood", signalMoodValue(state)},
+		{"Energy", signalEnergyValue(state)},
+		{"Sleep", signalSleepValue(state)},
+	} {
+		if signal.value == "" {
+			continue
+		}
+		column = append(column, theme.StyleHeader.Render(padCells(signal.name, 6))+"  "+
+			theme.StyleNormal.Render(strings.TrimPrefix(signal.value, "today ")))
+	}
+	return column
+}
+
+func dayStreakColumn(theme types.Theme, state types.ContentState) []string {
+	streaks := state.DailyStreaks
+	if streaks == nil {
+		return nil
+	}
+	current := []string{fmt.Sprintf("%dd", streaks.CurrentFocusDays), fmt.Sprintf("%dd", streaks.CurrentCheckInDays)}
+	currentWidth := max(len(current[0]), len(current[1]))
+	row := func(label, now string, best int) string {
+		return theme.StyleHeader.Render(padCells(label, 9)) + "  " + theme.StyleNormal.Render(padCells(now, currentWidth)) +
+			"  " + theme.StyleDim.Render(fmt.Sprintf("best %dd", best))
+	}
+	return []string{
+		row("Focus", current[0], streaks.LongestFocusDays),
+		row("Check-ins", current[1], streaks.LongestCheckInDays),
+	}
+}
+
+func columnWidth(column []string) int {
+	width := 0
+	for _, cell := range column {
+		width = max(width, ansi.StringWidth(cell))
+	}
+	return width
+}
+
+func stripWidth(columns [][]string) int {
+	width := 0
+	for i, column := range columns {
+		if i > 0 {
+			width += len(dayStripColumnGap)
+		}
+		width += columnWidth(column)
+	}
+	return width
 }
 
 // dailyDate is the day Daily shows: the loaded summary's date, else the dashboard date.
@@ -94,43 +179,6 @@ func dailyDate(state types.ContentState) string {
 		return state.DailySummary.Date
 	}
 	return viewruntime.CurrentDashboardDate(state)
-}
-
-func daySignalsRow(theme types.Theme, state types.ContentState) string {
-	field := func(name, value string) string {
-		if value == "" {
-			return ""
-		}
-		return theme.StyleHeader.Render(name) + " " + theme.StyleNormal.Render(strings.TrimPrefix(value, "today "))
-	}
-	groups := []string{}
-	signals := joinNonEmpty("  ",
-		field("Mood", signalMoodValue(state)),
-		field("Energy", signalEnergyValue(state)),
-		field("Sleep", signalSleepValue(state)),
-	)
-	if signals != "" {
-		groups = append(groups, signals)
-	}
-	if streaks := state.DailyStreaks; streaks != nil {
-		streak := func(name string, current, longest int) string {
-			return theme.StyleHeader.Render(name) + " " + theme.StyleNormal.Render(fmt.Sprintf("%dd", current)) +
-				theme.StyleDim.Render(fmt.Sprintf(" (best %dd)", longest))
-		}
-		groups = append(groups, streak("Focus", streaks.CurrentFocusDays, streaks.LongestFocusDays)+"  "+
-			streak("Check-ins", streaks.CurrentCheckInDays, streaks.LongestCheckInDays))
-	}
-	return strings.Join(groups, theme.StyleDim.Render("   │   "))
-}
-
-func joinNonEmpty(sep string, parts ...string) string {
-	kept := make([]string, 0, len(parts))
-	for _, part := range parts {
-		if part != "" {
-			kept = append(kept, part)
-		}
-	}
-	return strings.Join(kept, sep)
 }
 
 // padCells truncates or pads s to exactly width cells.

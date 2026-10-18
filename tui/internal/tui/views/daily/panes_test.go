@@ -196,7 +196,6 @@ func TestRenderIssuesUsesCompactListLayoutBelowBreakpoint(t *testing.T) {
 		"Ship compact issue list",
 		"[due 2099-03-21]",
 		"Docs > web | - / 15m | planned",
-		"--",
 	} {
 		if !strings.Contains(plain, want) {
 			t.Fatalf("expected compact list layout to contain %q, got %q", want, rendered)

@@ -15,6 +15,7 @@ import (
 	viewui "crona/tui/internal/tui/views/ui"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/evertras/bubble-table/table"
 )
 
@@ -145,20 +146,6 @@ func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {
 	return issues
 }
 
-// dailyTaskRows is the height the Tasks section needs to show every task at width.
-func dailyTaskRows(state types.ContentState, width int) int {
-	total := len(dailyIssueIndices(state, dailyAPIIssues(filteredDailyIssues(state))))
-	// Header and the Planned/Pinned/Overdue row come first.
-	switch {
-	case total == 0:
-		return 3
-	case width >= dailyIssueTableMinWidth:
-		return 3 + total
-	default:
-		return 2 + total*3 - 1
-	}
-}
-
 func renderCompactDailyIssueList(
 	theme types.Theme,
 	state types.ContentState,
@@ -189,7 +176,7 @@ func renderCompactDailyIssueList(
 	}
 	for idx, rawIdx := range indices[start:end] {
 		if idx > 0 {
-			lines = append(lines, theme.StyleDim.Render(renderCompactDailyIssueDivider(width)))
+			lines = append(lines, "")
 		}
 		issue := issues[rawIdx]
 		meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID)
@@ -323,10 +310,6 @@ func dateField(date string) string {
 	return "[" + date + "]"
 }
 
-func renderCompactDailyIssueDivider(width int) string {
-	return strings.Repeat("-", max(8, width-4))
-}
-
 func dailyTaskTitle(theme types.Theme, section string) string {
 	options := []struct {
 		key   string
@@ -401,6 +384,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
 	}
+	if !active {
+		lines = habitChips(theme, state, indices, width-2)
+		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+	}
 	inner := sectionBodyRows(height, lines)
 	start, end := listWindow(cur, total, inner)
 	if start > 0 {
@@ -408,18 +395,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	}
 	for i := start; i < end; i++ {
 		habit := state.DueHabits[indices[i]]
-		status := "[ ]"
-		style := &theme.StyleNormal
-		switch habit.Status {
-		case "completed":
-			status = "[x]"
-			s := lipgloss.NewStyle().Foreground(theme.ColorGreen)
-			style = &s
-		case "failed":
-			status = "[!]"
-			s := lipgloss.NewStyle().Foreground(theme.ColorRed)
-			style = &s
-		}
+		status, style := habitMark(theme, habit)
 		duration := ""
 		if habit.DurationMinutes != nil {
 			duration = "  " + helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes)
@@ -434,7 +410,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 				cur,
 				active,
 				fmt.Sprintf("%s %s%s", status, habit.Name, duration),
-				style,
+				&style,
 				width,
 			),
 		)
@@ -443,6 +419,46 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
 	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+}
+
+// habitMark is a habit's checkbox and the colour its row is drawn in.
+func habitMark(theme types.Theme, habit api.HabitDailyItem) (string, lipgloss.Style) {
+	switch habit.Status {
+	case "completed":
+		return "[x]", lipgloss.NewStyle().Foreground(theme.ColorGreen)
+	case "failed":
+		return "[!]", lipgloss.NewStyle().Foreground(theme.ColorRed)
+	default:
+		return "[ ]", theme.StyleNormal
+	}
+}
+
+// habitChips lays the unfocused habits out as wrapped inline chips, so Habits reads as a
+// different kind of thing from the Tasks list above it.
+func habitChips(theme types.Theme, state types.ContentState, indices []int, width int) []string {
+	const gap = "   "
+	lines := []string{}
+	line := ""
+	for _, idx := range indices {
+		habit := state.DueHabits[idx]
+		status, style := habitMark(theme, habit)
+		chip := style.Render(status + " " + habit.Name)
+		if habit.DurationMinutes != nil {
+			chip += " " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))
+		} else if habit.TargetMinutes != nil {
+			chip += " " + theme.StyleDim.Render(helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes))
+		}
+		chip = viewhelpers.TruncateANSI(chip, max(1, width))
+		if line != "" && ansi.StringWidth(line+gap+chip) > width {
+			lines = append(lines, line)
+			line = ""
+		}
+		if line != "" {
+			line += gap
+		}
+		line += chip
+	}
+	return append(lines, line)
 }
 
 // listWindow picks the visible items for budget rows, reserving a row for each ↑/↓ marker.

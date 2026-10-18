@@ -228,7 +228,13 @@ func renderSubTabLine(state State) string {
 			parts = append(parts, chrome.StyleDim.Render(label))
 		}
 	}
-	return " " + strings.Join(parts, chrome.StyleDim.Render(" · "))
+	left := " " + strings.Join(parts, chrome.StyleDim.Render(" · "))
+	right := viewrenderer.SubTabMeta(ViewTheme(), state.ContentState)
+	// The view's meta only shows when it fits whole beside the sub-tabs.
+	if right == "" || ansi.StringWidth(left)+ansi.StringWidth(right)+3 > state.Width {
+		return left
+	}
+	return joinEnds(left, right+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {

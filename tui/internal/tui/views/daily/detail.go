@@ -13,10 +13,11 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// detailCalendarMinRows is the space left under the selection before the calendar is shown.
-const detailCalendarMinRows = 10
+// detailSelectionMinRows is the room the selection keeps above the calendar.
+const detailSelectionMinRows = 8
 
-// renderDetail shows the focused pane's selection, with the month calendar below when it fits.
+// renderDetail shows the focused pane's selection, with the month calendar pinned to the
+// bottom when it fits, so the calendar never moves as the selection changes.
 func renderDetail(theme types.Theme, state types.ContentState, width, height int) string {
 	bodyWidth := max(1, width-2)
 	var lines []string
@@ -30,10 +31,16 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	if len(lines) == 0 {
 		lines = []string{theme.StyleDim.Render("Nothing selected")}
 	}
-	if spare := height - 1 - len(lines) - 1; spare >= detailCalendarMinRows {
-		if calendar := detailCalendar(theme, state, bodyWidth, spare); len(calendar) > 0 {
-			lines = append(append(lines, ""), calendar...)
+	body := height - 1
+	if calendar := detailCalendar(theme, state, bodyWidth, body-detailSelectionMinRows-1); len(calendar) > 0 {
+		top := body - len(calendar) - 1
+		if len(lines) > top {
+			lines = append(lines[:top-1:top-1], theme.StyleDim.Render("…"))
 		}
+		for len(lines) < top {
+			lines = append(lines, "")
+		}
+		lines = append(append(lines, ""), calendar...)
 	}
 	return dailySection(theme, "Selected", "", false, width, height, lines)
 }
@@ -149,6 +156,9 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 
 func detailCalendar(theme types.Theme, state types.ContentState, width, maxLines int) []string {
 	rawDate := dailyDate(state)
+	if maxLines < 1 {
+		return nil
+	}
 	if _, ok := viewcalendar.ParseDate(rawDate); !ok {
 		return nil
 	}
