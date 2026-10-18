@@ -45,10 +45,10 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	state.Timer.SegmentStartTime = &segmentStart
 
 	rendered := renderActiveView(types.Theme{}, state)
-	titleAt := strings.Index(rendered, "Focus Session")
+	titleAt := strings.Index(rendered, "Stopwatch · Focus")
 	clockAt := strings.Index(rendered, "█")
-	metricAt := strings.Index(rendered, "WORK")
-	issueAt := strings.Index(rendered, "Active Issue")
+	metricAt := strings.Index(rendered, "Timer sizing")
+	issueAt := strings.Index(rendered, "[x] end session")
 	if titleAt < 0 || clockAt < 0 || metricAt < 0 || issueAt < 0 {
 		t.Fatalf("expected title, clock, metadata, and issue pane to render, got %q", rendered)
 	}
@@ -72,9 +72,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if strings.Contains(rendered, "██ ██") {
 		t.Fatalf("expected narrow active view to avoid the large glyph clock, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Focus") || !strings.Contains(rendered, "Session") ||
-		!strings.Contains(rendered, "WORK") ||
-		!strings.Contains(rendered, "Active Issue") {
+	if !strings.Contains(rendered, "Stopwatch") || !strings.Contains(rendered, "Timer sizing") {
 		t.Fatalf(
 			"expected narrow active view to keep the title, metadata, and issue pane visible, got %q",
 			rendered,
@@ -96,7 +94,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	pausedNow := time.Now().UTC().Format(time.RFC3339)
 	pausedState.Timer.SegmentStartTime = &pausedNow
 	rendered = renderActiveView(types.Theme{}, pausedState)
-	if !strings.Contains(rendered, "Paused For") {
+	if !strings.Contains(rendered, "Stopwatch · Paused") {
 		t.Fatalf("expected paused stopwatch title, got %q", rendered)
 	}
 	if strings.Contains(rendered, "00:12:34") || strings.Contains(rendered, "12:34") ||
@@ -130,7 +128,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	hardLimitState.Timer.SessionStartTime = &sessionStart
 	hardLimitState.Timer.SegmentStartTime = &segmentStart
 	rendered = renderActiveView(types.Theme{}, hardLimitState)
-	if !strings.Contains(rendered, "Pomodoro Session") {
+	if !strings.Contains(rendered, "Pomodoro") {
 		t.Fatalf("expected hard-limit title, got %q", rendered)
 	}
 	if strings.Contains(rendered, "until long break") {
@@ -167,7 +165,7 @@ func TestRenderActiveViewUsesResponsiveClockVariants(t *testing.T) {
 	if strings.Contains(rendered, "Ready For") {
 		t.Fatalf("expected hard-limit ready state to avoid ready-for title, got %q", rendered)
 	}
-	if !strings.Contains(rendered, "Pomodoro Session") {
+	if !strings.Contains(rendered, "Pomodoro") {
 		t.Fatalf("expected hard-limit ready state to keep the hard-limit title, got %q", rendered)
 	}
 
@@ -227,16 +225,16 @@ func TestActiveCountdownUsesTimerSessionTitle(t *testing.T) {
 	}
 
 	rendered := renderActiveView(types.Theme{}, state)
-	if !strings.Contains(rendered, "Timer Session") {
+	if !strings.Contains(rendered, "Timer · Focus") {
 		t.Fatalf("expected countdown title, got %q", rendered)
 	}
-	if strings.Contains(rendered, "Pomodoro Session") {
+	if strings.Contains(rendered, "Pomodoro") {
 		t.Fatalf("expected countdown not to render as Pomodoro, got %q", rendered)
 	}
 
 	state.Timer.HardLimitKind = ""
 	rendered = renderActiveView(types.Theme{}, state)
-	if !strings.Contains(rendered, "Pomodoro Session") {
+	if !strings.Contains(rendered, "Pomodoro") {
 		t.Fatalf("expected legacy hard limit to remain Pomodoro, got %q", rendered)
 	}
 }
@@ -312,7 +310,7 @@ func TestActiveTimedSessionRendersEndsAt(t *testing.T) {
 	}
 
 	rendered := renderActiveView(types.Theme{}, state)
-	if !strings.Contains(rendered, "Ends At") {
+	if !strings.Contains(rendered, "ends at") {
 		t.Fatalf("expected active timed session to render ends-at time, got %q", rendered)
 	}
 }
@@ -426,7 +424,7 @@ func TestPomodoroMetadataFitsAt24Rows(t *testing.T) {
 			NextSegmentType:           &shortBreak,
 		},
 	}))
-	if !strings.Contains(rendered, "Completed sessions") {
+	if !strings.Contains(rendered, "next short break") {
 		t.Fatalf("expected pomodoro metadata at 80x24, got:\n%s", rendered)
 	}
 }

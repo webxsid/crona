@@ -48,7 +48,6 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	}
 	timerTitle := "Focus Session"
 	timerHint := "[p] pause  [x] end session  [i] context"
-	structured := false
 	nextLabel := sessionActionSegmentLabel(state.Timer)
 	stateColor := activeTimerColor(theme, state.Timer)
 	if hardLimit {
@@ -72,125 +71,116 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	} else if state.Timer.State == "ready" && !hardLimit {
 		timerTitle = "Ready For"
 		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] context"
-	} else if structured {
-		timerHint = "[r] start " + nextLabel + "  [x] end session  [i] context"
-		if state.Timer.SegmentType != nil {
-			switch *state.Timer.SegmentType {
-			case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak, sharedtypes.SessionSegmentLongBreak:
-				timerHint = "[m] pause  " + timerHint
-			}
-		}
 	} else if state.Timer.State == "paused" {
 		stateColor = theme.ColorYellow
 		timerTitle = "Paused For"
 		timerHint = "[r] resume  [x] end session  [i] context"
 		seg = "paused"
 	}
+	if hardLimit && state.Timer.State != "ready" {
+		timerTitle = strings.TrimSuffix(timerTitle, " Session") + " · " + phaseLabel(seg)
+	} else if !hardLimit {
+		phase := phaseLabel(seg)
+		if state.Timer.State == "ready" {
+			phase = "Ready for " + nextLabel
+		}
+		timerTitle = "Stopwatch · " + phase
+	}
 	totalH := max(state.Height, 1)
-	timerW, issueW := state.Width, state.Width
-	timerH, issueH := viewhelpers.SplitVertical(totalH, 8, 8, max(8, totalH/2))
-	wide := viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide
-	if wide {
-		cols := viewhelpers.Columns(state.Width, 3, 2)
-		timerW, issueW = cols[0], cols[1]
-		timerH, issueH = totalH, totalH
-	}
-	leftW := timerW - 2
-	clockWidth := max(12, leftW-4)
-	clockHeight := max(7, timerH-5)
-	timerText := sessionmeta.RenderResponsiveClock(
-		elapsed,
-		clockWidth,
-		clockHeight,
-		stateColor,
-		theme.ColorDim,
-	)
-	timerText = lipgloss.NewStyle().
-		Width(clockWidth).
-		AlignHorizontal(lipgloss.Center).
-		Render(timerText)
-	timingLabel := sessionTimingLabel(state, now)
-	endsAtLabel := sessionEndsAtLabel(state, now)
-	if timingLabel != "" && endsAtLabel != "" {
-		timingLabel += "  ·  " + endsAtLabel
-	} else if timingLabel == "" {
-		timingLabel = endsAtLabel
-	}
-	priorWorkedSeconds, completedSessions := sessionmeta.SummarizeCompletedSessions(
-		state.IssueSessions,
-	)
-	metadataLines := []string{
-		theme.StyleDim.Render(
-			fmt.Sprintf("%s  ·  Completed sessions: %d", strings.ToUpper(seg), completedSessions),
-		),
-	}
-	if activeIssue != nil && activeIssue.EstimateMinutes != nil {
-		metadataLines = append(
-			metadataLines,
-			theme.StyleDim.Render(
-				sessionmeta.FormatEstimateProgress(
-					priorWorkedSeconds+workElapsedSeconds,
-					*activeIssue.EstimateMinutes,
-				),
-			),
-		)
-	}
-	centerWidth := max(1, leftW-4)
-	progressLine := ""
+	width := max(1, state.Width-2)
+	centerWidth := max(1, width-1)
+
+	// Under the clock: the phase bar (timed sessions only), then one status line.
+	below := []string{}
 	if hardLimit {
-		progressLine = hardLimitProgressBar(theme, state, centerWidth, now, stateColor)
-	} else if structured {
-		progressLine = structuredProgressBar(theme, state, centerWidth, now)
+		if bar := hardLimitProgressBar(theme, state, min(centerWidth, 72), now, stateColor); bar != "" {
+			below = append(below, "", bar)
+		}
 	}
-	timerParts := []string{
-		"",
-		lipgloss.NewStyle().
-			Width(centerWidth).
-			AlignHorizontal(lipgloss.Center).
-			Render(lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText)),
+	status := []string{}
+	if label := sessionTimingLabel(state, now); label != "" {
+		status = append(status, label)
 	}
-	if timingLabel != "" {
-		timerParts = append(timerParts, "", lipgloss.NewStyle().
-			Width(centerWidth).
-			AlignHorizontal(lipgloss.Center).
-			Render(lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timingLabel)))
+	if nextLabel != "next" && state.Timer.State != "ready" {
+		status = append(status, "next "+nextLabel)
 	}
-	if progressLine != "" {
-		timerParts = append(timerParts, "", progressLine)
+	if label := sessionEndsAtLabel(state, now); label != "" {
+		status = append(status, strings.Replace(label, "Ends At", "ends at", 1))
 	}
-	timerParts = append(timerParts, "", centerLines(metadataLines, centerWidth))
-	timerRows := splitLines(timerParts)
-	if !wide {
-		// Grow the timer section to fit its body; the issue section takes what is left.
-		timerH = min(max(timerH, len(timerRows)+1), max(timerH, totalH-6))
-		issueH = totalH - timerH
+	if len(status) > 0 {
+		below = append(below, "", lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(strings.Join(status, "  ·  ")))
+	}
+	priorWorkedSeconds, _ := sessionmeta.SummarizeCompletedSessions(state.IssueSessions)
+	below = append(below, "", "")
+	below = append(below, sessionIssueLines(theme, activeIssue, state.Timer.Adhoc, priorWorkedSeconds+workElapsedSeconds, centerWidth)...)
+	below = append(below, "", theme.StyleDim.Render(timerHint))
+
+	clockHeight := max(3, min(totalH/2, totalH-1-len(below)-2))
+	timerText := sessionmeta.RenderResponsiveClock(elapsed, centerWidth, clockHeight, stateColor, theme.ColorDim)
+	body := splitLines([]string{lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText), centerLines(below, centerWidth)})
+	for i, line := range body {
+		body[i] = lipgloss.NewStyle().Width(centerWidth).AlignHorizontal(lipgloss.Center).Render(line)
+	}
+	if pad := (totalH - 1 - len(body)) / 2; pad > 0 {
+		body = append(make([]string, pad), body...)
 	}
 	titleStyle := lipgloss.NewStyle().Foreground(stateColor).Bold(true)
-	timerSection := viewchrome.RenderSection(theme, viewchrome.Section{
+	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title:      timerTitle,
-		Meta:       nextLabel,
+		Meta:       sessionContextLabel(activeIssue, state.Timer.Adhoc),
 		TitleStyle: &titleStyle,
-		Width:      timerW,
-		Height:     timerH,
-		Lines:      timerRows,
+		Width:      state.Width,
+		Height:     totalH,
+		Lines:      body,
 	})
-	issueSection := viewchrome.RenderSection(theme, viewchrome.Section{
-		Title:  "Issue",
-		Width:  issueW,
-		Height: issueH,
-		Lines: splitLines(sessionIssueCompactLines(
-			theme,
-			activeIssue,
-			state.Timer != nil && state.Timer.Adhoc,
-			issueW-2,
-			state.Height,
-			timerHint,
-		)),
-	})
-	if wide {
-		return viewchrome.JoinColumns(theme, totalH, timerSection, issueSection)
+}
+
+// phaseLabel names a segment for the header: Focus, Short break, Long break, Rest, Paused.
+func phaseLabel(segment string) string {
+	switch segment {
+	case "work":
+		return "Focus"
+	case "short_break":
+		return "Short break"
+	case "long_break":
+		return "Long break"
+	case "rest":
+		return "Rest"
+	case "paused":
+		return "Paused"
+	default:
+		return "Focus"
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, timerSection, issueSection)
+}
+
+func sessionContextLabel(issue *api.IssueWithMeta, adhoc bool) string {
+	if adhoc {
+		return "Ad hoc"
+	}
+	if issue == nil || issue.RepoName == "" {
+		return ""
+	}
+	return issue.RepoName + " › " + issue.StreamName
+}
+
+// sessionIssueLines is the issue block under the clock: title, one line of description,
+// then worked time against the estimate.
+func sessionIssueLines(theme types.Theme, issue *api.IssueWithMeta, adhoc bool, workedSeconds, width int) []string {
+	if issue == nil {
+		if adhoc {
+			return []string{theme.StyleDim.Render("Ad hoc session · attribution pending until you end it")}
+		}
+		return []string{theme.StyleDim.Render("No issue selected")}
+	}
+	lines := []string{theme.StyleHeader.Render(viewhelpers.Truncate(issue.Title, width))}
+	if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {
+		lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(collapseSpace(*issue.Description), width)))
+	}
+	worked := "Worked " + helperpkg.FormatCompactDurationMinutes(workedSeconds/60)
+	if issue.EstimateMinutes != nil && *issue.EstimateMinutes > 0 {
+		worked += fmt.Sprintf(" / est. %s  ·  %d%%", helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes), workedSeconds*100/(*issue.EstimateMinutes*60))
+	}
+	return append(lines, "", theme.StyleDim.Render(worked))
 }
 
 func splitLines(lines []string) []string {
@@ -433,56 +423,6 @@ func segmentColor(theme types.Theme, segment sharedtypes.SessionSegmentType) lip
 	}
 }
 
-func structuredProgressBar(
-	theme types.Theme,
-	state types.ContentState,
-	width int,
-	now time.Time,
-) string {
-	if state.Timer == nil || state.Settings == nil || width < 8 {
-		return ""
-	}
-	durationSeconds := 0
-	if state.Timer.SegmentType != nil {
-		if state.Timer.HardLimitActive {
-			durationSeconds, _ = hardLimitSegmentDurationSeconds(
-				state.Timer,
-				*state.Timer.SegmentType,
-			)
-		} else {
-			switch *state.Timer.SegmentType {
-			case sharedtypes.SessionSegmentWork:
-				durationSeconds = state.Settings.WorkDurationMinutes * 60
-			case sharedtypes.SessionSegmentShortBreak:
-				durationSeconds = state.Settings.ShortBreakMinutes * 60
-			case sharedtypes.SessionSegmentLongBreak:
-				durationSeconds = state.Settings.LongBreakMinutes * 60
-			}
-		}
-	}
-	if durationSeconds <= 0 || state.Timer.State == "ready" {
-		return ""
-	}
-	elapsed := helperpkg.DerivedSegmentElapsedSeconds(
-		state.Timer,
-		state.Elapsed,
-		now,
-	)
-	elapsed = min(elapsed, durationSeconds)
-	filled := 0
-	if durationSeconds > 0 {
-		filled = elapsed * width / durationSeconds
-	}
-	if elapsed > 0 && filled == 0 {
-		filled = 1
-	}
-	filled = min(filled, width)
-	color := activeTimerColor(theme, state.Timer)
-	return lipgloss.NewStyle().
-		Width(width).
-		Render(viewhelpers.RenderGradientBar(width, filled, sessionProgressPalette(theme, state.Timer, color)))
-}
-
 func sessionProgressPalette(
 	theme types.Theme,
 	timer *api.TimerState,
@@ -552,55 +492,4 @@ func centerLines(lines []string, width int) string {
 		)
 	}
 	return strings.Join(centered, "\n")
-}
-
-func sessionIssueCompactLines(
-	theme types.Theme,
-	activeIssue *api.IssueWithMeta,
-	adhoc bool,
-	width, height int,
-	timerHint string,
-) []string {
-	lines := []string{"Active Issue", ""}
-	if activeIssue == nil {
-		label := "No issue selected"
-		if adhoc {
-			label = "Ad hoc session · attribution pending until you end it"
-		}
-		lines = append(lines, label, "", theme.StyleDim.Render(timerHint))
-		return lines
-	}
-	maxLine := max(20, width-12)
-	lines = append(
-		lines,
-		fmt.Sprintf("[%s/%s]", activeIssue.RepoName, activeIssue.StreamName),
-		viewhelpers.Truncate(activeIssue.Title, maxLine),
-	)
-	if activeIssue.EstimateMinutes != nil && *activeIssue.EstimateMinutes > 0 {
-		lines = append(
-			lines,
-			"",
-			theme.StyleDim.Render(
-				"Estimate "+helperpkg.FormatCompactDurationMinutes(*activeIssue.EstimateMinutes),
-			),
-		)
-	}
-	if activeIssue.Description != nil && strings.TrimSpace(*activeIssue.Description) != "" {
-		lines = append(
-			lines,
-			theme.StyleDim.Render(
-				"Desc  "+viewhelpers.Truncate(collapseSpace(*activeIssue.Description), maxLine),
-			),
-		)
-	}
-	if activeIssue.Notes != nil && strings.TrimSpace(*activeIssue.Notes) != "" {
-		lines = append(
-			lines,
-			theme.StyleDim.Render(
-				"Notes "+viewhelpers.Truncate(collapseSpace(*activeIssue.Notes), maxLine),
-			),
-		)
-	}
-	lines = append(lines, "", theme.StyleDim.Render(timerHint))
-	return lines
 }
