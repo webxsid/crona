@@ -51,6 +51,24 @@ Plan entry additions:
 
 Issue changes:
 - `TodoForDate` moves to the next day's date on carry, exactly as a reschedule does today, so every existing view keyed on it keeps working.
+- New issue status `carried`. A carry sets it, so carried-in work reads as its own state and never shows in Overdue.
+- The new day entry stores `CarriedIssueStatus`: the status the issue had before its first carry in the chain.
+
+### Which statuses carry
+
+| Issue status | Carried at the boundary or on reschedule? |
+|---|---|
+| `planned`, `ready`, `in_progress`, `in_review` | Yes. The issue becomes `carried`; its status is saved on the new entry. |
+| `carried` | Yes, again (a chain). The saved status from the first carry is kept. |
+| `blocked` | No. It stays on its day and shows as Overdue; a manual carry is refused. |
+| `backlog`, `done`, `abandoned` | No. They have no open plan entry to carry. |
+
+Leaving `carried`:
+- Starting focus moves it to `in_progress`, like `planned` and `ready`.
+- Any manual status change is allowed from `carried` (all open and closed statuses). Nothing can be changed *to* `carried` by hand; only a carry sets it.
+- Undoing the first carry of a chain restores the saved status. Undoing a later carry keeps it `carried`, since the issue is still carried into the earlier day.
+- A carry lapses when the issue is not worked on (below threshold) on its carried-in day: at the next boundary it goes back to the saved status and shows as Overdue.
+- A plain reschedule (not a carry) also ends it and restores the saved status.
 
 No new tables. Day entries are the copies.
 

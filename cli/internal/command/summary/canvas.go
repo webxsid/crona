@@ -609,6 +609,8 @@ func issueMark(status sharedtypes.IssueStatus) (string, string) {
 		return "[!]", ansiRed
 	case sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusInReview:
 		return "[>]", ansiCyan
+	case sharedtypes.IssueStatusCarried:
+		return "[~]", ansiCyan
 	default:
 		return "[ ]", ansiYellow
 	}
