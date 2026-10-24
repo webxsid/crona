@@ -354,6 +354,9 @@ const (
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
 	CoreSettingsKeyDailyPlanRollbackMins CoreSettingsKey = "dailyPlanRollbackMinutes"
 	CoreSettingsKeyPlanHighRiskTenths    CoreSettingsKey = "planHighRiskThresholdTenths"
+	CoreSettingsKeyCarryOverEnabled      CoreSettingsKey = "carryOverEnabled"
+	CoreSettingsKeyCarryOverMinMinutes   CoreSettingsKey = "carryOverMinMinutes"
+	CoreSettingsKeyCarryOverStallAfter   CoreSettingsKey = "carryOverStallAfter"
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
@@ -857,6 +860,7 @@ const (
 	DailyPlanEntryStatusFailed    DailyPlanEntryStatus = "failed"
 	DailyPlanEntryStatusAbandoned DailyPlanEntryStatus = "abandoned"
 	DailyPlanEntryStatusCanceled  DailyPlanEntryStatus = "canceled"
+	DailyPlanEntryStatusCarried   DailyPlanEntryStatus = "carried"
 )
 
 type DailyPlanFailureReason string
@@ -879,6 +883,8 @@ const (
 	DailyPlanEventAbandoned       DailyPlanEventType = "abandoned"
 	DailyPlanEventFailed          DailyPlanEventType = "failed"
 	DailyPlanEventFailureReverted DailyPlanEventType = "failure_reverted"
+	DailyPlanEventCarriedOver     DailyPlanEventType = "carried_over"
+	DailyPlanEventCarryUndone     DailyPlanEventType = "carry_undone"
 )
 
 type DailyPlanEvent struct {
@@ -894,6 +900,7 @@ type DailyPlanAccountabilitySummary struct {
 	CompletedCount       int     `json:"completedCount"`
 	FailedCount          int     `json:"failedCount"`
 	AbandonedCount       int     `json:"abandonedCount"`
+	CarriedCount         int     `json:"carriedCount"`
 	PendingRollbackCount int     `json:"pendingRollbackCount"`
 	AccountabilityScore  float64 `json:"accountabilityScore"`
 	BacklogPressure      float64 `json:"backlogPressure"`
@@ -921,6 +928,13 @@ type DailyPlanEntry struct {
 	CurrentDelayedDays   int                     `json:"currentDelayedDays"`
 	MaxDelayedDays       int                     `json:"maxDelayedDays"`
 	FailScore            float64                 `json:"failScore"`
+	CarriedFromEntryID   *string                 `json:"carriedFromEntryId,omitempty"`
+	CarriedToEntryID     *string                 `json:"carriedToEntryId,omitempty"`
+	CarriedFromDate      *string                 `json:"carriedFromDate,omitempty"`
+	CarriedToDate        *string                 `json:"carriedToDate,omitempty"`
+	CarryCount           int                     `json:"carryCount"`
+	Stalled              bool                    `json:"stalled"`
+	WorkedSeconds        int                     `json:"workedSeconds"`
 	Penalty              *DailyPlanEntryPenalty  `json:"penalty,omitempty"`
 	Events               []DailyPlanEvent        `json:"events,omitempty"`
 }
@@ -931,6 +945,7 @@ type DailyPlanEntryPenalty struct {
 	ProtectedDaysSkipped int                         `json:"protectedDaysSkipped"`
 	DelayComponent       float64                     `json:"delayComponent"`
 	FrequencyComponent   float64                     `json:"frequencyComponent"`
+	StallComponent       float64                     `json:"stallComponent"`
 	HighRisk             bool                        `json:"highRisk"`
 	HighRiskThreshold    float64                     `json:"highRiskThreshold"`
 	Historical           bool                        `json:"historical"`
@@ -1309,6 +1324,14 @@ type ActiveContext struct {
 }
 
 const (
+	DefaultCarryOverMinMinutes = 15
+	MaxCarryOverMinMinutes     = 240
+	DefaultCarryOverStallAfter = 5
+	MinCarryOverStallAfter     = 1
+	MaxCarryOverStallAfter     = 30
+)
+
+const (
 	DefaultPlanHighRiskTenths = 25
 	MinPlanHighRiskTenths     = 5
 	MaxPlanHighRiskTenths     = 100
@@ -1349,6 +1372,9 @@ type CoreSettings struct {
 	RestSpecificDates     []string                `json:"restSpecificDates,omitempty"`
 	DailyPlanRollbackMins int                     `json:"dailyPlanRollbackMinutes"`
 	PlanHighRiskTenths    int                     `json:"planHighRiskThresholdTenths"`
+	CarryOverEnabled      bool                    `json:"carryOverEnabled"`
+	CarryOverMinMinutes   int                     `json:"carryOverMinMinutes"`
+	CarryOverStallAfter   int                     `json:"carryOverStallAfter"`
 	DateDisplayPreset     DateDisplayPreset       `json:"dateDisplayPreset"`
 	DateDisplayFormat     string                  `json:"dateDisplayFormat,omitempty"`
 	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`

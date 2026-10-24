@@ -262,7 +262,43 @@ func scoreDailyPlan(
 			settings,
 		)
 	}
+	if err := annotateDailyPlanCarry(ctx, c, plan); err != nil {
+		return nil, err
+	}
 	return plan, nil
+}
+
+// annotateDailyPlanCarry adds each entry's time worked on the plan's day and the dates its carry
+// chain links point to.
+func annotateDailyPlanCarry(ctx context.Context, c *core.Context, plan *sharedtypes.DailyPlan) error {
+	if len(plan.Entries) == 0 {
+		return nil
+	}
+	worked, err := workedSecondsByIssueOnDate(ctx, c, plan.Date)
+	if err != nil {
+		return err
+	}
+	linkedDate := func(entryID *string) (*string, error) {
+		if entryID == nil {
+			return nil, nil
+		}
+		linked, err := c.DailyPlans.GetEntryByID(ctx, c.UserID, *entryID)
+		if err != nil || linked == nil {
+			return nil, err
+		}
+		return &linked.Date, nil
+	}
+	for i := range plan.Entries {
+		entry := &plan.Entries[i]
+		entry.WorkedSeconds = worked[entry.IssueID]
+		if entry.CarriedFromDate, err = linkedDate(entry.CarriedFromEntryID); err != nil {
+			return err
+		}
+		if entry.CarriedToDate, err = linkedDate(entry.CarriedToEntryID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func buildDailyPlanSummary(
@@ -285,6 +321,8 @@ func buildDailyPlanSummary(
 			summary.FailedCount++
 		case sharedtypes.DailyPlanEntryStatusAbandoned:
 			summary.AbandonedCount++
+		case sharedtypes.DailyPlanEntryStatusCarried:
+			summary.CarriedCount++
 		}
 	}
 	totalDelayDays := 0
@@ -326,7 +364,9 @@ func applyDailyPlanScore(entry *sharedtypes.DailyPlanEntry, settings *sharedtype
 	if entry.MaxDelayedDays < entry.CurrentDelayedDays {
 		entry.MaxDelayedDays = entry.CurrentDelayedDays
 	}
-	entry.FailScore = dailyPlanDelayComponent(*entry) + dailyPlanFrequencyComponent(*entry)
+	entry.Stalled = entry.CarryCount >= carryOverStallAfter(settings)
+	entry.FailScore = dailyPlanDelayComponent(*entry) + dailyPlanFrequencyComponent(*entry) +
+		dailyPlanStallComponent(*entry, settings)
 }
 
 func dailyPlanDelayComponent(entry sharedtypes.DailyPlanEntry) float64 {
@@ -362,6 +402,7 @@ func buildDailyPlanEntryPenalty(
 		),
 		DelayComponent:     dailyPlanDelayComponent(entry),
 		FrequencyComponent: dailyPlanFrequencyComponent(entry),
+		StallComponent:     dailyPlanStallComponent(entry, settings),
 		HighRisk:           entry.FailScore >= threshold,
 		HighRiskThreshold:  threshold,
 		Historical:         !active,

@@ -188,6 +188,9 @@ type CoreSettingsModel struct {
 	RestSpecificDates     string `bun:"rest_specific_dates,notnull,type:text"`
 	DailyPlanRollbackMins int    `bun:"daily_plan_rollback_minutes,notnull,type:integer"`
 	PlanHighRiskTenths    int    `bun:"plan_high_risk_threshold_tenths,notnull,type:integer"`
+	CarryOverEnabled      bool   `bun:"carry_over_enabled,notnull,type:integer"`
+	CarryOverMinMinutes   int    `bun:"carry_over_min_minutes,notnull,type:integer"`
+	CarryOverStallAfter   int    `bun:"carry_over_stall_after,notnull,type:integer"`
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
@@ -298,6 +301,9 @@ type DailyPlanEntryModel struct {
 	CurrentPlannedDate   string  `bun:"current_planned_date,notnull,type:text"`
 	PostponeCount        int     `bun:"postpone_count,notnull,type:integer"`
 	MaxDelayedDays       int     `bun:"max_delayed_days,notnull,type:integer"`
+	CarriedFromEntryID   *string `bun:"carried_from_entry_id,type:text,nullzero"`
+	CarriedToEntryID     *string `bun:"carried_to_entry_id,type:text,nullzero"`
+	CarryCount           int     `bun:"carry_count,notnull,type:integer,default:0"`
 	CreatedAt            string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt            string  `bun:"updated_at,notnull,type:text"`
 }

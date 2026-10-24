@@ -227,6 +227,30 @@ func (h *Handler) handleWorkMethods(
 			}
 			return corecommands.MarkIssueTodoForToday(ctx, h.core, id)
 		}), true
+	case protocol.MethodIssueCarry:
+		return h.handleNoParams(req, func() (any, error) {
+			raw, err := decodeObject(req.Params)
+			if err != nil {
+				return nil, err
+			}
+			id, err := decodeRequiredInt64(raw, "id")
+			if err != nil {
+				return nil, err
+			}
+			date, _, err := decodeOptionalStringFromMap(raw, "date")
+			if err != nil {
+				return nil, err
+			}
+			target := ""
+			if date != nil {
+				target = *date
+			}
+			return corecommands.CarryIssue(ctx, h.core, id, target)
+		}), true
+	case protocol.MethodIssueCarryUndo:
+		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
+			return corecommands.UndoCarry(ctx, h.core, input.ID)
+		}), true
 	case protocol.MethodIssueClearTodo:
 		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
 			return corecommands.ClearIssueTodoForDate(ctx, h.core, input.ID)
