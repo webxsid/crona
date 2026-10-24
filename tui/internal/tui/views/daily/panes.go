@@ -30,7 +30,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	lines := dailyTaskHeader(theme, state, width, height)
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
-		return dailySection(theme, "Tasks", meta, active, width, height, lines)
+		return dailySection(theme, "Tasks", viewhelpers.FilterMeta(meta, state.Filters["issues"]), active, width, height, lines)
 	}
 	lines = renderCompactDailyIssueList(
 		theme,
@@ -46,7 +46,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		cur,
 		active,
 	)
-	return dailySection(theme, "Tasks", meta, active, width, height, lines)
+	return dailySection(theme, "Tasks", viewhelpers.FilterMeta(meta, state.Filters["issues"]), active, width, height, lines)
 }
 
 // dailyTaskHeader is the section selector over the new-task line; in a short pane the
@@ -381,7 +381,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	lines := []string{newItemLine(theme, "new habit")}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
-		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+		return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
 	}
 	inner := sectionBodyRows(height, lines)
 	if active {
@@ -408,7 +408,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+	return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
 }
 
 const habitRowBarWidth = 10

@@ -267,6 +267,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		ReviewWindowEnd:         m.reviewWindowEnd,
 		Cursor:                  m.cursor,
 		Filters:                 m.filters,
+		TagFiltersRestored:      m.tagFiltersRestored,
 		Repos:                   m.repos,
 		Streams:                 m.streams,
 		Issues:                  m.issues,
@@ -362,6 +363,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 		m.cursor = map[Pane]int{}
 	}
 	m.filters = state.Filters
+	m.tagFiltersRestored = state.TagFiltersRestored
 	m.repos = state.Repos
 	m.streams = state.Streams
 	m.issues = state.Issues
@@ -467,6 +469,7 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 			next := m.applyDispatchMessageState(state)
 			return next.currentOpsLimit()
 		},
+		SaveTagFilters: func(filters map[string]string) tea.Cmd { return commands.SaveTagFilters(m.client, filters) },
 		ClampFiltered: func(state *dispatchpkg.MessageState, pane Pane) {
 			next := m.applyDispatchMessageState(*state)
 			snapshot := next.selectionSnapshot()

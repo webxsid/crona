@@ -193,6 +193,7 @@ type CoreSettingsModel struct {
 	CarryOverStallAfter   int    `bun:"carry_over_stall_after,notnull,type:integer"`
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
+	TagFilters            string `bun:"tag_filters,notnull,type:text,default:'{}'"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
 	OnboardingCompleted   bool   `bun:"onboarding_completed,notnull,type:integer"`
 	UsageTelemetryEnabled bool   `bun:"usage_telemetry_enabled,notnull,type:integer"`

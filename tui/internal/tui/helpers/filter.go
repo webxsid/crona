@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"slices"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -51,6 +52,19 @@ func TagFilterQuery(query string) string {
 		tokens = append(tokens, "-"+name)
 	}
 	return strings.Join(tokens, " ")
+}
+
+// PruneTagFilter drops the tag tokens in query that name none of the known tags.
+func PruneTagFilter(query string, known []string) string {
+	kept := []string{}
+	for _, field := range strings.Fields(query) {
+		if len(field) > 1 && (field[0] == '+' || field[0] == '-') &&
+			field[1:] != sharedtypes.TagUntagged && !slices.Contains(known, strings.ToLower(field[1:])) {
+			continue
+		}
+		kept = append(kept, field)
+	}
+	return strings.Join(kept, " ")
 }
 
 // TagChips renders tags as "+a +b" for compact rows.

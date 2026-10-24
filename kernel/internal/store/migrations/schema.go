@@ -145,6 +145,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"update_channel":           "stable",
 		"date_display_preset":      "iso",
 		"date_display_format":      "",
+		"tag_filters":              "{}",
 		"prompt_glyph_mode":        "emoji",
 		"habit_streak_definitions": "[]",
 		"frozen_streak_kinds":      "[]",

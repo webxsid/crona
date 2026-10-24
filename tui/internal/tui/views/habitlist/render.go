@@ -8,6 +8,7 @@ import (
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	"crona/tui/internal/tui/views/issuecore"
 	types "crona/tui/internal/tui/views/types"
 
@@ -169,7 +170,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		theme,
 		viewchrome.Section{
 			Title:   "Habits",
-			Meta:    fmt.Sprintf("%d", len(indices)),
+			Meta:    viewhelpers.FilterMeta(fmt.Sprintf("%d", len(indices)), state.Filters["habits"]),
 			Focused: active,
 			Width:   width,
 			Height:  height,

@@ -422,6 +422,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			return nil
 		},
+		OpenPaneFilter: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(
+				next.dialogSnapshot().OpenPaneFilter(string(next.pane), next.filters[next.pane]),
+			)
+			*state = next.inputState()
+			return true
+		},
+		SetPaneFilter: func(pane Pane, value string) tea.Cmd { return commands.SetPaneFilter(string(pane), value) },
 		OpenTagPicker: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			opened, ok := next.openTagPicker()

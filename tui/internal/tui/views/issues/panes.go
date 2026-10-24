@@ -6,6 +6,7 @@ import (
 
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	"crona/tui/internal/tui/views/daily"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
 	types "crona/tui/internal/tui/views/types"
@@ -120,7 +121,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		theme,
 		viewchrome.Section{
 			Title:   "Issues",
-			Meta:    meta,
+			Meta:    viewhelpers.FilterMeta(meta, state.Filters["issues"]),
 			Focused: active,
 			Width:   width,
 			Height:  height,

@@ -109,6 +109,8 @@ type Model struct {
 	dailySummary *api.DailyIssueSummary
 	dailyPlan    *api.DailyPlan
 	tags         []api.Tag
+	// tagFiltersRestored is set once the saved tag filters are applied after settings load.
+	tagFiltersRestored bool
 	// date is the shared date every dated view shows; "" follows the logical today.
 	date string
 	// reviewWindowDays end on reviewWindowEnd; reviewShowTime puts Time in Trends' slot.

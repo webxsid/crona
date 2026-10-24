@@ -478,6 +478,8 @@ func Update(
 		return updateBetaSupport(state, msg)
 	case "edit_tags":
 		return updateTagPicker(state, msg)
+	case "edit_filter":
+		return updatePaneFilter(state, msg)
 	default:
 		return state, nil, ""
 	}

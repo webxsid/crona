@@ -45,6 +45,8 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderHabitLogForm(theme, state)
 	case "edit_tags":
 		return renderTagPicker(theme, state)
+	case "edit_filter":
+		return renderPaneFilter(theme, state)
 	default:
 		return ""
 	}

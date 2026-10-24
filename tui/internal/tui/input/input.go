@@ -110,6 +110,8 @@ type Deps struct {
 	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
 	CarrySelectedIssue              func(*State) tea.Cmd
 	OpenTagPicker                   func(*State) bool
+	OpenPaneFilter                  func(*State) bool
+	SetPaneFilter                   func(pane uistate.Pane, value string) tea.Cmd
 	OpenSelectedIssueTodoDateDialog func(*State) bool
 	HandleCreateAction              func(*State) bool
 	OpenExportDailyDialog           func(*State) bool
@@ -270,6 +272,18 @@ func newRouter(deps Deps) *router {
 				return s, nil, false
 			}
 			return handleIssueStatus(s, deps)
+		},
+		"/": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if !filterablePanes[s.ActivePane] || deps.OpenPaneFilter == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenPaneFilter(&s)
+		},
+		"esc": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.Filters[s.ActivePane] == "" || deps.SetPaneFilter == nil {
+				return s, nil, false
+			}
+			return s, deps.SetPaneFilter(s.ActivePane, ""), true
 		},
 		"y": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
@@ -712,4 +726,19 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
 	)
 	return r
+}
+
+// filterablePanes are the list panes / filters: free text, plus +tag and -tag where the items
+// carry tags.
+var filterablePanes = map[uistate.Pane]bool{
+	uistate.PaneIssues:        true,
+	uistate.PaneHabits:        true,
+	uistate.PaneSessions:      true,
+	uistate.PaneHabitHistory:  true,
+	uistate.PaneMomentumCards: true,
+	uistate.PaneOps:           true,
+	uistate.PaneExportReports: true,
+	uistate.PaneConfig:        true,
+	uistate.PaneSettings:      true,
+	uistate.PaneAlerts:        true,
 }

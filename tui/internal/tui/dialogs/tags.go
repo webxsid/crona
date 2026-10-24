@@ -40,3 +40,16 @@ func renderTagPicker(theme Theme, state controllerpkg.State) string {
 		primary: "enter save", hints: []string{"↑/↓ move", "space toggle", "type to filter or create"},
 	})
 }
+
+// renderPaneFilter draws the pane filter: free text, +tag to keep and -tag to drop.
+func renderPaneFilter(theme Theme, state controllerpkg.State) string {
+	inner := formInner(state.Width)
+	full, _ := formColumns(inner, len("Filter"))
+	return renderForm(theme, state, FormSpec{
+		Title: "Filter " + titleWords(state.ViewName), FocusCount: 1, Primary: "enter apply",
+		Rows: []FormRow{
+			fieldRow(0, Field(theme, "Filter", len("Filter"), bareInput(state.Inputs[0], full, "text  +tag  -tag"), true)),
+			staticRow("", theme.StyleDim.Render("Words match the text, +tag keeps a tag (any of several), -tag drops it. Empty clears.")),
+		},
+	})
+}

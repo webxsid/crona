@@ -23,3 +23,9 @@ func TestItemFilter(t *testing.T) {
 		t.Fatalf("unexpected tag query %q", got)
 	}
 }
+
+func TestPruneTagFilter(t *testing.T) {
+	if got := PruneTagFilter("+urgent -gone +untagged", []string{"urgent"}); got != "+urgent +untagged" {
+		t.Fatalf("unexpected prune %q", got)
+	}
+}

@@ -940,6 +940,22 @@ func ToggleIssuePinnedDaily(
 	}
 }
 
+// SetPaneFilter replaces a pane's filter.
+func SetPaneFilter(pane, value string) tea.Cmd {
+	return func() tea.Msg { return PaneFilterSetMsg{Pane: pane, Value: value} }
+}
+
+// SaveTagFilters stores the tag part of each pane's filter, so it survives restarts.
+func SaveTagFilters(c *api.Client, filters map[string]string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyTagFilters, filters); err != nil {
+			logger.Errorf("SaveTagFilters: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return LoadSettings(c)()
+	}
+}
+
 // SetItemTags replaces an issue's or habit's tags. The kernel's tags.changed and updated
 // events reload the lists, so this only reports a failure.
 func SetItemTags(c *api.Client, habit bool, id int64, tags []string) tea.Cmd {
