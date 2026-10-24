@@ -374,7 +374,7 @@ func issuePriority(issue sharedtypes.Issue, today string) (bucket int, statusRan
 
 func openIssueStatusRank(status sharedtypes.IssueStatus) int {
 	switch status {
-	case sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusCarried:
+	case sharedtypes.IssueStatusInProgress:
 		return 0
 	case sharedtypes.IssueStatusBlocked:
 		return 1

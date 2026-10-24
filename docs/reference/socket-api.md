@@ -179,8 +179,8 @@ Alert behavior notes:
 | `issue.status_transitions` | `dto.NumericIDRequest` | `dto.IssueStatusTransitionsResponse` | Returns daemon-authoritative valid lifecycle transitions for an issue. |
 | `issue.set_todo` | `dto.SetIssueTodoRequest` | issue object | Sets a todo date. |
 | `issue.clear_todo` | `dto.NumericIDRequest` | issue object | Clears a todo date. |
-| `issue.carry` | `{ "id": number, "date"?: "YYYY-MM-DD" }` | issue object | Carries an issue from its planned day to `date`, or the next working day. Its plan entry for that day becomes `carried`, and the issue's status becomes `carried`. Only `planned`, `ready`, `in_progress`, `in_review`, and `carried` issues can be carried. |
-| `issue.carry.undo` | `dto.NumericIDRequest` | issue object | Undoes the issue's latest carry-over inside the plan rollback window, restoring its status from before the carry. |
+| `issue.carry` | `{ "id": number, "date"?: "YYYY-MM-DD" }` | issue object | Carries an issue from its planned day to `date`, or the next working day. Its plan entry for that day becomes `carried` The issue keeps its status. Only `planned`, `ready`, `in_progress`, and `in_review` issues can be carried. |
+| `issue.carry.undo` | `dto.NumericIDRequest` | issue object | Undoes the issue's latest carry-over inside the plan rollback window. |
 | `issue.daily_summary` | `dto.DailyIssueSummaryQuery` | daily summary object | Summary for an arbitrary date. |
 | `issue.today_summary` | `dto.Empty` | daily summary object | Today's summary shortcut. |
 | `daily_plan.get` | `dto.DailyPlanQuery` | daily plan object | Returns planned issues and supporting daily data. |

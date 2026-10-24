@@ -32,19 +32,3 @@ func TestDailyPlannedKeepsIssuesCarriedAwayFromTheDay(t *testing.T) {
 		t.Fatalf("expected no overdue issues, got %+v", overdue)
 	}
 }
-
-func TestDailyOverdueSkipsCarriedIssues(t *testing.T) {
-	day, past := "2026-10-24", "2026-10-22"
-	s := Snapshot{
-		View:          uistate.ViewDaily,
-		DashboardDate: day,
-		AllIssues: []api.IssueWithMeta{
-			{Issue: api.Issue{ID: 1, Status: sharedtypes.IssueStatusCarried, TodoForDate: &past}},
-			{Issue: api.Issue{ID: 2, Status: sharedtypes.IssueStatusReady, TodoForDate: &past}},
-		},
-	}
-	overdue := DailySectionIssues(s, uistate.DailyTaskSectionOverdue)
-	if len(overdue) != 1 || overdue[0].ID != 2 {
-		t.Fatalf("expected only the uncarried issue overdue, got %+v", overdue)
-	}
-}

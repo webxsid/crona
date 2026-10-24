@@ -304,7 +304,6 @@ type DailyPlanEntryModel struct {
 	CarriedFromEntryID   *string `bun:"carried_from_entry_id,type:text,nullzero"`
 	CarriedToEntryID     *string `bun:"carried_to_entry_id,type:text,nullzero"`
 	CarryCount           int     `bun:"carry_count,notnull,type:integer,default:0"`
-	CarriedIssueStatus   *string `bun:"carried_issue_status,type:text,nullzero"`
 	CreatedAt            string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt            string  `bun:"updated_at,notnull,type:text"`
 }

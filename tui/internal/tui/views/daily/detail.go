@@ -92,7 +92,7 @@ func IssueDetailLines(
 		}
 	}
 	statusStyle := theme.StyleNormal
-	if style := issuecore.IssueStatusStyle(theme, string(issue.Status)); style != nil {
+	if style := issuecore.IssueStatusStyle(theme, DisplayIssueStatus(state, issue.ID, issue.Status)); style != nil {
 		statusStyle = *style
 	}
 	estimate := 0
@@ -100,7 +100,7 @@ func IssueDetailLines(
 		estimate = *issue.EstimateMinutes
 	}
 	fields := []detailEntry{
-		{"status", statusStyle.Render(issuecore.PlainIssueStatus(string(issue.Status)))},
+		{"status", statusStyle.Render(issuecore.PlainIssueStatus(DisplayIssueStatus(state, issue.ID, issue.Status)))},
 		{"context", theme.StyleNormal.Render(detailContext(repo, stream))},
 		{"effort", theme.StyleNormal.Render(issueProgressText(worked, estimate, true))},
 	}

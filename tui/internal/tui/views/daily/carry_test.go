@@ -71,3 +71,15 @@ func TestRescheduleCarriesOnlyWorkedIssuesToday(t *testing.T) {
 		t.Fatal("expected no carry when carry-over is off")
 	}
 }
+
+func TestCarriedStatusShowsOnlyOnTheDayCarriedFrom(t *testing.T) {
+	state := detailState()
+	state.DailyPlan = carryPlan(state.DashboardDate, api.DailyPlanEntry{IssueID: 2, Status: sharedtypes.DailyPlanEntryStatusCarried})
+	if got := DisplayIssueStatus(state, 2, sharedtypes.IssueStatusInReview); got != "carried" {
+		t.Fatalf("expected carried on the day carried from, got %q", got)
+	}
+	state.DailyPlan = carryPlan(state.DashboardDate, api.DailyPlanEntry{IssueID: 2, Status: sharedtypes.DailyPlanEntryStatusPlanned, CarriedFromDate: new("2026-10-23")})
+	if got := DisplayIssueStatus(state, 2, sharedtypes.IssueStatusInReview); got != "in_review" {
+		t.Fatalf("expected the issue's own status on the day carried into, got %q", got)
+	}
+}
