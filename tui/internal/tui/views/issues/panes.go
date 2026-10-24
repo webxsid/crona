@@ -74,6 +74,9 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			if penalty := daily.PenaltyMarkerText(state, issue.ID); penalty != "" {
 				title += "  " + penalty
 			}
+			if carry := daily.CarryMarkerText(state, issue.ID); carry != "" {
+				title += "  " + carry
+			}
 			date := issuecore.IssueDateLabel(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings)
 			room := max(1, width-4)
 			if date != "" {

@@ -91,7 +91,8 @@ func PatchSetting(
 				LoadWellbeing(c, dashboardDate),
 				RequestRollupRefresh(),
 			)
-		case sharedtypes.CoreSettingsKeyPlanHighRiskTenths:
+		case sharedtypes.CoreSettingsKeyPlanHighRiskTenths,
+			sharedtypes.CoreSettingsKeyCarryOverStallAfter:
 			cmds = append(cmds, LoadDailyPlan(c, dashboardDate))
 		}
 		return tea.Batch(cmds...)()

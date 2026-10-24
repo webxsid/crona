@@ -164,6 +164,7 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 			fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount),
 			width,
 		),
+		Row(theme, "Carried", fmt.Sprintf("%d to a later day", s.CarriedCount), width),
 		Row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
 	)
 }

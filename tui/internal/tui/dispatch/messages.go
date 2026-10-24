@@ -812,6 +812,7 @@ func selectionSnapshotFromMessageState(state MessageState) selectionpkg.Snapshot
 		DefaultIssueSection: state.DefaultIssueSection,
 		BrowseScope:         state.BrowseScope,
 		DashboardDate:       messageStateDate(state),
+		DailyPlan:           state.DailyPlan,
 		Cursors:             state.Cursor,
 		Filters:             state.Filters,
 		Context:             state.Context,

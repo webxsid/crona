@@ -507,6 +507,9 @@ func MarkIssueTodoForDate(
 	if err != nil {
 		return nil, err
 	}
+	if handled, carried, err := rescheduleAsCarry(ctx, c, issue, previousDate, todoForDate, settings); handled || err != nil {
+		return carried, err
+	}
 	nextStatus := sharedtypes.AutoStatusOnTodoAssigned(issue.Status)
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]

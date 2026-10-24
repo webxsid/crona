@@ -97,6 +97,18 @@ var settingsHelp = map[string]viewchrome.RowHelp{
 		Description: "Delay penalty at which a planned issue is flagged high risk.",
 		Keys:        change,
 	},
+	"Carry Over": {
+		Description: "Moves issues you worked on but didn't finish to the next working day, keeping a copy on each day.",
+		Options:     toggle, Keys: change,
+	},
+	"Carry Threshold": {
+		Description: "Work a day needs for an unfinished issue to carry over instead of going overdue.",
+		Keys:        change,
+	},
+	"Stall After": {
+		Description: "Carries in a row before an issue is flagged stalled and starts adding to accountability.",
+		Keys:        change,
+	},
 	"Rest & Streak Protection": {
 		Description: "Which streaks rest days protect, and which weekdays and dates are rest days.",
 		Keys:        edit,

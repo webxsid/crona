@@ -179,6 +179,45 @@ func UndoCarry(ctx context.Context, c *core.Context, issueID int64) (*sharedtype
 	})
 }
 
+// rescheduleAsCarry turns a reschedule into carry-over work when that is what it means: moving
+// an issue worked on today to a later day carries it, and moving a carried-in issue back to the
+// day it came from, inside the rollback window, undoes the carry.
+func rescheduleAsCarry(
+	ctx context.Context,
+	c *core.Context,
+	issue *sharedtypes.Issue,
+	previousDate, nextDate string,
+	settings *sharedtypes.CoreSettings,
+) (bool, *sharedtypes.Issue, error) {
+	if previousDate == "" || previousDate == nextDate || settings == nil || !settings.CarryOverEnabled {
+		return false, nil, nil
+	}
+	entry, err := c.DailyPlans.GetEntry(ctx, c.UserID, previousDate, issue.ID)
+	if err != nil || entry == nil || entry.Status != sharedtypes.DailyPlanEntryStatusPlanned {
+		return false, nil, err
+	}
+	if nextDate < previousDate {
+		if entry.CarriedFromEntryID == nil {
+			return false, nil, nil
+		}
+		from, err := c.DailyPlans.GetEntryByID(ctx, c.UserID, *entry.CarriedFromEntryID)
+		if err != nil || from == nil || from.Date != nextDate || !withinRollbackWindow(from.ResolvedAt, c.Now(), settings) {
+			return false, nil, err
+		}
+		undone, err := UndoCarry(ctx, c, issue.ID)
+		return true, undone, err
+	}
+	if previousDate != c.CurrentDate() {
+		return false, nil, nil
+	}
+	worked, err := workedSecondsByIssueOnDate(ctx, c, previousDate)
+	if err != nil || worked[issue.ID] <= 0 {
+		return false, nil, err
+	}
+	carried, err := carryEntry(ctx, c, issue, *entry, nextDate, worked[issue.ID], true)
+	return true, carried, err
+}
+
 // carryEntry resolves entry as carried and opens the next entry in the chain on target. The new
 // entry starts a fresh delay baseline: the carried day was planned work, not a slip.
 func carryEntry(

@@ -113,6 +113,7 @@ func IssueDetailLines(
 	lines := detailDescription(theme, issue.Description, width)
 	lines = append(lines, detailGrid(theme, fields, width)...)
 	lines = append(lines, penaltyLines(theme, state, issue.ID, width)...)
+	lines = append(lines, carryLines(theme, state, issue.ID, width)...)
 	lines = append(lines, issuecore.NotesLines(theme, state.Settings, issue.Notes, width)...)
 	return append(
 		lines,

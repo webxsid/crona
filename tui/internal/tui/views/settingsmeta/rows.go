@@ -79,6 +79,17 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 			Label:   "High-Risk Threshold",
 			Value:   fmt.Sprintf("%.1f", settings.PlanHighRiskThreshold()),
 		},
+		{Section: "Recovery", Label: "Carry Over", Value: enabledDisabled(settings.CarryOverEnabled)},
+		{
+			Section: "Recovery",
+			Label:   "Carry Threshold",
+			Value:   carryThresholdLabel(settings.CarryOverMinMinutes),
+		},
+		{
+			Section: "Recovery",
+			Label:   "Stall After",
+			Value:   fmt.Sprintf("%d carries", settings.CarryOverStallAfter),
+		},
 		{
 			Section: "Recovery",
 			Label:   "Rest & Streak Protection",
@@ -418,4 +429,12 @@ func restProtectionLabel(settings *sharedtypes.CoreSettings) string {
 		return "All streaks • No rest days"
 	}
 	return strings.Join(parts, " • ")
+}
+
+// carryThresholdLabel is the work a day needs for carry-over; zero accepts any session.
+func carryThresholdLabel(minutes int) string {
+	if minutes <= 0 {
+		return "Any session"
+	}
+	return fmt.Sprintf("%d min", minutes)
 }

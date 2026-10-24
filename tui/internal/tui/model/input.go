@@ -28,6 +28,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		PreferActiveIssue: m.timer != nil && m.timer.State != "idle" &&
 			m.view == ViewSessionActive,
 		DashboardDate:  m.currentDate(),
+		DailyPlan:      m.dailyPlan,
 		Cursors:        m.cursor,
 		Filters:        m.filters,
 		Context:        m.context,
