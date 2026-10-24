@@ -27,6 +27,7 @@ type APIIssue struct {
 	TodoForDate     *string
 	CompletedAt     *string
 	AbandonedAt     *string
+	Tags            []string
 }
 
 func NewAPIIssue(
@@ -216,11 +217,11 @@ func IssueWorkedEstimateSummary(workedSeconds int, estimateMinutes *int) string 
 }
 
 func FilteredIssueIndices(issues []APIIssue, filter string) []int {
-	filter = normalizeFilter(filter)
+	parsed := helperpkg.ParseItemFilter(filter)
 	out := []int{}
 	for i, issue := range issues {
-		text := strings.ToLower(strings.Join([]string{issue.Title, string(issue.Status)}, " "))
-		if filter == "" || strings.Contains(text, filter) {
+		text := strings.Join([]string{issue.Title, string(issue.Status)}, " ")
+		if parsed.Match(text, issue.Tags) {
 			out = append(out, i)
 		}
 	}
@@ -228,16 +229,14 @@ func FilteredIssueIndices(issues []APIIssue, filter string) []int {
 }
 
 func filteredIssueMetaIndices(issues []api.IssueWithMeta, filter string) []int {
-	filter = normalizeFilter(filter)
+	parsed := helperpkg.ParseItemFilter(filter)
 	out := []int{}
 	for i, issue := range issues {
-		text := strings.ToLower(
-			strings.Join(
-				[]string{issue.Title, issue.RepoName, issue.StreamName, string(issue.Status)},
-				" ",
-			),
+		text := strings.Join(
+			[]string{issue.Title, issue.RepoName, issue.StreamName, string(issue.Status)},
+			" ",
 		)
-		if filter == "" || strings.Contains(text, filter) {
+		if parsed.Match(text, issue.Tags) {
 			out = append(out, i)
 		}
 	}

@@ -102,7 +102,11 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 				worked = meta.WorkedSeconds
 			}
 			meta := strings.Join([]string{issuecore.IssueContextLabel(issue.RepoName, issue.StreamName), issuecore.IssueWorkedEstimateCompactLabel(worked, issue.EstimateMinutes), issuecore.PlainIssueStatus(string(issue.Status))}, " | ")
-			lines = append(lines, theme.StyleDim.Render("  "+ansi.Truncate(meta, max(1, width-4), "…")))
+			metaLine := theme.StyleDim.Render("  " + ansi.Truncate(meta, max(1, width-4), "…"))
+			if chips := issuecore.TagChips(theme, issue.Tags, state.Tags, max(0, (width-4)/2)); chips != "" {
+				metaLine = theme.StyleDim.Render("  "+ansi.Truncate(meta, max(1, width-6-ansi.StringWidth(chips)), "…")) + "  " + chips
+			}
+			lines = append(lines, metaLine)
 		}
 		if end < len(indices) {
 			lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", len(indices)-end)))

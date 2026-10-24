@@ -109,6 +109,7 @@ type Deps struct {
 	ToggleSelectedIssueToday        func(*State) tea.Cmd
 	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
 	CarrySelectedIssue              func(*State) tea.Cmd
+	OpenTagPicker                   func(*State) bool
 	OpenSelectedIssueTodoDateDialog func(*State) bool
 	HandleCreateAction              func(*State) bool
 	OpenExportDailyDialog           func(*State) bool
@@ -398,6 +399,23 @@ func newRouter(deps Deps) *router {
 		s.DailyDetailDay = !s.DailyDetailDay
 		return s, nil, true
 	})
+	// + edits the selected issue's or habit's tags.
+	for _, target := range []struct {
+		view uistate.View
+		pane uistate.Pane
+	}{
+		{uistate.ViewDaily, uistate.PaneIssues},
+		{uistate.ViewDaily, uistate.PaneHabits},
+		{uistate.ViewDefault, uistate.PaneIssues},
+		{uistate.ViewHabitList, uistate.PaneHabits},
+	} {
+		r.RegisterPane(target.view, target.pane, "+", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive || deps.OpenTagPicker == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenTagPicker(&s)
+		})
+	}
 	// Overdue issues the day boundary did not carry (untouched, blocked, ...) carry by hand.
 	r.RegisterView(uistate.ViewDaily, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if s.ProtectedModeActive || s.ActivePane != uistate.PaneIssues ||

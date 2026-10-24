@@ -330,16 +330,21 @@ func FilteredIndices(s Snapshot, pane uistate.Pane) []int {
 
 	} else {
 		items := PaneItems(s, pane)
-		query := strings.TrimSpace(strings.ToLower(s.Filters[pane]))
-		if query == "" {
+		if strings.TrimSpace(s.Filters[pane]) == "" {
 			indices = make([]int, len(items))
 			for i := range items {
 				indices[i] = i
 			}
 		} else {
+			filter := helperpkg.ParseItemFilter(s.Filters[pane])
+			tags := paneItemTags(s, pane)
 			indices = make([]int, 0, len(items))
 			for i, item := range items {
-				if strings.Contains(strings.ToLower(item), query) {
+				var itemTags []string
+				if i < len(tags) {
+					itemTags = tags[i]
+				}
+				if filter.Match(item, itemTags) {
 					indices = append(indices, i)
 				}
 			}
@@ -545,4 +550,28 @@ func RepoNameByID(s Snapshot, repoID int64) string {
 		}
 	}
 	return ""
+}
+
+// paneItemTags lines up with PaneItems: each item's tags, for panes that list tagged things.
+func paneItemTags(s Snapshot, pane uistate.Pane) [][]string {
+	var out [][]string
+	switch {
+	case pane == uistate.PaneIssues && s.View == uistate.ViewDaily:
+		for _, issue := range DailyScopedIssues(s) {
+			out = append(out, issue.Tags)
+		}
+	case pane == uistate.PaneIssues:
+		for _, issue := range s.Issues {
+			out = append(out, issue.Tags)
+		}
+	case pane == uistate.PaneHabits && s.View == uistate.ViewDaily:
+		for _, habit := range FilteredDueHabits(s) {
+			out = append(out, habit.Tags)
+		}
+	case pane == uistate.PaneHabits:
+		for _, habit := range ScopedHabits(s) {
+			out = append(out, habit.Tags)
+		}
+	}
+	return out
 }

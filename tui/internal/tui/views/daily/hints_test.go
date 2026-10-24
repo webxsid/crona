@@ -153,7 +153,7 @@ func TestRunningTimerHidesRefusedKeys(t *testing.T) {
 }
 
 func TestTaskActionLineKeepsWholeHints(t *testing.T) {
-	labels := []string{"open", "status", "due", "pin", "focus", "edit", "delete", "log"}
+	labels := []string{"open", "status", "due", "pin", "tags", "focus", "edit", "delete", "log"}
 	for width := 40; width <= 110; width++ {
 		state := detailState()
 		state.Pane = "issues"

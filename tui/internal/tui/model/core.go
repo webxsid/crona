@@ -108,6 +108,7 @@ type Model struct {
 	todayHabits  []api.HabitDailyItem
 	dailySummary *api.DailyIssueSummary
 	dailyPlan    *api.DailyPlan
+	tags         []api.Tag
 	// date is the shared date every dated view shows; "" follows the logical today.
 	date string
 	// reviewWindowDays end on reviewWindowEnd; reviewShowTime puts Time in Trends' slot.
@@ -388,6 +389,7 @@ func (m Model) Init() tea.Cmd {
 	cmds := []tea.Cmd{
 		commands.LoadRepos(m.client),
 		commands.LoadAllHabits(m.client),
+		commands.LoadTags(m.client),
 		commands.LoadHabitStreakDefinitions(m.client),
 		commands.LoadMomentumRange(
 			m.client,

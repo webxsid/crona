@@ -940,6 +940,22 @@ func ToggleIssuePinnedDaily(
 	}
 }
 
+// SetItemTags replaces an issue's or habit's tags. The kernel's tags.changed and updated
+// events reload the lists, so this only reports a failure.
+func SetItemTags(c *api.Client, habit bool, id int64, tags []string) tea.Cmd {
+	return func() tea.Msg {
+		set := c.SetIssueTags
+		if habit {
+			set = c.SetHabitTags
+		}
+		if err := set(id, tags); err != nil {
+			logger.Errorf("SetItemTags: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return nil
+	}
+}
+
 // CarryIssueOver carries an issue by hand, then reloads what the carry changes.
 func CarryIssueOver(c *api.Client, issueID, streamID int64, dashboardDate string) tea.Cmd {
 	return func() tea.Msg {

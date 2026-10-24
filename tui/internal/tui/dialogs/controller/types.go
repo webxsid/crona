@@ -170,6 +170,11 @@ type State struct {
 	HardLimitBreakSeconds          int
 	HardLimitLongBreakSeconds      int
 	HardLimitCyclesBeforeLongBreak int
+	// TagTarget, TagSelected, TagVocab and TagCursor drive the tag picker.
+	TagTarget   string
+	TagSelected []string
+	TagVocab    []string
+	TagCursor   int
 }
 
 const (

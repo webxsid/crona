@@ -66,6 +66,7 @@ type Deps struct {
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
+	SetItemTags                    func(target string, id int64, tags []string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
 	OpenSupportFeedbackRoadmapURL  func() tea.Cmd
 	OpenSupportReleasesURL         func() tea.Cmd
@@ -184,6 +185,16 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		"set_export_reports_dir",
 		func(action dialogstate.Action) tea.Cmd { return deps.SetExportReportsDir(action.Path) },
 	)
+	r.Register("set_tags", func(action dialogstate.Action) tea.Cmd {
+		if deps.SetItemTags == nil {
+			return missingRuntimeHookCmd("set_tags")
+		}
+		id := action.IssueID
+		if action.Status == dialogstate.TagTargetHabit {
+			id = action.HabitID
+		}
+		return deps.SetItemTags(action.Status, id, action.StringList)
+	})
 	r.Register(
 		"set_export_ics_dir",
 		func(action dialogstate.Action) tea.Cmd { return deps.SetExportICSDir(action.Path) },

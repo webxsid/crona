@@ -86,6 +86,10 @@ type Action struct {
 func Close(state State) State {
 	state.Kind = ""
 	state.ErrorMessage = ""
+	state.TagTarget = ""
+	state.TagSelected = nil
+	state.TagVocab = nil
+	state.TagCursor = 0
 	state.Inputs = nil
 	state.Description = textarea.Model{}
 	state.DescriptionEnabled = false
@@ -472,6 +476,8 @@ func Update(
 		return updateViewJump(state, msg)
 	case "beta_support":
 		return updateBetaSupport(state, msg)
+	case "edit_tags":
+		return updateTagPicker(state, msg)
 	default:
 		return state, nil, ""
 	}

@@ -64,6 +64,17 @@ func LoadAllHabits(c *api.Client) tea.Cmd {
 	}
 }
 
+func LoadTags(c *api.Client) tea.Cmd {
+	return func() tea.Msg {
+		tags, err := c.ListTags()
+		if err != nil {
+			logger.Errorf("loadTags: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return TagsLoadedMsg{Tags: tags}
+	}
+}
+
 func LoadHabitStreakDefinitions(c *api.Client) tea.Cmd {
 	return func() tea.Msg {
 		defs, err := c.ListHabitStreakDefinitions()

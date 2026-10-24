@@ -101,6 +101,7 @@ func (m Model) viewContentState(
 		DailySummary:          m.dailySummary,
 		SummarySnapshot:       m.summarySnapshot,
 		DailyPlan:             m.dailyPlan,
+		Tags:                  m.tags,
 		DailyCheckIn:          m.dailyCheckIn,
 		MetricsRange:          m.metricsRange,
 		MetricsRollup:         m.metricsRollup,

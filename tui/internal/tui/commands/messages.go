@@ -48,6 +48,7 @@ type TodayHabitsLoadedMsg struct {
 }
 type DailySummaryLoadedMsg struct{ Summary *api.DailyIssueSummary }
 type DailyPlanLoadedMsg struct{ Plan *api.DailyPlan }
+type TagsLoadedMsg struct{ Tags []api.Tag }
 type DailyCheckInLoadedMsg struct{ CheckIn *api.DailyCheckIn }
 type MetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
 type MetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }

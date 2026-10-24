@@ -66,20 +66,19 @@ func dailyTaskHeader(theme types.Theme, state types.ContentState, width, height 
 func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {
 	issues := make([]issuecore.APIIssue, 0, len(sources))
 	for _, issue := range sources {
-		issues = append(
-			issues,
-			issuecore.NewAPIIssue(
-				issue.ID,
-				issue.Title,
-				issue.Status,
-				issue.EstimateMinutes,
-				issue.WorkedSeconds,
-				issue.PinnedDaily,
-				issue.TodoForDate,
-				issue.CompletedAt,
-				issue.AbandonedAt,
-			),
+		converted := issuecore.NewAPIIssue(
+			issue.ID,
+			issue.Title,
+			issue.Status,
+			issue.EstimateMinutes,
+			issue.WorkedSeconds,
+			issue.PinnedDaily,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
 		)
+		converted.Tags = issue.Tags
+		issues = append(issues, converted)
 	}
 	return issues
 }
@@ -187,6 +186,7 @@ func renderCompactDailyIssueList(
 			workedSeconds,
 			issue.EstimateMinutes,
 			DisplayIssueStatus(state, issue.ID, issue.Status),
+			issuecore.TagChips(theme, issue.Tags, state.Tags, max(0, width/2)),
 		))
 	}
 	if remaining := total - end; remaining > 0 {
@@ -251,6 +251,7 @@ func renderCompactDailyIssueMeta(
 	workedSeconds int,
 	estimateMinutes *int,
 	status string,
+	chips string,
 ) string {
 	metaParts := []string{
 		issuecore.IssueContextLabel(repoName, streamName),
@@ -263,7 +264,11 @@ func renderCompactDailyIssueMeta(
 	} else {
 		meta = theme.StyleDim.Render("  " + meta)
 	}
-	return viewhelpers.TruncateANSI(meta, width)
+	if chips == "" {
+		return viewhelpers.TruncateANSI(meta, width)
+	}
+	room := max(0, width-ansi.StringWidth(chips)-2)
+	return viewhelpers.TruncateANSI(meta, room) + "  " + chips
 }
 
 func compactDailyIssueDate(state types.ContentState, issue issuecore.APIIssue) string {

@@ -90,7 +90,8 @@ func Render(theme Theme, state controllerpkg.State) string {
 		"support_bundle_result",
 		"complete_habit",
 		"view_jump",
-		"beta_support":
+		"beta_support",
+		"edit_tags":
 		matched = "utility"
 		rendered = renderUtilityDialog(theme, state)
 	case "edit_telemetry_settings", "onboarding":

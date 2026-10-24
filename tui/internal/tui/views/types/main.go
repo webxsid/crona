@@ -64,6 +64,7 @@ type ContentState struct {
 	WeekStart           sharedtypes.WeekStart
 	DefaultIssueSection string
 	DailyTaskSection    string
+	Tags                []api.Tag
 	SessionHistoryTitle string
 	SessionHistoryMeta  string
 	HabitHistoryTitle   string

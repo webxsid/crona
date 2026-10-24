@@ -422,6 +422,15 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			return nil
 		},
+		OpenTagPicker: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			opened, ok := next.openTagPicker()
+			if !ok {
+				return false
+			}
+			*state = opened.inputState()
+			return true
+		},
 		CarrySelectedIssue: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			if issue, ok := selectionpkg.SelectedIssue(next.selectionSnapshot()); ok && !issue.Adhoc {
@@ -716,4 +725,26 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return true
 		},
 	}
+}
+
+// openTagPicker opens the tag picker on the selected issue or habit, if there is one.
+func (m Model) openTagPicker() (Model, bool) {
+	snapshot := m.selectionSnapshot()
+	vocab := make([]string, 0, len(m.tags))
+	for _, tag := range m.tags {
+		vocab = append(vocab, tag.Name)
+	}
+	open := func(target string, id int64, title string, current []string) (Model, bool) {
+		return m.withDialogState(m.dialogSnapshot().OpenTagPicker(target, id, title, current, vocab)), true
+	}
+	if issue, ok := selectionpkg.SelectedIssue(snapshot); ok && !issue.Adhoc {
+		return open(dialogstate.TagTargetIssue, issue.ID, issue.Title, issue.Tags)
+	}
+	if habit, ok := selectionpkg.SelectedDailyHabit(snapshot); ok {
+		return open(dialogstate.TagTargetHabit, habit.ID, habit.Name, habit.Tags)
+	}
+	if habit, ok := selectionpkg.SelectedHabit(snapshot); ok {
+		return open(dialogstate.TagTargetHabit, habit.ID, habit.Name, habit.Tags)
+	}
+	return m, false
 }

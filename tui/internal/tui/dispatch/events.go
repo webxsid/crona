@@ -50,6 +50,7 @@ type EventDeps struct {
 	LoadIssuesSelecting      func(streamID, selectedIssueID int64) tea.Cmd
 	LoadHabits               func(streamID int64) tea.Cmd
 	LoadAllHabits            func() tea.Cmd
+	LoadTags                 func() tea.Cmd
 	LoadAllStreams           func() tea.Cmd
 	LoadAllIssues            func() tea.Cmd
 	LoadAllIssuesSelecting   func(selectedIssueID int64) tea.Cmd
@@ -151,6 +152,20 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			cmds = append(cmds, deps.LoadHabitHistory(state.Context, state.SelectedHabitHistoryID))
 		}
 		return state, tea.Batch(append(cmds, summarySnapshotCmd(state, deps)...)...)
+	case "tags.changed":
+		cmds := []tea.Cmd{deps.LoadAllHabits(), deps.LoadDueHabits(state.CurrentDate)}
+		if deps.LoadTags != nil {
+			cmds = append(cmds, deps.LoadTags())
+		}
+		if state.Context != nil && state.Context.StreamID != nil {
+			cmds = append(cmds, deps.LoadIssues(*state.Context.StreamID), deps.LoadHabits(*state.Context.StreamID))
+		}
+		if state.SelectedIssueID != nil {
+			cmds = append(cmds, deps.LoadAllIssuesSelecting(*state.SelectedIssueID))
+		} else {
+			cmds = append(cmds, deps.LoadAllIssues())
+		}
+		return state, tea.Batch(cmds...)
 	case "checkin.updated", "checkin.deleted":
 		return state, tea.Batch(append([]tea.Cmd{
 			deps.LoadDailyStreaks(state.CurrentDate),

@@ -279,6 +279,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		DueHabits:               m.dueHabits,
 		DailySummary:            m.dailySummary,
 		DailyPlan:               m.dailyPlan,
+		Tags:                    m.tags,
 		MomentumWindowDays:      m.currentMomentumWindowDays(),
 		DailyCheckIn:            m.dailyCheckIn,
 		MetricsRange:            m.metricsRange,
@@ -373,6 +374,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.dueHabits = state.DueHabits
 	m.dailySummary = state.DailySummary
 	m.dailyPlan = state.DailyPlan
+	m.tags = state.Tags
 	m.date = state.Date
 	m.reviewWindowDays = state.ReviewWindowDays
 	m.reviewWindowEnd = state.ReviewWindowEnd

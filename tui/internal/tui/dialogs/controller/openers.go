@@ -433,6 +433,10 @@ func (s Snapshot) OpenDatePicker(
 	)
 }
 
+func (s Snapshot) OpenTagPicker(target string, id int64, title string, current, vocab []string) State {
+	return OpenTagPicker(s.Dialog, target, id, title, current, vocab)
+}
+
 func (s Snapshot) OpenViewEntity(title, name, meta, body string) State {
 	return OpenViewEntity(s.Dialog, title, name, meta, body)
 }

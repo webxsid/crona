@@ -45,6 +45,7 @@ type MessageState struct {
 	DueHabits              []api.HabitDailyItem
 	DailySummary           *api.DailyIssueSummary
 	DailyPlan              *api.DailyPlan
+	Tags                   []api.Tag
 	MomentumWindowDays     int
 	DailyCheckIn           *api.DailyCheckIn
 	MetricsRange           []api.DailyMetricsDay
@@ -302,6 +303,9 @@ func HandleMessage(
 		return state, nil, true
 	case commands.DailyPlanLoadedMsg:
 		state.DailyPlan = msg.Plan
+		return state, nil, true
+	case commands.TagsLoadedMsg:
+		state.Tags = msg.Tags
 		return state, nil, true
 	case commands.DailyCheckInLoadedMsg:
 		state.DailyCheckIn = msg.CheckIn
