@@ -169,7 +169,7 @@ func renderCompactDailyIssueList(
 				active,
 				title,
 				compactDailyIssueDate(state, issue),
-				string(issue.Status),
+				DisplayIssueStatus(state, issue.ID, issue.Status),
 			),
 		)
 		if start+idx == cur && active {
@@ -186,7 +186,7 @@ func renderCompactDailyIssueList(
 			streamName,
 			workedSeconds,
 			issue.EstimateMinutes,
-			string(issue.Status),
+			DisplayIssueStatus(state, issue.ID, issue.Status),
 		))
 	}
 	if remaining := total - end; remaining > 0 {

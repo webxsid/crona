@@ -48,22 +48,15 @@ func CarryOverPastDays(ctx context.Context, c *core.Context) error {
 			}
 			worked[entry.Date] = byIssue
 		}
+		seconds := worked[entry.Date][entry.IssueID]
+		if !meetsCarryThreshold(seconds, settings.CarryOverMinMinutes) {
+			continue
+		}
 		issue, err := c.Issues.GetByID(ctx, entry.IssueID, c.UserID)
 		if err != nil {
 			return err
 		}
-		if issue == nil {
-			continue
-		}
-		seconds := worked[entry.Date][entry.IssueID]
-		if !sharedtypes.CanCarryOver(issue.Status) || !meetsCarryThreshold(seconds, settings.CarryOverMinMinutes) {
-			// A carried-in issue left unworked stops being carried: it goes back to the status it
-			// had, so it shows as ordinary overdue work.
-			if issue.Status == sharedtypes.IssueStatusCarried {
-				if _, err := restoreCarriedStatus(ctx, c, issue, entry); err != nil {
-					return err
-				}
-			}
+		if issue == nil || !sharedtypes.CanCarryOver(issue.Status) {
 			continue
 		}
 		target := nextCarryDate(entry.Date, today, settings)
@@ -169,13 +162,7 @@ func UndoCarry(ctx context.Context, c *core.Context, issueID int64) (*sharedtype
 	if err := c.DailyPlans.DeleteEntry(ctx, current.ID); err != nil {
 		return nil, err
 	}
-	// Undoing one step of a longer chain leaves the issue carried into the earlier day.
-	status := carriedRestoreStatus(issue, *current)
-	if previous.CarriedFromEntryID != nil {
-		carried := sharedtypes.IssueStatusCarried
-		status = &carried
-	}
-	updated, err := updateCarriedIssue(ctx, c, issue, previous.Date, status, now)
+	updated, err := setIssueTodoDate(ctx, c, issueID, previous.Date, now)
 	if err != nil {
 		return nil, err
 	}
@@ -245,15 +232,8 @@ func carryEntry(
 	workedSeconds int,
 	manual bool,
 ) (*sharedtypes.Issue, error) {
-	if !sharedtypes.CanCarryOver(issue.Status) {
-		return nil, errors.New("only planned, ready, in-progress, or in-review issues can be carried over")
-	}
 	now := c.Now()
-	// The new entry remembers the status the issue had before it was first carried, so an undo
-	// or a lapsed carry can put it back; along a chain that is the status before the first carry.
-	before := carriedRestoreStatus(issue, entry)
-	carried := sharedtypes.IssueStatusCarried
-	updated, err := updateCarriedIssue(ctx, c, issue, target, &carried, now)
+	updated, err := setIssueTodoDate(ctx, c, issue.ID, target, now)
 	if err != nil {
 		return nil, err
 	}
@@ -271,10 +251,6 @@ func carryEntry(
 		return nil, err
 	}
 	if err := c.DailyPlans.SetCarryLinks(ctx, next.ID, now, &entry.ID, nil, entry.CarryCount+1); err != nil {
-		return nil, err
-	}
-	beforeValue := string(*before)
-	if err := c.DailyPlans.SetCarriedIssueStatus(ctx, next.ID, now, &beforeValue); err != nil {
 		return nil, err
 	}
 	if err := c.DailyPlans.AppendEvent(ctx, entry.ID, c.UserID, c.DeviceID, now, sharedtypes.DailyPlanEventCarriedOver, nil, map[string]any{
@@ -296,7 +272,6 @@ func carryEntry(
 	return updated, recordCarryChange(ctx, c, updated, now, map[string]any{
 		"todoForDate": target,
 		"carriedFrom": entry.Date,
-		"status":      carried,
 	})
 }
 
@@ -327,48 +302,8 @@ func recordCarryChange(
 	return nil
 }
 
-// carriedRestoreStatus is the status a carried issue goes back to when its carry is undone or
-// lapses: the one entry recorded, or in progress when that is missing. An issue that is not
-// carried keeps its own status.
-func carriedRestoreStatus(issue *sharedtypes.Issue, entry sharedtypes.DailyPlanEntry) *sharedtypes.IssueStatus {
-	status := sharedtypes.NormalizeIssueStatus(issue.Status)
-	if status != sharedtypes.IssueStatusCarried {
-		return &status
-	}
-	if entry.CarriedIssueStatus != nil && *entry.CarriedIssueStatus != sharedtypes.IssueStatusCarried {
-		restored := *entry.CarriedIssueStatus
-		return &restored
-	}
-	restored := sharedtypes.IssueStatusInProgress
-	return &restored
-}
-
-// restoreCarriedStatus takes a carried issue back to the status it had before the carry.
-func restoreCarriedStatus(
-	ctx context.Context,
-	c *core.Context,
-	issue *sharedtypes.Issue,
-	entry sharedtypes.DailyPlanEntry,
-) (*sharedtypes.Issue, error) {
-	now := c.Now()
-	status := carriedRestoreStatus(issue, entry)
-	updated, err := updateCarriedIssue(ctx, c, issue, issueCommittedDate(issue), status, now)
-	if err != nil {
-		return nil, err
-	}
-	return updated, recordCarryChange(ctx, c, updated, now, map[string]any{"status": *status})
-}
-
-// updateCarriedIssue moves the issue's plan date and, when status differs, its status.
-func updateCarriedIssue(
-	ctx context.Context,
-	c *core.Context,
-	issue *sharedtypes.Issue,
-	date string,
-	status *sharedtypes.IssueStatus,
-	now string,
-) (*sharedtypes.Issue, error) {
-	return c.Issues.Update(ctx, issue.ID, c.UserID, now, struct {
+func setIssueTodoDate(ctx context.Context, c *core.Context, issueID int64, date, now string) (*sharedtypes.Issue, error) {
+	return c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]
 		Description     sharedtypes.Patch[string]
 		Status          sharedtypes.Patch[sharedtypes.IssueStatus]
@@ -379,10 +314,6 @@ func updateCarriedIssue(
 		CompletedAt     sharedtypes.Patch[string]
 		AbandonedAt     sharedtypes.Patch[string]
 	}{
-		Status: sharedtypes.Patch[sharedtypes.IssueStatus]{
-			Set:   status != nil && *status != sharedtypes.NormalizeIssueStatus(issue.Status),
-			Value: status,
-		},
 		TodoForDate: sharedtypes.Patch[string]{Set: true, Value: &date},
 	})
 }

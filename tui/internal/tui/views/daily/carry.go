@@ -2,7 +2,6 @@ package daily
 
 import (
 	"fmt"
-	"strings"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -78,9 +77,6 @@ func carryLines(theme types.Theme, state types.ContentState, issueID int64, widt
 			text += fmt.Sprintf(" · %d carries in a row", entry.CarryCount)
 		}
 		lines = append(lines, label("Carried from")+theme.StyleNormal.Render(text))
-		if entry.CarriedIssueStatus != nil {
-			lines = append(lines, label("Before carry")+theme.StyleNormal.Render(strings.ReplaceAll(string(*entry.CarriedIssueStatus), "_", " ")))
-		}
 	}
 	if entry.Stalled && entry.Status != sharedtypes.DailyPlanEntryStatusCarried {
 		lines = append(lines, label("")+theme.StyleError.Render("stalled · consider splitting, re-estimating or abandoning it"))
@@ -89,4 +85,13 @@ func carryLines(theme types.Theme, state types.ContentState, issueID int64, widt
 		return nil
 	}
 	return truncateLines(append([]string{"", theme.StyleDim.Bold(true).Render("Carry-over")}, lines...), width)
+}
+
+// DisplayIssueStatus is the status to show on the issue's row for the shown day: "carried" on
+// a day the issue was carried away from, its own status everywhere else.
+func DisplayIssueStatus(state types.ContentState, issueID int64, status sharedtypes.IssueStatus) string {
+	if entry := issuePlanEntry(state, issueID); entry != nil && entry.Status == sharedtypes.DailyPlanEntryStatusCarried {
+		return string(sharedtypes.IssueStatusCarried)
+	}
+	return string(status)
 }

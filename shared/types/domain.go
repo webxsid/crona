@@ -17,9 +17,11 @@ const (
 	IssueStatusInProgress IssueStatus = "in_progress"
 	IssueStatusBlocked    IssueStatus = "blocked"
 	IssueStatusInReview   IssueStatus = "in_review"
-	IssueStatusCarried    IssueStatus = "carried"
-	IssueStatusDone       IssueStatus = "done"
-	IssueStatusAbandoned  IssueStatus = "abandoned"
+	// IssueStatusCarried is display-only: clients show it on a past day's row for an issue that
+	// day carried over. It is never stored; the issue keeps its own status.
+	IssueStatusCarried   IssueStatus = "carried"
+	IssueStatusDone      IssueStatus = "done"
+	IssueStatusAbandoned IssueStatus = "abandoned"
 )
 
 type FocusScoreReason string
@@ -934,7 +936,6 @@ type DailyPlanEntry struct {
 	CarriedFromDate      *string                 `json:"carriedFromDate,omitempty"`
 	CarriedToDate        *string                 `json:"carriedToDate,omitempty"`
 	CarryCount           int                     `json:"carryCount"`
-	CarriedIssueStatus   *IssueStatus            `json:"carriedIssueStatus,omitempty"`
 	Stalled              bool                    `json:"stalled"`
 	WorkedSeconds        int                     `json:"workedSeconds"`
 	Penalty              *DailyPlanEntryPenalty  `json:"penalty,omitempty"`

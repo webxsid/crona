@@ -338,7 +338,7 @@ func isClosedIssueStatus(status sharedtypes.IssueStatus) bool {
 
 func openIssueStatusRank(status sharedtypes.IssueStatus) int {
 	switch status {
-	case sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusCarried:
+	case sharedtypes.IssueStatusInProgress:
 		return 0
 	case sharedtypes.IssueStatusBlocked:
 		return 1

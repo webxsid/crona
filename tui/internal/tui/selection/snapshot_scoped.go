@@ -195,8 +195,7 @@ func isClosedDailyIssue(issue api.Issue) bool {
 }
 
 func dailyIssueOverdue(issue api.Issue, anchorDate string) bool {
-	// Carried work belongs to the day it was carried into, never to Overdue.
-	if isClosedDailyIssue(issue) || issue.Status == sharedtypes.IssueStatusCarried {
+	if isClosedDailyIssue(issue) {
 		return false
 	}
 	if issue.PinnedDaily && issue.TodoForDate == nil {
