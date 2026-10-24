@@ -1020,6 +1020,9 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 			return err
 		}
 	}
+	if err := h.seedCarryAndDelayFixtures(ctx, qaStream.ID, createIssue, seedSession, seedAt, dateAt); err != nil {
+		return err
+	}
 	if err := seedAt(-3, 18, 0, func() error {
 		_, err := corecommands.ChangeIssueStatus(ctx, h.core, underEstimateIssue.ID, sharedtypes.IssueStatusDone, new("Completed after running long relative to the estimate."))
 		return err
@@ -1058,4 +1061,104 @@ func mostRecentMatchingWeekday(base time.Time, weekdays []int) (string, int) {
 
 	}
 	return base.Format("2006-01-02"), 0
+}
+
+// seedCarryAndDelayFixtures seeds daily-plan chains for checking carry-over and delay
+// penalties in the TUI: a stalled carry chain, a single carry, a carried issue finished
+// later, and untouched issues postponed repeatedly.
+func (h *Handler) seedCarryAndDelayFixtures(
+	ctx context.Context,
+	streamID int64,
+	createIssue func(int, int64, string, string, int, *string, []sharedtypes.IssueStatus, ...string) (sharedtypes.Issue, error),
+	seedSession func(int, int64, int, int, int, corecommands.SessionEndInput) error,
+	seedAt func(int, int, int, func() error) error,
+	dateAt func(int) string,
+) error {
+	ready := []sharedtypes.IssueStatus{sharedtypes.IssueStatusReady}
+	work := func(dayOffset int, issueID int64, minutes int, what string) error {
+		return seedSession(dayOffset, issueID, 12, 0, minutes, corecommands.SessionEndInput{
+			CommitMessage: new("chore: " + what),
+			WorkedOn:      new(what),
+			Outcome:       new("not finished; carried to the next day"),
+		})
+	}
+	carry := func(dayOffset int, issueID int64, toOffset int) error {
+		return seedAt(dayOffset, 18, 30, func() error {
+			_, err := corecommands.CarryIssue(ctx, h.core, issueID, dateAt(toOffset))
+			return err
+		})
+	}
+	postpone := func(dayOffset int, issueID int64, toOffset int) error {
+		return seedAt(dayOffset, 17, 45, func() error {
+			_, err := corecommands.MarkIssueTodoForDate(ctx, h.core, issueID, dateAt(toOffset))
+			return err
+		})
+	}
+
+	// Carried every day for six days, so it is past the default stall limit of five.
+	stalled, err := createIssue(-6, streamID, "Migrate settings storage", "Seeded carry chain that keeps rolling forward.", 60, new(dateAt(-6)), ready)
+	if err != nil {
+		return err
+	}
+	for day := -6; day < 0; day++ {
+		if err := work(day, stalled.ID, 25, "settings storage migration"); err != nil {
+			return err
+		}
+		if err := carry(day, stalled.ID, day+1); err != nil {
+			return err
+		}
+	}
+
+	single, err := createIssue(-2, streamID, "Draft carry-over release notes", "Seeded single carry from yesterday.", 45, new(dateAt(-1)), ready)
+	if err != nil {
+		return err
+	}
+	if err := work(-1, single.ID, 35, "release notes draft"); err != nil {
+		return err
+	}
+	if err := carry(-1, single.ID, 0); err != nil {
+		return err
+	}
+
+	finished, err := createIssue(-4, streamID, "Tidy reschedule picker hints", "Seeded carry that was finished the next day.", 40, new(dateAt(-3)), ready)
+	if err != nil {
+		return err
+	}
+	if err := work(-3, finished.ID, 30, "picker hint copy"); err != nil {
+		return err
+	}
+	if err := carry(-3, finished.ID, -2); err != nil {
+		return err
+	}
+	if err := work(-2, finished.ID, 20, "picker hint polish"); err != nil {
+		return err
+	}
+	if err := seedAt(-2, 18, 45, func() error {
+		_, err := corecommands.ChangeIssueStatus(ctx, h.core, finished.ID, sharedtypes.IssueStatusDone, new("Finished after one carry."))
+		return err
+	}); err != nil {
+		return err
+	}
+
+	// Never worked on and pushed back three times, so it builds a high delay penalty.
+	delayed, err := createIssue(-6, streamID, "Untangle flaky e2e fixtures", "Seeded issue postponed repeatedly without work.", 50, new(dateAt(-6)), ready)
+	if err != nil {
+		return err
+	}
+	for _, step := range [][2]int{{-6, -4}, {-4, -2}, {-2, 0}} {
+		if err := postpone(step[0], delayed.ID, step[1]); err != nil {
+			return err
+		}
+	}
+
+	pushed, err := createIssue(-3, streamID, "Renew domain certificates", "Seeded issue postponed into the future.", 15, new(dateAt(-3)), ready)
+	if err != nil {
+		return err
+	}
+	for _, step := range [][2]int{{-3, -1}, {-1, 2}} {
+		if err := postpone(step[0], pushed.ID, step[1]); err != nil {
+			return err
+		}
+	}
+	return nil
 }
