@@ -1,6 +1,7 @@
 package input
 
 import (
+	"math"
 	"time"
 
 	sharedtypes "crona/shared/types"
@@ -144,6 +145,15 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyDailyPlanRollbackMins,
 			max(currentRollbackMinutes(s.Settings.DailyPlanRollbackMins)+dir, 1),
+			repoID,
+			streamID,
+			s.Date,
+		), true
+	case "High-Risk Threshold":
+		tenths := int(math.Round(s.Settings.PlanHighRiskThreshold()*10)) + dir
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyPlanHighRiskTenths,
+			min(max(tenths, sharedtypes.MinPlanHighRiskTenths), sharedtypes.MaxPlanHighRiskTenths),
 			repoID,
 			streamID,
 			s.Date,

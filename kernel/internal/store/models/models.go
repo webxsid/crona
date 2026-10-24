@@ -187,6 +187,7 @@ type CoreSettingsModel struct {
 	RestWeekdays          string `bun:"rest_weekdays,notnull,type:text"`
 	RestSpecificDates     string `bun:"rest_specific_dates,notnull,type:text"`
 	DailyPlanRollbackMins int    `bun:"daily_plan_rollback_minutes,notnull,type:integer"`
+	PlanHighRiskTenths    int    `bun:"plan_high_risk_threshold_tenths,notnull,type:integer"`
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
