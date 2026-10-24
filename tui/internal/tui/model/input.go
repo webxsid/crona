@@ -422,6 +422,13 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			return nil
 		},
+		CarrySelectedIssue: func(state *inputpkg.State) tea.Cmd {
+			next := m.applyInputState(*state)
+			if issue, ok := selectionpkg.SelectedIssue(next.selectionSnapshot()); ok && !issue.Adhoc {
+				return commands.CarryIssueOver(m.client, issue.ID, issue.StreamID, next.currentDate())
+			}
+			return nil
+		},
 		ToggleSelectedIssuePinnedDaily: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			snapshot := next.selectionSnapshot()

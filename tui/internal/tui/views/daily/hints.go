@@ -39,6 +39,9 @@ func taskActionLine(theme types.Theme, state types.ContentState, width int) stri
 		viewchrome.KeyHint(theme, "d", "due"),
 		viewchrome.KeyHint(theme, "P", "pin"),
 	)
+	if state.DailyTaskSection == "overdue" {
+		hints = append(hints, viewchrome.KeyHint(theme, "r", "carry"))
+	}
 	if timerIdle(state) {
 		hints = append(hints,
 			viewchrome.KeyHint(theme, "f", "focus"),

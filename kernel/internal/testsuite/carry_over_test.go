@@ -310,7 +310,34 @@ func TestCarryOverSkipsBlockedIssues(t *testing.T) {
 	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusPlanned {
 		t.Fatalf("expected blocked issue to stay put, got %+v", entry)
 	}
-	if _, err := corecommands.CarryIssue(ctx, coreCtx, issue.ID, ""); err == nil {
-		t.Fatal("expected manual carry of a blocked issue to fail")
+	// A blocked issue is never carried automatically, but can be by hand.
+	if _, err := corecommands.CarryIssue(ctx, coreCtx, issue.ID, ""); err != nil {
+		t.Fatalf("manual carry of a blocked issue: %v", err)
+	}
+	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-25", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusPlanned || entry.CarryCount != 1 {
+		t.Fatalf("expected blocked issue carried onto today, got %+v", entry)
+	}
+	if status := mustIssueStatus(t, ctx, coreCtx, issue.ID); status != sharedtypes.IssueStatusBlocked {
+		t.Fatalf("expected the issue to stay blocked, got %s", status)
+	}
+}
+
+func TestManualCarryOfUntouchedOverdueIssue(t *testing.T) {
+	ctx, coreCtx, now, issue := newCarryFixture(t)
+	*now = "2026-03-26T12:00:00Z"
+	if err := corecommands.CarryOverPastDays(ctx, coreCtx); err != nil {
+		t.Fatalf("carry over: %v", err)
+	}
+	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusPlanned {
+		t.Fatalf("expected the untouched issue to stay overdue, got %+v", entry)
+	}
+	if _, err := corecommands.CarryIssue(ctx, coreCtx, issue.ID, ""); err != nil {
+		t.Fatalf("manual carry: %v", err)
+	}
+	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusCarried {
+		t.Fatalf("expected the overdue day to be carried, got %+v", entry)
+	}
+	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-26", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusPlanned {
+		t.Fatalf("expected the carry to land on today, got %+v", entry)
 	}
 }

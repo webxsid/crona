@@ -58,8 +58,11 @@ Issue changes:
 | Issue status | Carried at the boundary or on reschedule? |
 |---|---|
 | `planned`, `ready`, `in_progress`, `in_review` | Yes. The status is unchanged; the day carried from shows the row as `carried`. |
-| `blocked` | No. It stays on its day and shows as Overdue; a manual carry is refused. |
-| `backlog`, `done`, `abandoned` | No. They have no open plan entry to carry. |
+| `blocked` | Not automatically. It stays on its day and shows as Overdue. |
+| `backlog` | Not automatically. |
+| `done`, `abandoned` | Never. |
+
+Manual carry (`issue.carry`, or `r` on the Daily Overdue tab) works for any open issue with an open plan entry, whatever its status and however long it was worked: blocked issues, untouched overdue issues, and anything below the threshold. It lands on today, or the next working day if today is a rest or away day.
 
 No new tables. Day entries are the copies.
 
