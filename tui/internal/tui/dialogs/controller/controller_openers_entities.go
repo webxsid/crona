@@ -593,7 +593,11 @@ func OpenAdhocResolution(state State, context *api.ActiveContext) State {
 	state.AdhocDate = adhocDate
 	state.RepoName = repoName
 	state.StreamName = streamName
-	state.ChoiceItems = []string{"Attach to an existing issue", "Create a new issue", "Keep as ad hoc"}
+	state.ChoiceItems = []string{
+		"Attach to an existing issue",
+		"Create a new issue",
+		"Keep as ad hoc",
+	}
 	state.ChoiceValues = []string{"attach", "create", "keep"}
 	state.ChoiceDetails = []string{
 		"Choose an issue, then add a session summary.",
@@ -661,7 +665,8 @@ func OpenAdhocIssuePicker(state State, issues []api.IssueWithMeta, currentDate s
 		}
 	}
 	state.AdhocIssueTabCounts[3] = len(eligible)
-	if initialOpening && tab == 0 && state.AdhocIssueTabCounts[0] == 0 && state.AdhocIssueTabCounts[3] > 0 {
+	if initialOpening && tab == 0 && state.AdhocIssueTabCounts[0] == 0 &&
+		state.AdhocIssueTabCounts[3] > 0 {
 		tab = 3
 		state.AdhocIssueTab = tab
 	}

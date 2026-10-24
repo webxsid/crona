@@ -179,7 +179,8 @@ func updateDayBoundaryTime(state State, key string, msg tea.KeyMsg) (State, *Act
 		}
 		if state.DayBoundaryEditingOverride {
 			for day, existing := range state.DayBoundarySchedule.WeekdayOverrides {
-				if existing == state.DayBoundaryEditingTime && containsInt(state.DayBoundarySelectedDays, day) {
+				if existing == state.DayBoundaryEditingTime &&
+					containsInt(state.DayBoundarySelectedDays, day) {
 					delete(state.DayBoundarySchedule.WeekdayOverrides, day)
 				}
 			}
@@ -213,15 +214,21 @@ func dayBoundaryOverview(state State) State {
 	state.DayBoundaryEditingTime = ""
 	state.DayBoundaryEditingOverride = false
 	state.DayBoundarySelectedDays = nil
-	state.DayBoundaryOverrideCursor = minInt(state.DayBoundaryOverrideCursor, len(state.DayBoundaryOverrides))
+	state.DayBoundaryOverrideCursor = minInt(
+		state.DayBoundaryOverrideCursor,
+		len(state.DayBoundaryOverrides),
+	)
 	state.FocusIdx = state.DayBoundaryOverrideCursor
 	return SyncDialogFocus(clearDialogError(state))
 }
 
 func shiftDayBoundaryOverviewCursor(state State, direction int) int {
-	if AllDayBoundaryDaysOverridden(state.DayBoundarySchedule) && len(state.DayBoundaryOverrides) > 0 {
+	if AllDayBoundaryDaysOverridden(state.DayBoundarySchedule) &&
+		len(state.DayBoundaryOverrides) > 0 {
 		current := state.DayBoundaryOverrideCursor - 1
-		current = (current + direction + len(state.DayBoundaryOverrides)) % len(state.DayBoundaryOverrides)
+		current = (current + direction + len(state.DayBoundaryOverrides)) % len(
+			state.DayBoundaryOverrides,
+		)
 		return current + 1
 	}
 	total := len(state.DayBoundaryOverrides) + 1

@@ -41,7 +41,8 @@ func TestDayCanvasUsesRequestedWidthWithoutANSIInPlainMode(t *testing.T) {
 
 func TestProgressBarUsesColorAndBlocksForTerminalMode(t *testing.T) {
 	bar := progressBar(renderOptions{Color: true, Unicode: true}, 3, 1, 5, 10, ansiGreen)
-	if !strings.Contains(bar, "\x1b[32m") || !strings.Contains(bar, "█") || !strings.Contains(bar, "░") {
+	if !strings.Contains(bar, "\x1b[32m") || !strings.Contains(bar, "█") ||
+		!strings.Contains(bar, "░") {
 		t.Fatalf("expected colored Unicode progress bar, got %q", bar)
 	}
 	if visibleWidth(bar) != 10 {

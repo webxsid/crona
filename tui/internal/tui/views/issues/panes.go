@@ -14,7 +14,11 @@ import (
 )
 
 func issueIndices(state types.ContentState) []int {
-	open, closed := issuecore.SplitDefaultIssueIndices(state.DefaultIssues, state.Filters["issues"], state.Settings)
+	open, closed := issuecore.SplitDefaultIssueIndices(
+		state.DefaultIssues,
+		state.Filters["issues"],
+		state.Settings,
+	)
 	if state.DefaultIssueSection == "completed" {
 		return closed
 	}
@@ -105,5 +109,15 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	if active {
 		meta += "  [←/→]"
 	}
-	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Issues", Meta: meta, Focused: active, Width: width, Height: height, Lines: lines})
+	return viewchrome.RenderSection(
+		theme,
+		viewchrome.Section{
+			Title:   "Issues",
+			Meta:    meta,
+			Focused: active,
+			Width:   width,
+			Height:  height,
+			Lines:   lines,
+		},
+	)
 }

@@ -34,8 +34,20 @@ func renderDateFormatForm(theme Theme, state controllerpkg.State) string {
 	return renderForm(theme, state, FormSpec{
 		Title: "Custom Date Format", FocusCount: 1, Primary: plainHint(dialogSubmitHint(state, "save")),
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Pattern", len("Pattern"), bareInput(state.Inputs[0], full, "YYYY-MM-DD"), true)),
-			staticRow("", theme.StyleDim.Render("Examples: YYYY-MM-DD   Do MMM YYYY   MM/DD/YYYY   [Week] W")),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Pattern",
+					len("Pattern"),
+					bareInput(state.Inputs[0], full, "YYYY-MM-DD"),
+					true,
+				),
+			),
+			staticRow(
+				"",
+				theme.StyleDim.Render("Examples: YYYY-MM-DD   Do MMM YYYY   MM/DD/YYYY   [Week] W"),
+			),
 		},
 	})
 }
@@ -51,7 +63,12 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 	steps := []string{"Streaks", "Weekdays", "Dates", "Review"}
 	active := min(max(0, state.ProtectionStep), len(steps)-1)
 	body := []string{stepStrip(theme, steps, active), ""}
-	d := listDialog{wide: true, title: "Rest & Streak Protection", context: stepContext(steps, active), focus: -1}
+	d := listDialog{
+		wide:    true,
+		title:   "Rest & Streak Protection",
+		context: stepContext(steps, active),
+		focus:   -1,
+	}
 	switch active {
 	case 0:
 		body = append(body, theme.StyleDim.Render("Select which streaks are protected"))
@@ -85,8 +102,15 @@ func renderRestProtectionDialog(theme Theme, state controllerpkg.State) string {
 		d.primary, d.hints = "tab next", []string{"a add date", "D remove selected"}
 	default:
 		column := len("Weekdays")
-		body = append(body,
-			Field(theme, "Streaks", column, fallback(streakKindsSummary(state.ProtectionStreaks), "None"), false),
+		body = append(
+			body,
+			Field(
+				theme,
+				"Streaks",
+				column,
+				fallback(streakKindsSummary(state.ProtectionStreaks), "None"),
+				false,
+			),
 			Field(theme, "Weekdays", column, weekdaysSummary(state.ProtectionWeekdays), false),
 			Field(theme, "Dates", column, restDatesSummary(state.ProtectionDates), false),
 		)
@@ -104,7 +128,12 @@ func renderDayBoundaryDialog(theme Theme, state controllerpkg.State) string {
 	steps := []string{"Default", "Add Override", "Time"}
 	active := min(max(0, state.DayBoundaryStep), len(steps)-1)
 	body := []string{stepStrip(theme, steps, active), ""}
-	d := listDialog{wide: true, title: title, context: fallbackTimezone(state.DayBoundaryTimezone), focus: -1}
+	d := listDialog{
+		wide:    true,
+		title:   title,
+		context: fallbackTimezone(state.DayBoundaryTimezone),
+		focus:   -1,
+	}
 	column := len("Enabled")
 	switch state.DayBoundaryStep {
 	case controllerpkg.DayBoundaryStepDays:
@@ -127,8 +156,15 @@ func renderDayBoundaryDialog(theme Theme, state controllerpkg.State) string {
 		d.primary, d.hints, d.esc = "enter next", []string{"↑/↓ move", "space toggle"}, "esc back"
 	case controllerpkg.DayBoundaryStepTime:
 		full, _ := formColumns(formInner(state.Width), column)
-		body = append(body,
-			Field(theme, "Days", column, dayBoundaryDaysLabel(state.DayBoundarySelectedDays), false),
+		body = append(
+			body,
+			Field(
+				theme,
+				"Days",
+				column,
+				dayBoundaryDaysLabel(state.DayBoundarySelectedDays),
+				false,
+			),
 			Field(theme, "Time", column, bareInput(state.Inputs[1], full, "HH:mm"), true),
 		)
 		d.focus = len(body) - 1
@@ -153,7 +189,10 @@ func renderDayBoundaryDialog(theme Theme, state controllerpkg.State) string {
 		}
 		labels := []string{}
 		for _, override := range state.DayBoundaryOverrides {
-			labels = append(labels, fmt.Sprintf("%-22s %s", dayBoundaryDaysLabel(override.Days), override.Time))
+			labels = append(
+				labels,
+				fmt.Sprintf("%-22s %s", dayBoundaryDaysLabel(override.Days), override.Time),
+			)
 		}
 		if state.DayBoundaryOverrideCursor > 0 {
 			d.focus = len(body) + state.DayBoundaryOverrideCursor - 1
@@ -173,23 +212,46 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 	steps := []string{"Usage", "Diagnostics", "Review"}
 	active := min(max(0, state.TelemetryStep), len(steps)-1)
 	body := []string{stepStrip(theme, steps, active), ""}
-	d := listDialog{wide: true, title: "Privacy & Diagnostics", context: stepContext(steps, active), focus: -1}
+	d := listDialog{
+		wide:    true,
+		title:   "Privacy & Diagnostics",
+		context: stepContext(steps, active),
+		focus:   -1,
+	}
 	switch active {
 	case 0:
-		body = append(body,
-			theme.StyleDim.Render("Share anonymous usage signals so Crona can spot problems early and understand which parts of the app people use."),
-			theme.StyleDim.Render("This does not include your work content, paths, notes, or anything you type into Crona."),
+		body = append(
+			body,
+			theme.StyleDim.Render(
+				"Share anonymous usage signals so Crona can spot problems early and understand which parts of the app people use.",
+			),
+			theme.StyleDim.Render(
+				"This does not include your work content, paths, notes, or anything you type into Crona.",
+			),
 			"",
 		)
-		body = append(body, selectList(theme, []string{checkbox(state.TelemetryUsage, "Share usage signals")}, 0)...)
+		body = append(
+			body,
+			selectList(
+				theme,
+				[]string{checkbox(state.TelemetryUsage, "Share usage signals")},
+				0,
+			)...)
 		d.primary, d.hints = "space toggle", []string{"tab next"}
 	case 1:
-		body = append(body,
-			theme.StyleDim.Render("Share sanitized diagnostic reports when Crona runs into an error it can explain or recover from."),
-			theme.StyleDim.Render("The report is stripped down to help us debug the problem without collecting your work content."),
+		body = append(
+			body,
+			theme.StyleDim.Render(
+				"Share sanitized diagnostic reports when Crona runs into an error it can explain or recover from.",
+			),
+			theme.StyleDim.Render(
+				"The report is stripped down to help us debug the problem without collecting your work content.",
+			),
 			"",
 		)
-		body = append(body, selectList(theme, []string{checkbox(state.TelemetryErrors, "Share diagnostics")}, 0)...)
+		body = append(
+			body,
+			selectList(theme, []string{checkbox(state.TelemetryErrors, "Share diagnostics")}, 0)...)
 		d.primary, d.hints = "space toggle", []string{"tab next", "shift+tab back"}
 	default:
 		column := len("Usage signals")
@@ -202,7 +264,13 @@ func renderTelemetrySettingsDialog(theme Theme, state controllerpkg.State) strin
 			"",
 		)
 		d.focus = len(body) + state.ChoiceCursor
-		body = append(body, selectList(theme, []string{"Save", "Save and Restart Now", "Cancel"}, state.ChoiceCursor)...)
+		body = append(
+			body,
+			selectList(
+				theme,
+				[]string{"Save", "Save and Restart Now", "Cancel"},
+				state.ChoiceCursor,
+			)...)
 		d.primary, d.hints = "enter choose", []string{"↑/↓ move", "shift+tab back"}
 	}
 	d.body = body

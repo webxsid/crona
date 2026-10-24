@@ -28,7 +28,12 @@ const (
 
 // DetailLines is the momentum's settings, then its chart, which fills the room left; with
 // buckets, the chart takes 55% of that room and the bucket table the rest.
-func DetailLines(theme types.Theme, card sharedtypes.MomentumCard, width, height int, buckets bool) []string {
+func DetailLines(
+	theme types.Theme,
+	card sharedtypes.MomentumCard,
+	width, height int,
+	buckets bool,
+) []string {
 	lines := append(headerLines(theme, card, width), "")
 	room := height - len(lines)
 	chartRows := room
@@ -56,7 +61,10 @@ func headerLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []
 	left := [][2]string{
 		{"Cadence", momentumhelpers.CadenceLabel(def.Period)},
 		{"Target", momentumTargetSummary(def)},
-		{"Streak", streakLabel(card, card.Current) + " now · best " + streakLabel(card, card.Longest)},
+		{
+			"Streak",
+			streakLabel(card, card.Current) + " now · best " + streakLabel(card, card.Longest),
+		},
 	}
 	right := [][2]string{
 		{momentumCardTargetLabel(def), momentumTargetSummaryNames(card)},
@@ -96,13 +104,22 @@ func chartLines(theme types.Theme, card sharedtypes.MomentumCard, width, height 
 		return nil
 	}
 	def := card.Definition
-	footnote := theme.StyleDim.Render(viewhelpers.Truncate(momentumSeriesFootnote(def, card.Series, def.Enabled), width))
+	footnote := theme.StyleDim.Render(
+		viewhelpers.Truncate(momentumSeriesFootnote(def, card.Series, def.Enabled), width),
+	)
 	rows := height - 1
 	var chart []string
 	switch {
 	case rows <= 0:
 	case sharedtypes.NormalizeHabitStreakPeriod(def.Period) == sharedtypes.HabitStreakPeriodDay && momentumDailySeriesUsesSquares(def, card.Series):
-		chart = calendarLines(theme, card.Series, width, rows, def.Enabled, time.Now().Format(isoDate))
+		chart = calendarLines(
+			theme,
+			card.Series,
+			width,
+			rows,
+			def.Enabled,
+			time.Now().Format(isoDate),
+		)
 	default:
 		chart = renderMomentumBars(theme, def, card.Series, width, rows, def.Enabled)
 	}
@@ -123,7 +140,11 @@ func BucketLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []
 	def, series := card.Definition, card.Series
 	shared, hasShared := momentumSharedTarget(series)
 	daily := sharedtypes.NormalizeHabitStreakPeriod(def.Period) == sharedtypes.HabitStreakPeriodDay
-	lines := []string{theme.StyleDim.Render(ansi.Truncate(bucketSummary(def, series, shared, hasShared), width, "…"))}
+	lines := []string{
+		theme.StyleDim.Render(
+			ansi.Truncate(bucketSummary(def, series, shared, hasShared), width, "…"),
+		),
+	}
 
 	labels := make([]string, len(series))
 	counts := make([]string, len(series))
@@ -144,7 +165,12 @@ func BucketLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []
 				if label := fmt.Sprintf("W%d", w); label != week {
 					week = label
 					rule := "── " + label + " "
-					lines = append(lines, theme.StyleDim.Render(rule+strings.Repeat("─", max(0, width-ansi.StringWidth(rule)))))
+					lines = append(
+						lines,
+						theme.StyleDim.Render(
+							rule+strings.Repeat("─", max(0, width-ansi.StringWidth(rule))),
+						),
+					)
 				}
 			}
 		}
@@ -158,7 +184,15 @@ func BucketLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []
 		case point.Skipped:
 			row += theme.StyleDim.Render(padRight(notes, room))
 		case notes != "" && room-len(notes)-2 >= minBucketBar:
-			row += momentumBucketBar(theme, point, room-len(notes)-2, def.Enabled, scale) + "  " + theme.StyleDim.Render(notes)
+			row += momentumBucketBar(
+				theme,
+				point,
+				room-len(notes)-2,
+				def.Enabled,
+				scale,
+			) + "  " + theme.StyleDim.Render(
+				notes,
+			)
 		default:
 			row += momentumBucketBar(theme, point, room, def.Enabled, scale)
 		}
@@ -168,7 +202,12 @@ func BucketLines(theme types.Theme, card sharedtypes.MomentumCard, width int) []
 }
 
 // bucketSummary is the table's opening line: the shared target, buckets met, and the mean.
-func bucketSummary(def sharedtypes.HabitStreakDefinition, series []sharedtypes.MomentumSeriesPoint, shared int, hasShared bool) string {
+func bucketSummary(
+	def sharedtypes.HabitStreakDefinition,
+	series []sharedtypes.MomentumSeriesPoint,
+	shared int,
+	hasShared bool,
+) string {
 	met, counted, total := 0, 0, 0
 	for _, point := range series {
 		if point.Skipped {
@@ -207,7 +246,12 @@ func bucketLabel(point sharedtypes.MomentumSeriesPoint, daily bool) string {
 }
 
 // bucketCount is the bucket's count, with its target only when it differs from the shared one.
-func bucketCount(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition, shared int, hasShared bool) string {
+func bucketCount(
+	point sharedtypes.MomentumSeriesPoint,
+	def sharedtypes.HabitStreakDefinition,
+	shared int,
+	hasShared bool,
+) string {
 	if point.Skipped {
 		return "skip"
 	}
@@ -217,7 +261,10 @@ func bucketCount(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStr
 	return momentumRatioText(point, def)
 }
 
-func bucketNotes(point sharedtypes.MomentumSeriesPoint, def sharedtypes.HabitStreakDefinition) string {
+func bucketNotes(
+	point sharedtypes.MomentumSeriesPoint,
+	def sharedtypes.HabitStreakDefinition,
+) string {
 	notes := []string{}
 	if point.ProtectedDayCount > 0 {
 		notes = append(notes, fmt.Sprintf("protected %dd", point.ProtectedDayCount))

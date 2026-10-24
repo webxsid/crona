@@ -36,7 +36,12 @@ func WindowDates(state types.ContentState) []string {
 	return dates
 }
 
-func renderDays(theme types.Theme, state types.ContentState, width, height int, meta string) string {
+func renderDays(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	meta string,
+) string {
 	dates := WindowDates(state)
 	metrics := map[string]api.DailyMetricsDay{}
 	for _, day := range state.MetricsRange {
@@ -74,7 +79,13 @@ func renderDays(theme types.Theme, state types.ContentState, width, height int, 
 	})
 }
 
-func dayRow(theme types.Theme, date string, plan sharedtypes.DashboardWindowDay, metrics api.DailyMetricsDay, meanMood float64) string {
+func dayRow(
+	theme types.Theme,
+	date string,
+	plan sharedtypes.DashboardWindowDay,
+	metrics api.DailyMetricsDay,
+	meanMood float64,
+) string {
 	label := date
 	if t, err := time.Parse(isoDate, date); err == nil {
 		label = t.Format("Mon 2")

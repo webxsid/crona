@@ -40,7 +40,11 @@ func splitIssueNotes(text string) ([]string, []issueNoteEntry) {
 			free = append(free, line)
 			continue
 		}
-		entries = append([]issueNoteEntry{{at: at, from: match[2], to: match[3], note: strings.TrimSpace(match[4])}}, entries...)
+		entries = append(
+			[]issueNoteEntry{
+				{at: at, from: match[2], to: match[3], note: strings.TrimSpace(match[4])},
+			},
+			entries...)
 	}
 	return free, entries
 }
@@ -68,8 +72,15 @@ func NotesLines(theme Theme, settings *api.CoreSettings, text *string, width int
 	lines = append(lines, "", theme.StyleDim.Bold(true).Render("History"))
 	for _, entry := range entries[:min(len(entries), issueHistoryLimit)] {
 		local := entry.at.Local()
-		row := theme.StyleDim.Render(shareddatefmt.FormatDate(local, settings)+"  "+local.Format("15:04")) + "  " +
-			theme.StyleNormal.Render(PlainIssueStatus(entry.from)+" → ") + issueStatusText(theme, entry.to)
+		row := theme.StyleDim.Render(
+			shareddatefmt.FormatDate(local, settings)+"  "+local.Format("15:04"),
+		) + "  " +
+			theme.StyleNormal.Render(
+				PlainIssueStatus(entry.from)+" → ",
+			) + issueStatusText(
+			theme,
+			entry.to,
+		)
 		note := entry.note
 		if written[note] {
 			note = ""

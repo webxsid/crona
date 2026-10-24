@@ -224,14 +224,20 @@ func requireExplicitScope(input shareddto.ExportReportRequest) error {
 	return nil
 }
 
-func applyGlancePeriod(input *shareddto.ExportReportRequest, yesterday, week, month bool, lastXDays int, now time.Time) error {
+func applyGlancePeriod(
+	input *shareddto.ExportReportRequest,
+	yesterday, week, month bool,
+	lastXDays int,
+	now time.Time,
+) error {
 	selected := 0
 	for _, active := range []bool{yesterday, week, month, lastXDays > 0} {
 		if active {
 			selected++
 		}
 	}
-	if selected > 1 || (selected > 0 && (input.Date != "" || input.Start != "" || input.End != "")) {
+	if selected > 1 ||
+		(selected > 0 && (input.Date != "" || input.Start != "" || input.End != "")) {
 		return errors.New("choose one summary period")
 	}
 	if (input.Start == "") != (input.End == "") {
@@ -247,7 +253,8 @@ func applyGlancePeriod(input *shareddto.ExportReportRequest, yesterday, week, mo
 		input.Start = anchor.AddDate(0, 0, -offset).Format(time.DateOnly)
 		input.End = anchor.Format(time.DateOnly)
 	case month:
-		input.Start = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).Format(time.DateOnly)
+		input.Start = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).
+			Format(time.DateOnly)
 		input.End = anchor.Format(time.DateOnly)
 	case lastXDays > 0:
 		input.Start = anchor.AddDate(0, 0, -(lastXDays - 1)).Format(time.DateOnly)
@@ -259,7 +266,13 @@ func applyGlancePeriod(input *shareddto.ExportReportRequest, yesterday, week, mo
 }
 
 func copyToClipboard(content string) error {
-	commands := [][]string{{"pbcopy"}, {"wl-copy"}, {"xclip", "-selection", "clipboard"}, {"xsel", "--clipboard", "--input"}, {"clip"}}
+	commands := [][]string{
+		{"pbcopy"},
+		{"wl-copy"},
+		{"xclip", "-selection", "clipboard"},
+		{"xsel", "--clipboard", "--input"},
+		{"clip"},
+	}
 	for _, candidate := range commands {
 		path, err := exec.LookPath(candidate[0])
 		if err != nil {

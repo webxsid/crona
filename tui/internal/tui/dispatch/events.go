@@ -102,7 +102,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 	case "issue.created", "issue.updated", "issue.deleted":
 		cmds := []tea.Cmd{
 			deps.LoadDailySummary(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		}
 		if state.Context != nil && state.Context.StreamID != nil {
 			if state.SelectedIssueID != nil {
@@ -126,7 +132,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadDailySummary(state.CurrentDate),
 			deps.LoadDailyStreaks(state.CurrentDate),
 			deps.LoadWellbeing(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 			deps.LoadAllHabits(),
 		}
 		if deps.LoadTodayHabits != nil {
@@ -143,13 +155,25 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(append([]tea.Cmd{
 			deps.LoadDailyStreaks(state.CurrentDate),
 			deps.LoadWellbeing(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		}, summarySnapshotCmd(state, deps)...)...)
 	case sharedtypes.EventTypeSessionHistoryChanged:
 		cmds := []tea.Cmd{
 			deps.LoadAllIssues(), deps.LoadDailySummary(state.CurrentDate),
 			deps.LoadSessionHistoryFor200(state), deps.LoadDailyStreaks(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 			deps.LoadWellbeing(state.CurrentDate),
 			deps.LoadMomentumRange(state.CurrentDate, state.MomentumWindowDays),
 		}
@@ -171,7 +195,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadContext(),
 			deps.LoadSessionHistoryFor200(state),
 			deps.LoadDailyStreaks(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		)
 	case "context.repo.changed",
 		"context.stream.changed",
@@ -181,7 +211,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		_ = json.Unmarshal(event.Payload, &payload)
 		cmds := []tea.Cmd{
 			deps.LoadContext(),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		}
 		if payload.RepoID != nil {
 			cmds = append(cmds, deps.LoadStreams(*payload.RepoID))
@@ -243,7 +279,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		state.Elapsed = 0
 		return state, tea.Batch(
 			deps.LoadTimer(),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		)
 	case "timer.hard_limit_reached":
 		state.Elapsed = 0
@@ -273,7 +315,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		}
 		return state, tea.Batch(
 			deps.LoadTimer(),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		)
 	case "timer.advance", "timer.defer_break", "timer.extended", "timer.break_deferred":
 		if shouldDismissDialogForSessionEvent(state, event, false) {
@@ -283,7 +331,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 		return state, tea.Batch(
 			deps.LoadTimer(),
 			deps.LoadSessionHistoryFor200(state),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		)
 	case "session.ended":
 		if shouldDismissDialogForSessionEvent(state, event, true) {
@@ -295,7 +349,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadContext(),
 			deps.LoadSessionHistoryFor200(state),
 			deps.LoadDailyStreaks(state.CurrentDate),
-			deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(
+					state.CurrentDate,
+					state.ReviewWindowEnd,
+					state.ReviewWindowDays,
+				),
+			),
 		)
 	case "update.status":
 		return state, deps.LoadUpdateStatus()
@@ -310,7 +370,13 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 				cmds,
 				deps.LoadDailyStreaks(state.CurrentDate),
 				deps.LoadWellbeing(state.CurrentDate),
-				deps.LoadReviewWindow(uistate.ReviewRange(state.CurrentDate, state.ReviewWindowEnd, state.ReviewWindowDays)),
+				deps.LoadReviewWindow(
+					uistate.ReviewRange(
+						state.CurrentDate,
+						state.ReviewWindowEnd,
+						state.ReviewWindowDays,
+					),
+				),
 				deps.LoadMomentumRange(state.CurrentDate, state.MomentumWindowDays),
 			)
 		}
@@ -341,7 +407,9 @@ func handleEvent(state EventState, deps EventDeps, event api.KernelEvent) (Event
 			deps.LoadDailyStreaks(date),
 			deps.LoadWellbeing(date),
 			deps.LoadMomentumRange(date, state.MomentumWindowDays),
-			deps.LoadReviewWindow(uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)),
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays),
+			),
 		}
 		if deps.LoadTodayHabits != nil {
 			cmds = append(cmds, deps.LoadTodayHabits(payload.LogicalDate))

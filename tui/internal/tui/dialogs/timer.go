@@ -9,7 +9,13 @@ import (
 )
 
 // timerMetaRows splits renderTimerMeta's rows into body lines.
-func timerMetaRows(theme Theme, state controllerpkg.State, totalLabel string, totalSeconds int, endsAt bool) []string {
+func timerMetaRows(
+	theme Theme,
+	state controllerpkg.State,
+	totalLabel string,
+	totalSeconds int,
+	endsAt bool,
+) []string {
 	meta := renderTimerMeta(theme, state, totalLabel, totalSeconds, endsAt)
 	if meta == "" {
 		return nil
@@ -30,8 +36,16 @@ func renderEndSession(theme Theme, state controllerpkg.State) string {
 		context = adhocElapsedLabel(state)
 		if state.AdhocResolution == sharedtypes.AdhocSessionResolutionKeep {
 			rows = append(rows, staticRow(
-				Field(theme, "Records to", column, theme.StyleHeader.Render("Ad hoc / Sessions"), false),
-				theme.StyleDim.Render("Your summary becomes the issue title, shortened if needed. The issue is marked Done and assigned today."),
+				Field(
+					theme,
+					"Records to",
+					column,
+					theme.StyleHeader.Render("Ad hoc / Sessions"),
+					false,
+				),
+				theme.StyleDim.Render(
+					"Your summary becomes the issue title, shortened if needed. The issue is marked Done and assigned today.",
+				),
 				"",
 			))
 			primary = "ctrl+s save ad hoc & finish"
@@ -48,7 +62,19 @@ func renderEndSession(theme Theme, state controllerpkg.State) string {
 		if i >= len(labels) {
 			break
 		}
-		rows = append(rows, fieldRow(i, Field(theme, labels[i], column, bareInput(state.Inputs[i], full, placeholders[i]), state.FocusIdx == i)))
+		rows = append(
+			rows,
+			fieldRow(
+				i,
+				Field(
+					theme,
+					labels[i],
+					column,
+					bareInput(state.Inputs[i], full, placeholders[i]),
+					state.FocusIdx == i,
+				),
+			),
+		)
 	}
 	return renderForm(theme, state, FormSpec{
 		Title: "End Session", Context: context, Rows: rows, Primary: primary, FocusCount: len(state.Inputs),
@@ -101,8 +127,19 @@ func renderAdhocNewIssue(theme Theme, state controllerpkg.State) string {
 	if state.ViewName != "" {
 		rows = append(rows, staticRow(theme.StyleDim.Render(state.ViewName)))
 	}
-	rows = append(rows, staticRow(note, ""), fieldRow(0, Field(theme, "Title", len("Title"), bareInput(state.Inputs[0], full, "required"), true)))
-	return renderForm(theme, state, FormSpec{Title: state.ViewTitle, Rows: rows, Primary: "enter continue", FocusCount: 1})
+	rows = append(
+		rows,
+		staticRow(note, ""),
+		fieldRow(
+			0,
+			Field(theme, "Title", len("Title"), bareInput(state.Inputs[0], full, "required"), true),
+		),
+	)
+	return renderForm(
+		theme,
+		state,
+		FormSpec{Title: state.ViewTitle, Rows: rows, Primary: "enter continue", FocusCount: 1},
+	)
 }
 
 func renderTimerStartType(theme Theme, state controllerpkg.State) string {
@@ -137,9 +174,19 @@ func renderPomodoro(theme Theme, state controllerpkg.State) string {
 		body = append(body, timerMetaRows(theme, state, vm.EstimatedTotalDuration, vm.EstimatedTotalSeconds, true)...)
 	}
 	if vm.ShowSummary {
-		body = append(body,
-			theme.StyleDim.Render(fmt.Sprintf("%s  ·  %s  ·  %s", vm.FocusDisplay, vm.ShortBreakDisplay, vm.LongBreakDisplay)),
-			theme.StyleDim.Render(vm.CyclesSummary), "")
+		body = append(
+			body,
+			theme.StyleDim.Render(
+				fmt.Sprintf(
+					"%s  ·  %s  ·  %s",
+					vm.FocusDisplay,
+					vm.ShortBreakDisplay,
+					vm.LongBreakDisplay,
+				),
+			),
+			theme.StyleDim.Render(vm.CyclesSummary),
+			"",
+		)
 	}
 	focus := -1
 	add := func(label, value string, active bool) {
@@ -149,8 +196,30 @@ func renderPomodoro(theme Theme, state controllerpkg.State) string {
 		body = append(body, Field(theme, label, column, value, active))
 	}
 	disabled := theme.StyleDim.Render("disabled")
-	add("Focus", pomodoroChoiceRow(theme, vm.FocusChoices, state.PomodoroFocusChoice, vm.FocusCustomChoice, vm.FocusCustomActive, bareInput(state.Inputs[0], 8, "25m")), vm.FocusRowActive || vm.FocusCustomActive)
-	add("Short break", pomodoroChoiceRow(theme, vm.BreakChoices, state.PomodoroBreakChoice, vm.BreakCustomChoice, vm.BreakCustomActive, bareInput(state.Inputs[1], 8, "5m")), vm.BreakRowActive || vm.BreakCustomActive)
+	add(
+		"Focus",
+		pomodoroChoiceRow(
+			theme,
+			vm.FocusChoices,
+			state.PomodoroFocusChoice,
+			vm.FocusCustomChoice,
+			vm.FocusCustomActive,
+			bareInput(state.Inputs[0], 8, "25m"),
+		),
+		vm.FocusRowActive || vm.FocusCustomActive,
+	)
+	add(
+		"Short break",
+		pomodoroChoiceRow(
+			theme,
+			vm.BreakChoices,
+			state.PomodoroBreakChoice,
+			vm.BreakCustomChoice,
+			vm.BreakCustomActive,
+			bareInput(state.Inputs[1], 8, "5m"),
+		),
+		vm.BreakRowActive || vm.BreakCustomActive,
+	)
 	if vm.LongBreakForcedOff {
 		add("Long break", disabled, false)
 	} else {
@@ -166,8 +235,19 @@ func renderPomodoro(theme Theme, state controllerpkg.State) string {
 	} else {
 		add("Long after", bareInput(state.Inputs[4], 3, "4")+theme.StyleDim.Render(" cycles"), vm.LongBreakCyclesActive)
 	}
-	d := listDialog{title: "Pomodoro Session", context: state.ViewName, border: theme.ColorGreen, body: body, focus: focus,
-		primary: plainHint(dialogSubmitHint(state, "start")), hints: []string{"←/→ choose", "↑/↓ move"}, esc: "esc back", wide: true}
+	d := listDialog{
+		title:   "Pomodoro Session",
+		context: state.ViewName,
+		border:  theme.ColorGreen,
+		body:    body,
+		focus:   focus,
+		primary: plainHint(
+			dialogSubmitHint(state, "start"),
+		),
+		hints: []string{"←/→ choose", "↑/↓ move"},
+		esc:   "esc back",
+		wide:  true,
+	}
 	if extend {
 		d.title, d.context, d.border, d.primary = "Extend Pomodoro Session", "", "", "enter extend"
 	}
@@ -214,7 +294,11 @@ func renderHardLimitExpired(theme Theme, state controllerpkg.State) string {
 	// The session has to end one way or another, so this dialog has no esc.
 	return Frame(theme, FrameSpec{
 		Title: title, Context: state.ViewName, Border: theme.ColorYellow, Body: body,
-		Footer:      withError(theme, state, footerWithEsc(theme, "enter choose", []string{"↑/↓ move"}, "", inner)),
+		Footer: withError(
+			theme,
+			state,
+			footerWithEsc(theme, "enter choose", []string{"↑/↓ move"}, "", inner),
+		),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focus, Inner: inner,
 	})
 }
@@ -223,7 +307,18 @@ func renderAmendSession(theme Theme, state controllerpkg.State) string {
 	full, _ := formColumns(formInner(state.Width), len("Commit"))
 	return renderForm(theme, state, FormSpec{
 		Title: "Amend Session", FocusCount: 1, Primary: plainHint(dialogSubmitHint(state, "save")),
-		Rows: []FormRow{fieldRow(0, Field(theme, "Commit", len("Commit"), bareInput(state.Inputs[0], full, "required"), true))},
+		Rows: []FormRow{
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Commit",
+					len("Commit"),
+					bareInput(state.Inputs[0], full, "required"),
+					true,
+				),
+			),
+		},
 	})
 }
 
@@ -236,7 +331,13 @@ func renderManualSession(theme Theme, state controllerpkg.State) string {
 		context += " · est. " + controllerpkg.FormatDurationMinutesInput(state.IssueEstimateMins)
 	}
 	field := func(label string, i, width int, placeholder string) string {
-		return Field(theme, label, column, bareInput(state.Inputs[i], width, placeholder), state.FocusIdx == i)
+		return Field(
+			theme,
+			label,
+			column,
+			bareInput(state.Inputs[i], width, placeholder),
+			state.FocusIdx == i,
+		)
 	}
 	rows := []FormRow{
 		fieldRow(0, field("Summary", 0, full, "optional")),
@@ -274,11 +375,46 @@ func renderIssueSessionTransition(theme Theme, state controllerpkg.State) string
 			label = "Note"
 		}
 		full, _ := formColumns(formInner(state.Width), len("Reason"))
-		rows = append(rows, staticRow(""), fieldRow(0, Field(theme, label, len("Reason"), bareInput(state.Inputs[0], full, "optional"), true)))
-		return renderForm(theme, state, FormSpec{Title: title, Border: border, Rows: rows, FocusCount: 1, Primary: plainHint(dialogSubmitHint(state, "confirm"))})
+		rows = append(
+			rows,
+			staticRow(""),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					label,
+					len("Reason"),
+					bareInput(state.Inputs[0], full, "optional"),
+					true,
+				),
+			),
+		)
+		return renderForm(
+			theme,
+			state,
+			FormSpec{
+				Title:      title,
+				Border:     border,
+				Rows:       rows,
+				FocusCount: 1,
+				Primary:    plainHint(dialogSubmitHint(state, "confirm")),
+			},
+		)
 	}
 	body, _ := formBody(rows, -1)
-	return renderListDialog(theme, state, listDialog{title: title, border: border, body: body, focus: -1, primary: "y confirm", hints: []string{"enter confirm"}, esc: "n/esc cancel"})
+	return renderListDialog(
+		theme,
+		state,
+		listDialog{
+			title:   title,
+			border:  border,
+			body:    body,
+			focus:   -1,
+			primary: "y confirm",
+			hints:   []string{"enter confirm"},
+			esc:     "n/esc cancel",
+		},
+	)
 }
 
 // renderEditSessionHistory draws Edit Session History: start and end, notes, then the
@@ -294,26 +430,59 @@ func renderEditSessionHistory(theme Theme, state controllerpkg.State) string {
 	}
 	if len(state.Inputs) >= 2 {
 		rows = append(rows, pairRow(
-			Field(theme, "Start", column, bareInput(state.Inputs[0], half, "YYYY-MM-DD HH:mm:ss"), state.FocusIdx == 0),
-			Field(theme, "End", column, bareInput(state.Inputs[1], half, "YYYY-MM-DD HH:mm:ss"), state.FocusIdx == 1),
-			0, 1, inner,
+			Field(
+				theme,
+				"Start",
+				column,
+				bareInput(state.Inputs[0], half, "YYYY-MM-DD HH:mm:ss"),
+				state.FocusIdx == 0,
+			),
+			Field(
+				theme,
+				"End",
+				column,
+				bareInput(state.Inputs[1], half, "YYYY-MM-DD HH:mm:ss"),
+				state.FocusIdx == 1,
+			),
+			0,
+			1,
+			inner,
 		))
 	}
 	for i, label := range []string{"Commit", "Work summary", "Notes"} {
 		if i < len(state.SessionHistoryNoteInputs) {
-			rows = append(rows, textareaRow(2+i, Textarea(theme, label, column, state.SessionHistoryNoteInputs[i].View(), state.FocusIdx == 2+i, inner)))
+			rows = append(
+				rows,
+				textareaRow(
+					2+i,
+					Textarea(
+						theme,
+						label,
+						column,
+						state.SessionHistoryNoteInputs[i].View(),
+						state.FocusIdx == 2+i,
+						inner,
+					),
+				),
+			)
 		}
 	}
 	rows = append(rows, staticRow("", theme.StyleDim.Render("Work and break segments")))
 	for i, segment := range state.SessionHistorySegments {
 		first := 5 + i*3
 		rows = append(rows, FormRow{
-			Lines: []string{historySegmentTypeRow(theme, state, segment, i), "    " + segment.StartTime.View() + "  →  " + segment.EndTime.View()},
+			Lines: []string{
+				historySegmentTypeRow(theme, state, segment, i),
+				"    " + segment.StartTime.View() + "  →  " + segment.EndTime.View(),
+			},
 			Focus: map[int]int{first: 0, first + 1: 1, first + 2: 1},
 		})
 	}
 	if len(state.SessionHistorySegments) == 0 {
-		rows = append(rows, staticRow(theme.StyleDim.Render("No segments. Press ctrl+a to add one.")))
+		rows = append(
+			rows,
+			staticRow(theme.StyleDim.Render("No segments. Press ctrl+a to add one.")),
+		)
 	}
 	return renderForm(theme, state, FormSpec{
 		Title: "Edit Session History", Rows: rows, Primary: plainHint(dialogSubmitHint(state, "save")),

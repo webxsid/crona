@@ -12,7 +12,15 @@ import (
 )
 
 func reviewModel() Model {
-	return Model{view: ViewReview, pane: PaneReviewDays, date: "2026-10-14", width: 200, height: 40, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+	return Model{
+		view:    ViewReview,
+		pane:    PaneReviewDays,
+		date:    "2026-10-14",
+		width:   200,
+		height:  40,
+		cursor:  map[Pane]int{},
+		filters: map[Pane]string{},
+	}
 }
 
 func reviewContent(m Model) viewtypes.ContentState {
@@ -55,8 +63,16 @@ func TestReviewContentStateUsesOneRange(t *testing.T) {
 	m := reviewModel()
 	m.reviewWindowDays, m.reviewWindowEnd = 30, "2026-10-20"
 	state := reviewContent(m)
-	if state.ReviewWindowDays != 30 || state.ReviewWindowEnd != "2026-10-20" || state.RollupStartDate != "2026-09-21" || state.RollupEndDate != "2026-10-20" {
-		t.Fatalf("expected one 30-day window ending 2026-10-20, got %d %s %s..%s", state.ReviewWindowDays, state.ReviewWindowEnd, state.RollupStartDate, state.RollupEndDate)
+	if state.ReviewWindowDays != 30 || state.ReviewWindowEnd != "2026-10-20" ||
+		state.RollupStartDate != "2026-09-21" ||
+		state.RollupEndDate != "2026-10-20" {
+		t.Fatalf(
+			"expected one 30-day window ending 2026-10-20, got %d %s %s..%s",
+			state.ReviewWindowDays,
+			state.ReviewWindowEnd,
+			state.RollupStartDate,
+			state.RollupEndDate,
+		)
 	}
 }
 
@@ -83,12 +99,20 @@ func TestNarrowReviewEnterOpensDayDialog(t *testing.T) {
 	m := reviewModel()
 	m.width = 80
 	m = pressReview(m, tea.KeyMsg{Type: tea.KeyEnter})
-	if m.dialogState().Kind != "view_entity" || !strings.Contains(m.dialogState().ViewTitle, "Day") {
-		t.Fatalf("expected the day dialog, got %q %q", m.dialogState().Kind, m.dialogState().ViewTitle)
+	if m.dialogState().Kind != "view_entity" ||
+		!strings.Contains(m.dialogState().ViewTitle, "Day") {
+		t.Fatalf(
+			"expected the day dialog, got %q %q",
+			m.dialogState().Kind,
+			m.dialogState().ViewTitle,
+		)
 	}
 	wide := pressReview(reviewModel(), tea.KeyMsg{Type: tea.KeyEnter})
 	if wide.dialogState().Kind != "" {
-		t.Fatalf("expected no dialog on enter when the detail is visible, got %q", wide.dialogState().Kind)
+		t.Fatalf(
+			"expected no dialog on enter when the detail is visible, got %q",
+			wide.dialogState().Kind,
+		)
 	}
 }
 
@@ -96,8 +120,15 @@ func TestNarrowReviewSOpensTimeDialog(t *testing.T) {
 	m := reviewModel()
 	m.width = 80
 	m = pressReview(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'S'}})
-	if m.dialogState().Kind != "view_entity" || !strings.Contains(m.dialogState().ViewTitle, "Time") || m.reviewShowTime {
-		t.Fatalf("expected the Time dialog without toggling, got %q %q show=%t", m.dialogState().Kind, m.dialogState().ViewTitle, m.reviewShowTime)
+	if m.dialogState().Kind != "view_entity" ||
+		!strings.Contains(m.dialogState().ViewTitle, "Time") ||
+		m.reviewShowTime {
+		t.Fatalf(
+			"expected the Time dialog without toggling, got %q %q show=%t",
+			m.dialogState().Kind,
+			m.dialogState().ViewTitle,
+			m.reviewShowTime,
+		)
 	}
 }
 

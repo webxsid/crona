@@ -51,7 +51,10 @@ func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 
 func handleCycleIssueSection(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	if s.ActiveView == uistate.ViewDefault && s.ActivePane == uistate.PaneIssues {
-		sections := []uistate.DefaultIssueSection{uistate.DefaultIssueSectionOpen, uistate.DefaultIssueSectionCompleted}
+		sections := []uistate.DefaultIssueSection{
+			uistate.DefaultIssueSectionOpen,
+			uistate.DefaultIssueSectionCompleted,
+		}
 		deps.SetDefaultIssueSection(&s, sections[nextIndex(s.DefaultIssueSection, sections, dir)])
 		return s, nil, true
 	}

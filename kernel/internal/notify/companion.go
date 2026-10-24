@@ -149,7 +149,9 @@ func (b *companionBroker) acknowledge(ack sharedtypes.AlertDeliveryAck) bool {
 	return true
 }
 
-func deliveryActionsByID(actions []sharedtypes.AlertDeliveryAction) map[string]sharedtypes.AlertDeliveryAction {
+func deliveryActionsByID(
+	actions []sharedtypes.AlertDeliveryAction,
+) map[string]sharedtypes.AlertDeliveryAction {
 	result := make(map[string]sharedtypes.AlertDeliveryAction, len(actions))
 	for _, action := range actions {
 		if action.ID != "" {

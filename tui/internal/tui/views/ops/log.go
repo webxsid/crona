@@ -63,7 +63,15 @@ func opsStrip(ops []api.Op) [][2]string {
 	}
 	return [][2]string{
 		{fmt.Sprintf("Ops %d", len(ops)), since},
-		{fmt.Sprintf("create %d  update %d  delete %d", counts["create"], counts["update"], counts["delete"]), ""},
+		{
+			fmt.Sprintf(
+				"create %d  update %d  delete %d",
+				counts["create"],
+				counts["update"],
+				counts["delete"],
+			),
+			"",
+		},
 	}
 }
 
@@ -82,8 +90,18 @@ func opsList(theme types.Theme, ops []api.Op, cursor, width, height int) []strin
 		date := at.Format("2006-01-02")
 		counts[date]++
 		action := fmt.Sprintf("%-6s", op.Action)
-		line := at.Format("15:04:05") + "  " + fmt.Sprintf("%-*s", entityWidth, humanEntity(op.Entity)) + "  " +
-			actionStyle(theme, string(op.Action)).Render(action) + "  " + op.EntityID
+		line := at.Format(
+			"15:04:05",
+		) + "  " + fmt.Sprintf(
+			"%-*s",
+			entityWidth,
+			humanEntity(op.Entity),
+		) + "  " +
+			actionStyle(
+				theme,
+				string(op.Action),
+			).Render(action) +
+			"  " + op.EntityID
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
 	summary := func(date string) string { return fmt.Sprint(counts[date]) }
@@ -103,7 +121,16 @@ func opDetailLines(theme types.Theme, op api.Op, width int) []string {
 		if strings.TrimSpace(value) == "" {
 			value = "–"
 		}
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("%-7s", field[0]))+" "+ansi.Truncate(value, max(1, width-8), "…"))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(
+				fmt.Sprintf("%-7s", field[0]),
+			)+" "+ansi.Truncate(
+				value,
+				max(1, width-8),
+				"…",
+			),
+		)
 	}
 	lines = append(lines, "", theme.StyleDim.Render("Payload"))
 	return append(lines, PayloadLines(op.Payload, width)...)

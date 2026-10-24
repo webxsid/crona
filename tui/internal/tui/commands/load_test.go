@@ -103,7 +103,11 @@ drained:
 		protocol.MethodDashboardGoalProgress,
 	} {
 		if len(got[method]) != 0 {
-			t.Fatalf("expected Wellbeing to leave Review's %s to the model, got %d requests", method, len(got[method]))
+			t.Fatalf(
+				"expected Wellbeing to leave Review's %s to the model, got %d requests",
+				method,
+				len(got[method]),
+			)
 		}
 	}
 	if len(got[protocol.MethodMetricsStreaks]) > 0 {

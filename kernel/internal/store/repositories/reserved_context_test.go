@@ -141,7 +141,12 @@ func TestNormalListsHideReservedEntities(t *testing.T) {
 
 	repos := repositories.NewRepoRepository(db.DB())
 	streams := repositories.NewStreamRepository(db.DB())
-	normalRepo, err := repos.Create(ctx, sharedtypes.Repo{ID: 100, Name: "normal"}, "user-a", "2026-09-24T10:00:00Z")
+	normalRepo, err := repos.Create(
+		ctx,
+		sharedtypes.Repo{ID: 100, Name: "normal"},
+		"user-a",
+		"2026-09-24T10:00:00Z",
+	)
 	if err != nil {
 		t.Fatalf("create normal repo: %v", err)
 	}

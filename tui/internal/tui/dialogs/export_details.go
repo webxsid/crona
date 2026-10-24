@@ -11,12 +11,26 @@ import (
 // preview), with the anchor date in the border. While an export runs the list dims and
 // the progress label shows instead of the keys.
 func renderExportChoice(theme Theme, state controllerpkg.State) string {
-	d := listDialog{context: helperpkg.FormatDisplayDate(state.CheckInDate, nil), border: theme.ColorGreen, hints: []string{"↑/↓ move"}}
+	d := listDialog{
+		context: helperpkg.FormatDisplayDate(state.CheckInDate, nil),
+		border:  theme.ColorGreen,
+		hints:   []string{"↑/↓ move"},
+	}
 	body := []string{}
 	switch state.Kind {
 	case "export_report", "export_summary_period":
 		d.title, d.primary = "Export Report", "enter choose"
-		body = append(body, Field(theme, "Category", len("Category"), theme.StyleHeader.Render(exportCategoryTitle(state.ExportCategory)), false), "")
+		body = append(
+			body,
+			Field(
+				theme,
+				"Category",
+				len("Category"),
+				theme.StyleHeader.Render(exportCategoryTitle(state.ExportCategory)),
+				false,
+			),
+			"",
+		)
 	case "export_report_category":
 		d.title, d.primary = "Export Report", "enter choose category"
 	case "export_preset", "export_summary_output":
@@ -30,12 +44,18 @@ func renderExportChoice(theme Theme, state controllerpkg.State) string {
 		for _, item := range state.ChoiceItems {
 			body = append(body, theme.StyleDim.Render("  "+item))
 		}
-		body = append(body, "", theme.StyleHeader.Render(state.ProcessingLabel), theme.StyleDim.Render("Please wait..."))
+		body = append(
+			body,
+			"",
+			theme.StyleHeader.Render(state.ProcessingLabel),
+			theme.StyleDim.Render("Please wait..."),
+		)
 		d.primary, d.hints = "", nil
 	} else {
 		body = append(body, selectList(theme, state.ChoiceItems, state.ChoiceCursor)...)
 	}
-	if !state.Processing && state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceDetails) {
+	if !state.Processing && state.ChoiceCursor >= 0 &&
+		state.ChoiceCursor < len(state.ChoiceDetails) {
 		detail := state.ChoiceDetails[state.ChoiceCursor]
 		switch {
 		case state.Kind == "export_preset" || state.Kind == "export_summary_output":
@@ -56,7 +76,10 @@ func renderExportPathForm(theme Theme, state controllerpkg.State, title string) 
 	return renderForm(theme, state, FormSpec{
 		Title: title, FocusCount: 1, Primary: plainHint(dialogSubmitHint(state, "save")),
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Path", len("Path"), bareInput(state.Inputs[0], full, "~/..."), true)),
+			fieldRow(
+				0,
+				Field(theme, "Path", len("Path"), bareInput(state.Inputs[0], full, "~/..."), true),
+			),
 			staticRow("", theme.StyleDim.Render("Use an absolute path or ~/...")),
 		},
 	})
@@ -71,9 +94,23 @@ func renderSummaryRangeForm(theme Theme, state controllerpkg.State) string {
 		Title: "Custom Summary Range", Border: theme.ColorGreen, FocusCount: 2, Primary: "enter continue",
 		Hints: func(int) []string { return []string{"tab switch"} },
 		Rows: []FormRow{pairRow(
-			Field(theme, "Start", column, bareInput(state.Inputs[0], half, "YYYY-MM-DD"), state.FocusIdx == 0),
-			Field(theme, "End", column, bareInput(state.Inputs[1], half, "YYYY-MM-DD"), state.FocusIdx == 1),
-			0, 1, inner,
+			Field(
+				theme,
+				"Start",
+				column,
+				bareInput(state.Inputs[0], half, "YYYY-MM-DD"),
+				state.FocusIdx == 0,
+			),
+			Field(
+				theme,
+				"End",
+				column,
+				bareInput(state.Inputs[1], half, "YYYY-MM-DD"),
+				state.FocusIdx == 1,
+			),
+			0,
+			1,
+			inner,
 		)},
 	})
 }
@@ -95,7 +132,10 @@ func renderDetailView(theme Theme, state controllerpkg.State) string {
 	case "view_momentum_detail":
 		body = append(body, "", theme.StyleDim.Render("Contributors"))
 		if len(state.ChoiceItems) == 0 {
-			body = append(body, theme.StyleDim.Render("No contributing entries in the current bucket"))
+			body = append(
+				body,
+				theme.StyleDim.Render("No contributing entries in the current bucket"),
+			)
 		}
 		for i, item := range state.ChoiceItems {
 			cursor := -1

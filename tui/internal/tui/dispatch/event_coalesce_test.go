@@ -20,8 +20,16 @@ func TestBurstsOfDataEventsReloadOnce(t *testing.T) {
 	}
 	state := MessageState{}
 	for range 500 {
-		state, _, _ = HandleMessage(state, commands.KernelEventMsg{Event: api.KernelEvent{Type: "habit.completed"}}, deps)
-		state, _, _ = HandleMessage(state, commands.KernelEventMsg{Event: api.KernelEvent{Type: "issue.updated"}}, deps)
+		state, _, _ = HandleMessage(
+			state,
+			commands.KernelEventMsg{Event: api.KernelEvent{Type: "habit.completed"}},
+			deps,
+		)
+		state, _, _ = HandleMessage(
+			state,
+			commands.KernelEventMsg{Event: api.KernelEvent{Type: "issue.updated"}},
+			deps,
+		)
 	}
 	if len(handled) != 0 {
 		t.Fatalf("expected data events to wait for the flush, handled %v", handled)
@@ -44,7 +52,11 @@ func TestTimerEventsAreHandledAtOnce(t *testing.T) {
 			return state, nil
 		},
 	}
-	HandleMessage(MessageState{}, commands.KernelEventMsg{Event: api.KernelEvent{Type: "timer.state"}}, deps)
+	HandleMessage(
+		MessageState{},
+		commands.KernelEventMsg{Event: api.KernelEvent{Type: "timer.state"}},
+		deps,
+	)
 	if handled != 1 {
 		t.Fatalf("expected timer.state to be handled at once, got %d", handled)
 	}

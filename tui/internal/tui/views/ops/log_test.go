@@ -20,11 +20,39 @@ func opsState(width int) types.ContentState {
 		View: "ops", Pane: "ops", Width: width, Height: 30,
 		Cursors: map[string]int{"ops": 0}, Filters: map[string]string{},
 		Ops: []api.Op{
-			{Entity: "issue", EntityID: "10", Action: "create", Timestamp: at(16, 16, 17), UserID: "u1", DeviceID: "d1"},
-			{Entity: "issue", EntityID: "10", Action: "update", Timestamp: at(17, 9, 0), UserID: "u1", DeviceID: "d1"},
-			{Entity: "habit", EntityID: "3", Action: "delete", Timestamp: at(17, 10, 0), UserID: "u1", DeviceID: "d1"},
-			{Entity: "habit_completion", EntityID: "2026-10-17", Action: "update", Timestamp: at(17, 11, 5),
-				UserID: "u1", DeviceID: "laptop", Payload: map[string]any{"status": "completed", "minutes": 9}},
+			{
+				Entity:    "issue",
+				EntityID:  "10",
+				Action:    "create",
+				Timestamp: at(16, 16, 17),
+				UserID:    "u1",
+				DeviceID:  "d1",
+			},
+			{
+				Entity:    "issue",
+				EntityID:  "10",
+				Action:    "update",
+				Timestamp: at(17, 9, 0),
+				UserID:    "u1",
+				DeviceID:  "d1",
+			},
+			{
+				Entity:    "habit",
+				EntityID:  "3",
+				Action:    "delete",
+				Timestamp: at(17, 10, 0),
+				UserID:    "u1",
+				DeviceID:  "d1",
+			},
+			{
+				Entity:    "habit_completion",
+				EntityID:  "2026-10-17",
+				Action:    "update",
+				Timestamp: at(17, 11, 5),
+				UserID:    "u1",
+				DeviceID:  "laptop",
+				Payload:   map[string]any{"status": "completed", "minutes": 9},
+			},
 		},
 	}
 }
@@ -42,7 +70,8 @@ func TestOpsStripCountsActions(t *testing.T) {
 
 func TestOpsRowsHumaniseAndKeepTarget(t *testing.T) {
 	text := opsText(120)
-	if !strings.Contains(text, "habit completion") || !strings.Contains(text, "2026-10-17") || strings.Contains(text, "habit_completion") {
+	if !strings.Contains(text, "habit completion") || !strings.Contains(text, "2026-10-17") ||
+		strings.Contains(text, "habit_completion") {
 		t.Fatalf("expected humanised entity and whole target, got\n%s", text)
 	}
 }

@@ -17,7 +17,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-// DayLines is the Day summary at width, one stat per row: the day's focus stats, plan accountability,
+// DayLines is the Day summary at width, one stat per row: the day's focus stats, plan
+// accountability,
 // check-in and streaks. It waits on the summary snapshot for the shown date.
 func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	snapshot := state.SummarySnapshot
@@ -59,18 +60,69 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) st
 		level = strings.ToUpper(level[:1]) + level[1:]
 	}
 	duration := helperpkg.FormatCompactDurationSeconds
-	lines = append(lines,
-		Row(theme, "Focus", theme.StyleHeader.Render(fmt.Sprintf("%d/100", focus.Score))+"  "+theme.StyleNormal.Render(level), width))
+	lines = append(
+		lines,
+		Row(
+			theme,
+			"Focus",
+			theme.StyleHeader.Render(
+				fmt.Sprintf("%d/100", focus.Score),
+			)+"  "+theme.StyleNormal.Render(
+				level,
+			),
+			width,
+		),
+	)
 	if reason != "" && !strings.EqualFold(reason, level) {
 		lines = append(lines, Row(theme, "", theme.StyleDim.Render(reason), width))
 	}
-	lines = append(lines,
-		Row(theme, "Worked", fmt.Sprintf("%s of %s", duration(metrics.WorkedSeconds), duration(focus.TargetWorkedSeconds)), width),
-		strings.Repeat(" ", labelWidth)+renderBar(theme, metrics.WorkedSeconds, 0, max(1, focus.TargetWorkedSeconds), max(8, width-labelWidth), theme.ColorCyan),
+	lines = append(
+		lines,
+		Row(
+			theme,
+			"Worked",
+			fmt.Sprintf(
+				"%s of %s",
+				duration(metrics.WorkedSeconds),
+				duration(focus.TargetWorkedSeconds),
+			),
+			width,
+		),
+		strings.Repeat(
+			" ",
+			labelWidth,
+		)+renderBar(
+			theme,
+			metrics.WorkedSeconds,
+			0,
+			max(1, focus.TargetWorkedSeconds),
+			max(8, width-labelWidth),
+			theme.ColorCyan,
+		),
 		Row(theme, "Rest", duration(metrics.RestSeconds), width),
 		Row(theme, "Sessions", fmt.Sprint(metrics.SessionCount), width),
-		Row(theme, "Issues", fmt.Sprintf("%d of %d done · %d abandoned", metrics.CompletedIssues, metrics.TotalIssues, metrics.AbandonedIssues), width),
-		Row(theme, "Habits", fmt.Sprintf("%d of %d done · %d failed", metrics.HabitCompletedCount, metrics.HabitDueCount, metrics.HabitFailedCount), width),
+		Row(
+			theme,
+			"Issues",
+			fmt.Sprintf(
+				"%d of %d done · %d abandoned",
+				metrics.CompletedIssues,
+				metrics.TotalIssues,
+				metrics.AbandonedIssues,
+			),
+			width,
+		),
+		Row(
+			theme,
+			"Habits",
+			fmt.Sprintf(
+				"%d of %d done · %d failed",
+				metrics.HabitCompletedCount,
+				metrics.HabitDueCount,
+				metrics.HabitFailedCount,
+			),
+			width,
+		),
 	)
 	return strings.Join(lines, "\n")
 }
@@ -81,18 +133,49 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		return append(lines, theme.StyleDim.Render("No committed plan."))
 	}
 	s := plan.Summary
-	return append(lines,
-		Row(theme, "Score", fmt.Sprintf("%.0f%%", s.AccountabilityScore)+theme.StyleDim.Render(fmt.Sprintf("  pressure %.1f", s.BacklogPressure)), width),
+	return append(
+		lines,
+		Row(
+			theme,
+			"Score",
+			fmt.Sprintf(
+				"%.0f%%",
+				s.AccountabilityScore,
+			)+theme.StyleDim.Render(
+				fmt.Sprintf("  pressure %.1f", s.BacklogPressure),
+			),
+			width,
+		),
 		Row(theme, "Done", fmt.Sprintf("%d of %d", s.CompletedCount, s.PlannedCount), width),
-		strings.Repeat(" ", labelWidth)+renderBar(theme, s.CompletedCount, s.FailedCount+s.AbandonedCount, max(1, s.PlannedCount), max(8, width-labelWidth), theme.ColorGreen),
-		Row(theme, "Missed", fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount), width),
+		strings.Repeat(
+			" ",
+			labelWidth,
+		)+renderBar(
+			theme,
+			s.CompletedCount,
+			s.FailedCount+s.AbandonedCount,
+			max(1, s.PlannedCount),
+			max(8, width-labelWidth),
+			theme.ColorGreen,
+		),
+		Row(
+			theme,
+			"Missed",
+			fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount),
+			width,
+		),
 		Row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
 	)
 }
 
 // renderTopPenalties lists the up to three live plan entries adding most to the accountability
 // score, so the issues worth doing first stand out.
-func renderTopPenalties(theme types.Theme, plan *sharedtypes.DailyPlan, issues *sharedtypes.DailyIssueSummary, width int) []string {
+func renderTopPenalties(
+	theme types.Theme,
+	plan *sharedtypes.DailyPlan,
+	issues *sharedtypes.DailyIssueSummary,
+	width int,
+) []string {
 	if plan == nil {
 		return nil
 	}
@@ -111,7 +194,10 @@ func renderTopPenalties(theme types.Theme, plan *sharedtypes.DailyPlan, issues *
 	if len(entries) == 0 {
 		return nil
 	}
-	sort.SliceStable(entries, func(i, j int) bool { return entries[i].FailScore > entries[j].FailScore })
+	sort.SliceStable(
+		entries,
+		func(i, j int) bool { return entries[i].FailScore > entries[j].FailScore },
+	)
 	lines := []string{}
 	for i, entry := range entries[:min(3, len(entries))] {
 		label := ""
@@ -128,26 +214,47 @@ func renderTopPenalties(theme types.Theme, plan *sharedtypes.DailyPlan, issues *
 		}
 		share := ""
 		if entry.Penalty.Contribution != nil {
-			share = theme.StyleDim.Render(fmt.Sprintf(" %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100))
+			share = theme.StyleDim.Render(
+				fmt.Sprintf(" %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100),
+			)
 		}
 		lines = append(lines, Row(theme, label, score+share+"  "+title, width))
 	}
 	return lines
 }
 
-func renderWellbeing(theme types.Theme, checkIn *sharedtypes.DailyCheckIn, rollup *sharedtypes.MetricsRollup, width int) []string {
+func renderWellbeing(
+	theme types.Theme,
+	checkIn *sharedtypes.DailyCheckIn,
+	rollup *sharedtypes.MetricsRollup,
+	width int,
+) []string {
 	lines := []string{theme.StylePaneTitle.Render("Wellbeing")}
 	if checkIn == nil || strings.TrimSpace(checkIn.Date) == "" {
 		lines = append(lines, theme.StyleDim.Render("No check-in recorded."))
 		if rollup != nil {
 			if rollup.AverageMood != nil {
-				lines = append(lines, Row(theme, "7d mood", fmt.Sprintf("%.1f/5", *rollup.AverageMood), width))
+				lines = append(
+					lines,
+					Row(theme, "7d mood", fmt.Sprintf("%.1f/5", *rollup.AverageMood), width),
+				)
 			}
 			if rollup.AverageEnergy != nil {
-				lines = append(lines, Row(theme, "7d energy", fmt.Sprintf("%.1f/5", *rollup.AverageEnergy), width))
+				lines = append(
+					lines,
+					Row(theme, "7d energy", fmt.Sprintf("%.1f/5", *rollup.AverageEnergy), width),
+				)
 			}
 			if rollup.AverageSleepHours != nil {
-				lines = append(lines, Row(theme, "7d sleep", helperpkg.FormatCompactDurationHours(*rollup.AverageSleepHours), width))
+				lines = append(
+					lines,
+					Row(
+						theme,
+						"7d sleep",
+						helperpkg.FormatCompactDurationHours(*rollup.AverageSleepHours),
+						width,
+					),
+				)
 			}
 		}
 		return lines
@@ -157,10 +264,21 @@ func renderWellbeing(theme types.Theme, checkIn *sharedtypes.DailyCheckIn, rollu
 		Row(theme, "Energy", fmt.Sprintf("%d/5", checkIn.Energy), width),
 	)
 	if checkIn.SleepHours != nil {
-		lines = append(lines, Row(theme, "Sleep", helperpkg.FormatCompactDurationHours(*checkIn.SleepHours), width))
+		lines = append(
+			lines,
+			Row(theme, "Sleep", helperpkg.FormatCompactDurationHours(*checkIn.SleepHours), width),
+		)
 	}
 	if checkIn.ScreenTimeMinutes != nil {
-		lines = append(lines, Row(theme, "Screen", helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes), width))
+		lines = append(
+			lines,
+			Row(
+				theme,
+				"Screen",
+				helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes),
+				width,
+			),
+		)
 	}
 	if checkIn.Notes != nil && strings.TrimSpace(*checkIn.Notes) != "" {
 		label := "Notes"

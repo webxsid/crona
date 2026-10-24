@@ -123,7 +123,8 @@ func dueDateInvalidKindForTime(state State, selected time.Time) dueDatePolicyKin
 		return dueDatePast
 	}
 	date := selected.Format("2006-01-02")
-	if slices.Contains(state.DueDateRestDates, date) || slices.Contains(state.DueDateAwayDates, date) {
+	if slices.Contains(state.DueDateRestDates, date) ||
+		slices.Contains(state.DueDateAwayDates, date) {
 		return dueDateRest
 	}
 	if slices.Contains(state.DueDateRestWeekdays, int(selected.Weekday())) {

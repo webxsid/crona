@@ -13,7 +13,12 @@ import (
 func updatesState(width, height int, expanded bool) types.ContentState {
 	return types.ContentState{
 		View: "updates", Width: width, Height: height, UpdateDiagnosticsExpanded: expanded,
-		UpdateStatus: &api.UpdateStatus{CurrentVersion: "1.10.0", ReleaseTag: "v1.10.0", ReleaseNotes: "- Faster\n- Smaller", Enabled: true},
+		UpdateStatus: &api.UpdateStatus{
+			CurrentVersion: "1.10.0",
+			ReleaseTag:     "v1.10.0",
+			ReleaseNotes:   "- Faster\n- Smaller",
+			Enabled:        true,
+		},
 	}
 }
 
@@ -25,14 +30,18 @@ func TestUpdatesColumns(t *testing.T) {
 			return
 		}
 	}
-	t.Fatalf("expected Status and Release Notes side by side, got\n%s", render(updatesState(160, 40, false)))
+	t.Fatalf(
+		"expected Status and Release Notes side by side, got\n%s",
+		render(updatesState(160, 40, false)),
+	)
 }
 
 func TestUpdatesDiagnosticsToggle(t *testing.T) {
 	if strings.Contains(render(updatesState(160, 40, false)), "Release Tag") {
 		t.Fatalf("expected diagnostics hidden")
 	}
-	if got := render(updatesState(160, 40, true)); !strings.Contains(got, "─ Diagnostics") || !strings.Contains(got, "Release Tag") {
+	if got := render(updatesState(160, 40, true)); !strings.Contains(got, "─ Diagnostics") ||
+		!strings.Contains(got, "Release Tag") {
 		t.Fatalf("expected diagnostics shown, got\n%s", got)
 	}
 }
@@ -46,7 +55,8 @@ func TestUpdatesNarrowStacks(t *testing.T) {
 }
 
 func TestUpdatesNoBox(t *testing.T) {
-	if got := render(updatesState(120, 36, false)); strings.Contains(got, "╭") || !strings.Contains(got, "[r] check again") {
+	if got := render(updatesState(120, 36, false)); strings.Contains(got, "╭") ||
+		!strings.Contains(got, "[r] check again") {
 		t.Fatalf("expected no box and keys in the header, got\n%s", got)
 	}
 }

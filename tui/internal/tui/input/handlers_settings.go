@@ -430,7 +430,13 @@ func handleToggleAwayMode(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 	setAwayMode := deps.SetAwayMode
 	if setAwayMode == nil {
 		setAwayMode = func(enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {
-			return deps.PatchSetting(sharedtypes.CoreSettingsKeyAwayModeEnabled, enabled, repoID, streamID, dashboardDate)
+			return deps.PatchSetting(
+				sharedtypes.CoreSettingsKeyAwayModeEnabled,
+				enabled,
+				repoID,
+				streamID,
+				dashboardDate,
+			)
 		}
 	}
 	return s, tea.Batch(

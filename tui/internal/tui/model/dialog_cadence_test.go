@@ -14,6 +14,10 @@ func TestCadenceArrowsSurviveTheModel(t *testing.T) {
 	next, _ := m.updateDialog(tea.KeyMsg{Type: tea.KeyRight})
 	state := next.(Model).dialogState()
 	if state.CadenceIdx != 1 || state.Inputs[0].Value() != "weekdays" {
-		t.Fatalf("right on the cadence picker: idx %d schedule %q, want 1/weekdays", state.CadenceIdx, state.Inputs[0].Value())
+		t.Fatalf(
+			"right on the cadence picker: idx %d schedule %q, want 1/weekdays",
+			state.CadenceIdx,
+			state.Inputs[0].Value(),
+		)
 	}
 }

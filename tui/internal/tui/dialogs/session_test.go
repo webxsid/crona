@@ -293,9 +293,19 @@ func TestTimerEndsAtLabelSkipsNonPositiveDurations(t *testing.T) {
 
 func TestAdhocPickerKeepsSelectionAndFooterVisible(t *testing.T) {
 	for _, size := range [][2]int{{80, 24}, {120, 40}, {180, 60}} {
-		state := controllerpkg.State{Kind: "adhoc_issue_picker", Width: size[0], Height: size[1], ViewTitle: "Attach to Issue", ViewName: "Choose an issue. You’ll add a session summary before finishing.", ChoiceCursor: 39}
+		state := controllerpkg.State{
+			Kind:         "adhoc_issue_picker",
+			Width:        size[0],
+			Height:       size[1],
+			ViewTitle:    "Attach to Issue",
+			ViewName:     "Choose an issue. You’ll add a session summary before finishing.",
+			ChoiceCursor: 39,
+		}
 		for i := 0; i < 60; i++ {
-			state.ChoiceItems = append(state.ChoiceItems, fmt.Sprintf("Issue %02d %s", i, strings.Repeat("long title ", 20)))
+			state.ChoiceItems = append(
+				state.ChoiceItems,
+				fmt.Sprintf("Issue %02d %s", i, strings.Repeat("long title ", 20)),
+			)
 			state.ChoiceDetails = append(state.ChoiceDetails, "Work / App · planned · 2026-10-07")
 			state.AdhocIssueIDs = append(state.AdhocIssueIDs, int64(i+1))
 		}
@@ -314,7 +324,14 @@ func TestAdhocPickerKeepsSelectionAndFooterVisible(t *testing.T) {
 	}
 }
 func TestAdhocConfirmationExplainsDestination(t *testing.T) {
-	state := controllerpkg.OpenAdhocEndSession(controllerpkg.State{Width: 100, AdhocElapsedSeconds: 91}, sharedtypes.AdhocSessionResolutionAttach, 41, 2, 3, "")
+	state := controllerpkg.OpenAdhocEndSession(
+		controllerpkg.State{Width: 100, AdhocElapsedSeconds: 91},
+		sharedtypes.AdhocSessionResolutionAttach,
+		41,
+		2,
+		3,
+		"",
+	)
 	state.ViewName = "Fix login"
 	state.RepoName = "Work"
 	state.StreamName = "App"
@@ -327,7 +344,11 @@ func TestAdhocConfirmationExplainsDestination(t *testing.T) {
 }
 
 func TestShortConversionFormKeepsActiveFieldAndErrorVisible(t *testing.T) {
-	state := controllerpkg.OpenPromoteAdhocIssue(controllerpkg.State{Width: 80, Height: 24}, api.IssueWithMeta{Issue: sharedtypes.Issue{ID: 1, Title: "Session title", Adhoc: true}}, nil)
+	state := controllerpkg.OpenPromoteAdhocIssue(
+		controllerpkg.State{Width: 80, Height: 24},
+		api.IssueWithMeta{Issue: sharedtypes.Issue{ID: 1, Title: "Session title", Adhoc: true}},
+		nil,
+	)
 	for i := 0; i < 6; i++ {
 		state.ErrorMessage = "Choose a repo and stream"
 		rendered := renderIssueDialog(Theme{}, state)
@@ -352,6 +373,11 @@ func TestShortConversionFormKeepsActiveFieldAndErrorVisible(t *testing.T) {
 				t.Fatalf("focused input missing: %s", rendered)
 			}
 		}
-		state, _, _ = controllerpkg.Update(state, controllerpkg.UpdateContext{}, "2026-10-08", tea.KeyMsg{Type: tea.KeyTab})
+		state, _, _ = controllerpkg.Update(
+			state,
+			controllerpkg.UpdateContext{},
+			"2026-10-08",
+			tea.KeyMsg{Type: tea.KeyTab},
+		)
 	}
 }

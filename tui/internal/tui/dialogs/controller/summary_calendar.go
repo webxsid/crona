@@ -18,7 +18,12 @@ func PopulateSummaryCalendarPresentation(theme Theme, state State, today string)
 	return state
 }
 
-func renderSummaryCalendarGrid(theme Theme, state State, month, selected time.Time, today string) string {
+func renderSummaryCalendarGrid(
+	theme Theme,
+	state State,
+	month, selected time.Time,
+	today string,
+) string {
 	cellWidth := 7
 	if state.Width > 0 && state.Width < 110 {
 		cellWidth = 5
@@ -26,7 +31,11 @@ func renderSummaryCalendarGrid(theme Theme, state State, month, selected time.Ti
 	weekdays := []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
 	header := make([]string, len(weekdays))
 	for i, weekday := range weekdays {
-		header[i] = lipgloss.NewStyle().Width(cellWidth).PaddingLeft(1).PaddingRight(1).Render(weekday)
+		header[i] = lipgloss.NewStyle().
+			Width(cellWidth).
+			PaddingLeft(1).
+			PaddingRight(1).
+			Render(weekday)
 	}
 	lines := []string{strings.Join(header, " ")}
 	offset := (int(month.Weekday()) + 6) % 7
@@ -36,7 +45,10 @@ func renderSummaryCalendarGrid(theme Theme, state State, month, selected time.Ti
 		cells := make([]string, 0, 7)
 		for day := 0; day < 7; day++ {
 			date := start.AddDate(0, 0, week*7+day)
-			cells = append(cells, renderSummaryDayCell(theme, state, date, selected, todayDate, month, cellWidth))
+			cells = append(
+				cells,
+				renderSummaryDayCell(theme, state, date, selected, todayDate, month, cellWidth),
+			)
 		}
 		// Each cell is multiline. Joining the raw strings would concatenate their
 		// newlines vertically, which collapses the grid into one column. Lip Gloss
@@ -53,7 +65,12 @@ func renderSummaryCalendarGrid(theme Theme, state State, month, selected time.Ti
 	return strings.Join(lines, "\n")
 }
 
-func renderSummaryDayCell(theme Theme, state State, date, selected, today, month time.Time, cellWidth int) string {
+func renderSummaryDayCell(
+	theme Theme,
+	state State,
+	date, selected, today, month time.Time,
+	cellWidth int,
+) string {
 	iso := date.Format("2006-01-02")
 	isAway := containsDate(state.DueDateAwayDates, iso)
 	isFuture := !today.IsZero() && date.After(today)
@@ -97,7 +114,14 @@ func renderSummaryDayCell(theme Theme, state State, date, selected, today, month
 	if isSelected {
 		border = theme.ColorCyan
 	}
-	return lipgloss.NewStyle().Width(cellWidth).Height(2).PaddingLeft(1).PaddingRight(1).Border(lipgloss.RoundedBorder()).BorderForeground(border).Render(label + "\n" + value)
+	return lipgloss.NewStyle().
+		Width(cellWidth).
+		Height(2).
+		PaddingLeft(1).
+		PaddingRight(1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(border).
+		Render(label + "\n" + value)
 }
 
 func isToday(date, today time.Time) bool { return !today.IsZero() && date.Equal(today) }

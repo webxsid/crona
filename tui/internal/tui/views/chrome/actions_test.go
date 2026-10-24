@@ -145,9 +145,15 @@ func TestPaneActionsForSelectedAdhocIssueUseReadOnlyActions(t *testing.T) {
 			t.Fatalf("expected pane actions to hide %q, got %q", hidden, actions)
 		}
 	}
-	global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "daily", SelectedIssueAdhoc: true}), " ")
+	global := strings.Join(
+		GlobalActions(Theme{}, ActionsState{View: "daily", SelectedIssueAdhoc: true}),
+		" ",
+	)
 	if strings.Contains(global, "[a] create") {
-		t.Fatalf("global actions should not offer create while an ad hoc issue is selected: %q", global)
+		t.Fatalf(
+			"global actions should not offer create while an ad hoc issue is selected: %q",
+			global,
+		)
 	}
 }
 
@@ -158,7 +164,10 @@ func TestNavigationActionsHintTabKeysOffTheBottomRow(t *testing.T) {
 			t.Fatalf("expected navigation actions to include %q, got %q", want, actions)
 		}
 	}
-	if global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "review"}), "\n"); strings.Contains(global, "[1-5]") {
+	if global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "review"}), "\n"); strings.Contains(
+		global,
+		"[1-5]",
+	) {
 		t.Fatalf("expected tab keys off the bottom row, got %q", global)
 	}
 }
@@ -196,7 +205,10 @@ func TestDailyDateActionsHintDayAndCalendar(t *testing.T) {
 }
 
 func TestMomentumActionsOmitDateKeys(t *testing.T) {
-	actions := strings.Join(ContextualActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}), "\n")
+	actions := strings.Join(
+		ContextualActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}),
+		"\n",
+	)
 	if !strings.Contains(actions, "[D] delete") {
 		t.Fatalf("expected the help sheet to keep delete, got %q", actions)
 	}
@@ -208,7 +220,10 @@ func TestMomentumActionsOmitDateKeys(t *testing.T) {
 }
 
 func TestMomentumBottomRowGlobalOnly(t *testing.T) {
-	global := strings.Join(GlobalActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}), "\n")
+	global := strings.Join(
+		GlobalActions(Theme{}, ActionsState{View: "momentum", Pane: "momentum_cards"}),
+		"\n",
+	)
 	for _, unwanted := range []string{"[e]", "[x]", "[D]"} {
 		if strings.Contains(global, unwanted) {
 			t.Fatalf("expected no %q on the bottom row, got %q", unwanted, global)

@@ -45,11 +45,17 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	actions := Actions()
 	cursor := min(max(0, state.SupportCursor), len(actions)-1)
-	actionLines := []string{theme.StyleDim.Render("Report bugs, share feedback, or build a support bundle."), ""}
+	actionLines := []string{
+		theme.StyleDim.Render("Report bugs, share feedback, or build a support bundle."),
+		"",
+	}
 	for i, action := range actions {
 		line := fmt.Sprintf("[%s] %s", action.Key, action.Label)
 		if i == cursor {
-			actionLines = append(actionLines, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
+			actionLines = append(
+				actionLines,
+				theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line),
+			)
 		} else {
 			actionLines = append(actionLines, "  "+line)
 		}
@@ -65,7 +71,10 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	diagnostics := diagnosticsLines(theme, state, max(1, diagnosticsWidth-2))
 	section := func(title string, focused bool, w, h int, lines []string) string {
-		return viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Focused: focused, Width: w, Height: h, Lines: lines})
+		return viewchrome.RenderSection(
+			theme,
+			viewchrome.Section{Title: title, Focused: focused, Width: w, Height: h, Lines: lines},
+		)
 	}
 	if detailWidth == 0 {
 		actionsHeight := min(len(actionLines)+1, height)
@@ -84,8 +93,17 @@ func diagnosticsLines(theme types.Theme, state types.ContentState, width int) []
 	)
 	lines := strings.Split(ansi.Wrap(summary, width, "/"), "\n")
 	if state.KernelInfo != nil {
-		lines = append(lines, "", theme.StyleDim.Render("Transport"),
-			supportFallback(strings.TrimSpace(state.KernelInfo.Transport), "-")+"  "+theme.StyleDim.Render(supportFallback(strings.TrimSpace(state.KernelInfo.Endpoint), "-")))
+		lines = append(
+			lines,
+			"",
+			theme.StyleDim.Render("Transport"),
+			supportFallback(
+				strings.TrimSpace(state.KernelInfo.Transport),
+				"-",
+			)+"  "+theme.StyleDim.Render(
+				supportFallback(strings.TrimSpace(state.KernelInfo.Endpoint), "-"),
+			),
+		)
 	}
 	return lines
 }

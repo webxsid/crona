@@ -227,7 +227,8 @@ func newRouter(deps Deps) *router {
 			if s.ActivePane == uistate.PaneScope {
 				return handleCursor(s, deps, -1)
 			}
-			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) && s.ActivePane == uistate.PaneIssues {
+			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) &&
+				s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, -1)
 			}
 			return s, nil, false
@@ -236,7 +237,8 @@ func newRouter(deps Deps) *router {
 			if s.ActivePane == uistate.PaneScope {
 				return handleCursor(s, deps, 1)
 			}
-			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) && s.ActivePane == uistate.PaneIssues {
+			if (s.ActiveView == uistate.ViewDaily || s.ActiveView == uistate.ViewDefault) &&
+				s.ActivePane == uistate.PaneIssues {
 				return handleCycleIssueSection(s, deps, 1)
 			}
 			return s, nil, false
@@ -563,22 +565,38 @@ func newRouter(deps Deps) *router {
 	)
 	for _, action := range supportActions {
 		run := action.run
-		r.RegisterView(uistate.ViewSupport, action.key, func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-			return s, run(s, deps), true
-		})
+		r.RegisterView(
+			uistate.ViewSupport,
+			action.key,
+			func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+				return s, run(s, deps), true
+			},
+		)
 	}
-	r.RegisterView(uistate.ViewSupport, "up", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		s.SupportCursor = max(0, s.SupportCursor-1)
-		return s, nil, true
-	})
-	r.RegisterView(uistate.ViewSupport, "down", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		s.SupportCursor = min(len(supportActions)-1, s.SupportCursor+1)
-		return s, nil, true
-	})
-	r.RegisterView(uistate.ViewSupport, "enter", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		action := supportActions[min(max(0, s.SupportCursor), len(supportActions)-1)]
-		return s, action.run(s, deps), true
-	})
+	r.RegisterView(
+		uistate.ViewSupport,
+		"up",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			s.SupportCursor = max(0, s.SupportCursor-1)
+			return s, nil, true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"down",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			s.SupportCursor = min(len(supportActions)-1, s.SupportCursor+1)
+			return s, nil, true
+		},
+	)
+	r.RegisterView(
+		uistate.ViewSupport,
+		"enter",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			action := supportActions[min(max(0, s.SupportCursor), len(supportActions)-1)]
+			return s, action.run(s, deps), true
+		},
+	)
 	r.RegisterView(
 		uistate.ViewMomentum,
 		"+",
@@ -623,24 +641,36 @@ func newRouter(deps Deps) *router {
 		}
 		return s, nil, false
 	})
-	r.RegisterView(uistate.ViewReview, "up", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleReviewStepDay(s, deps, -1)
-	})
-	r.RegisterView(uistate.ViewReview, "down", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		return handleReviewStepDay(s, deps, 1)
-	})
+	r.RegisterView(
+		uistate.ViewReview,
+		"up",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleReviewStepDay(s, deps, -1)
+		},
+	)
+	r.RegisterView(
+		uistate.ViewReview,
+		"down",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleReviewStepDay(s, deps, 1)
+		},
+	)
 	r.RegisterView(uistate.ViewReview, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if deps.OpenReviewDialog != nil && deps.OpenReviewDialog(&s, "time") {
 			return s, nil, true
 		}
 		return handleToggleReviewTime(s, deps)
 	})
-	r.RegisterView(uistate.ViewReview, "enter", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
-		if deps.OpenReviewDialog != nil {
-			deps.OpenReviewDialog(&s, "day")
-		}
-		return s, nil, true
-	})
+	r.RegisterView(
+		uistate.ViewReview,
+		"enter",
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if deps.OpenReviewDialog != nil {
+				deps.OpenReviewDialog(&s, "day")
+			}
+			return s, nil, true
+		},
+	)
 	r.RegisterView(uistate.ViewReview, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)
 	})

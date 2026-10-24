@@ -421,7 +421,9 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 			if entry.Penalty != nil {
 				item["highRisk"] = entry.Penalty.HighRisk && !entry.Penalty.Historical
 				if entry.Penalty.Contribution != nil {
-					item["accountabilityShare"] = roundReportMetric(entry.Penalty.Contribution.AccountabilityPct * 100)
+					item["accountabilityShare"] = roundReportMetric(
+						entry.Penalty.Contribution.AccountabilityPct * 100,
+					)
 				}
 			}
 			entries = append(entries, item)

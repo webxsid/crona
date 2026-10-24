@@ -22,8 +22,14 @@ func penaltyPlan(historical bool) *api.DailyPlan {
 		penalty.Contribution = &api.DailyPlanPenaltyShare{
 			Accountability: 3.38, AccountabilityPct: 0.54, BacklogPressure: 2.58, BacklogPressurePct: 0.38,
 		}
-		penalty.IfDoneToday = &api.DailyPlanPenaltyShare{Accountability: -3.38, BacklogPressure: -2.58}
-		penalty.IfPostponedOneDay = &api.DailyPlanPenaltyProjection{FailScore: 3.81, AccountabilityDelta: 0.43}
+		penalty.IfDoneToday = &api.DailyPlanPenaltyShare{
+			Accountability:  -3.38,
+			BacklogPressure: -2.58,
+		}
+		penalty.IfPostponedOneDay = &api.DailyPlanPenaltyProjection{
+			FailScore:           3.81,
+			AccountabilityDelta: 0.43,
+		}
 	}
 	plan := &api.DailyPlan{Entries: []api.DailyPlanEntry{{
 		IssueID:            2,
@@ -42,7 +48,10 @@ func penaltyPlan(historical bool) *api.DailyPlan {
 func TestDetailShowsLiveDelayPenalty(t *testing.T) {
 	state := detailState()
 	state.DailyPlan = penaltyPlan(false)
-	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))), " ")
+	rendered := strings.Join(
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))),
+		" ",
+	)
 	for _, want := range []string{
 		"Delay penalty ▲ high risk",
 		"5 days late, 3 postpones, 1 away day skipped",
@@ -63,9 +72,14 @@ func TestDetailShowsLiveDelayPenalty(t *testing.T) {
 func TestDetailShowsFinalPenaltyForResolvedIssue(t *testing.T) {
 	state := detailState()
 	state.DailyPlan = penaltyPlan(true)
-	rendered := strings.Join(strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))), " ")
-	if !strings.Contains(rendered, "Delay penalty (final)") || strings.Contains(rendered, "high risk") ||
-		strings.Contains(rendered, "Push 1 day") || strings.Contains(rendered, "Today") {
+	rendered := strings.Join(
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))),
+		" ",
+	)
+	if !strings.Contains(rendered, "Delay penalty (final)") ||
+		strings.Contains(rendered, "high risk") ||
+		strings.Contains(rendered, "Push 1 day") ||
+		strings.Contains(rendered, "Today") {
 		t.Fatalf("expected only final penalty lines, got %q", rendered)
 	}
 	list := ansi.Strip(renderIssues(testTheme(), state, 130, 20))
@@ -80,7 +94,8 @@ func TestDetailShowsOnScheduleWithoutPenalty(t *testing.T) {
 		IssueID: 2, PostponeCount: 1, Penalty: &api.DailyPlanEntryPenalty{HighRiskThreshold: 2.5},
 	}}}
 	rendered := ansi.Strip(renderDetail(testTheme(), state, 100, 40))
-	if !strings.Contains(rendered, "On schedule · no penalty") || strings.Contains(rendered, "Delay penalty") {
+	if !strings.Contains(rendered, "On schedule · no penalty") ||
+		strings.Contains(rendered, "Delay penalty") {
 		t.Fatalf("expected on-schedule line, got %q", rendered)
 	}
 }

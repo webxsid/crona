@@ -58,7 +58,10 @@ func (t *TimerService) getState(ctx context.Context) (sharedtypes.TimerState, er
 }
 
 // withProgress adds the cycle counts and the issue's earlier work to a live timer state.
-func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.TimerState) (sharedtypes.TimerState, error) {
+func (t *TimerService) withProgress(
+	ctx context.Context,
+	state sharedtypes.TimerState,
+) (sharedtypes.TimerState, error) {
 	cycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, *state.SessionID)
 	if err != nil {
 		return state, err
@@ -67,7 +70,10 @@ func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.Timer
 	if endsWithSegment(state) {
 		state.NextSegmentType = nil
 	}
-	if state.HardLimitActive && sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro {
+	if state.HardLimitActive &&
+		sharedtypes.NormalizeTimerHardLimitKind(
+			state.HardLimitKind,
+		) == sharedtypes.TimerHardLimitKindPomodoro {
 		state.HardLimitCycles = sharedtypes.InferPomodoroCycles(
 			state.HardLimitTotalSeconds, state.HardLimitWorkSeconds, state.HardLimitBreakSeconds,
 			state.HardLimitLongBreakSeconds, state.HardLimitCyclesBeforeLongBreak,
@@ -81,7 +87,8 @@ func (t *TimerService) withProgress(ctx context.Context, state sharedtypes.Timer
 		return state, err
 	}
 	for _, session := range sessions {
-		if session.EndTime == nil || session.DurationSeconds == nil || session.ID == *state.SessionID {
+		if session.EndTime == nil || session.DurationSeconds == nil ||
+			session.ID == *state.SessionID {
 			continue
 		}
 		state.IssueWorkedSeconds += *session.DurationSeconds
@@ -96,7 +103,9 @@ func endsWithSegment(state sharedtypes.TimerState) bool {
 	if !state.HardLimitActive || state.SegmentType == nil {
 		return false
 	}
-	if sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindCountdown {
+	if sharedtypes.NormalizeTimerHardLimitKind(
+		state.HardLimitKind,
+	) == sharedtypes.TimerHardLimitKindCountdown {
 		return true
 	}
 	duration := state.HardLimitWorkSeconds
@@ -306,7 +315,9 @@ func (t *TimerService) start(
 		return sharedtypes.TimerState{}, errors.New("issue not found")
 	}
 	if !adhoc && issue.Adhoc {
-		return sharedtypes.TimerState{}, errors.New("ad hoc issues must be converted before starting a focus session")
+		return sharedtypes.TimerState{}, errors.New(
+			"ad hoc issues must be converted before starting a focus session",
+		)
 	}
 	if !adhoc && !sharedtypes.CanStartFocus(issue.Status) {
 		return sharedtypes.TimerState{}, errors.New(
@@ -541,7 +552,10 @@ func (t *TimerService) advance(ctx context.Context) (sharedtypes.TimerState, err
 	if activeSegment == nil {
 		return sharedtypes.TimerState{}, errors.New("no prepared timer segment")
 	}
-	if runtimeState != nil && sharedtypes.NormalizeTimerHardLimitKind(runtimeState.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro &&
+	if runtimeState != nil &&
+		sharedtypes.NormalizeTimerHardLimitKind(
+			runtimeState.HardLimitKind,
+		) == sharedtypes.TimerHardLimitKindPomodoro &&
 		(activeSegment.SegmentType == sharedtypes.SessionSegmentShortBreak ||
 			activeSegment.SegmentType == sharedtypes.SessionSegmentLongBreak) {
 		completedWorkCycles, err := t.ctx.SessionSegments.CountWorkSegments(ctx, activeSession.ID)
@@ -629,7 +643,9 @@ func advanceHardLimitTimeline(
 	now string,
 ) error {
 	if state == nil || !state.HasHardLimit() ||
-		sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) != sharedtypes.TimerHardLimitKindPomodoro {
+		sharedtypes.NormalizeTimerHardLimitKind(
+			state.HardLimitKind,
+		) != sharedtypes.TimerHardLimitKindPomodoro {
 		return nil
 	}
 	duration := state.HardLimitWorkSeconds
@@ -715,12 +731,21 @@ func (t *TimerService) deferBreak(
 	if runtimeState == nil ||
 		!runtimeState.HasHardLimit() ||
 		runtimeState.HardLimitKind != sharedtypes.TimerHardLimitKindPomodoro {
-		return sharedtypes.TimerState{}, errors.New("current session is not a pomodoro hard-limit session")
+		return sharedtypes.TimerState{}, errors.New(
+			"current session is not a pomodoro hard-limit session",
+		)
 	}
 	if runtimeState.CurrentSegmentDeferralSeconds > 0 {
-		return sharedtypes.TimerState{}, errors.New("break has already been deferred for this work segment")
+		return sharedtypes.TimerState{}, errors.New(
+			"break has already been deferred for this work segment",
+		)
 	}
-	activeSegment, err := t.ctx.SessionSegments.GetActive(ctx, t.ctx.UserID, t.ctx.DeviceID, sessionID)
+	activeSegment, err := t.ctx.SessionSegments.GetActive(
+		ctx,
+		t.ctx.UserID,
+		t.ctx.DeviceID,
+		sessionID,
+	)
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
@@ -741,7 +766,11 @@ func (t *TimerService) deferBreak(
 	if err != nil {
 		return sharedtypes.TimerState{}, err
 	}
-	emit(t.ctx, sharedtypes.EventTypeTimerBreakDeferred, sharedtypes.SessionEventPayload{SessionID: sessionID})
+	emit(
+		t.ctx,
+		sharedtypes.EventTypeTimerBreakDeferred,
+		sharedtypes.SessionEventPayload{SessionID: sessionID},
+	)
 	emit(t.ctx, sharedtypes.EventTypeTimerState, state)
 	return state, nil
 }

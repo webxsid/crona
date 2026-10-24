@@ -98,7 +98,12 @@ func PatchSetting(
 	}
 }
 
-func SetAwayMode(c *api.Client, enabled bool, repoID, streamID int64, dashboardDate string) tea.Cmd {
+func SetAwayMode(
+	c *api.Client,
+	enabled bool,
+	repoID, streamID int64,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		if err := c.SetAwayMode(enabled); err != nil {
 			logger.Errorf("SetAwayMode(%t): %v", enabled, err)
@@ -374,7 +379,14 @@ func CreateIssueOnly(
 			logger.Errorf("CreateIssue: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp}
+		return IssueCreatedMsg{
+			Issue:      *issue,
+			RepoID:     repoID,
+			StreamID:   streamID,
+			RepoName:   repoName,
+			StreamName: streamName,
+			FollowUp:   followUp,
+		}
 	}
 }
 
@@ -521,7 +533,15 @@ func UpdateIssue(
 	}
 }
 
-func PromoteAdhocIssueWithPath(c *api.Client, issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
+func PromoteAdhocIssueWithPath(
+	c *api.Client,
+	issueID int64,
+	repoName, streamName, title string,
+	description *string,
+	estimateMinutes *int,
+	dueDate *string,
+	dashboardDate string,
+) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
 		if err != nil {
@@ -650,7 +670,15 @@ func CreateIssueWithPath(
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}
-		return IssueCreatedMsg{Issue: *issue, RepoID: repoID, StreamID: streamID, RepoName: repoName, StreamName: streamName, FollowUp: followUp, CommitMessage: commitMessage}
+		return IssueCreatedMsg{
+			Issue:         *issue,
+			RepoID:        repoID,
+			StreamID:      streamID,
+			RepoName:      repoName,
+			StreamName:    streamName,
+			FollowUp:      followUp,
+			CommitMessage: commitMessage,
+		}
 	}
 }
 

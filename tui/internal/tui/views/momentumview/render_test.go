@@ -38,7 +38,10 @@ func assertFits(t *testing.T, rendered string, width, height int) {
 }
 
 func TestRenderNarrowListOnly(t *testing.T) {
-	rendered := Render(types.Theme{}, renderState(60, 20, momentumTestCard("Deep work", "W1", "W2")))
+	rendered := Render(
+		types.Theme{},
+		renderState(60, 20, momentumTestCard("Deep work", "W1", "W2")),
+	)
 	assertFits(t, rendered, 60, 20)
 	text := plain(rendered)
 	if strings.Contains(text, "Cadence") || !strings.Contains(text, "[enter]") {
@@ -48,7 +51,15 @@ func TestRenderNarrowListOnly(t *testing.T) {
 
 func TestRenderMediumAndWideShowDetail(t *testing.T) {
 	for _, size := range [][2]int{{120, 36}, {200, 50}} {
-		rendered := Render(types.Theme{}, renderState(size[0], size[1], momentumTestCard("Deep work", "W1", "W2"), momentumTestCard("Reading", "W1")))
+		rendered := Render(
+			types.Theme{},
+			renderState(
+				size[0],
+				size[1],
+				momentumTestCard("Deep work", "W1", "W2"),
+				momentumTestCard("Reading", "W1"),
+			),
+		)
 		assertFits(t, rendered, size[0], size[1])
 		text := plain(rendered)
 		for _, want := range []string{"Cadence", "Target", "Streak", "Deep work"} {
@@ -67,16 +78,25 @@ func TestRenderInactiveDimmedAndPaused(t *testing.T) {
 	if !strings.Contains(text, "paused") || !strings.Contains(text, "[x] enable") {
 		t.Fatalf("expected a paused row and an enable key, got\n%s", text)
 	}
-	if text := plain(Render(types.Theme{}, renderState(120, 36, momentumTestCard("Deep work", "W1")))); !strings.Contains(text, "[x] disable") {
+	if text := plain(Render(types.Theme{}, renderState(120, 36, momentumTestCard("Deep work", "W1")))); !strings.Contains(
+		text,
+		"[x] disable",
+	) {
 		t.Fatalf("expected a disable key, got\n%s", text)
 	}
 }
 
 func TestRenderListCreateLineAndEmpty(t *testing.T) {
-	if text := plain(Render(types.Theme{}, renderState(120, 36, momentumTestCard("Deep work", "W1")))); !strings.Contains(text, "[a] new momentum") {
+	if text := plain(Render(types.Theme{}, renderState(120, 36, momentumTestCard("Deep work", "W1")))); !strings.Contains(
+		text,
+		"[a] new momentum",
+	) {
 		t.Fatalf("expected a create line, got\n%s", text)
 	}
-	if text := squash(plain(Render(types.Theme{}, renderState(120, 36)))); !strings.Contains(text, "No momentums yet [a] new momentum") {
+	if text := squash(plain(Render(types.Theme{}, renderState(120, 36)))); !strings.Contains(
+		text,
+		"No momentums yet [a] new momentum",
+	) {
 		t.Fatalf("expected the empty state, got\n%s", text)
 	}
 }
@@ -90,12 +110,22 @@ func TestRenderNoBordersOrHeader(t *testing.T) {
 
 func TestRenderTinyHeight(t *testing.T) {
 	for _, height := range []int{1, 4} {
-		assertFits(t, Render(types.Theme{}, renderState(120, height, momentumTestCard("Deep work", "W1"))), 120, height)
+		assertFits(
+			t,
+			Render(types.Theme{}, renderState(120, height, momentumTestCard("Deep work", "W1"))),
+			120,
+			height,
+		)
 	}
 }
 
 func TestRenderUsesFilteredRows(t *testing.T) {
-	state := renderState(120, 36, momentumTestCard("Deep work", "W1"), momentumTestCard("Reading", "W1", "W2"))
+	state := renderState(
+		120,
+		36,
+		momentumTestCard("Deep work", "W1"),
+		momentumTestCard("Reading", "W1", "W2"),
+	)
 	state.Filters["momentum_cards"] = "read"
 	text := plain(Render(types.Theme{}, state))
 	if strings.Contains(text, "Deep work") || !strings.Contains(text, "Reading") {
@@ -112,13 +142,26 @@ func TestDetailLinesWrapDescription(t *testing.T) {
 			t.Fatalf("expected lines within 30 cells, got %q", plain(line))
 		}
 	}
-	if !strings.Contains(squash(plain(strings.Join(DetailLines(types.Theme{}, card, 30, 40, false), " "))), strings.TrimSpace(description)) {
+	if !strings.Contains(
+		squash(plain(strings.Join(DetailLines(types.Theme{}, card, 30, 40, false), " "))),
+		strings.TrimSpace(description),
+	) {
 		t.Fatalf("expected the whole description")
 	}
 }
 
 func TestRenderWideListFitsLongerNames(t *testing.T) {
-	text := plain(Render(types.Theme{}, renderState(200, 50, momentumTestCard("Daily Context Any", "W1"), momentumTestCard("Daily Context All", "W1"))))
+	text := plain(
+		Render(
+			types.Theme{},
+			renderState(
+				200,
+				50,
+				momentumTestCard("Daily Context Any", "W1"),
+				momentumTestCard("Daily Context All", "W1"),
+			),
+		),
+	)
 	for _, want := range []string{"▶ Daily Context Any ", "  Daily Context All "} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected list row %q whole, got\n%s", want, text)
@@ -134,13 +177,20 @@ func labelledCard(name string, labels ...string) sharedtypes.MomentumCard {
 
 func TestDetailHeaderPairsSettings(t *testing.T) {
 	lines := DetailLines(types.Theme{}, momentumTestCard("Deep work", "W1"), 80, 30, false)
-	if !strings.Contains(plain(lines[0]), "Cadence") || !strings.Contains(plain(lines[0]), "Habits") {
+	if !strings.Contains(plain(lines[0]), "Cadence") ||
+		!strings.Contains(plain(lines[0]), "Habits") {
 		t.Fatalf("expected settings side by side, got %q", plain(lines[0]))
 	}
 }
 
 func TestChartFillsTheDetailHeight(t *testing.T) {
-	lines := DetailLines(types.Theme{}, labelledCard("Deep work", "Oct 1", "Oct 2", "Oct 3"), 80, 30, false)
+	lines := DetailLines(
+		types.Theme{},
+		labelledCard("Deep work", "Oct 1", "Oct 2", "Oct 3"),
+		80,
+		30,
+		false,
+	)
 	if len(lines) != 30 {
 		t.Fatalf("expected the chart to fill 30 lines, got %d", len(lines))
 	}
@@ -150,7 +200,12 @@ func TestChartFillsTheDetailHeight(t *testing.T) {
 }
 
 func TestMediumStacksBucketsUnderChart(t *testing.T) {
-	text := plain(Render(types.Theme{}, renderState(120, 36, labelledCard("Deep work", "Oct 1", "Oct 2", "Oct 3"))))
+	text := plain(
+		Render(
+			types.Theme{},
+			renderState(120, 36, labelledCard("Deep work", "Oct 1", "Oct 2", "Oct 3")),
+		),
+	)
 	chart, buckets := strings.Index(text, "└"), strings.Index(text, "Buckets")
 	if chart < 0 || buckets < chart {
 		t.Fatalf("expected Buckets below the chart, got\n%s", text)
@@ -158,7 +213,15 @@ func TestMediumStacksBucketsUnderChart(t *testing.T) {
 }
 
 func TestWideGivesBucketsTheirOwnColumn(t *testing.T) {
-	lines := strings.Split(plain(Render(types.Theme{}, renderState(200, 50, labelledCard("Deep work", "Oct 1", "Oct 2")))), "\n")
+	lines := strings.Split(
+		plain(
+			Render(
+				types.Theme{},
+				renderState(200, 50, labelledCard("Deep work", "Oct 1", "Oct 2")),
+			),
+		),
+		"\n",
+	)
 	title := lineContaining(strings.Join(lines, "\n"), "Momentums")
 	if !strings.Contains(title, "Deep work") || !strings.Contains(title, "Buckets") {
 		t.Fatalf("expected list, detail and buckets side by side, got %q", title)
@@ -234,7 +297,12 @@ func TestBucketLinesShowExceptions(t *testing.T) {
 }
 
 func TestBucketLinesWithoutWeeksForWeeklyBuckets(t *testing.T) {
-	text := plain(strings.Join(BucketLines(types.Theme{}, momentumTestCard("Deep work", "W1", "W2"), 60), "\n"))
+	text := plain(
+		strings.Join(
+			BucketLines(types.Theme{}, momentumTestCard("Deep work", "W1", "W2"), 60),
+			"\n",
+		),
+	)
 	if strings.Contains(text, "──") {
 		t.Fatalf("expected no week rules for weekly buckets, got\n%s", text)
 	}

@@ -110,7 +110,10 @@ func (s *Scheduler) Run(ctx context.Context) error {
 		}
 		now = now.In(location)
 		if settings == nil {
-			settings = &sharedtypes.CoreSettings{StartOfDay: sharedtypes.DefaultStartOfDaySchedule(), EndOfDay: sharedtypes.DefaultEndOfDaySchedule()}
+			settings = &sharedtypes.CoreSettings{
+				StartOfDay: sharedtypes.DefaultStartOfDaySchedule(),
+				EndOfDay:   sharedtypes.DefaultEndOfDaySchedule(),
+			}
 		}
 		logicalDate := LogicalDate(now, settings.StartOfDay)
 		previousDate := s.CurrentDate()
@@ -183,7 +186,11 @@ func (s *Scheduler) fireWithRetry(
 	}
 }
 
-func startOfDayBoundary(date string, schedule sharedtypes.DayBoundarySchedule, location *time.Location) (time.Time, bool) {
+func startOfDayBoundary(
+	date string,
+	schedule sharedtypes.DayBoundarySchedule,
+	location *time.Location,
+) (time.Time, bool) {
 	parsed, err := time.Parse(time.DateOnly, date)
 	if err != nil || !schedule.Enabled {
 		return time.Time{}, false
@@ -192,7 +199,16 @@ func startOfDayBoundary(date string, schedule sharedtypes.DayBoundarySchedule, l
 	if err != nil {
 		return time.Time{}, false
 	}
-	return time.Date(parsed.Year(), parsed.Month(), parsed.Day(), minutes/60, minutes%60, 0, 0, location), true
+	return time.Date(
+		parsed.Year(),
+		parsed.Month(),
+		parsed.Day(),
+		minutes/60,
+		minutes%60,
+		0,
+		0,
+		location,
+	), true
 }
 
 func waitForRetry(ctx context.Context, refresh <-chan struct{}, delay time.Duration) bool {
@@ -246,7 +262,14 @@ func (s *Scheduler) fire(
 	local := at.In(location)
 	scheduledAtUTC := local.UTC().Format(time.RFC3339Nano)
 	occurrenceID := fmt.Sprintf("day-boundary:%s:%s:%s", kind, scheduledAtUTC, location.String())
-	claimed, err := s.claim(ctx, occurrenceID, settings.UserID, string(kind), scheduledAtUTC, location.String())
+	claimed, err := s.claim(
+		ctx,
+		occurrenceID,
+		settings.UserID,
+		string(kind),
+		scheduledAtUTC,
+		location.String(),
+	)
 	if err != nil {
 		return err
 	}
@@ -277,9 +300,12 @@ func (s *Scheduler) fire(
 	s.emit(sharedtypes.KernelEvent{Type: eventType, Payload: b})
 	if kind == sharedtypes.DayBoundaryEnd && s.alert != nil {
 		return s.alert(ctx, sharedtypes.AlertRequest{
-			Kind:        sharedtypes.AlertEventDayBoundary,
-			Title:       "Time to rest",
-			Body:        fmt.Sprintf("The configured Crona day ended at %s.", schedule.TimeForWeekday(local.Weekday())),
+			Kind:  sharedtypes.AlertEventDayBoundary,
+			Title: "Time to rest",
+			Body: fmt.Sprintf(
+				"The configured Crona day ended at %s.",
+				schedule.TimeForWeekday(local.Weekday()),
+			),
 			Urgency:     sharedtypes.AlertUrgencyNormal,
 			PlaySound:   true,
 			IconEnabled: true,
@@ -304,14 +330,26 @@ func LogicalDate(now time.Time, schedule sharedtypes.DayBoundarySchedule) string
 	if err != nil {
 		return now.Format("2006-01-02")
 	}
-	boundary := time.Date(now.Year(), now.Month(), now.Day(), parsed.Hour(), parsed.Minute(), 0, 0, now.Location())
+	boundary := time.Date(
+		now.Year(),
+		now.Month(),
+		now.Day(),
+		parsed.Hour(),
+		parsed.Minute(),
+		0,
+		0,
+		now.Location(),
+	)
 	if now.Before(boundary) {
 		return now.AddDate(0, 0, -1).Format("2006-01-02")
 	}
 	return now.Format("2006-01-02")
 }
 
-func nextBoundary(now time.Time, settings *sharedtypes.CoreSettings) (time.Time, sharedtypes.DayBoundaryKind, sharedtypes.DayBoundarySchedule) {
+func nextBoundary(
+	now time.Time,
+	settings *sharedtypes.CoreSettings,
+) (time.Time, sharedtypes.DayBoundaryKind, sharedtypes.DayBoundarySchedule) {
 	type candidate struct {
 		at       time.Time
 		kind     sharedtypes.DayBoundaryKind
@@ -334,9 +372,21 @@ func nextBoundary(now time.Time, settings *sharedtypes.CoreSettings) (time.Time,
 			if err != nil {
 				continue
 			}
-			at := time.Date(date.Year(), date.Month(), date.Day(), minutes/60, minutes%60, 0, 0, now.Location())
+			at := time.Date(
+				date.Year(),
+				date.Month(),
+				date.Day(),
+				minutes/60,
+				minutes%60,
+				0,
+				0,
+				now.Location(),
+			)
 			if at.After(now) {
-				candidates = append(candidates, candidate{at: at, kind: item.kind, schedule: item.schedule})
+				candidates = append(
+					candidates,
+					candidate{at: at, kind: item.kind, schedule: item.schedule},
+				)
 			}
 		}
 	}

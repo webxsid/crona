@@ -107,9 +107,21 @@ func buildGlanceData(
 		resolved := report.Summary.CompletedIssues + report.Summary.AbandonedIssues
 		data["isRange"] = false
 		data["periodLabel"] = shareddatefmt.FormatISODate(end, settings)
-		data["focus"] = glanceMetric(formatDurationHMS(report.Summary.WorkedSeconds), report.Summary.WorkedSeconds, report.Summary.TotalEstimatedMinutes*60)
-		data["issueMetric"] = glanceMetric(fmt.Sprintf("%d / %d", resolved, report.Summary.TotalIssues), resolved, report.Summary.TotalIssues)
-		data["habitMetric"] = glanceMetric(fmt.Sprintf("%d / %d", habitDone, len(report.Habits)), habitDone, len(report.Habits))
+		data["focus"] = glanceMetric(
+			formatDurationHMS(report.Summary.WorkedSeconds),
+			report.Summary.WorkedSeconds,
+			report.Summary.TotalEstimatedMinutes*60,
+		)
+		data["issueMetric"] = glanceMetric(
+			fmt.Sprintf("%d / %d", resolved, report.Summary.TotalIssues),
+			resolved,
+			report.Summary.TotalIssues,
+		)
+		data["habitMetric"] = glanceMetric(
+			fmt.Sprintf("%d / %d", habitDone, len(report.Habits)),
+			habitDone,
+			len(report.Habits),
+		)
 		data["planMetric"] = glanceMetric(fmt.Sprintf("%.0f%%", planScore), int(planScore+.5), 100)
 		data["outcomes"] = []map[string]any{
 			glanceOutcome("Issue resolution", resolved, report.Summary.TotalIssues),
@@ -150,12 +162,16 @@ func buildGlanceData(
 			"workedTime":   formatDurationHMS(item.WorkedSeconds),
 			"restTime":     formatDurationHMS(item.RestSeconds),
 			"sessionCount": item.SessionCount,
-			"issues":       fmt.Sprintf("%d/%d", item.CompletedIssues+item.AbandonedIssues, item.TotalIssues),
-			"habits":       fmt.Sprintf("%d/%d", item.HabitCompletedCount, item.HabitDueCount),
-			"mood":         mood,
-			"energy":       energy,
-			"bar":          glanceBar(item.WorkedSeconds, maxWorked),
-			"percent":      glancePercent(item.WorkedSeconds, maxWorked),
+			"issues": fmt.Sprintf(
+				"%d/%d",
+				item.CompletedIssues+item.AbandonedIssues,
+				item.TotalIssues,
+			),
+			"habits":  fmt.Sprintf("%d/%d", item.HabitCompletedCount, item.HabitDueCount),
+			"mood":    mood,
+			"energy":  energy,
+			"bar":     glanceBar(item.WorkedSeconds, maxWorked),
+			"percent": glancePercent(item.WorkedSeconds, maxWorked),
 		})
 	}
 	return map[string]any{
@@ -164,14 +180,40 @@ func buildGlanceData(
 		"endDate":          end,
 		"displayStartDate": shareddatefmt.FormatISODate(start, settings),
 		"displayEndDate":   shareddatefmt.FormatISODate(end, settings),
-		"periodLabel":      shareddatefmt.FormatISODate(start, settings) + " to " + shareddatefmt.FormatISODate(end, settings),
-		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
-		"focus":            glanceMetric(formatDurationHMS(rollup.WorkedSeconds), rollup.FocusDays, max(1, rollup.Days)),
-		"issueMetric":      glanceMetric(fmt.Sprintf("%d resolved", rollup.CompletedIssues+rollup.AbandonedIssues), rollup.CompletedIssues+rollup.AbandonedIssues, totalIssues),
-		"habitMetric":      glanceMetric(fmt.Sprintf("%d / %d", rollup.HabitCompletedCount, rollup.HabitDueCount), rollup.HabitCompletedCount, rollup.HabitDueCount),
-		"planMetric":       glanceMetric(fmt.Sprintf("%.0f%%", window.AccountabilityScore), int(window.AccountabilityScore+.5), 100),
+		"periodLabel": shareddatefmt.FormatISODate(
+			start,
+			settings,
+		) + " to " + shareddatefmt.FormatISODate(
+			end,
+			settings,
+		),
+		"generatedAt": time.Now().UTC().Format(time.RFC3339),
+		"focus": glanceMetric(
+			formatDurationHMS(rollup.WorkedSeconds),
+			rollup.FocusDays,
+			max(1, rollup.Days),
+		),
+		"issueMetric": glanceMetric(
+			fmt.Sprintf("%d resolved", rollup.CompletedIssues+rollup.AbandonedIssues),
+			rollup.CompletedIssues+rollup.AbandonedIssues,
+			totalIssues,
+		),
+		"habitMetric": glanceMetric(
+			fmt.Sprintf("%d / %d", rollup.HabitCompletedCount, rollup.HabitDueCount),
+			rollup.HabitCompletedCount,
+			rollup.HabitDueCount,
+		),
+		"planMetric": glanceMetric(
+			fmt.Sprintf("%.0f%%", window.AccountabilityScore),
+			int(window.AccountabilityScore+.5),
+			100,
+		),
 		"outcomes": []map[string]any{
-			glanceOutcome("Issue resolution", rollup.CompletedIssues+rollup.AbandonedIssues, totalIssues),
+			glanceOutcome(
+				"Issue resolution",
+				rollup.CompletedIssues+rollup.AbandonedIssues,
+				totalIssues,
+			),
 			glanceOutcome("Habit completion", rollup.HabitCompletedCount, rollup.HabitDueCount),
 			glanceOutcome("Check-in coverage", rollup.CheckInDays, rollup.Days),
 			glanceOutcome("Plan completion", window.CompletedCount, window.PlannedCount),

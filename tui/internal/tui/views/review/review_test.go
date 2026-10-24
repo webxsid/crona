@@ -14,16 +14,41 @@ import (
 
 func reviewState(width, height int) types.ContentState {
 	end := "2026-10-14"
-	dates := []string{"2026-10-08", "2026-10-09", "2026-10-10", "2026-10-11", "2026-10-12", "2026-10-13", "2026-10-14"}
+	dates := []string{
+		"2026-10-08",
+		"2026-10-09",
+		"2026-10-10",
+		"2026-10-11",
+		"2026-10-12",
+		"2026-10-13",
+		"2026-10-14",
+	}
 	metrics := make([]api.DailyMetricsDay, 0, len(dates))
 	days := make([]sharedtypes.DashboardWindowDay, 0, len(dates))
 	for i, date := range dates {
-		day := api.DailyMetricsDay{Date: date, WorkedSeconds: (i + 2) * 3600, TotalEstimatedMinutes: 300}
+		day := api.DailyMetricsDay{
+			Date:                  date,
+			WorkedSeconds:         (i + 2) * 3600,
+			TotalEstimatedMinutes: 300,
+		}
 		if i != 2 {
-			day.CheckIn = &api.DailyCheckIn{Date: date, Mood: 1 + i%5, Energy: 3, CreatedAt: date + "T09:00:00Z"}
+			day.CheckIn = &api.DailyCheckIn{
+				Date:      date,
+				Mood:      1 + i%5,
+				Energy:    3,
+				CreatedAt: date + "T09:00:00Z",
+			}
 		}
 		metrics = append(metrics, day)
-		days = append(days, sharedtypes.DashboardWindowDay{Date: date, Status: "done", PlannedCount: 5, CompletedCount: 4})
+		days = append(
+			days,
+			sharedtypes.DashboardWindowDay{
+				Date:           date,
+				Status:         "done",
+				PlannedCount:   5,
+				CompletedCount: 4,
+			},
+		)
 	}
 	mood, energy, sleep := 3.8, 3.4, 7.1
 	return types.ContentState{
@@ -35,9 +60,20 @@ func reviewState(width, height int) types.ContentState {
 		MetricsRollup: &api.MetricsRollup{
 			Days: 7, CheckInDays: 6, WorkedSeconds: 17 * 3600,
 			AverageMood: &mood, AverageEnergy: &energy, AverageSleepHours: &sleep,
-			LatestBurnout: &api.BurnoutIndicator{Score: 20, Level: "low", Factors: map[string]float64{"breakDebt": 0.3, "recoveryBreaks": -0.2}},
+			LatestBurnout: &api.BurnoutIndicator{
+				Score:   20,
+				Level:   "low",
+				Factors: map[string]float64{"breakDebt": 0.3, "recoveryBreaks": -0.2},
+			},
 		},
-		DashboardWindow:  &api.DashboardWindowSummary{StartDate: dates[0], EndDate: end, PlannedCount: 27, CompletedCount: 22, FailedCount: 3, Days: days},
+		DashboardWindow: &api.DashboardWindowSummary{
+			StartDate:      dates[0],
+			EndDate:        end,
+			PlannedCount:   27,
+			CompletedCount: 22,
+			FailedCount:    3,
+			Days:           days,
+		},
 		WeeklyFocusScore: &api.FocusScoreSummary{Score: 72},
 	}
 }
@@ -74,7 +110,11 @@ func TestStripTwoRowsWidthExact(t *testing.T) {
 	}
 	narrow := StripRows(types.Theme{}, reviewState(60, 40), 60)
 	if strings.Contains(plain(narrow[0]), "failed") || strings.Contains(plain(narrow[1]), "Risk") {
-		t.Fatalf("expected the last groups dropped at 60: %q / %q", plain(narrow[0]), plain(narrow[1]))
+		t.Fatalf(
+			"expected the last groups dropped at 60: %q / %q",
+			plain(narrow[0]),
+			plain(narrow[1]),
+		)
 	}
 }
 
@@ -95,11 +135,13 @@ func TestPanesByWidth(t *testing.T) {
 		}
 	}
 	medium := plain(Render(types.Theme{}, reviewState(120, 36)))
-	if !strings.Contains(medium, "Days") || !strings.Contains(medium, "Wed 14 Oct") || strings.Contains(medium, "Trends") {
+	if !strings.Contains(medium, "Days") || !strings.Contains(medium, "Wed 14 Oct") ||
+		strings.Contains(medium, "Trends") {
 		t.Fatalf("medium: expected Days and the day, no Trends:\n%s", medium)
 	}
 	narrow := plain(Render(types.Theme{}, reviewState(80, 30)))
-	if !strings.Contains(narrow, "Days") || strings.Contains(narrow, "Trends") || strings.Contains(narrow, "Wed 14 Oct") {
+	if !strings.Contains(narrow, "Days") || strings.Contains(narrow, "Trends") ||
+		strings.Contains(narrow, "Wed 14 Oct") {
 		t.Fatalf("narrow: expected Days only:\n%s", narrow)
 	}
 }
@@ -111,7 +153,8 @@ func TestShowTimeSwapsSlot(t *testing.T) {
 	}
 	state.ReviewShowTime = true
 	out := plain(Render(types.Theme{}, state))
-	if !strings.Contains(out, "─ Time ") || strings.Contains(out, "Trends") || !strings.Contains(out, "[S] trends") {
+	if !strings.Contains(out, "─ Time ") || strings.Contains(out, "Trends") ||
+		!strings.Contains(out, "[S] trends") {
 		t.Fatalf("wide time: expected Time with [S] trends:\n%s", out)
 	}
 	medium := reviewState(120, 36)
@@ -120,7 +163,8 @@ func TestShowTimeSwapsSlot(t *testing.T) {
 	}
 	medium.ReviewShowTime = true
 	out = plain(Render(types.Theme{}, medium))
-	if !strings.Contains(out, "─ Time ") || strings.Contains(out, "Wed 14 Oct") || !strings.Contains(out, "[S] day") {
+	if !strings.Contains(out, "─ Time ") || strings.Contains(out, "Wed 14 Oct") ||
+		!strings.Contains(out, "[S] day") {
 		t.Fatalf("medium time: expected Time replacing the day with [S] day:\n%s", out)
 	}
 }
@@ -137,7 +181,8 @@ func TestDaysRowsAndSelection(t *testing.T) {
 	if len(rows) != 7 {
 		t.Fatalf("expected 7 day rows, got %d: %q", len(rows), rows)
 	}
-	if !strings.Contains(rows[0], "Thu 8") || !strings.Contains(rows[6], "▶") || !strings.Contains(rows[6], "Wed 14") {
+	if !strings.Contains(rows[0], "Thu 8") || !strings.Contains(rows[6], "▶") ||
+		!strings.Contains(rows[6], "Wed 14") {
 		t.Fatalf("expected oldest first and Wed 14 selected: %q", rows)
 	}
 	if strings.ContainsAny(rows[2], "▲▬▼") {
@@ -162,7 +207,8 @@ func TestShortHeightFoldsTrends(t *testing.T) {
 	short := plain(Render(types.Theme{}, reviewState(200, 24)))
 	tall := plain(Render(types.Theme{}, reviewState(200, 50)))
 	recovery := regexp.MustCompile(`Recovery\s+\d+%`)
-	if !strings.Contains(short, "Trends") || recovery.MatchString(short) || !recovery.MatchString(tall) {
+	if !strings.Contains(short, "Trends") || recovery.MatchString(short) ||
+		!recovery.MatchString(tall) {
 		t.Fatalf("expected Trends at 24 with fewer charts than at 50 (Recovery only when tall)")
 	}
 }
@@ -202,7 +248,11 @@ func TestHistoricalAwayDateKeepsStripAndDays(t *testing.T) {
 func TestHistoricalAwayDayDialogLines(t *testing.T) {
 	state := reviewState(80, 30)
 	state.HistoricalAwayDate = "2026-10-14"
-	if joined := plain(strings.Join(DetailLines(types.Theme{}, state, 60), "\n")); !strings.Contains(joined, "rest and recover") || strings.Contains(joined, "Risk") {
+	if joined := plain(strings.Join(DetailLines(types.Theme{}, state, 60), "\n")); !strings.Contains(
+		joined,
+		"rest and recover",
+	) ||
+		strings.Contains(joined, "Risk") {
 		t.Fatalf("expected only the away message for the day, got %q", joined)
 	}
 }
@@ -226,7 +276,10 @@ func TestNarrowDaysHints(t *testing.T) {
 	if !strings.Contains(narrow, "[enter] day") || !strings.Contains(narrow, "[S] time") {
 		t.Fatalf("expected narrow Days hints:\n%s", narrow)
 	}
-	if wide := plain(Render(types.Theme{}, reviewState(200, 50))); strings.Contains(wide, "[enter]") {
+	if wide := plain(Render(types.Theme{}, reviewState(200, 50))); strings.Contains(
+		wide,
+		"[enter]",
+	) {
 		t.Fatalf("expected no [enter] hint when the detail is visible")
 	}
 }
@@ -246,7 +299,8 @@ func TestWideDetailTakesMoreRoomAndWraps(t *testing.T) {
 	if i := strings.Index(header, "─ Wed 14 Oct"); i < 0 || 200-ansi.StringWidth(header[:i]) < 60 {
 		t.Fatalf("expected the detail column at least 60 wide, got header %q", header)
 	}
-	if !strings.Contains(squash(out), "Maintain your recovery rhythm.") || strings.Contains(out, "...") {
+	if !strings.Contains(squash(out), "Maintain your recovery rhythm.") ||
+		strings.Contains(out, "...") {
 		t.Fatalf("expected the risk summary wrapped whole:\n%s", out)
 	}
 }
@@ -254,10 +308,14 @@ func TestWideDetailTakesMoreRoomAndWraps(t *testing.T) {
 func TestStripCarriesWindowHintAtRight(t *testing.T) {
 	state := types.ContentState{Width: 200, ReviewWindowDays: 14}
 	rows := StripRows(types.Theme{}, state, 200)
-	if !strings.HasSuffix(ansi.Strip(rows[0]), "[+/-/0] 14d window") || ansi.StringWidth(rows[0]) != 200 {
+	if !strings.HasSuffix(ansi.Strip(rows[0]), "[+/-/0] 14d window") ||
+		ansi.StringWidth(rows[0]) != 200 {
 		t.Fatalf("expected the window hint at the right of row 1, got %q", ansi.Strip(rows[0]))
 	}
-	if narrow := ansi.Strip(StripRows(types.Theme{}, state, 30)[0]); strings.Contains(narrow, "[+/-/0]") {
+	if narrow := ansi.Strip(StripRows(types.Theme{}, state, 30)[0]); strings.Contains(
+		narrow,
+		"[+/-/0]",
+	) {
 		t.Fatalf("expected the hint to give way when narrow, got %q", narrow)
 	}
 }
@@ -276,14 +334,25 @@ func TestTrendsFillTheHeight(t *testing.T) {
 		blank++
 	}
 	if blank > 1 {
-		t.Fatalf("expected the charts to fill the pane, got %d blank lines at the bottom:\n%s", blank, strings.Join(lines, "\n"))
+		t.Fatalf(
+			"expected the charts to fill the pane, got %d blank lines at the bottom:\n%s",
+			blank,
+			strings.Join(lines, "\n"),
+		)
 	}
 }
 
 func TestFocusAxisUsesEvenHourSteps(t *testing.T) {
 	for _, c := range []struct{ value, max, step float64 }{{8, 8, 2}, {5.3, 6, 2}, {13, 16, 4}, {0.5, 1, 1}} {
 		if top, step := hourAxis(c.value); top != c.max || step != c.step {
-			t.Fatalf("hourAxis(%v): expected %v by %v, got %v by %v", c.value, c.max, c.step, top, step)
+			t.Fatalf(
+				"hourAxis(%v): expected %v by %v, got %v by %v",
+				c.value,
+				c.max,
+				c.step,
+				top,
+				step,
+			)
 		}
 	}
 	text := trendsText(100, 40)
@@ -307,7 +376,10 @@ func TestTrendsDrawSolidBarsWithEstimateTicks(t *testing.T) {
 func TestWellbeingBarsShareFocusColumns(t *testing.T) {
 	lines := strings.Split(trendsText(100, 40), "\n")
 	firstBar := func(line string) int {
-		return strings.IndexFunc(line, func(r rune) bool { return strings.ContainsRune("▁▂▃▄▅▆▇█", r) })
+		return strings.IndexFunc(
+			line,
+			func(r rune) bool { return strings.ContainsRune("▁▂▃▄▅▆▇█", r) },
+		)
 	}
 	focus, energy := -1, -1
 	for i, line := range lines {

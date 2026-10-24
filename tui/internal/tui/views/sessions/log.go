@@ -32,7 +32,10 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 		entries = append(entries, state.SessionHistory[index])
 	}
 	cursor := min(max(0, state.Cursors["sessions"]), max(0, len(entries)-1))
-	strip := viewchrome.StripRows(sessionStrip(state.SessionHistory, state.WeekStart, time.Now()), width)
+	strip := viewchrome.StripRows(
+		sessionStrip(state.SessionHistory, state.WeekStart, time.Now()),
+		width,
+	)
 	paneHeight := max(1, height-len(strip)-1)
 	listWidth, detailWidth := viewchrome.LogPaneWidths(width)
 	panes := viewchrome.RenderSection(theme, viewchrome.Section{
@@ -44,7 +47,13 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 		title, lines := "Detail", []string{theme.StyleDim.Render("Nothing selected")}
 		if len(entries) > 0 {
 			entry := entries[cursor]
-			title = localTime(entry.StartTime).Format("Mon 2 Jan") + "  " + timeRange(entry.StartTime, entry.EndTime)
+			title = localTime(
+				entry.StartTime,
+			).Format("Mon 2 Jan") +
+				"  " + timeRange(
+				entry.StartTime,
+				entry.EndTime,
+			)
 			lines = sessionDetailLines(theme, state, entry, detailWidth-1)
 		}
 		detail := viewchrome.RenderSection(theme, viewchrome.Section{
@@ -55,7 +64,11 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 	return strings.Join(append(strip, "", panes), "\n")
 }
 
-func sessionStrip(history []api.SessionHistoryEntry, weekStart sharedtypes.WeekStart, now time.Time) [][2]string {
+func sessionStrip(
+	history []api.SessionHistoryEntry,
+	weekStart sharedtypes.WeekStart,
+	now time.Time,
+) [][2]string {
 	total, longest, week := 0, 0, 0
 	from := startOfWeek(now.Local(), weekStart)
 	for _, entry := range history {
@@ -81,7 +94,11 @@ func sessionStrip(history []api.SessionHistoryEntry, weekStart sharedtypes.WeekS
 	}
 }
 
-func sessionList(theme types.Theme, entries []api.SessionHistoryEntry, cursor, width, height int) []string {
+func sessionList(
+	theme types.Theme,
+	entries []api.SessionHistoryEntry,
+	cursor, width, height int,
+) []string {
 	if len(entries) == 0 {
 		return []string{theme.StyleDim.Render("No sessions recorded")}
 	}
@@ -95,21 +112,40 @@ func sessionList(theme types.Theme, entries []api.SessionHistoryEntry, cursor, w
 		if first := firstLine(sessionNote(entry)); first != "" {
 			note = first
 		}
-		line := fmt.Sprintf("%-11s %6s  ", timeRange(entry.StartTime, entry.EndTime), compact(durationSeconds(entry))) + note
+		line := fmt.Sprintf(
+			"%-11s %6s  ",
+			timeRange(entry.StartTime, entry.EndTime),
+			compact(durationSeconds(entry)),
+		) + note
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
 	summary := func(date string) string { return fmt.Sprintf("%d · %s", counts[date], compact(sums[date])) }
 	return viewchrome.DayList(theme, rows, cursor, width, height, summary)
 }
 
-func sessionDetailLines(theme types.Theme, state types.ContentState, entry api.SessionHistoryEntry, width int) []string {
+func sessionDetailLines(
+	theme types.Theme,
+	state types.ContentState,
+	entry api.SessionHistoryEntry,
+	width int,
+) []string {
 	label := func(name, value string) string {
-		return theme.StyleDim.Render(fmt.Sprintf("%-7s", name)) + " " + ansi.Truncate(value, max(1, width-8), "…")
+		return theme.StyleDim.Render(
+			fmt.Sprintf("%-7s", name),
+		) + " " + ansi.Truncate(
+			value,
+			max(1, width-8),
+			"…",
+		)
 	}
 	lines := []string{}
 	preview := state.SessionPreview
 	if preview == nil || preview.ID != entry.ID {
-		lines = append(lines, label("Time", timeRange(entry.StartTime, entry.EndTime)), label("Length", compact(durationSeconds(entry))))
+		lines = append(
+			lines,
+			label("Time", timeRange(entry.StartTime, entry.EndTime)),
+			label("Length", compact(durationSeconds(entry))),
+		)
 		status := "Loading…"
 		if state.SessionPreviewFailed {
 			status = "Details unavailable"
@@ -117,12 +153,20 @@ func sessionDetailLines(theme types.Theme, state types.ContentState, entry api.S
 		lines = append(lines, theme.StyleDim.Render(status))
 		return append(lines, noteLines(theme, entry, width)...)
 	}
-	lines = append(lines,
+	lines = append(
+		lines,
 		label("Issue", orDash(preview.IssueTitle)),
 		label("Repo", orDash(preview.RepoName)),
 		label("Stream", orDash(preview.StreamName)),
 		"",
-		label("Work", compact(preview.WorkSummary.WorkSeconds)+"  "+theme.StyleDim.Render("rest "+compact(preview.WorkSummary.RestSeconds))),
+		label(
+			"Work",
+			compact(
+				preview.WorkSummary.WorkSeconds,
+			)+"  "+theme.StyleDim.Render(
+				"rest "+compact(preview.WorkSummary.RestSeconds),
+			),
+		),
 		"        "+workRestBar(theme, preview.WorkSummary, max(1, width-12)),
 	)
 	if len(preview.Segments) > 0 {
@@ -130,10 +174,24 @@ func sessionDetailLines(theme types.Theme, state types.ContentState, entry api.S
 		for _, segment := range preview.Segments {
 			seconds := 0
 			if segment.EndTime != nil {
-				seconds = int(localTime(*segment.EndTime).Sub(localTime(segment.StartTime)).Seconds())
+				seconds = int(
+					localTime(*segment.EndTime).Sub(localTime(segment.StartTime)).Seconds(),
+				)
 			}
 			kind := strings.ReplaceAll(string(segment.SegmentType), "_", " ")
-			lines = append(lines, ansi.Truncate(fmt.Sprintf("%s  %s  %s", kind, timeRange(segment.StartTime, segment.EndTime), compact(seconds)), width, "…"))
+			lines = append(
+				lines,
+				ansi.Truncate(
+					fmt.Sprintf(
+						"%s  %s  %s",
+						kind,
+						timeRange(segment.StartTime, segment.EndTime),
+						compact(seconds),
+					),
+					width,
+					"…",
+				),
+			)
 		}
 	}
 	return append(lines, noteLines(theme, preview.SessionHistoryEntry, width)...)
@@ -151,7 +209,11 @@ func noteLines(theme types.Theme, entry api.SessionHistoryEntry, width int) []st
 			continue
 		}
 		found = true
-		lines = append(lines, "", theme.StyleDim.Render(strings.ToUpper(string(section[:1]))+string(section[1:])))
+		lines = append(
+			lines,
+			"",
+			theme.StyleDim.Render(strings.ToUpper(string(section[:1]))+string(section[1:])),
+		)
 		lines = append(lines, wrap(text)...)
 	}
 	if !found && entry.Notes != nil && strings.TrimSpace(*entry.Notes) != "" {

@@ -202,7 +202,9 @@ func renderTabLine(state State) string {
 	// The tabs are the only navigation indicator, so everything else gives way first: the
 	// mark, then the context (truncated), then the version.
 	left := " " + tabs
-	if mark := chrome.StyleHeader.Render(viewchrome.LogoTiny()) + "  "; ansi.StringWidth(left+mark)+2 <= state.Width {
+	if mark := chrome.StyleHeader.Render(viewchrome.LogoTiny()) + "  "; ansi.StringWidth(
+		left+mark,
+	)+2 <= state.Width {
 		left = " " + mark + tabs
 	}
 	room := state.Width - ansi.StringWidth(left) - 2
@@ -210,7 +212,11 @@ func renderTabLine(state State) string {
 		return joinEnds(left, "", state.Width)
 	}
 	if ansi.StringWidth(right)+3+len(version) <= room {
-		return joinEnds(left, chrome.StyleHeader.Render(right)+chrome.StyleDim.Render(" · "+version), state.Width)
+		return joinEnds(
+			left,
+			chrome.StyleHeader.Render(right)+chrome.StyleDim.Render(" · "+version),
+			state.Width,
+		)
 	}
 	right = ansi.Truncate(right, room, "…")
 	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)
@@ -243,7 +249,14 @@ func renderSubTabLine(state State) string {
 		}
 	}
 	key := func(k string) string { return chrome.StyleHeader.Render("[" + k + "]") }
-	return " " + key("[") + " " + strings.Join(parts, chrome.StyleDim.Render(" · ")) + " " + key("]")
+	return " " + key(
+		"[",
+	) + " " + strings.Join(
+		parts,
+		chrome.StyleDim.Render(" · "),
+	) + " " + key(
+		"]",
+	)
 }
 
 // renderDateRow is a dated view's header row: the shared date's navigation, at the right.

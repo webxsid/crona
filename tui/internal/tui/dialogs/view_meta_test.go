@@ -14,7 +14,8 @@ func TestRenderViewMetaStacksColumns(t *testing.T) {
 	if len(lines) != 2 {
 		t.Fatalf("expected 6 fields in 3 columns over 2 rows, got %q", lines)
 	}
-	if !strings.HasPrefix(lines[0], "repo") || !strings.Contains(lines[0], "stream") || !strings.Contains(lines[0], "status") {
+	if !strings.HasPrefix(lines[0], "repo") || !strings.Contains(lines[0], "stream") ||
+		!strings.Contains(lines[0], "status") {
 		t.Fatalf("expected repo, stream and status on the first row, got %q", lines[0])
 	}
 	// Columns line up: "worked" starts where "repo" does, "due" where "stream" does.

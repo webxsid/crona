@@ -92,7 +92,15 @@ func momentumTargetsStep(theme Theme, state controllerpkg.State, body []string) 
 		}
 		labels := []string{}
 		for _, item := range state.HabitStreakDraft.Contexts {
-			labels = append(labels, "[x] "+momentumContextLabel(item, state.MomentumRepos, state.MomentumAllIssues, state.MomentumStreams))
+			labels = append(
+				labels,
+				"[x] "+momentumContextLabel(
+					item,
+					state.MomentumRepos,
+					state.MomentumAllIssues,
+					state.MomentumStreams,
+				),
+			)
 		}
 		cursor := -1
 		if state.FocusIdx == 2 {
@@ -125,12 +133,22 @@ func momentumTargetsStep(theme Theme, state controllerpkg.State, body []string) 
 	if matchFocused {
 		focus = len(body) + 1
 	}
-	mode := cases.Title(language.Und).String(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode))
-	body = append(body, "", Picker(theme, PickerSpec{Label: "Match", Column: column, Focused: matchFocused, Options: []string{mode}})[0])
+	mode := cases.Title(language.Und).
+		String(sharedtypes.MomentumMatchModeLabel(state.HabitStreakDraft.MatchMode))
+	body = append(
+		body,
+		"",
+		Picker(theme, PickerSpec{Label: "Match", Column: column, Focused: matchFocused, Options: []string{mode}})[0],
+	)
 	return body, focus
 }
 
-func momentumDetailsStep(theme Theme, state controllerpkg.State, body []string, momentumMode bool) ([]string, int) {
+func momentumDetailsStep(
+	theme Theme,
+	state controllerpkg.State,
+	body []string,
+	momentumMode bool,
+) ([]string, int) {
 	column := len("Description")
 	inner := formInner(state.Width)
 	full, _ := formColumns(inner, column)
@@ -138,9 +156,33 @@ func momentumDetailsStep(theme Theme, state controllerpkg.State, body []string, 
 	if momentumMode {
 		periodFocus, countFocus = 2, 3
 	}
-	rows := []FormRow{fieldRow(0, Field(theme, "Name", column, bareInput(state.Inputs[0], full, "required"), state.FocusIdx == 0))}
+	rows := []FormRow{
+		fieldRow(
+			0,
+			Field(
+				theme,
+				"Name",
+				column,
+				bareInput(state.Inputs[0], full, "required"),
+				state.FocusIdx == 0,
+			),
+		),
+	}
 	if momentumMode {
-		rows = append(rows, textareaRow(1, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == 1, inner)))
+		rows = append(
+			rows,
+			textareaRow(
+				1,
+				Textarea(
+					theme,
+					"Description",
+					column,
+					bareTextarea(state),
+					state.FocusIdx == 1,
+					inner,
+				),
+			),
+		)
 	}
 	current := sharedtypes.NormalizeHabitStreakPeriod(state.HabitStreakDraft.Period)
 	periods := []string{}
@@ -153,21 +195,67 @@ func momentumDetailsStep(theme Theme, state controllerpkg.State, body []string, 
 		}
 	}
 	unit := strings.TrimPrefix(habitStreakRequirementLabel(state.HabitStreakDraft), "Required ")
-	rows = append(rows,
-		fieldRow(periodFocus, Field(theme, "Period", column, strings.Join(periods, " "), state.FocusIdx == periodFocus)),
-		fieldRow(countFocus, Field(theme, "Required", column, bareInput(state.Inputs[1], 6, "1")+theme.StyleDim.Render("  "+unit), state.FocusIdx == countFocus)),
+	rows = append(
+		rows,
+		fieldRow(
+			periodFocus,
+			Field(
+				theme,
+				"Period",
+				column,
+				strings.Join(periods, " "),
+				state.FocusIdx == periodFocus,
+			),
+		),
+		fieldRow(
+			countFocus,
+			Field(
+				theme,
+				"Required",
+				column,
+				bareInput(state.Inputs[1], 6, "1")+theme.StyleDim.Render("  "+unit),
+				state.FocusIdx == countFocus,
+			),
+		),
 	)
 	if momentumMode && !momentumContextMode(state) {
 		capacity := habitMomentumViewCapacity(state.HabitStreakDraft, state.HabitItems)
 		if capacity.Valid {
-			rows = append(rows, staticRow(theme.StyleDim.Render(strings.Repeat(" ", column+2)+fmt.Sprintf("Allowed range: 1-%d per %s", capacity.MaxCount, habitStreakPeriodUnitLabel(state.HabitStreakDraft.Period)))))
+			rows = append(
+				rows,
+				staticRow(
+					theme.StyleDim.Render(
+						strings.Repeat(
+							" ",
+							column+2,
+						)+fmt.Sprintf(
+							"Allowed range: 1-%d per %s",
+							capacity.MaxCount,
+							habitStreakPeriodUnitLabel(state.HabitStreakDraft.Period),
+						),
+					),
+				),
+			)
 		} else if strings.TrimSpace(capacity.Reason) != "" {
 			rows = append(rows, staticRow(theme.StyleError.Render(capacity.Reason)))
 		}
 	}
-	rows = append(rows, staticRow("",
-		Field(theme, "Matching", column, habitStreakMatchTypeSummary(state.HabitStreakDraft), false),
-		Field(theme, habitStreakTargetLabel(state.HabitStreakDraft), column, momentumTargetsSummary(state), false),
+	rows = append(rows, staticRow(
+		"",
+		Field(
+			theme,
+			"Matching",
+			column,
+			habitStreakMatchTypeSummary(state.HabitStreakDraft),
+			false,
+		),
+		Field(
+			theme,
+			habitStreakTargetLabel(state.HabitStreakDraft),
+			column,
+			momentumTargetsSummary(state),
+			false,
+		),
 	))
 	lines, focus := formBody(rows, state.FocusIdx)
 	if focus >= 0 {
@@ -176,22 +264,72 @@ func momentumDetailsStep(theme Theme, state controllerpkg.State, body []string, 
 	return append(body, lines...), focus
 }
 
-func momentumReviewStep(theme Theme, state controllerpkg.State, body []string, momentumMode bool) []string {
+func momentumReviewStep(
+	theme Theme,
+	state controllerpkg.State,
+	body []string,
+	momentumMode bool,
+) []string {
 	column := len("Description")
 	if momentumMode {
-		body = append(body, Field(theme, "Kind", column, momentumTargetKindLabel(state.HabitStreakDraft.TargetKind), false))
+		body = append(
+			body,
+			Field(
+				theme,
+				"Kind",
+				column,
+				momentumTargetKindLabel(state.HabitStreakDraft.TargetKind),
+				false,
+			),
+		)
 	}
-	body = append(body, Field(theme, "Name", column, theme.StyleHeader.Render(fallback(state.HabitStreakDraft.Name, "-")), false))
-	if state.HabitStreakDraft.Description != nil && strings.TrimSpace(*state.HabitStreakDraft.Description) != "" {
-		body = append(body, Field(theme, "Description", column, strings.TrimSpace(*state.HabitStreakDraft.Description), false))
+	body = append(
+		body,
+		Field(
+			theme,
+			"Name",
+			column,
+			theme.StyleHeader.Render(fallback(state.HabitStreakDraft.Name, "-")),
+			false,
+		),
+	)
+	if state.HabitStreakDraft.Description != nil &&
+		strings.TrimSpace(*state.HabitStreakDraft.Description) != "" {
+		body = append(
+			body,
+			Field(
+				theme,
+				"Description",
+				column,
+				strings.TrimSpace(*state.HabitStreakDraft.Description),
+				false,
+			),
+		)
 	}
-	rule := fmt.Sprintf("%s per %s", habitStreakTargetSummary(state.HabitStreakDraft), habitStreakPeriodUnitLabel(state.HabitStreakDraft.Period))
-	return append(body,
+	rule := fmt.Sprintf(
+		"%s per %s",
+		habitStreakTargetSummary(state.HabitStreakDraft),
+		habitStreakPeriodUnitLabel(state.HabitStreakDraft.Period),
+	)
+	return append(
+		body,
 		Field(theme, "Rule", column, rule, false),
-		Field(theme, habitStreakTargetLabel(state.HabitStreakDraft), column, momentumTargetsSummary(state), false),
+		Field(
+			theme,
+			habitStreakTargetLabel(state.HabitStreakDraft),
+			column,
+			momentumTargetsSummary(state),
+			false,
+		),
 	)
 }
 
 func momentumTargetsSummary(state controllerpkg.State) string {
-	return habitStreakTargetSelectionSummary(state.HabitStreakDraft, state.MomentumRepos, state.MomentumAllIssues, state.MomentumStreams, state.HabitItems)
+	return habitStreakTargetSelectionSummary(
+		state.HabitStreakDraft,
+		state.MomentumRepos,
+		state.MomentumAllIssues,
+		state.MomentumStreams,
+		state.HabitItems,
+	)
 }

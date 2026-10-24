@@ -195,7 +195,13 @@ func pomodoroEstimatedTotalDuration(values pomodoroValues) string {
 func inferPomodoroCycles(
 	totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int,
 ) int {
-	return sharedtypes.InferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak)
+	return sharedtypes.InferPomodoroCycles(
+		totalSeconds,
+		focusSeconds,
+		breakSeconds,
+		longBreakSeconds,
+		cyclesBeforeLongBreak,
+	)
 }
 
 func pomodoroExtendEstimatedTotalDuration(state State) string {

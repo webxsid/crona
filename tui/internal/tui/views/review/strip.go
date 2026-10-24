@@ -15,7 +15,12 @@ func StripRows(theme types.Theme, state types.ContentState, width int) []string 
 	if days < 1 {
 		days = 7
 	}
-	return viewchrome.WithWindowHint(theme, days, width, func(width int) []string { return stripRows(theme, state, width) })
+	return viewchrome.WithWindowHint(
+		theme,
+		days,
+		width,
+		func(width int) []string { return stripRows(theme, state, width) },
+	)
 }
 
 func stripRows(theme types.Theme, state types.ContentState, width int) []string {
@@ -28,7 +33,11 @@ func stripRows(theme types.Theme, state types.ContentState, width int) []string 
 		worked = viewhelpers.FormatCompactDurationSeconds(rollup.WorkedSeconds)
 	}
 	if state.WeeklyFocusScore != nil {
-		focus = fmt.Sprintf("%d  %s", state.WeeklyFocusScore.Score, scoreBar(theme, state.WeeklyFocusScore.Score))
+		focus = fmt.Sprintf(
+			"%d  %s",
+			state.WeeklyFocusScore.Score,
+			scoreBar(theme, state.WeeklyFocusScore.Score),
+		)
 	}
 	if window := state.DashboardWindow; window != nil {
 		if window.PlannedCount > 0 {
@@ -54,7 +63,10 @@ func stripRows(theme types.Theme, state types.ContentState, width int) []string 
 	}
 	groups := [][2]string{
 		{label("Worked") + " " + worked, label("Mood") + " " + mood},
-		{label("Focus") + " " + focus, label("Energy") + " " + energy + "  " + label("Sleep") + " " + sleep},
+		{
+			label("Focus") + " " + focus,
+			label("Energy") + " " + energy + "  " + label("Sleep") + " " + sleep,
+		},
 		{label("Plan") + " " + plan, label("Check-ins") + " " + checkIns},
 		{outcome, label("Risk") + " " + risk},
 	}
@@ -63,5 +75,9 @@ func stripRows(theme types.Theme, state types.ContentState, width int) []string 
 
 func scoreBar(theme types.Theme, score int) string {
 	filled := max(0, min(10, score/10))
-	return theme.StyleHeader.Render(strings.Repeat("█", filled)) + theme.StyleDim.Render(strings.Repeat("░", 10-filled))
+	return theme.StyleHeader.Render(
+		strings.Repeat("█", filled),
+	) + theme.StyleDim.Render(
+		strings.Repeat("░", 10-filled),
+	)
 }

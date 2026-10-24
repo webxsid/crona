@@ -30,13 +30,62 @@ func TestExportDialogs(t *testing.T) {
 		c    formCase
 		want []string
 	}{
-		{formCase{name: "export_report", state: listState("export_report"), title: "Export Report"}, []string{"▶ Daily", "enter choose"}},
-		{formCase{name: "export_report_category", state: listState("export_report_category"), title: "Export Report"}, []string{"▶ Daily", "enter choose category"}},
-		{formCase{name: "export_preset", state: listState("export_preset"), title: "Choose Report Style"}, []string{"Preview", "enter use style"}},
-		{formCase{name: "export_calendar_repo", state: listState("export_calendar_repo"), title: "Calendar Export Repo"}, []string{"▶ Daily", "enter export"}},
-		{formCase{name: "export_summary_range", state: inputState("export_summary_range", 2), title: "Custom Summary Range"}, []string{"Start", "End", "enter continue"}},
-		{formCase{name: "edit_export_reports_dir", state: inputState("edit_export_reports_dir", 1), title: "Export Reports Directory"}, []string{"Path", "ctrl+s save"}},
-		{formCase{name: "edit_export_ics_dir", state: inputState("edit_export_ics_dir", 1), title: "ICS Export Directory"}, []string{"Path", "ctrl+s save"}},
+		{
+			formCase{
+				name:  "export_report",
+				state: listState("export_report"),
+				title: "Export Report",
+			},
+			[]string{"▶ Daily", "enter choose"},
+		},
+		{
+			formCase{
+				name:  "export_report_category",
+				state: listState("export_report_category"),
+				title: "Export Report",
+			},
+			[]string{"▶ Daily", "enter choose category"},
+		},
+		{
+			formCase{
+				name:  "export_preset",
+				state: listState("export_preset"),
+				title: "Choose Report Style",
+			},
+			[]string{"Preview", "enter use style"},
+		},
+		{
+			formCase{
+				name:  "export_calendar_repo",
+				state: listState("export_calendar_repo"),
+				title: "Calendar Export Repo",
+			},
+			[]string{"▶ Daily", "enter export"},
+		},
+		{
+			formCase{
+				name:  "export_summary_range",
+				state: inputState("export_summary_range", 2),
+				title: "Custom Summary Range",
+			},
+			[]string{"Start", "End", "enter continue"},
+		},
+		{
+			formCase{
+				name:  "edit_export_reports_dir",
+				state: inputState("edit_export_reports_dir", 1),
+				title: "Export Reports Directory",
+			},
+			[]string{"Path", "ctrl+s save"},
+		},
+		{
+			formCase{
+				name:  "edit_export_ics_dir",
+				state: inputState("edit_export_ics_dir", 1),
+				title: "ICS Export Directory",
+			},
+			[]string{"Path", "ctrl+s save"},
+		},
 	}
 	for _, tc := range cases {
 		out := assertListChrome(t, tc.c)
@@ -49,9 +98,26 @@ func TestExportDialogs(t *testing.T) {
 }
 
 func TestDetailDialogs(t *testing.T) {
-	entity := controllerpkg.State{Kind: "view_entity", ViewTitle: "Issue", ViewName: "Fix alerts", ViewMeta: "OSS / cli", ViewBody: "Body text"}
-	momentum := controllerpkg.State{Kind: "view_momentum_detail", ViewTitle: "Momentum Detail", ViewName: "Recovery Mix", ViewBody: "Summary", ChoiceItems: []string{"Run", "Read"}}
-	bundle := controllerpkg.State{Kind: "support_bundle_result", ViewTitle: "Support Bundle Ready", ViewName: "bundle.zip", ViewBody: "Saved"}
+	entity := controllerpkg.State{
+		Kind:      "view_entity",
+		ViewTitle: "Issue",
+		ViewName:  "Fix alerts",
+		ViewMeta:  "OSS / cli",
+		ViewBody:  "Body text",
+	}
+	momentum := controllerpkg.State{
+		Kind:        "view_momentum_detail",
+		ViewTitle:   "Momentum Detail",
+		ViewName:    "Recovery Mix",
+		ViewBody:    "Summary",
+		ChoiceItems: []string{"Run", "Read"},
+	}
+	bundle := controllerpkg.State{
+		Kind:      "support_bundle_result",
+		ViewTitle: "Support Bundle Ready",
+		ViewName:  "bundle.zip",
+		ViewBody:  "Saved",
+	}
 	for _, c := range []formCase{
 		{name: "view_entity", state: entity, title: "Issue"},
 		{name: "view_momentum_detail", state: momentum, title: "Momentum Detail"},

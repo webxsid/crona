@@ -12,11 +12,17 @@ import (
 func TestTasksPaneOffersNewTaskLine(t *testing.T) {
 	rendered := ansi.Strip(renderIssues(testTheme(), detailState(), 80, 20))
 	if rowOf(t, rendered, "[a] new task  [A] ad hoc") != rowOf(t, rendered, "Planned")+1 {
-		t.Fatalf("expected [a] new task and [A] ad hoc on their own line under the selector, got %q", rendered)
+		t.Fatalf(
+			"expected [a] new task and [A] ad hoc on their own line under the selector, got %q",
+			rendered,
+		)
 	}
 	state := detailState()
 	state.Pane = "issues"
-	if focused := ansi.Strip(renderIssues(testTheme(), state, 200, 20)); strings.Count(focused, "[A] ad hoc") != 1 {
+	if focused := ansi.Strip(renderIssues(testTheme(), state, 200, 20)); strings.Count(
+		focused,
+		"[A] ad hoc",
+	) != 1 {
 		t.Fatalf("expected [A] ad hoc only on the new-task line, not the card, got %q", focused)
 	}
 }
@@ -92,11 +98,17 @@ func TestHabitsPaneOffersNewHabitAndActionLine(t *testing.T) {
 
 func TestDetailTitleOffersDayKey(t *testing.T) {
 	state := detailState()
-	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] day summary") {
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(
+		strings.Split(rendered, "\n")[0],
+		"[S] day summary",
+	) {
 		t.Fatalf("expected [S] day summary in the detail title row, got %q", rendered)
 	}
 	state.DailyDetailDay = true
-	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(strings.Split(rendered, "\n")[0], "[S] show selection") {
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(
+		strings.Split(rendered, "\n")[0],
+		"[S] show selection",
+	) {
 		t.Fatalf("expected [S] show selection while the day shows, got %q", rendered)
 	}
 }
@@ -104,12 +116,16 @@ func TestDetailTitleOffersDayKey(t *testing.T) {
 func TestTaskActionsFitShortPaneWithPins(t *testing.T) {
 	state := groupedPlannedState(60)
 	for i := range 8 {
-		state.DailyIssues = append(state.DailyIssues, api.Issue{ID: int64(100 + i), Title: "Later", Status: "planned"})
+		state.DailyIssues = append(
+			state.DailyIssues,
+			api.Issue{ID: int64(100 + i), Title: "Later", Status: "planned"},
+		)
 	}
 	state.Pane = "issues"
 	state.Cursors["issues"] = 4
 	rendered := ansi.Strip(renderIssues(testTheme(), state, 60, 7))
-	if lines := strings.Split(rendered, "\n"); len(lines) != 7 || !strings.Contains(rendered, "[s] status") {
+	if lines := strings.Split(rendered, "\n"); len(lines) != 7 ||
+		!strings.Contains(rendered, "[s] status") {
 		t.Fatalf("expected the selected card's actions within 7 rows, got %q", rendered)
 	}
 }
@@ -119,13 +135,19 @@ func TestRunningTimerHidesRefusedKeys(t *testing.T) {
 	state.Pane = "issues"
 	state.SelectedIssueAdhoc = true
 	state.Timer = &api.TimerState{State: "running"}
-	if rendered := ansi.Strip(renderIssues(testTheme(), state, 160, 20)); strings.Contains(rendered, "[e] convert") {
+	if rendered := ansi.Strip(renderIssues(testTheme(), state, 160, 20)); strings.Contains(
+		rendered,
+		"[e] convert",
+	) {
 		t.Fatalf("expected convert hidden while a timer runs, got %q", rendered)
 	}
 	habits := meterHabitState(130)
 	habits.Pane = "habits"
 	habits.Timer = &api.TimerState{State: "running"}
-	if rendered := ansi.Strip(renderHabits(testTheme(), habits, 130, 10)); strings.Contains(rendered, "[D] delete") {
+	if rendered := ansi.Strip(renderHabits(testTheme(), habits, 130, 10)); strings.Contains(
+		rendered,
+		"[D] delete",
+	) {
 		t.Fatalf("expected habit delete hidden while a timer runs, got %q", rendered)
 	}
 }
@@ -136,13 +158,19 @@ func TestTaskActionLineKeepsWholeHints(t *testing.T) {
 		state := detailState()
 		state.Pane = "issues"
 		rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20))
-		row := strings.TrimSpace(strings.Split(rendered, "\n")[rowOf(t, rendered, "Fix sync conflict")+1])
+		row := strings.TrimSpace(
+			strings.Split(rendered, "\n")[rowOf(t, rendered, "Fix sync conflict")+1],
+		)
 		whole := false
 		for _, label := range labels {
 			whole = whole || strings.HasSuffix(row, " "+label)
 		}
 		if !whole {
-			t.Fatalf("width %d: expected the action line to end on a whole hint, got %q", width, row)
+			t.Fatalf(
+				"width %d: expected the action line to end on a whole hint, got %q",
+				width,
+				row,
+			)
 		}
 	}
 }
@@ -152,7 +180,8 @@ func TestDetailTitleTruncatesToKeepDayKey(t *testing.T) {
 	state.DailyIssues[1].Title = strings.Repeat("Very long task title ", 6)
 	for _, width := range []int{40, 70} {
 		header := strings.Split(ansi.Strip(renderDetail(testTheme(), state, width, 30)), "\n")[0]
-		if !strings.Contains(header, "Very long") || !strings.Contains(header, "…") || !strings.HasSuffix(header, "[S] day summary") {
+		if !strings.Contains(header, "Very long") || !strings.Contains(header, "…") ||
+			!strings.HasSuffix(header, "[S] day summary") {
 			t.Fatalf("width %d: expected a truncated title and the day key, got %q", width, header)
 		}
 		if got := ansi.StringWidth(header); got != width {

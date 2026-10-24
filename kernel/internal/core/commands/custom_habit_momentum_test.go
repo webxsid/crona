@@ -90,7 +90,10 @@ func TestMomentumTypesContinueAfterProtectedBucket(t *testing.T) {
 
 					got := state.Definitions[0]
 					if got.Current != 2 || got.Longest != 2 {
-						t.Fatalf("expected protected bucket to preserve and continue streak, got %+v", got)
+						t.Fatalf(
+							"expected protected bucket to preserve and continue streak, got %+v",
+							got,
+						)
 					}
 					rangeCurrent, rangeLongest := computeMomentumSummaryFromCounts(
 						def,
@@ -130,7 +133,13 @@ func TestDailyMomentumContinuesAfterProtectedDay(t *testing.T) {
 
 	state := customHabitMomentumSnapshotState{}
 	for _, date := range []string{"2026-08-07", "2026-08-08", "2026-08-09"} {
-		state = advanceCustomHabitMomentumSnapshotState(state, date, counts, []sharedtypes.HabitStreakDefinition{def}, settings)
+		state = advanceCustomHabitMomentumSnapshotState(
+			state,
+			date,
+			counts,
+			[]sharedtypes.HabitStreakDefinition{def},
+			settings,
+		)
 	}
 
 	got := state.Definitions[0]
@@ -172,7 +181,13 @@ func TestDailyMomentumResetsOnMissAfterProtectedDays(t *testing.T) {
 
 	state := customHabitMomentumSnapshotState{}
 	for _, date := range []string{"2026-08-07", "2026-08-08", "2026-08-09", "2026-08-10"} {
-		state = advanceCustomHabitMomentumSnapshotState(state, date, counts, []sharedtypes.HabitStreakDefinition{def}, settings)
+		state = advanceCustomHabitMomentumSnapshotState(
+			state,
+			date,
+			counts,
+			[]sharedtypes.HabitStreakDefinition{def},
+			settings,
+		)
 	}
 
 	got := state.Definitions[0]

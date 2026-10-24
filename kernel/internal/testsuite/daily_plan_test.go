@@ -688,7 +688,11 @@ func TestDailyPlanEntryPenaltyExplainsScoreAndProjections(t *testing.T) {
 	penalty = plan.Entries[0].Penalty
 	if penalty.HighRisk || penalty.HighRiskThreshold != 3 || plan.Summary.HighRiskIssueCount != 0 ||
 		!penalty.IfPostponedOneDay.BecomesHighRisk {
-		t.Fatalf("expected raised threshold to clear high risk, got %+v / %+v", penalty, plan.Summary)
+		t.Fatalf(
+			"expected raised threshold to clear high risk, got %+v / %+v",
+			penalty,
+			plan.Summary,
+		)
 	}
 
 	currentNow = "2026-03-25T09:05:00Z"

@@ -9,7 +9,13 @@ import (
 )
 
 func reviewState(date string) State {
-	return State{ActiveView: uistate.ViewReview, ActivePane: uistate.PaneReviewDays, Date: date, ReviewWindowEnd: "2026-10-14", ReviewWindowDays: 7}
+	return State{
+		ActiveView:       uistate.ViewReview,
+		ActivePane:       uistate.PaneReviewDays,
+		Date:             date,
+		ReviewWindowEnd:  "2026-10-14",
+		ReviewWindowDays: 7,
+	}
 }
 
 func TestReviewWindowPresets(t *testing.T) {
@@ -48,7 +54,12 @@ func TestReviewStepDayStaysInWindow(t *testing.T) {
 	}
 	s, _ = Handle(s, tea.KeyMsg{Type: tea.KeyDown}, dateDeps(&reloads))
 	if s.Date != "2026-10-09" || s.ReviewWindowEnd != "2026-10-14" || reloads != 1 {
-		t.Fatalf("expected down to move one day inside the window, got %s end %s (%d reloads)", s.Date, s.ReviewWindowEnd, reloads)
+		t.Fatalf(
+			"expected down to move one day inside the window, got %s end %s (%d reloads)",
+			s.Date,
+			s.ReviewWindowEnd,
+			reloads,
+		)
 	}
 	s, _ = Handle(reviewState("2026-10-14"), tea.KeyMsg{Type: tea.KeyDown}, dateDeps(&reloads))
 	if s.Date != "2026-10-14" {

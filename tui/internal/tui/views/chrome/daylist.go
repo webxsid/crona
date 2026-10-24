@@ -21,11 +21,19 @@ type dayLine struct {
 // DayList draws the cursor's window of rows, at most height lines, with a dim divider
 // before each date's first row. Rows keep their order; dividers are never selectable, and
 // the divider of the window's first row is kept in view while the cursor stays visible.
-func DayList(theme Theme, rows []DayRow, cursor, width, height int, summary func(date string) string) []string {
+func DayList(
+	theme Theme,
+	rows []DayRow,
+	cursor, width, height int,
+	summary func(date string) string,
+) []string {
 	lines := make([]dayLine, 0, len(rows)+8)
 	for i, row := range rows {
 		if i == 0 || row.Date != rows[i-1].Date {
-			lines = append(lines, dayLine{text: dayDivider(theme, row.Date, summary(row.Date), width), row: -1})
+			lines = append(
+				lines,
+				dayLine{text: dayDivider(theme, row.Date, summary(row.Date), width), row: -1},
+			)
 		}
 		lines = append(lines, dayLine{text: row.Line, row: i})
 	}
@@ -55,7 +63,12 @@ func dividedList(theme Theme, lines []dayLine, cursor, width, height int) []stri
 		case line.row < 0:
 			out = append(out, line.text)
 		case line.row == cursor:
-			out = append(out, theme.StyleCursor.Render(SelectionCursor+" "+ansi.Truncate(line.text, max(1, width-2), "…")))
+			out = append(
+				out,
+				theme.StyleCursor.Render(
+					SelectionCursor+" "+ansi.Truncate(line.text, max(1, width-2), "…"),
+				),
+			)
 		default:
 			out = append(out, "  "+ansi.Truncate(line.text, max(1, width-2), "…"))
 		}

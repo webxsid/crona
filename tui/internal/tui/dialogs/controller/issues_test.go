@@ -89,7 +89,12 @@ func TestCreateIssueMetaCreateShortcuts(t *testing.T) {
 	} {
 		next, action, status := updateCreateIssueMeta(state, "2026-04-20", test.msg)
 		if status != "" || action == nil || action.IssueCreateFollowUp != test.followUp {
-			t.Fatalf("expected follow-up %d, got action=%+v status=%q", test.followUp, action, status)
+			t.Fatalf(
+				"expected follow-up %d, got action=%+v status=%q",
+				test.followUp,
+				action,
+				status,
+			)
 		}
 		_ = next
 	}
@@ -114,7 +119,12 @@ func TestCreateIssueDefaultCreateShortcuts(t *testing.T) {
 	} {
 		_, action, status := updateCreateIssueDefault(state, ctx, "2026-04-20", test.msg)
 		if status != "" || action == nil || action.IssueCreateFollowUp != test.followUp {
-			t.Fatalf("expected follow-up %d, got action=%+v status=%q", test.followUp, action, status)
+			t.Fatalf(
+				"expected follow-up %d, got action=%+v status=%q",
+				test.followUp,
+				action,
+				status,
+			)
 		}
 	}
 }
@@ -129,7 +139,12 @@ func TestCreateIssueDefaultArrowDoesNotChangeCreateAction(t *testing.T) {
 		tea.KeyMsg{Type: tea.KeyLeft},
 	)
 	if action != nil || status != "" || next.FocusIdx != 2 {
-		t.Fatalf("expected left arrow to leave focus unchanged, got focus=%d, action=%+v, status=%q", next.FocusIdx, action, status)
+		t.Fatalf(
+			"expected left arrow to leave focus unchanged, got focus=%d, action=%+v, status=%q",
+			next.FocusIdx,
+			action,
+			status,
+		)
 	}
 }
 
@@ -213,13 +228,16 @@ func TestValidateDueDateRejectsPastAndConfiguredRestDates(t *testing.T) {
 		DueDateRestWeekdays: []int{6},
 		DueDateRestDates:    []string{"2026-04-23"},
 	}
-	if err := ValidateDueDate(state, "2026-04-19"); err == nil || err.Error() != "due dates cannot be in the past" {
+	if err := ValidateDueDate(state, "2026-04-19"); err == nil ||
+		err.Error() != "due dates cannot be in the past" {
 		t.Fatalf("expected past-date validation error, got %v", err)
 	}
-	if err := ValidateDueDate(state, "2026-04-23"); err == nil || err.Error() != "due dates cannot fall on configured rest days" {
+	if err := ValidateDueDate(state, "2026-04-23"); err == nil ||
+		err.Error() != "due dates cannot fall on configured rest days" {
 		t.Fatalf("expected explicit rest-date validation error, got %v", err)
 	}
-	if err := ValidateDueDate(state, "2026-04-25"); err == nil || err.Error() != "due dates cannot fall on configured rest days" {
+	if err := ValidateDueDate(state, "2026-04-25"); err == nil ||
+		err.Error() != "due dates cannot fall on configured rest days" {
 		t.Fatalf("expected weekday rest-date validation error, got %v", err)
 	}
 	if err := ValidateDueDate(state, "2026-04-24"); err != nil {
@@ -234,9 +252,18 @@ func TestDueDatePickerRejectsInvalidSelection(t *testing.T) {
 		DateCursorValue: "2026-04-19",
 		DueDateToday:    "2026-04-20",
 	}
-	next, action, status := updateDatePicker(state, UpdateContext{}, "2026-04-20", tea.KeyMsg{Type: tea.KeyEnter})
+	next, action, status := updateDatePicker(
+		state,
+		UpdateContext{},
+		"2026-04-20",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if action != nil || status != "" {
-		t.Fatalf("expected invalid selection to emit no action/status, got action=%+v status=%q", action, status)
+		t.Fatalf(
+			"expected invalid selection to emit no action/status, got action=%+v status=%q",
+			action,
+			status,
+		)
 	}
 	if next.ErrorMessage != "due dates cannot be in the past" {
 		t.Fatalf("expected picker validation error, got %q", next.ErrorMessage)
@@ -250,9 +277,18 @@ func TestDirectIssueDueDatePickerRejectsInvalidSelection(t *testing.T) {
 		DateCursorValue: "2026-04-19",
 		DueDateToday:    "2026-04-20",
 	}
-	next, action, status := updateDatePicker(state, UpdateContext{}, "2026-04-10", tea.KeyMsg{Type: tea.KeyEnter})
+	next, action, status := updateDatePicker(
+		state,
+		UpdateContext{},
+		"2026-04-10",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if action != nil || status != "" {
-		t.Fatalf("expected invalid direct selection to emit no action/status, got action=%+v status=%q", action, status)
+		t.Fatalf(
+			"expected invalid direct selection to emit no action/status, got action=%+v status=%q",
+			action,
+			status,
+		)
 	}
 	if next.ErrorMessage != "due dates cannot be in the past" {
 		t.Fatalf("expected direct picker validation error, got %q", next.ErrorMessage)

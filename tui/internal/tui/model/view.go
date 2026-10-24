@@ -57,8 +57,20 @@ func (m Model) layoutState() layoutpkg.State {
 		),
 	})
 	switch view {
-	case ViewDaily, ViewDefault, ViewHabitList, ViewReview, ViewMomentum, ViewSessionHistory, ViewHabitHistory, ViewOps,
-		ViewSettings, ViewAlerts, ViewReports, ViewConfig, ViewUpdates, ViewSupport:
+	case ViewDaily,
+		ViewDefault,
+		ViewHabitList,
+		ViewReview,
+		ViewMomentum,
+		ViewSessionHistory,
+		ViewHabitHistory,
+		ViewOps,
+		ViewSettings,
+		ViewAlerts,
+		ViewReports,
+		ViewConfig,
+		ViewUpdates,
+		ViewSupport:
 		// These panes show their own keys.
 		paneActions = nil
 	}
@@ -97,7 +109,9 @@ func (m Model) layoutState() layoutpkg.State {
 	// Without a detail pane, Daily's day summary key joins the bottom row.
 	if view == ViewDaily && state.ContentState.HistoricalAwayDate == "" &&
 		viewhelpers.ClassFor(state.ContentState.Width) != viewhelpers.WidthWide {
-		state.GlobalActions = append([]string{viewchrome.KeyHint(layoutpkg.ViewTheme(), "S", "day summary")}, state.GlobalActions...)
+		state.GlobalActions = append(
+			[]string{viewchrome.KeyHint(layoutpkg.ViewTheme(), "S", "day summary")},
+			state.GlobalActions...)
 	}
 	if view == ViewAway && m.view != ViewAway {
 		state.ContentState.View = "away"

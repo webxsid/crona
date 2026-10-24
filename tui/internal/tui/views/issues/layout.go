@@ -28,7 +28,9 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	}
 	scopeWidth := 24
 	listWidth := state.Width - scopeWidth - 3
-	columns := []string{scopepane.Render(theme, state, scopepane.IssueCounts(state.AllIssues), scopeWidth, height)}
+	columns := []string{
+		scopepane.Render(theme, state, scopepane.IssueCounts(state.AllIssues), scopeWidth, height),
+	}
 	detailWidth := 0
 	if state.Width >= 160 {
 		detailWidth = (listWidth - 3) / 2
@@ -45,7 +47,13 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			title = issue.Title
 			lines = daily.IssueDetailLines(theme, state, issue, detailWidth-2)
 		}
-		columns = append(columns, viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Width: detailWidth, Height: height, Lines: lines}))
+		columns = append(
+			columns,
+			viewchrome.RenderSection(
+				theme,
+				viewchrome.Section{Title: title, Width: detailWidth, Height: height, Lines: lines},
+			),
+		)
 	}
 	rows = append(rows, viewchrome.JoinColumns(theme, height, columns...))
 	return strings.Join(rows, "\n")

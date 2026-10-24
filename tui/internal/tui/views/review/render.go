@@ -50,24 +50,66 @@ func Render(theme types.Theme, state types.ContentState) string {
 	case viewhelpers.WidthMedium:
 		secondWidth := state.Width - daysWidth - 3
 		if state.HistoricalAwayDate != "" {
-			rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), renderAway(theme, state, secondWidth, height)))
+			rows = append(
+				rows,
+				viewchrome.JoinColumns(
+					theme,
+					height,
+					renderDays(theme, state, daysWidth, height, ""),
+					renderAway(theme, state, secondWidth, height),
+				),
+			)
 			break
 		}
-		second := renderDetail(theme, state, secondWidth, height, viewchrome.KeyHint(theme, "S", "time"))
+		second := renderDetail(
+			theme,
+			state,
+			secondWidth,
+			height,
+			viewchrome.KeyHint(theme, "S", "time"),
+		)
 		if state.ReviewShowTime {
-			second = renderTime(theme, state, secondWidth, height, viewchrome.KeyHint(theme, "S", "day"))
+			second = renderTime(
+				theme,
+				state,
+				secondWidth,
+				height,
+				viewchrome.KeyHint(theme, "S", "day"),
+			)
 		}
-		rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), second))
+		rows = append(
+			rows,
+			viewchrome.JoinColumns(
+				theme,
+				height,
+				renderDays(theme, state, daysWidth, height, ""),
+				second,
+			),
+		)
 	default:
 		detailWidth := max(minDetailWidth, (state.Width-daysWidth-6)*2/5)
 		middleWidth := state.Width - daysWidth - detailWidth - 6
 		if state.HistoricalAwayDate != "" {
-			rows = append(rows, viewchrome.JoinColumns(theme, height, renderDays(theme, state, daysWidth, height, ""), renderAway(theme, state, middleWidth+detailWidth+3, height)))
+			rows = append(
+				rows,
+				viewchrome.JoinColumns(
+					theme,
+					height,
+					renderDays(theme, state, daysWidth, height, ""),
+					renderAway(theme, state, middleWidth+detailWidth+3, height),
+				),
+			)
 			break
 		}
 		middle := renderTrends(theme, state, middleWidth, height)
 		if state.ReviewShowTime {
-			middle = renderTime(theme, state, middleWidth, height, viewchrome.KeyHint(theme, "S", "trends"))
+			middle = renderTime(
+				theme,
+				state,
+				middleWidth,
+				height,
+				viewchrome.KeyHint(theme, "S", "trends"),
+			)
 		}
 		rows = append(rows, viewchrome.JoinColumns(theme, height,
 			renderDays(theme, state, daysWidth, height, ""),
@@ -78,7 +120,12 @@ func Render(theme types.Theme, state types.ContentState) string {
 	return strings.Join(rows, "\n")
 }
 
-func renderTime(theme types.Theme, state types.ContentState, width, height int, meta string) string {
+func renderTime(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	meta string,
+) string {
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: "Time", Meta: meta, Width: width, Height: height, Lines: TimeLines(theme, state, width-2),
 	})
@@ -99,7 +146,12 @@ func TimeLines(theme types.Theme, state types.ContentState, width int) []string 
 }
 
 // renderDetail shows the selected day; meta is the medium layout's swap key.
-func renderDetail(theme types.Theme, state types.ContentState, width, height int, meta string) string {
+func renderDetail(
+	theme types.Theme,
+	state types.ContentState,
+	width, height int,
+	meta string,
+) string {
 	titleStyle := theme.StyleHeader.Bold(true)
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: dayTitle(state.DashboardDate), Meta: meta, TitleStyle: &titleStyle,
@@ -111,12 +163,25 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 // and the day list stay put.
 func renderAway(theme types.Theme, state types.ContentState, width, height int) string {
 	lines := make([]string, max(0, (height-2)/2))
-	lines = append(lines, lipgloss.PlaceHorizontal(max(1, width-2), lipgloss.Center, theme.StyleHeader.Render(awayMessage(state))))
-	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Away", Width: width, Height: height, Lines: lines})
+	lines = append(
+		lines,
+		lipgloss.PlaceHorizontal(
+			max(1, width-2),
+			lipgloss.Center,
+			theme.StyleHeader.Render(awayMessage(state)),
+		),
+	)
+	return viewchrome.RenderSection(
+		theme,
+		viewchrome.Section{Title: "Away", Width: width, Height: height, Lines: lines},
+	)
 }
 
 func awayMessage(state types.ContentState) string {
-	return fmt.Sprintf("You chose to rest and recover on %s.", helperpkg.FormatDisplayDate(state.HistoricalAwayDate, state.Settings))
+	return fmt.Sprintf(
+		"You chose to rest and recover on %s.",
+		helperpkg.FormatDisplayDate(state.HistoricalAwayDate, state.Settings),
+	)
 }
 
 // DetailLines is the selected day's summary, then the window's risk and its drivers; a past

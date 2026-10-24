@@ -58,14 +58,19 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 			next := m.applyOverlayState(*state)
 			next.sessionDetailOpen = false
 			next.sessionDetail = nil
-			next = next.withDialogState(dialogstate.OpenEditSessionHistory(next.dialogSnapshot().Dialog, detail))
+			next = next.withDialogState(
+				dialogstate.OpenEditSessionHistory(next.dialogSnapshot().Dialog, detail),
+			)
 			*state = next.overlayState()
 		},
 		OpenDeleteSessionHistory: func(state *overlaypkg.State, id string) {
 			next := m.applyOverlayState(*state)
 			next.sessionDetailOpen = false
 			next.sessionDetail = nil
-			next = next.withDialogState(next.dialogSnapshot().OpenConfirmDeleteEntity("session_history", id, "this session history entry"))
+			next = next.withDialogState(
+				next.dialogSnapshot().
+					OpenConfirmDeleteEntity("session_history", id, "this session history entry"),
+			)
 			*state = next.overlayState()
 		},
 		SessionCommit: helperpkg.SessionCommit,

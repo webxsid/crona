@@ -1775,7 +1775,9 @@ type CalendarExportResult struct {
 }
 
 // InferPomodoroCycles recovers a pomodoro's planned focus cycles from its total length.
-func InferPomodoroCycles(totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int) int {
+func InferPomodoroCycles(
+	totalSeconds, focusSeconds, breakSeconds, longBreakSeconds, cyclesBeforeLongBreak int,
+) int {
 	if totalSeconds <= 0 || focusSeconds <= 0 || breakSeconds <= 0 {
 		return 1
 	}

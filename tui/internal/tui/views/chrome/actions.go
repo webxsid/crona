@@ -87,7 +87,12 @@ func WithoutDateKeys(actions []string) []string {
 		plain := ansi.Strip(action)
 		key, _, _ := strings.Cut(plain, " ")
 		switch {
-		case key == "[,/.]", key == "[g]", key == "[+/-/0]", key == "[+/-]", key == "[0]", plain == "[E] calendar":
+		case key == "[,/.]",
+			key == "[g]",
+			key == "[+/-/0]",
+			key == "[+/-]",
+			key == "[0]",
+			plain == "[E] calendar":
 			continue
 		}
 		out = append(out, action)
@@ -157,7 +162,9 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render("[i]") + theme.StyleDim.Render(" context"),
 				theme.StyleHeader.Render("[s]") + theme.StyleDim.Render(" change status"),
 			}
-			if sharedtypes.NormalizeTimerHardLimitKind(state.HardLimitKind) == sharedtypes.TimerHardLimitKindPomodoro {
+			if sharedtypes.NormalizeTimerHardLimitKind(
+				state.HardLimitKind,
+			) == sharedtypes.TimerHardLimitKindPomodoro {
 				if label := helperpkg.PomodoroAdvanceActionLabel(&api.TimerState{
 					State:           state.TimerState,
 					SegmentType:     segmentPtr(state.TimerSegment),
@@ -165,7 +172,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 					HardLimitActive: true,
 					HardLimitKind:   state.HardLimitKind,
 				}); label != "" {
-					actions = append([]string{theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" "+label)}, actions...)
+					actions = append(
+						[]string{
+							theme.StyleHeader.Render("[z]") + theme.StyleDim.Render(" "+label),
+						},
+						actions...)
 				}
 			}
 			return actions
@@ -312,8 +323,16 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 		timerIdle := state.TimerState == "" || state.TimerState == "idle"
 		if state.SelectedIssueAdhoc {
 			return []string{
-				theme.StyleHeader.Render("[enter]") + theme.StyleDim.Render(" review ad hoc session"),
-				theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" convert to regular issue"),
+				theme.StyleHeader.Render(
+					"[enter]",
+				) + theme.StyleDim.Render(
+					" review ad hoc session",
+				),
+				theme.StyleHeader.Render(
+					"[e]",
+				) + theme.StyleDim.Render(
+					" convert to regular issue",
+				),
 			}
 		}
 		if state.View == "daily" {
@@ -375,7 +394,11 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			theme.StyleHeader.Render("[e]") + theme.StyleDim.Render(" edit habit"),
 		}
 		if state.TimerState == "" || state.TimerState == "idle" {
-			actions = append(actions, theme.StyleHeader.Render("[D]")+theme.StyleDim.Render(" delete"), theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"))
+			actions = append(
+				actions,
+				theme.StyleHeader.Render("[D]")+theme.StyleDim.Render(" delete"),
+				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log completion"),
+			)
 		}
 		return actions
 	case "ops":

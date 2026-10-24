@@ -28,7 +28,10 @@ func (m Model) sessionPreviewTick(before string, wasWide bool) tea.Cmd {
 	if id == "" || m.width < 100 || (id == before && wasWide) {
 		return nil
 	}
-	return tea.Tick(sessionPreviewDelay, func(time.Time) tea.Msg { return commands.SessionPreviewTickMsg{ID: id} })
+	return tea.Tick(
+		sessionPreviewDelay,
+		func(time.Time) tea.Msg { return commands.SessionPreviewTickMsg{ID: id} },
+	)
 }
 
 func (m Model) handleSessionPreview(msg tea.Msg) (Model, tea.Cmd, bool) {

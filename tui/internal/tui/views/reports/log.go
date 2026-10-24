@@ -16,7 +16,10 @@ import (
 
 // renderLog lays the exported reports out as a strip over a day list and a detail pane.
 func renderLog(theme types.Theme, state types.ContentState) string {
-	indices := viewhelpers.FilteredStrings(reportItems(state.ExportReports), state.Filters["export_reports"])
+	indices := viewhelpers.FilteredStrings(
+		reportItems(state.ExportReports),
+		state.Filters["export_reports"],
+	)
 	reports := make([]api.ExportReportFile, 0, len(indices))
 	for _, index := range indices {
 		reports = append(reports, state.ExportReports[index])
@@ -31,7 +34,10 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 	case state.ExportAssets == nil:
 		body = []string{theme.StyleDim.Render("Loading…")}
 	case len(reports) == 0:
-		body = []string{theme.StyleDim.Render("No exported reports yet"), theme.StyleDim.Render("Export from Insights to see reports here")}
+		body = []string{
+			theme.StyleDim.Render("No exported reports yet"),
+			theme.StyleDim.Render("Export from Insights to see reports here"),
+		}
 	default:
 		rows := make([]viewchrome.DayRow, 0, len(reports))
 		counts := map[string]int{}
@@ -45,7 +51,14 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 			parts = append(parts, reportPeriod(report), theme.StyleDim.Render(report.Format))
 			rows = append(rows, viewchrome.DayRow{Date: date, Line: strings.Join(parts, "  ")})
 		}
-		body = viewchrome.DayList(theme, rows, cursor, listWidth-1, height-1, func(date string) string { return fmt.Sprint(counts[date]) })
+		body = viewchrome.DayList(
+			theme,
+			rows,
+			cursor,
+			listWidth-1,
+			height-1,
+			func(date string) string { return fmt.Sprint(counts[date]) },
+		)
 	}
 	panes := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: "Reports", Meta: fmt.Sprint(len(reports)), Focused: true,
@@ -106,7 +119,16 @@ func reportDetailLines(theme types.Theme, report api.ExportReportFile, width int
 	}
 	lines := []string{}
 	for _, field := range fields {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("%-8s", field[0]))+" "+ansi.Truncate(field[1], max(1, width-9), "…"))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(
+				fmt.Sprintf("%-8s", field[0]),
+			)+" "+ansi.Truncate(
+				field[1],
+				max(1, width-9),
+				"…",
+			),
+		)
 	}
 	lines = append(lines, "", theme.StyleDim.Render("Path"))
 	return append(lines, strings.Split(ansi.Hardwrap(report.Path, max(1, width), false), "\n")...)

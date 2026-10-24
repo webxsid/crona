@@ -23,7 +23,15 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	focusOf := map[string]int{"title": 0, "description": 1, "estimate": 2, "due": 3}
 	if state.Kind == "create_issue_default" {
 		title, estimate, due = 2, 3, 4
-		focusOf = map[string]int{"repo": 0, "stream": 1, "title": 2, "description": 3, "estimate": 4, "due": 5, "summary": 6}
+		focusOf = map[string]int{
+			"repo":        0,
+			"stream":      1,
+			"title":       2,
+			"description": 3,
+			"estimate":    4,
+			"due":         5,
+			"summary":     6,
+		}
 	}
 	focused := func(name string) bool { idx, ok := focusOf[name]; return ok && state.FocusIdx == idx }
 	at := func(name string) int {
@@ -44,20 +52,71 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
 		rows = append(rows, staticRow(theme.StyleDim.Render(state.ViewName), ""))
 	}
-	rows = append(rows,
-		fieldRow(at("title"), Field(theme, "Title", column, bareInput(state.Inputs[title], full, "required"), focused("title"))),
-		textareaRow(at("description"), Textarea(theme, "Description", column, bareTextarea(state), focused("description"), inner)),
+	rows = append(
+		rows,
+		fieldRow(
+			at("title"),
+			Field(
+				theme,
+				"Title",
+				column,
+				bareInput(state.Inputs[title], full, "required"),
+				focused("title"),
+			),
+		),
+		textareaRow(
+			at("description"),
+			Textarea(
+				theme,
+				"Description",
+				column,
+				bareTextarea(state),
+				focused("description"),
+				inner,
+			),
+		),
 		pairRow(
-			Field(theme, "Estimate", column, bareInput(state.Inputs[estimate], half, "45m, 1h30m"), focused("estimate")),
-			Field(theme, "Due", dueColumn, bareInput(state.Inputs[due], half, "YYYY-MM-DD"), focused("due")),
-			at("estimate"), at("due"), inner,
+			Field(
+				theme,
+				"Estimate",
+				column,
+				bareInput(state.Inputs[estimate], half, "45m, 1h30m"),
+				focused("estimate"),
+			),
+			Field(
+				theme,
+				"Due",
+				dueColumn,
+				bareInput(state.Inputs[due], half, "YYYY-MM-DD"),
+				focused("due"),
+			),
+			at("estimate"),
+			at("due"),
+			inner,
 		),
 	)
 	if state.Kind == "create_issue_default" {
-		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
+		rows = append(
+			rows,
+			staticRow(""),
+			repoPickerRow(theme, state, column, full, 0),
+			streamPickerRow(theme, state, column, full, 1),
+		)
 	}
 	if state.AdhocTimer {
-		rows = append(rows, fieldRow(at("summary"), Field(theme, "Summary", column, bareInput(state.Inputs[5], full, "required"), focused("summary"))))
+		rows = append(
+			rows,
+			fieldRow(
+				at("summary"),
+				Field(
+					theme,
+					"Summary",
+					column,
+					bareInput(state.Inputs[5], full, "required"),
+					focused("summary"),
+				),
+			),
+		)
 	}
 	primary, _ := splitHints(issueCreateHint(state))
 	return renderForm(theme, state, FormSpec{
@@ -163,7 +222,12 @@ func renderCheckoutContext(theme Theme, state controllerpkg.State) string {
 		Current: state.StreamSelectorLabel, Options: state.StreamOptionLabels, Selected: state.StreamIndex,
 		Placeholder: state.StreamSelectorLabel,
 	})...)
-	footer := Footer(theme, "enter set context", []string{"c clear", "tab move", "type filter", "←/→ choose"}, inner)
+	footer := Footer(
+		theme,
+		"enter set context",
+		[]string{"c clear", "tab move", "type filter", "←/→ choose"},
+		inner,
+	)
 	return Frame(theme, FrameSpec{
 		Title: "Checkout Context", Body: body, Footer: withError(theme, state, footer),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focus, Inner: inner,

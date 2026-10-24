@@ -8,13 +8,18 @@ import (
 )
 
 func groupRows() []GroupRow {
-	return []GroupRow{{Group: "Dates", Line: "Date Format"}, {Group: "Dates", Line: "Week Start"}, {Group: "Danger", Line: "Reset", Danger: true}}
+	return []GroupRow{
+		{Group: "Dates", Line: "Date Format"},
+		{Group: "Dates", Line: "Week Start"},
+		{Group: "Danger", Line: "Reset", Danger: true},
+	}
 }
 
 func TestGroupListDividesGroups(t *testing.T) {
 	lines := GroupList(Theme{}, groupRows(), 1, 30, 10)
 	text := ansi.Strip(strings.Join(lines, "\n"))
-	if strings.Count(text, "── ") != 2 || !strings.Contains(text, "── Dates ") || !strings.Contains(text, "▶ Week Start") {
+	if strings.Count(text, "── ") != 2 || !strings.Contains(text, "── Dates ") ||
+		!strings.Contains(text, "▶ Week Start") {
 		t.Fatalf("expected two dividers and the cursor row, got\n%s", text)
 	}
 }
@@ -27,7 +32,21 @@ func TestGroupListKeepsDividerInView(t *testing.T) {
 }
 
 func TestHelpLinesMarksCurrent(t *testing.T) {
-	text := ansi.Strip(strings.Join(HelpLines(Theme{}, RowHelp{Description: "First day.", Options: []string{"Monday", "Sunday"}, Keys: []string{"[←/→] change"}}, "sunday", 30), "\n"))
+	text := ansi.Strip(
+		strings.Join(
+			HelpLines(
+				Theme{},
+				RowHelp{
+					Description: "First day.",
+					Options:     []string{"Monday", "Sunday"},
+					Keys:        []string{"[←/→] change"},
+				},
+				"sunday",
+				30,
+			),
+			"\n",
+		),
+	)
 	for _, want := range []string{"First day.", "○ Monday", "● Sunday", "[←/→] change"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q in\n%s", want, text)
@@ -66,13 +85,15 @@ func TestPackHintsKeepsHintsWhole(t *testing.T) {
 	if len(got) != 3 || got[1] != "[o] open migration guide" {
 		t.Fatalf("expected whole hints per line, got %q", got)
 	}
-	if got := PackHints([]string{"[a] one", "[b] two"}, 30); len(got) != 1 || got[0] != "[a] one  [b] two" {
+	if got := PackHints([]string{"[a] one", "[b] two"}, 30); len(got) != 1 ||
+		got[0] != "[a] one  [b] two" {
 		t.Fatalf("expected hints packed onto one line, got %q", got)
 	}
 }
 
 func TestLabelCellFitsColumn(t *testing.T) {
-	if got := LabelCell("Add Plan-the-Day Reminder", 24); ansi.StringWidth(got) != 24 || !strings.HasSuffix(got, "…") {
+	if got := LabelCell("Add Plan-the-Day Reminder", 24); ansi.StringWidth(got) != 24 ||
+		!strings.HasSuffix(got, "…") {
 		t.Fatalf("expected a 24-cell truncated label, got %q", got)
 	}
 	if got := LabelCell("Sound", 8); got != "Sound   " {

@@ -20,7 +20,14 @@ func TestFormBodyFocusLine(t *testing.T) {
 func TestFormFooterPaddedToTallest(t *testing.T) {
 	hints := func(focus int) []string {
 		if focus == 1 {
-			return []string{"aaaa one", "bbbb two", "cccc three", "dddd four", "eeee five", "ffff six"}
+			return []string{
+				"aaaa one",
+				"bbbb two",
+				"cccc three",
+				"dddd four",
+				"eeee five",
+				"ffff six",
+			}
 		}
 		return nil
 	}

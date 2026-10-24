@@ -55,7 +55,8 @@ func TestUpdateSessionHistoryPreservesNotesAndReplacesSegments(t *testing.T) {
 			t.Errorf("updated notes lost %q: %v", want, detail.Notes)
 		}
 	}
-	if len(detail.Segments) != 1 || detail.Segments[0].SegmentType != sharedtypes.SessionSegmentWork {
+	if len(detail.Segments) != 1 ||
+		detail.Segments[0].SegmentType != sharedtypes.SessionSegmentWork {
 		t.Fatalf("expected replacement work segment, got %+v", detail.Segments)
 	}
 	parsed := sessionnotes.Parse(detail.Notes)
@@ -78,7 +79,8 @@ func TestSessionHistoryManagementRequiresEnabledAndWithinWindow(t *testing.T) {
 	}
 	request := shareddto.UpdateSessionHistoryRequest{ID: today.ID,
 		StartTime: "2026-05-24T09:00:00Z", EndTime: "2026-05-24T09:01:00Z"}
-	if _, err := UpdateSessionHistory(ctx, coreCtx, request); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if _, err := UpdateSessionHistory(ctx, coreCtx, request); err == nil ||
+		!strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("expected disabled history edit rejection, got %v", err)
 	}
 	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyManageHistory, true); err != nil {
@@ -132,22 +134,36 @@ func TestUpdateSessionHistoryRejectsInvalidSessionAndSegmentRanges(t *testing.T)
 		name   string
 		change func(*shareddto.UpdateSessionHistoryRequest)
 	}{
-		{name: "malformed session time", change: func(request *shareddto.UpdateSessionHistoryRequest) {
-			request.EndTime = "not-a-time"
-		}},
+		{
+			name: "malformed session time",
+			change: func(request *shareddto.UpdateSessionHistoryRequest) {
+				request.EndTime = "not-a-time"
+			},
+		},
 		{name: "end before start", change: func(request *shareddto.UpdateSessionHistoryRequest) {
 			request.EndTime = request.StartTime
 		}},
-		{name: "segment outside session", change: func(request *shareddto.UpdateSessionHistoryRequest) {
-			request.Segments = []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork,
-				StartTime: "2026-05-24T08:00:00Z", EndTime: historyTestStringPointer("2026-05-24T08:01:00Z")}}
-		}},
-		{name: "overlapping segments", change: func(request *shareddto.UpdateSessionHistoryRequest) {
-			request.Segments = append(request.Segments, request.Segments[0])
-		}},
-		{name: "invalid segment type", change: func(request *shareddto.UpdateSessionHistoryRequest) {
-			request.Segments[0].SegmentType = "unknown"
-		}},
+		{
+			name: "segment outside session",
+			change: func(request *shareddto.UpdateSessionHistoryRequest) {
+				request.Segments = []sharedtypes.SessionSegment{
+					{SegmentType: sharedtypes.SessionSegmentWork,
+						StartTime: "2026-05-24T08:00:00Z", EndTime: historyTestStringPointer("2026-05-24T08:01:00Z")},
+				}
+			},
+		},
+		{
+			name: "overlapping segments",
+			change: func(request *shareddto.UpdateSessionHistoryRequest) {
+				request.Segments = append(request.Segments, request.Segments[0])
+			},
+		},
+		{
+			name: "invalid segment type",
+			change: func(request *shareddto.UpdateSessionHistoryRequest) {
+				request.Segments[0].SegmentType = "unknown"
+			},
+		},
 	}
 	for _, test := range invalid {
 		t.Run(test.name, func(t *testing.T) {
@@ -172,7 +188,16 @@ func TestHistoryEditNormalizesUTCAndUsesSegmentDuration(t *testing.T) {
 	}
 	mustMakeIssuePlanned(t, ctx, c, issue.ID)
 	commit := "Work"
-	session, err := LogManualSession(ctx, c, ManualSessionInput{IssueID: issue.ID, Date: "2026-05-24", WorkDurationSeconds: 1800, CommitMessage: &commit})
+	session, err := LogManualSession(
+		ctx,
+		c,
+		ManualSessionInput{
+			IssueID:             issue.ID,
+			Date:                "2026-05-24",
+			WorkDurationSeconds: 1800,
+			CommitMessage:       &commit,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +209,25 @@ func TestHistoryEditNormalizesUTCAndUsesSegmentDuration(t *testing.T) {
 	})
 	defer unsub()
 	segmentEnd := "2026-05-24T14:45:00+05:30"
-	_, err = UpdateSessionHistory(ctx, c, shareddto.UpdateSessionHistoryRequest{ID: session.ID, StartTime: "2026-05-24T14:30:00+05:30", EndTime: "2026-05-24T15:00:00+05:30", EditableNotes: sharedtypes.ParsedSessionNotes{sharedtypes.SessionNoteSectionCommit: commit}, Segments: []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork, StartTime: "2026-05-24T14:30:00+05:30", EndTime: &segmentEnd}}})
+	_, err = UpdateSessionHistory(
+		ctx,
+		c,
+		shareddto.UpdateSessionHistoryRequest{
+			ID:        session.ID,
+			StartTime: "2026-05-24T14:30:00+05:30",
+			EndTime:   "2026-05-24T15:00:00+05:30",
+			EditableNotes: sharedtypes.ParsedSessionNotes{
+				sharedtypes.SessionNoteSectionCommit: commit,
+			},
+			Segments: []sharedtypes.SessionSegment{
+				{
+					SegmentType: sharedtypes.SessionSegmentWork,
+					StartTime:   "2026-05-24T14:30:00+05:30",
+					EndTime:     &segmentEnd,
+				},
+			},
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -192,10 +235,13 @@ func TestHistoryEditNormalizesUTCAndUsesSegmentDuration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if detail.StartTime != "2026-05-24T09:00:00Z" || *detail.EndTime != "2026-05-24T09:30:00Z" || detail.Segments[0].StartTime != "2026-05-24T09:00:00Z" || *detail.Segments[0].EndTime != "2026-05-24T09:15:00Z" {
+	if detail.StartTime != "2026-05-24T09:00:00Z" || *detail.EndTime != "2026-05-24T09:30:00Z" ||
+		detail.Segments[0].StartTime != "2026-05-24T09:00:00Z" ||
+		*detail.Segments[0].EndTime != "2026-05-24T09:15:00Z" {
 		t.Fatalf("noncanonical timestamps: %+v", detail)
 	}
-	if detail.DurationSeconds == nil || *detail.DurationSeconds != 900 || detail.WorkSummary.WorkSeconds != 900 {
+	if detail.DurationSeconds == nil || *detail.DurationSeconds != 900 ||
+		detail.WorkSummary.WorkSeconds != 900 {
 		t.Fatalf("segment duration mismatch: %+v", detail)
 	}
 	since, until := "2026-05-24T08:59:00Z", "2026-05-24T09:01:00Z"

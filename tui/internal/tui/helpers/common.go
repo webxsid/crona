@@ -30,7 +30,9 @@ func IssueScheduleLabel(issue api.Issue, settings *api.CoreSettings) string {
 
 func PomodoroAdvanceActionLabel(timer *api.TimerState) string {
 	if timer == nil || timer.State == "idle" || !timer.HardLimitActive ||
-		sharedtypes.NormalizeTimerHardLimitKind(timer.HardLimitKind) != sharedtypes.TimerHardLimitKindPomodoro {
+		sharedtypes.NormalizeTimerHardLimitKind(
+			timer.HardLimitKind,
+		) != sharedtypes.TimerHardLimitKindPomodoro {
 		return ""
 	}
 	next := timer.NextSegmentType

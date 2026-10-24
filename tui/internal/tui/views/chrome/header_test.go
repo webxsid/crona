@@ -20,8 +20,10 @@ func headerState(view string) HeaderState {
 			HardLimitWorkSeconds: 1500, HardLimitBreakSeconds: 300, HardLimitTotalSeconds: 7200, HardLimitRemainingSeconds: 6000,
 			HardLimitCycles: 4, CompletedWorkCycles: 1, IssueWorkedSeconds: 1200, IssueCompletedSessions: 2,
 		},
-		AllIssues: []api.IssueWithMeta{{Issue: api.Issue{ID: issueID, Title: "Improve install docs", EstimateMinutes: &est}}},
-		Health:    &api.Health{OK: 1, DB: true},
+		AllIssues: []api.IssueWithMeta{
+			{Issue: api.Issue{ID: issueID, Title: "Improve install docs", EstimateMinutes: &est}},
+		},
+		Health: &api.Health{OK: 1, DB: true},
 	}
 }
 
@@ -48,7 +50,10 @@ func TestStatusChipIsEmptyOnTheSessionView(t *testing.T) {
 func TestStatusChipWarnsWhenTheEngineIsDegraded(t *testing.T) {
 	state := headerState("daily")
 	state.Health = &api.Health{OK: 0}
-	if line := ansi.Strip(HeaderSessionLine(Theme{}, state)); !strings.Contains(line, "engine degraded") {
+	if line := ansi.Strip(HeaderSessionLine(Theme{}, state)); !strings.Contains(
+		line,
+		"engine degraded",
+	) {
 		t.Fatalf("expected an engine warning, got %q", line)
 	}
 }

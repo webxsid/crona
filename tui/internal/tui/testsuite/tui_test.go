@@ -382,7 +382,18 @@ func TestExportDialogListsPhase3ReportChoices(t *testing.T) {
 
 func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil, nil, nil, 0, nil)
+	state := dialogs.OpenExportDaily(
+		dialogs.State{},
+		"2026-03-19",
+		false,
+		repos,
+		nil,
+		nil,
+		nil,
+		nil,
+		0,
+		nil,
+	)
 	if state.RepoID != 5 || state.RepoName != "Work" || state.RepoIndex != 0 {
 		t.Fatalf(
 			"expected first repo selected by default, got id=%d name=%q index=%d",
@@ -395,7 +406,18 @@ func TestExportDialogDefaultsCalendarRepoToFirstRepoWhenNoContextRepo(t *testing
 
 func TestExportDialogCalendarChoiceOpensRepoPicker(t *testing.T) {
 	repos := []api.Repo{{ID: 5, Name: "Work"}, {ID: 9, Name: "Personal"}}
-	state := dialogs.OpenExportDaily(dialogs.State{}, "2026-03-19", false, repos, nil, nil, nil, nil, 0, nil)
+	state := dialogs.OpenExportDaily(
+		dialogs.State{},
+		"2026-03-19",
+		false,
+		repos,
+		nil,
+		nil,
+		nil,
+		nil,
+		0,
+		nil,
+	)
 	for i, item := range state.ChoiceItems {
 		if item == "Data Exports" {
 			state.ChoiceCursor = i
@@ -455,7 +477,11 @@ func TestSummaryExportAsksForPeriodThenOutputType(t *testing.T) {
 		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
 	)
 	if status != "" || action != nil {
-		t.Fatalf("summary category should open period selection: status=%q action=%#v", status, action)
+		t.Fatalf(
+			"summary category should open period selection: status=%q action=%#v",
+			status,
+			action,
+		)
 	}
 	if state.Kind != "export_summary_period" {
 		t.Fatalf("expected summary period selection, got %q", state.Kind)
@@ -465,7 +491,11 @@ func TestSummaryExportAsksForPeriodThenOutputType(t *testing.T) {
 		state, dialogs.UpdateContext{}, "2026-03-19", tea.KeyMsg{Type: tea.KeyEnter},
 	)
 	if status != "" || action != nil {
-		t.Fatalf("summary period should open output selection: status=%q action=%#v", status, action)
+		t.Fatalf(
+			"summary period should open output selection: status=%q action=%#v",
+			status,
+			action,
+		)
 	}
 	if state.Kind != "export_summary_output" {
 		t.Fatalf("expected summary output selection, got %q", state.Kind)
@@ -1262,10 +1292,17 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 		t.Fatalf("expected planned section header to highlight Planned, got %q", plannedRendered)
 	}
 	// Open pinned tasks lead, under their own heading, whatever their date.
-	if strings.Index(plannedStripped, "Pinned over") > strings.Index(plannedStripped, "Today task") {
+	if strings.Index(
+		plannedStripped,
+		"Pinned over",
+	) > strings.Index(
+		plannedStripped,
+		"Today task",
+	) {
 		t.Fatalf("expected pinned tasks above planned ones, got %q", plannedStripped)
 	}
-	if strings.Count(plannedStripped, "Today task") != 1 || strings.Count(plannedStripped, "Pinned toda") != 1 {
+	if strings.Count(plannedStripped, "Today task") != 1 ||
+		strings.Count(plannedStripped, "Pinned toda") != 1 {
 		t.Fatalf("expected each task once, got %q", plannedStripped)
 	}
 
@@ -1331,7 +1368,10 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 	upcomingRendered := renderModelScopedDaily(upcoming)
 	upcomingStripped := ansi.Strip(upcomingRendered)
 	if !strings.Contains(upcomingStripped, "Pinned futu") {
-		t.Fatalf("expected upcoming section to show the task due in 3 days, got %q", upcomingStripped)
+		t.Fatalf(
+			"expected upcoming section to show the task due in 3 days, got %q",
+			upcomingStripped,
+		)
 	}
 	for _, unwanted := range []string{"Old task", "Today task", "Pinned overdue task", "Pinned today task"} {
 		if strings.Contains(upcomingStripped, unwanted) {
@@ -1345,7 +1385,14 @@ func TestDailyIssuesPaneRendersOnlyActiveTaskSection(t *testing.T) {
 
 func TestDailyUpcomingCoversTheNextSevenDays(t *testing.T) {
 	issue := func(id int64, title, date, status string) api.IssueWithMeta {
-		return api.IssueWithMeta{Issue: api.Issue{ID: id, Title: title, Status: sharedtypes.IssueStatus(status), TodoForDate: new(date)}}
+		return api.IssueWithMeta{
+			Issue: api.Issue{
+				ID:          id,
+				Title:       title,
+				Status:      sharedtypes.IssueStatus(status),
+				TodoForDate: new(date),
+			},
+		}
 	}
 	scoped := selectionpkg.DailyScopedIssues(selectionpkg.Snapshot{
 		View:             uistate.ViewDaily,

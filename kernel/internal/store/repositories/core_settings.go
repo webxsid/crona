@@ -352,11 +352,14 @@ func (r *CoreSettingsRepository) SetSettings(
 		return nil
 	}
 	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
-		query := tx.NewUpdate().Model((*storemodels.CoreSettingsModel)(nil)).Where("user_id = ?", userID)
+		query := tx.NewUpdate().
+			Model((*storemodels.CoreSettingsModel)(nil)).
+			Where("user_id = ?", userID)
 		for _, update := range updates {
 			query = query.Set(update.column+" = ?", update.value)
 		}
-		_, err := query.Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10)).Exec(ctx)
+		_, err := query.Set("updated_at = ?", strconv.FormatInt(time.Now().UnixMilli(), 10)).
+			Exec(ctx)
 		return err
 	})
 }
@@ -399,7 +402,10 @@ func (r *CoreSettingsRepository) SetAwayMode(
 	return awayDatesChanged, err
 }
 
-func (r *CoreSettingsRepository) RecordAwayDate(ctx context.Context, userID, date string) (bool, error) {
+func (r *CoreSettingsRepository) RecordAwayDate(
+	ctx context.Context,
+	userID, date string,
+) (bool, error) {
 	return r.RecordAwayDates(ctx, userID, []string{date})
 }
 

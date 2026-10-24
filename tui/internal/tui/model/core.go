@@ -144,7 +144,8 @@ type Model struct {
 	habitHistoryTitle     string
 	habitHistoryMeta      string
 	sessionDetail         *api.SessionDetail
-	// sessionPreview feeds Log's Sessions detail pane; sessionPreviewFailed holds the ID whose fetch failed.
+	// sessionPreview feeds Log's Sessions detail pane; sessionPreviewFailed holds the ID whose
+	// fetch failed.
 	sessionPreview            *api.SessionDetail
 	sessionPreviewFailed      string
 	ops                       []api.Op

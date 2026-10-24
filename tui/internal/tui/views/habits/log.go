@@ -87,7 +87,11 @@ func habitLogStrip(history []api.HabitCompletion) [][2]string {
 	}
 }
 
-func habitLogList(theme types.Theme, entries []api.HabitCompletion, cursor, width, height int) []string {
+func habitLogList(
+	theme types.Theme,
+	entries []api.HabitCompletion,
+	cursor, width, height int,
+) []string {
 	if len(entries) == 0 {
 		return []string{theme.StyleDim.Render("No habit history recorded")}
 	}
@@ -102,8 +106,19 @@ func habitLogList(theme types.Theme, entries []api.HabitCompletion, cursor, widt
 		if entry.DurationMinutes != nil {
 			duration = helperpkg.FormatCompactDurationMinutes(*entry.DurationMinutes)
 		}
-		line := habitLogMark(theme, entry) + " " + name + strings.Repeat(" ", nameWidth-ansi.StringWidth(name)) +
-			fmt.Sprintf(" %6s  ", duration) + theme.StyleDim.Render(habitLogContext(entry))
+		line := habitLogMark(
+			theme,
+			entry,
+		) + " " + name + strings.Repeat(
+			" ",
+			nameWidth-ansi.StringWidth(name),
+		) +
+			fmt.Sprintf(
+				" %6s  ",
+				duration,
+			) + theme.StyleDim.Render(
+			habitLogContext(entry),
+		)
 		rows = append(rows, viewchrome.DayRow{Date: entry.Date, Line: line})
 	}
 	summary := func(date string) string {
@@ -132,7 +147,12 @@ func habitLogList(theme types.Theme, entries []api.HabitCompletion, cursor, widt
 }
 
 // HabitLogDetailLines describes one completion from the list data alone.
-func HabitLogDetailLines(theme types.Theme, state types.ContentState, entry *api.HabitCompletion, width int) []string {
+func HabitLogDetailLines(
+	theme types.Theme,
+	state types.ContentState,
+	entry *api.HabitCompletion,
+	width int,
+) []string {
 	if entry == nil {
 		return []string{theme.StyleDim.Render("Nothing selected")}
 	}
@@ -148,15 +168,32 @@ func HabitLogDetailLines(theme types.Theme, state types.ContentState, entry *api
 		{"Kind", orDash(string(entry.Kind))},
 	}
 	if entry.SnapshotTarget != nil {
-		fields = append(fields, [2]string{"Target", helperpkg.FormatCompactDurationMinutes(*entry.SnapshotTarget)})
+		fields = append(
+			fields,
+			[2]string{"Target", helperpkg.FormatCompactDurationMinutes(*entry.SnapshotTarget)},
+		)
 	}
 	lines := make([]string, 0, len(fields)+4)
 	for _, field := range fields {
-		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("%-9s", field[0]))+" "+ansi.Truncate(field[1], max(1, width-10), "…"))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(
+				fmt.Sprintf("%-9s", field[0]),
+			)+" "+ansi.Truncate(
+				field[1],
+				max(1, width-10),
+				"…",
+			),
+		)
 	}
 	if entry.Notes != nil && strings.TrimSpace(*entry.Notes) != "" {
 		lines = append(lines, "", theme.StyleDim.Render("Note"))
-		lines = append(lines, strings.Split(ansi.Wordwrap(strings.TrimSpace(*entry.Notes), max(1, width-1), ""), "\n")...)
+		lines = append(
+			lines,
+			strings.Split(
+				ansi.Wordwrap(strings.TrimSpace(*entry.Notes), max(1, width-1), ""),
+				"\n",
+			)...)
 	}
 	return lines
 }

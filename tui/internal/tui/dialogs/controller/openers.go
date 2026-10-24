@@ -43,7 +43,12 @@ func (s Snapshot) OpenSummaryCalendar() State {
 
 func (s Snapshot) OpenEditDayBoundary(key sharedtypes.CoreSettingsKey) State {
 	if s.Settings == nil {
-		return OpenEditDayBoundary(s.Dialog, key, sharedtypes.DayBoundarySchedule{}, s.DaemonTimezone)
+		return OpenEditDayBoundary(
+			s.Dialog,
+			key,
+			sharedtypes.DayBoundarySchedule{},
+			s.DaemonTimezone,
+		)
 	}
 	schedule := s.Settings.StartOfDay
 	if key == sharedtypes.CoreSettingsKeyEndOfDay {
@@ -181,7 +186,14 @@ func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
 	}
 	if s.Context.StreamID != nil {
 		want := strconv.FormatInt(*s.Context.StreamID, 10)
-		options := DefaultStreamOptions(next.Inputs, next.RepoIndex, s.Repos, s.AllIssues, s.Streams, s.Context)
+		options := DefaultStreamOptions(
+			next.Inputs,
+			next.RepoIndex,
+			s.Repos,
+			s.AllIssues,
+			s.Streams,
+			s.Context,
+		)
 		for index, option := range options {
 			if option.ID == want {
 				next.StreamIndex = index
@@ -192,7 +204,10 @@ func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
 	return next
 }
 
-func (s Snapshot) OpenCreateIssueDefaultForPath(repoID, streamID int64, repoName, streamName string) State {
+func (s Snapshot) OpenCreateIssueDefaultForPath(
+	repoID, streamID int64,
+	repoName, streamName string,
+) State {
 	next := OpenCreateIssueDefault(s.Dialog)
 	next.Inputs[0].SetValue(repoName)
 	next.Inputs[1].SetValue(streamName)

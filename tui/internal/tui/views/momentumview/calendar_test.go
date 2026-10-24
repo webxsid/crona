@@ -12,7 +12,11 @@ import (
 
 // twoWeeks runs Mon 5 to Sun 18 Oct 2026 (W41, W42); Mondays are missed, all else done.
 func twoWeeks() []string {
-	series := dailyMomentumSeries(time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}, 1)
+	series := dailyMomentumSeries(
+		time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC),
+		[]int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1},
+		1,
+	)
 	return calendarLines(types.Theme{}, series, 70, 20, true, "")
 }
 
@@ -64,7 +68,11 @@ func TestCalendarHitRowSitsUnderTheGrid(t *testing.T) {
 	for i, line := range lines {
 		if strings.HasPrefix(ansi.Strip(line), "hit") {
 			if i == len(lines)-1 || ansi.Strip(lines[i-1]) == "" {
-				t.Fatalf("expected the hit row right under the grid with room below, got line %d of %d", i, len(lines))
+				t.Fatalf(
+					"expected the hit row right under the grid with room below, got line %d of %d",
+					i,
+					len(lines),
+				)
 			}
 			return
 		}
@@ -73,7 +81,47 @@ func TestCalendarHitRowSitsUnderTheGrid(t *testing.T) {
 }
 
 func TestCalendarCellsUseTheWholePane(t *testing.T) {
-	series := dailyMomentumSeries(time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC), []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, 1)
+	series := dailyMomentumSeries(
+		time.Date(2026, 9, 14, 0, 0, 0, 0, time.UTC),
+		[]int{
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+			1,
+		},
+		1,
+	)
 	text := ansi.Strip(strings.Join(calendarLines(types.Theme{}, series, 83, 40, true, ""), "\n"))
 	if !strings.Contains(text, strings.Repeat("█", 10)) {
 		t.Fatalf("expected 10-cell squares in an 83-cell pane, got\n%s", text)
@@ -84,7 +132,11 @@ func TestCalendarCellsUseTheWholePane(t *testing.T) {
 }
 
 func TestCalendarMarksToday(t *testing.T) {
-	series := dailyMomentumSeries(time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC), []int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1}, 1)
+	series := dailyMomentumSeries(
+		time.Date(2026, 10, 5, 0, 0, 0, 0, time.UTC),
+		[]int{0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1},
+		1,
+	)
 	lines := calendarLines(types.Theme{}, series, 70, 20, true, "2026-10-17")
 	header := ansi.Strip(lines[0])
 	if !strings.Contains(header, "Sat•") || strings.Contains(header, "Fri•") {
@@ -95,6 +147,10 @@ func TestCalendarMarksToday(t *testing.T) {
 		marked += strings.Count(ansi.Strip(line), "•")
 	}
 	if marked != 1 {
-		t.Fatalf("expected exactly one marked cell, got %d in\n%s", marked, ansi.Strip(strings.Join(lines, "\n")))
+		t.Fatalf(
+			"expected exactly one marked cell, got %d in\n%s",
+			marked,
+			ansi.Strip(strings.Join(lines, "\n")),
+		)
 	}
 }

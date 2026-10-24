@@ -176,7 +176,11 @@ func ComputeFocusScoreSummary(
 	}, nil
 }
 
-func focusScoreReason(workedSeconds, targetSeconds int, restRatio float64, level sharedtypes.FocusScoreLevel) sharedtypes.FocusScoreReason {
+func focusScoreReason(
+	workedSeconds, targetSeconds int,
+	restRatio float64,
+	level sharedtypes.FocusScoreLevel,
+) sharedtypes.FocusScoreReason {
 	if level == sharedtypes.FocusScoreLevelOverextended {
 		return sharedtypes.FocusScoreReasonOverextended
 	}
@@ -211,11 +215,13 @@ func ComputeFocusScoreRange(
 			return nil, err
 		}
 		days = append(days, sharedtypes.FocusScoreRangeDay{
-			Date:    date,
-			Score:   summary.Score,
-			Level:   summary.Level,
-			Reason:  summary.Reason,
-			HasData: summary.WorkedSeconds > 0 || summary.RestSeconds > 0 || summary.SessionCount > 0 || summary.TargetWorkedSeconds > 0,
+			Date:   date,
+			Score:  summary.Score,
+			Level:  summary.Level,
+			Reason: summary.Reason,
+			HasData: summary.WorkedSeconds > 0 || summary.RestSeconds > 0 ||
+				summary.SessionCount > 0 ||
+				summary.TargetWorkedSeconds > 0,
 		})
 	}
 	return days, nil

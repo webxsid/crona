@@ -196,7 +196,8 @@ func SyncDialogFocus(state State) State {
 		return state
 	}
 	if state.Kind == "edit_day_boundary" {
-		if state.DayBoundaryStep == DayBoundaryStepOverview && state.FocusIdx == 0 && len(state.Inputs) > 0 {
+		if state.DayBoundaryStep == DayBoundaryStepOverview && state.FocusIdx == 0 &&
+			len(state.Inputs) > 0 {
 			state.Inputs[0].Focus()
 		}
 		if state.DayBoundaryStep == DayBoundaryStepTime && len(state.Inputs) > 1 {
@@ -676,7 +677,11 @@ func validAdhocResolution(resolution sharedtypes.AdhocSessionResolution) bool {
 		resolution == sharedtypes.AdhocSessionResolutionKeep
 }
 
-func updateAdhocResolution(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+func updateAdhocResolution(
+	state State,
+	ctx UpdateContext,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -704,13 +709,24 @@ func updateAdhocResolution(state State, ctx UpdateContext, msg tea.KeyMsg) (Stat
 		case "create":
 			return OpenAdhocIssueCreation(state, ctx.Context), nil, ""
 		case "keep":
-			return OpenAdhocEndSession(state, sharedtypes.AdhocSessionResolutionKeep, 0, 0, 0, ""), nil, ""
+			return OpenAdhocEndSession(
+				state,
+				sharedtypes.AdhocSessionResolutionKeep,
+				0,
+				0,
+				0,
+				"",
+			), nil, ""
 		}
 	}
 	return state, nil, ""
 }
 
-func updateAdhocIssuePicker(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+func updateAdhocIssuePicker(
+	state State,
+	ctx UpdateContext,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return OpenAdhocResolution(state, ctx.Context), nil, ""
@@ -735,7 +751,10 @@ func updateAdhocIssuePicker(state State, ctx UpdateContext, msg tea.KeyMsg) (Sta
 		if msg.String() == "pgup" {
 			direction = -1
 		}
-		state.ChoiceCursor = min(len(state.ChoiceItems)-1, max(0, state.ChoiceCursor+direction*max(1, (state.Height-16)/3)))
+		state.ChoiceCursor = min(
+			len(state.ChoiceItems)-1,
+			max(0, state.ChoiceCursor+direction*max(1, (state.Height-16)/3)),
+		)
 		return clearDialogError(state), nil, ""
 	case "enter":
 		if state.ChoiceCursor < 0 || state.ChoiceCursor >= len(state.ChoiceValues) ||
@@ -765,7 +784,9 @@ func switchAdhocIssueTab(state State, ctx UpdateContext, direction int) State {
 	if state.ChoiceCursor >= 0 && state.ChoiceCursor < len(state.ChoiceValues) {
 		selectedID, _ = strconv.ParseInt(state.ChoiceValues[state.ChoiceCursor], 10, 64)
 	}
-	state.AdhocIssueTab = (state.AdhocIssueTab + direction + len(adhocIssueTabNames)) % len(adhocIssueTabNames)
+	state.AdhocIssueTab = (state.AdhocIssueTab + direction + len(adhocIssueTabNames)) % len(
+		adhocIssueTabNames,
+	)
 	next := OpenAdhocIssuePicker(state, ctx.AllIssues, ctx.CurrentDate)
 	for i, value := range next.ChoiceValues {
 		if id, err := strconv.ParseInt(value, 10, 64); err == nil && id == selectedID {
@@ -1320,7 +1341,11 @@ func updatePomodoroStart(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return clearDialogError(state), nil, ""
 }
 
-func updateHardLimitExpired(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+func updateHardLimitExpired(
+	state State,
+	ctx UpdateContext,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "down":
 		if state.ChoiceCursor < len(state.ChoiceItems)-1 {

@@ -34,10 +34,19 @@ func TestShiftDateMovesSharedDateOnEveryDatedView(t *testing.T) {
 		back, _ := Handle(start, runeKey(','), dateDeps(&reloads))
 		forward, _ := Handle(start, runeKey('.'), dateDeps(&reloads))
 		if back.Date != "2026-07-27" || forward.Date != "2026-07-29" {
-			t.Fatalf("%s: expected ,/. to move the shared date, got %q / %q", view, back.Date, forward.Date)
+			t.Fatalf(
+				"%s: expected ,/. to move the shared date, got %q / %q",
+				view,
+				back.Date,
+				forward.Date,
+			)
 		}
 		if reloads != 2 {
-			t.Fatalf("%s: expected every move to reload the date surfaces, got %d reloads", view, reloads)
+			t.Fatalf(
+				"%s: expected every move to reload the date surfaces, got %d reloads",
+				view,
+				reloads,
+			)
 		}
 	}
 }
@@ -45,9 +54,18 @@ func TestShiftDateMovesSharedDateOnEveryDatedView(t *testing.T) {
 func TestResetDateGoesToLogicalToday(t *testing.T) {
 	for _, view := range datedViews {
 		reloads := 0
-		next, _ := Handle(State{ActiveView: view, ActivePane: uistate.DefaultPane(view), Date: "2026-07-01"}, runeKey('g'), dateDeps(&reloads))
+		next, _ := Handle(
+			State{ActiveView: view, ActivePane: uistate.DefaultPane(view), Date: "2026-07-01"},
+			runeKey('g'),
+			dateDeps(&reloads),
+		)
 		if next.Date != "2026-07-30" || reloads != 1 {
-			t.Fatalf("%s: expected g to reset to the logical today and reload, got %q (%d reloads)", view, next.Date, reloads)
+			t.Fatalf(
+				"%s: expected g to reset to the logical today and reload, got %q (%d reloads)",
+				view,
+				next.Date,
+				reloads,
+			)
 		}
 	}
 }

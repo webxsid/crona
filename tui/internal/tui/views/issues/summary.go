@@ -31,11 +31,21 @@ func StripRows(theme types.Theme, state types.ContentState, width int) []string 
 		if open+closed > 0 {
 			filled = n * 10 / (open + closed)
 		}
-		return theme.StyleHeader.Render(strings.Repeat("█", filled)) + theme.StyleDim.Render(strings.Repeat("░", 10-filled))
+		return theme.StyleHeader.Render(
+			strings.Repeat("█", filled),
+		) + theme.StyleDim.Render(
+			strings.Repeat("░", 10-filled),
+		)
 	}
 	groups := [][2]string{
-		{fmt.Sprintf("Open %d  %s", open, bar(open)), fmt.Sprintf("Closed %d  %s", closed, bar(closed))},
-		{fmt.Sprintf("in progress %d  blocked %d", counts["in_progress"], counts["blocked"]), fmt.Sprintf("done %d  abandoned %d", counts["done"], counts["abandoned"])},
+		{
+			fmt.Sprintf("Open %d  %s", open, bar(open)),
+			fmt.Sprintf("Closed %d  %s", closed, bar(closed)),
+		},
+		{
+			fmt.Sprintf("in progress %d  blocked %d", counts["in_progress"], counts["blocked"]),
+			fmt.Sprintf("done %d  abandoned %d", counts["done"], counts["abandoned"]),
+		},
 		{"Due  " + dueSummary(state), estimateSummary(state)},
 	}
 	rows := []string{"", ""}

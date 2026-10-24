@@ -35,7 +35,8 @@ func groupBuckets(series []sharedtypes.MomentumSeriesPoint, cols int, enabled bo
 			if point.Skipped {
 				continue
 			}
-			if status := momentumStatusForPoint(point, enabled); counted == 0 || statusRank[status] > statusRank[group.status] {
+			if status := momentumStatusForPoint(point, enabled); counted == 0 ||
+				statusRank[status] > statusRank[group.status] {
 				group.status = status
 			}
 			group.count += point.Count
@@ -70,7 +71,9 @@ func renderMomentumBars(
 	axisMax := momentumSeriesScale(series)
 	_, tickLabels := momentumChartTicks(axisMax, chartRows, def)
 	labelWidth := 0
-	if sharedtypes.NormalizeMomentumTargetKind(def.TargetKind) == sharedtypes.MomentumTargetKindContext {
+	if sharedtypes.NormalizeMomentumTargetKind(
+		def.TargetKind,
+	) == sharedtypes.MomentumTargetKindContext {
 		axis := momentumContextAxis(axisMax)
 		axisMax = axis.MaxAxis
 		_, tickLabels = momentumContextTickRows(axisMax, chartRows, axis.Step, axis.Format)

@@ -77,7 +77,12 @@ func selectedDailyHabit(state types.ContentState) (api.HabitDailyItem, bool) {
 type detailEntry struct{ label, value string }
 
 // IssueDetailLines renders the shared issue detail body.
-func IssueDetailLines(theme types.Theme, state types.ContentState, issue api.Issue, width int) []string {
+func IssueDetailLines(
+	theme types.Theme,
+	state types.ContentState,
+	issue api.Issue,
+	width int,
+) []string {
 	repo, stream, worked := issue.RepoName, issue.StreamName, issue.WorkedSeconds
 	var repoID int64
 	if meta := sessionmeta.IssueMetaByID(state.AllIssues, issue.ID); meta != nil {
@@ -109,10 +114,17 @@ func IssueDetailLines(theme types.Theme, state types.ContentState, issue api.Iss
 	lines = append(lines, detailGrid(theme, fields, width)...)
 	lines = append(lines, penaltyLines(theme, state, issue.ID, width)...)
 	lines = append(lines, issuecore.NotesLines(theme, state.Settings, issue.Notes, width)...)
-	return append(lines, momentumLines(theme, issueMomentums(state, repoID, issue.StreamID), width)...)
+	return append(
+		lines,
+		momentumLines(theme, issueMomentums(state, repoID, issue.StreamID), width)...)
 }
 
-func habitDetailLines(theme types.Theme, state types.ContentState, habit api.HabitDailyItem, width int) []string {
+func habitDetailLines(
+	theme types.Theme,
+	state types.ContentState,
+	habit api.HabitDailyItem,
+	width int,
+) []string {
 	status := "due"
 	switch habit.Status {
 	case "completed":
@@ -123,13 +135,35 @@ func habitDetailLines(theme types.Theme, state types.ContentState, habit api.Hab
 	return habitDetailWithStatus(theme, state, habit, width, status)
 }
 
-func habitDetailWithStatus(theme types.Theme, state types.ContentState, habit api.HabitDailyItem, width int, status string) []string {
+func habitDetailWithStatus(
+	theme types.Theme,
+	state types.ContentState,
+	habit api.HabitDailyItem,
+	width int,
+	status string,
+) []string {
 	fields := []detailEntry{{"status", theme.StyleNormal.Render(status)}}
 	if habit.DurationMinutes != nil {
-		fields = append(fields, detailEntry{"logged", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes))})
+		fields = append(
+			fields,
+			detailEntry{
+				"logged",
+				theme.StyleNormal.Render(
+					helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes),
+				),
+			},
+		)
 	}
 	if habit.TargetMinutes != nil {
-		fields = append(fields, detailEntry{"target", theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes))})
+		fields = append(
+			fields,
+			detailEntry{
+				"target",
+				theme.StyleNormal.Render(
+					helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes),
+				),
+			},
+		)
 	}
 	if meta := strings.TrimSpace(detailContext(habit.RepoName, habit.StreamName)); meta != "-" {
 		fields = append(fields, detailEntry{"context", theme.StyleNormal.Render(meta)})
@@ -160,7 +194,13 @@ func detailGrid(theme types.Theme, fields []detailEntry, width int) []string {
 	for start := 0; start < len(fields); start += cols {
 		cells := []string{}
 		for _, field := range fields[start:min(len(fields), start+cols)] {
-			cells = append(cells, padCells(theme.StyleDim.Render(padCells(field.label, labelWidth))+field.value, cell))
+			cells = append(
+				cells,
+				padCells(
+					theme.StyleDim.Render(padCells(field.label, labelWidth))+field.value,
+					cell,
+				),
+			)
 		}
 		lines = append(lines, strings.TrimRight(strings.Join(cells, strings.Repeat(" ", gap)), " "))
 	}
@@ -170,7 +210,8 @@ func detailGrid(theme types.Theme, fields []detailEntry, width int) []string {
 // habitMomentums are the enabled habit momentums that count this habit.
 func habitMomentums(state types.ContentState, habitID int64) []sharedtypes.MomentumCard {
 	return enabledMomentums(state, func(def sharedtypes.HabitStreakDefinition) bool {
-		return def.TargetKind == sharedtypes.MomentumTargetKindHabit && slices.Contains(def.HabitIDs, habitID)
+		return def.TargetKind == sharedtypes.MomentumTargetKindHabit &&
+			slices.Contains(def.HabitIDs, habitID)
 	})
 }
 
@@ -186,12 +227,16 @@ func issueMomentums(state types.ContentState, repoID, streamID int64) []sharedty
 			return false
 		}
 		return slices.ContainsFunc(def.Contexts, func(context sharedtypes.MomentumContext) bool {
-			return context.RepoID == repoID && (context.StreamID == nil || *context.StreamID == streamID)
+			return context.RepoID == repoID &&
+				(context.StreamID == nil || *context.StreamID == streamID)
 		})
 	})
 }
 
-func enabledMomentums(state types.ContentState, matches func(sharedtypes.HabitStreakDefinition) bool) []sharedtypes.MomentumCard {
+func enabledMomentums(
+	state types.ContentState,
+	matches func(sharedtypes.HabitStreakDefinition) bool,
+) []sharedtypes.MomentumCard {
 	out := []sharedtypes.MomentumCard{}
 	for _, card := range state.MomentumCards {
 		def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
@@ -280,7 +325,12 @@ func wrapDetail(style lipgloss.Style, text string, width int) []string {
 }
 
 // HabitDetailLines reuses the daily detail fields for a habit definition.
-func HabitDetailLines(theme types.Theme, state types.ContentState, habit api.HabitWithMeta, width int) []string {
+func HabitDetailLines(
+	theme types.Theme,
+	state types.ContentState,
+	habit api.HabitWithMeta,
+	width int,
+) []string {
 	for _, due := range state.DueHabits {
 		if due.ID == habit.ID {
 			return habitDetailLines(theme, state, due, width)
@@ -290,5 +340,11 @@ func HabitDetailLines(theme types.Theme, state types.ContentState, habit api.Hab
 	if !habit.Active {
 		status = "paused"
 	}
-	return habitDetailWithStatus(theme, state, api.HabitDailyItem{HabitWithMeta: habit}, width, status)
+	return habitDetailWithStatus(
+		theme,
+		state,
+		api.HabitDailyItem{HabitWithMeta: habit},
+		width,
+		status,
+	)
 }

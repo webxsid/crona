@@ -118,7 +118,11 @@ func updateCreateIssueDefault(
 			return state, nil, ""
 		}
 	case "tab", "shift+tab":
-		state.FocusIdx = shiftDefaultIssueFocus(state.FocusIdx, ternaryDir(msg.String()), state.AdhocTimer)
+		state.FocusIdx = shiftDefaultIssueFocus(
+			state.FocusIdx,
+			ternaryDir(msg.String()),
+			state.AdhocTimer,
+		)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	case "left":
@@ -213,7 +217,8 @@ func updateCreateIssueDefault(
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		preservingOriginalDate := (state.AdhocTimer || state.PromotingAdhoc) && ValueOrEmpty(dueDate) == state.AdhocDate
+		preservingOriginalDate := (state.AdhocTimer || state.PromotingAdhoc) &&
+			ValueOrEmpty(dueDate) == state.AdhocDate
 		if !preservingOriginalDate {
 			if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 				return state, nil, err.Error()
@@ -708,7 +713,13 @@ func updateExportScope(state State, msg tea.KeyMsg) (State, *Action, string) {
 		if err != nil {
 			return state, nil, "Invalid export target"
 		}
-		action := &Action{Kind: "export_report", ReportKind: state.ExportPresetKind, ReportFormat: sharedtypes.ExportFormatMarkdown, OutputMode: sharedtypes.ExportOutputModeFile, CheckInDate: state.CheckInDate}
+		action := &Action{
+			Kind:         "export_report",
+			ReportKind:   state.ExportPresetKind,
+			ReportFormat: sharedtypes.ExportFormatMarkdown,
+			OutputMode:   sharedtypes.ExportOutputModeFile,
+			CheckInDate:  state.CheckInDate,
+		}
 		switch state.ExportPresetKind {
 		case sharedtypes.ExportReportKindRepo:
 			action.RepoID = id
@@ -746,7 +757,8 @@ func updateExportSummaryOutput(state State, msg tea.KeyMsg) (State, *Action, str
 			output = sharedtypes.ExportOutputModeClipboard
 		}
 		reportKind := sharedtypes.ExportReportKindGlance
-		if state.ExportStart != "" && state.ExportEnd != "" && state.ExportStart != state.ExportEnd {
+		if state.ExportStart != "" && state.ExportEnd != "" &&
+			state.ExportStart != state.ExportEnd {
 			reportKind = sharedtypes.ExportReportKindSummaryRange
 		}
 		return OpenExportPreset(state, reportKind, format, output), nil, ""
@@ -766,7 +778,11 @@ func updateExportSummaryRange(state State, msg tea.KeyMsg) (State, *Action, stri
 		}
 		return clearDialogError(state), nil, ""
 	case "enter":
-		start, end := strings.TrimSpace(state.Inputs[0].Value()), strings.TrimSpace(state.Inputs[1].Value())
+		start, end := strings.TrimSpace(
+			state.Inputs[0].Value(),
+		), strings.TrimSpace(
+			state.Inputs[1].Value(),
+		)
 		startDate, startErr := time.Parse(time.DateOnly, start)
 		endDate, endErr := time.Parse(time.DateOnly, end)
 		if startErr != nil || endErr != nil {
@@ -779,10 +795,15 @@ func updateExportSummaryRange(state State, msg tea.KeyMsg) (State, *Action, stri
 		state.Inputs = nil
 		state.Kind = "export_summary_output"
 		state.ChoiceItems = []string{"Write Markdown file", "Copy Markdown"}
-		state.ChoiceDetails = []string{"Save the dashboard as Markdown.", "Copy the dashboard Markdown to the clipboard."}
+		state.ChoiceDetails = []string{
+			"Save the dashboard as Markdown.",
+			"Copy the dashboard Markdown to the clipboard.",
+		}
 		if state.ExportIncludePDF {
 			state.ChoiceItems = append([]string{"Write PDF file"}, state.ChoiceItems...)
-			state.ChoiceDetails = append([]string{"Save a styled, landscape PDF dashboard."}, state.ChoiceDetails...)
+			state.ChoiceDetails = append(
+				[]string{"Save a styled, landscape PDF dashboard."},
+				state.ChoiceDetails...)
 		}
 		state.ChoiceCursor = 0
 		return state, nil, ""

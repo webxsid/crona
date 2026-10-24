@@ -40,14 +40,27 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		if notesWidth > 0 {
 			notesInner = notesWidth
 		}
-		notes = wrapLines(releaseNotesExcerptLines(theme, state.UpdateStatus.ReleaseNotes, max(1, notesInner-2)), max(1, notesInner-2))
+		notes = wrapLines(
+			releaseNotesExcerptLines(theme, state.UpdateStatus.ReleaseNotes, max(1, notesInner-2)),
+			max(1, notesInner-2),
+		)
 	}
 	diagnostics := []string{}
 	if state.UpdateDiagnosticsExpanded && state.UpdateStatus != nil {
 		diagnostics = diagnosticsFieldLines(theme, inner)
 	}
 	section := func(title, meta string, focused bool, w, h int, lines []string) string {
-		return viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Meta: meta, Focused: focused, Width: w, Height: h, Lines: lines})
+		return viewchrome.RenderSection(
+			theme,
+			viewchrome.Section{
+				Title:   title,
+				Meta:    meta,
+				Focused: focused,
+				Width:   w,
+				Height:  h,
+				Lines:   lines,
+			},
+		)
 	}
 	if notesWidth == 0 {
 		statusHeight := min(len(status)+2, max(1, height/2))
@@ -57,7 +70,10 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			notesHeight = min(len(notes)+2, max(1, (height-statusHeight)/2))
 			diagHeight = height - statusHeight - notesHeight
 		}
-		parts := []string{section("Status", meta, true, width, statusHeight, status), section(notesTitle, "", false, width, notesHeight, notes)}
+		parts := []string{
+			section("Status", meta, true, width, statusHeight, status),
+			section(notesTitle, "", false, width, notesHeight, notes),
+		}
 		if diagHeight > 0 {
 			parts = append(parts, section("Diagnostics", "", false, width, diagHeight, diagnostics))
 		}
@@ -69,7 +85,12 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		left = section("Status", meta, true, listWidth, statusHeight, status) + "\n" +
 			section("Diagnostics", "", false, listWidth, height-statusHeight, diagnostics)
 	}
-	return viewchrome.JoinColumns(theme, height, left, section(notesTitle, "", false, notesWidth, height, notes))
+	return viewchrome.JoinColumns(
+		theme,
+		height,
+		left,
+		section(notesTitle, "", false, notesWidth, height, notes),
+	)
 }
 
 // statusSectionLines are the Status body: any banner or migration checklist, the status
@@ -88,10 +109,18 @@ func statusSectionLines(theme types.Theme, state types.ContentState) []string {
 	}
 	lines = append(lines, statusCardLines(theme, state)...)
 	if state.UpdateChecking {
-		lines = append(lines, "", viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates…"))
+		lines = append(
+			lines,
+			"",
+			viewchrome.LipStyle(theme, theme.ColorYellow).Render("Checking for updates…"),
+		)
 	}
 	if strings.TrimSpace(status.Error) != "" {
-		lines = append(lines, "", theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)))
+		lines = append(
+			lines,
+			"",
+			theme.StyleError.Render("Check error: "+strings.TrimSpace(status.Error)),
+		)
 	}
 	return lines
 }
