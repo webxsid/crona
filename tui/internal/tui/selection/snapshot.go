@@ -316,7 +316,11 @@ func FilteredIndices(s Snapshot, pane uistate.Pane) []int {
 	}
 	var indices []int
 	if pane == uistate.PaneIssues && s.View == uistate.ViewDefault {
-		open, completed := issuecore.SplitDefaultIssueIndices(DefaultScopedIssues(s), s.Filters[pane], s.Settings)
+		open, completed := issuecore.SplitDefaultIssueIndices(
+			DefaultScopedIssues(s),
+			s.Filters[pane],
+			s.Settings,
+		)
 		indices = open
 		if s.DefaultIssueSection == uistate.DefaultIssueSectionCompleted {
 			indices = completed

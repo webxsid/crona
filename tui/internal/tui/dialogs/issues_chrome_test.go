@@ -36,7 +36,8 @@ func TestNewIssueChrome(t *testing.T) {
 			t.Fatalf("expected no %q, got\n%s", unwanted, text)
 		}
 	}
-	if !strings.Contains(text, "╭─ New Issue") || !strings.Contains(text, "ctrl+s save") || !strings.Contains(text, "Title") {
+	if !strings.Contains(text, "╭─ New Issue") || !strings.Contains(text, "ctrl+s save") ||
+		!strings.Contains(text, "Title") {
 		t.Fatalf("expected the new chrome, got\n%s", text)
 	}
 	paired := false
@@ -71,7 +72,9 @@ func TestAdhocIssueKeepsSummary(t *testing.T) {
 	state := issueState("create_issue_default", 2, 120, 40)
 	state.AdhocTimer, state.ViewName = true, "Ad hoc session"
 	text := issueText(state)
-	if !strings.Contains(text, "Create Issue & Finish Session") || !strings.Contains(text, "Summary") || !strings.Contains(text, "Ad hoc session") {
+	if !strings.Contains(text, "Create Issue & Finish Session") ||
+		!strings.Contains(text, "Summary") ||
+		!strings.Contains(text, "Ad hoc session") {
 		t.Fatalf("expected the ad hoc variant, got\n%s", text)
 	}
 }
@@ -92,7 +95,8 @@ func TestNewIssuePairFitsTypedEstimate(t *testing.T) {
 	state.Inputs[3].SetValue("1h30m")
 	state.Inputs[3].Focus()
 	for _, line := range strings.Split(issueText(state), "\n") {
-		if strings.Contains(line, "Estimate") && (strings.Contains(line, "…") || !strings.Contains(line, "1h30m")) {
+		if strings.Contains(line, "Estimate") &&
+			(strings.Contains(line, "…") || !strings.Contains(line, "1h30m")) {
 			t.Fatalf("expected the estimate whole, got %q", line)
 		}
 	}

@@ -10,7 +10,12 @@ import (
 )
 
 func TestNewIssueMetaNamesRepoAndStreamOnce(t *testing.T) {
-	state := controllerpkg.OpenCreateIssueMeta(controllerpkg.State{Width: 100, Height: 40}, 3, "cli", "OSS")
+	state := controllerpkg.OpenCreateIssueMeta(
+		controllerpkg.State{Width: 100, Height: 40},
+		3,
+		"cli",
+		"OSS",
+	)
 	rendered := ansi.Strip(renderSessionDialogOrIssue(state))
 	if n := strings.Count(rendered, "OSS"); n != 1 {
 		t.Fatalf("repo shown %d times:\n%s", n, rendered)

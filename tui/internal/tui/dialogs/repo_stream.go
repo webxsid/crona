@@ -15,7 +15,14 @@ func renderRepoStreamDialog(theme Theme, state controllerpkg.State) string {
 	case "create_stream":
 		return renderNameDescriptionForm(theme, state, "New Stream", state.RepoName, "", "create")
 	case "edit_stream":
-		return renderNameDescriptionForm(theme, state, "Edit Stream", state.RepoName, theme.ColorYellow, "save")
+		return renderNameDescriptionForm(
+			theme,
+			state,
+			"Edit Stream",
+			state.RepoName,
+			theme.ColorYellow,
+			"save",
+		)
 	case "checkout_context":
 		return renderCheckoutContext(theme, state)
 	case "create_habit":
@@ -45,16 +52,49 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 	focused := func(input int) bool { return state.FocusIdx == focusOf(input) }
 	_, days, count, _ := controllerpkg.CadenceLayout(state)
 	rows := []FormRow{
-		fieldRow(focusOf(name), Field(theme, "Name", column, bareInput(state.Inputs[name], full, "required"), focused(name))),
-		textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
+		fieldRow(
+			focusOf(name),
+			Field(
+				theme,
+				"Name",
+				column,
+				bareInput(state.Inputs[name], full, "required"),
+				focused(name),
+			),
+		),
+		textareaRow(
+			state.DescriptionIndex,
+			Textarea(
+				theme,
+				"Description",
+				column,
+				bareTextarea(state),
+				state.FocusIdx == state.DescriptionIndex,
+				inner,
+			),
+		),
 		fieldRow(focusOf(schedule), cadenceField(theme, state, column, focusOf(schedule))),
 		fieldRow(days, daysField(theme, state, column, days)),
-		fieldRow(focusOf(target), Field(theme, "Target", column, bareInput(state.Inputs[target], full, "optional"), focused(target))),
+		fieldRow(
+			focusOf(target),
+			Field(
+				theme,
+				"Target",
+				column,
+				bareInput(state.Inputs[target], full, "optional"),
+				focused(target),
+			),
+		),
 	}
 	title, border, submit := "Edit Habit", theme.ColorYellow, "save"
 	if create {
 		title, border, submit = "New Habit", "", "create"
-		rows = append(rows, staticRow(""), repoPickerRow(theme, state, column, full, 0), streamPickerRow(theme, state, column, full, 1))
+		rows = append(
+			rows,
+			staticRow(""),
+			repoPickerRow(theme, state, column, full, 0),
+			streamPickerRow(theme, state, column, full, 1),
+		)
 	}
 	textarea := textareaHints(state.DescriptionIndex)
 	return renderForm(theme, state, FormSpec{
@@ -73,7 +113,13 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 }
 
 // renderNameDescriptionForm draws the repo and stream forms: Name, then Description.
-func renderNameDescriptionForm(theme Theme, state controllerpkg.State, title, context string, border lipgloss.Color, submit string) string {
+func renderNameDescriptionForm(
+	theme Theme,
+	state controllerpkg.State,
+	title, context string,
+	border lipgloss.Color,
+	submit string,
+) string {
 	inner := formInner(state.Width)
 	column := len("Description")
 	full, _ := formColumns(inner, column)
@@ -82,8 +128,27 @@ func renderNameDescriptionForm(theme Theme, state controllerpkg.State, title, co
 		Primary: plainHint(dialogSubmitHint(state, submit)),
 		Hints:   textareaHints(state.DescriptionIndex),
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Name", column, bareInput(state.Inputs[0], full, "required"), state.FocusIdx == 0)),
-			textareaRow(state.DescriptionIndex, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Name",
+					column,
+					bareInput(state.Inputs[0], full, "required"),
+					state.FocusIdx == 0,
+				),
+			),
+			textareaRow(
+				state.DescriptionIndex,
+				Textarea(
+					theme,
+					"Description",
+					column,
+					bareTextarea(state),
+					state.FocusIdx == state.DescriptionIndex,
+					inner,
+				),
+			),
 		},
 	})
 }

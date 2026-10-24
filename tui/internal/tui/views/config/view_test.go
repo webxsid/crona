@@ -21,7 +21,12 @@ func configState(width, height int, assets *api.ExportAssetStatus) types.Content
 }
 
 func assets() *api.ExportAssetStatus {
-	return &api.ExportAssetStatus{ReportsDir: longDir, DefaultReportsDir: longDir, ICSDir: "/tmp/ics", DefaultICSDir: "/tmp/ics"}
+	return &api.ExportAssetStatus{
+		ReportsDir:        longDir,
+		DefaultReportsDir: longDir,
+		ICSDir:            "/tmp/ics",
+		DefaultICSDir:     "/tmp/ics",
+	}
 }
 
 func TestConfigEveryRowHasHelp(t *testing.T) {
@@ -58,7 +63,10 @@ func TestConfigLayout(t *testing.T) {
 }
 
 func TestConfigLoading(t *testing.T) {
-	if text := ansi.Strip(renderView(types.Theme{}, configState(120, 36, nil))); !strings.Contains(text, "Loading…") {
+	if text := ansi.Strip(renderView(types.Theme{}, configState(120, 36, nil))); !strings.Contains(
+		text,
+		"Loading…",
+	) {
 		t.Fatalf("expected loading, got\n%s", text)
 	}
 }

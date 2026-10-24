@@ -15,7 +15,11 @@ func modified(day, hour int) string {
 	return time.Date(2026, 10, day, hour, 0, 0, 0, time.Local).UTC().Format(time.RFC3339)
 }
 
-func reportsState(width int, reports []api.ExportReportFile, assets *api.ExportAssetStatus) types.ContentState {
+func reportsState(
+	width int,
+	reports []api.ExportReportFile,
+	assets *api.ExportAssetStatus,
+) types.ContentState {
 	return types.ContentState{
 		View: "reports", Pane: "export_reports", Width: width, Height: 30,
 		Cursors: map[string]int{"export_reports": 0}, Filters: map[string]string{},
@@ -25,15 +29,42 @@ func reportsState(width int, reports []api.ExportReportFile, assets *api.ExportA
 
 func sampleReports() []api.ExportReportFile {
 	return []api.ExportReportFile{
-		{Name: "daily.md", Path: "/r/reports/daily-2026-10-17.md", Kind: "daily", DateLabel: "Sat 17 Oct", Format: "markdown", SizeBytes: 1234, ModifiedAt: modified(17, 18)},
-		{Name: "weekly.pdf", Path: "/r/reports/weekly.pdf", Kind: "weekly", ScopeLabel: "Crona", DateLabel: "W42", Format: "pdf", SizeBytes: 900, ModifiedAt: modified(17, 9)},
-		{Name: "daily.md", Path: "/r/reports/daily-2026-10-16.md", Kind: "daily", DateLabel: "Fri 16 Oct", Format: "markdown", SizeBytes: 800, ModifiedAt: modified(16, 20)},
+		{
+			Name:       "daily.md",
+			Path:       "/r/reports/daily-2026-10-17.md",
+			Kind:       "daily",
+			DateLabel:  "Sat 17 Oct",
+			Format:     "markdown",
+			SizeBytes:  1234,
+			ModifiedAt: modified(17, 18),
+		},
+		{
+			Name:       "weekly.pdf",
+			Path:       "/r/reports/weekly.pdf",
+			Kind:       "weekly",
+			ScopeLabel: "Crona",
+			DateLabel:  "W42",
+			Format:     "pdf",
+			SizeBytes:  900,
+			ModifiedAt: modified(17, 9),
+		},
+		{
+			Name:       "daily.md",
+			Path:       "/r/reports/daily-2026-10-16.md",
+			Kind:       "daily",
+			DateLabel:  "Fri 16 Oct",
+			Format:     "markdown",
+			SizeBytes:  800,
+			ModifiedAt: modified(16, 20),
+		},
 	}
 }
 
 func text(state types.ContentState) string { return ansi.Strip(renderView(types.Theme{}, state)) }
 
-var dir = &api.ExportAssetStatus{ReportsDir: "/Users/someone/Library/Application Support/Crona Dev/reports"}
+var dir = &api.ExportAssetStatus{
+	ReportsDir: "/Users/someone/Library/Application Support/Crona Dev/reports",
+}
 
 func TestReportsGroupsByDay(t *testing.T) {
 	got := text(reportsState(120, sampleReports(), dir))
@@ -58,7 +89,8 @@ func TestReportsDetail(t *testing.T) {
 
 func TestReportsStripKeepsDirTail(t *testing.T) {
 	lines := strings.Split(text(reportsState(40, sampleReports(), dir)), "\n")
-	if !strings.HasSuffix(strings.TrimRight(lines[1], " "), "/reports") || !strings.Contains(lines[1], "…") {
+	if !strings.HasSuffix(strings.TrimRight(lines[1], " "), "/reports") ||
+		!strings.Contains(lines[1], "…") {
 		t.Fatalf("expected the dir tail with a leading ellipsis, got %q", lines[1])
 	}
 }

@@ -39,7 +39,8 @@ func TestRenderDayBoundaryOverviewGroupsDaysAndDisablesAddWhenCovered(t *testing
 		"Asia/Kolkata",
 	)
 	rendered = renderDayBoundaryDialog(testTheme(), state)
-	if !strings.Contains(rendered, "all days have overrides") || !strings.Contains(rendered, "unavailable") {
+	if !strings.Contains(rendered, "all days have overrides") ||
+		!strings.Contains(rendered, "unavailable") {
 		t.Fatalf("expected covered-state affordances in render: %q", rendered)
 	}
 }

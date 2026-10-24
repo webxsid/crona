@@ -18,10 +18,20 @@ func points(target int, counts ...int) []sharedtypes.MomentumSeriesPoint {
 	return series
 }
 
-func cardWith(name string, enabled bool, current, longest int, series []sharedtypes.MomentumSeriesPoint) sharedtypes.MomentumCard {
+func cardWith(
+	name string,
+	enabled bool,
+	current, longest int,
+	series []sharedtypes.MomentumSeriesPoint,
+) sharedtypes.MomentumCard {
 	return sharedtypes.MomentumCard{
-		Definition: sharedtypes.HabitStreakDefinition{Name: name, Enabled: enabled, Period: sharedtypes.HabitStreakPeriodDay, RequiredCount: 1},
-		Current:    current, Longest: longest, Series: series,
+		Definition: sharedtypes.HabitStreakDefinition{
+			Name:          name,
+			Enabled:       enabled,
+			Period:        sharedtypes.HabitStreakPeriodDay,
+			RequiredCount: 1,
+		},
+		Current: current, Longest: longest, Series: series,
 	}
 }
 
@@ -73,7 +83,17 @@ func TestStatusMarks(t *testing.T) {
 }
 
 func TestListRowFitsWidth(t *testing.T) {
-	row := listRow(types.Theme{}, cardWith("A remarkably long momentum name that will not fit", true, 27, 30, points(1, 1, 1)), 38)
+	row := listRow(
+		types.Theme{},
+		cardWith(
+			"A remarkably long momentum name that will not fit",
+			true,
+			27,
+			30,
+			points(1, 1, 1),
+		),
+		38,
+	)
 	plain := ansi.Strip(row)
 	if w := ansi.StringWidth(row); w != 38 {
 		t.Fatalf("expected 38 cells, got %d: %q", w, plain)
@@ -119,7 +139,11 @@ func TestStripRowsCounts(t *testing.T) {
 }
 
 func TestStripRowsDropRightFirst(t *testing.T) {
-	rows := StripRows(types.Theme{}, stripState(cardWith("Deep work", true, 27, 30, points(4, 4))), 30)
+	rows := StripRows(
+		types.Theme{},
+		stripState(cardWith("Deep work", true, 27, 30, points(4, 4))),
+		30,
+	)
 	for _, row := range rows {
 		if w := ansi.StringWidth(row); w != 30 || strings.Contains(row, "Latest") {
 			t.Fatalf("expected a 30-cell row without Latest, got %d %q", w, ansi.Strip(row))
@@ -139,7 +163,10 @@ func squash(s string) string { return strings.Join(strings.Fields(s), " ") }
 func TestStripRowsCarryWindowHint(t *testing.T) {
 	state := stripState(cardWith("Deep work", true, 27, 30, points(4, 4)))
 	state.MomentumWindowDays = 90
-	if row := ansi.Strip(StripRows(types.Theme{}, state, 160)[0]); !strings.HasSuffix(row, "[+/-/0] 90d window") {
+	if row := ansi.Strip(StripRows(types.Theme{}, state, 160)[0]); !strings.HasSuffix(
+		row,
+		"[+/-/0] 90d window",
+	) {
 		t.Fatalf("expected the window hint at the right of row 1, got %q", row)
 	}
 }

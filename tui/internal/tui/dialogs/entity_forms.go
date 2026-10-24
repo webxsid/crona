@@ -19,14 +19,26 @@ func renderCheckInForm(theme Theme, state controllerpkg.State, displayDate strin
 	column := len("Screen time")
 	full, half := formColumns(inner, column)
 	field := func(label string, input int, width int, placeholder string) string {
-		return Field(theme, label, column, bareInput(state.Inputs[input], width, placeholder), state.FocusIdx == input)
+		return Field(
+			theme,
+			label,
+			column,
+			bareInput(state.Inputs[input], width, placeholder),
+			state.FocusIdx == input,
+		)
 	}
 	return renderForm(theme, state, FormSpec{
 		Title: title, Context: displayDate, Border: border, FocusCount: 6,
 		Primary: plainHint(dialogSubmitHint(state, "save")), Hints: tabNextHints,
 		Rows: []FormRow{
 			pairRow(field("Mood", 0, half, "1-5"), field("Energy", 1, half, "1-5"), 0, 1, inner),
-			pairRow(field("Sleep", 2, half, "7h30m"), field("Sleep score", 3, half, "0-100"), 2, 3, inner),
+			pairRow(
+				field("Sleep", 2, half, "7h30m"),
+				field("Sleep score", 3, half, "0-100"),
+				2,
+				3,
+				inner,
+			),
 			fieldRow(4, field("Screen time", 4, full, "2h")),
 			fieldRow(5, field("Notes", 5, full, "optional")),
 		},
@@ -44,10 +56,31 @@ func renderHabitLogForm(theme Theme, state controllerpkg.State) string {
 	full, _ := formColumns(inner, column)
 	return renderForm(theme, state, FormSpec{
 		Title: title, Context: state.CheckInDate, Border: theme.ColorGreen, FocusCount: 2,
-		Primary: plainHint(dialogSubmitHint(state, "save")), Hints: textareaHints(state.DescriptionIndex),
+		Primary: plainHint(
+			dialogSubmitHint(state, "save"),
+		), Hints: textareaHints(state.DescriptionIndex),
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Duration", column, bareInput(state.Inputs[0], full, "optional"), state.FocusIdx == 0)),
-			textareaRow(state.DescriptionIndex, Textarea(theme, "Notes", column, bareTextarea(state), state.FocusIdx == state.DescriptionIndex, inner)),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Duration",
+					column,
+					bareInput(state.Inputs[0], full, "optional"),
+					state.FocusIdx == 0,
+				),
+			),
+			textareaRow(
+				state.DescriptionIndex,
+				Textarea(
+					theme,
+					"Notes",
+					column,
+					bareTextarea(state),
+					state.FocusIdx == state.DescriptionIndex,
+					inner,
+				),
+			),
 		},
 	})
 }
@@ -80,7 +113,16 @@ func renderReminderForm(theme Theme, state controllerpkg.State) string {
 		Rows: []FormRow{
 			fieldRow(0, cadenceField(theme, state, column, 0)),
 			fieldRow(2, daysField(theme, state, column, 2)),
-			fieldRow(1, Field(theme, "Time", column, bareInput(state.Inputs[1], full, "HH:MM"), state.FocusIdx == 1)),
+			fieldRow(
+				1,
+				Field(
+					theme,
+					"Time",
+					column,
+					bareInput(state.Inputs[1], full, "HH:MM"),
+					state.FocusIdx == 1,
+				),
+			),
 			staticRow("", theme.StyleDim.Render("Time uses 24-hour HH:MM, for example 20:00.")),
 		},
 	})

@@ -20,7 +20,15 @@ func TestFormFocusIgnoresUpDown(t *testing.T) {
 			focus, repo := state.FocusIdx, state.RepoIndex
 			next, _, _ := Update(state, UpdateContext{}, "2026-10-18", tea.KeyMsg{Type: key})
 			if next.FocusIdx != focus || next.RepoIndex != repo {
-				t.Errorf("%s %v: focus %d→%d repo %d→%d", name, key, focus, next.FocusIdx, repo, next.RepoIndex)
+				t.Errorf(
+					"%s %v: focus %d→%d repo %d→%d",
+					name,
+					key,
+					focus,
+					next.FocusIdx,
+					repo,
+					next.RepoIndex,
+				)
 			}
 		}
 		state := open()

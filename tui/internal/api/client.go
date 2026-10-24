@@ -360,7 +360,10 @@ func (c *Client) UpdateSessionHistory(input shareddto.UpdateSessionHistoryReques
 }
 
 func (c *Client) DeleteSessionHistory(id string) error {
-	return c.mustOK(protocol.MethodSessionHistoryDelete, shareddto.DeleteSessionHistoryRequest{ID: id})
+	return c.mustOK(
+		protocol.MethodSessionHistoryDelete,
+		shareddto.DeleteSessionHistoryRequest{ID: id},
+	)
 }
 
 func (c *Client) LogManualSession(input shareddto.ManualSessionLogRequest) (*Session, error) {
@@ -792,7 +795,8 @@ func decodeSettings(raw json.RawMessage) (*CoreSettings, error) {
 }
 
 func (c *Client) PatchSetting(key sharedtypes.CoreSettingsKey, value any) error {
-	if key == sharedtypes.CoreSettingsKeyAwayModeEnabled || key == sharedtypes.CoreSettingsKeyAwayDates {
+	if key == sharedtypes.CoreSettingsKeyAwayModeEnabled ||
+		key == sharedtypes.CoreSettingsKeyAwayDates {
 		return fmt.Errorf("away mode must be changed through SetAwayMode")
 	}
 	return c.call(protocol.MethodSettingsPatch, shareddto.PatchCoreSettingRequest{

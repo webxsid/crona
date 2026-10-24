@@ -48,7 +48,8 @@ func TestDailyStripThenTasksThenHabits(t *testing.T) {
 	for _, width := range []int{99, 120, 160} {
 		rendered := renderView(testTheme(), dailyState(width, 40))
 		lines := strings.Split(ansi.Strip(rendered), "\n")
-		if !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") || !strings.HasPrefix(fieldsOf(lines[1]), "Habits 0/2") {
+		if !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") ||
+			!strings.HasPrefix(fieldsOf(lines[1]), "Habits 0/2") {
 			t.Fatalf("width %d: expected the day strip on rows 0-1, got %q", width, lines[:2])
 		}
 		if rowOf(t, rendered, "─ Habits Due") <= rowOf(t, rendered, "─ Tasks") {
@@ -62,7 +63,10 @@ func TestDailyWideHasDetailPane(t *testing.T) {
 	if rowOf(t, wide, "─ Ship momentum block") != rowOf(t, wide, "─ Tasks") {
 		t.Fatal("expected the detail pane beside tasks at 160 columns")
 	}
-	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(medium, "─ Ship momentum block") {
+	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(
+		medium,
+		"─ Ship momentum block",
+	) {
 		t.Fatal("expected no detail pane below 160 columns")
 	}
 }
@@ -76,7 +80,13 @@ func TestDailySplitsTasksAndHabitsEvenly(t *testing.T) {
 			tasksH := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks")
 			habitsH := 40 - strip - tasksH
 			if tasksH-habitsH < 0 || tasksH-habitsH > 1 {
-				t.Fatalf("width %d, %d tasks: expected an even split, got tasks %d habits %d", width, tasks, tasksH, habitsH)
+				t.Fatalf(
+					"width %d, %d tasks: expected an even split, got tasks %d habits %d",
+					width,
+					tasks,
+					tasksH,
+					habitsH,
+				)
 			}
 		}
 	}
@@ -86,7 +96,9 @@ func cardHabits(state types.ContentState, n int) types.ContentState {
 	state.DueHabits = nil
 	for i := range n {
 		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
-			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)},
+			},
 		})
 	}
 	return state
@@ -96,15 +108,31 @@ func meterHabitState(width int) types.ContentState {
 	state := dailyState(width, 40)
 	target, logged := 10, 15
 	state.DueHabits = []api.HabitDailyItem{
-		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 1, Name: "Walk", TargetMinutes: &target}}},
-		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 2, Name: "Journal", TargetMinutes: &target}}, Status: "completed", DurationMinutes: &logged},
-		{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 3, Name: "Morning Walk"}}, Status: "failed"},
+		{
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: 1, Name: "Walk", TargetMinutes: &target},
+			},
+		},
+		{
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: 2, Name: "Journal", TargetMinutes: &target},
+			},
+			Status:          "completed",
+			DurationMinutes: &logged,
+		},
+		{
+			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 3, Name: "Morning Walk"}},
+			Status:        "failed",
+		},
 	}
 	return state
 }
 
 func TestDailyHabitRowsShowStatusBarAndMinutes(t *testing.T) {
-	lines := strings.Split(ansi.Strip(renderHabits(testTheme(), meterHabitState(130), 130, 10)), "\n")
+	lines := strings.Split(
+		ansi.Strip(renderHabits(testTheme(), meterHabitState(130), 130, 10)),
+		"\n",
+	)
 	assertContainsLine(t, lines, "[x] Journal", "15m / 10m")
 	assertContainsLine(t, lines, "[x] Journal", "█")
 	assertContainsLine(t, lines, "[ ] Walk", "- / 10m")
@@ -166,11 +194,16 @@ func TestDailyFocusedHabitsCursorVisible(t *testing.T) {
 	state.DueHabits = nil
 	for i := range 30 {
 		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
-			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)},
+			},
 		})
 	}
 	state.Cursors["habits"] = 29
-	if rendered := ansi.Strip(renderView(testTheme(), state)); !strings.Contains(rendered, "Habit 29") {
+	if rendered := ansi.Strip(renderView(testTheme(), state)); !strings.Contains(
+		rendered,
+		"Habit 29",
+	) {
 		t.Fatalf("expected the focused habit cursor to stay visible, got %q", rendered)
 	}
 }
@@ -229,7 +262,9 @@ func TestDailyHabitsCursorVisibleAtEnd(t *testing.T) {
 	state.DueHabits = nil
 	for i := range 30 {
 		state.DueHabits = append(state.DueHabits, api.HabitDailyItem{
-			HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)}},
+			HabitWithMeta: api.HabitWithMeta{
+				Habit: api.Habit{ID: int64(i + 1), Name: fmt.Sprintf("Habit %02d", i)},
+			},
 		})
 	}
 	state.Cursors["habits"] = 29
@@ -262,7 +297,11 @@ func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
 		state := manyIssues(dailyState(width, 30), 1)
 		state.DailyIssues[0].RepoName, state.DailyIssues[0].StreamName = "crona", "core"
 		state.Pane = "habits" // unfocused, so the card keeps its meta line
-		if rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20)); !strings.Contains(rendered, "crona") || !strings.Contains(rendered, "core") {
+		if rendered := ansi.Strip(renderIssues(testTheme(), state, width, 20)); !strings.Contains(
+			rendered,
+			"crona",
+		) ||
+			!strings.Contains(rendered, "core") {
 			t.Fatalf("width %d: expected the issue's own repo and stream, got %q", width, rendered)
 		}
 	}

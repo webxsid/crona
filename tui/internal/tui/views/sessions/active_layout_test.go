@@ -20,10 +20,18 @@ func layoutState(hardLimit bool) types.ContentState {
 		View: "session_active", Pane: "session_active", Width: 160, Height: 44,
 		Timer: &api.TimerState{
 			State: "running", IssueID: &issueID, SegmentStartTime: &start, SessionStartTime: &start,
-			SegmentType: new(sharedtypes.SessionSegmentWork), NextSegmentType: new(sharedtypes.SessionSegmentShortBreak),
+			SegmentType: new(
+				sharedtypes.SessionSegmentWork,
+			), NextSegmentType: new(sharedtypes.SessionSegmentShortBreak),
 		},
 		AllIssues: []api.IssueWithMeta{{
-			Issue:    api.Issue{ID: issueID, Title: "Improve install docs", EstimateMinutes: &est, Description: &desc, Notes: &notes},
+			Issue: api.Issue{
+				ID:              issueID,
+				Title:           "Improve install docs",
+				EstimateMinutes: &est,
+				Description:     &desc,
+				Notes:           &notes,
+			},
 			RepoName: "OSS", StreamName: "cli",
 		}},
 		Settings: &api.CoreSettings{TimerMode: sharedtypes.TimerModeStopwatch},
@@ -40,7 +48,8 @@ func layoutState(hardLimit bool) types.ContentState {
 
 func TestActiveSessionIsOnePanelWithTheIssueUnderTheClock(t *testing.T) {
 	rendered := ansi.Strip(renderActiveView(types.Theme{}, layoutState(true)))
-	if strings.Contains(rendered, "Active Issue") || strings.Contains(rendered, "Notes") || strings.Contains(rendered, "planned -> ready") {
+	if strings.Contains(rendered, "Active Issue") || strings.Contains(rendered, "Notes") ||
+		strings.Contains(rendered, "planned -> ready") {
 		t.Fatalf("expected no separate issue pane or notes:\n%s", rendered)
 	}
 	clock, issue := strings.Index(rendered, "█"), strings.Index(rendered, "Improve install docs")
@@ -98,7 +107,12 @@ func TestActiveSessionCentresItsContentVertically(t *testing.T) {
 	}
 	above, below := first, len(lines)-2-last
 	if above < 3 || above-below > 2 || below-above > 2 {
-		t.Fatalf("expected centred content, %d blank above and %d below:\n%s", above, below, strings.Join(lines, "\n"))
+		t.Fatalf(
+			"expected centred content, %d blank above and %d below:\n%s",
+			above,
+			below,
+			strings.Join(lines, "\n"),
+		)
 	}
 }
 

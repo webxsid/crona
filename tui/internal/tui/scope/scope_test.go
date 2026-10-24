@@ -18,7 +18,8 @@ func TestNodesNestStreamsUnderRepos(t *testing.T) {
 	for _, node := range nodes {
 		names, depths = append(names, node.Name), append(depths, node.Depth)
 	}
-	if !slices.Equal(names, []string{"All", "crona", "tui", "daemon", "dotfiles"}) || !slices.Equal(depths, []int{0, 0, 1, 1, 0}) {
+	if !slices.Equal(names, []string{"All", "crona", "tui", "daemon", "dotfiles"}) ||
+		!slices.Equal(depths, []int{0, 0, 1, 1, 0}) {
 		t.Fatalf("got names %v depths %v", names, depths)
 	}
 	if nodes[2].Scope != (Scope{RepoID: 1, StreamID: 2}) || !nodes[0].Scope.IsAll() {

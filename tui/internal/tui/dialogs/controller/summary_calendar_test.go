@@ -33,7 +33,9 @@ func TestSummaryCalendarSelectsDate(t *testing.T) {
 	state := OpenSummaryCalendar(State{}, "2026-08-18")
 	state.DateCursorValue = "2026-08-17"
 	next, action, _ := updateSummaryCalendar(state, "2026-08-18", tea.KeyMsg{Type: tea.KeyEnter})
-	if next.Kind != "" || action == nil || action.Kind != "set_summary_date" || action.DueDate == nil || *action.DueDate != "2026-08-17" {
+	if next.Kind != "" || action == nil || action.Kind != "set_summary_date" ||
+		action.DueDate == nil ||
+		*action.DueDate != "2026-08-17" {
 		t.Fatalf("unexpected calendar selection: state=%+v action=%+v", next, action)
 	}
 }

@@ -22,23 +22,38 @@ func TestDayBoundaryEditorLoadsAndSavesSchedule(t *testing.T) {
 		"Asia/Kolkata",
 	)
 	if state.Inputs[0].Value() != "08:30" || len(state.DayBoundaryOverrides) != 1 {
-		t.Fatalf("schedule values were not loaded: default=%q overrides=%+v", state.Inputs[0].Value(), state.DayBoundaryOverrides)
+		t.Fatalf(
+			"schedule values were not loaded: default=%q overrides=%+v",
+			state.Inputs[0].Value(),
+			state.DayBoundaryOverrides,
+		)
 	}
-	if got := state.DayBoundaryOverrides[0]; got.Time != "09:00" || len(got.Days) != 1 || got.Days[0] != 1 {
+	if got := state.DayBoundaryOverrides[0]; got.Time != "09:00" || len(got.Days) != 1 ||
+		got.Days[0] != 1 {
 		t.Fatalf("unexpected grouped override: %+v", got)
 	}
 	if state.DayBoundaryTimezone != "Asia/Kolkata" {
 		t.Fatalf("timezone = %q", state.DayBoundaryTimezone)
 	}
 
-	next, action, status := Update(state, UpdateContext{}, "2026-07-29", tea.KeyMsg{Type: tea.KeyCtrlS})
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-07-29",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
 	if status != "" {
 		t.Fatalf("unexpected save status: %q", status)
 	}
 	if next.Kind != "" || action == nil {
-		t.Fatalf("expected editor to close with save action: state=%q action=%+v", next.Kind, action)
+		t.Fatalf(
+			"expected editor to close with save action: state=%q action=%+v",
+			next.Kind,
+			action,
+		)
 	}
-	if action.SettingKey != sharedtypes.CoreSettingsKeyStartOfDay || action.DayBoundarySchedule.DefaultTime != "08:30" {
+	if action.SettingKey != sharedtypes.CoreSettingsKeyStartOfDay ||
+		action.DayBoundarySchedule.DefaultTime != "08:30" {
 		t.Fatalf("unexpected save action: %+v", action)
 	}
 }
@@ -50,7 +65,12 @@ func TestDayBoundaryEditorAddsMultiDayOverride(t *testing.T) {
 		sharedtypes.DayBoundarySchedule{Enabled: true, DefaultTime: "08:30"},
 		"UTC",
 	)
-	state, _, _ = Update(state, UpdateContext{}, "2026-07-29", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	state, _, _ = Update(
+		state,
+		UpdateContext{},
+		"2026-07-29",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}},
+	)
 	if state.DayBoundaryStep != DayBoundaryStepDays {
 		t.Fatalf("step = %d, want day selector", state.DayBoundaryStep)
 	}
@@ -64,7 +84,8 @@ func TestDayBoundaryEditorAddsMultiDayOverride(t *testing.T) {
 	if status != "" || state.DayBoundaryStep != DayBoundaryStepOverview {
 		t.Fatalf("expected overview after apply, step=%d status=%q", state.DayBoundaryStep, status)
 	}
-	if got := state.DayBoundarySchedule.WeekdayOverrides; got[1] != "09:15" || got[3] != "09:15" || got[5] != "09:15" {
+	if got := state.DayBoundarySchedule.WeekdayOverrides; got[1] != "09:15" || got[3] != "09:15" ||
+		got[5] != "09:15" {
 		t.Fatalf("unexpected overrides: %+v", got)
 	}
 }
@@ -83,7 +104,12 @@ func TestDayBoundaryEditorDisablesConfiguredDays(t *testing.T) {
 		},
 		"UTC",
 	)
-	state, _, _ = Update(state, UpdateContext{}, "2026-07-29", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	state, _, _ = Update(
+		state,
+		UpdateContext{},
+		"2026-07-29",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}},
+	)
 	if DayBoundaryDayAvailable(state, 1) || DayBoundaryDayAvailable(state, 3) {
 		t.Fatal("expected configured weekdays to be unavailable")
 	}
@@ -129,7 +155,11 @@ func TestDayBoundaryEditorDisablesDefaultAndAddWhenAllDaysCovered(t *testing.T) 
 	state := OpenEditDayBoundary(
 		State{},
 		sharedtypes.CoreSettingsKeyStartOfDay,
-		sharedtypes.DayBoundarySchedule{Enabled: true, DefaultTime: "08:30", WeekdayOverrides: overrides},
+		sharedtypes.DayBoundarySchedule{
+			Enabled:          true,
+			DefaultTime:      "08:30",
+			WeekdayOverrides: overrides,
+		},
 		"UTC",
 	)
 	if !AllDayBoundaryDaysOverridden(state.DayBoundarySchedule) {
@@ -138,7 +168,12 @@ func TestDayBoundaryEditorDisablesDefaultAndAddWhenAllDaysCovered(t *testing.T) 
 	if state.DayBoundaryOverrideCursor == 0 {
 		t.Fatal("expected default row to be skipped when all weekdays are covered")
 	}
-	state, _, _ = Update(state, UpdateContext{}, "2026-07-29", tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+	state, _, _ = Update(
+		state,
+		UpdateContext{},
+		"2026-07-29",
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}},
+	)
 	if state.DayBoundaryStep != DayBoundaryStepOverview {
 		t.Fatal("add override should be disabled when all weekdays are covered")
 	}
@@ -152,8 +187,18 @@ func TestDayBoundaryEditorRejectsInvalidTime(t *testing.T) {
 		"UTC",
 	)
 	state.Inputs[0].SetValue("8:00")
-	next, action, status := Update(state, UpdateContext{}, "2026-07-29", tea.KeyMsg{Type: tea.KeyCtrlS})
+	next, action, status := Update(
+		state,
+		UpdateContext{},
+		"2026-07-29",
+		tea.KeyMsg{Type: tea.KeyCtrlS},
+	)
 	if action != nil || next.Kind != "edit_day_boundary" || status == "" {
-		t.Fatalf("expected validation error, state=%q action=%+v status=%q", next.Kind, action, status)
+		t.Fatalf(
+			"expected validation error, state=%q action=%+v status=%q",
+			next.Kind,
+			action,
+			status,
+		)
 	}
 }

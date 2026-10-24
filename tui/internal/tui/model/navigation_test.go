@@ -51,7 +51,10 @@ func TestOpenSelectedViewDialogIncludesWorkedEstimate(t *testing.T) {
 		)
 	}
 	if strings.Contains(next.dialogViewBody, "Worked / est.") {
-		t.Fatalf("expected worked/estimate only in the meta, not repeated in the body, got %q", next.dialogViewBody)
+		t.Fatalf(
+			"expected worked/estimate only in the meta, not repeated in the body, got %q",
+			next.dialogViewBody,
+		)
 	}
 }
 
@@ -169,10 +172,17 @@ func daySummaryModel(width int) Model {
 	issue := api.Issue{ID: 1, Title: "Today", Status: "planned", TodoForDate: &date}
 	return Model{
 		view: ViewDaily, pane: PaneIssues, width: width, height: 40, date: date,
-		cursor:          map[Pane]int{PaneIssues: 0, PaneHabits: 0},
-		filters:         map[Pane]string{},
-		allIssues:       []api.IssueWithMeta{{Issue: issue}, {Issue: api.Issue{ID: 2, Title: "Other", Status: "planned", TodoForDate: &date}}},
-		summarySnapshot: &api.SummarySnapshot{Date: date, Focus: &api.FocusScoreSummary{Score: 72}, Metrics: &api.DailyMetricsDay{Date: date}},
+		cursor:  map[Pane]int{PaneIssues: 0, PaneHabits: 0},
+		filters: map[Pane]string{},
+		allIssues: []api.IssueWithMeta{
+			{Issue: issue},
+			{Issue: api.Issue{ID: 2, Title: "Other", Status: "planned", TodoForDate: &date}},
+		},
+		summarySnapshot: &api.SummarySnapshot{
+			Date:    date,
+			Focus:   &api.FocusScoreSummary{Score: 72},
+			Metrics: &api.DailyMetricsDay{Date: date},
+		},
 	}
 }
 
@@ -184,16 +194,28 @@ func pressKey(m Model, key rune) Model {
 func TestDaySummaryKeyTogglesOnWideAndOpensDialogWhenNarrow(t *testing.T) {
 	wide := pressKey(daySummaryModel(200), 'S')
 	if !wide.dailyDetailDay || wide.dialog != "" {
-		t.Fatalf("expected S to show the Day summary in the pane, got day=%v dialog=%q", wide.dailyDetailDay, wide.dialog)
+		t.Fatalf(
+			"expected S to show the Day summary in the pane, got day=%v dialog=%q",
+			wide.dailyDetailDay,
+			wide.dialog,
+		)
 	}
 	if back := pressKey(wide, 'S'); back.dailyDetailDay {
 		t.Fatal("expected a second S to return to the selection")
 	}
 	narrow := pressKey(daySummaryModel(120), 'S')
 	if narrow.dailyDetailDay || narrow.dialog != "view_entity" || narrow.dialogViewTitle != "Day" {
-		t.Fatalf("expected a Day dialog when narrow, got day=%v dialog=%q title=%q", narrow.dailyDetailDay, narrow.dialog, narrow.dialogViewTitle)
+		t.Fatalf(
+			"expected a Day dialog when narrow, got day=%v dialog=%q title=%q",
+			narrow.dailyDetailDay,
+			narrow.dialog,
+			narrow.dialogViewTitle,
+		)
 	}
-	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(strings.Join(strings.Fields(body), " "), "Focus 72/100") {
+	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(
+		strings.Join(strings.Fields(body), " "),
+		"Focus 72/100",
+	) {
 		t.Fatalf("expected the Day summary in the dialog, got %q", body)
 	}
 }

@@ -16,8 +16,11 @@ func alertsState(width, height int) types.ContentState {
 	return types.ContentState{
 		View: "alerts", Pane: "alerts", Width: width, Height: height,
 		Cursors: map[string]int{"alerts": 0}, Filters: map[string]string{},
-		Settings:    &sharedtypes.CoreSettings{BoundaryNotifications: true},
-		AlertStatus: &api.AlertStatus{NotificationsAvailable: true, NotificationBackend: "terminal-notifier"},
+		Settings: &sharedtypes.CoreSettings{BoundaryNotifications: true},
+		AlertStatus: &api.AlertStatus{
+			NotificationsAvailable: true,
+			NotificationBackend:    "terminal-notifier",
+		},
 		AlertReminders: []api.AlertReminder{
 			{ID: "r1", Kind: sharedtypes.AlertReminderKindCheckIn},
 			{ID: "r2", Kind: sharedtypes.AlertReminderKindDailyPlan},

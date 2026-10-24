@@ -87,21 +87,33 @@ func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, wi
 		lines = append(lines,
 			label("Today")+body.Render(fmt.Sprintf(
 				"%s accountability (%s of %s)",
-				signed(share.Accountability), pct(share.AccountabilityPct), num(summary.AccountabilityScore),
+				signed(
+					share.Accountability,
+				),
+				pct(share.AccountabilityPct),
+				num(summary.AccountabilityScore),
 			)),
 			label("")+body.Render(fmt.Sprintf(
 				"%s backlog pressure (%s of %s)",
-				signed(share.BacklogPressure), pct(share.BacklogPressurePct), num(summary.BacklogPressure),
+				signed(
+					share.BacklogPressure,
+				),
+				pct(share.BacklogPressurePct),
+				num(summary.BacklogPressure),
 			)),
 		)
 	}
 	if done := penalty.IfDoneToday; done != nil {
 		lines = append(lines, label("Done today")+body.Render(fmt.Sprintf(
-			"accountability %s · backlog %s", signed(done.Accountability), signed(done.BacklogPressure),
+			"accountability %s · backlog %s",
+			signed(done.Accountability),
+			signed(done.BacklogPressure),
 		)))
 	}
 	if push := penalty.IfPostponedOneDay; push != nil {
-		text := body.Render(fmt.Sprintf("penalty %s (%s)", num(push.FailScore), signed(push.AccountabilityDelta)))
+		text := body.Render(
+			fmt.Sprintf("penalty %s (%s)", num(push.FailScore), signed(push.AccountabilityDelta)),
+		)
 		if push.BecomesHighRisk {
 			text += "  " + warn.Render("becomes high risk")
 		}
@@ -127,11 +139,16 @@ func RescheduleHint(plan *api.DailyPlan, issueID int64) string {
 		return ""
 	}
 	for _, entry := range plan.Entries {
-		if entry.IssueID != issueID || entry.Penalty == nil || entry.Penalty.IfPostponedOneDay == nil {
+		if entry.IssueID != issueID || entry.Penalty == nil ||
+			entry.Penalty.IfPostponedOneDay == nil {
 			continue
 		}
 		push := entry.Penalty.IfPostponedOneDay
-		hint := fmt.Sprintf("Push 1 day: penalty %.2f (%+.2f)", push.FailScore, push.AccountabilityDelta)
+		hint := fmt.Sprintf(
+			"Push 1 day: penalty %.2f (%+.2f)",
+			push.FailScore,
+			push.AccountabilityDelta,
+		)
 		if push.BecomesHighRisk {
 			hint += " · becomes high risk"
 		}

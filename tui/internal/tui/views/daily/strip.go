@@ -83,7 +83,10 @@ func dayStripRows(theme types.Theme, state types.ContentState, width, maxRows in
 		left := " " + strings.TrimRight(strings.Join(cells, dayStripColumnGap), " ")
 		if i < len(week) {
 			right := padCells(week[i], columnWidth(week)) + " "
-			left += strings.Repeat(" ", max(0, width-ansi.StringWidth(left)-ansi.StringWidth(right))) + right
+			left += strings.Repeat(
+				" ",
+				max(0, width-ansi.StringWidth(left)-ansi.StringWidth(right)),
+			) + right
 		}
 		rows[i] = padCells(left, width)
 	}
@@ -141,7 +144,11 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 	}
 	valueWidth := max(len(values[0]), len(values[1]))
 	row := func(label, value, bar, tail string) string {
-		line := theme.StyleHeader.Render(padCells(label, 6)) + "  " + theme.StyleNormal.Render(padCells(value, valueWidth))
+		line := theme.StyleHeader.Render(
+			padCells(label, 6),
+		) + "  " + theme.StyleNormal.Render(
+			padCells(value, valueWidth),
+		)
 		if bar != "" {
 			line += "  " + bar
 		}
@@ -153,10 +160,21 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 	tasksBar, habitsBar := "", ""
 	if withBars {
 		tasksBar = renderIssueStatusBar(theme, statusCounts, dayStripBarWidth)
-		habitsBar = renderHabitBar(theme, habitsDone, habitsFailed, len(state.DueHabits), dayStripBarWidth)
+		habitsBar = renderHabitBar(
+			theme,
+			habitsDone,
+			habitsFailed,
+			len(state.DueHabits),
+			dayStripBarWidth,
+		)
 	}
 	return []string{
-		row("Tasks", values[0], tasksBar, theme.StyleDim.Render(issueProgressText(worked, estimate, true))),
+		row(
+			"Tasks",
+			values[0],
+			tasksBar,
+			theme.StyleDim.Render(issueProgressText(worked, estimate, true)),
+		),
 		row("Habits", values[1], habitsBar, ""),
 	}
 }
@@ -173,8 +191,18 @@ func dayGridColumns(theme types.Theme, state types.ContentState) [][]string {
 	}
 	bottom := []cell{{"Focus", ""}, {"Check-ins", ""}, {"", ""}, {"Plan", ""}}
 	if streaks := state.DailyStreaks; streaks != nil {
-		bottom[0].value = fmt.Sprintf("%dd  ", streaks.CurrentFocusDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestFocusDays))
-		bottom[1].value = fmt.Sprintf("%dd  ", streaks.CurrentCheckInDays) + theme.StyleDim.Render(fmt.Sprintf("best %dd", streaks.LongestCheckInDays))
+		bottom[0].value = fmt.Sprintf(
+			"%dd  ",
+			streaks.CurrentFocusDays,
+		) + theme.StyleDim.Render(
+			fmt.Sprintf("best %dd", streaks.LongestFocusDays),
+		)
+		bottom[1].value = fmt.Sprintf(
+			"%dd  ",
+			streaks.CurrentCheckInDays,
+		) + theme.StyleDim.Render(
+			fmt.Sprintf("best %dd", streaks.LongestCheckInDays),
+		)
 	}
 	// The day's headline scores come from the summary snapshot, once it is the shown date's.
 	top = append(top, cell{"Score", ""})

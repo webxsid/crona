@@ -15,7 +15,12 @@ import (
 
 // Render is the tree as a section: one row per node with its count and a ● on the
 // checked-out repo and stream, the focused node's keys under it, and a create line.
-func Render(theme types.Theme, state types.ContentState, counts map[scope.Scope]int, width, height int) string {
+func Render(
+	theme types.Theme,
+	state types.ContentState,
+	counts map[scope.Scope]int,
+	width, height int,
+) string {
 	focused := state.Pane == "scope"
 	nodes := scope.Nodes(state.Repos, state.AllStreams)
 	cur := min(max(0, state.Cursors["scope"]), len(nodes)-1)
@@ -35,7 +40,18 @@ func Render(theme types.Theme, state types.ContentState, counts map[scope.Scope]
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
 	for i := start; i < end; i++ {
-		lines = append(lines, nodeRow(theme, nodes[i], counts[nodes[i].Scope], isChecked(nodes[i], checked), focused && i == cur, i == cur, rowWidth))
+		lines = append(
+			lines,
+			nodeRow(
+				theme,
+				nodes[i],
+				counts[nodes[i].Scope],
+				isChecked(nodes[i], checked),
+				focused && i == cur,
+				i == cur,
+				rowWidth,
+			),
+		)
 		if focused && i == cur && !nodes[i].Scope.IsAll() {
 			lines = append(lines, "    "+viewchrome.FitHints(nodeActions(theme, state), rowWidth-4))
 		}
@@ -65,7 +81,13 @@ func RenderRow(theme types.Theme, state types.ContentState, width int) string {
 	if state.Pane == "scope" {
 		label = theme.StylePaneTitle.Render("Scope")
 	}
-	row := " " + label + " " + theme.StyleHeader.Render("‹") + " " + theme.StyleNormal.Render(path) + " " + theme.StyleHeader.Render("›")
+	row := " " + label + " " + theme.StyleHeader.Render(
+		"‹",
+	) + " " + theme.StyleNormal.Render(
+		path,
+	) + " " + theme.StyleHeader.Render(
+		"›",
+	)
 	if isChecked(node, scope.FromContext(state.Context)) {
 		row += " " + theme.StyleHeader.Render("●")
 	}
@@ -102,7 +124,13 @@ func add(counts map[scope.Scope]int, repoID, streamID int64) {
 	counts[scope.Scope{RepoID: repoID, StreamID: streamID}]++
 }
 
-func nodeRow(theme types.Theme, node scope.Node, count int, checked, cursor, selected bool, width int) string {
+func nodeRow(
+	theme types.Theme,
+	node scope.Node,
+	count int,
+	checked, cursor, selected bool,
+	width int,
+) string {
 	marker := "  "
 	if cursor {
 		marker = viewchrome.SelectionCursor + " "
@@ -122,11 +150,19 @@ func nodeRow(theme types.Theme, node scope.Node, count int, checked, cursor, sel
 	case selected:
 		style = theme.StyleSelected
 	}
-	return style.Render(name) + strings.Repeat(" ", max(1, width-ansi.StringWidth(name)-ansi.StringWidth(right))) + right
+	return style.Render(
+		name,
+	) + strings.Repeat(
+		" ",
+		max(1, width-ansi.StringWidth(name)-ansi.StringWidth(right)),
+	) + right
 }
 
 func nodeActions(theme types.Theme, state types.ContentState) []string {
-	actions := []string{viewchrome.KeyHint(theme, "c", "check out"), viewchrome.KeyHint(theme, "e", "edit")}
+	actions := []string{
+		viewchrome.KeyHint(theme, "c", "check out"),
+		viewchrome.KeyHint(theme, "e", "edit"),
+	}
 	if state.Timer == nil || state.Timer.State == "idle" {
 		actions = append(actions, viewchrome.KeyHint(theme, "D", "delete"))
 	}

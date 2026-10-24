@@ -32,7 +32,11 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 		return nil
 	}
 	rows := []Row{
-		{Section: "History", Label: "Manage History", Value: enabledDisabled(settings.ManageHistory)},
+		{
+			Section: "History",
+			Label:   "Manage History",
+			Value:   enabledDisabled(settings.ManageHistory),
+		},
 		{
 			Section: "Updates",
 			Label:   "Update Checks",
@@ -85,8 +89,16 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 			Label:   "Privacy & Diagnostics",
 			Value:   telemetrySettingsLabel(settings),
 		},
-		{Section: "Day Boundaries", Label: "Start of Day", Value: dayBoundaryLabel(settings.StartOfDay, timezone)},
-		{Section: "Day Boundaries", Label: "End of Day", Value: dayBoundaryLabel(settings.EndOfDay, timezone)},
+		{
+			Section: "Day Boundaries",
+			Label:   "Start of Day",
+			Value:   dayBoundaryLabel(settings.StartOfDay, timezone),
+		},
+		{
+			Section: "Day Boundaries",
+			Label:   "End of Day",
+			Value:   dayBoundaryLabel(settings.EndOfDay, timezone),
+		},
 		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 	}
 	if settings.ManageHistory {

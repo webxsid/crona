@@ -22,9 +22,17 @@ func newView() viewui.View {
 // renderView lays Alerts out as a backend strip over the editable rows and their help.
 func renderView(theme types.Theme, state types.ContentState) string {
 	filter := state.Filters["alerts"]
-	rows := alertsmeta.FilteredSelectableRows(filter, state.Settings, state.AlertStatus, state.AlertReminders)
+	rows := alertsmeta.FilteredSelectableRows(
+		filter,
+		state.Settings,
+		state.AlertStatus,
+		state.AlertReminders,
+	)
 	cursor := min(max(0, state.Cursors["alerts"]), max(0, len(rows)-1))
-	strip := viewchrome.StripRows(backendGroups(alertsmeta.Rows(state.Settings, state.AlertStatus, state.AlertReminders)), state.Width)
+	strip := viewchrome.StripRows(
+		backendGroups(alertsmeta.Rows(state.Settings, state.AlertStatus, state.AlertReminders)),
+		state.Width,
+	)
 	height := max(1, state.Height-len(strip)-1)
 	listWidth, detailWidth := viewchrome.LogPaneWidths(state.Width)
 

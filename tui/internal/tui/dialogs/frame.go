@@ -76,7 +76,10 @@ func Frame(theme Theme, spec FrameSpec) string {
 	}
 	side := border.Render("│")
 	row := func(line string) string {
-		return side + "  " + line + strings.Repeat(" ", max(0, inner-ansi.StringWidth(line))) + "  " + side
+		return side + "  " + line + strings.Repeat(
+			" ",
+			max(0, inner-ansi.StringWidth(line)),
+		) + "  " + side
 	}
 	rows := []string{frameTop(theme, border, spec.Title, spec.Context, inner+frameChrome), row("")}
 	for _, line := range body {
@@ -150,7 +153,12 @@ func Field(theme Theme, label string, column int, value string, focused bool) st
 	if focused {
 		style = theme.StylePaneTitle
 	}
-	return style.Render(label) + strings.Repeat(" ", max(0, column-ansi.StringWidth(label))+2) + value
+	return style.Render(
+		label,
+	) + strings.Repeat(
+		" ",
+		max(0, column-ansi.StringWidth(label))+2,
+	) + value
 }
 
 // FieldPair puts two field rows side by side, or stacks them below an inner width of 56.
@@ -165,7 +173,14 @@ func FieldPair(left, right string, inner int) []string {
 
 // Textarea is the label on the body's first row and a dim ┊ gutter on the rest, at the
 // body's own fixed height.
-func Textarea(theme Theme, label string, column int, body string, focused bool, inner int) []string {
+func Textarea(
+	theme Theme,
+	label string,
+	column int,
+	body string,
+	focused bool,
+	inner int,
+) []string {
 	lines := []string{}
 	for i, line := range strings.Split(body, "\n") {
 		line = theme.StyleDim.Render("┊ ") + ansi.Truncate(line, max(1, inner-column-4), "")
@@ -259,7 +274,11 @@ func footerWithEsc(theme Theme, primary string, hints []string, esc string, inne
 	lines := viewchrome.PackHints(all, inner)
 	for i, line := range lines {
 		if i == 0 && strings.HasPrefix(line, primary) {
-			lines[i] = theme.StyleHeader.Render(primary) + theme.StyleDim.Render(strings.TrimPrefix(line, primary))
+			lines[i] = theme.StyleHeader.Render(
+				primary,
+			) + theme.StyleDim.Render(
+				strings.TrimPrefix(line, primary),
+			)
 			continue
 		}
 		lines[i] = theme.StyleDim.Render(line)

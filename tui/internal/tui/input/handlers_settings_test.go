@@ -77,7 +77,10 @@ func TestHandleActivateSelectedSettingOpensTelemetrySettingsDialog(t *testing.T)
 			ErrorReportingEnabled: false,
 		},
 		Cursor: map[uistate.Pane]int{
-			uistate.PaneSettings: settingsCursor(&sharedtypes.CoreSettings{}, "Privacy & Diagnostics"),
+			uistate.PaneSettings: settingsCursor(
+				&sharedtypes.CoreSettings{},
+				"Privacy & Diagnostics",
+			),
 		},
 	}
 	deps := Deps{

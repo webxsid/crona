@@ -32,7 +32,9 @@ type Service struct {
 	actionHandler      func(context.Context, string, string, int) error
 }
 
-func (s *Service) SetCompanionActionHandler(handler func(context.Context, string, string, int) error) {
+func (s *Service) SetCompanionActionHandler(
+	handler func(context.Context, string, string, int) error,
+) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.actionHandler = handler
@@ -488,7 +490,9 @@ func (s *Service) deliverWithActions(
 	return firstErr
 }
 
-func (s *Service) actionHandlerFor(actionID string) func(context.Context, string, string, int) error {
+func (s *Service) actionHandlerFor(
+	actionID string,
+) func(context.Context, string, string, int) error {
 	s.mu.Lock()
 	handler := s.actionHandler
 	s.mu.Unlock()
@@ -498,7 +502,9 @@ func (s *Service) actionHandlerFor(actionID string) func(context.Context, string
 	return handler
 }
 
-func breakDeferralWarningAlert(payload sharedtypes.TimerBreakDeferralWarningPayload) sharedtypes.AlertRequest {
+func breakDeferralWarningAlert(
+	payload sharedtypes.TimerBreakDeferralWarningPayload,
+) sharedtypes.AlertRequest {
 	return sharedtypes.AlertRequest{
 		Kind:        sharedtypes.AlertEventTimerBreakDeferral,
 		Title:       "Break approaching",
@@ -511,7 +517,9 @@ func breakDeferralWarningAlert(payload sharedtypes.TimerBreakDeferralWarningPayl
 	}
 }
 
-func breakDeferralWarningActions(payload sharedtypes.TimerBreakDeferralWarningPayload) []sharedtypes.AlertDeliveryAction {
+func breakDeferralWarningActions(
+	payload sharedtypes.TimerBreakDeferralWarningPayload,
+) []sharedtypes.AlertDeliveryAction {
 	return []sharedtypes.AlertDeliveryAction{{
 		ID:               "timer.defer_break",
 		Title:            "Keep Working",

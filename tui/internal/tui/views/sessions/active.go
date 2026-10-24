@@ -80,7 +80,11 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 	if hardLimit && state.Timer.State != "ready" {
 		timerTitle = strings.TrimSuffix(timerTitle, " Session") + " · " + phaseLabel(seg)
 		if seg == "work" && state.Timer.HardLimitCycles > 0 {
-			timerTitle += fmt.Sprintf(" %d of %d", min(state.Timer.CompletedWorkCycles+1, state.Timer.HardLimitCycles), state.Timer.HardLimitCycles)
+			timerTitle += fmt.Sprintf(
+				" %d of %d",
+				min(state.Timer.CompletedWorkCycles+1, state.Timer.HardLimitCycles),
+				state.Timer.HardLimitCycles,
+			)
 		}
 	} else if !hardLimit {
 		phase := phaseLabel(seg)
@@ -114,18 +118,47 @@ func renderActiveView(theme types.Theme, state types.ContentState) string {
 		below = append(below, "", lipgloss.NewStyle().Foreground(stateColor).Render(dots))
 	}
 	if len(status) > 0 {
-		below = append(below, "", lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(strings.Join(status, "  ·  ")))
+		below = append(
+			below,
+			"",
+			lipgloss.NewStyle().
+				Foreground(stateColor).
+				Bold(true).
+				Render(strings.Join(status, "  ·  ")),
+		)
 	}
 	priorWorkedSeconds := state.Timer.IssueWorkedSeconds
 	below = append(below, "", "")
-	below = append(below, sessionIssueLines(theme, activeIssue, state.Timer.Adhoc, priorWorkedSeconds+workElapsedSeconds, centerWidth)...)
+	below = append(
+		below,
+		sessionIssueLines(
+			theme,
+			activeIssue,
+			state.Timer.Adhoc,
+			priorWorkedSeconds+workElapsedSeconds,
+			centerWidth,
+		)...)
 	below = append(below, "", theme.StyleDim.Render(timerHint))
 
 	clockHeight := max(3, min(totalH/2, totalH-1-len(below)-2))
-	timerText := sessionmeta.RenderResponsiveClock(elapsed, centerWidth, clockHeight, stateColor, theme.ColorDim)
-	body := splitLines([]string{lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText), centerLines(below, centerWidth)})
+	timerText := sessionmeta.RenderResponsiveClock(
+		elapsed,
+		centerWidth,
+		clockHeight,
+		stateColor,
+		theme.ColorDim,
+	)
+	body := splitLines(
+		[]string{
+			lipgloss.NewStyle().Foreground(stateColor).Bold(true).Render(timerText),
+			centerLines(below, centerWidth),
+		},
+	)
 	for i, line := range body {
-		body[i] = lipgloss.NewStyle().Width(centerWidth).AlignHorizontal(lipgloss.Center).Render(line)
+		body[i] = lipgloss.NewStyle().
+			Width(centerWidth).
+			AlignHorizontal(lipgloss.Center).
+			Render(line)
 	}
 	if pad := (totalH - 1 - len(body)) / 2; pad > 0 {
 		body = append(make([]string, pad), body...)
@@ -190,20 +223,34 @@ func sessionContextLabel(issue *api.IssueWithMeta, adhoc bool) string {
 
 // sessionIssueLines is the issue block under the clock: title, one line of description,
 // then worked time against the estimate.
-func sessionIssueLines(theme types.Theme, issue *api.IssueWithMeta, adhoc bool, workedSeconds, width int) []string {
+func sessionIssueLines(
+	theme types.Theme,
+	issue *api.IssueWithMeta,
+	adhoc bool,
+	workedSeconds, width int,
+) []string {
 	if issue == nil {
 		if adhoc {
-			return []string{theme.StyleDim.Render("Ad hoc session · attribution pending until you end it")}
+			return []string{
+				theme.StyleDim.Render("Ad hoc session · attribution pending until you end it"),
+			}
 		}
 		return []string{theme.StyleDim.Render("No issue selected")}
 	}
 	lines := []string{theme.StyleHeader.Render(viewhelpers.Truncate(issue.Title, width))}
 	if issue.Description != nil && strings.TrimSpace(*issue.Description) != "" {
-		lines = append(lines, theme.StyleDim.Render(viewhelpers.Truncate(collapseSpace(*issue.Description), width)))
+		lines = append(
+			lines,
+			theme.StyleDim.Render(viewhelpers.Truncate(collapseSpace(*issue.Description), width)),
+		)
 	}
 	worked := "Worked " + helperpkg.FormatCompactDurationMinutes(workedSeconds/60)
 	if issue.EstimateMinutes != nil && *issue.EstimateMinutes > 0 {
-		worked += fmt.Sprintf(" / est. %s  ·  %d%%", helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes), workedSeconds*100/(*issue.EstimateMinutes*60))
+		worked += fmt.Sprintf(
+			" / est. %s  ·  %d%%",
+			helperpkg.FormatCompactDurationMinutes(*issue.EstimateMinutes),
+			workedSeconds*100/(*issue.EstimateMinutes*60),
+		)
 	}
 	return append(lines, "", theme.StyleDim.Render(worked))
 }

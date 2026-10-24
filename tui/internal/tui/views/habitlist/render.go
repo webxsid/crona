@@ -41,7 +41,9 @@ func StripRows(theme types.Theme, state types.ContentState, width int) []string 
 	best := -1
 	for _, card := range state.MomentumCards {
 		def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
-		if !def.Enabled || def.TargetKind != sharedtypes.MomentumTargetKindHabit || def.Period != sharedtypes.HabitStreakPeriodDay || len(def.HabitIDs) == 0 {
+		if !def.Enabled || def.TargetKind != sharedtypes.MomentumTargetKindHabit ||
+			def.Period != sharedtypes.HabitStreakPeriodDay ||
+			len(def.HabitIDs) == 0 {
 			continue
 		}
 		contained := true
@@ -60,14 +62,21 @@ func StripRows(theme types.Theme, state types.ContentState, width int) []string 
 		streak = fmt.Sprintf("%dd", best)
 	}
 
-	groups := [][2]string{{fmt.Sprintf("Active %d", active), fmt.Sprintf("Done today %d", done)}, {fmt.Sprintf("paused %d", paused), fmt.Sprintf("failed %d", failed)}, {fmt.Sprintf("due today %d", due), "best streak " + streak}}
+	groups := [][2]string{
+		{fmt.Sprintf("Active %d", active), fmt.Sprintf("Done today %d", done)},
+		{fmt.Sprintf("paused %d", paused), fmt.Sprintf("failed %d", failed)},
+		{fmt.Sprintf("due today %d", due), "best streak " + streak},
+	}
 	rows := []string{"", ""}
 	for _, group := range groups {
 		gap := ""
 		if rows[0] != "" {
 			gap = "  "
 		}
-		if max(ansi.StringWidth(rows[0]+gap+group[0]), ansi.StringWidth(rows[1]+gap+group[1])) > width {
+		if max(
+			ansi.StringWidth(rows[0]+gap+group[0]),
+			ansi.StringWidth(rows[1]+gap+group[1]),
+		) > width {
 			break
 		}
 		for i := range rows {
@@ -95,7 +104,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	indices := habitIndices(state)
 	lines := []string{}
 	if active {
-		lines = append(lines, viewchrome.FitHints([]string{viewchrome.KeyHint(theme, "a", "new habit")}, width-2))
+		lines = append(
+			lines,
+			viewchrome.FitHints([]string{viewchrome.KeyHint(theme, "a", "new habit")}, width-2),
+		)
 	}
 	if len(indices) == 0 {
 		lines = append(lines, theme.StyleDim.Render("No habits in this scope"))
@@ -126,19 +138,39 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		}
 		lines = append(lines, style.Render(marker+ansi.Truncate(habit.Name, max(1, width-4), "…")))
 		if active && pos == cur {
-			hints := []string{viewchrome.KeyHint(theme, "enter", "open"), viewchrome.KeyHint(theme, "e", "edit")}
+			hints := []string{
+				viewchrome.KeyHint(theme, "enter", "open"),
+				viewchrome.KeyHint(theme, "e", "edit"),
+			}
 			if state.Timer == nil || state.Timer.State == "idle" {
-				hints = append(hints, viewchrome.KeyHint(theme, "D", "delete"), viewchrome.KeyHint(theme, "m", "log"))
+				hints = append(
+					hints,
+					viewchrome.KeyHint(theme, "D", "delete"),
+					viewchrome.KeyHint(theme, "m", "log"),
+				)
 			}
 			lines = append(lines, "  "+viewchrome.FitHints(hints, width-4))
 			continue
 		}
-		lines = append(lines, theme.StyleDim.Render("  "+ansi.Truncate(habitMeta(habit), max(1, width-4), "…")))
+		lines = append(
+			lines,
+			theme.StyleDim.Render("  "+ansi.Truncate(habitMeta(habit), max(1, width-4), "…")),
+		)
 	}
 	if end < len(indices) {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", len(indices)-end)))
 	}
-	return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Habits", Meta: fmt.Sprintf("%d", len(indices)), Focused: active, Width: width, Height: height, Lines: lines})
+	return viewchrome.RenderSection(
+		theme,
+		viewchrome.Section{
+			Title:   "Habits",
+			Meta:    fmt.Sprintf("%d", len(indices)),
+			Focused: active,
+			Width:   width,
+			Height:  height,
+			Lines:   lines,
+		},
+	)
 }
 func habitMeta(habit api.HabitWithMeta) string {
 	schedule := string(habit.ScheduleType)

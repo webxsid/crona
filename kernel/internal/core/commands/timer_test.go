@@ -495,13 +495,19 @@ func TestTimerAdvanceExpiresAfterFinalPomodoroBreak(t *testing.T) {
 	coreCtx, service, issue := newTimerTestContext(t, func() string { return now })
 	mustMakeIssuePlanned(t, ctx, coreCtx, issue.ID)
 
-	state, err := service.Start(ctx, nil, new(issue.StreamID), new(issue.ID), &shareddto.TimerStartRequest{
-		HardLimitTotalSeconds:          new(14 * 60),
-		HardLimitWorkSeconds:           new(5 * 60),
-		HardLimitBreakSeconds:          new(2 * 60),
-		HardLimitLongBreakSeconds:      new(0),
-		HardLimitCyclesBeforeLongBreak: new(0),
-	})
+	state, err := service.Start(
+		ctx,
+		nil,
+		new(issue.StreamID),
+		new(issue.ID),
+		&shareddto.TimerStartRequest{
+			HardLimitTotalSeconds:          new(14 * 60),
+			HardLimitWorkSeconds:           new(5 * 60),
+			HardLimitBreakSeconds:          new(2 * 60),
+			HardLimitLongBreakSeconds:      new(0),
+			HardLimitCyclesBeforeLongBreak: new(0),
+		},
+	)
 	if err != nil {
 		t.Fatalf("start Pomodoro: %v", err)
 	}
@@ -522,7 +528,12 @@ func TestTimerAdvanceExpiresAfterFinalPomodoroBreak(t *testing.T) {
 			t.Fatalf("advance %d: expected %q, got %+v", i+1, test.want, state.SegmentType)
 		}
 		if state.HardLimitRemainingSeconds != test.remaining {
-			t.Fatalf("advance %d: expected %d seconds remaining, got %d", i+1, test.remaining, state.HardLimitRemainingSeconds)
+			t.Fatalf(
+				"advance %d: expected %d seconds remaining, got %d",
+				i+1,
+				test.remaining,
+				state.HardLimitRemainingSeconds,
+			)
 		}
 	}
 
@@ -1020,7 +1031,12 @@ func TestTimerDeferBreakKeepsWorkSegmentAndStartsBreak(t *testing.T) {
 	if deferred.State != "running" || deferred.HardLimitExpired {
 		t.Fatalf("expected running non-expired state, got %+v", deferred)
 	}
-	active, err := service.ctx.SessionSegments.GetActive(ctx, service.ctx.UserID, service.ctx.DeviceID, *started.SessionID)
+	active, err := service.ctx.SessionSegments.GetActive(
+		ctx,
+		service.ctx.UserID,
+		service.ctx.DeviceID,
+		*started.SessionID,
+	)
 	if err != nil {
 		t.Fatalf("load active segment after deferral: %v", err)
 	}
@@ -1034,7 +1050,8 @@ func TestTimerDeferBreakKeepsWorkSegmentAndStartsBreak(t *testing.T) {
 	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 {
 		t.Fatalf("expected sixty-second current-segment deferral, got %+v", runtimeState)
 	}
-	if runtimeState.HardLimitElapsedOffsetSeconds != 0 || runtimeState.HardLimitElapsedStartedAt != "2026-05-24T10:00:00Z" {
+	if runtimeState.HardLimitElapsedOffsetSeconds != 0 ||
+		runtimeState.HardLimitElapsedStartedAt != "2026-05-24T10:00:00Z" {
 		t.Fatalf("expected deferral not to rebase elapsed accounting, got %+v", runtimeState)
 	}
 	if _, err := service.DeferBreak(ctx, *started.SessionID, 30); err == nil {
@@ -1042,11 +1059,21 @@ func TestTimerDeferBreakKeepsWorkSegmentAndStartsBreak(t *testing.T) {
 	}
 	runtimeState, err = service.runtimeStateForSession(*started.SessionID)
 	if err != nil || runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 {
-		t.Fatalf("expected rejected deferral to preserve timer state, state=%+v err=%v", runtimeState, err)
+		t.Fatalf(
+			"expected rejected deferral to preserve timer state, state=%+v err=%v",
+			runtimeState,
+			err,
+		)
 	}
 
-	boundary, err := service.nextBoundary(ctx, *started.SessionID, sharedtypes.SessionSegmentWork, runtimeState)
-	if err != nil || boundary == nil || boundary.NextSegment != sharedtypes.SessionSegmentShortBreak {
+	boundary, err := service.nextBoundary(
+		ctx,
+		*started.SessionID,
+		sharedtypes.SessionSegmentWork,
+		runtimeState,
+	)
+	if err != nil || boundary == nil ||
+		boundary.NextSegment != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected work-to-short-break boundary, got boundary=%+v err=%v", boundary, err)
 	}
 	if _, err := service.applyBoundaryTransition(ctx, *started.SessionID, sharedtypes.SessionSegmentWork, boundary); err != nil {
@@ -1129,13 +1156,18 @@ func TestTimerDeferBreakSerializesConcurrentRequests(t *testing.T) {
 		}
 	}
 	if successes != 1 || failures != 1 {
-		t.Fatalf("expected one successful deferral and one rejection, successes=%d failures=%d", successes, failures)
+		t.Fatalf(
+			"expected one successful deferral and one rejection, successes=%d failures=%d",
+			successes,
+			failures,
+		)
 	}
 	runtimeState, err := service.runtimeStateForSession(*started.SessionID)
 	if err != nil {
 		t.Fatalf("load runtime state: %v", err)
 	}
-	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 || runtimeState.HardLimitTotalSeconds != 120 {
+	if runtimeState == nil || runtimeState.CurrentSegmentDeferralSeconds != 60 ||
+		runtimeState.HardLimitTotalSeconds != 120 {
 		t.Fatalf("expected one persisted extension, got %+v", runtimeState)
 	}
 	if deferredEvents != 1 {
@@ -1291,7 +1323,11 @@ func TestAdhocTimerRequiresResolutionBeforeEnding(t *testing.T) {
 	}
 	if initialContext.IssueID == nil || currentContext.IssueID == nil ||
 		*initialContext.IssueID != *currentContext.IssueID || *currentContext.IssueID != contextIssue.ID {
-		t.Fatalf("adhoc start changed active issue context: before=%+v after=%+v", initialContext, currentContext)
+		t.Fatalf(
+			"adhoc start changed active issue context: before=%+v after=%+v",
+			initialContext,
+			currentContext,
+		)
 	}
 }
 
@@ -1341,7 +1377,8 @@ func TestAdhocTimerKeepCreatesTodayIssueAndReassignsSession(t *testing.T) {
 			break
 		}
 	}
-	if listedAdhoc == nil || listedAdhoc.RepoName != "Ad hoc" || listedAdhoc.StreamName != "Sessions" {
+	if listedAdhoc == nil || listedAdhoc.RepoName != "Ad hoc" ||
+		listedAdhoc.StreamName != "Sessions" {
 		t.Fatalf("ListAll() ad hoc entry = %+v, want human-readable reserved context", listedAdhoc)
 	}
 	if _, err := UpdateIssue(ctx, coreCtx, adhoc.ID, struct {
@@ -1399,8 +1436,12 @@ func TestAdhocTimerKeepCreatesTodayIssueAndReassignsSession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("promote ad hoc issue: %v", err)
 	}
-	if converted.ID != adhoc.ID || converted.Adhoc || converted.StreamID != targetStreamID || converted.Status != sharedtypes.IssueStatusDone {
-		t.Fatalf("converted issue = %+v; want same id/context and completed regular issue", converted)
+	if converted.ID != adhoc.ID || converted.Adhoc || converted.StreamID != targetStreamID ||
+		converted.Status != sharedtypes.IssueStatusDone {
+		t.Fatalf(
+			"converted issue = %+v; want same id/context and completed regular issue",
+			converted,
+		)
 	}
 	convertedHistory, err := coreCtx.Sessions.ListEnded(ctx, struct {
 		UserID   string
@@ -1439,7 +1480,11 @@ func TestAdhocTimerAttachTransitionsIssueAndReassignsSession(t *testing.T) {
 		t.Fatalf("load attached issue: %v", err)
 	}
 	if updated.Status != sharedtypes.IssueStatusInProgress {
-		t.Fatalf("attached issue status = %q, want %q", updated.Status, sharedtypes.IssueStatusInProgress)
+		t.Fatalf(
+			"attached issue status = %q, want %q",
+			updated.Status,
+			sharedtypes.IssueStatusInProgress,
+		)
 	}
 	history, err := coreCtx.Sessions.ListEnded(ctx, struct {
 		UserID   string
@@ -1508,7 +1553,8 @@ func TestAdhocTimerCreatesIssueInProvidedContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("list session history: %v", err)
 	}
-	if len(history) != 1 || history[0].IssueID != created.ID || history[0].ID != *started.SessionID {
+	if len(history) != 1 || history[0].IssueID != created.ID ||
+		history[0].ID != *started.SessionID {
 		t.Fatalf("ListEnded() = %+v, want session attributed to new issue %d", history, created.ID)
 	}
 }

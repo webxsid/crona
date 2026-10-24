@@ -389,7 +389,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		nameWidth = max(nameWidth, ansi.StringWidth(state.DueHabits[idx].Name))
 	}
 	for i := start; i < end; i++ {
-		lines = append(lines, habitRow(theme, state.DueHabits[indices[i]], nameWidth, width-1, i == cur, active))
+		lines = append(
+			lines,
+			habitRow(theme, state.DueHabits[indices[i]], nameWidth, width-1, i == cur, active),
+		)
 		if i == cur && active {
 			lines = append(lines, habitActionLine(theme, state, width-1))
 		}
@@ -404,7 +407,12 @@ const habitRowBarWidth = 10
 
 // habitRow is one habit as an htop-style meter: checkbox and name, status, a bar of logged
 // minutes against the target, and the minutes. The bar, then the status, give way when narrow.
-func habitRow(theme types.Theme, habit api.HabitDailyItem, nameWidth, width int, selected, active bool) string {
+func habitRow(
+	theme types.Theme,
+	habit api.HabitDailyItem,
+	nameWidth, width int,
+	selected, active bool,
+) string {
 	mark, style := habitMark(theme, habit)
 	status := "due"
 	switch habit.Status {
@@ -452,7 +460,10 @@ func habitMeter(theme types.Theme, habit api.HabitDailyItem) string {
 	filled := 0
 	switch {
 	case habit.TargetMinutes != nil && *habit.TargetMinutes > 0 && habit.DurationMinutes != nil:
-		filled = min(habitRowBarWidth, *habit.DurationMinutes*habitRowBarWidth / *habit.TargetMinutes)
+		filled = min(
+			habitRowBarWidth,
+			*habit.DurationMinutes*habitRowBarWidth / *habit.TargetMinutes,
+		)
 	case habit.Status == "completed":
 		filled = habitRowBarWidth
 	}

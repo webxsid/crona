@@ -77,7 +77,8 @@ func TestDialogStatePreservesSummaryExportRange(t *testing.T) {
 	}
 
 	state := model.dialogState()
-	if state.ExportCategory != "summary" || state.ExportStart != "2026-03-13" || state.ExportEnd != "2026-03-19" {
+	if state.ExportCategory != "summary" || state.ExportStart != "2026-03-13" ||
+		state.ExportEnd != "2026-03-19" {
 		t.Fatalf("dialogState dropped summary range: %#v", state)
 	}
 
@@ -91,7 +92,8 @@ func TestDialogStatePreservesSummaryExportRange(t *testing.T) {
 		ExportPresetFormat: sharedtypes.ExportFormatMarkdown,
 		ExportPresetOutput: sharedtypes.ExportOutputModeFile,
 	})
-	if next.dialogExportCategory != "summary" || next.dialogExportStart != "2026-03-13" || next.dialogExportEnd != "2026-03-19" {
+	if next.dialogExportCategory != "summary" || next.dialogExportStart != "2026-03-13" ||
+		next.dialogExportEnd != "2026-03-19" {
 		t.Fatalf("withDialogState dropped summary range: %#v", next)
 	}
 }
@@ -107,12 +109,25 @@ func TestSessionViewAdhocStartOpensTimerTypeDialog(t *testing.T) {
 
 func TestAdhocShortcutPreservesMarkerIntoTimerStartRequest(t *testing.T) {
 	model := Model{view: ViewDaily, pane: PaneIssues, timer: &api.TimerState{State: "idle"}}
-	state, _ := inputpkg.Handle(model.inputState(), tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'A'}}, model.inputDeps())
+	state, _ := inputpkg.Handle(
+		model.inputState(),
+		tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'A'}},
+		model.inputDeps(),
+	)
 	next := model.applyInputState(state)
 	if next.dialog != "timer_start_type" || !next.dialogState().AdhocTimer {
-		t.Fatalf("dialog after A = %q adhoc=%t, want ad hoc timer type", next.dialog, next.dialogState().AdhocTimer)
+		t.Fatalf(
+			"dialog after A = %q adhoc=%t, want ad hoc timer type",
+			next.dialog,
+			next.dialogState().AdhocTimer,
+		)
 	}
-	_, action, status := dialogstate.Update(next.dialogState(), dialogstate.UpdateContext{}, "2026-10-08", tea.KeyMsg{Type: tea.KeyEnter})
+	_, action, status := dialogstate.Update(
+		next.dialogState(),
+		dialogstate.UpdateContext{},
+		"2026-10-08",
+		tea.KeyMsg{Type: tea.KeyEnter},
+	)
 	if status != "" || action == nil || action.TimerStart == nil || !action.TimerStart.Adhoc {
 		t.Fatalf("timer start request = %+v, status %q; want adhoc marker", action, status)
 	}
@@ -145,7 +160,8 @@ func TestAdhocStopwatchEndRendersAttributionDialog(t *testing.T) {
 		t.Fatalf("dialog after x = %q, want adhoc_resolution", next.dialog)
 	}
 	rendered := next.View()
-	if !strings.Contains(rendered, "Finish Ad hoc Session") || !strings.Contains(rendered, "Attach to an existing issue") {
+	if !strings.Contains(rendered, "Finish Ad hoc Session") ||
+		!strings.Contains(rendered, "Attach to an existing issue") {
 		t.Fatalf("ad hoc end dialog rendered blank or incomplete: %q", rendered)
 	}
 }
@@ -358,7 +374,11 @@ func TestMomentumEnterOpensDialogAtAnyWidth(t *testing.T) {
 			momentumWindowDays: 30,
 			cursor:             map[Pane]int{PaneMomentumCards: 0},
 			momentumCards: []api.MomentumCard{{
-				Definition: sharedtypes.HabitStreakDefinition{ID: "momentum-1", Name: "Focus", Period: sharedtypes.HabitStreakPeriodDay},
+				Definition: sharedtypes.HabitStreakDefinition{
+					ID:     "momentum-1",
+					Name:   "Focus",
+					Period: sharedtypes.HabitStreakPeriodDay,
+				},
 			}},
 		}
 		if _, cmd, handled := model.handleInputEnter(); !handled || cmd == nil {

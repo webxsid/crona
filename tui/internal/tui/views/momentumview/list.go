@@ -51,7 +51,13 @@ func latestStatus(card sharedtypes.MomentumCard) string {
 }
 
 // statusMarks are the one-glyph forms of bucket statuses; paused stays a word.
-var statusMarks = map[string]string{"met": "✓", "near": "◐", "missed": "✗", "skipped": "·", "paused": "paused"}
+var statusMarks = map[string]string{
+	"met":     "✓",
+	"near":    "◐",
+	"missed":  "✗",
+	"skipped": "·",
+	"paused":  "paused",
+}
 
 func statusMark(theme types.Theme, card sharedtypes.MomentumCard) string {
 	status := latestStatus(card)
@@ -77,7 +83,11 @@ func listRow(theme types.Theme, card sharedtypes.MomentumCard, width int) string
 	if !card.Definition.Enabled {
 		name, streak = theme.StyleDim.Render(name), theme.StyleDim.Render(streak)
 	}
-	row := name + "  " + sparkline(theme, card.Series, card.Definition.Enabled) + "  " + streak + " " + mark
+	row := name + "  " + sparkline(
+		theme,
+		card.Series,
+		card.Definition.Enabled,
+	) + "  " + streak + " " + mark
 	row = ansi.Truncate(row, width, "")
 	return row + strings.Repeat(" ", max(0, width-ansi.StringWidth(row)))
 }

@@ -40,7 +40,11 @@ func TestSupportEnterRunsSelectedAction(t *testing.T) {
 
 func TestSupportCursorClamps(t *testing.T) {
 	var called []string
-	s, _ := Handle(State{ActiveView: uistate.ViewSupport}, tea.KeyMsg{Type: tea.KeyUp}, supportDeps(&called))
+	s, _ := Handle(
+		State{ActiveView: uistate.ViewSupport},
+		tea.KeyMsg{Type: tea.KeyUp},
+		supportDeps(&called),
+	)
 	if s.SupportCursor != 0 {
 		t.Fatalf("expected up at 0 to stay 0, got %d", s.SupportCursor)
 	}

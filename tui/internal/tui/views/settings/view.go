@@ -62,7 +62,12 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if len(indices) > 0 && state.Settings != nil {
 		row := rows[indices[cursor]]
 		title = row.Label
-		lines = viewchrome.HelpLines(theme, settingsHelp[row.Label], strings.TrimSpace(row.Value), detailWidth-2)
+		lines = viewchrome.HelpLines(
+			theme,
+			settingsHelp[row.Label],
+			strings.TrimSpace(row.Value),
+			detailWidth-2,
+		)
 	}
 	detail := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: title, Width: detailWidth, Height: state.Height, Lines: lines,

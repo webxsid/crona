@@ -69,9 +69,27 @@ func assertHeightStable(t *testing.T, c formCase) {
 func TestRepoStreamForms(t *testing.T) {
 	cases := []formCase{
 		{"create_repo", controllerpkg.OpenCreateRepo(controllerpkg.State{}), "New Repo", "", 2},
-		{"edit_repo", controllerpkg.OpenEditRepo(controllerpkg.State{}, 1, "OSS", nil), "Edit Repo", "", 2},
-		{"create_stream", controllerpkg.OpenCreateStream(controllerpkg.State{}, 1, "OSS"), "New Stream", "OSS", 2},
-		{"edit_stream", controllerpkg.OpenEditStream(controllerpkg.State{}, 2, 1, "cli", "OSS", nil), "Edit Stream", "OSS", 2},
+		{
+			"edit_repo",
+			controllerpkg.OpenEditRepo(controllerpkg.State{}, 1, "OSS", nil),
+			"Edit Repo",
+			"",
+			2,
+		},
+		{
+			"create_stream",
+			controllerpkg.OpenCreateStream(controllerpkg.State{}, 1, "OSS"),
+			"New Stream",
+			"OSS",
+			2,
+		},
+		{
+			"edit_stream",
+			controllerpkg.OpenEditStream(controllerpkg.State{}, 2, 1, "cli", "OSS", nil),
+			"Edit Stream",
+			"OSS",
+			2,
+		},
 	}
 	for _, c := range cases {
 		assertFormChrome(t, c)
@@ -81,7 +99,16 @@ func TestRepoStreamForms(t *testing.T) {
 
 func habitEditState() controllerpkg.State {
 	target := 20
-	return controllerpkg.OpenEditHabit(controllerpkg.State{}, 3, 2, "Read", nil, "daily", &target, true)
+	return controllerpkg.OpenEditHabit(
+		controllerpkg.State{},
+		3,
+		2,
+		"Read",
+		nil,
+		"daily",
+		&target,
+		true,
+	)
 }
 
 func TestHabitAndEditIssueForms(t *testing.T) {
@@ -90,7 +117,13 @@ func TestHabitAndEditIssueForms(t *testing.T) {
 	cases := []formCase{
 		{"create_habit", create, "New Habit", "OSS › cli", 7},
 		{"edit_habit", habitEditState(), "Edit Habit", "", 5},
-		{"edit_issue", controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil), "Edit Issue", "", 4},
+		{
+			"edit_issue",
+			controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil),
+			"Edit Issue",
+			"",
+			4,
+		},
 	}
 	for _, c := range cases {
 		assertFormChrome(t, c)
@@ -99,7 +132,11 @@ func TestHabitAndEditIssueForms(t *testing.T) {
 }
 
 func TestEditIssueDueKeepsTodayHint(t *testing.T) {
-	state := sized(controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil), 120, 36)
+	state := sized(
+		controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil),
+		120,
+		36,
+	)
 	state.FocusIdx = 3
 	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
 	if !strings.Contains(out, "g today") {
@@ -117,15 +154,55 @@ func TestNewHabitShortTerminal(t *testing.T) {
 }
 
 func TestRemainingEntityForms(t *testing.T) {
-	note := controllerpkg.OpenIssueStatusNote(controllerpkg.State{}, 1, 2, "blocked", "Why is it blocked?", true)
+	note := controllerpkg.OpenIssueStatusNote(
+		controllerpkg.State{},
+		1,
+		2,
+		"blocked",
+		"Why is it blocked?",
+		true,
+	)
 	note.ViewName = "Fix alerts"
 	cases := []formCase{
 		{"issue_status_note", note, "Block Issue", "Fix alerts", 1},
-		{"create_checkin", controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"), "New Check-In", "", 6},
-		{"edit_checkin", controllerpkg.OpenEditCheckIn(controllerpkg.State{}, nil, "2026-10-18"), "Edit Check-In", "", 6},
-		{"complete_habit", controllerpkg.OpenHabitCompletion(controllerpkg.State{}, 1, "2026-10-18", nil, nil), "Habit Log", "2026-10-18", 2},
-		{"create_alert_reminder", controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), "Add Check-In Reminder", "", 3},
-		{"edit_alert_reminder", controllerpkg.OpenEditAlertReminder(controllerpkg.State{}, sharedtypes.AlertReminder{TimeHHMM: "20:00"}), "Edit Check-In Reminder", "", 3},
+		{
+			"create_checkin",
+			controllerpkg.OpenCreateCheckIn(controllerpkg.State{}, "2026-10-18"),
+			"New Check-In",
+			"",
+			6,
+		},
+		{
+			"edit_checkin",
+			controllerpkg.OpenEditCheckIn(controllerpkg.State{}, nil, "2026-10-18"),
+			"Edit Check-In",
+			"",
+			6,
+		},
+		{
+			"complete_habit",
+			controllerpkg.OpenHabitCompletion(controllerpkg.State{}, 1, "2026-10-18", nil, nil),
+			"Habit Log",
+			"2026-10-18",
+			2,
+		},
+		{
+			"create_alert_reminder",
+			controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""),
+			"Add Check-In Reminder",
+			"",
+			3,
+		},
+		{
+			"edit_alert_reminder",
+			controllerpkg.OpenEditAlertReminder(
+				controllerpkg.State{},
+				sharedtypes.AlertReminder{TimeHHMM: "20:00"},
+			),
+			"Edit Check-In Reminder",
+			"",
+			3,
+		},
 	}
 	for _, c := range cases {
 		assertFormChrome(t, c)
@@ -151,18 +228,27 @@ func TestEntityFormErrorVisible(t *testing.T) {
 }
 
 func TestFormPairsFitTheirPlaceholders(t *testing.T) {
-	habit := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)))
+	habit := ansi.Strip(
+		Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)),
+	)
 	if strings.Contains(habit, "…") {
 		t.Errorf("schedule placeholder truncated:\n%s", habit)
 	}
-	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
+	reminder := ansi.Strip(
+		Render(
+			testTheme(),
+			sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36),
+		),
+	)
 	if !strings.Contains(reminder, "Time     20:00") {
 		t.Errorf("time label not aligned with Cadence:\n%s", reminder)
 	}
 }
 
 func TestCadenceRows(t *testing.T) {
-	daily := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)))
+	daily := ansi.Strip(
+		Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)),
+	)
 	for _, want := range []string{"Cadence", "‹ Daily ›", "Days", "Mo  Tu  We"} {
 		if !strings.Contains(daily, want) {
 			t.Errorf("new habit lacks %q:\n%s", want, daily)
@@ -171,11 +257,35 @@ func TestCadenceRows(t *testing.T) {
 	if strings.Contains(daily, "Schedule") || strings.Contains(daily, "filter:") {
 		t.Errorf("new habit keeps the typed schedule:\n%s", daily)
 	}
-	custom := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenEditHabit(controllerpkg.State{}, 3, 2, "Read", nil, "tue,thu", nil, true), 120, 36)))
-	if !strings.Contains(custom, "‹ Custom days ›") || !strings.Contains(custom, "[Tu]") || !strings.Contains(custom, "[Th]") {
+	custom := ansi.Strip(
+		Render(
+			testTheme(),
+			sized(
+				controllerpkg.OpenEditHabit(
+					controllerpkg.State{},
+					3,
+					2,
+					"Read",
+					nil,
+					"tue,thu",
+					nil,
+					true,
+				),
+				120,
+				36,
+			),
+		),
+	)
+	if !strings.Contains(custom, "‹ Custom days ›") || !strings.Contains(custom, "[Tu]") ||
+		!strings.Contains(custom, "[Th]") {
 		t.Errorf("custom habit should tick Tu and Th:\n%s", custom)
 	}
-	reminder := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36)))
+	reminder := ansi.Strip(
+		Render(
+			testTheme(),
+			sized(controllerpkg.OpenCreateAlertReminder(controllerpkg.State{}, ""), 120, 36),
+		),
+	)
 	if !strings.Contains(reminder, "‹ Daily ›") || strings.Contains(reminder, "weekday lists") {
 		t.Errorf("reminder should use the cadence picker without the typing help:\n%s", reminder)
 	}
@@ -203,7 +313,15 @@ func TestCadenceRowsStackAboveTarget(t *testing.T) {
 		}
 		cadence, days, end := row("Cadence"), row("Days"), row(last)
 		if cadence < 0 || days != cadence+1 || end != days+1 {
-			t.Errorf("%s: Cadence %d, Days %d, %s %d; want consecutive rows\n%s", state.Kind, cadence, days, last, end, strings.Join(lines, "\n"))
+			t.Errorf(
+				"%s: Cadence %d, Days %d, %s %d; want consecutive rows\n%s",
+				state.Kind,
+				cadence,
+				days,
+				last,
+				end,
+				strings.Join(lines, "\n"),
+			)
 		}
 	}
 }

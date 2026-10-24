@@ -334,11 +334,17 @@ func TestActivePomodoroSessionAdvertisesAdvanceKey(t *testing.T) {
 		},
 	})
 	if !strings.Contains(rendered, "[z]") || !strings.Contains(rendered, "start short break") {
-		t.Fatalf("expected Pomodoro active view to advertise starting the short break, got %q", rendered)
+		t.Fatalf(
+			"expected Pomodoro active view to advertise starting the short break, got %q",
+			rendered,
+		)
 	}
 }
 
-func activeSectionState(width, height int, segment sharedtypes.SessionSegmentType) types.ContentState {
+func activeSectionState(
+	width, height int,
+	segment sharedtypes.SessionSegmentType,
+) types.ContentState {
 	issueID := int64(7)
 	return types.ContentState{
 		View:   "session_active",
@@ -370,7 +376,10 @@ func sessionTheme() types.Theme {
 
 func TestActiveSessionHasNoBorders(t *testing.T) {
 	for _, width := range []int{80, 200} {
-		rendered := renderActiveView(sessionTheme(), activeSectionState(width, 36, sharedtypes.SessionSegmentWork))
+		rendered := renderActiveView(
+			sessionTheme(),
+			activeSectionState(width, 36, sharedtypes.SessionSegmentWork),
+		)
 		if strings.ContainsAny(rendered, "╭╰") {
 			t.Fatalf("width %d: expected no box borders, got:\n%s", width, ansi.Strip(rendered))
 		}
@@ -393,7 +402,10 @@ func TestActiveSessionHeaderUsesSegmentColour(t *testing.T) {
 
 func TestActiveSessionFitsFrame(t *testing.T) {
 	for _, size := range [][2]int{{60, 18}, {200, 47}} {
-		rendered := renderActiveView(sessionTheme(), activeSectionState(size[0], size[1], sharedtypes.SessionSegmentWork))
+		rendered := renderActiveView(
+			sessionTheme(),
+			activeSectionState(size[0], size[1], sharedtypes.SessionSegmentWork),
+		)
 		lines := strings.Split(rendered, "\n")
 		if len(lines) != size[1] {
 			t.Fatalf("%dx%d: got %d lines", size[0], size[1], len(lines))

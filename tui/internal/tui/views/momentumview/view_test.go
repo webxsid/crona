@@ -494,11 +494,16 @@ func TestRenderShowsDisabledMomentumAsPausedHistory(t *testing.T) {
 	if !strings.Contains(rendered, "paused") {
 		t.Fatalf("expected paused status in disabled render, got %q", rendered)
 	}
-	if body := strings.Join(strings.Split(rendered, "\n")[2:], "\n"); strings.Contains(body, "missed") || strings.Contains(body, "met") {
+	if body := strings.Join(strings.Split(rendered, "\n")[2:], "\n"); strings.Contains(
+		body,
+		"missed",
+	) ||
+		strings.Contains(body, "met") {
 		t.Fatalf("expected disabled momentum to avoid live status labels, got %q", rendered)
 	}
 	// The bucket table states the shared target once, then each bucket's count.
-	if !strings.Contains(rendered, "paused · target 3") || !strings.Contains(rendered, " 1 ") || !strings.Contains(rendered, " 3 ") {
+	if !strings.Contains(rendered, "paused · target 3") || !strings.Contains(rendered, " 1 ") ||
+		!strings.Contains(rendered, " 3 ") {
 		t.Fatalf("expected disabled momentum to keep historical counts, got %q", rendered)
 	}
 	if !strings.Contains(rendered, "Momentum disabled") {
@@ -541,11 +546,15 @@ func TestRenderUsesCalendarOnlyForBinaryDailyHabit(t *testing.T) {
 		t.Fatalf("expected daily header in render, got %q", rendered)
 	}
 	// A binary daily habit draws a calendar of weeks, not bars on a scale.
-	chart := ansi.Strip(strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"))
-	if !strings.Contains(chart, "Mon") || !strings.Contains(chart, "Sun") || !strings.Contains(chart, "hit") {
+	chart := ansi.Strip(
+		strings.Join(DetailLines(testTheme(), state.MomentumCards[0], 80, 30, false), "\n"),
+	)
+	if !strings.Contains(chart, "Mon") || !strings.Contains(chart, "Sun") ||
+		!strings.Contains(chart, "hit") {
 		t.Fatalf("expected a weekday calendar with hit counts, got %q", chart)
 	}
-	if strings.Contains(chart, "┆") || strings.Contains(chart, "May 4-10") || strings.ContainsFunc(chart, func(r rune) bool { return r > 0x2800 && r <= 0x28FF }) {
+	if strings.Contains(chart, "┆") || strings.Contains(chart, "May 4-10") ||
+		strings.ContainsFunc(chart, func(r rune) bool { return r > 0x2800 && r <= 0x28FF }) {
 		t.Fatalf("expected no bucket bars or braille in the calendar, got %q", chart)
 	}
 }

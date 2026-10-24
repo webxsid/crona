@@ -64,10 +64,25 @@ func TestDayStartRollover(t *testing.T) {
 			loaded := ""
 			deps := testEventDeps()
 			deps.LoadDailySummary = func(date string) tea.Cmd { loaded = date; return func() tea.Msg { return nil } }
-			payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10", DateBefore: "2026-08-09"})
-			state, _ := HandleEvent(EventState{Date: tc.date}, deps, api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
+			payload, _ := json.Marshal(
+				sharedtypes.DayBoundaryEventPayload{
+					LogicalDate: "2026-08-10",
+					DateBefore:  "2026-08-09",
+				},
+			)
+			state, _ := HandleEvent(
+				EventState{Date: tc.date},
+				deps,
+				api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload},
+			)
 			if state.Date != tc.wantDate || loaded != tc.wantLoaded {
-				t.Fatalf("Date = %q loaded %q, want %q loaded %q", state.Date, loaded, tc.wantDate, tc.wantLoaded)
+				t.Fatalf(
+					"Date = %q loaded %q, want %q loaded %q",
+					state.Date,
+					loaded,
+					tc.wantDate,
+					tc.wantLoaded,
+				)
 			}
 		})
 	}
@@ -79,7 +94,11 @@ func TestReviewRefreshUsesSharedDateAndWindow(t *testing.T) {
 		CurrentDate:      func(s MessageState) string { return s.Date },
 		LoadReviewWindow: func(s, e string) tea.Cmd { start, end = s, e; return func() tea.Msg { return nil } },
 	}
-	_, cmd, handled := HandleMessage(MessageState{Date: "2026-08-10", ReviewWindowDays: 30}, commands.RequestRollupRefresh()(), deps)
+	_, cmd, handled := HandleMessage(
+		MessageState{Date: "2026-08-10", ReviewWindowDays: 30},
+		commands.RequestRollupRefresh()(),
+		deps,
+	)
 	if !handled || cmd == nil || start != "2026-07-12" || end != "2026-08-10" {
 		t.Fatalf("expected Review reloaded on 2026-07-12..2026-08-10, got %q..%q", start, end)
 	}
@@ -98,8 +117,14 @@ func TestRolloverReloadsSummarySnapshot(t *testing.T) {
 	snapshot = ""
 	eventDeps := testEventDeps()
 	eventDeps.LoadSummarySnapshot = func(date string) tea.Cmd { snapshot = date; return func() tea.Msg { return nil } }
-	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10", DateBefore: "2026-08-09"})
-	HandleEvent(EventState{Date: "2026-08-09"}, eventDeps, api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
+	payload, _ := json.Marshal(
+		sharedtypes.DayBoundaryEventPayload{LogicalDate: "2026-08-10", DateBefore: "2026-08-09"},
+	)
+	HandleEvent(
+		EventState{Date: "2026-08-09"},
+		eventDeps,
+		api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload},
+	)
 	if snapshot != "2026-08-10" {
 		t.Fatalf("expected the summary snapshot reloaded on day_start, got %q", snapshot)
 	}
@@ -112,7 +137,11 @@ func TestDailyEditsReloadSummarySnapshot(t *testing.T) {
 		deps.LoadSummarySnapshot = func(date string) tea.Cmd { snapshot = date; return func() tea.Msg { return nil } }
 		HandleEvent(EventState{CurrentDate: "2026-08-10"}, deps, api.KernelEvent{Type: eventType})
 		if snapshot != "2026-08-10" {
-			t.Fatalf("%s: expected the summary snapshot reloaded for the shown date, got %q", eventType, snapshot)
+			t.Fatalf(
+				"%s: expected the summary snapshot reloaded for the shown date, got %q",
+				eventType,
+				snapshot,
+			)
 		}
 	}
 }
@@ -123,9 +152,21 @@ func TestRolloverRefreshesTodayWhileDailyStaysHistorical(t *testing.T) {
 		shown, today := "", ""
 		deps := rolloverMessageDeps(&shown)
 		deps.LoadTodayHabits = func(date string) tea.Cmd { today = date; return nil }
-		state, _, _ := HandleMessage(MessageState{Date: historical, Health: &api.Health{CurrentDate: "2026-08-09"}}, commands.HealthLoadedMsg{Health: &api.Health{CurrentDate: newToday}}, deps)
+		state, _, _ := HandleMessage(
+			MessageState{Date: historical, Health: &api.Health{CurrentDate: "2026-08-09"}},
+			commands.HealthLoadedMsg{Health: &api.Health{CurrentDate: newToday}},
+			deps,
+		)
 		if state.Date != historical || shown != historical || today != newToday {
-			t.Fatalf("health rollover: stored %q, displayed %q, today load %q; want %q, %q, %q", state.Date, shown, today, historical, historical, newToday)
+			t.Fatalf(
+				"health rollover: stored %q, displayed %q, today load %q; want %q, %q, %q",
+				state.Date,
+				shown,
+				today,
+				historical,
+				historical,
+				newToday,
+			)
 		}
 	})
 	t.Run("day start", func(t *testing.T) {
@@ -133,10 +174,24 @@ func TestRolloverRefreshesTodayWhileDailyStaysHistorical(t *testing.T) {
 		deps := testEventDeps()
 		deps.LoadDueHabits = func(date string) tea.Cmd { shown = date; return nil }
 		deps.LoadTodayHabits = func(date string) tea.Cmd { today = date; return nil }
-		payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{DateBefore: "2026-08-09", LogicalDate: newToday})
-		state, _ := HandleEvent(EventState{Date: historical, Today: "2026-08-09"}, deps, api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
+		payload, _ := json.Marshal(
+			sharedtypes.DayBoundaryEventPayload{DateBefore: "2026-08-09", LogicalDate: newToday},
+		)
+		state, _ := HandleEvent(
+			EventState{Date: historical, Today: "2026-08-09"},
+			deps,
+			api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload},
+		)
 		if state.Date != historical || shown != historical || today != newToday {
-			t.Fatalf("day start: stored %q, displayed %q, today load %q; want %q, %q, %q", state.Date, shown, today, historical, historical, newToday)
+			t.Fatalf(
+				"day start: stored %q, displayed %q, today load %q; want %q, %q, %q",
+				state.Date,
+				shown,
+				today,
+				historical,
+				historical,
+				newToday,
+			)
 		}
 	})
 }

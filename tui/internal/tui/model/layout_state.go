@@ -81,46 +81,50 @@ func (m Model) viewContentState(
 			"settings":       m.filters[PaneSettings],
 			"alerts":         m.filters[PaneAlerts],
 		},
-		Repos:                     m.repos,
-		Streams:                   m.streams,
-		Issues:                    m.issues,
-		DailyIssues:               dailyIssues,
-		DailyPlannedIssues:        selectionpkg.DailySectionIssues(snapshot, DailyTaskSectionPlanned),
-		Habits:                    m.habits,
-		AllHabits:                 m.allHabits,
-		ScopedHabits:              selectionpkg.ScopedHabits(snapshot),
-		AllStreams:                m.allStreams,
-		BrowseScope:               m.browseScope,
-		AllIssues:                 m.allIssues,
-		DefaultIssues:             defaultIssues,
-		DueHabits:                 dueHabits,
-		MomentumCards:             m.momentumCards,
-		DailySummary:              m.dailySummary,
-		SummarySnapshot:           m.summarySnapshot,
-		DailyPlan:                 m.dailyPlan,
-		DailyCheckIn:              m.dailyCheckIn,
-		MetricsRange:              m.metricsRange,
-		MetricsRollup:             m.metricsRollup,
-		RollupMetricsRange:        m.rollupMetricsRange,
-		RollupMetricsRollup:       m.rollupMetricsRollup,
-		MomentumMetricsRange:      m.momentumMetricsRange,
-		MomentumMetricsRollup:     m.momentumMetricsRollup,
-		Streaks:                   m.streaks,
-		DailyStreaks:              m.dailyStreaks,
-		DashboardWindow:           m.dashboardWindow,
-		DailyFocusScore:           m.dailyFocusScore,
-		WeeklyFocusScore:          m.weeklyFocusScore,
-		RepoDistribution:          m.repoDistribution,
-		StreamDistribution:        m.streamDistribution,
-		IssueDistribution:         m.issueDistribution,
-		SegmentDistribution:       m.segmentDistribution,
-		GoalProgress:              m.goalProgress,
-		ExportAssets:              m.exportAssets,
-		ExportReports:             m.exportReports,
-		IssueSessions:             m.issueSessions,
-		SessionHistory:            m.sessionHistory,
-		SessionPreview:            m.sessionPreview,
-		SessionPreviewFailed:      m.sessionPreviewFailed != "" && m.sessionPreviewFailed == m.selectedSessionID(),
+		Repos:       m.repos,
+		Streams:     m.streams,
+		Issues:      m.issues,
+		DailyIssues: dailyIssues,
+		DailyPlannedIssues: selectionpkg.DailySectionIssues(
+			snapshot,
+			DailyTaskSectionPlanned,
+		),
+		Habits:                m.habits,
+		AllHabits:             m.allHabits,
+		ScopedHabits:          selectionpkg.ScopedHabits(snapshot),
+		AllStreams:            m.allStreams,
+		BrowseScope:           m.browseScope,
+		AllIssues:             m.allIssues,
+		DefaultIssues:         defaultIssues,
+		DueHabits:             dueHabits,
+		MomentumCards:         m.momentumCards,
+		DailySummary:          m.dailySummary,
+		SummarySnapshot:       m.summarySnapshot,
+		DailyPlan:             m.dailyPlan,
+		DailyCheckIn:          m.dailyCheckIn,
+		MetricsRange:          m.metricsRange,
+		MetricsRollup:         m.metricsRollup,
+		RollupMetricsRange:    m.rollupMetricsRange,
+		RollupMetricsRollup:   m.rollupMetricsRollup,
+		MomentumMetricsRange:  m.momentumMetricsRange,
+		MomentumMetricsRollup: m.momentumMetricsRollup,
+		Streaks:               m.streaks,
+		DailyStreaks:          m.dailyStreaks,
+		DashboardWindow:       m.dashboardWindow,
+		DailyFocusScore:       m.dailyFocusScore,
+		WeeklyFocusScore:      m.weeklyFocusScore,
+		RepoDistribution:      m.repoDistribution,
+		StreamDistribution:    m.streamDistribution,
+		IssueDistribution:     m.issueDistribution,
+		SegmentDistribution:   m.segmentDistribution,
+		GoalProgress:          m.goalProgress,
+		ExportAssets:          m.exportAssets,
+		ExportReports:         m.exportReports,
+		IssueSessions:         m.issueSessions,
+		SessionHistory:        m.sessionHistory,
+		SessionPreview:        m.sessionPreview,
+		SessionPreviewFailed: m.sessionPreviewFailed != "" &&
+			m.sessionPreviewFailed == m.selectedSessionID(),
 		HabitHistory:              m.habitHistory,
 		Ops:                       m.ops,
 		Context:                   m.context,
@@ -169,8 +173,19 @@ func (m Model) dialogRenderState() dialogstate.State {
 	state := m.dialogState()
 	state.Width = m.width
 	if m.dialog == "create_issue_default" || m.dialog == "create_habit" {
-		state.RepoOptionLabels = optionLabels(dialogstate.DefaultRepoOptions(m.dialogInputs, m.repos))
-		state.StreamOptionLabels = optionLabels(dialogstate.DefaultStreamOptions(m.dialogInputs, m.dialogRepoIndex, m.repos, m.allIssues, m.streams, m.context))
+		state.RepoOptionLabels = optionLabels(
+			dialogstate.DefaultRepoOptions(m.dialogInputs, m.repos),
+		)
+		state.StreamOptionLabels = optionLabels(
+			dialogstate.DefaultStreamOptions(
+				m.dialogInputs,
+				m.dialogRepoIndex,
+				m.repos,
+				m.allIssues,
+				m.streams,
+				m.context,
+			),
+		)
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.DefaultIssueDialogLabels(
 			m.dialogInputs,
 			m.dialogRepoIndex,
@@ -193,8 +208,19 @@ func (m Model) dialogRenderState() dialogstate.State {
 		)
 	}
 	if m.dialog == "checkout_context" {
-		state.RepoOptionLabels = optionLabels(dialogstate.CheckoutRepoOptions(m.dialogInputs, m.repos))
-		state.StreamOptionLabels = optionLabels(dialogstate.CheckoutStreamOptions(m.dialogInputs, m.dialogRepoIndex, m.repos, m.allIssues, m.streams, m.context))
+		state.RepoOptionLabels = optionLabels(
+			dialogstate.CheckoutRepoOptions(m.dialogInputs, m.repos),
+		)
+		state.StreamOptionLabels = optionLabels(
+			dialogstate.CheckoutStreamOptions(
+				m.dialogInputs,
+				m.dialogRepoIndex,
+				m.repos,
+				m.allIssues,
+				m.streams,
+				m.context,
+			),
+		)
 		state.RepoSelectorLabel, state.StreamSelectorLabel = dialogstate.CheckoutDialogLabels(
 			m.dialogInputs,
 			m.dialogRepoIndex,
@@ -220,7 +246,11 @@ func (m Model) dialogRenderState() dialogstate.State {
 		if m.summarySnapshot != nil {
 			state.CalendarScores = m.summarySnapshot.CalendarScores
 		}
-		state = dialogstate.PopulateSummaryCalendarPresentation(dialogControllerTheme(layoutpkg.DialogTheme()), state, m.currentLogicalDate())
+		state = dialogstate.PopulateSummaryCalendarPresentation(
+			dialogControllerTheme(layoutpkg.DialogTheme()),
+			state,
+			m.currentLogicalDate(),
+		)
 	}
 	return state
 }

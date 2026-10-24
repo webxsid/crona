@@ -34,7 +34,12 @@ func CreateIssue(ctx context.Context, c *core.Context, input struct {
 	return createIssue(ctx, c, issueCreateInput(input), false)
 }
 
-func createIssue(ctx context.Context, c *core.Context, input issueCreateInput, adhoc bool) (sharedtypes.Issue, error) {
+func createIssue(
+	ctx context.Context,
+	c *core.Context,
+	input issueCreateInput,
+	adhoc bool,
+) (sharedtypes.Issue, error) {
 	if strings.TrimSpace(input.Title) == "" {
 		return sharedtypes.Issue{}, errors.New("issue title cannot be empty")
 	}
@@ -189,17 +194,25 @@ func ensurePinCapacity(ctx context.Context, c *core.Context) error {
 	pinned := 0
 	for _, issue := range issues {
 		status := sharedtypes.NormalizeIssueStatus(issue.Status)
-		if issue.PinnedDaily && status != sharedtypes.IssueStatusDone && status != sharedtypes.IssueStatusAbandoned {
+		if issue.PinnedDaily && status != sharedtypes.IssueStatusDone &&
+			status != sharedtypes.IssueStatusAbandoned {
 			pinned++
 		}
 	}
 	if pinned >= sharedtypes.MaxPinnedDailyIssues {
-		return fmt.Errorf("%d tasks already pinned; unpin one first", sharedtypes.MaxPinnedDailyIssues)
+		return fmt.Errorf(
+			"%d tasks already pinned; unpin one first",
+			sharedtypes.MaxPinnedDailyIssues,
+		)
 	}
 	return nil
 }
 
-func PromoteAdhocIssue(ctx context.Context, c *core.Context, input shareddto.PromoteAdhocIssueRequest) (*sharedtypes.Issue, error) {
+func PromoteAdhocIssue(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.PromoteAdhocIssueRequest,
+) (*sharedtypes.Issue, error) {
 	title := strings.TrimSpace(input.Title)
 	if input.ID <= 0 || input.StreamID <= 0 {
 		return nil, errors.New("issue and stream are required")
@@ -266,7 +279,11 @@ func IssueStatusTransitions(
 		return shareddto.IssueStatusTransitionsResponse{}, errors.New("issue not found")
 	}
 	if issue.Adhoc {
-		return shareddto.IssueStatusTransitionsResponse{ID: issueID, CurrentStatus: issue.Status, AllowedStatuses: []sharedtypes.IssueStatus{}}, nil
+		return shareddto.IssueStatusTransitionsResponse{
+			ID:              issueID,
+			CurrentStatus:   issue.Status,
+			AllowedStatuses: []sharedtypes.IssueStatus{},
+		}, nil
 	}
 
 	currentStatus := sharedtypes.NormalizeIssueStatus(issue.Status)

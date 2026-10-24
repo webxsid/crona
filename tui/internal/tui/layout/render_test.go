@@ -106,7 +106,10 @@ func TestRenderTabLineNumbersTabs(t *testing.T) {
 }
 
 func TestRenderSubTabLineFramedByKeys(t *testing.T) {
-	line := strings.TrimRight(plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[1], " ")
+	line := strings.TrimRight(
+		plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[1],
+		" ",
+	)
 	if !strings.HasPrefix(strings.TrimSpace(line), "[[] Daily") || !strings.HasSuffix(line, "[]]") {
 		t.Fatalf("expected the sub-tabs framed by [ and ], got %q", line)
 	}
@@ -122,20 +125,27 @@ func TestRenderDateRowOnDatedViews(t *testing.T) {
 		uistate.ViewReview:   "[E] calendar",
 	} {
 		line := plainLines(Render(datedShellState(view, 140, 36)))[2]
-		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") || !strings.Contains(line, keys) {
+		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") ||
+			!strings.Contains(line, keys) {
 			t.Fatalf("%s: expected the date row with %q, got %q", view, keys, line)
 		}
 		if view == uistate.ViewReview && !strings.Contains(line, "2026-05-21") {
 			t.Fatalf("review: expected its range start on the date row, got %q", line)
 		}
 	}
-	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[2]; strings.Contains(line, "next [.]") {
+	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[2]; strings.Contains(
+		line,
+		"next [.]",
+	) {
 		t.Fatalf("expected no date row on Settings, got %q", line)
 	}
 }
 
 func TestRenderDateRowKeepsDateWhenNarrow(t *testing.T) {
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 70, 30)))[2]; !strings.Contains(line, "2026-05-27") {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 70, 30)))[2]; !strings.Contains(
+		line,
+		"2026-05-27",
+	) {
 		t.Fatalf("expected the date kept on a narrow date row, got %q", line)
 	}
 }
@@ -359,7 +369,10 @@ func TestStatusLineShowsPaneActionsFirst(t *testing.T) {
 func TestTabLineContextAll(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.RepoName, state.StreamName = "", ""
-	line := strings.TrimSuffix(strings.TrimSpace(plainLines(Render(state))[0]), " · v"+versionpkg.Current())
+	line := strings.TrimSuffix(
+		strings.TrimSpace(plainLines(Render(state))[0]),
+		" · v"+versionpkg.Current(),
+	)
 	if !strings.HasSuffix(line, "All") || strings.Contains(line, "-") {
 		t.Fatalf("expected All context, got %q", line)
 	}
@@ -368,7 +381,10 @@ func TestTabLineContextAll(t *testing.T) {
 func TestTabLineContextRepoOnly(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.StreamName = ""
-	line := strings.TrimSuffix(strings.TrimSpace(plainLines(Render(state))[0]), " · v"+versionpkg.Current())
+	line := strings.TrimSuffix(
+		strings.TrimSpace(plainLines(Render(state))[0]),
+		" · v"+versionpkg.Current(),
+	)
 	if !strings.HasSuffix(line, "crona") || strings.Contains(line, "›") {
 		t.Fatalf("expected repo-only context, got %q", line)
 	}
@@ -376,10 +392,16 @@ func TestTabLineContextRepoOnly(t *testing.T) {
 
 func TestDailyDateRowLeavesDayKeyOff(t *testing.T) {
 	// The bottom row offers [S] when no detail pane shows; the date row never does.
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; strings.Contains(line, "[S]") {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; strings.Contains(
+		line,
+		"[S]",
+	) {
 		t.Fatalf("expected [S] off the date row, got %q", line)
 	}
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(line, "[S]") {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(
+		line,
+		"[S]",
+	) {
 		t.Fatalf("expected [S] left to the detail pane when it shows, got %q", line)
 	}
 	away := datedShellState(uistate.ViewDaily, 120, 36)

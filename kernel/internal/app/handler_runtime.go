@@ -333,5 +333,6 @@ func emitSettingsChanged(bus *events.Bus, keys ...sharedtypes.CoreSettingsKey) {
 }
 
 func isManagedAwaySetting(key sharedtypes.CoreSettingsKey) bool {
-	return key == sharedtypes.CoreSettingsKeyAwayModeEnabled || key == sharedtypes.CoreSettingsKeyAwayDates
+	return key == sharedtypes.CoreSettingsKeyAwayModeEnabled ||
+		key == sharedtypes.CoreSettingsKeyAwayDates
 }

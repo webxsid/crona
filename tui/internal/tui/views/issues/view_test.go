@@ -17,7 +17,14 @@ func issuesState(width, height int) types.ContentState {
 	yesterday, today := "2000-01-01", "2999-01-01"
 	issue := func(id int64, title, status string, due *string) api.IssueWithMeta {
 		return api.IssueWithMeta{
-			Issue:  api.Issue{ID: id, Title: title, Status: sharedtypes.IssueStatus(status), StreamID: 2, TodoForDate: due, EstimateMinutes: new(60)},
+			Issue: api.Issue{
+				ID:              id,
+				Title:           title,
+				Status:          sharedtypes.IssueStatus(status),
+				StreamID:        2,
+				TodoForDate:     due,
+				EstimateMinutes: new(60),
+			},
 			RepoID: 1, RepoName: "crona", StreamName: "tui",
 		}
 	}
@@ -69,7 +76,10 @@ func TestIssuesStripTwoRows(t *testing.T) {
 			t.Fatalf("expected %q in %q", want, bottom)
 		}
 	}
-	if narrow := ansi.Strip(strings.Join(StripRows(types.Theme{}, issuesState(60, 40), 60), "\n")); strings.Contains(narrow, "Due") {
+	if narrow := ansi.Strip(strings.Join(StripRows(types.Theme{}, issuesState(60, 40), 60), "\n")); strings.Contains(
+		narrow,
+		"Due",
+	) {
 		t.Fatalf("expected the Due column dropped at 60, got %q", narrow)
 	}
 }
@@ -115,7 +125,10 @@ func TestIssuesCardActionLine(t *testing.T) {
 	}
 	unfocused := issuesState(120, 40)
 	unfocused.Pane = "scope"
-	if line := cardSecondLine(t, Render(types.Theme{}, unfocused), "Fix sync conflict"); strings.Contains(line, "[s]") {
+	if line := cardSecondLine(t, Render(types.Theme{}, unfocused), "Fix sync conflict"); strings.Contains(
+		line,
+		"[s]",
+	) {
 		t.Fatalf("expected meta when unfocused, got %q", line)
 	}
 	running := issuesState(120, 40)
@@ -130,7 +143,8 @@ func TestIssuesCardActionLine(t *testing.T) {
 
 func TestIssuesLayoutByWidth(t *testing.T) {
 	wide := strings.Join(plain(Render(types.Theme{}, issuesState(200, 40))), "\n")
-	if !strings.Contains(wide, "─ Scope") || !strings.Contains(wide, "─ Issues") || !strings.Contains(wide, "─ Fix sync conflict") {
+	if !strings.Contains(wide, "─ Scope") || !strings.Contains(wide, "─ Issues") ||
+		!strings.Contains(wide, "─ Fix sync conflict") {
 		t.Fatalf("expected scope, list and detail at 200, got %q", wide)
 	}
 	medium := strings.Join(plain(Render(types.Theme{}, issuesState(120, 40))), "\n")
@@ -159,7 +173,8 @@ func TestDoneSectionListsOnlyClosed(t *testing.T) {
 	state := issuesState(120, 40)
 	state.DefaultIssueSection = "completed"
 	rendered := ansi.Strip(Render(types.Theme{}, state))
-	if !strings.Contains(rendered, "Shipped thing") || strings.Contains(rendered, "Fix sync conflict") {
+	if !strings.Contains(rendered, "Shipped thing") ||
+		strings.Contains(rendered, "Fix sync conflict") {
 		t.Fatalf("expected only closed issues on Done, got %q", rendered)
 	}
 }

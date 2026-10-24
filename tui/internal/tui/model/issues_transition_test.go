@@ -13,10 +13,17 @@ func TestRegressionEntryClampsScopeList(t *testing.T) {
 	m := scopeModel(0)
 	m.view, m.pane = ViewDaily, PaneIssues
 	m.cursor[PaneIssues] = 2
-	m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 1, StreamID: 2, Title: "Only issue", Status: "ready"}, RepoID: 1}}
+	m.allIssues = []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 1, StreamID: 2, Title: "Only issue", Status: "ready"}, RepoID: 1},
+	}
 	got, _ := press(m, "2")
 	if issue, ok := selectionpkg.SelectedIssue(got.selectionSnapshot()); !ok {
-		t.Fatalf("entry left cursor %d with scope %+v; selected %+v", got.cursor[PaneIssues], got.browseScope, issue)
+		t.Fatalf(
+			"entry left cursor %d with scope %+v; selected %+v",
+			got.cursor[PaneIssues],
+			got.browseScope,
+			issue,
+		)
 	}
 }
 
@@ -26,11 +33,18 @@ func TestRegressionScopeMoveKeepsOtherListInRange(t *testing.T) {
 	m.browseScope = scope.Scope{}
 	m.cursor[PaneIssues] = 2
 	m.issues = []api.Issue{{ID: 1}, {ID: 2}, {ID: 3}}
-	m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 4, StreamID: 9, Title: "Only issue", Status: "ready"}, RepoID: 3}}
+	m.allIssues = []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 4, StreamID: 9, Title: "Only issue", Status: "ready"}, RepoID: 3},
+	}
 	got, _ := press(m, "down")
 	got, _ = press(got, "[")
 	if issue, ok := selectionpkg.SelectedIssue(got.selectionSnapshot()); !ok {
-		t.Fatalf("sub-tab left issue cursor %d in scope %+v; selected %+v", got.cursor[PaneIssues], got.browseScope, issue)
+		t.Fatalf(
+			"sub-tab left issue cursor %d in scope %+v; selected %+v",
+			got.cursor[PaneIssues],
+			got.browseScope,
+			issue,
+		)
 	}
 }
 
@@ -41,8 +55,16 @@ func TestRegressionViewJumpSeedsScope(t *testing.T) {
 		m.browseScope = scope.Scope{RepoID: 3}
 		got, _ := press(m, "v")
 		got, cmd := press(got, key)
-		if got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) || got.cursor[PaneScope] != 2 || cmd == nil {
-			t.Errorf("jump %s: view %s scope %+v cursor %d cmd nil %t", key, got.view, got.browseScope, got.cursor[PaneScope], cmd == nil)
+		if got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) || got.cursor[PaneScope] != 2 ||
+			cmd == nil {
+			t.Errorf(
+				"jump %s: view %s scope %+v cursor %d cmd nil %t",
+				key,
+				got.view,
+				got.browseScope,
+				got.cursor[PaneScope],
+				cmd == nil,
+			)
 		}
 	}
 }
@@ -60,8 +82,20 @@ func TestIssuesTransitionsPreserveScopeAndClampLists(t *testing.T) {
 					m.cursor[PaneHabits] = cursor
 					m.issues = []api.Issue{{ID: 1}, {ID: 2}, {ID: 3}}
 					if !empty {
-						m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 4, StreamID: 9, Title: "Match", Status: "done"}, RepoID: 3}}
-						m.allHabits = []api.HabitWithMeta{{Habit: api.Habit{ID: 5, StreamID: 9, Name: "Match"}, RepoID: 3}}
+						m.allIssues = []api.IssueWithMeta{
+							{
+								Issue: api.Issue{
+									ID:       4,
+									StreamID: 9,
+									Title:    "Match",
+									Status:   "done",
+								},
+								RepoID: 3,
+							},
+						}
+						m.allHabits = []api.HabitWithMeta{
+							{Habit: api.Habit{ID: 5, StreamID: 9, Name: "Match"}, RepoID: 3},
+						}
 					}
 					m.defaultIssueSection = DefaultIssueSectionCompleted
 					m.filters[PaneIssues] = "Match"
@@ -112,8 +146,15 @@ func TestEntryRoutesClampFilteredLists(t *testing.T) {
 				m.filters[PaneIssues] = "Match"
 				m.filters[PaneHabits] = "Match"
 				if !empty {
-					m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 1, StreamID: 2, Title: "Match", Status: "ready"}, RepoID: 1}}
-					m.allHabits = []api.HabitWithMeta{{Habit: api.Habit{ID: 2, StreamID: 2, Name: "Match"}, RepoID: 1}}
+					m.allIssues = []api.IssueWithMeta{
+						{
+							Issue:  api.Issue{ID: 1, StreamID: 2, Title: "Match", Status: "ready"},
+							RepoID: 1,
+						},
+					}
+					m.allHabits = []api.HabitWithMeta{
+						{Habit: api.Habit{ID: 2, StreamID: 2, Name: "Match"}, RepoID: 1},
+					}
 				}
 				if route != "2" {
 					m, _ = press(m, "v")
@@ -122,7 +163,8 @@ func TestEntryRoutesClampFilteredLists(t *testing.T) {
 				if cmd == nil {
 					t.Fatal("entry must refresh today")
 				}
-				if got.cursor[PaneIssues] != 0 || got.cursor[PaneHabits] != 0 || got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) {
+				if got.cursor[PaneIssues] != 0 || got.cursor[PaneHabits] != 0 ||
+					got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) {
 					t.Fatalf("scope %+v cursors %v", got.browseScope, got.cursor)
 				}
 			})

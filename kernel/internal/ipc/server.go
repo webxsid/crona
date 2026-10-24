@@ -113,7 +113,10 @@ func (s *Server) handleConn(conn net.Conn) {
 	defer s.wg.Done()
 	defer func() {
 		if recovered := recover(); recovered != nil && s.logger != nil {
-			s.logger.Error("panic in ipc connection handler", fmt.Errorf("%v\n%s", recovered, debug.Stack()))
+			s.logger.Error(
+				"panic in ipc connection handler",
+				fmt.Errorf("%v\n%s", recovered, debug.Stack()),
+			)
 		}
 	}()
 	defer func() {

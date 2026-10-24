@@ -34,7 +34,14 @@ func Nodes(repos []api.Repo, streams []api.Stream) []Node {
 		nodes = append(nodes, Node{Scope: Scope{RepoID: repo.ID}, Name: repo.Name})
 		for _, stream := range streams {
 			if stream.RepoID == repo.ID {
-				nodes = append(nodes, Node{Scope: Scope{RepoID: repo.ID, StreamID: stream.ID}, Name: stream.Name, Depth: 1})
+				nodes = append(
+					nodes,
+					Node{
+						Scope: Scope{RepoID: repo.ID, StreamID: stream.ID},
+						Name:  stream.Name,
+						Depth: 1,
+					},
+				)
 			}
 		}
 	}

@@ -163,7 +163,10 @@ func TestRunRangeUsesWindowQueries(t *testing.T) {
 				if query.Start != "2026-07-01" || query.End != "2026-07-07" {
 					t.Fatalf("unexpected dashboard query: %#v", query)
 				}
-				if query.RepoID == nil || *query.RepoID != 91 || query.StreamID == nil || *query.StreamID != 92 || query.IssueID == nil || *query.IssueID != 93 {
+				if query.RepoID == nil || *query.RepoID != 91 || query.StreamID == nil ||
+					*query.StreamID != 92 ||
+					query.IssueID == nil ||
+					*query.IssueID != 93 {
 					t.Fatalf("expected context identifiers in dashboard query, got %#v", query)
 				}
 				window := target.(*sharedtypes.DashboardWindowSummary)
@@ -184,7 +187,17 @@ func TestRunRangeUsesWindowQueries(t *testing.T) {
 				}
 				days := target.(*[]sharedtypes.DailyMetricsDay)
 				*days = []sharedtypes.DailyMetricsDay{
-					{Date: "2026-07-01", WorkedSeconds: 60, RestSeconds: 20, SessionCount: 1, CompletedIssues: 1, TotalIssues: 2, HabitCompletedCount: 1, HabitDueCount: 2, HabitFailedCount: 0},
+					{
+						Date:                "2026-07-01",
+						WorkedSeconds:       60,
+						RestSeconds:         20,
+						SessionCount:        1,
+						CompletedIssues:     1,
+						TotalIssues:         2,
+						HabitCompletedCount: 1,
+						HabitDueCount:       2,
+						HabitFailedCount:    0,
+					},
 				}
 				return nil
 			case protocol.MethodMetricsRollup:
@@ -264,7 +277,10 @@ func TestRunYesterdayPresetUsesPreviousDay(t *testing.T) {
 					t.Fatalf("unexpected yesterday habit query: %#v", query)
 				}
 				return nil
-			case protocol.MethodDailyPlanGet, protocol.MethodCheckInGet, protocol.MethodMetricsRollup, protocol.MethodMetricsStreaksLifetime:
+			case protocol.MethodDailyPlanGet,
+				protocol.MethodCheckInGet,
+				protocol.MethodMetricsRollup,
+				protocol.MethodMetricsStreaksLifetime:
 				return nil
 			default:
 				t.Fatalf("unexpected method: %s", method)
@@ -319,7 +335,9 @@ func TestRunWeekAndMonthPresetsUseCalendarRanges(t *testing.T) {
 							t.Fatalf("unexpected dashboard query: %#v", query)
 						}
 						return nil
-					case protocol.MethodMetricsRange, protocol.MethodMetricsRollup, protocol.MethodMetricsStreaks:
+					case protocol.MethodMetricsRange,
+						protocol.MethodMetricsRollup,
+						protocol.MethodMetricsStreaks:
 						query := params.(shareddto.DateRangeQuery)
 						if query.Start != tt.wantStart || query.End != tt.wantEnd {
 							t.Fatalf("unexpected date range query: %#v", query)
@@ -357,7 +375,9 @@ func TestRunLastXDaysPresetUsesRollingRange(t *testing.T) {
 					t.Fatalf("unexpected rolling dashboard query: %#v", query)
 				}
 				return nil
-			case protocol.MethodMetricsRange, protocol.MethodMetricsRollup, protocol.MethodMetricsStreaks:
+			case protocol.MethodMetricsRange,
+				protocol.MethodMetricsRollup,
+				protocol.MethodMetricsStreaks:
 				query := params.(shareddto.DateRangeQuery)
 				if query.Start != "2026-07-22" || query.End != "2026-07-28" {
 					t.Fatalf("unexpected rolling date range query: %#v", query)

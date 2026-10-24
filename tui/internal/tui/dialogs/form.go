@@ -61,7 +61,12 @@ func formBody(rows []FormRow, focusIdx int) ([]string, int) {
 
 // formFooter renders the focused field's hints, padded to the tallest focus so the
 // dialog never changes height while tabbing.
-func formFooter(theme Theme, primary string, hints func(focus int) []string, focus, focusCount, inner int) []string {
+func formFooter(
+	theme Theme,
+	primary string,
+	hints func(focus int) []string,
+	focus, focusCount, inner int,
+) []string {
 	hintsAt := func(f int) []string {
 		if hints == nil {
 			return nil
@@ -85,7 +90,11 @@ func renderForm(theme Theme, state controllerpkg.State, spec FormSpec) string {
 	footer := formFooter(theme, spec.Primary, spec.Hints, state.FocusIdx, spec.FocusCount, inner)
 	return Frame(theme, FrameSpec{
 		Title: spec.Title, Context: spec.Context, Border: spec.Border, Body: body,
-		Footer: withError(theme, state, footer), ScreenWidth: state.Width, ScreenHeight: state.Height,
+		Footer: withError(
+			theme,
+			state,
+			footer,
+		), ScreenWidth: state.Width, ScreenHeight: state.Height,
 		Focus: focus, Inner: inner,
 	})
 }

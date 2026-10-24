@@ -28,7 +28,11 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	selectionSnapshot := m.selectionSnapshot()
 	dialogState := m.dialogState()
 	if m.timer != nil && m.timer.Adhoc {
-		dialogState.AdhocElapsedSeconds = helperpkg.DerivedSessionElapsedSeconds(m.timer, m.elapsed, time.Now())
+		dialogState.AdhocElapsedSeconds = helperpkg.DerivedSessionElapsedSeconds(
+			m.timer,
+			m.elapsed,
+			time.Now(),
+		)
 		dialogState.AdhocDate = m.currentLogicalDate()
 	}
 	if m.settings != nil {
@@ -92,7 +96,11 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 		next.date = strings.TrimSpace(*action.DueDate)
 		return next, next.reloadDateSurfaces()
 	case "load_summary_calendar_month":
-		return next, commands.LoadSummaryCalendarScores(next.client, action.StartDate, action.EndDate)
+		return next, commands.LoadSummaryCalendarScores(
+			next.client,
+			action.StartDate,
+			action.EndDate,
+		)
 	case "jump_view":
 		target := View(strings.TrimSpace(action.TargetView))
 		if target == "" {
@@ -542,21 +550,43 @@ func (m Model) openDatePickerDialog(
 
 // openDaySummaryDialog shows the Day summary as a dialog, for when Daily has no detail pane.
 func (m Model) openDaySummaryDialog() Model {
-	lines := viewsummary.DayLines(layoutpkg.ViewTheme(), m.layoutState().ContentState, viewEntityBodyWidth(m.width))
-	return m.openViewEntityDialog("Day", helperpkg.FormatDisplayDate(m.currentDate(), m.settings), "", strings.Join(lines, "\n"))
+	lines := viewsummary.DayLines(
+		layoutpkg.ViewTheme(),
+		m.layoutState().ContentState,
+		viewEntityBodyWidth(m.width),
+	)
+	return m.openViewEntityDialog(
+		"Day",
+		helperpkg.FormatDisplayDate(m.currentDate(), m.settings),
+		"",
+		strings.Join(lines, "\n"),
+	)
 }
 
 // openReviewDialog shows Review's selected day, or its Time breakdown, as a dialog.
 func (m Model) openReviewDialog(kind string) Model {
-	theme, state, width := layoutpkg.ViewTheme(), m.layoutState().ContentState, viewEntityBodyWidth(m.width)
+	theme, state, width := layoutpkg.ViewTheme(), m.layoutState().ContentState, viewEntityBodyWidth(
+		m.width,
+	)
 	if kind == "time" {
 		lines := reviewview.TimeLines(theme, state, width)
 		start, end := m.reviewRange()
-		name := helperpkg.FormatDisplayDate(start, m.settings) + " – " + helperpkg.FormatDisplayDate(end, m.settings)
+		name := helperpkg.FormatDisplayDate(
+			start,
+			m.settings,
+		) + " – " + helperpkg.FormatDisplayDate(
+			end,
+			m.settings,
+		)
 		return m.openViewEntityDialog("Time", name, "", strings.Join(lines, "\n"))
 	}
 	lines := reviewview.DetailLines(theme, state, width)
-	return m.openViewEntityDialog("Day", helperpkg.FormatDisplayDate(m.currentDate(), m.settings), "", strings.Join(lines, "\n"))
+	return m.openViewEntityDialog(
+		"Day",
+		helperpkg.FormatDisplayDate(m.currentDate(), m.settings),
+		"",
+		strings.Join(lines, "\n"),
+	)
 }
 
 func (m Model) openViewEntityDialog(title string, name string, meta string, body string) Model {
@@ -711,7 +741,12 @@ func (m Model) openHelpDialog() Model {
 		globalActions = chromeState.GlobalActions
 	}
 	rows := []string{"Navigation"}
-	rows = append(rows, viewchrome.NavigationActions(theme, viewchrome.ActionsState{IsBetaBuild: m.isBetaBuild()})...)
+	rows = append(
+		rows,
+		viewchrome.NavigationActions(
+			theme,
+			viewchrome.ActionsState{IsBetaBuild: m.isBetaBuild()},
+		)...)
 	rows = append(rows, viewchrome.DateActions(theme, string(m.view))...)
 	rows = append(rows, "", "Global")
 	rows = append(rows, globalActions...)

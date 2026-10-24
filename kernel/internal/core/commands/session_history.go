@@ -56,7 +56,9 @@ func UpdateSessionHistory(
 		segmentEnd, endErr := parseSegmentEnd(segments[i].EndTime)
 		if startErr != nil || endErr != nil || !segmentEnd.After(segmentStart) ||
 			segmentStart.Before(start) || segmentEnd.After(end) {
-			return shareddto.OKResponse{}, errors.New("segments must have valid times within the session")
+			return shareddto.OKResponse{}, errors.New(
+				"segments must have valid times within the session",
+			)
 		}
 		switch segments[i].SegmentType {
 		case sharedtypes.SessionSegmentWork, sharedtypes.SessionSegmentShortBreak,
@@ -107,7 +109,11 @@ func UpdateSessionHistory(
 	}); err != nil {
 		return shareddto.OKResponse{}, fmt.Errorf("recording session history update: %w", err)
 	}
-	emit(c, sharedtypes.EventTypeSessionHistoryChanged, sharedtypes.SessionEventPayload{SessionID: session.ID})
+	emit(
+		c,
+		sharedtypes.EventTypeSessionHistoryChanged,
+		sharedtypes.SessionEventPayload{SessionID: session.ID},
+	)
 	return shareddto.OKResponse{OK: true}, nil
 }
 
@@ -134,11 +140,19 @@ func DeleteSessionHistory(
 	}); err != nil {
 		return shareddto.OKResponse{}, fmt.Errorf("recording session history deletion: %w", err)
 	}
-	emit(c, sharedtypes.EventTypeSessionHistoryChanged, sharedtypes.SessionEventPayload{SessionID: session.ID})
+	emit(
+		c,
+		sharedtypes.EventTypeSessionHistoryChanged,
+		sharedtypes.SessionEventPayload{SessionID: session.ID},
+	)
 	return shareddto.OKResponse{OK: true}, nil
 }
 
-func requireEditableSession(ctx context.Context, c *core.Context, sessionID string) (*sharedtypes.Session, error) {
+func requireEditableSession(
+	ctx context.Context,
+	c *core.Context,
+	sessionID string,
+) (*sharedtypes.Session, error) {
 	settings, err := c.CoreSettings.Get(ctx, c.UserID)
 	if err != nil {
 		return nil, err

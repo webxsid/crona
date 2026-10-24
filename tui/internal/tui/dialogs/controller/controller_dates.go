@@ -121,19 +121,29 @@ func summaryCalendarMonthAction(state State) *Action {
 	return &Action{Kind: "load_summary_calendar_month", StartDate: start, EndDate: end}
 }
 
-func updateSummaryCalendar(state State, currentDate string, msg tea.KeyMsg) (State, *Action, string) {
+func updateSummaryCalendar(
+	state State,
+	currentDate string,
+	msg tea.KeyMsg,
+) (State, *Action, string) {
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
 	case "enter", " ":
 		selected := state.DateCursorValue
 		if current, err := time.Parse("2006-01-02", currentDate); err == nil {
-			if candidate, err := time.Parse("2006-01-02", selected); err == nil && candidate.After(current) {
+			if candidate, err := time.Parse("2006-01-02", selected); err == nil &&
+				candidate.After(current) {
 				state.ErrorMessage = "Future dates are not available"
 				return state, nil, ""
 			}
 		}
-		return Close(state), &Action{Kind: "set_summary_date", DueDate: ValueToPointer(selected)}, ""
+		return Close(
+				state,
+			), &Action{
+				Kind:    "set_summary_date",
+				DueDate: ValueToPointer(selected),
+			}, ""
 	case "left":
 		return summaryCalendarMove(state, currentDate, -1), nil, ""
 	case "right":
@@ -164,15 +174,29 @@ func summaryCalendarShiftMonth(state State, currentDate string, months int) Stat
 	currentMonth := DialogMonth(state, currentDate)
 	targetMonth := currentMonth.AddDate(0, months, 0)
 	today, _ := time.Parse("2006-01-02", currentDate)
-	if !today.IsZero() && targetMonth.After(time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())) {
+	if !today.IsZero() &&
+		targetMonth.After(time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location())) {
 		return state
 	}
 	day := DialogDate(state, currentDate).Day()
-	candidate := time.Date(targetMonth.Year(), targetMonth.Month(), day, 0, 0, 0, 0, targetMonth.Location())
+	candidate := time.Date(
+		targetMonth.Year(),
+		targetMonth.Month(),
+		day,
+		0,
+		0,
+		0,
+		0,
+		targetMonth.Location(),
+	)
 	return summaryCalendarSetValidDate(state, candidate, targetMonth, currentDate)
 }
 
-func summaryCalendarSetValidDate(state State, candidate, month time.Time, currentDate string) State {
+func summaryCalendarSetValidDate(
+	state State,
+	candidate, month time.Time,
+	currentDate string,
+) State {
 	monthStart := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, month.Location())
 	monthEnd := monthStart.AddDate(0, 1, -1)
 	today, _ := time.Parse("2006-01-02", currentDate)

@@ -50,7 +50,10 @@ func TestIssueNotesSplitHistoryNewestFirst(t *testing.T) {
 
 func TestIssueNotesHideEntryNoteRepeatingFreeText(t *testing.T) {
 	inUTC(t)
-	got := plainNotes("Future planned work.\n[2026-10-14T09:00:00Z] planned -> ready: Future planned work.", 80)
+	got := plainNotes(
+		"Future planned work.\n[2026-10-14T09:00:00Z] planned -> ready: Future planned work.",
+		80,
+	)
 	if last := got[len(got)-1]; last != "2026-10-14  09:00  planned → ready" {
 		t.Fatalf("expected the repeated note hidden, got %q", got)
 	}
@@ -71,20 +74,25 @@ func TestIssueNotesCapHistory(t *testing.T) {
 		raw = append(raw, fmt.Sprintf("[2026-10-%02dT09:00:00Z] ready -> blocked", day))
 	}
 	got := plainNotes(strings.Join(raw, "\n"), 80)
-	if len(got) != 2+5+1 || !strings.HasPrefix(got[2], "2026-10-08") || got[len(got)-1] != "+3 earlier" {
+	if len(got) != 2+5+1 || !strings.HasPrefix(got[2], "2026-10-08") ||
+		got[len(got)-1] != "+3 earlier" {
 		t.Fatalf("expected the latest 5 entries and +3 earlier, got %q", got)
 	}
 }
 
 func TestIssueNotesWrapEntryNoteWhenNarrow(t *testing.T) {
 	inUTC(t)
-	got := plainNotes("[2026-10-12T17:40:00Z] ready -> blocked: waiting on the API keys from the vendor", 40)
+	got := plainNotes(
+		"[2026-10-12T17:40:00Z] ready -> blocked: waiting on the API keys from the vendor",
+		40,
+	)
 	for _, line := range got {
 		if ansi.StringWidth(line) > 40 {
 			t.Fatalf("line %q exceeds width 40 in %q", line, got)
 		}
 	}
-	if got[2] != "2026-10-12  17:40  ready → blocked" || !strings.HasPrefix(got[3], "  waiting on") {
+	if got[2] != "2026-10-12  17:40  ready → blocked" ||
+		!strings.HasPrefix(got[3], "  waiting on") {
 		t.Fatalf("expected the note wrapped under the change, got %q", got)
 	}
 }

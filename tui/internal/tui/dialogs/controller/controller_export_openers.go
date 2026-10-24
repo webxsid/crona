@@ -100,7 +100,10 @@ func OpenExportScope(state State, kind sharedtypes.ExportReportKind) State {
 		}
 	case sharedtypes.ExportReportKindIssueRollup:
 		for i, issue := range state.MomentumAllIssues {
-			state.ChoiceItems = append(state.ChoiceItems, issue.RepoName+" / "+issue.StreamName+" / "+issue.Title)
+			state.ChoiceItems = append(
+				state.ChoiceItems,
+				issue.RepoName+" / "+issue.StreamName+" / "+issue.Title,
+			)
 			state.ChoiceValues = append(state.ChoiceValues, fmt.Sprint(issue.ID))
 			if issue.ID == state.IssueID {
 				state.ChoiceCursor = i
@@ -215,7 +218,8 @@ func OpenSummaryOutput(state State, period string) State {
 		state.ExportStart = anchor.AddDate(0, 0, -offset).Format(time.DateOnly)
 		state.ExportEnd = anchor.Format(time.DateOnly)
 	case "Calendar month":
-		state.ExportStart = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).Format(time.DateOnly)
+		state.ExportStart = time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location()).
+			Format(time.DateOnly)
 		state.ExportEnd = anchor.Format(time.DateOnly)
 	case "Last 7 days":
 		state.ExportStart = anchor.AddDate(0, 0, -6).Format(time.DateOnly)
@@ -226,10 +230,15 @@ func OpenSummaryOutput(state State, period string) State {
 	}
 	state.Kind = "export_summary_output"
 	state.ChoiceItems = []string{"Write Markdown file", "Copy Markdown"}
-	state.ChoiceDetails = []string{"Save the dashboard as Markdown.", "Copy the dashboard Markdown to the clipboard."}
+	state.ChoiceDetails = []string{
+		"Save the dashboard as Markdown.",
+		"Copy the dashboard Markdown to the clipboard.",
+	}
 	if state.ExportIncludePDF {
 		state.ChoiceItems = append([]string{"Write PDF file"}, state.ChoiceItems...)
-		state.ChoiceDetails = append([]string{"Save a styled, landscape PDF dashboard."}, state.ChoiceDetails...)
+		state.ChoiceDetails = append(
+			[]string{"Save a styled, landscape PDF dashboard."},
+			state.ChoiceDetails...)
 	}
 	state.ChoiceCursor = 0
 	return state

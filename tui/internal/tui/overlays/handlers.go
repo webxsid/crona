@@ -59,13 +59,15 @@ func HandleSessionDetail(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd
 		}
 		return state, nil
 	case "e":
-		if !state.ManageHistory || state.SessionDetail == nil || deps.OpenEditSessionHistory == nil {
+		if !state.ManageHistory || state.SessionDetail == nil ||
+			deps.OpenEditSessionHistory == nil {
 			return state, nil
 		}
 		deps.OpenEditSessionHistory(&state, state.SessionDetail)
 		return state, nil
 	case "D":
-		if !state.ManageHistory || state.SessionDetail == nil || deps.OpenDeleteSessionHistory == nil {
+		if !state.ManageHistory || state.SessionDetail == nil ||
+			deps.OpenDeleteSessionHistory == nil {
 			return state, nil
 		}
 		deps.OpenDeleteSessionHistory(&state, state.SessionDetail.ID)

@@ -38,7 +38,8 @@ func cellIndex(row, needle string) int {
 
 func TestDayStripStacksTasksOverHabits(t *testing.T) {
 	rows := stripRows(160)
-	if got := fieldsOf(rows[0]); !strings.HasPrefix(got, "Tasks 1/1") || !strings.Contains(got, "2h/55m") {
+	if got := fieldsOf(rows[0]); !strings.HasPrefix(got, "Tasks 1/1") ||
+		!strings.Contains(got, "2h/55m") {
 		t.Fatalf("expected the Tasks meter on row 0, got %q", rows[0])
 	}
 	if got := fieldsOf(rows[1]); !strings.HasPrefix(got, "Habits 1/1") {
@@ -70,7 +71,10 @@ func TestDayStripSignalsAverageWithoutCheckIn(t *testing.T) {
 	state := dailySummaryTestState()
 	state.DailyCheckIn = nil
 	rows := renderDayStrip(testTheme(), state, 160)
-	if want := "Mood avg 3.1/5 Energy avg 3.8/5 Sleep avg 6h15m"; !strings.Contains(fieldsOf(ansi.Strip(rows[0])), want) {
+	if want := "Mood avg 3.1/5 Energy avg 3.8/5 Sleep avg 6h15m"; !strings.Contains(
+		fieldsOf(ansi.Strip(rows[0])),
+		want,
+	) {
 		t.Fatalf("expected row 0 to contain %q, got %q", want, ansi.Strip(rows[0]))
 	}
 }
@@ -95,10 +99,12 @@ func TestDayStripLeavesDateToSubTabLine(t *testing.T) {
 
 func TestDayStripDropsRightmostColumnsWhenNarrow(t *testing.T) {
 	medium := strings.Join(stripRows(72), "\n")
-	if !strings.Contains(medium, "Mood") || !strings.Contains(medium, "Focus") || strings.Contains(medium, "Energy") {
+	if !strings.Contains(medium, "Mood") || !strings.Contains(medium, "Focus") ||
+		strings.Contains(medium, "Energy") {
 		t.Fatalf("expected only the first signal column at 72, got %q", medium)
 	}
-	if narrow := stripRows(48); len(narrow) != 2 || strings.Contains(strings.Join(narrow, ""), "Mood") {
+	if narrow := stripRows(48); len(narrow) != 2 ||
+		strings.Contains(strings.Join(narrow, ""), "Mood") {
 		t.Fatalf("expected meters only at 48, got %q", narrow)
 	}
 }
@@ -135,15 +141,24 @@ func TestDayStripShowsCurrentWeekAtRightEnd(t *testing.T) {
 	for i, want := range []string{"Mo Tu We Th Fr Sa Su", "25 26 27 28 29 30 31"} {
 		row := strings.TrimRight(rows[i], " ")
 		if !strings.HasSuffix(row, want) || ansi.StringWidth(row) != 159 {
-			t.Fatalf("expected row %d to end with %q one cell from the edge, got %q", i, want, rows[i])
+			t.Fatalf(
+				"expected row %d to end with %q one cell from the edge, got %q",
+				i,
+				want,
+				rows[i],
+			)
 		}
 	}
 }
 
 func TestDayStripKeepsWeekOverLaterColumns(t *testing.T) {
 	joined := strings.Join(stripRows(100), "\n")
-	if !strings.Contains(joined, "Mo Tu We") || !strings.Contains(joined, "Mood") || strings.Contains(joined, "Sleep") {
-		t.Fatalf("expected the week and first column kept, later columns dropped at 100, got %q", joined)
+	if !strings.Contains(joined, "Mo Tu We") || !strings.Contains(joined, "Mood") ||
+		strings.Contains(joined, "Sleep") {
+		t.Fatalf(
+			"expected the week and first column kept, later columns dropped at 100, got %q",
+			joined,
+		)
 	}
 }
 
@@ -151,7 +166,8 @@ func TestDayStripDropsWeekWhenNarrowOrOneRow(t *testing.T) {
 	if joined := strings.Join(stripRows(60), "\n"); strings.Contains(joined, "Mo Tu") {
 		t.Fatalf("expected no week at 60 columns, got %q", joined)
 	}
-	if rows := dayStripRows(testTheme(), dailySummaryTestState(), 160, 1); len(rows) != 1 || strings.Contains(ansi.Strip(rows[0]), "Mo Tu") {
+	if rows := dayStripRows(testTheme(), dailySummaryTestState(), 160, 1); len(rows) != 1 ||
+		strings.Contains(ansi.Strip(rows[0]), "Mo Tu") {
 		t.Fatalf("expected a one-row strip without the week, got %q", rows)
 	}
 }
@@ -172,7 +188,8 @@ func TestSubTabMetaShortensToFit(t *testing.T) {
 			t.Fatalf("room %d: expected the date within the room, got %q", room, got)
 		}
 	}
-	if got := ansi.Strip(SubTabMeta(testTheme(), state, 30)); !strings.Contains(got, "[,]") || !strings.Contains(got, "[.]") {
+	if got := ansi.Strip(SubTabMeta(testTheme(), state, 30)); !strings.Contains(got, "[,]") ||
+		!strings.Contains(got, "[.]") {
 		t.Fatalf("expected the keys kept before the words drop out, got %q", got)
 	}
 }
@@ -180,7 +197,10 @@ func TestSubTabMetaShortensToFit(t *testing.T) {
 func TestDayStripTasksFollowPlannedWhateverTheTab(t *testing.T) {
 	state := dailySummaryTestState()
 	state.DailyTaskSection = "overdue"
-	state.DailyIssues = []api.Issue{{ID: 90, Title: "Old", Status: "planned"}, {ID: 91, Title: "Older", Status: "planned"}}
+	state.DailyIssues = []api.Issue{
+		{ID: 90, Title: "Old", Status: "planned"},
+		{ID: 91, Title: "Older", Status: "planned"},
+	}
 	state.DailyPlannedIssues = []api.Issue{{ID: 1, Title: "Today", Status: "done"}}
 	rows := dayStripRows(testTheme(), state, 160, dayStripMaxRows)
 	if got := fieldsOf(rows[0]); !strings.HasPrefix(got, "Tasks 1/1") {
@@ -194,7 +214,10 @@ func scoredState(snapshotDate string) types.ContentState {
 	state.SummarySnapshot = &api.SummarySnapshot{
 		Date:  snapshotDate,
 		Focus: &api.FocusScoreSummary{Score: 72},
-		Plan:  &api.DailyPlan{Date: snapshotDate, Summary: sharedtypes.DailyPlanAccountabilitySummary{AccountabilityScore: 80}},
+		Plan: &api.DailyPlan{
+			Date:    snapshotDate,
+			Summary: sharedtypes.DailyPlanAccountabilitySummary{AccountabilityScore: 80},
+		},
 	}
 	return state
 }
@@ -202,13 +225,17 @@ func scoredState(snapshotDate string) types.ContentState {
 func TestDayStripShowsScoreOverPlan(t *testing.T) {
 	rows := dayStripRows(testTheme(), scoredState("2026-05-27"), 200, dayStripMaxRows)
 	top, bottom := ansi.Strip(rows[0]), ansi.Strip(rows[1])
-	if !strings.Contains(fieldsOf(top), "Score 72/100") || !strings.Contains(fieldsOf(bottom), "Plan 80%") {
+	if !strings.Contains(fieldsOf(top), "Score 72/100") ||
+		!strings.Contains(fieldsOf(bottom), "Plan 80%") {
 		t.Fatalf("expected Score over Plan, got %q / %q", top, bottom)
 	}
 	if cellIndex(top, "Score") != cellIndex(bottom, "Plan") {
 		t.Fatalf("expected Score and Plan in one column, got %q / %q", top, bottom)
 	}
-	stale := strings.Join(dayStripRows(testTheme(), scoredState("2026-05-26"), 200, dayStripMaxRows), "\n")
+	stale := strings.Join(
+		dayStripRows(testTheme(), scoredState("2026-05-26"), 200, dayStripMaxRows),
+		"\n",
+	)
 	if strings.Contains(stale, "Score") || strings.Contains(stale, "Plan") {
 		t.Fatalf("expected no score for another day's snapshot, got %q", ansi.Strip(stale))
 	}

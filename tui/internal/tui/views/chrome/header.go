@@ -86,7 +86,11 @@ func sessionPhase(theme Theme, timer *api.TimerState) (string, lipgloss.Color) {
 		return "REST", theme.ColorYellow
 	}
 	if timer.HardLimitCycles > 0 {
-		return fmt.Sprintf("FOCUS %d/%d", min(timer.CompletedWorkCycles+1, timer.HardLimitCycles), timer.HardLimitCycles), theme.ColorGreen
+		return fmt.Sprintf(
+			"FOCUS %d/%d",
+			min(timer.CompletedWorkCycles+1, timer.HardLimitCycles),
+			timer.HardLimitCycles,
+		), theme.ColorGreen
 	}
 	return "FOCUS", theme.ColorGreen
 }

@@ -24,7 +24,15 @@ func GroupList(theme Theme, rows []GroupRow, cursor, width, height int) []string
 				style = lipgloss.NewStyle().Foreground(theme.ColorRed)
 			}
 			text := ansi.Truncate("── "+row.Group+" ", width, "")
-			lines = append(lines, dayLine{text: style.Render(text + strings.Repeat("─", max(0, width-ansi.StringWidth(text)))), row: -1})
+			lines = append(
+				lines,
+				dayLine{
+					text: style.Render(
+						text + strings.Repeat("─", max(0, width-ansi.StringWidth(text))),
+					),
+					row: -1,
+				},
+			)
 		}
 		line := row.Line
 		if row.Danger {
@@ -63,7 +71,11 @@ func HelpLines(theme Theme, help RowHelp, current string, width int) []string {
 		lines = append(lines, strings.Split(ansi.Hardwrap(current, width, false), "\n")...)
 	}
 	if len(help.Keys) > 0 {
-		lines = append(lines, "", theme.StyleDim.Render(ansi.Truncate(strings.Join(help.Keys, "  "), width, "…")))
+		lines = append(
+			lines,
+			"",
+			theme.StyleDim.Render(ansi.Truncate(strings.Join(help.Keys, "  "), width, "…")),
+		)
 	}
 	return lines
 }

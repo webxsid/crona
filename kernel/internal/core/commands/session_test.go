@@ -61,7 +61,8 @@ func TestStopSessionInvalidIssueLeavesWorkRecording(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stopped.DurationSeconds == nil || (*stopped.DurationSeconds < 300 || *stopped.DurationSeconds > 305) {
+	if stopped.DurationSeconds == nil ||
+		(*stopped.DurationSeconds < 300 || *stopped.DurationSeconds > 305) {
 		t.Fatalf("lost work duration: %+v", stopped)
 	}
 }
@@ -81,7 +82,14 @@ func TestStopSessionEnforcesAdhocAttribution(t *testing.T) {
 	if err != nil || active == nil {
 		t.Fatalf("rejected completion ended segment: %v", err)
 	}
-	stopped, err := StopSession(ctx, c, SessionEndInput{CommitMessage: &commit, AdhocResolution: sharedtypes.AdhocSessionResolutionKeep})
+	stopped, err := StopSession(
+		ctx,
+		c,
+		SessionEndInput{
+			CommitMessage:   &commit,
+			AdhocResolution: sharedtypes.AdhocSessionResolutionKeep,
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,12 +108,21 @@ func TestConcurrentAdhocCompletionCreatesOneAttribution(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
 			c, timer, _ := newTimerTestContext(t, func() string { return "2026-05-24T10:00:00Z" })
-			started, err := timer.Start(ctx, nil, nil, nil, &shareddto.TimerStartRequest{Adhoc: true})
+			started, err := timer.Start(
+				ctx,
+				nil,
+				nil,
+				nil,
+				&shareddto.TimerStartRequest{Adhoc: true},
+			)
 			if err != nil {
 				t.Fatal(err)
 			}
 			summary := "Concurrent ad hoc work"
-			input := SessionEndInput{CommitMessage: &summary, AdhocResolution: sharedtypes.AdhocSessionResolutionKeep}
+			input := SessionEndInput{
+				CommitMessage:   &summary,
+				AdhocResolution: sharedtypes.AdhocSessionResolutionKeep,
+			}
 			start := make(chan struct{})
 			var wg sync.WaitGroup
 			var results [2]error

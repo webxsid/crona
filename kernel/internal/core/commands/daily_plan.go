@@ -255,7 +255,12 @@ func scoreDailyPlan(
 	}
 	for i := range plan.Entries {
 		entry := &plan.Entries[i]
-		entry.Penalty = buildDailyPlanEntryPenalty(*entry, activeIDs[entry.ID], plan.Summary, settings)
+		entry.Penalty = buildDailyPlanEntryPenalty(
+			*entry,
+			activeIDs[entry.ID],
+			plan.Summary,
+			settings,
+		)
 	}
 	return plan, nil
 }
@@ -265,7 +270,9 @@ func buildDailyPlanSummary(
 	active []sharedtypes.DailyPlanEntry,
 	settings *sharedtypes.CoreSettings,
 ) sharedtypes.DailyPlanAccountabilitySummary {
-	summary := sharedtypes.DailyPlanAccountabilitySummary{HighRiskThreshold: planHighRiskThreshold(settings)}
+	summary := sharedtypes.DailyPlanAccountabilitySummary{
+		HighRiskThreshold: planHighRiskThreshold(settings),
+	}
 	for _, entry := range entries {
 		summary.PlannedCount++
 		if entry.PendingFailureAt != nil {
@@ -348,12 +355,16 @@ func buildDailyPlanEntryPenalty(
 ) *sharedtypes.DailyPlanEntryPenalty {
 	threshold := summary.HighRiskThreshold
 	penalty := &sharedtypes.DailyPlanEntryPenalty{
-		ProtectedDaysSkipped: protectedDaysSkipped(entry.BaselineDate, entry.CurrentPlannedDate, settings),
-		DelayComponent:       dailyPlanDelayComponent(entry),
-		FrequencyComponent:   dailyPlanFrequencyComponent(entry),
-		HighRisk:             entry.FailScore >= threshold,
-		HighRiskThreshold:    threshold,
-		Historical:           !active,
+		ProtectedDaysSkipped: protectedDaysSkipped(
+			entry.BaselineDate,
+			entry.CurrentPlannedDate,
+			settings,
+		),
+		DelayComponent:     dailyPlanDelayComponent(entry),
+		FrequencyComponent: dailyPlanFrequencyComponent(entry),
+		HighRisk:           entry.FailScore >= threshold,
+		HighRiskThreshold:  threshold,
+		Historical:         !active,
 	}
 	if !active {
 		return penalty
@@ -375,7 +386,12 @@ func buildDailyPlanEntryPenalty(
 		nextDate := next.AddDate(0, 0, 1).Format("2006-01-02")
 		projected := entry
 		projected.BaselineDate, projected.CurrentPlannedDate, projected.PostponeCount, projected.MaxDelayedDays =
-			nextDailyPlanChainState(&entry, entry.CurrentPlannedDate, nextDate, settings)
+			nextDailyPlanChainState(
+				&entry,
+				entry.CurrentPlannedDate,
+				nextDate,
+				settings,
+			)
 		applyDailyPlanScore(&projected, settings)
 		penalty.IfPostponedOneDay = &sharedtypes.DailyPlanPenaltyProjection{
 			FailScore:           projected.FailScore,
@@ -395,7 +411,10 @@ func safeRatio(part, total float64) float64 {
 
 // protectedDaysSkipped counts away days between the baseline and the current
 // planned date that protectedDelayDays leaves out.
-func protectedDaysSkipped(baselineDate, currentPlannedDate string, settings *sharedtypes.CoreSettings) int {
+func protectedDaysSkipped(
+	baselineDate, currentPlannedDate string,
+	settings *sharedtypes.CoreSettings,
+) int {
 	if baselineDate == "" || currentPlannedDate <= baselineDate {
 		return 0
 	}

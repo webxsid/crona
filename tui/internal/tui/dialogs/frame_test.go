@@ -10,8 +10,21 @@ import (
 func plain(s string) []string { return strings.Split(ansi.Strip(s), "\n") }
 
 func TestFrameTitleInBorder(t *testing.T) {
-	lines := plain(Frame(Theme{}, FrameSpec{Title: "New Issue", Context: "OSS › cli", Body: []string{"x"}, ScreenWidth: 120, ScreenHeight: 40, Focus: -1}))
-	if !strings.HasPrefix(lines[0], "╭─ New Issue ") || !strings.HasSuffix(lines[0], " OSS › cli ─╮") {
+	lines := plain(
+		Frame(
+			Theme{},
+			FrameSpec{
+				Title:        "New Issue",
+				Context:      "OSS › cli",
+				Body:         []string{"x"},
+				ScreenWidth:  120,
+				ScreenHeight: 40,
+				Focus:        -1,
+			},
+		),
+	)
+	if !strings.HasPrefix(lines[0], "╭─ New Issue ") ||
+		!strings.HasSuffix(lines[0], " OSS › cli ─╮") {
 		t.Fatalf("expected title and context in the border, got %q", lines[0])
 	}
 }
@@ -26,7 +39,9 @@ func TestFrameContextDroppedWhenTight(t *testing.T) {
 
 func TestFrameWidthClamp(t *testing.T) {
 	width := func(screen int, body string) int {
-		return ansi.StringWidth(plain(Frame(Theme{}, FrameSpec{Title: "T", Body: []string{body}, ScreenWidth: screen, ScreenHeight: 40, Focus: -1}))[0])
+		return ansi.StringWidth(
+			plain(Frame(Theme{}, FrameSpec{Title: "T", Body: []string{body}, ScreenWidth: screen, ScreenHeight: 40, Focus: -1}))[0],
+		)
 	}
 	if got := width(200, "x"); got != 44+6 {
 		t.Fatalf("expected the minimum width, got %d", got)
@@ -40,9 +55,25 @@ func TestFrameWidthClamp(t *testing.T) {
 }
 
 func TestFrameNoTrailingBlank(t *testing.T) {
-	lines := plain(Frame(Theme{}, FrameSpec{Title: "T", Body: []string{"body"}, Footer: []string{"esc cancel"}, ScreenWidth: 120, ScreenHeight: 40, Focus: -1}))
-	if !strings.Contains(lines[len(lines)-3], "esc cancel") || strings.TrimSpace(strings.Trim(lines[len(lines)-2], "│")) != "" {
-		t.Fatalf("expected the footer, one padding line, then the border, got %q", lines[len(lines)-3:])
+	lines := plain(
+		Frame(
+			Theme{},
+			FrameSpec{
+				Title:        "T",
+				Body:         []string{"body"},
+				Footer:       []string{"esc cancel"},
+				ScreenWidth:  120,
+				ScreenHeight: 40,
+				Focus:        -1,
+			},
+		),
+	)
+	if !strings.Contains(lines[len(lines)-3], "esc cancel") ||
+		strings.TrimSpace(strings.Trim(lines[len(lines)-2], "│")) != "" {
+		t.Fatalf(
+			"expected the footer, one padding line, then the border, got %q",
+			lines[len(lines)-3:],
+		)
 	}
 }
 
@@ -51,8 +82,21 @@ func TestFrameKeepsFocusVisible(t *testing.T) {
 	for i := range body {
 		body[i] = "line " + string(rune('A'+i%26)) + strings.Repeat("x", i)
 	}
-	text := ansi.Strip(Frame(Theme{}, FrameSpec{Title: "T", Body: body, Footer: []string{"esc cancel"}, ScreenWidth: 120, ScreenHeight: 20, Focus: 30}))
-	if !strings.Contains(text, body[30]) || !strings.Contains(text, "esc cancel") || !strings.Contains(text, "↑ more") {
+	text := ansi.Strip(
+		Frame(
+			Theme{},
+			FrameSpec{
+				Title:        "T",
+				Body:         body,
+				Footer:       []string{"esc cancel"},
+				ScreenWidth:  120,
+				ScreenHeight: 20,
+				Focus:        30,
+			},
+		),
+	)
+	if !strings.Contains(text, body[30]) || !strings.Contains(text, "esc cancel") ||
+		!strings.Contains(text, "↑ more") {
 		t.Fatalf("expected the focused line, footer and ↑ more, got\n%s", text)
 	}
 	if n := len(strings.Split(text, "\n")); n > 16 {
@@ -61,7 +105,10 @@ func TestFrameKeepsFocusVisible(t *testing.T) {
 }
 
 func TestFieldPadsLabel(t *testing.T) {
-	if got := ansi.Strip(Field(Theme{}, "Due", 8, "x", false)); !strings.HasPrefix(got, "Due"+strings.Repeat(" ", 7)+"x") {
+	if got := ansi.Strip(Field(Theme{}, "Due", 8, "x", false)); !strings.HasPrefix(
+		got,
+		"Due"+strings.Repeat(" ", 7)+"x",
+	) {
 		t.Fatalf("expected a padded label, got %q", got)
 	}
 }
@@ -77,18 +124,37 @@ func TestFieldPairFallsBack(t *testing.T) {
 
 func TestPickerIsOneRow(t *testing.T) {
 	options := []string{"OSS", "Personal", "Work"}
-	unfocused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Current: "Work", Options: options, Selected: 2})
-	if len(unfocused) != 1 || !strings.Contains(ansi.Strip(unfocused[0]), "‹ Work ›  3/3") || strings.Contains(ansi.Strip(unfocused[0]), "filter") {
+	unfocused := Picker(
+		Theme{},
+		PickerSpec{Label: "Repo", Column: 6, Current: "Work", Options: options, Selected: 2},
+	)
+	if len(unfocused) != 1 || !strings.Contains(ansi.Strip(unfocused[0]), "‹ Work ›  3/3") ||
+		strings.Contains(ansi.Strip(unfocused[0]), "filter") {
 		t.Fatalf("expected one collapsed row, got %q", unfocused)
 	}
-	focused := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Focused: true, Input: "wo", Current: "Work", Options: options, Selected: 2})
-	if len(focused) != 1 || !strings.Contains(ansi.Strip(focused[0]), "‹ Work ›  3/3") || !strings.Contains(ansi.Strip(focused[0]), "filter: wo") {
+	focused := Picker(
+		Theme{},
+		PickerSpec{
+			Label:    "Repo",
+			Column:   6,
+			Focused:  true,
+			Input:    "wo",
+			Current:  "Work",
+			Options:  options,
+			Selected: 2,
+		},
+	)
+	if len(focused) != 1 || !strings.Contains(ansi.Strip(focused[0]), "‹ Work ›  3/3") ||
+		!strings.Contains(ansi.Strip(focused[0]), "filter: wo") {
 		t.Fatalf("expected one row with the filter, got %q", focused)
 	}
 }
 
 func TestPickerEmptyShowsPlaceholder(t *testing.T) {
-	got := Picker(Theme{}, PickerSpec{Label: "Repo", Column: 6, Placeholder: "Type to search or create"})
+	got := Picker(
+		Theme{},
+		PickerSpec{Label: "Repo", Column: 6, Placeholder: "Type to search or create"},
+	)
 	if len(got) != 1 || !strings.Contains(ansi.Strip(got[0]), "Type to search or create") {
 		t.Fatalf("expected the placeholder, got %q", got)
 	}

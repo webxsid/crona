@@ -195,7 +195,10 @@ func TestAwayModeDoesNotRecordCurrentDateAndRemovesProvisionalHistory(t *testing
 		t.Fatal("expected live away mode to be disabled")
 	}
 	if len(settings.AwayDates) != 0 {
-		t.Fatalf("expected current date removed from canonical history, got %+v", settings.AwayDates)
+		t.Fatalf(
+			"expected current date removed from canonical history, got %+v",
+			settings.AwayDates,
+		)
 	}
 }
 

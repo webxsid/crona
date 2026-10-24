@@ -282,7 +282,8 @@ func TestNotifyWithActionsQueuesExportActions(t *testing.T) {
 		if !queued.respectSettings {
 			t.Fatal("expected queued notify alert to respect settings")
 		}
-		if len(queued.actions) != 1 || queued.actions[0].Path == nil || *queued.actions[0].Path != path {
+		if len(queued.actions) != 1 || queued.actions[0].Path == nil ||
+			*queued.actions[0].Path != path {
 			t.Fatalf("unexpected queued actions: %+v", queued.actions)
 		}
 	case <-time.After(time.Second):
@@ -341,7 +342,8 @@ func TestBreakDeferralWarningUsesCompanionActionKind(t *testing.T) {
 		t.Fatalf("expected companion-recognized deferral kind, got %q", req.Kind)
 	}
 	actions := breakDeferralWarningActions(payload)
-	if len(actions) != 1 || actions[0].ID != "timer.defer_break" || actions[0].SessionID != payload.SessionID {
+	if len(actions) != 1 || actions[0].ID != "timer.defer_break" ||
+		actions[0].SessionID != payload.SessionID {
 		t.Fatalf("unexpected break deferral actions: %+v", actions)
 	}
 }
@@ -434,7 +436,8 @@ func TestHardLimitReachedActionsUseDialogTargets(t *testing.T) {
 	if actions[0].DialogKind != "end_session" || actions[1].DialogKind != "hard_limit_extend" {
 		t.Fatalf("unexpected dialog kinds: %+v", actions)
 	}
-	if actions[0].DialogParent != "hard_limit_expired" || actions[1].DialogParent != "hard_limit_expired" {
+	if actions[0].DialogParent != "hard_limit_expired" ||
+		actions[1].DialogParent != "hard_limit_expired" {
 		t.Fatalf("unexpected dialog parents: %+v", actions)
 	}
 }

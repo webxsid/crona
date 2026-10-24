@@ -40,7 +40,8 @@ func TestDeleteIssueReloadsTheDailyPlan(t *testing.T) {
 					return
 				}
 				methods <- req.Method
-				_ = json.NewEncoder(conn).Encode(protocol.Response{ID: req.ID, Result: replyFor(req.Method)})
+				_ = json.NewEncoder(conn).
+					Encode(protocol.Response{ID: req.ID, Result: replyFor(req.Method)})
 			}(conn)
 		}
 	}()

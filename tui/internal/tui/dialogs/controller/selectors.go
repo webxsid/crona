@@ -362,7 +362,14 @@ func DefaultIssueDialogNames(
 	return repoName, streamName
 }
 
-func DefaultIssueDialogIDs(inputs []textinput.Model, repoIndex, streamIndex int, repos []api.Repo, allIssues []api.IssueWithMeta, streams []api.Stream, context *api.ActiveContext) (int64, int64, bool) {
+func DefaultIssueDialogIDs(
+	inputs []textinput.Model,
+	repoIndex, streamIndex int,
+	repos []api.Repo,
+	allIssues []api.IssueWithMeta,
+	streams []api.Stream,
+	context *api.ActiveContext,
+) (int64, int64, bool) {
 	repoOptions := DefaultRepoOptions(inputs, repos)
 	streamOptions := DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
 	repo, repoOK := selectedOption(repoOptions, repoIndex)

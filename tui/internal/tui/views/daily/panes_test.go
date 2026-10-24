@@ -150,7 +150,13 @@ func groupedPlannedState(width int) types.ContentState {
 	state := dailyState(width, 30)
 	state.DailyTaskSection = "planned"
 	state.DailyIssues = []api.Issue{
-		{ID: 1, Title: "Ship release notes", Status: "ready", PinnedDaily: true, TodoForDate: new("2026-05-25")},
+		{
+			ID:          1,
+			Title:       "Ship release notes",
+			Status:      "ready",
+			PinnedDaily: true,
+			TodoForDate: new("2026-05-25"),
+		},
 		{ID: 2, Title: "Fix sync conflict", Status: "ready", PinnedDaily: true},
 		{ID: 3, Title: "Plan errands", Status: "planned", TodoForDate: new(state.DashboardDate)},
 	}
@@ -162,8 +168,15 @@ func TestPlannedTabGroupsPinnedAbovePlanned(t *testing.T) {
 		plain := ansi.Strip(renderIssues(testTheme(), groupedPlannedState(width), width, 20))
 		pinned, planned := strings.Index(plain, "Pinned 2"), strings.Index(plain, "Planned 1")
 		if pinned < 0 || planned < 0 || pinned > strings.Index(plain, "Ship release notes") ||
-			planned < strings.Index(plain, "Fix sync conflict") || planned > strings.Index(plain, "Plan errands") {
-			t.Fatalf("width %d: expected Pinned 2 then its tasks, then Planned 1, got %q", width, plain)
+			planned < strings.Index(
+				plain,
+				"Fix sync conflict",
+			) || planned > strings.Index(plain, "Plan errands") {
+			t.Fatalf(
+				"width %d: expected Pinned 2 then its tasks, then Planned 1, got %q",
+				width,
+				plain,
+			)
 		}
 	}
 }
@@ -182,7 +195,11 @@ func TestPlannedTabTagsPinnedTaskDates(t *testing.T) {
 func TestPlannedTabWithoutPinsHasNoHeadings(t *testing.T) {
 	state := groupedPlannedState(80)
 	state.DailyIssues = state.DailyIssues[2:]
-	if plain := ansi.Strip(renderIssues(testTheme(), state, 80, 20)); strings.Contains(plain, "Pinned 0") || strings.Contains(plain, "Planned 1") {
+	if plain := ansi.Strip(renderIssues(testTheme(), state, 80, 20)); strings.Contains(
+		plain,
+		"Pinned 0",
+	) ||
+		strings.Contains(plain, "Planned 1") {
 		t.Fatalf("expected no group headings without pinned tasks, got %q", plain)
 	}
 }

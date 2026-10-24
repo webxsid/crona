@@ -73,7 +73,14 @@ func tabs(t *testing.T, state State, key tea.KeyMsg, want ...int) {
 	for _, focus := range want {
 		state, _, _ = press(state, key)
 		if state.FocusIdx != focus {
-			t.Fatalf("%s %s: focus %d, want %d (order %v)", state.Kind, key, state.FocusIdx, focus, want)
+			t.Fatalf(
+				"%s %s: focus %d, want %d (order %v)",
+				state.Kind,
+				key,
+				state.FocusIdx,
+				focus,
+				want,
+			)
 		}
 	}
 }
@@ -121,7 +128,11 @@ func TestReminderCadence(t *testing.T) {
 
 func TestDateGridHeaderLinesUpWithDays(t *testing.T) {
 	due := "2026-10-20"
-	state := PopulateDatePresentation(Theme{}, OpenDatePicker(State{}, "", 0, 0, &due, "2026-10-18"), "2026-10-18")
+	state := PopulateDatePresentation(
+		Theme{},
+		OpenDatePicker(State{}, "", 0, 0, &due, "2026-10-18"),
+		"2026-10-18",
+	)
 	lines := strings.Split(state.DateGrid, "\n")
 	if lines[0] != " Mo   Tu   We   Th   Fr   Sa   Su " {
 		t.Fatalf("header %q does not match the 5-cell day stride of %q", lines[0], lines[1])

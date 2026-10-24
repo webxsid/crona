@@ -71,12 +71,45 @@ func renderEditIssue(theme Theme, state controllerpkg.State) string {
 			return []string{"tab next"}
 		},
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Title", column, bareInput(state.Inputs[0], full, "required"), state.FocusIdx == 0)),
-			textareaRow(1, Textarea(theme, "Description", column, bareTextarea(state), state.FocusIdx == 1, inner)),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Title",
+					column,
+					bareInput(state.Inputs[0], full, "required"),
+					state.FocusIdx == 0,
+				),
+			),
+			textareaRow(
+				1,
+				Textarea(
+					theme,
+					"Description",
+					column,
+					bareTextarea(state),
+					state.FocusIdx == 1,
+					inner,
+				),
+			),
 			pairRow(
-				Field(theme, "Estimate", column, bareInput(state.Inputs[1], half, "45m, 1h30m"), state.FocusIdx == 2),
-				Field(theme, "Due", dueColumn, bareInput(state.Inputs[2], half, "YYYY-MM-DD"), state.FocusIdx == 3),
-				2, 3, inner,
+				Field(
+					theme,
+					"Estimate",
+					column,
+					bareInput(state.Inputs[1], half, "45m, 1h30m"),
+					state.FocusIdx == 2,
+				),
+				Field(
+					theme,
+					"Due",
+					dueColumn,
+					bareInput(state.Inputs[2], half, "YYYY-MM-DD"),
+					state.FocusIdx == 3,
+				),
+				2,
+				3,
+				inner,
 			),
 		},
 	})
@@ -96,7 +129,16 @@ func renderStatusNote(theme Theme, state controllerpkg.State) string {
 		Primary: plainHint(dialogSubmitHint(state, "set")),
 		Hints:   func(int) []string { return []string{"tab next"} },
 		Rows: []FormRow{
-			fieldRow(0, Field(theme, "Note", len("Note"), bareInput(state.Inputs[0], full, fallback(state.StatusLabel, "optional")), true)),
+			fieldRow(
+				0,
+				Field(
+					theme,
+					"Note",
+					len("Note"),
+					bareInput(state.Inputs[0], full, fallback(state.StatusLabel, "optional")),
+					true,
+				),
+			),
 		},
 	})
 }

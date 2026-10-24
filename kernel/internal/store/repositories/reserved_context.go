@@ -169,7 +169,11 @@ func (r *ReservedContextRepository) EnsureAdhocContext(
 			}
 		}
 
-		out = ReservedContext{RepoID: repo.PublicID, StreamID: stream.PublicID, IssueID: issue.PublicID}
+		out = ReservedContext{
+			RepoID:   repo.PublicID,
+			StreamID: stream.PublicID,
+			IssueID:  issue.PublicID,
+		}
 		return nil
 	})
 	if err != nil {

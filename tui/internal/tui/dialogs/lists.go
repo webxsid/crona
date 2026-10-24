@@ -59,7 +59,9 @@ func renderListDialog(theme Theme, state controllerpkg.State, d listDialog) stri
 func renderConfirmDelete(theme Theme, state controllerpkg.State) string {
 	return renderListDialog(theme, state, listDialog{
 		title: "Delete " + titleWords(fallback(state.DeleteKind, "item")), danger: true, focus: -1,
-		body:    []string{theme.StyleError.Render("Delete " + fallback(state.DeleteLabel, "this item") + "?")},
+		body: []string{
+			theme.StyleError.Render("Delete " + fallback(state.DeleteLabel, "this item") + "?"),
+		},
 		primary: "enter delete",
 	})
 }
@@ -79,14 +81,35 @@ func renderConfirmWipe(theme Theme, state controllerpkg.State) string {
 func renderIssueStatus(theme Theme, state controllerpkg.State) string {
 	column := len("Status")
 	body := []string{
-		Field(theme, "Issue", column, theme.StyleHeader.Render(fallback(state.ViewName, "-")), false),
+		Field(
+			theme,
+			"Issue",
+			column,
+			theme.StyleHeader.Render(fallback(state.ViewName, "-")),
+			false,
+		),
 		Field(theme, "Status", column, plainIssueStatus(state.IssueStatus), false),
-		Field(theme, "Effort", column, issuecore.IssueWorkedEstimateSummary(state.IssueWorkedSeconds, state.IssueEstimateMins), false),
+		Field(
+			theme,
+			"Effort",
+			column,
+			issuecore.IssueWorkedEstimateSummary(state.IssueWorkedSeconds, state.IssueEstimateMins),
+			false,
+		),
 	}
 	body = append(body, "", theme.StyleDim.Render("Change status to"))
 	if len(state.StatusItems) == 0 {
 		body = append(body, theme.StyleDim.Render("No valid status transitions"))
-		return renderListDialog(theme, state, listDialog{title: "Set Issue Status", context: repoStreamContext(state), body: body, focus: -1})
+		return renderListDialog(
+			theme,
+			state,
+			listDialog{
+				title:   "Set Issue Status",
+				context: repoStreamContext(state),
+				body:    body,
+				focus:   -1,
+			},
+		)
 	}
 	labels := make([]string, 0, len(state.StatusItems))
 	for _, status := range state.StatusItems {
@@ -145,7 +168,10 @@ func renderDateGrid(theme Theme, state controllerpkg.State) string {
 		hints = []string{"←/→/↑/↓ move", ",/. month", "g today"}
 	}
 	return renderListDialog(theme, state, listDialog{
-		title: fallback(state.DateTitle, "Pick Date"), context: state.DateMonth, body: body, focus: -1,
+		title: fallback(
+			state.DateTitle,
+			"Pick Date",
+		), context: state.DateMonth, body: body, focus: -1,
 		primary: "enter choose", hints: hints,
 	})
 }
@@ -176,9 +202,18 @@ func renderAdhocIssuePicker(theme Theme, state controllerpkg.State) string {
 		if i == state.ChoiceCursor {
 			focus = len(body)
 		}
-		body = append(body, selectList(theme, []string{ansi.Truncate(strings.ReplaceAll(item, "\n", " "), width, "…")}, boolIndex(i == state.ChoiceCursor))...)
+		body = append(
+			body,
+			selectList(
+				theme,
+				[]string{ansi.Truncate(strings.ReplaceAll(item, "\n", " "), width, "…")},
+				boolIndex(i == state.ChoiceCursor),
+			)...)
 		if i < len(state.ChoiceDetails) {
-			body = append(body, theme.StyleDim.Render("  "+ansi.Truncate(state.ChoiceDetails[i], width, "…")))
+			body = append(
+				body,
+				theme.StyleDim.Render("  "+ansi.Truncate(state.ChoiceDetails[i], width, "…")),
+			)
 		}
 	}
 	if len(state.ChoiceItems) == 0 {
@@ -200,7 +235,10 @@ func renderAdhocIssuePicker(theme Theme, state controllerpkg.State) string {
 		context = fmt.Sprintf("%d of %d", state.ChoiceCursor+1, len(state.ChoiceItems))
 	}
 	return renderListDialog(theme, state, listDialog{
-		title: fallback(state.ViewTitle, "Attach to Issue"), context: context, body: body, focus: focus,
+		title: fallback(
+			state.ViewTitle,
+			"Attach to Issue",
+		), context: context, body: body, focus: focus,
 		primary: "enter continue", hints: []string{"←/→ tab", "↑/↓ move"},
 	})
 }

@@ -145,7 +145,8 @@ func (m *Model) initializeIssuesTransition(previous View) {
 }
 
 func (m Model) issuesTransitionRefresh(previous View) tea.Cmd {
-	entering := uistate.TabForView(m.view) == uistate.TabIssues && uistate.TabForView(previous) != uistate.TabIssues
+	entering := uistate.TabForView(m.view) == uistate.TabIssues &&
+		uistate.TabForView(previous) != uistate.TabIssues
 	if entering || m.view == ViewHabitList && previous != ViewHabitList {
 		return commands.LoadTodayHabits(m.client, m.currentLogicalDate())
 	}
@@ -264,7 +265,12 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 		if node.Scope.StreamID == 0 {
 			return m.openEditRepoDialog(node.Scope.RepoID, node.Name), true
 		}
-		return m.openEditStreamDialog(node.Scope.StreamID, node.Scope.RepoID, node.Name, m.repoNameByID(node.Scope.RepoID)), true
+		return m.openEditStreamDialog(
+			node.Scope.StreamID,
+			node.Scope.RepoID,
+			node.Name,
+			m.repoNameByID(node.Scope.RepoID),
+		), true
 	case PaneIssues:
 		if issue, ok := m.selectedIssueRecord(); ok {
 			if issue.Adhoc {
@@ -326,8 +332,16 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			return m, false
 		}
 		if node.Scope.StreamID == 0 {
-			body := strings.Join([]string{"Description", optionalText(m.repoDescriptionByID(node.Scope.RepoID))}, "\n")
-			return m.openViewEntityDialog("Repo", node.Name, fmt.Sprintf("ID %d", node.Scope.RepoID), body), true
+			body := strings.Join(
+				[]string{"Description", optionalText(m.repoDescriptionByID(node.Scope.RepoID))},
+				"\n",
+			)
+			return m.openViewEntityDialog(
+				"Repo",
+				node.Name,
+				fmt.Sprintf("ID %d", node.Scope.RepoID),
+				body,
+			), true
 		}
 		stream, _ := m.scopeStream(node.Scope.StreamID)
 		meta := strings.Join([]string{
@@ -369,7 +383,14 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 			"Description",
 			optionalText(issue.Description),
 		}
-		body = append(body, issuecore.NotesLines(layoutpkg.ViewTheme(), m.settings, issue.Notes, viewEntityBodyWidth(m.width))...)
+		body = append(
+			body,
+			issuecore.NotesLines(
+				layoutpkg.ViewTheme(),
+				m.settings,
+				issue.Notes,
+				viewEntityBodyWidth(m.width),
+			)...)
 		dialog := m.dialogSnapshot().OpenViewEntity(
 			"Issue",
 			issue.Title,
@@ -484,9 +505,17 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 			return m, false
 		}
 		if node.Scope.StreamID == 0 {
-			return m.openConfirmDeleteEntity("repo", fmt.Sprintf("%d", node.Scope.RepoID), node.Name), true
+			return m.openConfirmDeleteEntity(
+				"repo",
+				fmt.Sprintf("%d", node.Scope.RepoID),
+				node.Name,
+			), true
 		}
-		next := m.openConfirmDeleteEntity("stream", fmt.Sprintf("%d", node.Scope.StreamID), node.Name)
+		next := m.openConfirmDeleteEntity(
+			"stream",
+			fmt.Sprintf("%d", node.Scope.StreamID),
+			node.Name,
+		)
 		next.dialogRepoID = node.Scope.RepoID
 		return next, true
 	case PaneIssues:

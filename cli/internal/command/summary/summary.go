@@ -91,7 +91,9 @@ func parseArgs(args []string) (date, start, end string, err error) {
 	hasLastXDays := hasArg(args, "--last-x-days")
 
 	if sumBool(yesterday, week, month, hasLastXDays) > 1 {
-		return "", "", "", errors.New("use only one of --yesterday, --week, --month, or --last-x-days")
+		return "", "", "", errors.New(
+			"use only one of --yesterday, --week, --month, or --last-x-days",
+		)
 	}
 	if hasLastXDays && lastXDays <= 0 {
 		return "", "", "", errors.New("--last-x-days requires a positive integer")
@@ -105,7 +107,9 @@ func parseArgs(args []string) (date, start, end string, err error) {
 	}
 	if yesterday || week || month || hasLastXDays {
 		if date != "" || start != "" || end != "" {
-			return "", "", "", errors.New("preset flags cannot be combined with --date or --start/--end")
+			return "", "", "", errors.New(
+				"preset flags cannot be combined with --date or --start/--end",
+			)
 		}
 		today := nowFn()
 		switch {
@@ -115,7 +119,8 @@ func parseArgs(args []string) (date, start, end string, err error) {
 			start = startOfCalendarWeek(today).Format("2006-01-02")
 			end = today.Format("2006-01-02")
 		case month:
-			start = time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location()).Format("2006-01-02")
+			start = time.Date(today.Year(), today.Month(), 1, 0, 0, 0, 0, today.Location()).
+				Format("2006-01-02")
 			end = today.Format("2006-01-02")
 		case hasLastXDays:
 			start = today.AddDate(0, 0, -(lastXDays - 1)).Format("2006-01-02")
@@ -342,7 +347,11 @@ func printMetaSection(w io.Writer, rows []kvRow) error {
 	return printTable(w, "meta", []string{"field", "value"}, rowsToCells(rows))
 }
 
-func printContextSection(w io.Writer, ctx *sharedtypes.ActiveContext, timer *sharedtypes.TimerState) error {
+func printContextSection(
+	w io.Writer,
+	ctx *sharedtypes.ActiveContext,
+	timer *sharedtypes.TimerState,
+) error {
 	rows := []kvRow{}
 	if ctx != nil {
 		rows = append(rows,
@@ -366,12 +375,18 @@ func printDailyIssueSection(w io.Writer, summary *sharedtypes.DailyIssueSummary)
 	}
 	rows := []kvRow{
 		{Key: "total issues", Value: fmt.Sprintf("%d", summary.TotalIssues)},
-		{Key: "resolved", Value: fmt.Sprintf("%d", summary.CompletedIssues+summary.AbandonedIssues)},
+		{
+			Key:   "resolved",
+			Value: fmt.Sprintf("%d", summary.CompletedIssues+summary.AbandonedIssues),
+		},
 		{Key: "completed", Value: fmt.Sprintf("%d", summary.CompletedIssues)},
 		{Key: "abandoned", Value: fmt.Sprintf("%d", summary.AbandonedIssues)},
 		{Key: "estimated", Value: formatMinutes(summary.TotalEstimatedMinutes)},
 		{Key: "worked", Value: formatSeconds(summary.WorkedSeconds)},
-		{Key: "delta", Value: formatSignedSeconds(summary.WorkedSeconds - summary.TotalEstimatedMinutes*60)},
+		{
+			Key:   "delta",
+			Value: formatSignedSeconds(summary.WorkedSeconds - summary.TotalEstimatedMinutes*60),
+		},
 	}
 	return printTable(w, "day", []string{"metric", "value"}, rowsToCells(rows))
 }
@@ -421,7 +436,10 @@ func penaltyRows(data daySummaryData) []penaltyRow {
 		}
 		rows = append(rows, penaltyRow{Title: title, Entry: entry})
 	}
-	sort.SliceStable(rows, func(i, j int) bool { return rows[i].Entry.FailScore > rows[j].Entry.FailScore })
+	sort.SliceStable(
+		rows,
+		func(i, j int) bool { return rows[i].Entry.FailScore > rows[j].Entry.FailScore },
+	)
 	return rows
 }
 
@@ -452,10 +470,19 @@ func printPenaltySection(w io.Writer, rows []penaltyRow) error {
 			push,
 		})
 	}
-	return printTable(w, "penalties", []string{"issue", "late", "postpones", "penalty", "share", "push 1d"}, cells)
+	return printTable(
+		w,
+		"penalties",
+		[]string{"issue", "late", "postpones", "penalty", "share", "push 1d"},
+		cells,
+	)
 }
 
-func printCheckInSection(w io.Writer, checkIn *sharedtypes.DailyCheckIn, rollup *sharedtypes.MetricsRollup) error {
+func printCheckInSection(
+	w io.Writer,
+	checkIn *sharedtypes.DailyCheckIn,
+	rollup *sharedtypes.MetricsRollup,
+) error {
 	rows := []kvRow{}
 	if checkIn != nil {
 		rows = append(rows,
@@ -466,7 +493,10 @@ func printCheckInSection(w io.Writer, checkIn *sharedtypes.DailyCheckIn, rollup 
 			rows = append(rows, kvRow{Key: "sleep", Value: formatFloatHours(*checkIn.SleepHours)})
 		}
 		if checkIn.ScreenTimeMinutes != nil {
-			rows = append(rows, kvRow{Key: "screen", Value: formatMinutes(*checkIn.ScreenTimeMinutes)})
+			rows = append(
+				rows,
+				kvRow{Key: "screen", Value: formatMinutes(*checkIn.ScreenTimeMinutes)},
+			)
 		}
 		if notes := strings.TrimSpace(optionalString(checkIn.Notes, "")); notes != "" {
 			rows = append(rows, kvRow{Key: "notes", Value: notes})
@@ -474,13 +504,22 @@ func printCheckInSection(w io.Writer, checkIn *sharedtypes.DailyCheckIn, rollup 
 	}
 	if rollup != nil {
 		if rollup.AverageMood != nil {
-			rows = append(rows, kvRow{Key: "avg mood", Value: fmt.Sprintf("%.1f/5", *rollup.AverageMood)})
+			rows = append(
+				rows,
+				kvRow{Key: "avg mood", Value: fmt.Sprintf("%.1f/5", *rollup.AverageMood)},
+			)
 		}
 		if rollup.AverageEnergy != nil {
-			rows = append(rows, kvRow{Key: "avg energy", Value: fmt.Sprintf("%.1f/5", *rollup.AverageEnergy)})
+			rows = append(
+				rows,
+				kvRow{Key: "avg energy", Value: fmt.Sprintf("%.1f/5", *rollup.AverageEnergy)},
+			)
 		}
 		if rollup.AverageSleepHours != nil {
-			rows = append(rows, kvRow{Key: "avg sleep", Value: formatFloatHours(*rollup.AverageSleepHours)})
+			rows = append(
+				rows,
+				kvRow{Key: "avg sleep", Value: formatFloatHours(*rollup.AverageSleepHours)},
+			)
 		}
 	}
 	if len(rows) == 0 {
@@ -494,9 +533,18 @@ func printStreakSection(w io.Writer, streaks *sharedtypes.StreakSummary) error {
 		return nil
 	}
 	rows := []kvRow{
-		{Key: "focus", Value: fmt.Sprintf("%d / %d", streaks.CurrentFocusDays, streaks.LongestFocusDays)},
-		{Key: "check-ins", Value: fmt.Sprintf("%d / %d", streaks.CurrentCheckInDays, streaks.LongestCheckInDays)},
-		{Key: "habits", Value: fmt.Sprintf("%d / %d", streaks.CurrentHabitDays, streaks.LongestHabitDays)},
+		{
+			Key:   "focus",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentFocusDays, streaks.LongestFocusDays),
+		},
+		{
+			Key:   "check-ins",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentCheckInDays, streaks.LongestCheckInDays),
+		},
+		{
+			Key:   "habits",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentHabitDays, streaks.LongestHabitDays),
+		},
 	}
 	return printTable(w, "streaks", []string{"metric", "current / longest"}, rowsToCells(rows))
 }
@@ -540,9 +588,18 @@ func printRangeStreakSection(w io.Writer, streaks *sharedtypes.StreakSummary) er
 		return nil
 	}
 	rows := []kvRow{
-		{Key: "focus", Value: fmt.Sprintf("%d / %d", streaks.CurrentFocusDays, streaks.LongestFocusDays)},
-		{Key: "check-ins", Value: fmt.Sprintf("%d / %d", streaks.CurrentCheckInDays, streaks.LongestCheckInDays)},
-		{Key: "habits", Value: fmt.Sprintf("%d / %d", streaks.CurrentHabitDays, streaks.LongestHabitDays)},
+		{
+			Key:   "focus",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentFocusDays, streaks.LongestFocusDays),
+		},
+		{
+			Key:   "check-ins",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentCheckInDays, streaks.LongestCheckInDays),
+		},
+		{
+			Key:   "habits",
+			Value: fmt.Sprintf("%d / %d", streaks.CurrentHabitDays, streaks.LongestHabitDays),
+		},
 	}
 	return printTable(w, "streaks", []string{"metric", "current / longest"}, rowsToCells(rows))
 }
@@ -559,10 +616,20 @@ func printRangeDaysSection(w io.Writer, days []sharedtypes.DailyMetricsDay) erro
 			formatSeconds(day.RestSeconds),
 			fmt.Sprintf("%d", day.SessionCount),
 			fmt.Sprintf("%d/%d", day.CompletedIssues, day.TotalIssues),
-			fmt.Sprintf("%d/%d/%d", day.HabitCompletedCount, day.HabitDueCount, day.HabitFailedCount),
+			fmt.Sprintf(
+				"%d/%d/%d",
+				day.HabitCompletedCount,
+				day.HabitDueCount,
+				day.HabitFailedCount,
+			),
 		})
 	}
-	return printTable(w, "days", []string{"date", "worked", "rest", "sessions", "issues", "habits"}, rows)
+	return printTable(
+		w,
+		"days",
+		[]string{"date", "worked", "rest", "sessions", "issues", "habits"},
+		rows,
+	)
 }
 
 func rowsToCells(rows []kvRow) [][]string {
@@ -689,7 +756,14 @@ func formatTimer(timer *sharedtypes.TimerState) string {
 	if timer.SessionID != nil {
 		session = *timer.SessionID
 	}
-	return fmt.Sprintf("%s %s issue=%s session=%s elapsed=%s", timer.State, segment, issue, session, formatSeconds(timer.ElapsedSeconds))
+	return fmt.Sprintf(
+		"%s %s issue=%s session=%s elapsed=%s",
+		timer.State,
+		segment,
+		issue,
+		session,
+		formatSeconds(timer.ElapsedSeconds),
+	)
 }
 
 func formatSeconds(totalSeconds int) string {
@@ -810,7 +884,11 @@ func loadLifetimeStreaks(deps Deps, date string) (*sharedtypes.StreakSummary, er
 	return &out, nil
 }
 
-func loadDashboardWindow(deps Deps, start, end string, ctx *sharedtypes.ActiveContext) (*sharedtypes.DashboardWindowSummary, error) {
+func loadDashboardWindow(
+	deps Deps,
+	start, end string,
+	ctx *sharedtypes.ActiveContext,
+) (*sharedtypes.DashboardWindowSummary, error) {
 	var out sharedtypes.DashboardWindowSummary
 	req := shareddto.DashboardWindowQuery{
 		Start: strings.TrimSpace(start),

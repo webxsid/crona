@@ -25,7 +25,11 @@ func TestTimerStateReportsPomodoroCycles(t *testing.T) {
 		t.Fatalf("get state: %v", err)
 	}
 	if state.HardLimitCycles != 2 || state.CompletedWorkCycles != 0 {
-		t.Fatalf("expected cycle 0 of 2, got %d of %d", state.CompletedWorkCycles, state.HardLimitCycles)
+		t.Fatalf(
+			"expected cycle 0 of 2, got %d of %d",
+			state.CompletedWorkCycles,
+			state.HardLimitCycles,
+		)
 	}
 	now = "2026-05-24T10:25:00Z"
 	if _, err := service.Advance(ctx); err != nil {
@@ -59,7 +63,11 @@ func TestTimerStateReportsPriorWorkOnTheIssue(t *testing.T) {
 		t.Fatalf("get state: %v", err)
 	}
 	if state.IssueWorkedSeconds != 1200 || state.IssueCompletedSessions != 1 {
-		t.Fatalf("expected 1200s over 1 session, got %ds over %d", state.IssueWorkedSeconds, state.IssueCompletedSessions)
+		t.Fatalf(
+			"expected 1200s over 1 session, got %ds over %d",
+			state.IssueWorkedSeconds,
+			state.IssueCompletedSessions,
+		)
 	}
 }
 
@@ -99,7 +107,8 @@ func TestPomodoroLastPhaseReportsNoNextPhase(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get state: %v", err)
 	}
-	if state.NextSegmentType == nil || *state.NextSegmentType != sharedtypes.SessionSegmentShortBreak {
+	if state.NextSegmentType == nil ||
+		*state.NextSegmentType != sharedtypes.SessionSegmentShortBreak {
 		t.Fatalf("expected a short break after the focus, got %v", state.NextSegmentType)
 	}
 	now = "2026-05-24T10:25:00Z"
@@ -110,6 +119,9 @@ func TestPomodoroLastPhaseReportsNoNextPhase(t *testing.T) {
 		t.Fatalf("get state: %v", err)
 	}
 	if state.NextSegmentType != nil {
-		t.Fatalf("expected the session to end after its last break, got next %q", *state.NextSegmentType)
+		t.Fatalf(
+			"expected the session to end after its last break, got next %q",
+			*state.NextSegmentType,
+		)
 	}
 }

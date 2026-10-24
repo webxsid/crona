@@ -19,7 +19,15 @@ func stamp(day, hour, minute int) string {
 func session(id string, day, hour, minute, minutes int, note string) api.SessionHistoryEntry {
 	end := stamp(day, hour, minute+minutes)
 	seconds := minutes * 60
-	entry := api.SessionHistoryEntry{Session: api.Session{ID: id, IssueID: 7, StartTime: stamp(day, hour, minute), EndTime: &end, DurationSeconds: &seconds}}
+	entry := api.SessionHistoryEntry{
+		Session: api.Session{
+			ID:              id,
+			IssueID:         7,
+			StartTime:       stamp(day, hour, minute),
+			EndTime:         &end,
+			DurationSeconds: &seconds,
+		},
+	}
 	if note != "" {
 		entry.Notes = &note
 	}
@@ -58,7 +66,8 @@ func TestSessionLogRows(t *testing.T) {
 			t.Fatalf("expected %q in\n%s", want, text)
 		}
 	}
-	if text := sessionText(sessionState(60)); strings.Contains(text, "second line") || !strings.Contains(text, "Wired the preview") {
+	if text := sessionText(sessionState(60)); strings.Contains(text, "second line") ||
+		!strings.Contains(text, "Wired the preview") {
 		t.Fatalf("expected only the note's first line in the list, got\n%s", text)
 	}
 	state := sessionState(120)
@@ -86,9 +95,17 @@ func TestSessionDetailWaitsThenFills(t *testing.T) {
 	preview := &api.SessionDetail{
 		SessionHistoryEntry: state.SessionHistory[0],
 		RepoName:            "Crona", StreamName: "tui", IssueTitle: "Log redesign",
-		WorkSummary: sharedtypes.SessionWorkSummary{WorkSeconds: 900, RestSeconds: 240, TotalSeconds: 1140},
+		WorkSummary: sharedtypes.SessionWorkSummary{
+			WorkSeconds:  900,
+			RestSeconds:  240,
+			TotalSeconds: 1140,
+		},
 		Segments: []sharedtypes.SessionSegment{
-			{SegmentType: sharedtypes.SessionSegmentWork, StartTime: stamp(17, 16, 30), EndTime: &segEnd},
+			{
+				SegmentType: sharedtypes.SessionSegmentWork,
+				StartTime:   stamp(17, 16, 30),
+				EndTime:     &segEnd,
+			},
 		},
 	}
 	state.SessionPreview = preview
@@ -101,7 +118,8 @@ func TestSessionDetailWaitsThenFills(t *testing.T) {
 	other := *preview
 	other.ID = "zzz"
 	state.SessionPreview = &other
-	if text := sessionText(state); !strings.Contains(text, "Loading…") || strings.Contains(text, "Log redesign") {
+	if text := sessionText(state); !strings.Contains(text, "Loading…") ||
+		strings.Contains(text, "Log redesign") {
 		t.Fatalf("expected a stale preview to be ignored, got\n%s", text)
 	}
 	state.SessionPreview, state.SessionPreviewFailed = nil, true

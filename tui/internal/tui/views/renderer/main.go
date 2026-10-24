@@ -73,9 +73,23 @@ func DateNav(theme types.Theme, state types.ContentState, room int) string {
 	case "daily":
 		return daily.SubTabMeta(theme, state, room)
 	case "momentum":
-		return viewcalendar.DateNav(theme, state.MomentumDate, "", state.Settings, state.WeekStart, room)
+		return viewcalendar.DateNav(
+			theme,
+			state.MomentumDate,
+			"",
+			state.Settings,
+			state.WeekStart,
+			room,
+		)
 	case "review":
-		return viewcalendar.DateNav(theme, state.RollupEndDate, state.RollupStartDate, state.Settings, state.WeekStart, room)
+		return viewcalendar.DateNav(
+			theme,
+			state.RollupEndDate,
+			state.RollupStartDate,
+			state.Settings,
+			state.WeekStart,
+			room,
+		)
 	}
 	return ""
 }

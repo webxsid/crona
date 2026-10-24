@@ -29,7 +29,12 @@ func hourAxis(hours float64) (top, step float64) {
 
 // renderFocusBars draws each day's logged hours as a solid bar in its slot and the day's
 // estimate as a dashed tick across it, at exactly rows lines with hour ticks in the gutter.
-func renderFocusBars(theme types.Theme, days []api.DailyMetricsDay, starts []int, barWidth, width, rows int) []string {
+func renderFocusBars(
+	theme types.Theme,
+	days []api.DailyMetricsDay,
+	starts []int,
+	barWidth, width, rows int,
+) []string {
 	busiest := 0.0
 	logged := make([]float64, len(days))
 	for i, day := range days {
@@ -52,7 +57,10 @@ func renderFocusBars(theme types.Theme, days []api.DailyMetricsDay, starts []int
 		if i >= len(starts) || day.TotalEstimatedMinutes <= 0 {
 			continue
 		}
-		eighths := max(1, int(math.Round(float64(day.TotalEstimatedMinutes)/60/top*float64(rows*8))))
+		eighths := max(
+			1,
+			int(math.Round(float64(day.TotalEstimatedMinutes)/60/top*float64(rows*8))),
+		)
 		row := max(0, rows-1-(eighths-1)/8)
 		for col := max(0, starts[i]-1); col < min(width, starts[i]+barWidth+1); col++ {
 			grid[row][col] = estimate

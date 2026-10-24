@@ -19,8 +19,23 @@ func squash(s string) string { return strings.Join(strings.Fields(s), " ") }
 
 func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 	state := summaryTestState()
-	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 82, Level: sharedtypes.FocusScoreLevelStrong, Reason: sharedtypes.FocusScoreReasonBalanced, TargetWorkedSeconds: 3600}
-	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 2400, RestSeconds: 600, SessionCount: 3, TotalIssues: 4, CompletedIssues: 2, AbandonedIssues: 1, HabitDueCount: 3, HabitCompletedCount: 2, HabitFailedCount: 1}
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{
+		Score:               82,
+		Level:               sharedtypes.FocusScoreLevelStrong,
+		Reason:              sharedtypes.FocusScoreReasonBalanced,
+		TargetWorkedSeconds: 3600,
+	}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{
+		WorkedSeconds:       2400,
+		RestSeconds:         600,
+		SessionCount:        3,
+		TotalIssues:         4,
+		CompletedIssues:     2,
+		AbandonedIssues:     1,
+		HabitDueCount:       3,
+		HabitCompletedCount: 2,
+		HabitFailedCount:    1,
+	}
 	rendered := dayText(state, 42)
 	for _, want := range []string{"Stats", "Focus 82/100 Strong", "Worked 40m of 1h", "Rest 10m", "Sessions 3", "Issues 2 of 4 done · 1 abandoned", "Habits 2 of 3 done · 1 failed"} {
 		if !strings.Contains(squash(rendered), want) {
@@ -31,8 +46,20 @@ func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 
 func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 	state := summaryTestState()
-	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 52, Level: sharedtypes.FocusScoreLevelOverextended, Reason: "overextended", TargetWorkedSeconds: 21600}
-	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 6660, SessionCount: 2, TotalIssues: 4, CompletedIssues: 1, HabitDueCount: 5, HabitCompletedCount: 4}
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{
+		Score:               52,
+		Level:               sharedtypes.FocusScoreLevelOverextended,
+		Reason:              "overextended",
+		TargetWorkedSeconds: 21600,
+	}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{
+		WorkedSeconds:       6660,
+		SessionCount:        2,
+		TotalIssues:         4,
+		CompletedIssues:     1,
+		HabitDueCount:       5,
+		HabitCompletedCount: 4,
+	}
 	for _, line := range DayLines(types.Theme{}, state, 42) {
 		if w := ansi.StringWidth(line); w > 42 || strings.Contains(line, "…") {
 			t.Fatalf("expected every line whole within 42 cells, got %d: %q", w, ansi.Strip(line))
@@ -87,9 +114,11 @@ func summaryTestState() types.ContentState {
 				}},
 			},
 			Habits: []api.HabitDailyItem{{
-				HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{Name: "Walk", TargetMinutes: &target}},
-				Completed:     true,
-				Status:        sharedtypes.HabitCompletionStatusCompleted,
+				HabitWithMeta: api.HabitWithMeta{
+					Habit: api.Habit{Name: "Walk", TargetMinutes: &target},
+				},
+				Completed: true,
+				Status:    sharedtypes.HabitCompletionStatusCompleted,
 			}},
 			Plan: &api.DailyPlan{
 				Date: "2026-07-28",
@@ -100,7 +129,11 @@ func summaryTestState() types.ContentState {
 				},
 			},
 			CheckIn: &api.DailyCheckIn{Date: "2026-07-28", Mood: 4, Energy: 3},
-			Streaks: &api.StreakSummary{CurrentFocusDays: 3, CurrentCheckInDays: 4, CurrentHabitDays: 2},
+			Streaks: &api.StreakSummary{
+				CurrentFocusDays:   3,
+				CurrentCheckInDays: 4,
+				CurrentHabitDays:   2,
+			},
 		},
 	}
 }
@@ -123,19 +156,27 @@ func TestDayLinesWrapLongNotes(t *testing.T) {
 func TestDayLinesListTopPenalties(t *testing.T) {
 	state := summaryTestState()
 	entry := func(id int64, score float64, highRisk, historical bool) sharedtypes.DailyPlanEntry {
-		return sharedtypes.DailyPlanEntry{IssueID: id, FailScore: score, Penalty: &sharedtypes.DailyPlanEntryPenalty{
-			HighRisk: highRisk, Historical: historical,
-			Contribution: &sharedtypes.DailyPlanPenaltyShare{AccountabilityPct: score / 10},
-		}}
+		return sharedtypes.DailyPlanEntry{
+			IssueID:   id,
+			FailScore: score,
+			Penalty: &sharedtypes.DailyPlanEntryPenalty{
+				HighRisk: highRisk, Historical: historical,
+				Contribution: &sharedtypes.DailyPlanPenaltyShare{AccountabilityPct: score / 10},
+			},
+		}
 	}
-	state.SummarySnapshot.Plan = &sharedtypes.DailyPlan{Date: state.SummarySnapshot.Date, Entries: []sharedtypes.DailyPlanEntry{
-		entry(1, 1, false, false), entry(2, 3.38, true, false), entry(3, 5, true, true),
-	}}
+	state.SummarySnapshot.Plan = &sharedtypes.DailyPlan{
+		Date: state.SummarySnapshot.Date,
+		Entries: []sharedtypes.DailyPlanEntry{
+			entry(1, 1, false, false), entry(2, 3.38, true, false), entry(3, 5, true, true),
+		},
+	}
 	state.SummarySnapshot.Issues = &sharedtypes.DailyIssueSummary{Issues: []sharedtypes.Issue{
 		{ID: 1, Title: "Small slip"}, {ID: 2, Title: "Fix sync conflict"},
 	}}
 	rendered := squash(dayText(state, 60))
-	if !strings.Contains(rendered, "Top ▲3.38 34% Fix sync conflict 1.00 10% Small slip") || strings.Contains(rendered, "5.00") {
+	if !strings.Contains(rendered, "Top ▲3.38 34% Fix sync conflict 1.00 10% Small slip") ||
+		strings.Contains(rendered, "5.00") {
 		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
 	}
 }

@@ -45,7 +45,14 @@ func Run(ctx context.Context) (runErr error) {
 
 	logger := runtime.NewLogger(paths)
 	startedAt := time.Now().UTC().Format(time.RFC3339)
-	logger.Info(fmt.Sprintf("daemon starting pid=%d executable=%s protocol=%s", os.Getpid(), executablePath(), protocol.Version))
+	logger.Info(
+		fmt.Sprintf(
+			"daemon starting pid=%d executable=%s protocol=%s",
+			os.Getpid(),
+			executablePath(),
+			protocol.Version,
+		),
+	)
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			logger.Error("daemon panic", fmt.Errorf("%v\n%s", recovered, debug.Stack()))
@@ -132,22 +139,31 @@ func Run(ctx context.Context) (runErr error) {
 	}
 	alerts := notify.Start(runCtx, commandCtx, bus, logger, paths)
 	timerService := corecommands.GetTimerService(commandCtx)
-	alerts.SetCompanionActionHandler(func(actionCtx context.Context, sessionID, actionID string, seconds int) error {
-		if actionID != "timer.defer_break" {
-			return nil
-		}
-		if seconds <= 0 {
-			return nil
-		}
-		_, err := timerService.DeferBreak(actionCtx, sessionID, seconds)
-		return err
-	})
+	alerts.SetCompanionActionHandler(
+		func(actionCtx context.Context, sessionID, actionID string, seconds int) error {
+			if actionID != "timer.defer_break" {
+				return nil
+			}
+			if seconds <= 0 {
+				return nil
+			}
+			_, err := timerService.DeferBreak(actionCtx, sessionID, seconds)
+			return err
+		},
+	)
 	scheduler := dayboundary.New(
 		func(ctx context.Context) (*sharedtypes.CoreSettings, error) {
 			return commandCtx.CoreSettings.Get(ctx, commandCtx.UserID)
 		},
 		func(ctx context.Context, id, userID, kind, scheduledAtUTC, timezone string) (bool, error) {
-			return registry.DayBoundaryOccurrences.Claim(ctx, id, userID, kind, scheduledAtUTC, timezone)
+			return registry.DayBoundaryOccurrences.Claim(
+				ctx,
+				id,
+				userID,
+				kind,
+				scheduledAtUTC,
+				timezone,
+			)
 		},
 		bus.Emit,
 		func(ctx context.Context, request sharedtypes.AlertRequest) error {
@@ -157,23 +173,26 @@ func Run(ctx context.Context) (runErr error) {
 			return nil
 		},
 	)
-	scheduler.SetDateRecorder(func(ctx context.Context, date string, settings *sharedtypes.CoreSettings) error {
-		if settings == nil || date == "" || (!settings.AwayModeEnabled && !settings.IsConfiguredRestDate(date)) {
+	scheduler.SetDateRecorder(
+		func(ctx context.Context, date string, settings *sharedtypes.CoreSettings) error {
+			if settings == nil || date == "" ||
+				(!settings.AwayModeEnabled && !settings.IsConfiguredRestDate(date)) {
+				return nil
+			}
+			changed, err := commandCtx.CoreSettings.RecordAwayDate(ctx, commandCtx.UserID, date)
+			if err != nil {
+				return err
+			}
+			if !changed {
+				return nil
+			}
+			if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, commandCtx, date); err != nil {
+				return err
+			}
+			emitSettingsChanged(bus, sharedtypes.CoreSettingsKeyAwayDates)
 			return nil
-		}
-		changed, err := commandCtx.CoreSettings.RecordAwayDate(ctx, commandCtx.UserID, date)
-		if err != nil {
-			return err
-		}
-		if !changed {
-			return nil
-		}
-		if err := corecommands.InvalidateCustomHabitMomentumSnapshotsFrom(ctx, commandCtx, date); err != nil {
-			return err
-		}
-		emitSettingsChanged(bus, sharedtypes.CoreSettingsKeyAwayDates)
-		return nil
-	})
+		},
+	)
 	commandCtx.CurrentDate = scheduler.CurrentDate
 	if err := scheduler.Initialize(runCtx); err != nil {
 		return fmt.Errorf("initialize day-boundary scheduler: %w", err)
@@ -258,7 +277,13 @@ func Run(ctx context.Context) (runErr error) {
 			logger.Error("capture daemon stopped", captureErr)
 		}
 	}
-	logger.Info(fmt.Sprintf("kernel shutting down reason=%v uptime=%s", context.Cause(runCtx), time.Since(parseStartedAt(startedAt))))
+	logger.Info(
+		fmt.Sprintf(
+			"kernel shutting down reason=%v uptime=%s",
+			context.Cause(runCtx),
+			time.Since(parseStartedAt(startedAt)),
+		),
+	)
 	return nil
 }
 

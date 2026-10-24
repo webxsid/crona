@@ -130,13 +130,20 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 		if !ok || rowIndex >= len(state.SessionHistorySegments) {
 			return state, nil, ""
 		}
-		state.SessionHistorySegments = slices.Delete(state.SessionHistorySegments, rowIndex, rowIndex+1)
+		state.SessionHistorySegments = slices.Delete(
+			state.SessionHistorySegments,
+			rowIndex,
+			rowIndex+1,
+		)
 		if column > 0 {
 			column--
 		}
 		state.FocusIdx = min(state.FocusIdx, historyControlCount(state)-1)
 		if len(state.SessionHistorySegments) > 0 && state.FocusIdx >= 5 {
-			state.FocusIdx = sessionHistorySegmentFocus(min(rowIndex, len(state.SessionHistorySegments)-1), column)
+			state.FocusIdx = sessionHistorySegmentFocus(
+				min(rowIndex, len(state.SessionHistorySegments)-1),
+				column,
+			)
 		}
 		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
 	}
@@ -166,7 +173,9 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 			return state, nil, ""
 		}
 		var cmd tea.Cmd
-		state.SessionHistoryNoteInputs[index], cmd = state.SessionHistoryNoteInputs[index].Update(msg)
+		state.SessionHistoryNoteInputs[index], cmd = state.SessionHistoryNoteInputs[index].Update(
+			msg,
+		)
 		_ = cmd
 		return clearDialogError(state), nil, ""
 	}
@@ -242,9 +251,15 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 		}
 	}
 	notes := sharedtypes.ParsedSessionNotes{
-		sharedtypes.SessionNoteSectionCommit: strings.TrimSpace(state.SessionHistoryNoteInputs[0].Value()),
-		sharedtypes.SessionNoteSectionWork:   strings.TrimSpace(state.SessionHistoryNoteInputs[1].Value()),
-		sharedtypes.SessionNoteSectionNotes:  strings.TrimSpace(state.SessionHistoryNoteInputs[2].Value()),
+		sharedtypes.SessionNoteSectionCommit: strings.TrimSpace(
+			state.SessionHistoryNoteInputs[0].Value(),
+		),
+		sharedtypes.SessionNoteSectionWork: strings.TrimSpace(
+			state.SessionHistoryNoteInputs[1].Value(),
+		),
+		sharedtypes.SessionNoteSectionNotes: strings.TrimSpace(
+			state.SessionHistoryNoteInputs[2].Value(),
+		),
 	}
 	return &shareddto.UpdateSessionHistoryRequest{
 		ID: state.SessionID, StartTime: start.UTC().Format(time.RFC3339Nano), EndTime: end.UTC().Format(time.RFC3339Nano),
@@ -326,7 +341,10 @@ func focusSessionHistoryControl(state State) State {
 	return state
 }
 
-func nextSessionHistorySegmentType(current sharedtypes.SessionSegmentType, dir int) sharedtypes.SessionSegmentType {
+func nextSessionHistorySegmentType(
+	current sharedtypes.SessionSegmentType,
+	dir int,
+) sharedtypes.SessionSegmentType {
 	types := []sharedtypes.SessionSegmentType{
 		sharedtypes.SessionSegmentWork,
 		sharedtypes.SessionSegmentShortBreak,

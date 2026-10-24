@@ -105,7 +105,10 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("expected positive focus score, got %+v", focus)
 	}
 	if focus.TargetWorkedSeconds != 5400 {
-		t.Fatalf("expected focus target from due issue estimates, got %d", focus.TargetWorkedSeconds)
+		t.Fatalf(
+			"expected focus target from due issue estimates, got %d",
+			focus.TargetWorkedSeconds,
+		)
 	}
 	emptyFocus, err := corecommands.ComputeFocusScoreSummary(
 		ctx,
@@ -116,7 +119,10 @@ func TestDashboardSummariesExposeExecutionFocusDistributionAndProgress(t *testin
 		t.Fatalf("empty focus summary: %v", err)
 	}
 	if emptyFocus.TargetWorkedSeconds != 0 {
-		t.Fatalf("expected zero target without due issue estimates, got %d", emptyFocus.TargetWorkedSeconds)
+		t.Fatalf(
+			"expected zero target without due issue estimates, got %d",
+			emptyFocus.TargetWorkedSeconds,
+		)
 	}
 
 	distribution, err := corecommands.ComputeTimeDistributionSummary(

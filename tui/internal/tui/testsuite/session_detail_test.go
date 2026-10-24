@@ -27,6 +27,9 @@ func TestSessionDetailEditHotkeyDoesNothingWhenManageHistoryIsDisabled(t *testin
 	updated := next.(app.Model)
 
 	if got := updated.DialogKind(); got != "" {
-		t.Fatalf("expected edit dialog to remain closed when history management is disabled, got %q", got)
+		t.Fatalf(
+			"expected edit dialog to remain closed when history management is disabled, got %q",
+			got,
+		)
 	}
 }

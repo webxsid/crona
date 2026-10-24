@@ -13,7 +13,9 @@ import (
 
 func TestAllStreamsLoadedStored(t *testing.T) {
 	m := Model{view: ViewDaily, cursor: map[Pane]int{}, filters: map[Pane]string{}}
-	next, _ := m.update(commands.AllStreamsLoadedMsg{Streams: []api.Stream{{ID: 2, RepoID: 1}, {ID: 4, RepoID: 1}}})
+	next, _ := m.update(
+		commands.AllStreamsLoadedMsg{Streams: []api.Stream{{ID: 2, RepoID: 1}, {ID: 4, RepoID: 1}}},
+	)
 	if got := next.(Model).allStreams; len(got) != 2 {
 		t.Fatalf("expected all streams stored, got %+v", got)
 	}
@@ -38,9 +40,12 @@ func scopeModel(cursor int) Model {
 	return Model{
 		view: ViewDefault, pane: PaneScope, width: 200, height: 40,
 		cursor: map[Pane]int{PaneScope: cursor}, filters: map[Pane]string{},
-		context:     &api.ActiveContext{RepoID: &repo, StreamID: &stream},
-		repos:       []api.Repo{{ID: 1, Name: "crona"}, {ID: 3, Name: "dotfiles"}},
-		allStreams:  []api.Stream{{ID: 2, RepoID: 1, Name: "tui"}, {ID: 4, RepoID: 1, Name: "daemon"}},
+		context: &api.ActiveContext{RepoID: &repo, StreamID: &stream},
+		repos:   []api.Repo{{ID: 1, Name: "crona"}, {ID: 3, Name: "dotfiles"}},
+		allStreams: []api.Stream{
+			{ID: 2, RepoID: 1, Name: "tui"},
+			{ID: 4, RepoID: 1, Name: "daemon"},
+		},
 		browseScope: scope.Scope{RepoID: 1},
 	}
 }
@@ -57,7 +62,11 @@ func press(m Model, key string) (Model, tea.Cmd) {
 func TestScopeCursorMovesBrowseScope(t *testing.T) {
 	m, _ := press(scopeModel(1), "down")
 	if m.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) || m.cursor[PaneScope] != 2 {
-		t.Fatalf("expected the browse scope to follow the cursor to tui, got %+v at %d", m.browseScope, m.cursor[PaneScope])
+		t.Fatalf(
+			"expected the browse scope to follow the cursor to tui, got %+v at %d",
+			m.browseScope,
+			m.cursor[PaneScope],
+		)
 	}
 	if *m.context.StreamID != 2 || *m.context.RepoID != 1 {
 		t.Fatal("expected the checked-out context unchanged")
@@ -78,7 +87,11 @@ func TestScopeCreateOpensRepoOrStream(t *testing.T) {
 		t.Fatalf("expected a on All to create a repo, got %q", m.dialog)
 	}
 	if m, _ := press(scopeModel(2), "a"); m.dialog != "create_stream" || m.dialogRepoID != 1 {
-		t.Fatalf("expected a on tui to create a stream in crona, got %q repo %d", m.dialog, m.dialogRepoID)
+		t.Fatalf(
+			"expected a on tui to create a stream in crona, got %q repo %d",
+			m.dialog,
+			m.dialogRepoID,
+		)
 	}
 }
 
@@ -95,20 +108,37 @@ func TestScopeCursorFollowsScopeWhenStreamsLoad(t *testing.T) {
 	m := scopeModel(0)
 	m.allStreams = nil
 	m.browseScope = scope.Scope{RepoID: 1, StreamID: 4}
-	next, _ := m.update(commands.AllStreamsLoadedMsg{Streams: []api.Stream{{ID: 2, RepoID: 1, Name: "tui"}, {ID: 4, RepoID: 1, Name: "daemon"}}})
+	next, _ := m.update(
+		commands.AllStreamsLoadedMsg{
+			Streams: []api.Stream{
+				{ID: 2, RepoID: 1, Name: "tui"},
+				{ID: 4, RepoID: 1, Name: "daemon"},
+			},
+		},
+	)
 	got := next.(Model)
 	if got.browseScope != (scope.Scope{RepoID: 1, StreamID: 4}) || got.cursor[PaneScope] != 3 {
-		t.Fatalf("expected the cursor on daemon once streams load, got %+v at %d", got.browseScope, got.cursor[PaneScope])
+		t.Fatalf(
+			"expected the cursor on daemon once streams load, got %+v at %d",
+			got.browseScope,
+			got.cursor[PaneScope],
+		)
 	}
 }
 
 func TestDeletedBrowsedStreamFallsBackToAll(t *testing.T) {
 	m := scopeModel(3)
 	m.browseScope = scope.Scope{RepoID: 1, StreamID: 4}
-	next, _ := m.update(commands.AllStreamsLoadedMsg{Streams: []api.Stream{{ID: 2, RepoID: 1, Name: "tui"}}})
+	next, _ := m.update(
+		commands.AllStreamsLoadedMsg{Streams: []api.Stream{{ID: 2, RepoID: 1, Name: "tui"}}},
+	)
 	got := next.(Model)
 	if !got.browseScope.IsAll() || got.cursor[PaneScope] != 0 {
-		t.Fatalf("expected All after the browsed stream went away, got %+v at %d", got.browseScope, got.cursor[PaneScope])
+		t.Fatalf(
+			"expected All after the browsed stream went away, got %+v at %d",
+			got.browseScope,
+			got.cursor[PaneScope],
+		)
 	}
 }
 
@@ -123,7 +153,8 @@ func TestEnteringIssuesTabSeedsScopeCursor(t *testing.T) {
 
 func TestScopeArrowsStepNodes(t *testing.T) {
 	next, _ := scopeModel(1).update(tea.KeyMsg{Type: tea.KeyRight})
-	if got := next.(Model); got.cursor[PaneScope] != 2 || got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) {
+	if got := next.(Model); got.cursor[PaneScope] != 2 ||
+		got.browseScope != (scope.Scope{RepoID: 1, StreamID: 2}) {
 		t.Fatalf("expected → to step to tui, got %d %+v", got.cursor[PaneScope], got.browseScope)
 	}
 	next, _ = scopeModel(1).update(tea.KeyMsg{Type: tea.KeyLeft})
@@ -150,11 +181,18 @@ func TestArrowsSwitchOpenDoneAndTabCyclesPanes(t *testing.T) {
 func TestDoneSectionCursorInRange(t *testing.T) {
 	m := scopeModel(1)
 	m.pane = PaneIssues
-	m.allIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 1, StreamID: 2, Status: "ready"}, RepoID: 1}}
+	m.allIssues = []api.IssueWithMeta{
+		{Issue: api.Issue{ID: 1, StreamID: 2, Status: "ready"}, RepoID: 1},
+	}
 	m.cursor[PaneIssues] = 3
 	m.setDefaultIssueSection(DefaultIssueSectionCompleted)
-	if m.cursor[PaneIssues] != 0 || len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)) != 0 {
-		t.Fatalf("empty Done: cursor %d indices %v", m.cursor[PaneIssues], selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues))
+	if m.cursor[PaneIssues] != 0 ||
+		len(selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues)) != 0 {
+		t.Fatalf(
+			"empty Done: cursor %d indices %v",
+			m.cursor[PaneIssues],
+			selectionpkg.FilteredIndices(m.selectionSnapshot(), PaneIssues),
+		)
 	}
 }
 
@@ -183,7 +221,12 @@ func TestDailyCreateIssueDefaultsToCheckout(t *testing.T) {
 			t.Fatalf("browse %+v: dialog %q", browse, got.dialog)
 		}
 		if got.dialogInputs[0].Value() != "crona" || got.dialogInputs[1].Value() != "tui" {
-			t.Errorf("browse %+v: Daily defaults %q / %q, want crona / tui", browse, got.dialogInputs[0].Value(), got.dialogInputs[1].Value())
+			t.Errorf(
+				"browse %+v: Daily defaults %q / %q, want crona / tui",
+				browse,
+				got.dialogInputs[0].Value(),
+				got.dialogInputs[1].Value(),
+			)
 		}
 	}
 }

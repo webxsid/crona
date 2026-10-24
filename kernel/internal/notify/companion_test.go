@@ -62,10 +62,13 @@ func TestCompanionBrokerReplacesActiveSubscriber(t *testing.T) {
 
 func TestCompanionBrokerOnlyForwardsOfferedActions(t *testing.T) {
 	broker := newCompanionBroker()
-	deliveries, unsubscribe := broker.subscribe(context.Background(), sharedtypes.AlertDeliveryCapability{
-		ClientID:      "mac",
-		Notifications: true,
-	})
+	deliveries, unsubscribe := broker.subscribe(
+		context.Background(),
+		sharedtypes.AlertDeliveryCapability{
+			ClientID:      "mac",
+			Notifications: true,
+		},
+	)
 	defer unsubscribe()
 	result, offered := broker.offer(sharedtypes.AlertDelivery{
 		ID:                  "delivery-action",

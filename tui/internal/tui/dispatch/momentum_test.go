@@ -16,13 +16,23 @@ func momentumCard(name string, enabled bool) api.MomentumCard {
 }
 
 func TestMomentumCardsLoadActiveFirst(t *testing.T) {
-	loaded := []api.MomentumCard{momentumCard("A", false), momentumCard("B", true), momentumCard("C", false), momentumCard("D", true)}
-	state, _, _ := HandleMessage(MessageState{}, commands.MomentumRangeLoadedMsg{Cards: loaded}, MessageDeps{})
+	loaded := []api.MomentumCard{
+		momentumCard("A", false),
+		momentumCard("B", true),
+		momentumCard("C", false),
+		momentumCard("D", true),
+	}
+	state, _, _ := HandleMessage(
+		MessageState{},
+		commands.MomentumRangeLoadedMsg{Cards: loaded},
+		MessageDeps{},
+	)
 	var names []string
 	for _, card := range state.MomentumCards {
 		names = append(names, card.Definition.Name)
 	}
-	if got := len(names); got != 4 || names[0] != "B" || names[1] != "D" || names[2] != "A" || names[3] != "C" {
+	if got := len(names); got != 4 || names[0] != "B" || names[1] != "D" || names[2] != "A" ||
+		names[3] != "C" {
 		t.Fatalf("expected active momentums first in their order, got %v", names)
 	}
 	if loaded[0].Definition.Name != "A" {
@@ -32,9 +42,15 @@ func TestMomentumCardsLoadActiveFirst(t *testing.T) {
 
 func TestMomentumCardsLoadStillClamps(t *testing.T) {
 	clamped := false
-	HandleMessage(MessageState{Cursor: map[uistate.Pane]int{uistate.PaneMomentumCards: 9}},
-		commands.MomentumRangeLoadedMsg{Cards: []api.MomentumCard{momentumCard("A", true), momentumCard("B", false)}},
-		MessageDeps{ClampFiltered: func(_ *MessageState, pane uistate.Pane) { clamped = clamped || pane == uistate.PaneMomentumCards }})
+	HandleMessage(
+		MessageState{Cursor: map[uistate.Pane]int{uistate.PaneMomentumCards: 9}},
+		commands.MomentumRangeLoadedMsg{
+			Cards: []api.MomentumCard{momentumCard("A", true), momentumCard("B", false)},
+		},
+		MessageDeps{
+			ClampFiltered: func(_ *MessageState, pane uistate.Pane) { clamped = clamped || pane == uistate.PaneMomentumCards },
+		},
+	)
 	if !clamped {
 		t.Fatalf("expected the momentum cursor to be clamped")
 	}
@@ -49,7 +65,11 @@ func TestMomentumCardsLoadKeepsSelectionOnToggledCard(t *testing.T) {
 		Filters:       map[uistate.Pane]string{},
 	}
 	a.Definition.Enabled = false
-	state, _, _ = HandleMessage(state, commands.MomentumRangeLoadedMsg{Cards: []api.MomentumCard{a, b, c}}, MessageDeps{})
+	state, _, _ = HandleMessage(
+		state,
+		commands.MomentumRangeLoadedMsg{Cards: []api.MomentumCard{a, b, c}},
+		MessageDeps{},
+	)
 	if got := state.Cursor[uistate.PaneMomentumCards]; got != 2 {
 		t.Fatalf("expected the cursor to follow the disabled card to row 2, got %d", got)
 	}

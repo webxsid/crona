@@ -25,8 +25,15 @@ func TestCreateHabitDefaultsToBrowseScope(t *testing.T) {
 		m.pane = PaneHabits
 		m.browseScope = test.scope
 		next, _ := press(m, "a")
-		if next.dialog != "create_habit" || next.dialogInputs[0].Value() != test.repo || next.dialogInputs[1].Value() != test.stream {
-			t.Fatalf("scope %+v: %s %q %q", test.scope, next.dialog, next.dialogInputs[0].Value(), next.dialogInputs[1].Value())
+		if next.dialog != "create_habit" || next.dialogInputs[0].Value() != test.repo ||
+			next.dialogInputs[1].Value() != test.stream {
+			t.Fatalf(
+				"scope %+v: %s %q %q",
+				test.scope,
+				next.dialog,
+				next.dialogInputs[0].Value(),
+				next.dialogInputs[1].Value(),
+			)
 		}
 	}
 }
@@ -34,7 +41,10 @@ func TestHabitListKeysActOnScopedHabit(t *testing.T) {
 	m := scopeModel(1)
 	m.view = ViewHabitList
 	m.pane = PaneHabits
-	m.allHabits = []api.HabitWithMeta{{Habit: api.Habit{ID: 1, StreamID: 9, Name: "Other"}, RepoID: 3}, {Habit: api.Habit{ID: 2, StreamID: 4, Name: "Walk"}, RepoID: 1}}
+	m.allHabits = []api.HabitWithMeta{
+		{Habit: api.Habit{ID: 1, StreamID: 9, Name: "Other"}, RepoID: 3},
+		{Habit: api.Habit{ID: 2, StreamID: 4, Name: "Walk"}, RepoID: 1},
+	}
 	next, _ := press(m, "e")
 	if next.dialog != "edit_habit" || next.dialogHabitID != 2 {
 		t.Fatalf("edit = %s habit %d", next.dialog, next.dialogHabitID)
@@ -64,7 +74,8 @@ func TestNoMetaView(t *testing.T) {
 		t.Fatal("incorrect terminal title")
 	}
 	jump := m.openViewJumpDialog().dialogState()
-	if strings.Contains(strings.Join(jump.ChoiceItems, " "), "Meta") || !strings.Contains(strings.Join(jump.ChoiceItems, " "), "Habits") {
+	if strings.Contains(strings.Join(jump.ChoiceItems, " "), "Meta") ||
+		!strings.Contains(strings.Join(jump.ChoiceItems, " "), "Habits") {
 		t.Fatalf("view jump choices = %v, want Habits without Meta", jump.ChoiceItems)
 	}
 	next := m.openHelpDialog()
@@ -78,7 +89,9 @@ func TestHabitScopeChangeClampsCursor(t *testing.T) {
 	m.view = ViewHabitList
 	m.pane = PaneScope
 	m.cursor[PaneHabits] = 2
-	m.allHabits = []api.HabitWithMeta{{Habit: api.Habit{ID: 1, StreamID: 2, Name: "Walk"}, RepoID: 1}}
+	m.allHabits = []api.HabitWithMeta{
+		{Habit: api.Habit{ID: 1, StreamID: 2, Name: "Walk"}, RepoID: 1},
+	}
 	next, _ := press(m, "down")
 	if next.cursor[PaneHabits] != 0 {
 		t.Fatalf("habit cursor = %d", next.cursor[PaneHabits])
@@ -90,10 +103,20 @@ func TestHabitSummaryUsesTodayDespiteHistoricalDailyDate(t *testing.T) {
 	m.view = ViewDaily
 	m.pane = PaneHabits
 	m.date = "2020-01-01"
-	habit := api.HabitWithMeta{Habit: api.Habit{ID: 2, StreamID: 2, Name: "Walk", Active: true}, RepoID: 1}
+	habit := api.HabitWithMeta{
+		Habit:  api.Habit{ID: 2, StreamID: 2, Name: "Walk", Active: true},
+		RepoID: 1,
+	}
 	m.allHabits = []api.HabitWithMeta{habit}
 	m.dueHabits = []api.HabitDailyItem{{HabitWithMeta: habit, Status: "failed"}}
-	loaded, _ := m.update(commands.TodayHabitsLoadedMsg{Date: m.currentLogicalDate(), Habits: []api.HabitDailyItem{{HabitWithMeta: habit, Status: "completed", Completed: true}}})
+	loaded, _ := m.update(
+		commands.TodayHabitsLoadedMsg{
+			Date: m.currentLogicalDate(),
+			Habits: []api.HabitDailyItem{
+				{HabitWithMeta: habit, Status: "completed", Completed: true},
+			},
+		},
+	)
 	m = loaded.(Model)
 	m.view = ViewHabitList
 	state := m.layoutState().ContentState
@@ -102,7 +125,8 @@ func TestHabitSummaryUsesTodayDespiteHistoricalDailyDate(t *testing.T) {
 		t.Fatal(rows)
 	}
 	m.view = ViewDaily
-	if due := m.layoutState().ContentState.DueHabits; len(due) != 1 || due[0].Status != "failed" || m.currentDate() != "2020-01-01" {
+	if due := m.layoutState().ContentState.DueHabits; len(due) != 1 || due[0].Status != "failed" ||
+		m.currentDate() != "2020-01-01" {
 		t.Fatalf("Daily changed: %+v %s", due, m.currentDate())
 	}
 }
@@ -112,10 +136,17 @@ func TestHabitLogDefaultsToTodayWithoutChangingDailyDate(t *testing.T) {
 	m.view = ViewHabitList
 	m.pane = PaneHabits
 	m.date = "2020-01-01"
-	m.allHabits = []api.HabitWithMeta{{Habit: api.Habit{ID: 2, StreamID: 2, Name: "Walk"}, RepoID: 1}}
+	m.allHabits = []api.HabitWithMeta{
+		{Habit: api.Habit{ID: 2, StreamID: 2, Name: "Walk"}, RepoID: 1},
+	}
 	next, _ := press(m, "m")
 	if next.dialog != "complete_habit" || next.dialogCheckInDate != m.currentLogicalDate() {
-		t.Fatalf("habit log = %s date %s, want today %s", next.dialog, next.dialogCheckInDate, m.currentLogicalDate())
+		t.Fatalf(
+			"habit log = %s date %s, want today %s",
+			next.dialog,
+			next.dialogCheckInDate,
+			m.currentLogicalDate(),
+		)
 	}
 }
 
@@ -124,7 +155,13 @@ func TestReloadScopedHabitsClampsSelection(t *testing.T) {
 	m.view = ViewHabitList
 	m.pane = PaneHabits
 	m.cursor[PaneHabits] = 2
-	loaded, _ := m.update(commands.AllHabitsLoadedMsg{Habits: []api.HabitWithMeta{{Habit: api.Habit{ID: 1, StreamID: 2, Name: "Walk"}, RepoID: 1}}})
+	loaded, _ := m.update(
+		commands.AllHabitsLoadedMsg{
+			Habits: []api.HabitWithMeta{
+				{Habit: api.Habit{ID: 1, StreamID: 2, Name: "Walk"}, RepoID: 1},
+			},
+		},
+	)
 	if got := loaded.(Model).cursor[PaneHabits]; got != 0 {
 		t.Fatalf("reloaded habit cursor = %d, want 0", got)
 	}
@@ -134,12 +171,29 @@ func TestDayStartAcceptsNewTodayHabitsBeforeHealthReload(t *testing.T) {
 	m := scopeModel(1)
 	m.view, m.pane, m.date = ViewDaily, PaneHabits, "2026-08-01"
 	m.health = &api.Health{CurrentDate: "2026-08-09"}
-	payload, _ := json.Marshal(sharedtypes.DayBoundaryEventPayload{DateBefore: "2026-08-09", LogicalDate: "2026-08-10"})
-	next, _ := m.handleKernelEvent(api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload})
-	loaded, _ := next.update(commands.TodayHabitsLoadedMsg{Date: "2026-08-10", Habits: []api.HabitDailyItem{{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 1}}}}})
+	payload, _ := json.Marshal(
+		sharedtypes.DayBoundaryEventPayload{DateBefore: "2026-08-09", LogicalDate: "2026-08-10"},
+	)
+	next, _ := m.handleKernelEvent(
+		api.KernelEvent{Type: sharedtypes.EventTypeDayStart, Payload: payload},
+	)
+	loaded, _ := next.update(
+		commands.TodayHabitsLoadedMsg{
+			Date: "2026-08-10",
+			Habits: []api.HabitDailyItem{
+				{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 1}}},
+			},
+		},
+	)
 	got := loaded.(Model)
-	if len(got.todayHabits) != 1 || got.currentLogicalDate() != "2026-08-10" || got.currentDate() != "2026-08-01" {
-		t.Fatalf("rollover: today %s, displayed %s, habits %+v", got.currentLogicalDate(), got.currentDate(), got.todayHabits)
+	if len(got.todayHabits) != 1 || got.currentLogicalDate() != "2026-08-10" ||
+		got.currentDate() != "2026-08-01" {
+		t.Fatalf(
+			"rollover: today %s, displayed %s, habits %+v",
+			got.currentLogicalDate(),
+			got.currentDate(),
+			got.todayHabits,
+		)
 	}
 	if m.health.CurrentDate != "2026-08-09" {
 		t.Fatalf("rollover mutated previous model health: %+v", m.health)

@@ -93,7 +93,12 @@ func TestDigitsInDialogDoNotSwitchTabs(t *testing.T) {
 }
 
 func TestHelpDialogShowsVersion(t *testing.T) {
-	m := Model{view: ViewDaily, pane: PaneIssues, cursor: map[Pane]int{}, filters: map[Pane]string{}}
+	m := Model{
+		view:    ViewDaily,
+		pane:    PaneIssues,
+		cursor:  map[Pane]int{},
+		filters: map[Pane]string{},
+	}
 	m = m.openHelpDialog()
 	if !strings.Contains(m.dialogState().ViewMeta, "Version "+versionpkg.Current()) {
 		t.Fatalf("expected help meta to include version, got %q", m.dialogState().ViewMeta)
@@ -138,13 +143,24 @@ func TestDailyContentStateCarriesModelFilterIndices(t *testing.T) {
 	}
 	state := m.layoutState().ContentState
 	if !slices.Equal(state.DailyIssueIndices, []int{1}) {
-		t.Fatalf("expected the model's filtered task indices, got %v (issues %d)", state.DailyIssueIndices, len(state.DailyIssues))
+		t.Fatalf(
+			"expected the model's filtered task indices, got %v (issues %d)",
+			state.DailyIssueIndices,
+			len(state.DailyIssues),
+		)
 	}
 }
 
 func TestContentStateSharesOneDate(t *testing.T) {
 	for _, view := range []View{ViewDaily, ViewMomentum, ViewReview} {
-		m := Model{view: view, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{}, date: "2026-05-01"}
+		m := Model{
+			view:    view,
+			width:   120,
+			height:  36,
+			cursor:  map[Pane]int{},
+			filters: map[Pane]string{},
+			date:    "2026-05-01",
+		}
 		state := m.layoutState().ContentState
 		for name, got := range map[string]string{
 			"DashboardDate": state.DashboardDate,
@@ -158,7 +174,11 @@ func TestContentStateSharesOneDate(t *testing.T) {
 			}
 		}
 		if state.RollupStartDate != "2026-04-25" {
-			t.Fatalf("%s: expected a 7-day Review window ending on the shared date, got start %q", view, state.RollupStartDate)
+			t.Fatalf(
+				"%s: expected a 7-day Review window ending on the shared date, got start %q",
+				view,
+				state.RollupStartDate,
+			)
 		}
 	}
 }
@@ -170,8 +190,17 @@ func TestContentStatePlannedIssuesIgnoreTab(t *testing.T) {
 		{Issue: api.Issue{ID: 1, Title: "Today", Status: "planned", TodoForDate: &date}},
 		{Issue: api.Issue{ID: 2, Title: "Late", Status: "planned", TodoForDate: &past}},
 	}
-	m := Model{view: ViewDaily, pane: PaneIssues, width: 120, height: 36, cursor: map[Pane]int{}, filters: map[Pane]string{},
-		date: date, allIssues: issues, dailyTaskSection: DailyTaskSectionOverdue}
+	m := Model{
+		view:             ViewDaily,
+		pane:             PaneIssues,
+		width:            120,
+		height:           36,
+		cursor:           map[Pane]int{},
+		filters:          map[Pane]string{},
+		date:             date,
+		allIssues:        issues,
+		dailyTaskSection: DailyTaskSectionOverdue,
+	}
 	state := m.layoutState().ContentState
 	if len(state.DailyIssues) != 1 || state.DailyIssues[0].ID != 2 {
 		t.Fatalf("expected the Overdue tab's list, got %+v", state.DailyIssues)

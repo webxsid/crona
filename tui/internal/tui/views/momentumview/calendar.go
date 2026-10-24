@@ -27,7 +27,13 @@ type calendarWeek struct {
 // calendarLines draws a binary daily momentum as weeks by weekday at exactly height lines:
 // a weekday header, square cells sized to the room, the latest weeks kept, each weekday's
 // hits right under the grid, then blank lines. Today's weekday and cell carry a dot.
-func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, width, height int, enabled bool, today string) []string {
+func calendarLines(
+	theme types.Theme,
+	series []sharedtypes.MomentumSeriesPoint,
+	width, height int,
+	enabled bool,
+	today string,
+) []string {
 	weeks := calendarWeeks(series)
 	if len(weeks) == 0 || height < 3 {
 		return padLines([]string{theme.StyleDim.Render("no data")}, height)
@@ -94,7 +100,12 @@ func calendarLines(theme types.Theme, series []sharedtypes.MomentumSeriesPoint, 
 	return padLines(append(lines, theme.StyleDim.Render(strings.TrimRight(hit, " "))), height)
 }
 
-func calendarCell(theme types.Theme, point *sharedtypes.MomentumSeriesPoint, width int, enabled, mark bool) string {
+func calendarCell(
+	theme types.Theme,
+	point *sharedtypes.MomentumSeriesPoint,
+	width int,
+	enabled, mark bool,
+) string {
 	if point == nil {
 		return strings.Repeat(" ", width)
 	}

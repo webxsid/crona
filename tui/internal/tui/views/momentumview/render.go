@@ -41,7 +41,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 	cursor := min(max(0, state.Cursors["momentum_cards"]), max(0, len(cards)-1))
 	if viewhelpers.ClassFor(state.Width) == viewhelpers.WidthNarrow {
 		meta := viewchrome.KeyHint(theme, "enter", "details")
-		return strings.Join(append(rows, renderList(theme, cards, cursor, state.Width, height, meta)), "\n")
+		return strings.Join(
+			append(rows, renderList(theme, cards, cursor, state.Width, height, meta)),
+			"\n",
+		)
 	}
 	listWidth := listWidthFor(state.Width)
 	list := renderList(theme, cards, cursor, listWidth, height, fmt.Sprintf("%d", len(cards)))
@@ -55,7 +58,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 		detailWidth -= bucketsWidth + 3
 	}
 	if len(cards) == 0 {
-		detail := viewchrome.RenderSection(theme, viewchrome.Section{Title: "Momentum", Width: detailWidth, Height: height})
+		detail := viewchrome.RenderSection(
+			theme,
+			viewchrome.Section{Title: "Momentum", Width: detailWidth, Height: height},
+		)
 		return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail)), "\n")
 	}
 	card := cards[cursor]
@@ -63,7 +69,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 	if !card.Definition.Enabled {
 		toggle = "enable"
 	}
-	meta := viewchrome.FitHints([]string{viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "x", toggle)}, max(0, detailWidth-len(card.Definition.Name)-4))
+	meta := viewchrome.FitHints(
+		[]string{viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "x", toggle)},
+		max(0, detailWidth-len(card.Definition.Name)-4),
+	)
 	titleStyle := theme.StyleHeader.Bold(true)
 	detail := viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: card.Definition.Name, Meta: meta, TitleStyle: &titleStyle, Width: detailWidth, Height: height,
@@ -76,7 +85,10 @@ func Render(theme types.Theme, state types.ContentState) string {
 		Title: "Buckets", Meta: fmt.Sprintf("%d", len(card.Series)), Width: bucketsWidth, Height: height,
 		Lines: BucketLines(theme, card, bucketsWidth-2),
 	})
-	return strings.Join(append(rows, viewchrome.JoinColumns(theme, height, list, detail, buckets)), "\n")
+	return strings.Join(
+		append(rows, viewchrome.JoinColumns(theme, height, list, detail, buckets)),
+		"\n",
+	)
 }
 
 // visibleCards are the momentums the list filter keeps, in load order.
@@ -84,7 +96,12 @@ func visibleCards(state types.ContentState) []sharedtypes.MomentumCard {
 	return viewhelpers.VisibleMomentumCards(state.MomentumCards, state.Filters["momentum_cards"])
 }
 
-func renderList(theme types.Theme, cards []sharedtypes.MomentumCard, cursor, width, height int, meta string) string {
+func renderList(
+	theme types.Theme,
+	cards []sharedtypes.MomentumCard,
+	cursor, width, height int,
+	meta string,
+) string {
 	create := viewchrome.KeyHint(theme, "a", "new momentum")
 	lines := []string{}
 	if len(cards) == 0 {

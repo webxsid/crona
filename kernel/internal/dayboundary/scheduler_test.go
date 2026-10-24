@@ -23,10 +23,13 @@ func TestLogicalDateUsesSODBoundary(t *testing.T) {
 
 func TestDateRecorderRecordsCompletedDateOnlyOnRollover(t *testing.T) {
 	var dates []string
-	scheduler := &Scheduler{record: func(_ context.Context, date string, _ *sharedtypes.CoreSettings) error {
-		dates = append(dates, date)
-		return nil
-	}, recordKey: "2026-08-08"}
+	scheduler := &Scheduler{
+		record: func(_ context.Context, date string, _ *sharedtypes.CoreSettings) error {
+			dates = append(dates, date)
+			return nil
+		},
+		recordKey: "2026-08-08",
+	}
 	settings := &sharedtypes.CoreSettings{RestWeekdays: []int{6}}
 	ctx := context.Background()
 	if err := scheduler.recordDateIfChanged(ctx, "2026-08-08", settings); err != nil {
@@ -52,7 +55,8 @@ func TestNextBoundaryOrdersSODBeforeEOD(t *testing.T) {
 		EndOfDay:   sharedtypes.DayBoundarySchedule{Enabled: true, DefaultTime: "08:00"},
 	}
 	at, kind, _ := nextBoundary(now, settings)
-	if !at.Equal(time.Date(2026, 7, 29, 8, 0, 0, 0, location)) || kind != sharedtypes.DayBoundaryStart {
+	if !at.Equal(time.Date(2026, 7, 29, 8, 0, 0, 0, location)) ||
+		kind != sharedtypes.DayBoundaryStart {
 		t.Fatalf("next boundary = %s %s", at, kind)
 	}
 }

@@ -30,7 +30,10 @@ func TestDayBoundaryScheduleValidation(t *testing.T) {
 }
 
 func TestDayBoundaryScheduleWeekdayResolution(t *testing.T) {
-	schedule := DayBoundarySchedule{DefaultTime: "08:00", WeekdayOverrides: map[int]string{1: "09:30", 7: "10:00"}}
+	schedule := DayBoundarySchedule{
+		DefaultTime:      "08:00",
+		WeekdayOverrides: map[int]string{1: "09:30", 7: "10:00"},
+	}
 	if got := schedule.TimeForWeekday(time.Monday); got != "09:30" {
 		t.Fatalf("Monday override = %q", got)
 	}

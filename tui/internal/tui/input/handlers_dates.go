@@ -29,7 +29,12 @@ var (
 const defaultMomentumWindowDays = 30
 
 func handleShiftMomentumWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.MomentumWindowDays = shiftWindowDays(momentumWindowDaysPresets, s.MomentumWindowDays, defaultMomentumWindowDays, dir)
+	s.MomentumWindowDays = shiftWindowDays(
+		momentumWindowDaysPresets,
+		s.MomentumWindowDays,
+		defaultMomentumWindowDays,
+		dir,
+	)
 	return s, deps.LoadMomentumRange(deps.CurrentDate(s), s.MomentumWindowDays), true
 }
 
@@ -39,7 +44,12 @@ func handleResetMomentumWindow(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
 }
 
 func handleShiftReviewWindow(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
-	s.ReviewWindowDays = shiftWindowDays(reviewWindowDaysPresets, s.ReviewWindowDays, uistate.DefaultReviewWindowDays, dir)
+	s.ReviewWindowDays = shiftWindowDays(
+		reviewWindowDaysPresets,
+		s.ReviewWindowDays,
+		uistate.DefaultReviewWindowDays,
+		dir,
+	)
 	return s, loadReviewWindow(&s, deps), true
 }
 

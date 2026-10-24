@@ -93,7 +93,11 @@ func StopSession(
 }
 
 // stopSession requires the context's timer operation lock to be held.
-func stopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*sharedtypes.Session, error) {
+func stopSession(
+	ctx context.Context,
+	c *core.Context,
+	input SessionEndInput,
+) (*sharedtypes.Session, error) {
 	active, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {
 		return nil, err
@@ -233,7 +237,15 @@ func stopSession(ctx context.Context, c *core.Context, input SessionEndInput) (*
 	}
 	var stopped *sharedtypes.Session
 	if input.IssueID != nil {
-		stopped, err = c.Sessions.StopAsIssue(ctx, active.ID, stopInput, *input.IssueID, c.UserID, c.DeviceID, now)
+		stopped, err = c.Sessions.StopAsIssue(
+			ctx,
+			active.ID,
+			stopInput,
+			*input.IssueID,
+			c.UserID,
+			c.DeviceID,
+			now,
+		)
 	} else {
 		stopped, err = c.Sessions.Stop(ctx, active.ID, stopInput, c.UserID, c.DeviceID, now)
 	}

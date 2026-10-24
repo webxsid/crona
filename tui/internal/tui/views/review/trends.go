@@ -105,7 +105,9 @@ func renderTrends(theme types.Theme, state types.ContentState, width, height int
 	lines = append(lines, renderFocusBars(theme, days, starts, barWidth, chartWidth, focusRows)...)
 	for _, metric := range metrics {
 		lines = append(lines, "", metricHeader(theme, metric))
-		lines = append(lines, metricLines(theme, metric, starts, barWidth, chartWidth, metricRows)...)
+		lines = append(
+			lines,
+			metricLines(theme, metric, starts, barWidth, chartWidth, metricRows)...)
 	}
 	lines = append(lines, strings.Repeat(" ", trendGutter)+" └"+strings.Repeat("─", chartWidth))
 	lines = append(lines, trendDates(theme, days, centers, chartWidth))
@@ -140,12 +142,21 @@ func metricHeader(theme types.Theme, metric metricSeries) string {
 	case latest < avg-band:
 		mark = "▼"
 	}
-	return header + metric.format(latest) + "  " + theme.StyleDim.Render("avg "+metric.format(avg)) + "  " + mark
+	return header + metric.format(
+		latest,
+	) + "  " + theme.StyleDim.Render(
+		"avg "+metric.format(avg),
+	) + "  " + mark
 }
 
 // metricLines is the metric's days as short bars in the focus columns, rising from zero to
 // the scale's top; a day without a value is a dim dot.
-func metricLines(theme types.Theme, metric metricSeries, starts []int, barWidth, width, rows int) []string {
+func metricLines(
+	theme types.Theme,
+	metric metricSeries,
+	starts []int,
+	barWidth, width, rows int,
+) []string {
 	values := metric.values[:min(len(metric.values), len(starts))]
 	color := lipgloss.NewStyle().Foreground(metric.color)
 	grid := charts.BarGrid(values, starts, barWidth, width, rows, metric.max)

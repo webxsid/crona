@@ -16,7 +16,13 @@ import (
 // DateNav is the date navigation shown at the right of a dated view's sub-tab line: the
 // shared date with its week and the keys that move it, shortened to fit room. prefix
 // (Rollup's range start) leads the full form only.
-func DateNav(theme types.Theme, rawDate, prefix string, settings *api.CoreSettings, weekStart sharedtypes.WeekStart, room int) string {
+func DateNav(
+	theme types.Theme,
+	rawDate, prefix string,
+	settings *api.CoreSettings,
+	weekStart sharedtypes.WeekStart,
+	room int,
+) string {
 	date := theme.StyleHeader.Render(helperpkg.FormatDisplayDate(rawDate, settings))
 	dated := date
 	if parsed, ok := ParseDate(rawDate); ok && !DisplayPatternIncludesWeek(settings) {
@@ -25,11 +31,42 @@ func DateNav(theme types.Theme, rawDate, prefix string, settings *api.CoreSettin
 	}
 	key := func(k string) string { return theme.StyleHeader.Render("[" + k + "]") }
 	dim := theme.StyleDim.Render
-	full := key("g") + dim(" today   ") + key(",") + dim(" prev  ") + dated + dim("  next ") + key(".")
-	candidates := []string{full, key("g") + "  " + key(",") + " " + dated + " " + key("."), dated, date}
+	full := key(
+		"g",
+	) + dim(
+		" today   ",
+	) + key(
+		",",
+	) + dim(
+		" prev  ",
+	) + dated + dim(
+		"  next ",
+	) + key(
+		".",
+	)
+	candidates := []string{
+		full,
+		key("g") + "  " + key(",") + " " + dated + " " + key("."),
+		dated,
+		date,
+	}
 	if prefix != "" {
 		start := theme.StyleHeader.Render(helperpkg.FormatDisplayDate(prefix, settings))
-		ranged := key("g") + dim(" today   ") + key(",") + dim(" prev  ") + start + dim(" → ") + dated + dim("  next ") + key(".")
+		ranged := key(
+			"g",
+		) + dim(
+			" today   ",
+		) + key(
+			",",
+		) + dim(
+			" prev  ",
+		) + start + dim(
+			" → ",
+		) + dated + dim(
+			"  next ",
+		) + key(
+			".",
+		)
 		candidates = append([]string{ranged}, candidates...)
 	}
 	for _, candidate := range candidates {

@@ -29,7 +29,9 @@ func Render(theme types.Theme, state types.ContentState) string {
 		return strings.Join(rows, "\n")
 	}
 	listWidth := state.Width - 27
-	columns := []string{scopepane.Render(theme, state, scopepane.HabitCounts(state.AllHabits), 24, height)}
+	columns := []string{
+		scopepane.Render(theme, state, scopepane.HabitCounts(state.AllHabits), 24, height),
+	}
 	detailWidth := 0
 	if state.Width >= 160 {
 		detailWidth = (listWidth - 3) / 2
@@ -46,7 +48,13 @@ func Render(theme types.Theme, state types.ContentState) string {
 			title = habit.Name
 			lines = daily.HabitDetailLines(theme, state, habit, detailWidth-2)
 		}
-		columns = append(columns, viewchrome.RenderSection(theme, viewchrome.Section{Title: title, Width: detailWidth, Height: height, Lines: lines}))
+		columns = append(
+			columns,
+			viewchrome.RenderSection(
+				theme,
+				viewchrome.Section{Title: title, Width: detailWidth, Height: height, Lines: lines},
+			),
+		)
 	}
 	rows = append(rows, viewchrome.JoinColumns(theme, height, columns...))
 	return strings.Join(rows, "\n")

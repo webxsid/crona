@@ -61,7 +61,10 @@ func TestDayListEmpty(t *testing.T) {
 }
 
 func TestStripRowsPackAndDrop(t *testing.T) {
-	rows := StripRows([][2]string{{"Sessions 3", "This week 2h"}, {"total 1h40m  avg 33m", "longest 1h"}}, 30)
+	rows := StripRows(
+		[][2]string{{"Sessions 3", "This week 2h"}, {"total 1h40m  avg 33m", "longest 1h"}},
+		30,
+	)
 	for _, row := range rows {
 		if ansi.StringWidth(row) != 30 || strings.Contains(row, "total") {
 			t.Fatalf("expected 30-cell rows keeping the first group only, got %q", rows)

@@ -23,7 +23,8 @@ func summaryRenderOptions(w io.Writer) renderOptions {
 	width := 100
 	color := false
 	unicode := false
-	if columns, err := strconv.Atoi(strings.TrimSpace(os.Getenv("COLUMNS"))); err == nil && columns >= 40 {
+	if columns, err := strconv.Atoi(strings.TrimSpace(os.Getenv("COLUMNS"))); err == nil &&
+		columns >= 40 {
 		width = columns
 	}
 	if file, ok := w.(*os.File); ok && term.IsTerminal(file.Fd()) {
@@ -39,14 +40,27 @@ func summaryRenderOptions(w io.Writer) renderOptions {
 func renderDayCanvas(w io.Writer, data daySummaryData, opts renderOptions) error {
 	width := opts.Width
 	sections := []string{
-		renderHero(opts, width, "DAILY SUMMARY", data.Date, data.Context, todayTimer(data.Date, data.Timer)),
+		renderHero(
+			opts,
+			width,
+			"DAILY SUMMARY",
+			data.Date,
+			data.Context,
+			todayTimer(data.Date, data.Timer),
+		),
 		renderDayKPIs(opts, width, data),
 	}
 	if width >= 112 {
 		leftWidth := width * 3 / 5
 		agenda := renderDayAgenda(opts, leftWidth-4, data)
 		signals := renderDaySignals(opts, width-leftWidth-4, data)
-		sections = append(sections, joinBlocks(agendaBlock(opts, leftWidth, agenda), signalBlock(opts, width-leftWidth, signals)))
+		sections = append(
+			sections,
+			joinBlocks(
+				agendaBlock(opts, leftWidth, agenda),
+				signalBlock(opts, width-leftWidth, signals),
+			),
+		)
 	} else {
 		agenda := renderDayAgenda(opts, width-4, data)
 		signals := renderDaySignals(opts, width-4, data)
@@ -69,13 +83,22 @@ func renderRangeCanvas(w io.Writer, data rangeSummaryData, opts renderOptions) e
 	return err
 }
 
-func renderHero(opts renderOptions, width int, title, period string, ctx *sharedtypes.ActiveContext, timer *sharedtypes.TimerState) string {
+func renderHero(
+	opts renderOptions,
+	width int,
+	title, period string,
+	ctx *sharedtypes.ActiveContext,
+	timer *sharedtypes.TimerState,
+) string {
 	lines := []string{
 		paint(opts, ansiBold+ansiCyan, title) + "  " + paint(opts, ansiBold, period),
 		paint(opts, ansiDim, summaryScope(ctx)),
 	}
 	if timer != nil && timer.State != "idle" && timer.State != "ready" {
-		lines = append(lines, paint(opts, ansiYellow, strings.ToUpper(timer.State)+"  "+formatTimerCompact(timer)))
+		lines = append(
+			lines,
+			paint(opts, ansiYellow, strings.ToUpper(timer.State)+"  "+formatTimerCompact(timer)),
+		)
 	}
 	return box(opts, "", lines, width)
 }
@@ -94,10 +117,35 @@ func renderDayKPIs(opts renderOptions, width int, data daySummaryData) string {
 		score = int(data.Plan.Summary.AccountabilityScore + .5)
 	}
 	cards := []cliKPI{
-		{Label: "FOCUS", Value: formatSeconds(worked), Current: worked, Total: estimate, Color: ansiCyan},
-		{Label: "ISSUES", Value: fmt.Sprintf("%d/%d resolved", resolved, total), Current: resolved, Total: total, Color: ansiGreen},
-		{Label: "HABITS", Value: fmt.Sprintf("%d/%d done", habitDone, len(data.Habits)), Current: habitDone, Failed: habitFailed, Total: len(data.Habits), Color: ansiGreen},
-		{Label: "PLAN", Value: fmt.Sprintf("%d%% accountable", score), Current: score, Total: 100, Color: ansiMagenta},
+		{
+			Label:   "FOCUS",
+			Value:   formatSeconds(worked),
+			Current: worked,
+			Total:   estimate,
+			Color:   ansiCyan,
+		},
+		{
+			Label:   "ISSUES",
+			Value:   fmt.Sprintf("%d/%d resolved", resolved, total),
+			Current: resolved,
+			Total:   total,
+			Color:   ansiGreen,
+		},
+		{
+			Label:   "HABITS",
+			Value:   fmt.Sprintf("%d/%d done", habitDone, len(data.Habits)),
+			Current: habitDone,
+			Failed:  habitFailed,
+			Total:   len(data.Habits),
+			Color:   ansiGreen,
+		},
+		{
+			Label:   "PLAN",
+			Value:   fmt.Sprintf("%d%% accountable", score),
+			Current: score,
+			Total:   100,
+			Color:   ansiMagenta,
+		},
 	}
 	return renderKPIBox(opts, width, cards)
 }
@@ -115,10 +163,34 @@ func renderRangeKPIs(opts renderOptions, width int, data rangeSummaryData) strin
 		score = int(window.AccountabilityScore + .5)
 	}
 	cards := []cliKPI{
-		{Label: "FOCUS", Value: formatSeconds(worked), Current: focusDays, Total: totalDays, Color: ansiCyan},
-		{Label: "SESSIONS", Value: strconv.Itoa(sessions), Current: focusDays, Total: totalDays, Color: ansiBlue},
-		{Label: "PLAN", Value: fmt.Sprintf("%d/%d done", completed, planned), Current: completed, Total: planned, Color: ansiGreen},
-		{Label: "SCORE", Value: fmt.Sprintf("%d%% accountable", score), Current: score, Total: 100, Color: ansiMagenta},
+		{
+			Label:   "FOCUS",
+			Value:   formatSeconds(worked),
+			Current: focusDays,
+			Total:   totalDays,
+			Color:   ansiCyan,
+		},
+		{
+			Label:   "SESSIONS",
+			Value:   strconv.Itoa(sessions),
+			Current: focusDays,
+			Total:   totalDays,
+			Color:   ansiBlue,
+		},
+		{
+			Label:   "PLAN",
+			Value:   fmt.Sprintf("%d/%d done", completed, planned),
+			Current: completed,
+			Total:   planned,
+			Color:   ansiGreen,
+		},
+		{
+			Label:   "SCORE",
+			Value:   fmt.Sprintf("%d%% accountable", score),
+			Current: score,
+			Total:   100,
+			Color:   ansiMagenta,
+		},
 	}
 	return renderKPIBox(opts, width, cards)
 }
@@ -140,7 +212,10 @@ func renderKPIBox(opts renderOptions, width int, cards []cliKPI) string {
 			prefix := fmt.Sprintf("%-9s %-20s", card.Label, card.Value)
 			barWidth := max(5, inner-visibleWidth(prefix)-1)
 			lines = append(lines, paint(opts, ansiBold, fmt.Sprintf("%-9s", card.Label))+" "+
-				fmt.Sprintf("%-20s", card.Value)+" "+progressBar(opts, card.Current, card.Failed, card.Total, barWidth, card.Color))
+				fmt.Sprintf(
+					"%-20s",
+					card.Value,
+				)+" "+progressBar(opts, card.Current, card.Failed, card.Total, barWidth, card.Color))
 		}
 		return box(opts, "AT A GLANCE", lines, width)
 	}
@@ -154,7 +229,17 @@ func renderKPIBox(opts renderOptions, width int, cards []cliKPI) string {
 		currentWidth := cellWidth + extra
 		top += padRight(paint(opts, ansiBold, card.Label), currentWidth)
 		middle += padRight(card.Value, currentWidth)
-		bars += padRight(progressBar(opts, card.Current, card.Failed, card.Total, max(6, currentWidth-2), card.Color), currentWidth)
+		bars += padRight(
+			progressBar(
+				opts,
+				card.Current,
+				card.Failed,
+				card.Total,
+				max(6, currentWidth-2),
+				card.Color,
+			),
+			currentWidth,
+		)
 	}
 	return box(opts, "AT A GLANCE", []string{top, middle, bars}, width)
 }
@@ -259,33 +344,84 @@ func renderRangeProgress(opts renderOptions, width int, data rangeSummaryData) s
 	lines := make([]string, 0, 4)
 	barWidth := max(10, width-34)
 	if window != nil {
-		lines = append(lines, ratioLine(opts, "Plan completion", window.CompletedCount, window.FailedCount+window.AbandonedCount, window.PlannedCount, barWidth, ansiGreen))
+		lines = append(
+			lines,
+			ratioLine(
+				opts,
+				"Plan completion",
+				window.CompletedCount,
+				window.FailedCount+window.AbandonedCount,
+				window.PlannedCount,
+				barWidth,
+				ansiGreen,
+			),
+		)
 	}
 	if rollup != nil {
 		totalIssues := 0
 		for _, day := range data.Metrics {
 			totalIssues += day.TotalIssues
 		}
-		lines = append(lines,
-			ratioLine(opts, "Issue resolution", rollup.CompletedIssues+rollup.AbandonedIssues, 0, totalIssues, barWidth, ansiGreen),
-			ratioLine(opts, "Habit completion", rollup.HabitCompletedCount, rollup.HabitFailedCount, rollup.HabitDueCount, barWidth, ansiGreen),
-			ratioLine(opts, "Check-in coverage", rollup.CheckInDays, 0, max(1, rollup.Days), barWidth, ansiMagenta),
+		lines = append(
+			lines,
+			ratioLine(
+				opts,
+				"Issue resolution",
+				rollup.CompletedIssues+rollup.AbandonedIssues,
+				0,
+				totalIssues,
+				barWidth,
+				ansiGreen,
+			),
+			ratioLine(
+				opts,
+				"Habit completion",
+				rollup.HabitCompletedCount,
+				rollup.HabitFailedCount,
+				rollup.HabitDueCount,
+				barWidth,
+				ansiGreen,
+			),
+			ratioLine(
+				opts,
+				"Check-in coverage",
+				rollup.CheckInDays,
+				0,
+				max(1, rollup.Days),
+				barWidth,
+				ansiMagenta,
+			),
 		)
 	}
 	return box(opts, "OUTCOMES", lines, width)
 }
 
-func ratioLine(opts renderOptions, label string, current, failed, total, barWidth int, color string) string {
+func ratioLine(
+	opts renderOptions,
+	label string,
+	current, failed, total, barWidth int,
+	color string,
+) string {
 	ratio := 0
 	if total > 0 {
 		ratio = current * 100 / total
 	}
-	return fmt.Sprintf("%-19s %3d%%  %s", label, ratio, progressBar(opts, current, failed, total, barWidth, color))
+	return fmt.Sprintf(
+		"%-19s %3d%%  %s",
+		label,
+		ratio,
+		progressBar(opts, current, failed, total, barWidth, color),
+	)
 }
 
 func renderRangeDays(opts renderOptions, width int, data rangeSummaryData) string {
 	if len(data.Metrics) == 0 {
-		return box(opts, "DAILY RHYTHM", []string{paint(opts, ansiDim, "No activity in this period.")}, width)
+		return box(
+			opts,
+			"DAILY RHYTHM",
+			[]string{paint(opts, ansiDim, "No activity in this period.")},
+			width,
+		)
 	}
 	maxWorked := 1
 	for _, day := range data.Metrics {
@@ -298,7 +434,24 @@ func renderRangeDays(opts renderOptions, width int, data rangeSummaryData) strin
 	}
 	lines := make([]string, 0, len(data.Metrics)+1)
 	if wide {
-		lines = append(lines, paint(opts, ansiBold, fmt.Sprintf("%-10s  %-8s %-7s %-8s %-9s %-10s %-9s %s", "DATE", "WORKED", "REST", "SESSIONS", "ISSUES", "HABITS", "MOOD", "ACTIVITY")))
+		lines = append(
+			lines,
+			paint(
+				opts,
+				ansiBold,
+				fmt.Sprintf(
+					"%-10s  %-8s %-7s %-8s %-9s %-10s %-9s %s",
+					"DATE",
+					"WORKED",
+					"REST",
+					"SESSIONS",
+					"ISSUES",
+					"HABITS",
+					"MOOD",
+					"ACTIVITY",
+				),
+			),
+		)
 	} else {
 		lines = append(lines, paint(opts, ansiBold, fmt.Sprintf("%-10s  %-8s %-8s %-9s %s", "DATE", "WORKED", "ISSUES", "HABITS", "ACTIVITY")))
 	}
@@ -311,8 +464,17 @@ func renderRangeDays(opts renderOptions, width int, data rangeSummaryData) strin
 			if day.CheckIn != nil {
 				mood = fmt.Sprintf("%d/5", day.CheckIn.Mood)
 			}
-			lines = append(lines, fmt.Sprintf("%-10s  %-8s %-7s %-8d %-9s %-10s %-9s %s",
-				day.Date, formatSeconds(day.WorkedSeconds), formatSeconds(day.RestSeconds), day.SessionCount, issues, habits, mood, activity))
+			lines = append(lines, fmt.Sprintf(
+				"%-10s  %-8s %-7s %-8d %-9s %-10s %-9s %s",
+				day.Date,
+				formatSeconds(day.WorkedSeconds),
+				formatSeconds(day.RestSeconds),
+				day.SessionCount,
+				issues,
+				habits,
+				mood,
+				activity,
+			))
 		} else {
 			lines = append(lines, fmt.Sprintf("%-10s  %-8s %-8s %-9s %s", day.Date, formatSeconds(day.WorkedSeconds), issues, habits, activity))
 		}
@@ -339,7 +501,21 @@ func box(opts renderOptions, title string, lines []string, width int) string {
 	out := []string{paint(opts, ansiDim, top)}
 	for _, line := range lines {
 		for _, wrapped := range wrapLine(line, inner) {
-			out = append(out, paint(opts, ansiDim, "|")+" "+padRight(wrapped, inner)+" "+paint(opts, ansiDim, "|"))
+			out = append(
+				out,
+				paint(
+					opts,
+					ansiDim,
+					"|",
+				)+" "+padRight(
+					wrapped,
+					inner,
+				)+" "+paint(
+					opts,
+					ansiDim,
+					"|",
+				),
+			)
 		}
 	}
 	out = append(out, paint(opts, ansiDim, "+"+strings.Repeat("-", width-2)+"+"))

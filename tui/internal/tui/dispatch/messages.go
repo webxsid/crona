@@ -827,7 +827,8 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 	date := deps.CurrentDate(state)
 	cmds := make([]tea.Cmd, 0, len(extra)+20)
 	cmds = append(cmds, extra...)
-	cmds = append(cmds,
+	cmds = append(
+		cmds,
 		deps.LoadKernelInfo(),
 		deps.LoadRepos(),
 		deps.LoadHabitStreakDefinitions(),
@@ -837,7 +838,9 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 		deps.LoadDailySummary(date),
 		deps.LoadDailyStreaks(date),
 		deps.LoadWellbeing(date),
-		deps.LoadReviewWindow(uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)),
+		deps.LoadReviewWindow(
+			uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays),
+		),
 		deps.LoadSessionHistoryFor200(state),
 		deps.LoadOps(deps.CurrentOpsLimit(state)),
 		deps.LoadContext(),
@@ -874,7 +877,9 @@ func applyLogicalDate(state *MessageState, date, previousDate string, deps Messa
 		deps.LoadDailyStreaks(shown),
 		deps.LoadWellbeing(shown),
 		deps.LoadMomentumRange(shown, state.MomentumWindowDays),
-		deps.LoadReviewWindow(uistate.ReviewRange(shown, state.ReviewWindowEnd, state.ReviewWindowDays)),
+		deps.LoadReviewWindow(
+			uistate.ReviewRange(shown, state.ReviewWindowEnd, state.ReviewWindowDays),
+		),
 	}
 	if deps.LoadTodayHabits != nil {
 		cmds = append(cmds, deps.LoadTodayHabits(date))
@@ -924,7 +929,12 @@ func historyRefreshCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) t
 		cmds = append(cmds, deps.LoadDailyStreaks(date))
 	}
 	if deps.LoadReviewWindow != nil {
-		cmds = append(cmds, deps.LoadReviewWindow(uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays)))
+		cmds = append(
+			cmds,
+			deps.LoadReviewWindow(
+				uistate.ReviewRange(date, state.ReviewWindowEnd, state.ReviewWindowDays),
+			),
+		)
 	}
 	if deps.LoadWellbeing != nil {
 		cmds = append(cmds, deps.LoadWellbeing(date))
@@ -977,5 +987,8 @@ func boolRank(b bool) int {
 
 // visibleMomentumCards are the cards the list filter keeps, as the cursor indexes them.
 func visibleMomentumCards(state MessageState) []api.MomentumCard {
-	return viewhelpers.VisibleMomentumCards(state.MomentumCards, state.Filters[uistate.PaneMomentumCards])
+	return viewhelpers.VisibleMomentumCards(
+		state.MomentumCards,
+		state.Filters[uistate.PaneMomentumCards],
+	)
 }

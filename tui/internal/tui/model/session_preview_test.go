@@ -70,23 +70,39 @@ func TestSessionPreviewTickFetchesOnlyIfStillSelected(t *testing.T) {
 func TestSessionPreviewIgnoresStale(t *testing.T) {
 	m := previewModel(160)
 	m.sessionPreviewFailed = "a"
-	next, _ := m.update(commands.SessionPreviewLoadedMsg{Detail: &api.SessionDetail{SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "b"}}}})
+	next, _ := m.update(
+		commands.SessionPreviewLoadedMsg{
+			Detail: &api.SessionDetail{
+				SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "b"}},
+			},
+		},
+	)
 	if next.(Model).sessionPreview != nil {
 		t.Fatalf("expected a preview for another session to be ignored")
 	}
-	next, _ = m.update(commands.SessionPreviewLoadedMsg{Detail: &api.SessionDetail{SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "a"}}}})
+	next, _ = m.update(
+		commands.SessionPreviewLoadedMsg{
+			Detail: &api.SessionDetail{
+				SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "a"}},
+			},
+		},
+	)
 	if got := next.(Model); got.sessionPreview == nil || got.sessionPreviewFailed != "" {
 		t.Fatalf("expected the selected preview stored and the failure cleared")
 	}
 }
 
 func TestSessionPreviewFailureFlags(t *testing.T) {
-	next, _ := previewModel(160).update(commands.SessionPreviewFailedMsg{ID: "a", Err: errors.New("boom")})
+	next, _ := previewModel(
+		160,
+	).update(commands.SessionPreviewFailedMsg{ID: "a", Err: errors.New("boom")})
 	m := next.(Model)
 	if !m.viewContentState(m.width, m.height, m.selectionSnapshot(), nil).SessionPreviewFailed {
 		t.Fatalf("expected the failure passed to the view")
 	}
-	next, _ = previewModel(160).update(commands.SessionPreviewFailedMsg{ID: "b", Err: errors.New("boom")})
+	next, _ = previewModel(
+		160,
+	).update(commands.SessionPreviewFailedMsg{ID: "b", Err: errors.New("boom")})
 	m = next.(Model)
 	if m.viewContentState(m.width, m.height, m.selectionSnapshot(), nil).SessionPreviewFailed {
 		t.Fatalf("expected another session's failure ignored")
@@ -94,7 +110,9 @@ func TestSessionPreviewFailureFlags(t *testing.T) {
 }
 
 func TestSessionDialogPathUntouched(t *testing.T) {
-	next, _ := previewModel(160).update(commands.SessionPreviewLoadedMsg{Detail: &api.SessionDetail{SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "a"}}}})
+	next, _ := previewModel(
+		160,
+	).update(commands.SessionPreviewLoadedMsg{Detail: &api.SessionDetail{SessionHistoryEntry: api.SessionHistoryEntry{Session: api.Session{ID: "a"}}}})
 	if next.(Model).sessionDetailOpen || next.(Model).sessionDetail != nil {
 		t.Fatalf("expected the preview kept apart from the details dialog")
 	}

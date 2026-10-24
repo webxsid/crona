@@ -8,7 +8,10 @@ func dayBoundaryDaysLabel(days []int) string {
 	labels := make([]string, 0, len(days))
 	for _, day := range days {
 		if day >= 1 && day <= 7 {
-			labels = append(labels, []string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}[day-1])
+			labels = append(
+				labels,
+				[]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}[day-1],
+			)
 		}
 	}
 	if len(labels) == 0 {
