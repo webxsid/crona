@@ -108,6 +108,7 @@ type Deps struct {
 	AbandonSelectedIssue            func(*State) tea.Cmd
 	ToggleSelectedIssueToday        func(*State) tea.Cmd
 	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
+	CarrySelectedIssue              func(*State) tea.Cmd
 	OpenSelectedIssueTodoDateDialog func(*State) bool
 	HandleCreateAction              func(*State) bool
 	OpenExportDailyDialog           func(*State) bool
@@ -396,6 +397,14 @@ func newRouter(deps Deps) *router {
 		}
 		s.DailyDetailDay = !s.DailyDetailDay
 		return s, nil, true
+	})
+	// Overdue issues the day boundary did not carry (untouched, blocked, ...) carry by hand.
+	r.RegisterView(uistate.ViewDaily, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		if s.ProtectedModeActive || s.ActivePane != uistate.PaneIssues ||
+			s.DailyTaskSection != uistate.DailyTaskSectionOverdue || deps.CarrySelectedIssue == nil {
+			return s, nil, false
+		}
+		return s, deps.CarrySelectedIssue(&s), true
 	})
 	r.RegisterView(uistate.ViewDaily, "w", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		return handleOpenCheckIn(s, deps)

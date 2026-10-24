@@ -940,6 +940,26 @@ func ToggleIssuePinnedDaily(
 	}
 }
 
+// CarryIssueOver carries an issue by hand, then reloads what the carry changes.
+func CarryIssueOver(c *api.Client, issueID, streamID int64, dashboardDate string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.CarryIssue(issueID); err != nil {
+			logger.Errorf("CarryIssueOver: %v", err)
+			return ErrMsg{Err: err}
+		}
+		cmds := []tea.Cmd{
+			LoadAllIssuesSelecting(c, issueID),
+			LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate),
+			RequestRollupRefresh(),
+		}
+		if streamID != 0 {
+			cmds = append(cmds, LoadIssuesSelecting(c, streamID, issueID))
+		}
+		return tea.Batch(cmds...)()
+	}
+}
+
 func SetIssueTodoDate(
 	c *api.Client,
 	issueID int64,

@@ -317,6 +317,11 @@ func (c *Client) SetIssuePinnedDaily(id int64, pinned bool) error {
 	}, nil)
 }
 
+// CarryIssue carries the issue from its planned day to the next working day.
+func (c *Client) CarryIssue(id int64) error {
+	return c.call(protocol.MethodIssueCarry, map[string]any{"id": id}, nil)
+}
+
 func (c *Client) DeleteIssue(id int64) error {
 	return c.mustOK(protocol.MethodIssueDelete, shareddto.NumericIDRequest{ID: id})
 }

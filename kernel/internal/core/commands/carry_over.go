@@ -68,7 +68,8 @@ func CarryOverPastDays(ctx context.Context, c *core.Context) error {
 }
 
 // CarryIssue carries an issue from its current plan date to the next working day (or targetDate
-// when given), whatever it was worked. Choosing to carry is the signal, so no threshold applies.
+// when given), whatever it was worked. Choosing to carry is the signal, so neither the threshold
+// nor the automatic status rule applies: any open issue can be carried by hand.
 func CarryIssue(
 	ctx context.Context,
 	c *core.Context,
@@ -82,8 +83,8 @@ func CarryIssue(
 	if issue == nil {
 		return nil, errors.New("issue not found")
 	}
-	if !sharedtypes.CanCarryOver(issue.Status) {
-		return nil, errors.New("only planned, ready, in-progress, or in-review issues can be carried over")
+	if issue.Status == sharedtypes.IssueStatusDone || issue.Status == sharedtypes.IssueStatusAbandoned {
+		return nil, errors.New("only open issues can be carried over")
 	}
 	fromDate := issueCommittedDate(issue)
 	if fromDate == "" {
