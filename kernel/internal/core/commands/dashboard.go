@@ -540,7 +540,7 @@ func loadScoredDailyPlansByDate(
 		for j := range plans[i].Entries {
 			applyDailyPlanScore(&plans[i].Entries[j], settings)
 		}
-		plans[i].Summary = buildDailyPlanSummary(plans[i].Entries, active)
+		plans[i].Summary = buildDailyPlanSummary(plans[i].Entries, active, settings)
 		out[plans[i].Date] = &plans[i]
 	}
 	return out, nil

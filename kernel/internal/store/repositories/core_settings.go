@@ -163,6 +163,10 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "daily_plan_rollback_minutes",
 		queryKind: coreSettingQueryInt,
 	},
+	sharedtypes.CoreSettingsKeyPlanHighRiskTenths: {
+		column:    "plan_high_risk_threshold_tenths",
+		queryKind: coreSettingQueryInt,
+	},
 	sharedtypes.CoreSettingsKeyDateDisplayPreset: {
 		column:    "date_display_preset",
 		queryKind: coreSettingQueryString,
@@ -508,6 +512,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		RestWeekdays:          mustJSON(sharedconstants.DefaultCoreSettings["restWeekdays"]),
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
 		DailyPlanRollbackMins: sharedconstants.DefaultCoreSettings["dailyPlanRollbackMinutes"].(int),
+		PlanHighRiskTenths:    sharedconstants.DefaultCoreSettings["planHighRiskThresholdTenths"].(int),
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
@@ -569,6 +574,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseDayBoundarySchedule(toString(value), false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value)
+	case sharedtypes.CoreSettingsKeyPlanHighRiskTenths:
+		return clampPlanHighRiskTenths(value)
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value)
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -627,6 +634,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return dayBoundaryScheduleJSON(value, false)
 	case sharedtypes.CoreSettingsKeyDailyPlanRollbackMins:
 		return clampRollbackMinutes(value), nil
+	case sharedtypes.CoreSettingsKeyPlanHighRiskTenths:
+		return clampPlanHighRiskTenths(value), nil
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value), nil
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -731,6 +740,7 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		RestWeekdays:          parseIntSlice(row.RestWeekdays),
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
 		DailyPlanRollbackMins: row.DailyPlanRollbackMins,
+		PlanHighRiskTenths:    clampPlanHighRiskTenths(row.PlanHighRiskTenths),
 		DateDisplayPreset: sharedtypes.NormalizeDateDisplayPreset(
 			sharedtypes.DateDisplayPreset(row.DateDisplayPreset),
 		),
@@ -821,6 +831,21 @@ func clampInactivityMinutes(value any) int {
 		return 720
 	}
 	return minutes
+}
+
+// clampPlanHighRiskTenths keeps the high-risk threshold within 0.5–10.0.
+func clampPlanHighRiskTenths(value any) int {
+	tenths := sharedtypes.DefaultPlanHighRiskTenths
+	switch typed := value.(type) {
+	case int:
+		tenths = typed
+	case float64:
+		tenths = int(typed)
+	}
+	if tenths <= 0 {
+		return sharedtypes.DefaultPlanHighRiskTenths
+	}
+	return min(max(tenths, sharedtypes.MinPlanHighRiskTenths), sharedtypes.MaxPlanHighRiskTenths)
 }
 
 func clampRollbackMinutes(value any) int {

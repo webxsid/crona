@@ -69,6 +69,10 @@ var settingsHelp = map[string]viewchrome.RowHelp{
 		Description: "How long after midnight yesterday's plan can still be rolled back.",
 		Keys:        change,
 	},
+	"High-Risk Threshold": {
+		Description: "Delay penalty at which a planned issue is flagged high risk.",
+		Keys:        change,
+	},
 	"Rest & Streak Protection": {
 		Description: "Which streaks rest days protect, and which weekdays and dates are rest days.",
 		Keys:        edit,

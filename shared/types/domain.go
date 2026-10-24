@@ -353,6 +353,7 @@ const (
 	CoreSettingsKeyRestWeekdays          CoreSettingsKey = "restWeekdays"
 	CoreSettingsKeyRestSpecificDates     CoreSettingsKey = "restSpecificDates"
 	CoreSettingsKeyDailyPlanRollbackMins CoreSettingsKey = "dailyPlanRollbackMinutes"
+	CoreSettingsKeyPlanHighRiskTenths    CoreSettingsKey = "planHighRiskThresholdTenths"
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
@@ -900,6 +901,7 @@ type DailyPlanAccountabilitySummary struct {
 	HighRiskIssueCount   int     `json:"highRiskIssueCount"`
 	AvgDelayDays         float64 `json:"avgDelayDays"`
 	MaxDelayDays         int     `json:"maxDelayDays"`
+	HighRiskThreshold    float64 `json:"highRiskThreshold"`
 }
 
 type DailyPlanEntry struct {
@@ -919,7 +921,39 @@ type DailyPlanEntry struct {
 	CurrentDelayedDays   int                     `json:"currentDelayedDays"`
 	MaxDelayedDays       int                     `json:"maxDelayedDays"`
 	FailScore            float64                 `json:"failScore"`
+	Penalty              *DailyPlanEntryPenalty  `json:"penalty,omitempty"`
 	Events               []DailyPlanEvent        `json:"events,omitempty"`
+}
+
+// DailyPlanEntryPenalty explains an entry's delay penalty and its effect on
+// the day-level scores. Historical entries omit the live contributions.
+type DailyPlanEntryPenalty struct {
+	ProtectedDaysSkipped int                         `json:"protectedDaysSkipped"`
+	DelayComponent       float64                     `json:"delayComponent"`
+	FrequencyComponent   float64                     `json:"frequencyComponent"`
+	HighRisk             bool                        `json:"highRisk"`
+	HighRiskThreshold    float64                     `json:"highRiskThreshold"`
+	Historical           bool                        `json:"historical"`
+	Contribution         *DailyPlanPenaltyShare      `json:"contribution,omitempty"`
+	IfDoneToday          *DailyPlanPenaltyShare      `json:"ifDoneToday,omitempty"`
+	IfPostponedOneDay    *DailyPlanPenaltyProjection `json:"ifPostponedOneDay,omitempty"`
+}
+
+// DailyPlanPenaltyShare is an amount of accountability score and backlog
+// pressure, with each amount's share of the current totals.
+type DailyPlanPenaltyShare struct {
+	Accountability     float64 `json:"accountability"`
+	AccountabilityPct  float64 `json:"accountabilityPct"`
+	BacklogPressure    float64 `json:"backlogPressure"`
+	BacklogPressurePct float64 `json:"backlogPressurePct"`
+}
+
+// DailyPlanPenaltyProjection is the penalty an entry would carry after one
+// more day of delay.
+type DailyPlanPenaltyProjection struct {
+	FailScore           float64 `json:"failScore"`
+	AccountabilityDelta float64 `json:"accountabilityDelta"`
+	BecomesHighRisk     bool    `json:"becomesHighRisk"`
 }
 
 type DailyPlan struct {
@@ -1274,6 +1308,12 @@ type ActiveContext struct {
 	UpdatedAt  *string `json:"updatedAt,omitempty"`
 }
 
+const (
+	DefaultPlanHighRiskTenths = 25
+	MinPlanHighRiskTenths     = 5
+	MaxPlanHighRiskTenths     = 100
+)
+
 type CoreSettings struct {
 	UserID                string                  `json:"userId"`
 	DeviceID              string                  `json:"deviceId"`
@@ -1308,6 +1348,7 @@ type CoreSettings struct {
 	RestWeekdays          []int                   `json:"restWeekdays,omitempty"`
 	RestSpecificDates     []string                `json:"restSpecificDates,omitempty"`
 	DailyPlanRollbackMins int                     `json:"dailyPlanRollbackMinutes"`
+	PlanHighRiskTenths    int                     `json:"planHighRiskThresholdTenths"`
 	DateDisplayPreset     DateDisplayPreset       `json:"dateDisplayPreset"`
 	DateDisplayFormat     string                  `json:"dateDisplayFormat,omitempty"`
 	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`
@@ -1321,6 +1362,16 @@ type CoreSettings struct {
 	EndOfDay              DayBoundarySchedule     `json:"endOfDay"`
 	CreatedAt             string                  `json:"createdAt"`
 	UpdatedAt             string                  `json:"updatedAt"`
+}
+
+// PlanHighRiskThreshold is the plan fail score at which an entry counts as high
+// risk. It is stored in tenths so it fits the integer settings columns.
+func (s CoreSettings) PlanHighRiskThreshold() float64 {
+	tenths := s.PlanHighRiskTenths
+	if tenths <= 0 {
+		tenths = DefaultPlanHighRiskTenths
+	}
+	return float64(tenths) / 10
 }
 
 // IsAwayDate reports whether a date belongs to the canonical historical

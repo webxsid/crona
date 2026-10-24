@@ -105,6 +105,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "daily_plan_entries", column: "postpone_count", defaultValue: 0},
 		{table: "daily_plan_entries", column: "max_delayed_days", defaultValue: 0},
 		{table: "core_settings", column: "daily_plan_rollback_minutes", defaultValue: 5},
+		{table: "core_settings", column: "plan_high_risk_threshold_tenths", defaultValue: 25},
 		{table: "core_settings", column: "manage_history", defaultValue: 0},
 		{table: "core_settings", column: "manage_history_days", defaultValue: 0},
 	} {

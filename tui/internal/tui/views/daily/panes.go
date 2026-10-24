@@ -153,6 +153,9 @@ func renderCompactDailyIssueList(
 			}
 		}
 		title := issue.Title
+		if marker := penaltyMarkerText(state, issue.ID); marker != "" {
+			title += "  " + marker
+		}
 		lines = append(
 			lines,
 			renderCompactDailyIssueTitle(

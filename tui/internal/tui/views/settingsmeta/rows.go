@@ -72,6 +72,11 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 		},
 		{
 			Section: "Recovery",
+			Label:   "High-Risk Threshold",
+			Value:   fmt.Sprintf("%.1f", settings.PlanHighRiskThreshold()),
+		},
+		{
+			Section: "Recovery",
 			Label:   "Rest & Streak Protection",
 			Value:   restProtectionLabel(settings),
 		},

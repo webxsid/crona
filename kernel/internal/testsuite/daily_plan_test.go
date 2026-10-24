@@ -614,3 +614,97 @@ func TestDailyPlanActiveSummaryExcludesResolvedDelayedIssues(t *testing.T) {
 		)
 	}
 }
+
+func TestDailyPlanEntryPenaltyExplainsScoreAndProjections(t *testing.T) {
+	ctx := context.Background()
+	currentNow := "2026-03-25T09:00:00Z"
+	coreCtx, _ := newTestCoreContext(t, func() string { return currentNow })
+
+	repo, _ := corecommands.CreateRepo(ctx, coreCtx, struct {
+		Name        string
+		Description *string
+		Color       *string
+	}{Name: "Work"})
+	stream, _ := corecommands.CreateStream(ctx, coreCtx, struct {
+		RepoID      int64
+		Name        string
+		Description *string
+		Visibility  *sharedtypes.StreamVisibility
+	}{RepoID: repo.ID, Name: "app"})
+	today := "2026-03-25"
+	issue, err := corecommands.CreateIssue(ctx, coreCtx, struct {
+		StreamID        int64
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		Notes           *string
+		TodoForDate     *string
+	}{StreamID: stream.ID, Title: "Delayed item", TodoForDate: &today})
+	if err != nil {
+		t.Fatalf("create issue: %v", err)
+	}
+	currentNow = "2026-03-25T09:02:00Z"
+	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-30"); err != nil {
+		t.Fatalf("delay issue: %v", err)
+	}
+
+	plan, err := corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")
+	if err != nil {
+		t.Fatalf("get plan: %v", err)
+	}
+	if len(plan.Entries) != 1 || plan.Entries[0].Penalty == nil {
+		t.Fatalf("expected one entry with a penalty, got %+v", plan.Entries)
+	}
+	entry := plan.Entries[0]
+	penalty := entry.Penalty
+	approx := func(got, want float64) bool { return got > want-0.01 && got < want+0.01 }
+	if !approx(penalty.DelayComponent, 2.585) || penalty.FrequencyComponent != 0 ||
+		!approx(entry.FailScore, penalty.DelayComponent+penalty.FrequencyComponent) {
+		t.Fatalf("unexpected components: %+v (fail %.3f)", penalty, entry.FailScore)
+	}
+	if !penalty.HighRisk || penalty.HighRiskThreshold != 2.5 || penalty.Historical {
+		t.Fatalf("expected live high-risk penalty at default threshold, got %+v", penalty)
+	}
+	if penalty.Contribution == nil || !approx(penalty.Contribution.AccountabilityPct, 1) ||
+		!approx(penalty.Contribution.BacklogPressure, penalty.DelayComponent) {
+		t.Fatalf("expected full share of today's totals, got %+v", penalty.Contribution)
+	}
+	if penalty.IfDoneToday == nil || !approx(penalty.IfDoneToday.Accountability, -entry.FailScore) {
+		t.Fatalf("unexpected done-today projection: %+v", penalty.IfDoneToday)
+	}
+	// One more day: 6 delayed days and a second postpone.
+	if penalty.IfPostponedOneDay == nil || !approx(penalty.IfPostponedOneDay.FailScore, 3.307) ||
+		!approx(penalty.IfPostponedOneDay.AccountabilityDelta, 3.307-entry.FailScore) {
+		t.Fatalf("unexpected postpone projection: %+v", penalty.IfPostponedOneDay)
+	}
+
+	if err := coreCtx.CoreSettings.SetSetting(ctx, coreCtx.UserID, sharedtypes.CoreSettingsKeyPlanHighRiskTenths, 30); err != nil {
+		t.Fatalf("set threshold: %v", err)
+	}
+	plan, err = corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")
+	if err != nil {
+		t.Fatalf("get plan after threshold change: %v", err)
+	}
+	penalty = plan.Entries[0].Penalty
+	if penalty.HighRisk || penalty.HighRiskThreshold != 3 || plan.Summary.HighRiskIssueCount != 0 ||
+		!penalty.IfPostponedOneDay.BecomesHighRisk {
+		t.Fatalf("expected raised threshold to clear high risk, got %+v / %+v", penalty, plan.Summary)
+	}
+
+	currentNow = "2026-03-25T09:05:00Z"
+	if _, err := corecommands.ChangeIssueStatus(ctx, coreCtx, issue.ID, sharedtypes.IssueStatusInProgress, nil); err != nil {
+		t.Fatalf("start issue: %v", err)
+	}
+	if _, err := corecommands.ChangeIssueStatus(ctx, coreCtx, issue.ID, sharedtypes.IssueStatusDone, nil); err != nil {
+		t.Fatalf("complete issue: %v", err)
+	}
+	plan, err = corecommands.GetDailyPlan(ctx, coreCtx, "2026-03-30")
+	if err != nil {
+		t.Fatalf("get resolved plan: %v", err)
+	}
+	penalty = plan.Entries[0].Penalty
+	if !penalty.Historical || penalty.Contribution != nil || penalty.IfDoneToday != nil ||
+		penalty.IfPostponedOneDay != nil {
+		t.Fatalf("expected historical penalty without live projections, got %+v", penalty)
+	}
+}
