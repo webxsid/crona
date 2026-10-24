@@ -4,6 +4,7 @@ package summary
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -26,6 +27,7 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	lines := strings.Split(renderStats(theme, snapshot, width), "\n")
 	lines = append(lines, "")
 	lines = append(lines, renderPlan(theme, snapshot.Plan, width)...)
+	lines = append(lines, renderTopPenalties(theme, snapshot.Plan, snapshot.Issues, width)...)
 	lines = append(lines, "")
 	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, width)...)
 	lines = append(lines, "")
@@ -86,6 +88,51 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		Row(theme, "Missed", fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount), width),
 		Row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
 	)
+}
+
+// renderTopPenalties lists the up to three live plan entries adding most to the accountability
+// score, so the issues worth doing first stand out.
+func renderTopPenalties(theme types.Theme, plan *sharedtypes.DailyPlan, issues *sharedtypes.DailyIssueSummary, width int) []string {
+	if plan == nil {
+		return nil
+	}
+	titles := map[int64]string{}
+	if issues != nil {
+		for _, issue := range issues.Issues {
+			titles[issue.ID] = issue.Title
+		}
+	}
+	entries := []sharedtypes.DailyPlanEntry{}
+	for _, entry := range plan.Entries {
+		if entry.Penalty != nil && !entry.Penalty.Historical && entry.FailScore > 0 {
+			entries = append(entries, entry)
+		}
+	}
+	if len(entries) == 0 {
+		return nil
+	}
+	sort.SliceStable(entries, func(i, j int) bool { return entries[i].FailScore > entries[j].FailScore })
+	lines := []string{}
+	for i, entry := range entries[:min(3, len(entries))] {
+		label := ""
+		if i == 0 {
+			label = "Top"
+		}
+		title := titles[entry.IssueID]
+		if title == "" {
+			title = fmt.Sprintf("#%d", entry.IssueID)
+		}
+		score := fmt.Sprintf("%.2f", entry.FailScore)
+		if entry.Penalty.HighRisk {
+			score = lipgloss.NewStyle().Foreground(theme.ColorOrange).Render("▲" + score)
+		}
+		share := ""
+		if entry.Penalty.Contribution != nil {
+			share = theme.StyleDim.Render(fmt.Sprintf(" %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100))
+		}
+		lines = append(lines, Row(theme, label, score+share+"  "+title, width))
+	}
+	return lines
 }
 
 func renderWellbeing(theme types.Theme, checkIn *sharedtypes.DailyCheckIn, rollup *sharedtypes.MetricsRollup, width int) []string {

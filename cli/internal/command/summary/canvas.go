@@ -196,6 +196,7 @@ func renderDaySignals(opts renderOptions, width int, data daySummaryData) []stri
 			progressBar(opts, s.CompletedCount, s.FailedCount+s.AbandonedCount, max(1, s.PlannedCount), max(10, width-4), ansiGreen),
 			paint(opts, ansiDim, fmt.Sprintf("done %d  pending %d  failed %d  abandoned %d", s.CompletedCount, s.PendingRollbackCount, s.FailedCount, s.AbandonedCount)),
 		)
+		lines = append(lines, renderTopPenalties(opts, width, penaltyRows(data))...)
 	}
 	lines = append(lines, "", paint(opts, ansiBold, "WELLBEING"))
 	if data.CheckIn == nil || strings.TrimSpace(data.CheckIn.Date) == "" {
@@ -223,6 +224,31 @@ func renderDaySignals(opts renderOptions, width int, data daySummaryData) []stri
 			data.Streaks.CurrentCheckInDays, data.Streaks.LongestCheckInDays,
 			data.Streaks.CurrentHabitDays, data.Streaks.LongestHabitDays,
 		))
+	}
+	return lines
+}
+
+// renderTopPenalties lists the up to three issues adding most to today's accountability score.
+func renderTopPenalties(opts renderOptions, width int, rows []penaltyRow) []string {
+	if len(rows) == 0 {
+		return nil
+	}
+	lines := []string{paint(opts, ansiDim, "top penalties")}
+	for _, row := range rows[:min(3, len(rows))] {
+		marker, color := "  ", ""
+		if row.Entry.Penalty.HighRisk {
+			marker, color = "▲ ", ansiYellow
+		}
+		share := ""
+		if row.Entry.Penalty.Contribution != nil {
+			share = fmt.Sprintf("  %3.0f%%", row.Entry.Penalty.Contribution.AccountabilityPct*100)
+		}
+		prefix := fmt.Sprintf("%s%.2f%s  ", marker, row.Entry.FailScore, share)
+		title := truncateText(row.Title, max(8, width-4-len([]rune(prefix))))
+		if color != "" {
+			prefix = paint(opts, color, prefix)
+		}
+		lines = append(lines, prefix+title)
 	}
 	return lines
 }

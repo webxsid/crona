@@ -119,3 +119,23 @@ func TestDayLinesWrapLongNotes(t *testing.T) {
 		t.Fatalf("expected the whole note, got %q", dayText(state, 42))
 	}
 }
+
+func TestDayLinesListTopPenalties(t *testing.T) {
+	state := summaryTestState()
+	entry := func(id int64, score float64, highRisk, historical bool) sharedtypes.DailyPlanEntry {
+		return sharedtypes.DailyPlanEntry{IssueID: id, FailScore: score, Penalty: &sharedtypes.DailyPlanEntryPenalty{
+			HighRisk: highRisk, Historical: historical,
+			Contribution: &sharedtypes.DailyPlanPenaltyShare{AccountabilityPct: score / 10},
+		}}
+	}
+	state.SummarySnapshot.Plan = &sharedtypes.DailyPlan{Date: state.SummarySnapshot.Date, Entries: []sharedtypes.DailyPlanEntry{
+		entry(1, 1, false, false), entry(2, 3.38, true, false), entry(3, 5, true, true),
+	}}
+	state.SummarySnapshot.Issues = &sharedtypes.DailyIssueSummary{Issues: []sharedtypes.Issue{
+		{ID: 1, Title: "Small slip"}, {ID: 2, Title: "Fix sync conflict"},
+	}}
+	rendered := squash(dayText(state, 60))
+	if !strings.Contains(rendered, "Top ▲3.38 34% Fix sync conflict 1.00 10% Small slip") || strings.Contains(rendered, "5.00") {
+		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
+	}
+}

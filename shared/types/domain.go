@@ -1667,6 +1667,8 @@ type DailyReportIssue struct {
 	PlanCurrentDelayedDays   int                     `json:"planCurrentDelayedDays"`
 	PlanMaxDelayedDays       int                     `json:"planMaxDelayedDays"`
 	PlanFailScore            float64                 `json:"planFailScore"`
+	PlanAccountabilityShare  float64                 `json:"planAccountabilityShare"`
+	PlanHighRisk             bool                    `json:"planHighRisk"`
 }
 
 type DailyReportSession struct {

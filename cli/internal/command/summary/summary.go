@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 	"time"
 
@@ -291,6 +292,9 @@ func renderDaySummary(w io.Writer, data daySummaryData) error {
 	if err := printDailyPlanSection(w, data.Plan); err != nil {
 		return err
 	}
+	if err := printPenaltySection(w, penaltyRows(data)); err != nil {
+		return err
+	}
 	if err := printCheckInSection(w, data.CheckIn, data.Rollup); err != nil {
 		return err
 	}
@@ -387,6 +391,68 @@ func printDailyPlanSection(w io.Writer, plan *sharedtypes.DailyPlan) error {
 		{Key: "pressure", Value: fmt.Sprintf("%.1f", summary.BacklogPressure)},
 	}
 	return printTable(w, "plan", []string{"metric", "value"}, rowsToCells(rows))
+}
+
+// penaltyRow is one live plan entry carrying a delay penalty.
+type penaltyRow struct {
+	Title string
+	Entry sharedtypes.DailyPlanEntry
+}
+
+// penaltyRows lists the day's live penalised plan entries, largest penalty first.
+func penaltyRows(data daySummaryData) []penaltyRow {
+	if data.Plan == nil {
+		return nil
+	}
+	titles := map[int64]string{}
+	if data.Summary != nil {
+		for _, issue := range data.Summary.Issues {
+			titles[issue.ID] = issue.Title
+		}
+	}
+	rows := []penaltyRow{}
+	for _, entry := range data.Plan.Entries {
+		if entry.Penalty == nil || entry.Penalty.Historical || entry.FailScore <= 0 {
+			continue
+		}
+		title := titles[entry.IssueID]
+		if title == "" {
+			title = fmt.Sprintf("#%d", entry.IssueID)
+		}
+		rows = append(rows, penaltyRow{Title: title, Entry: entry})
+	}
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].Entry.FailScore > rows[j].Entry.FailScore })
+	return rows
+}
+
+func printPenaltySection(w io.Writer, rows []penaltyRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	cells := make([][]string, 0, len(rows))
+	for _, row := range rows {
+		entry, penalty := row.Entry, row.Entry.Penalty
+		score := fmt.Sprintf("%.2f", entry.FailScore)
+		if penalty.HighRisk {
+			score = "▲ " + score
+		}
+		share, push := "-", "-"
+		if penalty.Contribution != nil {
+			share = fmt.Sprintf("%.0f%%", penalty.Contribution.AccountabilityPct*100)
+		}
+		if penalty.IfPostponedOneDay != nil {
+			push = fmt.Sprintf("%+.2f", penalty.IfPostponedOneDay.AccountabilityDelta)
+		}
+		cells = append(cells, []string{
+			row.Title,
+			fmt.Sprintf("%dd", entry.CurrentDelayedDays),
+			fmt.Sprintf("%d", entry.PostponeCount),
+			score,
+			share,
+			push,
+		})
+	}
+	return printTable(w, "penalties", []string{"issue", "late", "postpones", "penalty", "share", "push 1d"}, cells)
 }
 
 func printCheckInSection(w io.Writer, checkIn *sharedtypes.DailyCheckIn, rollup *sharedtypes.MetricsRollup) error {

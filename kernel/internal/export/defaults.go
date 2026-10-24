@@ -423,6 +423,8 @@ Nested issue groups for the default template:
       - {{planCurrentDelayedDays}}
       - {{planMaxDelayedDays}}
       - {{planFailScore}}
+      - {{planAccountabilityShare}}
+      - {{planHighRisk}}
 
 Nested habit groups for the default template:
 - {{#each habitRepos}} ... {{/each}}

@@ -11,6 +11,7 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
+	dailyviews "crona/tui/internal/tui/views/daily"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	viewtypes "crona/tui/internal/tui/views/types"
 
@@ -210,6 +211,9 @@ func (m Model) dialogRenderState() dialogstate.State {
 			state,
 			m.currentDate(),
 		)
+		if state.Parent == "" {
+			state.PenaltyHint = dailyviews.RescheduleHint(m.dailyPlan, state.IssueID)
+		}
 	}
 	if m.dialog == "summary_calendar" {
 		state.CalendarScores = nil

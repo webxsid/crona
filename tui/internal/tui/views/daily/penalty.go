@@ -110,14 +110,34 @@ func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, wi
 	return truncateLines(lines, width)
 }
 
-// penaltyMarkerText is the compact high-risk marker for issue rows, unstyled so it takes the
+// PenaltyMarkerText is the compact high-risk marker for issue rows, unstyled so it takes the
 // row's style, or "" when the issue's shown-day entry is not high risk.
-func penaltyMarkerText(state types.ContentState, issueID int64) string {
+func PenaltyMarkerText(state types.ContentState, issueID int64) string {
 	entry := issuePlanEntry(state, issueID)
 	if entry == nil || entry.Penalty == nil || entry.Penalty.Historical || !entry.Penalty.HighRisk {
 		return ""
 	}
 	return fmt.Sprintf("▲%.1f", entry.FailScore)
+}
+
+// RescheduleHint is the cost of pushing an issue one more day, shown when rescheduling it,
+// or "" when the issue has no live penalty projection in the plan.
+func RescheduleHint(plan *api.DailyPlan, issueID int64) string {
+	if plan == nil {
+		return ""
+	}
+	for _, entry := range plan.Entries {
+		if entry.IssueID != issueID || entry.Penalty == nil || entry.Penalty.IfPostponedOneDay == nil {
+			continue
+		}
+		push := entry.Penalty.IfPostponedOneDay
+		hint := fmt.Sprintf("Push 1 day: penalty %.2f (%+.2f)", push.FailScore, push.AccountabilityDelta)
+		if push.BecomesHighRisk {
+			hint += " · becomes high risk"
+		}
+		return hint
+	}
+	return ""
 }
 
 func plural(count int, unit string) string {

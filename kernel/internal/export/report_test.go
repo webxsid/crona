@@ -46,11 +46,13 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 					RepoName:   "Work",
 					StreamName: "core",
 				},
-				WorkedSeconds:          1800,
-				PlanStatus:             sharedtypes.DailyPlanEntryStatusFailed,
-				PlanCurrentDelayedDays: 4,
-				PlanFailScore:          0.84,
-				PlanFailureReason:      new(sharedtypes.DailyPlanFailureReasonMissed),
+				WorkedSeconds:           1800,
+				PlanStatus:              sharedtypes.DailyPlanEntryStatusFailed,
+				PlanCurrentDelayedDays:  4,
+				PlanFailScore:           0.84,
+				PlanFailureReason:       new(sharedtypes.DailyPlanFailureReasonMissed),
+				PlanAccountabilityShare: 0.537,
+				PlanHighRisk:            true,
 			},
 		},
 	}
@@ -82,6 +84,12 @@ func TestBuildTemplateDataMapIncludesPlanAccountabilitySummary(t *testing.T) {
 	}
 	if got := issues[0]["planFailScore"]; got != 0.8 {
 		t.Fatalf("expected rounded fail score 0.8, got %#v", got)
+	}
+	if got := issues[0]["planAccountabilityShare"]; got != 53.7 {
+		t.Fatalf("expected accountability share 53.7, got %#v", got)
+	}
+	if got := issues[0]["planHighRisk"]; got != true {
+		t.Fatalf("expected high risk flag, got %#v", got)
 	}
 }
 
