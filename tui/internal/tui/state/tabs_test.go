@@ -63,9 +63,12 @@ func TestTodayTabHasNoSummary(t *testing.T) {
 	}
 }
 
-func TestIssuesTabSubTabs(t *testing.T) {
-	if got := TabViews(TabIssues); !slices.Equal(got, []View{ViewDefault, View("habit_list")}) {
-		t.Fatalf("Issues tabs = %v", got)
+func TestWorkTabSubTabs(t *testing.T) {
+	if TabLabel(TabIssues) != "Work" {
+		t.Fatalf("tab 2 label = %q", TabLabel(TabIssues))
+	}
+	if got := TabViews(TabIssues); !slices.Equal(got, []View{ViewDefault, View("habit_list"), ViewTags}) {
+		t.Fatalf("Work tabs = %v", got)
 	}
 	if ViewLabel(View("habit_list")) != "Habits" {
 		t.Fatal("missing Habits label")

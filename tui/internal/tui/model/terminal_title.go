@@ -108,6 +108,8 @@ func terminalViewTitle(view View) string {
 		return "Config"
 	case ViewSettings:
 		return "Settings"
+	case ViewTags:
+		return "Tags"
 	case ViewAlerts:
 		return "Alerts"
 	case ViewUpdates:

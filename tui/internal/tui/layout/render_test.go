@@ -98,7 +98,7 @@ func datedShellState(view uistate.View, width, height int) State {
 
 func TestRenderTabLineNumbersTabs(t *testing.T) {
 	line := plainLines(Render(shellStateForTest(uistate.ViewDaily, 120, 36)))[0]
-	for _, want := range []string{"[1] Today", "[2] Issues", "[5] System"} {
+	for _, want := range []string{"[1] Today", "[2] Work", "[5] System"} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("expected %q on the tab line, got %q", want, line)
 		}

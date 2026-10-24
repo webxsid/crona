@@ -14,7 +14,7 @@ var tabOrder = []Tab{TabToday, TabIssues, TabInsights, TabLog, TabSystem}
 
 var tabViews = map[Tab][]View{
 	TabToday:    {ViewDaily, ViewSessionActive, ViewAway},
-	TabIssues:   {ViewDefault, ViewHabitList},
+	TabIssues:   {ViewDefault, ViewHabitList, ViewTags},
 	TabInsights: {ViewReview, ViewMomentum},
 	TabLog:      {ViewSessionHistory, ViewHabitHistory, ViewOps},
 	TabSystem:   {ViewSettings, ViewAlerts, ViewReports, ViewConfig, ViewUpdates, ViewSupport},
@@ -22,7 +22,7 @@ var tabViews = map[Tab][]View{
 
 var tabLabels = map[Tab]string{
 	TabToday:    "Today",
-	TabIssues:   "Issues",
+	TabIssues:   "Work",
 	TabInsights: "Insights",
 	TabLog:      "Log",
 	TabSystem:   "System",
@@ -34,6 +34,7 @@ var viewLabels = map[View]string{
 	ViewAway:           "Away",
 	ViewDefault:        "Issues",
 	ViewHabitList:      "Habits",
+	ViewTags:           "Tags",
 	ViewReview:         "Review",
 	ViewMomentum:       "Momentum",
 	ViewSessionHistory: "Sessions",

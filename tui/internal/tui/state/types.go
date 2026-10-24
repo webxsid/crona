@@ -11,6 +11,7 @@ const (
 	ViewReview         View = "review"
 	ViewMomentum       View = "momentum"
 	ViewHabitList      View = "habit_list"
+	ViewTags           View = "tags"
 	ViewSessionHistory View = "session_history"
 	ViewHabitHistory   View = "habit_history"
 	ViewSessionActive  View = "session_active"
@@ -40,6 +41,7 @@ const (
 	PaneConfig        Pane = "config"
 	PaneSettings      Pane = "settings"
 	PaneAlerts        Pane = "alerts"
+	PaneTags          Pane = "tags"
 )
 
 type DefaultIssueSection string
@@ -63,6 +65,7 @@ var viewOrder = []View{
 	ViewMomentum,
 	ViewDefault,
 	ViewHabitList,
+	ViewTags,
 	ViewOps,
 	ViewReports,
 	ViewConfig,
@@ -81,6 +84,7 @@ var viewPanes = map[View][]Pane{
 	ViewReview:         {PaneReviewDays},
 	ViewMomentum:       {PaneMomentumCards},
 	ViewHabitList:      {PaneScope, PaneHabits},
+	ViewTags:           {PaneTags},
 	ViewSessionHistory: {PaneSessions},
 	ViewHabitHistory:   {PaneHabitHistory},
 	ViewSessionActive:  {},
@@ -100,6 +104,7 @@ var viewDefaultPane = map[View]Pane{
 	ViewReview:         PaneReviewDays,
 	ViewMomentum:       PaneMomentumCards,
 	ViewHabitList:      PaneHabits,
+	ViewTags:           PaneTags,
 	ViewSessionHistory: PaneSessions,
 	ViewHabitHistory:   PaneHabitHistory,
 	ViewSessionActive:  PaneIssues,

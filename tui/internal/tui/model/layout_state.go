@@ -65,6 +65,7 @@ func (m Model) viewContentState(
 			"export_reports": m.cursor[PaneExportReports],
 			"config":         m.cursor[PaneConfig],
 			"settings":       m.cursor[PaneSettings],
+			"tags":           m.cursor[PaneTags],
 			"alerts":         m.cursor[PaneAlerts],
 		},
 		Filters: map[string]string{
@@ -79,6 +80,7 @@ func (m Model) viewContentState(
 			"export_reports": m.filters[PaneExportReports],
 			"config":         m.filters[PaneConfig],
 			"settings":       m.filters[PaneSettings],
+			"tags":           m.filters[PaneTags],
 			"alerts":         m.filters[PaneAlerts],
 		},
 		Repos:       m.repos,

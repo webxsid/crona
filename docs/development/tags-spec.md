@@ -45,7 +45,7 @@ Crona seeds these on first run (and on upgrade, for any that are missing):
 | `someday` | Not planned; kept for later. |
 
 Rules:
-- System tags are marked `system` and shown with a small marker in Settings and autocomplete.
+- System tags are marked `system` and listed under System in the Tags view.
 - They cannot be deleted or renamed, and other tags cannot be merged into or renamed onto them. Their color can be changed.
 - Removing them from items works like any other tag.
 - "Remove unused tags" never touches system tags.
@@ -66,7 +66,7 @@ Rules:
 
 Rules:
 - A tag is created implicitly the first time it is applied. There is no separate "create tag" step.
-- A tag with no taggings and no note references is kept until explicitly deleted, so it stays in autocomplete. Settings offers "remove unused tags".
+- A tag with no taggings and no note references is kept until explicitly deleted, so it stays in autocomplete. The Tags view offers "remove unused tags".
 - Deleting a tag removes all its taggings after confirmation that shows the counts.
 - Renaming a tag updates every tagging. Renaming onto an existing name merges the two after confirmation.
 - Archived, done, and abandoned issues keep their tags. Inactive habits keep theirs.
@@ -123,9 +123,9 @@ This uses one existing key, `/`, plus `+` for editing. No other new keys.
 
 On Issues and Habits, the existing sort or group toggle (if present) gains a **by tag** option: one section per tag in name order, untagged last. An item with several tags appears under each of them, with a dim marker after its first appearance.
 
-#### Tags in Settings
+#### Tags view
 
-A **Tags** section in Settings lists the vocabulary with usage counts and supports rename, merge, color, delete, and remove-unused, using the existing confirm dialogs.
+Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The Tags view lists the vocabulary, system tags first, with usage counts. `enter` renames (merging onto an existing name after a warning), `←/→` cycles the color, `D` deletes after a confirm, and `U` removes unused tags. System tags only change color.
 
 ### Daily plan and dashboard
 

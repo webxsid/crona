@@ -345,7 +345,7 @@ func newRouter(deps Deps) *router {
 			if s.ActiveView == uistate.ViewAlerts {
 				return handleDeleteSelectedAlertReminder(s, deps)
 			}
-			if s.ActiveView == uistate.ViewSettings {
+			if s.ActiveView == uistate.ViewTags {
 				return handleDeleteSelectedTag(s, deps)
 			}
 			cmd, handled := deps.DeleteSelectionAction(&s)
@@ -510,6 +510,7 @@ func newRouter(deps Deps) *router {
 			return s, nil, false
 		},
 	)
+	registerTagKeys(r, deps)
 	keyregistry.RegisterSettings(
 		r,
 		uistate.ViewSettings,
@@ -748,5 +749,6 @@ var filterablePanes = map[uistate.Pane]bool{
 	uistate.PaneExportReports: true,
 	uistate.PaneConfig:        true,
 	uistate.PaneSettings:      true,
+	uistate.PaneTags:          true,
 	uistate.PaneAlerts:        true,
 }

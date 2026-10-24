@@ -1,7 +1,6 @@
 package model
 
 import (
-	"fmt"
 	"maps"
 	"time"
 
@@ -15,6 +14,7 @@ import (
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
 
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	tea "github.com/charmbracelet/bubbletea"
@@ -715,7 +715,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		OpenConfirmDeleteTagDialog: func(state *inputpkg.State, tag api.Tag) bool {
 			next := m.applyInputState(*state)
-			label := fmt.Sprintf("+%s (on %d issues and %d habits)", tag.Name, tag.IssueCount, tag.HabitCount)
+			label := "+" + tag.Name + " (on " + tagsmeta.Usage(tag) + ")"
 			next = next.withDialogState(next.dialogSnapshot().OpenConfirmDeleteEntity("tag", tag.Name, label))
 			*state = next.inputState()
 			return true

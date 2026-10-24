@@ -38,6 +38,7 @@ const (
 	ViewReports        = uistate.ViewReports
 	ViewConfig         = uistate.ViewConfig
 	ViewSettings       = uistate.ViewSettings
+	ViewTags           = uistate.ViewTags
 	ViewAlerts         = uistate.ViewAlerts
 	ViewUpdates        = uistate.ViewUpdates
 	ViewSupport        = uistate.ViewSupport
@@ -59,6 +60,7 @@ const (
 	PaneExportReports = uistate.PaneExportReports
 	PaneConfig        = uistate.PaneConfig
 	PaneSettings      = uistate.PaneSettings
+	PaneTags          = uistate.PaneTags
 	PaneAlerts        = uistate.PaneAlerts
 )
 
@@ -346,6 +348,7 @@ func New(
 			PaneConfig:        0,
 			PaneSettings:      0,
 			PaneAlerts:        0,
+			PaneTags:          0,
 		},
 		filters: map[Pane]string{
 			PaneRepos:         "",
@@ -360,6 +363,7 @@ func New(
 			PaneConfig:        "",
 			PaneSettings:      "",
 			PaneAlerts:        "",
+			PaneTags:          "",
 		},
 		currentExecutablePath: executablePath,
 		kernelInfo:            &api.KernelInfo{Env: env},

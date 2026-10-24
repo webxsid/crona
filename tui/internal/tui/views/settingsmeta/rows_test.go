@@ -28,21 +28,3 @@ func TestRowsWithTimezoneIncludesDayBoundaries(t *testing.T) {
 		t.Fatalf("unexpected EOD label: %q", values["End of Day"])
 	}
 }
-
-func TestTagRowsListVocabularyAndCountUnused(t *testing.T) {
-	red := "red"
-	rows := TagRows([]sharedtypes.Tag{
-		{Name: "urgent", Color: &red, System: true},
-		{Name: "release", IssueCount: 2},
-		{Name: "old"},
-	})
-	if len(rows) != 4 || rows[0].Tag != "urgent" || rows[0].Label != "+urgent" {
-		t.Fatalf("unexpected rows %+v", rows)
-	}
-	if rows[0].Value != "0 issues, 0 habits · red · system" {
-		t.Fatalf("unexpected system row value %q", rows[0].Value)
-	}
-	if last := rows[3]; last.Label != "Remove Unused Tags" || last.Value != "1 unused" {
-		t.Fatalf("unexpected remove-unused row %+v", last)
-	}
-}

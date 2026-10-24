@@ -309,6 +309,9 @@ func HandleMessage(
 		return state, nil, true
 	case commands.TagsLoadedMsg:
 		state.Tags = msg.Tags
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneTags)
+		}
 		return state, nil, true
 	case commands.DailyCheckInLoadedMsg:
 		state.DailyCheckIn = msg.CheckIn

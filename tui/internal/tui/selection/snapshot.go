@@ -12,6 +12,7 @@ import (
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
+	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
 )
 
 type Snapshot struct {
@@ -303,7 +304,9 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			items = append(items, fmt.Sprintf("%s %s.%s %s", ts, op.Entity, op.Action, op.EntityID))
 		}
 	case uistate.PaneSettings:
-		items = settingsmeta.ItemLabels(s.Settings, s.Tags...)
+		items = settingsmeta.ItemLabels(s.Settings)
+	case uistate.PaneTags:
+		items = tagsmeta.Names(s.Tags)
 	case uistate.PaneAlerts:
 		items = alertsmeta.ItemLabels(s.Settings, s.AlertStatus, s.AlertReminders)
 	default:
