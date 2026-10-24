@@ -480,6 +480,8 @@ func Update(
 		return updateTagPicker(state, msg)
 	case "edit_filter":
 		return updatePaneFilter(state, msg)
+	case "rename_tag":
+		return updateRenameTag(state, msg)
 	default:
 		return state, nil, ""
 	}

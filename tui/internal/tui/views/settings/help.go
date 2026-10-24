@@ -125,8 +125,18 @@ var settingsHelp = map[string]viewchrome.RowHelp{
 		Description: "When the day winds down; used for end-of-day prompts and summaries.",
 		Keys:        edit,
 	},
+	"Remove Unused Tags": {
+		Description: "Deletes every tag that no issue or habit uses. System tags are kept.",
+		Keys:        []string{"[enter] remove"},
+	},
 	"Wipe Runtime Data": {
 		Description: "Deletes all local data: issues, sessions, habits and settings. This cannot be undone.",
 		Keys:        []string{"[enter] confirm"},
 	},
+}
+
+// tagHelp explains a tag row in the Tags section.
+var tagHelp = viewchrome.RowHelp{
+	Description: "A tag from your vocabulary. Renaming onto an existing tag merges the two. System tags can only change color.",
+	Keys:        []string{"[enter] rename", "[←/→] color", "[D] delete"},
 }

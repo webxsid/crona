@@ -1370,3 +1370,36 @@ func copyToClipboard(text string) error {
 	}
 	return errors.New("no supported clipboard command found")
 }
+
+// RenameTag renames a tag, merging it into another when merge is set. The tags.changed event reloads the lists.
+func RenameTag(c *api.Client, from, to string, merge bool) tea.Cmd {
+	return tagCmd("RenameTag", func() error { return c.RenameTag(from, to, merge) })
+}
+
+// SetTagColor sets or clears a tag's palette color.
+func SetTagColor(c *api.Client, name string, color *string) tea.Cmd {
+	return tagCmd("SetTagColor", func() error { return c.SetTagColor(name, color) })
+}
+
+// DeleteTag deletes a tag and its taggings.
+func DeleteTag(c *api.Client, name string) tea.Cmd {
+	return tagCmd("DeleteTag", func() error { return c.DeleteTag(name) })
+}
+
+// RemoveUnusedTags deletes every unused tag except the system ones.
+func RemoveUnusedTags(c *api.Client) tea.Cmd {
+	return tagCmd("RemoveUnusedTags", func() error {
+		_, err := c.RemoveUnusedTags()
+		return err
+	})
+}
+
+func tagCmd(name string, run func() error) tea.Cmd {
+	return func() tea.Msg {
+		if err := run(); err != nil {
+			logger.Errorf("%s: %v", name, err)
+			return ErrMsg{Err: err}
+		}
+		return nil
+	}
+}

@@ -295,6 +295,10 @@ type Model struct {
 	dialogHardLimitBreakSeconds          int
 	dialogHardLimitLongBreakSeconds      int
 	dialogHardLimitCyclesBeforeLongBreak int
+	dialogTagTarget                      string
+	dialogTagSelected                    []string
+	dialogTagVocab                       []string
+	dialogTagCursor                      int
 
 	// status / error flash
 	statusMsg string

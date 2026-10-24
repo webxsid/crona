@@ -45,6 +45,7 @@ type Snapshot struct {
 	Settings       *api.CoreSettings
 	AlertStatus    *api.AlertStatus
 	AlertReminders []api.AlertReminder
+	Tags           []api.Tag
 	ConfigItems    []configitems.Item
 
 	issueMetaIndex         map[int64]int
@@ -302,7 +303,7 @@ func PaneItems(s Snapshot, pane uistate.Pane) []string {
 			items = append(items, fmt.Sprintf("%s %s.%s %s", ts, op.Entity, op.Action, op.EntityID))
 		}
 	case uistate.PaneSettings:
-		items = settingsmeta.ItemLabels(s.Settings)
+		items = settingsmeta.ItemLabels(s.Settings, s.Tags...)
 	case uistate.PaneAlerts:
 		items = alertsmeta.ItemLabels(s.Settings, s.AlertStatus, s.AlertReminders)
 	default:

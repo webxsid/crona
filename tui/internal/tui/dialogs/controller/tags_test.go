@@ -48,3 +48,23 @@ func TestTagPickerFiltersAndUnchecks(t *testing.T) {
 		t.Fatalf("expected habit tags cleared, got %+v", action)
 	}
 }
+
+func TestRenameTagMergesOntoExistingName(t *testing.T) {
+	state := OpenRenameTag(State{}, "bug", []string{"bug", "defect", "urgent"})
+	state.Inputs[0].SetValue("urgent")
+	if _, action, msg := updateRenameTag(state, tea.KeyMsg{Type: tea.KeyEnter}); action != nil || msg == "" {
+		t.Fatalf("expected renaming onto a system tag to be refused, got %+v %q", action, msg)
+	}
+	state.Inputs[0].SetValue("Defect")
+	if !RenameTagMerges(state) {
+		t.Fatal("expected renaming onto an existing tag to merge")
+	}
+	_, action, _ := updateRenameTag(state, tea.KeyMsg{Type: tea.KeyEnter})
+	if action == nil || action.Kind != "rename_tag" || action.Title != "bug" || action.Name != "defect" || !action.Active {
+		t.Fatalf("unexpected action %+v", action)
+	}
+	state.Inputs[0].SetValue("issue")
+	if _, action, _ = updateRenameTag(state, tea.KeyMsg{Type: tea.KeyEnter}); action == nil || action.Active {
+		t.Fatalf("a new name should rename without merging, got %+v", action)
+	}
+}

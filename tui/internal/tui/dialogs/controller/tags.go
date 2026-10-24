@@ -130,3 +130,54 @@ func toggleTagRow(state State, row TagPickerRow) State {
 	}
 	return state
 }
+
+// OpenRenameTag opens the rename dialog for one tag, prefilled with its name.
+func OpenRenameTag(state State, name string, vocab []string) State {
+	input := textinput.New()
+	input.Placeholder = "New name"
+	input.SetValue(name)
+	input.CursorEnd()
+	input.CharLimit = sharedtypes.MaxTagNameLength
+	input.Width = 40
+	input.Prompt = "+ "
+	input.Focus()
+	state = Close(state)
+	state.Kind = "rename_tag"
+	state.Inputs = []textinput.Model{input}
+	state.ViewName = name
+	state.TagVocab = slices.Clone(vocab)
+	return state
+}
+
+// RenameTagMerges reports whether saving the rename would merge into another existing tag.
+func RenameTagMerges(state State) bool {
+	if len(state.Inputs) == 0 {
+		return false
+	}
+	to, err := sharedtypes.NormalizeTagName(state.Inputs[0].Value())
+	return err == nil && to != state.ViewName && slices.Contains(state.TagVocab, to)
+}
+
+func updateRenameTag(state State, msg tea.KeyMsg) (State, *Action, string) {
+	switch msg.String() {
+	case "esc":
+		return Close(state), nil, ""
+	case "enter":
+		to, err := sharedtypes.NormalizeTagName(state.Inputs[0].Value())
+		if err != nil {
+			return state, nil, err.Error()
+		}
+		if to == state.ViewName {
+			return Close(state), nil, ""
+		}
+		if sharedtypes.IsSystemTag(to) {
+			return state, nil, "+" + to + " is a system tag; tags can't be renamed or merged onto it"
+		}
+		merge := RenameTagMerges(state)
+		return Close(state), &Action{Kind: "rename_tag", Title: state.ViewName, Name: to, Active: merge}, ""
+	}
+	var cmd tea.Cmd
+	state.Inputs[0], cmd = state.Inputs[0].Update(msg)
+	_ = cmd
+	return clearDialogError(state), nil, ""
+}

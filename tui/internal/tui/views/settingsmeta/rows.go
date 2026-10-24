@@ -14,6 +14,8 @@ type Row struct {
 	Section string
 	Label   string
 	Value   string
+	// Tag names the tag a row in the Tags section manages.
+	Tag string
 }
 
 type VisibleRow struct {
@@ -23,11 +25,11 @@ type VisibleRow struct {
 	Danger       bool
 }
 
-func Rows(settings *sharedtypes.CoreSettings) []Row {
-	return RowsWithTimezone(settings, "")
+func Rows(settings *sharedtypes.CoreSettings, tags ...sharedtypes.Tag) []Row {
+	return RowsWithTimezone(settings, "", tags...)
 }
 
-func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row {
+func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string, tags ...sharedtypes.Tag) []Row {
 	if settings == nil {
 		return nil
 	}
@@ -110,8 +112,9 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 			Label:   "End of Day",
 			Value:   dayBoundaryLabel(settings.EndOfDay, timezone),
 		},
-		{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"},
 	}
+	rows = append(rows, TagRows(tags)...)
+	rows = append(rows, Row{Section: "Danger", Label: "Wipe Runtime Data", Value: "Destructive"})
 	if settings.ManageHistory {
 		value := "Today"
 		if settings.ManageHistoryDays > 0 {
@@ -179,8 +182,28 @@ func GroupedVisibleRows(
 	return rows, selectedVisible
 }
 
-func ItemLabels(settings *sharedtypes.CoreSettings) []string {
-	rows := Rows(settings)
+// TagRows lists the tag vocabulary with usage counts, then the remove-unused action.
+func TagRows(tags []sharedtypes.Tag) []Row {
+	rows := make([]Row, 0, len(tags)+1)
+	unused := 0
+	for _, tag := range tags {
+		value := plural(tag.IssueCount, "issue") + ", " + plural(tag.HabitCount, "habit")
+		if tag.Color != nil && *tag.Color != "" {
+			value += " · " + *tag.Color
+		}
+		if tag.System {
+			value += " · system"
+		} else if tag.IssueCount+tag.HabitCount == 0 {
+			unused++
+		}
+		rows = append(rows, Row{Section: "Tags", Label: "+" + tag.Name, Value: value, Tag: tag.Name})
+	}
+	rows = append(rows, Row{Section: "Tags", Label: "Remove Unused Tags", Value: fmt.Sprintf("%d unused", unused)})
+	return rows
+}
+
+func ItemLabels(settings *sharedtypes.CoreSettings, tags ...sharedtypes.Tag) []string {
+	rows := Rows(settings, tags...)
 	labels := make([]string, 0, len(rows))
 	for _, row := range rows {
 		labels = append(labels, row.Label)
@@ -188,11 +211,11 @@ func ItemLabels(settings *sharedtypes.CoreSettings) []string {
 	return labels
 }
 
-func FilteredIndices(filter string, settings *sharedtypes.CoreSettings) []int {
+func FilteredIndices(filter string, settings *sharedtypes.CoreSettings, tags ...sharedtypes.Tag) []int {
 	if settings == nil {
 		return nil
 	}
-	return viewhelpers.FilteredStrings(ItemLabels(settings), filter)
+	return viewhelpers.FilteredStrings(ItemLabels(settings, tags...), filter)
 }
 
 func UpdateChannelLabel(value sharedtypes.UpdateChannel) string {
@@ -437,4 +460,11 @@ func carryThresholdLabel(minutes int) string {
 		return "Any session"
 	}
 	return fmt.Sprintf("%d min", minutes)
+}
+
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
+	}
+	return fmt.Sprintf("%d %ss", n, noun)
 }

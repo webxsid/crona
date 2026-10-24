@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"maps"
 	"time"
 
@@ -50,6 +51,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Settings:       m.settings,
 		AlertStatus:    m.alertStatus,
 		AlertReminders: m.alertReminders,
+		Tags:           m.tags,
 		ConfigItems:    m.configItemsForSnapshot(),
 	})
 }
@@ -121,6 +123,7 @@ func (m Model) inputState() inputpkg.State {
 		Settings:                  m.settings,
 		AlertStatus:               m.alertStatus,
 		AlertReminders:            m.alertReminders,
+		Tags:                      m.tags,
 		ExportAssets:              m.exportAssets,
 		DailyCheckIn:              m.dailyCheckIn,
 	}
@@ -704,6 +707,21 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenRenameTagDialog: func(state *inputpkg.State, name string) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(next.dialogSnapshot().OpenRenameTag(name, next.tagVocab()))
+			*state = next.inputState()
+			return true
+		},
+		OpenConfirmDeleteTagDialog: func(state *inputpkg.State, tag api.Tag) bool {
+			next := m.applyInputState(*state)
+			label := fmt.Sprintf("+%s (on %d issues and %d habits)", tag.Name, tag.IssueCount, tag.HabitCount)
+			next = next.withDialogState(next.dialogSnapshot().OpenConfirmDeleteEntity("tag", tag.Name, label))
+			*state = next.inputState()
+			return true
+		},
+		SetTagColor:                   func(name string, color *string) tea.Cmd { return commands.SetTagColor(m.client, name, color) },
+		RemoveUnusedTags:              func() tea.Cmd { return commands.RemoveUnusedTags(m.client) },
 		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },
 		OpenSupportReleasesURL:        func() tea.Cmd { return m.openSupportReleasesURL() },
@@ -739,10 +757,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 // openTagPicker opens the tag picker on the selected issue or habit, if there is one.
 func (m Model) openTagPicker() (Model, bool) {
 	snapshot := m.selectionSnapshot()
-	vocab := make([]string, 0, len(m.tags))
-	for _, tag := range m.tags {
-		vocab = append(vocab, tag.Name)
-	}
+	vocab := m.tagVocab()
 	open := func(target string, id int64, title string, current []string) (Model, bool) {
 		return m.withDialogState(m.dialogSnapshot().OpenTagPicker(target, id, title, current, vocab)), true
 	}
@@ -756,4 +771,12 @@ func (m Model) openTagPicker() (Model, bool) {
 		return open(dialogstate.TagTargetHabit, habit.ID, habit.Name, habit.Tags)
 	}
 	return m, false
+}
+
+func (m Model) tagVocab() []string {
+	vocab := make([]string, 0, len(m.tags))
+	for _, tag := range m.tags {
+		vocab = append(vocab, tag.Name)
+	}
+	return vocab
 }

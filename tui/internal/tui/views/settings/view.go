@@ -24,8 +24,8 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if state.Health != nil {
 		timezone = state.Health.Timezone
 	}
-	rows := settingsmeta.RowsWithTimezone(state.Settings, timezone)
-	indices := settingsmeta.FilteredIndices(state.Filters["settings"], state.Settings)
+	rows := settingsmeta.RowsWithTimezone(state.Settings, timezone, state.Tags...)
+	indices := settingsmeta.FilteredIndices(state.Filters["settings"], state.Settings, state.Tags...)
 	cursor := min(max(0, state.Cursors["settings"]), max(0, len(indices)-1))
 	listWidth, detailWidth := viewchrome.LogPaneWidths(state.Width)
 
@@ -62,9 +62,13 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if len(indices) > 0 && state.Settings != nil {
 		row := rows[indices[cursor]]
 		title = row.Label
+		help := settingsHelp[row.Label]
+		if row.Tag != "" {
+			help = tagHelp
+		}
 		lines = viewchrome.HelpLines(
 			theme,
-			settingsHelp[row.Label],
+			help,
 			strings.TrimSpace(row.Value),
 			detailWidth-2,
 		)

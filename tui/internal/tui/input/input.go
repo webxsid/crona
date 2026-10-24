@@ -49,6 +49,7 @@ type State struct {
 	Settings                  *api.CoreSettings
 	AlertStatus               *api.AlertStatus
 	AlertReminders            []api.AlertReminder
+	Tags                      []api.Tag
 	ExportAssets              *api.ExportAssetStatus
 	DailyCheckIn              *api.DailyCheckIn
 }
@@ -144,6 +145,10 @@ type Deps struct {
 	OpenEditTelemetrySettingsDialog func(*State) bool
 	OpenEditDayBoundaryDialog       func(*State, sharedtypes.CoreSettingsKey) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
+	OpenRenameTagDialog             func(*State, string) bool
+	OpenConfirmDeleteTagDialog      func(*State, api.Tag) bool
+	SetTagColor                     func(name string, color *string) tea.Cmd
+	RemoveUnusedTags                func() tea.Cmd
 	WipeRuntimeData                 func() tea.Cmd
 	OpenDateDialog                  func(*State) bool
 	OpenSupportFeedbackRoadmapURL   func() tea.Cmd
@@ -339,6 +344,9 @@ func newRouter(deps Deps) *router {
 		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewAlerts {
 				return handleDeleteSelectedAlertReminder(s, deps)
+			}
+			if s.ActiveView == uistate.ViewSettings {
+				return handleDeleteSelectedTag(s, deps)
 			}
 			cmd, handled := deps.DeleteSelectionAction(&s)
 			return s, cmd, handled

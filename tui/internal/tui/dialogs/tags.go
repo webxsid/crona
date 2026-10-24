@@ -1,6 +1,7 @@
 package dialogs
 
 import (
+	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 )
@@ -50,6 +51,27 @@ func renderPaneFilter(theme Theme, state controllerpkg.State) string {
 		Rows: []FormRow{
 			fieldRow(0, Field(theme, "Filter", len("Filter"), bareInput(state.Inputs[0], full, "text  +tag  -tag"), true)),
 			staticRow("", theme.StyleDim.Render("Words match the text, +tag keeps a tag (any of several), -tag drops it. Empty clears.")),
+		},
+	})
+}
+
+// renderRenameTag draws the tag rename dialog and warns when the new name merges into another tag.
+func renderRenameTag(theme Theme, state controllerpkg.State) string {
+	inner := formInner(state.Width)
+	full, _ := formColumns(inner, len("Name"))
+	note := theme.StyleDim.Render("Every issue and habit tagged +" + state.ViewName + " follows the rename.")
+	to, _ := sharedtypes.NormalizeTagName(state.Inputs[0].Value())
+	switch {
+	case to != state.ViewName && sharedtypes.IsSystemTag(to):
+		note = theme.StyleError.Render("+" + to + " is a system tag. Tags can't be renamed or merged onto it.")
+	case controllerpkg.RenameTagMerges(state):
+		note = theme.StyleError.Render("+" + to + " exists. Saving merges +" + state.ViewName + " into it.")
+	}
+	return renderForm(theme, state, FormSpec{
+		Title: "Rename +" + state.ViewName, FocusCount: 1, Primary: "enter rename",
+		Rows: []FormRow{
+			fieldRow(0, Field(theme, "Name", len("Name"), bareInput(state.Inputs[0], full, "New name"), true)),
+			staticRow("", note),
 		},
 	})
 }

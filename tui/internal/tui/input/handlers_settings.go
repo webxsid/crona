@@ -5,6 +5,7 @@ import (
 	"time"
 
 	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
 	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
 	viewruntime "crona/tui/internal/tui/views/runtime"
@@ -27,6 +28,9 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 	row, ok := selectedSettingsRow(s)
 	if !ok {
 		return s, nil, true
+	}
+	if row.Tag != "" {
+		return handleCycleTagColor(s, deps, row.Tag, dir)
 	}
 	switch row.Label {
 	case "Manage History":
@@ -204,7 +208,18 @@ func handleActivateSelectedSetting(s State, deps Deps) (tea.Model, tea.Cmd, bool
 	if !ok {
 		return s, nil, true
 	}
+	if row.Tag != "" {
+		if tag, ok := findTag(s.Tags, row.Tag); ok && !tag.System && deps.OpenRenameTagDialog != nil {
+			deps.OpenRenameTagDialog(&s, row.Tag)
+		}
+		return s, nil, true
+	}
 	switch row.Label {
+	case "Remove Unused Tags":
+		if deps.RemoveUnusedTags == nil {
+			return s, nil, true
+		}
+		return s, deps.RemoveUnusedTags(), true
 	case "Custom Date Format":
 		if deps.OpenEditDateDisplayFormatDialog != nil {
 			deps.OpenEditDateDisplayFormatDialog(&s)
@@ -473,8 +488,8 @@ func selectedSettingsRow(s State) (settingsmeta.Row, bool) {
 	if s.Settings == nil {
 		return settingsmeta.Row{}, false
 	}
-	rows := settingsmeta.Rows(s.Settings)
-	indices := settingsmeta.FilteredIndices(s.FilterState(uistate.PaneSettings), s.Settings)
+	rows := settingsmeta.Rows(s.Settings, s.Tags...)
+	indices := settingsmeta.FilteredIndices(s.FilterState(uistate.PaneSettings), s.Settings, s.Tags...)
 	cursor := s.Cursor[uistate.PaneSettings]
 	if cursor < 0 || cursor >= len(indices) {
 		return settingsmeta.Row{}, false
@@ -618,4 +633,45 @@ func nextAlertUrgency(current sharedtypes.AlertUrgency, dir int) sharedtypes.Ale
 		sharedtypes.AlertUrgencyHigh,
 	}
 	return options[nextIndex(sharedtypes.NormalizeAlertUrgency(current), options, dir)]
+}
+
+func findTag(tags []api.Tag, name string) (api.Tag, bool) {
+	for _, tag := range tags {
+		if tag.Name == name {
+			return tag, true
+		}
+	}
+	return api.Tag{}, false
+}
+
+// handleCycleTagColor steps a tag through no color and the palette.
+func handleCycleTagColor(s State, deps Deps, name string, dir int) (tea.Model, tea.Cmd, bool) {
+	tag, ok := findTag(s.Tags, name)
+	if !ok || deps.SetTagColor == nil || dir == 0 {
+		return s, nil, true
+	}
+	options := append([]string{""}, sharedtypes.TagColors...)
+	current := ""
+	if tag.Color != nil {
+		current = *tag.Color
+	}
+	next := options[nextIndex(current, options, dir)]
+	var color *string
+	if next != "" {
+		color = &next
+	}
+	return s, deps.SetTagColor(name, color), true
+}
+
+func handleDeleteSelectedTag(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	row, ok := selectedSettingsRow(s)
+	if !ok || row.Tag == "" || deps.OpenConfirmDeleteTagDialog == nil {
+		return s, nil, false
+	}
+	tag, ok := findTag(s.Tags, row.Tag)
+	if !ok || tag.System {
+		return s, nil, true
+	}
+	deps.OpenConfirmDeleteTagDialog(&s, tag)
+	return s, nil, true
 }
