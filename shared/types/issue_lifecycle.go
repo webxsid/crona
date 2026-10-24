@@ -16,6 +16,7 @@ func NormalizeIssueStatus(status IssueStatus) IssueStatus {
 		IssueStatusInProgress,
 		IssueStatusBlocked,
 		IssueStatusInReview,
+		IssueStatusCarried,
 		IssueStatusDone,
 		IssueStatusAbandoned:
 		return status
@@ -32,6 +33,7 @@ func AllIssueStatuses() []IssueStatus {
 		IssueStatusInProgress,
 		IssueStatusBlocked,
 		IssueStatusInReview,
+		IssueStatusCarried,
 		IssueStatusDone,
 		IssueStatusAbandoned,
 	}
@@ -75,6 +77,17 @@ func AllowedIssueStatusTransitions(status IssueStatus) []IssueStatus {
 			IssueStatusDone,
 			IssueStatusAbandoned,
 		}
+	// Carried is set only by carry-over, never chosen, so nothing transitions into it.
+	case IssueStatusCarried:
+		return []IssueStatus{
+			IssueStatusPlanned,
+			IssueStatusReady,
+			IssueStatusInProgress,
+			IssueStatusBlocked,
+			IssueStatusInReview,
+			IssueStatusDone,
+			IssueStatusAbandoned,
+		}
 	case IssueStatusDone:
 		return []IssueStatus{IssueStatusPlanned}
 	case IssueStatusAbandoned:
@@ -97,7 +110,7 @@ func IsValidIssueTransition(from, to IssueStatus) bool {
 
 func CanStartFocus(status IssueStatus) bool {
 	switch NormalizeIssueStatus(status) {
-	case IssueStatusPlanned, IssueStatusReady, IssueStatusInProgress:
+	case IssueStatusPlanned, IssueStatusReady, IssueStatusInProgress, IssueStatusCarried:
 		return true
 	default:
 		return false
@@ -106,7 +119,7 @@ func CanStartFocus(status IssueStatus) bool {
 
 func AutoStatusOnFocusStart(status IssueStatus) IssueStatus {
 	switch NormalizeIssueStatus(status) {
-	case IssueStatusPlanned, IssueStatusReady:
+	case IssueStatusPlanned, IssueStatusReady, IssueStatusCarried:
 		return IssueStatusInProgress
 	default:
 		return NormalizeIssueStatus(status)
@@ -119,5 +132,21 @@ func AutoStatusOnTodoAssigned(status IssueStatus) IssueStatus {
 		return IssueStatusPlanned
 	default:
 		return NormalizeIssueStatus(status)
+	}
+}
+
+// CanCarryOver reports whether an issue in status is carried to the next day when it was
+// worked on: open work that is moving (planned, ready, in progress, in review, or already
+// carried). Backlog, blocked, and closed issues stay where they are.
+func CanCarryOver(status IssueStatus) bool {
+	switch NormalizeIssueStatus(status) {
+	case IssueStatusPlanned,
+		IssueStatusReady,
+		IssueStatusInProgress,
+		IssueStatusInReview,
+		IssueStatusCarried:
+		return true
+	default:
+		return false
 	}
 }

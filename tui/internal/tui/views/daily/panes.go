@@ -546,6 +546,7 @@ func renderIssueStatusBar(theme types.Theme, counts map[string]int, width int) s
 		{status: "blocked", color: theme.ColorRed},
 		{status: "in_progress", color: theme.ColorYellow},
 		{status: "in_review", color: theme.ColorMagenta},
+		{status: "carried", color: theme.ColorYellow},
 		{status: "ready", color: theme.ColorCyan},
 		{status: "planned", color: theme.ColorBlue},
 		{status: "backlog", color: theme.ColorSubtle},

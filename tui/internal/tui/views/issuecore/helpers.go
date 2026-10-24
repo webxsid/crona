@@ -82,6 +82,9 @@ func IssueStatusStyle(theme Theme, status string) *lipgloss.Style {
 	case "in_review":
 		s := lipgloss.NewStyle().Foreground(theme.ColorMagenta)
 		return &s
+	case "carried":
+		s := lipgloss.NewStyle().Foreground(theme.ColorYellow).Italic(true)
+		return &s
 	case "done":
 		s := lipgloss.NewStyle().Foreground(theme.ColorGreen)
 		return &s
@@ -335,7 +338,7 @@ func isClosedIssueStatus(status sharedtypes.IssueStatus) bool {
 
 func openIssueStatusRank(status sharedtypes.IssueStatus) int {
 	switch status {
-	case sharedtypes.IssueStatusInProgress:
+	case sharedtypes.IssueStatusInProgress, sharedtypes.IssueStatusCarried:
 		return 0
 	case sharedtypes.IssueStatusBlocked:
 		return 1

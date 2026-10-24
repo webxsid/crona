@@ -511,6 +511,14 @@ func MarkIssueTodoForDate(
 		return carried, err
 	}
 	nextStatus := sharedtypes.AutoStatusOnTodoAssigned(issue.Status)
+	if issue.Status == sharedtypes.IssueStatusCarried && previousDate != "" {
+		// A plain reschedule ends the carry; the issue takes back its status from before it.
+		if entry, err := c.DailyPlans.GetEntry(ctx, c.UserID, previousDate, issueID); err != nil {
+			return nil, err
+		} else if entry != nil {
+			nextStatus = *carriedRestoreStatus(issue, *entry)
+		}
+	}
 	updated, err := c.Issues.Update(ctx, issueID, c.UserID, now, struct {
 		Title           sharedtypes.Patch[string]
 		Description     sharedtypes.Patch[string]

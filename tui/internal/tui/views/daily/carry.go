@@ -2,6 +2,7 @@ package daily
 
 import (
 	"fmt"
+	"strings"
 
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -77,6 +78,9 @@ func carryLines(theme types.Theme, state types.ContentState, issueID int64, widt
 			text += fmt.Sprintf(" · %d carries in a row", entry.CarryCount)
 		}
 		lines = append(lines, label("Carried from")+theme.StyleNormal.Render(text))
+		if entry.CarriedIssueStatus != nil {
+			lines = append(lines, label("Before carry")+theme.StyleNormal.Render(strings.ReplaceAll(string(*entry.CarriedIssueStatus), "_", " ")))
+		}
 	}
 	if entry.Stalled && entry.Status != sharedtypes.DailyPlanEntryStatusCarried {
 		lines = append(lines, label("")+theme.StyleError.Render("stalled · consider splitting, re-estimating or abandoning it"))

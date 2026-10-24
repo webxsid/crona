@@ -17,6 +17,7 @@ const (
 	IssueStatusInProgress IssueStatus = "in_progress"
 	IssueStatusBlocked    IssueStatus = "blocked"
 	IssueStatusInReview   IssueStatus = "in_review"
+	IssueStatusCarried    IssueStatus = "carried"
 	IssueStatusDone       IssueStatus = "done"
 	IssueStatusAbandoned  IssueStatus = "abandoned"
 )
@@ -933,6 +934,7 @@ type DailyPlanEntry struct {
 	CarriedFromDate      *string                 `json:"carriedFromDate,omitempty"`
 	CarriedToDate        *string                 `json:"carriedToDate,omitempty"`
 	CarryCount           int                     `json:"carryCount"`
+	CarriedIssueStatus   *IssueStatus            `json:"carriedIssueStatus,omitempty"`
 	Stalled              bool                    `json:"stalled"`
 	WorkedSeconds        int                     `json:"workedSeconds"`
 	Penalty              *DailyPlanEntryPenalty  `json:"penalty,omitempty"`

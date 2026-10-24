@@ -85,6 +85,7 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "momentums", column: "target_kind"},
 		{table: "momentums", column: "match_mode"},
 		{table: "momentums", column: "contexts"},
+		{table: "daily_plan_entries", column: "carried_issue_status"},
 	} {
 		if err := ensureTextColumn(ctx, db, spec.table, spec.column); err != nil {
 			return err
