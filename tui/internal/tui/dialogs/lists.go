@@ -137,6 +137,9 @@ func titleWords(kind string) string {
 func renderDateGrid(theme Theme, state controllerpkg.State) string {
 	body := []string{theme.StyleHeader.Render(state.DateHeader), ""}
 	body = append(body, strings.Split(state.DateGrid, "\n")...)
+	if state.PenaltyHint != "" {
+		body = append(body, "", theme.StyleDim.Render(state.PenaltyHint))
+	}
 	hints := []string{"h/j/k/l move", ",/. month", "c clear"}
 	if state.Kind == "summary_calendar" {
 		hints = []string{"←/→/↑/↓ move", ",/. month", "g today"}

@@ -86,34 +86,36 @@ type State struct {
 	StreamIndex              int
 	Parent                   string
 	DateMonthValue           string
-	DateCursorValue          string
-	DueDateToday             string
-	DueDateRestWeekdays      []int
-	DueDateRestDates         []string
-	DueDateAwayDates         []string
-	RepoSelectorLabel        string
-	RepoOptionLabels         []string
-	StreamOptionLabels       []string
-	StreamSelectorLabel      string
-	ViewTitle                string
-	ViewName                 string
-	IssueEstimateMins        *int
-	IssueWorkedSeconds       int
-	ReminderID               string
-	ReminderKind             sharedtypes.AlertReminderKind
-	ViewMeta                 string
-	ViewBody                 string
-	ViewPath                 string
-	SupportBundlePath        string
-	DateTitle                string
-	DateHeader               string
-	DateMonth                string
-	DateGrid                 string
-	CalendarScores           map[string]api.FocusScoreRangeDay
-	ProtectionStep           int
-	ProtectionCursor         int
-	ProtectionStreaks        []sharedtypes.StreakKind
-	ProtectionWeekdays       []int
+	// PenaltyHint shows what rescheduling the issue would do to its delay penalty.
+	PenaltyHint         string
+	DateCursorValue     string
+	DueDateToday        string
+	DueDateRestWeekdays []int
+	DueDateRestDates    []string
+	DueDateAwayDates    []string
+	RepoSelectorLabel   string
+	RepoOptionLabels    []string
+	StreamOptionLabels  []string
+	StreamSelectorLabel string
+	ViewTitle           string
+	ViewName            string
+	IssueEstimateMins   *int
+	IssueWorkedSeconds  int
+	ReminderID          string
+	ReminderKind        sharedtypes.AlertReminderKind
+	ViewMeta            string
+	ViewBody            string
+	ViewPath            string
+	SupportBundlePath   string
+	DateTitle           string
+	DateHeader          string
+	DateMonth           string
+	DateGrid            string
+	CalendarScores      map[string]api.FocusScoreRangeDay
+	ProtectionStep      int
+	ProtectionCursor    int
+	ProtectionStreaks   []sharedtypes.StreakKind
+	ProtectionWeekdays  []int
 	// CadenceIdx is the cadence picker choice (see CadenceLabels); CadenceDays the custom
 	// weekdays (0 = Sunday) and CadenceCursor the day under the cursor, Monday first.
 	CadenceIdx                     int

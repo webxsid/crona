@@ -235,6 +235,12 @@ func BuildDailyReportData(
 				PlanMaxDelayedDays:       entry.MaxDelayedDays,
 				PlanFailScore:            entry.FailScore,
 			}
+			if entry.Penalty != nil {
+				reportIssue.PlanHighRisk = entry.Penalty.HighRisk && !entry.Penalty.Historical
+				if entry.Penalty.Contribution != nil {
+					reportIssue.PlanAccountabilityShare = entry.Penalty.Contribution.AccountabilityPct
+				}
+			}
 			issues = append(issues, sanitizeDailyReportIssue(reportIssue))
 			includedIssueIDs[entry.IssueID] = struct{}{}
 		}
@@ -411,6 +417,12 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 				"currentDelayedDays":   entry.CurrentDelayedDays,
 				"maxDelayedDays":       entry.MaxDelayedDays,
 				"failScore":            roundReportMetric(entry.FailScore),
+			}
+			if entry.Penalty != nil {
+				item["highRisk"] = entry.Penalty.HighRisk && !entry.Penalty.Historical
+				if entry.Penalty.Contribution != nil {
+					item["accountabilityShare"] = roundReportMetric(entry.Penalty.Contribution.AccountabilityPct * 100)
+				}
 			}
 			entries = append(entries, item)
 		}
@@ -840,6 +852,8 @@ func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
 		"planCurrentDelayedDays":   issue.PlanCurrentDelayedDays,
 		"planMaxDelayedDays":       issue.PlanMaxDelayedDays,
 		"planFailScore":            roundReportMetric(issue.PlanFailScore),
+		"planAccountabilityShare":  roundReportMetric(issue.PlanAccountabilityShare * 100),
+		"planHighRisk":             issue.PlanHighRisk,
 	}
 }
 
@@ -849,6 +863,8 @@ func sanitizeDailyReportIssue(issue sharedtypes.DailyReportIssue) sharedtypes.Da
 		issue.PlanCurrentDelayedDays = 0
 		issue.PlanMaxDelayedDays = 0
 		issue.PlanFailScore = 0
+		issue.PlanAccountabilityShare = 0
+		issue.PlanHighRisk = false
 		issue.PlanPendingFailureAt = nil
 		issue.PlanPendingFailureReason = nil
 	}
