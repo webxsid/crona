@@ -19,6 +19,7 @@ type Theme struct {
 	ColorRed       lipgloss.Color
 	ColorDullRed   lipgloss.Color
 	ColorOrange    lipgloss.Color
+	ColorLavender  lipgloss.Color
 	ColorDim       lipgloss.Color
 	ColorWhite     lipgloss.Color
 

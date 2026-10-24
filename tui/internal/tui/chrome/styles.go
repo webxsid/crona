@@ -15,6 +15,7 @@ var (
 	ColorRed       = lipgloss.Color("9")
 	ColorDullRed   = lipgloss.Color("1")   // A duller red for less emphasis
 	ColorOrange    = lipgloss.Color("208") // A bright orange for warnings or highlights
+	ColorLavender  = lipgloss.Color("141") // Carried-over issues
 	ColorDim       = lipgloss.Color("8")
 	ColorWhite     = lipgloss.Color("15")
 	ColorBlack     = lipgloss.Color("0")
