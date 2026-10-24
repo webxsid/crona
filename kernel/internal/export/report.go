@@ -234,6 +234,10 @@ func BuildDailyReportData(
 				PlanCurrentDelayedDays:   entry.CurrentDelayedDays,
 				PlanMaxDelayedDays:       entry.MaxDelayedDays,
 				PlanFailScore:            entry.FailScore,
+				PlanCarriedFromDate:      entry.CarriedFromDate,
+				PlanCarriedToDate:        entry.CarriedToDate,
+				PlanCarryCount:           entry.CarryCount,
+				PlanStalled:              entry.Stalled,
 			}
 			if entry.Penalty != nil {
 				reportIssue.PlanHighRisk = entry.Penalty.HighRisk && !entry.Penalty.Historical
@@ -417,6 +421,11 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 				"currentDelayedDays":   entry.CurrentDelayedDays,
 				"maxDelayedDays":       entry.MaxDelayedDays,
 				"failScore":            roundReportMetric(entry.FailScore),
+				"carriedFromDate":      entry.CarriedFromDate,
+				"carriedToDate":        entry.CarriedToDate,
+				"carryCount":           entry.CarryCount,
+				"stalled":              entry.Stalled,
+				"workedSeconds":        entry.WorkedSeconds,
 			}
 			if entry.Penalty != nil {
 				item["highRisk"] = entry.Penalty.HighRisk && !entry.Penalty.Historical
@@ -436,6 +445,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 				"completedCount":       data.Plan.Summary.CompletedCount,
 				"failedCount":          data.Plan.Summary.FailedCount,
 				"abandonedCount":       data.Plan.Summary.AbandonedCount,
+				"carriedCount":         data.Plan.Summary.CarriedCount,
 				"pendingRollbackCount": data.Plan.Summary.PendingRollbackCount,
 				"accountabilityScore":  roundReportMetric(data.Plan.Summary.AccountabilityScore),
 				"backlogPressure":      roundReportMetric(data.Plan.Summary.BacklogPressure),
@@ -538,6 +548,7 @@ func buildSummaryMap(data *sharedtypes.DailyReportData) map[string]any {
 		summary["planCompletedCount"] = data.Plan.Summary.CompletedCount
 		summary["planFailedCount"] = data.Plan.Summary.FailedCount
 		summary["planAbandonedCount"] = data.Plan.Summary.AbandonedCount
+		summary["planCarriedCount"] = data.Plan.Summary.CarriedCount
 		summary["planPendingRollbackCount"] = data.Plan.Summary.PendingRollbackCount
 		summary["accountabilityScore"] = roundReportMetric(data.Plan.Summary.AccountabilityScore)
 		summary["backlogPressure"] = roundReportMetric(data.Plan.Summary.BacklogPressure)
@@ -856,6 +867,10 @@ func mapIssueTemplateItem(issue sharedtypes.DailyReportIssue) map[string]any {
 		"planFailScore":            roundReportMetric(issue.PlanFailScore),
 		"planAccountabilityShare":  roundReportMetric(issue.PlanAccountabilityShare * 100),
 		"planHighRisk":             issue.PlanHighRisk,
+		"planCarriedFromDate":      issue.PlanCarriedFromDate,
+		"planCarriedToDate":        issue.PlanCarriedToDate,
+		"planCarryCount":           issue.PlanCarryCount,
+		"planStalled":              issue.PlanStalled,
 	}
 }
 

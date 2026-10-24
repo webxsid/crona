@@ -425,6 +425,10 @@ Nested issue groups for the default template:
       - {{planFailScore}}
       - {{planAccountabilityShare}}
       - {{planHighRisk}}
+      - {{planCarriedFromDate}}
+      - {{planCarriedToDate}}
+      - {{planCarryCount}}
+      - {{planStalled}}
 
 Nested habit groups for the default template:
 - {{#each habitRepos}} ... {{/each}}

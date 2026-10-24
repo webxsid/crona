@@ -6,6 +6,7 @@ import (
 
 	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
+	"crona/kernel/internal/export"
 	sharedtypes "crona/shared/types"
 )
 
@@ -231,4 +232,30 @@ func TestRescheduleUntouchedIssueStaysAPostponement(t *testing.T) {
 	if entry.Status == sharedtypes.DailyPlanEntryStatusCarried || entry.PendingFailureAt == nil {
 		t.Fatalf("expected an untouched reschedule to stay a pending move, got %+v", entry)
 	}
+}
+
+func TestDailyReportIncludesCarriedIssue(t *testing.T) {
+	ctx, coreCtx, now, issue := newCarryFixture(t)
+	logWork(t, ctx, coreCtx, issue.ID, "2026-03-24", 20)
+	*now = "2026-03-25T12:00:00Z"
+	if err := corecommands.CarryOverPastDays(ctx, coreCtx); err != nil {
+		t.Fatalf("carry over: %v", err)
+	}
+	data, err := export.BuildDailyReportData(ctx, coreCtx, "2026-03-24")
+	if err != nil {
+		t.Fatalf("build report: %v", err)
+	}
+	if data.Plan == nil || data.Plan.Summary.CarriedCount != 1 {
+		t.Fatalf("expected a carried count in the report plan, got %+v", data.Plan)
+	}
+	for _, reportIssue := range data.Issues {
+		if reportIssue.ID == issue.ID {
+			if reportIssue.PlanStatus != sharedtypes.DailyPlanEntryStatusCarried || reportIssue.PlanCarriedToDate == nil ||
+				*reportIssue.PlanCarriedToDate != "2026-03-25" || reportIssue.WorkedSeconds != 1200 {
+				t.Fatalf("expected carried issue details in the report, got %+v", reportIssue)
+			}
+			return
+		}
+	}
+	t.Fatalf("expected the carried issue in the day's report, got %+v", data.Issues)
 }

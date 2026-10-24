@@ -279,7 +279,7 @@ func renderDaySignals(opts renderOptions, width int, data daySummaryData) []stri
 		lines = append(lines,
 			fmt.Sprintf("%.0f%% score  ·  pressure %.1f", s.AccountabilityScore, s.BacklogPressure),
 			progressBar(opts, s.CompletedCount, s.FailedCount+s.AbandonedCount, max(1, s.PlannedCount), max(10, width-4), ansiGreen),
-			paint(opts, ansiDim, fmt.Sprintf("done %d  pending %d  failed %d  abandoned %d", s.CompletedCount, s.PendingRollbackCount, s.FailedCount, s.AbandonedCount)),
+			paint(opts, ansiDim, fmt.Sprintf("done %d  carried %d  pending %d  failed %d  abandoned %d", s.CompletedCount, s.CarriedCount, s.PendingRollbackCount, s.FailedCount, s.AbandonedCount)),
 		)
 		lines = append(lines, renderTopPenalties(opts, width, penaltyRows(data))...)
 	}
