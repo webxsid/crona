@@ -48,6 +48,8 @@ const (
 	MethodIssueStatusTransitions = "issue.status_transitions"
 	MethodIssueSetTodo           = "issue.set_todo"
 	MethodIssueClearTodo         = "issue.clear_todo"
+	MethodIssueCarry             = "issue.carry"
+	MethodIssueCarryUndo         = "issue.carry.undo"
 	MethodIssueDailySummary      = "issue.daily_summary"
 	MethodIssueTodaySummary      = "issue.today_summary"
 	MethodDailyPlanGet           = "daily_plan.get"

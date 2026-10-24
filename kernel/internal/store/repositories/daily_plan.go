@@ -329,6 +329,9 @@ func (r *DailyPlanRepository) ListPendingFailuresBefore(
 		CurrentPlannedDate   string  `bun:"current_planned_date"`
 		PostponeCount        int     `bun:"postpone_count"`
 		MaxDelayedDays       int     `bun:"max_delayed_days"`
+		CarriedFromEntryID   *string `bun:"carried_from_entry_id"`
+		CarriedToEntryID     *string `bun:"carried_to_entry_id"`
+		CarryCount           int     `bun:"carry_count"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -349,6 +352,9 @@ func (r *DailyPlanRepository) ListPendingFailuresBefore(
 		ColumnExpr("COALESCE(NULLIF(e.current_planned_date, ''), p.date) AS current_planned_date").
 		ColumnExpr("COALESCE(e.postpone_count, 0) AS postpone_count").
 		ColumnExpr("COALESCE(e.max_delayed_days, 0) AS max_delayed_days").
+		ColumnExpr("e.carried_from_entry_id").
+		ColumnExpr("e.carried_to_entry_id").
+		ColumnExpr("COALESCE(e.carry_count, 0) AS carry_count").
 		Where("p.user_id = ?", userID).
 		Where("e.pending_failure_at IS NOT NULL").
 		Where("e.pending_failure_at <= ?", cutoff).
@@ -361,7 +367,7 @@ func (r *DailyPlanRepository) ListPendingFailuresBefore(
 	for _, row := range rows {
 		out = append(
 			out,
-			mapDailyPlanEntryRow(
+			withCarry(mapDailyPlanEntryRow(
 				row.ID,
 				row.Date,
 				row.IssuePublicID,
@@ -376,7 +382,7 @@ func (r *DailyPlanRepository) ListPendingFailuresBefore(
 				row.CurrentPlannedDate,
 				row.PostponeCount,
 				row.MaxDelayedDays,
-			),
+			), row.CarriedFromEntryID, row.CarriedToEntryID, row.CarryCount),
 		)
 	}
 	return out, nil
@@ -448,6 +454,9 @@ func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(
 		CurrentPlannedDate   string  `bun:"current_planned_date"`
 		PostponeCount        int     `bun:"postpone_count"`
 		MaxDelayedDays       int     `bun:"max_delayed_days"`
+		CarriedFromEntryID   *string `bun:"carried_from_entry_id"`
+		CarriedToEntryID     *string `bun:"carried_to_entry_id"`
+		CarryCount           int     `bun:"carry_count"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -469,6 +478,9 @@ func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(
 		ColumnExpr("COALESCE(NULLIF(e.current_planned_date, ''), p.date) AS current_planned_date").
 		ColumnExpr("COALESCE(e.postpone_count, 0) AS postpone_count").
 		ColumnExpr("COALESCE(e.max_delayed_days, 0) AS max_delayed_days").
+		ColumnExpr("e.carried_from_entry_id").
+		ColumnExpr("e.carried_to_entry_id").
+		ColumnExpr("COALESCE(e.carry_count, 0) AS carry_count").
 		Where("e.plan_id IN (?)", bun.In(planIDs)).
 		OrderExpr("p.date ASC, e.committed_at ASC").
 		Scan(ctx, &rows); err != nil {
@@ -480,7 +492,7 @@ func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(
 	}
 	grouped := make(map[string][]sharedtypes.DailyPlanEntry, len(planIDs))
 	for _, row := range rows {
-		entry := mapDailyPlanEntryRow(
+		entry := withCarry(mapDailyPlanEntryRow(
 			row.ID,
 			row.Date,
 			row.IssuePublicID,
@@ -495,7 +507,7 @@ func (r *DailyPlanRepository) listEntriesGroupedByPlanIDs(
 			row.CurrentPlannedDate,
 			row.PostponeCount,
 			row.MaxDelayedDays,
-		)
+		), row.CarriedFromEntryID, row.CarriedToEntryID, row.CarryCount)
 		entry.Events = events[row.ID]
 		grouped[row.PlanID] = append(grouped[row.PlanID], entry)
 	}
@@ -567,6 +579,9 @@ func (r *DailyPlanRepository) ListActiveEntries(
 		CurrentPlannedDate   string  `bun:"current_planned_date"`
 		PostponeCount        int     `bun:"postpone_count"`
 		MaxDelayedDays       int     `bun:"max_delayed_days"`
+		CarriedFromEntryID   *string `bun:"carried_from_entry_id"`
+		CarriedToEntryID     *string `bun:"carried_to_entry_id"`
+		CarryCount           int     `bun:"carry_count"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -587,6 +602,9 @@ func (r *DailyPlanRepository) ListActiveEntries(
 		ColumnExpr("COALESCE(NULLIF(e.current_planned_date, ''), p.date) AS current_planned_date").
 		ColumnExpr("COALESCE(e.postpone_count, 0) AS postpone_count").
 		ColumnExpr("COALESCE(e.max_delayed_days, 0) AS max_delayed_days").
+		ColumnExpr("e.carried_from_entry_id").
+		ColumnExpr("e.carried_to_entry_id").
+		ColumnExpr("COALESCE(e.carry_count, 0) AS carry_count").
 		Where("p.user_id = ?", userID).
 		Where("e.status = ?", string(sharedtypes.DailyPlanEntryStatusPlanned)).
 		Where("issues.todo_for_date = p.date").
@@ -599,7 +617,7 @@ func (r *DailyPlanRepository) ListActiveEntries(
 	for _, row := range rows {
 		out = append(
 			out,
-			mapDailyPlanEntryRow(
+			withCarry(mapDailyPlanEntryRow(
 				row.ID,
 				row.Date,
 				row.IssuePublicID,
@@ -614,10 +632,22 @@ func (r *DailyPlanRepository) ListActiveEntries(
 				row.CurrentPlannedDate,
 				row.PostponeCount,
 				row.MaxDelayedDays,
-			),
+			), row.CarriedFromEntryID, row.CarriedToEntryID, row.CarryCount),
 		)
 	}
 	return out, nil
+}
+
+// withCarry adds an entry's carry-over chain links.
+func withCarry(entry sharedtypes.DailyPlanEntry, from, to *string, count int) sharedtypes.DailyPlanEntry {
+	if from != nil && *from != "" {
+		entry.CarriedFromEntryID = from
+	}
+	if to != nil && *to != "" {
+		entry.CarriedToEntryID = to
+	}
+	entry.CarryCount = count
+	return entry
 }
 
 func mapDailyPlanEntryRow(
@@ -656,4 +686,81 @@ func mapDailyPlanEntryRow(
 		PostponeCount:        postponeCount,
 		MaxDelayedDays:       maxDelayedDays,
 	}
+}
+
+// SetCarryLinks records an entry's place in a carry-over chain.
+func (r *DailyPlanRepository) SetCarryLinks(
+	ctx context.Context,
+	entryID, now string,
+	carriedFromEntryID, carriedToEntryID *string,
+	carryCount int,
+) error {
+	_, err := r.db.NewUpdate().
+		Model((*storemodels.DailyPlanEntryModel)(nil)).
+		Where("id = ?", entryID).
+		Set("carried_from_entry_id = ?", carriedFromEntryID).
+		Set("carried_to_entry_id = ?", carriedToEntryID).
+		Set("carry_count = ?", carryCount).
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
+// ReopenEntry puts a resolved entry back to planned, clearing its resolution.
+func (r *DailyPlanRepository) ReopenEntry(ctx context.Context, entryID, now string) error {
+	_, err := r.db.NewUpdate().
+		Model((*storemodels.DailyPlanEntryModel)(nil)).
+		Where("id = ?", entryID).
+		Set("status = ?", string(sharedtypes.DailyPlanEntryStatusPlanned)).
+		Set("failure_reason = NULL").
+		Set("pending_failure_reason = NULL").
+		Set("pending_failure_at = NULL").
+		Set("resolved_at = NULL").
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	return err
+}
+
+// DeleteEntry removes an entry and its events. Only undoing a carry-over uses it, for the
+// entry the carry created.
+func (r *DailyPlanRepository) DeleteEntry(ctx context.Context, entryID string) error {
+	if _, err := r.db.NewDelete().
+		Model((*storemodels.DailyPlanEventModel)(nil)).
+		Where("plan_entry_id = ?", entryID).
+		Exec(ctx); err != nil {
+		return err
+	}
+	_, err := r.db.NewDelete().
+		Model((*storemodels.DailyPlanEntryModel)(nil)).
+		Where("id = ?", entryID).
+		Exec(ctx)
+	return err
+}
+
+// GetEntryByID loads an entry by its id, for following carry-over chain links.
+func (r *DailyPlanRepository) GetEntryByID(
+	ctx context.Context,
+	userID, entryID string,
+) (*sharedtypes.DailyPlanEntry, error) {
+	var ref struct {
+		Date          string `bun:"date"`
+		IssuePublicID int64  `bun:"issue_public_id"`
+	}
+	err := r.db.NewSelect().
+		TableExpr("daily_plan_entries AS e").
+		Join("INNER JOIN daily_plans AS p ON p.id = e.plan_id").
+		Join("INNER JOIN issues ON issues.id = e.issue_id").
+		ColumnExpr("p.date").
+		ColumnExpr("issues.public_id AS issue_public_id").
+		Where("e.id = ?", entryID).
+		Where("p.user_id = ?", userID).
+		Limit(1).
+		Scan(ctx, &ref)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return r.GetEntry(ctx, userID, ref.Date, ref.IssuePublicID)
 }

@@ -167,6 +167,18 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "plan_high_risk_threshold_tenths",
 		queryKind: coreSettingQueryInt,
 	},
+	sharedtypes.CoreSettingsKeyCarryOverEnabled: {
+		column:    "carry_over_enabled",
+		queryKind: coreSettingQueryBool,
+	},
+	sharedtypes.CoreSettingsKeyCarryOverMinMinutes: {
+		column:    "carry_over_min_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyCarryOverStallAfter: {
+		column:    "carry_over_stall_after",
+		queryKind: coreSettingQueryInt,
+	},
 	sharedtypes.CoreSettingsKeyDateDisplayPreset: {
 		column:    "date_display_preset",
 		queryKind: coreSettingQueryString,
@@ -519,6 +531,9 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		RestSpecificDates:     mustJSON(sharedconstants.DefaultCoreSettings["restSpecificDates"]),
 		DailyPlanRollbackMins: sharedconstants.DefaultCoreSettings["dailyPlanRollbackMinutes"].(int),
 		PlanHighRiskTenths:    sharedconstants.DefaultCoreSettings["planHighRiskThresholdTenths"].(int),
+		CarryOverEnabled:      sharedconstants.DefaultCoreSettings["carryOverEnabled"].(bool),
+		CarryOverMinMinutes:   sharedconstants.DefaultCoreSettings["carryOverMinMinutes"].(int),
+		CarryOverStallAfter:   sharedconstants.DefaultCoreSettings["carryOverStallAfter"].(int),
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
@@ -582,6 +597,10 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return clampRollbackMinutes(value)
 	case sharedtypes.CoreSettingsKeyPlanHighRiskTenths:
 		return clampPlanHighRiskTenths(value)
+	case sharedtypes.CoreSettingsKeyCarryOverMinMinutes:
+		return clampCarryOverMinMinutes(value)
+	case sharedtypes.CoreSettingsKeyCarryOverStallAfter:
+		return clampCarryOverStallAfter(value)
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value)
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -642,6 +661,10 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return clampRollbackMinutes(value), nil
 	case sharedtypes.CoreSettingsKeyPlanHighRiskTenths:
 		return clampPlanHighRiskTenths(value), nil
+	case sharedtypes.CoreSettingsKeyCarryOverMinMinutes:
+		return clampCarryOverMinMinutes(value), nil
+	case sharedtypes.CoreSettingsKeyCarryOverStallAfter:
+		return clampCarryOverStallAfter(value), nil
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value), nil
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -747,6 +770,9 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		RestSpecificDates:     parseStringSlice(row.RestSpecificDates),
 		DailyPlanRollbackMins: row.DailyPlanRollbackMins,
 		PlanHighRiskTenths:    clampPlanHighRiskTenths(row.PlanHighRiskTenths),
+		CarryOverEnabled:      row.CarryOverEnabled,
+		CarryOverMinMinutes:   clampCarryOverMinMinutes(row.CarryOverMinMinutes),
+		CarryOverStallAfter:   clampCarryOverStallAfter(row.CarryOverStallAfter),
 		DateDisplayPreset: sharedtypes.NormalizeDateDisplayPreset(
 			sharedtypes.DateDisplayPreset(row.DateDisplayPreset),
 		),
@@ -837,6 +863,31 @@ func clampInactivityMinutes(value any) int {
 		return 720
 	}
 	return minutes
+}
+
+func settingInt(value any, fallback int) int {
+	switch typed := value.(type) {
+	case int:
+		return typed
+	case float64:
+		return int(typed)
+	}
+	return fallback
+}
+
+// clampCarryOverMinMinutes keeps the carry-over threshold within 0–240 minutes; 0 means any session.
+func clampCarryOverMinMinutes(value any) int {
+	minutes := settingInt(value, sharedtypes.DefaultCarryOverMinMinutes)
+	return min(max(minutes, 0), sharedtypes.MaxCarryOverMinMinutes)
+}
+
+// clampCarryOverStallAfter keeps the stall limit within 1–30 carries.
+func clampCarryOverStallAfter(value any) int {
+	carries := settingInt(value, sharedtypes.DefaultCarryOverStallAfter)
+	if carries <= 0 {
+		return sharedtypes.DefaultCarryOverStallAfter
+	}
+	return min(max(carries, sharedtypes.MinCarryOverStallAfter), sharedtypes.MaxCarryOverStallAfter)
 }
 
 // clampPlanHighRiskTenths keeps the high-risk threshold within 0.5–10.0.

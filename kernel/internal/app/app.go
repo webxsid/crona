@@ -175,6 +175,9 @@ func Run(ctx context.Context) (runErr error) {
 	)
 	scheduler.SetDateRecorder(
 		func(ctx context.Context, date string, settings *sharedtypes.CoreSettings) error {
+			if err := corecommands.CarryOverPastDays(ctx, commandCtx); err != nil {
+				logger.Error("carry over unfinished issues", err)
+			}
 			if settings == nil || date == "" ||
 				(!settings.AwayModeEnabled && !settings.IsConfiguredRestDate(date)) {
 				return nil
@@ -196,6 +199,9 @@ func Run(ctx context.Context) (runErr error) {
 	commandCtx.CurrentDate = scheduler.CurrentDate
 	if err := scheduler.Initialize(runCtx); err != nil {
 		return fmt.Errorf("initialize day-boundary scheduler: %w", err)
+	}
+	if err := corecommands.CarryOverPastDays(runCtx, commandCtx); err != nil {
+		logger.Error("carry over unfinished issues", err)
 	}
 	logger.Go("day-boundary scheduler", func() {
 		if err := scheduler.Run(runCtx); err != nil && runCtx.Err() == nil {
