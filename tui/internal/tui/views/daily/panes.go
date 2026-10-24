@@ -156,6 +156,9 @@ func renderCompactDailyIssueList(
 		if marker := PenaltyMarkerText(state, issue.ID); marker != "" {
 			title += "  " + marker
 		}
+		if marker := CarryMarkerText(state, issue.ID); marker != "" {
+			title += "  " + marker
+		}
 		lines = append(
 			lines,
 			renderCompactDailyIssueTitle(

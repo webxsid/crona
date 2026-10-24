@@ -21,29 +21,31 @@ type Snapshot struct {
 	DailyTaskSection    uistate.DailyTaskSection
 	PreferActiveIssue   bool
 	DashboardDate       string
-	Cursors             map[uistate.Pane]int
-	Filters             map[uistate.Pane]string
-	Context             *api.ActiveContext
-	Timer               *api.TimerState
-	ActiveIssue         *api.IssueWithMeta
-	Repos               []api.Repo
-	Streams             []api.Stream
-	Issues              []api.Issue
-	Habits              []api.Habit
-	AllHabits           []api.HabitWithMeta
-	AllStreams          []api.Stream
-	BrowseScope         scope.Scope
-	MomentumCards       []api.MomentumCard
-	AllIssues           []api.IssueWithMeta
-	DueHabits           []api.HabitDailyItem
-	ExportReports       []api.ExportReportFile
-	SessionHistory      []api.SessionHistoryEntry
-	HabitHistory        []api.HabitCompletion
-	Ops                 []api.Op
-	Settings            *api.CoreSettings
-	AlertStatus         *api.AlertStatus
-	AlertReminders      []api.AlertReminder
-	ConfigItems         []configitems.Item
+	// DailyPlan is the shown day's plan; Daily's Planned tab keeps issues carried away from it.
+	DailyPlan      *api.DailyPlan
+	Cursors        map[uistate.Pane]int
+	Filters        map[uistate.Pane]string
+	Context        *api.ActiveContext
+	Timer          *api.TimerState
+	ActiveIssue    *api.IssueWithMeta
+	Repos          []api.Repo
+	Streams        []api.Stream
+	Issues         []api.Issue
+	Habits         []api.Habit
+	AllHabits      []api.HabitWithMeta
+	AllStreams     []api.Stream
+	BrowseScope    scope.Scope
+	MomentumCards  []api.MomentumCard
+	AllIssues      []api.IssueWithMeta
+	DueHabits      []api.HabitDailyItem
+	ExportReports  []api.ExportReportFile
+	SessionHistory []api.SessionHistoryEntry
+	HabitHistory   []api.HabitCompletion
+	Ops            []api.Op
+	Settings       *api.CoreSettings
+	AlertStatus    *api.AlertStatus
+	AlertReminders []api.AlertReminder
+	ConfigItems    []configitems.Item
 
 	issueMetaIndex         map[int64]int
 	repoNameIndex          map[int64]string

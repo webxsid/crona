@@ -198,3 +198,37 @@ func TestCarryOverStallFeedsAccountability(t *testing.T) {
 		t.Fatalf("expected stall to feed accountability only, got %+v", plan.Summary)
 	}
 }
+
+func TestRescheduleCarriesWorkedIssueAndMovingBackUndoes(t *testing.T) {
+	ctx, coreCtx, now, issue := newCarryFixture(t)
+	logWork(t, ctx, coreCtx, issue.ID, "2026-03-24", 10)
+	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-26"); err != nil {
+		t.Fatalf("reschedule: %v", err)
+	}
+	entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID)
+	if entry.Status != sharedtypes.DailyPlanEntryStatusCarried || entry.PendingFailureAt != nil {
+		t.Fatalf("expected rescheduling a worked issue to carry it, got %+v", entry)
+	}
+	if next := mustPlanEntry(t, ctx, coreCtx, "2026-03-26", issue.ID); next.CarryCount != 1 {
+		t.Fatalf("expected carried entry on the chosen day, got %+v", next)
+	}
+
+	*now = "2026-03-24T12:01:00Z"
+	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-24"); err != nil {
+		t.Fatalf("move back: %v", err)
+	}
+	if entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID); entry.Status != sharedtypes.DailyPlanEntryStatusPlanned {
+		t.Fatalf("expected moving back to undo the carry, got %+v", entry)
+	}
+}
+
+func TestRescheduleUntouchedIssueStaysAPostponement(t *testing.T) {
+	ctx, coreCtx, _, issue := newCarryFixture(t)
+	if _, err := corecommands.MarkIssueTodoForDate(ctx, coreCtx, issue.ID, "2026-03-26"); err != nil {
+		t.Fatalf("reschedule: %v", err)
+	}
+	entry := mustPlanEntry(t, ctx, coreCtx, "2026-03-24", issue.ID)
+	if entry.Status == sharedtypes.DailyPlanEntryStatusCarried || entry.PendingFailureAt == nil {
+		t.Fatalf("expected an untouched reschedule to stay a pending move, got %+v", entry)
+	}
+}

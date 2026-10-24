@@ -239,6 +239,10 @@ func (m Model) dialogRenderState() dialogstate.State {
 		)
 		if state.Parent == "" {
 			state.PenaltyHint = dailyviews.RescheduleHint(m.dailyPlan, state.IssueID)
+			if dailyviews.RescheduleCarries(m.dailyPlan, state.IssueID, m.currentLogicalDate(), m.settings) {
+				state.DateTitle = "Carry Over To"
+				state.PenaltyHint = "Worked on today, so this carries it over instead of postponing it."
+			}
 		}
 	}
 	if m.dialog == "summary_calendar" {

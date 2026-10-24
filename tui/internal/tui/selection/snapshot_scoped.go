@@ -1,6 +1,7 @@
 package selection
 
 import (
+	sharedtypes "crona/shared/types"
 	"fmt"
 	"sort"
 	"strings"
@@ -129,8 +130,29 @@ func buildDailyScopedIssues(s Snapshot) []api.Issue {
 				out = append(out, issue)
 			}
 		}
+		// Issues carried away from the shown day still belong to it: it holds their worked copy.
+		carried := dailyCarriedIssueIDs(s.DailyPlan, anchorDate)
+		for _, issue := range issues {
+			if carried[issue.ID] && !dailyIssuePinned(issue) && !dailyIssueToday(issue, anchorDate) {
+				out = append(out, issue)
+			}
+		}
 	}
 	return out
+}
+
+// dailyCarriedIssueIDs are the issues the plan for date carried over to a later day.
+func dailyCarriedIssueIDs(plan *api.DailyPlan, date string) map[int64]bool {
+	if plan == nil || plan.Date != date {
+		return nil
+	}
+	ids := map[int64]bool{}
+	for _, entry := range plan.Entries {
+		if entry.Status == sharedtypes.DailyPlanEntryStatusCarried {
+			ids[entry.IssueID] = true
+		}
+	}
+	return ids
 }
 
 // dailyUpcomingDays is how far ahead the Upcoming tab looks from the shown date.

@@ -149,6 +149,30 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.Date,
 		), true
+	case "Carry Over":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyCarryOverEnabled,
+			!s.Settings.CarryOverEnabled,
+			repoID,
+			streamID,
+			s.Date,
+		), true
+	case "Carry Threshold":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyCarryOverMinMinutes,
+			min(max(s.Settings.CarryOverMinMinutes+5*dir, 0), sharedtypes.MaxCarryOverMinMinutes),
+			repoID,
+			streamID,
+			s.Date,
+		), true
+	case "Stall After":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyCarryOverStallAfter,
+			min(max(s.Settings.CarryOverStallAfter+dir, sharedtypes.MinCarryOverStallAfter), sharedtypes.MaxCarryOverStallAfter),
+			repoID,
+			streamID,
+			s.Date,
+		), true
 	case "High-Risk Threshold":
 		tenths := int(math.Round(s.Settings.PlanHighRiskThreshold()*10)) + dir
 		return s, deps.PatchSetting(
