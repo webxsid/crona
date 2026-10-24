@@ -26,20 +26,46 @@ func newView() viewui.View {
 	}
 }
 
-// renderView lists the tag vocabulary with usage beside the selected tag's detail.
+// labelWidth caps the tag-name column; names are at most 32 characters plus the +.
+const labelWidth = 34
+
+// paneWidths keeps the list just wide enough for its columns and gives the rest to the detail.
+func paneWidths(width int) (list, detail int) {
+	if width < 100 {
+		return width, 0
+	}
+	list = min(72, max(64, width*2/5))
+	return list, width - list - 3
+}
+
+// renderView lists the tag vocabulary with its usage beside the selected tag's issues and habits.
 func renderView(theme types.Theme, state types.ContentState) string {
+	listWidth, detailWidth := paneWidths(state.Width)
+	list := renderList(theme, state, listWidth)
+	if detailWidth == 0 {
+		return list
+	}
+	return viewchrome.JoinColumns(theme, state.Height, list, renderDetail(theme, state, detailWidth))
+}
+
+func renderList(theme types.Theme, state types.ContentState, width int) string {
 	filter := state.Filters["tags"]
 	indices := tagsmeta.FilteredIndices(state.Tags, filter)
 	cursor := min(max(0, state.Cursors["tags"]), max(0, len(indices)-1))
-	listWidth, detailWidth := viewchrome.LogPaneWidths(state.Width)
-
-	var body []string
+	hints := viewchrome.FitHints([]string{
+		viewchrome.KeyHint(theme, "enter", "items"),
+		viewchrome.KeyHint(theme, "r", "rename"),
+		viewchrome.KeyHint(theme, "←/→", "color"),
+		viewchrome.KeyHint(theme, "D", "delete"),
+		viewchrome.KeyHint(theme, "U", "unused"),
+	}, width-2)
+	body := []string{hints}
 	if len(indices) == 0 {
 		empty := "No tags yet. Press + on an issue or habit to add one."
 		if filter != "" {
 			empty = "No tags match the current filter"
 		}
-		body = []string{theme.StyleDim.Render(empty)}
+		body = append(body, theme.StyleDim.Render(empty))
 	} else {
 		labels := make([]string, 0, len(indices))
 		for _, idx := range indices {
@@ -53,50 +79,85 @@ func renderView(theme types.Theme, state types.ContentState) string {
 			if tag.System {
 				group = "System"
 			}
-			chip := issuecore.TagChip(theme, tag.Name, state.Tags)
+			open, closed := tagsmeta.OpenDone(tag.Name, state.AllIssues)
 			pad := max(0, column-ansi.StringWidth("+"+tag.Name))
 			rows = append(rows, viewchrome.GroupRow{
 				Group: group,
-				Line:  chip + strings.Repeat(" ", pad) + "  " + tagsmeta.Usage(tag),
+				Line: issuecore.TagChip(theme, tag.Name, state.Tags) + strings.Repeat(" ", pad) +
+					fmt.Sprintf("  %3d open  %3d done  %3d habits", open, closed, tag.HabitCount),
 			})
 		}
-		body = viewchrome.GroupList(theme, rows, cursor, listWidth-1, state.Height-1)
+		body = append(body, viewchrome.GroupList(theme, rows, cursor, width-1, state.Height-4)...)
 	}
+	issues, habits := tagsmeta.Untagged(state.AllIssues, state.AllHabits)
+	for len(body) < state.Height-2 {
+		body = append(body, "")
+	}
+	body = append(body, theme.StyleDim.Render(ansi.Truncate(
+		fmt.Sprintf("Untagged: %d open issues, %d active habits", issues, habits), width-2, "…")))
 	meta := fmt.Sprint(len(indices))
 	if unused := tagsmeta.Unused(state.Tags); unused > 0 {
 		meta += fmt.Sprintf("  %d unused", unused)
 	}
-	list := viewchrome.RenderSection(theme, viewchrome.Section{
+	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title: "Tags", Meta: viewhelpers.FilterMeta(meta, filter), Focused: true,
-		Width: listWidth, Height: state.Height, Lines: body,
+		Width: width, Height: state.Height, Lines: body,
 	})
-	if detailWidth == 0 {
-		return list
-	}
-	title, lines := "Detail", []string{}
-	if tag, ok := tagsmeta.Selected(state.Tags, filter, cursor); ok {
-		title = "+" + tag.Name
-		help := viewchrome.RowHelp{
-			Description: "Used on " + tagsmeta.Usage(tag) + ". Renaming onto an existing tag merges the two.",
-			Keys:        []string{"[enter] rename", "[←/→] color", "[D] delete", "[U] remove unused"},
-		}
-		if tag.System {
-			help = viewchrome.RowHelp{
-				Description: "A system tag, used on " + tagsmeta.Usage(tag) + ". It can't be renamed or deleted; only its color changes.",
-				Keys:        []string{"[←/→] color", "[U] remove unused"},
-			}
-		}
-		color := "none"
-		if tag.Color != nil && *tag.Color != "" {
-			color = *tag.Color
-		}
-		lines = viewchrome.HelpLines(theme, help, "color "+color, detailWidth-2)
-	}
-	detail := viewchrome.RenderSection(theme, viewchrome.Section{
-		Title: title, Width: detailWidth, Height: state.Height, Lines: lines,
-	})
-	return viewchrome.JoinColumns(theme, state.Height, list, detail)
 }
 
-// labelWidth caps the tag-name column; names are at most 32 characters plus the +.
-const labelWidth = 34
+func renderDetail(theme types.Theme, state types.ContentState, width int) string {
+	tag, ok := tagsmeta.Selected(state.Tags, state.Filters["tags"], state.Cursors["tags"])
+	if !ok {
+		return viewchrome.RenderSection(theme, viewchrome.Section{Title: "Detail", Width: width, Height: state.Height})
+	}
+	room := max(1, width-2)
+	open, closed := tagsmeta.OpenDone(tag.Name, state.AllIssues)
+	color := "no color"
+	if tag.Color != nil && *tag.Color != "" {
+		color = *tag.Color
+	}
+	kind := "your tag"
+	if tag.System {
+		kind = "system tag, color only"
+	}
+	lines := []string{
+		fmt.Sprintf("%d open · %d done · %d habits", open, closed, tag.HabitCount),
+		theme.StyleDim.Render(color + " · " + kind),
+	}
+	issues := tagsmeta.TaggedIssues(tag.Name, state.AllIssues)
+	habits := tagsmeta.TaggedHabits(tag.Name, state.AllHabits)
+	if len(issues) > 0 {
+		lines = append(lines, "", theme.StyleHeader.Render("Issues"))
+		for _, issue := range issues {
+			style := theme.StyleNormal
+			if statusStyle := issuecore.IssueStatusStyle(theme, string(issue.Status)); statusStyle != nil {
+				style = *statusStyle
+			}
+			meta := "  " + issuecore.PlainIssueStatus(string(issue.Status)) + " · " +
+				issuecore.IssueContextLabel(issue.RepoName, issue.StreamName)
+			title := ansi.Truncate(issue.Title, max(1, room-min(ansi.StringWidth(meta), room/2)), "…")
+			lines = append(lines, style.Render(title)+theme.StyleDim.Render(ansi.Truncate(meta, max(0, room-ansi.StringWidth(title)), "…")))
+		}
+	}
+	if len(habits) > 0 {
+		lines = append(lines, "", theme.StyleHeader.Render("Habits"))
+		for _, habit := range habits {
+			meta := "  " + issuecore.IssueContextLabel(habit.RepoName, habit.StreamName)
+			if !habit.Active {
+				meta = "  paused ·" + meta
+			}
+			name := ansi.Truncate(habit.Name, max(1, room-min(ansi.StringWidth(meta), room/2)), "…")
+			lines = append(lines, name+theme.StyleDim.Render(ansi.Truncate(meta, max(0, room-ansi.StringWidth(name)), "…")))
+		}
+	}
+	if len(issues)+len(habits) == 0 {
+		lines = append(lines, "", theme.StyleDim.Render("Nothing carries this tag yet."))
+	}
+	if limit := max(1, state.Height-2); len(lines) > limit {
+		hidden := len(lines) - limit + 1
+		lines = append(lines[:limit-1], theme.StyleDim.Render(fmt.Sprintf("… %d more", hidden)))
+	}
+	return viewchrome.RenderSection(theme, viewchrome.Section{
+		Title: "+" + tag.Name, Width: width, Height: state.Height, Lines: lines,
+	})
+}

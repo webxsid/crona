@@ -28,3 +28,24 @@ func TestFilteredIndicesPutSystemTagsFirst(t *testing.T) {
 		t.Fatalf("unexpected order %v", got)
 	}
 }
+
+func TestTaggedIssuesPutOpenFirstAndCountUntagged(t *testing.T) {
+	issue := func(title string, status sharedtypes.IssueStatus, tags ...string) sharedtypes.IssueWithMeta {
+		return sharedtypes.IssueWithMeta{Issue: sharedtypes.Issue{Title: title, Status: status, Tags: tags}}
+	}
+	issues := []sharedtypes.IssueWithMeta{
+		issue("shipped", sharedtypes.IssueStatusDone, "release"),
+		issue("draft", sharedtypes.IssueStatusPlanned, "release"),
+		issue("loose", sharedtypes.IssueStatusPlanned),
+	}
+	got := TaggedIssues("release", issues)
+	if len(got) != 2 || got[0].Title != "draft" || got[1].Title != "shipped" {
+		t.Fatalf("unexpected tagged issues %+v", got)
+	}
+	if open, closed := OpenDone("release", issues); open != 1 || closed != 1 {
+		t.Fatalf("unexpected counts %d open %d done", open, closed)
+	}
+	if openIssues, _ := Untagged(issues, nil); openIssues != 1 {
+		t.Fatalf("expected 1 untagged open issue, got %d", openIssues)
+	}
+}

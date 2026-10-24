@@ -16,9 +16,12 @@ func registerTagKeys(r *keyregistry.Router[State, uistate.View, uistate.Pane], d
 		uistate.ViewTags,
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleTagColor(s, deps, -1) },
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleCycleTagColor(s, deps, 1) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRenameSelectedTag(s, deps) },
-		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleRenameSelectedTag(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShowTaggedItems(s, deps) },
+		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleShowTaggedItems(s, deps) },
 	)
+	r.RegisterView(uistate.ViewTags, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+		return handleRenameSelectedTag(s, deps)
+	})
 	r.RegisterView(uistate.ViewTags, "U", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if deps.RemoveUnusedTags == nil {
 			return s, nil, true
@@ -29,6 +32,21 @@ func registerTagKeys(r *keyregistry.Router[State, uistate.View, uistate.Pane], d
 
 func selectedTag(s State) (api.Tag, bool) {
 	return tagsmeta.Selected(s.Tags, s.FilterState(uistate.PaneTags), s.Cursor[uistate.PaneTags])
+}
+
+// handleShowTaggedItems opens Issues filtered to the selected tag, or Habits when only habits carry it.
+func handleShowTaggedItems(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	tag, ok := selectedTag(s)
+	if !ok || deps.SetPaneFilter == nil {
+		return s, nil, true
+	}
+	view, pane := uistate.ViewDefault, uistate.PaneIssues
+	if tag.IssueCount == 0 && tag.HabitCount > 0 {
+		view, pane = uistate.ViewHabitList, uistate.PaneHabits
+	}
+	next, _, _ := enterView(s, deps, view)
+	s = next.(State)
+	return s, deps.SetPaneFilter(pane, "+"+tag.Name), true
 }
 
 func handleRenameSelectedTag(s State, deps Deps) (tea.Model, tea.Cmd, bool) {

@@ -62,3 +62,76 @@ func plural(n int, noun string) string {
 	}
 	return fmt.Sprintf("%d %ss", n, noun)
 }
+
+// TaggedIssues are the issues carrying a tag, open ones first.
+func TaggedIssues(name string, issues []sharedtypes.IssueWithMeta) []sharedtypes.IssueWithMeta {
+	out := []sharedtypes.IssueWithMeta{}
+	for _, issue := range issues {
+		if slices.Contains(issue.Tags, name) {
+			out = append(out, issue)
+		}
+	}
+	slices.SortStableFunc(out, func(a, b sharedtypes.IssueWithMeta) int {
+		return boolOrder(IssueClosed(a.Status), IssueClosed(b.Status))
+	})
+	return out
+}
+
+// TaggedHabits are the habits carrying a tag, active ones first.
+func TaggedHabits(name string, habits []sharedtypes.HabitWithMeta) []sharedtypes.HabitWithMeta {
+	out := []sharedtypes.HabitWithMeta{}
+	for _, habit := range habits {
+		if slices.Contains(habit.Tags, name) {
+			out = append(out, habit)
+		}
+	}
+	slices.SortStableFunc(out, func(a, b sharedtypes.HabitWithMeta) int {
+		return boolOrder(!a.Active, !b.Active)
+	})
+	return out
+}
+
+// OpenDone splits a tag's issues into open and done or abandoned.
+func OpenDone(name string, issues []sharedtypes.IssueWithMeta) (open, closed int) {
+	for _, issue := range issues {
+		if !slices.Contains(issue.Tags, name) {
+			continue
+		}
+		if IssueClosed(issue.Status) {
+			closed++
+		} else {
+			open++
+		}
+	}
+	return open, closed
+}
+
+func IssueClosed(status sharedtypes.IssueStatus) bool {
+	return status == sharedtypes.IssueStatusDone || status == sharedtypes.IssueStatusAbandoned
+}
+
+// Untagged counts the open issues and active habits with no tags.
+func Untagged(issues []sharedtypes.IssueWithMeta, habits []sharedtypes.HabitWithMeta) (openIssues, activeHabits int) {
+	for _, issue := range issues {
+		if len(issue.Tags) == 0 && !IssueClosed(issue.Status) {
+			openIssues++
+		}
+	}
+	for _, habit := range habits {
+		if len(habit.Tags) == 0 && habit.Active {
+			activeHabits++
+		}
+	}
+	return openIssues, activeHabits
+}
+
+func boolOrder(a, b bool) int {
+	switch {
+	case a == b:
+		return 0
+	case a:
+		return 1
+	default:
+		return -1
+	}
+}

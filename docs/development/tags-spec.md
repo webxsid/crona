@@ -125,7 +125,7 @@ On Issues and Habits, the existing sort or group toggle (if present) gains a **b
 
 #### Tags view
 
-Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The Tags view lists the vocabulary, system tags first, with usage counts. `enter` renames (merging onto an existing name after a warning), `←/→` cycles the color, `D` deletes after a confirm, and `U` removes unused tags. System tags only change color.
+Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The Tags view lists the vocabulary, system tags first, with open, done and habit counts, and the number of untagged open issues and active habits below. The detail pane lists the issues and habits carrying the selected tag. `enter` opens Issues (or Habits, when only habits carry it) filtered to the tag, `r` renames (merging onto an existing name after a warning), `←/→` cycles the color, `D` deletes after a confirm, and `U` removes unused tags. System tags only change color.
 
 ### Daily plan and dashboard
 
