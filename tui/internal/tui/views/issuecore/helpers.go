@@ -83,7 +83,7 @@ func IssueStatusStyle(theme Theme, status string) *lipgloss.Style {
 		s := lipgloss.NewStyle().Foreground(theme.ColorMagenta)
 		return &s
 	case "carried":
-		s := lipgloss.NewStyle().Foreground(theme.ColorYellow).Italic(true)
+		s := lipgloss.NewStyle().Foreground(theme.ColorLavender)
 		return &s
 	case "done":
 		s := lipgloss.NewStyle().Foreground(theme.ColorGreen)

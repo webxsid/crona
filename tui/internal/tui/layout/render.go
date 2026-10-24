@@ -57,7 +57,7 @@ type State struct {
 func ViewTheme() viewtypes.Theme {
 	return viewtypes.Theme{
 		ColorBlue: chrome.ColorBlue, ColorCyan: chrome.ColorCyan, ColorGreen: chrome.ColorGreen, ColorDullGreen: chrome.ColorDullGreen, ColorMagenta: chrome.ColorMagenta,
-		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDullRed: chrome.ColorDullRed, ColorOrange: chrome.ColorOrange, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
+		ColorSubtle: chrome.ColorSubtle, ColorYellow: chrome.ColorYellow, ColorRed: chrome.ColorRed, ColorDullRed: chrome.ColorDullRed, ColorOrange: chrome.ColorOrange, ColorLavender: chrome.ColorLavender, ColorDim: chrome.ColorDim, ColorWhite: chrome.ColorWhite,
 		StyleActive: chrome.StyleActive, StyleInactive: chrome.StyleInactive, StylePaneTitle: chrome.StylePaneTitle, StyleDim: chrome.StyleDim,
 		StyleCursor: chrome.StyleCursor, StyleHeader: chrome.StyleHeader, StyleError: chrome.StyleError, StyleSelected: chrome.StyleSelected, StyleSelectedInverse: chrome.StyleSelectedInverse, StyleNormal: chrome.StyleNormal,
 	}
