@@ -401,6 +401,7 @@ func printDailyPlanSection(w io.Writer, plan *sharedtypes.DailyPlan) error {
 		{Key: "completed", Value: fmt.Sprintf("%d", summary.CompletedCount)},
 		{Key: "failed", Value: fmt.Sprintf("%d", summary.FailedCount)},
 		{Key: "abandoned", Value: fmt.Sprintf("%d", summary.AbandonedCount)},
+		{Key: "carried", Value: fmt.Sprintf("%d", summary.CarriedCount)},
 		{Key: "pending", Value: fmt.Sprintf("%d", summary.PendingRollbackCount)},
 		{Key: "score", Value: fmt.Sprintf("%.1f", summary.AccountabilityScore)},
 		{Key: "pressure", Value: fmt.Sprintf("%.1f", summary.BacklogPressure)},

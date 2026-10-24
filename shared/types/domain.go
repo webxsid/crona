@@ -1695,6 +1695,10 @@ type DailyReportIssue struct {
 	PlanFailScore            float64                 `json:"planFailScore"`
 	PlanAccountabilityShare  float64                 `json:"planAccountabilityShare"`
 	PlanHighRisk             bool                    `json:"planHighRisk"`
+	PlanCarriedFromDate      *string                 `json:"planCarriedFromDate,omitempty"`
+	PlanCarriedToDate        *string                 `json:"planCarriedToDate,omitempty"`
+	PlanCarryCount           int                     `json:"planCarryCount"`
+	PlanStalled              bool                    `json:"planStalled"`
 }
 
 type DailyReportSession struct {
