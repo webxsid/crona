@@ -37,6 +37,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		(*storemodels.CustomHabitMomentumSnapshotModel)(nil),
 		(*storemodels.HabitStreakDefinitionModel)(nil),
 		(*storemodels.HabitStreakHabitModel)(nil),
+		(*storemodels.TagModel)(nil),
+		(*storemodels.IssueTagModel)(nil),
+		(*storemodels.HabitTagModel)(nil),
 	}
 
 	for _, model := range models {
@@ -277,6 +280,9 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_momentum_id ON momentum_habits (momentum_id)",
 		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_habit_id ON momentum_habits (habit_id)",
 		"CREATE INDEX IF NOT EXISTS idx_momentum_habits_user_id ON momentum_habits (user_id)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_tags_user_name ON tags (user_id, name)",
+		"CREATE INDEX IF NOT EXISTS idx_issue_tags_tag_id ON issue_tags (tag_id)",
+		"CREATE INDEX IF NOT EXISTS idx_habit_tags_tag_id ON habit_tags (tag_id)",
 	}
 
 	for _, stmt := range indexes {

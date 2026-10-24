@@ -359,3 +359,33 @@ type HabitStreakHabitModel struct {
 	UserID     string `bun:"user_id,notnull,type:text"`
 	CreatedAt  string `bun:"created_at,notnull,type:text"`
 }
+
+type TagModel struct {
+	bun.BaseModel `bun:"table:tags"`
+
+	ID        string  `bun:"id,pk,type:text"`
+	UserID    string  `bun:"user_id,notnull,type:text"`
+	Name      string  `bun:"name,notnull,type:text"`
+	Color     *string `bun:"color,type:text,nullzero"`
+	System    bool    `bun:"system,notnull,type:integer,default:0"`
+	CreatedAt string  `bun:"created_at,notnull,type:text"`
+	UpdatedAt string  `bun:"updated_at,notnull,type:text"`
+}
+
+type IssueTagModel struct {
+	bun.BaseModel `bun:"table:issue_tags"`
+
+	IssueID   string `bun:"issue_id,pk,type:text"`
+	TagID     string `bun:"tag_id,pk,type:text"`
+	UserID    string `bun:"user_id,notnull,type:text"`
+	CreatedAt string `bun:"created_at,notnull,type:text"`
+}
+
+type HabitTagModel struct {
+	bun.BaseModel `bun:"table:habit_tags"`
+
+	HabitID   string `bun:"habit_id,pk,type:text"`
+	TagID     string `bun:"tag_id,pk,type:text"`
+	UserID    string `bun:"user_id,notnull,type:text"`
+	CreatedAt string `bun:"created_at,notnull,type:text"`
+}

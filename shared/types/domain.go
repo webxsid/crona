@@ -311,6 +311,7 @@ const (
 	OpEntitySession         OpEntity = "session"
 	OpEntitySessionSegment  OpEntity = "session_segment"
 	OpEntityActiveContext   OpEntity = "active_context"
+	OpEntityTag             OpEntity = "tag"
 )
 
 type OpAction string
@@ -742,6 +743,7 @@ type Habit struct {
 	Weekdays      []int             `json:"weekdays,omitempty"`
 	TargetMinutes *int              `json:"targetMinutes,omitempty"`
 	Active        bool              `json:"active"`
+	Tags          []string          `json:"tags,omitempty"`
 }
 
 type HabitCompletionStatus string
@@ -836,6 +838,7 @@ type Issue struct {
 	CompletedAt     *string     `json:"completedAt,omitempty"`
 	AbandonedAt     *string     `json:"abandonedAt,omitempty"`
 	Adhoc           bool        `json:"adhoc,omitempty"`
+	Tags            []string    `json:"tags,omitempty"`
 }
 
 type IssueWithMeta struct {

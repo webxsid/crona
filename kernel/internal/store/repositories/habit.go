@@ -77,6 +77,7 @@ func (r *HabitRepository) ListByStream(
 		Weekdays       *string `bun:"weekdays"`
 		TargetMinutes  *int    `bun:"target_minutes"`
 		Active         bool    `bun:"active"`
+		TagNames       string  `bun:"tag_names"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -90,6 +91,7 @@ func (r *HabitRepository) ListByStream(
 		ColumnExpr("habits.weekdays").
 		ColumnExpr("habits.target_minutes").
 		ColumnExpr("habits.active").
+		ColumnExpr(tagNamesColumn(TagKindHabit, "habits.id")).
 		Where("streams.public_id = ?", streamID).
 		Where("habits.user_id = ?", userID).
 		Where("habits.deleted_at IS NULL").
@@ -111,6 +113,7 @@ func (r *HabitRepository) ListByStream(
 			Weekdays:      parseWeekdays(row.Weekdays),
 			TargetMinutes: row.TargetMinutes,
 			Active:        row.Active,
+			Tags:          splitTagNames(row.TagNames),
 		})
 	}
 	return out, nil
@@ -129,6 +132,7 @@ func (r *HabitRepository) ListAllWithMeta(
 		Weekdays       *string `bun:"weekdays"`
 		TargetMinutes  *int    `bun:"target_minutes"`
 		Active         bool    `bun:"active"`
+		TagNames       string  `bun:"tag_names"`
 		StreamName     string  `bun:"stream_name"`
 		RepoPublicID   int64   `bun:"repo_public_id"`
 		RepoName       string  `bun:"repo_name"`
@@ -146,6 +150,7 @@ func (r *HabitRepository) ListAllWithMeta(
 		ColumnExpr("habits.weekdays").
 		ColumnExpr("habits.target_minutes").
 		ColumnExpr("habits.active").
+		ColumnExpr(tagNamesColumn(TagKindHabit, "habits.id")).
 		ColumnExpr("streams.name AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("repos.name AS repo_name").
@@ -171,6 +176,7 @@ func (r *HabitRepository) ListAllWithMeta(
 				Weekdays:      parseWeekdays(row.Weekdays),
 				TargetMinutes: row.TargetMinutes,
 				Active:        row.Active,
+				Tags:          splitTagNames(row.TagNames),
 			},
 			RepoID:     row.RepoPublicID,
 			RepoName:   row.RepoName,
@@ -194,6 +200,7 @@ func (r *HabitRepository) GetByID(
 		Weekdays       *string `bun:"weekdays"`
 		TargetMinutes  *int    `bun:"target_minutes"`
 		Active         bool    `bun:"active"`
+		TagNames       string  `bun:"tag_names"`
 	}
 	var item row
 	err := r.db.NewSelect().
@@ -207,6 +214,7 @@ func (r *HabitRepository) GetByID(
 		ColumnExpr("habits.weekdays").
 		ColumnExpr("habits.target_minutes").
 		ColumnExpr("habits.active").
+		ColumnExpr(tagNamesColumn(TagKindHabit, "habits.id")).
 		Where("habits.public_id = ?", habitID).
 		Where("habits.user_id = ?", userID).
 		Where("habits.deleted_at IS NULL").
@@ -230,6 +238,7 @@ func (r *HabitRepository) GetByID(
 		Weekdays:      parseWeekdays(item.Weekdays),
 		TargetMinutes: item.TargetMinutes,
 		Active:        item.Active,
+		Tags:          splitTagNames(item.TagNames),
 	}, nil
 }
 
@@ -247,6 +256,7 @@ func (r *HabitRepository) GetWithMetaByID(
 		Weekdays       *string `bun:"weekdays"`
 		TargetMinutes  *int    `bun:"target_minutes"`
 		Active         bool    `bun:"active"`
+		TagNames       string  `bun:"tag_names"`
 		StreamName     string  `bun:"stream_name"`
 		RepoPublicID   int64   `bun:"repo_public_id"`
 		RepoName       string  `bun:"repo_name"`
@@ -264,6 +274,7 @@ func (r *HabitRepository) GetWithMetaByID(
 		ColumnExpr("habits.weekdays").
 		ColumnExpr("habits.target_minutes").
 		ColumnExpr("habits.active").
+		ColumnExpr(tagNamesColumn(TagKindHabit, "habits.id")).
 		ColumnExpr("streams.name AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("repos.name AS repo_name").
@@ -289,6 +300,7 @@ func (r *HabitRepository) GetWithMetaByID(
 			Weekdays:      parseWeekdays(item.Weekdays),
 			TargetMinutes: item.TargetMinutes,
 			Active:        item.Active,
+			Tags:          splitTagNames(item.TagNames),
 		},
 		RepoID:     item.RepoPublicID,
 		RepoName:   item.RepoName,
@@ -311,6 +323,7 @@ func (r *HabitRepository) ListDueWithMeta(
 		Weekdays       *string `bun:"weekdays"`
 		TargetMinutes  *int    `bun:"target_minutes"`
 		Active         bool    `bun:"active"`
+		TagNames       string  `bun:"tag_names"`
 		StreamName     string  `bun:"stream_name"`
 		RepoPublicID   int64   `bun:"repo_public_id"`
 		RepoName       string  `bun:"repo_name"`
@@ -328,6 +341,7 @@ func (r *HabitRepository) ListDueWithMeta(
 		ColumnExpr("habits.weekdays").
 		ColumnExpr("habits.target_minutes").
 		ColumnExpr("habits.active").
+		ColumnExpr(tagNamesColumn(TagKindHabit, "habits.id")).
 		ColumnExpr("streams.name AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("repos.name AS repo_name").
@@ -353,6 +367,7 @@ func (r *HabitRepository) ListDueWithMeta(
 				Weekdays:      parseWeekdays(row.Weekdays),
 				TargetMinutes: row.TargetMinutes,
 				Active:        row.Active,
+				Tags:          splitTagNames(row.TagNames),
 			},
 			RepoID:     row.RepoPublicID,
 			RepoName:   row.RepoName,

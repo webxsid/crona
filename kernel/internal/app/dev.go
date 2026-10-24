@@ -1036,6 +1036,37 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
+	if err := corecommands.EnsureSystemTags(ctx, h.core); err != nil {
+		return err
+	}
+	for issueID, tags := range map[int64][]string{
+		focusIssue.ID:        {"urgent", "tooling"},
+		blockedIssue.ID:      {"waiting", "release"},
+		readyIssue.ID:        {"release", "quick"},
+		inProgressIssue.ID:   {"release"},
+		docsIssue.ID:         {"docs", "quick"},
+		overEstimateIssue.ID: {"review"},
+	} {
+		if _, err := corecommands.SetIssueTags(ctx, h.core, issueID, tags); err != nil {
+			return err
+		}
+	}
+	for habitID, tags := range map[int64][]string{
+		workoutHabit.ID: {"health"},
+		walkHabit.ID:    {"health", "quick"},
+		journalHabit.ID: {"reflection"},
+	} {
+		if _, err := corecommands.SetHabitTags(ctx, h.core, habitID, tags); err != nil {
+			return err
+		}
+	}
+	if err := corecommands.SetTagColor(ctx, h.core, "urgent", new("red")); err != nil {
+		return err
+	}
+	if err := corecommands.SetTagColor(ctx, h.core, "release", new("cyan")); err != nil {
+		return err
+	}
+
 	if _, err := corecommands.SetContext(ctx, h.core, corecommands.ContextPatch{
 		RepoSet:   true,
 		RepoID:    &workRepo.ID,

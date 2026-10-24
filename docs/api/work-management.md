@@ -27,6 +27,7 @@ Create and update requests use the corresponding request DTO; list methods retur
 | Ad hoc conversion (protocol `1.6`) | `issue.promote_adhoc` |
 | Todo state | `issue.set_todo`, `issue.clear_todo` |
 | Carry-over | `issue.carry`, `issue.carry.undo` |
+| Tags | `issue.tags.set`, `issue.tags.update`, `habit.tags.set`, `habit.tags.update`, `tag.list`, `tag.rename`, `tag.set_color`, `tag.delete`, `tag.remove_unused` |
 | Planning | `daily_plan.get` |
 
 Status changes must use a transition supported by `issue.status_transitions`. Daily summaries are date-boundary aware and should be requested using the configured logical day, not an arbitrary calendar midnight.

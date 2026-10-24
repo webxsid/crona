@@ -50,6 +50,8 @@ const (
 	MethodIssueClearTodo         = "issue.clear_todo"
 	MethodIssueCarry             = "issue.carry"
 	MethodIssueCarryUndo         = "issue.carry.undo"
+	MethodIssueTagsSet           = "issue.tags.set"
+	MethodIssueTagsUpdate        = "issue.tags.update"
 	MethodIssueDailySummary      = "issue.daily_summary"
 	MethodIssueTodaySummary      = "issue.today_summary"
 	MethodDailyPlanGet           = "daily_plan.get"
@@ -63,6 +65,14 @@ const (
 	MethodHabitComplete   = "habit.complete"
 	MethodHabitUncomplete = "habit.uncomplete"
 	MethodHabitHistory    = "habit.history"
+	MethodHabitTagsSet    = "habit.tags.set"
+	MethodHabitTagsUpdate = "habit.tags.update"
+
+	MethodTagList         = "tag.list"
+	MethodTagRename       = "tag.rename"
+	MethodTagSetColor     = "tag.set_color"
+	MethodTagDelete       = "tag.delete"
+	MethodTagRemoveUnused = "tag.remove_unused"
 
 	MethodMomentumList   = "momentum.list"
 	MethodMomentumCreate = "momentum.create"

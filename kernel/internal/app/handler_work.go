@@ -121,15 +121,17 @@ func (h *Handler) handleWorkMethods(
 		}), true
 	case protocol.MethodIssueList:
 		return handle(req, func(input shareddto.ListIssuesQuery) (any, error) {
-			return corecommands.ListIssuesByStream(ctx, h.core, input.StreamID)
+			issues, err := corecommands.ListIssuesByStream(ctx, h.core, input.StreamID)
+			return filterByTags(issues, err, input.Tags, func(i sharedtypes.Issue) []string { return i.Tags })
 		}), true
 	case protocol.MethodIssueListAll:
-		return h.handleNoParams(req, func() (any, error) {
-			return corecommands.ListAllIssues(ctx, h.core)
+		return handle(req, func(input shareddto.ListAllQuery) (any, error) {
+			issues, err := corecommands.ListAllIssues(ctx, h.core)
+			return filterByTags(issues, err, input.Tags, func(i sharedtypes.IssueWithMeta) []string { return i.Tags })
 		}), true
 	case protocol.MethodIssueCreate:
 		return handle(req, func(input shareddto.CreateIssueRequest) (any, error) {
-			return corecommands.CreateIssue(ctx, h.core, struct {
+			created, err := corecommands.CreateIssue(ctx, h.core, struct {
 				StreamID        int64
 				Title           string
 				Description     *string
@@ -144,6 +146,10 @@ func (h *Handler) handleWorkMethods(
 				Notes:           input.Notes,
 				TodoForDate:     input.TodoForDate,
 			})
+			if err != nil || len(input.Tags) == 0 {
+				return created, err
+			}
+			return corecommands.SetIssueTags(ctx, h.core, created.ID, input.Tags)
 		}), true
 	case protocol.MethodIssueUpdate:
 		return h.handleNoParams(req, func() (any, error) {
@@ -175,7 +181,11 @@ func (h *Handler) handleWorkMethods(
 			if err != nil {
 				return nil, err
 			}
-			return corecommands.UpdateIssue(ctx, h.core, id, struct {
+			tags, tagsSet, err := decodeOptionalStringsFromMap(raw, "tags")
+			if err != nil {
+				return nil, err
+			}
+			updated, err := corecommands.UpdateIssue(ctx, h.core, id, struct {
 				Title           sharedtypes.Patch[string]
 				Description     sharedtypes.Patch[string]
 				EstimateMinutes sharedtypes.Patch[int]
@@ -188,6 +198,47 @@ func (h *Handler) handleWorkMethods(
 				Notes:           sharedtypes.Patch[string]{Set: notesSet, Value: notes},
 				PinnedDaily:     sharedtypes.Patch[bool]{Set: pinnedDailySet, Value: pinnedDaily},
 			})
+			if err != nil || !tagsSet {
+				return updated, err
+			}
+			return corecommands.SetIssueTags(ctx, h.core, id, tags)
+		}), true
+	case protocol.MethodIssueTagsSet:
+		return handle(req, func(input shareddto.SetTagsRequest) (any, error) {
+			return corecommands.SetIssueTags(ctx, h.core, input.ID, input.Tags)
+		}), true
+	case protocol.MethodIssueTagsUpdate:
+		return handle(req, func(input shareddto.UpdateTagsRequest) (any, error) {
+			return corecommands.UpdateIssueTags(ctx, h.core, input.IDs, input.Add, input.Remove)
+		}), true
+	case protocol.MethodHabitTagsSet:
+		return handle(req, func(input shareddto.SetTagsRequest) (any, error) {
+			return corecommands.SetHabitTags(ctx, h.core, input.ID, input.Tags)
+		}), true
+	case protocol.MethodHabitTagsUpdate:
+		return handle(req, func(input shareddto.UpdateTagsRequest) (any, error) {
+			return corecommands.UpdateHabitTags(ctx, h.core, input.IDs, input.Add, input.Remove)
+		}), true
+	case protocol.MethodTagList:
+		return h.handleNoParams(req, func() (any, error) {
+			return corecommands.ListTags(ctx, h.core)
+		}), true
+	case protocol.MethodTagRename:
+		return handle(req, func(input shareddto.TagRenameRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.RenameTag(ctx, h.core, input.From, input.To, input.Merge)
+		}), true
+	case protocol.MethodTagSetColor:
+		return handle(req, func(input shareddto.TagSetColorRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.SetTagColor(ctx, h.core, input.Name, input.Color)
+		}), true
+	case protocol.MethodTagDelete:
+		return handle(req, func(input shareddto.TagNameRequest) (any, error) {
+			return shareddto.OKResponse{OK: true}, corecommands.DeleteTag(ctx, h.core, input.Name)
+		}), true
+	case protocol.MethodTagRemoveUnused:
+		return h.handleNoParams(req, func() (any, error) {
+			removed, err := corecommands.RemoveUnusedTags(ctx, h.core)
+			return shareddto.TagRemoveUnusedResponse{Removed: removed}, err
 		}), true
 	case protocol.MethodIssuePromoteAdhoc:
 		return handle(req, func(input shareddto.PromoteAdhocIssueRequest) (any, error) {
@@ -272,19 +323,22 @@ func (h *Handler) handleWorkMethods(
 		}), true
 	case protocol.MethodHabitList:
 		return handle(req, func(input shareddto.ListHabitsQuery) (any, error) {
-			return corecommands.ListHabitsByStream(ctx, h.core, input.StreamID)
+			habits, err := corecommands.ListHabitsByStream(ctx, h.core, input.StreamID)
+			return filterByTags(habits, err, input.Tags, func(h sharedtypes.Habit) []string { return h.Tags })
 		}), true
 	case protocol.MethodHabitListAll:
-		return h.handleNoParams(req, func() (any, error) {
-			return corecommands.ListAllHabits(ctx, h.core)
+		return handle(req, func(input shareddto.ListAllQuery) (any, error) {
+			habits, err := corecommands.ListAllHabits(ctx, h.core)
+			return filterByTags(habits, err, input.Tags, func(h sharedtypes.HabitWithMeta) []string { return h.Tags })
 		}), true
 	case protocol.MethodHabitListDue:
 		return handle(req, func(input shareddto.ListHabitsDueQuery) (any, error) {
-			return corecommands.ListHabitsDueForDate(ctx, h.core, input.Date)
+			habits, err := corecommands.ListHabitsDueForDate(ctx, h.core, input.Date)
+			return filterByTags(habits, err, input.Tags, func(h sharedtypes.HabitDailyItem) []string { return h.Tags })
 		}), true
 	case protocol.MethodHabitCreate:
 		return handle(req, func(input shareddto.CreateHabitRequest) (any, error) {
-			return corecommands.CreateHabit(ctx, h.core, struct {
+			created, err := corecommands.CreateHabit(ctx, h.core, struct {
 				StreamID      int64
 				Name          string
 				Description   *string
@@ -299,6 +353,10 @@ func (h *Handler) handleWorkMethods(
 				Weekdays:      input.Weekdays,
 				TargetMinutes: input.TargetMinutes,
 			})
+			if err != nil || len(input.Tags) == 0 {
+				return created, err
+			}
+			return corecommands.SetHabitTags(ctx, h.core, created.ID, input.Tags)
 		}), true
 	case protocol.MethodHabitUpdate:
 		return handle(req, func(input shareddto.UpdateHabitRequest) (any, error) {
@@ -306,7 +364,7 @@ func (h *Handler) handleWorkMethods(
 			if input.Active != nil {
 				active = input.Active
 			}
-			return corecommands.UpdateHabit(ctx, h.core, input.ID, struct {
+			updated, err := corecommands.UpdateHabit(ctx, h.core, input.ID, struct {
 				Name          sharedtypes.Patch[string]
 				Description   sharedtypes.Patch[string]
 				ScheduleType  *string
@@ -323,6 +381,10 @@ func (h *Handler) handleWorkMethods(
 				TargetMinutes: sharedtypes.Patch[int]{Set: true, Value: input.TargetMinutes},
 				Active:        active,
 			})
+			if err != nil || input.Tags == nil {
+				return updated, err
+			}
+			return corecommands.SetHabitTags(ctx, h.core, input.ID, *input.Tags)
 		}), true
 	case protocol.MethodHabitDelete:
 		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
@@ -612,4 +674,18 @@ func (h *Handler) notifyExportCompleted(
 		},
 	}
 	_ = h.alerts.NotifyWithActions(ctx, req, actions)
+}
+
+// filterByTags keeps the items that pass filter, when one is given.
+func filterByTags[T any](items []T, err error, filter *sharedtypes.TagFilter, tags func(T) []string) (any, error) {
+	if err != nil || filter == nil || filter.Empty() {
+		return items, err
+	}
+	out := make([]T, 0, len(items))
+	for _, item := range items {
+		if filter.Matches(tags(item)) {
+			out = append(out, item)
+		}
+	}
+	return out, nil
 }
