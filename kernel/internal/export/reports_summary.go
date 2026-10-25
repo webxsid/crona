@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -239,6 +240,7 @@ func generateDailyExport(
 		format,
 		input.OutputMode,
 		input.PresetID,
+		input.Tags,
 	)
 }
 
@@ -265,7 +267,7 @@ func generateWeeklyExport(
 	if err != nil {
 		return nil, err
 	}
-	tagTime, err := computeTagTime(ctx, c, start, end, nil, nil)
+	tagTime, err := computeTagTime(ctx, c, start, end, nil, nil, input.Tags)
 	if err != nil {
 		return nil, err
 	}
@@ -362,8 +364,10 @@ func generateRepoExport(
 		return nil, err
 	}
 	var issues []sharedtypes.IssueWithMeta
+	tagsByIssue := make(map[int64][]string, len(allIssues))
 	for _, issue := range allIssues {
-		if issue.RepoID == repo.ID {
+		tagsByIssue[issue.ID] = issue.Tags
+		if issue.RepoID == repo.ID && keepTagged(input.Tags, issue.Tags) {
 			issues = append(issues, issue)
 		}
 	}
@@ -387,8 +391,11 @@ func generateRepoExport(
 	if err != nil {
 		return nil, err
 	}
+	sessions = slices.DeleteFunc(sessions, func(session sharedtypes.SessionHistoryEntry) bool {
+		return !keepTagged(input.Tags, tagsByIssue[session.IssueID])
+	})
 	issueGroups := buildIssueGroups(issues, sessions)
-	tagTime, err := computeTagTime(ctx, c, start, end, &repo.ID, nil)
+	tagTime, err := computeTagTime(ctx, c, start, end, &repo.ID, nil, input.Tags)
 	if err != nil {
 		return nil, err
 	}
@@ -475,8 +482,20 @@ func generateStreamExport(
 	if repo != nil {
 		repoName = repo.Name
 	}
+	if input.Tags != nil && !input.Tags.Empty() {
+		tagsByIssue := make(map[int64][]string, len(issues))
+		for _, issue := range issues {
+			tagsByIssue[issue.ID] = issue.Tags
+		}
+		issues = slices.DeleteFunc(issues, func(issue sharedtypes.Issue) bool {
+			return !input.Tags.Matches(issue.Tags)
+		})
+		sessions = slices.DeleteFunc(sessions, func(session sharedtypes.SessionHistoryEntry) bool {
+			return !input.Tags.Matches(tagsByIssue[session.IssueID])
+		})
+	}
 	issueGroups := buildIssueGroupsWithStream(issues, repoName, stream.Name, sessions)
-	tagTime, err := computeTagTime(ctx, c, start, end, nil, &stream.ID)
+	tagTime, err := computeTagTime(ctx, c, start, end, nil, &stream.ID, input.Tags)
 	if err != nil {
 		return nil, err
 	}
@@ -709,6 +728,9 @@ func generateCSVExport(
 	rowMaps := make([]map[string]any, 0, len(entries))
 	for _, entry := range entries {
 		meta := issueMeta[entry.IssueID]
+		if !keepTagged(input.Tags, meta.Tags) {
+			continue
+		}
 		parsed := sessionnotes.Parse(entry.Notes)
 		duration := ""
 		if entry.DurationSeconds != nil {
@@ -725,6 +747,7 @@ func generateCSVExport(
 			"status":          string(meta.Status),
 			"repo":            meta.RepoName,
 			"stream":          meta.StreamName,
+			"tags":            strings.Join(meta.Tags, ";"),
 			"startTime":       entry.StartTime,
 			"endTime":         endTime,
 			"durationSeconds": duration,

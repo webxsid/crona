@@ -13,6 +13,7 @@ Common row fields:
 - `issueTitle`
 - `repo`
 - `stream`
+- `tags` (the issue's tags, separated by `;`)
 - `startTime`
 - `endTime`
 - `durationSeconds`

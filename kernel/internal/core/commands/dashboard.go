@@ -407,6 +407,15 @@ func loadDashboardData(
 	if err != nil {
 		return nil, err
 	}
+	if input.Tags != nil && !input.Tags.Empty() {
+		kept := issues[:0:0]
+		for _, issue := range issues {
+			if input.Tags.Matches(issue.Tags) {
+				kept = append(kept, issue)
+			}
+		}
+		issues = kept
+	}
 	issueByID := make(map[int64]sharedtypes.IssueWithMeta, len(issues))
 	for _, issue := range issues {
 		issueByID[issue.ID] = issue
@@ -422,6 +431,15 @@ func loadDashboardData(
 	)
 	if err != nil {
 		return nil, err
+	}
+	if input.Tags != nil && !input.Tags.Empty() {
+		kept := sessions[:0:0]
+		for _, session := range sessions {
+			if _, ok := issueByID[session.IssueID]; ok {
+				kept = append(kept, session)
+			}
+		}
+		sessions = kept
 	}
 	workBySession, segmentTotals, err := sessionWorkTotals(ctx, c, sessions)
 	if err != nil {

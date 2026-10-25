@@ -203,6 +203,8 @@ type DashboardSummaryQuery struct {
 	RepoID   *int64 `json:"repoId,omitempty"`
 	StreamID *int64 `json:"streamId,omitempty"`
 	IssueID  *int64 `json:"issueId,omitempty"`
+	// Tags limits the issues, and so the sessions, counted.
+	Tags *types.TagFilter `json:"tags,omitempty"`
 }
 
 type ExportReportRequest struct {
@@ -216,6 +218,9 @@ type ExportReportRequest struct {
 	Format     types.ExportFormat     `json:"format,omitempty"`
 	OutputMode types.ExportOutputMode `json:"outputMode"`
 	PresetID   string                 `json:"presetId,omitempty"`
+	// Tags limits the issues and sessions a report or CSV export includes. Day and range
+	// rollups (worked time, check-ins, streaks) still cover everything.
+	Tags *types.TagFilter `json:"tags,omitempty"`
 }
 
 type DailyReportRequest = ExportReportRequest

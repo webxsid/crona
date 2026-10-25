@@ -4,6 +4,7 @@
     {"header": "Issue Title", "field": "issueTitle"},
     {"header": "Repo", "field": "repo"},
     {"header": "Stream", "field": "stream"},
+    {"header": "Tags", "field": "tags"},
     {"header": "Session ID", "field": "sessionId"},
     {"header": "Start Time", "field": "startTime"},
     {"header": "End Time", "field": "endTime"},

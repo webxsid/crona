@@ -1015,6 +1015,7 @@ const fallbackCSVExportSpec = `{
     {"header": "Status", "field": "status"},
     {"header": "Repo", "field": "repo"},
     {"header": "Stream", "field": "stream"},
+    {"header": "Tags", "field": "tags"},
     {"header": "Start Time", "field": "startTime"},
     {"header": "End Time", "field": "endTime"},
     {"header": "Duration Seconds", "field": "durationSeconds"},
@@ -1042,6 +1043,7 @@ Available row fields:
 - status
 - repo
 - stream
+- tags (the issue's tags, separated by ;)
 - startTime
 - endTime
 - durationSeconds

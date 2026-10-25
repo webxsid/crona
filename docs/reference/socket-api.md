@@ -261,7 +261,7 @@ Streak behavior notes:
 | `dashboard.window` | `dto.DashboardWindowQuery` | dashboard window object | Shared dashboard data for a range and optional scope. |
 | `dashboard.focus_score` | `dto.DashboardSummaryQuery` | focus score summary | Focus scoring summary; `targetWorkedSeconds` is the sum of estimates on issues due in the requested date range, or `0` when none are estimated. The response also includes a cause-oriented `reason` (`no_activity`, `under_target`, `needs_breaks`, `balanced`, or `overextended`). |
 | `dashboard.focus_score_range` | `dto.DateRangeQuery` | array of `types.FocusScoreRangeDay` | One focus-score entry per calendar date in the inclusive requested range. Each entry includes the date, score, level, cause-oriented reason, and whether the day has score data. |
-| `dashboard.distribution` | `dto.DashboardSummaryQuery` | distribution summary | Time distribution summary. |
+| `dashboard.distribution` | `dto.DashboardSummaryQuery` | distribution summary | Time distribution summary. `groupBy` is `repo`, `stream`, `issue`, `segment_type`, or `tag`. With `tag`, a session counts toward every tag on its issue (untagged sessions fall under `untagged`), so rows can add up to more than `totalSeconds`. An optional `tags` filter (`{any, none}`) limits the issues counted. |
 | `dashboard.goal_progress` | `dto.DashboardSummaryQuery` | goal progress summary | Estimate and execution progress. |
 
 `dashboard.focus_score_range` accepts the inclusive ISO date range shape used by
@@ -309,7 +309,7 @@ through UTC midnight.
 | `export.repo` | `dto.ExportReportRequest` | export result | Repo report generation. |
 | `export.stream` | `dto.ExportReportRequest` | export result | Stream report generation. |
 | `export.issue_rollup` | `dto.ExportReportRequest` | export result | Issue rollup generation. |
-| `export.csv` | `dto.ExportReportRequest` | export result | CSV export generation. |
+| `export.csv` | `dto.ExportReportRequest` | export result | CSV export generation. Daily, weekly, repo, stream, and CSV exports accept an optional `tags` filter (`{any, none}`) that limits the issues and sessions included. |
 | `export.calendar` | `dto.ExportCalendarRequest` | calendar export result | Writes deterministic `.ics` artifacts. |
 | `export.assets.get` | `dto.Empty` | export assets metadata | Export templates, docs, preset metadata, directories. |
 | `export.reports_dir.set` | `dto.ExportReportsDirUpdateRequest` | `dto.OKResponse` | Sets the reports directory. |

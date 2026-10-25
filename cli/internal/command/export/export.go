@@ -153,7 +153,12 @@ func runReport(args []string, kind sharedtypes.ExportReportKind, deps Deps) erro
 	formatValue := fs.String("format", "", "")
 	outputValue := fs.String("output", "", "")
 	jsonOut := fs.Bool("json", false, "")
+	tagFilter := flagspkg.TagFilterFlags(fs)
 	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	tags, err := tagFilter()
+	if err != nil {
 		return err
 	}
 
@@ -164,6 +169,7 @@ func runReport(args []string, kind sharedtypes.ExportReportKind, deps Deps) erro
 		End:        strings.TrimSpace(*end),
 		Format:     parseExportFormat(*formatValue, kind),
 		OutputMode: parseExportOutput(*outputValue, kind),
+		Tags:       tags,
 	}
 	if *repoID > 0 {
 		input.RepoID = repoID

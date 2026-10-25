@@ -50,6 +50,7 @@ func GenerateDailyReportWithFormat(
 		normalizeNarrativeFormat(format),
 		mode,
 		"",
+		nil,
 	)
 }
 
@@ -61,6 +62,7 @@ func generateDailyReportWithKind(
 	format sharedtypes.ExportFormat,
 	mode sharedtypes.ExportOutputMode,
 	presetID string,
+	filter *sharedtypes.TagFilter,
 ) (*sharedtypes.DailyReportResult, error) {
 	if strings.TrimSpace(date) == "" {
 		date = time.Now().Format("2006-01-02")
@@ -68,6 +70,9 @@ func generateDailyReportWithKind(
 	format = normalizeExportFormat(format)
 	data, err := BuildDailyReportData(ctx, c, date)
 	if err != nil {
+		return nil, err
+	}
+	if err := filterDailyReportData(ctx, c, data, filter); err != nil {
 		return nil, err
 	}
 	status, err := EnsureAssets(paths)
@@ -298,7 +303,7 @@ func BuildDailyReportData(
 	if err != nil {
 		return nil, err
 	}
-	tagTime, err := computeTagTime(ctx, c, date, date, nil, nil)
+	tagTime, err := computeTagTime(ctx, c, date, date, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}

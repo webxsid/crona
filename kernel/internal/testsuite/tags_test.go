@@ -191,4 +191,15 @@ func TestTagDistributionCountsSessionsTowardEveryTag(t *testing.T) {
 	if out.Rows[0].Label != "+docs" || out.Rows[0].Percent != 90 {
 		t.Fatalf("expected +docs first at 90%%, got %+v", out.Rows[0])
 	}
+
+	filtered, err := corecommands.ComputeTimeDistributionSummary(ctx, coreCtx, shareddto.DashboardSummaryQuery{
+		Start: "2026-03-24", End: "2026-03-24", GroupBy: string(sharedtypes.DistributionGroupTag),
+		Tags: &sharedtypes.TagFilter{Any: []string{"docs"}, None: []string{"urgent"}},
+	})
+	if err != nil {
+		t.Fatalf("filtered distribution: %v", err)
+	}
+	if filtered.TotalSeconds != 30*60 || len(filtered.Rows) != 1 || filtered.Rows[0].Label != "+docs" {
+		t.Fatalf("expected only the second issue's 30m under +docs, got %+v", filtered)
+	}
 }

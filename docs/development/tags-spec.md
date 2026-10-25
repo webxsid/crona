@@ -137,7 +137,7 @@ Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The T
 
 - Daily, weekly, repo, and stream reports include a per-tag time table when any tags were used in the period.
 - CSV exports gain a `tags` column on issue and session rows (semicolon-separated names).
-- Exports and reports accept the same tag filter (`--tag`, `--not-tag`) to limit output.
+- Exports and reports accept the same tag filter (`--tag`, `--not-tag`) to limit output. It narrows issues, sessions and the tag table; day and range rollups stay whole.
 - Calendar export is unchanged.
 
 ### CLI
