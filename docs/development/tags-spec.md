@@ -144,7 +144,7 @@ Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The T
 
 - `crona issue tag <id> +urgent -waiting` adds and removes in one call. `crona habit tag <id> ...` likewise.
 - `crona issue ls --tag urgent --not-tag waiting`, `crona habit ls --tag health`.
-- `crona tag ls` (with counts), `crona tag rename <old> <new>`, `crona tag delete <name>`.
+- `crona tag ls` (with counts), `crona tag rename <old> <new> [--merge]`, `crona tag color <name> <color|none>`, `crona tag delete <name>`, `crona tag prune` (remove unused).
 - Create commands accept `--tag` (repeatable).
 
 ### Notes integration

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	contextcmd "crona/cli/internal/command/context"
+	tagcmd "crona/cli/internal/command/tag"
 	flagspkg "crona/cli/internal/flags"
 	outputpkg "crona/cli/internal/output"
 	shareddto "crona/shared/dto"
@@ -25,7 +26,8 @@ func TimerUsage() string {
 }
 
 func IssueUsage() string {
-	return "Usage: crona issue start (--id <issue-id> | --from-context) [--json]\n"
+	return "Usage: crona issue start (--id <issue-id> | --from-context) [--json]\n" +
+		"       crona issue tag <issue-id> [+add ...] [-remove ...] [--json]\n"
 }
 
 func RunTimer(args []string, deps Deps) error {
@@ -238,6 +240,8 @@ func RunIssue(args []string, deps Deps) error {
 			return outputpkg.PrintJSON(deps.Stdout, out)
 		}
 		return outputpkg.PrintTimerResult(deps.Stdout, out, "issue focus started")
+	case "tag":
+		return tagcmd.RunItem("issue", args[1:], tagcmd.Deps{Stdout: deps.Stdout, CallKernel: deps.CallKernel})
 	default:
 		return fmt.Errorf("unknown issue command: %s", args[0])
 	}

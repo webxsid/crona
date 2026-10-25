@@ -51,6 +51,18 @@ Interact with active focus sessions:
 - `crona timer resume`: Resumes the suspended timer.
 - `crona timer end`: Terminates the session and prompts for the commit summary.
 
+## Tags
+
+Tags are shared by issues and habits. Names are lowercased, and spaces become `-`.
+- `crona tag ls [--json]`: Lists every tag with its issue and habit counts, color, and whether it is a system tag.
+- `crona tag rename <old> <new> [--merge]`: Renames a tag. Pass `--merge` to fold it into a tag that already exists.
+- `crona tag color <name> <color|none>`: Sets a palette color (`blue`, `cyan`, `green`, `magenta`, `yellow`, `red`, `orange`, `lavender`) or clears it.
+- `crona tag delete <name>`: Deletes a tag and removes it from every item.
+- `crona tag prune`: Deletes tags no issue or habit uses.
+- `crona issue tag <id> +urgent -waiting`: Adds and removes tags on an issue in one call. `crona habit tag <id> ...` does the same for a habit.
+
+System tags (`urgent`, `waiting`, `quick`, `review`, `someday`) can't be renamed or deleted, but their color can change.
+
 ## Read-Only Summary
 
 `crona summary` prints a compact snapshot without changing any workspace data. It accepts a date, a date range, or convenience periods:
