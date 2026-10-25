@@ -298,6 +298,10 @@ func BuildDailyReportData(
 	if err != nil {
 		return nil, err
 	}
+	tagTime, err := computeTagTime(ctx, c, date, date, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
 		copy := days[len(days)-1]
@@ -316,6 +320,7 @@ func BuildDailyReportData(
 		Metrics:         metrics,
 		MetricsRollup:   rollup,
 		Streaks:         streaks,
+		TagTime:         tagTime,
 		DisplaySettings: settings,
 	}, nil
 }
@@ -375,6 +380,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 		"issues":        make([]map[string]any, 0, len(data.Issues)),
 		"repos":         groupIssuesByRepo(data.Issues),
 		"habitRepos":    groupHabitsByRepo(data.Habits),
+		"tagTime":       mapTagTime(data.TagTime),
 		"sessions":      make([]map[string]any, 0, len(data.Sessions)),
 		"habits":        make([]map[string]any, 0, len(data.Habits)),
 		"highlights":    highlights,

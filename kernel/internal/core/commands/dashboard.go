@@ -242,6 +242,7 @@ func ComputeTimeDistributionSummary(
 	}
 	accum := map[string]int{}
 	labels := map[string]string{}
+	tagTotal := 0
 	switch groupBy {
 	case sharedtypes.DistributionGroupSegmentType:
 		for key, total := range data.segmentTotals {
@@ -258,12 +259,30 @@ func ComputeTimeDistributionSummary(
 			if !ok {
 				continue
 			}
+			if groupBy == sharedtypes.DistributionGroupTag {
+				tagTotal += seconds
+				for _, name := range tagKeys(meta.Tags) {
+					accum["tag:"+name] += seconds
+					labels["tag:"+name] = "+" + name
+				}
+				continue
+			}
 			key, label := distributionKeyAndLabel(groupBy, meta)
 			accum[key] += seconds
 			labels[key] = label
 		}
 	}
 	rows, total := distributionRows(accum, labels)
+	if groupBy == sharedtypes.DistributionGroupTag {
+		// Rows overlap, so the total is the time worked, and each percent is of that time.
+		total = tagTotal
+		for i := range rows {
+			rows[i].Percent = 0
+			if total > 0 {
+				rows[i].Percent = (float64(rows[i].WorkedSeconds) / float64(total)) * 100.0
+			}
+		}
+	}
 	return &sharedtypes.TimeDistributionSummary{
 		StartDate:    input.Start,
 		EndDate:      input.End,
@@ -595,6 +614,14 @@ func distributionKeyAndLabel(
 	}
 }
 
+// tagKeys returns the tags a session's time counts toward, or untagged when there are none.
+func tagKeys(tags []string) []string {
+	if len(tags) == 0 {
+		return []string{sharedtypes.TagUntagged}
+	}
+	return tags
+}
+
 func goalProgressKeyAndLabel(
 	groupBy sharedtypes.GoalProgressGroup,
 	issue sharedtypes.IssueWithMeta,
@@ -651,6 +678,8 @@ func parseDistributionGroup(value string) sharedtypes.DistributionGroup {
 		return sharedtypes.DistributionGroupIssue
 	case sharedtypes.DistributionGroupSegmentType:
 		return sharedtypes.DistributionGroupSegmentType
+	case sharedtypes.DistributionGroupTag:
+		return sharedtypes.DistributionGroupTag
 	default:
 		return sharedtypes.DistributionGroupRepo
 	}

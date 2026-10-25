@@ -27,3 +27,6 @@ Flat collections:
 - `{{#each issues}} ... {{/each}}`
 - `{{#each sessions}} ... {{/each}}`
 - `{{#each habits}} ... {{/each}}`
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- `{{#each tagTime}} -> {{name}}, {{workedTime}}, {{workedSeconds}}, {{percent}}`

@@ -25,3 +25,6 @@ Issues:
 
 Habits:
 - `{{#each habits}} -> {{name}}, {{scheduleType}}`
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- `{{#each tagTime}} -> {{name}}, {{workedTime}}, {{workedSeconds}}, {{percent}}`

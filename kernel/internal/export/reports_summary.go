@@ -265,6 +265,10 @@ func generateWeeklyExport(
 	if err != nil {
 		return nil, err
 	}
+	tagTime, err := computeTagTime(ctx, c, start, end, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	checkInByDate := make(map[string]sharedtypes.DailyCheckIn, len(checkIns))
 	for _, checkIn := range checkIns {
@@ -312,7 +316,8 @@ func generateWeeklyExport(
 			"currentCheckInDays": streaks.CurrentCheckInDays,
 			"longestCheckInDays": streaks.LongestCheckInDays,
 		},
-		"days": dayItems,
+		"days":    dayItems,
+		"tagTime": mapTagTime(tagTime),
 	}
 
 	return renderNarrativeReport(paths, sharedtypes.ExportReportKindWeekly, data, reportWriteSpec{
@@ -383,6 +388,10 @@ func generateRepoExport(
 		return nil, err
 	}
 	issueGroups := buildIssueGroups(issues, sessions)
+	tagTime, err := computeTagTime(ctx, c, start, end, &repo.ID, nil)
+	if err != nil {
+		return nil, err
+	}
 	data := map[string]any{
 		"generatedAt":      time.Now().UTC().Format(time.RFC3339),
 		"startDate":        start,
@@ -402,6 +411,7 @@ func generateRepoExport(
 		"streams": mapStreams(streams),
 		"issues":  mapDetailedIssueGroups(issueGroups),
 		"habits":  mapHabits(habits),
+		"tagTime": mapTagTime(tagTime),
 	}
 	return renderNarrativeReport(paths, sharedtypes.ExportReportKindRepo, data, reportWriteSpec{
 		Kind:       sharedtypes.ExportReportKindRepo,
@@ -466,6 +476,10 @@ func generateStreamExport(
 		repoName = repo.Name
 	}
 	issueGroups := buildIssueGroupsWithStream(issues, repoName, stream.Name, sessions)
+	tagTime, err := computeTagTime(ctx, c, start, end, nil, &stream.ID)
+	if err != nil {
+		return nil, err
+	}
 	scope := &sharedtypes.ExportReportScope{
 		RepoID:     &stream.RepoID,
 		StreamID:   &stream.ID,
@@ -492,8 +506,9 @@ func generateStreamExport(
 			"habitCount":   len(habits),
 			"sessionCount": len(sessions),
 		},
-		"issues": mapDetailedIssueGroups(issueGroups),
-		"habits": mapHabits(habits),
+		"issues":  mapDetailedIssueGroups(issueGroups),
+		"habits":  mapHabits(habits),
+		"tagTime": mapTagTime(tagTime),
 	}
 	return renderNarrativeReport(paths, sharedtypes.ExportReportKindStream, data, reportWriteSpec{
 		Kind:       sharedtypes.ExportReportKindStream,

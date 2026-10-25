@@ -7,6 +7,7 @@ import (
 
 	"crona/kernel/internal/core"
 	corecommands "crona/kernel/internal/core/commands"
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 )
 
@@ -150,5 +151,44 @@ func TestRenameMergeAndDeleteTags(t *testing.T) {
 	removed, err := corecommands.RemoveUnusedTags(ctx, coreCtx)
 	if err != nil || !slices.Equal(removed, []string{"temp"}) {
 		t.Fatalf("expected temp removed, got %v %v", removed, err)
+	}
+}
+
+func TestTagDistributionCountsSessionsTowardEveryTag(t *testing.T) {
+	ctx, coreCtx, _, first := newCarryFixture(t)
+	today := "2026-03-24"
+	second := mustCreateCommandIssue(t, ctx, coreCtx, first.StreamID, "Second task", &today)
+	third := mustCreateCommandIssue(t, ctx, coreCtx, first.StreamID, "Untagged task", &today)
+	if _, err := corecommands.SetIssueTags(ctx, coreCtx, first.ID, []string{"urgent", "docs"}); err != nil {
+		t.Fatalf("tag first: %v", err)
+	}
+	if _, err := corecommands.SetIssueTags(ctx, coreCtx, second.ID, []string{"docs"}); err != nil {
+		t.Fatalf("tag second: %v", err)
+	}
+	logWork(t, ctx, coreCtx, first.ID, "2026-03-24", 60)
+	logWork(t, ctx, coreCtx, second.ID, "2026-03-24", 30)
+	logWork(t, ctx, coreCtx, third.ID, "2026-03-24", 10)
+
+	out, err := corecommands.ComputeTimeDistributionSummary(ctx, coreCtx, shareddto.DashboardSummaryQuery{
+		Start: "2026-03-24", End: "2026-03-24", GroupBy: string(sharedtypes.DistributionGroupTag),
+	})
+	if err != nil {
+		t.Fatalf("distribution: %v", err)
+	}
+	if out.TotalSeconds != 100*60 {
+		t.Fatalf("total should be time worked, got %d", out.TotalSeconds)
+	}
+	got := map[string]int{}
+	for _, row := range out.Rows {
+		got[row.Label] = row.WorkedSeconds / 60
+	}
+	want := map[string]int{"+docs": 90, "+urgent": 60, "+untagged": 10}
+	for label, minutes := range want {
+		if got[label] != minutes {
+			t.Fatalf("%s: want %d min, got %v", label, minutes, got)
+		}
+	}
+	if out.Rows[0].Label != "+docs" || out.Rows[0].Percent != 90 {
+		t.Fatalf("expected +docs first at 90%%, got %+v", out.Rows[0])
 	}
 }

@@ -160,6 +160,18 @@ Generated at {{generatedAt}}
 {{/if}}
 {{/if}}
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Habits
 
 {{#each habitRepos}}
@@ -493,6 +505,13 @@ Metrics:
 - {{metrics.restTime}}
 - {{metrics.burnout.level}}
 - {{metrics.burnout.score}}
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- {{#each tagTime}}
+  - {{name}}
+  - {{workedTime}}
+  - {{workedSeconds}}
+  - {{percent}}
 `
 
 const fallbackWeeklyReportTemplate = `{{frontmatterBlock}}
@@ -520,6 +539,18 @@ Generated at {{generatedAt}}
 - Focus: {{streaks.currentFocusDays}} current / {{streaks.longestFocusDays}} longest
 - Check-ins: {{streaks.currentCheckInDays}} current / {{streaks.longestCheckInDays}} longest
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Days
 
 {{#each days}}
@@ -634,6 +665,13 @@ Days:
   - {{abandonedIssues}}
   - {{checkIn.mood}}
   - {{checkIn.energy}}
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- {{#each tagTime}}
+  - {{name}}
+  - {{workedTime}}
+  - {{workedSeconds}}
+  - {{percent}}
 `
 
 const fallbackRepoReportTemplate = `{{frontmatterBlock}}
@@ -689,6 +727,18 @@ Sessions
 {{/each}}
 {{/each}}
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Habits
 
 {{#each habits}}
@@ -750,6 +800,13 @@ Habits:
 - {{#each habits}}
   - {{name}}
   - {{scheduleType}}
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- {{#each tagTime}}
+  - {{name}}
+  - {{workedTime}}
+  - {{workedSeconds}}
+  - {{percent}}
 `
 
 const fallbackStreamReportTemplate = `{{frontmatterBlock}}
@@ -798,6 +855,18 @@ Sessions
 {{/each}}
 {{/each}}
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Habits
 
 {{#each habits}}
@@ -852,6 +921,13 @@ Habits:
 - {{#each habits}}
   - {{name}}
   - {{scheduleType}}
+
+Time by tag (empty when no worked issue was tagged; a session counts toward every tag on its issue):
+- {{#each tagTime}}
+  - {{name}}
+  - {{workedTime}}
+  - {{workedSeconds}}
+  - {{percent}}
 `
 
 const fallbackIssueRollupReportTemplate = `{{frontmatterBlock}}
