@@ -317,6 +317,36 @@ func (c *Client) SetIssuePinnedDaily(id int64, pinned bool) error {
 	}, nil)
 }
 
+func (c *Client) ListTags() ([]Tag, error) {
+	var out []Tag
+	return out, c.call(protocol.MethodTagList, nil, &out)
+}
+
+func (c *Client) SetIssueTags(id int64, tags []string) error {
+	return c.call(protocol.MethodIssueTagsSet, shareddto.SetTagsRequest{ID: id, Tags: tags}, nil)
+}
+
+func (c *Client) SetHabitTags(id int64, tags []string) error {
+	return c.call(protocol.MethodHabitTagsSet, shareddto.SetTagsRequest{ID: id, Tags: tags}, nil)
+}
+
+func (c *Client) RenameTag(from, to string, merge bool) error {
+	return c.call(protocol.MethodTagRename, shareddto.TagRenameRequest{From: from, To: to, Merge: merge}, nil)
+}
+
+func (c *Client) SetTagColor(name string, color *string) error {
+	return c.call(protocol.MethodTagSetColor, shareddto.TagSetColorRequest{Name: name, Color: color}, nil)
+}
+
+func (c *Client) DeleteTag(name string) error {
+	return c.call(protocol.MethodTagDelete, shareddto.TagNameRequest{Name: name}, nil)
+}
+
+func (c *Client) RemoveUnusedTags() ([]string, error) {
+	var out shareddto.TagRemoveUnusedResponse
+	return out.Removed, c.call(protocol.MethodTagRemoveUnused, nil, &out)
+}
+
 // CarryIssue carries the issue from its planned day to the next working day.
 func (c *Client) CarryIssue(id int64) error {
 	return c.call(protocol.MethodIssueCarry, map[string]any{"id": id}, nil)

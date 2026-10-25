@@ -66,6 +66,10 @@ type Deps struct {
 	EndFocusSession                func(streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
+	SetItemTags                    func(target string, id int64, tags []string) tea.Cmd
+	SetPaneFilter                  func(pane, value string) tea.Cmd
+	RenameTag                      func(from, to string, merge bool) tea.Cmd
+	DeleteTag                      func(name string) tea.Cmd
 	WipeRuntimeData                func() tea.Cmd
 	OpenSupportFeedbackRoadmapURL  func() tea.Cmd
 	OpenSupportReleasesURL         func() tea.Cmd
@@ -184,6 +188,28 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		"set_export_reports_dir",
 		func(action dialogstate.Action) tea.Cmd { return deps.SetExportReportsDir(action.Path) },
 	)
+	r.Register("set_filter", func(action dialogstate.Action) tea.Cmd {
+		if deps.SetPaneFilter == nil {
+			return missingRuntimeHookCmd("set_filter")
+		}
+		return deps.SetPaneFilter(action.Name, action.Path)
+	})
+	r.Register("rename_tag", func(action dialogstate.Action) tea.Cmd {
+		if deps.RenameTag == nil {
+			return missingRuntimeHookCmd("rename_tag")
+		}
+		return deps.RenameTag(action.Title, action.Name, action.Active)
+	})
+	r.Register("set_tags", func(action dialogstate.Action) tea.Cmd {
+		if deps.SetItemTags == nil {
+			return missingRuntimeHookCmd("set_tags")
+		}
+		id := action.IssueID
+		if action.Status == dialogstate.TagTargetHabit {
+			id = action.HabitID
+		}
+		return deps.SetItemTags(action.Status, id, action.StringList)
+	})
 	r.Register(
 		"set_export_ics_dir",
 		func(action dialogstate.Action) tea.Cmd { return deps.SetExportICSDir(action.Path) },
@@ -478,6 +504,12 @@ func deleteCmd(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	})
 	r.Register("session_history", func(action dialogstate.Action) tea.Cmd {
 		return deps.DeleteSessionHistory(action.ID)
+	})
+	r.Register("tag", func(action dialogstate.Action) tea.Cmd {
+		if deps.DeleteTag == nil {
+			return missingRuntimeHookCmd("delete tag")
+		}
+		return deps.DeleteTag(action.ID)
 	})
 	if cmd, ok := r.Resolve(action.Name, action); ok {
 		return cmd

@@ -193,6 +193,7 @@ type CoreSettingsModel struct {
 	CarryOverStallAfter   int    `bun:"carry_over_stall_after,notnull,type:integer"`
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
+	TagFilters            string `bun:"tag_filters,notnull,type:text,default:'{}'"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
 	OnboardingCompleted   bool   `bun:"onboarding_completed,notnull,type:integer"`
 	UsageTelemetryEnabled bool   `bun:"usage_telemetry_enabled,notnull,type:integer"`
@@ -358,4 +359,34 @@ type HabitStreakHabitModel struct {
 	HabitID    int64  `bun:"habit_id,pk,type:integer"`
 	UserID     string `bun:"user_id,notnull,type:text"`
 	CreatedAt  string `bun:"created_at,notnull,type:text"`
+}
+
+type TagModel struct {
+	bun.BaseModel `bun:"table:tags"`
+
+	ID        string  `bun:"id,pk,type:text"`
+	UserID    string  `bun:"user_id,notnull,type:text"`
+	Name      string  `bun:"name,notnull,type:text"`
+	Color     *string `bun:"color,type:text,nullzero"`
+	System    bool    `bun:"system,notnull,type:integer,default:0"`
+	CreatedAt string  `bun:"created_at,notnull,type:text"`
+	UpdatedAt string  `bun:"updated_at,notnull,type:text"`
+}
+
+type IssueTagModel struct {
+	bun.BaseModel `bun:"table:issue_tags"`
+
+	IssueID   string `bun:"issue_id,pk,type:text"`
+	TagID     string `bun:"tag_id,pk,type:text"`
+	UserID    string `bun:"user_id,notnull,type:text"`
+	CreatedAt string `bun:"created_at,notnull,type:text"`
+}
+
+type HabitTagModel struct {
+	bun.BaseModel `bun:"table:habit_tags"`
+
+	HabitID   string `bun:"habit_id,pk,type:text"`
+	TagID     string `bun:"tag_id,pk,type:text"`
+	UserID    string `bun:"user_id,notnull,type:text"`
+	CreatedAt string `bun:"created_at,notnull,type:text"`
 }

@@ -72,7 +72,7 @@ func TestHabitListCardsAndActions(t *testing.T) {
 		},
 	}
 	rendered := ansi.Strip(Render(types.Theme{}, state))
-	for _, want := range []string{"[a] new habit", "Walk", "[enter] open  [e] edit  [D] delete  [m] log"} {
+	for _, want := range []string{"[a] new habit", "Walk", "[enter] open  [e] edit  [D] delete  [m] log  [+] tags"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("missing %q: %s", want, rendered)
 		}

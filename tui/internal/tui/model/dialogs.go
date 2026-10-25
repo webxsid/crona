@@ -916,6 +916,10 @@ func (m Model) dialogState() dialogstate.State {
 		HardLimitBreakSeconds:          m.dialogHardLimitBreakSeconds,
 		HardLimitLongBreakSeconds:      m.dialogHardLimitLongBreakSeconds,
 		HardLimitCyclesBeforeLongBreak: m.dialogHardLimitCyclesBeforeLongBreak,
+		TagTarget:                      m.dialogTagTarget,
+		TagSelected:                    m.dialogTagSelected,
+		TagVocab:                       m.dialogTagVocab,
+		TagCursor:                      m.dialogTagCursor,
 	}
 }
 
@@ -1045,6 +1049,10 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogHardLimitBreakSeconds = state.HardLimitBreakSeconds
 	m.dialogHardLimitLongBreakSeconds = state.HardLimitLongBreakSeconds
 	m.dialogHardLimitCyclesBeforeLongBreak = state.HardLimitCyclesBeforeLongBreak
+	m.dialogTagTarget = state.TagTarget
+	m.dialogTagSelected = state.TagSelected
+	m.dialogTagVocab = state.TagVocab
+	m.dialogTagCursor = state.TagCursor
 	return m
 }
 
@@ -1268,6 +1276,14 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		},
 		SetIssueTodoDate: func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd {
 			return commands.SetIssueTodoDate(m.client, issueID, date, streamID, dashboardDate)
+		},
+		SetPaneFilter: commands.SetPaneFilter,
+		RenameTag: func(from, to string, merge bool) tea.Cmd {
+			return commands.RenameTag(m.client, from, to, merge)
+		},
+		DeleteTag: func(name string) tea.Cmd { return commands.DeleteTag(m.client, name) },
+		SetItemTags: func(target string, id int64, tags []string) tea.Cmd {
+			return commands.SetItemTags(m.client, target == "habit", id, tags)
 		},
 		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },

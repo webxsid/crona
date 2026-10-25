@@ -11,6 +11,7 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	"crona/tui/internal/tui/commands"
+	helperpkg "crona/tui/internal/tui/helpers"
 	"crona/tui/internal/tui/scope"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
@@ -33,6 +34,7 @@ type MessageState struct {
 	ReviewWindowEnd        string
 	Cursor                 map[uistate.Pane]int
 	Filters                map[uistate.Pane]string
+	TagFiltersRestored     bool
 	Repos                  []api.Repo
 	Streams                []api.Stream
 	AllStreams             []api.Stream
@@ -45,6 +47,7 @@ type MessageState struct {
 	DueHabits              []api.HabitDailyItem
 	DailySummary           *api.DailyIssueSummary
 	DailyPlan              *api.DailyPlan
+	Tags                   []api.Tag
 	MomentumWindowDays     int
 	DailyCheckIn           *api.DailyCheckIn
 	MetricsRange           []api.DailyMetricsDay
@@ -120,6 +123,7 @@ type MessageDeps struct {
 	DefaultOpsLimit            func(MessageState) int
 	CurrentOpsLimit            func(MessageState) int
 	ClampFiltered              func(*MessageState, uistate.Pane)
+	SaveTagFilters             func(map[string]string) tea.Cmd
 	FilteredCursorForRawIndex  func(*MessageState, uistate.Pane, int) int
 	SetStatus                  func(*MessageState, string, bool) tea.Cmd
 	OpenViewEntityDialog       func(*MessageState, string, string, string, string)
@@ -302,6 +306,12 @@ func HandleMessage(
 		return state, nil, true
 	case commands.DailyPlanLoadedMsg:
 		state.DailyPlan = msg.Plan
+		return state, nil, true
+	case commands.TagsLoadedMsg:
+		state.Tags = msg.Tags
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.PaneTags)
+		}
 		return state, nil, true
 	case commands.DailyCheckInLoadedMsg:
 		state.DailyCheckIn = msg.CheckIn
@@ -510,8 +520,13 @@ func HandleMessage(
 		return state, deps.SetStatus(&state, msg.Label, false), true
 	case commands.AlertReminderChangedMsg:
 		return state, tea.Batch(deps.SetStatus(&state, msg.Label, false), deps.LoadAlertReminders()), true
+	case commands.PaneFilterSetMsg:
+		return setPaneFilter(state, deps, uistate.Pane(msg.Pane), msg.Value)
 	case commands.SettingsLoadedMsg:
 		state.Settings = msg.Settings
+		if msg.Settings != nil && !state.TagFiltersRestored {
+			state = restoreTagFilters(state, deps)
+		}
 		if deps.ClampFiltered != nil {
 			deps.ClampFiltered(&state, uistate.PaneSettings)
 			deps.ClampFiltered(&state, uistate.PaneAlerts)
@@ -992,4 +1007,63 @@ func visibleMomentumCards(state MessageState) []api.MomentumCard {
 		state.MomentumCards,
 		state.Filters[uistate.PaneMomentumCards],
 	)
+}
+
+// setPaneFilter applies a pane's filter and saves its tag part when that changed.
+func setPaneFilter(state MessageState, deps MessageDeps, pane uistate.Pane, value string) (MessageState, tea.Cmd, bool) {
+	filters := make(map[uistate.Pane]string, len(state.Filters)+1)
+	for key, filter := range state.Filters {
+		filters[key] = filter
+	}
+	filters[pane] = value
+	state.Filters = filters
+	if deps.ClampFiltered != nil {
+		deps.ClampFiltered(&state, pane)
+	}
+	saved := map[string]string{}
+	if state.Settings != nil {
+		for key, filter := range state.Settings.TagFilters {
+			saved[key] = filter
+		}
+	}
+	tags := helperpkg.TagFilterQuery(value)
+	if saved[string(pane)] == tags || deps.SaveTagFilters == nil {
+		return state, nil, true
+	}
+	if tags == "" {
+		delete(saved, string(pane))
+	} else {
+		saved[string(pane)] = tags
+	}
+	return state, deps.SaveTagFilters(saved), true
+}
+
+// restoreTagFilters puts each pane's saved tag filter back once, when settings first load,
+// dropping tags that no longer exist.
+func restoreTagFilters(state MessageState, deps MessageDeps) MessageState {
+	state.TagFiltersRestored = true
+	filters := make(map[uistate.Pane]string, len(state.Filters))
+	for key, filter := range state.Filters {
+		filters[key] = filter
+	}
+	known := make([]string, 0, len(state.Tags))
+	for _, tag := range state.Tags {
+		known = append(known, tag.Name)
+	}
+	for key, saved := range state.Settings.TagFilters {
+		pane := uistate.Pane(key)
+		if len(known) > 0 {
+			saved = helperpkg.PruneTagFilter(saved, known)
+		}
+		if filters[pane] == "" {
+			filters[pane] = saved
+		}
+	}
+	state.Filters = filters
+	for key := range state.Settings.TagFilters {
+		if deps.ClampFiltered != nil {
+			deps.ClampFiltered(&state, uistate.Pane(key))
+		}
+	}
+	return state
 }

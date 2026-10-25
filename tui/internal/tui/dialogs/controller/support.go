@@ -70,6 +70,7 @@ func OpenViewJump(state State, availableViews []uistate.View) State {
 			Value:  "habit_list",
 			Detail: "Habit definitions in the browse scope.",
 		},
+		{Key: "+", Label: "Tags", Value: "tags", Detail: "Tag vocabulary: rename, merge, color and delete."},
 		{Key: "o", Label: "Ops", Value: "ops", Detail: "Recent operation log."},
 		{
 			Key:    "s",

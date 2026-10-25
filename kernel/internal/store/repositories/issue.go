@@ -80,6 +80,7 @@ func (r *IssueRepository) ListByStream(
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
 		Adhoc           bool    `bun:"adhoc"`
+		TagNames        string  `bun:"tag_names"`
 	}
 
 	var rows []row
@@ -99,6 +100,7 @@ func (r *IssueRepository) ListByStream(
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
 		ColumnExpr("issues.adhoc").
+		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		Where("streams.public_id = ?", streamID).
 		Where("issues.user_id = ?", userID).
 		Where("issues.is_reserved = 0").
@@ -125,6 +127,7 @@ func (r *IssueRepository) ListByStream(
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
 			Adhoc:           row.Adhoc,
+			Tags:            splitTagNames(row.TagNames),
 		})
 	}
 	return out, nil
@@ -149,6 +152,7 @@ func (r *IssueRepository) GetByID(
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
 		Adhoc           bool    `bun:"adhoc"`
+		TagNames        string  `bun:"tag_names"`
 	}
 
 	var item row
@@ -168,6 +172,7 @@ func (r *IssueRepository) GetByID(
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
 		ColumnExpr("issues.adhoc").
+		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		Where("issues.public_id = ?", issueID).
 		Where("issues.user_id = ?", userID).
 		Where("issues.is_reserved = 0").
@@ -195,6 +200,7 @@ func (r *IssueRepository) GetByID(
 		CompletedAt:     item.CompletedAt,
 		AbandonedAt:     item.AbandonedAt,
 		Adhoc:           item.Adhoc,
+		Tags:            splitTagNames(item.TagNames),
 	}, nil
 }
 
@@ -270,6 +276,7 @@ func (r *IssueRepository) ListAll(
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
 		Adhoc           bool    `bun:"adhoc"`
+		TagNames        string  `bun:"tag_names"`
 		StreamName      string  `bun:"stream_name"`
 		RepoPublicID    int64   `bun:"repo_public_id"`
 		RepoName        string  `bun:"repo_name"`
@@ -292,6 +299,7 @@ func (r *IssueRepository) ListAll(
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
 		ColumnExpr("issues.adhoc").
+		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
 		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
@@ -324,6 +332,7 @@ func (r *IssueRepository) ListAll(
 				CompletedAt:     row.CompletedAt,
 				AbandonedAt:     row.AbandonedAt,
 				Adhoc:           row.Adhoc,
+				Tags:            splitTagNames(row.TagNames),
 			},
 			RepoID:     row.RepoPublicID,
 			RepoName:   row.RepoName,
@@ -352,6 +361,7 @@ func (r *IssueRepository) ListByTodoForDate(
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
 		Adhoc           bool    `bun:"adhoc"`
+		TagNames        string  `bun:"tag_names"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -370,6 +380,7 @@ func (r *IssueRepository) ListByTodoForDate(
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
 		ColumnExpr("issues.adhoc").
+		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		Where("issues.todo_for_date = ?", todoForDate).
 		Where("issues.user_id = ?", userID).
 		Where("issues.is_reserved = 0").
@@ -395,6 +406,7 @@ func (r *IssueRepository) ListByTodoForDate(
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
 			Adhoc:           row.Adhoc,
+			Tags:            splitTagNames(row.TagNames),
 		})
 	}
 	return out, nil
@@ -422,6 +434,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 		CompletedAt     *string `bun:"completed_at"`
 		AbandonedAt     *string `bun:"abandoned_at"`
 		Adhoc           bool    `bun:"adhoc"`
+		TagNames        string  `bun:"tag_names"`
 	}
 	var rows []row
 	if err := r.db.NewSelect().
@@ -443,6 +456,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 		ColumnExpr("issues.completed_at").
 		ColumnExpr("issues.abandoned_at").
 		ColumnExpr("issues.adhoc").
+		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		Where("issues.todo_for_date >= ?", startDate).
 		Where("issues.todo_for_date <= ?", endDate).
 		Where("issues.user_id = ?", userID).
@@ -471,6 +485,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 			CompletedAt:     row.CompletedAt,
 			AbandonedAt:     row.AbandonedAt,
 			Adhoc:           row.Adhoc,
+			Tags:            splitTagNames(row.TagNames),
 		})
 	}
 	return out, nil

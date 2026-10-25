@@ -187,6 +187,10 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "date_display_format",
 		queryKind: coreSettingQueryString,
 	},
+	sharedtypes.CoreSettingsKeyTagFilters: {
+		column:    "tag_filters",
+		queryKind: coreSettingQueryString,
+	},
 	sharedtypes.CoreSettingsKeyPromptGlyphMode: {
 		column:    "prompt_glyph_mode",
 		queryKind: coreSettingQueryString,
@@ -536,6 +540,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		CarryOverStallAfter:   sharedconstants.DefaultCoreSettings["carryOverStallAfter"].(int),
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
+		TagFilters:            mustJSON(sharedconstants.DefaultCoreSettings["tagFilters"]),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
 		OnboardingCompleted:   sharedconstants.DefaultCoreSettings["onboardingCompleted"].(bool),
 		UsageTelemetryEnabled: sharedconstants.DefaultCoreSettings["usageTelemetryEnabled"].(bool),
@@ -585,6 +590,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseStreakKinds(toString(value))
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
 		return parseIntSlice(toString(value))
+	case sharedtypes.CoreSettingsKeyTagFilters:
+		return parseStringMap(toString(value))
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyAwayDates:
@@ -649,6 +656,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return streakKindsJSON(value)
 	case sharedtypes.CoreSettingsKeyRestWeekdays:
 		return intSliceJSON(value)
+	case sharedtypes.CoreSettingsKeyTagFilters:
+		return stringMapJSON(value)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyAwayDates:
@@ -777,6 +786,7 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 			sharedtypes.DateDisplayPreset(row.DateDisplayPreset),
 		),
 		DateDisplayFormat: strings.TrimSpace(row.DateDisplayFormat),
+		TagFilters:        parseStringMap(row.TagFilters),
 		PromptGlyphMode: sharedtypes.NormalizePromptGlyphMode(
 			sharedtypes.PromptGlyphMode(row.PromptGlyphMode),
 		),
@@ -1155,4 +1165,41 @@ func normalizeStreakKinds(values []sharedtypes.StreakKind) []sharedtypes.StreakK
 func mustJSON(value any) string {
 	data, _ := json.Marshal(value)
 	return string(data)
+}
+
+// stringMapJSON encodes a string-to-string map setting, dropping empty values.
+func stringMapJSON(value any) (string, error) {
+	out := map[string]string{}
+	switch typed := value.(type) {
+	case map[string]string:
+		for key, item := range typed {
+			if item = strings.TrimSpace(item); item != "" {
+				out[key] = item
+			}
+		}
+	case map[string]any:
+		for key, item := range typed {
+			text, ok := item.(string)
+			if !ok {
+				return "", errors.New("expected string map")
+			}
+			if text = strings.TrimSpace(text); text != "" {
+				out[key] = text
+			}
+		}
+	default:
+		return "", errors.New("expected string map")
+	}
+	return mustJSON(out), nil
+}
+
+func parseStringMap(raw string) map[string]string {
+	out := map[string]string{}
+	if strings.TrimSpace(raw) == "" {
+		return out
+	}
+	if err := json.Unmarshal([]byte(raw), &out); err != nil {
+		return map[string]string{}
+	}
+	return out
 }

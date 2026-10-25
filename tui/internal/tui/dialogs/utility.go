@@ -43,6 +43,12 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderMenuList(theme, state)
 	case "complete_habit":
 		return renderHabitLogForm(theme, state)
+	case "edit_tags":
+		return renderTagPicker(theme, state)
+	case "edit_filter":
+		return renderPaneFilter(theme, state)
+	case "rename_tag":
+		return renderRenameTag(theme, state)
 	default:
 		return ""
 	}

@@ -1036,6 +1036,58 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		return err
 	}
 
+	if err := corecommands.EnsureSystemTags(ctx, h.core); err != nil {
+		return err
+	}
+	for issueID, tags := range map[int64][]string{
+		focusIssue.ID:           {"urgent", "tooling"},
+		blockedIssue.ID:         {"waiting", "release"},
+		readyIssue.ID:           {"release", "quick"},
+		inProgressIssue.ID:      {"release"},
+		docsIssue.ID:            {"docs", "quick"},
+		overEstimateIssue.ID:    {"review", "ops"},
+		underEstimateIssue.ID:   {"docs", "review"},
+		proratedContextIssue.ID: {"client-acme", "urgent"},
+	} {
+		if _, err := corecommands.SetIssueTags(ctx, h.core, issueID, tags); err != nil {
+			return err
+		}
+	}
+	for habitID, tags := range map[int64][]string{
+		workoutHabit.ID:       {"health"},
+		walkHabit.ID:          {"health", "quick"},
+		journalHabit.ID:       {"reflection"},
+		inboxHabit.ID:         {"quick", "ops"},
+		recoveryDrillHabit.ID: {"health", "someday"},
+	} {
+		if _, err := corecommands.SetHabitTags(ctx, h.core, habitID, tags); err != nil {
+			return err
+		}
+	}
+	if err := corecommands.SetTagColor(ctx, h.core, "urgent", new("red")); err != nil {
+		return err
+	}
+	for name, color := range map[string]string{
+		"release":     "cyan",
+		"health":      "green",
+		"docs":        "blue",
+		"client-acme": "magenta",
+		"waiting":     "yellow",
+		"tech-debt":   "orange",
+		"reflection":  "lavender",
+	} {
+		if err := corecommands.SetTagColor(ctx, h.core, name, new(color)); err != nil {
+			return err
+		}
+	}
+	// A tag that was used once and dropped, so Remove unused tags has something to remove.
+	if _, err := corecommands.SetIssueTags(ctx, h.core, docsIssue.ID, []string{"docs", "quick", "legacy"}); err != nil {
+		return err
+	}
+	if _, err := corecommands.SetIssueTags(ctx, h.core, docsIssue.ID, []string{"docs", "quick"}); err != nil {
+		return err
+	}
+
 	if _, err := corecommands.SetContext(ctx, h.core, corecommands.ContextPatch{
 		RepoSet:   true,
 		RepoID:    &workRepo.ID,
@@ -1157,6 +1209,17 @@ func (h *Handler) seedCarryAndDelayFixtures(
 	}
 	for _, step := range [][2]int{{-3, -1}, {-1, 2}} {
 		if err := postpone(step[0], pushed.ID, step[1]); err != nil {
+			return err
+		}
+	}
+	for issueID, tags := range map[int64][]string{
+		stalled.ID:  {"tech-debt", "someday"},
+		single.ID:   {"release", "docs"},
+		finished.ID: {"quick", "ux"},
+		delayed.ID:  {"tech-debt", "testing"},
+		pushed.ID:   {"ops", "waiting"},
+	} {
+		if _, err := corecommands.SetIssueTags(ctx, h.core, issueID, tags); err != nil {
 			return err
 		}
 	}

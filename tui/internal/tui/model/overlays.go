@@ -220,6 +220,7 @@ func (m Model) handleKernelEvent(event api.KernelEvent) (Model, tea.Cmd) {
 		},
 		LoadHabits:     func(streamID int64) tea.Cmd { return commands.LoadHabits(m.client, streamID) },
 		LoadAllHabits:  func() tea.Cmd { return commands.LoadAllHabits(m.client) },
+		LoadTags:       func() tea.Cmd { return commands.LoadTags(m.client) },
 		LoadAllStreams: func() tea.Cmd { return commands.LoadAllStreams(m.client) },
 		LoadAllIssues:  func() tea.Cmd { return commands.LoadAllIssues(m.client) },
 		LoadAllIssuesSelecting: func(selectedIssueID int64) tea.Cmd {

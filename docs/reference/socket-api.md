@@ -169,17 +169,19 @@ Alert behavior notes:
 
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
-| `issue.list` | `dto.ListIssuesQuery` | issue list | Lists issues for a stream. |
-| `issue.list_all` | `dto.Empty` | issue-with-meta list | Lists issues across the workspace. |
-| `issue.create` | `dto.CreateIssueRequest` | issue object | Creates an issue. |
-| `issue.update` | `dto.UpdateIssueRequest` | issue object | Updates an issue. |
+| `issue.list` | `dto.ListIssuesQuery` | issue list | Lists issues for a stream. Optional `tags` filter. |
+| `issue.list_all` | `dto.ListAllQuery` | issue-with-meta list | Lists issues across the workspace. Optional `tags` filter. |
+| `issue.create` | `dto.CreateIssueRequest` | issue object | Creates an issue. Optional `tags`. |
+| `issue.update` | `dto.UpdateIssueRequest` | issue object | Updates an issue. `tags`, when present, replaces the issue's tags. |
+| `issue.tags.set` | `dto.SetTagsRequest` | issue object | Replaces an issue's tags. |
+| `issue.tags.update` | `dto.UpdateTagsRequest` | issue list | Adds and removes tags across several issues. |
 | `issue.promote_adhoc` | `dto.PromoteAdhocIssueRequest` | issue object | Protocol `1.6`: converts a retained ad hoc issue into a regular issue, preserving identity, status, and session history. |
 | `issue.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes an issue. |
 | `issue.change_status` | `dto.ChangeIssueStatusRequest` | issue object | Applies a lifecycle transition. |
 | `issue.status_transitions` | `dto.NumericIDRequest` | `dto.IssueStatusTransitionsResponse` | Returns daemon-authoritative valid lifecycle transitions for an issue. |
 | `issue.set_todo` | `dto.SetIssueTodoRequest` | issue object | Sets a todo date. |
 | `issue.clear_todo` | `dto.NumericIDRequest` | issue object | Clears a todo date. |
-| `issue.carry` | `{ "id": number, "date"?: "YYYY-MM-DD" }` | issue object | Carries an issue from its planned day to `date`, or the next working day. Its plan entry for that day becomes `carried` The issue keeps its status. Any open issue can be carried this way; the automatic day-boundary carry only takes `planned`, `ready`, `in_progress`, and `in_review` issues. |
+| `issue.carry` | `{ "id": number, "date"?: "YYYY-MM-DD" }` | issue object | Carries an issue from its planned day to `date`, or the next working day. Its plan entry for that day becomes `carried`. The issue keeps its status. Any open issue can be carried this way; the automatic day-boundary carry only takes `planned`, `ready`, `in_progress`, and `in_review` issues. |
 | `issue.carry.undo` | `dto.NumericIDRequest` | issue object | Undoes the issue's latest carry-over inside the plan rollback window. |
 | `issue.daily_summary` | `dto.DailyIssueSummaryQuery` | daily summary object | Summary for an arbitrary date. |
 | `issue.today_summary` | `dto.Empty` | daily summary object | Today's summary shortcut. |
@@ -189,14 +191,29 @@ Alert behavior notes:
 
 | Method | Request | Result | Notes |
 | --- | --- | --- | --- |
-| `habit.list` | `dto.ListHabitsQuery` | habit list | Lists habits for a stream. |
-| `habit.list_due` | `dto.ListHabitsDueQuery` | due-habit list | Lists habits due for a date. |
-| `habit.create` | `dto.CreateHabitRequest` | habit object | Creates a habit. |
-| `habit.update` | `dto.UpdateHabitRequest` | habit object | Updates a habit. |
+| `habit.list` | `dto.ListHabitsQuery` | habit list | Lists habits for a stream. Optional `tags` filter. |
+| `habit.list_all` | `dto.ListAllQuery` | habit-with-meta list | Lists habits across the workspace. Optional `tags` filter. |
+| `habit.list_due` | `dto.ListHabitsDueQuery` | due-habit list | Lists habits due for a date. Optional `tags` filter. |
+| `habit.create` | `dto.CreateHabitRequest` | habit object | Creates a habit. Optional `tags`. |
+| `habit.update` | `dto.UpdateHabitRequest` | habit object | Updates a habit. `tags`, when present, replaces the habit's tags. |
+| `habit.tags.set` | `dto.SetTagsRequest` | habit object | Replaces a habit's tags. |
+| `habit.tags.update` | `dto.UpdateTagsRequest` | habit list | Adds and removes tags across several habits. |
 | `habit.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes a habit. |
 | `habit.complete` | `dto.HabitCompletionUpsertRequest` | completion object | Marks or logs habit completion. |
 | `habit.uncomplete` | `dto.HabitCompletionUpsertRequest` | completion object | Removes completion status. |
 | `habit.history` | `dto.HabitHistoryQuery` | history list | Habit completion history. |
+
+### Tags
+
+| Method | Request | Result | Notes |
+| --- | --- | --- | --- |
+| `tag.list` | `dto.Empty` | tag list | The vocabulary in name order, with issue and habit usage counts. System tags are always present. |
+| `tag.rename` | `dto.TagRenameRequest` | `dto.OKResponse` | Renames a tag. Renaming onto an existing tag requires `merge: true` and merges the two. System tags cannot be renamed or merged onto. |
+| `tag.set_color` | `dto.TagSetColorRequest` | `dto.OKResponse` | Sets a palette color (`blue`, `cyan`, `green`, `magenta`, `yellow`, `red`, `orange`, `lavender`), or clears it when `color` is empty. |
+| `tag.delete` | `dto.TagNameRequest` | `dto.OKResponse` | Deletes a user tag and every tagging of it. |
+| `tag.remove_unused` | `dto.Empty` | `dto.TagRemoveUnusedResponse` | Deletes user tags no issue or habit uses. |
+
+Tag names are lowercase letters, digits, `-`, `_` and `/`, 1–32 characters, starting with a letter or digit; the kernel normalizes input (lowercase, spaces to `-`, a leading `+` dropped). A tag filter is `{ "any"?: [names], "none"?: [names] }`; `untagged` matches items with no tags. Tag changes emit `tags.changed`, and item tag changes also emit `issue.updated` or `habit.updated`.
 
 ### Momentum
 

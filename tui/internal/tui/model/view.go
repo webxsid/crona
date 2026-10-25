@@ -66,6 +66,7 @@ func (m Model) layoutState() layoutpkg.State {
 		ViewHabitHistory,
 		ViewOps,
 		ViewSettings,
+		ViewTags,
 		ViewAlerts,
 		ViewReports,
 		ViewConfig,

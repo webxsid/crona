@@ -48,6 +48,13 @@ type TodayHabitsLoadedMsg struct {
 }
 type DailySummaryLoadedMsg struct{ Summary *api.DailyIssueSummary }
 type DailyPlanLoadedMsg struct{ Plan *api.DailyPlan }
+type TagsLoadedMsg struct{ Tags []api.Tag }
+
+// PaneFilterSetMsg replaces one pane's filter.
+type PaneFilterSetMsg struct {
+	Pane  string
+	Value string
+}
 type DailyCheckInLoadedMsg struct{ CheckIn *api.DailyCheckIn }
 type MetricsRangeLoadedMsg struct{ Days []api.DailyMetricsDay }
 type MetricsRollupLoadedMsg struct{ Rollup *api.MetricsRollup }

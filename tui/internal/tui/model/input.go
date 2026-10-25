@@ -14,6 +14,7 @@ import (
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
 
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	tea "github.com/charmbracelet/bubbletea"
@@ -50,6 +51,7 @@ func (m Model) selectionSnapshot() selectionpkg.Snapshot {
 		Settings:       m.settings,
 		AlertStatus:    m.alertStatus,
 		AlertReminders: m.alertReminders,
+		Tags:           m.tags,
 		ConfigItems:    m.configItemsForSnapshot(),
 	})
 }
@@ -121,6 +123,7 @@ func (m Model) inputState() inputpkg.State {
 		Settings:                  m.settings,
 		AlertStatus:               m.alertStatus,
 		AlertReminders:            m.alertReminders,
+		Tags:                      m.tags,
 		ExportAssets:              m.exportAssets,
 		DailyCheckIn:              m.dailyCheckIn,
 	}
@@ -422,6 +425,24 @@ func (m Model) inputDeps() inputpkg.Deps {
 			}
 			return nil
 		},
+		OpenPaneFilter: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(
+				next.dialogSnapshot().OpenPaneFilter(string(next.pane), next.filters[next.pane]),
+			)
+			*state = next.inputState()
+			return true
+		},
+		SetPaneFilter: func(pane Pane, value string) tea.Cmd { return commands.SetPaneFilter(string(pane), value) },
+		OpenTagPicker: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			opened, ok := next.openTagPicker()
+			if !ok {
+				return false
+			}
+			*state = opened.inputState()
+			return true
+		},
 		CarrySelectedIssue: func(state *inputpkg.State) tea.Cmd {
 			next := m.applyInputState(*state)
 			if issue, ok := selectionpkg.SelectedIssue(next.selectionSnapshot()); ok && !issue.Adhoc {
@@ -686,6 +707,21 @@ func (m Model) inputDeps() inputpkg.Deps {
 			*state = next.inputState()
 			return true
 		},
+		OpenRenameTagDialog: func(state *inputpkg.State, name string) bool {
+			next := m.applyInputState(*state)
+			next = next.withDialogState(next.dialogSnapshot().OpenRenameTag(name, next.tagVocab()))
+			*state = next.inputState()
+			return true
+		},
+		OpenConfirmDeleteTagDialog: func(state *inputpkg.State, tag api.Tag) bool {
+			next := m.applyInputState(*state)
+			label := "+" + tag.Name + " (on " + tagsmeta.Usage(tag) + ")"
+			next = next.withDialogState(next.dialogSnapshot().OpenConfirmDeleteEntity("tag", tag.Name, label))
+			*state = next.inputState()
+			return true
+		},
+		SetTagColor:                   func(name string, color *string) tea.Cmd { return commands.SetTagColor(m.client, name, color) },
+		RemoveUnusedTags:              func() tea.Cmd { return commands.RemoveUnusedTags(m.client) },
 		WipeRuntimeData:               func() tea.Cmd { return commands.WipeRuntimeData(m.client) },
 		OpenSupportFeedbackRoadmapURL: func() tea.Cmd { return m.openSupportFeedbackRoadmapURL() },
 		OpenSupportReleasesURL:        func() tea.Cmd { return m.openSupportReleasesURL() },
@@ -716,4 +752,31 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return true
 		},
 	}
+}
+
+// openTagPicker opens the tag picker on the selected issue or habit, if there is one.
+func (m Model) openTagPicker() (Model, bool) {
+	snapshot := m.selectionSnapshot()
+	vocab := m.tagVocab()
+	open := func(target string, id int64, title string, current []string) (Model, bool) {
+		return m.withDialogState(m.dialogSnapshot().OpenTagPicker(target, id, title, current, vocab)), true
+	}
+	if issue, ok := selectionpkg.SelectedIssue(snapshot); ok && !issue.Adhoc {
+		return open(dialogstate.TagTargetIssue, issue.ID, issue.Title, issue.Tags)
+	}
+	if habit, ok := selectionpkg.SelectedDailyHabit(snapshot); ok {
+		return open(dialogstate.TagTargetHabit, habit.ID, habit.Name, habit.Tags)
+	}
+	if habit, ok := selectionpkg.SelectedHabit(snapshot); ok {
+		return open(dialogstate.TagTargetHabit, habit.ID, habit.Name, habit.Tags)
+	}
+	return m, false
+}
+
+func (m Model) tagVocab() []string {
+	vocab := make([]string, 0, len(m.tags))
+	for _, tag := range m.tags {
+		vocab = append(vocab, tag.Name)
+	}
+	return vocab
 }

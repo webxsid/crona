@@ -31,6 +31,7 @@ type Registry struct {
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
 	ReservedContexts             *repositories.ReservedContextRepository
+	Tags                         *repositories.TagRepository
 }
 
 func Open(dbPath string) (*Store, error) {
@@ -64,5 +65,6 @@ func NewRegistry(db *bun.DB) *Registry {
 		CustomHabitMomentumSnapshots: repositories.NewCustomHabitMomentumSnapshotRepository(db),
 		HabitStreakDefinitions:       repositories.NewHabitStreakDefinitionRepository(db),
 		ReservedContexts:             repositories.NewReservedContextRepository(db),
+		Tags:                         repositories.NewTagRepository(db),
 	}
 }

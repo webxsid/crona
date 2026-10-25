@@ -311,6 +311,7 @@ const (
 	OpEntitySession         OpEntity = "session"
 	OpEntitySessionSegment  OpEntity = "session_segment"
 	OpEntityActiveContext   OpEntity = "active_context"
+	OpEntityTag             OpEntity = "tag"
 )
 
 type OpAction string
@@ -362,6 +363,7 @@ const (
 	CoreSettingsKeyCarryOverStallAfter   CoreSettingsKey = "carryOverStallAfter"
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
+	CoreSettingsKeyTagFilters            CoreSettingsKey = "tagFilters"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
 	CoreSettingsKeyOnboardingCompleted   CoreSettingsKey = "onboardingCompleted"
 	CoreSettingsKeyUsageTelemetryEnabled CoreSettingsKey = "usageTelemetryEnabled"
@@ -742,6 +744,7 @@ type Habit struct {
 	Weekdays      []int             `json:"weekdays,omitempty"`
 	TargetMinutes *int              `json:"targetMinutes,omitempty"`
 	Active        bool              `json:"active"`
+	Tags          []string          `json:"tags,omitempty"`
 }
 
 type HabitCompletionStatus string
@@ -836,6 +839,7 @@ type Issue struct {
 	CompletedAt     *string     `json:"completedAt,omitempty"`
 	AbandonedAt     *string     `json:"abandonedAt,omitempty"`
 	Adhoc           bool        `json:"adhoc,omitempty"`
+	Tags            []string    `json:"tags,omitempty"`
 }
 
 type IssueWithMeta struct {
@@ -1341,45 +1345,47 @@ const (
 )
 
 type CoreSettings struct {
-	UserID                string                  `json:"userId"`
-	DeviceID              string                  `json:"deviceId"`
-	TimerMode             TimerMode               `json:"timerMode"`
-	BreaksEnabled         bool                    `json:"breaksEnabled"`
-	WorkDurationMinutes   int                     `json:"workDurationMinutes"`
-	ShortBreakMinutes     int                     `json:"shortBreakMinutes"`
-	LongBreakMinutes      int                     `json:"longBreakMinutes"`
-	LongBreakEnabled      bool                    `json:"longBreakEnabled"`
-	CyclesBeforeLongBreak int                     `json:"cyclesBeforeLongBreak"`
-	AutoStartBreaks       bool                    `json:"autoStartBreaks"`
-	AutoStartWork         bool                    `json:"autoStartWork"`
-	BoundaryNotifications bool                    `json:"boundaryNotificationsEnabled"`
-	BoundarySound         bool                    `json:"boundarySoundEnabled"`
-	AlertSoundPreset      AlertSoundPreset        `json:"alertSoundPreset"`
-	AlertUrgency          AlertUrgency            `json:"alertUrgency"`
-	AlertIconEnabled      bool                    `json:"alertIconEnabled"`
-	InactivityAlerts      bool                    `json:"inactivityAlertsEnabled"`
-	InactivityThreshold   int                     `json:"inactivityThresholdMinutes"`
-	InactivityRepeat      int                     `json:"inactivityRepeatMinutes"`
-	UpdateChecksEnabled   bool                    `json:"updateChecksEnabled"`
-	UpdatePromptEnabled   bool                    `json:"updatePromptEnabled"`
-	UpdateChannel         UpdateChannel           `json:"updateChannel"`
-	RepoSort              RepoSort                `json:"repoSort"`
-	StreamSort            StreamSort              `json:"streamSort"`
-	IssueSort             IssueSort               `json:"issueSort"`
-	HabitSort             HabitSort               `json:"habitSort"`
-	WeekStart             WeekStart               `json:"weekStart"`
-	AwayModeEnabled       bool                    `json:"awayModeEnabled"`
-	AwayDates             []string                `json:"awayDates,omitempty"`
-	FrozenStreakKinds     []StreakKind            `json:"frozenStreakKinds,omitempty"`
-	RestWeekdays          []int                   `json:"restWeekdays,omitempty"`
-	RestSpecificDates     []string                `json:"restSpecificDates,omitempty"`
-	DailyPlanRollbackMins int                     `json:"dailyPlanRollbackMinutes"`
-	PlanHighRiskTenths    int                     `json:"planHighRiskThresholdTenths"`
-	CarryOverEnabled      bool                    `json:"carryOverEnabled"`
-	CarryOverMinMinutes   int                     `json:"carryOverMinMinutes"`
-	CarryOverStallAfter   int                     `json:"carryOverStallAfter"`
-	DateDisplayPreset     DateDisplayPreset       `json:"dateDisplayPreset"`
-	DateDisplayFormat     string                  `json:"dateDisplayFormat,omitempty"`
+	UserID                string            `json:"userId"`
+	DeviceID              string            `json:"deviceId"`
+	TimerMode             TimerMode         `json:"timerMode"`
+	BreaksEnabled         bool              `json:"breaksEnabled"`
+	WorkDurationMinutes   int               `json:"workDurationMinutes"`
+	ShortBreakMinutes     int               `json:"shortBreakMinutes"`
+	LongBreakMinutes      int               `json:"longBreakMinutes"`
+	LongBreakEnabled      bool              `json:"longBreakEnabled"`
+	CyclesBeforeLongBreak int               `json:"cyclesBeforeLongBreak"`
+	AutoStartBreaks       bool              `json:"autoStartBreaks"`
+	AutoStartWork         bool              `json:"autoStartWork"`
+	BoundaryNotifications bool              `json:"boundaryNotificationsEnabled"`
+	BoundarySound         bool              `json:"boundarySoundEnabled"`
+	AlertSoundPreset      AlertSoundPreset  `json:"alertSoundPreset"`
+	AlertUrgency          AlertUrgency      `json:"alertUrgency"`
+	AlertIconEnabled      bool              `json:"alertIconEnabled"`
+	InactivityAlerts      bool              `json:"inactivityAlertsEnabled"`
+	InactivityThreshold   int               `json:"inactivityThresholdMinutes"`
+	InactivityRepeat      int               `json:"inactivityRepeatMinutes"`
+	UpdateChecksEnabled   bool              `json:"updateChecksEnabled"`
+	UpdatePromptEnabled   bool              `json:"updatePromptEnabled"`
+	UpdateChannel         UpdateChannel     `json:"updateChannel"`
+	RepoSort              RepoSort          `json:"repoSort"`
+	StreamSort            StreamSort        `json:"streamSort"`
+	IssueSort             IssueSort         `json:"issueSort"`
+	HabitSort             HabitSort         `json:"habitSort"`
+	WeekStart             WeekStart         `json:"weekStart"`
+	AwayModeEnabled       bool              `json:"awayModeEnabled"`
+	AwayDates             []string          `json:"awayDates,omitempty"`
+	FrozenStreakKinds     []StreakKind      `json:"frozenStreakKinds,omitempty"`
+	RestWeekdays          []int             `json:"restWeekdays,omitempty"`
+	RestSpecificDates     []string          `json:"restSpecificDates,omitempty"`
+	DailyPlanRollbackMins int               `json:"dailyPlanRollbackMinutes"`
+	PlanHighRiskTenths    int               `json:"planHighRiskThresholdTenths"`
+	CarryOverEnabled      bool              `json:"carryOverEnabled"`
+	CarryOverMinMinutes   int               `json:"carryOverMinMinutes"`
+	CarryOverStallAfter   int               `json:"carryOverStallAfter"`
+	DateDisplayPreset     DateDisplayPreset `json:"dateDisplayPreset"`
+	DateDisplayFormat     string            `json:"dateDisplayFormat,omitempty"`
+	// TagFilters is the saved tag part ("+a -b") of each TUI pane's filter, by pane.
+	TagFilters            map[string]string       `json:"tagFilters,omitempty"`
 	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`
 	OnboardingCompleted   bool                    `json:"onboardingCompleted"`
 	UsageTelemetryEnabled bool                    `json:"usageTelemetryEnabled"`

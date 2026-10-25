@@ -30,7 +30,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 	lines := dailyTaskHeader(theme, state, width, height)
 	if len(issues) == 0 || total == 0 {
 		lines = append(lines, theme.StyleDim.Render(dailyTaskEmptyMessage(state.DailyTaskSection)))
-		return dailySection(theme, "Tasks", meta, active, width, height, lines)
+		return dailySection(theme, "Tasks", viewhelpers.FilterMeta(meta, state.Filters["issues"]), active, width, height, lines)
 	}
 	lines = renderCompactDailyIssueList(
 		theme,
@@ -46,7 +46,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 		cur,
 		active,
 	)
-	return dailySection(theme, "Tasks", meta, active, width, height, lines)
+	return dailySection(theme, "Tasks", viewhelpers.FilterMeta(meta, state.Filters["issues"]), active, width, height, lines)
 }
 
 // dailyTaskHeader is the section selector over the new-task line; in a short pane the
@@ -66,20 +66,19 @@ func dailyTaskHeader(theme types.Theme, state types.ContentState, width, height 
 func dailyAPIIssues(sources []api.Issue) []issuecore.APIIssue {
 	issues := make([]issuecore.APIIssue, 0, len(sources))
 	for _, issue := range sources {
-		issues = append(
-			issues,
-			issuecore.NewAPIIssue(
-				issue.ID,
-				issue.Title,
-				issue.Status,
-				issue.EstimateMinutes,
-				issue.WorkedSeconds,
-				issue.PinnedDaily,
-				issue.TodoForDate,
-				issue.CompletedAt,
-				issue.AbandonedAt,
-			),
+		converted := issuecore.NewAPIIssue(
+			issue.ID,
+			issue.Title,
+			issue.Status,
+			issue.EstimateMinutes,
+			issue.WorkedSeconds,
+			issue.PinnedDaily,
+			issue.TodoForDate,
+			issue.CompletedAt,
+			issue.AbandonedAt,
 		)
+		converted.Tags = issue.Tags
+		issues = append(issues, converted)
 	}
 	return issues
 }
@@ -187,6 +186,7 @@ func renderCompactDailyIssueList(
 			workedSeconds,
 			issue.EstimateMinutes,
 			DisplayIssueStatus(state, issue.ID, issue.Status),
+			issuecore.TagChips(theme, issue.Tags, state.Tags, max(0, width/2)),
 		))
 	}
 	if remaining := total - end; remaining > 0 {
@@ -251,6 +251,7 @@ func renderCompactDailyIssueMeta(
 	workedSeconds int,
 	estimateMinutes *int,
 	status string,
+	chips string,
 ) string {
 	metaParts := []string{
 		issuecore.IssueContextLabel(repoName, streamName),
@@ -263,7 +264,11 @@ func renderCompactDailyIssueMeta(
 	} else {
 		meta = theme.StyleDim.Render("  " + meta)
 	}
-	return viewhelpers.TruncateANSI(meta, width)
+	if chips == "" {
+		return viewhelpers.TruncateANSI(meta, width)
+	}
+	room := max(0, width-ansi.StringWidth(chips)-2)
+	return viewhelpers.TruncateANSI(meta, room) + "  " + chips
 }
 
 func compactDailyIssueDate(state types.ContentState, issue issuecore.APIIssue) string {
@@ -376,7 +381,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	lines := []string{newItemLine(theme, "new habit")}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
-		return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+		return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
 	}
 	inner := sectionBodyRows(height, lines)
 	if active {
@@ -403,7 +408,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return dailySection(theme, "Habits Due", meta, active, width, height, lines)
+	return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
 }
 
 const habitRowBarWidth = 10

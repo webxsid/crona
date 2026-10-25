@@ -433,6 +433,18 @@ func (s Snapshot) OpenDatePicker(
 	)
 }
 
+func (s Snapshot) OpenPaneFilter(pane, current string) State {
+	return OpenPaneFilter(s.Dialog, pane, current)
+}
+
+func (s Snapshot) OpenTagPicker(target string, id int64, title string, current, vocab []string) State {
+	return OpenTagPicker(s.Dialog, target, id, title, current, vocab)
+}
+
+func (s Snapshot) OpenRenameTag(name string, vocab []string) State {
+	return OpenRenameTag(s.Dialog, name, vocab)
+}
+
 func (s Snapshot) OpenViewEntity(title, name, meta, body string) State {
 	return OpenViewEntity(s.Dialog, title, name, meta, body)
 }

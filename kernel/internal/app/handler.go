@@ -303,6 +303,22 @@ func decodeOptionalStringFromMap(
 	return &out, true, nil
 }
 
+// decodeOptionalStringsFromMap reads a string list; null reads as an empty list.
+func decodeOptionalStringsFromMap(raw map[string]json.RawMessage, key string) ([]string, bool, error) {
+	value, ok := raw[key]
+	if !ok {
+		return nil, false, nil
+	}
+	if string(value) == "null" {
+		return []string{}, true, nil
+	}
+	var out []string
+	if err := json.Unmarshal(value, &out); err != nil {
+		return nil, false, err
+	}
+	return out, true, nil
+}
+
 func decodeOptionalIntFromMap(raw map[string]json.RawMessage, key string) (*int, bool, error) {
 	value, ok := raw[key]
 	if !ok {

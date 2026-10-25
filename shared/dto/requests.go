@@ -47,34 +47,76 @@ type UpdateStreamRequest struct {
 }
 
 type ListIssuesQuery struct {
-	StreamID int64 `json:"streamId"`
+	StreamID int64            `json:"streamId"`
+	Tags     *types.TagFilter `json:"tags,omitempty"`
 }
 
 type ListHabitsQuery struct {
-	StreamID int64 `json:"streamId"`
+	StreamID int64            `json:"streamId"`
+	Tags     *types.TagFilter `json:"tags,omitempty"`
 }
 
 type ListHabitsDueQuery struct {
-	Date string `json:"date"`
+	Date string           `json:"date"`
+	Tags *types.TagFilter `json:"tags,omitempty"`
+}
+
+// ListAllQuery is the optional filter for issue.list_all and habit.list_all.
+type ListAllQuery struct {
+	Tags *types.TagFilter `json:"tags,omitempty"`
+}
+
+// SetTagsRequest replaces one item's tags.
+type SetTagsRequest struct {
+	ID   int64    `json:"id"`
+	Tags []string `json:"tags"`
+}
+
+// UpdateTagsRequest adds and removes tags across several items.
+type UpdateTagsRequest struct {
+	IDs    []int64  `json:"ids"`
+	Add    []string `json:"add,omitempty"`
+	Remove []string `json:"remove,omitempty"`
+}
+
+type TagRenameRequest struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Merge bool   `json:"merge,omitempty"`
+}
+
+type TagSetColorRequest struct {
+	Name  string  `json:"name"`
+	Color *string `json:"color,omitempty"`
+}
+
+type TagNameRequest struct {
+	Name string `json:"name"`
+}
+
+type TagRemoveUnusedResponse struct {
+	Removed []string `json:"removed"`
 }
 
 type CreateHabitRequest struct {
-	StreamID      int64   `json:"streamId"`
-	Name          string  `json:"name"`
-	Description   *string `json:"description,omitempty"`
-	ScheduleType  string  `json:"scheduleType"`
-	Weekdays      []int   `json:"weekdays,omitempty"`
-	TargetMinutes *int    `json:"targetMinutes,omitempty"`
+	StreamID      int64    `json:"streamId"`
+	Name          string   `json:"name"`
+	Description   *string  `json:"description,omitempty"`
+	ScheduleType  string   `json:"scheduleType"`
+	Weekdays      []int    `json:"weekdays,omitempty"`
+	TargetMinutes *int     `json:"targetMinutes,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
 }
 
 type UpdateHabitRequest struct {
-	ID            int64   `json:"id"`
-	Name          *string `json:"name,omitempty"`
-	Description   *string `json:"description,omitempty"`
-	ScheduleType  *string `json:"scheduleType,omitempty"`
-	Weekdays      []int   `json:"weekdays,omitempty"`
-	TargetMinutes *int    `json:"targetMinutes,omitempty"`
-	Active        *bool   `json:"active,omitempty"`
+	ID            int64     `json:"id"`
+	Name          *string   `json:"name,omitempty"`
+	Description   *string   `json:"description,omitempty"`
+	ScheduleType  *string   `json:"scheduleType,omitempty"`
+	Weekdays      []int     `json:"weekdays,omitempty"`
+	TargetMinutes *int      `json:"targetMinutes,omitempty"`
+	Active        *bool     `json:"active,omitempty"`
+	Tags          *[]string `json:"tags,omitempty"`
 }
 
 type HabitCompletionUpsertRequest struct {
@@ -206,21 +248,23 @@ type ExportTemplatePresetApplyRequest struct {
 }
 
 type CreateIssueRequest struct {
-	StreamID        int64   `json:"streamId"`
-	Title           string  `json:"title"`
-	Description     *string `json:"description,omitempty"`
-	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
-	Notes           *string `json:"notes,omitempty"`
-	TodoForDate     *string `json:"todoForDate,omitempty"`
+	StreamID        int64    `json:"streamId"`
+	Title           string   `json:"title"`
+	Description     *string  `json:"description,omitempty"`
+	EstimateMinutes *int     `json:"estimateMinutes,omitempty"`
+	Notes           *string  `json:"notes,omitempty"`
+	TodoForDate     *string  `json:"todoForDate,omitempty"`
+	Tags            []string `json:"tags,omitempty"`
 }
 
 type UpdateIssueRequest struct {
-	ID              int64   `json:"id"`
-	Title           *string `json:"title,omitempty"`
-	Description     *string `json:"description,omitempty"`
-	EstimateMinutes *int    `json:"estimateMinutes,omitempty"`
-	Notes           *string `json:"notes,omitempty"`
-	PinnedDaily     *bool   `json:"pinnedDaily,omitempty"`
+	ID              int64     `json:"id"`
+	Title           *string   `json:"title,omitempty"`
+	Description     *string   `json:"description,omitempty"`
+	EstimateMinutes *int      `json:"estimateMinutes,omitempty"`
+	Notes           *string   `json:"notes,omitempty"`
+	PinnedDaily     *bool     `json:"pinnedDaily,omitempty"`
+	Tags            *[]string `json:"tags,omitempty"`
 }
 
 type PromoteAdhocIssueRequest struct {

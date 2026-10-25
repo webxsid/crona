@@ -38,6 +38,7 @@ var DefaultCoreSettings = map[string]any{
 	"carryOverStallAfter":          5,
 	"dateDisplayPreset":            "iso",
 	"dateDisplayFormat":            "",
+	"tagFilters":                   map[string]string{},
 	"promptGlyphMode":              "emoji",
 	"onboardingCompleted":          false,
 	"usageTelemetryEnabled":        false,

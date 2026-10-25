@@ -110,6 +110,9 @@ func IssueDetailLines(
 	if issue.PinnedDaily {
 		fields = append(fields, detailEntry{"pinned", theme.StyleNormal.Render("yes")})
 	}
+	if len(issue.Tags) > 0 {
+		fields = append(fields, detailEntry{"tags", issuecore.TagChips(theme, issue.Tags, state.Tags, max(8, width-12))})
+	}
 	lines := detailDescription(theme, issue.Description, width)
 	lines = append(lines, detailGrid(theme, fields, width)...)
 	lines = append(lines, penaltyLines(theme, state, issue.ID, width)...)
@@ -168,6 +171,9 @@ func habitDetailWithStatus(
 	}
 	if meta := strings.TrimSpace(detailContext(habit.RepoName, habit.StreamName)); meta != "-" {
 		fields = append(fields, detailEntry{"context", theme.StyleNormal.Render(meta)})
+	}
+	if len(habit.Tags) > 0 {
+		fields = append(fields, detailEntry{"tags", issuecore.TagChips(theme, habit.Tags, state.Tags, max(8, width-12))})
 	}
 	lines := detailDescription(theme, habit.Description, width)
 	lines = append(lines, detailGrid(theme, fields, width)...)

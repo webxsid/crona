@@ -38,6 +38,7 @@ func taskActionLine(theme types.Theme, state types.ContentState, width int) stri
 		viewchrome.KeyHint(theme, "s", "status"),
 		viewchrome.KeyHint(theme, "d", "due"),
 		viewchrome.KeyHint(theme, "P", "pin"),
+		viewchrome.KeyHint(theme, "+", "tags"),
 	)
 	if state.DailyTaskSection == "overdue" {
 		hints = append(hints, viewchrome.KeyHint(theme, "r", "carry"))
@@ -61,6 +62,7 @@ func habitActionLine(theme types.Theme, state types.ContentState, width int) str
 		viewchrome.KeyHint(theme, "x", "done"),
 		viewchrome.KeyHint(theme, "F", "fail"),
 		viewchrome.KeyHint(theme, "e", "edit"),
+		viewchrome.KeyHint(theme, "+", "tags"),
 	}
 	if timerIdle(state) {
 		hints = append(hints,

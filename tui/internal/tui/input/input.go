@@ -49,6 +49,7 @@ type State struct {
 	Settings                  *api.CoreSettings
 	AlertStatus               *api.AlertStatus
 	AlertReminders            []api.AlertReminder
+	Tags                      []api.Tag
 	ExportAssets              *api.ExportAssetStatus
 	DailyCheckIn              *api.DailyCheckIn
 }
@@ -109,6 +110,9 @@ type Deps struct {
 	ToggleSelectedIssueToday        func(*State) tea.Cmd
 	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
 	CarrySelectedIssue              func(*State) tea.Cmd
+	OpenTagPicker                   func(*State) bool
+	OpenPaneFilter                  func(*State) bool
+	SetPaneFilter                   func(pane uistate.Pane, value string) tea.Cmd
 	OpenSelectedIssueTodoDateDialog func(*State) bool
 	HandleCreateAction              func(*State) bool
 	OpenExportDailyDialog           func(*State) bool
@@ -141,6 +145,10 @@ type Deps struct {
 	OpenEditTelemetrySettingsDialog func(*State) bool
 	OpenEditDayBoundaryDialog       func(*State, sharedtypes.CoreSettingsKey) bool
 	OpenConfirmWipeDataDialog       func(*State) bool
+	OpenRenameTagDialog             func(*State, string) bool
+	OpenConfirmDeleteTagDialog      func(*State, api.Tag) bool
+	SetTagColor                     func(name string, color *string) tea.Cmd
+	RemoveUnusedTags                func() tea.Cmd
 	WipeRuntimeData                 func() tea.Cmd
 	OpenDateDialog                  func(*State) bool
 	OpenSupportFeedbackRoadmapURL   func() tea.Cmd
@@ -270,6 +278,18 @@ func newRouter(deps Deps) *router {
 			}
 			return handleIssueStatus(s, deps)
 		},
+		"/": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if !filterablePanes[s.ActivePane] || deps.OpenPaneFilter == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenPaneFilter(&s)
+		},
+		"esc": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.Filters[s.ActivePane] == "" || deps.SetPaneFilter == nil {
+				return s, nil, false
+			}
+			return s, deps.SetPaneFilter(s.ActivePane, ""), true
+		},
 		"y": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive {
 				return s, nil, false
@@ -324,6 +344,9 @@ func newRouter(deps Deps) *router {
 		"D": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ActiveView == uistate.ViewAlerts {
 				return handleDeleteSelectedAlertReminder(s, deps)
+			}
+			if s.ActiveView == uistate.ViewTags {
+				return handleDeleteSelectedTag(s, deps)
 			}
 			cmd, handled := deps.DeleteSelectionAction(&s)
 			return s, cmd, handled
@@ -398,6 +421,23 @@ func newRouter(deps Deps) *router {
 		s.DailyDetailDay = !s.DailyDetailDay
 		return s, nil, true
 	})
+	// + edits the selected issue's or habit's tags.
+	for _, target := range []struct {
+		view uistate.View
+		pane uistate.Pane
+	}{
+		{uistate.ViewDaily, uistate.PaneIssues},
+		{uistate.ViewDaily, uistate.PaneHabits},
+		{uistate.ViewDefault, uistate.PaneIssues},
+		{uistate.ViewHabitList, uistate.PaneHabits},
+	} {
+		r.RegisterPane(target.view, target.pane, "+", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive || deps.OpenTagPicker == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenTagPicker(&s)
+		})
+	}
 	// Overdue issues the day boundary did not carry (untouched, blocked, ...) carry by hand.
 	r.RegisterView(uistate.ViewDaily, "r", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if s.ProtectedModeActive || s.ActivePane != uistate.PaneIssues ||
@@ -470,6 +510,7 @@ func newRouter(deps Deps) *router {
 			return s, nil, false
 		},
 	)
+	registerTagKeys(r, deps)
 	keyregistry.RegisterSettings(
 		r,
 		uistate.ViewSettings,
@@ -694,4 +735,20 @@ func newRouter(deps Deps) *router {
 		func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) { return handleAdjustOpsLimit(s, deps, -10) },
 	)
 	return r
+}
+
+// filterablePanes are the list panes / filters: free text, plus +tag and -tag where the items
+// carry tags.
+var filterablePanes = map[uistate.Pane]bool{
+	uistate.PaneIssues:        true,
+	uistate.PaneHabits:        true,
+	uistate.PaneSessions:      true,
+	uistate.PaneHabitHistory:  true,
+	uistate.PaneMomentumCards: true,
+	uistate.PaneOps:           true,
+	uistate.PaneExportReports: true,
+	uistate.PaneConfig:        true,
+	uistate.PaneSettings:      true,
+	uistate.PaneTags:          true,
+	uistate.PaneAlerts:        true,
 }

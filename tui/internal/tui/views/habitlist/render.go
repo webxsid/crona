@@ -9,6 +9,7 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	"crona/tui/internal/tui/views/issuecore"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -91,11 +92,14 @@ func StripRows(theme types.Theme, state types.ContentState, width int) []string 
 }
 
 func habitIndices(state types.ContentState) []int {
-	items := make([]string, 0, len(state.ScopedHabits))
-	for _, habit := range state.ScopedHabits {
-		items = append(items, habit.Name)
+	filter := helperpkg.ParseItemFilter(state.Filters["habits"])
+	out := []int{}
+	for i, habit := range state.ScopedHabits {
+		if filter.Match(habit.Name, habit.Tags) {
+			out = append(out, i)
+		}
 	}
-	return viewhelpers.FilteredStrings(items, state.Filters["habits"])
+	return out
 }
 
 func renderHabits(theme types.Theme, state types.ContentState, width, height int) string {
@@ -149,13 +153,15 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 					viewchrome.KeyHint(theme, "m", "log"),
 				)
 			}
+			hints = append(hints, viewchrome.KeyHint(theme, "+", "tags"))
 			lines = append(lines, "  "+viewchrome.FitHints(hints, width-4))
 			continue
 		}
-		lines = append(
-			lines,
-			theme.StyleDim.Render("  "+ansi.Truncate(habitMeta(habit), max(1, width-4), "…")),
-		)
+		metaLine := theme.StyleDim.Render("  " + ansi.Truncate(habitMeta(habit), max(1, width-4), "…"))
+		if chips := issuecore.TagChips(theme, habit.Tags, state.Tags, max(0, (width-4)/2)); chips != "" {
+			metaLine = theme.StyleDim.Render("  "+ansi.Truncate(habitMeta(habit), max(1, width-6-ansi.StringWidth(chips)), "…")) + "  " + chips
+		}
+		lines = append(lines, metaLine)
 	}
 	if end < len(indices) {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", len(indices)-end)))
@@ -164,7 +170,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		theme,
 		viewchrome.Section{
 			Title:   "Habits",
-			Meta:    fmt.Sprintf("%d", len(indices)),
+			Meta:    viewhelpers.FilterMeta(fmt.Sprintf("%d", len(indices)), state.Filters["habits"]),
 			Focused: active,
 			Width:   width,
 			Height:  height,

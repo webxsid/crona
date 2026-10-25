@@ -17,6 +17,7 @@ import (
 	sessions "crona/tui/internal/tui/views/sessions"
 	settings "crona/tui/internal/tui/views/settings"
 	support "crona/tui/internal/tui/views/support"
+	tagsview "crona/tui/internal/tui/views/tags"
 	types "crona/tui/internal/tui/views/types"
 	updates "crona/tui/internal/tui/views/updates"
 )
@@ -47,6 +48,8 @@ func RenderContent(theme types.Theme, state types.ContentState) string {
 		return reports.Render(theme, state)
 	case "settings":
 		return settings.Render(theme, state)
+	case "tags":
+		return tagsview.Render(theme, state)
 	case "alerts":
 		return alerts.Render(theme, state)
 	case "updates":

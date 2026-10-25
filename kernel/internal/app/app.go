@@ -203,6 +203,9 @@ func Run(ctx context.Context) (runErr error) {
 	if err := corecommands.CarryOverPastDays(runCtx, commandCtx); err != nil {
 		logger.Error("carry over unfinished issues", err)
 	}
+	if err := corecommands.EnsureSystemTags(runCtx, commandCtx); err != nil {
+		logger.Error("seed system tags", err)
+	}
 	logger.Go("day-boundary scheduler", func() {
 		if err := scheduler.Run(runCtx); err != nil && runCtx.Err() == nil {
 			logger.Error("day-boundary scheduler stopped", err)

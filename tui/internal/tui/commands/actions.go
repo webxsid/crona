@@ -940,6 +940,38 @@ func ToggleIssuePinnedDaily(
 	}
 }
 
+// SetPaneFilter replaces a pane's filter.
+func SetPaneFilter(pane, value string) tea.Cmd {
+	return func() tea.Msg { return PaneFilterSetMsg{Pane: pane, Value: value} }
+}
+
+// SaveTagFilters stores the tag part of each pane's filter, so it survives restarts.
+func SaveTagFilters(c *api.Client, filters map[string]string) tea.Cmd {
+	return func() tea.Msg {
+		if err := c.PatchSetting(sharedtypes.CoreSettingsKeyTagFilters, filters); err != nil {
+			logger.Errorf("SaveTagFilters: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return LoadSettings(c)()
+	}
+}
+
+// SetItemTags replaces an issue's or habit's tags. The kernel's tags.changed and updated
+// events reload the lists, so this only reports a failure.
+func SetItemTags(c *api.Client, habit bool, id int64, tags []string) tea.Cmd {
+	return func() tea.Msg {
+		set := c.SetIssueTags
+		if habit {
+			set = c.SetHabitTags
+		}
+		if err := set(id, tags); err != nil {
+			logger.Errorf("SetItemTags: %v", err)
+			return ErrMsg{Err: err}
+		}
+		return nil
+	}
+}
+
 // CarryIssueOver carries an issue by hand, then reloads what the carry changes.
 func CarryIssueOver(c *api.Client, issueID, streamID int64, dashboardDate string) tea.Cmd {
 	return func() tea.Msg {
@@ -1337,4 +1369,37 @@ func copyToClipboard(text string) error {
 		}
 	}
 	return errors.New("no supported clipboard command found")
+}
+
+// RenameTag renames a tag, merging it into another when merge is set. The tags.changed event reloads the lists.
+func RenameTag(c *api.Client, from, to string, merge bool) tea.Cmd {
+	return tagCmd("RenameTag", func() error { return c.RenameTag(from, to, merge) })
+}
+
+// SetTagColor sets or clears a tag's palette color.
+func SetTagColor(c *api.Client, name string, color *string) tea.Cmd {
+	return tagCmd("SetTagColor", func() error { return c.SetTagColor(name, color) })
+}
+
+// DeleteTag deletes a tag and its taggings.
+func DeleteTag(c *api.Client, name string) tea.Cmd {
+	return tagCmd("DeleteTag", func() error { return c.DeleteTag(name) })
+}
+
+// RemoveUnusedTags deletes every unused tag except the system ones.
+func RemoveUnusedTags(c *api.Client) tea.Cmd {
+	return tagCmd("RemoveUnusedTags", func() error {
+		_, err := c.RemoveUnusedTags()
+		return err
+	})
+}
+
+func tagCmd(name string, run func() error) tea.Cmd {
+	return func() tea.Msg {
+		if err := run(); err != nil {
+			logger.Errorf("%s: %v", name, err)
+			return ErrMsg{Err: err}
+		}
+		return nil
+	}
 }

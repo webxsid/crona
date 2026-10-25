@@ -19,6 +19,7 @@ const (
 	EventTypeHabitDeleted              = "habit.deleted"
 	EventTypeHabitCompleted            = "habit.completed"
 	EventTypeHabitUncompleted          = "habit.uncompleted"
+	EventTypeTagsChanged               = "tags.changed"
 	EventTypeCheckInUpdated            = "checkin.updated"
 	EventTypeCheckInDeleted            = "checkin.deleted"
 	EventTypeSessionStarted            = "session.started"

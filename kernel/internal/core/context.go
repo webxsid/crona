@@ -29,6 +29,7 @@ type Context struct {
 	CustomHabitMomentumSnapshots *repositories.CustomHabitMomentumSnapshotRepository
 	HabitStreakDefinitions       *repositories.HabitStreakDefinitionRepository
 	ReservedContexts             *repositories.ReservedContextRepository
+	Tags                         *repositories.TagRepository
 
 	UserID      string
 	DeviceID    string
@@ -66,6 +67,7 @@ func NewContext(
 		CustomHabitMomentumSnapshots: registry.CustomHabitMomentumSnapshots,
 		HabitStreakDefinitions:       registry.HabitStreakDefinitions,
 		ReservedContexts:             registry.ReservedContexts,
+		Tags:                         registry.Tags,
 		UserID:                       userID,
 		DeviceID:                     deviceID,
 		ScratchDir:                   scratchDir,

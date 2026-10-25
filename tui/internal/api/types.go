@@ -9,6 +9,7 @@ type IssueWithMeta = sharedtypes.IssueWithMeta
 type Habit = sharedtypes.Habit
 type HabitWithMeta = sharedtypes.HabitWithMeta
 type HabitDailyItem = sharedtypes.HabitDailyItem
+type Tag = sharedtypes.Tag
 type HabitCompletion = sharedtypes.HabitCompletion
 type DailyIssueSummary = sharedtypes.DailyIssueSummary
 type DailyPlan = sharedtypes.DailyPlan
