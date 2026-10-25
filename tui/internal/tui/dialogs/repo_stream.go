@@ -85,6 +85,7 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 				focused(target),
 			),
 		),
+		tagsRow(theme, state, column, full),
 	}
 	title, border, submit := "Edit Habit", theme.ColorYellow, "save"
 	if create {
@@ -106,6 +107,9 @@ func renderHabitForm(theme Theme, state controllerpkg.State, create bool) string
 			}
 			if hints := cadenceHints(state, focus); hints != nil {
 				return hints
+			}
+			if state.TagsEnabled && focus == state.TagsFocus {
+				return []string{"tab next", "→ complete"}
 			}
 			return textarea(focus)
 		},

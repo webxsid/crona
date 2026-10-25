@@ -86,13 +86,13 @@ func tabs(t *testing.T, state State, key tea.KeyMsg, want ...int) {
 }
 
 func TestHabitTabGoesCadenceDaysTarget(t *testing.T) {
-	// edit_habit focus: Name 0, Description 1, Cadence 2, Target 3, Days 4.
+	// edit_habit focus: Name 0, Description 1, Cadence 2, Target 3, Days 4, Tags 5.
 	state := editHabit("daily")
 	state.FocusIdx = 2
-	tabs(t, state, keyTab, 3, 0)
+	tabs(t, state, keyTab, 3, 5, 0)
 	state = editHabit("mon")
 	state.FocusIdx = 2
-	tabs(t, state, keyTab, 4, 3, 0)
+	tabs(t, state, keyTab, 4, 3, 5, 0)
 	state.FocusIdx = 3
 	tabs(t, state, tea.KeyMsg{Type: tea.KeyShiftTab}, 4, 2)
 }

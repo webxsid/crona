@@ -175,6 +175,10 @@ type State struct {
 	TagSelected []string
 	TagVocab    []string
 	TagCursor   int
+	// TagsInput is the Tags field on issue and habit forms, at focus TagsFocus when TagsEnabled.
+	TagsInput   textinput.Model
+	TagsEnabled bool
+	TagsFocus   int
 }
 
 const (

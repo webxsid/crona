@@ -28,10 +28,10 @@ type Deps struct {
 	UpdateRepo                     func(repoID int64, name string, description *string) tea.Cmd
 	CreateStream                   func(repoID int64, name string, description *string) tea.Cmd
 	UpdateStream                   func(repoID, streamID int64, name string, description *string) tea.Cmd
-	CreateIssueOnly                func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd
-	CreateHabitWithPath            func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int) tea.Cmd
+	CreateIssueOnly                func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, tags []string) tea.Cmd
+	CreateHabitWithPath            func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, tags []string) tea.Cmd
 	UpdateHabit                    func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd
-	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string) tea.Cmd
+	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string, tags []string) tea.Cmd
 	PromoteAdhocIssue              func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
 	CheckoutContext                func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd
 	UpsertDailyCheckIn             func(req shareddto.DailyCheckInUpsertRequest, refreshDate string) tea.Cmd
@@ -101,7 +101,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Title,
 			action.Description,
 			action.Estimate,
-			action.DueDate, action.IssueCreateFollowUp,
+			action.DueDate, action.IssueCreateFollowUp, tagList(action.Tags),
 		)
 	})
 	r.Register("create_habit", func(action dialogstate.Action) tea.Cmd {
@@ -113,10 +113,11 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Status,
 			action.Weekdays,
 			action.Estimate,
+			tagList(action.Tags),
 		)
 	})
 	r.Register("edit_habit", func(action dialogstate.Action) tea.Cmd {
-		return deps.UpdateHabit(
+		return thenSetTags(deps, dialogstate.TagTargetHabit, action.HabitID, action.Tags, deps.UpdateHabit(
 			action.HabitID,
 			action.StreamID,
 			action.Name,
@@ -126,7 +127,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Estimate,
 			action.Active,
 			state.Date,
-		)
+		))
 	})
 	r.Register("create_issue_default", func(action dialogstate.Action) tea.Cmd {
 		return deps.CreateIssueWithPath(
@@ -135,12 +136,13 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Title,
 			action.Description,
 			action.Estimate,
-			action.DueDate, action.IssueCreateFollowUp, action.CommitMessage,
+			action.DueDate, action.IssueCreateFollowUp, action.CommitMessage, tagList(action.Tags),
 		)
 	})
 	r.Register("promote_adhoc_issue", func(action dialogstate.Action) tea.Cmd {
-		return deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
-			action.Title, action.Description, action.Estimate, action.DueDate, state.Date)
+		return thenSetTags(deps, dialogstate.TagTargetIssue, action.IssueID, action.Tags,
+			deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
+				action.Title, action.Description, action.Estimate, action.DueDate, state.Date))
 	})
 	r.Register("checkout_context", func(action dialogstate.Action) tea.Cmd {
 		return deps.CheckoutContext(
@@ -159,7 +161,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 		func(action dialogstate.Action) tea.Cmd { return checkinCmd(action, deps) },
 	)
 	r.Register("edit_issue", func(action dialogstate.Action) tea.Cmd {
-		return deps.UpdateIssue(
+		return thenSetTags(deps, dialogstate.TagTargetIssue, action.IssueID, action.Tags, deps.UpdateIssue(
 			action.IssueID,
 			action.StreamID,
 			action.Title,
@@ -167,7 +169,7 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			action.Estimate,
 			action.DueDate,
 			state.Date,
-		)
+		))
 	})
 	r.Register("complete_habit", func(action dialogstate.Action) tea.Cmd {
 		return deps.SetHabitStatus(
@@ -549,4 +551,20 @@ func patchRestProtectionCmd(action dialogstate.Action, state State, deps Deps) t
 			state.Date,
 		),
 	)
+}
+
+// tagList is a form's Tags value, or nil when the form had no Tags field.
+func tagList(tags *[]string) []string {
+	if tags == nil {
+		return nil
+	}
+	return *tags
+}
+
+// thenSetTags runs cmd, then replaces the item's tags with the form's Tags value.
+func thenSetTags(deps Deps, target string, id int64, tags *[]string, cmd tea.Cmd) tea.Cmd {
+	if tags == nil || deps.SetItemTags == nil {
+		return cmd
+	}
+	return tea.Sequence(cmd, deps.SetItemTags(target, id, *tags))
 }

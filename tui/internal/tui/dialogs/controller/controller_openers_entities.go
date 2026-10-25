@@ -199,6 +199,7 @@ func OpenCreateHabit(state State) State {
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = 3
 	state.FocusIdx = 2
+	state = withTagsField(state, 7, nil, state.TagVocab)
 	return SyncDialogFocus(initCadence(state))
 }
 
@@ -243,6 +244,7 @@ func OpenEditHabit(
 	state.HabitID = habitID
 	state.StreamID = streamID
 	state.StatusLabel = map[bool]string{true: "active", false: "inactive"}[active]
+	state = withTagsField(state, 5, nil, state.TagVocab)
 	return initCadence(state)
 }
 
@@ -323,7 +325,7 @@ func OpenCreateIssueMeta(state State, streamID int64, streamName, repoName strin
 	state.StreamID = streamID
 	state.StreamName = streamName
 	state.RepoName = repoName
-	return state
+	return withTagsField(state, issueMetaFocusTags, nil, state.TagVocab)
 }
 
 func OpenEditIssue(
@@ -368,7 +370,7 @@ func OpenEditIssue(
 	state.DescriptionIndex = 1
 	state.IssueID = issueID
 	state.StreamID = streamID
-	return state
+	return withTagsField(state, issueMetaFocusTags, nil, state.TagVocab)
 }
 
 func OpenCreateIssueDefault(state State) State {
@@ -405,6 +407,7 @@ func OpenCreateIssueDefault(state State) State {
 	state.DescriptionEnabled = true
 	state.DescriptionIndex = defaultIssueFocusDescription
 	state.FocusIdx = defaultIssueFocusTitle
+	state = withTagsField(state, defaultIssueFocusTags, nil, state.TagVocab)
 	return SyncDialogFocus(state)
 }
 

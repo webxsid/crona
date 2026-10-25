@@ -115,14 +115,14 @@ func TestHabitAndEditIssueForms(t *testing.T) {
 	create := controllerpkg.OpenCreateHabit(controllerpkg.State{})
 	create.RepoName, create.StreamName = "OSS", "cli"
 	cases := []formCase{
-		{"create_habit", create, "New Habit", "OSS › cli", 7},
-		{"edit_habit", habitEditState(), "Edit Habit", "", 5},
+		{"create_habit", create, "New Habit", "OSS › cli", 8},
+		{"edit_habit", habitEditState(), "Edit Habit", "", 6},
 		{
 			"edit_issue",
 			controllerpkg.OpenEditIssue(controllerpkg.State{}, 1, 2, "Fix", nil, nil, nil),
 			"Edit Issue",
 			"",
-			4,
+			5,
 		},
 	}
 	for _, c := range cases {
@@ -141,6 +141,22 @@ func TestEditIssueDueKeepsTodayHint(t *testing.T) {
 	out := ansi.Strip(Render(testTheme(), controllerpkg.SyncDialogFocus(state)))
 	if !strings.Contains(out, "g today") {
 		t.Fatalf("expected g today on Due:\n%s", out)
+	}
+}
+
+func TestIssueAndHabitFormsShowTags(t *testing.T) {
+	edit := controllerpkg.Snapshot{
+		TagVocab:  []string{"urgent", "review"},
+		AllIssues: []sharedtypes.IssueWithMeta{{Issue: sharedtypes.Issue{ID: 1, Tags: []string{"urgent"}}}},
+	}.OpenEditIssue(1, 2, "Fix", nil, nil, nil)
+	edit.FocusIdx = 4
+	out := ansi.Strip(Render(testTheme(), sized(controllerpkg.SyncDialogFocus(edit), 120, 36)))
+	if !strings.Contains(out, "Tags") || !strings.Contains(out, "urgent") || !strings.Contains(out, "→ complete") {
+		t.Fatalf("expected a prefilled Tags field with its hint:\n%s", out)
+	}
+	habit := ansi.Strip(Render(testTheme(), sized(controllerpkg.OpenCreateHabit(controllerpkg.State{}), 120, 36)))
+	if !strings.Contains(habit, "Tags") {
+		t.Fatalf("expected Tags on New Habit:\n%s", habit)
 	}
 }
 

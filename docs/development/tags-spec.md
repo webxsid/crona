@@ -106,7 +106,7 @@ The special value `untagged` matches items with no tags.
 
 #### Editing tags
 
-- In the existing issue and habit create and edit dialogs, a **Tags** field: comma- or space-separated input with autocomplete from the vocabulary. New names are created on save.
+- In the existing issue and habit create and edit dialogs, a **Tags** field: comma- or space-separated input with autocomplete from the vocabulary (`→` accepts the completion). New names are created on save, and saving an edit replaces the item's tags with the field's.
 - On a selected issue or habit row, `+` opens a small tag picker: a checklist of existing tags with a text input at the top to filter or create. `space` toggles, `enter` saves.
 - With multiple items selected (if multi-select exists on that list), `+` applies the picker to all of them; tags already on some items show as partially checked.
 

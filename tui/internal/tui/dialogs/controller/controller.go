@@ -28,40 +28,42 @@ type UpdateContext struct {
 }
 
 type Action struct {
-	Kind                 string
-	TargetView           string
-	ReportKind           sharedtypes.ExportReportKind
-	ReportFormat         sharedtypes.ExportFormat
-	OutputMode           sharedtypes.ExportOutputMode
-	PresetID             string
-	ID                   string
-	RepoID               int64
-	StreamID             int64
-	IssueID              int64
-	HabitID              int64
-	Name                 string
-	Path                 string
-	CheckInDate          string
-	StartDate            string
-	EndDate              string
-	RepoName             string
-	StreamName           string
-	Title                string
-	CommitMessage        string
-	Description          *string
-	Status               string
-	Weekdays             []int
-	Active               bool
-	Estimate             *int
-	DueDate              *string
-	IssueCreateFollowUp  int
-	Note                 *string
-	ReminderKind         sharedtypes.AlertReminderKind
-	ReminderSchedule     sharedtypes.AlertReminderScheduleType
-	ReminderTimeHHMM     string
-	SettingKey           sharedtypes.CoreSettingsKey
-	DayBoundarySchedule  sharedtypes.DayBoundarySchedule
-	StringList           []string
+	Kind                string
+	TargetView          string
+	ReportKind          sharedtypes.ExportReportKind
+	ReportFormat        sharedtypes.ExportFormat
+	OutputMode          sharedtypes.ExportOutputMode
+	PresetID            string
+	ID                  string
+	RepoID              int64
+	StreamID            int64
+	IssueID             int64
+	HabitID             int64
+	Name                string
+	Path                string
+	CheckInDate         string
+	StartDate           string
+	EndDate             string
+	RepoName            string
+	StreamName          string
+	Title               string
+	CommitMessage       string
+	Description         *string
+	Status              string
+	Weekdays            []int
+	Active              bool
+	Estimate            *int
+	DueDate             *string
+	IssueCreateFollowUp int
+	Note                *string
+	ReminderKind        sharedtypes.AlertReminderKind
+	ReminderSchedule    sharedtypes.AlertReminderScheduleType
+	ReminderTimeHHMM    string
+	SettingKey          sharedtypes.CoreSettingsKey
+	DayBoundarySchedule sharedtypes.DayBoundarySchedule
+	StringList          []string
+	// Tags is the Tags field's value on issue and habit forms; nil when the form has none.
+	Tags                 *[]string
 	IntList              []int
 	StreakKinds          []string
 	HabitStreakDefs      []sharedtypes.HabitStreakDefinition
@@ -90,6 +92,9 @@ func Close(state State) State {
 	state.TagSelected = nil
 	state.TagVocab = nil
 	state.TagCursor = 0
+	state.TagsInput = textinput.Model{}
+	state.TagsEnabled = false
+	state.TagsFocus = 0
 	state.Inputs = nil
 	state.Description = textarea.Model{}
 	state.DescriptionEnabled = false
@@ -193,6 +198,13 @@ func SyncDialogFocus(state State) State {
 	if state.DescriptionEnabled {
 		state.Description.Blur()
 	}
+	if state.TagsEnabled {
+		state.TagsInput.Blur()
+		if state.FocusIdx == state.TagsFocus {
+			state.TagsInput.Focus()
+			return state
+		}
+	}
 	if state.Kind == "pomodoro_start" || state.Kind == "hard_limit_extend" {
 		if inputIdx, ok := pomodoroDialogInputIndex(state, state.FocusIdx); ok {
 			state.Inputs[inputIdx].Focus()
@@ -229,6 +241,9 @@ func dialogInputIndex(state State, focusIdx int) (int, bool) {
 		return 0, false
 	}
 	if state.DescriptionEnabled && focusIdx == state.DescriptionIndex {
+		return 0, false
+	}
+	if state.TagsEnabled && focusIdx == state.TagsFocus {
 		return 0, false
 	}
 	inputIdx := focusIdx
@@ -302,6 +317,9 @@ func Update(
 ) (State, *Action, string) {
 	if ctx.CurrentDate == "" {
 		ctx.CurrentDate = currentDate
+	}
+	if next, ok := updateTagsField(state, msg); ok {
+		return next, nil, ""
 	}
 	switch state.Kind {
 	case "create_repo":
@@ -1762,7 +1780,12 @@ func updateHabitEditor(state State, msg tea.KeyMsg, kind string) (State, *Action
 		if err != nil {
 			return state, nil, err.Error()
 		}
+		tags, err := tagsFromField(state)
+		if err != nil {
+			return state, nil, err.Error()
+		}
 		action := &Action{
+			Tags:        tags,
 			Kind:        kind,
 			HabitID:     state.HabitID,
 			StreamID:    state.StreamID,
@@ -1882,8 +1905,13 @@ func updateCreateHabit(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *
 		if err != nil {
 			return state, nil, err.Error()
 		}
+		tags, err := tagsFromField(state)
+		if err != nil {
+			return state, nil, err.Error()
+		}
 		return Close(state), &Action{
 			Kind:        "create_habit",
+			Tags:        tags,
 			RepoName:    repoName,
 			StreamName:  streamName,
 			Name:        name,
