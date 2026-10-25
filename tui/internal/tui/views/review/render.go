@@ -142,7 +142,8 @@ func TimeLines(theme types.Theme, state types.ContentState, width int) []string 
 	lines = append(lines, renderDistributionSection(theme, "Repos", state.RepoDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Streams", state.StreamDistribution)...)
 	lines = append(lines, renderDistributionSection(theme, "Issues", state.IssueDistribution)...)
-	return append(lines, renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
+	lines = append(lines, renderDistributionSection(theme, "Segments", state.SegmentDistribution)...)
+	return append(lines, renderTagDistribution(theme, state.TagDistribution)...)
 }
 
 // renderDetail shows the selected day; meta is the medium layout's swap key.

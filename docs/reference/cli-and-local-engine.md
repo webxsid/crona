@@ -74,6 +74,8 @@ crona summary --month
 crona summary --last-x-days 7
 ```
 
+When any worked issue was tagged, the summary adds focused time per tag. A session counts toward every tag on its issue, so the shares can add up to more than 100%.
+
 Use `crona export summary` when you need a Markdown, PDF, or clipboard artifact instead.
 
 ## Shell Completions

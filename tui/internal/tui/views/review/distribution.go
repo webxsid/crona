@@ -2,6 +2,7 @@ package review
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"crona/tui/internal/api"
@@ -33,6 +34,23 @@ func renderDistributionSection(
 			),
 		)
 	}
+	return lines
+}
+
+// renderTagDistribution lists the top tags, or nothing when no worked issue was tagged. A
+// session counts toward each of its issue's tags, so the header says the shares overlap.
+func renderTagDistribution(theme types.Theme, summary *api.TimeDistributionSummary) []string {
+	if summary == nil {
+		return nil
+	}
+	tagged := slices.ContainsFunc(summary.Rows, func(row api.TimeDistributionRow) bool {
+		return row.Key != "tag:untagged"
+	})
+	if !tagged {
+		return nil
+	}
+	lines := renderDistributionSection(theme, "Tags", summary)
+	lines[0] += theme.StyleDim.Render("  overlap")
 	return lines
 }
 

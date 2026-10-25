@@ -111,11 +111,13 @@ type ContentState struct {
 	StreamDistribution    *api.TimeDistributionSummary
 	IssueDistribution     *api.TimeDistributionSummary
 	SegmentDistribution   *api.TimeDistributionSummary
-	GoalProgress          *api.GoalProgressSummary
-	ExportAssets          *api.ExportAssetStatus
-	ExportReports         []api.ExportReportFile
-	IssueSessions         []api.Session
-	SessionHistory        []api.SessionHistoryEntry
+	// TagDistribution counts each session toward every tag on its issue, so rows overlap.
+	TagDistribution *api.TimeDistributionSummary
+	GoalProgress    *api.GoalProgressSummary
+	ExportAssets    *api.ExportAssetStatus
+	ExportReports   []api.ExportReportFile
+	IssueSessions   []api.Session
+	SessionHistory  []api.SessionHistoryEntry
 	// SessionPreview is the selected session's loaded detail; ignore it when its ID differs.
 	SessionPreview            *api.SessionDetail
 	SessionPreviewFailed      bool

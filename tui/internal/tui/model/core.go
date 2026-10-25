@@ -139,6 +139,7 @@ type Model struct {
 	streamDistribution    *api.TimeDistributionSummary
 	issueDistribution     *api.TimeDistributionSummary
 	segmentDistribution   *api.TimeDistributionSummary
+	tagDistribution       *api.TimeDistributionSummary
 	goalProgress          *api.GoalProgressSummary
 	exportAssets          *api.ExportAssetStatus
 	exportReports         []api.ExportReportFile

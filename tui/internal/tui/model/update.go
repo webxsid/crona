@@ -298,6 +298,7 @@ func (m Model) dispatchMessageState() dispatchpkg.MessageState {
 		StreamDistribution:      m.streamDistribution,
 		IssueDistribution:       m.issueDistribution,
 		SegmentDistribution:     m.segmentDistribution,
+		TagDistribution:         m.tagDistribution,
 		GoalProgress:            m.goalProgress,
 		ExportAssets:            m.exportAssets,
 		ExportReports:           m.exportReports,
@@ -398,6 +399,7 @@ func (m Model) applyDispatchMessageState(state dispatchpkg.MessageState) Model {
 	m.streamDistribution = state.StreamDistribution
 	m.issueDistribution = state.IssueDistribution
 	m.segmentDistribution = state.SegmentDistribution
+	m.tagDistribution = state.TagDistribution
 	m.goalProgress = state.GoalProgress
 	m.exportAssets = state.ExportAssets
 	m.exportReports = state.ExportReports
