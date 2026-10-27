@@ -36,9 +36,11 @@ Notes also replace the old scratchpad: a quick brain dump is just a note that co
 
 ### Task lines
 
+Line grammar (annotations, natural phrases) and the review list are defined in the Issue Capture spec, which notes share with the `I` capture dialog and `crona issue add`. The sections below cover what is specific to notes.
+
 #### Detection
 
-A task line is a top-level list item in the note body: `- text`, `* text`, `- [ ] text`, or `- [x] text`. Rules:
+A task line is a top-level `- text` list item in the note body. Rules:
 - Indented list items under a task line are not separate tasks; their text becomes the created issue's description.
 - Lines inside fenced code blocks are ignored.
 - A line already carrying a write-back marker (see below) is triaged and is skipped.
@@ -54,7 +56,6 @@ All tokens are optional. A plain line becomes an issue titled with its text in t
 | `#name` | Matched against both repo and stream names. A stream match targets that stream and its repo. A repo match targets that repo; if the repo has exactly one stream it is used, otherwise the stream is left unresolved. A name matching both a repo and a stream in different places is ambiguous. |
 | `~45m`, `~1h30m` | Estimate. |
 | `@today`, `@tomorrow`, `@mon`…`@sun`, `@2026-10-30` | Plan date. `@today` adds the issue to today's plan. |
-| `[x]` | Already done: create the issue as done. With an estimate token, also log a manual session of that length on the plan date (today by default). |
 
 Tokens are removed from the title. Anything the parser does not understand stays in the title as text.
 
@@ -213,7 +214,7 @@ There is no separate key for an independent note; choosing "none" in the dialog 
 Saving a note with new task lines opens one review list for all of them. `t` on a note in the Notes view (list or detail) opens the same list for its pending lines.
 
 ```
-   title                       repo    stream  est  plan   done
+   title                       repo    stream  est  plan
 [x] fix login redirect bug      crona   api     45m  today  
 [x] release notes for beta.3    crona   docs    —    —      
 [?] call bank                   Inbox   Inbox   —    —      
@@ -221,7 +222,7 @@ Saving a note with new task lines opens one review list for all of them. `t` on 
 space toggle · ←/→ field · enter edit field · ctrl+s create · esc skip
 ```
 
-- Every field is editable: title, repo, stream, estimate, plan date, and done. `←`/`→` moves between fields and `enter` edits the focused one: title, estimate, and plan date edit inline; repo and stream use the existing pickers; done toggles. Changing the repo clears the stream unless the repo has exactly one.
+- Every field is editable: title, repo, stream, estimate, and plan date. `←`/`→` moves between fields and `enter` edits the focused one: title, estimate, and plan date edit inline; repo and stream use the existing pickers. Changing the repo clears the stream unless the repo has exactly one.
 - All proposals start selected except flagged ones (`?`: ambiguous, unknown, or unresolved repo or stream). A flagged row becomes selected once its target is resolved.
 - `ctrl+s` creates the selected issues in one kernel call, writes markers back, and refreshes the note.
 - `esc` skips triage. The note is still saved, unselected lines stay pending, and the note stays in Inbox.
