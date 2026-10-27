@@ -43,6 +43,11 @@ func captureToken(state State) (string, bool) {
 	return word, true
 }
 
+// captureSlug writes a name's spaces as `-`, the way the kernel matches `#` targets.
+func captureSlug(name string) string {
+	return strings.Join(strings.Fields(name), "-")
+}
+
 // captureSuggestions lists what the word at the cursor could become, best match first.
 func captureSuggestions(state State, ctx UpdateContext) []CaptureSuggestion {
 	word, ok := captureToken(state)
@@ -70,11 +75,11 @@ func captureSuggestions(state State, ctx UpdateContext) []CaptureSuggestion {
 				continue
 			}
 			for _, stream := range streams {
-				if stream.RepoID != repo.ID || strings.ContainsAny(repo.Name+stream.Name, " \t") {
+				if stream.RepoID != repo.ID {
 					continue
 				}
-				path := repo.Name + "/" + stream.Name
-				add(path, "", path, stream.Name)
+				path := captureSlug(repo.Name) + "/" + captureSlug(stream.Name)
+				add(path, "", path, captureSlug(stream.Name))
 			}
 		}
 	case "+":

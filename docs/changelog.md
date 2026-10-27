@@ -7,6 +7,30 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.10.0-beta.3] - 2026-10-27
+
+Crona v1.10.0-beta.3 adds tags, carries unfinished work over to the next day, surfaces the delay penalty, and lets you capture issues in bulk into an Inbox. The local IPC protocol moves to `1.7`.
+
+### Tags
+
+- Issues and habits carry tags, with system tags and `+tag` filters. Tag chips show in the TUI, `+` edits tags, and `/` filters panes, with tag filters kept across restarts.
+- Tags get their own sub-tab under the renamed Work tab (`[2]`), and can be managed in Settings. The issue and habit dialogs have a Tags field.
+- `crona tag` and `crona issue|habit tag` manage tags from the CLI.
+- Summaries, the Insights view, the dashboard and reports break down focused time by tag. CSV exports add a tags column and `--tag` / `--not-tag` filters.
+
+### Carry-over and delay penalty
+
+- Worked issues carry over to the next day, and rescheduling carries them too. A new carried status remembers the status before the carry and shows only on the day an issue was carried from.
+- `r` on the Daily Overdue tab carries any open issue by hand.
+- Delay penalties show in the issue details pane, summaries, reports and when rescheduling.
+
+### Issue capture and the Inbox
+
+- `I` in the TUI and `crona issue add` add issues in bulk from `- ` lines, with `#repo/stream`, `+tag`, `~estimate` and `@date` annotations, and a review step before import.
+- Spaces in repo and stream names are written as `-` in `#` targets, so `#side-projects/blog-posts` names "Side Projects / Blog Posts".
+- While typing in `I`, a popup suggests repos and streams, tags, estimates and dates.
+- Lines without a target go to a built-in Inbox repo and stream. They are marked system, cannot be renamed or deleted, and stay out of the repo and stream pickers. `e` moves an issue out of the Inbox.
+
 ## [1.10.0-beta.2] - 2026-10-18
 
 Crona v1.10.0-beta.2 redesigns the terminal UI around numbered tabs, a shared date row, and consistent dialogs, and makes the active session view show where a timer stands.

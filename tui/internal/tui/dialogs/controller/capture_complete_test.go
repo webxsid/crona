@@ -9,8 +9,8 @@ import (
 func captureCompleteCtx() UpdateContext {
 	return UpdateContext{
 		CurrentDate: "2026-10-27",
-		Repos:       []api.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "home"}},
-		Streams:     []api.Stream{{ID: 10, RepoID: 1, Name: "api"}, {ID: 11, RepoID: 1, Name: "web"}, {ID: 20, RepoID: 2, Name: "chores"}},
+		Repos:       []api.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "home"}, {ID: 3, Name: "Side Projects"}},
+		Streams:     []api.Stream{{ID: 10, RepoID: 1, Name: "api"}, {ID: 11, RepoID: 1, Name: "web"}, {ID: 20, RepoID: 2, Name: "chores"}, {ID: 30, RepoID: 3, Name: "Blog Posts"}},
 	}
 }
 
@@ -40,12 +40,14 @@ func TestCaptureSuggestsTargetsAndInsertsOnTab(t *testing.T) {
 func TestCaptureSuggestsTagsEstimatesAndDates(t *testing.T) {
 	ctx := captureCompleteCtx()
 	cases := map[string][]string{
-		"- a +u":  {"+urgent"},
-		"- a ~1":  {"~15m", "~1h", "~1h30m"},
-		"- a @to": {"@today", "@tomorrow"},
-		"- a @fr": {"@fri"},
-		"a #cr":   {},
-		"- a #zz": {},
+		"- a +u":      {"+urgent"},
+		"- a ~1":      {"~15m", "~1h", "~1h30m"},
+		"- a @to":     {"@today", "@tomorrow"},
+		"- a @fr":     {"@fri"},
+		"a #cr":       {},
+		"- a #zz":     {},
+		"- a #side-p": {"#Side-Projects/Blog-Posts"},
+		"- a #blog":   {"#Side-Projects/Blog-Posts"},
 	}
 	for text, want := range cases {
 		state := OpenCaptureIssues(State{}, 0, "", []string{"urgent", "home"})
