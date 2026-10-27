@@ -67,6 +67,8 @@ type Deps struct {
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
 	SetItemTags                    func(target string, id int64, tags []string) tea.Cmd
+	ParseIssueCapture              func(text string, streamID int64) tea.Cmd
+	ImportIssueCapture             func(rows []shareddto.IssueCaptureProposal, left int) tea.Cmd
 	SetPaneFilter                  func(pane, value string) tea.Cmd
 	RenameTag                      func(from, to string, merge bool) tea.Cmd
 	DeleteTag                      func(name string) tea.Cmd
@@ -201,6 +203,18 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			return missingRuntimeHookCmd("rename_tag")
 		}
 		return deps.RenameTag(action.Title, action.Name, action.Active)
+	})
+	r.Register("capture_parse", func(action dialogstate.Action) tea.Cmd {
+		if deps.ParseIssueCapture == nil {
+			return missingRuntimeHookCmd("capture_parse")
+		}
+		return deps.ParseIssueCapture(action.Title, action.StreamID)
+	})
+	r.Register("capture_import", func(action dialogstate.Action) tea.Cmd {
+		if deps.ImportIssueCapture == nil {
+			return missingRuntimeHookCmd("capture_import")
+		}
+		return deps.ImportIssueCapture(action.CaptureRows, action.CaptureLeft)
 	})
 	r.Register("set_tags", func(action dialogstate.Action) tea.Cmd {
 		if deps.SetItemTags == nil {

@@ -12,6 +12,7 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
 	selectionpkg "crona/tui/internal/tui/selection"
+	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -139,6 +140,31 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			return m, refresh
 		}
+	case commands.CaptureParsedMsg:
+		state := m.dialogState()
+		if state.Kind != "capture_issues" {
+			return m, nil
+		}
+		if len(msg.Proposals) == 0 {
+			state.ErrorMessage = "No `- ` lines to import"
+			return m.withDialogState(state), nil
+		}
+		return m.withDialogState(dialogstate.OpenCaptureReview(state, msg.Text, msg.Proposals)), nil
+	case commands.CaptureImportedMsg:
+		if m.dialogState().Kind == "capture_review" {
+			m = m.withDialogState(dialogstate.Close(m.dialogState()))
+		}
+		status := "Imported " + pluralIssues(len(msg.Issues))
+		if msg.Left > 0 {
+			status += fmt.Sprintf(" · %d left pending", msg.Left)
+		}
+		return m, tea.Batch(
+			m.setStatus(status, false),
+			commands.LoadRepos(m.client),
+			commands.LoadAllIssues(m.client),
+			commands.LoadDailySummary(m.client, ""),
+			commands.RequestRollupRefresh(),
+		)
 	case commands.IssueActionPreflightClearMsg:
 		switch msg.Mode {
 		case commands.IssueActionModeManual:
@@ -588,4 +614,11 @@ func (m Model) dispatchMessageDeps() dispatchpkg.MessageDeps {
 		},
 		CloseEventStop: func() { m.stopEventStream() },
 	}
+}
+
+func pluralIssues(n int) string {
+	if n == 1 {
+		return "1 issue"
+	}
+	return fmt.Sprintf("%d issues", n)
 }

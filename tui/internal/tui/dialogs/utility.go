@@ -49,6 +49,10 @@ func renderUtilityDialog(theme Theme, state controllerpkg.State) string {
 		return renderPaneFilter(theme, state)
 	case "rename_tag":
 		return renderRenameTag(theme, state)
+	case "capture_issues":
+		return renderCaptureIssues(theme, state)
+	case "capture_review":
+		return renderCaptureReview(theme, state)
 	default:
 		return ""
 	}

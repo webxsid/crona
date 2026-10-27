@@ -63,7 +63,10 @@ type Action struct {
 	DayBoundarySchedule sharedtypes.DayBoundarySchedule
 	StringList          []string
 	// Tags is the Tags field's value on issue and habit forms; nil when the form has none.
-	Tags                 *[]string
+	Tags *[]string
+	// CaptureRows are the review rows to import; CaptureLeft counts the rows left out.
+	CaptureRows          []shareddto.IssueCaptureProposal
+	CaptureLeft          int
 	IntList              []int
 	StreakKinds          []string
 	HabitStreakDefs      []sharedtypes.HabitStreakDefinition
@@ -95,6 +98,13 @@ func Close(state State) State {
 	state.TagsInput = textinput.Model{}
 	state.TagsEnabled = false
 	state.TagsFocus = 0
+	state.CaptureText = ""
+	state.CaptureTarget = ""
+	state.CaptureStreamID = 0
+	state.CaptureRows = nil
+	state.CaptureSelected = nil
+	state.CaptureCursor = 0
+	state.CaptureEditing = false
 	state.Inputs = nil
 	state.Description = textarea.Model{}
 	state.DescriptionEnabled = false
@@ -318,10 +328,17 @@ func Update(
 	if ctx.CurrentDate == "" {
 		ctx.CurrentDate = currentDate
 	}
+	if state.CaptureEditing && state.Kind == "create_issue_default" {
+		return updateCaptureRowEditor(state, ctx, currentDate, msg)
+	}
 	if next, ok := updateTagsField(state, msg); ok {
 		return next, nil, ""
 	}
 	switch state.Kind {
+	case "capture_issues":
+		return updateCaptureIssues(state, msg)
+	case "capture_review":
+		return updateCaptureReview(state, msg)
 	case "create_repo":
 		return updateNameDescription(
 			state,

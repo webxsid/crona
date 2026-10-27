@@ -25,8 +25,11 @@ func issueCreateHint(state controllerpkg.State) string {
 	if state.AdhocTimer {
 		static = "[ctrl+s] create issue & finish session"
 	}
+	if state.CaptureEditing {
+		static = "[ctrl+s] save row"
+	}
 	context := "[tab] next   [esc] cancel"
-	if state.AdhocTimer {
+	if state.AdhocTimer || state.CaptureEditing {
 		context = "[tab] next   [esc] back"
 	}
 	if state.Kind == "create_issue_default" {

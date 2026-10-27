@@ -111,6 +111,7 @@ type Deps struct {
 	ToggleSelectedIssuePinnedDaily  func(*State) tea.Cmd
 	CarrySelectedIssue              func(*State) tea.Cmd
 	OpenTagPicker                   func(*State) bool
+	OpenCaptureIssues               func(*State) bool
 	OpenPaneFilter                  func(*State) bool
 	SetPaneFilter                   func(pane uistate.Pane, value string) tea.Cmd
 	OpenSelectedIssueTodoDateDialog func(*State) bool
@@ -333,6 +334,13 @@ func newRouter(deps Deps) *router {
 			}
 			deps.HandleCreateAction(&s)
 			return s, nil, true
+		},
+		// I adds several issues at once from `- ` lines.
+		"I": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if s.ProtectedModeActive || deps.OpenCaptureIssues == nil {
+				return s, nil, false
+			}
+			return s, nil, deps.OpenCaptureIssues(&s)
 		},
 		"e": func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 			if s.ProtectedModeActive || timerIsActive(s) || !issueEditorContext(s) {

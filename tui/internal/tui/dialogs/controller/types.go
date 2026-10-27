@@ -1,6 +1,7 @@
 package controller
 
 import (
+	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 
@@ -179,6 +180,16 @@ type State struct {
 	TagsInput   textinput.Model
 	TagsEnabled bool
 	TagsFocus   int
+	// Capture* drive Add issues and its review: the text and its default stream (target
+	// names it), the parsed rows and their selection, and the row under the cursor.
+	// CaptureEditing is set while that row is open in the New Issue form.
+	CaptureText     string
+	CaptureTarget   string
+	CaptureStreamID int64
+	CaptureRows     []shareddto.IssueCaptureProposal
+	CaptureSelected []bool
+	CaptureCursor   int
+	CaptureEditing  bool
 }
 
 const (

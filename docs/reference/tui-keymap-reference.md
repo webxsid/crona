@@ -54,6 +54,7 @@ After opening view jump with `v`, press a view mnemonic directly. For example, `
 
 These apply to items in most planning tables or lists:
 - `a`: Create a new entry (issue, habit, repo, stream).
+- `I`: Add several issues at once. Type one `- ` line per issue (with optional `#repo/stream ~45m @fri +tag`, and indented lines for a description), press `ctrl+s` to review the parse, then `ctrl+s` again to import. In the review, `space` toggles a row, `a` selects all, `enter` edits a row, and `esc` goes back to the text. Lines without `#` go to the checked-out stream, or the Inbox stream.
 - `c`: Checkout selection context or open checkout modal.
 - `e`: Edit the selected item.
 - `d`: Change the selected issue's planning due date.

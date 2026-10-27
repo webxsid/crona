@@ -1406,3 +1406,23 @@ func tagCmd(name string, run func() error) tea.Cmd {
 		return nil
 	}
 }
+
+func ParseIssueCapture(c *api.Client, text string, streamID int64) tea.Cmd {
+	return func() tea.Msg {
+		proposals, err := c.ParseIssueCapture(text, streamID)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "issue_capture_parse"}
+		}
+		return CaptureParsedMsg{Text: text, StreamID: streamID, Proposals: proposals}
+	}
+}
+
+func ImportIssueCapture(c *api.Client, proposals []shareddto.IssueCaptureProposal, left int) tea.Cmd {
+	return func() tea.Msg {
+		issues, err := c.ImportIssueCapture(proposals)
+		if err != nil {
+			return ErrMsg{Err: err, Operation: "issue_capture_import"}
+		}
+		return CaptureImportedMsg{Issues: issues, Left: left}
+	}
+}

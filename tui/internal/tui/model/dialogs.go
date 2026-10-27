@@ -752,6 +752,7 @@ func (m Model) openHelpDialog() Model {
 	rows = append(rows, viewchrome.DateActions(theme, string(m.view))...)
 	rows = append(rows, "", "Global")
 	rows = append(rows, globalActions...)
+	rows = append(rows, viewchrome.KeyHint(theme, "I", "add issues from - lines"))
 	if len(paneActions) > 0 {
 		rows = append(rows, "", "Current View")
 		rows = append(rows, paneActions...)
@@ -925,6 +926,13 @@ func (m Model) dialogState() dialogstate.State {
 		TagsInput:                      m.dialogTagsInput,
 		TagsEnabled:                    m.dialogTagsEnabled,
 		TagsFocus:                      m.dialogTagsFocus,
+		CaptureText:                    m.dialogCaptureText,
+		CaptureTarget:                  m.dialogCaptureTarget,
+		CaptureStreamID:                m.dialogCaptureStreamID,
+		CaptureRows:                    m.dialogCaptureRows,
+		CaptureSelected:                m.dialogCaptureSelected,
+		CaptureCursor:                  m.dialogCaptureCursor,
+		CaptureEditing:                 m.dialogCaptureEditing,
 	}
 }
 
@@ -1061,6 +1069,13 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogTagsInput = state.TagsInput
 	m.dialogTagsEnabled = state.TagsEnabled
 	m.dialogTagsFocus = state.TagsFocus
+	m.dialogCaptureText = state.CaptureText
+	m.dialogCaptureTarget = state.CaptureTarget
+	m.dialogCaptureStreamID = state.CaptureStreamID
+	m.dialogCaptureRows = state.CaptureRows
+	m.dialogCaptureSelected = state.CaptureSelected
+	m.dialogCaptureCursor = state.CaptureCursor
+	m.dialogCaptureEditing = state.CaptureEditing
 	return m
 }
 
@@ -1293,6 +1308,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.RenameTag(m.client, from, to, merge)
 		},
 		DeleteTag: func(name string) tea.Cmd { return commands.DeleteTag(m.client, name) },
+		ParseIssueCapture: func(text string, streamID int64) tea.Cmd {
+			return commands.ParseIssueCapture(m.client, text, streamID)
+		},
+		ImportIssueCapture: func(rows []shareddto.IssueCaptureProposal, left int) tea.Cmd {
+			return commands.ImportIssueCapture(m.client, rows, left)
+		},
 		SetItemTags: func(target string, id int64, tags []string) tea.Cmd {
 			return commands.SetItemTags(m.client, target == "habit", id, tags)
 		},

@@ -4,6 +4,7 @@ import (
 	"crona/tui/internal/tui/scope"
 	"time"
 
+	shareddto "crona/shared/dto"
 	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -305,6 +306,13 @@ type Model struct {
 	dialogTagsInput                      textinput.Model
 	dialogTagsEnabled                    bool
 	dialogTagsFocus                      int
+	dialogCaptureText                    string
+	dialogCaptureTarget                  string
+	dialogCaptureStreamID                int64
+	dialogCaptureRows                    []shareddto.IssueCaptureProposal
+	dialogCaptureSelected                []bool
+	dialogCaptureCursor                  int
+	dialogCaptureEditing                 bool
 
 	// status / error flash
 	statusMsg string
