@@ -68,19 +68,52 @@ An explicit annotation wins over a phrase for the same field, and the phrase the
 
 ### Review
 
-Parsing opens one review list:
+Parsing always opens one review dialog, even when every row parsed cleanly, so capture works the same way every time. It is a list of rows with the selected row expanded in place; editing reuses the Edit Issue form rather than a grid of editable cells, which would not fit Crona's dialog widths.
 
 ```
-   title                  repo   stream  est  plan   tags
-[x] fix login redirect     crona  api     45m  tmrw   urgent
-[x] write release notes    crona  docs    1h   today  —
-[?] call bank              Inbox  Inbox   —    —      —
-space toggle · ←/→ field · enter edit field · ctrl+s create · esc back
+┌ Import Issues ─ 3 of 4 selected ─────────────────┐
+│ [x] fix login redirect       crona/api  45m tmrw │
+│ ▸[x] write release notes                         │
+│    Title       write release notes               │
+│    Repo        crona      Stream   docs          │
+│    Estimate    1h         Due      today         │
+│    Tags        +release                          │
+│    Description covered beta.3 and beta.4         │
+│ [?] call bank                stream?             │
+│ [x] refactor sync            crona/sync  —  fri  │
+│                                                  │
+│ space toggle · enter edit · ctrl+s import 3      │
+│ esc back                                         │
+└──────────────────────────────────────────────────┘
 ```
 
-- Every field is editable: `←`/`→` moves between fields and `enter` edits the focused one. Title, estimate and plan date edit inline; repo and stream use the existing pickers; tags use the Tags field. Changing the repo clears the stream unless the repo has exactly one.
-- All rows start selected except flagged ones (`?`). A flagged row becomes selectable once fixed.
-- `ctrl+s` creates the selected issues, their tags and plan entries in one kernel call.
+#### Rows
+
+- A collapsed row shows its title, then `repo/stream`, estimate and plan date when set.
+- The selected row expands to show every parsed field (title, repo, stream, estimate, plan date, tags, description), read-only, so the parse can be checked without editing.
+- A flagged row shows `?` and its reason in place of the target: `stream?` (unresolved), `ambiguous #doc`, `unknown #foo`, or `bad date`.
+- The title shows how many rows are selected; `ctrl+s` in the hint shows how many will be imported.
+
+#### Selection
+
+- All rows start selected except flagged ones. A flagged row cannot be selected until it is fixed, and is selected automatically once it is.
+- `space` toggles the selected row; `a` selects every unflagged row, or clears all when all are selected.
+- `up`/`down` move between rows.
+
+#### Editing
+
+- `enter` opens the row in the Edit Issue form, with its fields, pickers, Tags completion and validation. Saving the form returns to the list with the row updated instead of calling the kernel; `esc` in the form returns with the row unchanged.
+- Changing the repo clears the stream unless the repo has exactly one, as in the form today.
+
+#### Import
+
+- `ctrl+s` creates the selected rows' issues, tags and plan entries in one kernel call and closes the dialog. A status line reports the result, for example `Imported 3 issues · 1 left pending`.
+- If the kernel rejects a row (for example its stream was deleted meanwhile), nothing is created; the dialog stays open with that row flagged.
+- `esc` leaves without importing. What happens next depends on the entry point (below).
+
+#### CLI review
+
+The CLI prints the same rows as numbered plain text with flags marked, then asks `Import 3 issues? [Y/n]`. `--yes` imports every unflagged row without asking and reports flagged ones; `--dry-run` prints the parse as JSON.
 
 ### Entry points
 
@@ -88,7 +121,7 @@ space toggle · ←/→ field · enter edit field · ctrl+s create · esc back
 
 `I` (global, outside dialogs) opens a multi-line "Add issues" dialog with the target defaulting to the active context.
 
-- `ctrl+s` parses and opens the review. `esc` in the review returns to the text with its contents intact; `esc` in the text closes the dialog.
+- `ctrl+s` parses and opens the review. `esc` in the review returns to the text with its contents and any row edits intact; `esc` in the text closes the dialog.
 - Nothing is saved as a note; the created issues are the only output. Unselected rows are dropped when the dialog closes.
 - `I` is unbound today. It pairs with `a` (create one entry); `A` stays reserved for the ad-hoc timer and `ctrl+a` is avoided as a tmux and screen prefix. Inside dialogs `I` is plain text.
 
@@ -99,7 +132,7 @@ Saving a note with new lines in an `:::issues` block runs the same parser and re
 #### CLI
 
 - `crona issue add "text"` parses one line; `crona issue add -` reads lines from stdin.
-- On a terminal it prints the parsed rows and asks to confirm; `--yes` creates every unflagged row and reports flagged ones; `--dry-run` prints the parse as JSON.
+- Review follows CLI review above.
 - `--repo`/`--stream` set the default target.
 
 ### Kernel and IPC

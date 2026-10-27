@@ -211,21 +211,11 @@ There is no separate key for an independent note; choosing "none" in the dialog 
 
 #### Triage
 
-Saving a note with new task lines opens one review list for all of them. `t` on a note in the Notes view (list or detail) opens the same list for its pending lines.
+Saving a note with new task lines opens the Issue Capture review dialog for all of them. `t` on a note in the Notes view (list or detail) opens the same dialog for its pending lines. Rows, flags, selection and editing work as described there.
 
-```
-   title                       repo    stream  est  plan
-[x] fix login redirect bug      crona   api     45m  today  
-[x] release notes for beta.3    crona   docs    —    —      
-[?] call bank                   Inbox   Inbox   —    —      
-[?] refactor sync               crona   ?       —    fri    
-space toggle · ←/→ field · enter edit field · ctrl+s create · esc skip
-```
-
-- Every field is editable: title, repo, stream, estimate, and plan date. `←`/`→` moves between fields and `enter` edits the focused one: title, estimate, and plan date edit inline; repo and stream use the existing pickers. Changing the repo clears the stream unless the repo has exactly one.
-- All proposals start selected except flagged ones (`?`: ambiguous, unknown, or unresolved repo or stream). A flagged row becomes selected once its target is resolved.
-- `ctrl+s` creates the selected issues in one kernel call, writes markers back, and refreshes the note.
-- `esc` skips triage. The note is still saved, unselected lines stay pending, and the note stays in Inbox.
+Specific to notes:
+- `ctrl+s` imports the selected rows, writes `→ ID` markers back, links the note to each issue, and refreshes the note.
+- `esc` skips triage. The note is still saved, unselected and skipped lines stay pending, and the note stays in Inbox.
 - A `t` on a note with no pending task lines shows a short status message instead of the dialog.
 
 #### Key summary
