@@ -18,6 +18,10 @@ func DefaultRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOp
 	query := normalizeSelectorName(inputs[0].Value())
 	options := make([]SelectorOption, 0, len(repos)+1)
 	for _, repo := range repos {
+		// System repos like the Inbox are filled by Crona, not picked.
+		if repo.System {
+			continue
+		}
 		if query != "" && !strings.Contains(normalizeSelectorName(repo.Name), query) {
 			continue
 		}
@@ -75,7 +79,7 @@ func DefaultStreamOptions(
 		)
 	}
 	for _, stream := range streams {
-		if strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
+		if stream.System || strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
 			continue
 		}
 		streamKey := strconv.FormatInt(stream.ID, 10)

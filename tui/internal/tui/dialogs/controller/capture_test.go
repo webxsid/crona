@@ -183,3 +183,22 @@ func TestMoveInboxIssueStartsUnchosenAndSubmitsAMove(t *testing.T) {
 		t.Fatalf("unexpected move action %+v %q", action, status)
 	}
 }
+
+func TestPickersHideSystemReposButInboxRowsStayInbox(t *testing.T) {
+	ctx := UpdateContext{
+		Repos:   []api.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "Inbox", System: true}},
+		Streams: []api.Stream{{ID: 10, RepoID: 1, Name: "api"}, {ID: 20, RepoID: 2, Name: "Inbox", System: true}},
+	}
+	for _, option := range DefaultRepoOptions(OpenCreateIssueDefault(State{}).Inputs, ctx.Repos) {
+		if option.Label == "Inbox" {
+			t.Fatalf("the Inbox repo should not be offered: %+v", option)
+		}
+	}
+	rows := []shareddto.IssueCaptureProposal{{Line: 1, Title: "call bank", RepoID: 2, RepoName: "Inbox", StreamID: 20, StreamName: "Inbox", Inbox: true}}
+	state := OpenCaptureReview(OpenCaptureIssues(State{}, 0, "", nil), "- call bank", rows)
+	state, _, _ = capturePress(t, state, ctx, "enter")
+	state, _, status := capturePress(t, state, ctx, "ctrl+s")
+	if status != "" || state.Kind != "capture_review" || !state.CaptureRows[0].Inbox {
+		t.Fatalf("an Inbox row should save back as Inbox: %q %q %+v", status, state.Kind, state.CaptureRows[0])
+	}
+}

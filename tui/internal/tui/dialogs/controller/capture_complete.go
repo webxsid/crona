@@ -66,6 +66,9 @@ func captureSuggestions(state State, ctx UpdateContext) []CaptureSuggestion {
 			streams = ctx.Streams
 		}
 		for _, repo := range ctx.Repos {
+			if repo.System {
+				continue
+			}
 			for _, stream := range streams {
 				if stream.RepoID != repo.ID || strings.ContainsAny(repo.Name+stream.Name, " \t") {
 					continue

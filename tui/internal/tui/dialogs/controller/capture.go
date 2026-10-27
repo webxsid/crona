@@ -178,9 +178,9 @@ func openCaptureRowEditor(state State, ctx UpdateContext) State {
 
 // selectCaptureRowTarget points the form's pickers at the row's repo and stream. A part the
 // parse left unresolved starts unchosen, so saving cannot quietly take the first option.
-// The Inbox before its first import exists only by name.
+// The Inbox is not in the pickers, so an Inbox row is held by name.
 func selectCaptureRowTarget(state State, ctx UpdateContext, row shareddto.IssueCaptureProposal) State {
-	if row.Inbox && row.StreamID == 0 {
+	if row.Inbox {
 		state.Inputs[0].SetValue(row.RepoName)
 		state.Inputs[1].SetValue(row.StreamName)
 		state.RepoIndex, state.StreamIndex = 0, 0
@@ -246,8 +246,8 @@ func updateCaptureRowEditor(state State, ctx UpdateContext, currentDate string, 
 	return restoreCapture(next, saved, "capture_review"), nil, ""
 }
 
-// captureRowTarget resolves the form's repo and stream to existing ones. The Inbox counts
-// as existing before its first import creates it.
+// captureRowTarget resolves the form's repo and stream to existing ones. The Inbox is matched
+// by name, since it is not in the pickers and may not exist before its first import.
 func captureRowTarget(state State, ctx UpdateContext, row shareddto.IssueCaptureProposal) (int64, int64, bool, bool) {
 	repo, ok := selectedOption(DefaultRepoOptions(state.Inputs, ctx.Repos), state.RepoIndex)
 	if ok && repo.ID != "__new__" {
