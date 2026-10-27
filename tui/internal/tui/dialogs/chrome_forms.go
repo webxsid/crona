@@ -124,7 +124,12 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		)
 	}
 	primary, _ := splitHints(issueCreateHint(state))
+	esc := ""
+	if state.CaptureEditing {
+		esc = "esc back"
+	}
 	return renderForm(theme, state, FormSpec{
+		Esc:   esc,
 		Title: frameTitle, Context: repoStreamContext(state), Rows: rows, Primary: primary, FocusCount: len(focusOf),
 		Hints: func(focus int) []string {
 			probe := state

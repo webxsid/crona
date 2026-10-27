@@ -25,6 +25,8 @@ type FormSpec struct {
 	Primary        string
 	Hints          func(focus int) []string
 	FocusCount     int
+	// Esc replaces the closing `esc cancel` hint, for forms where esc goes back.
+	Esc string
 }
 
 func fieldRow(focus int, line string) FormRow {
@@ -65,18 +67,22 @@ func formFooter(
 	theme Theme,
 	primary string,
 	hints func(focus int) []string,
+	esc string,
 	focus, focusCount, inner int,
 ) []string {
+	if esc == "" {
+		esc = "esc cancel"
+	}
 	hintsAt := func(f int) []string {
 		if hints == nil {
 			return nil
 		}
 		return hints(f)
 	}
-	footer := Footer(theme, primary, hintsAt(focus), inner)
+	footer := footerWithEsc(theme, primary, hintsAt(focus), esc, inner)
 	tallest := len(footer)
 	for f := 0; f < focusCount; f++ {
-		tallest = max(tallest, len(Footer(theme, primary, hintsAt(f), inner)))
+		tallest = max(tallest, len(footerWithEsc(theme, primary, hintsAt(f), esc, inner)))
 	}
 	for len(footer) < tallest {
 		footer = append(footer, "")
@@ -87,7 +93,7 @@ func formFooter(
 func renderForm(theme Theme, state controllerpkg.State, spec FormSpec) string {
 	inner := formInner(state.Width)
 	body, focus := formBody(spec.Rows, state.FocusIdx)
-	footer := formFooter(theme, spec.Primary, spec.Hints, state.FocusIdx, spec.FocusCount, inner)
+	footer := formFooter(theme, spec.Primary, spec.Hints, spec.Esc, state.FocusIdx, spec.FocusCount, inner)
 	return Frame(theme, FrameSpec{
 		Title: spec.Title, Context: spec.Context, Border: spec.Border, Body: body,
 		Footer: withError(

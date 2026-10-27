@@ -123,3 +123,36 @@ func TestCaptureRowEditorWritesTheRowBack(t *testing.T) {
 		t.Fatalf("esc should discard form edits: %q %+v", state.Kind, state.CaptureRows[2])
 	}
 }
+
+func TestCaptureRowEditorStartsOnTheRowsTarget(t *testing.T) {
+	ctx := UpdateContext{
+		Repos:   []api.Repo{{ID: 1, Name: "crona-old"}, {ID: 2, Name: "crona"}},
+		Streams: []api.Stream{{ID: 10, RepoID: 2, Name: "web"}, {ID: 11, RepoID: 2, Name: "api"}},
+	}
+	rows := []shareddto.IssueCaptureProposal{
+		{Line: 1, Title: "fix login", RepoID: 2, RepoName: "crona", StreamID: 11, StreamName: "api"},
+		{Line: 2, Title: "broken", Flags: []string{"unknown #nope"}},
+		{Line: 3, Title: "half", RepoID: 2, RepoName: "crona", Flags: []string{"stream?"}},
+	}
+	review := OpenCaptureReview(OpenCaptureIssues(State{}, 0, "", nil), "- text", rows)
+
+	state, _, _ := capturePress(t, review, ctx, "enter")
+	repo, _ := selectedOption(DefaultRepoOptions(state.Inputs, ctx.Repos), state.RepoIndex)
+	stream, _ := selectedOption(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, nil, ctx.Streams, nil), state.StreamIndex)
+	if repo.ID != "2" || stream.ID != "11" {
+		t.Fatalf("resolved row should open on crona/api, got repo %q stream %q", repo.ID, stream.ID)
+	}
+
+	state, _, _ = capturePress(t, review, ctx, "down", "enter")
+	if state.RepoIndex != -1 || state.StreamIndex != -1 {
+		t.Fatalf("unknown target should start unchosen, got %d/%d", state.RepoIndex, state.StreamIndex)
+	}
+	if state, _, status := capturePress(t, state, ctx, "ctrl+s"); status == "" || state.Kind != "create_issue_default" {
+		t.Fatalf("saving with no repo chosen should be refused, got %q in %q", status, state.Kind)
+	}
+
+	state, _, _ = capturePress(t, review, ctx, "down", "down", "enter")
+	if state.RepoIndex < 0 || state.StreamIndex != -1 {
+		t.Fatalf("stream? row should keep its repo and leave the stream unchosen, got %d/%d", state.RepoIndex, state.StreamIndex)
+	}
+}

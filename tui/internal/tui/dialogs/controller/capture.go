@@ -98,7 +98,7 @@ func updateCaptureIssues(state State, msg tea.KeyMsg) (State, *Action, string) {
 	return clearDialogError(state), nil, ""
 }
 
-func updateCaptureReview(state State, msg tea.KeyMsg) (State, *Action, string) {
+func updateCaptureReview(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
 	rows := state.CaptureRows
 	switch msg.String() {
 	case "esc":
@@ -132,7 +132,7 @@ func updateCaptureReview(state State, msg tea.KeyMsg) (State, *Action, string) {
 		}
 	case "enter":
 		if state.CaptureCursor < len(rows) {
-			return openCaptureRowEditor(state), nil, ""
+			return openCaptureRowEditor(state, ctx), nil, ""
 		}
 	case "ctrl+s":
 		picked := make([]shareddto.IssueCaptureProposal, 0, len(rows))
@@ -155,12 +155,11 @@ func updateCaptureReview(state State, msg tea.KeyMsg) (State, *Action, string) {
 
 // openCaptureRowEditor edits the row under the cursor in the New Issue form; saving the form
 // writes the row back instead of creating an issue (see updateCaptureRowEditor).
-func openCaptureRowEditor(state State) State {
+func openCaptureRowEditor(state State, ctx UpdateContext) State {
 	saved := saveCapture(state)
 	row := saved.rows[saved.cursor]
 	next := OpenCreateIssueDefault(state)
-	next.Inputs[0].SetValue(row.RepoName)
-	next.Inputs[1].SetValue(row.StreamName)
+	next = selectCaptureRowTarget(next, ctx, row)
 	next.Inputs[2].SetValue(row.Title)
 	next.Description.SetValue(ValueOrEmpty(row.Description))
 	if row.EstimateMinutes != nil {
@@ -172,6 +171,38 @@ func openCaptureRowEditor(state State) State {
 	next.CaptureRows, next.CaptureSelected, next.CaptureCursor = saved.rows, saved.selected, saved.cursor
 	next.CaptureEditing = true
 	return SyncDialogFocus(next)
+}
+
+// selectCaptureRowTarget points the form's pickers at the row's repo and stream. A part the
+// parse left unresolved starts unchosen, so saving cannot quietly take the first option.
+// The Inbox before its first import exists only by name.
+func selectCaptureRowTarget(state State, ctx UpdateContext, row shareddto.IssueCaptureProposal) State {
+	if row.Inbox && row.StreamID == 0 {
+		state.Inputs[0].SetValue(row.RepoName)
+		state.Inputs[1].SetValue(row.StreamName)
+		state.RepoIndex, state.StreamIndex = 0, 0
+		return state
+	}
+	state.RepoIndex, state.StreamIndex = -1, -1
+	if row.RepoID == 0 {
+		return state
+	}
+	state.RepoIndex = optionIndex(DefaultRepoOptions(state.Inputs, ctx.Repos), row.RepoID)
+	if state.RepoIndex >= 0 && row.StreamID > 0 {
+		streams := DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, ctx.AllIssues, ctx.Streams, ctx.Context)
+		state.StreamIndex = optionIndex(streams, row.StreamID)
+	}
+	return state
+}
+
+func optionIndex(options []SelectorOption, id int64) int {
+	want := strconv.FormatInt(id, 10)
+	for i, option := range options {
+		if option.ID == want {
+			return i
+		}
+	}
+	return -1
 }
 
 // updateCaptureRowEditor runs the New Issue form for a review row. The form validates as

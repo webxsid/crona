@@ -31,8 +31,8 @@ func TestFormFooterPaddedToTallest(t *testing.T) {
 		}
 		return nil
 	}
-	zero := formFooter(testTheme(), "ctrl+s save", hints, 0, 2, 44)
-	one := formFooter(testTheme(), "ctrl+s save", hints, 1, 2, 44)
+	zero := formFooter(testTheme(), "ctrl+s save", hints, "", 0, 2, 44)
+	one := formFooter(testTheme(), "ctrl+s save", hints, "", 1, 2, 44)
 	if len(zero) != len(one) || len(one) < 2 {
 		t.Fatalf("footer heights differ: %d vs %d", len(zero), len(one))
 	}

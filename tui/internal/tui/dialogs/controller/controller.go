@@ -338,7 +338,7 @@ func Update(
 	case "capture_issues":
 		return updateCaptureIssues(state, msg)
 	case "capture_review":
-		return updateCaptureReview(state, msg)
+		return updateCaptureReview(state, ctx, msg)
 	case "create_repo":
 		return updateNameDescription(
 			state,
