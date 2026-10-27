@@ -65,6 +65,7 @@ type MessageState struct {
 	StreamDistribution     *api.TimeDistributionSummary
 	IssueDistribution      *api.TimeDistributionSummary
 	SegmentDistribution    *api.TimeDistributionSummary
+	TagDistribution        *api.TimeDistributionSummary
 	GoalProgress           *api.GoalProgressSummary
 	ExportAssets           *api.ExportAssetStatus
 	ExportReports          []api.ExportReportFile
@@ -375,6 +376,8 @@ func HandleMessage(
 			state.IssueDistribution = msg.Summary
 		case "segment_type":
 			state.SegmentDistribution = msg.Summary
+		case "tag":
+			state.TagDistribution = msg.Summary
 		}
 		return state, nil, true
 	case commands.GoalProgressLoadedMsg:

@@ -194,6 +194,7 @@ func (c *Client) CreateHabit(
 	scheduleType string,
 	weekdays []int,
 	targetMinutes *int,
+	tags []string,
 ) (*Habit, error) {
 	var out Habit
 	return &out, c.call(protocol.MethodHabitCreate, shareddto.CreateHabitRequest{
@@ -203,6 +204,7 @@ func (c *Client) CreateHabit(
 		ScheduleType:  scheduleType,
 		Weekdays:      weekdays,
 		TargetMinutes: targetMinutes,
+		Tags:          tags,
 	}, &out)
 }
 
@@ -274,11 +276,13 @@ func (c *Client) CreateIssue(
 	description *string,
 	estimateMinutes *int,
 	todoForDate *string,
+	tags []string,
 ) (*Issue, error) {
 	body := shareddto.CreateIssueRequest{
 		StreamID:    streamID,
 		Title:       title,
 		Description: description,
+		Tags:        tags,
 	}
 	if estimateMinutes != nil {
 		body.EstimateMinutes = estimateMinutes

@@ -204,6 +204,10 @@ func runDay(date string, deps Deps) error {
 	if err != nil {
 		return err
 	}
+	tags, err := loadTagTime(deps, date, date, nil)
+	if err != nil {
+		return err
+	}
 	data := daySummaryData{
 		Date:    date,
 		Context: ctx,
@@ -214,6 +218,7 @@ func runDay(date string, deps Deps) error {
 		CheckIn: checkIn,
 		Rollup:  rollup,
 		Streaks: streaks,
+		Tags:    tags,
 	}
 	return renderDaySummary(deps.Stdout, data)
 }
@@ -239,6 +244,10 @@ func runRange(start, end string, deps Deps) error {
 	if err != nil {
 		return err
 	}
+	tags, err := loadTagTime(deps, start, end, ctx)
+	if err != nil {
+		return err
+	}
 	data := rangeSummaryData{
 		Start:   start,
 		End:     end,
@@ -248,6 +257,7 @@ func runRange(start, end string, deps Deps) error {
 		Metrics: metrics,
 		Rollup:  rollup,
 		Streaks: streaks,
+		Tags:    tags,
 	}
 	return renderRangeSummary(deps.Stdout, data)
 }
@@ -262,6 +272,8 @@ type daySummaryData struct {
 	CheckIn *sharedtypes.DailyCheckIn
 	Rollup  *sharedtypes.MetricsRollup
 	Streaks *sharedtypes.StreakSummary
+	// Tags is focused time per tag, or nil when no worked issue was tagged.
+	Tags *sharedtypes.TimeDistributionSummary
 }
 
 type rangeSummaryData struct {
@@ -273,6 +285,8 @@ type rangeSummaryData struct {
 	Metrics []sharedtypes.DailyMetricsDay
 	Rollup  *sharedtypes.MetricsRollup
 	Streaks *sharedtypes.StreakSummary
+	// Tags is focused time per tag, or nil when no worked issue was tagged.
+	Tags *sharedtypes.TimeDistributionSummary
 }
 
 func renderDaySummary(w io.Writer, data daySummaryData) error {
@@ -303,7 +317,10 @@ func renderDaySummary(w io.Writer, data daySummaryData) error {
 	if err := printCheckInSection(w, data.CheckIn, data.Rollup); err != nil {
 		return err
 	}
-	return printStreakSection(w, data.Streaks)
+	if err := printStreakSection(w, data.Streaks); err != nil {
+		return err
+	}
+	return printTagSection(w, data.Tags)
 }
 
 func renderRangeSummary(w io.Writer, data rangeSummaryData) error {
@@ -330,6 +347,9 @@ func renderRangeSummary(w io.Writer, data rangeSummaryData) error {
 		return err
 	}
 	if err := printRangeStreakSection(w, data.Streaks); err != nil {
+		return err
+	}
+	if err := printTagSection(w, data.Tags); err != nil {
 		return err
 	}
 	return printRangeDaysSection(w, data.Metrics)
@@ -904,6 +924,55 @@ func loadDashboardWindow(
 		return nil, err
 	}
 	return &out, nil
+}
+
+// loadTagTime returns focused time per tag, or nil when no worked issue was tagged.
+func loadTagTime(
+	deps Deps,
+	start, end string,
+	ctx *sharedtypes.ActiveContext,
+) (*sharedtypes.TimeDistributionSummary, error) {
+	req := shareddto.DashboardSummaryQuery{
+		Start:   strings.TrimSpace(start),
+		End:     strings.TrimSpace(end),
+		GroupBy: string(sharedtypes.DistributionGroupTag),
+	}
+	if ctx != nil {
+		req.RepoID = ctx.RepoID
+		req.StreamID = ctx.StreamID
+		req.IssueID = ctx.IssueID
+	}
+	var out sharedtypes.TimeDistributionSummary
+	if err := deps.CallKernel(protocol.MethodDashboardDistribution, req, &out); err != nil {
+		return nil, err
+	}
+	for _, row := range out.Rows {
+		if row.Key != "tag:"+sharedtypes.TagUntagged {
+			return &out, nil
+		}
+	}
+	return nil, nil
+}
+
+// tagTimeRows formats up to limit tag rows as name, worked time and share.
+func tagTimeRows(summary *sharedtypes.TimeDistributionSummary, limit int) [][]string {
+	if summary == nil {
+		return nil
+	}
+	rows := [][]string{}
+	for _, row := range summary.Rows[:min(limit, len(summary.Rows))] {
+		rows = append(rows, []string{row.Label, formatSeconds(row.WorkedSeconds), fmt.Sprintf("%.0f%%", row.Percent)})
+	}
+	return rows
+}
+
+// printTagSection prints time per tag. A session counts toward each of its issue's tags, so
+// the shares can add up to more than 100%.
+func printTagSection(w io.Writer, summary *sharedtypes.TimeDistributionSummary) error {
+	if summary == nil {
+		return nil
+	}
+	return printTable(w, "tags (overlap)", []string{"tag", "worked", "share"}, tagTimeRows(summary, 10))
 }
 
 func loadMetricsRange(deps Deps, start, end string) ([]sharedtypes.DailyMetricsDay, error) {

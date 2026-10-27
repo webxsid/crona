@@ -37,6 +37,8 @@ func issueCreateHint(state controllerpkg.State) string {
 			context = "[enter] newline   " + context
 		case 5:
 			context = "[ctrl+e] calendar   [g] today   " + context
+		case 7:
+			context = tagsFieldHint + "   " + context
 		}
 	} else {
 		switch state.FocusIdx {
@@ -44,6 +46,8 @@ func issueCreateHint(state controllerpkg.State) string {
 			context = "[enter] newline   " + context
 		case 3:
 			context = "[ctrl+e] calendar   [g] today   " + context
+		case 4:
+			context = tagsFieldHint + "   " + context
 		}
 	}
 	return static + "\n" + context
@@ -59,7 +63,7 @@ func renderEditIssue(theme Theme, state controllerpkg.State) string {
 		dueColumn = column
 	}
 	return renderForm(theme, state, FormSpec{
-		Title: "Edit Issue", Context: repoStreamContext(state), Border: theme.ColorYellow, FocusCount: 4,
+		Title: "Edit Issue", Context: repoStreamContext(state), Border: theme.ColorYellow, FocusCount: 5,
 		Primary: plainHint(dialogSubmitHint(state, "save")),
 		Hints: func(focus int) []string {
 			switch focus {
@@ -67,6 +71,8 @@ func renderEditIssue(theme Theme, state controllerpkg.State) string {
 				return []string{"tab next", "enter newline"}
 			case 3:
 				return []string{"tab next", "ctrl+e calendar", "g today"}
+			case 4:
+				return []string{"tab next", "→ complete"}
 			}
 			return []string{"tab next"}
 		},
@@ -111,6 +117,7 @@ func renderEditIssue(theme Theme, state controllerpkg.State) string {
 				3,
 				inner,
 			),
+			tagsRow(theme, state, column, full),
 		},
 	})
 }

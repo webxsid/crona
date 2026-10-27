@@ -1207,6 +1207,9 @@ const (
 	DistributionGroupStream      DistributionGroup = "stream"
 	DistributionGroupIssue       DistributionGroup = "issue"
 	DistributionGroupSegmentType DistributionGroup = "segment_type"
+	// DistributionGroupTag counts a session fully toward every tag on its issue, so row totals
+	// can exceed TotalSeconds. Sessions on untagged issues fall under TagUntagged.
+	DistributionGroupTag DistributionGroup = "tag"
 )
 
 type TimeDistributionRow struct {
@@ -1720,18 +1723,19 @@ type DailyReportSession struct {
 }
 
 type DailyReportData struct {
-	Date            string               `json:"date"`
-	GeneratedAt     string               `json:"generatedAt"`
-	Summary         DailyIssueSummary    `json:"summary"`
-	Plan            *DailyPlan           `json:"plan,omitempty"`
-	Issues          []DailyReportIssue   `json:"issues"`
-	Sessions        []DailyReportSession `json:"sessions"`
-	Habits          []HabitDailyItem     `json:"habits"`
-	CheckIn         *DailyCheckIn        `json:"checkIn,omitempty"`
-	Metrics         *DailyMetricsDay     `json:"metrics,omitempty"`
-	MetricsRollup   *MetricsRollup       `json:"metricsRollup,omitempty"`
-	Streaks         *StreakSummary       `json:"streaks,omitempty"`
-	DisplaySettings *CoreSettings        `json:"-"`
+	Date            string                `json:"date"`
+	GeneratedAt     string                `json:"generatedAt"`
+	Summary         DailyIssueSummary     `json:"summary"`
+	Plan            *DailyPlan            `json:"plan,omitempty"`
+	Issues          []DailyReportIssue    `json:"issues"`
+	Sessions        []DailyReportSession  `json:"sessions"`
+	Habits          []HabitDailyItem      `json:"habits"`
+	CheckIn         *DailyCheckIn         `json:"checkIn,omitempty"`
+	Metrics         *DailyMetricsDay      `json:"metrics,omitempty"`
+	MetricsRollup   *MetricsRollup        `json:"metricsRollup,omitempty"`
+	Streaks         *StreakSummary        `json:"streaks,omitempty"`
+	TagTime         []TimeDistributionRow `json:"tagTime,omitempty"`
+	DisplaySettings *CoreSettings         `json:"-"`
 }
 
 type ExportAssetStatus struct {

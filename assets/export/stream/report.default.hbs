@@ -42,6 +42,18 @@ Sessions
 {{/each}}
 {{/each}}
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Habits
 
 {{#each habits}}

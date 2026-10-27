@@ -21,6 +21,18 @@ Generated at {{generatedAt}}
 - Focus: {{streaks.currentFocusDays}} current / {{streaks.longestFocusDays}} longest
 - Check-ins: {{streaks.currentCheckInDays}} current / {{streaks.longestCheckInDays}} longest
 
+{{#if tagTime}}
+## Time by Tag
+
+Each session counts toward every tag on its issue, so rows can add up to more than the time worked.
+
+| Tag | Worked | Share |
+| --- | --- | --- |
+{{#each tagTime}}
+| {{name}} | {{workedTime}} | {{percent}} |
+{{/each}}
+
+{{/if}}
 ## Days
 
 {{#each days}}

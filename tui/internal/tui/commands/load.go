@@ -605,6 +605,7 @@ func LoadRollupSummaries(c *api.Client, start, end string) tea.Cmd {
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupStream)),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupIssue)),
 		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupSegmentType)),
+		LoadDistribution(c, start, end, string(sharedtypes.DistributionGroupTag)),
 		LoadGoalProgress(c, start, end),
 	)
 }

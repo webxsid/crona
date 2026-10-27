@@ -117,6 +117,17 @@ func TestRunDayDefaultsToToday(t *testing.T) {
 				streaks.CurrentHabitDays = 4
 				streaks.LongestHabitDays = 7
 				return nil
+			case protocol.MethodDashboardDistribution:
+				query := params.(shareddto.DashboardSummaryQuery)
+				if query.GroupBy != string(sharedtypes.DistributionGroupTag) {
+					t.Fatalf("unexpected distribution query: %#v", query)
+				}
+				summary := target.(*sharedtypes.TimeDistributionSummary)
+				summary.Rows = []sharedtypes.TimeDistributionRow{
+					{Key: "tag:docs", Label: "+docs", WorkedSeconds: 5400, Percent: 75},
+					{Key: "tag:untagged", Label: "+untagged", WorkedSeconds: 1800, Percent: 25},
+				}
+				return nil
 			default:
 				t.Fatalf("unexpected method: %s", method)
 				return nil
@@ -127,12 +138,12 @@ func TestRunDayDefaultsToToday(t *testing.T) {
 		t.Fatalf("summary run: %v", err)
 	}
 
-	for _, want := range []string{"DAILY SUMMARY", "AT A GLANCE", "AGENDA", "SIGNALS", "ACCOUNTABILITY", "WELLBEING", "MOMENTUM", "2026-07-28"} {
+	for _, want := range []string{"DAILY SUMMARY", "AT A GLANCE", "AGENDA", "SIGNALS", "ACCOUNTABILITY", "WELLBEING", "MOMENTUM", "TAGS", "+docs", "2026-07-28"} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, out.String())
 		}
 	}
-	if len(gotMethods) != 8 {
+	if len(gotMethods) != 9 {
 		t.Fatalf("unexpected method count: %+v", gotMethods)
 	}
 }
@@ -229,6 +240,17 @@ func TestRunRangeUsesWindowQueries(t *testing.T) {
 				streaks.CurrentHabitDays = 3
 				streaks.LongestHabitDays = 6
 				return nil
+			case protocol.MethodDashboardDistribution:
+				query := params.(shareddto.DashboardSummaryQuery)
+				if query.GroupBy != string(sharedtypes.DistributionGroupTag) {
+					t.Fatalf("unexpected distribution query: %#v", query)
+				}
+				summary := target.(*sharedtypes.TimeDistributionSummary)
+				summary.Rows = []sharedtypes.TimeDistributionRow{
+					{Key: "tag:docs", Label: "+docs", WorkedSeconds: 5400, Percent: 75},
+					{Key: "tag:untagged", Label: "+untagged", WorkedSeconds: 1800, Percent: 25},
+				}
+				return nil
 			default:
 				t.Fatalf("unexpected method: %s", method)
 				return nil
@@ -239,12 +261,12 @@ func TestRunRangeUsesWindowQueries(t *testing.T) {
 		t.Fatalf("summary range run: %v", err)
 	}
 
-	for _, want := range []string{"SUMMARY", "AT A GLANCE", "OUTCOMES", "DAILY RHYTHM", "2026-07-01", "2026-07-07"} {
+	for _, want := range []string{"SUMMARY", "AT A GLANCE", "OUTCOMES", "DAILY RHYTHM", "TIME BY TAG", "+docs", "2026-07-01", "2026-07-07"} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("expected output to contain %q, got:\n%s", want, out.String())
 		}
 	}
-	if len(gotMethods) != 6 {
+	if len(gotMethods) != 7 {
 		t.Fatalf("unexpected method count: %+v", gotMethods)
 	}
 }
@@ -280,7 +302,8 @@ func TestRunYesterdayPresetUsesPreviousDay(t *testing.T) {
 			case protocol.MethodDailyPlanGet,
 				protocol.MethodCheckInGet,
 				protocol.MethodMetricsRollup,
-				protocol.MethodMetricsStreaksLifetime:
+				protocol.MethodMetricsStreaksLifetime,
+				protocol.MethodDashboardDistribution:
 				return nil
 			default:
 				t.Fatalf("unexpected method: %s", method)

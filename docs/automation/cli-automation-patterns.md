@@ -52,6 +52,9 @@ crona export summary --week
 # Export database entries as structured CSV sheets
 crona export csv
 
+# Limit an export to tagged work
+crona export csv --week --tag client-acme --not-tag waiting
+
 # Rebuild the deterministic iCalendar feeds
 crona export calendar
 ```

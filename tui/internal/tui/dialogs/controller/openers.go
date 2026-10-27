@@ -10,7 +10,9 @@ import (
 )
 
 type Snapshot struct {
-	Dialog               State
+	Dialog State
+	// TagVocab is every tag name, for the Tags field's completions.
+	TagVocab             []string
 	CurrentDate          string
 	Repos                []api.Repo
 	Streams              []api.Stream
@@ -80,7 +82,7 @@ func (s Snapshot) OpenCreateIssueMeta(streamID int64, streamName, repoName strin
 	if s.Context != nil && s.Context.RepoID != nil {
 		next.RepoID = *s.Context.RepoID
 	}
-	return next
+	return s.withTags(next, nil)
 }
 
 func (s Snapshot) OpenCreateHabit(streamID int64, streamName, repoName string) State {
@@ -95,9 +97,8 @@ func (s Snapshot) OpenCreateHabit(streamID int64, streamName, repoName string) S
 		next.StreamIndex = 0
 	}
 	next.FocusIdx = 2
-	next = SyncDialogFocus(next)
 	_ = streamID
-	return next
+	return s.withTags(next, nil)
 }
 
 func (s Snapshot) OpenEditIssue(
@@ -107,7 +108,7 @@ func (s Snapshot) OpenEditIssue(
 	estimateMinutes *int,
 	todoForDate *string,
 ) State {
-	return OpenEditIssue(
+	return s.withTags(OpenEditIssue(
 		s.Dialog,
 		issueID,
 		streamID,
@@ -115,7 +116,7 @@ func (s Snapshot) OpenEditIssue(
 		description,
 		estimateMinutes,
 		todoForDate,
-	)
+	), s.issueTags(issueID))
 }
 
 func (s Snapshot) OpenEditHabit(
@@ -131,7 +132,7 @@ func (s Snapshot) OpenEditHabit(
 	if schedule == "weekly" {
 		scheduleValue = strings.Join(WeekdayTokens(weekdays), ",")
 	}
-	return OpenEditHabit(
+	return s.withTags(OpenEditHabit(
 		s.Dialog,
 		habitID,
 		streamID,
@@ -140,7 +141,7 @@ func (s Snapshot) OpenEditHabit(
 		scheduleValue,
 		targetMinutes,
 		active,
-	)
+	), s.habitTags(habitID))
 }
 
 func (s Snapshot) OpenHabitCompletion(
@@ -155,7 +156,7 @@ func (s Snapshot) OpenHabitCompletion(
 func (s Snapshot) OpenCreateIssueDefault() State {
 	next := OpenCreateIssueDefault(s.Dialog)
 	if s.Context == nil {
-		return next
+		return s.withTags(next, nil)
 	}
 	if s.Context.RepoName != nil {
 		next.Inputs[0].SetValue(*s.Context.RepoName)
@@ -167,13 +168,13 @@ func (s Snapshot) OpenCreateIssueDefault() State {
 		next.StreamIndex = 0
 	}
 	next.FocusIdx = 2
-	return SyncDialogFocus(next)
+	return s.withTags(next, nil)
 }
 
 func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
 	next := OpenPromoteAdhocIssue(s.Dialog, issue, s.Context)
 	if s.Context == nil {
-		return next
+		return s.withTags(next, issue.Tags)
 	}
 	if s.Context.RepoID != nil {
 		want := strconv.FormatInt(*s.Context.RepoID, 10)
@@ -201,7 +202,7 @@ func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
 			}
 		}
 	}
-	return next
+	return s.withTags(next, issue.Tags)
 }
 
 func (s Snapshot) OpenCreateIssueDefaultForPath(
@@ -216,7 +217,7 @@ func (s Snapshot) OpenCreateIssueDefaultForPath(
 	next.FocusIdx = 2
 	next.RepoID = repoID
 	next.StreamID = streamID
-	return SyncDialogFocus(next)
+	return s.withTags(next, nil)
 }
 
 func (s Snapshot) OpenCheckoutContext() State {
@@ -570,4 +571,30 @@ func (s Snapshot) OpenEditAlertReminder(id string) State {
 		}
 	}
 	return s.Dialog
+}
+
+// withTags fills a form's Tags field with current and the vocabulary, and syncs focus.
+func (s Snapshot) withTags(next State, current []string) State {
+	if next.TagsEnabled {
+		next = withTagsField(next, next.TagsFocus, current, s.TagVocab)
+	}
+	return SyncDialogFocus(next)
+}
+
+func (s Snapshot) issueTags(id int64) []string {
+	for _, issue := range s.AllIssues {
+		if issue.ID == id {
+			return issue.Tags
+		}
+	}
+	return nil
+}
+
+func (s Snapshot) habitTags(id int64) []string {
+	for _, habit := range s.AllHabits {
+		if habit.ID == id {
+			return habit.Tags
+		}
+	}
+	return nil
 }

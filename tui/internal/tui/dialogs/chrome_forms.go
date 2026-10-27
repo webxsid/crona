@@ -20,7 +20,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		dueColumn = column
 	}
 	title, estimate, due := 0, 1, 2
-	focusOf := map[string]int{"title": 0, "description": 1, "estimate": 2, "due": 3}
+	focusOf := map[string]int{"title": 0, "description": 1, "estimate": 2, "due": 3, "tags": 4}
 	if state.Kind == "create_issue_default" {
 		title, estimate, due = 2, 3, 4
 		focusOf = map[string]int{
@@ -31,6 +31,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 			"estimate":    4,
 			"due":         5,
 			"summary":     6,
+			"tags":        7,
 		}
 	}
 	focused := func(name string) bool { idx, ok := focusOf[name]; return ok && state.FocusIdx == idx }
@@ -94,6 +95,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 			at("due"),
 			inner,
 		),
+		tagsRow(theme, state, column, full),
 	)
 	if state.Kind == "create_issue_default" {
 		rows = append(
@@ -232,4 +234,24 @@ func renderCheckoutContext(theme Theme, state controllerpkg.State) string {
 		Title: "Checkout Context", Body: body, Footer: withError(theme, state, footer),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: focus, Inner: inner,
 	})
+}
+
+// tagsFieldHint is the context hint while the Tags field is focused.
+const tagsFieldHint = "[→] complete"
+
+// tagsRow is the Tags field on issue and habit forms; it is empty when the form has none.
+func tagsRow(theme Theme, state controllerpkg.State, column, full int) FormRow {
+	if !state.TagsEnabled {
+		return FormRow{}
+	}
+	return fieldRow(
+		state.TagsFocus,
+		Field(
+			theme,
+			"Tags",
+			column,
+			bareInput(state.TagsInput, full, "comma or space separated"),
+			state.FocusIdx == state.TagsFocus,
+		),
+	)
 }

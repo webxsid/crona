@@ -77,8 +77,11 @@ func renderRangeCanvas(w io.Writer, data rangeSummaryData, opts renderOptions) e
 		renderHero(opts, width, "SUMMARY", period, data.Context, nil),
 		renderRangeKPIs(opts, width, data),
 		renderRangeProgress(opts, width, data),
-		renderRangeDays(opts, width, data),
 	}
+	if data.Tags != nil {
+		sections = append(sections, box(opts, "TIME BY TAG (overlap)", renderTagRows(tagTimeRows(data.Tags, 8)), width))
+	}
+	sections = append(sections, renderRangeDays(opts, width, data))
 	_, err := fmt.Fprintln(w, strings.Join(sections, "\n"))
 	return err
 }
@@ -309,6 +312,23 @@ func renderDaySignals(opts renderOptions, width int, data daySummaryData) []stri
 			data.Streaks.CurrentCheckInDays, data.Streaks.LongestCheckInDays,
 			data.Streaks.CurrentHabitDays, data.Streaks.LongestHabitDays,
 		))
+	}
+	if data.Tags != nil {
+		lines = append(lines, "", paint(opts, ansiBold, "TAGS")+paint(opts, ansiDim, "  overlap"))
+		lines = append(lines, renderTagRows(tagTimeRows(data.Tags, 5))...)
+	}
+	return lines
+}
+
+// renderTagRows aligns tag name, worked time and share into columns.
+func renderTagRows(rows [][]string) []string {
+	nameWidth := 0
+	for _, row := range rows {
+		nameWidth = max(nameWidth, visibleWidth(row[0]))
+	}
+	lines := make([]string, 0, len(rows))
+	for _, row := range rows {
+		lines = append(lines, fmt.Sprintf("%s  %8s  %4s", padRight(row[0], nameWidth), row[1], row[2]))
 	}
 	return lines
 }

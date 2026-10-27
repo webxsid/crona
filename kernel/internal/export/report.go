@@ -50,6 +50,7 @@ func GenerateDailyReportWithFormat(
 		normalizeNarrativeFormat(format),
 		mode,
 		"",
+		nil,
 	)
 }
 
@@ -61,6 +62,7 @@ func generateDailyReportWithKind(
 	format sharedtypes.ExportFormat,
 	mode sharedtypes.ExportOutputMode,
 	presetID string,
+	filter *sharedtypes.TagFilter,
 ) (*sharedtypes.DailyReportResult, error) {
 	if strings.TrimSpace(date) == "" {
 		date = time.Now().Format("2006-01-02")
@@ -68,6 +70,9 @@ func generateDailyReportWithKind(
 	format = normalizeExportFormat(format)
 	data, err := BuildDailyReportData(ctx, c, date)
 	if err != nil {
+		return nil, err
+	}
+	if err := filterDailyReportData(ctx, c, data, filter); err != nil {
 		return nil, err
 	}
 	status, err := EnsureAssets(paths)
@@ -298,6 +303,10 @@ func BuildDailyReportData(
 	if err != nil {
 		return nil, err
 	}
+	tagTime, err := computeTagTime(ctx, c, date, date, nil, nil, nil)
+	if err != nil {
+		return nil, err
+	}
 	var metrics *sharedtypes.DailyMetricsDay
 	if len(days) > 0 {
 		copy := days[len(days)-1]
@@ -316,6 +325,7 @@ func BuildDailyReportData(
 		Metrics:         metrics,
 		MetricsRollup:   rollup,
 		Streaks:         streaks,
+		TagTime:         tagTime,
 		DisplaySettings: settings,
 	}, nil
 }
@@ -375,6 +385,7 @@ func buildTemplateDataMap(data *sharedtypes.DailyReportData) map[string]any {
 		"issues":        make([]map[string]any, 0, len(data.Issues)),
 		"repos":         groupIssuesByRepo(data.Issues),
 		"habitRepos":    groupHabitsByRepo(data.Habits),
+		"tagTime":       mapTagTime(data.TagTime),
 		"sessions":      make([]map[string]any, 0, len(data.Sessions)),
 		"habits":        make([]map[string]any, 0, len(data.Habits)),
 		"highlights":    highlights,

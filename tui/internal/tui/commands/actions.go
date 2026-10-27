@@ -373,9 +373,10 @@ func CreateIssueOnly(
 	estimateMinutes *int,
 	todoForDate *string,
 	followUp int,
+	tags []string,
 ) tea.Cmd {
 	return func() tea.Msg {
-		issue, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate)
+		issue, err := c.CreateIssue(streamID, title, description, estimateMinutes, todoForDate, tags)
 		if err != nil {
 			logger.Errorf("CreateIssue: %v", err)
 			return ErrMsg{Err: err}
@@ -401,7 +402,7 @@ func CreateHabitOnly(
 	targetMinutes *int,
 ) tea.Cmd {
 	return func() tea.Msg {
-		if _, err := c.CreateHabit(streamID, name, description, scheduleType, weekdays, targetMinutes); err != nil {
+		if _, err := c.CreateHabit(streamID, name, description, scheduleType, weekdays, targetMinutes, nil); err != nil {
 			logger.Errorf("CreateHabit: %v", err)
 			return ErrMsg{Err: err}
 		}
@@ -620,6 +621,7 @@ func CreateIssueWithPath(
 	todoForDate *string,
 	followUp int,
 	commitMessage string,
+	tags []string,
 ) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
@@ -666,7 +668,7 @@ func CreateIssueWithPath(
 			}
 			streamID = stream.ID
 		}
-		issue, err := c.CreateIssue(streamID, title, issueDescription, estimateMinutes, todoForDate)
+		issue, err := c.CreateIssue(streamID, title, issueDescription, estimateMinutes, todoForDate, tags)
 		if err != nil {
 			logger.Errorf("CreateIssue in CreateIssueWithPath: %v", err)
 			return ErrMsg{Err: err}
@@ -690,6 +692,7 @@ func CreateHabitWithPath(
 	scheduleType string,
 	weekdays []int,
 	targetMinutes *int,
+	tags []string,
 ) tea.Cmd {
 	return func() tea.Msg {
 		repos, err := c.ListRepos()
@@ -736,7 +739,7 @@ func CreateHabitWithPath(
 			}
 			streamID = stream.ID
 		}
-		if _, err := c.CreateHabit(streamID, name, habitDescription, scheduleType, weekdays, targetMinutes); err != nil {
+		if _, err := c.CreateHabit(streamID, name, habitDescription, scheduleType, weekdays, targetMinutes, tags); err != nil {
 			logger.Errorf("CreateHabit in CreateHabitWithPath: %v", err)
 			return ErrMsg{Err: err}
 		}

@@ -30,6 +30,14 @@ Crona offers these report types:
 
 The TUI separates at-a-glance Summary exports from narrative reports. `crona export summary` produces a saved or clipboard-ready artifact; `crona summary` is the separate read-only command for inspecting a day or range directly in the terminal.
 
+## Tags in exports
+
+- **Time by tag**: Daily, weekly, repo, and stream reports add a time-by-tag table when any worked issue was tagged. A session counts fully toward every tag on its issue, so the rows can add up to more than the time worked.
+- **CSV `tags` column**: Session rows can include the issue's tags, separated by `;`. Add `{"header": "Tags", "field": "tags"}` to your CSV spec to include it.
+- **Filtering**: `--tag` (any of these tags) and `--not-tag` (none of these tags) limit a daily, weekly, repo, stream, or CSV export, for example `crona export csv --week --tag client-acme --not-tag waiting`. Both flags repeat and accept comma-separated names. `untagged` matches issues with no tags. The filter narrows the issues, sessions, and tag table, while day and range rollups (total worked time, check-ins, streaks) still cover everything.
+
+Templates and CSV specs are copied to your runtime folder once and never overwritten. If yours were created before tags shipped, reset them from the **Config** view, or add the `tagTime` section (see the variables file) and the `tags` column yourself.
+
 ## PDF note
 
 Markdown and CSV exports work out-of-the-box. PDF generation requires local renderer dependencies:

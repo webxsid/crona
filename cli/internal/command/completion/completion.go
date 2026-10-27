@@ -46,7 +46,7 @@ func zsh(name string) string {
 	return fmt.Sprintf(`#compdef %s
 _%s() {
   local -a commands
-  commands=('backup:Back up data' 'restore:Restore data' 'daemon:Daemon commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'update:Update commands' 'summary:Day and range summary' 'export:Export commands' 'dev:Dev-only commands')
+  commands=('backup:Back up data' 'restore:Restore data' 'daemon:Daemon commands' 'completion:Shell completions' 'context:Context commands' 'timer:Timer commands' 'issue:Issue commands' 'habit:Habit commands' 'tag:Tag commands' 'update:Update commands' 'summary:Day and range summary' 'export:Export commands' 'dev:Dev-only commands')
   if (( CURRENT == 2 )); then
     _describe 'command' commands
     return
@@ -58,7 +58,9 @@ _%s() {
     completion) _values 'shell' zsh bash fish ;;
     context) _values 'context command' get set clear clear-issue switch-repo switch-stream switch-issue ;;
     timer) _values 'timer command' status start pause resume end ;;
-    issue) _values 'issue command' start ;;
+    issue) _values 'issue command' start tag ;;
+    habit) _values 'habit command' tag ;;
+    tag) _values 'tag command' ls rename color delete prune ;;
     update) _values 'update command' status check dismiss notes ;;
     summary) _values 'summary command' --date --start --end --yesterday --week --month --last-x-days ;;
     export) _values 'export command' summary daily weekly repo stream issue-rollup csv calendar reports ;;
@@ -75,7 +77,7 @@ func bash(name string) string {
   local cur prev words cword
   _init_completion || return
   if [[ ${cword} -eq 1 ]]; then
-    COMPREPLY=( $(compgen -W "backup restore daemon completion context timer issue update summary export dev" -- "$cur") )
+    COMPREPLY=( $(compgen -W "backup restore daemon completion context timer issue habit tag update summary export dev" -- "$cur") )
     return
   fi
   case "${words[1]}" in
@@ -85,7 +87,9 @@ func bash(name string) string {
     completion) COMPREPLY=( $(compgen -W "zsh bash fish" -- "$cur") ) ;;
     context) COMPREPLY=( $(compgen -W "get set clear clear-issue switch-repo switch-stream switch-issue" -- "$cur") ) ;;
     timer) COMPREPLY=( $(compgen -W "status start pause resume end" -- "$cur") ) ;;
-    issue) COMPREPLY=( $(compgen -W "start" -- "$cur") ) ;;
+    issue) COMPREPLY=( $(compgen -W "start tag" -- "$cur") ) ;;
+    habit) COMPREPLY=( $(compgen -W "tag" -- "$cur") ) ;;
+    tag) COMPREPLY=( $(compgen -W "ls rename color delete prune" -- "$cur") ) ;;
     update) COMPREPLY=( $(compgen -W "status check dismiss notes" -- "$cur") ) ;;
     summary) COMPREPLY=( $(compgen -W "--date --start --end --yesterday --week --month --last-x-days" -- "$cur") ) ;;
     export) COMPREPLY=( $(compgen -W "summary daily weekly repo stream issue-rollup csv calendar reports" -- "$cur") ) ;;
@@ -98,19 +102,23 @@ complete -F _%s %s
 
 func fish(name string) string {
 	return fmt.Sprintf(
-		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore daemon completion context timer issue update summary export dev"
+		`complete -c %s -f -n "__fish_use_subcommand" -a "backup restore daemon completion context timer issue habit tag update summary export dev"
 complete -c %s -f -n "__fish_seen_subcommand_from backup" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from restore" -a ""
 complete -c %s -f -n "__fish_seen_subcommand_from daemon" -a "attach detach restart wipe-data info status"
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
 complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
 complete -c %s -f -n "__fish_seen_subcommand_from timer" -a "status start pause resume end"
-complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start"
+complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start tag"
+complete -c %s -f -n "__fish_seen_subcommand_from habit" -a "tag"
+complete -c %s -f -n "__fish_seen_subcommand_from tag" -a "ls rename color delete prune"
 complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismiss notes"
 complete -c %s -f -n "__fish_seen_subcommand_from summary" -a "--date --start --end --yesterday --week --month --last-x-days"
 complete -c %s -f -n "__fish_seen_subcommand_from export" -a "summary daily weekly repo stream issue-rollup csv calendar reports"
 complete -c %s -f -n "__fish_seen_subcommand_from dev" -a "seed clear"
 `,
+		name,
+		name,
 		name,
 		name,
 		name,

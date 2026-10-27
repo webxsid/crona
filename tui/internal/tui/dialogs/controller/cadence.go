@@ -8,15 +8,16 @@ var CadenceLabels = []string{"Daily", "Weekdays", "Custom days"}
 const cadenceCustom = 2
 
 // cadenceLayout places a dialog's cadence controls: the picker's focus, the Days row's
-// focus (always the last stop), the schedule input they write, and the focus count.
+// focus (tabbed to right after the picker), the schedule input they write, and the focus
+// count. Habit forms put their Tags field at the last focus, count-1.
 type cadenceLayout struct{ cadence, days, input, count int }
 
 func cadenceLayoutFor(state State) (cadenceLayout, bool) {
 	switch state.Kind {
 	case "create_habit":
-		return cadenceLayout{cadence: 4, days: 6, input: 3, count: 7}, true
+		return cadenceLayout{cadence: 4, days: 6, input: 3, count: 8}, true
 	case "edit_habit":
-		return cadenceLayout{cadence: 2, days: 4, input: 1, count: 5}, true
+		return cadenceLayout{cadence: 2, days: 4, input: 1, count: 6}, true
 	case "create_alert_reminder", "edit_alert_reminder":
 		return cadenceLayout{cadence: 0, days: 2, input: 0, count: 3}, true
 	}

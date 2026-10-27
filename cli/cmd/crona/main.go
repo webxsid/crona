@@ -16,6 +16,7 @@ import (
 	migrationcmd "crona/cli/internal/command/migration"
 	sessioncmd "crona/cli/internal/command/session"
 	summarycmd "crona/cli/internal/command/summary"
+	tagcmd "crona/cli/internal/command/tag"
 	updatecmd "crona/cli/internal/command/update"
 	flagspkg "crona/cli/internal/flags"
 	runtimepkg "crona/cli/internal/runtime"
@@ -132,6 +133,17 @@ func run(args []string) error {
 			Stdout:     os.Stdout,
 			CallKernel: callKernelFn,
 		})
+	case "habit":
+		if len(args) > 1 && args[1] == "tag" {
+			return tagcmd.RunItem("habit", args[2:], tagcmd.Deps{Stdout: os.Stdout, CallKernel: callKernelFn})
+		}
+		_, err := fmt.Print(tagcmd.ItemUsage("habit"))
+		return err
+	case "tag":
+		return tagcmd.Run(args[1:], tagcmd.Deps{
+			Stdout:     os.Stdout,
+			CallKernel: callKernelFn,
+		})
 	case "backup":
 		return migrationcmd.RunBackup(args[1:], migrationcmd.Deps{
 			Stdout:         os.Stdout,
@@ -196,7 +208,9 @@ Run without a command to open the TUI.
   completion  Generate shell completions
   context     Inspect or update checked-out context
   timer       Control the active timer/session
-  issue       Start issue focus
+  issue       Start issue focus or tag an issue
+  habit       Tag a habit
+  tag         List, rename, color, or delete tags
   summary     Read-only daily and range snapshot
   restore     Restore a backup database into the current runtime dir
   update      Inspect release updates and release notes

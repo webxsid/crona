@@ -106,7 +106,7 @@ The special value `untagged` matches items with no tags.
 
 #### Editing tags
 
-- In the existing issue and habit create and edit dialogs, a **Tags** field: comma- or space-separated input with autocomplete from the vocabulary. New names are created on save.
+- In the existing issue and habit create and edit dialogs, a **Tags** field: comma- or space-separated input with autocomplete from the vocabulary (`→` accepts the completion). New names are created on save, and saving an edit replaces the item's tags with the field's.
 - On a selected issue or habit row, `+` opens a small tag picker: a checklist of existing tags with a text input at the top to filter or create. `space` toggles, `enter` saves.
 - With multiple items selected (if multi-select exists on that list), `+` applies the picker to all of them; tags already on some items show as partially checked.
 
@@ -137,14 +137,14 @@ Tab 2 is renamed **Work** and holds Issues, Habits and a **Tags** sub-tab. The T
 
 - Daily, weekly, repo, and stream reports include a per-tag time table when any tags were used in the period.
 - CSV exports gain a `tags` column on issue and session rows (semicolon-separated names).
-- Exports and reports accept the same tag filter (`--tag`, `--not-tag`) to limit output.
+- Exports and reports accept the same tag filter (`--tag`, `--not-tag`) to limit output. It narrows issues, sessions and the tag table; day and range rollups stay whole.
 - Calendar export is unchanged.
 
 ### CLI
 
 - `crona issue tag <id> +urgent -waiting` adds and removes in one call. `crona habit tag <id> ...` likewise.
 - `crona issue ls --tag urgent --not-tag waiting`, `crona habit ls --tag health`.
-- `crona tag ls` (with counts), `crona tag rename <old> <new>`, `crona tag delete <name>`.
+- `crona tag ls` (with counts), `crona tag rename <old> <new> [--merge]`, `crona tag color <name> <color|none>`, `crona tag delete <name>`, `crona tag prune` (remove unused).
 - Create commands accept `--tag` (repeatable).
 
 ### Notes integration

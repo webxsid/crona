@@ -22,7 +22,11 @@ const (
 	defaultIssueFocusEstimate
 	defaultIssueFocusDueDate
 	defaultIssueFocusAdhocSummary
+	defaultIssueFocusTags
 )
+
+// issueMetaFocusTags is the Tags field's focus on New Issue (from a stream) and Edit Issue.
+const issueMetaFocusTags = 4
 
 func updateCreateIssueMeta(
 	state State,
@@ -49,11 +53,11 @@ func updateCreateIssueMeta(
 		return clearDialogError(state), nil, ""
 	}
 	if msg.String() == "tab" || msg.String() == "shift+tab" {
-		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 4) % 4
+		state.FocusIdx = (state.FocusIdx + ternaryDir(msg.String()) + 5) % 5
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
 	}
-	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
+	return updateMultiInputIssue(state, msg, 5, func(state State) (*Action, string) {
 		title := strings.TrimSpace(state.Inputs[0].Value())
 		if title == "" {
 			return nil, "Issue title is required"
@@ -70,8 +74,13 @@ func updateCreateIssueMeta(
 		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 			return nil, err.Error()
 		}
+		tags, err := tagsFromField(state)
+		if err != nil {
+			return nil, err.Error()
+		}
 		return &Action{
 			Kind:                "create_issue_meta",
+			Tags:                tags,
 			RepoID:              state.RepoID,
 			RepoName:            state.RepoName,
 			StreamID:            state.StreamID,
@@ -122,6 +131,7 @@ func updateCreateIssueDefault(
 			state.FocusIdx,
 			ternaryDir(msg.String()),
 			state.AdhocTimer,
+			state.TagsEnabled,
 		)
 		state = SyncDialogFocus(state)
 		return clearDialogError(state), nil, ""
@@ -228,10 +238,15 @@ func updateCreateIssueDefault(
 		if state.PromotingAdhoc {
 			actionKind = "promote_adhoc_issue"
 		}
+		tags, err := tagsFromField(state)
+		if err != nil {
+			return state, nil, err.Error()
+		}
 		return Close(
 				state,
 			), &Action{
 				Kind:          actionKind,
+				Tags:          tags,
 				IssueID:       state.IssueID,
 				RepoName:      repoName,
 				StreamName:    streamName,
@@ -274,15 +289,17 @@ func updateCreateIssueDefault(
 	return clearDialogError(state), nil, ""
 }
 
-func shiftDefaultIssueFocus(current, direction int, includeAdhocSummary bool) int {
+func shiftDefaultIssueFocus(current, direction int, includeAdhocSummary, includeTags bool) int {
 	order := []int{
 		defaultIssueFocusTitle,
 		defaultIssueFocusDescription,
 		defaultIssueFocusEstimate,
 		defaultIssueFocusDueDate,
-		defaultIssueFocusRepo,
-		defaultIssueFocusStream,
 	}
+	if includeTags {
+		order = append(order, defaultIssueFocusTags)
+	}
+	order = append(order, defaultIssueFocusRepo, defaultIssueFocusStream)
 	if includeAdhocSummary {
 		order = append(order, defaultIssueFocusAdhocSummary)
 	}
@@ -475,7 +492,7 @@ func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *A
 		state.Inputs[2].SetValue(currentDate)
 		return clearDialogError(state), nil, ""
 	}
-	return updateMultiInputIssue(state, msg, 4, func(state State) (*Action, string) {
+	return updateMultiInputIssue(state, msg, 5, func(state State) (*Action, string) {
 		title := strings.TrimSpace(state.Inputs[0].Value())
 		if title == "" {
 			return nil, "Issue title is required"
@@ -492,8 +509,13 @@ func updateEditIssue(state State, currentDate string, msg tea.KeyMsg) (State, *A
 		if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
 			return nil, err.Error()
 		}
+		tags, err := tagsFromField(state)
+		if err != nil {
+			return nil, err.Error()
+		}
 		return &Action{
 			Kind:        "edit_issue",
+			Tags:        tags,
 			IssueID:     state.IssueID,
 			StreamID:    state.StreamID,
 			Title:       title,

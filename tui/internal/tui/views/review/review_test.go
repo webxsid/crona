@@ -417,3 +417,22 @@ func TestTrendsShareOneDateRow(t *testing.T) {
 		t.Fatalf("expected one shared date row, got %d", n)
 	}
 }
+
+func TestTimeLinesShowTagsOnlyWhenTagged(t *testing.T) {
+	state := reviewState(120, 40)
+	state.TagDistribution = &api.TimeDistributionSummary{Rows: []api.TimeDistributionRow{
+		{Key: "tag:untagged", Label: "+untagged", WorkedSeconds: 3600, Percent: 100},
+	}}
+	if text := ansi.Strip(strings.Join(TimeLines(types.Theme{}, state, 60), "\n")); strings.Contains(text, "Tags") {
+		t.Fatalf("expected no Tags section when nothing is tagged:\n%s", text)
+	}
+	state.TagDistribution.Rows = append([]api.TimeDistributionRow{
+		{Key: "tag:docs", Label: "+docs", WorkedSeconds: 5400, Percent: 75},
+	}, state.TagDistribution.Rows...)
+	text := ansi.Strip(strings.Join(TimeLines(types.Theme{}, state, 60), "\n"))
+	for _, want := range []string{"Tags  overlap", "+docs  75%"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("missing %q:\n%s", want, text)
+		}
+	}
+}

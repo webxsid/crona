@@ -139,6 +139,7 @@ type Model struct {
 	streamDistribution    *api.TimeDistributionSummary
 	issueDistribution     *api.TimeDistributionSummary
 	segmentDistribution   *api.TimeDistributionSummary
+	tagDistribution       *api.TimeDistributionSummary
 	goalProgress          *api.GoalProgressSummary
 	exportAssets          *api.ExportAssetStatus
 	exportReports         []api.ExportReportFile
@@ -301,6 +302,9 @@ type Model struct {
 	dialogTagSelected                    []string
 	dialogTagVocab                       []string
 	dialogTagCursor                      int
+	dialogTagsInput                      textinput.Model
+	dialogTagsEnabled                    bool
+	dialogTagsFocus                      int
 
 	// status / error flash
 	statusMsg string

@@ -20,6 +20,7 @@ import (
 	reviewview "crona/tui/internal/tui/views/review"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	viewsummary "crona/tui/internal/tui/views/summary"
+	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -42,6 +43,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 	}
 	dialogSnapshot := dialogstate.Snapshot{
 		Dialog:               dialogState,
+		TagVocab:             tagsmeta.Names(m.tags),
 		CurrentDate:          m.currentLogicalDate(),
 		Repos:                m.repos,
 		Streams:              m.streams,
@@ -920,6 +922,9 @@ func (m Model) dialogState() dialogstate.State {
 		TagSelected:                    m.dialogTagSelected,
 		TagVocab:                       m.dialogTagVocab,
 		TagCursor:                      m.dialogTagCursor,
+		TagsInput:                      m.dialogTagsInput,
+		TagsEnabled:                    m.dialogTagsEnabled,
+		TagsFocus:                      m.dialogTagsFocus,
 	}
 }
 
@@ -1053,6 +1058,9 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogTagSelected = state.TagSelected
 	m.dialogTagVocab = state.TagVocab
 	m.dialogTagCursor = state.TagCursor
+	m.dialogTagsInput = state.TagsInput
+	m.dialogTagsEnabled = state.TagsEnabled
+	m.dialogTagsFocus = state.TagsFocus
 	return m
 }
 
@@ -1082,7 +1090,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 		UpdateStream: func(repoID, streamID int64, name string, description *string) tea.Cmd {
 			return commands.UpdateStream(m.client, repoID, streamID, name, description)
 		},
-		CreateIssueOnly: func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int) tea.Cmd {
+		CreateIssueOnly: func(repoID, streamID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, tags []string) tea.Cmd {
 			return commands.CreateIssueOnly(
 				m.client,
 				repoID, streamID, repoName, streamName,
@@ -1090,9 +1098,10 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				description,
 				estimateMinutes,
 				dueDate, followUp,
+				tags,
 			)
 		},
-		CreateHabitWithPath: func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int) tea.Cmd {
+		CreateHabitWithPath: func(repoName, streamName, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, tags []string) tea.Cmd {
 			return commands.CreateHabitWithPath(
 				m.client,
 				repoName,
@@ -1104,6 +1113,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				schedule,
 				weekdays,
 				estimateMinutes,
+				tags,
 			)
 		},
 		UpdateHabit: func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd {
@@ -1120,7 +1130,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dashboardDate,
 			)
 		},
-		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string) tea.Cmd {
+		CreateIssueWithPath: func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string, tags []string) tea.Cmd {
 			return commands.CreateIssueWithPath(
 				m.client,
 				repoName,
@@ -1131,6 +1141,7 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				description,
 				estimateMinutes,
 				dueDate, followUp, commitMessage,
+				tags,
 			)
 		},
 		PromoteAdhocIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {

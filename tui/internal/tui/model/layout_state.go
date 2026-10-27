@@ -120,6 +120,7 @@ func (m Model) viewContentState(
 		StreamDistribution:    m.streamDistribution,
 		IssueDistribution:     m.issueDistribution,
 		SegmentDistribution:   m.segmentDistribution,
+		TagDistribution:       m.tagDistribution,
 		GoalProgress:          m.goalProgress,
 		ExportAssets:          m.exportAssets,
 		ExportReports:         m.exportReports,
