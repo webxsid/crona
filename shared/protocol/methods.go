@@ -52,6 +52,8 @@ const (
 	MethodIssueCarryUndo         = "issue.carry.undo"
 	MethodIssueTagsSet           = "issue.tags.set"
 	MethodIssueTagsUpdate        = "issue.tags.update"
+	MethodIssueCaptureParse      = "issue.capture.parse"
+	MethodIssueCaptureImport     = "issue.capture.import"
 	MethodIssueDailySummary      = "issue.daily_summary"
 	MethodIssueTodaySummary      = "issue.today_summary"
 	MethodDailyPlanGet           = "daily_plan.get"
