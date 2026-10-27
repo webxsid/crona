@@ -191,6 +191,10 @@ type State struct {
 	CaptureSelected []bool
 	CaptureCursor   int
 	CaptureEditing  bool
+	// CaptureSuggestions is the annotation popup under the Add issues text, with
+	// CaptureSuggestCursor on the entry tab or enter would insert.
+	CaptureSuggestions   []CaptureSuggestion
+	CaptureSuggestCursor int
 }
 
 const (

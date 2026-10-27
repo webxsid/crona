@@ -77,7 +77,10 @@ func CaptureSelectedCount(state State) int {
 	return count
 }
 
-func updateCaptureIssues(state State, msg tea.KeyMsg) (State, *Action, string) {
+func updateCaptureIssues(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {
+	if next, ok := updateCaptureSuggest(state, msg); ok {
+		return next, nil, ""
+	}
 	switch msg.String() {
 	case "esc":
 		return Close(state), nil, ""
@@ -95,7 +98,7 @@ func updateCaptureIssues(state State, msg tea.KeyMsg) (State, *Action, string) {
 	var cmd tea.Cmd
 	state.Description, cmd = state.Description.Update(msg)
 	_ = cmd
-	return clearDialogError(state), nil, ""
+	return refreshCaptureSuggestions(clearDialogError(state), ctx), nil, ""
 }
 
 func updateCaptureReview(state State, ctx UpdateContext, msg tea.KeyMsg) (State, *Action, string) {

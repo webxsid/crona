@@ -47,6 +47,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		CurrentDate:          m.currentLogicalDate(),
 		Repos:                m.repos,
 		Streams:              m.streams,
+		AllStreams:           m.allStreams,
 		AllHabits:            m.allHabits,
 		AllIssues:            m.allIssues,
 		Context:              m.context,
@@ -940,6 +941,8 @@ func (m Model) dialogState() dialogstate.State {
 		CaptureSelected:                m.dialogCaptureSelected,
 		CaptureCursor:                  m.dialogCaptureCursor,
 		CaptureEditing:                 m.dialogCaptureEditing,
+		CaptureSuggestions:             m.dialogCaptureSuggestions,
+		CaptureSuggestCursor:           m.dialogCaptureSuggestCursor,
 	}
 }
 
@@ -1084,6 +1087,8 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogCaptureSelected = state.CaptureSelected
 	m.dialogCaptureCursor = state.CaptureCursor
 	m.dialogCaptureEditing = state.CaptureEditing
+	m.dialogCaptureSuggestions = state.CaptureSuggestions
+	m.dialogCaptureSuggestCursor = state.CaptureSuggestCursor
 	return m
 }
 

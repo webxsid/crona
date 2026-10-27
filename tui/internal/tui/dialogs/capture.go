@@ -22,12 +22,33 @@ func renderCaptureIssues(theme Theme, state controllerpkg.State) string {
 		"",
 		description.View(),
 		"",
-		theme.StyleDim.Render("#repo/stream  ~45m  @fri  +tag  · indent for a description"),
+	}
+	hints, esc := []string{"enter newline"}, ""
+	if len(state.CaptureSuggestions) > 0 {
+		body = append(body, captureSuggestionLines(theme, state, inner)...)
+		hints, esc = []string{"tab insert", "↑/↓ choose"}, "esc dismiss"
+	} else {
+		body = append(body, theme.StyleDim.Render("#repo/stream  ~45m  @fri  +tag  · indent for a description"))
 	}
 	return renderListDialog(theme, state, listDialog{
 		title: "Add Issues", wide: true, body: body, focus: -1,
-		primary: "ctrl+s review", hints: []string{"enter newline"},
+		primary: "ctrl+s review", hints: hints, esc: esc,
 	})
+}
+
+// captureSuggestionLines draws the annotation popup, the cursor entry highlighted.
+func captureSuggestionLines(theme Theme, state controllerpkg.State, inner int) []string {
+	lines := make([]string, 0, len(state.CaptureSuggestions))
+	for i, suggestion := range state.CaptureSuggestions {
+		text := ansi.Truncate(suggestion.Insert, max(8, inner-24), "…")
+		pad := strings.Repeat(" ", max(2, 28-ansi.StringWidth(text)))
+		if i == state.CaptureSuggestCursor {
+			lines = append(lines, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+text)+pad+theme.StyleDim.Render(suggestion.Detail))
+			continue
+		}
+		lines = append(lines, theme.StyleNormal.Render("  "+text)+pad+theme.StyleDim.Render(suggestion.Detail))
+	}
+	return lines
 }
 
 // renderCaptureReview draws the parsed rows: one line each, the cursor row expanded.

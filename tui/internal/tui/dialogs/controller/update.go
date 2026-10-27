@@ -21,6 +21,7 @@ func snapshotUpdateContext(snapshot Snapshot) UpdateContext {
 	ctx := UpdateContext{
 		Repos:       snapshot.Repos,
 		Streams:     snapshot.Streams,
+		AllStreams:  snapshot.AllStreams,
 		AllIssues:   snapshot.AllIssues,
 		Context:     snapshot.Context,
 		CurrentDate: snapshot.CurrentDate,

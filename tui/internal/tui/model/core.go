@@ -314,6 +314,8 @@ type Model struct {
 	dialogCaptureSelected                []bool
 	dialogCaptureCursor                  int
 	dialogCaptureEditing                 bool
+	dialogCaptureSuggestions             []dialogstate.CaptureSuggestion
+	dialogCaptureSuggestCursor           int
 
 	// status / error flash
 	statusMsg string

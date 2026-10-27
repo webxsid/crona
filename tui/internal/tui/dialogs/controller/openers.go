@@ -16,6 +16,7 @@ type Snapshot struct {
 	CurrentDate          string
 	Repos                []api.Repo
 	Streams              []api.Stream
+	AllStreams           []api.Stream
 	AllHabits            []api.HabitWithMeta
 	AllIssues            []api.IssueWithMeta
 	Context              *api.ActiveContext

@@ -15,8 +15,10 @@ import (
 )
 
 type UpdateContext struct {
-	Repos             []api.Repo
-	Streams           []api.Stream
+	Repos   []api.Repo
+	Streams []api.Stream
+	// AllStreams is every repo's streams, for Add issues completion.
+	AllStreams        []api.Stream
 	AllIssues         []api.IssueWithMeta
 	CurrentDate       string
 	Context           *api.ActiveContext
@@ -105,6 +107,8 @@ func Close(state State) State {
 	state.CaptureSelected = nil
 	state.CaptureCursor = 0
 	state.CaptureEditing = false
+	state.CaptureSuggestions = nil
+	state.CaptureSuggestCursor = 0
 	state.Inputs = nil
 	state.Description = textarea.Model{}
 	state.DescriptionEnabled = false
@@ -337,7 +341,7 @@ func Update(
 	}
 	switch state.Kind {
 	case "capture_issues":
-		return updateCaptureIssues(state, msg)
+		return updateCaptureIssues(state, ctx, msg)
 	case "capture_review":
 		return updateCaptureReview(state, ctx, msg)
 	case "create_repo":
