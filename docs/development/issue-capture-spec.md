@@ -11,7 +11,7 @@ Status: proposal. Not scheduled. This document describes what bulk issue capture
 
 ### Goal
 
-Turn a block of text into issues in one step. Users type or paste `-` lines, each carrying optional annotations, review the parsed result once, and create everything together. The same parser and review serve three entry points: the `I` capture dialog, saving a note (see the Notes spec), and the CLI.
+Turn a block of text into issues in one step. Users type or paste `-` lines, each carrying optional annotations, review the parsed result once, and create everything together. The same parser and review serve three entry points: the `I` capture dialog, `:::issues` blocks in notes (see the Notes spec), and the CLI.
 
 ### Non-goals
 
@@ -27,7 +27,7 @@ A task line is a top-level `- text` list item.
 - Lines indented under a task line become the issue's description.
 - Lines inside fenced code blocks are ignored.
 - Numbered lists, headings and prose are never tasks.
-- In a note, a line already carrying a write-back marker (`→ CRN-142`) is skipped.
+- In a note, only lines inside an `:::issues` block are considered, and a line already carrying a write-back marker (`→ CRN-142`) is skipped.
 
 #### Inline annotations
 
@@ -36,12 +36,16 @@ All annotations are optional and may appear anywhere in the line. They are remov
 | Annotation | Property |
 |---|---|
 | `#repo/stream` | Target repo and stream. |
-| `#name` | Matched against repo and stream names, as in the Notes spec. Case-insensitive prefix match; ambiguous, unknown or unresolved targets are flagged, never created silently. |
+| `#name` | Matched against both repo and stream names. A stream match targets that stream and its repo. A repo match targets that repo; if the repo has exactly one stream it is used, otherwise the stream is left unresolved. A name matching both a repo and a stream in different places is ambiguous. Case-insensitive prefix match; ambiguous, unknown or unresolved targets are flagged, never created silently. |
 | `~45m`, `~1h30m` | Estimate. |
 | `@today`, `@tomorrow`, `@mon`…`@sun`, `@2026-10-30` | Plan date. `@today` adds the issue to today's plan. |
 | `+urgent`, `+client-acme` | Tags. Unknown names are created, as in the dialog Tags field. |
 
 Without a `#` annotation the target is the caller's default: the active context's stream for the `I` dialog, the note's link for notes (see the Notes spec), `--repo`/`--stream` for the CLI, otherwise the Inbox stream.
+
+#### Inbox stream
+
+Crona keeps one built-in `Inbox` repo with a single `Inbox` stream as the default target for lines with no target. It behaves like any other repo and stream; issues can be moved out of it with the existing issue editing flows.
 
 #### Natural phrases
 
@@ -64,7 +68,7 @@ An explicit annotation wins over a phrase for the same field, and the phrase the
 
 ### Review
 
-Parsing opens one review list, the same one the Notes spec calls triage:
+Parsing opens one review list:
 
 ```
    title                  repo   stream  est  plan   tags
@@ -74,7 +78,7 @@ Parsing opens one review list, the same one the Notes spec calls triage:
 space toggle · ←/→ field · enter edit field · ctrl+s create · esc back
 ```
 
-- Every field is editable as in the Notes spec; tags use the Tags field.
+- Every field is editable: `←`/`→` moves between fields and `enter` edits the focused one. Title, estimate and plan date edit inline; repo and stream use the existing pickers; tags use the Tags field. Changing the repo clears the stream unless the repo has exactly one.
 - All rows start selected except flagged ones (`?`). A flagged row becomes selectable once fixed.
 - `ctrl+s` creates the selected issues, their tags and plan entries in one kernel call.
 
@@ -90,7 +94,7 @@ space toggle · ←/→ field · enter edit field · ctrl+s create · esc back
 
 #### Notes
 
-Saving a note runs the same parser and review, then writes `→ ID` markers back and links the note to each issue. The Notes spec defers to this document for line grammar and review.
+Saving a note with new lines in an `:::issues` block runs the same parser and review, then writes `→ ID` markers back and links the note to each issue. Lists outside a block are untouched. The Notes spec covers block syntax, write-back and when triage runs.
 
 #### CLI
 
@@ -103,4 +107,4 @@ Saving a note runs the same parser and review, then writes `→ ID` markers back
 - parse: text plus a default target → proposed issues with fields and flags (no writes)
 - create: an accepted list of proposals (possibly user-edited) → issues, tags and plan entries as one operation, returning created ids per row
 
-The parser lives in the kernel. Notes add their write-back and links on top of `create`.
+The parser lives in the kernel.

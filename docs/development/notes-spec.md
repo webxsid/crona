@@ -13,7 +13,7 @@ Status: proposal. Not scheduled. This document describes what a notes feature wo
 
 Let users keep longer-form markdown notes inside Crona that can stand alone or attach to issues, streams, repos, and habits, and that stay reachable from the screens where that work happens.
 
-Notes also replace the old scratchpad: a quick brain dump is just a note that contains task lines. Users write freely and save; saving triages the new task lines into issues through one review step instead of a form per task. There is one place to write (`n`), one place to look (the Notes view and its Inbox), and saving is what turns writing into work.
+Notes also replace the old scratchpad: a quick brain dump is just a note, with any tasks put in an `:::issues` block. Users write freely and save; saving triages the new task lines into issues through one review step instead of a form per task. There is one place to write (`n`), one place to look (the Notes view and its Inbox), and saving is what turns writing into work.
 
 ### Non-goals
 
@@ -30,42 +30,40 @@ Notes also replace the old scratchpad: a quick brain dump is just a note that co
 - **Link**: an attachment from a note to a Crona entity (`repo`, `stream`, `issue`, `habit`). A note may have zero or more links. A note with no links is independent.
 - **Pin**: a link flagged as important, so the note sorts first wherever that entity's notes appear.
 - **Notes directory**: a user-configurable folder that holds all note files.
-- **Task line**: a list item in a note body that Crona can turn into an issue. A note may contain any mix of prose and task lines.
+- **Task line**: a list item inside an `:::issues` block that Crona can turn into an issue. Lists outside a block are never tasks.
 - **Triage**: the single review step that turns a note's pending task lines into issues. It runs automatically when a note is saved from Crona.
 - **Inbox**: a built-in filter, not a separate entity: notes that are unlinked or still have pending task lines.
 
 ### Task lines
 
-Line grammar (annotations, natural phrases) and the review list are defined in the Issue Capture spec, which notes share with the `I` capture dialog and `crona issue add`. The sections below cover what is specific to notes.
+Line grammar (annotations, natural phrases, descriptions) and the review list are defined in the Issue Capture spec, which notes share with the `I` capture dialog and `crona issue add`. The sections below cover what is specific to notes.
 
-#### Detection
+#### Issues blocks
 
-A task line is a top-level `- text` list item in the note body. Rules:
-- Indented list items under a task line are not separate tasks; their text becomes the created issue's description.
-- Lines inside fenced code blocks are ignored.
+Only lines inside an issues block are task lines. Everything else in a note, including ordinary lists, is plain markdown and never becomes an issue.
+
+```
+Sync retry ideas, see the incident thread.
+
+:::issues
+- fix login redirect #api ~45m @today
+  happens after the SSO change
+- call bank friday
+:::
+
+- this list is just notes
+```
+
+Rules:
+- A block opens with a line that is exactly `:::issues` and closes with a line that is exactly `:::`. A note may hold any number of blocks. An unclosed block runs to the end of the note.
+- Inside a block, task lines and their indented descriptions follow the Issue Capture spec. Other lines in the block (blank lines, prose) are ignored.
+- Blocks inside fenced code blocks are ignored.
 - A line already carrying a write-back marker (see below) is triaged and is skipped.
-- Numbered lists, headings, and prose are never tasks.
+- Markdown renderers that do not know the syntax show the block as plain text with its list intact, so notes stay readable in other editors.
 
-#### Inline tokens
+#### Default target
 
-All tokens are optional. A plain line becomes an issue titled with its text in the Inbox stream.
-
-| Token | Meaning |
-|---|---|
-| `#repo/stream` | Target repo and stream. |
-| `#name` | Matched against both repo and stream names. A stream match targets that stream and its repo. A repo match targets that repo; if the repo has exactly one stream it is used, otherwise the stream is left unresolved. A name matching both a repo and a stream in different places is ambiguous. |
-| `~45m`, `~1h30m` | Estimate. |
-| `@today`, `@tomorrow`, `@mon`…`@sun`, `@2026-10-30` | Plan date. `@today` adds the issue to today's plan. |
-
-Tokens are removed from the title. Anything the parser does not understand stays in the title as text.
-
-Name matching for repos and streams is case-insensitive with prefix matching (`#doc` finds `docs`). Ambiguous, unknown, or unresolved targets are flagged in triage, never created silently.
-
-Without a `#` token, the target is the note's linked stream, the stream of its linked issue, or the note's linked repo (stream unresolved), in that order; otherwise the Inbox stream.
-
-#### Inbox stream
-
-Crona keeps one built-in `Inbox` repo with a single `Inbox` stream as the default target for task lines with no target. It behaves like any other repo and stream; issues can be moved out of it with the existing issue editing flows.
+Without a `#` annotation, a line targets the note's linked stream, the stream of its linked issue, or the note's linked repo (stream unresolved), in that order; otherwise the Inbox stream.
 
 #### Write-back
 
@@ -196,8 +194,10 @@ On narrow terminals the filters pane collapses and the detail replaces the list.
 ```
 ┌ New note ─────────────────────────────┐
 │ Link: CRN-142 (current)   [tab: none]  │
-│ fix login redirect #api ~45m @today    │
-│ call bank                              │
+│ :::issues                              │
+│ - fix login redirect #api ~45m @today  │
+│ - call bank                            │
+│ :::                                    │
 │                                        │
 │ ctrl+s save · esc cancel               │
 └────────────────────────────────────────┘
