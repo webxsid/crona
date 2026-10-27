@@ -211,6 +211,14 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.UpdateTagsRequest) (any, error) {
 			return corecommands.UpdateIssueTags(ctx, h.core, input.IDs, input.Add, input.Remove)
 		}), true
+	case protocol.MethodIssueCaptureParse:
+		return handle(req, func(input shareddto.IssueCaptureParseRequest) (any, error) {
+			return corecommands.ParseIssueCapture(ctx, h.core, input)
+		}), true
+	case protocol.MethodIssueCaptureImport:
+		return handle(req, func(input shareddto.IssueCaptureImportRequest) (any, error) {
+			return corecommands.ImportIssueCapture(ctx, h.core, input)
+		}), true
 	case protocol.MethodHabitTagsSet:
 		return handle(req, func(input shareddto.SetTagsRequest) (any, error) {
 			return corecommands.SetHabitTags(ctx, h.core, input.ID, input.Tags)
