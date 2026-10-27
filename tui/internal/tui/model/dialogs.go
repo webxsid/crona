@@ -723,7 +723,13 @@ func (m Model) openHelpDialog() Model {
 			} else {
 				paneActions = append(paneActions, viewchrome.KeyHint(theme, "s", "status"), viewchrome.KeyHint(theme, "d", "due"), viewchrome.KeyHint(theme, "P", "pin"))
 				if timerIdle {
-					paneActions = append(paneActions, viewchrome.KeyHint(theme, "f", "focus"), viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "D", "delete"))
+					edit := "edit"
+					if hasSelectedIssue {
+						if stream, ok := m.scopeStream(selectedIssue.StreamID); ok && stream.System {
+							edit = "move out of " + stream.Name
+						}
+					}
+					paneActions = append(paneActions, viewchrome.KeyHint(theme, "f", "focus"), viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "e", edit), viewchrome.KeyHint(theme, "D", "delete"))
 				}
 			}
 			if timerIdle {
@@ -808,6 +814,7 @@ func (m Model) dialogState() dialogstate.State {
 		IssueID:                  m.dialogIssueID,
 		AdhocTimer:               m.dialogAdhocTimer,
 		PromotingAdhoc:           m.dialogPromotingAdhoc,
+		MovingInbox:              m.dialogMovingInbox,
 		ViewEntityAdhoc:          m.dialogViewEntityAdhoc,
 		AdhocResolution:          m.dialogAdhocResolution,
 		AdhocIssueIDs:            m.dialogAdhocIssueIDs,
@@ -965,6 +972,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogIssueID = state.IssueID
 	m.dialogAdhocTimer = state.AdhocTimer
 	m.dialogPromotingAdhoc = state.PromotingAdhoc
+	m.dialogMovingInbox = state.MovingInbox
 	m.dialogViewEntityAdhoc = state.ViewEntityAdhoc
 	m.dialogAdhocResolution = state.AdhocResolution
 	m.dialogAdhocIssueIDs = state.AdhocIssueIDs
@@ -1158,6 +1166,10 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dueDate, followUp, commitMessage,
 				tags,
 			)
+		},
+		MoveInboxIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
+			return commands.MoveInboxIssueWithPath(m.client, issueID, repoName, streamName,
+				title, description, estimateMinutes, dueDate, dashboardDate)
 		},
 		PromoteAdhocIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
 			return commands.PromoteAdhocIssueWithPath(m.client, issueID, repoName, streamName,

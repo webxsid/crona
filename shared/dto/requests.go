@@ -281,6 +281,17 @@ type PromoteAdhocIssueRequest struct {
 	TodoForDate     *string `json:"todoForDate,omitempty"`
 }
 
+// MoveIssueRequest moves an issue out of the Inbox into StreamID, with its edited fields.
+type MoveIssueRequest struct {
+	ID              int64     `json:"id"`
+	StreamID        int64     `json:"streamId"`
+	Title           string    `json:"title"`
+	Description     *string   `json:"description,omitempty"`
+	EstimateMinutes *int      `json:"estimateMinutes,omitempty"`
+	TodoForDate     *string   `json:"todoForDate,omitempty"`
+	Tags            *[]string `json:"tags,omitempty"`
+}
+
 type ChangeIssueStatusRequest struct {
 	ID     int64             `json:"id"`
 	Status types.IssueStatus `json:"status"`

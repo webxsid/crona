@@ -52,6 +52,7 @@ type State struct {
 	IssueID                  int64
 	AdhocTimer               bool
 	PromotingAdhoc           bool
+	MovingInbox              bool
 	ViewEntityAdhoc          bool
 	AdhocResolution          sharedtypes.AdhocSessionResolution
 	AdhocIssueIDs            []int64

@@ -6,6 +6,7 @@ import (
 
 	corecommands "crona/kernel/internal/core/commands"
 	shareddto "crona/shared/dto"
+	sharedtypes "crona/shared/types"
 )
 
 func TestIssueCaptureParsesAndImports(t *testing.T) {
@@ -63,5 +64,49 @@ func TestIssueCaptureParsesAndImports(t *testing.T) {
 	again, err := corecommands.ImportIssueCapture(ctx, coreCtx, shareddto.IssueCaptureImportRequest{Proposals: proposals[1:2]})
 	if err != nil || again.Issues[0].StreamID != second.StreamID {
 		t.Fatalf("second Inbox import should reuse the stream: %v %+v", err, again)
+	}
+}
+
+func TestInboxIsSystemAndIssuesMoveOut(t *testing.T) {
+	ctx, coreCtx, _, existing := newCarryFixture(t)
+	result, err := corecommands.ImportIssueCapture(ctx, coreCtx, shareddto.IssueCaptureImportRequest{
+		Proposals: []shareddto.IssueCaptureProposal{{Line: 1, Title: "call bank", Inbox: true, Tags: []string{"home"}}},
+	})
+	if err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	inboxIssue := result.Issues[0]
+	stream, _ := coreCtx.Streams.GetByID(ctx, inboxIssue.StreamID, coreCtx.UserID)
+	repo, _ := coreCtx.Repos.GetByID(ctx, stream.RepoID, coreCtx.UserID)
+	if !stream.System || !repo.System {
+		t.Fatalf("Inbox should be system: repo %+v stream %+v", repo, stream)
+	}
+	name := "Later"
+	if _, err := corecommands.UpdateStream(ctx, coreCtx, stream.ID, struct {
+		Name        *string
+		Description sharedtypes.Patch[string]
+		Visibility  *sharedtypes.StreamVisibility
+	}{Name: &name}); err == nil {
+		t.Fatal("renaming the Inbox stream should be refused")
+	}
+	if err := corecommands.DeleteRepo(ctx, coreCtx, repo.ID); err == nil {
+		t.Fatal("deleting the Inbox repo should be refused")
+	}
+
+	// Only Inbox issues move, and never into a system stream.
+	if _, err := corecommands.MoveIssue(ctx, coreCtx, shareddto.MoveIssueRequest{ID: inboxIssue.ID, StreamID: stream.ID, Title: "x"}); err == nil {
+		t.Fatal("moving into the Inbox should be refused")
+	}
+	moved, err := corecommands.MoveIssue(ctx, coreCtx, shareddto.MoveIssueRequest{
+		ID: inboxIssue.ID, StreamID: existing.StreamID, Title: "call the bank", Tags: &[]string{"money"},
+	})
+	if err != nil {
+		t.Fatalf("move: %v", err)
+	}
+	if moved.StreamID != existing.StreamID || moved.Title != "call the bank" || !slices.Equal(moved.Tags, []string{"money"}) {
+		t.Fatalf("unexpected moved issue %+v", moved)
+	}
+	if _, err := corecommands.MoveIssue(ctx, coreCtx, shareddto.MoveIssueRequest{ID: inboxIssue.ID, StreamID: existing.StreamID, Title: "x"}); err == nil {
+		t.Fatal("an issue outside the Inbox should not move")
 	}
 }

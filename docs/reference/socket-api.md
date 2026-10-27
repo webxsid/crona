@@ -176,8 +176,9 @@ Alert behavior notes:
 | `issue.tags.set` | `dto.SetTagsRequest` | issue object | Replaces an issue's tags. |
 | `issue.tags.update` | `dto.UpdateTagsRequest` | issue list | Adds and removes tags across several issues. |
 | `issue.capture.parse` | `dto.IssueCaptureParseRequest` | `dto.IssueCaptureProposal` list | Parses `- ` lines into issue proposals without writing. Optional `streamId`, or `target` as a `repo/stream` or single name matched like a `#` annotation, is the default target; otherwise untargeted lines go to the Inbox stream. Unresolved rows carry `flags`. |
-| `issue.capture.import` | `dto.IssueCaptureImportRequest` | `dto.IssueCaptureImportResult` | Creates one issue per proposal, with tags and plan dates. Every row is validated first, so a bad row fails the import before anything is created. Creates the Inbox repo and stream when a row needs them. |
+| `issue.capture.import` | `dto.IssueCaptureImportRequest` | `dto.IssueCaptureImportResult` | Creates one issue per proposal, with tags and plan dates. Every row is validated first, so a bad row fails the import before anything is created. Creates the Inbox repo and stream when a row needs them; both are marked `system`. |
 | `issue.promote_adhoc` | `dto.PromoteAdhocIssueRequest` | issue object | Protocol `1.6`: converts a retained ad hoc issue into a regular issue, preserving identity, status, and session history. |
+| `issue.move` | `dto.MoveIssueRequest` | issue object | Moves an Inbox issue to a regular stream with its edited title, description, estimate, plan date and optional `tags`. Status and sessions stay with the issue. Only issues in a `system` stream can move, and never into one. |
 | `issue.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes an issue. |
 | `issue.change_status` | `dto.ChangeIssueStatusRequest` | issue object | Applies a lifecycle transition. |
 | `issue.status_transitions` | `dto.NumericIDRequest` | `dto.IssueStatusTransitionsResponse` | Returns daemon-authoritative valid lifecycle transitions for an issue. |

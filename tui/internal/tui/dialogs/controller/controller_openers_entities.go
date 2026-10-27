@@ -436,6 +436,26 @@ func OpenPromoteAdhocIssue(state State, issue api.IssueWithMeta, context *api.Ac
 	return SyncDialogFocus(state)
 }
 
+// OpenMoveInboxIssue edits an Inbox issue in the New Issue form and moves it to the chosen
+// repo and stream on save. Nothing is chosen at first: the Inbox is not a destination.
+func OpenMoveInboxIssue(state State, issue api.IssueWithMeta) State {
+	state = OpenCreateIssueDefault(state)
+	state.MovingInbox = true
+	state.IssueID = issue.ID
+	state.ViewName = "Choose where this issue belongs. Its sessions and status move with it."
+	state.Inputs[2].SetValue(issue.Title)
+	state.Description.SetValue(ValueOrEmpty(issue.Description))
+	if issue.EstimateMinutes != nil {
+		state.Inputs[3].SetValue(FormatDurationMinutesInput(issue.EstimateMinutes))
+	}
+	if issue.TodoForDate != nil {
+		state.Inputs[4].SetValue(*issue.TodoForDate)
+		state.AdhocDate = strings.TrimSpace(*issue.TodoForDate)
+	}
+	state.RepoIndex, state.StreamIndex = -1, -1
+	return SyncDialogFocus(state)
+}
+
 func OpenCheckoutContext(state State) State {
 	repoFilter := textinput.New()
 	repoFilter.Placeholder = "Search repo"

@@ -33,6 +33,7 @@ type Deps struct {
 	UpdateHabit                    func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd
 	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string, tags []string) tea.Cmd
 	PromoteAdhocIssue              func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
+	MoveInboxIssue                 func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
 	CheckoutContext                func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd
 	UpsertDailyCheckIn             func(req shareddto.DailyCheckInUpsertRequest, refreshDate string) tea.Cmd
 	UpdateIssue                    func(issueID, streamID int64, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
@@ -144,6 +145,11 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 	r.Register("promote_adhoc_issue", func(action dialogstate.Action) tea.Cmd {
 		return thenSetTags(deps, dialogstate.TagTargetIssue, action.IssueID, action.Tags,
 			deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
+				action.Title, action.Description, action.Estimate, action.DueDate, state.Date))
+	})
+	r.Register("move_inbox_issue", func(action dialogstate.Action) tea.Cmd {
+		return thenSetTags(deps, dialogstate.TagTargetIssue, action.IssueID, action.Tags,
+			deps.MoveInboxIssue(action.IssueID, action.RepoName, action.StreamName,
 				action.Title, action.Description, action.Estimate, action.DueDate, state.Date))
 	})
 	r.Register("checkout_context", func(action dialogstate.Action) tea.Cmd {

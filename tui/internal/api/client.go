@@ -327,6 +327,10 @@ func (c *Client) UpdateIssue(
 	return c.call(protocol.MethodIssueUpdate, body, nil)
 }
 
+func (c *Client) MoveIssue(input shareddto.MoveIssueRequest) error {
+	return c.call(protocol.MethodIssueMove, input, nil)
+}
+
 func (c *Client) PromoteAdhocIssue(input shareddto.PromoteAdhocIssueRequest) error {
 	return c.call(protocol.MethodIssuePromoteAdhoc, input, nil)
 }

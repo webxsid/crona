@@ -278,6 +278,11 @@ func (m Model) openSelectedEditDialog() (Model, bool) {
 					return m.withDialogState(m.dialogSnapshot().OpenPromoteAdhocIssue(*meta)), true
 				}
 			}
+			if stream, found := m.scopeStream(issue.StreamID); found && stream.System {
+				if meta, found := m.issueMetaByID(issue.ID); found {
+					return m.withDialogState(m.dialogSnapshot().OpenMoveInboxIssue(*meta)), true
+				}
+			}
 			return m.openEditIssueDialog(
 				issue.ID,
 				issue.StreamID,
@@ -503,6 +508,9 @@ func (m Model) openSelectedDeleteDialog() (Model, bool) {
 		node, ok := m.selectedScopeNode()
 		if !ok || node.Scope.IsAll() {
 			return m, false
+		}
+		if node.System {
+			return m.withStatus(node.Name+" is made by Crona and cannot be deleted", true), true
 		}
 		if node.Scope.StreamID == 0 {
 			return m.openConfirmDeleteEntity(

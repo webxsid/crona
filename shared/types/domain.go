@@ -708,6 +708,8 @@ type Repo struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
 	Color       *string `json:"color,omitempty"`
+	// System marks a repo Crona made itself, like the Inbox; it cannot be renamed or deleted.
+	System bool `json:"system,omitempty"`
 }
 
 type Stream struct {
@@ -716,6 +718,8 @@ type Stream struct {
 	Name        string           `json:"name"`
 	Description *string          `json:"description,omitempty"`
 	Visibility  StreamVisibility `json:"visibility"`
+	// System marks a stream Crona made itself, like the Inbox; it cannot be renamed or deleted.
+	System bool `json:"system,omitempty"`
 }
 
 type HabitScheduleType string

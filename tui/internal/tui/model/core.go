@@ -202,6 +202,7 @@ type Model struct {
 	dialogIssueID                        int64
 	dialogAdhocTimer                     bool
 	dialogPromotingAdhoc                 bool
+	dialogMovingInbox                    bool
 	dialogViewEntityAdhoc                bool
 	dialogAdhocResolution                sharedtypes.AdhocSessionResolution
 	dialogAdhocIssueIDs                  []int64

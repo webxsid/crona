@@ -171,6 +171,10 @@ func (s Snapshot) OpenCreateIssueDefault() State {
 	return s.withTags(next, nil)
 }
 
+func (s Snapshot) OpenMoveInboxIssue(issue api.IssueWithMeta) State {
+	return s.withTags(OpenMoveInboxIssue(s.Dialog, issue), issue.Tags)
+}
+
 func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {
 	next := OpenPromoteAdhocIssue(s.Dialog, issue, s.Context)
 	if s.Context == nil {

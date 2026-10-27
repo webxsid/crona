@@ -22,6 +22,9 @@ func issueCreateHint(state controllerpkg.State) string {
 	if state.PromotingAdhoc {
 		static = "[ctrl+s] convert issue"
 	}
+	if state.MovingInbox {
+		static = "[ctrl+s] move issue"
+	}
 	if state.AdhocTimer {
 		static = "[ctrl+s] create issue & finish session"
 	}

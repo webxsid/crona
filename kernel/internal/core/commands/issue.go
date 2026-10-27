@@ -256,6 +256,78 @@ func PromoteAdhocIssue(
 	return updated, nil
 }
 
+// MoveIssue moves an issue out of a system stream (the Inbox) into a real stream, applying
+// the fields edited on the way out. Sessions and status stay with the issue.
+func MoveIssue(
+	ctx context.Context,
+	c *core.Context,
+	input shareddto.MoveIssueRequest,
+) (*sharedtypes.Issue, error) {
+	title := strings.TrimSpace(input.Title)
+	if input.ID <= 0 || input.StreamID <= 0 {
+		return nil, errors.New("issue and stream are required")
+	}
+	if title == "" {
+		return nil, errors.New("issue title cannot be empty")
+	}
+	if input.EstimateMinutes != nil && *input.EstimateMinutes < 0 {
+		return nil, errors.New("estimate must be >= 0")
+	}
+	var tags []string
+	if input.Tags != nil {
+		var err error
+		if tags, err = sharedtypes.NormalizeTagNames(*input.Tags); err != nil {
+			return nil, err
+		}
+	}
+	issue, err := c.Issues.GetByID(ctx, input.ID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if issue == nil || issue.Adhoc {
+		return nil, errors.New("issue not found")
+	}
+	from, err := c.Streams.GetByID(ctx, issue.StreamID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if from == nil || !from.System {
+		return nil, errors.New("only Inbox issues can be moved")
+	}
+	to, err := c.Streams.GetByID(ctx, input.StreamID, c.UserID)
+	if err != nil {
+		return nil, err
+	}
+	if to == nil {
+		return nil, errors.New("stream not found")
+	}
+	if to.System {
+		return nil, fmt.Errorf("pick a stream other than %s", to.Name)
+	}
+	now := c.Now()
+	updated, err := c.Issues.Move(ctx, input.ID, input.StreamID, c.UserID, now, struct {
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		TodoForDate     *string
+	}{Title: title, Description: normalizeOptionalString(input.Description), EstimateMinutes: input.EstimateMinutes, TodoForDate: input.TodoForDate})
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Ops.Append(ctx, sharedtypes.Op{ID: uuid.NewString(), Entity: sharedtypes.OpEntityIssue,
+		EntityID: fmt.Sprintf("%d", input.ID), Action: sharedtypes.OpActionUpdate, Payload: input,
+		Timestamp: now, UserID: c.UserID, DeviceID: c.DeviceID}); err != nil {
+		return nil, err
+	}
+	if input.Tags != nil {
+		if updated, err = SetIssueTags(ctx, c, input.ID, tags); err != nil {
+			return nil, err
+		}
+	}
+	emit(c, sharedtypes.EventTypeIssueUpdated, updated)
+	return updated, nil
+}
+
 func ChangeIssueStatus(
 	ctx context.Context,
 	c *core.Context,

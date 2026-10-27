@@ -45,6 +45,7 @@ func (r *StreamRepository) Create(
 		Name:        stream.Name,
 		Description: stream.Description,
 		Visibility:  string(stream.Visibility),
+		IsSystem:    stream.System,
 		UserID:      userID,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -66,6 +67,7 @@ func (r *StreamRepository) ListByRepo(
 		Name        string  `bun:"name"`
 		Description *string `bun:"description"`
 		Visibility  string  `bun:"visibility"`
+		IsSystem    bool    `bun:"is_system"`
 	}
 
 	var rows []row
@@ -77,6 +79,7 @@ func (r *StreamRepository) ListByRepo(
 		ColumnExpr("streams.name").
 		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
+		ColumnExpr("streams.is_system").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
 		Where("streams.is_reserved = 0").
@@ -95,6 +98,7 @@ func (r *StreamRepository) ListByRepo(
 			Name:        row.Name,
 			Description: row.Description,
 			Visibility:  sharedtypes.StreamVisibility(row.Visibility),
+			System:      row.IsSystem,
 		})
 	}
 	return out, nil
@@ -111,6 +115,7 @@ func (r *StreamRepository) GetByID(
 		Name        string  `bun:"name"`
 		Description *string `bun:"description"`
 		Visibility  string  `bun:"visibility"`
+		IsSystem    bool    `bun:"is_system"`
 	}
 
 	var item row
@@ -122,6 +127,7 @@ func (r *StreamRepository) GetByID(
 		ColumnExpr("streams.name").
 		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
+		ColumnExpr("streams.is_system").
 		Where("streams.public_id = ?", streamID).
 		Where("streams.user_id = ?", userID).
 		Where("streams.is_reserved = 0").
@@ -142,6 +148,7 @@ func (r *StreamRepository) GetByID(
 		Name:        item.Name,
 		Description: item.Description,
 		Visibility:  sharedtypes.StreamVisibility(item.Visibility),
+		System:      item.IsSystem,
 	}, nil
 }
 
@@ -156,6 +163,7 @@ func (r *StreamRepository) ListDeletedByRepo(
 		Name        string  `bun:"name"`
 		Description *string `bun:"description"`
 		Visibility  string  `bun:"visibility"`
+		IsSystem    bool    `bun:"is_system"`
 	}
 
 	var rows []row
@@ -167,6 +175,7 @@ func (r *StreamRepository) ListDeletedByRepo(
 		ColumnExpr("streams.name").
 		ColumnExpr("streams.description").
 		ColumnExpr("streams.visibility").
+		ColumnExpr("streams.is_system").
 		Where("repos.public_id = ?", repoID).
 		Where("streams.user_id = ?", userID).
 		Where("streams.is_reserved = 0").
@@ -185,6 +194,7 @@ func (r *StreamRepository) ListDeletedByRepo(
 			Name:        row.Name,
 			Description: row.Description,
 			Visibility:  sharedtypes.StreamVisibility(row.Visibility),
+			System:      row.IsSystem,
 		})
 	}
 	return out, nil

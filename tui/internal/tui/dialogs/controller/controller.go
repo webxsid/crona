@@ -120,6 +120,7 @@ func Close(state State) State {
 	state.IssueID = 0
 	state.AdhocTimer = false
 	state.PromotingAdhoc = false
+	state.MovingInbox = false
 	state.ViewEntityAdhoc = false
 	state.AdhocResolution = ""
 	state.AdhocIssueIDs = nil

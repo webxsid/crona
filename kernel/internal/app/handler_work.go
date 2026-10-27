@@ -252,6 +252,10 @@ func (h *Handler) handleWorkMethods(
 		return handle(req, func(input shareddto.PromoteAdhocIssueRequest) (any, error) {
 			return corecommands.PromoteAdhocIssue(ctx, h.core, input)
 		}), true
+	case protocol.MethodIssueMove:
+		return handle(req, func(input shareddto.MoveIssueRequest) (any, error) {
+			return corecommands.MoveIssue(ctx, h.core, input)
+		}), true
 	case protocol.MethodIssueDelete:
 		return handle(req, func(input shareddto.NumericIDRequest) (any, error) {
 			return shareddto.OKResponse{OK: true}, corecommands.DeleteIssue(ctx, h.core, input.ID)

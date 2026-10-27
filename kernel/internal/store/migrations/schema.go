@@ -101,6 +101,14 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 	if err := backfillLegacyAdhocIssues(ctx, db); err != nil {
 		return err
 	}
+	for _, table := range []string{"repos", "streams"} {
+		if err := ensureIntegerColumn(ctx, db, table, "is_system", 0); err != nil {
+			return err
+		}
+	}
+	if err := backfillInboxSystemFlag(ctx, db); err != nil {
+		return err
+	}
 	for _, spec := range []struct {
 		table        string
 		column       string
@@ -446,6 +454,24 @@ func backfillLegacyAdhocIssues(ctx context.Context, db *bun.DB) error {
 		  AND stream_id IN (SELECT id FROM streams WHERE is_reserved = 1)
 		  AND title = 'Ad hoc'
 	`, string(sharedtypes.IssueStatusDone))
+	return err
+}
+
+// backfillInboxSystemFlag marks an Inbox repo and its Inbox stream made by issue capture
+// before the system flag existed.
+func backfillInboxSystemFlag(ctx context.Context, db *bun.DB) error {
+	if _, err := db.ExecContext(ctx, `
+		UPDATE streams SET is_system = 1
+		WHERE is_reserved = 0 AND is_system = 0 AND name = 'Inbox'
+		  AND repo_id IN (SELECT id FROM repos WHERE is_reserved = 0 AND name = 'Inbox')
+	`); err != nil {
+		return err
+	}
+	_, err := db.ExecContext(ctx, `
+		UPDATE repos SET is_system = 1
+		WHERE is_reserved = 0 AND is_system = 0 AND name = 'Inbox'
+		  AND id IN (SELECT repo_id FROM streams WHERE is_system = 1)
+	`)
 	return err
 }
 

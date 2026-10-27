@@ -144,37 +144,34 @@ func catalogTarget(catalog capture.Catalog, streamID int64) *capture.Target {
 	return nil
 }
 
-// ensureInboxStream returns the Inbox repo's Inbox stream, creating either when missing.
+// ensureInboxStream returns the system Inbox repo's Inbox stream, creating either when
+// missing. A repo the user named Inbox is used as is, since repo names are unique.
 func ensureInboxStream(ctx context.Context, c *core.Context, catalog capture.Catalog) (int64, error) {
 	var repoID int64
 	for _, repo := range catalog.Repos {
-		if strings.EqualFold(repo.Name, capture.InboxName) {
+		if repo.System || (repoID == 0 && strings.EqualFold(repo.Name, capture.InboxName)) {
 			repoID = repo.ID
-			break
 		}
 	}
 	if repoID == 0 {
-		repo, err := CreateRepo(ctx, c, struct {
-			Name        string
-			Description *string
-			Color       *string
-		}{Name: capture.InboxName})
+		repo, err := createRepo(ctx, c, sharedtypes.Repo{Name: capture.InboxName, System: true})
 		if err != nil {
 			return 0, err
 		}
 		repoID = repo.ID
 	}
+	var streamID int64
 	for _, stream := range catalog.Streams {
-		if stream.RepoID == repoID && strings.EqualFold(stream.Name, capture.InboxName) {
-			return stream.ID, nil
+		if stream.RepoID == repoID && (stream.System || (streamID == 0 && strings.EqualFold(stream.Name, capture.InboxName))) {
+			streamID = stream.ID
 		}
 	}
-	stream, err := CreateStream(ctx, c, struct {
-		RepoID      int64
-		Name        string
-		Description *string
-		Visibility  *sharedtypes.StreamVisibility
-	}{RepoID: repoID, Name: capture.InboxName})
+	if streamID > 0 {
+		return streamID, nil
+	}
+	stream, err := createStream(ctx, c, sharedtypes.Stream{
+		RepoID: repoID, Name: capture.InboxName, Visibility: sharedtypes.StreamVisibilityPersonal, System: true,
+	})
 	if err != nil {
 		return 0, err
 	}

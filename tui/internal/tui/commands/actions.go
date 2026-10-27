@@ -545,41 +545,9 @@ func PromoteAdhocIssueWithPath(
 	dashboardDate string,
 ) tea.Cmd {
 	return func() tea.Msg {
-		repos, err := c.ListRepos()
+		streamID, err := ensureStreamByPath(c, repoName, streamName)
 		if err != nil {
 			return ErrMsg{Err: err}
-		}
-		var repoID int64
-		for _, repo := range repos {
-			if strings.EqualFold(strings.TrimSpace(repo.Name), strings.TrimSpace(repoName)) {
-				repoID = repo.ID
-				break
-			}
-		}
-		if repoID == 0 {
-			repo, createErr := c.CreateRepo(strings.TrimSpace(repoName), nil)
-			if createErr != nil {
-				return ErrMsg{Err: createErr}
-			}
-			repoID = repo.ID
-		}
-		streams, err := c.ListStreams(repoID)
-		if err != nil {
-			return ErrMsg{Err: err}
-		}
-		var streamID int64
-		for _, stream := range streams {
-			if strings.EqualFold(strings.TrimSpace(stream.Name), strings.TrimSpace(streamName)) {
-				streamID = stream.ID
-				break
-			}
-		}
-		if streamID == 0 {
-			stream, createErr := c.CreateStream(repoID, strings.TrimSpace(streamName), nil)
-			if createErr != nil {
-				return ErrMsg{Err: createErr}
-			}
-			streamID = stream.ID
 		}
 		if err := c.PromoteAdhocIssue(shareddto.PromoteAdhocIssueRequest{
 			ID: issueID, StreamID: streamID, Title: title, Description: description,
@@ -590,6 +558,68 @@ func PromoteAdhocIssueWithPath(
 		return tea.Batch(LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate),
 			LoadDailyPlan(c, dashboardDate), RequestRollupRefresh(), LoadContext(c))()
 	}
+}
+
+// MoveInboxIssueWithPath moves an Inbox issue to repoName/streamName, creating either when new.
+func MoveInboxIssueWithPath(
+	c *api.Client,
+	issueID int64,
+	repoName, streamName, title string,
+	description *string,
+	estimateMinutes *int,
+	dueDate *string,
+	dashboardDate string,
+) tea.Cmd {
+	return func() tea.Msg {
+		streamID, err := ensureStreamByPath(c, repoName, streamName)
+		if err != nil {
+			return ErrMsg{Err: err}
+		}
+		if err := c.MoveIssue(shareddto.MoveIssueRequest{
+			ID: issueID, StreamID: streamID, Title: title, Description: description,
+			EstimateMinutes: estimateMinutes, TodoForDate: dueDate,
+		}); err != nil {
+			return ErrMsg{Err: err}
+		}
+		return tea.Batch(LoadAllIssuesSelecting(c, issueID), LoadDailySummary(c, dashboardDate),
+			LoadDailyPlan(c, dashboardDate), RequestRollupRefresh(), LoadContext(c))()
+	}
+}
+
+// ensureStreamByPath finds repoName/streamName by name, creating the repo or stream when new.
+func ensureStreamByPath(c *api.Client, repoName, streamName string) (int64, error) {
+	repos, err := c.ListRepos()
+	if err != nil {
+		return 0, err
+	}
+	var repoID int64
+	for _, repo := range repos {
+		if strings.EqualFold(strings.TrimSpace(repo.Name), strings.TrimSpace(repoName)) {
+			repoID = repo.ID
+			break
+		}
+	}
+	if repoID == 0 {
+		repo, err := c.CreateRepo(strings.TrimSpace(repoName), nil)
+		if err != nil {
+			return 0, err
+		}
+		repoID = repo.ID
+	}
+	streams, err := c.ListStreams(repoID)
+	if err != nil {
+		return 0, err
+	}
+	for _, stream := range streams {
+		if strings.EqualFold(strings.TrimSpace(stream.Name), strings.TrimSpace(streamName)) {
+			return stream.ID, nil
+		}
+	}
+	stream, err := c.CreateStream(repoID, strings.TrimSpace(streamName), nil)
+	if err != nil {
+		return 0, err
+	}
+	return stream.ID, nil
 }
 
 func DeleteIssue(c *api.Client, issueID, streamID int64, dashboardDate string) tea.Cmd {

@@ -156,3 +156,28 @@ func TestCaptureRowEditorStartsOnTheRowsTarget(t *testing.T) {
 		t.Fatalf("stream? row should keep its repo and leave the stream unchosen, got %d/%d", state.RepoIndex, state.StreamIndex)
 	}
 }
+
+func TestMoveInboxIssueStartsUnchosenAndSubmitsAMove(t *testing.T) {
+	ctx := UpdateContext{
+		Repos:   []api.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "Inbox", System: true}},
+		Streams: []api.Stream{{ID: 10, RepoID: 1, Name: "api"}, {ID: 20, RepoID: 2, Name: "Inbox", System: true}},
+	}
+	issue := api.IssueWithMeta{RepoID: 2, RepoName: "Inbox", StreamName: "Inbox"}
+	issue.ID, issue.StreamID, issue.Title = 7, 20, "call bank"
+	state := OpenMoveInboxIssue(State{}, issue)
+	if !state.MovingInbox || state.RepoIndex != -1 || state.StreamIndex != -1 || state.Inputs[2].Value() != "call bank" {
+		t.Fatalf("move form should prefill the text and leave the target unchosen: %+v", state.Inputs[2].Value())
+	}
+	if _, action, status := capturePress(t, state, ctx, "ctrl+s"); action != nil || status == "" {
+		t.Fatalf("moving with no target should be refused: %+v %q", action, status)
+	}
+	if _, action, _ := capturePress(t, state, ctx, "ctrl+a"); action != nil {
+		t.Fatalf("create-more keys should do nothing in the move form: %+v", action)
+	}
+	state.RepoIndex = optionIndex(DefaultRepoOptions(state.Inputs, ctx.Repos), 1)
+	state.StreamIndex = optionIndex(DefaultStreamOptions(state.Inputs, state.RepoIndex, ctx.Repos, nil, ctx.Streams, nil), 10)
+	_, action, status := capturePress(t, state, ctx, "ctrl+s")
+	if action == nil || action.Kind != "move_inbox_issue" || action.IssueID != 7 || action.RepoName != "crona" || action.StreamName != "api" {
+		t.Fatalf("unexpected move action %+v %q", action, status)
+	}
+}

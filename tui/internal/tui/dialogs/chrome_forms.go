@@ -46,6 +46,9 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	if state.PromotingAdhoc {
 		frameTitle = "Convert Ad hoc Issue"
 	}
+	if state.MovingInbox {
+		frameTitle = "Move Out of Inbox"
+	}
 	if state.AdhocTimer {
 		frameTitle = "Create Issue & Finish Session"
 	}
@@ -53,7 +56,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		frameTitle = "Edit Import Row"
 	}
 	rows := []FormRow{}
-	if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
+	if (state.AdhocTimer || state.PromotingAdhoc || state.MovingInbox) && state.ViewName != "" {
 		rows = append(rows, staticRow(theme.StyleDim.Render(state.ViewName), ""))
 	}
 	rows = append(
