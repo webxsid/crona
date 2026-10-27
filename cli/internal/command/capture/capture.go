@@ -166,7 +166,7 @@ func ConfirmOnTerminal(prompt string) (bool, error) {
 	if err != nil {
 		return false, errors.New("no terminal to confirm on")
 	}
-	defer tty.Close()
+	defer func() { _ = tty.Close() }()
 	if _, err := fmt.Fprint(tty, prompt); err != nil {
 		return false, err
 	}
