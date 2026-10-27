@@ -3,10 +3,12 @@ package session
 import (
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	capturecmd "crona/cli/internal/command/capture"
 	contextcmd "crona/cli/internal/command/context"
 	tagcmd "crona/cli/internal/command/tag"
 	flagspkg "crona/cli/internal/flags"
@@ -27,6 +29,7 @@ func TimerUsage() string {
 
 func IssueUsage() string {
 	return "Usage: crona issue start (--id <issue-id> | --from-context) [--json]\n" +
+		"       crona issue add (\"text\" | -) [--repo <name>] [--stream <name>] [--yes] [--dry-run]\n" +
 		"       crona issue tag <issue-id> [+add ...] [-remove ...] [--json]\n"
 }
 
@@ -240,6 +243,13 @@ func RunIssue(args []string, deps Deps) error {
 			return outputpkg.PrintJSON(deps.Stdout, out)
 		}
 		return outputpkg.PrintTimerResult(deps.Stdout, out, "issue focus started")
+	case "add":
+		return capturecmd.Run(args[1:], capturecmd.Deps{
+			Stdout:     deps.Stdout,
+			Stdin:      os.Stdin,
+			CallKernel: deps.CallKernel,
+			Confirm:    capturecmd.ConfirmOnTerminal,
+		})
 	case "tag":
 		return tagcmd.RunItem("issue", args[1:], tagcmd.Deps{Stdout: deps.Stdout, CallKernel: deps.CallKernel})
 	default:

@@ -51,6 +51,16 @@ Interact with active focus sessions:
 - `crona timer resume`: Resumes the suspended timer.
 - `crona timer end`: Terminates the session and prompts for the commit summary.
 
+## Adding Issues
+
+`crona issue add` turns `- ` lines into issues in one step. Each line can carry annotations: `#repo/stream` or `#name` (prefix match), `~45m` estimate, `@friday` or `@2026-10-30` plan date, and `+tag`. Trailing phrases such as `for 45 min`, `tomorrow`, `next friday` or `in 3 days` also set the estimate and plan date. Indented lines under a `- ` line become its description.
+- `crona issue add "fix login #api ~45m @today"`: Parses one line, prints the result, and asks before importing.
+- `pbpaste | crona issue add -`: Reads every `- ` line from stdin. The confirmation is asked on the terminal.
+- `--repo <name>` / `--stream <name>`: Default target for lines without `#`. Without them, lines go to the built-in Inbox stream, which is created the first time it is needed.
+- `--yes`: Imports every unflagged row without asking. `--dry-run` prints the parse as JSON and imports nothing.
+
+Rows the parser cannot settle (an unknown or ambiguous `#` target, a repo with several streams, a bad `@` date or tag) are shown with `?` and left out of the import.
+
 ## Tags
 
 Tags are shared by issues and habits. Names are lowercased, and spaces become `-`.

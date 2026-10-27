@@ -2,11 +2,13 @@ package dto
 
 import "crona/shared/types"
 
-// IssueCaptureParseRequest parses `-` lines into issue proposals. StreamID is the
-// caller's default target; without it, lines with no target go to the Inbox stream.
+// IssueCaptureParseRequest parses `-` lines into issue proposals. StreamID, or Target as
+// a `repo/stream` or single name matched like a `#` annotation, is the caller's default
+// target; without either, lines with no target go to the Inbox stream.
 type IssueCaptureParseRequest struct {
 	Text     string `json:"text"`
 	StreamID *int64 `json:"streamId,omitempty"`
+	Target   string `json:"target,omitempty"`
 }
 
 // IssueCaptureProposal is one parsed line. A proposal with flags cannot be imported

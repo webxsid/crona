@@ -175,7 +175,7 @@ Alert behavior notes:
 | `issue.update` | `dto.UpdateIssueRequest` | issue object | Updates an issue. `tags`, when present, replaces the issue's tags. |
 | `issue.tags.set` | `dto.SetTagsRequest` | issue object | Replaces an issue's tags. |
 | `issue.tags.update` | `dto.UpdateTagsRequest` | issue list | Adds and removes tags across several issues. |
-| `issue.capture.parse` | `dto.IssueCaptureParseRequest` | `dto.IssueCaptureProposal` list | Parses `- ` lines into issue proposals without writing. Optional `streamId` is the default target; otherwise untargeted lines go to the Inbox stream. Unresolved rows carry `flags`. |
+| `issue.capture.parse` | `dto.IssueCaptureParseRequest` | `dto.IssueCaptureProposal` list | Parses `- ` lines into issue proposals without writing. Optional `streamId`, or `target` as a `repo/stream` or single name matched like a `#` annotation, is the default target; otherwise untargeted lines go to the Inbox stream. Unresolved rows carry `flags`. |
 | `issue.capture.import` | `dto.IssueCaptureImportRequest` | `dto.IssueCaptureImportResult` | Creates one issue per proposal, with tags and plan dates. Every row is validated first, so a bad row fails the import before anything is created. Creates the Inbox repo and stream when a row needs them. |
 | `issue.promote_adhoc` | `dto.PromoteAdhocIssueRequest` | issue object | Protocol `1.6`: converts a retained ad hoc issue into a regular issue, preserving identity, status, and session history. |
 | `issue.delete` | `dto.NumericIDRequest` | `dto.OKResponse` | Deletes an issue. |

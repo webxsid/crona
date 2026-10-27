@@ -34,3 +34,23 @@ func IsHelpArg(value string) bool {
 		return false
 	}
 }
+
+// ParseWithPositionals lets flags appear before or after the positional names.
+func ParseWithPositionals(fs interface {
+	Parse([]string) error
+	Args() []string
+}, args []string) ([]string, error) {
+	positionals := []string{}
+	for len(args) > 0 {
+		if err := fs.Parse(args); err != nil {
+			return nil, err
+		}
+		rest := fs.Args()
+		if len(rest) == 0 {
+			break
+		}
+		positionals = append(positionals, rest[0])
+		args = rest[1:]
+	}
+	return positionals, nil
+}

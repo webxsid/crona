@@ -26,6 +26,15 @@ func ParseIssueCapture(ctx context.Context, c *core.Context, input shareddto.Iss
 		if target == nil {
 			return nil, errors.New("default stream not found")
 		}
+	} else if name := strings.TrimSpace(input.Target); name != "" {
+		resolved, flag := capture.ResolveTarget(name, catalog)
+		if resolved == nil {
+			if flag == "stream?" {
+				return nil, fmt.Errorf("%s has several streams; name one as repo/stream", name)
+			}
+			return nil, fmt.Errorf("default target: %s", flag)
+		}
+		target = resolved
 	}
 	return capture.Parse(input.Text, catalog, target, c.CurrentDate()), nil
 }

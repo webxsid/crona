@@ -190,6 +190,17 @@ func resolveTarget(p *shareddto.IssueCaptureProposal, name string, catalog Catal
 	}
 }
 
+// ResolveTarget matches name like a `#` annotation and returns the stream it names, or
+// the flag explaining why it names none.
+func ResolveTarget(name string, catalog Catalog) (*Target, string) {
+	var p shareddto.IssueCaptureProposal
+	resolveTarget(&p, strings.TrimPrefix(name, "#"), catalog)
+	if len(p.Flags) > 0 {
+		return nil, p.Flags[0]
+	}
+	return &Target{RepoID: p.RepoID, RepoName: p.RepoName, StreamID: p.StreamID, StreamName: p.StreamName}, ""
+}
+
 func targetFlag(matches int, token string) string {
 	if matches == 0 {
 		return "unknown " + token

@@ -58,7 +58,7 @@ _%s() {
     completion) _values 'shell' zsh bash fish ;;
     context) _values 'context command' get set clear clear-issue switch-repo switch-stream switch-issue ;;
     timer) _values 'timer command' status start pause resume end ;;
-    issue) _values 'issue command' start tag ;;
+    issue) _values 'issue command' start add tag ;;
     habit) _values 'habit command' tag ;;
     tag) _values 'tag command' ls rename color delete prune ;;
     update) _values 'update command' status check dismiss notes ;;
@@ -87,7 +87,7 @@ func bash(name string) string {
     completion) COMPREPLY=( $(compgen -W "zsh bash fish" -- "$cur") ) ;;
     context) COMPREPLY=( $(compgen -W "get set clear clear-issue switch-repo switch-stream switch-issue" -- "$cur") ) ;;
     timer) COMPREPLY=( $(compgen -W "status start pause resume end" -- "$cur") ) ;;
-    issue) COMPREPLY=( $(compgen -W "start tag" -- "$cur") ) ;;
+    issue) COMPREPLY=( $(compgen -W "start add tag" -- "$cur") ) ;;
     habit) COMPREPLY=( $(compgen -W "tag" -- "$cur") ) ;;
     tag) COMPREPLY=( $(compgen -W "ls rename color delete prune" -- "$cur") ) ;;
     update) COMPREPLY=( $(compgen -W "status check dismiss notes" -- "$cur") ) ;;
@@ -109,7 +109,7 @@ complete -c %s -f -n "__fish_seen_subcommand_from daemon" -a "attach detach rest
 complete -c %s -f -n "__fish_seen_subcommand_from completion" -a "zsh bash fish"
 complete -c %s -f -n "__fish_seen_subcommand_from context" -a "get set clear clear-issue switch-repo switch-stream switch-issue"
 complete -c %s -f -n "__fish_seen_subcommand_from timer" -a "status start pause resume end"
-complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start tag"
+complete -c %s -f -n "__fish_seen_subcommand_from issue" -a "start add tag"
 complete -c %s -f -n "__fish_seen_subcommand_from habit" -a "tag"
 complete -c %s -f -n "__fish_seen_subcommand_from tag" -a "ls rename color delete prune"
 complete -c %s -f -n "__fish_seen_subcommand_from update" -a "status check dismiss notes"
