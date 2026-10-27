@@ -47,6 +47,7 @@ func (m Model) dialogSnapshot() dialogstate.Snapshot {
 		CurrentDate:          m.currentLogicalDate(),
 		Repos:                m.repos,
 		Streams:              m.streams,
+		AllStreams:           m.allStreams,
 		AllHabits:            m.allHabits,
 		AllIssues:            m.allIssues,
 		Context:              m.context,
@@ -723,7 +724,13 @@ func (m Model) openHelpDialog() Model {
 			} else {
 				paneActions = append(paneActions, viewchrome.KeyHint(theme, "s", "status"), viewchrome.KeyHint(theme, "d", "due"), viewchrome.KeyHint(theme, "P", "pin"))
 				if timerIdle {
-					paneActions = append(paneActions, viewchrome.KeyHint(theme, "f", "focus"), viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "e", "edit"), viewchrome.KeyHint(theme, "D", "delete"))
+					edit := "edit"
+					if hasSelectedIssue {
+						if stream, ok := m.scopeStream(selectedIssue.StreamID); ok && stream.System {
+							edit = "move out of " + stream.Name
+						}
+					}
+					paneActions = append(paneActions, viewchrome.KeyHint(theme, "f", "focus"), viewchrome.KeyHint(theme, "m", "log"), viewchrome.KeyHint(theme, "e", edit), viewchrome.KeyHint(theme, "D", "delete"))
 				}
 			}
 			if timerIdle {
@@ -752,6 +759,7 @@ func (m Model) openHelpDialog() Model {
 	rows = append(rows, viewchrome.DateActions(theme, string(m.view))...)
 	rows = append(rows, "", "Global")
 	rows = append(rows, globalActions...)
+	rows = append(rows, viewchrome.KeyHint(theme, "I", "add issues from - lines"))
 	if len(paneActions) > 0 {
 		rows = append(rows, "", "Current View")
 		rows = append(rows, paneActions...)
@@ -807,6 +815,7 @@ func (m Model) dialogState() dialogstate.State {
 		IssueID:                  m.dialogIssueID,
 		AdhocTimer:               m.dialogAdhocTimer,
 		PromotingAdhoc:           m.dialogPromotingAdhoc,
+		MovingInbox:              m.dialogMovingInbox,
 		ViewEntityAdhoc:          m.dialogViewEntityAdhoc,
 		AdhocResolution:          m.dialogAdhocResolution,
 		AdhocIssueIDs:            m.dialogAdhocIssueIDs,
@@ -925,6 +934,15 @@ func (m Model) dialogState() dialogstate.State {
 		TagsInput:                      m.dialogTagsInput,
 		TagsEnabled:                    m.dialogTagsEnabled,
 		TagsFocus:                      m.dialogTagsFocus,
+		CaptureText:                    m.dialogCaptureText,
+		CaptureTarget:                  m.dialogCaptureTarget,
+		CaptureStreamID:                m.dialogCaptureStreamID,
+		CaptureRows:                    m.dialogCaptureRows,
+		CaptureSelected:                m.dialogCaptureSelected,
+		CaptureCursor:                  m.dialogCaptureCursor,
+		CaptureEditing:                 m.dialogCaptureEditing,
+		CaptureSuggestions:             m.dialogCaptureSuggestions,
+		CaptureSuggestCursor:           m.dialogCaptureSuggestCursor,
 	}
 }
 
@@ -957,6 +975,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogIssueID = state.IssueID
 	m.dialogAdhocTimer = state.AdhocTimer
 	m.dialogPromotingAdhoc = state.PromotingAdhoc
+	m.dialogMovingInbox = state.MovingInbox
 	m.dialogViewEntityAdhoc = state.ViewEntityAdhoc
 	m.dialogAdhocResolution = state.AdhocResolution
 	m.dialogAdhocIssueIDs = state.AdhocIssueIDs
@@ -1061,6 +1080,15 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogTagsInput = state.TagsInput
 	m.dialogTagsEnabled = state.TagsEnabled
 	m.dialogTagsFocus = state.TagsFocus
+	m.dialogCaptureText = state.CaptureText
+	m.dialogCaptureTarget = state.CaptureTarget
+	m.dialogCaptureStreamID = state.CaptureStreamID
+	m.dialogCaptureRows = state.CaptureRows
+	m.dialogCaptureSelected = state.CaptureSelected
+	m.dialogCaptureCursor = state.CaptureCursor
+	m.dialogCaptureEditing = state.CaptureEditing
+	m.dialogCaptureSuggestions = state.CaptureSuggestions
+	m.dialogCaptureSuggestCursor = state.CaptureSuggestCursor
 	return m
 }
 
@@ -1143,6 +1171,10 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 				dueDate, followUp, commitMessage,
 				tags,
 			)
+		},
+		MoveInboxIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
+			return commands.MoveInboxIssueWithPath(m.client, issueID, repoName, streamName,
+				title, description, estimateMinutes, dueDate, dashboardDate)
 		},
 		PromoteAdhocIssue: func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd {
 			return commands.PromoteAdhocIssueWithPath(m.client, issueID, repoName, streamName,
@@ -1293,6 +1325,12 @@ func (m Model) dialogRuntimeDeps() dialogruntime.Deps {
 			return commands.RenameTag(m.client, from, to, merge)
 		},
 		DeleteTag: func(name string) tea.Cmd { return commands.DeleteTag(m.client, name) },
+		ParseIssueCapture: func(text string, streamID int64) tea.Cmd {
+			return commands.ParseIssueCapture(m.client, text, streamID)
+		},
+		ImportIssueCapture: func(rows []shareddto.IssueCaptureProposal, left int) tea.Cmd {
+			return commands.ImportIssueCapture(m.client, rows, left)
+		},
 		SetItemTags: func(target string, id int64, tags []string) tea.Cmd {
 			return commands.SetItemTags(m.client, target == "habit", id, tags)
 		},

@@ -33,6 +33,7 @@ type Deps struct {
 	UpdateHabit                    func(habitID, streamID int64, name string, description *string, schedule string, weekdays []int, estimateMinutes *int, active bool, dashboardDate string) tea.Cmd
 	CreateIssueWithPath            func(repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, followUp int, commitMessage string, tags []string) tea.Cmd
 	PromoteAdhocIssue              func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
+	MoveInboxIssue                 func(issueID int64, repoName, streamName, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
 	CheckoutContext                func(repoID int64, repoName string, streamID int64, streamName string) tea.Cmd
 	UpsertDailyCheckIn             func(req shareddto.DailyCheckInUpsertRequest, refreshDate string) tea.Cmd
 	UpdateIssue                    func(issueID, streamID int64, title string, description *string, estimateMinutes *int, dueDate *string, dashboardDate string) tea.Cmd
@@ -67,6 +68,8 @@ type Deps struct {
 	ChangeIssueStatusAndEndSession func(issueID int64, status string, note *string, streamID int64, dashboardDate string, payload shareddto.EndSessionRequest) tea.Cmd
 	SetIssueTodoDate               func(issueID int64, date string, streamID int64, dashboardDate string) tea.Cmd
 	SetItemTags                    func(target string, id int64, tags []string) tea.Cmd
+	ParseIssueCapture              func(text string, streamID int64) tea.Cmd
+	ImportIssueCapture             func(rows []shareddto.IssueCaptureProposal, left int) tea.Cmd
 	SetPaneFilter                  func(pane, value string) tea.Cmd
 	RenameTag                      func(from, to string, merge bool) tea.Cmd
 	DeleteTag                      func(name string) tea.Cmd
@@ -144,6 +147,11 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			deps.PromoteAdhocIssue(action.IssueID, action.RepoName, action.StreamName,
 				action.Title, action.Description, action.Estimate, action.DueDate, state.Date))
 	})
+	r.Register("move_inbox_issue", func(action dialogstate.Action) tea.Cmd {
+		return thenSetTags(deps, dialogstate.TagTargetIssue, action.IssueID, action.Tags,
+			deps.MoveInboxIssue(action.IssueID, action.RepoName, action.StreamName,
+				action.Title, action.Description, action.Estimate, action.DueDate, state.Date))
+	})
 	r.Register("checkout_context", func(action dialogstate.Action) tea.Cmd {
 		return deps.CheckoutContext(
 			action.RepoID,
@@ -201,6 +209,18 @@ func Resolve(action dialogstate.Action, state State, deps Deps) tea.Cmd {
 			return missingRuntimeHookCmd("rename_tag")
 		}
 		return deps.RenameTag(action.Title, action.Name, action.Active)
+	})
+	r.Register("capture_parse", func(action dialogstate.Action) tea.Cmd {
+		if deps.ParseIssueCapture == nil {
+			return missingRuntimeHookCmd("capture_parse")
+		}
+		return deps.ParseIssueCapture(action.Title, action.StreamID)
+	})
+	r.Register("capture_import", func(action dialogstate.Action) tea.Cmd {
+		if deps.ImportIssueCapture == nil {
+			return missingRuntimeHookCmd("capture_import")
+		}
+		return deps.ImportIssueCapture(action.CaptureRows, action.CaptureLeft)
 	})
 	r.Register("set_tags", func(action dialogstate.Action) tea.Cmd {
 		if deps.SetItemTags == nil {

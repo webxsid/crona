@@ -16,6 +16,7 @@ type Snapshot struct {
 	CurrentDate          string
 	Repos                []api.Repo
 	Streams              []api.Stream
+	AllStreams           []api.Stream
 	AllHabits            []api.HabitWithMeta
 	AllIssues            []api.IssueWithMeta
 	Context              *api.ActiveContext
@@ -169,6 +170,10 @@ func (s Snapshot) OpenCreateIssueDefault() State {
 	}
 	next.FocusIdx = 2
 	return s.withTags(next, nil)
+}
+
+func (s Snapshot) OpenMoveInboxIssue(issue api.IssueWithMeta) State {
+	return s.withTags(OpenMoveInboxIssue(s.Dialog, issue), issue.Tags)
 }
 
 func (s Snapshot) OpenPromoteAdhocIssue(issue api.IssueWithMeta) State {

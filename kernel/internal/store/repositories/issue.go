@@ -648,6 +648,49 @@ func (r *IssueRepository) PromoteAdhoc(
 	return r.GetByID(ctx, issueID, userID)
 }
 
+// Move puts a regular issue in streamID with its edited fields.
+func (r *IssueRepository) Move(
+	ctx context.Context,
+	issueID int64,
+	streamID int64,
+	userID string,
+	now string,
+	updates struct {
+		Title           string
+		Description     *string
+		EstimateMinutes *int
+		TodoForDate     *string
+	},
+) (*sharedtypes.Issue, error) {
+	streamInternalID, err := resolveStreamInternalID(ctx, r.db, streamID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if streamInternalID == "" {
+		return nil, errors.New("stream not found")
+	}
+	res, err := r.db.NewUpdate().Model((*storemodels.IssueModel)(nil)).
+		Where("public_id = ?", issueID).
+		Where("user_id = ?", userID).
+		Where("is_reserved = 0").
+		Where("adhoc = 0").
+		Where("deleted_at IS NULL").
+		Set("stream_id = ?", streamInternalID).
+		Set("title = ?", updates.Title).
+		Set("description = ?", updates.Description).
+		Set("estimate_minutes = ?", updates.EstimateMinutes).
+		Set("todo_for_date = ?", updates.TodoForDate).
+		Set("updated_at = ?", now).
+		Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if rows, _ := res.RowsAffected(); rows == 0 {
+		return nil, errors.New("issue not found")
+	}
+	return r.GetByID(ctx, issueID, userID)
+}
+
 func (r *IssueRepository) CascadeSoftDeleteByStream(
 	ctx context.Context,
 	streamID int64,

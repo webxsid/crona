@@ -18,6 +18,10 @@ func DefaultRepoOptions(inputs []textinput.Model, repos []api.Repo) []SelectorOp
 	query := normalizeSelectorName(inputs[0].Value())
 	options := make([]SelectorOption, 0, len(repos)+1)
 	for _, repo := range repos {
+		// System repos like the Inbox are filled by Crona, not picked.
+		if repo.System {
+			continue
+		}
 		if query != "" && !strings.Contains(normalizeSelectorName(repo.Name), query) {
 			continue
 		}
@@ -75,7 +79,7 @@ func DefaultStreamOptions(
 		)
 	}
 	for _, stream := range streams {
-		if strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
+		if stream.System || strconv.FormatInt(stream.RepoID, 10) != repoOpt.ID {
 			continue
 		}
 		streamKey := strconv.FormatInt(stream.ID, 10)
@@ -286,10 +290,18 @@ func DefaultIssueDialogLabels(
 	if len(repoOptions) == 0 {
 		return "Type to search or create", "Select a repo first"
 	}
-	if len(streamOptions) == 0 {
-		return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, "Type to search or create"
+	// A negative index means nothing is chosen yet, as for an unresolved import row.
+	if repoIndex < 0 {
+		return "←/→ to choose a repo", "Select a repo first"
 	}
-	return repoOptions[min(repoIndex, len(repoOptions)-1)].Label, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
+	repoLabel := repoOptions[min(repoIndex, len(repoOptions)-1)].Label
+	if len(streamOptions) == 0 {
+		return repoLabel, "Type to search or create"
+	}
+	if streamIndex < 0 {
+		return repoLabel, "←/→ to choose a stream"
+	}
+	return repoLabel, streamOptions[min(streamIndex, len(streamOptions)-1)].Label
 }
 
 func MomentumDialogLabels(
@@ -346,7 +358,7 @@ func DefaultIssueDialogNames(
 ) (string, string) {
 	repoOptions := DefaultRepoOptions(inputs, repos)
 	streamOptions := DefaultStreamOptions(inputs, repoIndex, repos, allIssues, streams, context)
-	if len(repoOptions) == 0 || len(streamOptions) == 0 {
+	if len(repoOptions) == 0 || len(streamOptions) == 0 || repoIndex < 0 || streamIndex < 0 {
 		return "", ""
 	}
 	repo := repoOptions[min(repoIndex, len(repoOptions)-1)]

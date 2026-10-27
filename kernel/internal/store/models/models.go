@@ -11,6 +11,7 @@ type RepoModel struct {
 	Description *string `bun:"description,type:text,nullzero"`
 	Color       *string `bun:"color,type:text,nullzero"`
 	IsReserved  bool    `bun:"is_reserved,notnull,type:integer"`
+	IsSystem    bool    `bun:"is_system,notnull,type:integer"`
 	UserID      string  `bun:"user_id,notnull,type:text"`
 	CreatedAt   string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt   string  `bun:"updated_at,notnull,type:text"`
@@ -27,6 +28,7 @@ type StreamModel struct {
 	Description *string `bun:"description,type:text,nullzero"`
 	Visibility  string  `bun:"visibility,notnull,type:text"`
 	IsReserved  bool    `bun:"is_reserved,notnull,type:integer"`
+	IsSystem    bool    `bun:"is_system,notnull,type:integer"`
 	UserID      string  `bun:"user_id,notnull,type:text"`
 	CreatedAt   string  `bun:"created_at,notnull,type:text"`
 	UpdatedAt   string  `bun:"updated_at,notnull,type:text"`

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	shareddto "crona/shared/dto"
 	"crona/tui/internal/api"
 )
 
@@ -142,6 +143,19 @@ type IssueCreatedMsg struct {
 	RepoName, StreamName string
 	FollowUp             int
 	CommitMessage        string
+}
+
+// CaptureParsedMsg carries the parse of the Add issues text for the review dialog.
+type CaptureParsedMsg struct {
+	Text      string
+	StreamID  int64
+	Proposals []shareddto.IssueCaptureProposal
+}
+
+// CaptureImportedMsg reports a finished import; Left counts rows not imported.
+type CaptureImportedMsg struct {
+	Issues []api.Issue
+	Left   int
 }
 type ClearStatusMsg struct{ Seq int }
 

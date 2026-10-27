@@ -434,6 +434,12 @@ func (m Model) inputDeps() inputpkg.Deps {
 			return true
 		},
 		SetPaneFilter: func(pane Pane, value string) tea.Cmd { return commands.SetPaneFilter(string(pane), value) },
+		OpenCaptureIssues: func(state *inputpkg.State) bool {
+			next := m.applyInputState(*state)
+			next = next.openCaptureIssues()
+			*state = next.inputState()
+			return true
+		},
 		OpenTagPicker: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)
 			opened, ok := next.openTagPicker()
@@ -779,4 +785,16 @@ func (m Model) tagVocab() []string {
 		vocab = append(vocab, tag.Name)
 	}
 	return vocab
+}
+
+// openCaptureIssues opens Add issues, sending untargeted lines to the checked-out stream,
+// or to the Inbox without one.
+func (m Model) openCaptureIssues() Model {
+	var streamID int64
+	target := ""
+	if ctx := m.context; ctx != nil && ctx.StreamID != nil && ctx.RepoName != nil && ctx.StreamName != nil {
+		streamID = *ctx.StreamID
+		target = *ctx.RepoName + "/" + *ctx.StreamName
+	}
+	return m.withDialogState(dialogstate.OpenCaptureIssues(m.dialogState(), streamID, target, m.tagVocab()))
 }

@@ -32,6 +32,7 @@ func (r *RepoRepository) Create(
 		Name:        repo.Name,
 		Description: repo.Description,
 		Color:       repo.Color,
+		IsSystem:    repo.System,
 		UserID:      userID,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -54,7 +55,7 @@ func (r *RepoRepository) GetByID(
 	var model storemodels.RepoModel
 	err := r.db.NewSelect().
 		Model(&model).
-		Column("public_id", "name", "description", "color").
+		Column("public_id", "name", "description", "color", "is_system").
 		Where("public_id = ?", repoID).
 		Where("user_id = ?", userID).
 		Where("is_reserved = 0").
@@ -72,6 +73,7 @@ func (r *RepoRepository) GetByID(
 		Name:        model.Name,
 		Description: model.Description,
 		Color:       model.Color,
+		System:      model.IsSystem,
 	}, nil
 }
 
@@ -79,7 +81,7 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 	var models []storemodels.RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
-		Column("public_id", "name", "description", "color").
+		Column("public_id", "name", "description", "color", "is_system").
 		Where("user_id = ?", userID).
 		Where("is_reserved = 0").
 		Where("deleted_at IS NULL").
@@ -97,6 +99,7 @@ func (r *RepoRepository) List(ctx context.Context, userID string) ([]sharedtypes
 				Name:        model.Name,
 				Description: model.Description,
 				Color:       model.Color,
+				System:      model.IsSystem,
 			},
 		)
 	}
@@ -110,7 +113,7 @@ func (r *RepoRepository) ListDeleted(
 	var models []storemodels.RepoModel
 	if err := r.db.NewSelect().
 		Model(&models).
-		Column("public_id", "name", "description", "color").
+		Column("public_id", "name", "description", "color", "is_system").
 		Where("user_id = ?", userID).
 		Where("is_reserved = 0").
 		Where("deleted_at IS NOT NULL").
@@ -128,6 +131,7 @@ func (r *RepoRepository) ListDeleted(
 				Name:        model.Name,
 				Description: model.Description,
 				Color:       model.Color,
+				System:      model.IsSystem,
 			},
 		)
 	}

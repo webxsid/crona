@@ -46,11 +46,17 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 	if state.PromotingAdhoc {
 		frameTitle = "Convert Ad hoc Issue"
 	}
+	if state.MovingInbox {
+		frameTitle = "Move Out of Inbox"
+	}
 	if state.AdhocTimer {
 		frameTitle = "Create Issue & Finish Session"
 	}
+	if state.CaptureEditing {
+		frameTitle = "Edit Import Row"
+	}
 	rows := []FormRow{}
-	if (state.AdhocTimer || state.PromotingAdhoc) && state.ViewName != "" {
+	if (state.AdhocTimer || state.PromotingAdhoc || state.MovingInbox) && state.ViewName != "" {
 		rows = append(rows, staticRow(theme.StyleDim.Render(state.ViewName), ""))
 	}
 	rows = append(
@@ -121,7 +127,12 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 		)
 	}
 	primary, _ := splitHints(issueCreateHint(state))
+	esc := ""
+	if state.CaptureEditing {
+		esc = "esc back"
+	}
 	return renderForm(theme, state, FormSpec{
+		Esc:   esc,
 		Title: frameTitle, Context: repoStreamContext(state), Rows: rows, Primary: primary, FocusCount: len(focusOf),
 		Hints: func(focus int) []string {
 			probe := state

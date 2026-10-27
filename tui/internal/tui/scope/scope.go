@@ -25,21 +25,24 @@ type Node struct {
 	Scope Scope
 	Name  string
 	Depth int
+	// System is a repo or stream Crona made itself, like the Inbox.
+	System bool
 }
 
 // Nodes is All, then each repo followed by its streams, in the order given.
 func Nodes(repos []api.Repo, streams []api.Stream) []Node {
 	nodes := []Node{{Name: "All"}}
 	for _, repo := range repos {
-		nodes = append(nodes, Node{Scope: Scope{RepoID: repo.ID}, Name: repo.Name})
+		nodes = append(nodes, Node{Scope: Scope{RepoID: repo.ID}, Name: repo.Name, System: repo.System})
 		for _, stream := range streams {
 			if stream.RepoID == repo.ID {
 				nodes = append(
 					nodes,
 					Node{
-						Scope: Scope{RepoID: repo.ID, StreamID: stream.ID},
-						Name:  stream.Name,
-						Depth: 1,
+						Scope:  Scope{RepoID: repo.ID, StreamID: stream.ID},
+						Name:   stream.Name,
+						Depth:  1,
+						System: stream.System,
 					},
 				)
 			}

@@ -4,6 +4,7 @@ import (
 	"crona/tui/internal/tui/scope"
 	"time"
 
+	shareddto "crona/shared/dto"
 	sharedposthog "crona/shared/posthog"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -201,6 +202,7 @@ type Model struct {
 	dialogIssueID                        int64
 	dialogAdhocTimer                     bool
 	dialogPromotingAdhoc                 bool
+	dialogMovingInbox                    bool
 	dialogViewEntityAdhoc                bool
 	dialogAdhocResolution                sharedtypes.AdhocSessionResolution
 	dialogAdhocIssueIDs                  []int64
@@ -305,6 +307,15 @@ type Model struct {
 	dialogTagsInput                      textinput.Model
 	dialogTagsEnabled                    bool
 	dialogTagsFocus                      int
+	dialogCaptureText                    string
+	dialogCaptureTarget                  string
+	dialogCaptureStreamID                int64
+	dialogCaptureRows                    []shareddto.IssueCaptureProposal
+	dialogCaptureSelected                []bool
+	dialogCaptureCursor                  int
+	dialogCaptureEditing                 bool
+	dialogCaptureSuggestions             []dialogstate.CaptureSuggestion
+	dialogCaptureSuggestCursor           int
 
 	// status / error flash
 	statusMsg string

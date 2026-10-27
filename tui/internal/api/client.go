@@ -270,6 +270,23 @@ func (c *Client) ListAllIssues() ([]IssueWithMeta, error) {
 	return out, c.call(protocol.MethodIssueListAll, nil, &out)
 }
 
+// ParseIssueCapture parses `- ` lines into proposals; streamID is the default target, or 0
+// for the Inbox stream.
+func (c *Client) ParseIssueCapture(text string, streamID int64) ([]shareddto.IssueCaptureProposal, error) {
+	body := shareddto.IssueCaptureParseRequest{Text: text}
+	if streamID > 0 {
+		body.StreamID = &streamID
+	}
+	var out []shareddto.IssueCaptureProposal
+	return out, c.call(protocol.MethodIssueCaptureParse, body, &out)
+}
+
+func (c *Client) ImportIssueCapture(proposals []shareddto.IssueCaptureProposal) ([]Issue, error) {
+	var out shareddto.IssueCaptureImportResult
+	err := c.call(protocol.MethodIssueCaptureImport, shareddto.IssueCaptureImportRequest{Proposals: proposals}, &out)
+	return out.Issues, err
+}
+
 func (c *Client) CreateIssue(
 	streamID int64,
 	title string,
@@ -308,6 +325,10 @@ func (c *Client) UpdateIssue(
 	}
 	body.EstimateMinutes = estimateMinutes
 	return c.call(protocol.MethodIssueUpdate, body, nil)
+}
+
+func (c *Client) MoveIssue(input shareddto.MoveIssueRequest) error {
+	return c.call(protocol.MethodIssueMove, input, nil)
 }
 
 func (c *Client) PromoteAdhocIssue(input shareddto.PromoteAdhocIssueRequest) error {

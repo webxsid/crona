@@ -19,7 +19,12 @@ func CreateRepo(ctx context.Context, c *core.Context, input struct {
 	Description *string
 	Color       *string
 }) (sharedtypes.Repo, error) {
-	if strings.TrimSpace(input.Name) == "" {
+	return createRepo(ctx, c, sharedtypes.Repo{Name: input.Name, Description: input.Description, Color: input.Color})
+}
+
+// createRepo creates repo with a fresh ID; repo.System is kept for Crona's own repos.
+func createRepo(ctx context.Context, c *core.Context, repo sharedtypes.Repo) (sharedtypes.Repo, error) {
+	if strings.TrimSpace(repo.Name) == "" {
 		return sharedtypes.Repo{}, errors.New("repo name cannot be empty")
 	}
 
@@ -27,12 +32,9 @@ func CreateRepo(ctx context.Context, c *core.Context, input struct {
 	if err != nil {
 		return sharedtypes.Repo{}, err
 	}
-	repo := sharedtypes.Repo{
-		ID:          nextID,
-		Name:        strings.TrimSpace(input.Name),
-		Description: normalizeOptionalString(input.Description),
-		Color:       input.Color,
-	}
+	repo.ID = nextID
+	repo.Name = strings.TrimSpace(repo.Name)
+	repo.Description = normalizeOptionalString(repo.Description)
 	now := c.Now()
 
 	created, err := c.Repos.Create(ctx, repo, c.UserID, now)
@@ -73,6 +75,11 @@ func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates stru
 	if updates.Description.Set {
 		updates.Description.Value = normalizeOptionalString(updates.Description.Value)
 	}
+	if updates.Name.Set && updates.Name.Value != nil {
+		if err := refuseSystemRepo(ctx, c, repoID, *updates.Name.Value); err != nil {
+			return nil, err
+		}
+	}
 
 	now := c.Now()
 	updated, err := c.Repos.Update(ctx, repoID, c.UserID, now, updates)
@@ -100,6 +107,9 @@ func UpdateRepo(ctx context.Context, c *core.Context, repoID int64, updates stru
 }
 
 func DeleteRepo(ctx context.Context, c *core.Context, repoID int64) error {
+	if err := refuseSystemRepo(ctx, c, repoID, ""); err != nil {
+		return err
+	}
 	now := c.Now()
 
 	if err := c.Issues.CascadeSoftDeleteByRepo(ctx, repoID, c.UserID, now); err != nil {
@@ -138,6 +148,22 @@ func ListRepos(ctx context.Context, c *core.Context) ([]sharedtypes.Repo, error)
 	}
 	sortRepos(repos, loadListSortSettings(ctx, c).repoSort)
 	return repos, nil
+}
+
+// refuseSystemRepo stops a system repo being renamed to newName, or deleted when newName
+// is empty. Keeping its name is fine, so its description and color can still change.
+func refuseSystemRepo(ctx context.Context, c *core.Context, repoID int64, newName string) error {
+	repo, err := c.Repos.GetByID(ctx, repoID, c.UserID)
+	if err != nil || repo == nil || !repo.System {
+		return err
+	}
+	if newName == "" {
+		return fmt.Errorf("%s is a system repo and cannot be deleted", repo.Name)
+	}
+	if newName != repo.Name {
+		return fmt.Errorf("%s is a system repo and cannot be renamed", repo.Name)
+	}
+	return nil
 }
 
 func emit(c *core.Context, eventType string, payload any) {

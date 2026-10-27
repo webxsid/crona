@@ -52,7 +52,7 @@ func Run(args []string, deps Deps) error {
 	case "rename":
 		fs := flags.New("tag rename")
 		merge := fs.Bool("merge", false, "")
-		names, err := parseWithPositionals(fs, args[1:])
+		names, err := flags.ParseWithPositionals(fs, args[1:])
 		if err != nil {
 			return err
 		}
@@ -155,26 +155,6 @@ func RunItem(kind string, args []string, deps Deps) error {
 	}
 	_, err = fmt.Fprintf(deps.Stdout, "%s %d: %s\n", kind, id, strings.Join(parts, " "))
 	return err
-}
-
-// parseWithPositionals lets flags appear before or after the positional names.
-func parseWithPositionals(fs interface {
-	Parse([]string) error
-	Args() []string
-}, args []string) ([]string, error) {
-	positionals := []string{}
-	for len(args) > 0 {
-		if err := fs.Parse(args); err != nil {
-			return nil, err
-		}
-		rest := fs.Args()
-		if len(rest) == 0 {
-			break
-		}
-		positionals = append(positionals, rest[0])
-		args = rest[1:]
-	}
-	return positionals, nil
 }
 
 func printTags(w io.Writer, tags []sharedtypes.Tag) error {

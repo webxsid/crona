@@ -141,6 +141,9 @@ func nodeRow(
 		dot = " " + theme.StyleHeader.Render("●")
 	}
 	right := theme.StyleDim.Render(fmt.Sprintf("%d", count)) + dot
+	if node.System {
+		right = theme.StyleDim.Render("system  ") + right
+	}
 	room := width - ansi.StringWidth(right) - 1
 	name = ansi.Truncate(name, max(1, room), "…")
 	style := theme.StyleNormal

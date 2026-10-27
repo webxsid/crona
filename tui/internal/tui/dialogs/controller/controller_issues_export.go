@@ -190,11 +190,11 @@ func updateCreateIssueDefault(
 			return clearDialogError(state), nil, ""
 		}
 	}
-	if state.PromotingAdhoc && (msg.String() == "ctrl+a" || msg.String() == "ctrl+f") {
+	singleSubmit := state.AdhocTimer || state.PromotingAdhoc || state.MovingInbox
+	if (state.PromotingAdhoc || state.MovingInbox) && (msg.String() == "ctrl+a" || msg.String() == "ctrl+f") {
 		return state, nil, ""
 	}
-	if ((state.AdhocTimer || state.PromotingAdhoc) && msg.String() == "ctrl+s") ||
-		(!state.AdhocTimer && !state.PromotingAdhoc && isIssueCreateSubmitKey(msg.String())) {
+	if (singleSubmit && msg.String() == "ctrl+s") || (!singleSubmit && isIssueCreateSubmitKey(msg.String())) {
 		repoName, streamName := DefaultIssueDialogNames(
 			state.Inputs,
 			state.RepoIndex,
@@ -227,7 +227,7 @@ func updateCreateIssueDefault(
 		if err != nil {
 			return state, nil, err.Error()
 		}
-		preservingOriginalDate := (state.AdhocTimer || state.PromotingAdhoc) &&
+		preservingOriginalDate := singleSubmit &&
 			ValueOrEmpty(dueDate) == state.AdhocDate
 		if !preservingOriginalDate {
 			if err := ValidateDueDateAt(state, ValueOrEmpty(dueDate), currentDate); err != nil {
@@ -237,6 +237,9 @@ func updateCreateIssueDefault(
 		actionKind := "create_issue_default"
 		if state.PromotingAdhoc {
 			actionKind = "promote_adhoc_issue"
+		}
+		if state.MovingInbox {
+			actionKind = "move_inbox_issue"
 		}
 		tags, err := tagsFromField(state)
 		if err != nil {
@@ -256,7 +259,7 @@ func updateCreateIssueDefault(
 				Estimate:      estimate,
 				DueDate:       dueDate,
 				IssueCreateFollowUp: func() int {
-					if state.PromotingAdhoc {
+					if state.PromotingAdhoc || state.MovingInbox {
 						return IssueCreateFollowUpDefault
 					}
 					if state.AdhocTimer {
