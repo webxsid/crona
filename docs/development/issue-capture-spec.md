@@ -36,7 +36,7 @@ All annotations are optional and may appear anywhere in the line. They are remov
 | Annotation | Property |
 |---|---|
 | `#repo/stream` | Target repo and stream. |
-| `#name` | Matched against both repo and stream names. A stream match targets that stream and its repo. A repo match targets that repo; if the repo has exactly one stream it is used, otherwise the stream is left unresolved. A name matching both a repo and a stream in different places is ambiguous. Case-insensitive prefix match; ambiguous, unknown or unresolved targets are flagged, never created silently. |
+| `#name` | Matched against both repo and stream names. A stream match targets that stream and its repo. A repo match targets that repo; if the repo has exactly one stream it is used, otherwise the stream is left unresolved. A name matching both a repo and a stream in different places is ambiguous. Case-insensitive prefix match; spaces in names are written as `-`, so `#side-projects/blog-posts` names the "Side Projects" repo's "Blog Posts" stream. Ambiguous, unknown or unresolved targets are flagged, never created silently. |
 | `~45m`, `~1h30m` | Estimate. |
 | `@today`, `@tomorrow`, `@mon`…`@sun`, `@2026-10-30` | Plan date. `@today` adds the issue to today's plan. |
 | `+urgent`, `+client-acme` | Tags. Unknown names are created, as in the dialog Tags field. |

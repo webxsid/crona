@@ -12,12 +12,13 @@ import (
 const today = "2026-10-27"
 
 var catalog = Catalog{
-	Repos: []sharedtypes.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "home"}, {ID: 3, Name: "docs-site"}},
+	Repos: []sharedtypes.Repo{{ID: 1, Name: "crona"}, {ID: 2, Name: "home"}, {ID: 3, Name: "docs-site"}, {ID: 4, Name: "Side Projects"}},
 	Streams: []sharedtypes.Stream{
 		{ID: 10, RepoID: 1, Name: "api"},
 		{ID: 11, RepoID: 1, Name: "docs"},
 		{ID: 20, RepoID: 2, Name: "chores"},
 		{ID: 30, RepoID: 3, Name: "main"},
+		{ID: 40, RepoID: 4, Name: "Blog Posts"},
 	},
 }
 
@@ -90,6 +91,10 @@ func TestTargetsAndFlags(t *testing.T) {
 		{"a #crona", 1, 0, "stream?"},      // repo with several streams
 		{"a #doc", 0, 0, "ambiguous #doc"}, // stream docs and repo docs-site
 		{"a #nope", 0, 0, "unknown #nope"},
+		{"a #side-projects/blog-posts", 4, 40, ""}, // names with spaces as slugs
+		{"a #Side-Projects", 4, 40, ""},
+		{"a #side-pro/blog", 4, 40, ""},
+		{"a #blog-posts", 4, 40, ""},
 		{"a #crona/nope", 1, 0, "unknown #crona/nope"},
 		{"a @someday", 0, 0, "bad date @someday"},
 		{"a +Bad_Tag!", 0, 0, "bad tag +Bad_Tag!"},

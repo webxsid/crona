@@ -148,7 +148,7 @@ func applyDefault(p *shareddto.IssueCaptureProposal, target *Target) {
 }
 
 // resolveTarget matches `#repo/stream` or `#name` by case-insensitive prefix, preferring
-// exact names. Anything it cannot settle on one stream is flagged.
+// exact names. Spaces in names are written as `-` (see slug). Anything it cannot settle on one stream is flagged.
 func resolveTarget(p *shareddto.IssueCaptureProposal, name string, catalog Catalog) {
 	if repoName, streamName, ok := strings.Cut(name, "/"); ok {
 		repos := matchRepos(catalog.Repos, repoName)
@@ -225,13 +225,13 @@ func matchStreams(streams []sharedtypes.Stream, name string) []sharedtypes.Strea
 }
 
 func matchNames[T any](items []T, name string, nameOf func(T) string) []T {
-	name = strings.ToLower(name)
+	name = slug(name)
 	if name == "" {
 		return nil
 	}
 	var exact, prefix []T
 	for _, item := range items {
-		switch candidate := strings.ToLower(nameOf(item)); {
+		switch candidate := slug(nameOf(item)); {
 		case candidate == name:
 			exact = append(exact, item)
 		case strings.HasPrefix(candidate, name):
@@ -242,6 +242,12 @@ func matchNames[T any](items []T, name string, nameOf func(T) string) []T {
 		return exact
 	}
 	return prefix
+}
+
+// slug lowercases a name and joins its words with `-`, so a one-word `#` annotation can
+// name a repo or stream whose name has spaces.
+func slug(name string) string {
+	return strings.Join(strings.Fields(strings.ToLower(name)), "-")
 }
 
 func streamsOf(streams []sharedtypes.Stream, repoID int64) []sharedtypes.Stream {
