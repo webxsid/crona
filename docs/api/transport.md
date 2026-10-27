@@ -9,7 +9,7 @@ order: 7.1
 # Transport and Envelopes
 
 :::note[Protocol compatibility]
-Protocol `1.6` is used by the current beta line. Clients should read `protocolVersion` from `kernel.info.get` instead of assuming that every daemon supports the newest envelopes or events.
+Protocol `1.7` is used by the current beta line. It adds tags, carry-over, the delay penalty and issue capture (with `-` for spaces in `#` targets) over `1.6`. Clients should read `protocolVersion` from `kernel.info.get` instead of assuming that every daemon supports the newest envelopes or events.
 :::
 
 Crona uses Unix-domain sockets on Unix-like systems and named pipes on Windows. The transport is local-only; clients should obtain the active endpoint from the daemon runtime metadata rather than hardcoding a path.
