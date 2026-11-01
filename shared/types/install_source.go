@@ -10,6 +10,7 @@ const (
 	InstallSourceBrew    InstallSource = "brew"
 	InstallSourceScoop   InstallSource = "scoop"
 	InstallSourceGo      InstallSource = "go"
+	InstallSourceNix     InstallSource = "nix"
 	InstallSourceManual  InstallSource = "manual"
 )
 
@@ -19,6 +20,7 @@ func NormalizeInstallSource(value InstallSource) InstallSource {
 		InstallSourceBrew,
 		InstallSourceScoop,
 		InstallSourceGo,
+		InstallSourceNix,
 		InstallSourceManual:
 		return value
 	default:

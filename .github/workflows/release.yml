@@ -68,3 +68,6 @@ jobs:
         env:
           SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
         run: sh ./scripts/publish_scoop_manifest.sh "${GITHUB_REF_NAME}"
+
+      - name: Publish Nix sources
+        run: sh ./scripts/publish_nix_sources.sh "${GITHUB_REF_NAME}"

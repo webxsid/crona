@@ -72,6 +72,7 @@ brew_cmd() {
 
 ensure_dirs() {
   mkdir -p "${TEST_ROOT}" "${PREFIX_ROOT}/bin" "${PREFIX_ROOT}/Library/Taps" "${CELLAR_ROOT}" "${CACHE_ROOT}" "${TAP_DIR}/Formula"
+  rm -f "${ISOLATED_BREW_BIN}"
   cp "${SYSTEM_BREW_BIN}" "${ISOLATED_BREW_BIN}"
   tmp_brew="$(mktemp)"
   awk -v prefix="${PREFIX_ROOT}" '
@@ -81,8 +82,10 @@ ensure_dirs() {
     }
     { print }
   ' "${ISOLATED_BREW_BIN}" > "${tmp_brew}"
-  mv "${tmp_brew}" "${ISOLATED_BREW_BIN}"
-  chmod +x "${ISOLATED_BREW_BIN}"
+  mv -f "${tmp_brew}" "${ISOLATED_BREW_BIN}"
+  # Homebrew refuses to build when the sandbox could write to brew itself, and a
+  # read-only brew file is what it accepts as proof that it cannot.
+  chmod 555 "${ISOLATED_BREW_BIN}"
   rm -rf "${REPO_ROOT}"
   mkdir -p "$(dirname "${REPO_ROOT}")"
   ln -sfn "${SYSTEM_BREW_LIBRARY}" "${REPO_ROOT}"

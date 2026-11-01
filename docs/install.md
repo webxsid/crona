@@ -31,6 +31,22 @@ Homebrew handles updates:
 brew upgrade crona
 ```
 
+### Nix
+
+The repository is a flake. Install into your profile:
+
+```bash
+nix profile install github:webxsid/crona#crona
+```
+
+Update with:
+
+```bash
+nix profile upgrade crona
+```
+
+The flake installs the same prebuilt binaries as Homebrew, checked against the release's `checksums.txt`, for Linux and Apple silicon Macs (nixpkgs no longer supports Intel Macs, so use Homebrew there). On NixOS or with Home Manager, add `github:webxsid/crona` as a flake input and use `packages.${system}.crona`.
+
 ## Windows
 
 Install with Scoop:

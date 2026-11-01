@@ -29,6 +29,11 @@ func TestSourceFromExecutablePath(t *testing.T) {
 			want: sharedtypes.InstallSourceScoop,
 		},
 		{
+			name: "nix",
+			path: "/nix/store/0c9z1v8f-crona-beta-1.10.0-beta.3/bin/crona-daemon",
+			want: sharedtypes.InstallSourceNix,
+		},
+		{
 			name: "unknown",
 			path: "/tmp/crona",
 			want: sharedtypes.InstallSourceUnknown,
@@ -75,6 +80,22 @@ func TestUpdateCommandForStatus(t *testing.T) {
 				ReleaseChannel: sharedtypes.UpdateChannelBeta,
 			},
 			want: "scoop update crona-beta",
+		},
+		{
+			name: "nix stable",
+			status: sharedtypes.UpdateStatus{
+				InstallSource:  sharedtypes.InstallSourceNix,
+				ReleaseChannel: sharedtypes.UpdateChannelStable,
+			},
+			want: "nix profile upgrade crona",
+		},
+		{
+			name: "nix beta",
+			status: sharedtypes.UpdateStatus{
+				InstallSource:  sharedtypes.InstallSourceNix,
+				ReleaseChannel: sharedtypes.UpdateChannelBeta,
+			},
+			want: "nix profile upgrade crona-beta",
 		},
 		{
 			name: "brew migration",

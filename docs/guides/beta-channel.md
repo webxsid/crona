@@ -35,12 +35,16 @@ Stable and beta installations use separate packages:
 | --- | --- | --- |
 | Homebrew | `crona` | `crona-beta` |
 | Scoop | `crona` | `crona-beta` |
+| Nix | `#crona` | `#crona-beta` |
 
 Install the beta package explicitly:
 
 ```bash
 # macOS or Linux
 brew install webxsid/tap/crona-beta
+
+# Nix
+nix profile install github:webxsid/crona#crona-beta
 
 # Windows PowerShell
 scoop install crona-beta

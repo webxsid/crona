@@ -155,7 +155,7 @@ func statusCardLines(theme types.Theme, state types.ContentState) []string {
 		lines = append(
 			lines,
 			fieldBlock(theme, "Latest Version", displayVersion(status.LatestVersion), true)...)
-		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop {
+		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop || source == sharedtypes.InstallSourceNix {
 			lines = append(
 				lines,
 				fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
@@ -180,7 +180,7 @@ func statusCardLines(theme types.Theme, state types.ContentState) []string {
 		if source := strings.TrimSpace(string(status.InstallSource)); source != "" {
 			lines = append(lines, fieldBlock(theme, "Install Source", sourceLabel(status.InstallSource), false)...)
 		}
-		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop {
+		if source := sharedtypes.NormalizeInstallSource(status.InstallSource); source == sharedtypes.InstallSourceScoop || source == sharedtypes.InstallSourceNix {
 			lines = append(lines, fieldBlock(theme, "Channel", channelLabel(status.ReleaseChannel), false)...)
 		}
 		if checked := relativeCheckedAt(status.CheckedAt); checked != "" {
@@ -212,6 +212,8 @@ func sourceLabel(source sharedtypes.InstallSource) string {
 		return "Homebrew"
 	case sharedtypes.InstallSourceScoop:
 		return "Scoop"
+	case sharedtypes.InstallSourceNix:
+		return "Nix"
 	case sharedtypes.InstallSourceGo:
 		return "go install"
 	case sharedtypes.InstallSourceScript:

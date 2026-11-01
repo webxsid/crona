@@ -9,3 +9,4 @@ coverage/
 .tmp*/
 .manifest/*
 .handoff/*
+result*

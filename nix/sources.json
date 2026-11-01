@@ -1,0 +1,18 @@
+{
+  "crona": {
+    "version": "1.9.0",
+    "platforms": {
+      "aarch64-darwin": "c323ef709bb179a907012202f8190af9649c5ad5509dd0b022dd286a385d1b4d",
+      "aarch64-linux": "831ff46587ec27940c72d17c4bdf6f56849e8cce81008c55d5f2cfadeac0bb28",
+      "x86_64-linux": "2a85a9055c216017663a1c996344c27b8e1fd84649e99c1233122745246daf5e"
+    }
+  },
+  "crona-beta": {
+    "version": "1.10.0-beta.3",
+    "platforms": {
+      "aarch64-darwin": "21d0c432cb5312b063680cd86ecd58531e357367b53c53b38b527db9707c4a04",
+      "aarch64-linux": "17b83596f1b108c11202bea76525bfe61e7448036a74a1d4358762c471bbe417",
+      "x86_64-linux": "8a7cbc875c3e0e5a2ce6e87b99860962319f5d1996f7570323534157cd7e25ad"
+    }
+  }
+}
