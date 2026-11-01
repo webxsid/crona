@@ -8,11 +8,11 @@
     }
   },
   "crona-beta": {
-    "version": "1.10.0-beta.3",
+    "version": "1.10.0-beta.4",
     "platforms": {
-      "aarch64-darwin": "21d0c432cb5312b063680cd86ecd58531e357367b53c53b38b527db9707c4a04",
-      "aarch64-linux": "17b83596f1b108c11202bea76525bfe61e7448036a74a1d4358762c471bbe417",
-      "x86_64-linux": "8a7cbc875c3e0e5a2ce6e87b99860962319f5d1996f7570323534157cd7e25ad"
+      "aarch64-darwin": "498f2abe4ca1bdaaf6920e18307138c9cb0f4f8313e92454a6be391a94f655b3",
+      "aarch64-linux": "7c91a19d5dcf3a036ebed12f4b4cb7e0bfb6c1fcda08a14f4c071399e1a0077d",
+      "x86_64-linux": "eb01cebfcb5143ef782b9ad25291bef407fb3221f5ea76d26c4e81efebab5516"
     }
   }
 }
