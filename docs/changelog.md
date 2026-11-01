@@ -7,6 +7,17 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.10.0-beta.4] - 2026-11-01
+
+Crona v1.10.0-beta.4 adds Nix as an install channel. The local IPC protocol stays at `1.7`.
+
+### Nix
+
+- The repository is now a flake with `crona` and `crona-beta` packages for Linux and Apple silicon Macs. They install the same prebuilt release binaries as Homebrew, checked against each release's `checksums.txt`. Install with `nix profile install github:webxsid/crona#crona-beta`.
+- Each release updates the flake's hashes for its channel, so `nix profile upgrade crona-beta` picks up new betas.
+- Crona recognises a Nix install, including through the symlinks a Nix profile puts on the `PATH`. The Updates pane shows Nix as the install source and suggests `nix profile upgrade crona` or `nix profile upgrade crona-beta`. As with Homebrew and Scoop, Crona does not try to update a Nix install itself.
+- Intel Macs are not covered, because nixpkgs no longer supports them. Use Homebrew there.
+
 ## [1.10.0-beta.3] - 2026-10-27
 
 Crona v1.10.0-beta.3 adds tags, carries unfinished work over to the next day, surfaces the delay penalty, and lets you capture issues in bulk into an Inbox. The local IPC protocol moves to `1.7`.
