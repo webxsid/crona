@@ -12,6 +12,7 @@ Crona is a local-first work tracker for developers. It combines a terminal UI, a
 
 Managed package installers are the preferred distribution path:
 - Homebrew on macOS and Linux
+- Nix (flake) on Linux and Apple silicon Macs
 - Scoop on Windows
 - GitHub Releases as the canonical binary source
 
@@ -55,6 +56,15 @@ These captures show the v1.10.0-beta.1 interface.
 ## Quick Start
 
 See the full installation guide in [docs/install.md](docs/install.md).
+
+With Nix, install straight from this repository's flake:
+
+```bash
+nix profile install github:webxsid/crona#crona       # stable
+nix profile install github:webxsid/crona#crona-beta  # beta
+```
+
+Update with `nix profile upgrade crona` (or `crona-beta`).
 
 If you are migrating from the install script, another package manager, or a beta channel, use [docs/migration.md](docs/migration.md) before reinstalling.
 
