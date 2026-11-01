@@ -36,7 +36,7 @@ brew upgrade crona
 The repository is a flake. Install into your profile:
 
 ```bash
-nix profile install github:webxsid/crona#crona
+nix profile add github:webxsid/crona#crona
 ```
 
 Update with:
@@ -46,6 +46,8 @@ nix profile upgrade crona
 ```
 
 The flake installs the same prebuilt binaries as Homebrew, checked against the release's `checksums.txt`, for Linux and Apple silicon Macs (nixpkgs no longer supports Intel Macs, so use Homebrew there). On NixOS or with Home Manager, add `github:webxsid/crona` as a flake input and use `packages.${system}.crona`.
+
+These commands need flakes. If Nix reports that `nix-command` or `flakes` is disabled, add `experimental-features = nix-command flakes` to `~/.config/nix/nix.conf`, or pass `--extra-experimental-features 'nix-command flakes'` to each command. On older Nix releases that lack `nix profile add`, use `nix profile install`.
 
 ## Windows
 

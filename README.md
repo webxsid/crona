@@ -60,11 +60,13 @@ See the full installation guide in [docs/install.md](docs/install.md).
 With Nix, install straight from this repository's flake:
 
 ```bash
-nix profile install github:webxsid/crona#crona       # stable
-nix profile install github:webxsid/crona#crona-beta  # beta
+nix profile add github:webxsid/crona#crona       # stable
+nix profile add github:webxsid/crona#crona-beta  # beta
 ```
 
 Update with `nix profile upgrade crona` (or `crona-beta`).
+
+These commands need flakes. If Nix reports that `nix-command` or `flakes` is disabled, add `experimental-features = nix-command flakes` to `~/.config/nix/nix.conf`, or pass `--extra-experimental-features 'nix-command flakes'` to each command. On older Nix releases that lack `nix profile add`, use `nix profile install`.
 
 If you are migrating from the install script, another package manager, or a beta channel, use [docs/migration.md](docs/migration.md) before reinstalling.
 
