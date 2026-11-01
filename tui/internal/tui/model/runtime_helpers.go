@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -97,7 +98,20 @@ func (m Model) effectiveInstallSource() sharedtypes.InstallSource {
 	return sharedtypes.InstallSourceUnknown
 }
 
+// installSourceFromPath also follows symlinks, because Nix profiles link each binary into /nix/store
+// and os.Executable does not resolve that link on macOS.
 func installSourceFromPath(path string) sharedtypes.InstallSource {
+	if source := installSourceFromPathString(path); source != sharedtypes.InstallSourceUnknown {
+		return source
+	}
+	resolved, err := filepath.EvalSymlinks(strings.TrimSpace(path))
+	if err != nil || resolved == strings.TrimSpace(path) {
+		return sharedtypes.InstallSourceUnknown
+	}
+	return installSourceFromPathString(resolved)
+}
+
+func installSourceFromPathString(path string) sharedtypes.InstallSource {
 	normalized := strings.ToLower(strings.TrimSpace(path))
 	normalized = strings.ReplaceAll(normalized, "\\", "/")
 	if normalized == "" {

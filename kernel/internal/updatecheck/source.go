@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -283,7 +284,20 @@ func sourceFromEnv() sharedtypes.InstallSource {
 	return sharedtypes.ParseInstallSource(strings.TrimSpace(os.Getenv(config.EnvVarInstallSource)))
 }
 
+// sourceFromExecutablePath also follows symlinks, because Nix profiles link each binary into /nix/store
+// and os.Executable does not resolve that link on macOS.
 func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
+	if source := sourceFromPathString(path); source != sharedtypes.InstallSourceUnknown {
+		return source
+	}
+	resolved, err := filepath.EvalSymlinks(strings.TrimSpace(path))
+	if err != nil || resolved == strings.TrimSpace(path) {
+		return sharedtypes.InstallSourceUnknown
+	}
+	return sourceFromPathString(resolved)
+}
+
+func sourceFromPathString(path string) sharedtypes.InstallSource {
 	normalized := strings.ToLower(strings.TrimSpace(path))
 	normalized = strings.ReplaceAll(normalized, "\\", "/")
 	if normalized == "" {

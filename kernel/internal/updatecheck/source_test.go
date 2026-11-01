@@ -1,6 +1,8 @@
 package updatecheck
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	sharedtypes "crona/shared/types"
@@ -45,6 +47,27 @@ func TestSourceFromExecutablePath(t *testing.T) {
 				t.Fatalf("sourceFromExecutablePath(%q) = %s, want %s", tc.path, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestSourceFromExecutablePathFollowsNixProfileLinks(t *testing.T) {
+	root := t.TempDir()
+	target := filepath.Join(root, "nix", "store", "abc-crona-beta", "bin", "crona-daemon")
+	if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, nil, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(root, "profile", "bin", "crona-daemon")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if got := sourceFromExecutablePath(link); got != sharedtypes.InstallSourceNix {
+		t.Fatalf("sourceFromExecutablePath(%q) = %s, want nix", link, got)
 	}
 }
 
