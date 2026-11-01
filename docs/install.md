@@ -45,7 +45,7 @@ Update with:
 nix profile upgrade crona
 ```
 
-The flake installs the same prebuilt binaries as Homebrew, checked against the release's `checksums.txt`. On NixOS or with Home Manager, add `github:webxsid/crona` as a flake input and use `packages.${system}.crona`.
+The flake installs the same prebuilt binaries as Homebrew, checked against the release's `checksums.txt`, for Linux and Apple silicon Macs (nixpkgs no longer supports Intel Macs, so use Homebrew there). On NixOS or with Home Manager, add `github:webxsid/crona` as a flake input and use `packages.${system}.crona`.
 
 ## Windows
 
