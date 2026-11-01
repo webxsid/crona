@@ -301,6 +301,8 @@ func updateCommand(
 			return "scoop update crona-beta"
 		}
 		return "scoop update crona"
+	case sharedtypes.InstallSourceNix:
+		return nixUpdateCommand(status)
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
 	}
@@ -315,6 +317,8 @@ func updateCommand(
 			return "scoop update crona-beta"
 		}
 		return "scoop update crona"
+	case sharedtypes.InstallSourceNix:
+		return nixUpdateCommand(status)
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
 	}

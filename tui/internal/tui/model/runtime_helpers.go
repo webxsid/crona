@@ -48,6 +48,8 @@ func (m Model) selfUpdateUnsupportedReason() string {
 			return "Installed via Scoop. Use scoop update crona-beta."
 		}
 		return "Installed via Scoop. Use scoop update crona."
+	case sharedtypes.InstallSourceNix:
+		return fmt.Sprintf("Installed via Nix. Use %s.", nixUpdateCommand(m.updateStatus))
 	case sharedtypes.InstallSourceGo:
 		return "Installed via go install. Use go install github.com/webxsid/crona/...@latest."
 	case sharedtypes.InstallSourceManual, sharedtypes.InstallSourceUnknown:
@@ -100,6 +102,9 @@ func installSourceFromPath(path string) sharedtypes.InstallSource {
 	normalized = strings.ReplaceAll(normalized, "\\", "/")
 	if normalized == "" {
 		return sharedtypes.InstallSourceUnknown
+	}
+	if strings.Contains(normalized, "/nix/store/") {
+		return sharedtypes.InstallSourceNix
 	}
 	if strings.Contains(normalized, "/opt/homebrew/") ||
 		strings.Contains(normalized, "/usr/local/cellar/") ||
@@ -158,4 +163,12 @@ func kernelExecutablePath(info *api.KernelInfo) string {
 		return ""
 	}
 	return info.ExecutablePath
+}
+
+func nixUpdateCommand(status *sharedtypes.UpdateStatus) string {
+	if status != nil &&
+		sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		return "nix profile upgrade crona-beta"
+	}
+	return "nix profile upgrade crona"
 }

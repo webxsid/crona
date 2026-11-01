@@ -289,6 +289,9 @@ func sourceFromExecutablePath(path string) sharedtypes.InstallSource {
 	if normalized == "" {
 		return sharedtypes.InstallSourceUnknown
 	}
+	if strings.Contains(normalized, "/nix/store/") {
+		return sharedtypes.InstallSourceNix
+	}
 	if strings.Contains(normalized, "/opt/homebrew/") ||
 		strings.Contains(normalized, "/usr/local/cellar/") ||
 		strings.Contains(normalized, "/home/linuxbrew/.linuxbrew/") ||
@@ -346,6 +349,8 @@ func updateCommandForStatus(status sharedtypes.UpdateStatus) string {
 		return "curl -fsSL https://crona.work/install.sh | sh"
 	case sharedtypes.InstallSourceGo:
 		return "go install github.com/webxsid/crona/...@latest"
+	case sharedtypes.InstallSourceNix:
+		return nixCommandForStatus(status)
 	default:
 		if strings.TrimSpace(status.ReleaseURL) != "" {
 			return strings.TrimSpace(status.ReleaseURL)
@@ -423,6 +428,14 @@ func scoopCommandForStatus(status sharedtypes.UpdateStatus) string {
 		return "scoop update crona-beta"
 	}
 	return "scoop update crona"
+}
+
+// nixCommandForStatus names the profile entry, which the flake calls crona or crona-beta.
+func nixCommandForStatus(status sharedtypes.UpdateStatus) string {
+	if sharedtypes.NormalizeUpdateChannel(status.ReleaseChannel) == sharedtypes.UpdateChannelBeta {
+		return "nix profile upgrade crona-beta"
+	}
+	return "nix profile upgrade crona"
 }
 
 func (s *Service) hasLocalRelease() bool {
