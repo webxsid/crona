@@ -31,5 +31,16 @@ jobs:
             tui/go.sum
             cli/go.sum
 
+      - name: Set up GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          install-only: true
+
+      # Linux runners ship Homebrew under /home/linuxbrew but leave it off the PATH.
+      - name: Put Homebrew on the PATH
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+
       - name: Run isolated Homebrew workflow
         run: make brew-test
