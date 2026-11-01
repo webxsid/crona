@@ -1,0 +1,30 @@
+name: Nix
+
+on:
+  push:
+    branches: [main]
+    paths: [flake.nix, flake.lock, nix/**]
+  pull_request:
+    paths: [flake.nix, flake.lock, nix/**]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build flake packages
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Build crona and crona-beta
+        run: |
+          set -eu
+          for package in crona crona-beta; do
+            nix build ".#${package}" --print-build-logs
+            ./result/bin/crona --version
+            test -x ./result/bin/crona-daemon
+            test -x ./result/bin/crona-tui
+          done
