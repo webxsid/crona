@@ -5,9 +5,10 @@
 
   outputs = { self, nixpkgs }:
     let
+      # Intel macOS is left out because nixpkgs no longer supports it.
       # Release hashes per channel, rewritten by scripts/publish_nix_sources.sh on each release.
       sources = builtins.fromJSON (builtins.readFile ./nix/sources.json);
-      goarch = { aarch64-darwin = "darwin-arm64"; x86_64-darwin = "darwin-amd64"; aarch64-linux = "linux-arm64"; x86_64-linux = "linux-amd64"; };
+      goarch = { aarch64-darwin = "darwin-arm64"; aarch64-linux = "linux-arm64"; x86_64-linux = "linux-amd64"; };
       forAllSystems = nixpkgs.lib.genAttrs (builtins.attrNames goarch);
 
       # The release bundles are static Go binaries, so they are unpacked as they are.

@@ -43,14 +43,12 @@ jq --indent 2 \
   --arg package "${PACKAGE}" \
   --arg version "${VERSION_NO_V}" \
   --arg darwinArm "$(checksum_for darwin-arm64)" \
-  --arg darwinIntel "$(checksum_for darwin-amd64)" \
   --arg linuxArm "$(checksum_for linux-arm64)" \
   --arg linuxIntel "$(checksum_for linux-amd64)" \
   '.[$package] = {
     version: $version,
     platforms: {
       "aarch64-darwin": $darwinArm,
-      "x86_64-darwin": $darwinIntel,
       "aarch64-linux": $linuxArm,
       "x86_64-linux": $linuxIntel
     }
