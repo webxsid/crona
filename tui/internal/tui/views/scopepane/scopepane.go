@@ -63,7 +63,7 @@ func Render(
 		lines = append(lines, createLine(theme, nodes[cur]))
 	}
 	return viewchrome.RenderSection(theme, viewchrome.Section{
-		Title: "Scope", Focused: focused, Width: width, Height: height, Lines: lines,
+		Title: "Scope", Focused: focused, Dimmed: !focused, Width: width, Height: height, Lines: lines,
 	})
 }
 

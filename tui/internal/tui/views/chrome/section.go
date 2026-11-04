@@ -12,6 +12,8 @@ type Section struct {
 	Title   string
 	Meta    string
 	Focused bool
+	// Dimmed fades the body, for a pane that can take focus but does not have it.
+	Dimmed bool
 	// TitleStyle overrides the focused/unfocused title style when set.
 	TitleStyle *lipgloss.Style
 	Width      int
@@ -33,7 +35,11 @@ func RenderSection(theme Theme, s Section) string {
 		}
 	}
 	for _, line := range body {
-		rows = append(rows, fitCells(" "+line, s.Width))
+		line = fitCells(" "+line, s.Width)
+		if s.Dimmed {
+			line = Faint(line)
+		}
+		rows = append(rows, line)
 	}
 	for len(rows) < s.Height {
 		rows = append(rows, strings.Repeat(" ", s.Width))
@@ -91,4 +97,15 @@ func fitCells(s string, width int) string {
 		return ansi.Truncate(s, width, "")
 	}
 	return s + strings.Repeat(" ", width-ansi.StringWidth(s))
+}
+
+// Faint renders an already styled line in the terminal's faint intensity, keeping its
+// colours. Styles inside the line end with a reset or a normal-intensity code, so faint is
+// turned back on after each one.
+func Faint(line string) string {
+	const faint = "\x1b[2m"
+	for _, reset := range []string{"\x1b[0m", "\x1b[m", "\x1b[22m"} {
+		line = strings.ReplaceAll(line, reset, reset+faint)
+	}
+	return faint + line + "\x1b[0m"
 }

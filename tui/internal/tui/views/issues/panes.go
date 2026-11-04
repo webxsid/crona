@@ -123,6 +123,7 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 			Title:   "Issues",
 			Meta:    viewhelpers.FilterMeta(meta, state.Filters["issues"]),
 			Focused: active,
+			Dimmed:  !active,
 			Width:   width,
 			Height:  height,
 			Lines:   lines,

@@ -74,3 +74,17 @@ func TestJoinColumnsGutter(t *testing.T) {
 		}
 	}
 }
+
+func TestRenderSectionFadesOnlyDimmedBodies(t *testing.T) {
+	theme := sectionTheme()
+	line := "\x1b[92mready\x1b[0m done"
+	dimmed := RenderSection(theme, Section{Title: "Issues", Dimmed: true, Width: 30, Height: 3, Lines: []string{line}})
+	body := strings.Split(dimmed, "\n")[1]
+	if !strings.HasPrefix(body, "\x1b[2m") || !strings.Contains(body, "\x1b[0m\x1b[2m done") {
+		t.Fatalf("a dimmed body should stay faint across inner resets, got %q", body)
+	}
+	focused := RenderSection(theme, Section{Title: "Issues", Focused: true, Width: 30, Height: 3, Lines: []string{line}})
+	if strings.Contains(focused, "\x1b[2m") {
+		t.Fatalf("a focused body should not be faint, got %q", focused)
+	}
+}

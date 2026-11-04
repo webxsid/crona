@@ -172,6 +172,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 			Title:   "Habits",
 			Meta:    viewhelpers.FilterMeta(fmt.Sprintf("%d", len(indices)), state.Filters["habits"]),
 			Focused: active,
+			Dimmed:  !active,
 			Width:   width,
 			Height:  height,
 			Lines:   lines,

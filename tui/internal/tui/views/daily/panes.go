@@ -534,6 +534,7 @@ func dailySection(
 		Title:   title,
 		Meta:    meta,
 		Focused: focused,
+		Dimmed:  !focused,
 		Width:   width,
 		Height:  height,
 		Lines:   body,
