@@ -368,3 +368,13 @@ func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
 		t.Fatalf("expected folded details over the calendar in the right column, got\n%s", out)
 	}
 }
+
+func TestDailyScoreCalendarIsNotFaded(t *testing.T) {
+	state := dailyState(130, 40)
+	state.DashboardDate = "2026-05-27"
+	for _, line := range strings.Split(renderView(testTheme(), state), "\n") {
+		if strings.Contains(ansi.Strip(line), "May 2026") && strings.Contains(line, "\x1b[2m") {
+			t.Fatalf("expected the calendar body unfaded, got %q", line)
+		}
+	}
+}

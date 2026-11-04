@@ -76,8 +76,14 @@ func calendarPane(
 		lines := scoreCalendarLines(theme, state, width-2, week)
 		height := len(lines) + 1
 		if len(lines) > 0 && fits(height) {
-			return dailySection(theme, "Calendar", foldHint(theme, uistate.CollapseDailyCalendar, "fold"),
-				false, width, height, lines), height
+			// The calendar never takes focus, so it is not faded like an unfocused list.
+			return viewchrome.RenderSection(theme, viewchrome.Section{
+				Title:  "Calendar",
+				Meta:   foldHint(theme, uistate.CollapseDailyCalendar, "fold"),
+				Width:  width,
+				Height: height,
+				Lines:  lines,
+			}), height
 		}
 	}
 	return collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
