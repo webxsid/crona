@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	shareddatefmt "crona/shared/datefmt"
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 
@@ -118,10 +119,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 		return moveSessionHistoryFocus(state, -1), nil, ""
 	case "ctrl+a":
 		row := newSessionHistorySegmentRow(state, sharedtypes.SessionSegmentWork)
-		if len(state.Inputs) >= 2 {
-			row.StartTime.SetValue(sessionHistoryDatePrefix(state.Inputs[0].Value()))
-			row.EndTime.SetValue(sessionHistoryDatePrefix(state.Inputs[1].Value()))
-		}
+		row.StartTime.SetValue(nextSessionHistorySegmentStart(state))
 		state.SessionHistorySegments = append(state.SessionHistorySegments, row)
 		state.FocusIdx = sessionHistorySegmentFocus(len(state.SessionHistorySegments)-1, 0)
 		state = syncSessionHistoryBounds(state)
@@ -216,39 +214,58 @@ func syncSessionHistoryBounds(state State) State {
 	if len(segments) == 0 || len(state.Inputs) < 2 {
 		return state
 	}
-	if value := segments[0].StartTime.Value(); validSessionHistoryTimestamp(value) {
-		state.Inputs[0].SetValue(value)
+	start, err := resolveSessionHistoryTime(state.Inputs[0].Value(), state.SessionHistoryBounds[0], time.Time{}, state.SessionHistoryDatePattern)
+	if err != nil {
+		return state
 	}
-	if value := segments[len(segments)-1].EndTime.Value(); validSessionHistoryTimestamp(value) {
-		state.Inputs[1].SetValue(value)
+	if first, err := resolveSessionHistoryTime(segments[0].StartTime.Value(), segments[0].OriginalStart, start, state.SessionHistoryDatePattern); err == nil {
+		start = first
+		state.Inputs[0].SetValue(sessionHistoryStamp(start, state.SessionHistoryDatePattern))
+	}
+	if last, err := resolveSessionHistoryTime(segments[len(segments)-1].EndTime.Value(), segments[len(segments)-1].OriginalEnd, start, state.SessionHistoryDatePattern); err == nil {
+		state.Inputs[1].SetValue(sessionHistoryTimeText(last, start, state.SessionHistoryDatePattern))
 	}
 	return state
 }
 
-func validSessionHistoryTimestamp(value string) bool {
-	_, err := parseSessionHistoryTimestamp(value)
-	return err == nil
+// nextSessionHistorySegmentStart starts a new segment where the last one ends, or at the
+// session's start when there is none.
+func nextSessionHistorySegmentStart(state State) string {
+	if n := len(state.SessionHistorySegments); n > 0 {
+		return state.SessionHistorySegments[n-1].EndTime.Value()
+	}
+	if len(state.Inputs) == 0 {
+		return ""
+	}
+	start, err := resolveSessionHistoryTime(state.Inputs[0].Value(), state.SessionHistoryBounds[0], time.Time{}, state.SessionHistoryDatePattern)
+	if err != nil {
+		return ""
+	}
+	return sessionHistoryClock(start)
 }
 
 func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRequest, error) {
 	if len(state.Inputs) < 2 || len(state.SessionHistoryNoteInputs) < 3 {
 		return nil, errors.New("session editor is incomplete")
 	}
-	start, err := parseSessionHistoryTimestamp(state.Inputs[0].Value())
+	start, err := resolveSessionHistoryTime(state.Inputs[0].Value(), state.SessionHistoryBounds[0], time.Time{}, state.SessionHistoryDatePattern)
 	if err != nil {
-		return nil, errors.New("session start must use YYYY-MM-DD HH:mm:ss")
+		return nil, fmt.Errorf(
+			"session start needs a date and time, like %s",
+			sessionHistoryStamp(time.Date(2026, 11, 4, 9, 30, 0, 0, time.Local), state.SessionHistoryDatePattern),
+		)
 	}
-	end, err := parseSessionHistoryTimestamp(state.Inputs[1].Value())
+	end, err := resolveSessionHistoryTime(state.Inputs[1].Value(), state.SessionHistoryBounds[1], start, state.SessionHistoryDatePattern)
 	if err != nil || !end.After(start) {
 		return nil, errors.New("session end must be after its start")
 	}
 	segments := make([]sharedtypes.SessionSegment, 0, len(state.SessionHistorySegments))
 	for i, row := range state.SessionHistorySegments {
-		segmentStart, err := parseSessionHistoryTimestamp(row.StartTime.Value())
+		segmentStart, err := resolveSessionHistoryTime(row.StartTime.Value(), row.OriginalStart, start, state.SessionHistoryDatePattern)
 		if err != nil {
-			return nil, fmt.Errorf("segment %d start must use YYYY-MM-DD HH:mm:ss", i+1)
+			return nil, fmt.Errorf("segment %d start must be a time, like 09:30", i+1)
 		}
-		segmentEnd, err := parseSessionHistoryTimestamp(row.EndTime.Value())
+		segmentEnd, err := resolveSessionHistoryTime(row.EndTime.Value(), row.OriginalEnd, start, state.SessionHistoryDatePattern)
 		if err != nil || !segmentEnd.After(segmentStart) {
 			return nil, fmt.Errorf("segment %d end must be after its start", i+1)
 		}
@@ -291,26 +308,95 @@ func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRe
 	}, nil
 }
 
-func parseSessionHistoryTimestamp(value string) (time.Time, error) {
+// parseSessionHistoryTime reads a time typed in the session editor, in local time. A date
+// in the user's pattern (or ISO) followed by `HH:mm[:ss]` stands alone. A bare `HH:mm[:ss]`
+// lands on whichever of the day before, the day of, or the day after base is nearest to
+// base, so a session can run past midnight in either direction. The zero base accepts
+// only a full date and time.
+func parseSessionHistoryTime(value string, base time.Time, pattern string) (time.Time, error) {
 	value = strings.TrimSpace(value)
-	if parsed, err := time.Parse("2006-01-02 15:04:05.999999999 -07:00", value); err == nil {
+	if parsed, err := time.ParseInLocation("2006-01-02 15:04:05.999999999 -07:00", value, time.Local); err == nil {
 		return parsed, nil
 	}
-	if parsed, err := time.ParseInLocation("2006-01-02 15:04:05.999999999", value, time.Local); err == nil {
-		return parsed, nil
+	if cut := strings.LastIndexByte(value, ' '); cut > 0 {
+		if clock, ok := parseSessionHistoryClock(value[cut+1:]); ok {
+			if day, err := shareddatefmt.ParseDate(value[:cut], pattern, time.Local); err == nil {
+				return atClock(day, clock), nil
+			}
+		}
 	}
-	return time.ParseInLocation("2006-01-02 15:04", value, time.Local)
+	clock, ok := parseSessionHistoryClock(value)
+	if !ok {
+		return time.Time{}, fmt.Errorf("unrecognised time %q", value)
+	}
+	if base.IsZero() {
+		return time.Time{}, errors.New("a date is required")
+	}
+	best := atClock(base.In(time.Local), clock)
+	for _, offset := range []int{-1, 1} {
+		candidate := atClock(base.In(time.Local).AddDate(0, 0, offset), clock)
+		if candidate.Sub(base).Abs() < best.Sub(base).Abs() {
+			best = candidate
+		}
+	}
+	return best, nil
 }
 
-func sessionHistoryDatePrefix(value string) string {
-	value = strings.TrimSpace(value)
-	if len(value) < len("2006-01-02") {
-		return ""
+func parseSessionHistoryClock(value string) (time.Time, bool) {
+	for _, layout := range []string{"15:04:05", "15:04"} {
+		if clock, err := time.Parse(layout, strings.TrimSpace(value)); err == nil {
+			return clock, true
+		}
 	}
-	if _, err := time.Parse("2006-01-02", value[:len("2006-01-02")]); err != nil {
-		return ""
+	return time.Time{}, false
+}
+
+// atClock is day's date at clock's time of day, in local time.
+func atClock(day, clock time.Time) time.Time {
+	return time.Date(day.Year(), day.Month(), day.Day(), clock.Hour(), clock.Minute(), clock.Second(), 0, time.Local)
+}
+
+// sessionHistoryDatePlaceholder writes the user's date pattern for a placeholder.
+func sessionHistoryDatePlaceholder(pattern string) string {
+	if strings.TrimSpace(pattern) == "" {
+		return "YYYY-MM-DD"
 	}
-	return value[:len("2006-01-02")] + " "
+	return pattern
+}
+
+// resolveSessionHistoryTime is the loaded time while the field still shows it, and the
+// parsed text once it has been edited.
+func resolveSessionHistoryTime(
+	value string,
+	original SessionHistoryTime,
+	base time.Time,
+	pattern string,
+) (time.Time, error) {
+	if !original.At.IsZero() && strings.TrimSpace(value) == original.Text {
+		return original.At, nil
+	}
+	return parseSessionHistoryTime(value, base, pattern)
+}
+
+// sessionHistoryClock is `HH:mm`, with seconds only when they are not zero.
+func sessionHistoryClock(t time.Time) string {
+	t = t.In(time.Local)
+	if t.Second() != 0 {
+		return t.Format("15:04:05")
+	}
+	return t.Format("15:04")
+}
+
+func sessionHistoryStamp(t time.Time, pattern string) string {
+	return shareddatefmt.FormatWithPattern(t.In(time.Local), pattern) + " " + sessionHistoryClock(t)
+}
+
+// sessionHistoryTimeText is the clock alone on base's day, and the full stamp otherwise.
+func sessionHistoryTimeText(t, base time.Time, pattern string) string {
+	if t.In(time.Local).Format("2006-01-02") == base.In(time.Local).Format("2006-01-02") {
+		return sessionHistoryClock(t)
+	}
+	return sessionHistoryStamp(t, pattern)
 }
 
 func historyControlCount(state State) int {

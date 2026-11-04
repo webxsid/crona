@@ -812,6 +812,8 @@ func (m Model) dialogState() dialogstate.State {
 		SessionHistoryContext:    m.dialogSessionHistoryContext,
 		SessionHistoryNoteInputs: m.dialogSessionHistoryNoteInputs,
 		SessionHistorySegments:   m.dialogSessionHistorySegments,
+		SessionHistoryBounds:     m.dialogSessionHistoryBounds,
+		SessionHistoryDatePattern: m.dialogSessionHistoryDatePattern,
 		IssueID:                  m.dialogIssueID,
 		AdhocTimer:               m.dialogAdhocTimer,
 		PromotingAdhoc:           m.dialogPromotingAdhoc,
@@ -972,6 +974,8 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogSessionHistoryContext = state.SessionHistoryContext
 	m.dialogSessionHistoryNoteInputs = state.SessionHistoryNoteInputs
 	m.dialogSessionHistorySegments = state.SessionHistorySegments
+	m.dialogSessionHistoryBounds = state.SessionHistoryBounds
+	m.dialogSessionHistoryDatePattern = state.SessionHistoryDatePattern
 	m.dialogIssueID = state.IssueID
 	m.dialogAdhocTimer = state.AdhocTimer
 	m.dialogPromotingAdhoc = state.PromotingAdhoc

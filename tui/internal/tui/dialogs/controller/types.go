@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"time"
+
 	shareddto "crona/shared/dto"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
@@ -30,6 +32,16 @@ type SessionHistorySegmentRow struct {
 	Type      sharedtypes.SessionSegmentType
 	StartTime textinput.Model
 	EndTime   textinput.Model
+	// OriginalStart and OriginalEnd keep the loaded times, which are shown shortened.
+	OriginalStart, OriginalEnd SessionHistoryTime
+}
+
+// SessionHistoryTime is a loaded time and the text it was shown as. While a field still
+// shows that text, the exact time is saved, so shortening it to the minute or second loses
+// nothing.
+type SessionHistoryTime struct {
+	Text string
+	At   time.Time
 }
 
 type State struct {
@@ -49,45 +61,48 @@ type State struct {
 	SessionHistoryContext    string
 	SessionHistoryNoteInputs []textarea.Model
 	SessionHistorySegments   []SessionHistorySegmentRow
-	IssueID                  int64
-	AdhocTimer               bool
-	PromotingAdhoc           bool
-	MovingInbox              bool
-	ViewEntityAdhoc          bool
-	AdhocResolution          sharedtypes.AdhocSessionResolution
-	AdhocIssueIDs            []int64
-	AdhocIssueTab            int
-	AdhocIssueTabCounts      [4]int
-	AdhocElapsedSeconds      int
-	AdhocDate                string
-	NewIssueTitle            string
-	HabitID                  int64
-	TargetView               string
-	RepoID                   int64
-	StreamID                 int64
-	StatusItems              []sharedtypes.IssueStatus
-	StatusCursor             int
-	ChoiceItems              []string
-	ChoiceValues             []string
-	ChoiceDetails            []string
-	TemplateAssets           []sharedtypes.ExportTemplateAsset
-	ChoiceCursor             int
-	MomentumRepoInput        textinput.Model
-	MomentumStreamInput      textinput.Model
-	Processing               bool
-	ProcessingLabel          string
-	StatusLabel              string
-	StatusRequired           bool
-	IssueStatus              string
-	CheckInDate              string
-	RepoName                 string
-	RepoItems                []string
-	RepoItemIDs              []int64
-	StreamName               string
-	RepoIndex                int
-	StreamIndex              int
-	Parent                   string
-	DateMonthValue           string
+	SessionHistoryBounds     [2]SessionHistoryTime
+	// SessionHistoryDatePattern is the user's date display pattern, for dates in the editor.
+	SessionHistoryDatePattern string
+	IssueID                   int64
+	AdhocTimer                bool
+	PromotingAdhoc            bool
+	MovingInbox               bool
+	ViewEntityAdhoc           bool
+	AdhocResolution           sharedtypes.AdhocSessionResolution
+	AdhocIssueIDs             []int64
+	AdhocIssueTab             int
+	AdhocIssueTabCounts       [4]int
+	AdhocElapsedSeconds       int
+	AdhocDate                 string
+	NewIssueTitle             string
+	HabitID                   int64
+	TargetView                string
+	RepoID                    int64
+	StreamID                  int64
+	StatusItems               []sharedtypes.IssueStatus
+	StatusCursor              int
+	ChoiceItems               []string
+	ChoiceValues              []string
+	ChoiceDetails             []string
+	TemplateAssets            []sharedtypes.ExportTemplateAsset
+	ChoiceCursor              int
+	MomentumRepoInput         textinput.Model
+	MomentumStreamInput       textinput.Model
+	Processing                bool
+	ProcessingLabel           string
+	StatusLabel               string
+	StatusRequired            bool
+	IssueStatus               string
+	CheckInDate               string
+	RepoName                  string
+	RepoItems                 []string
+	RepoItemIDs               []int64
+	StreamName                string
+	RepoIndex                 int
+	StreamIndex               int
+	Parent                    string
+	DateMonthValue            string
 	// PenaltyHint shows what rescheduling the issue would do to its delay penalty.
 	PenaltyHint         string
 	DateCursorValue     string

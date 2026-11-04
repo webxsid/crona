@@ -29,18 +29,24 @@ func OpenCreateRepo(state State) State {
 	return state
 }
 
-func OpenEditSessionHistory(state State, detail *api.SessionDetail) State {
+// OpenEditSessionHistory opens the session editor; datePattern is the user's date display
+// pattern (shareddatefmt.DisplayPattern), and an empty one shows ISO dates.
+func OpenEditSessionHistory(state State, detail *api.SessionDetail, datePattern string) State {
 	if detail == nil {
 		return state
 	}
 	inputs := []textinput.Model{
-		newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
-		newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
+		newSessionDetailInput(state, sessionHistoryDatePlaceholder(datePattern)+" HH:mm"),
+		newSessionDetailInput(state, "HH:mm"),
 	}
-	inputs[0].SetValue(sessionHistoryTimestampValue(detail.StartTime))
+	start := sessionHistoryParseUTC(detail.StartTime)
+	bounds := [2]SessionHistoryTime{{Text: sessionHistoryStamp(start, datePattern), At: start}}
 	if detail.EndTime != nil {
-		inputs[1].SetValue(sessionHistoryTimestampValue(*detail.EndTime))
+		end := sessionHistoryParseUTC(*detail.EndTime)
+		bounds[1] = SessionHistoryTime{Text: sessionHistoryTimeText(end, start, datePattern), At: end}
 	}
+	inputs[0].SetValue(bounds[0].Text)
+	inputs[1].SetValue(bounds[1].Text)
 	noteSections := []sharedtypes.SessionNoteSection{
 		sharedtypes.SessionNoteSectionCommit,
 		sharedtypes.SessionNoteSectionWork,
@@ -57,9 +63,13 @@ func OpenEditSessionHistory(state State, detail *api.SessionDetail) State {
 	segmentRows := make([]SessionHistorySegmentRow, 0, len(detail.Segments))
 	for _, segment := range detail.Segments {
 		row := newSessionHistorySegmentRow(state, segment.SegmentType)
-		row.StartTime.SetValue(sessionHistoryTimestampValue(segment.StartTime))
+		segmentStart := sessionHistoryParseUTC(segment.StartTime)
+		row.OriginalStart = SessionHistoryTime{Text: sessionHistoryTimeText(segmentStart, start, datePattern), At: segmentStart}
+		row.StartTime.SetValue(row.OriginalStart.Text)
 		if segment.EndTime != nil {
-			row.EndTime.SetValue(sessionHistoryTimestampValue(*segment.EndTime))
+			segmentEnd := sessionHistoryParseUTC(*segment.EndTime)
+			row.OriginalEnd = SessionHistoryTime{Text: sessionHistoryTimeText(segmentEnd, start, datePattern), At: segmentEnd}
+			row.EndTime.SetValue(row.OriginalEnd.Text)
 		}
 		segmentRows = append(segmentRows, row)
 	}
@@ -73,6 +83,8 @@ func OpenEditSessionHistory(state State, detail *api.SessionDetail) State {
 	state.Inputs = inputs
 	state.SessionHistoryNoteInputs = noteInputs
 	state.SessionHistorySegments = segmentRows
+	state.SessionHistoryBounds = bounds
+	state.SessionHistoryDatePattern = datePattern
 	state.FocusIdx = 0
 	return SyncDialogFocus(state)
 }
@@ -86,17 +98,14 @@ func newSessionHistorySegmentRow(
 	}
 	return SessionHistorySegmentRow{
 		Type:      segmentType,
-		StartTime: newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
-		EndTime:   newSessionDetailInput(state, "YYYY-MM-DD HH:mm:ss"),
+		StartTime: newSessionDetailInput(state, "HH:mm"),
+		EndTime:   newSessionDetailInput(state, "HH:mm"),
 	}
 }
 
-func sessionHistoryTimestampValue(value string) string {
-	parsed, err := time.Parse(time.RFC3339Nano, value)
-	if err != nil {
-		return strings.TrimSpace(value)
-	}
-	return parsed.In(time.Local).Format("2006-01-02 15:04:05.999999999 -07:00")
+func sessionHistoryParseUTC(value string) time.Time {
+	parsed, _ := time.Parse(time.RFC3339Nano, value)
+	return parsed
 }
 
 func OpenEditRepo(state State, repoID int64, name string, descriptionValue *string) State {

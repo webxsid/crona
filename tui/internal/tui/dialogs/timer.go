@@ -422,7 +422,8 @@ func renderIssueSessionTransition(theme Theme, state controllerpkg.State) string
 // renderEditSessionHistory draws Edit Session History: start and end, notes, then the
 // segment rows (type, start, end). FocusIdx 0–1 are the times, 2–4 the notes, and each
 // segment takes three stops from 5. Timestamps carry their zone, so every time gets a
-// row of its own instead of a pair.
+// row of its own instead of a pair. Times are local: the start carries its date, and the
+// rest show only the clock while they fall on the start's day.
 func renderEditSessionHistory(theme Theme, state controllerpkg.State) string {
 	inner := formInner(state.Width)
 	column := len("Work summary")
@@ -437,7 +438,7 @@ func renderEditSessionHistory(theme Theme, state controllerpkg.State) string {
 				theme,
 				label,
 				column,
-				bareInput(state.Inputs[i], full, "YYYY-MM-DD HH:mm:ss"),
+				bareInput(state.Inputs[i], full, ""),
 				state.FocusIdx == i,
 			)))
 		}
@@ -468,7 +469,7 @@ func renderEditSessionHistory(theme Theme, state controllerpkg.State) string {
 				theme,
 				[]string{"Start", "End"}[j],
 				segmentColumn,
-				bareInput(input, segmentWidth, "YYYY-MM-DD HH:mm:ss"),
+				bareInput(input, segmentWidth, ""),
 				state.FocusIdx == first+1+j,
 			))
 		}

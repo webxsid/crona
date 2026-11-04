@@ -30,7 +30,7 @@ func TestEditSessionHistoryOpensStructuredFieldsAndEditsSegments(t *testing.T) {
 		Segments: []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork,
 			StartTime: "2026-05-24T09:00:00Z", EndTime: &segmentEnd}},
 	}
-	state := OpenEditSessionHistory(State{Width: 100, Height: 40}, detail)
+	state := OpenEditSessionHistory(State{Width: 100, Height: 40}, detail, "")
 	if len(state.Inputs) != 2 || len(state.SessionHistoryNoteInputs) != 3 ||
 		len(state.SessionHistorySegments) != 1 {
 		t.Fatalf("expected structured editor fields, got %+v", state)
@@ -46,11 +46,11 @@ func TestEditSessionHistoryOpensStructuredFieldsAndEditsSegments(t *testing.T) {
 			len(state.SessionHistorySegments),
 		)
 	}
-	if got, want := state.SessionHistorySegments[1].StartTime.Value(), state.Inputs[0].Value()[:10]+" "; got != want {
-		t.Fatalf("expected new segment start date %q, got %q", want, got)
+	if got, want := state.SessionHistorySegments[1].StartTime.Value(), state.SessionHistorySegments[0].EndTime.Value(); got != want {
+		t.Fatalf("expected the new segment to start where the last one ends, %q, got %q", want, got)
 	}
-	if got, want := state.SessionHistorySegments[1].EndTime.Value(), state.Inputs[1].Value()[:10]+" "; got != want {
-		t.Fatalf("expected new segment end date %q, got %q", want, got)
+	if got := state.SessionHistorySegments[1].EndTime.Value(); got != "" {
+		t.Fatalf("expected the new segment's end to be left for typing, got %q", got)
 	}
 	state.FocusIdx = 5
 	state, _, err = updateEditSessionHistory(state, tea.KeyMsg{Type: tea.KeyRight})
@@ -78,12 +78,12 @@ func TestSessionHistoryUpdateRequestValidatesRanges(t *testing.T) {
 		}},
 		Segments: []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork,
 			StartTime: "2026-05-24T09:00:00Z", EndTime: stringPointer("2026-05-24T09:30:00Z")}},
-	})
+	}, "")
 	request, err := sessionHistoryUpdateRequest(state)
 	if err != nil || len(request.Segments) != 1 || request.ID != "session-1" {
 		t.Fatalf("expected valid structured request, got request=%+v err=%v", request, err)
 	}
-	state.SessionHistorySegments[0].EndTime.SetValue("2026-05-24 10:00")
+	state.SessionHistorySegments[0].EndTime.SetValue(sessionHistoryStamp(time.Date(2026, 5, 24, 23, 0, 0, 0, time.Local), ""))
 	if _, err := sessionHistoryUpdateRequest(state); err == nil {
 		t.Fatal("expected segment outside session range to be rejected")
 	}
@@ -102,7 +102,7 @@ func TestHistoryTypingDoesNotChangeSegments(t *testing.T) {
 		},
 	}
 	for _, focus := range []int{2, 3, 4} {
-		state := OpenEditSessionHistory(State{}, detail)
+		state := OpenEditSessionHistory(State{}, detail, "")
 		state.FocusIdx = focus
 		state = focusSessionHistoryControl(state)
 		state, _, _ = updateEditSessionHistory(
@@ -132,6 +132,7 @@ func TestHistoryEditorPreservesSubMinutePrecision(t *testing.T) {
 				{SegmentType: sharedtypes.SessionSegmentWork, StartTime: start, EndTime: &end},
 			},
 		},
+		"",
 	)
 	request, err := sessionHistoryUpdateRequest(state)
 	if err != nil {
@@ -166,6 +167,7 @@ func TestHistorySegmentsSortChronologicallyWithinSecond(t *testing.T) {
 				},
 				Segments: segments,
 			},
+			"",
 		)
 		request, err := sessionHistoryUpdateRequest(state)
 		if err != nil {
@@ -188,8 +190,8 @@ func TestEditSessionHistoryKeepsBoundsOnFirstAndLastSegment(t *testing.T) {
 			{SegmentType: sharedtypes.SessionSegmentShortBreak, StartTime: "2026-05-24T09:30:00Z", EndTime: &secondEnd},
 		},
 	}
-	state := OpenEditSessionHistory(State{Width: 100, Height: 40}, detail)
-	ts := func(utc string) string { return sessionHistoryTimestampValue(utc) }
+	state := OpenEditSessionHistory(State{Width: 100, Height: 40}, detail, "")
+	ts := func(utc string) string { return sessionHistoryClock(sessionHistoryParseUTC(utc)) }
 	edit := func(state State, focus int, value string) State {
 		state.FocusIdx = focus
 		state = focusSessionHistoryControl(state)
@@ -203,7 +205,7 @@ func TestEditSessionHistoryKeepsBoundsOnFirstAndLastSegment(t *testing.T) {
 	}
 
 	state = edit(state, sessionHistorySegmentFocus(0, 1), ts("2026-05-24T08:45:00Z"))
-	if got := state.Inputs[0].Value(); got != ts("2026-05-24T08:45:00Z") {
+	if got := state.Inputs[0].Value(); got != sessionHistoryStamp(sessionHistoryParseUTC("2026-05-24T08:45:00Z"), "") {
 		t.Fatalf("session start should follow the first segment's start, got %q", got)
 	}
 	state = edit(state, sessionHistorySegmentFocus(1, 2), ts("2026-05-24T10:15:00Z"))
@@ -215,5 +217,67 @@ func TestEditSessionHistoryKeepsBoundsOnFirstAndLastSegment(t *testing.T) {
 	state, _, _ = updateEditSessionHistory(state, tea.KeyMsg{Type: tea.KeyCtrlD})
 	if got := state.Inputs[1].Value(); got != ts(firstEnd) {
 		t.Fatalf("removing the last segment should move the session end to %q, got %q", ts(firstEnd), got)
+	}
+}
+
+func TestSessionHistoryShowsShortLocalTimesAndRollsPastMidnight(t *testing.T) {
+	day := time.Date(2026, 11, 4, 23, 30, 0, 0, time.Local)
+	start := day.UTC().Format(time.RFC3339Nano)
+	end := day.Add(time.Hour).UTC().Format(time.RFC3339Nano)
+	state := OpenEditSessionHistory(State{}, &api.SessionDetail{
+		SessionHistoryEntry: sharedtypes.SessionHistoryEntry{Session: sharedtypes.Session{
+			ID: "s", StartTime: start, EndTime: &end,
+		}},
+		Segments: []sharedtypes.SessionSegment{{SegmentType: sharedtypes.SessionSegmentWork, StartTime: start, EndTime: &end}},
+	}, "")
+	if got := state.Inputs[0].Value(); got != "2026-11-04 23:30" {
+		t.Fatalf("start should show its local date and minute, got %q", got)
+	}
+	if got := state.Inputs[1].Value(); got != "2026-11-05 00:30" {
+		t.Fatalf("an end on the next day should carry its date, got %q", got)
+	}
+	if got := state.SessionHistorySegments[0].StartTime.Value(); got != "23:30" {
+		t.Fatalf("a segment on the start's day should show just the clock, got %q", got)
+	}
+
+	state.SessionHistorySegments[0].EndTime.SetValue("00:15")
+	state.Inputs[1].SetValue("00:45")
+	request, err := sessionHistoryUpdateRequest(state)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := day.Add(75 * time.Minute)
+	if got, _ := time.Parse(time.RFC3339Nano, request.EndTime); !got.Equal(want) {
+		t.Fatalf("a clock before the start should fall on the next day: got %s want %s", got, want)
+	}
+	if got, _ := time.Parse(time.RFC3339Nano, *request.Segments[0].EndTime); !got.Equal(day.Add(45 * time.Minute)) {
+		t.Fatalf("segment end 00:15 should be the next day, got %s", got)
+	}
+}
+
+func TestSessionHistoryUsesTheDateDisplayPattern(t *testing.T) {
+	day := time.Date(2026, 11, 4, 11, 30, 0, 0, time.Local)
+	start := day.UTC().Format(time.RFC3339Nano)
+	end := day.AddDate(0, 0, 1).UTC().Format(time.RFC3339Nano)
+	state := OpenEditSessionHistory(State{}, &api.SessionDetail{
+		SessionHistoryEntry: sharedtypes.SessionHistoryEntry{Session: sharedtypes.Session{
+			ID: "s", StartTime: start, EndTime: &end,
+		}},
+	}, "DD/MM/YYYY")
+	if got := state.Inputs[0].Value(); got != "04/11/2026 11:30" {
+		t.Fatalf("start should use the display pattern, got %q", got)
+	}
+	if got := state.Inputs[1].Value(); got != "05/11/2026 11:30" {
+		t.Fatalf("an end on another day should use the display pattern, got %q", got)
+	}
+	for _, typed := range []string{"03/11/2026 09:15", "2026-11-03 09:15"} {
+		state.Inputs[0].SetValue(typed)
+		request, err := sessionHistoryUpdateRequest(state)
+		if err != nil {
+			t.Fatalf("%q: %v", typed, err)
+		}
+		if got, _ := time.Parse(time.RFC3339Nano, request.StartTime); !got.Equal(time.Date(2026, 11, 3, 9, 15, 0, 0, time.Local)) {
+			t.Fatalf("%q parsed to %s", typed, got)
+		}
 	}
 }

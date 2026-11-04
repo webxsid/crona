@@ -199,6 +199,8 @@ type Model struct {
 	dialogSessionHistoryContext          string
 	dialogSessionHistoryNoteInputs       []textarea.Model
 	dialogSessionHistorySegments         []dialogstate.SessionHistorySegmentRow
+	dialogSessionHistoryBounds           [2]dialogstate.SessionHistoryTime
+	dialogSessionHistoryDatePattern      string
 	dialogIssueID                        int64
 	dialogAdhocTimer                     bool
 	dialogPromotingAdhoc                 bool

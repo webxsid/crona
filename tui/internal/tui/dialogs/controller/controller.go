@@ -121,6 +121,8 @@ func Close(state State) State {
 	state.SessionHistoryContext = ""
 	state.SessionHistoryNoteInputs = nil
 	state.SessionHistorySegments = nil
+	state.SessionHistoryBounds = [2]SessionHistoryTime{}
+	state.SessionHistoryDatePattern = ""
 	state.IssueID = 0
 	state.AdhocTimer = false
 	state.PromotingAdhoc = false

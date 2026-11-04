@@ -1,6 +1,7 @@
 package model
 
 import (
+	shareddatefmt "crona/shared/datefmt"
 	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	commands "crona/tui/internal/tui/commands"
@@ -59,7 +60,11 @@ func (m Model) overlayDeps() overlaypkg.Deps {
 			next.sessionDetailOpen = false
 			next.sessionDetail = nil
 			next = next.withDialogState(
-				dialogstate.OpenEditSessionHistory(next.dialogSnapshot().Dialog, detail),
+				dialogstate.OpenEditSessionHistory(
+					next.dialogSnapshot().Dialog,
+					detail,
+					shareddatefmt.DisplayPattern(next.settings),
+				),
 			)
 			*state = next.overlayState()
 		},
