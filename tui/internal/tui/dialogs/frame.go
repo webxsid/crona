@@ -29,6 +29,9 @@ type FrameSpec struct {
 	Focus                     int
 	// Inner, when set, fixes the inner width (still clamped) for forms that lay out to it.
 	Inner int
+	// Scrollable cuts a body taller than the screen at Scroll instead of around Focus.
+	Scrollable bool
+	Scroll     int
 }
 
 // FrameInner is the inner width a frame on this screen gives content of these lines.
@@ -53,17 +56,15 @@ func Frame(theme Theme, spec FrameSpec) string {
 	if spec.Inner > 0 {
 		inner = FrameInner(spec.ScreenWidth, []string{strings.Repeat(" ", spec.Inner)})
 	}
-	body, footer := wrapAll(spec.Body, inner), wrapAll(spec.Footer, inner)
+	body, footer := frameWrapped(spec)
 	focus := spec.Focus
 	if focus >= 0 {
 		focus = wrappedIndex(spec.Body, inner, focus)
 	}
-	if limit := spec.ScreenHeight - 4; limit > 0 {
-		budget := limit - 4 - len(footer)
-		if len(footer) > 0 {
-			budget--
-		}
-		if len(body) > budget {
+	if budget, ok := bodyBudget(spec.ScreenHeight, len(footer)); ok && len(body) > budget {
+		if spec.Scrollable {
+			body = scrollLines(theme, body, spec.Scroll, budget)
+		} else {
 			body = windowLines(theme, body, max(0, focus), max(1, budget))
 		}
 	}
@@ -131,6 +132,58 @@ func wrappedIndex(lines []string, width, index int) int {
 }
 
 // windowLines keeps budget lines around focus, marking cut edges with ↑ more and ↓ more.
+// bodyBudget is how many body lines fit on the screen beside the frame and the footer.
+func bodyBudget(screenHeight, footerLines int) (int, bool) {
+	limit := screenHeight - 4
+	if limit <= 0 {
+		return 0, false
+	}
+	budget := limit - 4 - footerLines
+	if footerLines > 0 {
+		budget--
+	}
+	return max(1, budget), true
+}
+
+// frameWrapped is the body and footer as Frame wraps them.
+func frameWrapped(spec FrameSpec) (body, footer []string) {
+	inner := FrameInner(spec.ScreenWidth, append(append([]string{}, spec.Body...), spec.Footer...))
+	if spec.Inner > 0 {
+		inner = FrameInner(spec.ScreenWidth, []string{strings.Repeat(" ", spec.Inner)})
+	}
+	return wrapAll(spec.Body, inner), wrapAll(spec.Footer, inner)
+}
+
+// FrameMaxScroll is the furthest a scrollable frame's body can scroll; 0 when it fits.
+func FrameMaxScroll(spec FrameSpec) int {
+	body, footer := frameWrapped(spec)
+	budget, ok := bodyBudget(spec.ScreenHeight, len(footer))
+	if !ok || len(body) <= budget || budget < 3 {
+		return 0
+	}
+	return len(body) - (budget - 2)
+}
+
+// scrollLines shows budget lines from scroll, keeping a row each for the ↑ and ↓ markers so
+// the dialog does not change height while scrolling.
+func scrollLines(theme Theme, lines []string, scroll, budget int) []string {
+	if budget < 3 {
+		return lines[:min(len(lines), budget)]
+	}
+	visible := budget - 2
+	start := min(max(0, scroll), len(lines)-visible)
+	end := start + visible
+	more := func(show bool, text string) string {
+		if show {
+			return theme.StyleDim.Render(text)
+		}
+		return ""
+	}
+	out := []string{more(start > 0, "↑ more")}
+	out = append(out, lines[start:end]...)
+	return append(out, more(end < len(lines), "↓ more"))
+}
+
 func windowLines(theme Theme, lines []string, focus, budget int) []string {
 	if budget < 3 {
 		return lines[:min(len(lines), budget)]

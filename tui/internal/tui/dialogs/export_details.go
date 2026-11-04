@@ -118,6 +118,19 @@ func renderSummaryRangeForm(theme Theme, state controllerpkg.State) string {
 // renderDetailView draws view_entity, view_momentum_detail and support_bundle_result: the
 // name, its meta fields, the body, and (for momentum) a contributor list.
 func renderDetailView(theme Theme, state controllerpkg.State) string {
+	return Frame(theme, detailViewSpec(theme, state))
+}
+
+// ClampViewScroll keeps a view_entity dialog's scroll within its body, so scrolling back up
+// from the end responds on the first key.
+func ClampViewScroll(theme Theme, state controllerpkg.State) controllerpkg.State {
+	if state.Kind == "view_entity" {
+		state.ViewScroll = min(max(0, state.ViewScroll), FrameMaxScroll(detailViewSpec(theme, state)))
+	}
+	return state
+}
+
+func detailViewSpec(theme Theme, state controllerpkg.State) FrameSpec {
 	inner := FrameInner(state.Width, []string{strings.Repeat(" ", frameMaxInner)})
 	body := []string{theme.StyleHeader.Render(fallback(state.ViewName, "-"))}
 	if state.ViewMeta != "" {
@@ -158,7 +171,16 @@ func renderDetailView(theme Theme, state controllerpkg.State) string {
 		if state.ViewEntityAdhoc {
 			d.hints = append(d.hints, "e convert to regular issue")
 		}
+		if state.Kind == "view_entity" {
+			d.scrollable, d.scroll = true, state.ViewScroll
+			d.body = body
+			withHint := d
+			withHint.hints = append([]string{"↑/↓ scroll"}, d.hints...)
+			if FrameMaxScroll(listDialogSpec(theme, state, withHint)) > 0 {
+				d = withHint
+			}
+		}
 	}
 	d.body = body
-	return renderListDialog(theme, state, d)
+	return listDialogSpec(theme, state, d)
 }

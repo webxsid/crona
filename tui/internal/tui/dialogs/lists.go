@@ -38,9 +38,16 @@ type listDialog struct {
 	focus   int
 	primary string
 	hints   []string
+	// scrollable bodies scroll by scroll instead of following focus.
+	scrollable bool
+	scroll     int
 }
 
 func renderListDialog(theme Theme, state controllerpkg.State, d listDialog) string {
+	return Frame(theme, listDialogSpec(theme, state, d))
+}
+
+func listDialogSpec(theme Theme, state controllerpkg.State, d listDialog) FrameSpec {
 	inner := FrameInner(state.Width, d.body)
 	if d.wide {
 		inner = formInner(state.Width)
@@ -49,11 +56,12 @@ func renderListDialog(theme Theme, state controllerpkg.State, d listDialog) stri
 	if esc == "" {
 		esc = "esc cancel"
 	}
-	return Frame(theme, FrameSpec{
+	return FrameSpec{
 		Title: d.title, Context: d.context, Danger: d.danger, Border: d.border, Body: d.body,
 		Footer:      withError(theme, state, footerWithEsc(theme, d.primary, d.hints, esc, inner)),
 		ScreenWidth: state.Width, ScreenHeight: state.Height, Focus: d.focus, Inner: inner,
-	})
+		Scrollable: d.scrollable, Scroll: d.scroll,
+	}
 }
 
 func renderConfirmDelete(theme Theme, state controllerpkg.State) string {

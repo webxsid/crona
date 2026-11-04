@@ -183,6 +183,7 @@ func OpenViewEntityWithPath(
 	state.ViewMeta = meta
 	state.ViewBody = body
 	state.ViewPath = strings.TrimSpace(path)
+	state.ViewScroll = 0
 	return state
 }
 
@@ -299,7 +300,27 @@ func OpenMomentumDetail(state State, detail api.MomentumDetail) State {
 }
 
 func updateViewEntity(state State, msg tea.KeyMsg) (State, *Action, string) {
+	// The renderer clamps the far end; see dialogs.ClampViewScroll.
+	page := max(1, state.Height-12)
 	switch msg.String() {
+	case "up", "k":
+		state.ViewScroll = max(0, state.ViewScroll-1)
+		return state, nil, ""
+	case "down", "j":
+		state.ViewScroll++
+		return state, nil, ""
+	case "pgup", "ctrl+u":
+		state.ViewScroll = max(0, state.ViewScroll-page)
+		return state, nil, ""
+	case "pgdown", "ctrl+d", " ":
+		state.ViewScroll += page
+		return state, nil, ""
+	case "home", "g":
+		state.ViewScroll = 0
+		return state, nil, ""
+	case "end", "G":
+		state.ViewScroll = 1 << 20
+		return state, nil, ""
 	case "esc", "enter", "?":
 		return Close(state), nil, ""
 	case "e":

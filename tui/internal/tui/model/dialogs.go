@@ -875,6 +875,7 @@ func (m Model) dialogState() dialogstate.State {
 		ViewMeta:                       m.dialogViewMeta,
 		ViewBody:                       m.dialogViewBody,
 		ViewPath:                       m.dialogViewPath,
+		ViewScroll:                     m.dialogViewScroll,
 		SupportBundlePath:              m.dialogSupportBundlePath,
 		ProtectionStep:                 m.dialogProtectionStep,
 		ProtectionCursor:               m.dialogProtectionCursor,
@@ -1024,6 +1025,7 @@ func (m Model) withDialogState(state dialogstate.State) Model {
 	m.dialogViewMeta = state.ViewMeta
 	m.dialogViewBody = state.ViewBody
 	m.dialogViewPath = state.ViewPath
+	m.dialogViewScroll = state.ViewScroll
 	m.dialogSupportBundlePath = state.SupportBundlePath
 	m.dialogProtectionStep = state.ProtectionStep
 	m.dialogProtectionCursor = state.ProtectionCursor

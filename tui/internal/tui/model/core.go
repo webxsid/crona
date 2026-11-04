@@ -249,6 +249,7 @@ type Model struct {
 	dialogViewMeta                       string
 	dialogViewBody                       string
 	dialogViewPath                       string
+	dialogViewScroll                     int
 	dialogSupportBundlePath              string
 	dialogProtectionStep                 int
 	dialogProtectionCursor               int

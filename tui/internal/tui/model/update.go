@@ -7,10 +7,12 @@ import (
 	"crona/tui/internal/api"
 	"crona/tui/internal/logger"
 	commands "crona/tui/internal/tui/commands"
+	"crona/tui/internal/tui/dialogs"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	dispatchpkg "crona/tui/internal/tui/dispatch"
 	helperpkg "crona/tui/internal/tui/helpers"
 	inputpkg "crona/tui/internal/tui/input"
+	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
 	"fmt"
 	"time"
@@ -268,6 +270,7 @@ func (m Model) updateDialog(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.withDialogState(state), nil
 	}
 	state.ErrorMessage = ""
+	state = dialogs.ClampViewScroll(layoutpkg.DialogTheme(), state)
 	next := m.withDialogState(state)
 	if action == nil {
 		return next, nil

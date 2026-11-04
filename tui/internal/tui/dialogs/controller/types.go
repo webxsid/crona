@@ -123,16 +123,18 @@ type State struct {
 	ViewMeta            string
 	ViewBody            string
 	ViewPath            string
-	SupportBundlePath   string
-	DateTitle           string
-	DateHeader          string
-	DateMonth           string
-	DateGrid            string
-	CalendarScores      map[string]api.FocusScoreRangeDay
-	ProtectionStep      int
-	ProtectionCursor    int
-	ProtectionStreaks   []sharedtypes.StreakKind
-	ProtectionWeekdays  []int
+	// ViewScroll is how far a view_entity dialog's body is scrolled.
+	ViewScroll         int
+	SupportBundlePath  string
+	DateTitle          string
+	DateHeader         string
+	DateMonth          string
+	DateGrid           string
+	CalendarScores     map[string]api.FocusScoreRangeDay
+	ProtectionStep     int
+	ProtectionCursor   int
+	ProtectionStreaks  []sharedtypes.StreakKind
+	ProtectionWeekdays []int
 	// CadenceIdx is the cadence picker choice (see CadenceLabels); CadenceDays the custom
 	// weekdays (0 = Sunday) and CadenceCursor the day under the cursor, Monday first.
 	CadenceIdx                     int
