@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
@@ -25,9 +24,9 @@ func issuePlanEntry(state types.ContentState, issueID int64) *api.DailyPlanEntry
 	return nil
 }
 
-// penaltyLines explains the issue's delay penalty: how late it is, how the score is made up,
-// its share of today's totals and what doing or postponing it would change. The kernel does
-// all the scoring; this only lays it out.
+// penaltyLines explains the issue's delay penalty in plain terms: how late it is, a bar of the
+// penalty against the high-risk limit, its share of today's penalty, and what finishing it
+// today or pushing it again would do. The kernel does all the scoring; this only lays it out.
 func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, width int) []string {
 	entry := issuePlanEntry(state, issueID)
 	if entry == nil || entry.Penalty == nil {
@@ -42,10 +41,10 @@ func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, wi
 		return []string{"", theme.StyleDim.Render("On schedule · no penalty")}
 	}
 	warn := lipgloss.NewStyle().Foreground(theme.ColorOrange)
-	label := func(text string) string { return theme.StyleDim.Render(padCells(text, 12)) }
+	good := lipgloss.NewStyle().Foreground(theme.ColorGreen)
+	bad := lipgloss.NewStyle().Foreground(theme.ColorRed)
+	label := func(text string) string { return theme.StyleDim.Render(padCells(text, 14)) }
 	num := func(value float64) string { return fmt.Sprintf("%.2f", value) }
-	signed := func(value float64) string { return fmt.Sprintf("%+.2f", value) }
-	pct := func(value float64) string { return fmt.Sprintf("%.0f%%", value*100) }
 
 	title := "Delay penalty"
 	if penalty.Historical {
@@ -60,66 +59,68 @@ func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, wi
 		body = theme.StyleDim
 	}
 
-	planned := fmt.Sprintf(
-		"%s → %s  (%s late, %s",
-		helperpkg.FormatDisplayDate(entry.BaselineDate, state.Settings),
-		helperpkg.FormatDisplayDate(entry.CurrentPlannedDate, state.Settings),
-		plural(entry.CurrentDelayedDays, "day"),
-		plural(entry.PostponeCount, "postpone"),
-	)
-	if penalty.ProtectedDaysSkipped > 0 {
-		planned += ", " + plural(penalty.ProtectedDaysSkipped, "away day") + " skipped"
+	lateParts := []string{plural(entry.CurrentDelayedDays, "day")}
+	if entry.PostponeCount > 1 {
+		lateParts = append(lateParts, fmt.Sprintf("pushed %d×", entry.PostponeCount))
 	}
-	planned += ")"
-	score := fmt.Sprintf(
-		"%s = %s delay + %s frequency",
-		num(entry.FailScore), num(penalty.DelayComponent), num(penalty.FrequencyComponent),
-	)
-	scoreLine := label("Penalty") + body.Render(score) +
-		theme.StyleDim.Render("  threshold "+num(penalty.HighRiskThreshold))
-
-	lines := []string{"", header, label("Planned") + body.Render(planned), scoreLine}
+	if penalty.ProtectedDaysSkipped > 0 {
+		lateParts = append(lateParts, plural(penalty.ProtectedDaysSkipped, "away day")+" skipped")
+	}
+	lines := []string{
+		"", header,
+		label("Late") + body.Render(strings.Join(lateParts, " · ")),
+		label("Penalty") + penaltyBar(theme, entry.FailScore, penalty.HighRiskThreshold, penalty.HighRisk && !penalty.Historical) +
+			" " + body.Render(num(entry.FailScore)) + theme.StyleDim.Render("  limit "+num(penalty.HighRiskThreshold)),
+	}
 	if penalty.Historical {
 		return truncateLines(lines, width)
 	}
-	if share := penalty.Contribution; share != nil && state.DailyPlan != nil {
-		summary := state.DailyPlan.Summary
-		lines = append(lines,
-			label("Today")+body.Render(fmt.Sprintf(
-				"%s accountability (%s of %s)",
-				signed(
-					share.Accountability,
-				),
-				pct(share.AccountabilityPct),
-				num(summary.AccountabilityScore),
-			)),
-			label("")+body.Render(fmt.Sprintf(
-				"%s backlog pressure (%s of %s)",
-				signed(
-					share.BacklogPressure,
-				),
-				pct(share.BacklogPressurePct),
-				num(summary.BacklogPressure),
-			)),
-		)
+	if share := penalty.Contribution; share != nil {
+		lines = append(lines, label("Share")+body.Render(
+			fmt.Sprintf("%.0f%% of today's penalty", share.AccountabilityPct*100),
+		))
 	}
-	if done := penalty.IfDoneToday; done != nil {
-		lines = append(lines, label("Done today")+body.Render(fmt.Sprintf(
-			"accountability %s · backlog %s",
-			signed(done.Accountability),
-			signed(done.BacklogPressure),
-		)))
+	if done := penalty.IfDoneToday; done != nil && done.Accountability < 0 {
+		lines = append(lines, label("Finish today")+good.Render("clears "+num(-done.Accountability)))
 	}
 	if push := penalty.IfPostponedOneDay; push != nil {
-		text := body.Render(
-			fmt.Sprintf("penalty %s (%s)", num(push.FailScore), signed(push.AccountabilityDelta)),
-		)
+		text := bad.Render(fmt.Sprintf("rises to %s (+%s)", num(push.FailScore), num(push.AccountabilityDelta)))
 		if push.BecomesHighRisk {
-			text += "  " + warn.Render("becomes high risk")
+			text += "  " + warn.Render("▲ high risk")
 		}
-		lines = append(lines, label("Push 1 day")+text)
+		lines = append(lines, label("Push a day")+text)
 	}
 	return truncateLines(lines, width)
+}
+
+// penaltyBarWidth is the penalty bar's cells.
+const penaltyBarWidth = 16
+
+// penaltyBar fills to score on a scale of twice the high-risk limit (or the score, if
+// higher), with a │ at the limit; it is orange when high risk, yellow otherwise.
+func penaltyBar(theme types.Theme, score, limit float64, highRisk bool) string {
+	scale := max(limit*2, score, 0.01)
+	filled := min(penaltyBarWidth, int(score/scale*penaltyBarWidth+0.5))
+	mark := -1
+	if limit > 0 {
+		mark = min(penaltyBarWidth-1, int(limit/scale*penaltyBarWidth+0.5))
+	}
+	fill := lipgloss.NewStyle().Foreground(theme.ColorYellow)
+	if highRisk {
+		fill = lipgloss.NewStyle().Foreground(theme.ColorOrange)
+	}
+	var out strings.Builder
+	for i := range penaltyBarWidth {
+		switch {
+		case i == mark:
+			out.WriteString(theme.StyleNormal.Render("│"))
+		case i < filled:
+			out.WriteString(fill.Render("█"))
+		default:
+			out.WriteString(theme.StyleDim.Render("░"))
+		}
+	}
+	return out.String()
 }
 
 // PenaltyMarkerText is the compact high-risk marker for issue rows, unstyled so it takes the
