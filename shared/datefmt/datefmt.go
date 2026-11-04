@@ -229,3 +229,61 @@ func isoWeek(value time.Time) int {
 	_, week := value.ISOWeek()
 	return week
 }
+
+// FormatWithPattern renders value in a display pattern, falling back to ISO when the
+// pattern cannot be rendered.
+func FormatWithPattern(value time.Time, pattern string) string {
+	if rendered, ok := formatMomentDate(value, pattern); ok {
+		return rendered
+	}
+	return value.Format(isoLayout)
+}
+
+// ParseDate reads a date typed in the display pattern, or in ISO, at midnight in loc.
+// Patterns with tokens that cannot be read back (Do, d, W, WW) accept ISO only.
+func ParseDate(raw, pattern string, loc *time.Location) (time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if layout, ok := goLayout(pattern); ok {
+		if parsed, err := time.ParseInLocation(layout, raw, loc); err == nil {
+			return parsed, nil
+		}
+	}
+	return time.ParseInLocation(isoLayout, raw, loc)
+}
+
+// goLayout turns a display pattern into a Go time layout, if every token can be parsed.
+func goLayout(pattern string) (string, bool) {
+	trimmed := strings.TrimSpace(pattern)
+	if trimmed == "" {
+		return "", false
+	}
+	layouts := map[string]string{
+		"YYYY": "2006", "YY": "06", "MMMM": "January", "MMM": "Jan", "MM": "01", "M": "1",
+		"DD": "02", "D": "2", "dddd": "Monday", "ddd": "Mon", "L": "01/02/2006", "LL": "2 Jan 2006",
+	}
+	var out strings.Builder
+	for i := 0; i < len(trimmed); {
+		if trimmed[i] == '[' {
+			end := strings.IndexByte(trimmed[i+1:], ']')
+			if end < 0 {
+				return "", false
+			}
+			out.WriteString(trimmed[i+1 : i+1+end])
+			i += end + 2
+			continue
+		}
+		token, width := longestToken(trimmed[i:])
+		if token == "" {
+			out.WriteByte(trimmed[i])
+			i++
+			continue
+		}
+		layout, ok := layouts[token]
+		if !ok {
+			return "", false
+		}
+		out.WriteString(layout)
+		i += width
+	}
+	return out.String(), true
+}
