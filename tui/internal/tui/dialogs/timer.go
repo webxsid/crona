@@ -6,6 +6,8 @@ import (
 
 	sharedtypes "crona/shared/types"
 	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+
+	"github.com/charmbracelet/bubbles/textinput"
 )
 
 // timerMetaRows splits renderTimerMeta's rows into body lines.
@@ -418,65 +420,59 @@ func renderIssueSessionTransition(theme Theme, state controllerpkg.State) string
 }
 
 // renderEditSessionHistory draws Edit Session History: start and end, notes, then the
-// segment rows (type, start → end). FocusIdx 0–1 are the times, 2–4 the notes, and each
-// segment takes three stops from 5.
+// segment rows (type, start, end). FocusIdx 0–1 are the times, 2–4 the notes, and each
+// segment takes three stops from 5. Timestamps carry their zone, so every time gets a
+// row of its own instead of a pair.
 func renderEditSessionHistory(theme Theme, state controllerpkg.State) string {
 	inner := formInner(state.Width)
 	column := len("Work summary")
-	_, half := formColumns(inner, column)
+	full, _ := formColumns(inner, column)
 	rows := []FormRow{}
 	if state.SessionHistoryContext != "" {
 		rows = append(rows, staticRow(theme.StyleDim.Render(state.SessionHistoryContext), ""))
 	}
 	if len(state.Inputs) >= 2 {
-		rows = append(rows, pairRow(
-			Field(
+		for i, label := range []string{"Start", "End"} {
+			rows = append(rows, fieldRow(i, Field(
 				theme,
-				"Start",
+				label,
 				column,
-				bareInput(state.Inputs[0], half, "YYYY-MM-DD HH:mm:ss"),
-				state.FocusIdx == 0,
-			),
-			Field(
-				theme,
-				"End",
-				column,
-				bareInput(state.Inputs[1], half, "YYYY-MM-DD HH:mm:ss"),
-				state.FocusIdx == 1,
-			),
-			0,
-			1,
-			inner,
-		))
+				bareInput(state.Inputs[i], full, "YYYY-MM-DD HH:mm:ss"),
+				state.FocusIdx == i,
+			)))
+		}
 	}
 	for i, label := range []string{"Commit", "Work summary", "Notes"} {
 		if i < len(state.SessionHistoryNoteInputs) {
+			note := state.SessionHistoryNoteInputs[i]
+			note.Prompt = ""
+			note.Placeholder = "optional"
+			note.SetWidth(max(1, full-2))
 			rows = append(
 				rows,
 				textareaRow(
 					2+i,
-					Textarea(
-						theme,
-						label,
-						column,
-						state.SessionHistoryNoteInputs[i].View(),
-						state.FocusIdx == 2+i,
-						inner,
-					),
+					Textarea(theme, label, column, note.View(), state.FocusIdx == 2+i, inner),
 				),
 			)
 		}
 	}
 	rows = append(rows, staticRow("", theme.StyleDim.Render("Work and break segments")))
+	segmentColumn := len("Start")
+	segmentWidth, _ := formColumns(inner-6, segmentColumn)
 	for i, segment := range state.SessionHistorySegments {
 		first := 5 + i*3
-		rows = append(rows, FormRow{
-			Lines: []string{
-				historySegmentTypeRow(theme, state, segment, i),
-				"    " + segment.StartTime.View() + "  →  " + segment.EndTime.View(),
-			},
-			Focus: map[int]int{first: 0, first + 1: 1, first + 2: 1},
-		})
+		lines := []string{historySegmentTypeRow(theme, state, segment, i)}
+		for j, input := range []textinput.Model{segment.StartTime, segment.EndTime} {
+			lines = append(lines, "      "+Field(
+				theme,
+				[]string{"Start", "End"}[j],
+				segmentColumn,
+				bareInput(input, segmentWidth, "YYYY-MM-DD HH:mm:ss"),
+				state.FocusIdx == first+1+j,
+			))
+		}
+		rows = append(rows, FormRow{Lines: lines, Focus: map[int]int{first: 0, first + 1: 1, first + 2: 2}})
 	}
 	if len(state.SessionHistorySegments) == 0 {
 		rows = append(
