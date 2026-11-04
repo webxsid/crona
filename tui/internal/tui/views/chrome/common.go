@@ -227,7 +227,7 @@ func RenderPaneRowStyled(
 		line = contentStyle.Render(line)
 	}
 	if i == cur && active {
-		return theme.StyleCursor.Render(SelectionCursor + " " + line)
+		return SelectedRow(theme, line)
 	}
 	if i == cur {
 		return theme.StyleSelected.Render("  " + line)

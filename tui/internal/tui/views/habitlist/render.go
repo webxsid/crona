@@ -137,10 +137,10 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		marker := "  "
 		style := theme.StyleNormal
 		if active && pos == cur {
-			marker = viewchrome.SelectionCursor + " "
-			style = theme.StyleCursor
+			marker = theme.StyleCursor.Render(viewchrome.SelectionCursor + " ")
+			style = style.Bold(true)
 		}
-		lines = append(lines, style.Render(marker+ansi.Truncate(habit.Name, max(1, width-4), "…")))
+		lines = append(lines, marker+style.Render(ansi.Truncate(habit.Name, max(1, width-4), "…")))
 		if active && pos == cur {
 			hints := []string{
 				viewchrome.KeyHint(theme, "enter", "open"),

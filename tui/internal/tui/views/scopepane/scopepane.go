@@ -149,7 +149,7 @@ func nodeRow(
 	style := theme.StyleNormal
 	switch {
 	case cursor:
-		style = theme.StyleCursor
+		style = theme.StyleCursor.UnsetForeground()
 	case selected:
 		style = theme.StyleSelected
 	}

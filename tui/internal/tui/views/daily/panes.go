@@ -221,10 +221,6 @@ func renderCompactDailyIssueTitle(
 	if i == cur && active {
 		rowStyle = rowStyle.Bold(true)
 	}
-	cursor := " "
-	if i == cur && active {
-		cursor = viewchrome.SelectionCursor
-	}
 	// A long title gives way before its date does.
 	room := max(18, width-4)
 	if date != "" {
@@ -234,7 +230,7 @@ func renderCompactDailyIssueTitle(
 	line := viewhelpers.TruncateANSI(title, room)
 	line = rowStyle.Render(line)
 	if i == cur && active {
-		return theme.StyleCursor.Render(cursor + " " + line)
+		return viewchrome.SelectedRow(theme, line)
 	}
 	if i == cur {
 		return theme.StyleSelected.Render("  " + line)
@@ -431,7 +427,7 @@ func habitRow(
 	}
 	cursor := "  "
 	if selected && active {
-		cursor = viewchrome.SelectionCursor + " "
+		cursor = theme.StyleCursor.Render(viewchrome.SelectionCursor + " ")
 		style = style.Bold(true)
 	}
 	name := style.Render(mark + " " + padCells(habit.Name, min(nameWidth, max(8, width/2))))

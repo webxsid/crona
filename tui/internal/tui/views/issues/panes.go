@@ -90,10 +90,10 @@ func renderIssues(theme types.Theme, state types.ContentState, width, height int
 				style = *statusStyle
 			}
 			if pos == cur && active {
-				marker = viewchrome.SelectionCursor + " "
-				style = theme.StyleCursor
+				marker = theme.StyleCursor.Render(viewchrome.SelectionCursor + " ")
+				style = style.Bold(true)
 			}
-			lines = append(lines, style.Render(marker+ansi.Truncate(title, room, "…")))
+			lines = append(lines, marker+style.Render(ansi.Truncate(title, room, "…")))
 			if pos == cur && active {
 				lines = append(lines, daily.TaskActionLine(theme, state, width))
 				continue

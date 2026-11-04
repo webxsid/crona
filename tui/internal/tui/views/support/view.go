@@ -54,7 +54,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		if i == cursor {
 			actionLines = append(
 				actionLines,
-				theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line),
+				viewchrome.SelectedRow(theme, line),
 			)
 		} else {
 			actionLines = append(actionLines, "  "+line)

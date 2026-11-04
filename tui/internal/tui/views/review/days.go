@@ -69,7 +69,7 @@ func renderDays(
 	for i := start; i < end; i++ {
 		line := dayRow(theme, dates[i], plans[dates[i]], metrics[dates[i]], meanMood)
 		if i == cur {
-			lines = append(lines, theme.StyleCursor.Render(viewchrome.SelectionCursor+" "+line))
+			lines = append(lines, viewchrome.SelectedRow(theme, line))
 		} else {
 			lines = append(lines, "  "+line)
 		}

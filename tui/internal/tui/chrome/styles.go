@@ -30,12 +30,12 @@ var (
 
 	StylePaneTitle       = lipgloss.NewStyle().Bold(true).Foreground(ColorCyan)
 	StyleDim             = lipgloss.NewStyle().Foreground(ColorDim)
-	StyleCursor          = lipgloss.NewStyle().Foreground(ColorGreen).Bold(true)
+	StyleCursor          = lipgloss.NewStyle().Foreground(ColorCyan).Bold(true)
 	StyleHeader          = lipgloss.NewStyle().Foreground(ColorCyan)
 	StyleError           = lipgloss.NewStyle().Foreground(ColorRed)
-	StyleSelected        = lipgloss.NewStyle().Foreground(ColorGreen)
+	StyleSelected        = lipgloss.NewStyle().Foreground(ColorWhite)
 	StyleSelectedInverse = lipgloss.NewStyle().
-				Background(ColorGreen).
+				Background(ColorCyan).
 				Foreground(ColorBlack).
 				Padding(0, 1)
 	StyleNormal = lipgloss.NewStyle()

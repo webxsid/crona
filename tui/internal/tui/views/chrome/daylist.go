@@ -65,9 +65,7 @@ func dividedList(theme Theme, lines []dayLine, cursor, width, height int) []stri
 		case line.row == cursor:
 			out = append(
 				out,
-				theme.StyleCursor.Render(
-					SelectionCursor+" "+ansi.Truncate(line.text, max(1, width-2), "…"),
-				),
+				SelectedRow(theme, ansi.Truncate(line.text, max(1, width-2), "…")),
 			)
 		default:
 			out = append(out, "  "+ansi.Truncate(line.text, max(1, width-2), "…"))
