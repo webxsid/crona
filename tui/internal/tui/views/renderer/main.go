@@ -4,7 +4,6 @@ import (
 	alerts "crona/tui/internal/tui/views/alerts"
 	away "crona/tui/internal/tui/views/away"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
-	viewchrome "crona/tui/internal/tui/views/chrome"
 	config "crona/tui/internal/tui/views/config"
 	daily "crona/tui/internal/tui/views/daily"
 	habitlist "crona/tui/internal/tui/views/habitlist"
@@ -101,9 +100,9 @@ func DateNav(theme types.Theme, state types.ContentState, room int) string {
 func DateCalendarKey(theme types.Theme, state types.ContentState) string {
 	switch state.View {
 	case "daily":
-		return viewchrome.KeyHint(theme, "C", "calendar")
+		return theme.StyleHeader.Render("C") + theme.StyleDim.Render(" calendar")
 	case "review":
-		return viewchrome.KeyHint(theme, "E", "calendar")
+		return theme.StyleHeader.Render("E") + theme.StyleDim.Render(" calendar")
 	}
 	return ""
 }

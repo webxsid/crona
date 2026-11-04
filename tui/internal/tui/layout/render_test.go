@@ -1,7 +1,6 @@
 package layout
 
 import (
-	versionpkg "crona/shared/version"
 	"strings"
 	"testing"
 
@@ -55,7 +54,7 @@ func TestRenderTabLineMarksActiveTab(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 36)
 	state.SubTabs = []uistate.View{uistate.ViewDaily, uistate.ViewSessionActive}
 	lines := plainLines(Render(state))
-	if !strings.Contains(lines[0], "[1] Today") || !strings.Contains(lines[0], "[5] System") {
+	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "5 System") {
 		t.Fatalf("expected tab line with all tabs, got %q", lines[0])
 	}
 	if !strings.Contains(lines[0], "crona › tui") {
@@ -75,8 +74,8 @@ func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
 	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Review") {
 		t.Fatalf("expected sub-tab line, got %q", lines[1])
 	}
-	if got := ContentHeight(state); got != 36-4 {
-		t.Fatalf("expected content height 32 with sub-tabs and the date row, got %d", got)
+	if got := ContentHeight(state); got != 36-3 {
+		t.Fatalf("expected content height 33 with sub-tabs and the date sharing a row, got %d", got)
 	}
 	ops := shellStateForTest(uistate.ViewOps, 120, 36)
 	ops.SubTabs = []uistate.View{uistate.ViewOps}
@@ -98,61 +97,61 @@ func datedShellState(view uistate.View, width, height int) State {
 
 func TestRenderTabLineNumbersTabs(t *testing.T) {
 	line := plainLines(Render(shellStateForTest(uistate.ViewDaily, 120, 36)))[0]
-	for _, want := range []string{"[1] Today", "[2] Work", "[5] System"} {
+	for _, want := range []string{"1 Today", "2 Work", "5 System"} {
 		if !strings.Contains(line, want) {
 			t.Fatalf("expected %q on the tab line, got %q", want, line)
 		}
 	}
 }
 
-func TestRenderSubTabLineFramedByKeys(t *testing.T) {
-	line := strings.TrimRight(
-		plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[1],
-		" ",
-	)
-	if !strings.HasPrefix(strings.TrimSpace(line), "[[] Daily") || !strings.HasSuffix(line, "[]]") {
-		t.Fatalf("expected the sub-tabs framed by [ and ], got %q", line)
+func TestRenderNavRowPutsSubTabsLeftAndDateRight(t *testing.T) {
+	line := strings.TrimRight(plainLines(Render(datedShellState(uistate.ViewDaily, 140, 36)))[1], " ")
+	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.Contains(line, "[ ] switch") {
+		t.Fatalf("expected the sub-tabs first with a switch hint, got %q", line)
 	}
-	if strings.Contains(line, "2026-05-27") {
-		t.Fatalf("expected the date off the sub-tab line, got %q", line)
+	if strings.Contains(line, "[[]") || strings.Contains(line, "[]]") {
+		t.Fatalf("expected no [[ ]] frame, got %q", line)
+	}
+	if !strings.HasSuffix(line, "C calendar") || strings.Index(line, "switch") > strings.Index(line, "2026-05-27") {
+		t.Fatalf("expected the date navigation at the right, got %q", line)
 	}
 }
 
-func TestRenderDateRowOnDatedViews(t *testing.T) {
+func TestRenderNavRowOnDatedViews(t *testing.T) {
 	for view, keys := range map[uistate.View]string{
-		uistate.ViewDaily:    "[C] calendar",
-		uistate.ViewMomentum: "[g] today",
-		uistate.ViewReview:   "[E] calendar",
+		uistate.ViewDaily:    "C calendar",
+		uistate.ViewMomentum: "g today",
+		uistate.ViewReview:   "E calendar",
 	} {
-		line := plainLines(Render(datedShellState(view, 140, 36)))[2]
-		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, "next [.]") ||
+		line := plainLines(Render(datedShellState(view, 140, 36)))[1]
+		if !strings.Contains(line, "2026-05-27") || !strings.Contains(line, ". ›") ||
 			!strings.Contains(line, keys) {
-			t.Fatalf("%s: expected the date row with %q, got %q", view, keys, line)
+			t.Fatalf("%s: expected the date navigation with %q, got %q", view, keys, line)
 		}
 		if view == uistate.ViewReview && !strings.Contains(line, "2026-05-21") {
-			t.Fatalf("review: expected its range start on the date row, got %q", line)
+			t.Fatalf("review: expected its range start on the row, got %q", line)
 		}
 	}
-	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[2]; strings.Contains(
+	if line := plainLines(Render(shellStateForTest(uistate.ViewSettings, 140, 36)))[1]; strings.Contains(
 		line,
-		"next [.]",
+		". ›",
 	) {
-		t.Fatalf("expected no date row on Settings, got %q", line)
+		t.Fatalf("expected no date navigation on Settings, got %q", line)
 	}
 }
 
-func TestRenderDateRowKeepsDateWhenNarrow(t *testing.T) {
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 70, 30)))[2]; !strings.Contains(
+func TestRenderNavRowKeepsDateWhenNarrow(t *testing.T) {
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 70, 30)))[1]; !strings.Contains(
 		line,
 		"2026-05-27",
 	) {
-		t.Fatalf("expected the date kept on a narrow date row, got %q", line)
+		t.Fatalf("expected the date kept on a narrow row, got %q", line)
 	}
 }
 
-func TestContentHeightCountsDateRow(t *testing.T) {
-	if got := ContentHeight(datedShellState(uistate.ViewDaily, 120, 36)); got != 36-4 {
-		t.Fatalf("expected tabs, sub-tabs, date row and status to take 4 rows, got content %d", got)
+func TestContentHeightCountsNavRowOnce(t *testing.T) {
+	if got := ContentHeight(datedShellState(uistate.ViewDaily, 120, 36)); got != 36-3 {
+		t.Fatalf("expected tabs, the nav row and status to take 3 rows, got content %d", got)
 	}
 }
 
@@ -162,7 +161,7 @@ func TestRenderTimerActiveShowsOnlyAllowedTabs(t *testing.T) {
 	state.Tabs = []uistate.Tab{uistate.TabToday, uistate.TabLog}
 	state.SubTabs = []uistate.View{uistate.ViewSessionActive}
 	lines := plainLines(Render(state))
-	if !strings.Contains(lines[0], "[1] Today") || !strings.Contains(lines[0], "[4] Log") {
+	if !strings.Contains(lines[0], "1 Today") || !strings.Contains(lines[0], "4 Log") {
 		t.Fatalf("expected today and log tabs, got %q", lines[0])
 	}
 	if strings.Contains(lines[0], "Insights") {
@@ -193,7 +192,7 @@ func TestRenderMinimumSize(t *testing.T) {
 		}
 	}
 	rendered := Render(shellStateForTest(uistate.ViewDaily, 60, 20))
-	if !strings.Contains(ansi.Strip(rendered), "[1] Today") {
+	if !strings.Contains(ansi.Strip(rendered), "1 Today") {
 		t.Fatal("expected shell at 60x20")
 	}
 }
@@ -345,7 +344,7 @@ func TestRenderTabLineKeepsTabsWithLongContext(t *testing.T) {
 	state.RepoName = "crona-monorepo"
 	state.StreamName = "feature/tui-layout-redesign-long-name"
 	line := plainLines(Render(state))[0]
-	if !strings.Contains(line, "[5] System") {
+	if !strings.Contains(line, "5 System") {
 		t.Fatalf("expected all tabs to survive a long context, got %q", line)
 	}
 	// The numbered tabs fill the minimum width; the context shows once there is room.
@@ -369,10 +368,7 @@ func TestStatusLineShowsPaneActionsFirst(t *testing.T) {
 func TestTabLineContextAll(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.RepoName, state.StreamName = "", ""
-	line := strings.TrimSuffix(
-		strings.TrimSpace(plainLines(Render(state))[0]),
-		" · v"+versionpkg.Current(),
-	)
+	line := strings.TrimSpace(plainLines(Render(state))[0])
 	if !strings.HasSuffix(line, "All") || strings.Contains(line, "-") {
 		t.Fatalf("expected All context, got %q", line)
 	}
@@ -381,10 +377,7 @@ func TestTabLineContextAll(t *testing.T) {
 func TestTabLineContextRepoOnly(t *testing.T) {
 	state := shellStateForTest(uistate.ViewDaily, 120, 30)
 	state.StreamName = ""
-	line := strings.TrimSuffix(
-		strings.TrimSpace(plainLines(Render(state))[0]),
-		" · v"+versionpkg.Current(),
-	)
+	line := strings.TrimSpace(plainLines(Render(state))[0])
 	if !strings.HasSuffix(line, "crona") || strings.Contains(line, "›") {
 		t.Fatalf("expected repo-only context, got %q", line)
 	}
@@ -392,13 +385,13 @@ func TestTabLineContextRepoOnly(t *testing.T) {
 
 func TestDailyDateRowLeavesDayKeyOff(t *testing.T) {
 	// The bottom row offers [S] when no detail pane shows; the date row never does.
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[2]; strings.Contains(
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 120, 36)))[1]; strings.Contains(
 		line,
 		"[S]",
 	) {
 		t.Fatalf("expected [S] off the date row, got %q", line)
 	}
-	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[2]; strings.Contains(
+	if line := plainLines(Render(datedShellState(uistate.ViewDaily, 200, 36)))[1]; strings.Contains(
 		line,
 		"[S]",
 	) {
@@ -406,29 +399,29 @@ func TestDailyDateRowLeavesDayKeyOff(t *testing.T) {
 	}
 	away := datedShellState(uistate.ViewDaily, 120, 36)
 	away.ContentState.HistoricalAwayDate = "2026-05-27"
-	if line := plainLines(Render(away))[2]; strings.Contains(line, "[S]") {
+	if line := plainLines(Render(away))[1]; strings.Contains(line, "[S]") {
 		t.Fatalf("expected no [S] on a historical away date, got %q", line)
 	}
 }
 
 func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
-	for view, calendar := range map[uistate.View]string{uistate.ViewDaily: "[C] calendar", uistate.ViewReview: "[E] calendar"} {
-		line := plainLines(Render(datedShellState(view, 160, 36)))[2]
+	for view, calendar := range map[uistate.View]string{uistate.ViewDaily: "C calendar", uistate.ViewReview: "E calendar"} {
+		line := plainLines(Render(datedShellState(view, 160, 36)))[1]
 		at := -1
-		for _, want := range []string{calendar, "[g] today", "[,] prev", "2026-05-27", "next [.]"} {
+		for _, want := range []string{"‹ ,", "2026-05-27", ". ›", "g today", calendar} {
 			next := strings.Index(line, want)
 			if next <= at {
 				t.Fatalf("%s: expected %q after the previous key, got %q", view, want, line)
 			}
 			at = next
 		}
-		if !strings.HasSuffix(line, "next [.] ") {
+		if !strings.HasSuffix(line, calendar+" ") {
 			t.Fatalf("%s: expected the navigation one cell from the right edge, got %q", view, line)
 		}
 	}
 	// The window keys live on the strip below, at its right.
 	lines := plainLines(Render(datedShellState(uistate.ViewReview, 160, 36)))
-	if strings.Contains(lines[2], "[+/-/0]") || !strings.Contains(lines[3], "[+/-/0]") {
-		t.Fatalf("expected the window key under the date nav, got %q / %q", lines[2], lines[3])
+	if strings.Contains(lines[1], "[+/-/0]") || !strings.Contains(lines[2], "[+/-/0]") {
+		t.Fatalf("expected the window key under the date nav, got %q / %q", lines[1], lines[2])
 	}
 }

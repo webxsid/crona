@@ -10,12 +10,12 @@ import (
 	helperpkg "crona/tui/internal/tui/helpers"
 	types "crona/tui/internal/tui/views/types"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
-// DateNav is the date navigation shown at the right of a dated view's sub-tab line: the
-// shared date with its week and the keys that move it, shortened to fit room. prefix
-// (Rollup's range start) leads the full form only.
+// DateNav is the date navigation at the right of the row under the tabs: `‹ , date . ›`
+// with g for today, shortened to fit room. prefix (Review's range start) leads the date.
 func DateNav(
 	theme types.Theme,
 	rawDate, prefix string,
@@ -23,51 +23,24 @@ func DateNav(
 	weekStart sharedtypes.WeekStart,
 	room int,
 ) string {
-	date := theme.StyleHeader.Render(helperpkg.FormatDisplayDate(rawDate, settings))
+	// The date reads in bold; keys are bare cyan letters so they do not compete with it.
+	bold := lipgloss.NewStyle().Bold(true)
+	date := bold.Render(helperpkg.FormatDisplayDate(rawDate, settings))
 	dated := date
 	if parsed, ok := ParseDate(rawDate); ok && !DisplayPatternIncludesWeek(settings) {
-		dated = theme.StyleHeader.Render(helperpkg.FormatDisplayDate(rawDate, settings) +
-			fmt.Sprintf(" · W%02d", WeekNumber(parsed, weekStart)))
-	}
-	key := func(k string) string { return theme.StyleHeader.Render("[" + k + "]") }
-	dim := theme.StyleDim.Render
-	full := key(
-		"g",
-	) + dim(
-		" today   ",
-	) + key(
-		",",
-	) + dim(
-		" prev  ",
-	) + dated + dim(
-		"  next ",
-	) + key(
-		".",
-	)
-	candidates := []string{
-		full,
-		key("g") + "  " + key(",") + " " + dated + " " + key("."),
-		dated,
-		date,
+		dated = date + theme.StyleDim.Render(fmt.Sprintf(" · W%02d", WeekNumber(parsed, weekStart)))
 	}
 	if prefix != "" {
-		start := theme.StyleHeader.Render(helperpkg.FormatDisplayDate(prefix, settings))
-		ranged := key(
-			"g",
-		) + dim(
-			" today   ",
-		) + key(
-			",",
-		) + dim(
-			" prev  ",
-		) + start + dim(
-			" → ",
-		) + dated + dim(
-			"  next ",
-		) + key(
-			".",
-		)
-		candidates = append([]string{ranged}, candidates...)
+		dated = bold.Render(helperpkg.FormatDisplayDate(prefix, settings)) + theme.StyleDim.Render(" → ") + dated
+	}
+	key := theme.StyleHeader.Render
+	dim := theme.StyleDim.Render
+	stepper := dim("‹ ") + key(",") + "  " + dated + "  " + key(".") + dim(" ›")
+	candidates := []string{
+		stepper + "   " + key("g") + dim(" today"),
+		stepper,
+		dated,
+		date,
 	}
 	for _, candidate := range candidates {
 		if ansi.StringWidth(candidate) <= room {

@@ -39,4 +39,11 @@ var (
 				Foreground(ColorBlack).
 				Padding(0, 1)
 	StyleNormal = lipgloss.NewStyle()
+
+	// StyleTabActive is the active tab's pill; StyleTabIdle the label of the others.
+	StyleTabActive = lipgloss.NewStyle().Bold(true).Foreground(ColorBlack).Background(ColorCyan)
+	StyleTabIdle   = lipgloss.NewStyle().Foreground(ColorSubtle)
+	// StyleSubTabActive marks the open sub-tab with an underline instead of a frame.
+	StyleSubTabActive = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(ColorCyan)
+	StyleDevBadge     = lipgloss.NewStyle().Bold(true).Foreground(ColorYellow)
 )

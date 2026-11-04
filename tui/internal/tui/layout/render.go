@@ -116,11 +116,8 @@ func Render(state State) string {
 	}
 
 	parts := []string{renderTabLine(state)}
-	if subTabs := renderSubTabLine(state); subTabs != "" {
-		parts = append(parts, subTabs)
-	}
-	if dateRow := renderDateRow(state); dateRow != "" {
-		parts = append(parts, dateRow)
+	if navRow := renderNavRow(state); navRow != "" {
+		parts = append(parts, navRow)
 	}
 	content := clipViewportString(
 		viewrenderer.RenderContent(ViewTheme(), state.ContentState),
@@ -180,46 +177,29 @@ func renderMinimumSizeWarning(width, height int) string {
 	)
 }
 
+// renderTabLine is the numbered tabs, the active one as a pill, and the active repo and
+// stream at the right. The mark, version and dev badge live on the status line.
 func renderTabLine(state State) string {
 	parts := []string{}
 	for i, tab := range uistate.TabOrder() {
 		if !slices.Contains(state.Tabs, tab) {
 			continue
 		}
-		label := fmt.Sprintf("[%d] %s", i+1, uistate.TabLabel(tab))
+		number, label := fmt.Sprint(i+1), uistate.TabLabel(tab)
 		if tab == uistate.TabForView(state.View) {
-			parts = append(parts, chrome.StyleCursor.Render(label))
+			parts = append(parts, chrome.StyleTabActive.Render(" "+number+" "+label+" "))
 		} else {
-			parts = append(parts, chrome.StyleDim.Render(label))
+			parts = append(parts, " "+chrome.StyleDim.Render(number)+" "+chrome.StyleTabIdle.Render(label)+" ")
 		}
 	}
-	tabs := strings.Join(parts, "  ")
-	right := contextLabel(state.RepoName, state.StreamName)
-	if state.IsDevMode {
-		right += " · dev"
-	}
-	version := "v" + versionpkg.Current()
-	// The tabs are the only navigation indicator, so everything else gives way first: the
-	// mark, then the context (truncated), then the version.
-	left := " " + tabs
-	if mark := chrome.StyleHeader.Render(viewchrome.LogoTiny()) + "  "; ansi.StringWidth(
-		left+mark,
-	)+2 <= state.Width {
-		left = " " + mark + tabs
-	}
+	left := " " + strings.Join(parts, " ")
+	// The tabs are the only navigation indicator, so the context gives way first.
 	room := state.Width - ansi.StringWidth(left) - 2
 	if room < 4 {
 		return joinEnds(left, "", state.Width)
 	}
-	if ansi.StringWidth(right)+3+len(version) <= room {
-		return joinEnds(
-			left,
-			chrome.StyleHeader.Render(right)+chrome.StyleDim.Render(" · "+version),
-			state.Width,
-		)
-	}
-	right = ansi.Truncate(right, room, "…")
-	return joinEnds(left, chrome.StyleHeader.Render(right), state.Width)
+	right := ansi.Truncate(contextLabel(state.RepoName, state.StreamName), room, "…")
+	return joinEnds(left, chrome.StyleTabIdle.Render(right)+" ", state.Width)
 }
 
 // contextLabel names the active scope, falling back to All when no repo is selected.
@@ -234,44 +214,35 @@ func contextLabel(repo, stream string) string {
 	}
 }
 
-// renderSubTabLine lists the tab's views between the [ and ] keys that cycle them.
-func renderSubTabLine(state State) string {
-	if len(state.SubTabs) < 2 {
-		return ""
-	}
-	parts := make([]string, 0, len(state.SubTabs))
-	for _, view := range state.SubTabs {
-		label := uistate.ViewLabel(view)
-		if view == state.View {
-			parts = append(parts, chrome.StyleHeader.Render(label))
-		} else {
-			parts = append(parts, chrome.StyleDim.Render(label))
+// renderNavRow is the row under the tabs: the tab's views at the left, the open one
+// underlined, and the shared date's navigation at the right. It is empty when the tab has
+// a single view and no date.
+func renderNavRow(state State) string {
+	left := ""
+	if len(state.SubTabs) >= 2 {
+		parts := make([]string, 0, len(state.SubTabs))
+		for _, view := range state.SubTabs {
+			label := uistate.ViewLabel(view)
+			if view == state.View {
+				parts = append(parts, chrome.StyleSubTabActive.Render(label))
+			} else {
+				parts = append(parts, chrome.StyleTabIdle.Render(label))
+			}
 		}
+		left = " " + strings.Join(parts, "   ") + "   " +
+			chrome.StyleHeader.Render("[ ]") + chrome.StyleDim.Render(" switch")
 	}
-	key := func(k string) string { return chrome.StyleHeader.Render("[" + k + "]") }
-	return " " + key(
-		"[",
-	) + " " + strings.Join(
-		parts,
-		chrome.StyleDim.Render(" · "),
-	) + " " + key(
-		"]",
-	)
-}
-
-// renderDateRow is a dated view's header row: the shared date's navigation, at the right.
-func renderDateRow(state State) string {
 	if !viewrenderer.HasDateRow(state.ContentState) {
-		return ""
+		return left
 	}
-	// Navigation sits at the right, over the day strip's week, led by the calendar key.
 	theme := ViewTheme()
-	nav := viewrenderer.DateNav(theme, state.ContentState, state.Width-2)
+	room := state.Width - ansi.StringWidth(left) - 3
+	nav := viewrenderer.DateNav(theme, state.ContentState, room)
 	if calendar := viewrenderer.DateCalendarKey(theme, state.ContentState); calendar != "" &&
-		ansi.StringWidth(calendar)+2+ansi.StringWidth(nav) <= state.Width-2 {
-		nav = calendar + "  " + nav
+		ansi.StringWidth(nav)+2+ansi.StringWidth(calendar) <= room {
+		nav += "  " + calendar
 	}
-	return joinEnds("", nav+" ", state.Width)
+	return joinEnds(left, nav+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {
@@ -284,6 +255,16 @@ func renderStatusLine(state State) string {
 		}
 	}
 	right := chrome.StyleHeader.Render("[?]") + chrome.StyleDim.Render(" all keys  ctrl+c quit")
+	// The mark and version sit after the keys, and only when the actions still fit.
+	brand := "   " + chrome.StyleHeader.Render(viewchrome.LogoTiny()) + " "
+	if state.IsDevMode {
+		brand += chrome.StyleDevBadge.Render("DEV") + " "
+	}
+	brand += chrome.StyleDim.Render("v" + versionpkg.Current())
+	if ansi.StringWidth(" "+left)+ansi.StringWidth(right+brand)+2 <= state.Width {
+		right += brand
+	}
+	right += " "
 	if state.StatusMsg != "" {
 		style := chrome.StyleSelected
 		if state.StatusErr {
@@ -442,11 +423,8 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 
 func ContentHeight(state State) int {
 	rows := 2
-	if len(state.SubTabs) >= 2 {
-		rows++
-	}
 	// The shell's view, not ContentState's: the model sizes content before filling it in.
-	if viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
+	if len(state.SubTabs) >= 2 || viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
 		rows++
 	}
 	return max(4, state.Height-rows)
