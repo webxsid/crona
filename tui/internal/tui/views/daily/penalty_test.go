@@ -111,3 +111,22 @@ func TestRescheduleHintShowsPushCost(t *testing.T) {
 		t.Fatalf("expected no hint without a plan, got %q", got)
 	}
 }
+
+func TestIssueInsightLinesMatchTheDetailPane(t *testing.T) {
+	state := detailState()
+	state.DailyPlan = penaltyPlan(false)
+	state.MomentumCards = []api.MomentumCard{{
+		Definition: api.HabitStreakDefinition{
+			ID: "fit", Name: "Fitness", Enabled: true, Period: "week", RequiredCount: 3, HabitIDs: []int64{2},
+		},
+		Current: 4, Longest: 9,
+	}}
+	issue := strings.Join(strings.Fields(ansi.Strip(strings.Join(IssueInsightLines(testTheme(), state, 2, 0, 0, 80), "\n"))), " ")
+	if !strings.Contains(issue, "Delay penalty ▲ high risk") {
+		t.Fatalf("expected the delay penalty for the dialog, got %q", issue)
+	}
+	habit := ansi.Strip(strings.Join(HabitMomentumLines(testTheme(), state, 2, 80), "\n"))
+	if !strings.Contains(habit, "Momentum") || !strings.Contains(habit, "Fitness") || !strings.ContainsAny(habit, "▰▱") {
+		t.Fatalf("expected the habit's momentum ladder for the dialog, got %q", habit)
+	}
+}

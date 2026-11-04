@@ -355,3 +355,21 @@ func HabitDetailLines(
 		status,
 	)
 }
+
+// IssueInsightLines are the delay penalty, carry-over and momentum sections of the issue
+// detail pane, for the issue detail dialog to show the same.
+func IssueInsightLines(
+	theme types.Theme,
+	state types.ContentState,
+	issueID, repoID, streamID int64,
+	width int,
+) []string {
+	lines := penaltyLines(theme, state, issueID, width)
+	lines = append(lines, carryLines(theme, state, issueID, width)...)
+	return append(lines, momentumLines(theme, issueMomentums(state, repoID, streamID), width)...)
+}
+
+// HabitMomentumLines are the habit detail pane's momentum section, ladders included.
+func HabitMomentumLines(theme types.Theme, state types.ContentState, habitID int64, width int) []string {
+	return momentumLines(theme, habitMomentums(state, habitID), width)
+}

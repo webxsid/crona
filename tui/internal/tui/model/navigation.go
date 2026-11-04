@@ -15,8 +15,10 @@ import (
 	navigationutil "crona/tui/internal/tui/navigationutil"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	dailyviews "crona/tui/internal/tui/views/daily"
 	issuecore "crona/tui/internal/tui/views/issuecore"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	viewtypes "crona/tui/internal/tui/views/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -396,6 +398,14 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 				issue.Notes,
 				viewEntityBodyWidth(m.width),
 			)...)
+		var repoID int64
+		if issueMeta != nil {
+			repoID = issueMeta.RepoID
+		}
+		body = append(body, dailyviews.IssueInsightLines(
+			layoutpkg.ViewTheme(), m.detailContentState(snapshot),
+			issue.ID, repoID, issue.StreamID, viewEntityBodyWidth(m.width),
+		)...)
 		dialog := m.dialogSnapshot().OpenViewEntity(
 			"Issue",
 			issue.Title,
@@ -419,12 +429,13 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 					fmt.Sprintf("Active %t", habit.Active),
 					fmt.Sprintf("ID %d", habit.ID),
 				}
-				body := strings.Join([]string{"Description", optionalText(habit.Description)}, "\n")
+				body := append([]string{"Description", optionalText(habit.Description)},
+					m.habitMomentumLines(snapshot, habit.ID)...)
 				return m.openViewEntityDialog(
 					"Habit",
 					habit.Name,
 					strings.Join(meta, "   "),
-					body,
+					strings.Join(body, "\n"),
 				), true
 			}
 		}
@@ -448,6 +459,7 @@ func (m Model) openSelectedViewDialog() (Model, bool) {
 				if habit.Notes != nil && strings.TrimSpace(*habit.Notes) != "" {
 					body = append(body, "", "Notes", strings.TrimSpace(*habit.Notes))
 				}
+				body = append(body, m.habitMomentumLines(snapshot, habit.ID)...)
 				return m.openViewEntityDialog(
 					"Habit",
 					habit.Name,
@@ -640,4 +652,15 @@ func (m Model) currentWeekStart() sharedtypes.WeekStart {
 		return sharedtypes.WeekStartMonday
 	}
 	return sharedtypes.NormalizeWeekStart(m.settings.WeekStart)
+}
+
+// detailContentState is the content state the detail dialogs read penalties and momentums from.
+func (m Model) detailContentState(snapshot selectionpkg.Snapshot) viewtypes.ContentState {
+	return m.viewContentState(m.mainContentWidth(), m.height, snapshot, nil)
+}
+
+func (m Model) habitMomentumLines(snapshot selectionpkg.Snapshot, habitID int64) []string {
+	return dailyviews.HabitMomentumLines(
+		layoutpkg.ViewTheme(), m.detailContentState(snapshot), habitID, viewEntityBodyWidth(m.width),
+	)
 }
