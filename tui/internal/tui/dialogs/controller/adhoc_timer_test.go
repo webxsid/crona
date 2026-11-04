@@ -368,7 +368,7 @@ func TestAdhocIssueDetailOffersConversionAction(t *testing.T) {
 		State{},
 		"Issue",
 		"Session title",
-		"Ad hoc / Sessions",
+		"Unplanned / Sessions",
 		"Reviewed session",
 	)
 	state.ViewEntityAdhoc = true

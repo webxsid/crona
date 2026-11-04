@@ -44,7 +44,7 @@ func renderIssueCreate(theme Theme, state controllerpkg.State) string {
 
 	frameTitle := "New Issue"
 	if state.PromotingAdhoc {
-		frameTitle = "Convert Ad hoc Issue"
+		frameTitle = "Convert Unplanned Issue"
 	}
 	if state.MovingInbox {
 		frameTitle = "Move Out of Inbox"

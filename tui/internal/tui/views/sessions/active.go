@@ -213,7 +213,7 @@ func phaseLabel(segment string) string {
 
 func sessionContextLabel(issue *api.IssueWithMeta, adhoc bool) string {
 	if adhoc {
-		return "Ad hoc"
+		return "Quick timer"
 	}
 	if issue == nil || issue.RepoName == "" {
 		return ""
@@ -232,7 +232,7 @@ func sessionIssueLines(
 	if issue == nil {
 		if adhoc {
 			return []string{
-				theme.StyleDim.Render("Ad hoc session · attribution pending until you end it"),
+				theme.StyleDim.Render("Quick timer · attribution pending until you end it"),
 			}
 		}
 		return []string{theme.StyleDim.Render("No issue selected")}

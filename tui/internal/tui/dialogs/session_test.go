@@ -32,14 +32,14 @@ func TestAdhocAttributionChoicesSeparateLabelsAndDescriptions(t *testing.T) {
 	state := controllerpkg.OpenAdhocResolution(controllerpkg.State{Width: 100}, nil)
 	rendered := renderSessionDialog(Theme{}, state)
 	for _, text := range []string{
-		"Finish Ad hoc Session",
+		"Finish Quick Timer",
 		"Choose where this session should be recorded.",
 		"Attach to an existing issue",
 		"Choose an issue, then add a session summary.",
 		"Create a new issue",
 		"Create an issue and finish this session in one step.",
-		"Keep as ad hoc",
-		"Create a completed issue in Ad hoc / Sessions.",
+		"Keep as unplanned",
+		"Create a completed issue in Unplanned / Sessions.",
 		"Convert it",
 	} {
 		if !strings.Contains(rendered, text) {
@@ -352,7 +352,7 @@ func TestShortConversionFormKeepsActiveFieldAndErrorVisible(t *testing.T) {
 	for i := 0; i < 6; i++ {
 		state.ErrorMessage = "Choose a repo and stream"
 		rendered := renderIssueDialog(Theme{}, state)
-		for _, want := range []string{"Convert Ad hoc Issue", "ctrl+s convert issue", "Choose a repo and stream"} {
+		for _, want := range []string{"Convert Unplanned Issue", "ctrl+s convert issue", "Choose a repo and stream"} {
 			if !strings.Contains(rendered, want) {
 				t.Fatalf("focus %d missing %q: %s", state.FocusIdx, want, rendered)
 			}

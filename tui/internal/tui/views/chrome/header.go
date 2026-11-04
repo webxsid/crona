@@ -55,7 +55,7 @@ func HeaderSessionLine(theme Theme, state HeaderState) string {
 		}
 		parts = append(parts, theme.StyleDim.Render(label))
 	} else if timer.Adhoc {
-		parts = append(parts, theme.StyleDim.Render("ad hoc"))
+		parts = append(parts, theme.StyleDim.Render("quick timer"))
 	}
 	if chip := healthChip(state.Health); chip != "" {
 		parts = append(parts, LipStyle(theme, theme.ColorYellow).Render(chip))

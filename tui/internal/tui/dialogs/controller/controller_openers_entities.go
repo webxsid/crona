@@ -607,7 +607,7 @@ func OpenTimerStartType(
 }
 
 func OpenAdhocTimerStartType(state State) State {
-	state = OpenTimerStartType(state, 0, 0, 0, "Ad hoc", nil, 0)
+	state = OpenTimerStartType(state, 0, 0, 0, "Quick timer", nil, 0)
 	state.AdhocTimer = true
 	return state
 }
@@ -618,7 +618,7 @@ func OpenAdhocResolution(state State, context *api.ActiveContext) State {
 	repoName, streamName := state.RepoName, state.StreamName
 	state = Close(state)
 	state.Kind = "adhoc_resolution"
-	state.ViewTitle = "Finish Ad hoc Session"
+	state.ViewTitle = "Finish Quick Timer"
 	state.ViewName = "Choose where this session should be recorded."
 	state.AdhocTimer = true
 	state.AdhocElapsedSeconds = adhocElapsedSeconds
@@ -628,13 +628,13 @@ func OpenAdhocResolution(state State, context *api.ActiveContext) State {
 	state.ChoiceItems = []string{
 		"Attach to an existing issue",
 		"Create a new issue",
-		"Keep as ad hoc",
+		"Keep as unplanned",
 	}
 	state.ChoiceValues = []string{"attach", "create", "keep"}
 	state.ChoiceDetails = []string{
 		"Choose an issue, then add a session summary.",
 		"Create an issue and finish this session in one step.",
-		"Create a completed issue in Ad hoc / Sessions. Convert it later.",
+		"Create a completed issue in Unplanned / Sessions. Convert it later.",
 	}
 	if context != nil {
 		if context.RepoID != nil {

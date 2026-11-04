@@ -316,7 +316,7 @@ func (t *TimerService) start(
 	}
 	if !adhoc && issue.Adhoc {
 		return sharedtypes.TimerState{}, errors.New(
-			"ad hoc issues must be converted before starting a focus session",
+			"unplanned issues must be converted before starting a focus session",
 		)
 	}
 	if !adhoc && !sharedtypes.CanStartFocus(issue.Status) {
@@ -1063,7 +1063,7 @@ func resolveAdhocSession(ctx context.Context, c *core.Context, input *SessionEnd
 	switch input.AdhocResolution {
 	case sharedtypes.AdhocSessionResolutionAttach:
 		if input.IssueID == nil || *input.IssueID <= 0 {
-			return errors.New("an issue is required to attach the ad hoc session")
+			return errors.New("an issue is required to attach the quick timer session")
 		}
 		issue, err := c.Issues.GetByID(ctx, *input.IssueID, c.UserID)
 		if err != nil {
@@ -1073,7 +1073,7 @@ func resolveAdhocSession(ctx context.Context, c *core.Context, input *SessionEnd
 			return errors.New("issue not found")
 		}
 		if !sharedtypes.CanStartFocus(issue.Status) {
-			return errors.New("ad hoc sessions cannot be attached to the current issue status")
+			return errors.New("quick timer sessions cannot be attached to the current issue status")
 		}
 		stream, err := c.Streams.GetByID(ctx, issue.StreamID, c.UserID)
 		if err != nil {
@@ -1162,14 +1162,14 @@ func resolveAdhocSession(ctx context.Context, c *core.Context, input *SessionEnd
 		input.StreamID = &reserved.StreamID
 		return nil
 	default:
-		return errors.New("choose an issue, create a new issue, or keep the session ad hoc")
+		return errors.New("choose an issue, create a new issue, or keep the session as unplanned")
 	}
 }
 
 func adhocIssueTitle(message string) string {
 	title := strings.TrimSpace(message)
 	if title == "" {
-		return "Ad hoc session"
+		return "Unplanned session"
 	}
 	runes := []rune(title)
 	const maxTitleRunes = 80

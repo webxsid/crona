@@ -90,12 +90,12 @@ func TestIssuesListSelectorAndCreateLine(t *testing.T) {
 	if !strings.Contains(joined, "Open Done") && !strings.Contains(squash(joined), "Open Done") {
 		t.Fatalf("expected the Open/Done selector, got %q", joined)
 	}
-	if !strings.Contains(squash(joined), "[a] new issue [A] ad hoc") {
+	if !strings.Contains(squash(joined), "[a] new issue [A] quick timer") {
 		t.Fatalf("expected the create line, got %q", joined)
 	}
 	running := issuesState(120, 40)
 	running.Timer = &api.TimerState{State: "running"}
-	if strings.Contains(ansi.Strip(Render(types.Theme{}, running)), "[A] ad hoc") {
+	if strings.Contains(ansi.Strip(Render(types.Theme{}, running)), "[A] quick timer") {
 		t.Fatal("expected [A] hidden while a timer runs")
 	}
 }

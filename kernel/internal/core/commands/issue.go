@@ -122,7 +122,7 @@ func UpdateIssue(ctx context.Context, c *core.Context, issueID int64, updates st
 		return nil, errors.New("issue not found")
 	}
 	if current.Adhoc {
-		return nil, errors.New("ad hoc issues must be converted before editing")
+		return nil, errors.New("unplanned issues must be converted before editing")
 	}
 	if updates.Title.Set && updates.Title.Value != nil &&
 		strings.TrimSpace(*updates.Title.Value) == "" {
@@ -228,7 +228,7 @@ func PromoteAdhocIssue(
 		return nil, err
 	}
 	if issue == nil || !issue.Adhoc {
-		return nil, errors.New("ad hoc issue not found")
+		return nil, errors.New("unplanned issue not found")
 	}
 	stream, err := c.Streams.GetByID(ctx, input.StreamID, c.UserID)
 	if err != nil {
@@ -393,7 +393,7 @@ func changeIssueStatus(
 		return nil, errors.New("issue not found")
 	}
 	if issue.Adhoc {
-		return nil, errors.New("ad hoc issues must be converted before changing status")
+		return nil, errors.New("unplanned issues must be converted before changing status")
 	}
 	activeSession, err := c.Sessions.GetActiveSession(ctx, c.UserID)
 	if err != nil {

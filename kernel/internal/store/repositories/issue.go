@@ -302,7 +302,7 @@ func (r *IssueRepository) ListAll(
 		ColumnExpr(tagNamesColumn(TagKindIssue, "issues.id")).
 		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
-		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Unplanned' ELSE repos.name END AS repo_name").
 		Where("issues.user_id = ?", userID).
 		Where("issues.is_reserved = 0").
 		Where("issues.deleted_at IS NULL").
@@ -444,7 +444,7 @@ func (r *IssueRepository) ListByTodoDateRange(
 		ColumnExpr("issues.public_id").
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
-		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Unplanned' ELSE repos.name END AS repo_name").
 		ColumnExpr("issues.title").
 		ColumnExpr("issues.description").
 		ColumnExpr("issues.status").
@@ -643,7 +643,7 @@ func (r *IssueRepository) PromoteAdhoc(
 		return nil, err
 	}
 	if rows, _ := res.RowsAffected(); rows == 0 {
-		return nil, errors.New("ad hoc issue not found")
+		return nil, errors.New("unplanned issue not found")
 	}
 	return r.GetByID(ctx, issueID, userID)
 }

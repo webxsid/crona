@@ -19,7 +19,7 @@ func newItemLine(theme types.Theme, label string) string {
 func newTaskLine(theme types.Theme, state types.ContentState, width int) string {
 	hints := []string{newItemLine(theme, "new task")}
 	if timerIdle(state) {
-		hints = append(hints, viewchrome.KeyHint(theme, "A", "ad hoc"))
+		hints = append(hints, viewchrome.KeyHint(theme, "A", "quick timer"))
 	}
 	return viewchrome.FitHints(hints, width)
 }

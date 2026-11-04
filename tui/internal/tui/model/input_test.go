@@ -160,7 +160,7 @@ func TestAdhocStopwatchEndRendersAttributionDialog(t *testing.T) {
 		t.Fatalf("dialog after x = %q, want adhoc_resolution", next.dialog)
 	}
 	rendered := next.View()
-	if !strings.Contains(rendered, "Finish Ad hoc Session") ||
+	if !strings.Contains(rendered, "Finish Quick Timer") ||
 		!strings.Contains(rendered, "Attach to an existing issue") {
 		t.Fatalf("ad hoc end dialog rendered blank or incomplete: %q", rendered)
 	}

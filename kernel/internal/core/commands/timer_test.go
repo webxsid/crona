@@ -1377,7 +1377,7 @@ func TestAdhocTimerKeepCreatesTodayIssueAndReassignsSession(t *testing.T) {
 			break
 		}
 	}
-	if listedAdhoc == nil || listedAdhoc.RepoName != "Ad hoc" ||
+	if listedAdhoc == nil || listedAdhoc.RepoName != "Unplanned" ||
 		listedAdhoc.StreamName != "Sessions" {
 		t.Fatalf("ListAll() ad hoc entry = %+v, want human-readable reserved context", listedAdhoc)
 	}

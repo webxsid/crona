@@ -42,7 +42,7 @@ func renderEndSession(theme Theme, state controllerpkg.State) string {
 					theme,
 					"Records to",
 					column,
-					theme.StyleHeader.Render("Ad hoc / Sessions"),
+					theme.StyleHeader.Render("Unplanned / Sessions"),
 					false,
 				),
 				theme.StyleDim.Render(
@@ -50,7 +50,7 @@ func renderEndSession(theme Theme, state controllerpkg.State) string {
 				),
 				"",
 			))
-			primary = "ctrl+s save ad hoc & finish"
+			primary = "ctrl+s save unplanned & finish"
 		} else {
 			rows = append(rows, staticRow(
 				Field(theme, "Attach to", column, theme.StyleHeader.Render(state.ViewName), false),

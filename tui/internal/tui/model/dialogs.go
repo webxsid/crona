@@ -89,7 +89,7 @@ func (m Model) handleDialogAction(next Model, action dialogstate.Action) (Model,
 	case "open_adhoc_conversion":
 		issue, ok := next.issueMetaByID(action.IssueID)
 		if !ok || issue == nil || !issue.Adhoc {
-			return next, next.setStatus("Ad hoc issue is no longer available", true)
+			return next, next.setStatus("Unplanned issue is no longer available", true)
 		}
 		return next.withDialogState(next.dialogSnapshot().OpenPromoteAdhocIssue(*issue)), nil
 	case "set_summary_date", "set_shared_date":
@@ -734,7 +734,7 @@ func (m Model) openHelpDialog() Model {
 				}
 			}
 			if timerIdle {
-				paneActions = append(paneActions, viewchrome.KeyHint(theme, "A", "ad hoc"))
+				paneActions = append(paneActions, viewchrome.KeyHint(theme, "A", "quick timer"))
 			}
 		} else {
 			paneActions = append(paneActions, "", "Habits (tab to focus)",
@@ -796,50 +796,50 @@ func (m Model) dialogState() dialogstate.State {
 		awayDates = m.settings.AwayDates
 	}
 	return dialogstate.State{
-		Kind:                     m.dialog,
-		Width:                    m.width,
-		Height:                   m.height,
-		Inputs:                   m.dialogInputs,
-		Description:              m.dialogDescription,
-		DescriptionEnabled:       m.dialogDescriptionOn,
-		DescriptionIndex:         m.dialogDescriptionIdx,
-		FocusIdx:                 m.dialogFocusIdx,
-		ErrorMessage:             m.dialogErrorMessage,
-		DeleteID:                 m.dialogDeleteID,
-		DeleteKind:               m.dialogDeleteKind,
-		DeleteLabel:              m.dialogDeleteLabel,
-		SessionID:                m.dialogSessionID,
-		SessionHistoryContext:    m.dialogSessionHistoryContext,
-		SessionHistoryNoteInputs: m.dialogSessionHistoryNoteInputs,
-		SessionHistorySegments:   m.dialogSessionHistorySegments,
-		SessionHistoryBounds:     m.dialogSessionHistoryBounds,
+		Kind:                      m.dialog,
+		Width:                     m.width,
+		Height:                    m.height,
+		Inputs:                    m.dialogInputs,
+		Description:               m.dialogDescription,
+		DescriptionEnabled:        m.dialogDescriptionOn,
+		DescriptionIndex:          m.dialogDescriptionIdx,
+		FocusIdx:                  m.dialogFocusIdx,
+		ErrorMessage:              m.dialogErrorMessage,
+		DeleteID:                  m.dialogDeleteID,
+		DeleteKind:                m.dialogDeleteKind,
+		DeleteLabel:               m.dialogDeleteLabel,
+		SessionID:                 m.dialogSessionID,
+		SessionHistoryContext:     m.dialogSessionHistoryContext,
+		SessionHistoryNoteInputs:  m.dialogSessionHistoryNoteInputs,
+		SessionHistorySegments:    m.dialogSessionHistorySegments,
+		SessionHistoryBounds:      m.dialogSessionHistoryBounds,
 		SessionHistoryDatePattern: m.dialogSessionHistoryDatePattern,
-		IssueID:                  m.dialogIssueID,
-		AdhocTimer:               m.dialogAdhocTimer,
-		PromotingAdhoc:           m.dialogPromotingAdhoc,
-		MovingInbox:              m.dialogMovingInbox,
-		ViewEntityAdhoc:          m.dialogViewEntityAdhoc,
-		AdhocResolution:          m.dialogAdhocResolution,
-		AdhocIssueIDs:            m.dialogAdhocIssueIDs,
-		AdhocIssueTab:            m.dialogAdhocIssueTab,
-		AdhocIssueTabCounts:      m.dialogAdhocIssueTabCounts,
-		AdhocElapsedSeconds:      m.dialogAdhocElapsedSeconds,
-		AdhocDate:                m.dialogAdhocDate,
-		NewIssueTitle:            m.dialogNewIssueTitle,
-		HabitID:                  m.dialogHabitID,
-		IssueStatus:              m.dialogIssueStatus,
-		CheckInDate:              m.dialogCheckInDate,
-		RepoID:                   m.dialogRepoID,
-		RepoName:                 m.dialogRepoName,
-		RepoItems:                m.dialogRepoItems,
-		RepoItemIDs:              m.dialogRepoItemIDs,
-		StreamID:                 m.dialogStreamID,
-		StreamName:               m.dialogStreamName,
-		RepoIndex:                m.dialogRepoIndex,
-		StreamIndex:              m.dialogStreamIndex,
-		Parent:                   m.dialogParent,
-		DateMonthValue:           m.dialogDateMonth,
-		DateCursorValue:          m.dialogDateCursor,
+		IssueID:                   m.dialogIssueID,
+		AdhocTimer:                m.dialogAdhocTimer,
+		PromotingAdhoc:            m.dialogPromotingAdhoc,
+		MovingInbox:               m.dialogMovingInbox,
+		ViewEntityAdhoc:           m.dialogViewEntityAdhoc,
+		AdhocResolution:           m.dialogAdhocResolution,
+		AdhocIssueIDs:             m.dialogAdhocIssueIDs,
+		AdhocIssueTab:             m.dialogAdhocIssueTab,
+		AdhocIssueTabCounts:       m.dialogAdhocIssueTabCounts,
+		AdhocElapsedSeconds:       m.dialogAdhocElapsedSeconds,
+		AdhocDate:                 m.dialogAdhocDate,
+		NewIssueTitle:             m.dialogNewIssueTitle,
+		HabitID:                   m.dialogHabitID,
+		IssueStatus:               m.dialogIssueStatus,
+		CheckInDate:               m.dialogCheckInDate,
+		RepoID:                    m.dialogRepoID,
+		RepoName:                  m.dialogRepoName,
+		RepoItems:                 m.dialogRepoItems,
+		RepoItemIDs:               m.dialogRepoItemIDs,
+		StreamID:                  m.dialogStreamID,
+		StreamName:                m.dialogStreamName,
+		RepoIndex:                 m.dialogRepoIndex,
+		StreamIndex:               m.dialogStreamIndex,
+		Parent:                    m.dialogParent,
+		DateMonthValue:            m.dialogDateMonth,
+		DateCursorValue:           m.dialogDateCursor,
 		CalendarScores: func() map[string]api.FocusScoreRangeDay {
 			if m.summarySnapshot != nil {
 				return m.summarySnapshot.CalendarScores

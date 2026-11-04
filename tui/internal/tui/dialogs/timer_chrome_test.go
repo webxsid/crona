@@ -41,7 +41,7 @@ func TestTimerLifecycleDialogs(t *testing.T) {
 				title:   "End Session",
 				context: "Elapsed 1m 31s",
 			},
-			[]string{"Summary", "Ad hoc / Sessions", "save ad hoc & finish"},
+			[]string{"Summary", "Unplanned / Sessions", "save unplanned & finish"},
 		},
 		{
 			formCase{
@@ -50,10 +50,10 @@ func TestTimerLifecycleDialogs(t *testing.T) {
 					controllerpkg.State{AdhocElapsedSeconds: 91},
 					nil,
 				),
-				title:   "Finish Ad hoc Session",
+				title:   "Finish Quick Timer",
 				context: "Elapsed 1m 31s",
 			},
-			[]string{"▶", "Keep as ad hoc", "enter choose", "esc back"},
+			[]string{"▶", "Keep as unplanned", "enter choose", "esc back"},
 		},
 		{
 			formCase{

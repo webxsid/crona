@@ -225,7 +225,7 @@ func (r *SessionRepository) GetDetail(
 		ColumnExpr("streams.public_id AS stream_public_id").
 		ColumnExpr("CASE WHEN streams.is_reserved = 1 THEN 'Sessions' ELSE streams.name END AS stream_name").
 		ColumnExpr("repos.public_id AS repo_public_id").
-		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Ad hoc' ELSE repos.name END AS repo_name").
+		ColumnExpr("CASE WHEN repos.is_reserved = 1 THEN 'Unplanned' ELSE repos.name END AS repo_name").
 		ColumnExpr("sessions.start_time").
 		ColumnExpr("sessions.end_time").
 		ColumnExpr("sessions.duration_seconds").

@@ -153,7 +153,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	if state.View == "session_active" {
 		if state.TimerState == "" || state.TimerState == "idle" {
 			return []string{
-				theme.StyleHeader.Render("[A]") + theme.StyleDim.Render(" start ad hoc timer"),
+				theme.StyleHeader.Render("[A]") + theme.StyleDim.Render(" start quick timer"),
 			}
 		}
 		if state.HardLimitActive {
@@ -326,7 +326,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				theme.StyleHeader.Render(
 					"[enter]",
 				) + theme.StyleDim.Render(
-					" review ad hoc session",
+					" review quick timer",
 				),
 				theme.StyleHeader.Render(
 					"[e]",
@@ -347,7 +347,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 				actions = append(
 					actions,
 					theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
-					theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start ad hoc timer"),
+					theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start quick timer"),
 					theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
 					theme.StyleHeader.Render("[e]")+theme.StyleDim.Render(" edit issue"),
 				)
@@ -364,7 +364,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 			actions = append(
 				actions,
 				theme.StyleHeader.Render("[f]")+theme.StyleDim.Render(" start focus timer"),
-				theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start ad hoc timer"),
+				theme.StyleHeader.Render("[A]")+theme.StyleDim.Render(" start quick timer"),
 				theme.StyleHeader.Render("[m]")+theme.StyleDim.Render(" log work"),
 				theme.StyleHeader.Render("[e/D]")+theme.StyleDim.Render(" edit/delete"),
 			)

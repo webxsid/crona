@@ -123,7 +123,7 @@ The CLI prints the same rows as numbered plain text with flags marked, then asks
 
 - `ctrl+s` parses and opens the review. `esc` in the review returns to the text with its contents and any row edits intact; `esc` in the text closes the dialog.
 - Nothing is saved as a note; the created issues are the only output. Unselected rows are dropped when the dialog closes.
-- `I` is unbound today. It pairs with `a` (create one entry); `A` stays reserved for the ad-hoc timer and `ctrl+a` is avoided as a tmux and screen prefix. Inside dialogs `I` is plain text.
+- `I` is unbound today. It pairs with `a` (create one entry); `A` stays reserved for the quick timer and `ctrl+a` is avoided as a tmux and screen prefix. Inside dialogs `I` is plain text.
 
 #### Notes
 

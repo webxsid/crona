@@ -119,7 +119,7 @@ func stopSession(
 			return nil, err
 		}
 	} else if input.AdhocResolution != "" {
-		return nil, errors.New("active session is not ad hoc")
+		return nil, errors.New("active session is not a quick timer")
 	}
 	activeContext, err := c.ActiveContext.Get(ctx, c.UserID, c.DeviceID)
 	if err != nil {
