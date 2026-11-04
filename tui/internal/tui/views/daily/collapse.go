@@ -55,7 +55,7 @@ func scoreCalendarLines(theme types.Theme, state types.ContentState, width int, 
 		return nil
 	}
 	if week {
-		lines = append(lines[:2:2], lines[2+viewcalendar.ScoreWeekIndex(selection)])
+		lines = append(lines[:3:3], lines[3+viewcalendar.ScoreWeekIndex(selection)], lines[len(lines)-1])
 	}
 	pad := strings.Repeat(" ", max(0, (width-viewcalendar.MaxLineWidth(lines))/2))
 	for i, line := range lines {
