@@ -176,3 +176,44 @@ func TestHistorySegmentsSortChronologicallyWithinSecond(t *testing.T) {
 		}
 	}
 }
+
+func TestEditSessionHistoryKeepsBoundsOnFirstAndLastSegment(t *testing.T) {
+	end, firstEnd, secondEnd := "2026-05-24T10:00:00Z", "2026-05-24T09:30:00Z", "2026-05-24T10:00:00Z"
+	detail := &api.SessionDetail{
+		SessionHistoryEntry: sharedtypes.SessionHistoryEntry{Session: sharedtypes.Session{
+			ID: "session-1", StartTime: "2026-05-24T09:00:00Z", EndTime: &end,
+		}},
+		Segments: []sharedtypes.SessionSegment{
+			{SegmentType: sharedtypes.SessionSegmentWork, StartTime: "2026-05-24T09:00:00Z", EndTime: &firstEnd},
+			{SegmentType: sharedtypes.SessionSegmentShortBreak, StartTime: "2026-05-24T09:30:00Z", EndTime: &secondEnd},
+		},
+	}
+	state := OpenEditSessionHistory(State{Width: 100, Height: 40}, detail)
+	ts := func(utc string) string { return sessionHistoryTimestampValue(utc) }
+	edit := func(state State, focus int, value string) State {
+		state.FocusIdx = focus
+		state = focusSessionHistoryControl(state)
+		for range len([]rune(state.SessionHistorySegments[(focus-5)/3].EndTime.Value())) + 40 {
+			state, _, _ = updateEditSessionHistory(state, tea.KeyMsg{Type: tea.KeyBackspace})
+		}
+		for _, r := range value {
+			state, _, _ = updateEditSessionHistory(state, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{r}})
+		}
+		return state
+	}
+
+	state = edit(state, sessionHistorySegmentFocus(0, 1), ts("2026-05-24T08:45:00Z"))
+	if got := state.Inputs[0].Value(); got != ts("2026-05-24T08:45:00Z") {
+		t.Fatalf("session start should follow the first segment's start, got %q", got)
+	}
+	state = edit(state, sessionHistorySegmentFocus(1, 2), ts("2026-05-24T10:15:00Z"))
+	if got := state.Inputs[1].Value(); got != ts("2026-05-24T10:15:00Z") {
+		t.Fatalf("session end should follow the last segment's end, got %q", got)
+	}
+
+	state.FocusIdx = sessionHistorySegmentFocus(1, 0)
+	state, _, _ = updateEditSessionHistory(state, tea.KeyMsg{Type: tea.KeyCtrlD})
+	if got := state.Inputs[1].Value(); got != ts(firstEnd) {
+		t.Fatalf("removing the last segment should move the session end to %q, got %q", ts(firstEnd), got)
+	}
+}

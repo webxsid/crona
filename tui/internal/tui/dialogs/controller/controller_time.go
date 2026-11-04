@@ -124,6 +124,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 		}
 		state.SessionHistorySegments = append(state.SessionHistorySegments, row)
 		state.FocusIdx = sessionHistorySegmentFocus(len(state.SessionHistorySegments)-1, 0)
+		state = syncSessionHistoryBounds(state)
 		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
 	case "ctrl+d":
 		rowIndex, column, ok := sessionHistorySegmentAt(state.FocusIdx)
@@ -145,6 +146,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 				column,
 			)
 		}
+		state = syncSessionHistoryBounds(state)
 		return focusSessionHistoryControl(clearDialogError(state)), nil, ""
 	}
 	if msg.String() == "left" || msg.String() == "right" {
@@ -195,7 +197,7 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 			row.EndTime, cmd = row.EndTime.Update(msg)
 			_ = cmd
 		}
-		return clearDialogError(state), nil, ""
+		return syncSessionHistoryBounds(clearDialogError(state)), nil, ""
 	}
 	var cmd tea.Cmd
 	if state.FocusIdx < 0 || state.FocusIdx >= len(state.Inputs) {
@@ -204,6 +206,28 @@ func updateEditSessionHistory(state State, msg tea.KeyMsg) (State, *Action, stri
 	state.Inputs[state.FocusIdx], cmd = state.Inputs[state.FocusIdx].Update(msg)
 	_ = cmd
 	return clearDialogError(state), nil, ""
+}
+
+// syncSessionHistoryBounds keeps the session's start and end on the first segment's start
+// and the last segment's end. A time still being typed is skipped, so the session keeps its
+// last valid bound until the segment's time parses again.
+func syncSessionHistoryBounds(state State) State {
+	segments := state.SessionHistorySegments
+	if len(segments) == 0 || len(state.Inputs) < 2 {
+		return state
+	}
+	if value := segments[0].StartTime.Value(); validSessionHistoryTimestamp(value) {
+		state.Inputs[0].SetValue(value)
+	}
+	if value := segments[len(segments)-1].EndTime.Value(); validSessionHistoryTimestamp(value) {
+		state.Inputs[1].SetValue(value)
+	}
+	return state
+}
+
+func validSessionHistoryTimestamp(value string) bool {
+	_, err := parseSessionHistoryTimestamp(value)
+	return err == nil
 }
 
 func sessionHistoryUpdateRequest(state State) (*shareddto.UpdateSessionHistoryRequest, error) {
