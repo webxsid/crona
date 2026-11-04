@@ -307,21 +307,35 @@ func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
 	}
 }
 
-func TestDailyCalendarPaneSitsUnderHabits(t *testing.T) {
+func TestDailyScoreCalendarSitsUnderDetailsOnWideScreens(t *testing.T) {
+	state := dailyState(200, 40)
+	state.DashboardDate = "2026-05-27"
+	state.SummarySnapshot = &api.SummarySnapshot{CalendarScores: map[string]api.FocusScoreRangeDay{
+		"2026-05-20": {Date: "2026-05-20", Score: 82, HasData: true},
+	}}
+	rendered := ansi.Strip(renderView(testTheme(), state))
+	calendarRow, detailRow := rowOf(t, rendered, "─ Calendar"), rowOf(t, rendered, "─ Ship momentum block")
+	lines := strings.Split(rendered, "\n")
+	if calendarRow <= detailRow || strings.Index(lines[calendarRow], "─ Calendar") < 100 {
+		t.Fatalf("expected the calendar in the right column under details, got\n%s", rendered)
+	}
+	if !strings.Contains(rendered, "May 2026") || !strings.Contains(rendered, "20  82") {
+		t.Fatalf("expected the month with each day's score, got\n%s", rendered)
+	}
+}
+
+func TestDailyScoreCalendarGoesUnderHabitsOnNarrowScreens(t *testing.T) {
 	state := dailyState(130, 40)
 	state.DashboardDate = "2026-05-27"
 	rendered := ansi.Strip(renderView(testTheme(), state))
-	if rowOf(t, rendered, "─ Calendar") <= rowOf(t, rendered, "─ Habits Due") ||
-		!strings.Contains(rendered, "May 2026") {
+	if rowOf(t, rendered, "─ Calendar") <= rowOf(t, rendered, "─ Habits Due") || !strings.Contains(rendered, "May 2026") {
 		t.Fatalf("expected the month calendar under Habits, got\n%s", rendered)
 	}
-	if strings.Contains(rendered, "W22") {
-		t.Fatalf("expected the whole month with room to spare, got\n%s", rendered)
-	}
-	short := dailyState(130, 24)
+	short := dailyState(130, 26)
 	short.DashboardDate = "2026-05-27"
-	if out := ansi.Strip(renderView(testTheme(), short)); !strings.Contains(out, "W22 25 26 27") {
-		t.Fatalf("expected the calendar to drop to its week on a short screen, got\n%s", out)
+	out := ansi.Strip(renderView(testTheme(), short))
+	if strings.Contains(out, " 4  ") || !strings.Contains(out, "25   · 26") {
+		t.Fatalf("expected only the shown week on a short screen, got\n%s", out)
 	}
 	tiny := dailyState(130, 18)
 	tiny.DashboardDate = "2026-05-27"
@@ -340,11 +354,17 @@ func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
 	if len(lines) != 40 {
 		t.Fatalf("expected the view to keep its height, got %d", len(lines))
 	}
-	if !strings.Contains(lines[38], "Habits ▸") || !strings.Contains(lines[38], "alt+1") ||
-		!strings.Contains(lines[39], "Calendar ▸") {
-		t.Fatalf("expected Habits and Calendar folded to the last two rows, got\n%s", rendered)
+	for i, want := range []string{"Habits ▸", "Calendar ▸", "Details ▸"} {
+		if row := lines[37+i]; !strings.Contains(row, want) || !strings.Contains(row, "expand") {
+			t.Fatalf("expected %q folded on row %d, got\n%s", want, 37+i, rendered)
+		}
 	}
 	if strings.Contains(rendered, "─ Ship momentum block") {
 		t.Fatalf("expected the detail pane folded away, got\n%s", rendered)
+	}
+	state.Settings.CollapsedPanes = []string{uistate.CollapseDailyDetail}
+	if out := ansi.Strip(renderView(testTheme(), state)); !strings.Contains(out, "Details ▸") ||
+		rowOf(t, out, "─ Calendar") <= rowOf(t, out, "Details ▸") {
+		t.Fatalf("expected folded details over the calendar in the right column, got\n%s", out)
 	}
 }

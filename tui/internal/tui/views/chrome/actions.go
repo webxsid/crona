@@ -68,9 +68,9 @@ func DateActions(theme Theme, view string) []string {
 		return append(actions,
 			theme.StyleHeader.Render("[S]")+theme.StyleDim.Render(" day summary"),
 			theme.StyleHeader.Render("[C]")+theme.StyleDim.Render(" calendar"),
-			theme.StyleHeader.Render("[alt+1]")+theme.StyleDim.Render(" fold habits"),
-			theme.StyleHeader.Render("[alt+2]")+theme.StyleDim.Render(" fold calendar pane"),
-			theme.StyleHeader.Render("[alt+3]")+theme.StyleDim.Render(" fold detail pane"),
+			theme.StyleHeader.Render("["+uistate.KeyLabel("alt+1")+"]")+theme.StyleDim.Render(" fold habits"),
+			theme.StyleHeader.Render("["+uistate.KeyLabel("alt+2")+"]")+theme.StyleDim.Render(" fold calendar pane"),
+			theme.StyleHeader.Render("["+uistate.KeyLabel("alt+3")+"]")+theme.StyleDim.Render(" fold detail pane"),
 		)
 	case "review":
 		return append(actions,

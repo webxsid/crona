@@ -193,8 +193,17 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Snapshot == nil || msg.Snapshot.Date != m.currentDate() {
 			return m, nil
 		}
+		// Keep the calendar scores already loaded, then refresh the shown month's, which
+		// Today's calendar pane shows.
+		if m.summarySnapshot != nil && msg.Snapshot.CalendarScores == nil {
+			msg.Snapshot.CalendarScores = m.summarySnapshot.CalendarScores
+		}
 		m.summarySnapshot = msg.Snapshot
-		return m, nil
+		start, end := monthBounds(msg.Snapshot.Date)
+		if start == "" {
+			return m, nil
+		}
+		return m, commands.LoadSummaryCalendarScores(m.client, start, end)
 	case commands.SummaryCalendarScoresLoadedMsg:
 		if m.summarySnapshot == nil {
 			return m, nil
@@ -624,4 +633,14 @@ func pluralIssues(n int) string {
 		return "1 issue"
 	}
 	return fmt.Sprintf("%d issues", n)
+}
+
+// monthBounds is the first and last day of date's month, or empty when date is not a date.
+func monthBounds(date string) (string, string) {
+	day, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return "", ""
+	}
+	first := time.Date(day.Year(), day.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return first.Format("2006-01-02"), first.AddDate(0, 1, -1).Format("2006-01-02")
 }

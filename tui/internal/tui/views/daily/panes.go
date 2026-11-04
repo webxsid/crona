@@ -1,6 +1,7 @@
 package daily
 
 import (
+	uistate "crona/tui/internal/tui/state"
 	"fmt"
 	"strings"
 
@@ -377,7 +378,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	lines := []string{newItemLine(theme, "new habit")}
 	if total == 0 {
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
-		return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
+		return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"])+"  "+foldHint(theme, uistate.CollapseDailyHabits, "fold"), active, width, height, lines)
 	}
 	inner := sectionBodyRows(height, lines)
 	if active {
@@ -404,7 +405,7 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
 	}
-	return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"]), active, width, height, lines)
+	return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"])+"  "+foldHint(theme, uistate.CollapseDailyHabits, "fold"), active, width, height, lines)
 }
 
 const habitRowBarWidth = 10

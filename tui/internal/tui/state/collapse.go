@@ -1,6 +1,10 @@
 package state
 
-import "slices"
+import (
+	"runtime"
+	"slices"
+	"strings"
+)
 
 // Collapsible Today panes, saved in core settings' collapsedPanes as these keys.
 const (
@@ -27,4 +31,29 @@ func ToggleCollapsed(collapsed []string, key string) []string {
 		return slices.DeleteFunc(slices.Clone(collapsed), func(k string) bool { return k == key })
 	}
 	return append(slices.Clone(collapsed), key)
+}
+
+// KeyLabel shows an alt+ key the way the keyboard names it: ⌥ on macOS, where the key is
+// Option, and alt+ elsewhere.
+func KeyLabel(key string) string {
+	return keyLabelFor(runtime.GOOS, key)
+}
+
+func keyLabelFor(goos, key string) string {
+	if goos == "darwin" {
+		if rest, ok := strings.CutPrefix(key, "alt+"); ok {
+			return "⌥" + rest
+		}
+	}
+	return key
+}
+
+// FoldKey is the key that folds a Today pane, the reverse of DailyCollapseKeys.
+func FoldKey(pane string) string {
+	for key, p := range DailyCollapseKeys {
+		if p == pane {
+			return key
+		}
+	}
+	return ""
 }
