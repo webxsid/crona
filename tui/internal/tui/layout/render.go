@@ -181,7 +181,7 @@ func renderMinimumSizeWarning(width, height int) string {
 // and dev badge live on the status line.
 func renderTabLine(state State) string {
 	active := uistate.TabForView(state.View)
-	line := func(views []uistate.View, hint bool) string {
+	line := func(views []uistate.View, hint, compact bool) string {
 		parts := []string{}
 		for i, tab := range uistate.TabOrder() {
 			if !slices.Contains(state.Tabs, tab) {
@@ -189,7 +189,9 @@ func renderTabLine(state State) string {
 			}
 			number, label := fmt.Sprint(i+1), uistate.TabLabel(tab)
 			if tab == active {
-				parts = append(parts, tabPill(number, label, views, state.View))
+				parts = append(parts, tabPill(number, label, views, state.SubTabs, state.View))
+			} else if compact {
+				parts = append(parts, " "+chrome.StyleDim.Render(number)+" ")
 			} else {
 				parts = append(parts, " "+chrome.StyleDim.Render(number)+" "+chrome.StyleTabIdle.Render(label)+" ")
 			}
@@ -209,16 +211,29 @@ func renderTabLine(state State) string {
 	fits := func(left string) bool {
 		return ansi.StringWidth(left)+3+min(ansi.StringWidth(context), 16) <= state.Width
 	}
-	// The [ ] hint goes first, then the other views, then the open view.
-	left := line(views, len(views) > 0)
-	if len(views) > 0 && !fits(left) {
-		left = line(views, false)
+	// When narrow, the [ ] hint goes first, then the other tabs shrink to their numbers,
+	// and only then does the pill drop its other views.
+	type attempt struct {
+		views         []uistate.View
+		hint, compact bool
 	}
-	if len(views) > 0 && !fits(left) {
-		left = line([]uistate.View{state.View}, false)
+	attempts := []attempt{{views, len(views) > 0, false}}
+	if len(views) > 0 {
+		attempts = append(attempts,
+			attempt{views, false, false},
+			attempt{views, false, true},
+		)
+		// Then a shrinking window of views around the open one, down to it alone.
+		for size := len(views) - 1; size >= 1; size-- {
+			attempts = append(attempts, attempt{viewWindow(views, state.View, size), false, true})
+		}
 	}
-	if !fits(left) {
-		left = line(nil, false)
+	attempts = append(attempts, attempt{nil, false, true})
+	left := ""
+	for _, a := range attempts {
+		if left = line(a.views, a.hint, a.compact); fits(left) {
+			break
+		}
 	}
 	// The tabs are the only navigation indicator, so the context gives way first.
 	room := state.Width - ansi.StringWidth(left) - 2
@@ -230,10 +245,14 @@ func renderTabLine(state State) string {
 }
 
 // tabPill is the active tab, `2 Work │ Issues  Habits  Tags`, with open underlined.
-func tabPill(number, label string, views []uistate.View, open uistate.View) string {
+// views may be a window of all; a … marks the views left out on either side.
+func tabPill(number, label string, views, all []uistate.View, open uistate.View) string {
 	pill := chrome.StyleTabPill.Render(" "+number+" ") + chrome.StyleTabPill.Bold(true).Render(label)
 	if len(views) > 0 {
 		pill += chrome.StyleTabPillDivider.Render(" │ ")
+		if len(all) > 0 && views[0] != all[0] {
+			pill += chrome.StyleTabPillDivider.Render("…  ")
+		}
 		for i, view := range views {
 			if i > 0 {
 				pill += chrome.StyleTabPill.Render("  ")
@@ -244,8 +263,18 @@ func tabPill(number, label string, views []uistate.View, open uistate.View) stri
 			}
 			pill += style.Render(uistate.ViewLabel(view))
 		}
+		if len(all) > 0 && views[len(views)-1] != all[len(all)-1] {
+			pill += chrome.StyleTabPillDivider.Render("  …")
+		}
 	}
 	return pill + chrome.StyleTabPill.Render(" ")
+}
+
+// viewWindow is size consecutive views containing open, as centred on it as the ends allow.
+func viewWindow(views []uistate.View, open uistate.View, size int) []uistate.View {
+	at := max(slices.Index(views, open), 0)
+	start := min(max(at-size/2, 0), len(views)-size)
+	return views[start : start+size]
 }
 
 // contextLabel names the active scope, falling back to All when no repo is selected.

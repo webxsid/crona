@@ -126,9 +126,9 @@ func TestRenderTabPillShrinksBeforeTheContext(t *testing.T) {
 	}
 	state.Width = 80
 	line := plainLines(Render(state))[0]
-	if !strings.Contains(line, "1 Today │ Daily ") || strings.Contains(line, "Session") ||
+	if !strings.Contains(line, "1 Today │ Daily  Session  Away") || strings.Contains(line, "Work") ||
 		!strings.Contains(line, "crona › tui") {
-		t.Fatalf("expected the pill to keep only the open view so the context fits, got %q", line)
+		t.Fatalf("expected other tabs as numbers so the pill keeps its views, got %q", line)
 	}
 }
 
@@ -359,8 +359,10 @@ func TestRenderTabLineKeepsTabsWithLongContext(t *testing.T) {
 	state.RepoName = "crona-monorepo"
 	state.StreamName = "feature/tui-layout-redesign-long-name"
 	line := plainLines(Render(state))[0]
-	if !strings.Contains(line, "5 System") {
-		t.Fatalf("expected all tabs to survive a long context, got %q", line)
+	for _, number := range []string{" 2 ", " 3 ", " 4 ", " 5 "} {
+		if !strings.Contains(line, number) {
+			t.Fatalf("expected every tab number to survive a long context, got %q", line)
+		}
 	}
 	// The numbered tabs fill the minimum width; the context shows once there is room.
 	state.Width = 80
@@ -438,5 +440,27 @@ func TestDateRowNavSitsRightInKeyOrder(t *testing.T) {
 	lines := plainLines(Render(datedShellState(uistate.ViewReview, 160, 36)))
 	if strings.Contains(lines[1], "[+/-/0]") || !strings.Contains(lines[2], "[+/-/0]") {
 		t.Fatalf("expected the window key under the date nav, got %q / %q", lines[1], lines[2])
+	}
+}
+
+func TestNarrowTabLineKeepsViewsByShrinkingOtherTabs(t *testing.T) {
+	state := shellStateForTest(uistate.ViewConfig, 80, 24)
+	state.SubTabs = []uistate.View{uistate.ViewSupport, uistate.ViewConfig, uistate.ViewSettings}
+	line := plainLines(Render(state))[0]
+	if !strings.Contains(line, "5 System │") || !strings.Contains(line, "Config") || strings.Contains(line, "Today") {
+		t.Fatalf("expected other tabs as numbers and the pill keeping its views, got %q", line)
+	}
+}
+
+func TestNarrowPillShowsAWindowOfViewsAroundTheOpenOne(t *testing.T) {
+	state := shellStateForTest(uistate.ViewConfig, 80, 24)
+	state.SubTabs = []uistate.View{
+		uistate.ViewSettings, uistate.ViewAlerts, uistate.ViewReports,
+		uistate.ViewConfig, uistate.ViewUpdates, uistate.ViewSupport,
+	}
+	line := plainLines(Render(state))[0]
+	if !strings.Contains(line, "5 System │ …  ") || !strings.Contains(line, "Config") ||
+		!strings.Contains(line, "Reports") || !strings.Contains(line, "  …") {
+		t.Fatalf("expected a window of views around Config with … on both sides, got %q", line)
 	}
 }
