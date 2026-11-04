@@ -146,12 +146,12 @@ func RescheduleHint(plan *api.DailyPlan, issueID int64) string {
 		}
 		push := entry.Penalty.IfPostponedOneDay
 		hint := fmt.Sprintf(
-			"Push 1 day: penalty %.2f (%+.2f)",
+			"Push a day: penalty rises to %.2f (%+.2f)",
 			push.FailScore,
 			push.AccountabilityDelta,
 		)
 		if push.BecomesHighRisk {
-			hint += " · becomes high risk"
+			hint += " ▲ high risk"
 		}
 		return hint
 	}

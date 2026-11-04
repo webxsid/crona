@@ -100,7 +100,7 @@ func TestDetailShowsOnScheduleWithoutPenalty(t *testing.T) {
 }
 
 func TestRescheduleHintShowsPushCost(t *testing.T) {
-	if got := RescheduleHint(penaltyPlan(false), 2); got != "Push 1 day: penalty 3.81 (+0.43)" {
+	if got := RescheduleHint(penaltyPlan(false), 2); got != "Push a day: penalty rises to 3.81 (+0.43)" {
 		t.Fatalf("unexpected hint %q", got)
 	}
 	if got := RescheduleHint(penaltyPlan(true), 2); got != "" {
