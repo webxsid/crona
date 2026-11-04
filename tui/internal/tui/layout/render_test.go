@@ -73,6 +73,9 @@ func TestRenderTabPillListsTheTabsViews(t *testing.T) {
 	if line := plainLines(Render(state))[0]; !strings.Contains(line, "3 Insights │ Review  Momentum") {
 		t.Fatalf("expected the active tab to list its views, got %q", line)
 	}
+	if line := plainLines(Render(state))[0]; !strings.Contains(line, "[ ] switch view") {
+		t.Fatalf("expected the view switch hint beside the pill, got %q", line)
+	}
 	if got := ContentHeight(state); got != 36-3 {
 		t.Fatalf("expected content height 33 with only the date row under the tabs, got %d", got)
 	}
@@ -80,6 +83,9 @@ func TestRenderTabPillListsTheTabsViews(t *testing.T) {
 	ops.SubTabs = []uistate.View{uistate.ViewOps}
 	if line := plainLines(Render(ops))[0]; strings.Contains(line, "│") {
 		t.Fatalf("expected a single-view tab without a list, got %q", line)
+	}
+	if line := plainLines(Render(ops))[0]; strings.Contains(line, "[ ]") {
+		t.Fatalf("expected no switch hint on a single-view tab, got %q", line)
 	}
 	if got := ContentHeight(ops); got != 36-3 {
 		t.Fatalf("expected content height 33 with a blank row under the tabs, got %d", got)
@@ -112,8 +118,8 @@ func TestRenderTabLineNumbersTabs(t *testing.T) {
 func TestRenderTabPillShrinksBeforeTheContext(t *testing.T) {
 	state := datedShellState(uistate.ViewDaily, 140, 36)
 	if line := plainLines(Render(state))[0]; !strings.Contains(line, "1 Today │ Daily  Session  Away") ||
-		strings.Contains(line, "[[]") || strings.Contains(line, "switch") {
-		t.Fatalf("expected the views inside the pill and no switch frame, got %q", line)
+		strings.Contains(line, "[[]") || !strings.Contains(line, "[ ] switch view") {
+		t.Fatalf("expected the views inside the pill and the [ ] hint, got %q", line)
 	}
 	if line := plainLines(Render(state))[1]; !strings.HasSuffix(line, "C calendar ") {
 		t.Fatalf("expected the date navigation alone on the next row, got %q", line)

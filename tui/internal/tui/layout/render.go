@@ -181,7 +181,7 @@ func renderMinimumSizeWarning(width, height int) string {
 // and dev badge live on the status line.
 func renderTabLine(state State) string {
 	active := uistate.TabForView(state.View)
-	line := func(views []uistate.View) string {
+	line := func(views []uistate.View, hint bool) string {
 		parts := []string{}
 		for i, tab := range uistate.TabOrder() {
 			if !slices.Contains(state.Tabs, tab) {
@@ -194,7 +194,11 @@ func renderTabLine(state State) string {
 				parts = append(parts, " "+chrome.StyleDim.Render(number)+" "+chrome.StyleTabIdle.Render(label)+" ")
 			}
 		}
-		return " " + strings.Join(parts, " ")
+		out := " " + strings.Join(parts, " ")
+		if hint {
+			out += "   " + chrome.StyleHeader.Render("[ ]") + chrome.StyleDim.Render(" switch view")
+		}
+		return out
 	}
 	var views []uistate.View
 	if len(state.SubTabs) >= 2 {
@@ -205,12 +209,16 @@ func renderTabLine(state State) string {
 	fits := func(left string) bool {
 		return ansi.StringWidth(left)+3+min(ansi.StringWidth(context), 16) <= state.Width
 	}
-	left := line(views)
+	// The [ ] hint goes first, then the other views, then the open view.
+	left := line(views, len(views) > 0)
 	if len(views) > 0 && !fits(left) {
-		left = line([]uistate.View{state.View})
+		left = line(views, false)
+	}
+	if len(views) > 0 && !fits(left) {
+		left = line([]uistate.View{state.View}, false)
 	}
 	if !fits(left) {
-		left = line(nil)
+		left = line(nil, false)
 	}
 	// The tabs are the only navigation indicator, so the context gives way first.
 	room := state.Width - ansi.StringWidth(left) - 2
