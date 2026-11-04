@@ -422,6 +422,12 @@ func newRouter(deps Deps) *router {
 		}
 		return s, nil, deps.OpenSummaryCalendar(&s)
 	})
+	// alt+1/2/3 fold and unfold Habits, the calendar and the detail pane; the choice is saved.
+	for key, pane := range uistate.DailyCollapseKeys {
+		r.RegisterView(uistate.ViewDaily, key, func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			return handleToggleCollapsed(s, deps, pane)
+		})
+	}
 	r.RegisterView(uistate.ViewDaily, "S", func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
 		if deps.OpenDaySummary != nil && deps.OpenDaySummary(&s) {
 			return s, nil, true

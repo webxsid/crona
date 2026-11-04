@@ -39,6 +39,7 @@ var DefaultCoreSettings = map[string]any{
 	"dateDisplayPreset":            "iso",
 	"dateDisplayFormat":            "",
 	"tagFilters":                   map[string]string{},
+	"collapsedPanes":               []string{},
 	"promptGlyphMode":              "emoji",
 	"onboardingCompleted":          false,
 	"usageTelemetryEnabled":        false,

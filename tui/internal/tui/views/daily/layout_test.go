@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"crona/tui/internal/api"
+	uistate "crona/tui/internal/tui/state"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -76,9 +77,8 @@ func TestDailySplitsTasksAndHabitsEvenly(t *testing.T) {
 		for _, tasks := range []int{1, 3, 30} {
 			state := manyIssues(dailyState(width, 40), tasks)
 			rendered := renderView(testTheme(), state)
-			strip := len(renderDayStrip(testTheme(), state, width))
 			tasksH := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks")
-			habitsH := 40 - strip - tasksH
+			habitsH := 40 - len(renderDayStrip(testTheme(), state, width)) - tasksH
 			if tasksH-habitsH < 0 || tasksH-habitsH > 1 {
 				t.Fatalf(
 					"width %d, %d tasks: expected an even split, got tasks %d habits %d",
@@ -304,5 +304,47 @@ func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
 			!strings.Contains(rendered, "core") {
 			t.Fatalf("width %d: expected the issue's own repo and stream, got %q", width, rendered)
 		}
+	}
+}
+
+func TestDailyCalendarPaneSitsUnderHabits(t *testing.T) {
+	state := dailyState(130, 40)
+	state.DashboardDate = "2026-05-27"
+	rendered := ansi.Strip(renderView(testTheme(), state))
+	if rowOf(t, rendered, "─ Calendar") <= rowOf(t, rendered, "─ Habits Due") ||
+		!strings.Contains(rendered, "May 2026") {
+		t.Fatalf("expected the month calendar under Habits, got\n%s", rendered)
+	}
+	if strings.Contains(rendered, "W22") {
+		t.Fatalf("expected the whole month with room to spare, got\n%s", rendered)
+	}
+	short := dailyState(130, 24)
+	short.DashboardDate = "2026-05-27"
+	if out := ansi.Strip(renderView(testTheme(), short)); !strings.Contains(out, "W22 25 26 27") {
+		t.Fatalf("expected the calendar to drop to its week on a short screen, got\n%s", out)
+	}
+	tiny := dailyState(130, 18)
+	tiny.DashboardDate = "2026-05-27"
+	if out := ansi.Strip(renderView(testTheme(), tiny)); !strings.Contains(out, "Calendar ▸") {
+		t.Fatalf("expected the calendar folded when even a week does not fit, got\n%s", out)
+	}
+}
+
+func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
+	state := dailyState(200, 40)
+	state.Settings = &api.CoreSettings{CollapsedPanes: []string{
+		uistate.CollapseDailyHabits, uistate.CollapseDailyCalendar, uistate.CollapseDailyDetail,
+	}}
+	rendered := ansi.Strip(renderView(testTheme(), state))
+	lines := strings.Split(rendered, "\n")
+	if len(lines) != 40 {
+		t.Fatalf("expected the view to keep its height, got %d", len(lines))
+	}
+	if !strings.Contains(lines[38], "Habits ▸") || !strings.Contains(lines[38], "alt+1") ||
+		!strings.Contains(lines[39], "Calendar ▸") {
+		t.Fatalf("expected Habits and Calendar folded to the last two rows, got\n%s", rendered)
+	}
+	if strings.Contains(rendered, "─ Ship momentum block") {
+		t.Fatalf("expected the detail pane folded away, got\n%s", rendered)
 	}
 }

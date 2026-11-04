@@ -1,6 +1,7 @@
 package daily
 
 import (
+	uistate "crona/tui/internal/tui/state"
 	viewaway "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -36,15 +37,34 @@ func renderView(theme types.Theme, state types.ContentState) string {
 
 	listW := width
 	detail := ""
-	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide {
+	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide && !dailyCollapsed(state, uistate.CollapseDailyDetail) {
 		cols := viewhelpers.Columns(width, 3, 2)
 		listW = cols[0]
 		detail = renderDetail(theme, state, cols[1], rest)
 	}
-	habitsH := rest / 2
+	// Tasks keeps the top half; Habits and the calendar share the bottom half, the calendar
+	// only when Habits keeps dailyMinHabitRows. With Habits folded, Tasks takes what the
+	// calendar leaves, down to dailyMinTaskRows.
+	habitsFolded := dailyCollapsed(state, uistate.CollapseDailyHabits)
+	lower := rest / 2
+	fits := func(h int) bool { return lower-h >= dailyMinHabitRows }
+	if habitsFolded {
+		fits = func(h int) bool { return rest-1-h >= dailyMinTaskRows }
+	}
+	calendar, calendarH := collapsedPane(theme, "Calendar", "alt+2", listW), 1
+	if !dailyCollapsed(state, uistate.CollapseDailyCalendar) {
+		calendar, calendarH = calendarPane(theme, state, listW, fits)
+	}
+	habits, habitsH := collapsedPane(theme, "Habits", "alt+1", listW), 1
+	if !habitsFolded {
+		habitsH = max(1, lower-calendarH)
+		habits = renderHabits(theme, state, listW, habitsH)
+	}
+	tasksH := rest - habitsH - calendarH
 	body := lipgloss.JoinVertical(lipgloss.Left,
-		renderIssues(theme, state, listW, rest-habitsH),
-		renderHabits(theme, state, listW, habitsH),
+		renderIssues(theme, state, listW, tasksH),
+		habits,
+		calendar,
 	)
 	if detail != "" {
 		body = viewchrome.JoinColumns(theme, rest, body, detail)

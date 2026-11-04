@@ -196,6 +196,7 @@ type CoreSettingsModel struct {
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
 	TagFilters            string `bun:"tag_filters,notnull,type:text,default:'{}'"`
+	CollapsedPanes        string `bun:"collapsed_panes,notnull,type:text,default:'[]'"`
 	PromptGlyphMode       string `bun:"prompt_glyph_mode,notnull,type:text"`
 	OnboardingCompleted   bool   `bun:"onboarding_completed,notnull,type:integer"`
 	UsageTelemetryEnabled bool   `bun:"usage_telemetry_enabled,notnull,type:integer"`

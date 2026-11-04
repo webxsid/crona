@@ -191,6 +191,10 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "tag_filters",
 		queryKind: coreSettingQueryString,
 	},
+	sharedtypes.CoreSettingsKeyCollapsedPanes: {
+		column:    "collapsed_panes",
+		queryKind: coreSettingQueryString,
+	},
 	sharedtypes.CoreSettingsKeyPromptGlyphMode: {
 		column:    "prompt_glyph_mode",
 		queryKind: coreSettingQueryString,
@@ -541,6 +545,7 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		TagFilters:            mustJSON(sharedconstants.DefaultCoreSettings["tagFilters"]),
+		CollapsedPanes:        mustJSON(sharedconstants.DefaultCoreSettings["collapsedPanes"]),
 		PromptGlyphMode:       sharedconstants.DefaultCoreSettings["promptGlyphMode"].(string),
 		OnboardingCompleted:   sharedconstants.DefaultCoreSettings["onboardingCompleted"].(bool),
 		UsageTelemetryEnabled: sharedconstants.DefaultCoreSettings["usageTelemetryEnabled"].(bool),
@@ -592,6 +597,8 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return parseIntSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyTagFilters:
 		return parseStringMap(toString(value))
+	case sharedtypes.CoreSettingsKeyCollapsedPanes:
+		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return parseStringSlice(toString(value))
 	case sharedtypes.CoreSettingsKeyAwayDates:
@@ -658,6 +665,8 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return intSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyTagFilters:
 		return stringMapJSON(value)
+	case sharedtypes.CoreSettingsKeyCollapsedPanes:
+		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyRestSpecificDates:
 		return stringSliceJSON(value)
 	case sharedtypes.CoreSettingsKeyAwayDates:
@@ -787,6 +796,7 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		),
 		DateDisplayFormat: strings.TrimSpace(row.DateDisplayFormat),
 		TagFilters:        parseStringMap(row.TagFilters),
+		CollapsedPanes:    parseStringSlice(row.CollapsedPanes),
 		PromptGlyphMode: sharedtypes.NormalizePromptGlyphMode(
 			sharedtypes.PromptGlyphMode(row.PromptGlyphMode),
 		),

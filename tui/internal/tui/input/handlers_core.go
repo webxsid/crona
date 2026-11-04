@@ -1,6 +1,8 @@
 package input
 
 import (
+	sharedtypes "crona/shared/types"
+	"crona/tui/internal/api"
 	uistate "crona/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -46,6 +48,11 @@ func enterView(s State, deps Deps, view uistate.View) (tea.Model, tea.Cmd, bool)
 
 func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
 	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
+	// A folded Habits pane takes no focus.
+	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneHabits && s.Settings != nil &&
+		uistate.PaneCollapsed(s.Settings.CollapsedPanes, uistate.CollapseDailyHabits) {
+		s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
+	}
 	return s, nil, true
 }
 
@@ -229,4 +236,25 @@ func nextIndex[T comparable](current T, options []T, dir int) int {
 		index = 0
 	}
 	return index
+}
+
+// handleToggleCollapsed folds or unfolds a Today pane at once and saves the choice. Folding
+// Habits while it has focus hands focus to Tasks.
+func handleToggleCollapsed(s State, deps Deps, pane string) (tea.Model, tea.Cmd, bool) {
+	settings := api.CoreSettings{}
+	if s.Settings != nil {
+		settings = *s.Settings
+	}
+	settings.CollapsedPanes = uistate.ToggleCollapsed(settings.CollapsedPanes, pane)
+	s.Settings = &settings
+	if pane == uistate.CollapseDailyHabits && s.ActivePane == uistate.PaneHabits &&
+		uistate.PaneCollapsed(settings.CollapsedPanes, pane) {
+		s.ActivePane = uistate.PaneIssues
+	}
+	if deps.PatchSetting == nil {
+		return s, nil, true
+	}
+	return s, deps.PatchSetting(
+		sharedtypes.CoreSettingsKeyCollapsedPanes, settings.CollapsedPanes, 0, 0, "",
+	), true
 }

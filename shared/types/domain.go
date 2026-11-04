@@ -364,6 +364,7 @@ const (
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyTagFilters            CoreSettingsKey = "tagFilters"
+	CoreSettingsKeyCollapsedPanes        CoreSettingsKey = "collapsedPanes"
 	CoreSettingsKeyPromptGlyphMode       CoreSettingsKey = "promptGlyphMode"
 	CoreSettingsKeyOnboardingCompleted   CoreSettingsKey = "onboardingCompleted"
 	CoreSettingsKeyUsageTelemetryEnabled CoreSettingsKey = "usageTelemetryEnabled"
@@ -1392,7 +1393,9 @@ type CoreSettings struct {
 	DateDisplayPreset     DateDisplayPreset `json:"dateDisplayPreset"`
 	DateDisplayFormat     string            `json:"dateDisplayFormat,omitempty"`
 	// TagFilters is the saved tag part ("+a -b") of each TUI pane's filter, by pane.
-	TagFilters            map[string]string       `json:"tagFilters,omitempty"`
+	TagFilters map[string]string `json:"tagFilters,omitempty"`
+	// CollapsedPanes are the TUI panes the user has collapsed, as "view/pane" keys.
+	CollapsedPanes        []string                `json:"collapsedPanes,omitempty"`
 	PromptGlyphMode       PromptGlyphMode         `json:"promptGlyphMode"`
 	OnboardingCompleted   bool                    `json:"onboardingCompleted"`
 	UsageTelemetryEnabled bool                    `json:"usageTelemetryEnabled"`
