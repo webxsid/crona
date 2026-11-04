@@ -68,19 +68,21 @@ func TestRenderTabLineMarksActiveTab(t *testing.T) {
 	}
 }
 
-func TestRenderSubTabLineOnlyForMultiViewTabs(t *testing.T) {
+func TestRenderTabPillListsTheTabsViews(t *testing.T) {
 	state := shellStateForTest(uistate.ViewReview, 120, 36)
-	lines := plainLines(Render(state))
-	if !strings.Contains(lines[1], "Momentum") || !strings.Contains(lines[1], "Review") {
-		t.Fatalf("expected sub-tab line, got %q", lines[1])
+	if line := plainLines(Render(state))[0]; !strings.Contains(line, "3 Insights │ Review  Momentum") {
+		t.Fatalf("expected the active tab to list its views, got %q", line)
 	}
 	if got := ContentHeight(state); got != 36-3 {
-		t.Fatalf("expected content height 33 with sub-tabs and the date sharing a row, got %d", got)
+		t.Fatalf("expected content height 33 with only the date row under the tabs, got %d", got)
 	}
 	ops := shellStateForTest(uistate.ViewOps, 120, 36)
 	ops.SubTabs = []uistate.View{uistate.ViewOps}
+	if line := plainLines(Render(ops))[0]; strings.Contains(line, "│") {
+		t.Fatalf("expected a single-view tab without a list, got %q", line)
+	}
 	if got := ContentHeight(ops); got != 36-2 {
-		t.Fatalf("expected content height 34 without sub-tabs, got %d", got)
+		t.Fatalf("expected content height 34 without a date row, got %d", got)
 	}
 }
 
@@ -104,16 +106,20 @@ func TestRenderTabLineNumbersTabs(t *testing.T) {
 	}
 }
 
-func TestRenderNavRowPutsSubTabsLeftAndDateRight(t *testing.T) {
-	line := strings.TrimRight(plainLines(Render(datedShellState(uistate.ViewDaily, 140, 36)))[1], " ")
-	if !strings.HasPrefix(strings.TrimSpace(line), "Daily") || !strings.Contains(line, "[ ] switch") {
-		t.Fatalf("expected the sub-tabs first with a switch hint, got %q", line)
+func TestRenderTabPillShrinksBeforeTheContext(t *testing.T) {
+	state := datedShellState(uistate.ViewDaily, 140, 36)
+	if line := plainLines(Render(state))[0]; !strings.Contains(line, "1 Today │ Daily  Session  Away") ||
+		strings.Contains(line, "[[]") || strings.Contains(line, "switch") {
+		t.Fatalf("expected the views inside the pill and no switch frame, got %q", line)
 	}
-	if strings.Contains(line, "[[]") || strings.Contains(line, "[]]") {
-		t.Fatalf("expected no [[ ]] frame, got %q", line)
+	if line := plainLines(Render(state))[1]; !strings.HasSuffix(line, "C calendar ") {
+		t.Fatalf("expected the date navigation alone on the next row, got %q", line)
 	}
-	if !strings.HasSuffix(line, "C calendar") || strings.Index(line, "switch") > strings.Index(line, "2026-05-27") {
-		t.Fatalf("expected the date navigation at the right, got %q", line)
+	state.Width = 80
+	line := plainLines(Render(state))[0]
+	if !strings.Contains(line, "1 Today │ Daily ") || strings.Contains(line, "Session") ||
+		!strings.Contains(line, "crona › tui") {
+		t.Fatalf("expected the pill to keep only the open view so the context fits, got %q", line)
 	}
 }
 

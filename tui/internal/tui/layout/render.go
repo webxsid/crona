@@ -116,8 +116,8 @@ func Render(state State) string {
 	}
 
 	parts := []string{renderTabLine(state)}
-	if navRow := renderNavRow(state); navRow != "" {
-		parts = append(parts, navRow)
+	if dateRow := renderDateRow(state); dateRow != "" {
+		parts = append(parts, dateRow)
 	}
 	content := clipViewportString(
 		viewrenderer.RenderContent(ViewTheme(), state.ContentState),
@@ -177,29 +177,69 @@ func renderMinimumSizeWarning(width, height int) string {
 	)
 }
 
-// renderTabLine is the numbered tabs, the active one as a pill, and the active repo and
-// stream at the right. The mark, version and dev badge live on the status line.
+// renderTabLine is the numbered tabs and the active repo and stream at the right. The
+// active tab is a pill that also lists its views, the open one underlined; when the row is
+// short of room the pill keeps only the open view, then only the tab. The mark, version
+// and dev badge live on the status line.
 func renderTabLine(state State) string {
-	parts := []string{}
-	for i, tab := range uistate.TabOrder() {
-		if !slices.Contains(state.Tabs, tab) {
-			continue
+	active := uistate.TabForView(state.View)
+	line := func(views []uistate.View) string {
+		parts := []string{}
+		for i, tab := range uistate.TabOrder() {
+			if !slices.Contains(state.Tabs, tab) {
+				continue
+			}
+			number, label := fmt.Sprint(i+1), uistate.TabLabel(tab)
+			if tab == active {
+				parts = append(parts, tabPill(number, label, views, state.View))
+			} else {
+				parts = append(parts, " "+chrome.StyleDim.Render(number)+" "+chrome.StyleTabIdle.Render(label)+" ")
+			}
 		}
-		number, label := fmt.Sprint(i+1), uistate.TabLabel(tab)
-		if tab == uistate.TabForView(state.View) {
-			parts = append(parts, chrome.StyleTabActive.Render(" "+number+" "+label+" "))
-		} else {
-			parts = append(parts, " "+chrome.StyleDim.Render(number)+" "+chrome.StyleTabIdle.Render(label)+" ")
-		}
+		return " " + strings.Join(parts, " ")
 	}
-	left := " " + strings.Join(parts, " ")
+	var views []uistate.View
+	if len(state.SubTabs) >= 2 {
+		views = state.SubTabs
+	}
+	context := contextLabel(state.RepoName, state.StreamName)
+	// The pill lists its views only while the context keeps up to 16 cells.
+	fits := func(left string) bool {
+		return ansi.StringWidth(left)+3+min(ansi.StringWidth(context), 16) <= state.Width
+	}
+	left := line(views)
+	if len(views) > 0 && !fits(left) {
+		left = line([]uistate.View{state.View})
+	}
+	if !fits(left) {
+		left = line(nil)
+	}
 	// The tabs are the only navigation indicator, so the context gives way first.
 	room := state.Width - ansi.StringWidth(left) - 2
 	if room < 4 {
 		return joinEnds(left, "", state.Width)
 	}
-	right := ansi.Truncate(contextLabel(state.RepoName, state.StreamName), room, "…")
+	right := ansi.Truncate(context, room, "…")
 	return joinEnds(left, chrome.StyleTabIdle.Render(right)+" ", state.Width)
+}
+
+// tabPill is the active tab, `2 Work │ Issues  Habits  Tags`, with open underlined.
+func tabPill(number, label string, views []uistate.View, open uistate.View) string {
+	pill := chrome.StyleTabPill.Render(" "+number+" ") + chrome.StyleTabPill.Bold(true).Render(label)
+	if len(views) > 0 {
+		pill += chrome.StyleTabPillDivider.Render(" │ ")
+		for i, view := range views {
+			if i > 0 {
+				pill += chrome.StyleTabPill.Render("  ")
+			}
+			style := chrome.StyleTabPill
+			if view == open {
+				style = chrome.StyleTabPillOpen
+			}
+			pill += style.Render(uistate.ViewLabel(view))
+		}
+	}
+	return pill + chrome.StyleTabPill.Render(" ")
 }
 
 // contextLabel names the active scope, falling back to All when no repo is selected.
@@ -214,35 +254,20 @@ func contextLabel(repo, stream string) string {
 	}
 }
 
-// renderNavRow is the row under the tabs: the tab's views at the left, the open one
-// underlined, and the shared date's navigation at the right. It is empty when the tab has
-// a single view and no date.
-func renderNavRow(state State) string {
-	left := ""
-	if len(state.SubTabs) >= 2 {
-		parts := make([]string, 0, len(state.SubTabs))
-		for _, view := range state.SubTabs {
-			label := uistate.ViewLabel(view)
-			if view == state.View {
-				parts = append(parts, chrome.StyleSubTabActive.Render(label))
-			} else {
-				parts = append(parts, chrome.StyleTabIdle.Render(label))
-			}
-		}
-		left = " " + strings.Join(parts, "   ") + "   " +
-			chrome.StyleHeader.Render("[ ]") + chrome.StyleDim.Render(" switch")
-	}
+// renderDateRow is a dated view's row under the tabs: the shared date's navigation, at
+// the right.
+func renderDateRow(state State) string {
 	if !viewrenderer.HasDateRow(state.ContentState) {
-		return left
+		return ""
 	}
 	theme := ViewTheme()
-	room := state.Width - ansi.StringWidth(left) - 3
+	room := state.Width - 3
 	nav := viewrenderer.DateNav(theme, state.ContentState, room)
 	if calendar := viewrenderer.DateCalendarKey(theme, state.ContentState); calendar != "" &&
 		ansi.StringWidth(nav)+2+ansi.StringWidth(calendar) <= room {
 		nav += "  " + calendar
 	}
-	return joinEnds(left, nav+" ", state.Width)
+	return joinEnds("", nav+" ", state.Width)
 }
 
 func renderStatusLine(state State) string {
@@ -424,7 +449,7 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 func ContentHeight(state State) int {
 	rows := 2
 	// The shell's view, not ContentState's: the model sizes content before filling it in.
-	if len(state.SubTabs) >= 2 || viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
+	if viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
 		rows++
 	}
 	return max(4, state.Height-rows)

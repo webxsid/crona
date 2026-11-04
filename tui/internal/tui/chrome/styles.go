@@ -40,10 +40,12 @@ var (
 				Padding(0, 1)
 	StyleNormal = lipgloss.NewStyle()
 
-	// StyleTabActive is the active tab's pill; StyleTabIdle the label of the others.
-	StyleTabActive = lipgloss.NewStyle().Bold(true).Foreground(ColorBlack).Background(ColorCyan)
-	StyleTabIdle   = lipgloss.NewStyle().Foreground(ColorSubtle)
-	// StyleSubTabActive marks the open sub-tab with an underline instead of a frame.
-	StyleSubTabActive = lipgloss.NewStyle().Bold(true).Underline(true).Foreground(ColorCyan)
-	StyleDevBadge     = lipgloss.NewStyle().Bold(true).Foreground(ColorYellow)
+	// StyleTabIdle is the label of the tabs that are not open.
+	StyleTabIdle = lipgloss.NewStyle().Foreground(ColorSubtle)
+	// StyleTabPill is the active tab's pill, which also holds its views; the open view is
+	// bold and underlined inside it.
+	StyleTabPill        = lipgloss.NewStyle().Foreground(ColorBlack).Background(ColorCyan)
+	StyleTabPillOpen    = StyleTabPill.Bold(true).Underline(true)
+	StyleTabPillDivider = StyleTabPill.Foreground(ColorDim)
+	StyleDevBadge       = lipgloss.NewStyle().Bold(true).Foreground(ColorYellow)
 )
