@@ -180,3 +180,25 @@ func TestDayLinesListTopPenalties(t *testing.T) {
 		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
 	}
 }
+
+func TestDayLineFitsTheDayInOneLine(t *testing.T) {
+	state := summaryTestState()
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{
+		Score: 82, Level: sharedtypes.FocusScoreLevelStrong, TargetWorkedSeconds: 3600,
+	}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{WorkedSeconds: 2400, RestSeconds: 600, SessionCount: 3}
+	wide := ansi.Strip(DayLine(types.Theme{}, state, 120))
+	for _, want := range []string{"Focus 82 strong", "Worked 40m/1h", "Rest 10m", "Sessions 3"} {
+		if !strings.Contains(wide, want) {
+			t.Fatalf("expected the day line to contain %q, got %q", want, wide)
+		}
+	}
+	narrow := ansi.Strip(DayLine(types.Theme{}, state, 40))
+	if ansi.StringWidth(narrow) > 40 || !strings.Contains(narrow, "Focus") || strings.Contains(narrow, "Sessions") {
+		t.Fatalf("expected parts to drop from the right at 40, got %q", narrow)
+	}
+	state.SummarySnapshot.Focus = nil
+	if line := DayLine(types.Theme{}, state, 120); line != "" {
+		t.Fatalf("expected no day line before the summary loads, got %q", line)
+	}
+}

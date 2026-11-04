@@ -333,3 +333,33 @@ func clamp(value, low, high int) int {
 	}
 	return value
 }
+
+// DayLine is the day summary in one line for narrow screens, where the detail pane that
+// holds it is hidden: focus, worked against target, rest, sessions and accountability. Parts
+// drop from the right to fit; it is empty until the summary has loaded.
+func DayLine(theme types.Theme, state types.ContentState, width int) string {
+	snapshot := state.SummarySnapshot
+	if snapshot == nil || snapshot.Date != state.SummaryDate || snapshot.Focus == nil || snapshot.Metrics == nil {
+		return ""
+	}
+	duration := helperpkg.FormatCompactDurationSeconds
+	focus, metrics := snapshot.Focus, snapshot.Metrics
+	part := func(label, value string) string {
+		return theme.StyleDim.Render(label+" ") + value
+	}
+	level := strings.ReplaceAll(string(focus.Level), "_", " ")
+	parts := []string{
+		part("Focus", theme.StyleHeader.Render(fmt.Sprint(focus.Score))+" "+theme.StyleNormal.Render(level)),
+		part("Worked", duration(metrics.WorkedSeconds)+theme.StyleDim.Render("/"+duration(focus.TargetWorkedSeconds))),
+		part("Rest", duration(metrics.RestSeconds)),
+		part("Sessions", fmt.Sprint(metrics.SessionCount)),
+	}
+	if plan := snapshot.Plan; plan != nil && strings.TrimSpace(plan.Date) != "" {
+		parts = append(parts, part("Score", fmt.Sprintf("%.0f%%", plan.Summary.AccountabilityScore)))
+	}
+	sep := theme.StyleDim.Render("  ·  ")
+	for len(parts) > 1 && ansi.StringWidth(" "+strings.Join(parts, sep)) > width {
+		parts = parts[:len(parts)-1]
+	}
+	return viewhelpers.TruncateANSI(" "+strings.Join(parts, sep), width)
+}

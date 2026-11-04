@@ -4,6 +4,7 @@ import (
 	viewaway "crona/tui/internal/tui/views/away"
 	viewchrome "crona/tui/internal/tui/views/chrome"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewsummary "crona/tui/internal/tui/views/summary"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
@@ -19,6 +20,13 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		return viewaway.RenderHistorical(theme, state)
 	}
 	width, height := state.Width, state.Height
+	// Without the detail pane, the day summary it holds shows as one line over the strip.
+	var dayLine []string
+	if viewhelpers.ClassFor(width) != viewhelpers.WidthWide && height-1-dayStripMaxRows >= dailyMinBodyRows {
+		if line := viewsummary.DayLine(theme, state, width); line != "" {
+			dayLine, height = []string{line}, height-1
+		}
+	}
 	stripRows := dayStripMaxRows
 	for stripRows > 1 && height-stripRows < dailyMinBodyRows {
 		stripRows--
@@ -41,5 +49,5 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if detail != "" {
 		body = viewchrome.JoinColumns(theme, rest, body, detail)
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, append(strip, body)...)
+	return lipgloss.JoinVertical(lipgloss.Left, append(append(dayLine, strip...), body)...)
 }

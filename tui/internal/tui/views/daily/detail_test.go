@@ -317,3 +317,25 @@ func TestDailyHabitZeroStatusRemainsDue(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestNarrowDailyShowsTheDayLineOverTheStrip(t *testing.T) {
+	state := detailState()
+	state.SummaryDate = "2026-05-27"
+	state.SummarySnapshot = &api.SummarySnapshot{
+		Date:    "2026-05-27",
+		Focus:   &api.FocusScoreSummary{Score: 72, TargetWorkedSeconds: 7200},
+		Metrics: &api.DailyMetricsDay{Date: "2026-05-27", WorkedSeconds: 3600},
+	}
+	state.Width, state.Height = 80, 30
+	narrow := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n")
+	if !strings.Contains(narrow[0], "Focus 72") || !strings.Contains(narrow[0], "Worked 1h/2h") {
+		t.Fatalf("expected the day line first on a narrow screen, got %q", narrow[0])
+	}
+	if len(narrow) != 30 {
+		t.Fatalf("expected the view to keep its height, got %d rows", len(narrow))
+	}
+	state.Width = 200
+	if wide := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); strings.Contains(wide[0], "Focus 72") {
+		t.Fatalf("expected no day line beside the detail pane, got %q", wide[0])
+	}
+}
