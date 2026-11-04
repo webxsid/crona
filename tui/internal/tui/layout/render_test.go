@@ -81,8 +81,11 @@ func TestRenderTabPillListsTheTabsViews(t *testing.T) {
 	if line := plainLines(Render(ops))[0]; strings.Contains(line, "│") {
 		t.Fatalf("expected a single-view tab without a list, got %q", line)
 	}
-	if got := ContentHeight(ops); got != 36-2 {
-		t.Fatalf("expected content height 34 without a date row, got %d", got)
+	if got := ContentHeight(ops); got != 36-3 {
+		t.Fatalf("expected content height 33 with a blank row under the tabs, got %d", got)
+	}
+	if line := plainLines(Render(ops))[1]; strings.TrimSpace(line) != "" {
+		t.Fatalf("expected a blank row under the tabs without a date, got %q", line)
 	}
 }
 

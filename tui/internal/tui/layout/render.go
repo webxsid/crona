@@ -116,9 +116,7 @@ func Render(state State) string {
 	}
 
 	parts := []string{renderTabLine(state)}
-	if dateRow := renderDateRow(state); dateRow != "" {
-		parts = append(parts, dateRow)
-	}
+	parts = append(parts, renderDateRow(state))
 	content := clipViewportString(
 		viewrenderer.RenderContent(ViewTheme(), state.ContentState),
 		state.Width,
@@ -254,11 +252,11 @@ func contextLabel(repo, stream string) string {
 	}
 }
 
-// renderDateRow is a dated view's row under the tabs: the shared date's navigation, at
-// the right.
+// renderDateRow is the row under the tabs: a dated view's navigation at the right, and
+// blank elsewhere so content always starts a row below the tabs.
 func renderDateRow(state State) string {
 	if !viewrenderer.HasDateRow(state.ContentState) {
-		return ""
+		return strings.Repeat(" ", state.Width)
 	}
 	theme := ViewTheme()
 	room := state.Width - 3
@@ -446,13 +444,9 @@ func renderOverlaySection(lines []string, width int, lineStyle lipgloss.Style) [
 	return out
 }
 
+// ContentHeight is what is left after the tabs, the row under them and the status line.
 func ContentHeight(state State) int {
-	rows := 2
-	// The shell's view, not ContentState's: the model sizes content before filling it in.
-	if viewrenderer.HasDateRow(viewtypes.ContentState{View: string(state.View)}) {
-		rows++
-	}
-	return max(4, state.Height-rows)
+	return max(4, state.Height-3)
 }
 
 func WrapText(text string, width int) []string {
