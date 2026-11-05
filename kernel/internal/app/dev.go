@@ -16,7 +16,18 @@ import (
 	sharedtypes "crona/shared/types"
 )
 
+// muteUntilReset silences the bus for bulk work. The returned func ends the mute and, once
+// no mute is left, sends one data.reset in place of the thousands of events it dropped.
+func (h *Handler) muteUntilReset() func() {
+	release := h.bus.Mute()
+	return func() {
+		release()
+		h.bus.Emit(sharedtypes.KernelEvent{Type: sharedtypes.EventTypeDataReset})
+	}
+}
+
 func (h *Handler) clearDevData(ctx context.Context) error {
+	defer h.muteUntilReset()()
 	h.timer.ClearBoundary()
 
 	if err := store.ClearAllData(ctx, h.core.Store.DB()); err != nil {
@@ -59,6 +70,7 @@ func (h *Handler) resetRuntimeFiles(ctx context.Context) error {
 }
 
 func (h *Handler) seedDevData(ctx context.Context) error {
+	defer h.muteUntilReset()()
 	if err := h.clearDevData(ctx); err != nil {
 		return err
 	}
@@ -695,6 +707,15 @@ func (h *Handler) seedDevData(ctx context.Context) error {
 		h.core.UserID,
 		h.core.Now(),
 		habitStreakDefs,
+	); err != nil {
+		return err
+	}
+	// Seeded data is ready to use, so the clients' reload after it skips onboarding.
+	if err := h.core.CoreSettings.SetSetting(
+		ctx,
+		h.core.UserID,
+		sharedtypes.CoreSettingsKeyOnboardingCompleted,
+		true,
 	); err != nil {
 		return err
 	}

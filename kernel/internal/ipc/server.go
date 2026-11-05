@@ -9,11 +9,24 @@ import (
 	"net"
 	"runtime/debug"
 	"sync"
+	"time"
 
 	"crona/kernel/internal/runtime"
 	"crona/shared/localipc"
 	"crona/shared/protocol"
 )
+
+// streamWriteTimeout is how long an event stream may wait on a client that stopped reading
+// before the kernel drops it, so a stuck subscriber cannot hold a goroutine forever.
+const streamWriteTimeout = 5 * time.Second
+
+// deadlineWriter bounds each write to a stream client by streamWriteTimeout.
+type deadlineWriter struct{ conn net.Conn }
+
+func (w deadlineWriter) Write(p []byte) (int, error) {
+	_ = w.conn.SetWriteDeadline(time.Now().Add(streamWriteTimeout))
+	return w.conn.Write(p)
+}
 
 type Handler interface {
 	Handle(ctx context.Context, req protocol.Request) protocol.Response
@@ -151,7 +164,7 @@ func (s *Server) handleConn(conn net.Conn) {
 				})
 				return
 			}
-			if err := streamHandler.Stream(s.requestContext(), req, writer); err != nil &&
+			if err := streamHandler.Stream(s.requestContext(), req, json.NewEncoder(deadlineWriter{conn})); err != nil &&
 				!errors.Is(err, context.Canceled) {
 				s.logError("ipc event stream failed", err)
 			}

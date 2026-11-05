@@ -42,6 +42,9 @@ const (
 	EventTypeSettingsChanged           = "settings.changed"
 	EventTypeDayStart                  = "day.start"
 	EventTypeDayEnd                    = "day.end"
+	// EventTypeDataReset says the data was replaced wholesale (dev seed or clear), so
+	// clients reload everything. The events of the bulk work itself are not sent.
+	EventTypeDataReset = "data.reset"
 )
 
 type KernelEvent struct {

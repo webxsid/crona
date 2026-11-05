@@ -629,6 +629,10 @@ func HandleMessage(
 		}
 		return state, nil, true
 	case commands.KernelEventMsg:
+		if msg.Event.Type == sharedtypes.EventTypeDataReset {
+			state.PendingEvents = nil
+			return state, tea.Batch(fullReloadCmd(state, deps), deps.WaitForEvent()), true
+		}
 		if !coalescesEvent(msg.Event.Type) {
 			updated, cmd := deps.HandleKernelEvent(state, msg.Event)
 			return updated, tea.Batch(cmd, deps.WaitForEvent()), true
@@ -876,6 +880,9 @@ func fullReloadCmd(state MessageState, deps MessageDeps, extra ...tea.Cmd) tea.C
 	}
 	if deps.LoadSummarySnapshot != nil {
 		cmds = append(cmds, deps.LoadSummarySnapshot(date))
+	}
+	if deps.LoadDailyPlan != nil {
+		cmds = append(cmds, deps.LoadDailyPlan(date))
 	}
 	return tea.Batch(cmds...)
 }
