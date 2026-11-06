@@ -54,84 +54,55 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 	}
 	focus := snapshot.Focus
 	metrics := snapshot.Metrics
-	reason := strings.ReplaceAll(string(focus.Reason), "_", " ")
-	level := strings.ReplaceAll(string(focus.Level), "_", " ")
-	if level != "" {
-		level = strings.ToUpper(level[:1]) + level[1:]
-	}
 	duration := helperpkg.FormatCompactDurationSeconds
-	lines = append(
-		lines,
-		Row(
-			theme,
-			"Focus",
-			theme.StyleHeader.Render(
-				fmt.Sprintf("%d/100", focus.Score),
-			)+"  "+theme.StyleNormal.Render(
-				level,
-			),
-			width,
-		),
-	)
-	if reason != "" && !strings.EqualFold(reason, level) {
-		lines = append(lines, Row(theme, "", theme.StyleDim.Render(reason), width))
+	lines = headed(lines[0], focusVerdict(theme, focus), width)
+	target := max(1, focus.TargetWorkedSeconds)
+	workedFraction := float64(metrics.WorkedSeconds) / float64(target)
+	workedColor := theme.ColorCyan
+	if workedFraction >= 1 {
+		workedColor = theme.ColorGreen
 	}
-	lines = append(
-		lines,
-		Row(
-			theme,
-			"Worked",
-			fmt.Sprintf(
-				"%s of %s",
-				duration(metrics.WorkedSeconds),
-				duration(focus.TargetWorkedSeconds),
-			),
-			width,
-		),
-		strings.Repeat(
-			" ",
-			labelWidth,
-		)+renderBar(
-			theme,
-			metrics.WorkedSeconds,
-			0,
-			max(1, focus.TargetWorkedSeconds),
-			max(8, width-labelWidth),
-			theme.ColorCyan,
-		),
-		Row(theme, "Rest", duration(metrics.RestSeconds), width),
-		Row(theme, "Sessions", fmt.Sprint(metrics.SessionCount), width),
-		Row(
-			theme,
-			"Issues",
-			fmt.Sprintf(
-				"%d of %d done · %d abandoned",
-				metrics.CompletedIssues,
-				metrics.TotalIssues,
-				metrics.AbandonedIssues,
-			),
-			width,
-		),
-		strings.Repeat(" ", labelWidth)+IssueStatusBar(theme, statusCounts, max(8, width-labelWidth)),
-		Row(
-			theme,
-			"Habits",
-			fmt.Sprintf(
-				"%d of %d done · %d failed",
-				metrics.HabitCompletedCount,
-				metrics.HabitDueCount,
-				metrics.HabitFailedCount,
-			),
-			width,
-		),
-		strings.Repeat(" ", labelWidth)+HabitBar(
-			theme,
-			metrics.HabitCompletedCount,
-			metrics.HabitFailedCount,
-			metrics.HabitDueCount,
-			max(8, width-labelWidth),
-		),
+	arcs := renderGauges(theme, []gauge{
+		{
+			label: "Focus", value: fmt.Sprintf("%d", focus.Score),
+			fraction: float64(focus.Score) / 100, color: focusColor(theme, focus.Level),
+		},
+		{
+			label: "Worked", value: duration(metrics.WorkedSeconds),
+			fraction: workedFraction, color: workedColor,
+		},
+	}, gaugeCols*2+gaugeGap)
+	sessions := "sessions"
+	if metrics.SessionCount == 1 {
+		sessions = "session"
+	}
+	rest := theme.StyleNormal.Render(duration(metrics.RestSeconds))
+	if metrics.RestSeconds == 0 && metrics.WorkedSeconds >= 45*60 {
+		rest = lipgloss.NewStyle().Foreground(theme.ColorOrange).Render(duration(metrics.RestSeconds)) +
+			theme.StyleDim.Render("  aim ~1 break an hour")
+	}
+	facts := []string{
+		factRow(theme, "Worked", workedText(metrics.WorkedSeconds, focus.TargetWorkedSeconds)+
+			theme.StyleDim.Render(fmt.Sprintf(" · %d %s", metrics.SessionCount, sessions))),
+		factRow(theme, "Rest", rest),
+	}
+	lines = append(lines, besideArcs(arcs, facts, gaugeCols*2+gaugeGap, width)...)
+	countWidth := 16
+	barWidth := max(8, min(30, width-labelWidth-countWidth))
+	lines = append(lines,
+		Row(theme, "Issues", padTo(fmt.Sprintf("%d of %d done", metrics.CompletedIssues, metrics.TotalIssues), countWidth)+
+			IssueStatusBar(theme, statusCounts, barWidth), width),
 	)
+	if legend := IssueStatusLegend(theme, statusCounts); legend != "" {
+		lines = append(lines, Row(theme, "", legend, width))
+	}
+	lines = append(lines,
+		Row(theme, "Habits", padTo(fmt.Sprintf("%d of %d done", metrics.HabitCompletedCount, metrics.HabitDueCount), countWidth)+
+			HabitBar(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount, barWidth), width),
+	)
+	if legend := HabitLegend(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount); legend != "" {
+		lines = append(lines, Row(theme, "", legend, width))
+	}
 	return strings.Join(lines, "\n")
 }
 
@@ -141,7 +112,7 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		return []string{title, theme.StyleDim.Render("No committed plan.")}
 	}
 	s := plan.Summary
-	lines := []string{title + "   " + planVerdict(theme, s)}
+	lines := headed(title, planVerdict(theme, s), width)
 	doneFraction := float64(s.CompletedCount) / float64(max(1, s.PlannedCount))
 	arc := renderGauges(theme, []gauge{{
 		label: "Done", value: fmt.Sprintf("%d/%d", s.CompletedCount, s.PlannedCount),
@@ -153,13 +124,35 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		factRow(theme, "Delayed", delayText(theme, s)),
 		factRow(theme, "Resolved", resolvedChips(theme, s)),
 	}
-	if width < gaugeCols+gaugeGap+28 {
-		return append(append(lines, arc...), facts...)
+	lines = append(lines, besideArcs(arc, facts, gaugeCols, width)...)
+	return lines
+}
+
+// headed puts a verdict beside the section title, or on its own line when both don't fit.
+func headed(title, verdict string, width int) []string {
+	if line := title + "   " + verdict; ansi.StringWidth(line) <= width {
+		return []string{line}
 	}
-	for i := range max(len(arc), len(facts)) {
-		left := strings.Repeat(" ", gaugeCols)
-		if i < len(arc) {
-			left = arc[i] + strings.Repeat(" ", max(0, gaugeCols-ansi.StringWidth(arc[i])))
+	return []string{title, ansi.Truncate(verdict, width, "…")}
+}
+
+func workedText(worked, target int) string {
+	if target <= 0 {
+		return helperpkg.FormatCompactDurationSeconds(worked)
+	}
+	return fmt.Sprintf("%s of %s", helperpkg.FormatCompactDurationSeconds(worked), helperpkg.FormatCompactDurationSeconds(target))
+}
+
+// besideArcs puts fact lines to the right of arc gauges, or under them when the pane is narrow.
+func besideArcs(arcs, facts []string, arcWidth, width int) []string {
+	if width < arcWidth+gaugeGap+28 {
+		return append(append([]string{}, arcs...), facts...)
+	}
+	lines := []string{}
+	for i := range max(len(arcs), len(facts)) {
+		left := strings.Repeat(" ", arcWidth)
+		if i < len(arcs) {
+			left = padTo(arcs[i], arcWidth)
 		}
 		right := ""
 		if i < len(facts) {
@@ -168,6 +161,43 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		lines = append(lines, ansi.Truncate(left+strings.Repeat(" ", gaugeGap+1)+right, width, "…"))
 	}
 	return lines
+}
+
+// focusVerdict turns the focus level and reason into words, coloured by level.
+func focusVerdict(theme types.Theme, focus *sharedtypes.FocusScoreSummary) string {
+	reasons := map[sharedtypes.FocusScoreReason]string{
+		sharedtypes.FocusScoreReasonNoActivity:   "no focus logged yet",
+		sharedtypes.FocusScoreReasonUnderTarget:  "under today's target",
+		sharedtypes.FocusScoreReasonNeedsBreaks:  "take a break",
+		sharedtypes.FocusScoreReasonBalanced:     "work and rest balanced",
+		sharedtypes.FocusScoreReasonOverextended: "past target, ease off",
+	}
+	head := map[sharedtypes.FocusScoreLevel]string{
+		sharedtypes.FocusScoreLevelLow:          "▲ Low focus",
+		sharedtypes.FocusScoreLevelSteady:       "◆ Steady",
+		sharedtypes.FocusScoreLevelStrong:       "✓ Strong",
+		sharedtypes.FocusScoreLevelOverextended: "▲ Overextended",
+	}[focus.Level]
+	if head == "" {
+		head = "● Focus"
+	}
+	out := lipgloss.NewStyle().Foreground(focusColor(theme, focus.Level)).Bold(true).Render(head)
+	if reason := reasons[focus.Reason]; reason != "" {
+		out += theme.StyleDim.Render(" · " + reason)
+	}
+	return out
+}
+
+func focusColor(theme types.Theme, level sharedtypes.FocusScoreLevel) lipgloss.Color {
+	switch level {
+	case sharedtypes.FocusScoreLevelStrong:
+		return theme.ColorGreen
+	case sharedtypes.FocusScoreLevelSteady:
+		return theme.ColorYellow
+	case sharedtypes.FocusScoreLevelOverextended:
+		return theme.ColorOrange
+	}
+	return theme.ColorRed
 }
 
 // planVerdict sums the plan up in words: at risk once anything is high risk, slipping while
@@ -425,30 +455,6 @@ func renderWellbeing(
 		}
 	}
 	return lines
-}
-
-func renderBar(theme types.Theme, current, failed, total, width int, color lipgloss.Color) string {
-	if width < 1 {
-		return ""
-	}
-	if total < 1 {
-		return theme.StyleDim.Render(strings.Repeat("░", width))
-	}
-	filled := clamp(current*width/total, 0, width)
-	failedWidth := clamp(failed*width/total, 0, width-filled)
-	return lipgloss.NewStyle().Foreground(color).Render(strings.Repeat("█", filled)) +
-		lipgloss.NewStyle().Foreground(theme.ColorRed).Render(strings.Repeat("█", failedWidth)) +
-		theme.StyleDim.Render(strings.Repeat("░", width-filled-failedWidth))
-}
-
-func clamp(value, low, high int) int {
-	if value < low {
-		return low
-	}
-	if value > high {
-		return high
-	}
-	return value
 }
 
 // DayLine is the day summary in one line for narrow screens, where the detail pane that

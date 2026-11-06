@@ -1,6 +1,7 @@
 package summary
 
 import (
+	"fmt"
 	"strings"
 
 	viewhelpers "crona/tui/internal/tui/views/helpers"
@@ -9,23 +10,57 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type issueStatus struct {
+	status, label string
+	color         lipgloss.Color
+}
+
+// issueStatuses is the bar's segment order, with each status's legend label and colour.
+func issueStatuses(theme types.Theme) []issueStatus {
+	return []issueStatus{
+		{"done", "done", theme.ColorGreen},
+		{"abandoned", "abandoned", theme.ColorRed},
+		{"blocked", "blocked", theme.ColorRed},
+		{"in_progress", "active", theme.ColorYellow},
+		{"in_review", "review", theme.ColorMagenta},
+		{"carried", "carried", theme.ColorLavender},
+		{"ready", "ready", theme.ColorCyan},
+		{"planned", "planned", theme.ColorBlue},
+		{"backlog", "backlog", theme.ColorSubtle},
+	}
+}
+
+// IssueStatusLegend keys the status bar: a coloured dot and count for each status present.
+func IssueStatusLegend(theme types.Theme, counts map[string]int) string {
+	var parts []string
+	for _, item := range issueStatuses(theme) {
+		if n := counts[item.status]; n > 0 {
+			parts = append(parts, lipgloss.NewStyle().Foreground(item.color).Render("●")+
+				theme.StyleNormal.Render(fmt.Sprintf(" %d ", n))+theme.StyleDim.Render(item.label))
+		}
+	}
+	return strings.Join(parts, "  ")
+}
+
+// HabitLegend keys the habit bar with done, failed and still-open counts.
+func HabitLegend(theme types.Theme, completed, failed, total int) string {
+	parts := []string{}
+	if completed > 0 {
+		parts = append(parts, lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(fmt.Sprintf("✓ %d", completed))+theme.StyleDim.Render(" done"))
+	}
+	if failed > 0 {
+		parts = append(parts, lipgloss.NewStyle().Foreground(theme.ColorOrange).Render(fmt.Sprintf("✗ %d", failed))+theme.StyleDim.Render(" failed"))
+	}
+	if left := total - completed - failed; left > 0 {
+		parts = append(parts, theme.StyleDim.Render(fmt.Sprintf("○ %d left", left)))
+	}
+	return strings.Join(parts, "  ")
+}
+
 // IssueStatusBar splits width cells by the day's task statuses, done first.
 func IssueStatusBar(theme types.Theme, counts map[string]int, width int) string {
 	width = max(8, width)
-	order := []struct {
-		status string
-		color  lipgloss.Color
-	}{
-		{status: "done", color: theme.ColorGreen},
-		{status: "abandoned", color: theme.ColorRed},
-		{status: "blocked", color: theme.ColorRed},
-		{status: "in_progress", color: theme.ColorYellow},
-		{status: "in_review", color: theme.ColorMagenta},
-		{status: "carried", color: theme.ColorLavender},
-		{status: "ready", color: theme.ColorCyan},
-		{status: "planned", color: theme.ColorBlue},
-		{status: "backlog", color: theme.ColorSubtle},
-	}
+	order := issueStatuses(theme)
 	total := 0
 	for _, count := range counts {
 		total += count

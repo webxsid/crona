@@ -222,7 +222,7 @@ func TestDaySummaryKeyOpensDialogWhenNarrow(t *testing.T) {
 	}
 	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(
 		strings.Join(strings.Fields(body), " "),
-		"Focus 72/100",
+		"72",
 	) {
 		t.Fatalf("expected the Day summary in the dialog, got %q", body)
 	}

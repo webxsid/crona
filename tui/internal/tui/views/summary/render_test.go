@@ -37,7 +37,7 @@ func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 		HabitFailedCount:    1,
 	}
 	rendered := dayText(state, 42)
-	for _, want := range []string{"Stats", "Focus 82/100 Strong", "Worked 40m of 1h", "Rest 10m", "Sessions 3", "Issues 2 of 4 done · 1 abandoned", "Habits 2 of 3 done · 1 failed"} {
+	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked 40m of 1h · 3 sessions", "Rest 10m", "Issues 2 of 4 done", "Habits 2 of 3 done", "✓ 2 done ✗ 1 failed"} {
 		if !strings.Contains(squash(rendered), want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
@@ -214,8 +214,8 @@ func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
 	for _, label := range []string{"Issues", "Habits"} {
 		for i, line := range lines {
 			if strings.HasPrefix(line, label) {
-				if i+1 >= len(lines) || !strings.Contains(lines[i+1], "█") {
-					t.Fatalf("expected a bar under %s, got %q", label, lines)
+				if !strings.Contains(line, "█") || i+1 >= len(lines) || !strings.Contains(lines[i+1], "1 done") {
+					t.Fatalf("expected a bar beside %s and a legend under it, got %q", label, lines)
 				}
 				break
 			}
