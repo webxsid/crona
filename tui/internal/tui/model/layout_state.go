@@ -127,6 +127,8 @@ func (m Model) viewContentState(
 		ExportAssets:          m.exportAssets,
 		ExportReports:         m.exportReports,
 		IssueSessions:         m.issueSessions,
+		DetailSessions:        m.detailSessions,
+		DetailSessionsIssueID: m.detailSessionsIssueID,
 		SessionHistory:        m.sessionHistory,
 		SessionPreview:        m.sessionPreview,
 		SessionPreviewFailed: m.sessionPreviewFailed != "" &&

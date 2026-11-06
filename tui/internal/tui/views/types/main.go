@@ -121,7 +121,11 @@ type ContentState struct {
 	ExportAssets    *api.ExportAssetStatus
 	ExportReports   []api.ExportReportFile
 	IssueSessions   []api.Session
-	SessionHistory  []api.SessionHistoryEntry
+	// DetailSessions are the sessions of DetailSessionsIssueID, the issue Daily's detail pane
+	// shows.
+	DetailSessions        []api.Session
+	DetailSessionsIssueID int64
+	SessionHistory        []api.SessionHistoryEntry
 	// SessionPreview is the selected session's loaded detail; ignore it when its ID differs.
 	SessionPreview            *api.SessionDetail
 	SessionPreviewFailed      bool

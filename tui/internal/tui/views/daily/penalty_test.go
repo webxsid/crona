@@ -53,12 +53,12 @@ func TestDetailShowsLiveDelayPenalty(t *testing.T) {
 		" ",
 	)
 	for _, want := range []string{
-		"Delay penalty ▲ high risk",
-		"Late 5 days · pushed 3× · 1 away day skipped",
-		"3.38 limit 2.50",
-		"Share 54% of today's penalty",
-		"Finish today clears 3.38",
-		"Push a day rises to 3.81 (+0.43)",
+		"▲ high risk · 54% of today",
+		"3.38",
+		"Penalty/2.5",
+		"Delay 5 days late · pushed 3× · 1 away day skipped",
+		"If today ✓ clears 3.38",
+		"If pushed ▲ rises to 3.81 (+0.43)",
 	} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected detail to contain %q, got %q", want, rendered)
@@ -93,7 +93,7 @@ func TestDetailShowsOnScheduleWithoutPenalty(t *testing.T) {
 		IssueID: 2, PostponeCount: 1, Penalty: &api.DailyPlanEntryPenalty{HighRiskThreshold: 2.5},
 	}}}
 	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 100, 40))
-	if !strings.Contains(rendered, "On schedule · no penalty") ||
+	if !strings.Contains(rendered, "on schedule · no penalty") ||
 		strings.Contains(rendered, "Delay penalty") {
 		t.Fatalf("expected on-schedule line, got %q", rendered)
 	}

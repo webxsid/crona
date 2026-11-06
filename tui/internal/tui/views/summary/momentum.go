@@ -68,6 +68,24 @@ func renderMomentum(theme types.Theme, state types.ContentState, streaks *shared
 	if len(items) == 0 {
 		lines = append(lines, theme.StyleDim.Render(ansi.Truncate("Nothing due feeds a momentum.", width, "…")))
 	}
+	lines = append(lines, momentumRows(theme, items, width)...)
+	if streaks != nil {
+		focus := theme.StyleDim.Render("Focus ") + streakText(theme, streaks.CurrentFocusDays, streaks.LongestFocusDays, "d")
+		checkIns := theme.StyleDim.Render("Check-ins ") + streakText(theme, streaks.CurrentCheckInDays, streaks.LongestCheckInDays, "d")
+		lines = append(lines, "")
+		if one := focus + theme.StyleDim.Render("  ·  ") + checkIns; ansi.StringWidth(one) <= width {
+			lines = append(lines, one)
+		} else {
+			lines = append(lines, ansi.Truncate(focus, width, "…"), ansi.Truncate(checkIns, width, "…"))
+		}
+	}
+	return lines
+}
+
+// momentumRows are one row per momentum: name, cadence, this period's meter and progress
+// (✓ once met), and the streak with its best.
+func momentumRows(theme types.Theme, items []dayMomentum, width int) []string {
+	lines := []string{}
 	nameWidth, progressWidth := 0, 0
 	progress := make([]string, len(items))
 	for i, item := range items {
@@ -92,17 +110,18 @@ func renderMomentum(theme types.Theme, state types.ContentState, streaks *shared
 		}, "  ")
 		lines = append(lines, ansi.Truncate(row, width, "…"))
 	}
-	if streaks != nil {
-		focus := theme.StyleDim.Render("Focus ") + streakText(theme, streaks.CurrentFocusDays, streaks.LongestFocusDays, "d")
-		checkIns := theme.StyleDim.Render("Check-ins ") + streakText(theme, streaks.CurrentCheckInDays, streaks.LongestCheckInDays, "d")
-		lines = append(lines, "")
-		if one := focus + theme.StyleDim.Render("  ·  ") + checkIns; ansi.StringWidth(one) <= width {
-			lines = append(lines, one)
-		} else {
-			lines = append(lines, ansi.Truncate(focus, width, "…"), ansi.Truncate(checkIns, width, "…"))
-		}
-	}
 	return lines
+}
+
+// MomentumCardRows are cards as the Day summary's momentum rows, each at its period holding
+// date (or its latest period).
+func MomentumCardRows(theme types.Theme, cards []sharedtypes.MomentumCard, date string, width int) []string {
+	items := make([]dayMomentum, 0, len(cards))
+	for _, card := range cards {
+		point, _ := momentumhelpers.PeriodPoint(card, date)
+		items = append(items, dayMomentum{card: card, point: point})
+	}
+	return momentumRows(theme, items, width)
 }
 
 // periodProgress is this period's count against its target, as time for context momentums.

@@ -35,7 +35,7 @@ func detailState() (state types.ContentState) {
 
 func TestDetailShowsSelectedTask(t *testing.T) {
 	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30))
-	for _, want := range []string{"Fix sync conflict", "in progress", "crona › core", "30m/1h", "keeping both edits"} {
+	for _, want := range []string{"Fix sync conflict", "in progress", "crona › core", "30m", "Effort/1h", "keeping both edits"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected detail to contain %q, got %q", want, rendered)
 		}
@@ -198,18 +198,18 @@ func TestDetailTitleIsTheSelection(t *testing.T) {
 
 func TestDetailDescriptionComesFirst(t *testing.T) {
 	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30))
-	if strings.Index(rendered, "keeping both edits") > strings.Index(rendered, "status") {
+	if strings.Index(rendered, "keeping both edits") > strings.Index(rendered, "Effort") {
 		t.Fatalf("expected the description above the fields, got %q", rendered)
 	}
 }
 
-func TestDetailFieldsFlowIntoColumns(t *testing.T) {
+func TestDetailFactsSitBesideTheEffortArc(t *testing.T) {
 	wide := strings.Split(ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30)), "\n")
-	assertContainsLine(t, wide, "status", "context")
+	assertContainsLine(t, wide, "⣤", "● in progress")
 	narrow := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 32, 30))
 	for _, line := range strings.Split(narrow, "\n") {
-		if strings.Contains(line, "status") && strings.Contains(line, "context") {
-			t.Fatalf("expected one field per row when narrow, got %q", line)
+		if strings.Contains(line, "⣤") && strings.Contains(line, "in progress") {
+			t.Fatalf("expected the facts under the arc when narrow, got %q", line)
 		}
 	}
 }
@@ -344,4 +344,24 @@ func TestNarrowDailyShowsTheDayLineOverTheStrip(t *testing.T) {
 func focusDetail(state types.ContentState) types.ContentState {
 	state.DailyDetailFocus = true
 	return state
+}
+
+func TestDetailListsTheIssuesSessionsNewestFirst(t *testing.T) {
+	state := focusDetail(detailState())
+	long, short := 3600, 900
+	end := "2026-05-27T10:00:00Z"
+	state.DetailSessionsIssueID = 2
+	state.DetailSessions = []api.Session{
+		{IssueID: 2, StartTime: "2026-05-26T09:00:00Z", EndTime: &end, DurationSeconds: &short},
+		{IssueID: 2, StartTime: "2026-05-27T09:00:00Z", EndTime: &end, DurationSeconds: &long},
+	}
+	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 40))
+	if !strings.Contains(rendered, "Sessions  2 · 1h15m total") ||
+		strings.Index(rendered, "1h") > strings.Index(rendered, "15m ") {
+		t.Fatalf("expected both sessions, newest first, got %q", rendered)
+	}
+	state.DetailSessions = nil
+	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 40)); !strings.Contains(rendered, "no work logged yet") {
+		t.Fatalf("expected the empty sessions note, got %q", rendered)
+	}
 }

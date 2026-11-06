@@ -125,7 +125,11 @@ type Model struct {
 	// summary, until esc or the selection moves; dailyDetailScroll scrolls it.
 	dailyDetailFocus bool
 	// dailyDetailSummary keeps the focused pane on the Day summary (tab into it).
-	dailyDetailSummary    bool
+	dailyDetailSummary bool
+	// detailSessions are the sessions of detailSessionsIssueID, loaded when Daily's detail
+	// pane opens on an issue.
+	detailSessions        []api.Session
+	detailSessionsIssueID int64
 	dailyDetailScroll     int
 	momentumWindowDays    int
 	dailyCheckIn          *api.DailyCheckIn

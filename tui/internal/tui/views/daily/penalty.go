@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
+	viewsummary "crona/tui/internal/tui/views/summary"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 
@@ -91,6 +92,76 @@ func penaltyLines(theme types.Theme, state types.ContentState, issueID int64, wi
 		lines = append(lines, label("Push a day")+text)
 	}
 	return truncateLines(lines, width)
+}
+
+// penaltyView is the issue's delay penalty laid out for its details: an arc while it is live,
+// a verdict for the fact column, and the rows under the arcs.
+type penaltyView struct {
+	arc     *viewsummary.Arc
+	verdict string
+	lines   []string
+}
+
+// issuePenaltyView splits a live penalty into an arc of the score against twice the
+// high-risk limit, a verdict (risk and share of today), and the delay and what-if rows. A
+// settled penalty keeps its plain rows.
+func issuePenaltyView(theme types.Theme, state types.ContentState, issueID int64, width int) penaltyView {
+	entry := issuePlanEntry(state, issueID)
+	if entry == nil || entry.Penalty == nil {
+		return penaltyView{}
+	}
+	penalty := entry.Penalty
+	late := entry.CurrentDelayedDays > 0 || entry.PostponeCount > 1
+	if !late {
+		if penalty.Historical {
+			return penaltyView{}
+		}
+		return penaltyView{verdict: theme.StyleDim.Render("on schedule · no penalty")}
+	}
+	if penalty.Historical {
+		return penaltyView{lines: penaltyLines(theme, state, issueID, width)}
+	}
+	warn := lipgloss.NewStyle().Foreground(theme.ColorOrange)
+	num := func(value float64) string { return fmt.Sprintf("%.2f", value) }
+	limit := penalty.HighRiskThreshold
+	color := theme.ColorYellow
+	verdict := lipgloss.NewStyle().Foreground(theme.ColorYellow).Render("◆ late")
+	if penalty.HighRisk {
+		color = theme.ColorOrange
+		verdict = warn.Render("▲ high risk")
+	}
+	if share := penalty.Contribution; share != nil {
+		verdict += theme.StyleDim.Render(fmt.Sprintf(" · %.0f%% of today", share.AccountabilityPct*100))
+	}
+	label := "Penalty"
+	if limit > 0 {
+		label += "/" + strings.TrimRight(strings.TrimRight(fmt.Sprintf("%.2f", limit), "0"), ".")
+	}
+	arc := &viewsummary.Arc{
+		Label: label, Value: num(entry.FailScore),
+		Fraction: entry.FailScore / max(limit*2, 0.01), Color: color,
+	}
+	row := func(name, value string) string { return theme.StyleDim.Render(padCells(name, 11)) + value }
+	lateParts := []string{plural(entry.CurrentDelayedDays, "day") + " late"}
+	if entry.PostponeCount > 1 {
+		lateParts = append(lateParts, fmt.Sprintf("pushed %d×", entry.PostponeCount))
+	}
+	if penalty.ProtectedDaysSkipped > 0 {
+		lateParts = append(lateParts, plural(penalty.ProtectedDaysSkipped, "away day")+" skipped")
+	}
+	lines := []string{"", row("Delay", theme.StyleNormal.Render(strings.Join(lateParts, " · ")))}
+	if done := penalty.IfDoneToday; done != nil && done.Accountability < 0 {
+		lines = append(lines, row("If today", lipgloss.NewStyle().Foreground(theme.ColorGreen).Render("✓ clears "+num(-done.Accountability))))
+	}
+	if push := penalty.IfPostponedOneDay; push != nil {
+		text := lipgloss.NewStyle().Foreground(theme.ColorRed).Render(
+			fmt.Sprintf("▲ rises to %s (+%s)", num(push.FailScore), num(push.AccountabilityDelta)))
+		if push.BecomesHighRisk {
+			text += "  " + warn.Render("turns high risk")
+		}
+		lines = append(lines, row("If pushed", text))
+	}
+	return penaltyView{arc: arc, verdict: verdict, lines: truncateLines(lines, width)}
 }
 
 // penaltyBarWidth is the penalty bar's cells.

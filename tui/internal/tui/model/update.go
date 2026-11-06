@@ -32,8 +32,14 @@ const (
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	before, wasWide := m.selectedSessionID(), m.width >= 100
+	if loaded, ok := msg.(commands.IssueSessionsLoadedMsg); ok && loaded.IssueID == m.detailSessionsIssueID {
+		m.detailSessions = loaded.Sessions
+	}
 	next, cmd := m.update(msg)
 	if model, ok := next.(Model); ok {
+		if load := model.syncDetailSessions(); load != nil {
+			cmd = tea.Batch(cmd, load)
+		}
 		if tick := model.sessionPreviewTick(before, wasWide); tick != nil {
 			cmd = tea.Batch(cmd, tick)
 		}
@@ -44,6 +50,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return model.withTerminalTitle(cmd)
 	}
 	return next, cmd
+}
+
+// syncDetailSessions loads the sessions of the issue Daily's detail pane shows, once each time
+// the pane opens on it, and forgets them when the pane shows anything else.
+func (m *Model) syncDetailSessions() tea.Cmd {
+	var id int64
+	if m.view == ViewDaily && m.pane == PaneIssues && m.dailyDetailFocus && !m.dailyDetailSummary {
+		if issue, ok := selectionpkg.SelectedIssue(m.selectionSnapshot()); ok {
+			id = issue.ID
+		}
+	}
+	if id == m.detailSessionsIssueID {
+		return nil
+	}
+	m.detailSessionsIssueID, m.detailSessions = id, nil
+	if id == 0 || m.client == nil {
+		return nil
+	}
+	return commands.LoadIssueSessions(m.client, id)
 }
 
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {

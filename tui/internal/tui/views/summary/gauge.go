@@ -113,3 +113,29 @@ func renderGauges(theme types.Theme, gauges []gauge, width int) []string {
 	}
 	return lines
 }
+
+// Arc is one half-circle gauge for callers outside the summary.
+type Arc struct {
+	Label, Value string
+	Fraction     float64
+	Color        lipgloss.Color
+}
+
+// Arcs renders arcs side by side, as the summary's sections do.
+func Arcs(theme types.Theme, arcs []Arc, width int) []string {
+	gauges := make([]gauge, 0, len(arcs))
+	for _, a := range arcs {
+		gauges = append(gauges, gauge{label: a.Label, value: a.Value, fraction: a.Fraction, color: a.Color})
+	}
+	return renderGauges(theme, gauges, width)
+}
+
+// ArcsWidth is the cells n arcs take side by side.
+func ArcsWidth(n int) int {
+	return max(1, n)*gaugeCols + max(0, n-1)*gaugeGap
+}
+
+// BesideArcs puts fact lines to the right of arcs, or under them when the width is narrow.
+func BesideArcs(arcs, facts []string, arcWidth, width int) []string {
+	return besideArcs(arcs, facts, arcWidth, width)
+}

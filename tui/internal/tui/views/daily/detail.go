@@ -1,7 +1,6 @@
 package daily
 
 import (
-	"fmt"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -134,28 +133,55 @@ func IssueDetailLines(
 	if issue.EstimateMinutes != nil {
 		estimate = *issue.EstimateMinutes
 	}
-	fields := []detailEntry{
-		{"status", statusStyle.Render(issuecore.PlainIssueStatus(DisplayIssueStatus(state, issue.ID, issue.Status)))},
-		{"context", theme.StyleNormal.Render(detailContext(repo, stream))},
-		{"effort", theme.StyleNormal.Render(issueProgressText(worked, estimate, true))},
-	}
+	status := DisplayIssueStatus(state, issue.ID, issue.Status)
+	// The fact column: status with its date, context, tags, then the penalty's verdict.
+	head := statusStyle.Render("● " + issuecore.PlainIssueStatus(status))
 	if date := issuecore.IssueDateLabel(issue.Status, issue.TodoForDate, issue.CompletedAt, issue.AbandonedAt, state.Settings); date != "" {
-		fields = append(fields, detailEntry{"date", theme.StyleNormal.Render(date)})
+		head += theme.StyleDim.Render(" · ") + theme.StyleNormal.Render(date)
 	}
 	if issue.PinnedDaily {
-		fields = append(fields, detailEntry{"pinned", theme.StyleNormal.Render("yes")})
+		head += theme.StyleDim.Render(" · pinned")
 	}
+	facts := []string{head, theme.StyleNormal.Render(detailContext(repo, stream))}
 	if len(issue.Tags) > 0 {
-		fields = append(fields, detailEntry{"tags", issuecore.TagChips(theme, issue.Tags, state.Tags, max(8, width-12))})
+		facts = append(facts, issuecore.TagChips(theme, issue.Tags, state.Tags, max(8, width-viewsummary.ArcsWidth(2)-3)))
 	}
+	penalty := issuePenaltyView(theme, state, issue.ID, width)
+	if penalty.verdict != "" {
+		facts = append(facts, penalty.verdict)
+	}
+	arcs := []viewsummary.Arc{effortArc(theme, worked, estimate)}
+	if penalty.arc != nil {
+		arcs = append(arcs, *penalty.arc)
+	}
+	arcWidth := viewsummary.ArcsWidth(len(arcs))
 	lines := detailDescription(theme, issue.Description, width)
-	lines = append(lines, detailGrid(theme, fields, width)...)
-	lines = append(lines, penaltyLines(theme, state, issue.ID, width)...)
+	lines = append(lines, viewsummary.BesideArcs(viewsummary.Arcs(theme, arcs, arcWidth), facts, arcWidth, width)...)
+	lines = append(lines, penalty.lines...)
+	lines = append(lines, issueSessionLines(theme, state, issue.ID, width)...)
 	lines = append(lines, carryLines(theme, state, issue.ID, width)...)
 	lines = append(lines, issuecore.NotesLines(theme, state.Settings, issue.Notes, width)...)
 	return append(
 		lines,
-		momentumLines(theme, issueMomentums(state, repoID, issue.StreamID), width)...)
+		momentumLines(theme, state, issueMomentums(state, repoID, issue.StreamID), width)...)
+}
+
+// effortArc fills with worked time against the estimate: cyan on the way, green at the
+// estimate and orange past it. Without an estimate it shows the time worked on a dim track.
+func effortArc(theme types.Theme, workedSeconds, estimateMinutes int) viewsummary.Arc {
+	arc := viewsummary.Arc{Label: "Effort", Value: helperpkg.FormatCompactDurationSeconds(workedSeconds), Color: theme.ColorCyan}
+	if estimateMinutes <= 0 {
+		return arc
+	}
+	arc.Label += "/" + helperpkg.FormatCompactDurationMinutes(estimateMinutes)
+	arc.Fraction = float64(workedSeconds) / float64(estimateMinutes*60)
+	switch {
+	case arc.Fraction > 1.05:
+		arc.Color = theme.ColorOrange
+	case arc.Fraction >= 1:
+		arc.Color = theme.ColorGreen
+	}
+	return arc
 }
 
 func habitDetailLines(
@@ -213,7 +239,7 @@ func habitDetailWithStatus(
 	lines := detailDescription(theme, habit.Description, width)
 	lines = append(lines, detailGrid(theme, fields, width)...)
 	lines = append(lines, detailText(theme, "Notes", habit.Notes, width)...)
-	return append(lines, momentumLines(theme, habitMomentums(state, habit.ID), width)...)
+	return append(lines, momentumLines(theme, state, habitMomentums(state, habit.ID), width)...)
 }
 
 // detailDescription leads the pane with the description, followed by a blank row.
@@ -261,45 +287,13 @@ func issueMomentums(state types.ContentState, repoID, streamID int64) []sharedty
 
 // momentumLines lists momentums one per line: cadence, the current period's progress (time
 // for context momentums), the ladder and the streak.
-func momentumLines(theme types.Theme, cards []sharedtypes.MomentumCard, width int) []string {
+func momentumLines(theme types.Theme, state types.ContentState, cards []sharedtypes.MomentumCard, width int) []string {
 	if len(cards) == 0 {
 		return nil
 	}
-	nameWidth := 0
-	progress := make([]string, len(cards))
-	for i, card := range cards {
-		nameWidth = max(nameWidth, lipgloss.Width(card.Definition.Name))
-		if len(card.Series) == 0 {
-			continue
-		}
-		point := card.Series[len(card.Series)-1]
-		progress[i] = fmt.Sprintf("%d/%d", point.Count, point.Target)
-		if card.Definition.TargetKind == sharedtypes.MomentumTargetKindContext {
-			progress[i] = helperpkg.FormatCompactDurationSeconds(point.Count) + "/" +
-				helperpkg.FormatCompactDurationSeconds(point.Target)
-		}
-	}
-	progressWidth := 0
-	for _, text := range progress {
-		progressWidth = max(progressWidth, ansi.StringWidth(text))
-	}
 	lines := []string{"", theme.StyleDim.Bold(true).Render("Momentum")}
-	for i, card := range cards {
-		def := card.Definition
-		unit := momentumhelpers.Unit(def.Period)
-		parts := []string{
-			theme.StyleNormal.Render(padCells(def.Name, min(nameWidth, max(8, width/3)))),
-			theme.StyleDim.Render(padCells(momentumhelpers.CadenceLabel(def.Period), 7)),
-		}
-		if progressWidth > 0 {
-			parts = append(parts, theme.StyleNormal.Render(padCells(progress[i], progressWidth)))
-		}
-		parts = append(parts,
-			momentumhelpers.Ladder(theme, def.Period, card.Current, card.Longest),
-			theme.StyleNormal.Render(momentumhelpers.FormatLength(card.Current, unit))+
-				theme.StyleDim.Render(" best "+momentumhelpers.FormatLength(card.Longest, unit)),
-		)
-		lines = append(lines, viewhelpers.TruncateANSI(strings.Join(parts, "  "), width))
+	for _, row := range viewsummary.MomentumCardRows(theme, cards, dailyDate(state), max(1, width-2)) {
+		lines = append(lines, "  "+row)
 	}
 	return lines
 }
@@ -370,10 +364,10 @@ func IssueInsightLines(
 ) []string {
 	lines := penaltyLines(theme, state, issueID, width)
 	lines = append(lines, carryLines(theme, state, issueID, width)...)
-	return append(lines, momentumLines(theme, issueMomentums(state, repoID, streamID), width)...)
+	return append(lines, momentumLines(theme, state, issueMomentums(state, repoID, streamID), width)...)
 }
 
 // HabitMomentumLines are the habit detail pane's momentum section, ladders included.
 func HabitMomentumLines(theme types.Theme, state types.ContentState, habitID int64, width int) []string {
-	return momentumLines(theme, habitMomentums(state, habitID), width)
+	return momentumLines(theme, state, habitMomentums(state, habitID), width)
 }
