@@ -1,6 +1,7 @@
 package sessions
 
 import (
+	viewsummary "crona/tui/internal/tui/views/summary"
 	"fmt"
 	"strings"
 	"time"
@@ -151,22 +152,7 @@ func sessionDetailLines(
 		lines = append(lines, theme.StyleDim.Render(status))
 		return append(lines, noteLines(theme, entry, width)...)
 	}
-	lines = append(
-		lines,
-		label("Issue", orDash(preview.IssueTitle)),
-		label("Repo", orDash(preview.RepoName)),
-		label("Stream", orDash(preview.StreamName)),
-		"",
-		label(
-			"Work",
-			compact(
-				preview.WorkSummary.WorkSeconds,
-			)+"  "+theme.StyleDim.Render(
-				"rest "+compact(preview.WorkSummary.RestSeconds),
-			),
-		),
-		"        "+workRestBar(theme, preview.WorkSummary, max(1, width-12)),
-	)
+	lines = append(lines, sessionArcLines(theme, preview, width)...)
 	if len(preview.Segments) > 0 {
 		lines = append(lines, "", theme.StyleDim.Render("Segments"))
 		for _, segment := range preview.Segments {
@@ -177,15 +163,16 @@ func sessionDetailLines(
 				)
 			}
 			kind := strings.ReplaceAll(string(segment.SegmentType), "_", " ")
+			color := theme.ColorDullGreen
+			if segment.SegmentType != sharedtypes.SessionSegmentWork {
+				color = theme.ColorLavender
+			}
 			lines = append(
 				lines,
 				ansi.Truncate(
-					fmt.Sprintf(
-						"%s  %s  %s",
-						kind,
-						timeRange(segment.StartTime, segment.EndTime),
+					lipgloss.NewStyle().Foreground(color).Render("● "+fmt.Sprintf("%-5s", kind))+"  "+
+						theme.StyleDim.Render(timeRange(segment.StartTime, segment.EndTime))+"  "+
 						compact(seconds),
-					),
 					width,
 					"…",
 				),
@@ -221,14 +208,40 @@ func noteLines(theme types.Theme, entry api.SessionHistoryEntry, width int) []st
 	return lines
 }
 
-func workRestBar(theme types.Theme, summary sharedtypes.SessionWorkSummary, width int) string {
+// sessionArcLines leads the details with Work and Rest arcs, each its share of the session,
+// beside the time, issue and context.
+func sessionArcLines(theme types.Theme, preview *api.SessionDetail, width int) []string {
+	summary := preview.WorkSummary
 	total := summary.WorkSeconds + summary.RestSeconds
-	if total <= 0 {
-		return theme.StyleDim.Render(strings.Repeat("─", width))
+	share := func(seconds int) float64 {
+		if total <= 0 {
+			return 0
+		}
+		return float64(seconds) / float64(total)
 	}
-	work := summary.WorkSeconds * width / total
-	return lipgloss.NewStyle().Foreground(theme.ColorDullGreen).Render(strings.Repeat("█", work)) +
-		theme.StyleDim.Render(strings.Repeat("█", width-work))
+	arcs := []viewsummary.Arc{
+		{Label: "Work", Value: compact(summary.WorkSeconds), Fraction: share(summary.WorkSeconds), Color: theme.ColorGreen},
+		{Label: "Rest", Value: compact(summary.RestSeconds), Fraction: share(summary.RestSeconds), Color: theme.ColorLavender},
+	}
+	arcWidth := viewsummary.ArcsWidth(len(arcs))
+	context := orDash(preview.RepoName)
+	if preview.StreamName != "" {
+		context += " › " + preview.StreamName
+	}
+	facts := []string{
+		lipgloss.NewStyle().Foreground(theme.ColorCyan).Render(timeRange(preview.StartTime, preview.EndTime)) +
+			theme.StyleDim.Render(" · ") + compact(durationSeconds(preview.SessionHistoryEntry)),
+		theme.StyleNormal.Bold(true).Render(orDash(preview.IssueTitle)),
+		theme.StyleDim.Render(context),
+	}
+	if n := len(preview.Segments); n > 0 {
+		noun := "segments"
+		if n == 1 {
+			noun = "segment"
+		}
+		facts = append(facts, theme.StyleDim.Render(fmt.Sprintf("%d %s", n, noun)))
+	}
+	return viewsummary.BesideArcs(viewsummary.Arcs(theme, arcs, arcWidth), facts, arcWidth, width)
 }
 
 func sessionNote(entry api.SessionHistoryEntry) string {

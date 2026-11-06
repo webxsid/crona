@@ -120,7 +120,7 @@ func TestSessionDetailWaitsThenFills(t *testing.T) {
 	}
 	state.SessionPreview = preview
 	text = sessionText(state)
-	for _, want := range []string{"Issue", "Log redesign", "Repo", "Crona", "Stream", "Work", "work  16:30–16:49"} {
+	for _, want := range []string{"Log redesign", "Crona › tui", "Work", "Rest", "work   16:30–16:49"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q with the preview, got\n%s", want, text)
 		}

@@ -1,6 +1,7 @@
 package habits
 
 import (
+	viewsummary "crona/tui/internal/tui/views/summary"
 	"fmt"
 	"strings"
 
@@ -158,32 +159,7 @@ func HabitLogDetailLines(
 	if entry.DurationMinutes != nil {
 		duration = helperpkg.FormatCompactDurationMinutes(*entry.DurationMinutes)
 	}
-	fields := [][2]string{
-		{"Date", helperpkg.FormatDisplayDate(entry.Date, state.Settings)},
-		{"Status", habitHistoryStatusLabel(*entry)},
-		{"Duration", duration},
-		{"Context", habitLogContext(*entry)},
-		{"Kind", orDash(string(entry.Kind))},
-	}
-	if entry.SnapshotTarget != nil {
-		fields = append(
-			fields,
-			[2]string{"Target", helperpkg.FormatCompactDurationMinutes(*entry.SnapshotTarget)},
-		)
-	}
-	lines := make([]string, 0, len(fields)+4)
-	for _, field := range fields {
-		lines = append(
-			lines,
-			theme.StyleDim.Render(
-				fmt.Sprintf("%-9s", field[0]),
-			)+" "+ansi.Truncate(
-				field[1],
-				max(1, width-10),
-				"…",
-			),
-		)
-	}
+	lines := habitLogArcLines(theme, state, *entry, duration, width)
 	if entry.Notes != nil && strings.TrimSpace(*entry.Notes) != "" {
 		lines = append(lines, "", theme.StyleDim.Render("Note"))
 		lines = append(
@@ -194,6 +170,44 @@ func HabitLogDetailLines(
 			)...)
 	}
 	return lines
+}
+
+// habitLogArcLines leads the details with the entry's time against its target as an arc,
+// beside its status, date, context and kind.
+func habitLogArcLines(
+	theme types.Theme,
+	state types.ContentState,
+	entry api.HabitCompletion,
+	duration string,
+	width int,
+) []string {
+	color := theme.ColorCyan
+	statusColor := theme.ColorDim
+	switch entry.Status {
+	case sharedtypes.HabitCompletionStatusCompleted:
+		color, statusColor = theme.ColorGreen, theme.ColorGreen
+	case sharedtypes.HabitCompletionStatusFailed:
+		color, statusColor = theme.ColorRed, theme.ColorRed
+	}
+	arc := viewsummary.Arc{Label: "Time", Value: duration, Color: color}
+	if entry.SnapshotTarget != nil && *entry.SnapshotTarget > 0 {
+		arc.Label = "of " + helperpkg.FormatCompactDurationMinutes(*entry.SnapshotTarget)
+		if entry.DurationMinutes != nil {
+			arc.Fraction = float64(*entry.DurationMinutes) / float64(*entry.SnapshotTarget)
+		}
+	} else if entry.Status == sharedtypes.HabitCompletionStatusCompleted {
+		arc.Fraction = 1
+	}
+	facts := []string{
+		lipgloss.NewStyle().Foreground(statusColor).Render("● "+habitHistoryStatusLabel(entry)) +
+			theme.StyleDim.Render(" · ") + helperpkg.FormatDisplayDate(entry.Date, state.Settings),
+		theme.StyleNormal.Render(habitLogContext(entry)),
+	}
+	if kind := strings.TrimSpace(string(entry.Kind)); kind != "" {
+		facts = append(facts, theme.StyleDim.Render(kind))
+	}
+	arcWidth := viewsummary.ArcsWidth(1)
+	return viewsummary.BesideArcs(viewsummary.Arcs(theme, []viewsummary.Arc{arc}, arcWidth), facts, arcWidth, width)
 }
 
 func habitLogMark(theme types.Theme, entry api.HabitCompletion) string {
@@ -219,11 +233,4 @@ func habitLogName(entry api.HabitCompletion) string {
 
 func habitLogContext(entry api.HabitCompletion) string {
 	return strings.Replace(habitHistoryContextLabel(entry), " > ", " › ", 1)
-}
-
-func orDash(value string) string {
-	if strings.TrimSpace(value) == "" {
-		return "–"
-	}
-	return value
 }

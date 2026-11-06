@@ -97,7 +97,7 @@ func TestHabitLogPanesByWidth(t *testing.T) {
 	}
 	for _, width := range []int{120, 200} {
 		text := logText(width, 40)
-		for _, want := range []string{"Date", "Status", "Context", "long day of reviews"} {
+		for _, want := range []string{"completed", "Personal › wellbeing", "long day of reviews"} {
 			if !strings.Contains(text, want) {
 				t.Fatalf("%d: expected %q in\n%s", width, want, text)
 			}
