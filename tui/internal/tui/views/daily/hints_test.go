@@ -233,3 +233,22 @@ func TestDaySummaryShowsArrowsWhenItOverflows(t *testing.T) {
 		t.Fatalf("expected the focused summary scrolled with ↑, got %q", header)
 	}
 }
+
+func TestDetailPaneFadesWithoutFocus(t *testing.T) {
+	state := detailState()
+	faint := func(rendered string) bool {
+		for _, line := range strings.Split(rendered, "\n")[1:] {
+			if strings.TrimSpace(ansi.Strip(line)) != "" {
+				return strings.Contains(line, "\x1b[2m")
+			}
+		}
+		return false
+	}
+	if !faint(renderDetail(testTheme(), state, 70, 20)) {
+		t.Fatal("expected the unfocused detail pane faded")
+	}
+	state.DailyDetailFocus, state.DailyDetailSummary = true, true
+	if faint(renderDetail(testTheme(), state, 70, 20)) {
+		t.Fatal("expected the focused detail pane at full strength")
+	}
+}

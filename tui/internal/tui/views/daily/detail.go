@@ -50,6 +50,8 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 		Height:     height,
 		Lines:      lines,
 		Focused:    state.DailyDetailFocus,
+		// The pane takes focus (tab or enter), so it fades like the lists without it.
+		Dimmed: !state.DailyDetailFocus,
 	})
 }
 
