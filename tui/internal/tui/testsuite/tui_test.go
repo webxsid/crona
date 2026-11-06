@@ -933,7 +933,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Actions", "Feedback & discussions", "github.com/webxsid", "v0.4.0-beta.2", "Running channel", "Update channel", "crona-beta", "install unav", "Diagnostics"} {
+	for _, want := range []string{"Actions", "Feedback & discussions", "Releases", "v0.4.0-beta.2", "Running channel", "Update channel", "crona-beta", "install unav", "Diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
