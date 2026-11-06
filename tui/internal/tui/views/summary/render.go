@@ -136,42 +136,112 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 }
 
 func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []string {
-	lines := []string{theme.StylePaneTitle.Render("Accountability")}
+	title := theme.StylePaneTitle.Render("Accountability")
 	if plan == nil || strings.TrimSpace(plan.Date) == "" {
-		return append(lines, theme.StyleDim.Render("No committed plan."))
+		return []string{title, theme.StyleDim.Render("No committed plan.")}
 	}
 	s := plan.Summary
-	// The accountability score is the summed fail score of the plan's open entries: it is a
-	// penalty, so 0 is a clean day and it grows as committed work slips.
-	threshold := s.HighRiskThreshold
-	if threshold <= 0 {
-		threshold = 3
-	}
-	penaltyColor := penaltyColorFor(theme, s.AccountabilityScore, threshold, threshold*2)
+	lines := []string{title + "   " + planVerdict(theme, s)}
 	doneFraction := float64(s.CompletedCount) / float64(max(1, s.PlannedCount))
-	lines = append(lines, renderGauges(theme, []gauge{
-		{
-			label: "Done", value: fmt.Sprintf("%d/%d", s.CompletedCount, s.PlannedCount),
-			fraction: doneFraction, color: doneColor(theme, doneFraction),
-		},
-		{
-			// The high-risk threshold sits at the arc's top; a full arc is twice it.
-			label: "Penalty", value: fmt.Sprintf("%.1f", s.AccountabilityScore),
-			fraction: s.AccountabilityScore / (threshold * 2), color: penaltyColor,
-		},
-		{
-			label: "Pressure", value: fmt.Sprintf("%.1f", s.BacklogPressure),
-			fraction: s.BacklogPressure / 8, color: penaltyColorFor(theme, s.BacklogPressure, 2, 4),
-		},
-	}, width)...)
-	return append(
-		lines,
-		strings.Repeat(" ", labelWidth)+planBar(theme, s, max(8, width-labelWidth)),
-		Row(theme, "Missed", outcome(theme, "✗", s.FailedCount, "failed", theme.ColorRed)+
-			theme.StyleDim.Render("  ·  ")+outcome(theme, "⊘", s.AbandonedCount, "abandoned", theme.ColorOrange), width),
-		Row(theme, "Carried", outcome(theme, "↷", s.CarriedCount, "to a later day", theme.ColorLavender), width),
-		Row(theme, "Pending", outcome(theme, "↺", s.PendingRollbackCount, "to roll back", theme.ColorYellow), width),
-	)
+	arc := renderGauges(theme, []gauge{{
+		label: "Done", value: fmt.Sprintf("%d/%d", s.CompletedCount, s.PlannedCount),
+		fraction: doneFraction, color: doneColor(theme, doneFraction),
+	}}, gaugeCols)
+	facts := []string{
+		factRow(theme, "Done", fmt.Sprintf("%d of %d planned", s.CompletedCount, s.PlannedCount)),
+		factRow(theme, "Slipping", riskDots(theme, s)),
+		factRow(theme, "Delayed", delayText(theme, s)),
+		factRow(theme, "Resolved", resolvedChips(theme, s)),
+	}
+	if width < gaugeCols+gaugeGap+28 {
+		return append(append(lines, arc...), facts...)
+	}
+	for i := range max(len(arc), len(facts)) {
+		left := strings.Repeat(" ", gaugeCols)
+		if i < len(arc) {
+			left = arc[i] + strings.Repeat(" ", max(0, gaugeCols-ansi.StringWidth(arc[i])))
+		}
+		right := ""
+		if i < len(facts) {
+			right = facts[i]
+		}
+		lines = append(lines, ansi.Truncate(left+strings.Repeat(" ", gaugeGap+1)+right, width, "…"))
+	}
+	return lines
+}
+
+// planVerdict sums the plan up in words: at risk once anything is high risk, slipping while
+// work is delayed, otherwise on track (or done once nothing is left open).
+func planVerdict(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary) string {
+	var reasons []string
+	if s.HighRiskIssueCount > 0 {
+		reasons = append(reasons, fmt.Sprintf("%d high risk", s.HighRiskIssueCount))
+	}
+	if s.DelayedIssueCount > 0 {
+		reasons = append(reasons, fmt.Sprintf("%d delayed", s.DelayedIssueCount))
+	}
+	reason := theme.StyleDim.Render(" · " + strings.Join(reasons, ", "))
+	switch {
+	case s.HighRiskIssueCount > 0:
+		return lipgloss.NewStyle().Foreground(theme.ColorRed).Bold(true).Render("▲ At risk") + reason
+	case s.DelayedIssueCount > 0:
+		return lipgloss.NewStyle().Foreground(theme.ColorYellow).Bold(true).Render("◆ Slipping") + reason
+	case s.PlannedCount > 0 && s.CompletedCount == s.PlannedCount:
+		return lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render("✓ All done")
+	}
+	return lipgloss.NewStyle().Foreground(theme.ColorGreen).Bold(true).Render("● On track")
+}
+
+func factRow(theme types.Theme, label, value string) string {
+	return theme.StyleDim.Render(fmt.Sprintf("%-10s", label)) + value
+}
+
+// riskDots draws one dot per planned task, high-risk ones filled red first.
+func riskDots(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary) string {
+	if s.HighRiskIssueCount == 0 {
+		return theme.StyleDim.Render("none high risk")
+	}
+	total := max(s.PlannedCount, s.HighRiskIssueCount)
+	shown := min(total, 12)
+	hot := min(shown, s.HighRiskIssueCount)
+	dots := lipgloss.NewStyle().Foreground(theme.ColorRed).Render(strings.Repeat("●", hot)) +
+		theme.StyleDim.Render(strings.Repeat("○", shown-hot))
+	return dots + "  " + fmt.Sprintf("%d high risk", s.HighRiskIssueCount)
+}
+
+func delayText(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary) string {
+	if s.DelayedIssueCount == 0 {
+		return theme.StyleDim.Render("nothing late")
+	}
+	color := theme.ColorYellow
+	if s.MaxDelayDays >= 3 {
+		color = theme.ColorOrange
+	}
+	return lipgloss.NewStyle().Foreground(color).Render(fmt.Sprintf("%d", s.DelayedIssueCount)) +
+		theme.StyleDim.Render(fmt.Sprintf(" · avg %.1fd · max %dd", s.AvgDelayDays, s.MaxDelayDays))
+}
+
+// resolvedChips lists only the outcomes that happened, or says there were no misses.
+func resolvedChips(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary) string {
+	var chips []string
+	for _, c := range []struct {
+		glyph, label string
+		count        int
+		color        lipgloss.Color
+	}{
+		{"✗", "failed", s.FailedCount, theme.ColorRed},
+		{"⊘", "abandoned", s.AbandonedCount, theme.ColorOrange},
+		{"↷", "carried", s.CarriedCount, theme.ColorLavender},
+		{"↺", "to roll back", s.PendingRollbackCount, theme.ColorYellow},
+	} {
+		if c.count > 0 {
+			chips = append(chips, outcome(theme, c.glyph, c.count, c.label, c.color))
+		}
+	}
+	if len(chips) == 0 {
+		return theme.StyleDim.Render("no misses yet")
+	}
+	return strings.Join(chips, theme.StyleDim.Render("  "))
 }
 
 // doneColor is green once every planned task is done, yellow past half and lavender before.
@@ -185,46 +255,6 @@ func doneColor(theme types.Theme, fraction float64) lipgloss.Color {
 	return theme.ColorLavender
 }
 
-// penaltyColorFor colours a lower-is-better value: green at 0, yellow, orange from warn, red
-// from bad.
-func penaltyColorFor(theme types.Theme, v, warn, bad float64) lipgloss.Color {
-	switch {
-	case v >= bad:
-		return theme.ColorRed
-	case v >= warn:
-		return theme.ColorOrange
-	case v > 0:
-		return theme.ColorYellow
-	}
-	return theme.ColorGreen
-}
-
-// planBar splits the planned tasks into done, failed, abandoned and carried segments over a
-// track for those still open.
-func planBar(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary, width int) string {
-	total := max(1, s.PlannedCount)
-	used := 0
-	var b strings.Builder
-	for _, part := range []struct {
-		count int
-		color lipgloss.Color
-	}{
-		{s.CompletedCount, theme.ColorGreen},
-		{s.FailedCount, theme.ColorRed},
-		{s.AbandonedCount, theme.ColorOrange},
-		{s.CarriedCount, theme.ColorLavender},
-	} {
-		cells := min(width-used, part.count*width/total)
-		if part.count > 0 && cells == 0 && used < width {
-			cells = 1
-		}
-		b.WriteString(lipgloss.NewStyle().Foreground(part.color).Render(strings.Repeat("█", cells)))
-		used += cells
-	}
-	return b.String() + theme.StyleDim.Render(strings.Repeat("░", width-used))
-}
-
-// outcome is a glyph, count and label, coloured when the count is not zero and dim when it is.
 func outcome(theme types.Theme, glyph string, count int, label string, color lipgloss.Color) string {
 	text := fmt.Sprintf("%s %d %s", glyph, count, label)
 	if count == 0 {
@@ -274,22 +304,24 @@ func renderTopPenalties(
 		if title == "" {
 			title = fmt.Sprintf("#%d", entry.IssueID)
 		}
-		score := fmt.Sprintf("%.2f", entry.FailScore)
+		mark := "  "
+		color := theme.ColorYellow
 		if entry.Penalty.HighRisk {
-			score = lipgloss.NewStyle().Foreground(theme.ColorOrange).Render("▲" + score)
+			mark = lipgloss.NewStyle().Foreground(theme.ColorRed).Render("▲ ")
+			color = theme.ColorOrange
 		}
-		share := ""
+		why := "due today"
+		if entry.CurrentDelayedDays > 0 {
+			why = fmt.Sprintf("late %dd", entry.CurrentDelayedDays)
+		}
 		if entry.Penalty.Contribution != nil {
-			pct := entry.Penalty.Contribution.AccountabilityPct
-			color := theme.ColorYellow
-			if entry.Penalty.HighRisk {
-				color = theme.ColorOrange
-			}
-			// A small bar shows the issue's share of the day's penalty.
-			share = "  " + renderBar(theme, int(pct*100), 0, 100, 6, color) +
-				theme.StyleDim.Render(fmt.Sprintf(" %3.0f%%", pct*100))
+			why += fmt.Sprintf(" · %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100)
 		}
-		lines = append(lines, Row(theme, label, score+share+"  "+title, width))
+		why = lipgloss.NewStyle().Foreground(color).Render(why)
+		room := max(8, width-labelWidth-2-ansi.StringWidth(why)-2)
+		title = ansi.Truncate(title, room, "…")
+		pad := strings.Repeat(" ", max(1, room-ansi.StringWidth(title)+2))
+		lines = append(lines, Row(theme, label, mark+title+pad+why, width))
 	}
 	return lines
 }

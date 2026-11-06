@@ -72,7 +72,7 @@ func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
 	rendered := squash(dayText(summaryTestState(), 42))
-	for _, want := range []string{"Accountability", "1/1", "Done", "Penalty", "100.0", "Pressure", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
+	for _, want := range []string{"Accountability", "✓ All done", "1/1", "Done 1 of 1 planned", "none high risk", "nothing late", "no misses yet", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}
@@ -175,7 +175,7 @@ func TestDayLinesListTopPenalties(t *testing.T) {
 		{ID: 1, Title: "Small slip"}, {ID: 2, Title: "Fix sync conflict"},
 	}}
 	rendered := squash(dayText(state, 60))
-	if !strings.Contains(rendered, "Top ▲3.38 █░░░░░ 34% Fix sync conflict 1.00 ░░░░░░ 10% Small slip") ||
+	if !strings.Contains(rendered, "Top ▲ Fix sync conflict due today · 34% Small slip due today · 10%") ||
 		strings.Contains(rendered, "5.00") {
 		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
 	}
@@ -283,5 +283,23 @@ func TestMomentumListsTheDaysMomentumsUnmetFirst(t *testing.T) {
 	}
 	if strings.Contains(text, "Unrelated") {
 		t.Fatalf("expected momentums the day does not feed left out, got %q", text)
+	}
+}
+
+func TestPlanVerdictAndResolvedChips(t *testing.T) {
+	theme := types.Theme{}
+	s := sharedtypes.DailyPlanAccountabilitySummary{
+		PlannedCount: 9, HighRiskIssueCount: 2, DelayedIssueCount: 4, AvgDelayDays: 2.3, MaxDelayDays: 5,
+		FailedCount: 1, CarriedCount: 2,
+	}
+	got := ansi.Strip(planVerdict(theme, s))
+	if got != "▲ At risk · 2 high risk, 4 delayed" {
+		t.Fatalf("verdict = %q", got)
+	}
+	if got := ansi.Strip(resolvedChips(theme, s)); got != "✗ 1 failed  ↷ 2 carried" {
+		t.Fatalf("chips = %q", got)
+	}
+	if got := ansi.Strip(delayText(theme, s)); got != "4 · avg 2.3d · max 5d" {
+		t.Fatalf("delay = %q", got)
 	}
 }
