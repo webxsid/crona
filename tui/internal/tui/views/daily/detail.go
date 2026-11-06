@@ -63,10 +63,10 @@ func detailBody(theme types.Theme, state types.ContentState, width int) (string,
 	}
 	if state.Pane == "habits" {
 		if habit, ok := selectedDailyHabit(state); ok {
-			return habit.Name, habitDetailLines(theme, state, habit, width)
+			return habit.Name, padded(habitDetailLines(theme, state, habit, max(1, width-2*panePad)))
 		}
 	} else if issue, ok := selectedDailyIssue(state); ok {
-		return issue.Title, IssueDetailLines(theme, state, issue, width)
+		return issue.Title, padded(IssueDetailLines(theme, state, issue, max(1, width-2*panePad)))
 	}
 	return "Selected", []string{theme.StyleDim.Render("Nothing selected")}
 }

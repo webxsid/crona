@@ -122,7 +122,7 @@ func TestFocusedDetailScrolls(t *testing.T) {
 	full := strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")
 	state.DailyDetailScroll = 2
 	scrolled := strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")
-	if full[1] == scrolled[1] || !strings.Contains(scrolled[0], "↑") {
+	if strings.Join(full[1:], "\n") == strings.Join(scrolled[1:], "\n") || !strings.Contains(scrolled[0], "↑") {
 		t.Fatalf("expected the body scrolled with an up arrow, got %q then %q", full, scrolled)
 	}
 }
