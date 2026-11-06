@@ -50,9 +50,9 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 	if snapshot == nil {
 		return ""
 	}
-	lines := []string{theme.StylePaneTitle.Render("Stats")}
+	lines := []string{theme.StylePaneTitle.Render("Focus")}
 	if snapshot.Focus == nil || snapshot.Metrics == nil {
-		return strings.Join(append(lines, theme.StyleDim.Render("Stats unavailable.")), "\n")
+		return strings.Join(append(lines, theme.StyleDim.Render("Focus stats unavailable.")), "\n")
 	}
 	focus := snapshot.Focus
 	metrics := snapshot.Metrics
