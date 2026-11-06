@@ -96,20 +96,34 @@ func TestHabitsPaneOffersNewHabitAndActionLine(t *testing.T) {
 	}
 }
 
-func TestDetailTitleOffersDayKey(t *testing.T) {
+func TestDetailTitleOffersEnterAndEsc(t *testing.T) {
 	state := detailState()
+	state.DailyDetailFocus = false
 	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(
 		strings.Split(rendered, "\n")[0],
-		"[S] day summary",
+		"[enter] details",
 	) {
-		t.Fatalf("expected [S] day summary in the detail title row, got %q", rendered)
+		t.Fatalf("expected [enter] details on the Day summary, got %q", rendered)
 	}
-	state.DailyDetailDay = true
+	state.DailyDetailFocus = true
 	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(
 		strings.Split(rendered, "\n")[0],
-		"[S] show selection",
+		"[esc] back",
 	) {
-		t.Fatalf("expected [S] show selection while the day shows, got %q", rendered)
+		t.Fatalf("expected [esc] back while focused, got %q", rendered)
+	}
+}
+
+func TestFocusedDetailScrolls(t *testing.T) {
+	state := detailState()
+	state.Pane = "issues"
+	state.Cursors["issues"] = 1
+	state.DailyDetailFocus = true
+	full := strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")
+	state.DailyDetailScroll = 2
+	scrolled := strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")
+	if full[1] == scrolled[1] || !strings.Contains(scrolled[0], "↑") {
+		t.Fatalf("expected the body scrolled with an up arrow, got %q then %q", full, scrolled)
 	}
 }
 
@@ -179,9 +193,9 @@ func TestDetailTitleTruncatesToKeepDayKey(t *testing.T) {
 	state := detailState()
 	state.DailyIssues[1].Title = strings.Repeat("Very long task title ", 6)
 	for _, width := range []int{40, 70} {
-		header := strings.Split(ansi.Strip(renderDetail(testTheme(), state, width, 30)), "\n")[0]
+		header := strings.Split(ansi.Strip(renderDetail(testTheme(), focusDetail(state), width, 30)), "\n")[0]
 		if !strings.Contains(header, "Very lo") || !strings.Contains(header, "…") ||
-			!strings.Contains(header, "[S] day summary") || !strings.HasSuffix(header, " fold") {
+			!strings.Contains(header, "[esc] back") || !strings.HasSuffix(header, " fold") {
 			t.Fatalf("width %d: expected a truncated title, the day key and the fold key, got %q", width, header)
 		}
 		if got := ansi.StringWidth(header); got != width {

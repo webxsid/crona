@@ -49,7 +49,7 @@ func TestDetailShowsLiveDelayPenalty(t *testing.T) {
 	state := detailState()
 	state.DailyPlan = penaltyPlan(false)
 	rendered := strings.Join(
-		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))),
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), focusDetail(state), 100, 40))),
 		" ",
 	)
 	for _, want := range []string{
@@ -72,7 +72,7 @@ func TestDetailShowsFinalPenaltyForResolvedIssue(t *testing.T) {
 	state := detailState()
 	state.DailyPlan = penaltyPlan(true)
 	rendered := strings.Join(
-		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 100, 40))),
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), focusDetail(state), 100, 40))),
 		" ",
 	)
 	if !strings.Contains(rendered, "Delay penalty (final)") ||
@@ -92,7 +92,7 @@ func TestDetailShowsOnScheduleWithoutPenalty(t *testing.T) {
 	state.DailyPlan = &api.DailyPlan{Entries: []api.DailyPlanEntry{{
 		IssueID: 2, PostponeCount: 1, Penalty: &api.DailyPlanEntryPenalty{HighRiskThreshold: 2.5},
 	}}}
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 100, 40))
+	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 100, 40))
 	if !strings.Contains(rendered, "On schedule · no penalty") ||
 		strings.Contains(rendered, "Delay penalty") {
 		t.Fatalf("expected on-schedule line, got %q", rendered)

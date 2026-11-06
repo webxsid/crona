@@ -20,7 +20,7 @@ import (
 )
 
 func renderIssues(theme types.Theme, state types.ContentState, width, height int) string {
-	active := state.Pane == "issues"
+	active := state.Pane == "issues" && !state.DailyDetailFocus
 	cur := state.Cursors["issues"]
 	sources := filteredDailyIssues(state)
 	issues := dailyAPIIssues(sources)
@@ -364,7 +364,7 @@ func dailyHabitIndices(state types.ContentState) []int {
 }
 
 func renderHabits(theme types.Theme, state types.ContentState, width, height int) string {
-	active := state.Pane == "habits"
+	active := state.Pane == "habits" && !state.DailyDetailFocus
 	cur := state.Cursors["habits"]
 	indices := dailyHabitIndices(state)
 	total := len(indices)

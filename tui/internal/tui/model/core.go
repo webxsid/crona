@@ -121,8 +121,10 @@ type Model struct {
 	reviewWindowEnd  string
 	reviewShowTime   bool
 	summarySnapshot  *api.SummarySnapshot
-	// dailyDetailDay shows the Day summary in Daily's detail pane until the selection moves.
-	dailyDetailDay        bool
+	// dailyDetailFocus shows the selection in Daily's detail pane (enter) instead of the Day
+	// summary, until esc or the selection moves; dailyDetailScroll scrolls it.
+	dailyDetailFocus      bool
+	dailyDetailScroll     int
 	momentumWindowDays    int
 	dailyCheckIn          *api.DailyCheckIn
 	metricsRange          []api.DailyMetricsDay

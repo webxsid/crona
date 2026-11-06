@@ -81,8 +81,10 @@ type ContentState struct {
 	DailyIssues []api.Issue
 	// DailyPlannedIssues is the Planned section whatever tab is shown; the strip counts it.
 	DailyPlannedIssues []api.Issue
-	// DailyDetailDay shows the Day summary in the detail pane instead of the selection.
-	DailyDetailDay bool
+	// DailyDetailFocus focuses Daily's detail pane on the selection (enter); otherwise it
+	// shows the Day summary. DailyDetailScroll is how far the focused pane is scrolled.
+	DailyDetailFocus  bool
+	DailyDetailScroll int
 	// DailyIssueIndices and DailyHabitIndices are the model's text-filtered raw indices into
 	// DailyIssues and DueHabits; the pane cursors are positions in these lists.
 	DailyIssueIndices     []int

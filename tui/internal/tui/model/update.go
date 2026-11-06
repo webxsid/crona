@@ -14,6 +14,7 @@ import (
 	inputpkg "crona/tui/internal/tui/input"
 	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
+	dailyviews "crona/tui/internal/tui/views/daily"
 	"fmt"
 	"time"
 
@@ -97,6 +98,11 @@ func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				state.Dialog,
 			)
 			next := m.applyInputState(state)
+			if next.dailyDetailFocus && next.dailyDetailScroll > 0 {
+				next.dailyDetailScroll = min(next.dailyDetailScroll, dailyviews.DetailScrollLimit(
+					layoutpkg.ViewTheme(), next.detailContentState(next.selectionSnapshot()),
+				))
+			}
 			cmd = batchCmds(cmd, next.issuesTransitionRefresh(m.view))
 			return next, batchCmds(touch, cmd)
 		}

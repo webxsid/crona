@@ -20,8 +20,10 @@ type State struct {
 	Filters             map[uistate.Pane]string
 	DefaultIssueSection uistate.DefaultIssueSection
 	DailyTaskSection    uistate.DailyTaskSection
-	// DailyDetailDay shows the Day summary in Daily's detail pane instead of the selection.
-	DailyDetailDay bool
+	// DailyDetailFocus shows the selection in Daily's detail pane instead of the Day summary;
+	// DailyDetailScroll scrolls it.
+	DailyDetailFocus  bool
+	DailyDetailScroll int
 	// Date is the one date every dated view shows; "" means the logical today.
 	Date             string
 	ReviewWindowDays int
@@ -177,6 +179,9 @@ func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 		state.SessionDetailOpen,
 		state.SessionContextOpen,
 	)
+	if next, handled := handleFocusedDailyDetail(state, key); handled {
+		return next, nil
+	}
 	next, cmd := newRouter(deps).Handle(state, state.ActiveView, state.ActivePane, key)
 	if routed, ok := next.(State); ok {
 		logger.Infof(
@@ -432,7 +437,7 @@ func newRouter(deps Deps) *router {
 		if deps.OpenDaySummary != nil && deps.OpenDaySummary(&s) {
 			return s, nil, true
 		}
-		s.DailyDetailDay = !s.DailyDetailDay
+		s.DailyDetailFocus = false
 		return s, nil, true
 	})
 	// + edits the selected issue's or habit's tags.
@@ -765,4 +770,33 @@ var filterablePanes = map[uistate.Pane]bool{
 	uistate.PaneSettings:      true,
 	uistate.PaneTags:          true,
 	uistate.PaneAlerts:        true,
+}
+
+// handleFocusedDailyDetail scrolls Daily's focused detail pane and returns to the Day summary
+// on esc. Other keys go on to the router, so actions still apply to the shown selection.
+func handleFocusedDailyDetail(s State, key tea.KeyMsg) (State, bool) {
+	if !s.DailyDetailFocus || s.ActiveView != uistate.ViewDaily || s.Dialog != "" || s.HelpOpen {
+		return s, false
+	}
+	switch key.String() {
+	case "esc":
+		s.DailyDetailFocus, s.DailyDetailScroll = false, 0
+	case "up", "k":
+		s.DailyDetailScroll--
+	case "down", "j":
+		s.DailyDetailScroll++
+	case "pgup", "ctrl+u":
+		s.DailyDetailScroll -= 10
+	case "pgdown", "ctrl+d":
+		s.DailyDetailScroll += 10
+	case "g":
+		s.DailyDetailScroll = 0
+	case "G":
+		s.DailyDetailScroll = 1 << 30
+	case "enter":
+	default:
+		return s, false
+	}
+	s.DailyDetailScroll = max(0, s.DailyDetailScroll)
+	return s, true
 }

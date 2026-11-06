@@ -97,7 +97,8 @@ func (m Model) inputState() inputpkg.State {
 		Filters:                   m.filters,
 		DefaultIssueSection:       m.defaultIssueSection,
 		DailyTaskSection:          m.dailyTaskSection,
-		DailyDetailDay:            m.dailyDetailDay,
+		DailyDetailFocus:          m.dailyDetailFocus,
+		DailyDetailScroll:         m.dailyDetailScroll,
 		Date:                      m.date,
 		ReviewWindowDays:          m.reviewWindowDays,
 		ReviewWindowEnd:           m.reviewWindowEnd,
@@ -130,10 +131,14 @@ func (m Model) inputState() inputpkg.State {
 }
 
 func (m Model) applyInputState(state inputpkg.State) Model {
-	// Moving the selection returns Daily's detail pane from the Day summary to it.
-	moved := state.ActivePane != m.pane ||
+	// Moving the selection or leaving Daily returns its detail pane to the Day summary.
+	moved := state.ActivePane != m.pane || state.ActiveView != m.view ||
 		state.Cursor[PaneIssues] != m.cursor[PaneIssues] || state.Cursor[PaneHabits] != m.cursor[PaneHabits]
-	m.dailyDetailDay = state.DailyDetailDay && !moved
+	m.dailyDetailFocus = state.DailyDetailFocus && !moved
+	m.dailyDetailScroll = 0
+	if m.dailyDetailFocus {
+		m.dailyDetailScroll = max(0, state.DailyDetailScroll)
+	}
 	previousView := m.view
 	scopeMoved := state.ActivePane == PaneScope && state.Cursor[PaneScope] != m.cursor[PaneScope]
 	m.view = state.ActiveView
@@ -538,6 +543,11 @@ func (m Model) inputDeps() inputpkg.Deps {
 		},
 		EnterAction: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)
+			if next.dailyDetailShown() {
+				next.dailyDetailFocus, next.dailyDetailScroll = true, 0
+				*state = next.inputState()
+				return nil, true
+			}
 			next, cmd, handled := next.handleInputEnter()
 			*state = next.inputState()
 			return cmd, handled
@@ -797,4 +807,16 @@ func (m Model) openCaptureIssues() Model {
 		target = *ctx.RepoName + "/" + *ctx.StreamName
 	}
 	return m.withDialogState(dialogstate.OpenCaptureIssues(m.dialogState(), streamID, target, m.tagVocab()))
+}
+
+// dailyDetailShown is true when enter on Daily's task or habit can focus the detail pane: the
+// screen is wide and the pane is not folded. Otherwise enter opens the detail dialog.
+func (m Model) dailyDetailShown() bool {
+	if m.view != ViewDaily || (m.pane != PaneIssues && m.pane != PaneHabits) {
+		return false
+	}
+	if viewhelpers.ClassFor(m.mainContentWidth()) != viewhelpers.WidthWide {
+		return false
+	}
+	return m.settings == nil || !uistate.PaneCollapsed(m.settings.CollapsedPanes, uistate.CollapseDailyDetail)
 }

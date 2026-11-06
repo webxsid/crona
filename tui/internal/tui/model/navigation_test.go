@@ -192,26 +192,33 @@ func pressKey(m Model, key rune) Model {
 	return next.(Model)
 }
 
-func TestDaySummaryKeyTogglesOnWideAndOpensDialogWhenNarrow(t *testing.T) {
-	wide := pressKey(daySummaryModel(200), 'S')
-	if !wide.dailyDetailDay || wide.dialog != "" {
-		t.Fatalf(
-			"expected S to show the Day summary in the pane, got day=%v dialog=%q",
-			wide.dailyDetailDay,
-			wide.dialog,
-		)
+func TestEnterFocusesDetailOnWideAndEscReturnsToSummary(t *testing.T) {
+	wide, _ := daySummaryModel(200).Update(tea.KeyMsg{Type: tea.KeyEnter})
+	focused := wide.(Model)
+	if !focused.dailyDetailFocus || focused.dialog != "" {
+		t.Fatalf("expected enter to focus the detail pane, got focus=%v dialog=%q", focused.dailyDetailFocus, focused.dialog)
 	}
-	if back := pressKey(wide, 'S'); back.dailyDetailDay {
-		t.Fatal("expected a second S to return to the selection")
+	scrolled := pressKey(focused, 'j')
+	if !scrolled.dailyDetailFocus || scrolled.cursor[PaneIssues] != focused.cursor[PaneIssues] {
+		t.Fatal("expected j to scroll the focused pane, not move the selection")
 	}
+	back, _ := scrolled.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	if back.(Model).dailyDetailFocus {
+		t.Fatal("expected esc to return to the Day summary")
+	}
+}
+
+func TestEnterOpensDetailDialogWhenNarrow(t *testing.T) {
+	next, _ := daySummaryModel(120).Update(tea.KeyMsg{Type: tea.KeyEnter})
+	if narrow := next.(Model); narrow.dailyDetailFocus || narrow.dialog != "view_entity" {
+		t.Fatalf("expected the detail dialog when narrow, got focus=%v dialog=%q", narrow.dailyDetailFocus, narrow.dialog)
+	}
+}
+
+func TestDaySummaryKeyOpensDialogWhenNarrow(t *testing.T) {
 	narrow := pressKey(daySummaryModel(120), 'S')
-	if narrow.dailyDetailDay || narrow.dialog != "view_entity" || narrow.dialogViewTitle != "Day" {
-		t.Fatalf(
-			"expected a Day dialog when narrow, got day=%v dialog=%q title=%q",
-			narrow.dailyDetailDay,
-			narrow.dialog,
-			narrow.dialogViewTitle,
-		)
+	if narrow.dialog != "view_entity" || narrow.dialogViewTitle != "Day" {
+		t.Fatalf("expected a Day dialog when narrow, got dialog=%q title=%q", narrow.dialog, narrow.dialogViewTitle)
 	}
 	if body := ansi.Strip(narrow.dialogViewBody); !strings.Contains(
 		strings.Join(strings.Fields(body), " "),
@@ -221,10 +228,10 @@ func TestDaySummaryKeyTogglesOnWideAndOpensDialogWhenNarrow(t *testing.T) {
 	}
 }
 
-func TestCursorMoveReturnsDetailToSelection(t *testing.T) {
-	m := pressKey(daySummaryModel(200), 'S')
-	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyDown})
-	if moved := next.(Model); moved.dailyDetailDay || moved.cursor[PaneIssues] != 1 {
-		t.Fatal("expected moving the cursor to return the pane to the selection")
+func TestCursorMoveReturnsDetailToSummary(t *testing.T) {
+	m, _ := daySummaryModel(200).Update(tea.KeyMsg{Type: tea.KeyEnter})
+	m, _ = m.(Model).Update(tea.KeyMsg{Type: tea.KeyTab})
+	if moved := m.(Model); moved.dailyDetailFocus {
+		t.Fatal("expected switching panes to return the detail pane to the Day summary")
 	}
 }

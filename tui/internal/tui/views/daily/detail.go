@@ -24,36 +24,67 @@ import (
 // renderDetail shows the focused pane's selection, titled with its name.
 func renderDetail(theme types.Theme, state types.ContentState, width, height int) string {
 	bodyWidth := max(1, width-2)
-	title := "Selected"
-	var lines []string
-	if state.DailyDetailDay {
-		title, lines = "Day", viewsummary.DayLines(theme, state, bodyWidth)
-	} else if state.Pane == "habits" {
-		if habit, ok := selectedDailyHabit(state); ok {
-			title, lines = habit.Name, habitDetailLines(theme, state, habit, bodyWidth)
+	title, lines := detailBody(theme, state, bodyWidth)
+	meta := viewchrome.KeyHint(theme, "enter", "details")
+	if state.DailyDetailFocus {
+		meta = viewchrome.KeyHint(theme, "esc", "back")
+		// Scrolled, the body starts lower and the title says how far.
+		visible := max(1, height-1)
+		scroll := min(state.DailyDetailScroll, max(0, len(lines)-visible))
+		if scroll > 0 {
+			lines = lines[scroll:]
 		}
-	} else if issue, ok := selectedDailyIssue(state); ok {
-		title, lines = issue.Title, IssueDetailLines(theme, state, issue, bodyWidth)
+		if more := len(lines) > visible; more || scroll > 0 {
+			meta = theme.StyleDim.Render(scrollArrows(scroll > 0, more)) + "  " + meta
+		}
 	}
-	if lines == nil {
-		lines = []string{theme.StyleDim.Render("Nothing selected")}
-	}
-	dayKey := viewchrome.KeyHint(theme, "S", "day summary")
-	if state.DailyDetailDay {
-		dayKey = viewchrome.KeyHint(theme, "S", "show selection")
-	}
-	dayKey += "  " + foldHint(theme, uistate.CollapseDailyDetail, "fold")
+	meta += "  " + foldHint(theme, uistate.CollapseDailyDetail, "fold")
 	// A long title gives way so the key always fits: lead, padded title, a fill cell, meta.
-	title = ansi.Truncate(title, max(1, width-5-ansi.StringWidth(dayKey)), "…")
+	title = ansi.Truncate(title, max(1, width-5-ansi.StringWidth(meta)), "…")
 	titleStyle := theme.StyleHeader.Bold(true)
 	return viewchrome.RenderSection(theme, viewchrome.Section{
 		Title:      title,
-		Meta:       dayKey,
+		Meta:       meta,
 		TitleStyle: &titleStyle,
 		Width:      width,
 		Height:     height,
 		Lines:      lines,
+		Focused:    state.DailyDetailFocus,
 	})
+}
+
+// detailBody is the Day summary, or with the pane focused (enter on a task or habit) the
+// selection's details.
+func detailBody(theme types.Theme, state types.ContentState, width int) (string, []string) {
+	if !state.DailyDetailFocus {
+		return "Day", viewsummary.DayLines(theme, state, width)
+	}
+	if state.Pane == "habits" {
+		if habit, ok := selectedDailyHabit(state); ok {
+			return habit.Name, habitDetailLines(theme, state, habit, width)
+		}
+	} else if issue, ok := selectedDailyIssue(state); ok {
+		return issue.Title, IssueDetailLines(theme, state, issue, width)
+	}
+	return "Selected", []string{theme.StyleDim.Render("Nothing selected")}
+}
+
+// DetailScrollLimit is the furthest the focused detail pane scrolls: its last line at the top.
+func DetailScrollLimit(theme types.Theme, state types.ContentState) int {
+	width := viewhelpers.Columns(state.Width, 3, 2)[1]
+	_, lines := detailBody(theme, state, max(1, width-2))
+	return max(0, len(lines)-1)
+}
+
+func scrollArrows(up, down bool) string {
+	switch {
+	case up && down:
+		return "↑↓"
+	case up:
+		return "↑"
+	default:
+		return "↓"
+	}
 }
 
 func selectedDailyIssue(state types.ContentState) (api.Issue, bool) {

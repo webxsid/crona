@@ -61,12 +61,12 @@ func TestDailyStripThenTasksThenHabits(t *testing.T) {
 
 func TestDailyWideHasDetailPane(t *testing.T) {
 	wide := renderView(testTheme(), dailyState(160, 40))
-	if rowOf(t, wide, "─ Ship momentum block") != rowOf(t, wide, "─ Tasks") {
+	if rowOf(t, wide, "─ Day ") != rowOf(t, wide, "─ Tasks") {
 		t.Fatal("expected the detail pane beside tasks at 160 columns")
 	}
 	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(
 		medium,
-		"─ Ship momentum block",
+		"─ Day ",
 	) {
 		t.Fatal("expected no detail pane below 160 columns")
 	}
@@ -314,7 +314,7 @@ func TestDailyScoreCalendarSitsUnderDetailsOnWideScreens(t *testing.T) {
 		"2026-05-20": {Date: "2026-05-20", Score: 82, HasData: true},
 	}}
 	rendered := ansi.Strip(renderView(testTheme(), state))
-	calendarRow, detailRow := rowOf(t, rendered, "─ Calendar"), rowOf(t, rendered, "─ Ship momentum block")
+	calendarRow, detailRow := rowOf(t, rendered, "─ Calendar"), rowOf(t, rendered, "─ Day ")
 	lines := strings.Split(rendered, "\n")
 	if calendarRow <= detailRow || strings.Index(lines[calendarRow], "─ Calendar") < 100 {
 		t.Fatalf("expected the calendar in the right column under details, got\n%s", rendered)
@@ -360,7 +360,7 @@ func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
 			t.Fatalf("expected %q folded on row %d, got\n%s", want, 37+i, rendered)
 		}
 	}
-	if strings.Contains(rendered, "─ Ship momentum block") {
+	if strings.Contains(rendered, "─ Day ") {
 		t.Fatalf("expected the detail pane folded away, got\n%s", rendered)
 	}
 	state.Settings.CollapsedPanes = []string{uistate.CollapseDailyDetail}

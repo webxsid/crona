@@ -34,7 +34,7 @@ func detailState() (state types.ContentState) {
 }
 
 func TestDetailShowsSelectedTask(t *testing.T) {
-	rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30))
+	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30))
 	for _, want := range []string{"Fix sync conflict", "in progress", "crona › core", "30m/1h", "keeping both edits"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected detail to contain %q, got %q", want, rendered)
@@ -52,7 +52,7 @@ func TestDetailFollowsHabitsFocus(t *testing.T) {
 	target := 20
 	state.DueHabits[1].TargetMinutes = &target
 	rendered := strings.Join(
-		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))),
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30))),
 		" ",
 	)
 	if !strings.Contains(rendered, "Read") {
@@ -68,7 +68,7 @@ func TestDetailEmptySelection(t *testing.T) {
 	state := detailState()
 	state.DailyIssues = nil
 	rendered := strings.Join(
-		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))),
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30))),
 		" ",
 	)
 	if !strings.Contains(rendered, "Nothing selected") {
@@ -77,7 +77,7 @@ func TestDetailEmptySelection(t *testing.T) {
 }
 
 func TestDetailHasNoCalendar(t *testing.T) {
-	if rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 40)); strings.Contains(
+	if rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 40)); strings.Contains(
 		rendered,
 		"Mo Tu We",
 	) {
@@ -90,7 +90,7 @@ func TestDetailFollowsModelFilteredCursor(t *testing.T) {
 	state.Filters["issues"] = "sync"
 	state.DailyIssueIndices = []int{1}
 	state.Cursors["issues"] = 0
-	detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	detail := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30))
 	if !strings.Contains(detail, "Fix sync conflict") || strings.Contains(detail, "First task") {
 		t.Fatalf("expected the filtered selection in detail, got %q", detail)
 	}
@@ -103,7 +103,7 @@ func TestDetailFollowsModelFilteredHabitCursor(t *testing.T) {
 	state.Pane = "habits"
 	state.DailyHabitIndices = []int{1}
 	state.Cursors["habits"] = 0
-	detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30))
+	detail := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30))
 	if !strings.Contains(detail, "Read") || strings.Contains(detail, "Walk") {
 		t.Fatalf("expected the filtered habit in detail, got %q", detail)
 	}
@@ -124,7 +124,7 @@ func TestDailyTrustsModelTaskSection(t *testing.T) {
 		{ID: 2, Title: "Open pinned task", Status: "ready", PinnedDaily: true},
 	}
 	state.Cursors["issues"] = 0
-	if detail := ansi.Strip(renderDetail(testTheme(), state, 70, 30)); !strings.Contains(
+	if detail := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30)); !strings.Contains(
 		detail,
 		"Closed pinned task",
 	) {
@@ -168,7 +168,7 @@ func TestDetailHabitListsTheMomentumsItFeeds(t *testing.T) {
 		},
 	}
 	rendered := strings.Join(
-		strings.Fields(ansi.Strip(renderDetail(testTheme(), state, 70, 30))),
+		strings.Fields(ansi.Strip(renderDetail(testTheme(), focusDetail(state), 70, 30))),
 		" ",
 	)
 	lines := strings.Split(rendered, "\n")
@@ -186,7 +186,7 @@ func TestDetailHabitListsTheMomentumsItFeeds(t *testing.T) {
 }
 
 func TestDetailTitleIsTheSelection(t *testing.T) {
-	lines := strings.Split(ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30)), "\n")
+	lines := strings.Split(ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30)), "\n")
 	if !strings.HasPrefix(lines[0], "─ Fix sync conflict ") ||
 		strings.Contains(strings.Join(lines, "\n"), "Selected") {
 		t.Fatalf("expected the selected task as the pane title, got %q", lines[0])
@@ -197,16 +197,16 @@ func TestDetailTitleIsTheSelection(t *testing.T) {
 }
 
 func TestDetailDescriptionComesFirst(t *testing.T) {
-	rendered := ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30))
+	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30))
 	if strings.Index(rendered, "keeping both edits") > strings.Index(rendered, "status") {
 		t.Fatalf("expected the description above the fields, got %q", rendered)
 	}
 }
 
 func TestDetailFieldsFlowIntoColumns(t *testing.T) {
-	wide := strings.Split(ansi.Strip(renderDetail(testTheme(), detailState(), 70, 30)), "\n")
+	wide := strings.Split(ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 70, 30)), "\n")
 	assertContainsLine(t, wide, "status", "context")
-	narrow := ansi.Strip(renderDetail(testTheme(), detailState(), 32, 30))
+	narrow := ansi.Strip(renderDetail(testTheme(), focusDetail(detailState()), 32, 30))
 	for _, line := range strings.Split(narrow, "\n") {
 		if strings.Contains(line, "status") && strings.Contains(line, "context") {
 			t.Fatalf("expected one field per row when narrow, got %q", line)
@@ -251,7 +251,7 @@ func TestDetailIssueListsTheContextMomentumsItFeeds(t *testing.T) {
 			},
 		},
 	}
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 80, 30))
+	rendered := ansi.Strip(renderDetail(testTheme(), focusDetail(state), 80, 30))
 	lines := strings.Split(rendered, "\n")
 	assertContainsLine(t, lines, "Deep work", "45m/1h")
 	assertContainsLine(t, lines, "Core focus", "2d best 6d")
@@ -262,9 +262,9 @@ func TestDetailIssueListsTheContextMomentumsItFeeds(t *testing.T) {
 	}
 }
 
-func TestDetailShowsDaySummaryWhenToggled(t *testing.T) {
+func TestDetailShowsDaySummaryUntilFocused(t *testing.T) {
 	state := detailState()
-	state.DailyDetailDay = true
+	state.DailyDetailFocus = false
 	state.SummaryDate = "2026-05-27"
 	state.SummarySnapshot = &api.SummarySnapshot{
 		Date:    "2026-05-27",
@@ -338,4 +338,10 @@ func TestNarrowDailyShowsTheDayLineOverTheStrip(t *testing.T) {
 	if wide := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); strings.Contains(wide[0], "Focus 72") {
 		t.Fatalf("expected no day line beside the detail pane, got %q", wide[0])
 	}
+}
+
+// focusDetail focuses the detail pane on the selection, as enter does.
+func focusDetail(state types.ContentState) types.ContentState {
+	state.DailyDetailFocus = true
+	return state
 }
