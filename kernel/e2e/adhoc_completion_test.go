@@ -18,7 +18,7 @@ func TestSessionEndRequiresAdhocAttribution(t *testing.T) {
 	kernel.call(t, protocol.MethodTimerStart, shareddto.TimerStartRequest{Adhoc: true}, &timer)
 	summary := "Ad hoc work through session endpoint"
 	message := kernel.callError(t, protocol.MethodSessionEnd, shareddto.EndSessionRequest{CommitMessage: &summary})
-	if !strings.Contains(message, "keep the session ad hoc") {
+	if !strings.Contains(message, "keep the session as unplanned") {
 		t.Fatalf("expected attribution rejection, got %q", message)
 	}
 	var active sharedtypes.Session
