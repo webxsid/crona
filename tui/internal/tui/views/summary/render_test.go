@@ -202,3 +202,26 @@ func TestDayLineFitsTheDayInOneLine(t *testing.T) {
 		t.Fatalf("expected no day line before the summary loads, got %q", line)
 	}
 }
+
+func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
+	state := summaryTestState()
+	state.SummarySnapshot.Focus = &api.FocusScoreSummary{Score: 60, TargetWorkedSeconds: 3600}
+	state.SummarySnapshot.Metrics = &api.DailyMetricsDay{
+		TotalIssues: 2, CompletedIssues: 1, HabitDueCount: 2, HabitCompletedCount: 1,
+	}
+	state.DailyPlannedIssues = []api.Issue{{Status: "done"}, {Status: "planned"}}
+	lines := strings.Split(dayText(state, 42), "\n")
+	for _, label := range []string{"Issues", "Habits"} {
+		for i, line := range lines {
+			if strings.HasPrefix(line, label) {
+				if i+1 >= len(lines) || !strings.Contains(lines[i+1], "█") {
+					t.Fatalf("expected a bar under %s, got %q", label, lines)
+				}
+				break
+			}
+		}
+	}
+	if rendered := squash(strings.Join(lines, "\n")); !strings.Contains(rendered, "best") {
+		t.Fatalf("expected best streaks under Momentum, got %q", rendered)
+	}
+}

@@ -46,7 +46,7 @@ func TestDailyHasNoBorders(t *testing.T) {
 }
 
 func TestDailyStripThenTasksThenHabits(t *testing.T) {
-	for _, width := range []int{99, 120, 160} {
+	for _, width := range []int{99, 120, 159} {
 		rendered := renderView(testTheme(), dailyState(width, 40))
 		lines := strings.Split(ansi.Strip(rendered), "\n")
 		if !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") ||
@@ -78,7 +78,11 @@ func TestDailySplitsTasksAndHabitsEvenly(t *testing.T) {
 			state := manyIssues(dailyState(width, 40), tasks)
 			rendered := renderView(testTheme(), state)
 			tasksH := rowOf(t, rendered, "─ Habits Due") - rowOf(t, rendered, "─ Tasks")
-			habitsH := 40 - len(renderDayStrip(testTheme(), state, width)) - tasksH
+			strip := len(renderDayStrip(testTheme(), state, width))
+			if dailySummaryPaneShown(state) {
+				strip = 0
+			}
+			habitsH := 40 - strip - tasksH
 			if tasksH-habitsH < 0 || tasksH-habitsH > 1 {
 				t.Fatalf(
 					"width %d, %d tasks: expected an even split, got tasks %d habits %d",
@@ -377,5 +381,16 @@ func TestDailyScoreCalendarIsNotFaded(t *testing.T) {
 		if strings.Contains(ansi.Strip(line), "May 2026") && strings.Contains(line, "\x1b[2m") {
 			t.Fatalf("expected the calendar body unfaded, got %q", line)
 		}
+	}
+}
+
+func TestDailyDropsTheStripWhileTheSummaryPaneShows(t *testing.T) {
+	state := dailyState(160, 40)
+	if lines := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); !strings.HasPrefix(lines[0], "─ Tasks") {
+		t.Fatalf("expected Tasks on the first row beside the summary pane, got %q", lines[0])
+	}
+	state.Settings = &api.CoreSettings{CollapsedPanes: []string{uistate.CollapseDailyDetail}}
+	if lines := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") {
+		t.Fatalf("expected the strip back with the detail pane folded, got %q", lines[0])
 	}
 }

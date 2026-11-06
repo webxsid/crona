@@ -1523,6 +1523,8 @@ func TestDailyStripShowsWeekAtMediumHeights(t *testing.T) {
 				Status: "pending",
 			},
 		},
+		// The strip shows on wide screens only with the detail pane folded.
+		Settings: &api.CoreSettings{CollapsedPanes: []string{"daily/detail"}},
 		Context: &api.ActiveContext{
 			RepoName:   new("Work"),
 			StreamName: new("app"),
@@ -1566,6 +1568,8 @@ func TestDailyStripShowsWeekWhenWideEvenAtShortHeights(t *testing.T) {
 				Status: "pending",
 			},
 		},
+		// The strip shows on wide screens only with the detail pane folded.
+		Settings: &api.CoreSettings{CollapsedPanes: []string{"daily/detail"}},
 		Context: &api.ActiveContext{
 			RepoName:   new("Work"),
 			StreamName: new("app"),

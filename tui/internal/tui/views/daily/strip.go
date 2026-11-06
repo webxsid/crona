@@ -7,6 +7,7 @@ import (
 	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
 	viewruntime "crona/tui/internal/tui/views/runtime"
+	viewsummary "crona/tui/internal/tui/views/summary"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
@@ -159,8 +160,8 @@ func dayMeterColumn(theme types.Theme, state types.ContentState, withBars bool) 
 	}
 	tasksBar, habitsBar := "", ""
 	if withBars {
-		tasksBar = renderIssueStatusBar(theme, statusCounts, dayStripBarWidth)
-		habitsBar = renderHabitBar(
+		tasksBar = viewsummary.IssueStatusBar(theme, statusCounts, dayStripBarWidth)
+		habitsBar = viewsummary.HabitBar(
 			theme,
 			habitsDone,
 			habitsFailed,

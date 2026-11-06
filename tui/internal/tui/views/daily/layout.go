@@ -32,7 +32,12 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	for stripRows > 1 && height-stripRows < dailyMinBodyRows {
 		stripRows--
 	}
-	strip := dayStripRows(theme, state, width, stripRows)
+	// The detail pane's Day summary holds the strip's meters and signals, so with that pane
+	// on screen the strip is left out.
+	var strip []string
+	if !dailySummaryPaneShown(state) {
+		strip = dayStripRows(theme, state, width, stripRows)
+	}
 	rest := height - len(strip)
 
 	var body string
@@ -105,4 +110,10 @@ func dailyLists(theme types.Theme, state types.ContentState, width, height int, 
 	}
 	parts := append([]string{renderIssues(theme, state, width, height-habitsH-belowH), habits}, below...)
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+// dailySummaryPaneShown is true when the wide layout shows the detail pane, unfolded.
+func dailySummaryPaneShown(state types.ContentState) bool {
+	return viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide &&
+		!dailyCollapsed(state, uistate.CollapseDailyDetail)
 }

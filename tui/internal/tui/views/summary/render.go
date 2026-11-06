@@ -25,7 +25,7 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	if snapshot == nil || snapshot.Date != state.SummaryDate {
 		return []string{theme.StyleDim.Render("Loading summary…")}
 	}
-	lines := strings.Split(renderStats(theme, snapshot, width), "\n")
+	lines := strings.Split(renderStats(theme, snapshot, plannedStatusCounts(state), width), "\n")
 	lines = append(lines, "")
 	lines = append(lines, renderPlan(theme, snapshot.Plan, width)...)
 	lines = append(lines, renderTopPenalties(theme, snapshot.Plan, snapshot.Issues, width)...)
@@ -44,7 +44,7 @@ func Row(theme types.Theme, label, value string, width int) string {
 		viewhelpers.TruncateANSI(value, max(1, width-labelWidth))
 }
 
-func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) string {
+func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts map[string]int, width int) string {
 	if snapshot == nil {
 		return ""
 	}
@@ -112,6 +112,7 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) st
 			),
 			width,
 		),
+		strings.Repeat(" ", labelWidth)+IssueStatusBar(theme, statusCounts, max(8, width-labelWidth)),
 		Row(
 			theme,
 			"Habits",
@@ -122,6 +123,13 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, width int) st
 				metrics.HabitFailedCount,
 			),
 			width,
+		),
+		strings.Repeat(" ", labelWidth)+HabitBar(
+			theme,
+			metrics.HabitCompletedCount,
+			metrics.HabitFailedCount,
+			metrics.HabitDueCount,
+			max(8, width-labelWidth),
 		),
 	)
 	return strings.Join(lines, "\n")
@@ -297,9 +305,9 @@ func renderStreaks(theme types.Theme, streaks *sharedtypes.StreakSummary, width 
 		return append(lines, theme.StyleDim.Render("No streak data."))
 	}
 	return append(lines,
-		Row(theme, "Focus", days(streaks.CurrentFocusDays), width),
-		Row(theme, "Check-ins", days(streaks.CurrentCheckInDays), width),
-		Row(theme, "Habits", days(streaks.CurrentHabitDays), width),
+		Row(theme, "Focus", streak(theme, streaks.CurrentFocusDays, streaks.LongestFocusDays), width),
+		Row(theme, "Check-ins", streak(theme, streaks.CurrentCheckInDays, streaks.LongestCheckInDays), width),
+		Row(theme, "Habits", streak(theme, streaks.CurrentHabitDays, streaks.LongestHabitDays), width),
 	)
 }
 
@@ -362,4 +370,18 @@ func DayLine(theme types.Theme, state types.ContentState, width int) string {
 		parts = parts[:len(parts)-1]
 	}
 	return viewhelpers.TruncateANSI(" "+strings.Join(parts, sep), width)
+}
+
+// streak is a current run with its best beside it, dim.
+func streak(theme types.Theme, current, best int) string {
+	return days(current) + "  " + theme.StyleDim.Render("best "+days(best))
+}
+
+// plannedStatusCounts counts the shown day's planned tasks by status, for the status bar.
+func plannedStatusCounts(state types.ContentState) map[string]int {
+	counts := map[string]int{}
+	for _, issue := range state.DailyPlannedIssues {
+		counts[string(issue.Status)]++
+	}
+	return counts
 }
