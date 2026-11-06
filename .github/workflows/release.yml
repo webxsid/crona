@@ -23,11 +23,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-          cache-dependency-path: |
-            shared/go.sum
-            kernel/go.sum
-            tui/go.sum
-            cli/go.sum
+          cache-dependency-path: go.sum
 
       - name: Run tests
         run: make test-unit
@@ -68,6 +64,9 @@ jobs:
         env:
           SCOOP_BUCKET_GITHUB_TOKEN: ${{ secrets.SCOOP_BUCKET_GITHUB_TOKEN }}
         run: sh ./scripts/publish_scoop_manifest.sh "${GITHUB_REF_NAME}"
+
+      - name: Set up Nix
+        uses: cachix/install-nix-action@v31
 
       - name: Publish Nix sources
         run: sh ./scripts/publish_nix_sources.sh "${GITHUB_REF_NAME}"

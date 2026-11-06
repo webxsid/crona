@@ -15,7 +15,7 @@ CLI_BINARY := $(PROJECT_NAME)$(BIN_SUFFIX)
 DAEMON_BINARY := $(PROJECT_NAME)-daemon$(BIN_SUFFIX)
 TUI_BINARY := $(PROJECT_NAME)-tui$(BIN_SUFFIX)
 
-.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-daemon test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-daemon run-tui install-daemon install-tui install-cli seed-dev clear-dev release brew-test brew-generate brew-clean brew-upgrade-test scoop-manifest scoop-manifest-stable scoop-manifest-beta scoop-manifest-clean
+.PHONY: help meta build test test-unit test-e2e test-coverage test-shared test-daemon test-tui test-cli fmt vet lint ci release-check install-lint install-fmt run-daemon run-tui install-daemon install-tui install-cli seed-dev clear-dev release brew-test brew-generate brew-clean brew-upgrade-test scoop-manifest scoop-manifest-stable scoop-manifest-beta scoop-manifest-clean nix-vendor-hash
 
 help:
 	@printf "%s %s\n" "$(PROJECT_NAME)" "$(PROJECT_VERSION)"
@@ -53,6 +53,7 @@ help:
 	@printf "  make scoop-manifest-beta VERSION=<tag>  Generate the beta local Scoop manifest\n"
 	@printf "  make scoop-manifest-clean  Remove local Scoop manifests\n"
 	@printf "  make release VERSION=<tag>  Build release binaries and installer\n"
+	@printf "  make nix-vendor-hash Refresh nix/vendor.json after go.mod or go.sum change\n"
 	@printf "  make meta            Print project metadata\n"
 
 meta:
@@ -173,3 +174,6 @@ scoop-manifest-beta:
 
 scoop-manifest-clean:
 	rm -rf .manifest
+
+nix-vendor-hash:
+	sh ./scripts/update_nix_vendor_hash.sh

@@ -45,7 +45,7 @@ Update with:
 nix profile upgrade crona
 ```
 
-The flake installs the same prebuilt binaries as Homebrew, checked against the release's `checksums.txt`, for Linux and Apple silicon Macs (nixpkgs no longer supports Intel Macs, so use Homebrew there). On NixOS or with Home Manager, add `github:crona-app/crona` as a flake input and use `packages.${system}.crona`.
+The flake builds Crona from source at the release tag, for Linux and Apple silicon Macs (nixpkgs no longer supports Intel Macs, so use Homebrew there). `crona-beta` follows the beta channel, and `crona-git` builds the latest commit on `main`. Releases from before v1.10 install the prebuilt binaries instead. On NixOS or with Home Manager, add `github:crona-app/crona` as a flake input and use `packages.${system}.crona`.
 
 These commands need flakes. If Nix reports that `nix-command` or `flakes` is disabled, add `experimental-features = nix-command flakes` to `~/.config/nix/nix.conf`, or pass `--extra-experimental-features 'nix-command flakes'` to each command. On older Nix releases that lack `nix profile add`, use `nix profile install`.
 

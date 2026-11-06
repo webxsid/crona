@@ -10,15 +10,12 @@ fi
 
 VERSION="$1"
 VERSION_NO_V="${VERSION#v}"
-DIST_DIR="${CRONA_GORELEASER_DIST_DIR:-${PWD}/dist}"
-CHECKSUMS="${DIST_DIR}/checksums.txt"
 SOURCES="${ROOT_DIR}/nix/sources.json"
 BRANCH="${CRONA_NIX_SOURCES_BRANCH:-main}"
+export NIX_CONFIG="${NIX_CONFIG:-}
+experimental-features = nix-command flakes"
 
-if [ ! -f "${CHECKSUMS}" ]; then
-  echo "missing GoReleaser checksums file: ${CHECKSUMS}" >&2
-  exit 1
-fi
+. "${ROOT_DIR}/scripts/project_meta.sh"
 
 # The flake names its packages after the Homebrew formulae: crona and crona-beta.
 if printf '%s' "${VERSION}" | grep -Eq -- '-beta'; then
@@ -27,32 +24,25 @@ else
   PACKAGE="crona"
 fi
 
-checksum_for() {
-  file="crona-bundle-${VERSION_NO_V}-$1.zip"
-  sum="$(awk -v name="${file}" '$2 == name { print $1; exit }' "${CHECKSUMS}")"
-  if [ -z "${sum}" ]; then
-    echo "missing checksum for ${file}" >&2
-    exit 1
-  fi
-  printf '%s\n' "${sum}"
-}
+# The flake builds each channel from source at its tag: the hash of the tag's source tree,
+# as fetchFromGitHub unpacks it, and the tag's own vendored-modules hash.
+HASH="$(nix flake prefetch --json "github:${PROJECT_REPO}/${VERSION}" | jq -r '.hash')"
+VENDOR_HASH="$(git -C "${ROOT_DIR}" show "${VERSION}:nix/vendor.json" | jq -r '.vendorHash')"
+if [ -z "${HASH}" ] || [ "${HASH}" = "null" ] || [ -z "${VENDOR_HASH}" ] || [ "${VENDOR_HASH}" = "null" ]; then
+  echo "could not resolve the source or vendor hash for ${VERSION}" >&2
+  exit 1
+fi
 
 TMP="$(mktemp)"
 trap 'rm -f "${TMP}"' EXIT INT TERM
 jq --indent 2 \
   --arg package "${PACKAGE}" \
   --arg version "${VERSION_NO_V}" \
-  --arg darwinArm "$(checksum_for darwin-arm64)" \
-  --arg linuxArm "$(checksum_for linux-arm64)" \
-  --arg linuxIntel "$(checksum_for linux-amd64)" \
-  '.[$package] = {
-    version: $version,
-    platforms: {
-      "aarch64-darwin": $darwinArm,
-      "aarch64-linux": $linuxArm,
-      "x86_64-linux": $linuxIntel
-    }
-  }' "${SOURCES}" > "${TMP}"
+  --arg rev "${VERSION}" \
+  --arg hash "${HASH}" \
+  --arg vendorHash "${VENDOR_HASH}" \
+  '.[$package] = { version: $version, rev: $rev, hash: $hash, vendorHash: $vendorHash }' \
+  "${SOURCES}" > "${TMP}"
 
 if [ -n "${CRONA_NIX_SOURCES_DRY_RUN:-}" ]; then
   cat "${TMP}"

@@ -202,3 +202,11 @@ crona/
 ├─ go.mod        (one module: crona.work)
 └─ README.md
 ```
+
+## Nix
+
+The flake builds Crona from source with `buildGoModule`. Its `vendorHash` covers the Go
+dependencies, so it changes whenever `go.mod` or `go.sum` does. After a dependency change,
+run `make nix-vendor-hash` and commit `nix/vendor.json`; the Nix workflow builds `crona-git`
+and fails until the hash matches. Each release copies that tag's hash into
+`nix/sources.json` for its channel.

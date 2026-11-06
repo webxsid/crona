@@ -25,11 +25,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-          cache-dependency-path: |
-            shared/go.sum
-            kernel/go.sum
-            tui/go.sum
-            cli/go.sum
+          cache-dependency-path: go.sum
 
       - name: Set up GoReleaser
         uses: goreleaser/goreleaser-action@v6

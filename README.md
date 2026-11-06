@@ -64,7 +64,7 @@ nix profile add github:crona-app/crona#crona       # stable
 nix profile add github:crona-app/crona#crona-beta  # beta
 ```
 
-Update with `nix profile upgrade crona` (or `crona-beta`).
+The flake builds from source at the release tag; `#crona-git` builds the latest `main`. Update with `nix profile upgrade crona` (or `crona-beta`).
 
 These commands need flakes. If Nix reports that `nix-command` or `flakes` is disabled, add `experimental-features = nix-command flakes` to `~/.config/nix/nix.conf`, or pass `--extra-experimental-features 'nix-command flakes'` to each command. On older Nix releases that lack `nix profile add`, use `nix profile install`.
 

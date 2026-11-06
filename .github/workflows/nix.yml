@@ -3,9 +3,9 @@ name: Nix
 on:
   push:
     branches: [main]
-    paths: [flake.nix, flake.lock, nix/**]
+    paths: [flake.nix, flake.lock, nix/**, go.mod, go.sum]
   pull_request:
-    paths: [flake.nix, flake.lock, nix/**]
+    paths: [flake.nix, flake.lock, nix/**, go.mod, go.sum]
   workflow_dispatch:
 
 jobs:
@@ -23,7 +23,7 @@ jobs:
         run: |
           set -eu
           nix flake check --all-systems
-          for package in crona crona-beta; do
+          for package in crona crona-beta crona-git; do
             nix build ".#${package}" --print-build-logs
             ./result/bin/crona --version
             test -x ./result/bin/crona-daemon
