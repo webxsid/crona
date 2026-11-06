@@ -214,8 +214,8 @@ func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
 	for _, label := range []string{"Issues", "Habits"} {
 		for i, line := range lines {
 			if strings.HasPrefix(line, label) {
-				if !strings.Contains(line, "█") || i+1 >= len(lines) || !strings.Contains(lines[i+1], "1 done") {
-					t.Fatalf("expected a bar beside %s and a legend under it, got %q", label, lines)
+				if strings.Contains(line, "█") || i+1 >= len(lines) || !strings.Contains(lines[i+1], "1 done") {
+					t.Fatalf("expected no bar beside %s and its indicators under it, got %q", label, lines)
 				}
 				break
 			}

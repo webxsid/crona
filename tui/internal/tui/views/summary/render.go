@@ -87,22 +87,22 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 		factRow(theme, "Rest", rest),
 	}
 	lines = append(lines, besideArcs(arcs, facts, gaugeCols*2+gaugeGap, width)...)
-	countWidth := 16
-	barWidth := max(8, min(30, width-labelWidth-countWidth))
-	lines = append(lines,
-		Row(theme, "Issues", padTo(fmt.Sprintf("%d of %d done", metrics.CompletedIssues, metrics.TotalIssues), countWidth)+
-			IssueStatusBar(theme, statusCounts, barWidth), width),
-	)
-	if legend := IssueStatusLegend(theme, statusCounts); legend != "" {
-		lines = append(lines, Row(theme, "", legend, width))
+	// Counts with their status indicators; the indicators sit beside the count when they fit.
+	keyed := func(label, count, legend string) []string {
+		if legend == "" {
+			return []string{Row(theme, label, count, width)}
+		}
+		if labelWidth+15+ansi.StringWidth(legend) <= width {
+			return []string{Row(theme, label, padTo(count, 15)+legend, width)}
+		}
+		return []string{Row(theme, label, count, width), Row(theme, "", legend, width)}
 	}
-	lines = append(lines,
-		Row(theme, "Habits", padTo(fmt.Sprintf("%d of %d done", metrics.HabitCompletedCount, metrics.HabitDueCount), countWidth)+
-			HabitBar(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount, barWidth), width),
-	)
-	if legend := HabitLegend(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount); legend != "" {
-		lines = append(lines, Row(theme, "", legend, width))
-	}
+	lines = append(lines, keyed("Issues",
+		fmt.Sprintf("%d of %d done", metrics.CompletedIssues, metrics.TotalIssues),
+		IssueStatusLegend(theme, statusCounts))...)
+	lines = append(lines, keyed("Habits",
+		fmt.Sprintf("%d of %d done", metrics.HabitCompletedCount, metrics.HabitDueCount),
+		HabitLegend(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount))...)
 	return strings.Join(lines, "\n")
 }
 
