@@ -1,7 +1,9 @@
 package daily
 
 import (
+	uistate "crona/tui/internal/tui/state"
 	viewchrome "crona/tui/internal/tui/views/chrome"
+	viewhelpers "crona/tui/internal/tui/views/helpers"
 	types "crona/tui/internal/tui/views/types"
 )
 
@@ -27,7 +29,7 @@ func newTaskLine(theme types.Theme, state types.ContentState, width int) string 
 // taskActionLine stands in for the focused selected card's meta line. It offers what the
 // pane's key list did: keys that start or edit work only while no timer runs.
 func taskActionLine(theme types.Theme, state types.ContentState, width int) string {
-	hints := []string{viewchrome.KeyHint(theme, "enter", "open")}
+	hints := []string{enterHint(theme, state)}
 	if state.SelectedIssueAdhoc {
 		if timerIdle(state) {
 			hints = append(hints, viewchrome.KeyHint(theme, "e", "convert"))
@@ -58,7 +60,7 @@ func taskActionLine(theme types.Theme, state types.ContentState, width int) stri
 // habitActionLine sits under the focused selected habit.
 func habitActionLine(theme types.Theme, state types.ContentState, width int) string {
 	hints := []string{
-		viewchrome.KeyHint(theme, "enter", "open"),
+		enterHint(theme, state),
 		viewchrome.KeyHint(theme, "x", "done"),
 		viewchrome.KeyHint(theme, "F", "fail"),
 		viewchrome.KeyHint(theme, "e", "edit"),
@@ -76,4 +78,14 @@ func habitActionLine(theme types.Theme, state types.ContentState, width int) str
 // TaskActionLine renders the selected issue card action hints.
 func TaskActionLine(theme types.Theme, state types.ContentState, width int) string {
 	return taskActionLine(theme, state, width)
+}
+
+// enterHint names what enter does on a selected task or habit: it shows the details in the
+// detail pane on wide screens, and opens them in a dialog where that pane is hidden or folded.
+func enterHint(theme types.Theme, state types.ContentState) string {
+	if viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide &&
+		!dailyCollapsed(state, uistate.CollapseDailyDetail) {
+		return viewchrome.KeyHint(theme, "enter", "details")
+	}
+	return viewchrome.KeyHint(theme, "enter", "open")
 }

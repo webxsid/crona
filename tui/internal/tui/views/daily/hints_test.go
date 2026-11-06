@@ -203,3 +203,18 @@ func TestDetailTitleTruncatesToKeepDayKey(t *testing.T) {
 		}
 	}
 }
+
+func TestEnterHintSaysDetailsWhereThePaneShowsThem(t *testing.T) {
+	for _, tc := range []struct {
+		width int
+		want  string
+	}{{200, "[enter] details"}, {120, "[enter] open"}} {
+		state := dailyState(tc.width, 40)
+		if got := ansi.Strip(taskActionLine(testTheme(), state, 100)); !strings.Contains(got, tc.want) {
+			t.Fatalf("width %d: expected %q, got %q", tc.width, tc.want, got)
+		}
+		if got := ansi.Strip(habitActionLine(testTheme(), state, 100)); !strings.Contains(got, tc.want) {
+			t.Fatalf("width %d: expected %q on habits, got %q", tc.width, tc.want, got)
+		}
+	}
+}
