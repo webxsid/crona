@@ -518,3 +518,13 @@ func compactWeekHeader(weekStart sharedtypes.WeekStart) string {
 		return "Mo Tu We Th Fr Sa Su"
 	}
 }
+
+// WeekdayNames are the two-letter weekday names in the order weekStart sets.
+func WeekdayNames(weekStart sharedtypes.WeekStart) []string {
+	return strings.Fields(compactWeekHeader(weekStart))
+}
+
+// WeekLabel is a week's number as the calendars show it, W45.
+func WeekLabel(rowStart time.Time, weekStart sharedtypes.WeekStart) string {
+	return fmt.Sprintf("W%02d", WeekNumber(rowStart, weekStart))
+}

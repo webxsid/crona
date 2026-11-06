@@ -39,7 +39,7 @@ func ScoreGrid(theme types.Theme, selection ScoreSelection, width int, week bool
 	}
 	cellWidth := 0
 	for _, candidate := range []int{7, 5, 4} {
-		if 7*(candidate+2)+6 <= width {
+		if weekColumn+7*(candidate+2)+6 <= width {
 			cellWidth = candidate
 			break
 		}
@@ -56,7 +56,7 @@ func ScoreGrid(theme types.Theme, selection ScoreSelection, width int, week bool
 	}
 	lines := []string{
 		theme.StyleHeader.Render(monthStart.Format("January 2006")) + "  " + scoreSummary(theme, selection, anchor),
-		theme.StyleDim.Render(strings.Join(header, " ")),
+		strings.Repeat(" ", weekColumn) + theme.StyleDim.Render(strings.Join(header, " ")),
 	}
 	first, last := 0, 5
 	if week {
@@ -72,7 +72,8 @@ func ScoreGrid(theme types.Theme, selection ScoreSelection, width int, week bool
 			}
 			cells = append(cells, scoreBox(theme, selection, rowStart.AddDate(0, 0, day), anchor, today, monthStart, cellWidth))
 		}
-		lines = append(lines, strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, cells...), "\n")...)
+		lines = append(lines, WeekRowLines(theme.StyleDim.Render(WeekLabel(rowStart, weekStart)),
+			strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, cells...), "\n"))...)
 	}
 	return lines
 }
@@ -150,4 +151,21 @@ func scoreSummary(theme types.Theme, selection ScoreSelection, anchor time.Time)
 	default:
 		return label + theme.StyleDim.Render(" · no score yet")
 	}
+}
+
+// weekColumn is the week-number column before a boxed week: W45 and a gap.
+const weekColumn = 4
+
+// WeekRowLines puts a week's label beside its boxed row, on the day-number line, and pads
+// the box's other lines to match.
+func WeekRowLines(label string, row []string) []string {
+	out := make([]string, len(row))
+	for i, line := range row {
+		cell := strings.Repeat(" ", weekColumn)
+		if i == 1 {
+			cell = label + " "
+		}
+		out[i] = cell + line
+	}
+	return out
 }

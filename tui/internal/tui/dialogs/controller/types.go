@@ -110,6 +110,7 @@ type State struct {
 	DueDateRestWeekdays []int
 	DueDateRestDates    []string
 	DueDateAwayDates    []string
+	DueDateWeekStart    sharedtypes.WeekStart
 	RepoSelectorLabel   string
 	RepoOptionLabels    []string
 	StreamOptionLabels  []string

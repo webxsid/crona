@@ -4,8 +4,11 @@ import (
 	"strings"
 	"testing"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
+
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestSummaryCalendarUsesScoreBoxesAndAwaySemantics(t *testing.T) {
@@ -26,6 +29,22 @@ func TestSummaryCalendarUsesScoreBoxesAndAwaySemantics(t *testing.T) {
 	rows := strings.Split(state.DateGrid, "\n")
 	if len(rows) < 25 || !strings.Contains(rows[2], "27") || !strings.Contains(rows[2], " 2") {
 		t.Fatalf("expected seven date cells on the same rendered row, got: %q", state.DateGrid)
+	}
+}
+
+func TestSummaryCalendarFollowsWeekStartAndShowsWeekNumbers(t *testing.T) {
+	state := OpenSummaryCalendar(State{}, "2026-08-18")
+	state.Width = 135
+	state.DueDateWeekStart = sharedtypes.WeekStartSunday
+	state = PopulateSummaryCalendarPresentation(Theme{}, state, "2026-08-18")
+	rows := strings.Split(ansi.Strip(state.DateGrid), "\n")
+	if fields := strings.Fields(rows[0]); fields[0] != "Su" {
+		t.Fatalf("expected Sunday first, got %q", rows[0])
+	}
+	// August 2026 starts on a Saturday, so a Sunday grid opens on July 26.
+	if !strings.Contains(rows[2], "W31") || !strings.Contains(rows[2], "26") ||
+		strings.Index(rows[2], "26") > strings.Index(rows[2], "27") {
+		t.Fatalf("expected the first week to start Sunday July 26 with its number, got %q", rows[2])
 	}
 }
 

@@ -5,6 +5,10 @@ import (
 	"strings"
 	"time"
 
+	shareddatefmt "crona/shared/datefmt"
+	sharedtypes "crona/shared/types"
+	viewcalendar "crona/tui/internal/tui/views/calendar"
+
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -28,18 +32,18 @@ func renderSummaryCalendarGrid(
 	if state.Width > 0 && state.Width < 110 {
 		cellWidth = 5
 	}
-	weekdays := []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
+	weekStart := sharedtypes.NormalizeWeekStart(state.DueDateWeekStart)
+	weekdays := viewcalendar.WeekdayNames(weekStart)
 	header := make([]string, len(weekdays))
 	for i, weekday := range weekdays {
+		// A box is cellWidth plus its two border cells; the name sits over the day number.
 		header[i] = lipgloss.NewStyle().
-			Width(cellWidth).
-			PaddingLeft(1).
-			PaddingRight(1).
+			Width(cellWidth + 2).
+			PaddingLeft(2).
 			Render(weekday)
 	}
-	lines := []string{strings.Join(header, " ")}
-	offset := (int(month.Weekday()) + 6) % 7
-	start := month.AddDate(0, 0, -offset)
+	lines := []string{"    " + strings.Join(header, " ")}
+	start := shareddatefmt.StartOfWeek(month, weekStart)
 	todayDate, _ := time.Parse("2006-01-02", today)
 	for week := 0; week < 6; week++ {
 		cells := make([]string, 0, 7)
@@ -60,7 +64,11 @@ func renderSummaryCalendarGrid(
 			}
 			row = append(row, cell)
 		}
-		lines = append(lines, lipgloss.JoinHorizontal(lipgloss.Top, row...))
+		rowStart := start.AddDate(0, 0, week*7)
+		lines = append(lines, viewcalendar.WeekRowLines(
+			theme.StyleDim.Render(viewcalendar.WeekLabel(rowStart, weekStart)),
+			strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, row...), "\n"),
+		)...)
 	}
 	return strings.Join(lines, "\n")
 }

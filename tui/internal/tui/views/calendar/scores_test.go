@@ -20,7 +20,7 @@ func TestScoreGridBoxesEachDayWithItsScore(t *testing.T) {
 	}
 	lines := ScoreGrid(testTheme(), selection, 80, false)
 	text := ansi.Strip(strings.Join(lines, "\n"))
-	for _, want := range []string{"May 2026  Wed 20 · focus 82 strong", "Mo", "╭", " 82", "Away", "│ 20"} {
+	for _, want := range []string{"May 2026  Wed 20 · focus 82 strong", "Mo", "╭", " 82", "Away", "│ 20", "W21 │ 18"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q in the score grid, got\n%s", want, text)
 		}
@@ -36,10 +36,21 @@ func TestScoreGridBoxesEachDayWithItsScore(t *testing.T) {
 	if week := ScoreGrid(testTheme(), selection, 80, true); len(week) != 2+4 {
 		t.Fatalf("expected one boxed week, got %d lines", len(week))
 	}
-	if narrow := ScoreGrid(testTheme(), selection, 50, false); narrow == nil {
-		t.Fatal("expected narrower boxes at 50 cells")
+	if narrow := ScoreGrid(testTheme(), selection, 54, false); narrow == nil {
+		t.Fatal("expected narrower boxes at 54 cells")
 	}
-	if none := ScoreGrid(testTheme(), selection, 40, false); none != nil {
+	if none := ScoreGrid(testTheme(), selection, 50, false); none != nil {
 		t.Fatal("expected no grid when even the narrowest boxes do not fit")
+	}
+}
+
+func TestScoreGridFollowsTheWeekStart(t *testing.T) {
+	selection := ScoreSelection{AnchorDate: "2026-05-20", Today: "2026-05-27", WeekStart: sharedtypes.WeekStartSunday}
+	lines := ScoreGrid(testTheme(), selection, 80, true)
+	if header := strings.Fields(ansi.Strip(lines[1])); header[0] != "Su" {
+		t.Fatalf("expected Sunday first, got %v", header)
+	}
+	if row := ansi.Strip(lines[3]); !strings.Contains(row, "│ 17") || strings.Index(row, "│ 17") > strings.Index(row, "│ 18") {
+		t.Fatalf("expected the week to start on Sunday the 17th, got %q", row)
 	}
 }

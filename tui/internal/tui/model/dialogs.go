@@ -850,6 +850,7 @@ func (m Model) dialogState() dialogstate.State {
 		DueDateRestWeekdays:            restWeekdays,
 		DueDateRestDates:               restDates,
 		DueDateAwayDates:               awayDates,
+		DueDateWeekStart:               m.currentWeekStart(),
 		StatusItems:                    m.dialogStatusItems,
 		StatusCursor:                   m.dialogStatusCursor,
 		ChoiceItems:                    m.dialogChoiceItems,
