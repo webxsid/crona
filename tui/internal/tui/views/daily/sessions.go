@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	sharedtypes "crona/shared/types"
 	"crona/tui/internal/api"
 	helperpkg "crona/tui/internal/tui/helpers"
 	types "crona/tui/internal/tui/views/types"
@@ -31,7 +32,7 @@ func issueSessionLines(theme types.Theme, state types.ContentState, issueID int6
 	if len(sessions) == 0 {
 		return []string{"", title, "  " + theme.StyleDim.Render("no work logged yet")}
 	}
-	slices.SortFunc(sessions, func(a, b api.Session) int { return strings.Compare(b.StartTime, a.StartTime) })
+	slices.SortFunc(sessions, func(a, b api.SessionHistoryEntry) int { return strings.Compare(b.StartTime, a.StartTime) })
 	total := 0
 	for _, session := range sessions {
 		total += sessionSeconds(session)
@@ -58,6 +59,9 @@ func issueSessionLines(theme types.Theme, state types.ContentState, issueID int6
 			lipgloss.NewStyle().Foreground(theme.ColorCyan).Render(strings.Repeat("█", filled)) +
 			theme.StyleDim.Render(strings.Repeat("░", sessionBarCells-filled)) + "  " +
 			theme.StyleNormal.Render(duration)
+		if commit := sessionCommitLine(session); commit != "" {
+			row += "  " + theme.StyleDim.Render(commit)
+		}
 		lines = append(lines, ansi.Truncate(row, width, "…"))
 	}
 	if more := len(sessions) - len(shown); more > 0 {
@@ -66,7 +70,14 @@ func issueSessionLines(theme types.Theme, state types.ContentState, issueID int6
 	return lines
 }
 
-func sessionSeconds(session api.Session) int {
+// sessionCommitLine is the first line of the session's commit message, if it has one.
+func sessionCommitLine(session api.SessionHistoryEntry) string {
+	message := strings.TrimSpace(session.ParsedNotes[sharedtypes.SessionNoteSectionCommit])
+	first, _, _ := strings.Cut(message, "\n")
+	return strings.TrimSpace(first)
+}
+
+func sessionSeconds(session api.SessionHistoryEntry) int {
 	if session.DurationSeconds != nil {
 		return *session.DurationSeconds
 	}

@@ -99,6 +99,13 @@ type DetailHabitHistoryLoadedMsg struct {
 	Completions []api.HabitCompletion
 }
 
+// DetailIssueHistoryLoadedMsg carries the session history, notes parsed, of the issue
+// Daily's detail pane shows.
+type DetailIssueHistoryLoadedMsg struct {
+	IssueID  int64
+	Sessions []api.SessionHistoryEntry
+}
+
 type IssueSessionsLoadedMsg struct {
 	IssueID  int64
 	Sessions []api.Session

@@ -422,6 +422,19 @@ func LoadIssueSessions(c *api.Client, issueID int64) tea.Cmd {
 	}
 }
 
+// LoadDetailIssueHistory loads an issue's sessions with their parsed notes for Daily's
+// detail pane.
+func LoadDetailIssueHistory(c *api.Client, issueID int64) tea.Cmd {
+	return func() tea.Msg {
+		sessions, err := c.ListSessionHistory(&issueID, 0)
+		if err != nil {
+			logger.Errorf("loadDetailIssueHistory(%d): %v", issueID, err)
+			return ErrMsg{Err: err}
+		}
+		return DetailIssueHistoryLoadedMsg{IssueID: issueID, Sessions: sessions}
+	}
+}
+
 func LoadSessionHistory(c *api.Client, issueID *int64, limit int) tea.Cmd {
 	return func() tea.Msg {
 		sessions, err := c.ListSessionHistory(issueID, limit)

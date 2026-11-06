@@ -353,11 +353,17 @@ func TestDetailListsTheIssuesSessionsNewestFirst(t *testing.T) {
 	long, short := 3600, 900
 	end := "2026-05-27T10:00:00Z"
 	state.DetailSessionsIssueID = 2
-	state.DetailSessions = []api.Session{
-		{IssueID: 2, StartTime: "2026-05-26T09:00:00Z", EndTime: &end, DurationSeconds: &short},
-		{IssueID: 2, StartTime: "2026-05-27T09:00:00Z", EndTime: &end, DurationSeconds: &long},
+	state.DetailSessions = []api.SessionHistoryEntry{
+		{Session: api.Session{IssueID: 2, StartTime: "2026-05-26T09:00:00Z", EndTime: &end, DurationSeconds: &short}},
+		{
+			Session:     api.Session{IssueID: 2, StartTime: "2026-05-27T09:00:00Z", EndTime: &end, DurationSeconds: &long},
+			ParsedNotes: sharedtypes.ParsedSessionNotes{sharedtypes.SessionNoteSectionCommit: "Fix sync merge\n\nlonger body"},
+		},
 	}
-	rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 40))
+	rendered := ansi.Strip(renderDetail(testTheme(), state, 90, 40))
+	if !strings.Contains(rendered, "1h  Fix sync merge") || strings.Contains(rendered, "longer body") {
+		t.Fatalf("expected the commit's first line beside its session, got %q", rendered)
+	}
 	if !strings.Contains(rendered, "Sessions  2 · 1h15m total") ||
 		strings.Index(rendered, "1h") > strings.Index(rendered, "15m ") {
 		t.Fatalf("expected both sessions, newest first, got %q", rendered)

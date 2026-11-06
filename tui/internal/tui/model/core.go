@@ -128,7 +128,7 @@ type Model struct {
 	dailyDetailSummary bool
 	// detailSessions are the sessions of detailSessionsIssueID, loaded when Daily's detail
 	// pane opens on an issue.
-	detailSessions        []api.Session
+	detailSessions        []api.SessionHistoryEntry
 	detailSessionsIssueID int64
 	detailHabitHistory    []api.HabitCompletion
 	detailHistoryHabitID  int64

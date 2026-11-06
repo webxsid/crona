@@ -123,7 +123,7 @@ type ContentState struct {
 	IssueSessions   []api.Session
 	// DetailSessions are the sessions of DetailSessionsIssueID, the issue Daily's detail pane
 	// shows.
-	DetailSessions        []api.Session
+	DetailSessions        []api.SessionHistoryEntry
 	DetailSessionsIssueID int64
 	// DetailHabitHistory is the history of DetailHistoryHabitID, the habit the pane shows.
 	DetailHabitHistory   []api.HabitCompletion

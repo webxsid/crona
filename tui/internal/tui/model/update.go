@@ -32,8 +32,11 @@ const (
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	before, wasWide := m.selectedSessionID(), m.width >= 100
-	if loaded, ok := msg.(commands.IssueSessionsLoadedMsg); ok && loaded.IssueID == m.detailSessionsIssueID {
-		m.detailSessions = loaded.Sessions
+	if loaded, ok := msg.(commands.DetailIssueHistoryLoadedMsg); ok {
+		if loaded.IssueID == m.detailSessionsIssueID {
+			m.detailSessions = loaded.Sessions
+		}
+		return m, nil
 	}
 	if loaded, ok := msg.(commands.DetailHabitHistoryLoadedMsg); ok {
 		if loaded.HabitID == m.detailHistoryHabitID {
@@ -72,7 +75,7 @@ func (m *Model) syncDetailSessions() tea.Cmd {
 	if id != m.detailSessionsIssueID {
 		m.detailSessionsIssueID, m.detailSessions = id, nil
 		if id != 0 && m.client != nil {
-			cmds = append(cmds, commands.LoadIssueSessions(m.client, id))
+			cmds = append(cmds, commands.LoadDetailIssueHistory(m.client, id))
 		}
 	}
 	var habitID int64
