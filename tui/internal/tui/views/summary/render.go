@@ -130,9 +130,14 @@ func renderPlan(
 		return append(lines, facts...)
 	}
 	// The arc carries the done count, so the indicator row lists only what is still open.
-	issueFraction := float64(metrics.CompletedIssues) / float64(max(1, metrics.TotalIssues))
+	// With a committed plan the arc counts its entries, so it agrees with the verdict.
+	done, total := metrics.CompletedIssues, metrics.TotalIssues
+	if hasPlan {
+		done, total = plan.Summary.CompletedCount, plan.Summary.PlannedCount
+	}
+	issueFraction := float64(done) / float64(max(1, total))
 	arcs := renderGauges(theme, []gauge{{
-		label: "Issues", value: fmt.Sprintf("%d/%d", metrics.CompletedIssues, metrics.TotalIssues),
+		label: "Issues", value: fmt.Sprintf("%d/%d", done, total),
 		fraction: issueFraction, color: doneColor(theme, issueFraction),
 	}}, gaugeCols)
 	lines = append(lines, besideArcs(arcs, facts, gaugeCols, width)...)
