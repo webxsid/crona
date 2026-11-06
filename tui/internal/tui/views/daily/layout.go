@@ -81,13 +81,13 @@ func listsCalendarFits(state types.ContentState, height, belowH int) func(int) b
 	return func(h int) bool { return height/2-belowH-h >= dailyMinHabitRows }
 }
 
-// dailyRightColumn is the detail pane over the score calendar. The calendar gives way first,
+// dailyRightColumn is the score calendar over the detail pane. The calendar gives way first,
 // to its week and then folded, so details keep half the column.
 func dailyRightColumn(theme types.Theme, state types.ContentState, width, height int) string {
 	// The boxed month is tall, so it shows only while details keep half the column;
 	// otherwise the shown week does.
 	calendar, calendarH := calendarPane(theme, state, width, detailCalendarFits(height))
-	return lipgloss.JoinVertical(lipgloss.Left, renderDetail(theme, state, width, height-calendarH), calendar)
+	return lipgloss.JoinVertical(lipgloss.Left, calendar, renderDetail(theme, state, width, height-calendarH))
 }
 
 // dailyLists is Tasks over Habits. Tasks keeps the top half and Habits the bottom half;

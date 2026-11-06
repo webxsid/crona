@@ -64,8 +64,8 @@ func TestDailyStripThenTasksThenHabits(t *testing.T) {
 
 func TestDailyWideHasDetailPane(t *testing.T) {
 	wide := renderView(testTheme(), dailyState(160, 40))
-	if rowOf(t, wide, "─ Day ") != rowOf(t, wide, "─ Tasks") {
-		t.Fatal("expected the detail pane beside tasks at 160 columns")
+	if rowOf(t, wide, "─ Calendar") != rowOf(t, wide, "─ Tasks") || rowOf(t, wide, "─ Day ") <= rowOf(t, wide, "─ Tasks") {
+		t.Fatal("expected the calendar beside tasks and the detail pane under it at 160 columns")
 	}
 	if medium := ansi.Strip(renderView(testTheme(), dailyState(159, 40))); strings.Contains(
 		medium,
@@ -314,7 +314,7 @@ func TestDailyTasksUseIssueContextWithoutMeta(t *testing.T) {
 	}
 }
 
-func TestDailyScoreCalendarSitsUnderDetailsOnWideScreens(t *testing.T) {
+func TestDailyScoreCalendarSitsOverDetailsOnWideScreens(t *testing.T) {
 	state := dailyState(200, 60)
 	state.DashboardDate = "2026-05-27"
 	state.SummarySnapshot = &api.SummarySnapshot{CalendarScores: map[string]api.FocusScoreRangeDay{
@@ -323,8 +323,8 @@ func TestDailyScoreCalendarSitsUnderDetailsOnWideScreens(t *testing.T) {
 	rendered := ansi.Strip(renderView(testTheme(), state))
 	calendarRow, detailRow := rowOf(t, rendered, "─ Calendar"), rowOf(t, rendered, "─ Day ")
 	lines := strings.Split(rendered, "\n")
-	if calendarRow <= detailRow || strings.Index(lines[calendarRow], "─ Calendar") < 100 {
-		t.Fatalf("expected the calendar in the right column under details, got\n%s", rendered)
+	if calendarRow >= detailRow || strings.Index(lines[calendarRow], "─ Calendar") < 100 {
+		t.Fatalf("expected the calendar in the right column over details, got\n%s", rendered)
 	}
 	if !strings.Contains(rendered, "May 2026  Wed 27 · no score yet") || !strings.Contains(rendered, " 82") ||
 		!strings.Contains(rendered, "╭") {
@@ -365,10 +365,13 @@ func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
 	if len(lines) != 40 {
 		t.Fatalf("expected the view to keep its height, got %d", len(lines))
 	}
-	last := lines[39]
-	for _, want := range []string{"Habits ▸", "Calendar ▸"} {
-		if !strings.Contains(last, want) || !strings.Contains(last, "expand") {
-			t.Fatalf("expected %q folded on the last row, got\n%s", want, rendered)
+	// Habits folds to the last row; the calendar, over the details, to the first.
+	for _, fold := range []struct {
+		want string
+		row  int
+	}{{"Habits ▸", 39}, {"Calendar ▸", 0}} {
+		if !strings.Contains(lines[fold.row], fold.want) || !strings.Contains(lines[fold.row], "expand") {
+			t.Fatalf("expected %q folded on row %d, got\n%s", fold.want, fold.row, rendered)
 		}
 	}
 	if !strings.Contains(rendered, "─ Day ") {
