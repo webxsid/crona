@@ -32,6 +32,8 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	lines = append(lines, "")
 	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, state.Settings, width)...)
 	lines = append(lines, "")
+	lines = append(lines, renderHabits(theme, snapshot.Metrics, width)...)
+	lines = append(lines, "")
 	return append(lines, renderMomentum(theme, state, snapshot.Streaks, width)...)
 }
 
@@ -127,20 +129,13 @@ func renderPlan(
 	if metrics == nil {
 		return append(lines, facts...)
 	}
-	// The arcs carry the done counts, so the indicator rows below list only the rest.
+	// The arc carries the done count, so the indicator row lists only what is still open.
 	issueFraction := float64(metrics.CompletedIssues) / float64(max(1, metrics.TotalIssues))
-	habitFraction := float64(metrics.HabitCompletedCount) / float64(max(1, metrics.HabitDueCount))
-	arcs := renderGauges(theme, []gauge{
-		{
-			label: "Issues", value: fmt.Sprintf("%d/%d", metrics.CompletedIssues, metrics.TotalIssues),
-			fraction: issueFraction, color: doneColor(theme, issueFraction),
-		},
-		{
-			label: "Habits", value: fmt.Sprintf("%d/%d", metrics.HabitCompletedCount, metrics.HabitDueCount),
-			fraction: habitFraction, color: doneColor(theme, habitFraction),
-		},
-	}, gaugeCols*2+gaugeGap)
-	lines = append(lines, besideArcs(arcs, facts, gaugeCols*2+gaugeGap, width)...)
+	arcs := renderGauges(theme, []gauge{{
+		label: "Issues", value: fmt.Sprintf("%d/%d", metrics.CompletedIssues, metrics.TotalIssues),
+		fraction: issueFraction, color: doneColor(theme, issueFraction),
+	}}, gaugeCols)
+	lines = append(lines, besideArcs(arcs, facts, gaugeCols, width)...)
 	open := map[string]int{}
 	for status, n := range statusCounts {
 		if status != "done" {
@@ -150,10 +145,33 @@ func renderPlan(
 	if legend := IssueStatusLegend(theme, open); legend != "" {
 		lines = append(lines, Row(theme, "Issues", legend, width))
 	}
-	if legend := HabitLegend(theme, 0, metrics.HabitFailedCount, metrics.HabitDueCount-metrics.HabitCompletedCount); legend != "" {
-		lines = append(lines, Row(theme, "Habits", legend, width))
-	}
 	return lines
+}
+
+// renderHabits is the day's due habits apart from Accountability, which they don't feed: an
+// arc of done over due beside what failed and what is left.
+func renderHabits(theme types.Theme, metrics *api.DailyMetricsDay, width int) []string {
+	lines := []string{theme.StylePaneTitle.Render("Habits")}
+	if metrics == nil || metrics.HabitDueCount == 0 {
+		return append(lines, theme.StyleDim.Render("No habits due."))
+	}
+	done, failed, due := metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount
+	fraction := float64(done) / float64(due)
+	arcs := renderGauges(theme, []gauge{{
+		label: "Done", value: fmt.Sprintf("%d/%d", done, due),
+		fraction: fraction, color: doneColor(theme, fraction),
+	}}, gaugeCols)
+	facts := []string{}
+	if failed > 0 {
+		facts = append(facts, factRow(theme, "Failed", lipgloss.NewStyle().Foreground(theme.ColorOrange).Render(fmt.Sprintf("✗ %d", failed))))
+	}
+	if left := due - done - failed; left > 0 {
+		facts = append(facts, factRow(theme, "Left", theme.StyleNormal.Render(fmt.Sprintf("○ %d", left))+theme.StyleDim.Render(" still to do")))
+	}
+	if len(facts) == 0 {
+		facts = append(facts, lipgloss.NewStyle().Foreground(theme.ColorGreen).Render("✓ every habit done"))
+	}
+	return append(lines, besideArcs(arcs, facts, gaugeCols, width)...)
 }
 
 // headed puts a verdict beside the section title, or on its own line when both don't fit.
@@ -369,10 +387,7 @@ func renderTopPenalties(
 			why += fmt.Sprintf(" · %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100)
 		}
 		why = lipgloss.NewStyle().Foreground(color).Render(why)
-		room := max(8, width-labelWidth-2-ansi.StringWidth(why)-2)
-		title = ansi.Truncate(title, room, "…")
-		pad := strings.Repeat(" ", max(1, room-ansi.StringWidth(title)+2))
-		lines = append(lines, Row(theme, label, mark+title+pad+why, width))
+		lines = append(lines, Row(theme, label, mark+title+theme.StyleDim.Render(" · ")+why, width))
 	}
 	return lines
 }

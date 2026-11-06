@@ -37,7 +37,7 @@ func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 		HabitFailedCount:    1,
 	}
 	rendered := dayText(state, 42)
-	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked/1h", "To go 20m to target", "Sessions 3 · avg 13m", "Rest 10m", "2/4", "2/3", "Issues Habits", "Habits ✗ 1 failed"} {
+	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked/1h", "To go 20m to target", "Sessions 3 · avg 13m", "Rest 10m", "2/4", "2/3", "Issues", "Habits", "Failed ✗ 1"} {
 		if !strings.Contains(squash(rendered), want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
@@ -175,7 +175,7 @@ func TestDayLinesListTopPenalties(t *testing.T) {
 		{ID: 1, Title: "Small slip"}, {ID: 2, Title: "Fix sync conflict"},
 	}}
 	rendered := squash(dayText(state, 60))
-	if !strings.Contains(rendered, "Top ▲ Fix sync conflict due today · 34% Small slip due today · 10%") ||
+	if !strings.Contains(rendered, "Top ▲ Fix sync conflict · due today · 34% Small slip · due today · 10%") ||
 		strings.Contains(rendered, "5.00") {
 		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
 	}
@@ -212,7 +212,7 @@ func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
 	state.DailyPlannedIssues = []api.Issue{{Status: "done"}, {Status: "planned"}}
 	lines := strings.Split(dayText(state, 42), "\n")
 	text := strings.Join(lines, "\n")
-	for _, want := range []string{"1/2", "Issues    ● 1 planned", "Habits    ○ 1 left"} {
+	for _, want := range []string{"1/2", "Issues    ● 1 planned", "Left      ○ 1 still to do"} {
 		if !strings.Contains(text, want) || strings.Contains(text, "█") {
 			t.Fatalf("expected arcs with %q and no bars, got %q", want, lines)
 		}

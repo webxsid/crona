@@ -42,21 +42,6 @@ func IssueStatusLegend(theme types.Theme, counts map[string]int) string {
 	return strings.Join(parts, "  ")
 }
 
-// HabitLegend keys the habit bar with done, failed and still-open counts.
-func HabitLegend(theme types.Theme, completed, failed, total int) string {
-	parts := []string{}
-	if completed > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(fmt.Sprintf("✓ %d", completed))+theme.StyleDim.Render(" done"))
-	}
-	if failed > 0 {
-		parts = append(parts, lipgloss.NewStyle().Foreground(theme.ColorOrange).Render(fmt.Sprintf("✗ %d", failed))+theme.StyleDim.Render(" failed"))
-	}
-	if left := total - completed - failed; left > 0 {
-		parts = append(parts, theme.StyleDim.Render(fmt.Sprintf("○ %d left", left)))
-	}
-	return strings.Join(parts, "  ")
-}
-
 // IssueStatusBar splits width cells by the day's task statuses, done first.
 func IssueStatusBar(theme types.Theme, counts map[string]int, width int) string {
 	width = max(8, width)
