@@ -58,7 +58,9 @@ func TestDetailFollowsHabitsFocus(t *testing.T) {
 	if !strings.Contains(rendered, "Read") {
 		t.Fatalf("expected selected habit details, got %q", rendered)
 	}
-	assertContainsLine(t, strings.Split(rendered, "\n"), "target", "20m")
+	if !strings.Contains(rendered, "Today/20m") {
+		t.Fatalf("expected the Today arc against its 20m target, got %q", rendered)
+	}
 	if strings.Contains(rendered, "Fix sync conflict") {
 		t.Fatalf("expected habit focus to replace task detail, got %q", rendered)
 	}
@@ -304,7 +306,7 @@ func TestDefinitionHabitStatus(t *testing.T) {
 				}
 			}
 			got := ansi.Strip(strings.Join(HabitDetailLines(testTheme(), state, habit, 80), "\n"))
-			if status := strings.Join(strings.Fields(strings.Split(got, "\n")[0]), " "); status != "status "+tc.want {
+			if !strings.Contains(got, "● "+tc.want) {
 				t.Fatalf("wanted %q: %s", tc.want, got)
 			}
 		})
@@ -313,7 +315,7 @@ func TestDefinitionHabitStatus(t *testing.T) {
 
 func TestDailyHabitZeroStatusRemainsDue(t *testing.T) {
 	lines := habitDetailLines(testTheme(), types.ContentState{}, api.HabitDailyItem{}, 80)
-	if got := strings.Join(strings.Fields(ansi.Strip(lines[0])), " "); got != "status due" {
+	if got := ansi.Strip(strings.Join(lines, "\n")); !strings.Contains(got, "● due") {
 		t.Fatal(got)
 	}
 }
@@ -363,5 +365,22 @@ func TestDetailListsTheIssuesSessionsNewestFirst(t *testing.T) {
 	state.DetailSessions = nil
 	if rendered := ansi.Strip(renderDetail(testTheme(), state, 70, 40)); !strings.Contains(rendered, "no work logged yet") {
 		t.Fatalf("expected the empty sessions note, got %q", rendered)
+	}
+}
+
+func TestHabitDetailShowsHitRateTrailAndRecent(t *testing.T) {
+	state := types.ContentState{DashboardDate: "2026-05-27"}
+	ten, five := 10, 5
+	habit := api.HabitDailyItem{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 7, Name: "Read", TargetMinutes: &ten}}}
+	state.HabitHistory = []api.HabitCompletion{
+		{HabitID: 7, Date: "2026-05-26", Status: "completed", DurationMinutes: &ten},
+		{HabitID: 7, Date: "2026-05-25", Status: "failed", DurationMinutes: &five},
+		{HabitID: 8, Date: "2026-05-26", Status: "completed"},
+	}
+	got := strings.Join(strings.Fields(ansi.Strip(strings.Join(habitDetailLines(testTheme(), state, habit, 80), "\n"))), " ")
+	for _, want := range []string{"50%", "Hit/30d", "Last 14d", "✗ ● ·", "Recent", "Tue 26 May", "10m ✓", "5m ✗"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("expected %q, got %q", want, got)
+		}
 	}
 }

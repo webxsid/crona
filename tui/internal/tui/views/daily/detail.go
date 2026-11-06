@@ -107,9 +107,6 @@ func selectedDailyHabit(state types.ContentState) (api.HabitDailyItem, bool) {
 	return state.DueHabits[indices[cur]], true
 }
 
-// detailEntry is one labelled field in the detail grid.
-type detailEntry struct{ label, value string }
-
 // IssueDetailLines renders the shared issue detail body.
 func IssueDetailLines(
 	theme types.Theme,
@@ -207,39 +204,7 @@ func habitDetailWithStatus(
 	width int,
 	status string,
 ) []string {
-	fields := []detailEntry{{"status", theme.StyleNormal.Render(status)}}
-	if habit.DurationMinutes != nil {
-		fields = append(
-			fields,
-			detailEntry{
-				"logged",
-				theme.StyleNormal.Render(
-					helperpkg.FormatCompactDurationMinutes(*habit.DurationMinutes),
-				),
-			},
-		)
-	}
-	if habit.TargetMinutes != nil {
-		fields = append(
-			fields,
-			detailEntry{
-				"target",
-				theme.StyleNormal.Render(
-					helperpkg.FormatCompactDurationMinutes(*habit.TargetMinutes),
-				),
-			},
-		)
-	}
-	if meta := strings.TrimSpace(detailContext(habit.RepoName, habit.StreamName)); meta != "-" {
-		fields = append(fields, detailEntry{"context", theme.StyleNormal.Render(meta)})
-	}
-	if len(habit.Tags) > 0 {
-		fields = append(fields, detailEntry{"tags", issuecore.TagChips(theme, habit.Tags, state.Tags, max(8, width-12))})
-	}
-	lines := detailDescription(theme, habit.Description, width)
-	lines = append(lines, detailGrid(theme, fields, width)...)
-	lines = append(lines, detailText(theme, "Notes", habit.Notes, width)...)
-	return append(lines, momentumLines(theme, state, habitMomentums(state, habit.ID), width)...)
+	return habitDetailView(theme, state, habit, width, status)
 }
 
 // detailDescription leads the pane with the description, followed by a blank row.
@@ -248,31 +213,6 @@ func detailDescription(theme types.Theme, text *string, width int) []string {
 		return []string{}
 	}
 	return append(wrapDetail(theme.StyleNormal, strings.TrimSpace(*text), width), "")
-}
-
-// detailGrid flows fields row by row into as many equal columns (up to 3) as fit width.
-func detailGrid(theme types.Theme, fields []detailEntry, width int) []string {
-	const gap, labelWidth = 3, 9
-	cell := 0
-	for _, field := range fields {
-		cell = max(cell, labelWidth+ansi.StringWidth(field.value))
-	}
-	cols := min(3, len(fields), max(1, (width+gap)/(cell+gap)))
-	lines := []string{}
-	for start := 0; start < len(fields); start += cols {
-		cells := []string{}
-		for _, field := range fields[start:min(len(fields), start+cols)] {
-			cells = append(
-				cells,
-				padCells(
-					theme.StyleDim.Render(padCells(field.label, labelWidth))+field.value,
-					cell,
-				),
-			)
-		}
-		lines = append(lines, strings.TrimRight(strings.Join(cells, strings.Repeat(" ", gap)), " "))
-	}
-	return lines
 }
 
 // habitMomentums are the enabled habit momentums that count this habit.

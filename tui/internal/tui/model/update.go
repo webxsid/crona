@@ -35,6 +35,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if loaded, ok := msg.(commands.IssueSessionsLoadedMsg); ok && loaded.IssueID == m.detailSessionsIssueID {
 		m.detailSessions = loaded.Sessions
 	}
+	if loaded, ok := msg.(commands.DetailHabitHistoryLoadedMsg); ok {
+		if loaded.HabitID == m.detailHistoryHabitID {
+			m.detailHabitHistory = loaded.Completions
+		}
+		return m, nil
+	}
 	next, cmd := m.update(msg)
 	if model, ok := next.(Model); ok {
 		if load := model.syncDetailSessions(); load != nil {
@@ -52,8 +58,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return next, cmd
 }
 
-// syncDetailSessions loads the sessions of the issue Daily's detail pane shows, once each time
-// the pane opens on it, and forgets them when the pane shows anything else.
+// syncDetailSessions loads the sessions of the issue, or the history of the habit, that
+// Daily's detail pane shows, once each time the pane opens on it, and forgets them when the
+// pane shows anything else.
 func (m *Model) syncDetailSessions() tea.Cmd {
 	var id int64
 	if m.view == ViewDaily && m.pane == PaneIssues && m.dailyDetailFocus && !m.dailyDetailSummary {
@@ -61,14 +68,26 @@ func (m *Model) syncDetailSessions() tea.Cmd {
 			id = issue.ID
 		}
 	}
-	if id == m.detailSessionsIssueID {
-		return nil
+	var cmds []tea.Cmd
+	if id != m.detailSessionsIssueID {
+		m.detailSessionsIssueID, m.detailSessions = id, nil
+		if id != 0 && m.client != nil {
+			cmds = append(cmds, commands.LoadIssueSessions(m.client, id))
+		}
 	}
-	m.detailSessionsIssueID, m.detailSessions = id, nil
-	if id == 0 || m.client == nil {
-		return nil
+	var habitID int64
+	if m.view == ViewDaily && m.pane == PaneHabits && m.dailyDetailFocus && !m.dailyDetailSummary {
+		if habit, ok := selectionpkg.SelectedDailyHabit(m.selectionSnapshot()); ok {
+			habitID = habit.ID
+		}
 	}
-	return commands.LoadIssueSessions(m.client, id)
+	if habitID != m.detailHistoryHabitID {
+		m.detailHistoryHabitID, m.detailHabitHistory = habitID, nil
+		if habitID != 0 && m.client != nil {
+			cmds = append(cmds, commands.LoadDetailHabitHistory(m.client, habitID))
+		}
+	}
+	return tea.Batch(cmds...)
 }
 
 func (m Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {

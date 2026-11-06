@@ -125,7 +125,10 @@ type ContentState struct {
 	// shows.
 	DetailSessions        []api.Session
 	DetailSessionsIssueID int64
-	SessionHistory        []api.SessionHistoryEntry
+	// DetailHabitHistory is the history of DetailHistoryHabitID, the habit the pane shows.
+	DetailHabitHistory   []api.HabitCompletion
+	DetailHistoryHabitID int64
+	SessionHistory       []api.SessionHistoryEntry
 	// SessionPreview is the selected session's loaded detail; ignore it when its ID differs.
 	SessionPreview            *api.SessionDetail
 	SessionPreviewFailed      bool

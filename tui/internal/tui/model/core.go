@@ -130,6 +130,8 @@ type Model struct {
 	// pane opens on an issue.
 	detailSessions        []api.Session
 	detailSessionsIssueID int64
+	detailHabitHistory    []api.HabitCompletion
+	detailHistoryHabitID  int64
 	dailyDetailScroll     int
 	momentumWindowDays    int
 	dailyCheckIn          *api.DailyCheckIn

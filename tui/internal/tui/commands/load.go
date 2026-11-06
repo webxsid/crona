@@ -393,6 +393,24 @@ func LoadMetricsLifetimeStreaks(c *api.Client, date string) tea.Cmd {
 	}
 }
 
+// LoadDetailHabitHistory loads one habit's history across every repo and stream.
+func LoadDetailHabitHistory(c *api.Client, habitID int64) tea.Cmd {
+	return func() tea.Msg {
+		completions, err := c.ListHabitHistory(nil, nil)
+		if err != nil {
+			logger.Errorf("loadDetailHabitHistory(%d): %v", habitID, err)
+			return ErrMsg{Err: err}
+		}
+		own := []api.HabitCompletion{}
+		for _, completion := range completions {
+			if completion.HabitID == habitID {
+				own = append(own, completion)
+			}
+		}
+		return DetailHabitHistoryLoadedMsg{HabitID: habitID, Completions: own}
+	}
+}
+
 func LoadIssueSessions(c *api.Client, issueID int64) tea.Cmd {
 	return func() tea.Msg {
 		sessions, err := c.ListSessionsByIssue(issueID)

@@ -93,6 +93,12 @@ type SupportBundleGeneratedMsg struct {
 	WindowLabel string
 }
 
+// DetailHabitHistoryLoadedMsg carries one habit's history for Daily's detail pane.
+type DetailHabitHistoryLoadedMsg struct {
+	HabitID     int64
+	Completions []api.HabitCompletion
+}
+
 type IssueSessionsLoadedMsg struct {
 	IssueID  int64
 	Sessions []api.Session

@@ -129,6 +129,8 @@ func (m Model) viewContentState(
 		IssueSessions:         m.issueSessions,
 		DetailSessions:        m.detailSessions,
 		DetailSessionsIssueID: m.detailSessionsIssueID,
+		DetailHabitHistory:    m.detailHabitHistory,
+		DetailHistoryHabitID:  m.detailHistoryHabitID,
 		SessionHistory:        m.sessionHistory,
 		SessionPreview:        m.sessionPreview,
 		SessionPreviewFailed: m.sessionPreviewFailed != "" &&

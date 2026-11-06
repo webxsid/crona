@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"crona/tui/internal/api"
-	viewsummary "crona/tui/internal/tui/views/summary"
 	viewhelpers "crona/tui/internal/tui/views/helpers"
+	viewsummary "crona/tui/internal/tui/views/summary"
 	types "crona/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
