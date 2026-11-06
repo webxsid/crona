@@ -10,14 +10,12 @@ import (
 const (
 	CollapseDailyHabits   = "daily/habits"
 	CollapseDailyCalendar = "daily/calendar"
-	CollapseDailyDetail   = "daily/detail"
 )
 
 // DailyCollapseKeys maps Today's alt+number keys to the pane each collapses.
 var DailyCollapseKeys = map[string]string{
 	"alt+1": CollapseDailyHabits,
 	"alt+2": CollapseDailyCalendar,
-	"alt+3": CollapseDailyDetail,
 }
 
 // PaneCollapsed reports whether key is among the collapsed panes.

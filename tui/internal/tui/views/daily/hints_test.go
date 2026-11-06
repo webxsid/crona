@@ -195,8 +195,8 @@ func TestDetailTitleTruncatesToKeepDayKey(t *testing.T) {
 	for _, width := range []int{40, 70} {
 		header := strings.Split(ansi.Strip(renderDetail(testTheme(), focusDetail(state), width, 30)), "\n")[0]
 		if !strings.Contains(header, "Very lo") || !strings.Contains(header, "…") ||
-			!strings.Contains(header, "[esc] back") || !strings.HasSuffix(header, " fold") {
-			t.Fatalf("width %d: expected a truncated title, the day key and the fold key, got %q", width, header)
+			!strings.HasSuffix(header, "[esc] back") {
+			t.Fatalf("width %d: expected a truncated title and the esc key, got %q", width, header)
 		}
 		if got := ansi.StringWidth(header); got != width {
 			t.Fatalf("width %d: header is %d cells: %q", width, got, header)

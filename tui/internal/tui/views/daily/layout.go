@@ -41,8 +41,7 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	rest := height - len(strip)
 
 	var body string
-	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide &&
-		(!dailyCollapsed(state, uistate.CollapseDailyDetail) || !dailyCollapsed(state, uistate.CollapseDailyCalendar)) {
+	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide {
 		cols := viewhelpers.Columns(width, 3, 2)
 		body = viewchrome.JoinColumns(theme, rest,
 			dailyLists(theme, state, cols[0], rest, false),
@@ -54,42 +53,23 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	return lipgloss.JoinVertical(lipgloss.Left, append(append(dayLine, strip...), body)...)
 }
 
-// dailyRightColumn is the detail pane over the score calendar. Folded, each keeps its title
-// row; the calendar gives way first, to its week and then folded, so details keep
-// dailyMinDetailRows.
+// dailyRightColumn is the detail pane over the score calendar. The calendar gives way first,
+// to its week and then folded, so details keep dailyMinDetailRows.
 func dailyRightColumn(theme types.Theme, state types.ContentState, width, height int) string {
-	detailFolded := dailyCollapsed(state, uistate.CollapseDailyDetail)
-	detailMin := dailyMinDetailRows
-	if detailFolded {
-		detailMin = 1
-	}
 	calendar, calendarH := collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
 	if !dailyCollapsed(state, uistate.CollapseDailyCalendar) {
-		calendar, calendarH = calendarPane(theme, state, width, func(h int) bool { return height-h >= detailMin })
-	}
-	if detailFolded {
-		top := collapsedPane(theme, "Details", uistate.CollapseDailyDetail, width)
-		filler := lipgloss.NewStyle().Width(width).Height(max(0, height-1-calendarH)).Render("")
-		if height-1-calendarH <= 0 {
-			return lipgloss.JoinVertical(lipgloss.Left, top, calendar)
-		}
-		return lipgloss.JoinVertical(lipgloss.Left, top, calendar, filler)
+		calendar, calendarH = calendarPane(theme, state, width, func(h int) bool { return height-h >= dailyMinDetailRows })
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, renderDetail(theme, state, width, height-calendarH), calendar)
 }
 
 // dailyLists is Tasks over Habits. Tasks keeps the top half and Habits the bottom half;
 // folded, Habits keeps its title row and Tasks takes the rest. withCalendar puts the
-// calendar (and, on wide screens with both side panes folded, the detail's folded row) under
-// Habits, where the calendar shares Habits' half while Habits keeps dailyMinHabitRows.
+// calendar under Habits, where it shares Habits' half while Habits keeps dailyMinHabitRows.
 func dailyLists(theme types.Theme, state types.ContentState, width, height int, withCalendar bool) string {
 	habitsFolded := dailyCollapsed(state, uistate.CollapseDailyHabits)
 	var below []string
 	belowH := 0
-	if withCalendar && viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide {
-		below = append(below, collapsedPane(theme, "Details", uistate.CollapseDailyDetail, width))
-		belowH++
-	}
 	lower := height / 2
 	if withCalendar {
 		fits := func(h int) bool { return lower-belowH-h >= dailyMinHabitRows }
@@ -112,8 +92,7 @@ func dailyLists(theme types.Theme, state types.ContentState, width, height int, 
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
 }
 
-// dailySummaryPaneShown is true when the wide layout shows the detail pane, unfolded.
+// dailySummaryPaneShown is true when the wide layout shows the detail pane.
 func dailySummaryPaneShown(state types.ContentState) bool {
-	return viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide &&
-		!dailyCollapsed(state, uistate.CollapseDailyDetail)
+	return viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide
 }

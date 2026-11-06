@@ -352,25 +352,21 @@ func TestDailyScoreCalendarGoesUnderHabitsOnNarrowScreens(t *testing.T) {
 func TestDailyFoldedPanesKeepOnlyTheirTitleRow(t *testing.T) {
 	state := dailyState(200, 40)
 	state.Settings = &api.CoreSettings{CollapsedPanes: []string{
-		uistate.CollapseDailyHabits, uistate.CollapseDailyCalendar, uistate.CollapseDailyDetail,
+		uistate.CollapseDailyHabits, uistate.CollapseDailyCalendar,
 	}}
 	rendered := ansi.Strip(renderView(testTheme(), state))
 	lines := strings.Split(rendered, "\n")
 	if len(lines) != 40 {
 		t.Fatalf("expected the view to keep its height, got %d", len(lines))
 	}
-	for i, want := range []string{"Habits ▸", "Calendar ▸", "Details ▸"} {
-		if row := lines[37+i]; !strings.Contains(row, want) || !strings.Contains(row, "expand") {
-			t.Fatalf("expected %q folded on row %d, got\n%s", want, 37+i, rendered)
+	last := lines[39]
+	for _, want := range []string{"Habits ▸", "Calendar ▸"} {
+		if !strings.Contains(last, want) || !strings.Contains(last, "expand") {
+			t.Fatalf("expected %q folded on the last row, got\n%s", want, rendered)
 		}
 	}
-	if strings.Contains(rendered, "─ Day ") {
-		t.Fatalf("expected the detail pane folded away, got\n%s", rendered)
-	}
-	state.Settings.CollapsedPanes = []string{uistate.CollapseDailyDetail}
-	if out := ansi.Strip(renderView(testTheme(), state)); !strings.Contains(out, "Details ▸") ||
-		rowOf(t, out, "─ Calendar") <= rowOf(t, out, "Details ▸") {
-		t.Fatalf("expected folded details over the calendar in the right column, got\n%s", out)
+	if !strings.Contains(rendered, "─ Day ") {
+		t.Fatalf("expected the detail pane to stay, got\n%s", rendered)
 	}
 }
 
@@ -385,12 +381,10 @@ func TestDailyScoreCalendarIsNotFaded(t *testing.T) {
 }
 
 func TestDailyDropsTheStripWhileTheSummaryPaneShows(t *testing.T) {
-	state := dailyState(160, 40)
-	if lines := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); !strings.HasPrefix(lines[0], "─ Tasks") {
+	if lines := strings.Split(ansi.Strip(renderView(testTheme(), dailyState(160, 40))), "\n"); !strings.HasPrefix(lines[0], "─ Tasks") {
 		t.Fatalf("expected Tasks on the first row beside the summary pane, got %q", lines[0])
 	}
-	state.Settings = &api.CoreSettings{CollapsedPanes: []string{uistate.CollapseDailyDetail}}
-	if lines := strings.Split(ansi.Strip(renderView(testTheme(), state)), "\n"); !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") {
-		t.Fatalf("expected the strip back with the detail pane folded, got %q", lines[0])
+	if lines := strings.Split(ansi.Strip(renderView(testTheme(), dailyState(159, 40))), "\n"); !strings.HasPrefix(fieldsOf(lines[0]), "Tasks") {
+		t.Fatalf("expected the strip without the summary pane, got %q", lines[0])
 	}
 }

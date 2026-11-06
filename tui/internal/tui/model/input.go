@@ -815,8 +815,5 @@ func (m Model) dailyDetailShown() bool {
 	if m.view != ViewDaily || (m.pane != PaneIssues && m.pane != PaneHabits) {
 		return false
 	}
-	if viewhelpers.ClassFor(m.mainContentWidth()) != viewhelpers.WidthWide {
-		return false
-	}
-	return m.settings == nil || !uistate.PaneCollapsed(m.settings.CollapsedPanes, uistate.CollapseDailyDetail)
+	return viewhelpers.ClassFor(m.mainContentWidth()) == viewhelpers.WidthWide
 }

@@ -1502,7 +1502,7 @@ func TestDailyStripShowsWeekAtMediumHeights(t *testing.T) {
 	state := views.ContentState{
 		View:   "daily",
 		Pane:   "issues",
-		Width:  180,
+		Width:  159,
 		Height: 46,
 		Cursors: map[string]int{
 			"issues": 0,
@@ -1523,8 +1523,6 @@ func TestDailyStripShowsWeekAtMediumHeights(t *testing.T) {
 				Status: "pending",
 			},
 		},
-		// The strip shows on wide screens only with the detail pane folded.
-		Settings: &api.CoreSettings{CollapsedPanes: []string{"daily/detail"}},
 		Context: &api.ActiveContext{
 			RepoName:   new("Work"),
 			StreamName: new("app"),
@@ -1542,12 +1540,12 @@ func TestDailyStripShowsWeekAtMediumHeights(t *testing.T) {
 	}
 }
 
-func TestDailyStripShowsWeekWhenWideEvenAtShortHeights(t *testing.T) {
+func TestDailyStripShowsWeekBelowWideEvenAtShortHeights(t *testing.T) {
 	target := 15
 	state := views.ContentState{
 		View:   "daily",
 		Pane:   "issues",
-		Width:  180,
+		Width:  159,
 		Height: 30,
 		Cursors: map[string]int{
 			"issues": 0,
@@ -1568,8 +1566,6 @@ func TestDailyStripShowsWeekWhenWideEvenAtShortHeights(t *testing.T) {
 				Status: "pending",
 			},
 		},
-		// The strip shows on wide screens only with the detail pane folded.
-		Settings: &api.CoreSettings{CollapsedPanes: []string{"daily/detail"}},
 		Context: &api.ActiveContext{
 			RepoName:   new("Work"),
 			StreamName: new("app"),
