@@ -62,14 +62,27 @@ func calendarPane(
 	width int,
 	fits func(calendarH int) bool,
 ) (string, int) {
-	for _, week := range []bool{false, true} {
+	mode := calendarMode(state)
+	if mode == uistate.CalendarHidden {
+		return collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
+	}
+	shapes := []bool{false, true}
+	if mode == uistate.CalendarWeek {
+		shapes = []bool{true}
+	}
+	for _, week := range shapes {
 		lines := scoreCalendarLines(theme, state, width-2, week)
 		height := len(lines) + 1
 		if len(lines) > 0 && fits(height) {
+			// The fold key steps a month to its week, and a week to hidden.
+			next := "week"
+			if week {
+				next = "hide"
+			}
 			// The calendar never takes focus, so it is not faded like an unfocused list.
 			return viewchrome.RenderSection(theme, viewchrome.Section{
 				Title:  "Calendar",
-				Meta:   foldHint(theme, uistate.CollapseDailyCalendar, "fold"),
+				Meta:   foldHint(theme, uistate.CollapseDailyCalendar, next),
 				Width:  width,
 				Height: height,
 				Lines:  lines,
@@ -77,4 +90,22 @@ func calendarPane(
 		}
 	}
 	return collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
+}
+
+func calendarMode(state types.ContentState) uistate.CalendarMode {
+	if state.Settings == nil {
+		return uistate.CalendarMonth
+	}
+	return uistate.DailyCalendarMode(state.Settings.CollapsedPanes)
+}
+
+// CalendarMonthFits reports whether Today has room for the calendar's full month where it
+// sits now, so the fold key can skip a month that would only show as its week.
+func CalendarMonthFits(theme types.Theme, state types.ContentState) bool {
+	if state.HistoricalAwayDate != "" {
+		return false
+	}
+	width, fits := calendarSlot(state)
+	lines := scoreCalendarLines(theme, state, width-2, false)
+	return len(lines) > 0 && fits(len(lines)+1)
 }

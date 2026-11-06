@@ -11,8 +11,10 @@ import (
 	configitems "crona/tui/internal/tui/configitems"
 	dialogstate "crona/tui/internal/tui/dialogs/controller"
 	inputpkg "crona/tui/internal/tui/input"
+	layoutpkg "crona/tui/internal/tui/layout"
 	selectionpkg "crona/tui/internal/tui/selection"
 	uistate "crona/tui/internal/tui/state"
+	dailyviews "crona/tui/internal/tui/views/daily"
 	viewruntime "crona/tui/internal/tui/views/runtime"
 	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
 
@@ -248,6 +250,9 @@ func (m Model) inputDeps() inputpkg.Deps {
 			next = next.openCheckInDialogForDate(next.currentDate())
 			*state = next.inputState()
 			return true
+		},
+		DailyCalendarMonthFits: func(state inputpkg.State) bool {
+			return dailyviews.CalendarMonthFits(layoutpkg.ViewTheme(), m.applyInputState(state).layoutState().ContentState)
 		},
 		OpenDaySummary: func(state *inputpkg.State) bool {
 			next := m.applyInputState(*state)

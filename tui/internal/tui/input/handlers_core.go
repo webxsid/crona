@@ -249,6 +249,25 @@ func nextIndex[T comparable](current T, options []T, dir int) int {
 
 // handleToggleCollapsed folds or unfolds a Today pane at once and saves the choice. Folding
 // Habits while it has focus hands focus to Tasks.
+// handleCycleCalendar steps Today's calendar through month, week and hidden, skipping the
+// month when it has no room; the choice is saved.
+func handleCycleCalendar(s State, deps Deps) (tea.Model, tea.Cmd, bool) {
+	settings := api.CoreSettings{}
+	if s.Settings != nil {
+		settings = *s.Settings
+	}
+	monthFits := deps.DailyCalendarMonthFits == nil || deps.DailyCalendarMonthFits(s)
+	mode := uistate.NextCalendarMode(uistate.DailyCalendarMode(settings.CollapsedPanes), monthFits)
+	settings.CollapsedPanes = uistate.WithCalendarMode(settings.CollapsedPanes, mode)
+	s.Settings = &settings
+	if deps.PatchSetting == nil {
+		return s, nil, true
+	}
+	return s, deps.PatchSetting(
+		sharedtypes.CoreSettingsKeyCollapsedPanes, settings.CollapsedPanes, 0, 0, "",
+	), true
+}
+
 func handleToggleCollapsed(s State, deps Deps, pane string) (tea.Model, tea.Cmd, bool) {
 	settings := api.CoreSettings{}
 	if s.Settings != nil {

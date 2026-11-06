@@ -96,6 +96,8 @@ type Deps struct {
 	// OpenDaySummary opens the Day summary as a dialog when Daily has no detail pane, and
 	// reports whether it did.
 	OpenDaySummary func(*State) bool
+	// DailyCalendarMonthFits reports whether Today has room for the calendar's full month.
+	DailyCalendarMonthFits func(State) bool
 	// OpenReviewDialog opens Review's "day" or "time" as a dialog on narrow screens, where
 	// neither has a pane, and reports whether it did.
 	OpenReviewDialog                func(*State, string) bool
@@ -439,6 +441,9 @@ func newRouter(deps Deps) *router {
 	// alt+1/2/3 fold and unfold Habits, the calendar and the detail pane; the choice is saved.
 	for key, pane := range uistate.DailyCollapseKeys {
 		r.RegisterView(uistate.ViewDaily, key, func(s State, _ tea.KeyMsg) (tea.Model, tea.Cmd, bool) {
+			if pane == uistate.CollapseDailyCalendar {
+				return handleCycleCalendar(s, deps)
+			}
 			return handleToggleCollapsed(s, deps, pane)
 		})
 	}

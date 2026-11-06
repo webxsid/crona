@@ -20,25 +20,8 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	if state.HistoricalAwayDate != "" {
 		return viewaway.RenderHistorical(theme, state)
 	}
-	width, height := state.Width, state.Height
-	// Without the detail pane, the day summary it holds shows as one line over the strip.
-	var dayLine []string
-	if viewhelpers.ClassFor(width) != viewhelpers.WidthWide && height-1-dayStripMaxRows >= dailyMinBodyRows {
-		if line := viewsummary.DayLine(theme, state, width); line != "" {
-			dayLine, height = []string{line}, height-1
-		}
-	}
-	stripRows := dayStripMaxRows
-	for stripRows > 1 && height-stripRows < dailyMinBodyRows {
-		stripRows--
-	}
-	// The detail pane's Day summary holds the strip's meters and signals, so with that pane
-	// on screen the strip is left out.
-	var strip []string
-	if !dailySummaryPaneShown(state) {
-		strip = dayStripRows(theme, state, width, stripRows)
-	}
-	rest := height - len(strip)
+	width := state.Width
+	dayLine, strip, rest := dailyChrome(theme, state)
 
 	var body string
 	if viewhelpers.ClassFor(width) == viewhelpers.WidthWide {
@@ -53,17 +36,57 @@ func renderView(theme types.Theme, state types.ContentState) string {
 	return lipgloss.JoinVertical(lipgloss.Left, append(append(dayLine, strip...), body)...)
 }
 
+// dailyChrome is the day line and strip over Today's lists, and the rows left beneath them.
+func dailyChrome(theme types.Theme, state types.ContentState) (dayLine, strip []string, rest int) {
+	width, height := state.Width, state.Height
+	// Without the detail pane, the day summary it holds shows as one line over the strip.
+	if viewhelpers.ClassFor(width) != viewhelpers.WidthWide && height-1-dayStripMaxRows >= dailyMinBodyRows {
+		if line := viewsummary.DayLine(theme, state, width); line != "" {
+			dayLine, height = []string{line}, height-1
+		}
+	}
+	stripRows := dayStripMaxRows
+	for stripRows > 1 && height-stripRows < dailyMinBodyRows {
+		stripRows--
+	}
+	// The detail pane's Day summary holds the strip's meters and signals, so with that pane
+	// on screen the strip is left out.
+	if !dailySummaryPaneShown(state) {
+		strip = dayStripRows(theme, state, width, stripRows)
+	}
+	return dayLine, strip, height - len(strip)
+}
+
+// calendarSlot is the calendar's width and the test of whether a calendar of a given
+// height fits where Today puts it: under the details on wide screens, under Habits otherwise.
+func calendarSlot(state types.ContentState) (int, func(int) bool) {
+	_, _, rest := dailyChrome(types.Theme{}, state)
+	if viewhelpers.ClassFor(state.Width) == viewhelpers.WidthWide {
+		return viewhelpers.Columns(state.Width, 3, 2)[1], detailCalendarFits(rest)
+	}
+	return state.Width, listsCalendarFits(state, rest, 0)
+}
+
+// detailCalendarFits keeps the details at least half the column.
+func detailCalendarFits(height int) func(int) bool {
+	return func(h int) bool { return height-h >= max(dailyMinDetailRows, height/2) }
+}
+
+// listsCalendarFits keeps Habits its rows in the lower half, or, with Habits folded, Tasks
+// its rows; belowH is what already sits under Habits.
+func listsCalendarFits(state types.ContentState, height, belowH int) func(int) bool {
+	if dailyCollapsed(state, uistate.CollapseDailyHabits) {
+		return func(h int) bool { return height-1-belowH-h >= dailyMinTaskRows }
+	}
+	return func(h int) bool { return height/2-belowH-h >= dailyMinHabitRows }
+}
+
 // dailyRightColumn is the detail pane over the score calendar. The calendar gives way first,
 // to its week and then folded, so details keep half the column.
 func dailyRightColumn(theme types.Theme, state types.ContentState, width, height int) string {
-	calendar, calendarH := collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
-	if !dailyCollapsed(state, uistate.CollapseDailyCalendar) {
-		// The boxed month is tall, so it shows only while details keep half the column;
-		// otherwise the shown week does.
-		calendar, calendarH = calendarPane(theme, state, width, func(h int) bool {
-			return height-h >= max(dailyMinDetailRows, height/2)
-		})
-	}
+	// The boxed month is tall, so it shows only while details keep half the column;
+	// otherwise the shown week does.
+	calendar, calendarH := calendarPane(theme, state, width, detailCalendarFits(height))
 	return lipgloss.JoinVertical(lipgloss.Left, renderDetail(theme, state, width, height-calendarH), calendar)
 }
 
@@ -76,14 +99,7 @@ func dailyLists(theme types.Theme, state types.ContentState, width, height int, 
 	belowH := 0
 	lower := height / 2
 	if withCalendar {
-		fits := func(h int) bool { return lower-belowH-h >= dailyMinHabitRows }
-		if habitsFolded {
-			fits = func(h int) bool { return height-1-belowH-h >= dailyMinTaskRows }
-		}
-		calendar, calendarH := collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
-		if !dailyCollapsed(state, uistate.CollapseDailyCalendar) {
-			calendar, calendarH = calendarPane(theme, state, width, fits)
-		}
+		calendar, calendarH := calendarPane(theme, state, width, listsCalendarFits(state, height, belowH))
 		below = append([]string{calendar}, below...)
 		belowH += calendarH
 	}
