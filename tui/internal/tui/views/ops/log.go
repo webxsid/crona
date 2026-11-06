@@ -104,8 +104,8 @@ func opsList(theme types.Theme, ops []api.Op, cursor, width, height int) []strin
 			"  " + op.EntityID
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
-	summary := func(date string) string { return fmt.Sprint(counts[date]) }
-	return viewchrome.DayList(theme, rows, cursor, width, height, summary)
+	summary := func(date string) string { return fmt.Sprintf("%d ops", counts[date]) }
+	return viewchrome.DateColumnList(theme, rows, cursor, width, height, summary)
 }
 
 func opDetailLines(theme types.Theme, op api.Op, width int) []string {

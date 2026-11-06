@@ -75,11 +75,19 @@ func TestHabitLogRows(t *testing.T) {
 	}
 }
 
-func TestHabitLogDividerSummary(t *testing.T) {
+func TestHabitLogDateColumnSummary(t *testing.T) {
 	text := logText(200, 40)
-	if !strings.Contains(text, "Sat 17 Oct · 2 done · 1 failed") ||
-		!strings.Contains(text, "Fri 16 Oct · 1 done ") {
-		t.Fatalf("expected day summaries, got\n%s", text)
+	found := map[string]bool{}
+	for _, line := range strings.Split(text, "\n") {
+		line, _, _ = strings.Cut(line, "│")
+		for date, summary := range map[string]string{"Sat 17 Oct": "2 done · 1 failed", "Fri 16 Oct": "1 done"} {
+			if strings.Contains(line, date) && strings.HasSuffix(strings.TrimSpace(line), summary) {
+				found[date] = true
+			}
+		}
+	}
+	if len(found) != 2 {
+		t.Fatalf("expected each date on its first row with the day summary at the end, got\n%s", text)
 	}
 }
 

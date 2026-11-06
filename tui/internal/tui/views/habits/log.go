@@ -143,7 +143,7 @@ func habitLogList(
 		}
 		return strings.Join(parts, " · ")
 	}
-	return viewchrome.DayList(theme, rows, cursor, width, height, summary)
+	return viewchrome.DateColumnList(theme, rows, cursor, width, height, summary)
 }
 
 // HabitLogDetailLines describes one completion from the list data alone.
