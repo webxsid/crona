@@ -252,3 +252,9 @@ func TestDetailPaneFadesWithoutFocus(t *testing.T) {
 		t.Fatal("expected the focused detail pane at full strength")
 	}
 }
+
+func TestNewTaskLineOffersBulkAdd(t *testing.T) {
+	if got := ansi.Strip(newTaskLine(testTheme(), dailyState(160, 40), 100)); !strings.Contains(got, "[A] quick timer  [I] bulk add") {
+		t.Fatalf("expected [I] bulk add after the quick timer, got %q", got)
+	}
+}

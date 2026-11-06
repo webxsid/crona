@@ -15,13 +15,14 @@ func newItemLine(theme types.Theme, label string) string {
 	return viewchrome.KeyHint(theme, "a", label)
 }
 
-// newTaskLine pairs the create key with the ad hoc timer, which needs no selected task;
-// the timer key shows only while no timer runs.
+// newTaskLine pairs the create key with the ad hoc timer, which needs no selected task, and
+// bulk add; the timer key shows only while no timer runs.
 func newTaskLine(theme types.Theme, state types.ContentState, width int) string {
 	hints := []string{newItemLine(theme, "new task")}
 	if timerIdle(state) {
 		hints = append(hints, viewchrome.KeyHint(theme, "A", "quick timer"))
 	}
+	hints = append(hints, viewchrome.KeyHint(theme, "I", "bulk add"))
 	return viewchrome.FitHints(hints, width)
 }
 
