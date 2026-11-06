@@ -3,7 +3,7 @@ package helpers
 const (
 	supportGitHubRepoBaseURL  = "https://github.com/webxsid/crona"
 	supportGitHubDocsURL      = "https://github.com/webxsid/crona/blob/main/docs/README.md"
-	supportFeedbackRoadmapURL = "https://crona.userjot.com/"
+	supportFeedbackRoadmapURL = "https://github.com/webxsid/crona/discussions"
 )
 
 func SupportRepoURL() string {

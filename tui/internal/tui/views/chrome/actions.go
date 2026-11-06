@@ -294,7 +294,7 @@ func ContextualActions(theme Theme, state ActionsState) []string {
 	}
 	if state.View == "support" {
 		return []string{
-			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" feedback & roadmap"),
+			theme.StyleHeader.Render("[o]") + theme.StyleDim.Render(" feedback & discussions"),
 			theme.StyleHeader.Render("[r]") + theme.StyleDim.Render(" open releases"),
 			theme.StyleHeader.Render("[g]") + theme.StyleDim.Render(" open documentation"),
 			theme.StyleHeader.Render("[c]") + theme.StyleDim.Render(" copy diagnostics"),
@@ -600,7 +600,7 @@ func compactActionLabel(key, label string) string {
 		return "guide"
 	case "open documentation":
 		return "documentation"
-	case "feedback & roadmap":
+	case "feedback & discussions":
 		return "feedback"
 	case "change context":
 		return "context"

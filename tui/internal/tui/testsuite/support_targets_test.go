@@ -13,8 +13,8 @@ func TestSupportFeedbackRoadmapURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("url.Parse: %v", err)
 	}
-	if parsed.Scheme != "https" || parsed.Host != "crona.userjot.com" {
-		t.Fatalf("expected UserJot https URL, got %q", raw)
+	if parsed.Scheme != "https" || parsed.Host != "github.com" || parsed.Path != "/webxsid/crona/discussions" {
+		t.Fatalf("expected the GitHub Discussions https URL, got %q", raw)
 	}
 }
 

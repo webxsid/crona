@@ -27,7 +27,7 @@ type Action struct {
 // Actions are Support's rows in the order input's supportActions runs them.
 func Actions() []Action {
 	return []Action{
-		{"o", "Feedback & roadmap", helperpkg.SupportFeedbackRoadmapURL()},
+		{"o", "Feedback & discussions", helperpkg.SupportFeedbackRoadmapURL()},
 		{"r", "Releases", helperpkg.SupportReleasesURL()},
 		{"g", "Documentation", helperpkg.SupportDocumentationURL()},
 		{"c", "Copy diagnostics", ""},

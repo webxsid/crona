@@ -933,7 +933,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Actions", "crona.userjot.com", "github.com/webxsid", "v0.4.0-beta.2", "Running channel", "Update channel", "crona-beta", "install unav", "Diagnostics"} {
+	for _, want := range []string{"Actions", "Feedback & discussions", "github.com/webxsid", "v0.4.0-beta.2", "Running channel", "Update channel", "crona-beta", "install unav", "Diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -945,7 +945,7 @@ func TestSupportViewActionsExposeIssueProjectAndCopy(t *testing.T) {
 		View: "support",
 	})
 	joined := strings.Join(actions, " ")
-	for _, want := range []string{"[o]", "feedback & roadmap", "[r]", "open releases", "[g]", "open documentation", "[c]", "copy diagnostics", "[b]", "generate bundle", "[enter]", "run selected"} {
+	for _, want := range []string{"[o]", "feedback & discussions", "[r]", "open releases", "[g]", "open documentation", "[c]", "copy diagnostics", "[b]", "generate bundle", "[enter]", "run selected"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("expected support actions to contain %q, got %q", want, joined)
 		}

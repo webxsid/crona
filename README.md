@@ -136,8 +136,8 @@ Operational references:
 
 Public support is available through these links:
 
-- Bugs: [UserJot](https://crona.userjot.com/)
-- Feedback and roadmap: [UserJot](https://crona.userjot.com/)
+- Bugs: [GitHub Discussions](https://github.com/webxsid/crona/discussions)
+- Feedback and questions: [GitHub Discussions](https://github.com/webxsid/crona/discussions)
 - Release updates: [Releases](https://github.com/webxsid/crona/releases)
 - Release process: [docs/release.md](docs/release.md)
 

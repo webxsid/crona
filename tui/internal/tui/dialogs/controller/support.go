@@ -131,9 +131,9 @@ func OpenBetaSupport(state State) State {
 	choices := []menuChoice{
 		{
 			Key:    "o",
-			Label:  "Feedback & Roadmap",
+			Label:  "Feedback & Discussions",
 			Value:  "open_support_feedback_roadmap",
-			Detail: "Share feedback, report bugs, and explore the roadmap on UserJot.",
+			Detail: "Share feedback, report bugs and ask questions in GitHub Discussions.",
 		},
 		{
 			Key:    "r",
