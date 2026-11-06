@@ -37,7 +37,7 @@ func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 		HabitFailedCount:    1,
 	}
 	rendered := dayText(state, 42)
-	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked 40m of 1h · 3 sessions", "Rest 10m", "Issues 2 of 4 done", "Habits 2 of 3 done", "✓ 2 done ✗ 1 failed"} {
+	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked 40m of 1h · 3 sessions", "Rest 10m", "2/4", "2/3", "Issues Habits", "Habits ✗ 1 failed"} {
 		if !strings.Contains(squash(rendered), want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
@@ -72,7 +72,7 @@ func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
 	rendered := squash(dayText(summaryTestState(), 42))
-	for _, want := range []string{"Accountability", "✓ All done", "1/1", "none high risk", "nothing late", "no misses yet", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
+	for _, want := range []string{"Accountability", "✓ All done", "none high risk", "nothing late", "no misses yet", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}
@@ -211,14 +211,10 @@ func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
 	}
 	state.DailyPlannedIssues = []api.Issue{{Status: "done"}, {Status: "planned"}}
 	lines := strings.Split(dayText(state, 42), "\n")
-	for _, label := range []string{"Issues", "Habits"} {
-		for i, line := range lines {
-			if strings.HasPrefix(line, label) {
-				if strings.Contains(line, "█") || i+1 >= len(lines) || !strings.Contains(lines[i+1], "1 done") {
-					t.Fatalf("expected no bar beside %s and its indicators under it, got %q", label, lines)
-				}
-				break
-			}
+	text := strings.Join(lines, "\n")
+	for _, want := range []string{"1/2", "Issues    ● 1 planned", "Habits    ○ 1 left"} {
+		if !strings.Contains(text, want) || strings.Contains(text, "█") {
+			t.Fatalf("expected arcs with %q and no bars, got %q", want, lines)
 		}
 	}
 	if rendered := squash(strings.Join(lines, "\n")); !strings.Contains(rendered, "best") {
