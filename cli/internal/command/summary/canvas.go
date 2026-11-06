@@ -115,9 +115,10 @@ func renderDayKPIs(opts renderOptions, width int, data daySummaryData) string {
 		estimate = data.Summary.TotalEstimatedMinutes * 60
 	}
 	habitDone, habitFailed := cliHabitCounts(data.Habits)
-	score := 0
+	planDone, planTotal, penalty := 0, 0, 0.0
 	if data.Plan != nil {
-		score = int(data.Plan.Summary.AccountabilityScore + .5)
+		planDone, planTotal = data.Plan.Summary.CompletedCount, data.Plan.Summary.PlannedCount
+		penalty = data.Plan.Summary.AccountabilityScore
 	}
 	cards := []cliKPI{
 		{
@@ -144,9 +145,9 @@ func renderDayKPIs(opts renderOptions, width int, data daySummaryData) string {
 		},
 		{
 			Label:   "PLAN",
-			Value:   fmt.Sprintf("%d%% accountable", score),
-			Current: score,
-			Total:   100,
+			Value:   fmt.Sprintf("%d/%d done · penalty %.1f", planDone, planTotal, penalty),
+			Current: planDone,
+			Total:   planTotal,
 			Color:   ansiMagenta,
 		},
 	}
@@ -160,10 +161,10 @@ func renderRangeKPIs(opts renderOptions, width int, data rangeSummaryData) strin
 	if rollup != nil {
 		worked, sessions, focusDays = rollup.WorkedSeconds, rollup.SessionCount, rollup.FocusDays
 	}
-	completed, planned, score := 0, 0, 0
+	completed, planned, penalty := 0, 0, 0.0
 	if window != nil {
 		completed, planned = window.CompletedCount, window.PlannedCount
-		score = int(window.AccountabilityScore + .5)
+		penalty = window.AccountabilityScore
 	}
 	cards := []cliKPI{
 		{
@@ -188,9 +189,10 @@ func renderRangeKPIs(opts renderOptions, width int, data rangeSummaryData) strin
 			Color:   ansiGreen,
 		},
 		{
-			Label:   "SCORE",
-			Value:   fmt.Sprintf("%d%% accountable", score),
-			Current: score,
+			// The average daily penalty is lower-is-better; the bar fills toward 10.
+			Label:   "PENALTY",
+			Value:   fmt.Sprintf("%.1f avg/day", penalty),
+			Current: int(min(penalty, 10)*10 + .5),
 			Total:   100,
 			Color:   ansiMagenta,
 		},
@@ -280,7 +282,7 @@ func renderDaySignals(opts renderOptions, width int, data daySummaryData) []stri
 	} else {
 		s := data.Plan.Summary
 		lines = append(lines,
-			fmt.Sprintf("%.0f%% score  ·  pressure %.1f", s.AccountabilityScore, s.BacklogPressure),
+			fmt.Sprintf("penalty %.1f (lower is better)  ·  pressure %.1f", s.AccountabilityScore, s.BacklogPressure),
 			progressBar(opts, s.CompletedCount, s.FailedCount+s.AbandonedCount, max(1, s.PlannedCount), max(10, width-4), ansiGreen),
 			paint(opts, ansiDim, fmt.Sprintf("done %d  carried %d  pending %d  failed %d  abandoned %d", s.CompletedCount, s.CarriedCount, s.PendingRollbackCount, s.FailedCount, s.AbandonedCount)),
 		)

@@ -122,7 +122,9 @@ func buildGlanceData(
 			habitDone,
 			len(report.Habits),
 		)
-		data["planMetric"] = glanceMetric(fmt.Sprintf("%.0f%%", planScore), int(planScore+.5), 100)
+		// The accountability score is a lower-is-better penalty, so the bar tracks plan completion
+		// and the penalty rides along in the value.
+		data["planMetric"] = glanceMetric(planMetricValue(planDone, planTotal, planScore), planDone, planTotal)
 		data["outcomes"] = []map[string]any{
 			glanceOutcome("Issue resolution", resolved, report.Summary.TotalIssues),
 			glanceOutcome("Habit completion", habitDone, len(report.Habits)),
@@ -204,9 +206,9 @@ func buildGlanceData(
 			rollup.HabitDueCount,
 		),
 		"planMetric": glanceMetric(
-			fmt.Sprintf("%.0f%%", window.AccountabilityScore),
-			int(window.AccountabilityScore+.5),
-			100,
+			planMetricValue(window.CompletedCount, window.PlannedCount, window.AccountabilityScore),
+			window.CompletedCount,
+			window.PlannedCount,
 		),
 		"outcomes": []map[string]any{
 			glanceOutcome(
@@ -228,6 +230,12 @@ func buildGlanceData(
 		},
 		"days": dayItems,
 	}, nil
+}
+
+// planMetricValue reads "3 / 5 · penalty 4.2"; the penalty is the summed fail score of open
+// plan entries (averaged per planned day over a range), where 0 is clean.
+func planMetricValue(done, total int, penalty float64) string {
+	return fmt.Sprintf("%d / %d · penalty %.1f", done, total, penalty)
 }
 
 func glanceMetric(value string, current, total int) map[string]any {

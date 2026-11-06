@@ -226,7 +226,7 @@ func TestDayStripShowsScoreOverPlan(t *testing.T) {
 	rows := dayStripRows(testTheme(), scoredState("2026-05-27"), 200, dayStripMaxRows)
 	top, bottom := ansi.Strip(rows[0]), ansi.Strip(rows[1])
 	if !strings.Contains(fieldsOf(top), "Score 72/100") ||
-		!strings.Contains(fieldsOf(bottom), "Plan 80%") {
+		!strings.Contains(fieldsOf(bottom), "Plan penalty 80.0") {
 		t.Fatalf("expected Score over Plan, got %q / %q", top, bottom)
 	}
 	if cellIndex(top, "Score") != cellIndex(bottom, "Plan") {

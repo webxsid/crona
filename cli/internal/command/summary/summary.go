@@ -423,7 +423,7 @@ func printDailyPlanSection(w io.Writer, plan *sharedtypes.DailyPlan) error {
 		{Key: "abandoned", Value: fmt.Sprintf("%d", summary.AbandonedCount)},
 		{Key: "carried", Value: fmt.Sprintf("%d", summary.CarriedCount)},
 		{Key: "pending", Value: fmt.Sprintf("%d", summary.PendingRollbackCount)},
-		{Key: "score", Value: fmt.Sprintf("%.1f", summary.AccountabilityScore)},
+		{Key: "penalty", Value: fmt.Sprintf("%.1f", summary.AccountabilityScore)},
 		{Key: "pressure", Value: fmt.Sprintf("%.1f", summary.BacklogPressure)},
 	}
 	return printTable(w, "plan", []string{"metric", "value"}, rowsToCells(rows))
@@ -581,7 +581,7 @@ func printRangeWindowSection(w io.Writer, window *sharedtypes.DashboardWindowSum
 		{Key: "abandoned", Value: fmt.Sprintf("%d", window.AbandonedCount)},
 		{Key: "missed", Value: fmt.Sprintf("%d", window.MissedCount)},
 		{Key: "carry over", Value: fmt.Sprintf("%d", window.CarryOverCount)},
-		{Key: "score", Value: fmt.Sprintf("%.1f", window.AccountabilityScore)},
+		{Key: "penalty", Value: fmt.Sprintf("%.1f", window.AccountabilityScore)},
 	}
 	return printTable(w, "window", []string{"metric", "value"}, rowsToCells(rows))
 }

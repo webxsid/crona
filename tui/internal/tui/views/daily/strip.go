@@ -212,7 +212,7 @@ func dayGridColumns(theme types.Theme, state types.ContentState) [][]string {
 			top[3].value = fmt.Sprintf("%d/100", snapshot.Focus.Score)
 		}
 		if snapshot.Plan != nil && strings.TrimSpace(snapshot.Plan.Date) != "" {
-			bottom[3].value = fmt.Sprintf("%.0f%%", snapshot.Plan.Summary.AccountabilityScore)
+			bottom[3].value = fmt.Sprintf("penalty %.1f", snapshot.Plan.Summary.AccountabilityScore)
 		}
 	}
 	columns := [][]string{}
