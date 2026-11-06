@@ -273,14 +273,19 @@ func renderWellbeing(
 		avgMood, avgEnergy = rollup.AverageMood, rollup.AverageEnergy
 		avgSleep, avgScreen = rollup.AverageSleepHours, rollup.AverageScreenTimeMins
 	}
-	lines = append(lines,
-		Row(theme, "Mood", scaleMeter(theme, "●", "○", checkIn.Mood)+"  "+
-			theme.StyleNormal.Render(fmt.Sprintf("%d/5", checkIn.Mood))+
-			trend(theme, float64(checkIn.Mood), avgMood, 0.3, true, func(v float64) string { return fmt.Sprintf("%.1f", v) }), width),
-		Row(theme, "Energy", scaleMeter(theme, "▰", "▱", checkIn.Energy)+"  "+
-			theme.StyleNormal.Render(fmt.Sprintf("%d/5", checkIn.Energy))+
-			trend(theme, float64(checkIn.Energy), avgEnergy, 0.3, true, func(v float64) string { return fmt.Sprintf("%.1f", v) }), width),
-	)
+	oneDecimal := func(v float64) string { return fmt.Sprintf("%.1f", v) }
+	gauges := []gauge{
+		{
+			label: "Mood", value: fmt.Sprintf("%d/5", checkIn.Mood), fraction: float64(checkIn.Mood) / 5,
+			color: scaleColor(theme, checkIn.Mood),
+			trend: trend(theme, float64(checkIn.Mood), avgMood, 0.3, true, oneDecimal),
+		},
+		{
+			label: "Energy", value: fmt.Sprintf("%d/5", checkIn.Energy), fraction: float64(checkIn.Energy) / 5,
+			color: scaleColor(theme, checkIn.Energy),
+			trend: trend(theme, float64(checkIn.Energy), avgEnergy, 0.3, true, oneDecimal),
+		},
+	}
 	if checkIn.SleepHours != nil {
 		hours := *checkIn.SleepHours
 		color := theme.ColorGreen
@@ -290,10 +295,11 @@ func renderWellbeing(
 		case hours < 7:
 			color = theme.ColorYellow
 		}
-		lines = append(lines, Row(theme, "Sleep",
-			renderBar(theme, int(hours*60), 0, sleepScaleMinutes, wellbeingBarWidth, color)+"  "+
-				theme.StyleNormal.Render(helperpkg.FormatCompactDurationHours(hours))+
-				trend(theme, hours, avgSleep, 0.25, true, helperpkg.FormatCompactDurationHours), width))
+		gauges = append(gauges, gauge{
+			label: "Sleep", value: helperpkg.FormatCompactDurationHours(hours),
+			fraction: hours * 60 / sleepScaleMinutes, color: color,
+			trend: trend(theme, hours, avgSleep, 0.25, true, helperpkg.FormatCompactDurationHours),
+		})
 	}
 	if checkIn.ScreenTimeMinutes != nil {
 		minutes := *checkIn.ScreenTimeMinutes
@@ -304,14 +310,17 @@ func renderWellbeing(
 		case minutes >= 2*60:
 			color = theme.ColorYellow
 		}
-		lines = append(lines, Row(theme, "Screen",
-			renderBar(theme, minutes, 0, screenScaleMinutes, wellbeingBarWidth, color)+"  "+
-				theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(minutes))+
-				trend(theme, float64(minutes), avgScreen, 15, false, func(v float64) string {
-					return helperpkg.FormatCompactDurationMinutes(int(v))
-				}), width))
+		gauges = append(gauges, gauge{
+			label: "Screen", value: helperpkg.FormatCompactDurationMinutes(minutes),
+			fraction: float64(minutes) / screenScaleMinutes, color: color,
+			trend: trend(theme, float64(minutes), avgScreen, 15, false, func(v float64) string {
+				return helperpkg.FormatCompactDurationMinutes(int(v))
+			}),
+		})
 	}
+	lines = append(lines, renderGauges(theme, gauges, width)...)
 	if checkIn.Notes != nil && strings.TrimSpace(*checkIn.Notes) != "" {
+		lines = append(lines, "")
 		label, quote := "Notes", "❝ "
 		for _, line := range strings.Split(ansi.Wordwrap(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth-2), ""), "\n") {
 			lines = append(lines, Row(theme, label, theme.StyleDim.Render(quote)+theme.StyleDim.Italic(true).Render(line), width))
@@ -409,26 +418,20 @@ func plannedStatusCounts(state types.ContentState) map[string]int {
 }
 
 const (
-	// wellbeingBarWidth is the cell width of the sleep and screen-time bars.
-	wellbeingBarWidth = 10
-	// sleepScaleMinutes fills the sleep bar at 9h; screenScaleMinutes fills screen time at 8h.
+	// sleepScaleMinutes fills the sleep gauge at 9h; screenScaleMinutes fills screen time at 8h.
 	sleepScaleMinutes  = 9 * 60
 	screenScaleMinutes = 8 * 60
 )
 
-// scaleMeter is a 1-5 check-in value as five glyphs, coloured red low, yellow middling and
-// green high.
-func scaleMeter(theme types.Theme, on, off string, value int) string {
-	value = clamp(value, 0, 5)
-	color := theme.ColorGreen
+// scaleColor colours a 1-5 check-in value: red low, yellow middling, green high.
+func scaleColor(theme types.Theme, value int) lipgloss.Color {
 	switch {
 	case value <= 2:
-		color = theme.ColorRed
+		return theme.ColorRed
 	case value == 3:
-		color = theme.ColorYellow
+		return theme.ColorYellow
 	}
-	return lipgloss.NewStyle().Foreground(color).Render(strings.Repeat(on, value)) +
-		theme.StyleDim.Render(strings.Repeat(off, 5-value))
+	return theme.ColorGreen
 }
 
 // trend compares today with the 7-day average: an arrow for the direction, green when it
@@ -441,7 +444,7 @@ func trend(theme types.Theme, today float64, average *float64, tolerance float64
 	avg := theme.StyleDim.Render("7d " + format(*average))
 	diff := today - *average
 	if diff > -tolerance && diff < tolerance {
-		return "   " + theme.StyleDim.Render("=") + " " + avg
+		return theme.StyleDim.Render("=") + " " + avg
 	}
 	arrow, good := "▲", diff > 0
 	if diff < 0 {
@@ -454,5 +457,5 @@ func trend(theme types.Theme, today float64, average *float64, tolerance float64
 	if good {
 		color = theme.ColorGreen
 	}
-	return "   " + lipgloss.NewStyle().Foreground(color).Render(arrow) + " " + avg
+	return lipgloss.NewStyle().Foreground(color).Render(arrow) + " " + avg
 }
