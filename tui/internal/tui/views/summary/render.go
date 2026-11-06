@@ -30,7 +30,7 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	lines = append(lines, renderPlan(theme, snapshot.Plan, width)...)
 	lines = append(lines, renderTopPenalties(theme, snapshot.Plan, snapshot.Issues, width)...)
 	lines = append(lines, "")
-	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, width)...)
+	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, state.Settings, width)...)
 	lines = append(lines, "")
 	return append(lines, renderStreaks(theme, snapshot.Streaks, width)...)
 }
@@ -236,6 +236,7 @@ func renderWellbeing(
 	theme types.Theme,
 	checkIn *sharedtypes.DailyCheckIn,
 	rollup *sharedtypes.MetricsRollup,
+	settings *sharedtypes.CoreSettings,
 	width int,
 ) []string {
 	lines := []string{theme.StylePaneTitle.Render("Wellbeing")}
@@ -286,34 +287,36 @@ func renderWellbeing(
 			trend: trend(theme, float64(checkIn.Energy), avgEnergy, 0.3, true, oneDecimal),
 		},
 	}
+	sleepTarget, screenLimit := wellbeingTargets(settings)
 	if checkIn.SleepHours != nil {
-		hours := *checkIn.SleepHours
-		color := theme.ColorGreen
-		switch {
-		case hours < 6:
-			color = theme.ColorRed
-		case hours < 7:
-			color = theme.ColorYellow
-		}
+		minutes := *checkIn.SleepHours * 60
 		gauges = append(gauges, gauge{
-			label: "Sleep", value: helperpkg.FormatCompactDurationHours(hours),
-			fraction: hours * 60 / sleepScaleMinutes, color: color,
-			trend: trend(theme, hours, avgSleep, 0.25, true, helperpkg.FormatCompactDurationHours),
+			label: "Sleep", value: helperpkg.FormatCompactDurationHours(*checkIn.SleepHours),
+			fraction: minutes / float64(sleepTarget),
+			color:    targetColor(theme, minutes/float64(sleepTarget)),
+			trend:    trend(theme, *checkIn.SleepHours, avgSleep, 0.25, true, helperpkg.FormatCompactDurationHours),
 		})
 	}
 	if checkIn.ScreenTimeMinutes != nil {
-		minutes := *checkIn.ScreenTimeMinutes
-		color := theme.ColorGreen
-		switch {
-		case minutes >= 4*60:
-			color = theme.ColorRed
-		case minutes >= 2*60:
-			color = theme.ColorYellow
+		// The screen gauge is the limit left, so like the others a fuller arc is better.
+		left := screenLimit - *checkIn.ScreenTimeMinutes
+		value := helperpkg.FormatCompactDurationMinutes(max(0, left))
+		if left < 0 {
+			value = "+" + helperpkg.FormatCompactDurationMinutes(-left)
+		}
+		var avgLeft *float64
+		if avgScreen != nil {
+			v := float64(screenLimit) - *avgScreen
+			avgLeft = &v
 		}
 		gauges = append(gauges, gauge{
-			label: "Screen", value: helperpkg.FormatCompactDurationMinutes(minutes),
-			fraction: float64(minutes) / screenScaleMinutes, color: color,
-			trend: trend(theme, float64(minutes), avgScreen, 15, false, func(v float64) string {
+			label: "Screen left", value: value,
+			fraction: float64(left) / float64(screenLimit),
+			color:    limitColor(theme, left, screenLimit),
+			trend: trend(theme, float64(left), avgLeft, 15, true, func(v float64) string {
+				if v < 0 {
+					return "+" + helperpkg.FormatCompactDurationMinutes(int(-v))
+				}
 				return helperpkg.FormatCompactDurationMinutes(int(v))
 			}),
 		})
@@ -417,11 +420,30 @@ func plannedStatusCounts(state types.ContentState) map[string]int {
 	return counts
 }
 
-const (
-	// sleepScaleMinutes fills the sleep gauge at 9h; screenScaleMinutes fills screen time at 8h.
-	sleepScaleMinutes  = 9 * 60
-	screenScaleMinutes = 8 * 60
-)
+// wellbeingTargets are the sleep target and screen-time limit from settings, in minutes,
+// falling back to the defaults.
+func wellbeingTargets(settings *sharedtypes.CoreSettings) (sleep, screen int) {
+	sleep, screen = sharedtypes.DefaultSleepTargetMinutes, sharedtypes.DefaultScreenTimeLimitMinutes
+	if settings != nil && settings.SleepTargetMinutes > 0 {
+		sleep = settings.SleepTargetMinutes
+	}
+	if settings != nil && settings.ScreenTimeLimitMins > 0 {
+		screen = settings.ScreenTimeLimitMins
+	}
+	return sleep, screen
+}
+
+// targetColor colours progress toward a target: green from the target, yellow within an
+// eighth below it, red further off.
+func targetColor(theme types.Theme, fraction float64) lipgloss.Color {
+	switch {
+	case fraction >= 1:
+		return theme.ColorGreen
+	case fraction >= 0.875:
+		return theme.ColorYellow
+	}
+	return theme.ColorRed
+}
 
 // scaleColor colours a 1-5 check-in value: red low, yellow middling, green high.
 func scaleColor(theme types.Theme, value int) lipgloss.Color {
@@ -458,4 +480,16 @@ func trend(theme types.Theme, today float64, average *float64, tolerance float64
 		color = theme.ColorGreen
 	}
 	return lipgloss.NewStyle().Foreground(color).Render(arrow) + " " + avg
+}
+
+// limitColor colours what is left of a limit: green with a quarter or more left, yellow
+// below that, red once over.
+func limitColor(theme types.Theme, left, limit int) lipgloss.Color {
+	switch {
+	case left < 0:
+		return theme.ColorRed
+	case left*4 < limit:
+		return theme.ColorYellow
+	}
+	return theme.ColorGreen
 }

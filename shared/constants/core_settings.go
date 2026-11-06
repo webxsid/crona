@@ -36,6 +36,8 @@ var DefaultCoreSettings = map[string]any{
 	"carryOverEnabled":             true,
 	"carryOverMinMinutes":          15,
 	"carryOverStallAfter":          5,
+	"sleepTargetMinutes":           480,
+	"screenTimeLimitMinutes":       240,
 	"dateDisplayPreset":            "iso",
 	"dateDisplayFormat":            "",
 	"tagFilters":                   map[string]string{},

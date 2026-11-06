@@ -109,6 +109,14 @@ var settingsHelp = map[string]viewchrome.RowHelp{
 		Description: "Carries in a row before an issue is flagged stalled and starts adding to accountability.",
 		Keys:        change,
 	},
+	"Sleep Target": {
+		Description: "Sleep you aim for each night. The Day summary's sleep gauge fills toward it.",
+		Keys:        change,
+	},
+	"Screen Time Limit": {
+		Description: "Most screen time you want in a day. The Day summary's screen gauge shows how much of it is left.",
+		Keys:        change,
+	},
 	"Rest & Streak Protection": {
 		Description: "Which streaks rest days protect, and which weekdays and dates are rest days.",
 		Keys:        edit,

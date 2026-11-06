@@ -165,6 +165,22 @@ func handleAdjustSelectedSetting(s State, deps Deps, dir int) (tea.Model, tea.Cm
 			streamID,
 			s.Date,
 		), true
+	case "Sleep Target":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeySleepTargetMinutes,
+			min(max(s.Settings.SleepTargetMinutes+15*dir, sharedtypes.MinSleepTargetMinutes), sharedtypes.MaxSleepTargetMinutes),
+			repoID,
+			streamID,
+			s.Date,
+		), true
+	case "Screen Time Limit":
+		return s, deps.PatchSetting(
+			sharedtypes.CoreSettingsKeyScreenTimeLimitMins,
+			min(max(s.Settings.ScreenTimeLimitMins+15*dir, sharedtypes.MinScreenTimeLimitMinutes), sharedtypes.MaxScreenTimeLimitMinutes),
+			repoID,
+			streamID,
+			s.Date,
+		), true
 	case "Stall After":
 		return s, deps.PatchSetting(
 			sharedtypes.CoreSettingsKeyCarryOverStallAfter,

@@ -95,6 +95,8 @@ func RowsWithTimezone(settings *sharedtypes.CoreSettings, timezone string) []Row
 			Label:   "Rest & Streak Protection",
 			Value:   restProtectionLabel(settings),
 		},
+		{Section: "Wellbeing", Label: "Sleep Target", Value: hoursMinutes(settings.SleepTargetMinutes)},
+		{Section: "Wellbeing", Label: "Screen Time Limit", Value: hoursMinutes(settings.ScreenTimeLimitMins)},
 		{
 			Section: "Privacy",
 			Label:   "Privacy & Diagnostics",
@@ -437,4 +439,15 @@ func carryThresholdLabel(minutes int) string {
 		return "Any session"
 	}
 	return fmt.Sprintf("%d min", minutes)
+}
+
+// hoursMinutes shows a minute count as 8h, 7h30m or 45m.
+func hoursMinutes(minutes int) string {
+	switch {
+	case minutes < 60:
+		return fmt.Sprintf("%dm", minutes)
+	case minutes%60 == 0:
+		return fmt.Sprintf("%dh", minutes/60)
+	}
+	return fmt.Sprintf("%dh%02dm", minutes/60, minutes%60)
 }

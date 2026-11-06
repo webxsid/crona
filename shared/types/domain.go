@@ -361,6 +361,8 @@ const (
 	CoreSettingsKeyCarryOverEnabled      CoreSettingsKey = "carryOverEnabled"
 	CoreSettingsKeyCarryOverMinMinutes   CoreSettingsKey = "carryOverMinMinutes"
 	CoreSettingsKeyCarryOverStallAfter   CoreSettingsKey = "carryOverStallAfter"
+	CoreSettingsKeySleepTargetMinutes    CoreSettingsKey = "sleepTargetMinutes"
+	CoreSettingsKeyScreenTimeLimitMins   CoreSettingsKey = "screenTimeLimitMinutes"
 	CoreSettingsKeyDateDisplayPreset     CoreSettingsKey = "dateDisplayPreset"
 	CoreSettingsKeyDateDisplayFormat     CoreSettingsKey = "dateDisplayFormat"
 	CoreSettingsKeyTagFilters            CoreSettingsKey = "tagFilters"
@@ -1346,6 +1348,16 @@ const (
 	MaxCarryOverStallAfter     = 30
 )
 
+// The sleep target and screen-time limit the Day summary's wellbeing gauges measure against.
+const (
+	DefaultSleepTargetMinutes     = 8 * 60
+	MinSleepTargetMinutes         = 4 * 60
+	MaxSleepTargetMinutes         = 12 * 60
+	DefaultScreenTimeLimitMinutes = 4 * 60
+	MinScreenTimeLimitMinutes     = 30
+	MaxScreenTimeLimitMinutes     = 16 * 60
+)
+
 const (
 	DefaultPlanHighRiskTenths = 25
 	MinPlanHighRiskTenths     = 5
@@ -1390,6 +1402,8 @@ type CoreSettings struct {
 	CarryOverEnabled      bool              `json:"carryOverEnabled"`
 	CarryOverMinMinutes   int               `json:"carryOverMinMinutes"`
 	CarryOverStallAfter   int               `json:"carryOverStallAfter"`
+	SleepTargetMinutes    int               `json:"sleepTargetMinutes"`
+	ScreenTimeLimitMins   int               `json:"screenTimeLimitMinutes"`
 	DateDisplayPreset     DateDisplayPreset `json:"dateDisplayPreset"`
 	DateDisplayFormat     string            `json:"dateDisplayFormat,omitempty"`
 	// TagFilters is the saved tag part ("+a -b") of each TUI pane's filter, by pane.

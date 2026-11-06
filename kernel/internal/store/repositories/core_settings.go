@@ -179,6 +179,14 @@ var coreSettingMetas = map[sharedtypes.CoreSettingsKey]coreSettingMeta{
 		column:    "carry_over_stall_after",
 		queryKind: coreSettingQueryInt,
 	},
+	sharedtypes.CoreSettingsKeySleepTargetMinutes: {
+		column:    "sleep_target_minutes",
+		queryKind: coreSettingQueryInt,
+	},
+	sharedtypes.CoreSettingsKeyScreenTimeLimitMins: {
+		column:    "screen_time_limit_minutes",
+		queryKind: coreSettingQueryInt,
+	},
 	sharedtypes.CoreSettingsKeyDateDisplayPreset: {
 		column:    "date_display_preset",
 		queryKind: coreSettingQueryString,
@@ -542,6 +550,8 @@ func (r *CoreSettingsRepository) InitializeDefaults(
 		CarryOverEnabled:      sharedconstants.DefaultCoreSettings["carryOverEnabled"].(bool),
 		CarryOverMinMinutes:   sharedconstants.DefaultCoreSettings["carryOverMinMinutes"].(int),
 		CarryOverStallAfter:   sharedconstants.DefaultCoreSettings["carryOverStallAfter"].(int),
+		SleepTargetMinutes:    sharedconstants.DefaultCoreSettings["sleepTargetMinutes"].(int),
+		ScreenTimeLimitMins:   sharedconstants.DefaultCoreSettings["screenTimeLimitMinutes"].(int),
 		DateDisplayPreset:     sharedconstants.DefaultCoreSettings["dateDisplayPreset"].(string),
 		DateDisplayFormat:     sharedconstants.DefaultCoreSettings["dateDisplayFormat"].(string),
 		TagFilters:            mustJSON(sharedconstants.DefaultCoreSettings["tagFilters"]),
@@ -615,6 +625,10 @@ func coreSettingsValueFromColumn(key sharedtypes.CoreSettingsKey, value any) any
 		return clampCarryOverMinMinutes(value)
 	case sharedtypes.CoreSettingsKeyCarryOverStallAfter:
 		return clampCarryOverStallAfter(value)
+	case sharedtypes.CoreSettingsKeySleepTargetMinutes:
+		return clampSleepTargetMinutes(value)
+	case sharedtypes.CoreSettingsKeyScreenTimeLimitMins:
+		return clampScreenTimeLimitMinutes(value)
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value)
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -683,6 +697,10 @@ func coreSettingsDBValue(key sharedtypes.CoreSettingsKey, value any) (any, error
 		return clampCarryOverMinMinutes(value), nil
 	case sharedtypes.CoreSettingsKeyCarryOverStallAfter:
 		return clampCarryOverStallAfter(value), nil
+	case sharedtypes.CoreSettingsKeySleepTargetMinutes:
+		return clampSleepTargetMinutes(value), nil
+	case sharedtypes.CoreSettingsKeyScreenTimeLimitMins:
+		return clampScreenTimeLimitMinutes(value), nil
 	case sharedtypes.CoreSettingsKeyManageHistoryDays:
 		return clampManageHistoryDays(value), nil
 	case sharedtypes.CoreSettingsKeyInactivityThreshold,
@@ -791,6 +809,8 @@ func (r *CoreSettingsRepository) hydrateCoreSettings(
 		CarryOverEnabled:      row.CarryOverEnabled,
 		CarryOverMinMinutes:   clampCarryOverMinMinutes(row.CarryOverMinMinutes),
 		CarryOverStallAfter:   clampCarryOverStallAfter(row.CarryOverStallAfter),
+		SleepTargetMinutes:    clampSleepTargetMinutes(row.SleepTargetMinutes),
+		ScreenTimeLimitMins:   clampScreenTimeLimitMinutes(row.ScreenTimeLimitMins),
 		DateDisplayPreset: sharedtypes.NormalizeDateDisplayPreset(
 			sharedtypes.DateDisplayPreset(row.DateDisplayPreset),
 		),
@@ -1212,4 +1232,22 @@ func parseStringMap(raw string) map[string]string {
 		return map[string]string{}
 	}
 	return out
+}
+
+// clampSleepTargetMinutes keeps the sleep target within 4–12h; unset means the default 8h.
+func clampSleepTargetMinutes(value any) int {
+	minutes := settingInt(value, sharedtypes.DefaultSleepTargetMinutes)
+	if minutes <= 0 {
+		return sharedtypes.DefaultSleepTargetMinutes
+	}
+	return min(max(minutes, sharedtypes.MinSleepTargetMinutes), sharedtypes.MaxSleepTargetMinutes)
+}
+
+// clampScreenTimeLimitMinutes keeps the screen-time limit within 30m–16h; unset means 4h.
+func clampScreenTimeLimitMinutes(value any) int {
+	minutes := settingInt(value, sharedtypes.DefaultScreenTimeLimitMinutes)
+	if minutes <= 0 {
+		return sharedtypes.DefaultScreenTimeLimitMinutes
+	}
+	return min(max(minutes, sharedtypes.MinScreenTimeLimitMinutes), sharedtypes.MaxScreenTimeLimitMinutes)
 }

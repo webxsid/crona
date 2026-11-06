@@ -123,6 +123,8 @@ func InitSchema(ctx context.Context, db *bun.DB) error {
 		{table: "core_settings", column: "carry_over_enabled", defaultValue: 1},
 		{table: "core_settings", column: "carry_over_min_minutes", defaultValue: 15},
 		{table: "core_settings", column: "carry_over_stall_after", defaultValue: 5},
+		{table: "core_settings", column: "sleep_target_minutes", defaultValue: 480},
+		{table: "core_settings", column: "screen_time_limit_minutes", defaultValue: 240},
 		{table: "core_settings", column: "manage_history", defaultValue: 0},
 		{table: "core_settings", column: "manage_history_days", defaultValue: 0},
 	} {

@@ -231,13 +231,21 @@ func TestWellbeingShowsArcGaugesAndTheWeekTrend(t *testing.T) {
 	sleep, screen := 7.5, 300
 	state.SummarySnapshot.CheckIn.SleepHours = &sleep
 	state.SummarySnapshot.CheckIn.ScreenTimeMinutes = &screen
-	avgMood, avgSleep := 3.0, 7.4
-	state.SummarySnapshot.Rollup = &sharedtypes.MetricsRollup{AverageMood: &avgMood, AverageSleepHours: &avgSleep}
+	avgMood, avgSleep, avgScreen := 3.0, 7.4, 120.0
+	state.SummarySnapshot.Rollup = &sharedtypes.MetricsRollup{
+		AverageMood: &avgMood, AverageSleepHours: &avgSleep, AverageScreenTimeMins: &avgScreen,
+	}
+	state.Settings = &sharedtypes.CoreSettings{SleepTargetMinutes: 480, ScreenTimeLimitMins: 360}
 	rendered := squash(dayText(state, 78))
-	for _, want := range []string{"4/5", "3/5", "7h30m", "5h", "Mood Energy Sleep Screen", "▲ 7d 3.0", "= 7d 7h24m", "⣿"} {
+	// 5h of a 6h limit leaves 1h; the week averaged 2h, so 4h left, and today is worse.
+	for _, want := range []string{"4/5", "3/5", "7h30m", "1h", "Mood Energy Sleep Screen left", "▲ 7d 3.0", "= 7d 7h24m", "▼ 7d 4h", "⣿"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected %q in the wellbeing gauges, got %q", want, rendered)
 		}
+	}
+	screen = 400
+	if rendered := squash(dayText(state, 78)); !strings.Contains(rendered, "+40m") {
+		t.Fatalf("expected screen time over the limit as +40m, got %q", rendered)
 	}
 	for _, line := range DayLines(types.Theme{}, state, 30) {
 		if w := ansi.StringWidth(line); w > 30 {

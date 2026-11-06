@@ -193,6 +193,8 @@ type CoreSettingsModel struct {
 	CarryOverEnabled      bool   `bun:"carry_over_enabled,notnull,type:integer"`
 	CarryOverMinMinutes   int    `bun:"carry_over_min_minutes,notnull,type:integer"`
 	CarryOverStallAfter   int    `bun:"carry_over_stall_after,notnull,type:integer"`
+	SleepTargetMinutes    int    `bun:"sleep_target_minutes,notnull,type:integer,default:480"`
+	ScreenTimeLimitMins   int    `bun:"screen_time_limit_minutes,notnull,type:integer,default:240"`
 	DateDisplayPreset     string `bun:"date_display_preset,notnull,type:text"`
 	DateDisplayFormat     string `bun:"date_display_format,notnull,type:text"`
 	TagFilters            string `bun:"tag_filters,notnull,type:text,default:'{}'"`
