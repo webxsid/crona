@@ -110,17 +110,17 @@ func sessionList(
 		sums[date] += durationSeconds(entry)
 		note := theme.StyleDim.Render("no note")
 		if first := firstLine(sessionNote(entry)); first != "" {
-			note = first
+			note = dimCommitType(theme, first)
 		}
 		line := fmt.Sprintf(
-			"%-11s %6s  ",
-			timeRange(entry.StartTime, entry.EndTime),
+			"%s %6s  ",
+			localTime(entry.StartTime).Format("15:04"),
 			compact(durationSeconds(entry)),
 		) + note
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
 	summary := func(date string) string { return fmt.Sprintf("%d · %s", counts[date], compact(sums[date])) }
-	return viewchrome.DayList(theme, rows, cursor, width, height, summary)
+	return viewchrome.DateColumnList(theme, rows, cursor, width, height, summary)
 }
 
 func sessionDetailLines(
@@ -243,6 +243,16 @@ func sessionNote(entry api.SessionHistoryEntry) string {
 		return strings.TrimSpace(*entry.Notes)
 	}
 	return ""
+}
+
+// dimCommitType dims a conventional commit's type ("fix:", "chore(tui):") so the subject
+// reads first.
+func dimCommitType(theme types.Theme, text string) string {
+	kind, subject, ok := strings.Cut(text, ": ")
+	if !ok || kind == "" || len(kind) > 16 || strings.ContainsAny(kind, " \t") {
+		return text
+	}
+	return theme.StyleDim.Render(kind+":") + " " + subject
 }
 
 func firstLine(text string) string {

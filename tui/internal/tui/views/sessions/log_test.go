@@ -77,9 +77,19 @@ func TestSessionLogRows(t *testing.T) {
 	}
 }
 
-func TestSessionLogDivider(t *testing.T) {
-	if text := sessionText(sessionState(120)); !strings.Contains(text, "Sat 17 Oct · 2 · 1h01m") {
-		t.Fatalf("expected day summary, got\n%s", text)
+func TestSessionLogDateColumn(t *testing.T) {
+	text := sessionText(sessionState(120))
+	var dayRows []string
+	list := []string{}
+	for _, line := range strings.Split(text, "\n") {
+		line, _, _ = strings.Cut(line, "│")
+		list = append(list, line)
+		if strings.Contains(line, "Sat 17 Oct") {
+			dayRows = append(dayRows, line)
+		}
+	}
+	if len(dayRows) != 1 || !strings.Contains(dayRows[0], "2 · 1h01m") || strings.Contains(strings.Join(list, "\n"), "── Fri") {
+		t.Fatalf("expected the date once, on its first session's row with the day summary, got\n%s", text)
 	}
 }
 
