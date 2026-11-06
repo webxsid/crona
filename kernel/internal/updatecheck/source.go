@@ -362,7 +362,7 @@ func updateCommandForStatus(status sharedtypes.UpdateStatus) string {
 		}
 		return "curl -fsSL https://crona.work/install.sh | sh"
 	case sharedtypes.InstallSourceGo:
-		return "go install github.com/webxsid/crona/...@latest"
+		return versionpkg.GoInstallCommand()
 	case sharedtypes.InstallSourceNix:
 		return nixCommandForStatus(status)
 	default:
@@ -407,7 +407,7 @@ func brewMigrationCommand(status sharedtypes.UpdateStatus) string {
 		installed = previousBrewFormula()
 	}
 	target := currentBrewFormula()
-	return fmt.Sprintf("brew uninstall %s && brew install webxsid/tap/%s", installed, target)
+	return fmt.Sprintf("brew uninstall %s && brew install %s", installed, versionpkg.BrewTapFormula(target))
 }
 
 func brewMigrationReason(status sharedtypes.UpdateStatus) string {

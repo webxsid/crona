@@ -69,10 +69,8 @@ changelog:
   sort: asc
   abbrev: -1
 
+# The release repository comes from the git remote, so it follows the repo if it moves.
 release:
-  github:
-    owner: webxsid
-    name: crona
   draft: false
   prerelease: auto
   extra_files:

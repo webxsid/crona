@@ -1,6 +1,7 @@
 package testsuite
 
 import (
+	versionpkg "crona/shared/version"
 	"net/url"
 	"testing"
 
@@ -13,7 +14,7 @@ func TestSupportFeedbackRoadmapURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("url.Parse: %v", err)
 	}
-	if parsed.Scheme != "https" || parsed.Host != "github.com" || parsed.Path != "/webxsid/crona/discussions" {
+	if parsed.Scheme != "https" || parsed.Host != "github.com" || parsed.Path != "/"+versionpkg.RepoSlug()+"/discussions" {
 		t.Fatalf("expected the GitHub Discussions https URL, got %q", raw)
 	}
 }

@@ -310,7 +310,7 @@ func updateCommand(
 	case sharedtypes.InstallSourceNix:
 		return nixUpdateCommand(status)
 	case sharedtypes.InstallSourceGo:
-		return "go install github.com/webxsid/crona/...@latest"
+		return versionpkg.GoInstallCommand()
 	}
 	switch installSourceFromPath(kernelExecutablePath) {
 	case sharedtypes.InstallSourceBrew:
@@ -326,7 +326,7 @@ func updateCommand(
 	case sharedtypes.InstallSourceNix:
 		return nixUpdateCommand(status)
 	case sharedtypes.InstallSourceGo:
-		return "go install github.com/webxsid/crona/...@latest"
+		return versionpkg.GoInstallCommand()
 	}
 	return ""
 }

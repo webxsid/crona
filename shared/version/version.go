@@ -10,11 +10,30 @@ var Version = "1.10.0-beta.4"
 
 var InstallSource = ""
 
+// RepoOwner owns Crona's GitHub repository, the source of truth for releases. It is the one
+// place the owner is written for the Go code: update checks, update hints and support links
+// all build on it. The release scripts read their copy from scripts/project_meta.sh.
 const (
 	RepoOwner                 = "webxsid"
 	RepoName                  = "crona"
 	InstallScriptMigrationURL = "https://crona.work/migration"
 )
+
+// PackageOwner owns the Homebrew tap and Scoop bucket repositories. It follows RepoOwner
+// until those move.
+const PackageOwner = RepoOwner
+
+// RepoSlug is owner/name, as GitHub's API and URLs use it.
+func RepoSlug() string { return RepoOwner + "/" + RepoName }
+
+// RepoURL is the repository's web address.
+func RepoURL() string { return "https://github.com/" + RepoSlug() }
+
+// GoInstallCommand installs or updates Crona from source with go install.
+func GoInstallCommand() string { return "go install github.com/" + RepoSlug() + "/...@latest" }
+
+// BrewTapFormula is formula's install name in Crona's Homebrew tap, like owner/tap/crona.
+func BrewTapFormula(formula string) string { return PackageOwner + "/tap/" + formula }
 
 func Current() string {
 	return strings.TrimSpace(Version)

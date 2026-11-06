@@ -11,7 +11,7 @@ fi
 
 VERSION="$1"
 DIST_DIR="${CRONA_GORELEASER_DIST_DIR:-${PWD}/dist}"
-BUCKET_REPO="webxsid/scoop-bucket"
+BUCKET_REPO="${PACKAGE_OWNER}/scoop-bucket"
 BUCKET_BRANCH="main"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT INT TERM

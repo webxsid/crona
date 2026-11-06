@@ -1,23 +1,19 @@
 package helpers
 
-const (
-	supportGitHubRepoBaseURL  = "https://github.com/webxsid/crona"
-	supportGitHubDocsURL      = "https://github.com/webxsid/crona/blob/main/docs/README.md"
-	supportFeedbackRoadmapURL = "https://github.com/webxsid/crona/discussions"
-)
+import versionpkg "crona/shared/version"
 
 func SupportRepoURL() string {
-	return supportGitHubRepoBaseURL
+	return versionpkg.RepoURL()
 }
 
 func SupportFeedbackRoadmapURL() string {
-	return supportFeedbackRoadmapURL
+	return versionpkg.RepoURL() + "/discussions"
 }
 
 func SupportReleasesURL() string {
-	return supportGitHubRepoBaseURL + "/releases"
+	return versionpkg.RepoURL() + "/releases"
 }
 
 func SupportDocumentationURL() string {
-	return supportGitHubDocsURL
+	return versionpkg.RepoURL() + "/blob/main/docs/README.md"
 }

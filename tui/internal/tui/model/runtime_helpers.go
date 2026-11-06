@@ -52,7 +52,7 @@ func (m Model) selfUpdateUnsupportedReason() string {
 	case sharedtypes.InstallSourceNix:
 		return fmt.Sprintf("Installed via Nix. Use %s.", nixUpdateCommand(m.updateStatus))
 	case sharedtypes.InstallSourceGo:
-		return "Installed via go install. Use go install github.com/webxsid/crona/...@latest."
+		return "Installed via go install. Use " + versionpkg.GoInstallCommand() + "."
 	case sharedtypes.InstallSourceManual, sharedtypes.InstallSourceUnknown:
 		if m.updateStatus != nil {
 			if command := strings.TrimSpace(m.updateStatus.UpdateCommand); command != "" {

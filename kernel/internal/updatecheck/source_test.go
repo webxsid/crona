@@ -126,7 +126,7 @@ func TestUpdateCommandForStatus(t *testing.T) {
 				InstallSource: sharedtypes.InstallSourceBrew,
 				BrewFormula:   "crona-beta",
 			},
-			want: "brew uninstall crona-beta && brew install webxsid/tap/crona",
+			want: "brew uninstall crona-beta && brew install " + versionpkg.BrewTapFormula("crona"),
 		},
 		{
 			name: "script",
@@ -140,7 +140,7 @@ func TestUpdateCommandForStatus(t *testing.T) {
 			status: sharedtypes.UpdateStatus{
 				InstallSource: sharedtypes.InstallSourceGo,
 			},
-			want: "go install github.com/webxsid/crona/...@latest",
+			want: versionpkg.GoInstallCommand(),
 		},
 		{
 			name: "manual release url",

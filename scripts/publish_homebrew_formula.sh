@@ -11,7 +11,7 @@ fi
 VERSION="$1"
 RELEASE_DIR="$2"
 DIST_DIR="${CRONA_GORELEASER_DIST_DIR:-${PWD}/dist}"
-TAP_REPO="webxsid/homebrew-tap"
+TAP_REPO="${PACKAGE_OWNER}/homebrew-tap"
 TAP_BRANCH="main"
 TAP_DIR="$(mktemp -d)"
 PRIMARY_FORMULA_NAME="${CRONA_BREW_FORMULA_NAME:-crona}"
