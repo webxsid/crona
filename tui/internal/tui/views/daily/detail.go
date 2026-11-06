@@ -59,7 +59,7 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 // selection's details.
 func detailBody(theme types.Theme, state types.ContentState, width int) (string, []string) {
 	if !state.DailyDetailFocus || state.DailyDetailSummary {
-		return "Day", viewsummary.DayLines(theme, state, width)
+		return "Day", padded(viewsummary.DayLines(theme, state, max(1, width-2*panePad)))
 	}
 	if state.Pane == "habits" {
 		if habit, ok := selectedDailyHabit(state); ok {

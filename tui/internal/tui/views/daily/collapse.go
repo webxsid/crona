@@ -1,6 +1,8 @@
 package daily
 
 import (
+	"strings"
+
 	uistate "crona/tui/internal/tui/state"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -51,7 +53,31 @@ func scoreCalendarLines(theme types.Theme, state types.ContentState, width int, 
 	if state.SummarySnapshot != nil {
 		selection.Scores = state.SummarySnapshot.CalendarScores
 	}
-	return viewcalendar.ScoreGrid(theme, selection, width, week)
+	lines := viewcalendar.ScoreGrid(theme, selection, max(1, width-2*panePad), week)
+	if len(lines) == 0 {
+		return nil
+	}
+	// A blank row parts the month caption from the grid.
+	// A blank row parts the grid from the pane below.
+	return append(padded(append([]string{lines[0], ""}, lines[1:]...)), "")
+}
+
+// panePad is the inset the calendar and Day summary keep from their pane's sides.
+const panePad = 1
+
+// padded insets lines by panePad and opens them with a blank row, so the content breathes
+// under the pane's title rule.
+func padded(lines []string) []string {
+	out := make([]string, 0, len(lines)+1)
+	out = append(out, "")
+	for _, line := range lines {
+		if line == "" {
+			out = append(out, line)
+			continue
+		}
+		out = append(out, strings.Repeat(" ", panePad)+line)
+	}
+	return out
 }
 
 // calendarPane is the score calendar at the largest size fits allows: the month, then the
