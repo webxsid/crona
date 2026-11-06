@@ -380,12 +380,19 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		lines = append(lines, theme.StyleDim.Render("No due habits for this date"))
 		return dailySection(theme, "Habits Due", viewhelpers.FilterMeta(meta, state.Filters["habits"])+"  "+foldHint(theme, uistate.CollapseDailyHabits, "fold"), active, width, height, lines)
 	}
+	// Like tasks, each habit is a title row and a meta row, with a blank row between habits;
+	// the selected habit's action line takes its meta row.
 	inner := sectionBodyRows(height, lines)
-	if active {
-		// The selected habit's action line takes a row of the list.
-		inner = max(1, inner-1)
+	slots := func(rows int) int { return max(1, (rows+1)/3) }
+	start, end := viewchrome.ListWindow(cur, total, slots(inner))
+	rows := inner
+	if start > 0 {
+		rows--
 	}
-	start, end := listWindow(cur, total, inner)
+	if end < total {
+		rows--
+	}
+	start, end = viewchrome.ListWindow(cur, total, slots(rows))
 	if start > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↑ %d more", start)))
 	}
@@ -394,13 +401,16 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 		nameWidth = max(nameWidth, ansi.StringWidth(state.DueHabits[idx].Name))
 	}
 	for i := start; i < end; i++ {
-		lines = append(
-			lines,
-			habitRow(theme, state.DueHabits[indices[i]], nameWidth, width-1, i == cur, active),
-		)
+		if i > start {
+			lines = append(lines, "")
+		}
+		habit := state.DueHabits[indices[i]]
+		lines = append(lines, habitRow(theme, habit, nameWidth, width-1, i == cur, active))
 		if i == cur && active {
 			lines = append(lines, habitActionLine(theme, state, width-1))
+			continue
 		}
+		lines = append(lines, habitMetaRow(theme, state, habit, width-1, i == cur))
 	}
 	if remaining := total - end; remaining > 0 {
 		lines = append(lines, theme.StyleDim.Render(fmt.Sprintf("↓ %d more", remaining)))
@@ -410,8 +420,8 @@ func renderHabits(theme types.Theme, state types.ContentState, width, height int
 
 const habitRowBarWidth = 10
 
-// habitRow is one habit as an htop-style meter: checkbox and name, status, a bar of logged
-// minutes against the target, and the minutes. The bar, then the status, give way when narrow.
+// habitRow is a habit's title row: checkbox and name, a bar of logged minutes against the
+// target, and the minutes. The bar gives way when narrow.
 func habitRow(
 	theme types.Theme,
 	habit api.HabitDailyItem,
@@ -419,13 +429,6 @@ func habitRow(
 	selected, active bool,
 ) string {
 	mark, style := habitMark(theme, habit)
-	status := "due"
-	switch habit.Status {
-	case "completed":
-		status = "done"
-	case "failed":
-		status = "failed"
-	}
 	cursor := "  "
 	if selected && active {
 		cursor = theme.StyleCursor.Render(viewchrome.SelectionCursor + " ")
@@ -433,9 +436,9 @@ func habitRow(
 	}
 	name := style.Render(mark + " " + padCells(habit.Name, min(nameWidth, max(8, width/2))))
 	minutes := theme.StyleDim.Render(habitMinutesText(habit))
+	// The status sits on the meta row, so the title row is name, meter and minutes.
 	for _, parts := range [][]string{
-		{name, theme.StyleDim.Render(padCells(status, 6)), habitMeter(theme, habit), minutes},
-		{name, theme.StyleDim.Render(padCells(status, 6)), minutes},
+		{name, habitMeter(theme, habit), minutes},
 		{name, minutes},
 	} {
 		if line := cursor + strings.Join(parts, "  "); ansi.StringWidth(line) <= width {
@@ -443,6 +446,33 @@ func habitRow(
 		}
 	}
 	return viewhelpers.TruncateANSI(cursor+name, width)
+}
+
+// habitMetaRow is a habit's second row, like a task's: its repo and stream, schedule and
+// status, with its tags at the end.
+func habitMetaRow(theme types.Theme, state types.ContentState, habit api.HabitDailyItem, width int, selected bool) string {
+	status := "due"
+	switch habit.Status {
+	case "completed":
+		status = "done"
+	case "failed":
+		status = "failed"
+	}
+	parts := []string{issuecore.IssueContextLabel(habit.RepoName, habit.StreamName)}
+	if schedule := strings.ReplaceAll(string(habit.ScheduleType), "_", " "); schedule != "" {
+		parts = append(parts, schedule)
+	}
+	meta := "    " + strings.Join(append(parts, status), " | ")
+	if selected {
+		meta = theme.StyleSelected.Render(meta)
+	} else {
+		meta = theme.StyleDim.Render(meta)
+	}
+	chips := issuecore.TagChips(theme, habit.Tags, state.Tags, max(0, width/2))
+	if chips == "" {
+		return viewhelpers.TruncateANSI(meta, width)
+	}
+	return viewhelpers.TruncateANSI(meta, max(0, width-ansi.StringWidth(chips)-2)) + "  " + chips
 }
 
 func habitMinutesText(habit api.HabitDailyItem) string {
@@ -493,22 +523,6 @@ func habitMark(theme types.Theme, habit api.HabitDailyItem) (string, lipgloss.St
 	default:
 		return "[ ]", theme.StyleNormal
 	}
-}
-
-// listWindow picks the visible items for budget rows, reserving a row for each ↑/↓ marker.
-func listWindow(cur, total, budget int) (int, int) {
-	start, end := viewchrome.ListWindow(cur, total, max(1, budget))
-	for range 2 {
-		slots := budget
-		if start > 0 {
-			slots--
-		}
-		if end < total {
-			slots--
-		}
-		start, end = viewchrome.ListWindow(cur, total, max(1, slots))
-	}
-	return start, end
 }
 
 // sectionBodyRows is the list budget left in a section of height rows after its header and lines.

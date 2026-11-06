@@ -143,10 +143,13 @@ func TestDailyHabitRowsShowStatusBarAndMinutes(t *testing.T) {
 	assertContainsLine(t, lines, "[x] Journal", "15m / 10m")
 	assertContainsLine(t, lines, "[x] Journal", "█")
 	assertContainsLine(t, lines, "[ ] Walk", "- / 10m")
-	assertContainsLine(t, lines, "[!] Morning Walk", "failed")
-	walk, journal := lines[rowOf(t, strings.Join(lines, "\n"), "Walk")], lines[rowOf(t, strings.Join(lines, "\n"), "Journal")]
-	if cellIndex(walk, "due") != cellIndex(journal, "done") || cellIndex(walk, "due") < 0 {
-		t.Fatalf("expected the status column aligned, got %q / %q", walk, journal)
+	// Each habit's status sits on its meta row, under the title row.
+	text := strings.Join(lines, "\n")
+	for name, status := range map[string]string{"[!] Morning Walk": "failed", "[ ] Walk": "due", "[x] Journal": "done"} {
+		row := rowOf(t, text, name)
+		if row+1 >= len(lines) || !strings.Contains(lines[row+1], status) {
+			t.Fatalf("expected %q under %q, got %q", status, name, lines)
+		}
 	}
 }
 
