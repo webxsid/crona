@@ -141,40 +141,61 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		return append(lines, theme.StyleDim.Render("No committed plan."))
 	}
 	s := plan.Summary
+	barWidth := max(8, width-labelWidth)
+	scoreColor := theme.ColorGreen
+	switch {
+	case s.AccountabilityScore < 50:
+		scoreColor = theme.ColorRed
+	case s.AccountabilityScore < 80:
+		scoreColor = theme.ColorYellow
+	}
+	score := lipgloss.NewStyle().Foreground(scoreColor).Bold(true).Render(fmt.Sprintf("%.0f%%", s.AccountabilityScore))
 	return append(
 		lines,
-		Row(
-			theme,
-			"Score",
-			fmt.Sprintf(
-				"%.0f%%",
-				s.AccountabilityScore,
-			)+theme.StyleDim.Render(
-				fmt.Sprintf("  pressure %.1f", s.BacklogPressure),
-			),
-			width,
-		),
+		Row(theme, "Score", score+theme.StyleDim.Render(fmt.Sprintf("  pressure %.1f", s.BacklogPressure)), width),
+		strings.Repeat(" ", labelWidth)+renderBar(theme, int(s.AccountabilityScore), 0, 100, barWidth, scoreColor),
 		Row(theme, "Done", fmt.Sprintf("%d of %d", s.CompletedCount, s.PlannedCount), width),
-		strings.Repeat(
-			" ",
-			labelWidth,
-		)+renderBar(
-			theme,
-			s.CompletedCount,
-			s.FailedCount+s.AbandonedCount,
-			max(1, s.PlannedCount),
-			max(8, width-labelWidth),
-			theme.ColorGreen,
-		),
-		Row(
-			theme,
-			"Missed",
-			fmt.Sprintf("%d failed · %d abandoned", s.FailedCount, s.AbandonedCount),
-			width,
-		),
-		Row(theme, "Carried", fmt.Sprintf("%d to a later day", s.CarriedCount), width),
-		Row(theme, "Pending", fmt.Sprintf("%d to roll back", s.PendingRollbackCount), width),
+		strings.Repeat(" ", labelWidth)+planBar(theme, s, barWidth),
+		Row(theme, "Missed", outcome(theme, "✗", s.FailedCount, "failed", theme.ColorRed)+
+			theme.StyleDim.Render("  ·  ")+outcome(theme, "⊘", s.AbandonedCount, "abandoned", theme.ColorOrange), width),
+		Row(theme, "Carried", outcome(theme, "↷", s.CarriedCount, "to a later day", theme.ColorLavender), width),
+		Row(theme, "Pending", outcome(theme, "↺", s.PendingRollbackCount, "to roll back", theme.ColorYellow), width),
 	)
+}
+
+// planBar splits the planned tasks into done, failed, abandoned and carried segments over a
+// track for those still open.
+func planBar(theme types.Theme, s sharedtypes.DailyPlanAccountabilitySummary, width int) string {
+	total := max(1, s.PlannedCount)
+	used := 0
+	var b strings.Builder
+	for _, part := range []struct {
+		count int
+		color lipgloss.Color
+	}{
+		{s.CompletedCount, theme.ColorGreen},
+		{s.FailedCount, theme.ColorRed},
+		{s.AbandonedCount, theme.ColorOrange},
+		{s.CarriedCount, theme.ColorLavender},
+	} {
+		cells := min(width-used, part.count*width/total)
+		if part.count > 0 && cells == 0 && used < width {
+			cells = 1
+		}
+		b.WriteString(lipgloss.NewStyle().Foreground(part.color).Render(strings.Repeat("█", cells)))
+		used += cells
+	}
+	return b.String() + theme.StyleDim.Render(strings.Repeat("░", width-used))
+}
+
+// outcome is a glyph, count and label, coloured when the count is not zero and dim when it is.
+func outcome(theme types.Theme, glyph string, count int, label string, color lipgloss.Color) string {
+	text := fmt.Sprintf("%s %d %s", glyph, count, label)
+	if count == 0 {
+		return theme.StyleDim.Render(text)
+	}
+	return lipgloss.NewStyle().Foreground(color).Render(fmt.Sprintf("%s %d", glyph, count)) +
+		theme.StyleNormal.Render(" "+label)
 }
 
 // renderTopPenalties lists the up to three live plan entries adding most to the accountability
@@ -223,9 +244,14 @@ func renderTopPenalties(
 		}
 		share := ""
 		if entry.Penalty.Contribution != nil {
-			share = theme.StyleDim.Render(
-				fmt.Sprintf(" %.0f%%", entry.Penalty.Contribution.AccountabilityPct*100),
-			)
+			pct := entry.Penalty.Contribution.AccountabilityPct
+			color := theme.ColorYellow
+			if entry.Penalty.HighRisk {
+				color = theme.ColorOrange
+			}
+			// A small bar shows the issue's share of the day's penalty.
+			share = "  " + renderBar(theme, int(pct*100), 0, 100, 6, color) +
+				theme.StyleDim.Render(fmt.Sprintf(" %3.0f%%", pct*100))
 		}
 		lines = append(lines, Row(theme, label, score+share+"  "+title, width))
 	}

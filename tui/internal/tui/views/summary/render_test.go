@@ -175,7 +175,7 @@ func TestDayLinesListTopPenalties(t *testing.T) {
 		{ID: 1, Title: "Small slip"}, {ID: 2, Title: "Fix sync conflict"},
 	}}
 	rendered := squash(dayText(state, 60))
-	if !strings.Contains(rendered, "Top ▲3.38 34% Fix sync conflict 1.00 10% Small slip") ||
+	if !strings.Contains(rendered, "Top ▲3.38 █░░░░░ 34% Fix sync conflict 1.00 ░░░░░░ 10% Small slip") ||
 		strings.Contains(rendered, "5.00") {
 		t.Fatalf("expected top penalties largest first without resolved entries, got %q", rendered)
 	}
