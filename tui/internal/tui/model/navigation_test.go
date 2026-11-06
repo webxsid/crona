@@ -235,3 +235,38 @@ func TestCursorMoveReturnsDetailToSummary(t *testing.T) {
 		t.Fatal("expected switching panes to return the detail pane to the Day summary")
 	}
 }
+
+func TestTabCyclesIntoTheDaySummaryAndScrollsIt(t *testing.T) {
+	m := daySummaryModel(200)
+	tab := func(m Model, key tea.KeyType) Model {
+		next, _ := m.Update(tea.KeyMsg{Type: key})
+		return next.(Model)
+	}
+	habits := tab(m, tea.KeyTab)
+	if habits.pane != PaneHabits || habits.dailyDetailFocus {
+		t.Fatalf("expected tab to reach Habits first, got pane=%s focus=%v", habits.pane, habits.dailyDetailFocus)
+	}
+	summary := tab(habits, tea.KeyTab)
+	if !summary.dailyDetailFocus || !summary.dailyDetailSummary {
+		t.Fatal("expected tab from Habits to focus the Day summary")
+	}
+	if scrolled := pressKey(summary, 'j'); !scrolled.dailyDetailFocus || scrolled.cursor[PaneHabits] != summary.cursor[PaneHabits] {
+		t.Fatal("expected j to scroll the summary, not move the list")
+	}
+	back := tab(summary, tea.KeyTab)
+	if back.dailyDetailFocus || back.pane != PaneIssues {
+		t.Fatalf("expected tab to leave the summary for Tasks, got pane=%s focus=%v", back.pane, back.dailyDetailFocus)
+	}
+	if prev := tab(back, tea.KeyShiftTab); !prev.dailyDetailSummary {
+		t.Fatal("expected shift+tab from Tasks to focus the Day summary")
+	}
+	if space := tab(summary, tea.KeySpace); space.dialog != "" || !space.dailyDetailFocus {
+		t.Fatal("expected list keys to do nothing while the summary is focused")
+	}
+	if esc := tab(summary, tea.KeyEsc); esc.dailyDetailFocus {
+		t.Fatal("expected esc to leave the summary")
+	}
+	if narrow := tab(tab(daySummaryModel(120), tea.KeyTab), tea.KeyTab); narrow.dailyDetailFocus || narrow.pane != PaneIssues {
+		t.Fatal("expected tab to keep cycling the lists without a detail pane")
+	}
+}

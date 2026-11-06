@@ -24,17 +24,20 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 	bodyWidth := max(1, width-2)
 	title, lines := detailBody(theme, state, bodyWidth)
 	meta := viewchrome.KeyHint(theme, "enter", "details")
+	scroll := 0
 	if state.DailyDetailFocus {
 		meta = viewchrome.KeyHint(theme, "esc", "back")
-		// Scrolled, the body starts lower and the title says how far.
-		visible := max(1, height-1)
-		scroll := min(state.DailyDetailScroll, max(0, len(lines)-visible))
-		if scroll > 0 {
-			lines = lines[scroll:]
-		}
-		if more := len(lines) > visible; more || scroll > 0 {
-			meta = theme.StyleDim.Render(scrollArrows(scroll > 0, more)) + "  " + meta
-		}
+		scroll = state.DailyDetailScroll
+	}
+	// Scrolled, the body starts lower; arrows in the title say there is more either way,
+	// focused or not.
+	visible := max(1, height-1)
+	scroll = min(scroll, max(0, len(lines)-visible))
+	if scroll > 0 {
+		lines = lines[scroll:]
+	}
+	if more := len(lines) > visible; more || scroll > 0 {
+		meta = theme.StyleDim.Render(scrollArrows(scroll > 0, more)) + "  " + meta
 	}
 	// A long title gives way so the key always fits: lead, padded title, a fill cell, meta.
 	title = ansi.Truncate(title, max(1, width-5-ansi.StringWidth(meta)), "…")
@@ -53,7 +56,7 @@ func renderDetail(theme types.Theme, state types.ContentState, width, height int
 // detailBody is the Day summary, or with the pane focused (enter on a task or habit) the
 // selection's details.
 func detailBody(theme types.Theme, state types.ContentState, width int) (string, []string) {
-	if !state.DailyDetailFocus {
+	if !state.DailyDetailFocus || state.DailyDetailSummary {
 		return "Day", viewsummary.DayLines(theme, state, width)
 	}
 	if state.Pane == "habits" {

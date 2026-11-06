@@ -47,11 +47,20 @@ func enterView(s State, deps Deps, view uistate.View) (tea.Model, tea.Cmd, bool)
 }
 
 func handleCyclePane(s State, deps Deps, dir int) (tea.Model, tea.Cmd, bool) {
+	from := s.ActivePane
 	s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
 	// A folded Habits pane takes no focus.
-	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneHabits && s.Settings != nil &&
-		uistate.PaneCollapsed(s.Settings.CollapsedPanes, uistate.CollapseDailyHabits) {
+	if s.ActiveView == uistate.ViewDaily && s.ActivePane == uistate.PaneHabits && dailyHabitsFolded(s) {
 		s.ActivePane = deps.NextPane(s.ActiveView, s.ActivePane, dir)
+	}
+	// On Today the Day summary is the last stop: tab wraps into it from the last list, and
+	// shift+tab reaches it from Tasks. The lists keep their pane under it.
+	if s.ActiveView == uistate.ViewDaily && s.DailyDetailShown {
+		wrapped := (dir > 0 && s.ActivePane == uistate.PaneIssues) || (dir < 0 && from == uistate.PaneIssues)
+		if wrapped {
+			s.ActivePane = from
+			s.DailyDetailFocus, s.DailyDetailSummary, s.DailyDetailScroll = true, true, 0
+		}
 	}
 	return s, nil, true
 }

@@ -218,3 +218,18 @@ func TestEnterHintSaysDetailsWhereThePaneShowsThem(t *testing.T) {
 		}
 	}
 }
+
+func TestDaySummaryShowsArrowsWhenItOverflows(t *testing.T) {
+	state := detailState()
+	state.SummaryDate = "2026-05-27"
+	state.SummarySnapshot = &api.SummarySnapshot{Date: "2026-05-27"}
+	header := strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")[0]
+	if !strings.Contains(header, "↓") {
+		t.Fatalf("expected ↓ on an overflowing summary, got %q", header)
+	}
+	state.DailyDetailFocus, state.DailyDetailSummary, state.DailyDetailScroll = true, true, 2
+	header = strings.Split(ansi.Strip(renderDetail(testTheme(), state, 70, 4)), "\n")[0]
+	if !strings.Contains(header, "─ Day") || !strings.Contains(header, "↑") {
+		t.Fatalf("expected the focused summary scrolled with ↑, got %q", header)
+	}
+}

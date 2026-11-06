@@ -22,7 +22,11 @@ type State struct {
 	DailyTaskSection    uistate.DailyTaskSection
 	// DailyDetailFocus shows the selection in Daily's detail pane instead of the Day summary;
 	// DailyDetailScroll scrolls it.
-	DailyDetailFocus  bool
+	DailyDetailFocus bool
+	// DailyDetailSummary keeps the focused pane on the Day summary rather than the selection.
+	DailyDetailSummary bool
+	// DailyDetailShown is true while Today shows its detail pane (wide screens).
+	DailyDetailShown  bool
 	DailyDetailScroll int
 	// Date is the one date every dated view shows; "" means the logical today.
 	Date             string
@@ -182,7 +186,12 @@ func Handle(state State, key tea.KeyMsg, deps Deps) (State, tea.Cmd) {
 	if next, handled := handleFocusedDailyDetail(state, key); handled {
 		return next, nil
 	}
-	next, cmd := newRouter(deps).Handle(state, state.ActiveView, state.ActivePane, key)
+	pane := state.ActivePane
+	if state.DailyDetailFocus && state.DailyDetailSummary {
+		// The focused Day summary takes no list keys: they would act on a selection it hides.
+		pane = ""
+	}
+	next, cmd := newRouter(deps).Handle(state, state.ActiveView, pane, key)
 	if routed, ok := next.(State); ok {
 		logger.Infof(
 			"input.Handle result: key=%q next_view=%s next_pane=%s dialog=%q",
@@ -437,7 +446,7 @@ func newRouter(deps Deps) *router {
 		if deps.OpenDaySummary != nil && deps.OpenDaySummary(&s) {
 			return s, nil, true
 		}
-		s.DailyDetailFocus = false
+		s.DailyDetailFocus, s.DailyDetailSummary = false, false
 		return s, nil, true
 	})
 	// + edits the selected issue's or habit's tags.
@@ -772,15 +781,22 @@ var filterablePanes = map[uistate.Pane]bool{
 	uistate.PaneAlerts:        true,
 }
 
-// handleFocusedDailyDetail scrolls Daily's focused detail pane and returns to the Day summary
-// on esc. Other keys go on to the router, so actions still apply to the shown selection.
+// handleFocusedDailyDetail scrolls Daily's focused detail pane, returns to the lists on esc
+// or tab, and lets other keys go on to the router, so actions still apply to the selection.
 func handleFocusedDailyDetail(s State, key tea.KeyMsg) (State, bool) {
 	if !s.DailyDetailFocus || s.ActiveView != uistate.ViewDaily || s.Dialog != "" || s.HelpOpen {
 		return s, false
 	}
 	switch key.String() {
 	case "esc":
-		s.DailyDetailFocus, s.DailyDetailScroll = false, 0
+		s.DailyDetailFocus, s.DailyDetailSummary, s.DailyDetailScroll = false, false, 0
+	case "tab", "shift+tab":
+		// Tab leaves the pane for Tasks, shift+tab for Habits (Tasks when Habits is folded).
+		s.DailyDetailFocus, s.DailyDetailSummary, s.DailyDetailScroll = false, false, 0
+		s.ActivePane = uistate.PaneIssues
+		if key.String() == "shift+tab" && !dailyHabitsFolded(s) {
+			s.ActivePane = uistate.PaneHabits
+		}
 	case "up", "k":
 		s.DailyDetailScroll--
 	case "down", "j":
@@ -799,4 +815,8 @@ func handleFocusedDailyDetail(s State, key tea.KeyMsg) (State, bool) {
 	}
 	s.DailyDetailScroll = max(0, s.DailyDetailScroll)
 	return s, true
+}
+
+func dailyHabitsFolded(s State) bool {
+	return s.Settings != nil && uistate.PaneCollapsed(s.Settings.CollapsedPanes, uistate.CollapseDailyHabits)
 }

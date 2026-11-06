@@ -123,7 +123,9 @@ type Model struct {
 	summarySnapshot  *api.SummarySnapshot
 	// dailyDetailFocus shows the selection in Daily's detail pane (enter) instead of the Day
 	// summary, until esc or the selection moves; dailyDetailScroll scrolls it.
-	dailyDetailFocus      bool
+	dailyDetailFocus bool
+	// dailyDetailSummary keeps the focused pane on the Day summary (tab into it).
+	dailyDetailSummary    bool
 	dailyDetailScroll     int
 	momentumWindowDays    int
 	dailyCheckIn          *api.DailyCheckIn

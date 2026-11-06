@@ -83,8 +83,10 @@ type ContentState struct {
 	DailyPlannedIssues []api.Issue
 	// DailyDetailFocus focuses Daily's detail pane on the selection (enter); otherwise it
 	// shows the Day summary. DailyDetailScroll is how far the focused pane is scrolled.
-	DailyDetailFocus  bool
-	DailyDetailScroll int
+	DailyDetailFocus bool
+	// DailyDetailSummary keeps the focused detail pane on the Day summary (tab into it).
+	DailyDetailSummary bool
+	DailyDetailScroll  int
 	// DailyIssueIndices and DailyHabitIndices are the model's text-filtered raw indices into
 	// DailyIssues and DueHabits; the pane cursors are positions in these lists.
 	DailyIssueIndices     []int

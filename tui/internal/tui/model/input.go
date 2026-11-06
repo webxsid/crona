@@ -98,6 +98,8 @@ func (m Model) inputState() inputpkg.State {
 		DefaultIssueSection:       m.defaultIssueSection,
 		DailyTaskSection:          m.dailyTaskSection,
 		DailyDetailFocus:          m.dailyDetailFocus,
+		DailyDetailSummary:        m.dailyDetailSummary,
+		DailyDetailShown:          m.view == ViewDaily && viewhelpers.ClassFor(m.mainContentWidth()) == viewhelpers.WidthWide,
 		DailyDetailScroll:         m.dailyDetailScroll,
 		Date:                      m.date,
 		ReviewWindowDays:          m.reviewWindowDays,
@@ -135,6 +137,7 @@ func (m Model) applyInputState(state inputpkg.State) Model {
 	moved := state.ActivePane != m.pane || state.ActiveView != m.view ||
 		state.Cursor[PaneIssues] != m.cursor[PaneIssues] || state.Cursor[PaneHabits] != m.cursor[PaneHabits]
 	m.dailyDetailFocus = state.DailyDetailFocus && !moved
+	m.dailyDetailSummary = state.DailyDetailSummary && m.dailyDetailFocus
 	m.dailyDetailScroll = 0
 	if m.dailyDetailFocus {
 		m.dailyDetailScroll = max(0, state.DailyDetailScroll)
@@ -544,7 +547,7 @@ func (m Model) inputDeps() inputpkg.Deps {
 		EnterAction: func(state *inputpkg.State) (tea.Cmd, bool) {
 			next := m.applyInputState(*state)
 			if next.dailyDetailShown() {
-				next.dailyDetailFocus, next.dailyDetailScroll = true, 0
+				next.dailyDetailFocus, next.dailyDetailSummary, next.dailyDetailScroll = true, false, 0
 				*state = next.inputState()
 				return nil, true
 			}
