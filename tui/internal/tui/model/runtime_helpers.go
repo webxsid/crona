@@ -6,11 +6,11 @@ import (
 	"strings"
 	"sync"
 
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/api"
-	appruntime "crona/tui/internal/tui/runtime"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/api"
+	appruntime "crona.work/tui/internal/tui/runtime"
 )
 
 func (m Model) selfUpdateInstallAvailable() bool {

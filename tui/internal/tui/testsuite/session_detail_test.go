@@ -3,9 +3,9 @@ package testsuite
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	app "crona/tui/internal/tui/model"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	app "crona.work/tui/internal/tui/model"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

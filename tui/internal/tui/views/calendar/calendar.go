@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	sharedtypes "crona/shared/types"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	shareddatefmt "crona.work/shared/datefmt"
+	sharedtypes "crona.work/shared/types"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

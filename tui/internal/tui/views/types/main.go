@@ -1,9 +1,9 @@
 package viewtypes
 
 import (
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/scope"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/scope"
 
 	"github.com/charmbracelet/lipgloss"
 )

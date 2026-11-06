@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	issuecore "crona/tui/internal/tui/views/issuecore"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

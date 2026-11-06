@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
-	"crona/tui/internal/tui/scope"
-	"crona/tui/internal/tui/views/habitlist"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
+	"crona.work/tui/internal/tui/scope"
+	"crona.work/tui/internal/tui/views/habitlist"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 func TestCreateHabitDefaultsToBrowseScope(t *testing.T) {

@@ -1,10 +1,10 @@
 package commands
 
 import (
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/logger"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

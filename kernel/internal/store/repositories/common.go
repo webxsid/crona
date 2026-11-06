@@ -3,8 +3,8 @@ package repositories
 import (
 	"context"
 
-	sharedtypes "crona/shared/types"
-	sharedutils "crona/shared/utils"
+	sharedtypes "crona.work/shared/types"
+	sharedutils "crona.work/shared/utils"
 
 	"github.com/uptrace/bun"
 )

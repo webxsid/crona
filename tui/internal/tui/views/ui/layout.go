@@ -1,6 +1,6 @@
 package ui
 
-import viewtypes "crona/tui/internal/tui/views/types"
+import viewtypes "crona.work/tui/internal/tui/views/types"
 
 type Layout struct {
 	Theme      viewtypes.Theme

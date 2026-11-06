@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 // 2026-10-27 is a Tuesday.

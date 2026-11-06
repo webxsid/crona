@@ -6,8 +6,8 @@ import (
 	"math"
 	"time"
 
-	"crona/kernel/internal/core"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	sharedtypes "crona.work/shared/types"
 )
 
 const defaultDailyPlanRollbackMinutes = 5

@@ -1,8 +1,8 @@
 package sessions
 
 import (
-	types "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	types "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 )
 
 func newView() viewui.View {

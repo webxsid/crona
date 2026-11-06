@@ -3,8 +3,8 @@ package helpers
 import (
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 )
 
 func ReportsDirMeta(status *api.ExportAssetStatus) string {

@@ -3,10 +3,10 @@ package kernel
 import (
 	"bufio"
 	"bytes"
-	"crona/shared/config"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/config"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"crona/tui/internal/logger"
+	"crona.work/tui/internal/logger"
 )
 
 type Info = sharedtypes.KernelInfo
@@ -201,12 +201,12 @@ func kernelLaunchCandidates() []launchCandidate {
 				cmd:  repoBin,
 			})
 		}
-		if _, err := os.Stat(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel")); err == nil {
+		if _, err := os.Stat(filepath.Join(repoRoot, "kernel", "cmd", "crona-daemon")); err == nil {
 			if goCmd, lookErr := exec.LookPath("go"); lookErr == nil {
 				add(launchCandidate{
 					name: "repo-local go run",
 					cmd:  goCmd,
-					args: []string{"run", "./kernel/cmd/crona-kernel"},
+					args: []string{"run", "./kernel/cmd/crona-daemon"},
 					dir:  repoRoot,
 				})
 			}
@@ -234,8 +234,8 @@ func findRepoRoot() (string, error) {
 			}
 			seen[dir] = struct{}{}
 
-			if fileExists(filepath.Join(dir, "go.work")) &&
-				fileExists(filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
+			if fileExists(filepath.Join(dir, "go.mod")) &&
+				fileExists(filepath.Join(dir, "kernel", "cmd", "crona-daemon")) {
 				return dir, nil
 			}
 

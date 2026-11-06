@@ -1,6 +1,6 @@
 package viewhelpers
 
-import sharedtypes "crona/shared/types"
+import sharedtypes "crona.work/shared/types"
 
 // VisibleMomentumCards are the cards the list filter keeps, in load order, as the cursor indexes
 // them.

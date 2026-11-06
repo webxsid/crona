@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"slices"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 // computeTagTime returns focused time per tag for the range, or nil when no worked issue was

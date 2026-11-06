@@ -3,7 +3,7 @@ package issuecore
 import (
 	"fmt"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

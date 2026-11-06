@@ -4,14 +4,14 @@ import (
 	"strings"
 	"time"
 
-	versionpkg "crona/shared/version"
-	helperpkg "crona/tui/internal/tui/helpers"
-	layoutpkg "crona/tui/internal/tui/layout"
-	selectionpkg "crona/tui/internal/tui/selection"
-	uistate "crona/tui/internal/tui/state"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewruntime "crona/tui/internal/tui/views/runtime"
+	versionpkg "crona.work/shared/version"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	selectionpkg "crona.work/tui/internal/tui/selection"
+	uistate "crona.work/tui/internal/tui/state"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
 )
 
 func (m Model) View() string {

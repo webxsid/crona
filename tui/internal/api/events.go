@@ -2,8 +2,8 @@ package api
 
 import (
 	"bufio"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
 	"encoding/json"
 	"strings"
 	"time"

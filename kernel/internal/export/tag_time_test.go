@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestDailyReportShowsTimeByTagOnlyWhenTagged(t *testing.T) {

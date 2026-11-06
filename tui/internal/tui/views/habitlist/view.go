@@ -4,10 +4,10 @@ package habitlist
 import (
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	"crona/tui/internal/tui/views/daily"
-	"crona/tui/internal/tui/views/scopepane"
-	types "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	"crona.work/tui/internal/tui/views/daily"
+	"crona.work/tui/internal/tui/views/scopepane"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 // Render shows the habit summary, scope, cards and wide-screen detail.

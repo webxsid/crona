@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	sharedutils "crona/shared/utils"
+	sharedtypes "crona.work/shared/types"
+	sharedutils "crona.work/shared/utils"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"

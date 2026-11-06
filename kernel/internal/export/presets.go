@@ -3,7 +3,7 @@ package export
 import (
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type templatePreset struct {

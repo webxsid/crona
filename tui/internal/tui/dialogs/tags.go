@@ -1,9 +1,9 @@
 package dialogs
 
 import (
-	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	sharedtypes "crona.work/shared/types"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 )
 
 // renderTagPicker draws the tag picker: the filter-or-create input, then the checklist.

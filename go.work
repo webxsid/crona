@@ -1,9 +1,0 @@
-go 1.26.1
-
-use (
-	./assets
-	./cli
-	./kernel
-	./tui
-	./shared
-)

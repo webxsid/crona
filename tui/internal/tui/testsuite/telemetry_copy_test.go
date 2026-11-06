@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"crona/tui/internal/tui/dialogs"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	layoutpkg "crona/tui/internal/tui/layout"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	"crona.work/tui/internal/tui/dialogs"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 )
 
 func TestTelemetryDialogCopyUsesProductLanguage(t *testing.T) {

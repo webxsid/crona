@@ -6,8 +6,8 @@ import (
 	"errors"
 	"strings"
 
-	storemodels "crona/kernel/internal/store/models"
-	sharedtypes "crona/shared/types"
+	storemodels "crona.work/kernel/internal/store/models"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"

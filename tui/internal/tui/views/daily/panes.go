@@ -1,19 +1,19 @@
 package daily
 
 import (
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 	"fmt"
 	"strings"
 
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	viewruntime "crona/tui/internal/tui/views/runtime"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
-	types "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
+	sessionmeta "crona.work/tui/internal/tui/views/sessionmeta"
+	types "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

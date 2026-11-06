@@ -3,9 +3,9 @@ package commands
 import (
 	"context"
 
-	"crona/kernel/internal/core"
+	"crona.work/kernel/internal/core"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func ListLatestOps(ctx context.Context, c *core.Context, limit int) ([]sharedtypes.Op, error) {

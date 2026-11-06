@@ -1,7 +1,7 @@
 // Package scope is the Issues tab's browse scope: All, a repo, or one of its streams.
 package scope
 
-import "crona/tui/internal/api"
+import "crona.work/tui/internal/api"
 
 // Scope is a repo and optionally one of its streams; the zero value is All.
 type Scope struct{ RepoID, StreamID int64 }

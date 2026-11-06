@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/logger"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

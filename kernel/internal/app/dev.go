@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/export"
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/kernel/internal/store"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/export"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/store"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 // muteUntilReset silences the bus for bulk work. The returned func ends the mute and, once

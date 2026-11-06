@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/export"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/export"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 func (h *Handler) handleWorkMethods(

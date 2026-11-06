@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
+	shareddatefmt "crona.work/shared/datefmt"
 )
 
 type dueDatePolicyKind string

@@ -1,12 +1,12 @@
 package controller
 
 import (
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 	"slices"
 	"strings"
 	"testing"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"

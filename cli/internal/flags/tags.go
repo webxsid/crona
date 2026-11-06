@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 // TagList collects a repeatable, comma-separated tag flag such as `--tag urgent,quick`.

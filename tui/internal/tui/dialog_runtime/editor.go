@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"runtime"
 
-	"crona/tui/internal/tui/commands"
+	"crona.work/tui/internal/tui/commands"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

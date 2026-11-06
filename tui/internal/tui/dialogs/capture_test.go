@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	shareddto "crona/shared/dto"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	shareddto "crona.work/shared/dto"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"

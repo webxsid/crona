@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
-	"crona/kernel/internal/sessionnotes"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	"crona.work/kernel/internal/sessionnotes"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/google/uuid"
 )

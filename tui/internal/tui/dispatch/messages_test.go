@@ -3,10 +3,10 @@ package dispatch
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

@@ -3,9 +3,9 @@ package testsuite
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	dialogs "crona/tui/internal/tui/dialogs/controller"
-	app "crona/tui/internal/tui/model"
+	"crona.work/tui/internal/api"
+	dialogs "crona.work/tui/internal/tui/dialogs/controller"
+	app "crona.work/tui/internal/tui/model"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"

@@ -3,17 +3,17 @@ package model
 import (
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/dialogs"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	helperpkg "crona/tui/internal/tui/helpers"
-	layoutpkg "crona/tui/internal/tui/layout"
-	selectionpkg "crona/tui/internal/tui/selection"
-	dailyviews "crona/tui/internal/tui/views/daily"
-	viewruntime "crona/tui/internal/tui/views/runtime"
-	viewtypes "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/dialogs"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	selectionpkg "crona.work/tui/internal/tui/selection"
+	dailyviews "crona.work/tui/internal/tui/views/daily"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

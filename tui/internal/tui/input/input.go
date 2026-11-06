@@ -1,13 +1,13 @@
 package input
 
 import (
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	keyregistry "crona/tui/internal/tui/key_registry"
-	uistate "crona/tui/internal/tui/state"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/logger"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	keyregistry "crona.work/tui/internal/tui/key_registry"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

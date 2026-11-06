@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/export"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/export"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestDailyPlanMarksMovedTodayIssueFailedAfterRollbackWindow(t *testing.T) {

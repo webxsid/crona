@@ -70,7 +70,7 @@ Typical locations:
 Install the source build with:
 
 ```bash
-go install github.com/webxsid/crona/...@latest
+go install crona.work/...@latest
 ```
 
 Make sure your `GOBIN` or `PATH` includes the directory where Go installs binaries.
@@ -87,7 +87,7 @@ If the runtime directory already contains a `crona.db`, Crona prompts before ove
 
 ## After Migration
 
-- Source installs now own their update path through `go install github.com/webxsid/crona/...@latest`.
+- Source installs now own their update path through `go install crona.work/...@latest`.
 - `crona backup` and `crona restore` only move `crona.db`.
 - Keep the same `go install` command handy for future reinstalls or upgrades.
 

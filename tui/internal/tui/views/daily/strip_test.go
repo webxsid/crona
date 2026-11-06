@@ -1,15 +1,15 @@
 package daily
 
 import (
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 	"fmt"
 	"strings"
 	"testing"
 
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewcalendar "crona/tui/internal/tui/views/calendar"
-	types "crona/tui/internal/tui/views/types"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewcalendar "crona.work/tui/internal/tui/views/calendar"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

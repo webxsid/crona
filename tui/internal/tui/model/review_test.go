@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 
-	uistate "crona/tui/internal/tui/state"
-	viewtypes "crona/tui/internal/tui/views/types"
+	uistate "crona.work/tui/internal/tui/state"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 func reviewModel() Model {

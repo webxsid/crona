@@ -1,7 +1,7 @@
 package controller
 
 import (
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

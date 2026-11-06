@@ -5,11 +5,11 @@ import (
 	"slices"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	helperpkg "crona/tui/internal/tui/helpers"
-	momentumhelpers "crona/tui/internal/tui/views/momentum"
-	"crona/tui/internal/tui/views/sessionmeta"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	momentumhelpers "crona.work/tui/internal/tui/views/momentum"
+	"crona.work/tui/internal/tui/views/sessionmeta"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

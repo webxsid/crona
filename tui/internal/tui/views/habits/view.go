@@ -1,6 +1,6 @@
 package habits
 
-import viewui "crona/tui/internal/tui/views/ui"
+import viewui "crona.work/tui/internal/tui/views/ui"
 
 func newView() viewui.View {
 	return viewui.View{

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
 )
 
 type RowKey string

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	versionpkg "crona/shared/version"
+	versionpkg "crona.work/shared/version"
 )
 
 func attachFrontmatter(data map[string]any, spec reportWriteSpec) map[string]any {

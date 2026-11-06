@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/kernel"
-	"crona/tui/internal/logger"
-	helperpkg "crona/tui/internal/tui/helpers"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/kernel"
+	"crona.work/tui/internal/logger"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

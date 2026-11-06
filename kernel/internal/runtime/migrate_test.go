@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestMigrateLegacyBaseDirMovesLegacyDir(t *testing.T) {

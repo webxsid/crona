@@ -1,6 +1,6 @@
 package dto
 
-import "crona/shared/types"
+import "crona.work/shared/types"
 
 // Shared request DTOs used across kernel, TUI, and future CLI clients.
 

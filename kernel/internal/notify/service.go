@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"crona/kernel/internal/core"
-	"crona/kernel/internal/events"
-	runtimepkg "crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	"crona.work/kernel/internal/events"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Service struct {

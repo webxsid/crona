@@ -6,8 +6,8 @@ import (
 	"slices"
 	"testing"
 
-	"crona/shared/localipc"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/localipc"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestNormalizeKernelInfoPreservesWindowsNamedPipeFields(t *testing.T) {
@@ -50,10 +50,10 @@ func TestKernelLaunchCandidatesIncludeWindowsExeSources(t *testing.T) {
 	if err := os.MkdirAll(pathDir, 0o755); err != nil {
 		t.Fatalf("mkdir path dir: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(repoRoot, "go.work"), []byte("go 1.26.1\n"), 0o644); err != nil {
-		t.Fatalf("write go.work: %v", err)
+	if err := os.WriteFile(filepath.Join(repoRoot, "go.mod"), []byte("module crona.work\n"), 0o644); err != nil {
+		t.Fatalf("write go.mod: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel"), []byte("stub"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(repoRoot, "kernel", "cmd", "crona-daemon"), []byte("stub"), 0o644); err != nil {
 		t.Fatalf("write repo daemon marker: %v", err)
 	}
 

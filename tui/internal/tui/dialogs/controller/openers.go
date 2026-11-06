@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 type Snapshot struct {

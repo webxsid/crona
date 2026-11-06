@@ -3,8 +3,8 @@ package dialogs
 import (
 	"strings"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	helperpkg "crona/tui/internal/tui/helpers"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 )
 
 // renderExportChoice draws the export pickers: a list, the selected item's help (or a

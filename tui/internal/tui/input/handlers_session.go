@@ -1,10 +1,10 @@
 package input
 
 import (
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 	tea "github.com/charmbracelet/bubbletea"
 
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func timerIsActive(s State) bool {

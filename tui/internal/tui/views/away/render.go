@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewtypes "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewtypes "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 
 	"github.com/charmbracelet/lipgloss"
 )

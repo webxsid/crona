@@ -1,24 +1,24 @@
 package model
 
 import (
-	"crona/tui/internal/tui/scope"
+	"crona.work/tui/internal/tui/scope"
 	"fmt"
 	"slices"
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
-	helperpkg "crona/tui/internal/tui/helpers"
-	layoutpkg "crona/tui/internal/tui/layout"
-	navigationutil "crona/tui/internal/tui/navigationutil"
-	selectionpkg "crona/tui/internal/tui/selection"
-	uistate "crona/tui/internal/tui/state"
-	dailyviews "crona/tui/internal/tui/views/daily"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	viewruntime "crona/tui/internal/tui/views/runtime"
-	viewtypes "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	navigationutil "crona.work/tui/internal/tui/navigationutil"
+	selectionpkg "crona.work/tui/internal/tui/selection"
+	uistate "crona.work/tui/internal/tui/state"
+	dailyviews "crona.work/tui/internal/tui/views/daily"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

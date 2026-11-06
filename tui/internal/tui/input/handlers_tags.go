@@ -1,11 +1,11 @@
 package input
 
 import (
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	keyregistry "crona/tui/internal/tui/key_registry"
-	uistate "crona/tui/internal/tui/state"
-	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	keyregistry "crona.work/tui/internal/tui/key_registry"
+	uistate "crona.work/tui/internal/tui/state"
+	tagsmeta "crona.work/tui/internal/tui/views/tagsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

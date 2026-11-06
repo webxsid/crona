@@ -3,9 +3,9 @@ package selection
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/scope"
-	uistate "crona/tui/internal/tui/state"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/scope"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func TestDefaultScopedIssuesFollowBrowseScope(t *testing.T) {

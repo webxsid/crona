@@ -5,10 +5,10 @@ import (
 	"math"
 	"strings"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/views/charts"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/views/charts"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

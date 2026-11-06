@@ -3,7 +3,7 @@ package commands
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestFocusScoreReason(t *testing.T) {

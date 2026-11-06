@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	commands "crona.work/tui/internal/tui/commands"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

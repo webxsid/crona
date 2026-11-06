@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	uistate "crona/tui/internal/tui/state"
-	viewtypes "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	uistate "crona.work/tui/internal/tui/state"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

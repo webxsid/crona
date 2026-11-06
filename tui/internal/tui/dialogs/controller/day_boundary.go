@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"

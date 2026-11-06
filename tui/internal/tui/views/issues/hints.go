@@ -1,8 +1,8 @@
 package issues
 
 import (
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	types "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 func newIssueLine(theme types.Theme, state types.ContentState, width int) string {

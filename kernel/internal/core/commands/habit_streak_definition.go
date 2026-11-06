@@ -5,9 +5,9 @@ import (
 	"errors"
 	"strings"
 
-	"crona/kernel/internal/core"
-	sharedtypes "crona/shared/types"
-	sharedutils "crona/shared/utils"
+	"crona.work/kernel/internal/core"
+	sharedtypes "crona.work/shared/types"
+	sharedutils "crona.work/shared/utils"
 )
 
 func ListHabitStreakDefinitions(

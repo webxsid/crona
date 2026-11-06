@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )

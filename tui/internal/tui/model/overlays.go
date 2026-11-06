@@ -1,15 +1,15 @@
 package model
 
 import (
-	shareddatefmt "crona/shared/datefmt"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	dispatchpkg "crona/tui/internal/tui/dispatch"
-	helperpkg "crona/tui/internal/tui/helpers"
-	overlaypkg "crona/tui/internal/tui/overlays"
-	selectionpkg "crona/tui/internal/tui/selection"
+	shareddatefmt "crona.work/shared/datefmt"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	commands "crona.work/tui/internal/tui/commands"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	dispatchpkg "crona.work/tui/internal/tui/dispatch"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	overlaypkg "crona.work/tui/internal/tui/overlays"
+	selectionpkg "crona.work/tui/internal/tui/selection"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

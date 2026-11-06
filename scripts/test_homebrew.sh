@@ -174,7 +174,7 @@ run_status_checks() {
   printf '%s\n' "${status_output}" | grep -F "current: ${expected_version}" >/dev/null 2>&1
   printf '%s\n' "${status_output}" | grep -F "install-source: brew" >/dev/null 2>&1
   printf '%s\n' "${status_output}" | grep -F "update-command: brew upgrade crona" >/dev/null 2>&1
-  if printf '%s\n' "${status_output}" | grep -Eq 'self-update|curl -fsSL https://crona.work/install.sh|go install github.com/webxsid/crona'; then
+  if printf '%s\n' "${status_output}" | grep -Eq 'self-update|curl -fsSL https://crona.work/install.sh|go install crona.work'; then
     echo "update status exposed a non-brew update path" >&2
     exit 1
   fi
@@ -222,11 +222,11 @@ build_fake_release_dir() {
   tui_bin="${out_dir}/crona-tui"
 
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
-    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${cli_bin}" ./cli/cmd/crona
+    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona.work/shared/version.Version=${version}" -o "${cli_bin}" ./cli/cmd/crona
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
-    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${daemon_bin}" ./kernel/cmd/crona-kernel
+    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona.work/shared/version.Version=${version}" -o "${daemon_bin}" ./kernel/cmd/crona-daemon
   GOCACHE="${GOCACHE:-/tmp/crona-go-cache}" GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
-    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona/shared/version.Version=${version}" -o "${tui_bin}" ./tui
+    "${GO_CMD}" build -trimpath -ldflags "-s -w -X crona.work/shared/version.Version=${version}" -o "${tui_bin}" ./tui/cmd/crona-tui
 
   archive_file="${out_dir}/$(archive_name "${version}" "${goos}" "${goarch}")"
   (

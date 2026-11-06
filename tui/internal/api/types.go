@@ -1,6 +1,6 @@
 package api
 
-import sharedtypes "crona/shared/types"
+import sharedtypes "crona.work/shared/types"
 
 type Repo = sharedtypes.Repo
 type Stream = sharedtypes.Stream

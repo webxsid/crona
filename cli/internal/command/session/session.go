@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	capturecmd "crona/cli/internal/command/capture"
-	contextcmd "crona/cli/internal/command/context"
-	tagcmd "crona/cli/internal/command/tag"
-	flagspkg "crona/cli/internal/flags"
-	outputpkg "crona/cli/internal/output"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	capturecmd "crona.work/cli/internal/command/capture"
+	contextcmd "crona.work/cli/internal/command/context"
+	tagcmd "crona.work/cli/internal/command/tag"
+	flagspkg "crona.work/cli/internal/flags"
+	outputpkg "crona.work/cli/internal/output"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Deps struct {

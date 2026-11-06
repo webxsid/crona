@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/lipgloss"
 )

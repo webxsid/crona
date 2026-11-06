@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	helperpkg "crona/tui/internal/tui/helpers"
-	types "crona/tui/internal/tui/views/types"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

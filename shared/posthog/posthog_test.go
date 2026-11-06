@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	sharedconfig "crona/shared/config"
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
+	sharedconfig "crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
 )
 
 func TestNewReturnsNoopWhenDisabled(t *testing.T) {

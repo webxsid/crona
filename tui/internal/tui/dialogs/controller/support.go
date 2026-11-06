@@ -7,11 +7,11 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
 
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 type menuChoice struct {

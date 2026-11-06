@@ -3,7 +3,7 @@ package version
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestRunningChannelReflectsCurrentVersion(t *testing.T) {

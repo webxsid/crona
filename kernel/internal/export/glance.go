@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/runtime"
-	shareddatefmt "crona/shared/datefmt"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/runtime"
+	shareddatefmt "crona.work/shared/datefmt"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func generateGlanceExport(

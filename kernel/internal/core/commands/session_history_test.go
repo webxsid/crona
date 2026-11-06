@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"crona/kernel/internal/sessionnotes"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/sessionnotes"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestUpdateSessionHistoryPreservesNotesAndReplacesSegments(t *testing.T) {

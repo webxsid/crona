@@ -11,11 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/config"
-	sharedconstants "crona/shared/constants"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/config"
+	sharedconstants "crona.work/shared/constants"
+	sharedtypes "crona.work/shared/types"
 
-	storemodels "crona/kernel/internal/store/models"
+	storemodels "crona.work/kernel/internal/store/models"
 
 	"github.com/uptrace/bun"
 )

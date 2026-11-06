@@ -1,6 +1,6 @@
 package export
 
-import sharedtypes "crona/shared/types"
+import sharedtypes "crona.work/shared/types"
 
 type assetDescriptor struct {
 	reportKind        sharedtypes.ExportReportKind

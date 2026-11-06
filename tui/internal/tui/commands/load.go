@@ -3,9 +3,9 @@ package commands
 import (
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/logger"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

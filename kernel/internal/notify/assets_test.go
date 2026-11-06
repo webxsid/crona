@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	runtimepkg "crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestAlertSoundPathFallsBackToEmbeddedAssets(t *testing.T) {

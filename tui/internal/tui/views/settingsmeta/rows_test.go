@@ -3,7 +3,7 @@ package settingsmeta
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestRowsWithTimezoneIncludesDayBoundaries(t *testing.T) {

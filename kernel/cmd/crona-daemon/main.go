@@ -8,8 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"crona/kernel/internal/app"
-	versionpkg "crona/shared/version"
+	"crona.work/kernel/internal/app"
+	versionpkg "crona.work/shared/version"
 )
 
 func main() {

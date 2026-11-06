@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 // StripRows sums the window: work over wellbeing, column groups dropped right-first.

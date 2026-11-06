@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 
-	sharedtypes "crona/shared/types"
-	utils "crona/shared/utils"
+	sharedtypes "crona.work/shared/types"
+	utils "crona.work/shared/utils"
 
-	storemodels "crona/kernel/internal/store/models"
+	storemodels "crona.work/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 

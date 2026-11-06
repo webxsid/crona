@@ -5,12 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	app "crona/tui/internal/tui/model"
-	"crona/tui/internal/tui/testsuite/support"
-	viewtypes "crona/tui/internal/tui/views/types"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	app "crona.work/tui/internal/tui/model"
+	"crona.work/tui/internal/tui/testsuite/support"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 func TestAvailableViewsAlwaysIncludeUpdates(t *testing.T) {

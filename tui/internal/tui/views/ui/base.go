@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewtypes "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 type PaneBase struct {

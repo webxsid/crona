@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"crona/kernel/internal/core"
-	runtimepkg "crona/kernel/internal/runtime"
+	"crona.work/kernel/internal/core"
+	runtimepkg "crona.work/kernel/internal/runtime"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 type TimerService struct {

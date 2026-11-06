@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/views"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/views"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func ProtectedRestMode(settings *api.CoreSettings, date string) (bool, bool, string) {

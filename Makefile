@@ -120,22 +120,22 @@ install-fmt:
 	GOCACHE=$(GOCACHE) $(GO) install github.com/segmentio/golines@v0.13.0
 
 run-daemon:
-	cd kernel && GOCACHE=$(GOCACHE) $(GO) run ./cmd/crona-kernel
+	GOCACHE=$(GOCACHE) $(GO) run ./kernel/cmd/crona-daemon
 
 run-tui:
-	cd tui && PATH="$(CURDIR)/bin:$$PATH" GOCACHE=$(GOCACHE) $(GO) run .
+	PATH="$(CURDIR)/bin:$$PATH" GOCACHE=$(GOCACHE) $(GO) run ./tui/cmd/crona-tui
 
 install-daemon:
 	mkdir -p bin
-	cd kernel && GOCACHE=$(GOCACHE) $(GO) build -o ../bin/$(DAEMON_BINARY) ./cmd/crona-kernel
+	GOCACHE=$(GOCACHE) $(GO) build -o bin/$(DAEMON_BINARY) ./kernel/cmd/crona-daemon
 
 install-tui:
 	mkdir -p bin
-	cd tui && GOCACHE=$(GOCACHE) $(GO) build -o ../bin/$(TUI_BINARY) .
+	GOCACHE=$(GOCACHE) $(GO) build -o bin/$(TUI_BINARY) ./tui/cmd/crona-tui
 
 install-cli:
 	mkdir -p bin
-	cd cli && GOCACHE=$(GOCACHE) $(GO) build -o ../bin/$(CLI_BINARY) ./cmd/crona
+	GOCACHE=$(GOCACHE) $(GO) build -o bin/$(CLI_BINARY) ./cli/cmd/crona
 
 seed-dev:
 	sh ./scripts/dev_seed.sh

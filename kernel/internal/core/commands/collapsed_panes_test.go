@@ -5,7 +5,7 @@ import (
 	"slices"
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestCollapsedPanesSettingRoundTrips(t *testing.T) {

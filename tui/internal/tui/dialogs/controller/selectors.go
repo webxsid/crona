@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

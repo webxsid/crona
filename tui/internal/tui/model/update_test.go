@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	dispatchpkg "crona/tui/internal/tui/dispatch"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	commands "crona.work/tui/internal/tui/commands"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	dispatchpkg "crona.work/tui/internal/tui/dispatch"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )

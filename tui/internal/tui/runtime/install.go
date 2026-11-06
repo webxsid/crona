@@ -5,7 +5,7 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"crona/shared/config"
+	"crona.work/shared/config"
 )
 
 const manualUpdateMessage = "You seem to be running the app from a non-standard location. Please update manually."

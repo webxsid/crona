@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

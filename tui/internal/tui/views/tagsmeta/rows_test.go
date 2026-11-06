@@ -3,7 +3,7 @@ package tagsmeta
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestSelectedFollowsTheFilterAndUnusedSkipsSystemTags(t *testing.T) {

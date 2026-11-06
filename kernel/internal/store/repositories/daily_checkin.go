@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 
-	storemodels "crona/kernel/internal/store/models"
+	storemodels "crona.work/kernel/internal/store/models"
 	"github.com/uptrace/bun"
 )
 

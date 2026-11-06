@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	assetbundle "crona.local/assets"
-	"crona/kernel/internal/runtime"
+	assetbundle "crona.work/assets"
+	"crona.work/kernel/internal/runtime"
 )
 
 func userTemplatePath(paths runtime.Paths, descriptor assetDescriptor) string {

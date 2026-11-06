@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"crona/kernel/internal/store/repositories"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/store/repositories"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestGetAllSettingsReturnsPublicCoreSettingsShape(t *testing.T) {

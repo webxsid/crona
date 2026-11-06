@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
+	"crona.work/kernel/internal/core"
 
 	"github.com/google/uuid"
 
-	sharedtypes "crona/shared/types"
-	"crona/shared/utils"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/shared/utils"
 )
 
 func ListHabitsByStream(

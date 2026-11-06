@@ -3,8 +3,8 @@ package dispatch
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

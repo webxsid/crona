@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 )
 
 func TestPomodoroAdvanceActionLabel(t *testing.T) {

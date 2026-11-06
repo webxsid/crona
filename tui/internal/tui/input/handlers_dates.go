@@ -3,8 +3,8 @@ package input
 import (
 	"time"
 
-	navigationutil "crona/tui/internal/tui/navigationutil"
-	uistate "crona/tui/internal/tui/state"
+	navigationutil "crona.work/tui/internal/tui/navigationutil"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

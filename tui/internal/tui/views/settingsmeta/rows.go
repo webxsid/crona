@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	sharedtypes "crona/shared/types"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
+	shareddatefmt "crona.work/shared/datefmt"
+	sharedtypes "crona.work/shared/types"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
 )
 
 type Row struct {

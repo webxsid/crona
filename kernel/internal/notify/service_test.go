@@ -8,16 +8,16 @@ import (
 	"testing"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/events"
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/kernel/internal/store"
-	dbpkg "crona/kernel/internal/store/db"
-	"crona/kernel/internal/store/migrations"
-	"crona/kernel/internal/store/repositories"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/events"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/store"
+	dbpkg "crona.work/kernel/internal/store/db"
+	"crona.work/kernel/internal/store/migrations"
+	"crona.work/kernel/internal/store/repositories"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestDispatchHonorsNotificationAndSoundSettingsIndependently(t *testing.T) {

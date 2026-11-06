@@ -3,8 +3,8 @@ package testsuite
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
+	sharedtypes "crona.work/shared/types"
+	settingsmeta "crona.work/tui/internal/tui/views/settingsmeta"
 )
 
 func TestSettingsRowsUseClearerStatusLabels(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestFormatDateUsesPreset(t *testing.T) {

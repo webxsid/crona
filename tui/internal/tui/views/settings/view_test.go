@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	settingsmeta "crona.work/tui/internal/tui/views/settingsmeta"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

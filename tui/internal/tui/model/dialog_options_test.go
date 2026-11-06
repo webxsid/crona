@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func TestDialogRenderStateCarriesPickerOptions(t *testing.T) {

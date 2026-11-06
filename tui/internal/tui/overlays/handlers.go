@@ -1,8 +1,8 @@
 package overlays
 
 import (
-	"crona/tui/internal/api"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	"crona.work/tui/internal/api"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

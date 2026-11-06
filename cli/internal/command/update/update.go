@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	flagspkg "crona/cli/internal/flags"
-	outputpkg "crona/cli/internal/output"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	flagspkg "crona.work/cli/internal/flags"
+	outputpkg "crona.work/cli/internal/output"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Deps struct {

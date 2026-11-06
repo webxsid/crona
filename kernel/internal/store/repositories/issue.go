@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	storemodels "crona/kernel/internal/store/models"
-	sharedtypes "crona/shared/types"
+	storemodels "crona.work/kernel/internal/store/models"
+	sharedtypes "crona.work/shared/types"
 	"github.com/uptrace/bun"
 )
 

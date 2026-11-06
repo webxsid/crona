@@ -3,9 +3,9 @@ package input
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	uistate "crona/tui/internal/tui/state"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
+	sharedtypes "crona.work/shared/types"
+	uistate "crona.work/tui/internal/tui/state"
+	settingsmeta "crona.work/tui/internal/tui/views/settingsmeta"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

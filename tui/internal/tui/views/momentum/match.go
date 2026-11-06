@@ -3,7 +3,7 @@ package momentum
 import (
 	"slices"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 // ForHabit are the enabled habit momentums that count this habit.

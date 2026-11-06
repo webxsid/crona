@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	sessionmeta "crona.work/tui/internal/tui/views/sessionmeta"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

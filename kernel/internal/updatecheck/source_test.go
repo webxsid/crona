@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
 )
 
 func TestSourceFromExecutablePath(t *testing.T) {

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	sharedtypes "crona/shared/types"
-	viewcalendar "crona/tui/internal/tui/views/calendar"
+	shareddatefmt "crona.work/shared/datefmt"
+	sharedtypes "crona.work/shared/types"
+	viewcalendar "crona.work/tui/internal/tui/views/calendar"
 
 	"github.com/charmbracelet/lipgloss"
 )

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/shared/protocol"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/shared/protocol"
 )
 
 type streamOnlyHandler struct {

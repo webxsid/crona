@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type ClaimFunc func(context.Context, string, string, string, string, string) (bool, error)

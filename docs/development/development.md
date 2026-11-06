@@ -27,9 +27,9 @@ Development docs use `kernel` when referring to the Go module, source tree, or I
 Manual builds from the repo root:
 
 ```bash
-cd kernel && go build -o ../bin/crona-daemon ./cmd/crona-kernel
-cd tui && go build -o ../bin/crona-tui .
-cd cli && go build -o ../bin/crona ./cmd/crona
+go build -o bin/crona-daemon ./kernel/cmd/crona-daemon
+go build -o bin/crona-tui ./tui/cmd/crona-tui
+go build -o bin/crona ./cli/cmd/crona
 ```
 
 ## Dev Mode
@@ -199,6 +199,6 @@ crona/
 ├─ tui/
 ├─ docs/
 ├─ Makefile
-├─ go.work
+├─ go.mod        (one module: crona.work)
 └─ README.md
 ```

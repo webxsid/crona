@@ -3,8 +3,8 @@ package controller
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

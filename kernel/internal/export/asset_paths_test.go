@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestDefaultAssetSourceFallsBackToEmbeddedAssets(t *testing.T) {

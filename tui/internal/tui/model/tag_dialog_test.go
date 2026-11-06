@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
 )
 
 func TestTagDialogStateSurvivesTheModel(t *testing.T) {

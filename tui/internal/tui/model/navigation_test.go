@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
-	viewruntime "crona/tui/internal/tui/views/runtime"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"

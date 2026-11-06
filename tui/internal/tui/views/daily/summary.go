@@ -3,7 +3,7 @@ package daily
 import (
 	"fmt"
 
-	helperpkg "crona/tui/internal/tui/helpers"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 )
 
 func issueProgressText(workedSeconds, estimateMinutes int, compact bool) string {

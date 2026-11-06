@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	versionpkg "crona/shared/version"
-	uistate "crona/tui/internal/tui/state"
+	versionpkg "crona.work/shared/version"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func statusRow(state State) string {

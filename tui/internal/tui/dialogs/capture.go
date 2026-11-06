@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	shareddto "crona/shared/dto"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	shareddto "crona.work/shared/dto"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/x/ansi"
 )

@@ -1,13 +1,13 @@
 package controller
 
 import (
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 	"fmt"
 	"strconv"
 	"strings"
 
-	shareddto "crona/shared/dto"
-	helperpkg "crona/tui/internal/tui/helpers"
+	shareddto "crona.work/shared/dto"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 )
 
 const (

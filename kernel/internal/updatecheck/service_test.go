@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestFetchLatestReleaseRequiresInstallerAndChecksumsAssets(t *testing.T) {

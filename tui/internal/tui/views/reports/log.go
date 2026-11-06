@@ -1,16 +1,16 @@
 package reports
 
 import (
-	helperpkg "crona/tui/internal/tui/helpers"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"crona/tui/internal/api"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

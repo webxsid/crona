@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type LaunchCandidate struct {
@@ -268,7 +268,7 @@ func KernelLaunchCandidates(deps Deps) []LaunchCandidate {
 		if info, err := deps.OSStat(repoBin); err == nil && !info.IsDir() {
 			add(LaunchCandidate{Name: "repo bin " + deps.KernelBinary(), Cmd: repoBin})
 		}
-		if _, err := deps.OSStat(filepath.Join(repoRoot, "kernel", "cmd", "crona-kernel")); err == nil {
+		if _, err := deps.OSStat(filepath.Join(repoRoot, "kernel", "cmd", "crona-daemon")); err == nil {
 			if goCmd, lookErr := deps.ExecLookPath("go"); lookErr == nil {
 				add(
 					LaunchCandidate{
@@ -363,8 +363,8 @@ func FindRepoRoot(deps Deps) (string, error) {
 				break
 			}
 			seen[dir] = struct{}{}
-			if FileExists(deps, filepath.Join(dir, "go.work")) &&
-				FileExists(deps, filepath.Join(dir, "kernel", "cmd", "crona-kernel")) {
+			if FileExists(deps, filepath.Join(dir, "go.mod")) &&
+				FileExists(deps, filepath.Join(dir, "kernel", "cmd", "crona-daemon")) {
 				return dir, nil
 			}
 			parent := filepath.Dir(dir)

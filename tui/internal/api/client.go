@@ -2,10 +2,10 @@ package api
 
 import (
 	"bufio"
-	shareddto "crona/shared/dto"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 	"encoding/json"
 	"fmt"
 	"strings"

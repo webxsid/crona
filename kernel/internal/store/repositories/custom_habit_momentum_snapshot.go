@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	storemodels "crona/kernel/internal/store/models"
+	storemodels "crona.work/kernel/internal/store/models"
 
 	"github.com/uptrace/bun"
 )

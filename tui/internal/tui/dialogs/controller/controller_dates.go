@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

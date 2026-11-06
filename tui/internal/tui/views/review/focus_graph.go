@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/views/charts"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/views/charts"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

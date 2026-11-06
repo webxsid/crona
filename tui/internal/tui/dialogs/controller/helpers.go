@@ -1,7 +1,7 @@
 package controller
 
 import (
-	shareddto "crona/shared/dto"
+	shareddto "crona.work/shared/dto"
 	"fmt"
 	"math"
 	"strconv"

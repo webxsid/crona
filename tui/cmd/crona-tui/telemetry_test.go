@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	sharedposthog "crona/shared/posthog"
-	sharedtypes "crona/shared/types"
+	sharedposthog "crona.work/shared/posthog"
+	sharedtypes "crona.work/shared/types"
 )
 
 type recordedEvent struct {

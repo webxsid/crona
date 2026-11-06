@@ -10,10 +10,10 @@ import (
 	"os"
 	"strings"
 
-	"crona/cli/internal/flags"
-	"crona/cli/internal/output"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
+	"crona.work/cli/internal/flags"
+	"crona.work/cli/internal/output"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
 )
 
 type Deps struct {

@@ -4,8 +4,8 @@ import (
 	"slices"
 	"testing"
 
-	shareddto "crona/shared/dto"
-	"crona/tui/internal/api"
+	shareddto "crona.work/shared/dto"
+	"crona.work/tui/internal/api"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

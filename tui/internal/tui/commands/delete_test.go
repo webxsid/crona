@@ -11,9 +11,9 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	"crona/tui/internal/api"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	"crona.work/tui/internal/api"
 )
 
 func TestDeleteIssueReloadsTheDailyPlan(t *testing.T) {

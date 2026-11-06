@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 )
 
 func TestGenerateSupportBundleCreatesExpectedFilesAndRedactsSensitiveDetails(t *testing.T) {

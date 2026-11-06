@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	"crona/tui/internal/api"
-	configitems "crona/tui/internal/tui/configitems"
+	"crona.work/tui/internal/api"
+	configitems "crona.work/tui/internal/tui/configitems"
 )
 
 func configItems(status *api.ExportAssetStatus) []string {

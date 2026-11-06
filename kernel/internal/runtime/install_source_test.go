@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestInstallSourceRoundTrip(t *testing.T) {

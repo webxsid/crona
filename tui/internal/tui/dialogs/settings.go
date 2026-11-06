@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	sharedtypes "crona.work/shared/types"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 )
 
 // stepStrip draws a wizard's numbered steps with the active one selected.

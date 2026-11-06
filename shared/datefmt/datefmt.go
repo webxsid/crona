@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 const isoLayout = "2006-01-02"

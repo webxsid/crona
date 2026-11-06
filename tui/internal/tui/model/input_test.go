@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	inputpkg "crona/tui/internal/tui/input"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	inputpkg "crona.work/tui/internal/tui/input"
+	uistate "crona.work/tui/internal/tui/state"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

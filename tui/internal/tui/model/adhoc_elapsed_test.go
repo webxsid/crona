@@ -1,9 +1,9 @@
 package model
 
 import (
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
 	tea "github.com/charmbracelet/bubbletea"
 	"testing"
 	"time"

@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

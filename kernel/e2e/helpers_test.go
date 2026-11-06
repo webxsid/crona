@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	"crona/kernel/internal/app"
-	"crona/kernel/internal/runtime"
-	shareddto "crona/shared/dto"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/app"
+	"crona.work/kernel/internal/runtime"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type testKernel struct {

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestLogicalDateUsesSODBoundary(t *testing.T) {

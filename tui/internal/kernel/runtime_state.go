@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/config"
+	"crona.work/shared/config"
 )
 
 type TUIRuntimeState struct {

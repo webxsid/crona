@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/scope"
-	selectionpkg "crona/tui/internal/tui/selection"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/scope"
+	selectionpkg "crona.work/tui/internal/tui/selection"
 )
 
 func TestRegressionEntryClampsScopeList(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"

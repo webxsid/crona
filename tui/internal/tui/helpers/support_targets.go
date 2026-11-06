@@ -1,6 +1,6 @@
 package helpers
 
-import versionpkg "crona/shared/version"
+import versionpkg "crona.work/shared/version"
 
 func SupportRepoURL() string {
 	return versionpkg.RepoURL()

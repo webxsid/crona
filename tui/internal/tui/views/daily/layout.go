@@ -1,12 +1,12 @@
 package daily
 
 import (
-	uistate "crona/tui/internal/tui/state"
-	viewaway "crona/tui/internal/tui/views/away"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewsummary "crona/tui/internal/tui/views/summary"
-	types "crona/tui/internal/tui/views/types"
+	uistate "crona.work/tui/internal/tui/state"
+	viewaway "crona.work/tui/internal/tui/views/away"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewsummary "crona.work/tui/internal/tui/views/summary"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

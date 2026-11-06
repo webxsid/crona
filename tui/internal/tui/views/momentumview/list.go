@@ -4,9 +4,9 @@ import (
 	"math"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	momentumhelpers "crona/tui/internal/tui/views/momentum"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	momentumhelpers "crona.work/tui/internal/tui/views/momentum"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

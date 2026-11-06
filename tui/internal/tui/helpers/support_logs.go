@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/config"
-	"crona/tui/internal/api"
+	"crona.work/shared/config"
+	"crona.work/tui/internal/api"
 )
 
 const SupportRecentDiagnosticsWindow = time.Hour

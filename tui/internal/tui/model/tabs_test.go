@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/api"
-	layoutpkg "crona/tui/internal/tui/layout"
-	uistate "crona/tui/internal/tui/state"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/api"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

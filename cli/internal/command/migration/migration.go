@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	flagspkg "crona/cli/internal/flags"
-	"crona/shared/config"
+	flagspkg "crona.work/cli/internal/flags"
+	"crona.work/shared/config"
 )
 
 type Deps struct {

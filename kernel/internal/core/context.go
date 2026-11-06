@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"crona/kernel/internal/events"
-	"crona/kernel/internal/health"
-	"crona/kernel/internal/store"
-	"crona/kernel/internal/store/repositories"
+	"crona.work/kernel/internal/events"
+	"crona.work/kernel/internal/health"
+	"crona.work/kernel/internal/store"
+	"crona.work/kernel/internal/store/repositories"
 )
 
 type Context struct {

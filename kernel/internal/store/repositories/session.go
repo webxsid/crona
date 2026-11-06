@@ -6,10 +6,10 @@ import (
 	"errors"
 	"strings"
 
-	"crona/kernel/internal/sessionnotes"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/sessionnotes"
+	sharedtypes "crona.work/shared/types"
 
-	storemodels "crona/kernel/internal/store/models"
+	storemodels "crona.work/kernel/internal/store/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )

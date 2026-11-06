@@ -7,11 +7,11 @@ import (
 	"maps"
 	"slices"
 
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/events"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/events"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 func (h *Handler) handleRuntimeMethods(

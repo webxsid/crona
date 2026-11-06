@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func NextView[T comparable](order []T, current T, dir int) T {

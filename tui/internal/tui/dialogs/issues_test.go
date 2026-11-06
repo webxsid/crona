@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	sharedtypes "crona.work/shared/types"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 )
 
 func TestIssueStatusDialogShowsSelectedIssueContext(t *testing.T) {

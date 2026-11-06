@@ -1,20 +1,20 @@
 package model
 
 import (
-	"crona/tui/internal/tui/scope"
+	"crona.work/tui/internal/tui/scope"
 	"time"
 
-	shareddto "crona/shared/dto"
-	sharedposthog "crona/shared/posthog"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	"crona/tui/internal/logger"
-	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	selectionpkg "crona/tui/internal/tui/selection"
-	uistate "crona/tui/internal/tui/state"
-	"crona/tui/internal/tui/terminaltitle"
-	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
+	shareddto "crona.work/shared/dto"
+	sharedposthog "crona.work/shared/posthog"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/logger"
+	commands "crona.work/tui/internal/tui/commands"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	selectionpkg "crona.work/tui/internal/tui/selection"
+	uistate "crona.work/tui/internal/tui/state"
+	"crona.work/tui/internal/tui/terminaltitle"
+	alertsmeta "crona.work/tui/internal/tui/views/alertsmeta"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"

@@ -3,7 +3,7 @@ package input
 import (
 	"testing"
 
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

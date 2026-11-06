@@ -3,10 +3,10 @@ package model
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
-	"crona/tui/internal/tui/scope"
-	selectionpkg "crona/tui/internal/tui/selection"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
+	"crona.work/tui/internal/tui/scope"
+	selectionpkg "crona.work/tui/internal/tui/selection"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

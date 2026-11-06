@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type companionDeliveryResult struct {

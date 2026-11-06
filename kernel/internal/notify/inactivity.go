@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func (s *Service) TouchTimerActivity(ctx context.Context) error {

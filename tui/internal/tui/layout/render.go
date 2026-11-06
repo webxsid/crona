@@ -1,20 +1,20 @@
 package layout
 
 import (
-	versionpkg "crona/shared/version"
+	versionpkg "crona.work/shared/version"
 	"fmt"
 	"slices"
 	"strings"
 
-	"crona/tui/internal/logger"
-	"crona/tui/internal/tui/chrome"
-	"crona/tui/internal/tui/dialogs"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
-	helperpkg "crona/tui/internal/tui/helpers"
-	uistate "crona/tui/internal/tui/state"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewrenderer "crona/tui/internal/tui/views/renderer"
-	viewtypes "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/logger"
+	"crona.work/tui/internal/tui/chrome"
+	"crona.work/tui/internal/tui/dialogs"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	uistate "crona.work/tui/internal/tui/state"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewrenderer "crona.work/tui/internal/tui/views/renderer"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

@@ -9,16 +9,16 @@ import (
 	"testing"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/events"
-	"crona/kernel/internal/export"
-	"crona/kernel/internal/runtime"
-	"crona/kernel/internal/sessionnotes"
-	"crona/kernel/internal/store"
-	"crona/kernel/internal/store/repositories"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/events"
+	"crona.work/kernel/internal/export"
+	"crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/sessionnotes"
+	"crona.work/kernel/internal/store"
+	"crona.work/kernel/internal/store/repositories"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestHabitCascadeDeleteAndRestoreByStreamAndRepo(t *testing.T) {

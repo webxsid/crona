@@ -3,9 +3,9 @@ package testsuite
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/testsuite/support"
-	"crona/tui/internal/tui/views"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/testsuite/support"
+	"crona.work/tui/internal/tui/views"
 )
 
 func TestTinyAndCompactModes(t *testing.T) {

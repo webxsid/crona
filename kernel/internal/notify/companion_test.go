@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	runtimepkg "crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestCompanionBrokerReplacesActiveSubscriber(t *testing.T) {

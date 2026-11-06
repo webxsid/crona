@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	storemodels "crona/kernel/internal/store/models"
-	storerepositories "crona/kernel/internal/store/repositories"
-	sharedtypes "crona/shared/types"
+	storemodels "crona.work/kernel/internal/store/models"
+	storerepositories "crona.work/kernel/internal/store/repositories"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/uptrace/bun"
 )

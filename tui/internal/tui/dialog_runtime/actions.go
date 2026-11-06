@@ -3,11 +3,11 @@ package dialogruntime
 import (
 	"errors"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	commands "crona/tui/internal/tui/commands"
-	dialogstate "crona/tui/internal/tui/dialogs/controller"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	commands "crona.work/tui/internal/tui/commands"
+	dialogstate "crona.work/tui/internal/tui/dialogs/controller"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

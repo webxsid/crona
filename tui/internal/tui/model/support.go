@@ -1,9 +1,9 @@
 package model
 
 import (
-	"crona/tui/internal/tui/commands"
-	helperpkg "crona/tui/internal/tui/helpers"
-	inputpkg "crona/tui/internal/tui/input"
+	"crona.work/tui/internal/tui/commands"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	inputpkg "crona.work/tui/internal/tui/input"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

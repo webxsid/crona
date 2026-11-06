@@ -1,16 +1,16 @@
 package selection
 
 import (
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	uistate "crona/tui/internal/tui/state"
-	issuecore "crona/tui/internal/tui/views/issuecore"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	uistate "crona.work/tui/internal/tui/state"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
 )
 
 // buildDefaultScopedIssues is the Issues view's list: every issue within the browse scope.

@@ -1,6 +1,6 @@
 package app
 
-import sharedtypes "crona/shared/types"
+import sharedtypes "crona.work/shared/types"
 
 func telemetryUsageEnabled(settings *sharedtypes.CoreSettings) bool {
 	return settings != nil && settings.OnboardingCompleted && settings.UsageTelemetryEnabled

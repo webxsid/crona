@@ -16,9 +16,9 @@ import (
 	"sync"
 	"time"
 
-	sharedconfig "crona/shared/config"
-	"crona/shared/protocol"
-	versionpkg "crona/shared/version"
+	sharedconfig "crona.work/shared/config"
+	"crona.work/shared/protocol"
+	versionpkg "crona.work/shared/version"
 
 	vendorposthog "github.com/posthog/posthog-go"
 )

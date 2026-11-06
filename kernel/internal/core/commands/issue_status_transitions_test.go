@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestIssueStatusTransitionsReturnsAllowedStatuses(t *testing.T) {

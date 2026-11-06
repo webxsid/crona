@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	helperpkg "crona/tui/internal/tui/helpers"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewsummary "crona/tui/internal/tui/views/summary"
-	types "crona/tui/internal/tui/views/types"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewsummary "crona.work/tui/internal/tui/views/summary"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

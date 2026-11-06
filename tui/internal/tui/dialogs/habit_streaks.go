@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	sharedutils "crona/shared/utils"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
+	sharedtypes "crona.work/shared/types"
+	sharedutils "crona.work/shared/utils"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

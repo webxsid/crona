@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

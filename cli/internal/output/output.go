@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func PrintJSON(w io.Writer, value any) error {

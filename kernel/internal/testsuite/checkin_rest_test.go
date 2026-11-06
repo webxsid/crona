@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestSpecificRestDatePreservesFocusAndCheckInStreaks(t *testing.T) {

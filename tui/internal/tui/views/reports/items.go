@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func reportItems(reports []api.ExportReportFile) []string {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func WriteKernelInfo(paths Paths, info sharedtypes.KernelInfo) error {

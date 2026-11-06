@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/config"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
+	"crona.work/shared/config"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
 )
 
 func (h *Handler) handleKernelMethods(

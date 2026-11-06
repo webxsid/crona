@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
-	storerepositories "crona/kernel/internal/store/repositories"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	storerepositories "crona.work/kernel/internal/store/repositories"
+	sharedtypes "crona.work/shared/types"
 )
 
 type customHabitMomentumSnapshotState struct {

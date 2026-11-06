@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
 )
 
 func previewModel(width int) Model {

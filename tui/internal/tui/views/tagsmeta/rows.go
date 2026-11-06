@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"slices"
 
-	sharedtypes "crona/shared/types"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
+	sharedtypes "crona.work/shared/types"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
 )
 
 // Usage says how many issues and habits carry a tag.

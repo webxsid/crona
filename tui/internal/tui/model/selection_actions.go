@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/tui/commands"
-	dialogruntime "crona/tui/internal/tui/dialog_runtime"
-	helperpkg "crona/tui/internal/tui/helpers"
-	selectionpkg "crona/tui/internal/tui/selection"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/tui/commands"
+	dialogruntime "crona.work/tui/internal/tui/dialog_runtime"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	selectionpkg "crona.work/tui/internal/tui/selection"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

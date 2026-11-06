@@ -3,10 +3,10 @@ package daily
 import (
 	"strings"
 
-	uistate "crona/tui/internal/tui/state"
-	viewcalendar "crona/tui/internal/tui/views/calendar"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	types "crona/tui/internal/tui/views/types"
+	uistate "crona.work/tui/internal/tui/state"
+	viewcalendar "crona.work/tui/internal/tui/views/calendar"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 // The calendar shrinks to its week, then folds, before these panes drop below their rows.

@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"crona/cli/internal/flags"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/cli/internal/flags"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Deps struct {

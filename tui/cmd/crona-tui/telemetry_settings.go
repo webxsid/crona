@@ -1,6 +1,6 @@
 package main
 
-import sharedtypes "crona/shared/types"
+import sharedtypes "crona.work/shared/types"
 
 func telemetryOnboardingCompleted(settings *sharedtypes.CoreSettings) bool {
 	return settings != nil && settings.OnboardingCompleted

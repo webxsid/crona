@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	shareddatefmt "crona.work/shared/datefmt"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 )
 
 func IssueScheduleLabel(issue api.Issue, settings *api.CoreSettings) string {

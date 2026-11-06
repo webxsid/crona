@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"io"
 
-	"crona/cli/internal/flags"
-	"crona/cli/internal/output"
-	runtimepkg "crona/cli/internal/runtime"
-	shareddto "crona/shared/dto"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/cli/internal/flags"
+	"crona.work/cli/internal/output"
+	runtimepkg "crona.work/cli/internal/runtime"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Deps struct {

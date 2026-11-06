@@ -3,8 +3,8 @@ package dialogs
 import (
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	sharedtypes "crona.work/shared/types"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 )
 
 func tabNextHints(int) []string { return []string{"tab next"} }

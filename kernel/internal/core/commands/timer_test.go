@@ -7,13 +7,13 @@ import (
 	"sync"
 	"testing"
 
-	"crona/kernel/internal/core"
-	"crona/kernel/internal/events"
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/kernel/internal/store"
-	"crona/shared/config"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	"crona.work/kernel/internal/events"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/store"
+	"crona.work/shared/config"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestTimerStructuredBoundaryPreparesBreakWhenAutoStartBreaksDisabled(t *testing.T) {

@@ -1,9 +1,9 @@
 package input
 
 import (
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

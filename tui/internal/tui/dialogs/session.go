@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	issuecore "crona/tui/internal/tui/views/issuecore"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"

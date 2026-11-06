@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 	"github.com/charmbracelet/x/ansi"
 )
 
-import uistate "crona/tui/internal/tui/state"
+import uistate "crona.work/tui/internal/tui/state"
 
 type ActionsState struct {
 	View                      string

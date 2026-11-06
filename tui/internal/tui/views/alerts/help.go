@@ -1,9 +1,9 @@
 package alerts
 
 import (
-	sharedtypes "crona/shared/types"
-	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	sharedtypes "crona.work/shared/types"
+	alertsmeta "crona.work/tui/internal/tui/views/alertsmeta"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 )
 
 var (

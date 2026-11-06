@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func SessionContextContentLines(issue *api.IssueWithMeta) []string {

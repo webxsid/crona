@@ -3,8 +3,8 @@ package momentumview
 import (
 	"fmt"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	types "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 // StripRows sums the momentums: counts over streaks, column groups dropped right-first.

@@ -13,13 +13,13 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/runtime"
-	"crona/kernel/internal/sessionnotes"
-	shareddatefmt "crona/shared/datefmt"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/sessionnotes"
+	shareddatefmt "crona.work/shared/datefmt"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 type reportFileMetadata struct {

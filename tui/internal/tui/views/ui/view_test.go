@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	viewtypes "crona/tui/internal/tui/views/types"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

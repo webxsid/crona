@@ -3,10 +3,10 @@ package store
 import (
 	"context"
 
-	storedb "crona/kernel/internal/store/db"
-	devtools "crona/kernel/internal/store/devtools"
-	migrations "crona/kernel/internal/store/migrations"
-	"crona/kernel/internal/store/repositories"
+	storedb "crona.work/kernel/internal/store/db"
+	devtools "crona.work/kernel/internal/store/devtools"
+	migrations "crona.work/kernel/internal/store/migrations"
+	"crona.work/kernel/internal/store/repositories"
 
 	"github.com/uptrace/bun"
 )

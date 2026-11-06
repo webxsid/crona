@@ -3,7 +3,7 @@ package viewchrome
 import (
 	"strings"
 
-	helperpkg "crona/tui/internal/tui/helpers"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 
 	"github.com/charmbracelet/lipgloss"
 )

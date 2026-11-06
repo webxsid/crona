@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddatefmt "crona.work/shared/datefmt"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

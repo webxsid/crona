@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

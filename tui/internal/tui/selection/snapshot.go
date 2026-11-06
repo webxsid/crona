@@ -1,18 +1,18 @@
 package selection
 
 import (
-	"crona/tui/internal/tui/scope"
+	"crona.work/tui/internal/tui/scope"
 	"fmt"
 	"strings"
 
-	"crona/tui/internal/api"
-	configitems "crona/tui/internal/tui/configitems"
-	helperpkg "crona/tui/internal/tui/helpers"
-	uistate "crona/tui/internal/tui/state"
-	alertsmeta "crona/tui/internal/tui/views/alertsmeta"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
-	tagsmeta "crona/tui/internal/tui/views/tagsmeta"
+	"crona.work/tui/internal/api"
+	configitems "crona.work/tui/internal/tui/configitems"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	uistate "crona.work/tui/internal/tui/state"
+	alertsmeta "crona.work/tui/internal/tui/views/alertsmeta"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
+	settingsmeta "crona.work/tui/internal/tui/views/settingsmeta"
+	tagsmeta "crona.work/tui/internal/tui/views/tagsmeta"
 )
 
 type Snapshot struct {

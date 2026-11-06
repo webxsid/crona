@@ -3,7 +3,7 @@ package utils
 import (
 	"time"
 
-	"crona/shared/types"
+	"crona.work/shared/types"
 )
 
 func HabitMatchesDate(habit types.Habit, date string) bool {

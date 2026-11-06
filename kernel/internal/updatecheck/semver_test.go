@@ -3,7 +3,7 @@ package updatecheck
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestIsNewerVersion(t *testing.T) {

@@ -3,8 +3,8 @@ package viewruntime
 import (
 	"time"
 
-	"crona/tui/internal/api"
-	viewtypes "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 func CurrentDashboardDate(state viewtypes.ContentState) string {

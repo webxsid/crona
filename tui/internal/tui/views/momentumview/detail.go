@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	momentumhelpers "crona/tui/internal/tui/views/momentum"
-	viewsummary "crona/tui/internal/tui/views/summary"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	momentumhelpers "crona.work/tui/internal/tui/views/momentum"
+	viewsummary "crona.work/tui/internal/tui/views/summary"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"crona/kernel/internal/runtime"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
+	"crona.work/kernel/internal/runtime"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
 )
 
 // streamWriteTimeout is how long an event stream may wait on a client that stopped reading

@@ -3,9 +3,9 @@ package away
 import (
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewtypes "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewtypes "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 
 	"github.com/charmbracelet/lipgloss"
 )

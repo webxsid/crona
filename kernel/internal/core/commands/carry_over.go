@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"crona/kernel/internal/core"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	sharedtypes "crona.work/shared/types"
 
 	"github.com/google/uuid"
 )

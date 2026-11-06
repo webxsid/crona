@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	viewsummary "crona/tui/internal/tui/views/summary"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
+	viewsummary "crona.work/tui/internal/tui/views/summary"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

@@ -5,11 +5,11 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewruntime "crona/tui/internal/tui/views/runtime"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 // renderView lays Updates out as a status column (with diagnostics below when shown)

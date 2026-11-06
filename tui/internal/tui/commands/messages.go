@@ -1,8 +1,8 @@
 package commands
 
 import (
-	shareddto "crona/shared/dto"
-	"crona/tui/internal/api"
+	shareddto "crona.work/shared/dto"
+	"crona.work/tui/internal/api"
 )
 
 type ReposLoadedMsg struct{ Repos []api.Repo }

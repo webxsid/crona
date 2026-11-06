@@ -3,9 +3,9 @@ package dispatch
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
-	uistate "crona/tui/internal/tui/state"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func momentumCard(name string, enabled bool) api.MomentumCard {

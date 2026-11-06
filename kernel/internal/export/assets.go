@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 type templateMeta struct {

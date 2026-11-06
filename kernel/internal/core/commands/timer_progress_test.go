@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestTimerStateReportsPomodoroCycles(t *testing.T) {

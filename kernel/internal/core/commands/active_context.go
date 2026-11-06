@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 
-	"crona/kernel/internal/core"
+	"crona.work/kernel/internal/core"
 
 	"github.com/google/uuid"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type ContextPatch struct {

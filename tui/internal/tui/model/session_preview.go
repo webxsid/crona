@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"crona/tui/internal/tui/commands"
+	"crona.work/tui/internal/tui/commands"
 )
 
 const sessionPreviewDelay = 150 * time.Millisecond

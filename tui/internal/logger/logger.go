@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"time"
 
-	"crona/shared/config"
+	"crona.work/shared/config"
 )
 
 var logBase string

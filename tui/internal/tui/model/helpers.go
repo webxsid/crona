@@ -3,9 +3,9 @@ package model
 import (
 	"strings"
 
-	"crona/tui/internal/api"
-	commands "crona/tui/internal/tui/commands"
-	helperpkg "crona/tui/internal/tui/helpers"
+	"crona.work/tui/internal/api"
+	commands "crona.work/tui/internal/tui/commands"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

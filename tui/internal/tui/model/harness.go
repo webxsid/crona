@@ -1,11 +1,11 @@
 package model
 
 import (
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 
-	appcmd "crona/tui/internal/tui/commands"
-	layoutpkg "crona/tui/internal/tui/layout"
-	selectionpkg "crona/tui/internal/tui/selection"
+	appcmd "crona.work/tui/internal/tui/commands"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	selectionpkg "crona.work/tui/internal/tui/selection"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

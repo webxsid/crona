@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	corecommands "crona/kernel/internal/core/commands"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	corecommands "crona.work/kernel/internal/core/commands"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestIssueCaptureParsesAndImports(t *testing.T) {

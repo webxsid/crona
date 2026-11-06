@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"slices"
 
-	"crona/shared/types"
+	"crona.work/shared/types"
 )
 
 type HabitMomentumCapacity struct {

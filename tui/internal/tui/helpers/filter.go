@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 // ItemFilter is a pane filter split into its free text and its tag part. In the filter text,

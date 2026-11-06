@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"crona/kernel/internal/core"
-	"crona/kernel/internal/events"
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
+	"crona.work/kernel/internal/core"
+	"crona.work/kernel/internal/events"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
 )
 
 const checkInterval = 24 * time.Hour

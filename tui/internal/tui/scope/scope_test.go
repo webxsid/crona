@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func treeFixture() ([]api.Repo, []api.Stream) {

@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.work
+          go-version-file: go.mod
           cache: true
           cache-dependency-path: |
             shared/go.sum
@@ -51,7 +51,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.work
+          go-version-file: go.mod
           cache: true
           cache-dependency-path: |
             shared/go.sum

@@ -3,7 +3,7 @@ package helpers
 import (
 	"fmt"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func ActiveTimerIssueID(timer *api.TimerState) *int64 {

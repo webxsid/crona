@@ -1,7 +1,7 @@
 package dialogs
 
 import (
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 
 	"github.com/charmbracelet/lipgloss"
 )

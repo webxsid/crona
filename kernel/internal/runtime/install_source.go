@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type InstallSourceFile struct {

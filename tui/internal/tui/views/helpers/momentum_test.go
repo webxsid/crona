@@ -3,7 +3,7 @@ package viewhelpers
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestVisibleMomentumCardsKeepsOrderAndMatches(t *testing.T) {

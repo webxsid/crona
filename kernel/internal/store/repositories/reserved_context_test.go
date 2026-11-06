@@ -5,11 +5,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	storedb "crona/kernel/internal/store/db"
-	migrations "crona/kernel/internal/store/migrations"
-	storemodels "crona/kernel/internal/store/models"
-	repositories "crona/kernel/internal/store/repositories"
-	sharedtypes "crona/shared/types"
+	storedb "crona.work/kernel/internal/store/db"
+	migrations "crona.work/kernel/internal/store/migrations"
+	storemodels "crona.work/kernel/internal/store/models"
+	repositories "crona.work/kernel/internal/store/repositories"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestInitSchemaUpgradesBeforeLegacyAdhocBackfill(t *testing.T) {

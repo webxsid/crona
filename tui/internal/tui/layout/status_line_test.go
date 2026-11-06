@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	viewchrome "crona/tui/internal/tui/views/chrome"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
 
 	"github.com/charmbracelet/x/ansi"
 )

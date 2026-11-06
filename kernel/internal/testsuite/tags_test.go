@@ -5,10 +5,10 @@ import (
 	"slices"
 	"testing"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func newTagFixture(t *testing.T) (context.Context, *core.Context, sharedtypes.Issue, sharedtypes.Issue, sharedtypes.Habit) {

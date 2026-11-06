@@ -1,6 +1,6 @@
 package dto
 
-import "crona/shared/types"
+import "crona.work/shared/types"
 
 // IssueCaptureParseRequest parses `-` lines into issue proposals. StreamID, or Target as
 // a `repo/stream` or single name matched like a `#` annotation, is the caller's default

@@ -3,7 +3,7 @@ package contextmeta
 import (
 	"strings"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func DefaultScopeLabel(ctx *api.ActiveContext) string {

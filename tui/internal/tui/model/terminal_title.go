@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	helperpkg "crona/tui/internal/tui/helpers"
-	"crona/tui/internal/tui/terminaltitle"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	"crona.work/tui/internal/tui/terminaltitle"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

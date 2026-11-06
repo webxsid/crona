@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewruntime "crona/tui/internal/tui/views/runtime"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
 	"github.com/charmbracelet/lipgloss"
 )
 

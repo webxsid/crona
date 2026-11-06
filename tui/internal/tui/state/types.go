@@ -1,6 +1,6 @@
 package state
 
-import navigationutil "crona/tui/internal/tui/navigationutil"
+import navigationutil "crona.work/tui/internal/tui/navigationutil"
 
 type View string
 

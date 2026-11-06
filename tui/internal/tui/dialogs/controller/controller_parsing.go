@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func ParseHabitSchedule(raw string) (string, []int, error) {

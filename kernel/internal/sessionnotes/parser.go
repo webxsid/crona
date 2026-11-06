@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func Parse(raw *string) sharedtypes.ParsedSessionNotes {

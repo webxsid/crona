@@ -12,8 +12,8 @@ import (
 	"strings"
 	"syscall"
 
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
 )
 
 func MigrateLegacyBaseDir(mode string) error {
@@ -104,7 +104,9 @@ func legacyKernelRunning(base string) (bool, error) {
 			err,
 		)
 	}
-	return strings.Contains(strings.TrimSpace(string(cmd)), "crona-kernel"), nil
+	command := strings.TrimSpace(string(cmd))
+	// crona-kernel is the daemon's name before it moved to kernel/cmd/crona-daemon.
+	return strings.Contains(command, "crona-daemon") || strings.Contains(command, "crona-kernel"), nil
 }
 
 func copyThenReplaceRuntimeDir(source, target string) error {

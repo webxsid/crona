@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"crona/kernel/internal/core"
+	"crona.work/kernel/internal/core"
 
 	"github.com/google/uuid"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func CreateRepo(ctx context.Context, c *core.Context, input struct {

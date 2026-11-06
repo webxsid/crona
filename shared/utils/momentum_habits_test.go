@@ -3,7 +3,7 @@ package utils
 import (
 	"testing"
 
-	"crona/shared/types"
+	"crona.work/shared/types"
 )
 
 func TestHabitMomentumCapacityDailyAllRequiresDailyHabits(t *testing.T) {

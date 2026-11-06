@@ -4,7 +4,7 @@ import (
 	"math"
 	"strings"
 
-	types "crona/tui/internal/tui/views/types"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

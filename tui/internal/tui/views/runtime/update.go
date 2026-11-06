@@ -3,7 +3,7 @@ package viewruntime
 import (
 	"strings"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func ShouldShowUpdatesView(status *api.UpdateStatus) bool {

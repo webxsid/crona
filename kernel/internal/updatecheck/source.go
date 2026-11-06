@@ -10,10 +10,10 @@ import (
 	"runtime"
 	"strings"
 
-	runtimepkg "crona/kernel/internal/runtime"
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
-	versionpkg "crona/shared/version"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
+	versionpkg "crona.work/shared/version"
 )
 
 type latestRelease struct {

@@ -1,12 +1,12 @@
 package selection
 
 import (
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 	"testing"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 
-	uistate "crona/tui/internal/tui/state"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func TestRegressionRestoreReorderedIssue(t *testing.T) {

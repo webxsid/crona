@@ -3,7 +3,7 @@ package controller
 import (
 	"testing"
 
-	"crona/tui/internal/api"
+	"crona.work/tui/internal/api"
 )
 
 func captureCompleteCtx() UpdateContext {

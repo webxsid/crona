@@ -4,8 +4,8 @@ import (
 	"strings"
 	"time"
 
-	"crona/tui/internal/logger"
-	commands "crona/tui/internal/tui/commands"
+	"crona.work/tui/internal/logger"
+	commands "crona.work/tui/internal/tui/commands"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"crona/shared/config"
-	sharedtypes "crona/shared/types"
+	"crona.work/shared/config"
+	sharedtypes "crona.work/shared/types"
 )
 
 type TimerRuntimeState struct {

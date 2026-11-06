@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	settingsmeta "crona/tui/internal/tui/views/settingsmeta"
-	types "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	settingsmeta "crona.work/tui/internal/tui/views/settingsmeta"
+	types "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 )
 
 func newView() viewui.View {

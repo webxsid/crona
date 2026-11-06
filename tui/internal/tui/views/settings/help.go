@@ -1,6 +1,6 @@
 package settings
 
-import viewchrome "crona/tui/internal/tui/views/chrome"
+import viewchrome "crona.work/tui/internal/tui/views/chrome"
 
 var (
 	toggle     = []string{"Enabled", "Disabled"}

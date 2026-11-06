@@ -3,9 +3,9 @@ package controller
 import (
 	"time"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"

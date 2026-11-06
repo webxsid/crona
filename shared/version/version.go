@@ -3,7 +3,7 @@ package version
 import (
 	"strings"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 var Version = "1.10.0-beta.4"
@@ -29,8 +29,13 @@ func RepoSlug() string { return RepoOwner + "/" + RepoName }
 // RepoURL is the repository's web address.
 func RepoURL() string { return "https://github.com/" + RepoSlug() }
 
-// GoInstallCommand installs or updates Crona from source with go install.
-func GoInstallCommand() string { return "go install github.com/" + RepoSlug() + "/...@latest" }
+// ModulePath is Crona's Go module path. It is served from crona.work rather than GitHub so
+// it does not change when the repository moves.
+const ModulePath = "crona.work"
+
+// GoInstallCommand installs or updates Crona from source with go install: the crona CLI,
+// crona-daemon and crona-tui.
+func GoInstallCommand() string { return "go install " + ModulePath + "/...@latest" }
 
 // BrewTapFormula is formula's install name in Crona's Homebrew tap, like owner/tap/crona.
 func BrewTapFormula(formula string) string { return PackageOwner + "/tap/" + formula }

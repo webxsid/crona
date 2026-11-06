@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"crona/shared/config"
-	sharedposthog "crona/shared/posthog"
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/api"
-	"crona/tui/internal/kernel"
-	"crona/tui/internal/logger"
-	"crona/tui/internal/tui"
-	"crona/tui/internal/tui/terminaltitle"
+	"crona.work/shared/config"
+	sharedposthog "crona.work/shared/posthog"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/kernel"
+	"crona.work/tui/internal/logger"
+	"crona.work/tui/internal/tui"
+	"crona.work/tui/internal/tui/terminaltitle"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

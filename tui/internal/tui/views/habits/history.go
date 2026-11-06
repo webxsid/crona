@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	helperpkg "crona/tui/internal/tui/helpers"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	helperpkg "crona.work/tui/internal/tui/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 )
 
 func renderHistoryView(theme types.Theme, state types.ContentState) string {

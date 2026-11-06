@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	types "crona/tui/internal/tui/views/types"
+	sharedtypes "crona.work/shared/types"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

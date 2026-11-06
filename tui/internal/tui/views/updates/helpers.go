@@ -6,10 +6,10 @@ import (
 	"time"
 	"unicode"
 
-	versionpkg "crona/shared/version"
-	"crona/tui/internal/api"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewtypes "crona/tui/internal/tui/views/types"
+	versionpkg "crona.work/shared/version"
+	"crona.work/tui/internal/api"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 func installScriptDeprecationBanner(theme viewtypes.Theme, status *api.UpdateStatus) []string {

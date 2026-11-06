@@ -1,7 +1,7 @@
 package viewchrome
 
 import (
-	rootchrome "crona/tui/internal/tui/chrome"
+	rootchrome "crona.work/tui/internal/tui/chrome"
 
 	"github.com/charmbracelet/lipgloss"
 )

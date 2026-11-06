@@ -3,8 +3,8 @@ package testsuite
 import (
 	"testing"
 
-	inputpkg "crona/tui/internal/tui/input"
-	uistate "crona/tui/internal/tui/state"
+	inputpkg "crona.work/tui/internal/tui/input"
+	uistate "crona.work/tui/internal/tui/state"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

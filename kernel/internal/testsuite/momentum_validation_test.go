@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	corecommands "crona/kernel/internal/core/commands"
-	sharedtypes "crona/shared/types"
+	corecommands "crona.work/kernel/internal/core/commands"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestCreateHabitMomentumRejectsInvalidDailyAllSelection(t *testing.T) {

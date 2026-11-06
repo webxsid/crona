@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
-	flagspkg "crona/cli/internal/flags"
-	outputpkg "crona/cli/internal/output"
-	"crona/shared/protocol"
+	flagspkg "crona.work/cli/internal/flags"
+	outputpkg "crona.work/cli/internal/output"
+	"crona.work/shared/protocol"
 )
 
 type Deps struct {

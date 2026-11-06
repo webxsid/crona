@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	"crona/tui/internal/tui/views/daily"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	issuecore "crona/tui/internal/tui/views/issuecore"
-	sessionmeta "crona/tui/internal/tui/views/sessionmeta"
-	types "crona/tui/internal/tui/views/types"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	"crona.work/tui/internal/tui/views/daily"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
+	sessionmeta "crona.work/tui/internal/tui/views/sessionmeta"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

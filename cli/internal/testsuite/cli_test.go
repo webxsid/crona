@@ -9,17 +9,17 @@ import (
 	"testing"
 	"time"
 
-	completioncmd "crona/cli/internal/command/completion"
-	contextcmd "crona/cli/internal/command/context"
-	exportcmd "crona/cli/internal/command/export"
-	kernelcmd "crona/cli/internal/command/kernel"
-	migrationcmd "crona/cli/internal/command/migration"
-	sessioncmd "crona/cli/internal/command/session"
-	updatecmd "crona/cli/internal/command/update"
-	shareddto "crona/shared/dto"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	completioncmd "crona.work/cli/internal/command/completion"
+	contextcmd "crona.work/cli/internal/command/context"
+	exportcmd "crona.work/cli/internal/command/export"
+	kernelcmd "crona.work/cli/internal/command/kernel"
+	migrationcmd "crona.work/cli/internal/command/migration"
+	sessioncmd "crona.work/cli/internal/command/session"
+	updatecmd "crona.work/cli/internal/command/update"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestKernelAttachJSONUsesEnsureKernel(t *testing.T) {

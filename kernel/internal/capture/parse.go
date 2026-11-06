@@ -5,8 +5,8 @@ package capture
 import (
 	"strings"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 // InboxName names the built-in Inbox repo and its single stream.

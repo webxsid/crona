@@ -1,11 +1,11 @@
 package testsuite
 
 import (
-	versionpkg "crona/shared/version"
+	versionpkg "crona.work/shared/version"
 	"net/url"
 	"testing"
 
-	helperpkg "crona/tui/internal/tui/helpers"
+	helperpkg "crona.work/tui/internal/tui/helpers"
 )
 
 func TestSupportFeedbackRoadmapURL(t *testing.T) {

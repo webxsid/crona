@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"crona/shared/config"
-	"crona/shared/localipc"
+	"crona.work/shared/config"
+	"crona.work/shared/localipc"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"crona/kernel/internal/core"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	sharedtypes "crona.work/shared/types"
 )
 
 func setIssuePinned(ctx context.Context, coreCtx *core.Context, issueID int64, pinned bool) error {

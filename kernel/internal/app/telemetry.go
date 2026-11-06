@@ -1,8 +1,8 @@
 package app
 
 import (
-	sharedposthog "crona/shared/posthog"
-	sharedtypes "crona/shared/types"
+	sharedposthog "crona.work/shared/posthog"
+	sharedtypes "crona.work/shared/types"
 )
 
 func captureDaemonStarted(

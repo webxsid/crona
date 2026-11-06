@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"crona/tui/internal/api"
-	configitems "crona/tui/internal/tui/configitems"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	configitems "crona.work/tui/internal/tui/configitems"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

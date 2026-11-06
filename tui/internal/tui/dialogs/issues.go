@@ -1,6 +1,6 @@
 package dialogs
 
-import controllerpkg "crona/tui/internal/tui/dialogs/controller"
+import controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 
 func renderIssueDialog(theme Theme, state controllerpkg.State) string {
 	switch state.Kind {

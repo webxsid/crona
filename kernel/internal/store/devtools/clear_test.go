@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"crona/kernel/internal/store"
-	"crona/kernel/internal/store/devtools"
+	"crona.work/kernel/internal/store"
+	"crona.work/kernel/internal/store/devtools"
 )
 
 func TestClearAllDataRemovesDailyPlanTables(t *testing.T) {

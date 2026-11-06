@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
+	uistate "crona.work/tui/internal/tui/state"
 
 	"github.com/charmbracelet/x/ansi"
 )

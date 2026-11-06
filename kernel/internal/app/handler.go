@@ -6,16 +6,16 @@ import (
 	"errors"
 	"time"
 
-	"crona/kernel/internal/core"
-	corecommands "crona/kernel/internal/core/commands"
-	"crona/kernel/internal/dayboundary"
-	"crona/kernel/internal/events"
-	"crona/kernel/internal/notify"
-	"crona/kernel/internal/runtime"
-	"crona/kernel/internal/updatecheck"
-	sharedposthog "crona/shared/posthog"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	corecommands "crona.work/kernel/internal/core/commands"
+	"crona.work/kernel/internal/dayboundary"
+	"crona.work/kernel/internal/events"
+	"crona.work/kernel/internal/notify"
+	"crona.work/kernel/internal/runtime"
+	"crona.work/kernel/internal/updatecheck"
+	sharedposthog "crona.work/shared/posthog"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Handler struct {

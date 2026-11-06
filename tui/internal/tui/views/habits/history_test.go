@@ -4,11 +4,11 @@ import (
 	"strings"
 	"testing"
 
-	"crona/shared/types"
-	"crona/tui/internal/api"
-	layoutpkg "crona/tui/internal/tui/layout"
-	habitviews "crona/tui/internal/tui/views/habits"
-	viewtypes "crona/tui/internal/tui/views/types"
+	"crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	habitviews "crona.work/tui/internal/tui/views/habits"
+	viewtypes "crona.work/tui/internal/tui/views/types"
 )
 
 func TestRenderHabitHistoryShowsSelectedHabitAndCompletionDetails(t *testing.T) {

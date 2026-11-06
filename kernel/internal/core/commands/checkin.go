@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
+	"crona.work/kernel/internal/core"
 
 	"github.com/google/uuid"
 
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func GetDailyCheckIn(

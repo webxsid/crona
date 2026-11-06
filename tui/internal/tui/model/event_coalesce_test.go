@@ -3,8 +3,8 @@ package model
 import (
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/commands"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/commands"
 )
 
 func TestModelBuffersBurstsOfDataEvents(t *testing.T) {

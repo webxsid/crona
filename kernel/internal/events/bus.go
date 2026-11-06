@@ -3,7 +3,7 @@ package events
 import (
 	"sync"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 type Listener func(sharedtypes.KernelEvent)

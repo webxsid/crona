@@ -6,10 +6,10 @@ import (
 	"slices"
 	"testing"
 
-	"crona/kernel/internal/events"
-	"crona/kernel/internal/runtime"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/events"
+	"crona.work/kernel/internal/runtime"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
 )
 
 func TestKernelInfoIncludesProtocolVersion(t *testing.T) {

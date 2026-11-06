@@ -3,9 +3,9 @@ package selection
 import (
 	"testing"
 
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
-	uistate "crona/tui/internal/tui/state"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
+	uistate "crona.work/tui/internal/tui/state"
 )
 
 func TestDailyPlannedKeepsIssuesCarriedAwayFromTheDay(t *testing.T) {

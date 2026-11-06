@@ -3,7 +3,7 @@ package dialogs
 import (
 	"strings"
 
-	controllerpkg "crona/tui/internal/tui/dialogs/controller"
+	controllerpkg "crona.work/tui/internal/tui/dialogs/controller"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )

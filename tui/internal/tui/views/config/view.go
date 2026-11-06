@@ -3,11 +3,11 @@ package config
 import (
 	"strings"
 
-	configitems "crona/tui/internal/tui/configitems"
-	viewchrome "crona/tui/internal/tui/views/chrome"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
-	viewui "crona/tui/internal/tui/views/ui"
+	configitems "crona.work/tui/internal/tui/configitems"
+	viewchrome "crona.work/tui/internal/tui/views/chrome"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
+	viewui "crona.work/tui/internal/tui/views/ui"
 )
 
 func newView() viewui.View {

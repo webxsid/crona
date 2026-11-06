@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	versionpkg "crona/shared/version"
+	versionpkg "crona.work/shared/version"
 )
 
 func TestRunNoArgsLaunchesTUI(t *testing.T) {

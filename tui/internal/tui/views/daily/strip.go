@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	viewcalendar "crona/tui/internal/tui/views/calendar"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	viewruntime "crona/tui/internal/tui/views/runtime"
-	viewsummary "crona/tui/internal/tui/views/summary"
-	types "crona/tui/internal/tui/views/types"
+	viewcalendar "crona.work/tui/internal/tui/views/calendar"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	viewruntime "crona.work/tui/internal/tui/views/runtime"
+	viewsummary "crona.work/tui/internal/tui/views/summary"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/x/ansi"
 )

@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"crona/tui/internal/api"
-	"crona/tui/internal/tui/input"
-	layoutpkg "crona/tui/internal/tui/layout"
-	supportview "crona/tui/internal/tui/views/support"
+	"crona.work/tui/internal/api"
+	"crona.work/tui/internal/tui/input"
+	layoutpkg "crona.work/tui/internal/tui/layout"
+	supportview "crona.work/tui/internal/tui/views/support"
 
 	"github.com/charmbracelet/x/ansi"
 )

@@ -5,9 +5,9 @@ import (
 	"os"
 	"path/filepath"
 
-	assetbundle "crona.local/assets"
-	runtimepkg "crona/kernel/internal/runtime"
-	sharedtypes "crona/shared/types"
+	assetbundle "crona.work/assets"
+	runtimepkg "crona.work/kernel/internal/runtime"
+	sharedtypes "crona.work/shared/types"
 )
 
 var alertSoundFiles = map[sharedtypes.AlertSoundPreset]string{

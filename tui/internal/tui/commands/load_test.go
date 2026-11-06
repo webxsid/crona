@@ -13,11 +13,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	shareddto "crona/shared/dto"
-	"crona/shared/localipc"
-	"crona/shared/protocol"
-	sharedtypes "crona/shared/types"
-	"crona/tui/internal/api"
+	shareddto "crona.work/shared/dto"
+	"crona.work/shared/localipc"
+	"crona.work/shared/protocol"
+	sharedtypes "crona.work/shared/types"
+	"crona.work/tui/internal/api"
 )
 
 func TestLoadWellbeingLeavesTheWindowToTheModel(t *testing.T) {

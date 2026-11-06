@@ -1,9 +1,9 @@
 package tui
 
 import (
-	sharedposthog "crona/shared/posthog"
-	"crona/tui/internal/api"
-	modelpkg "crona/tui/internal/tui/model"
+	sharedposthog "crona.work/shared/posthog"
+	"crona.work/tui/internal/api"
+	modelpkg "crona.work/tui/internal/tui/model"
 )
 
 type Model = modelpkg.Model

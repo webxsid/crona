@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	shareddto "crona/shared/dto"
+	shareddto "crona.work/shared/dto"
 
 	tea "github.com/charmbracelet/bubbletea"
 )

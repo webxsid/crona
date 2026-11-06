@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	shareddatefmt "crona/shared/datefmt"
-	"crona/tui/internal/api"
+	shareddatefmt "crona.work/shared/datefmt"
+	"crona.work/tui/internal/api"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"

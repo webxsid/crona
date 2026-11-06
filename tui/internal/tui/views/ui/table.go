@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
 
-	issuecore "crona/tui/internal/tui/views/issuecore"
+	issuecore "crona.work/tui/internal/tui/views/issuecore"
 )
 
 type TablePane struct {

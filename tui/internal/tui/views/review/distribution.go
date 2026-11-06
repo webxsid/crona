@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"crona/tui/internal/api"
-	viewhelpers "crona/tui/internal/tui/views/helpers"
-	types "crona/tui/internal/tui/views/types"
+	"crona.work/tui/internal/api"
+	viewhelpers "crona.work/tui/internal/tui/views/helpers"
+	types "crona.work/tui/internal/tui/views/types"
 
 	"github.com/charmbracelet/lipgloss"
 )

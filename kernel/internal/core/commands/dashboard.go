@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"crona/kernel/internal/core"
-	shareddto "crona/shared/dto"
-	sharedtypes "crona/shared/types"
+	"crona.work/kernel/internal/core"
+	shareddto "crona.work/shared/dto"
+	sharedtypes "crona.work/shared/types"
 )
 
 func ComputeDashboardWindowSummary(

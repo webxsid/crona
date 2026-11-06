@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"crona/kernel/internal/core"
-	"crona/kernel/internal/sessionnotes"
+	"crona.work/kernel/internal/core"
+	"crona.work/kernel/internal/sessionnotes"
 
 	"github.com/google/uuid"
 
-	sharedtypes "crona/shared/types"
+	sharedtypes "crona.work/shared/types"
 )
 
 func StartSession(
