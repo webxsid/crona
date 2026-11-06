@@ -54,3 +54,18 @@ func TestScoreGridFollowsTheWeekStart(t *testing.T) {
 		t.Fatalf("expected the week to start on Sunday the 17th, got %q", row)
 	}
 }
+
+func TestAwayLabelNeverWraps(t *testing.T) {
+	for inner, want := range map[int]string{5: "Away", 4: "Away", 3: "Awy", 2: "A"} {
+		if got := AwayLabel(inner); got != want {
+			t.Fatalf("AwayLabel(%d) = %q, want %q", inner, got, want)
+		}
+	}
+	selection := ScoreSelection{AnchorDate: "2026-05-20", Today: "2026-05-27", AwayDates: []string{"2026-05-21"}}
+	for _, width := range []int{80, 66, 54} {
+		text := ansi.Strip(strings.Join(ScoreGrid(testTheme(), selection, width, true), "\n"))
+		if strings.Contains(text, "Aw\n") || strings.Contains(text, "│ y") {
+			t.Fatalf("width %d: expected the away label on one line, got\n%s", width, text)
+		}
+	}
+}

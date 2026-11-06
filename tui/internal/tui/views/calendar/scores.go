@@ -97,11 +97,7 @@ func scoreBox(theme types.Theme, selection ScoreSelection, date, anchor, today, 
 	value := theme.StyleDim.Render("—")
 	switch score, ok := selection.Scores[iso]; {
 	case away:
-		label := "Away"
-		if cellWidth < len(label) {
-			label = "Awy"
-		}
-		value = lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(label)
+		value = lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(AwayLabel(cellWidth - 2))
 	case ok && score.HasData && !future:
 		value = lipgloss.NewStyle().Foreground(scoreColor(theme, score.Score)).Bold(true).Render(fmt.Sprintf("%3d", score.Score))
 	case !future && date.Month() == month.Month():
@@ -168,4 +164,16 @@ func WeekRowLines(label string, row []string) []string {
 		out[i] = cell + line
 	}
 	return out
+}
+
+// AwayLabel is "Away" cut to fit a box's inner width (its width less the side padding), so
+// it never wraps: Away, Awy, then A.
+func AwayLabel(inner int) string {
+	switch {
+	case inner >= 4:
+		return "Away"
+	case inner == 3:
+		return "Awy"
+	}
+	return "A"
 }

@@ -99,11 +99,7 @@ func renderSummaryDayCell(
 	label := dayStyle.Render(fmt.Sprintf("%-2d", date.Day()))
 	value := theme.StyleDim.Render("—")
 	if isAway {
-		awayLabel := "Away"
-		if cellWidth < len(awayLabel) {
-			awayLabel = "Awy"
-		}
-		value = theme.StyleNormal.Foreground(theme.ColorGreen).Render(awayLabel)
+		value = theme.StyleNormal.Foreground(theme.ColorGreen).Render(viewcalendar.AwayLabel(cellWidth - 2))
 	} else if score, ok := state.CalendarScores[iso]; ok && score.HasData && !isFuture {
 		color := theme.ColorYellow
 		if score.Score >= 75 {
