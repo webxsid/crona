@@ -268,32 +268,54 @@ func renderWellbeing(
 		}
 		return lines
 	}
+	var avgMood, avgEnergy, avgSleep, avgScreen *float64
+	if rollup != nil {
+		avgMood, avgEnergy = rollup.AverageMood, rollup.AverageEnergy
+		avgSleep, avgScreen = rollup.AverageSleepHours, rollup.AverageScreenTimeMins
+	}
 	lines = append(lines,
-		Row(theme, "Mood", fmt.Sprintf("%d/5", checkIn.Mood), width),
-		Row(theme, "Energy", fmt.Sprintf("%d/5", checkIn.Energy), width),
+		Row(theme, "Mood", scaleMeter(theme, "●", "○", checkIn.Mood)+"  "+
+			theme.StyleNormal.Render(fmt.Sprintf("%d/5", checkIn.Mood))+
+			trend(theme, float64(checkIn.Mood), avgMood, 0.3, true, func(v float64) string { return fmt.Sprintf("%.1f", v) }), width),
+		Row(theme, "Energy", scaleMeter(theme, "▰", "▱", checkIn.Energy)+"  "+
+			theme.StyleNormal.Render(fmt.Sprintf("%d/5", checkIn.Energy))+
+			trend(theme, float64(checkIn.Energy), avgEnergy, 0.3, true, func(v float64) string { return fmt.Sprintf("%.1f", v) }), width),
 	)
 	if checkIn.SleepHours != nil {
-		lines = append(
-			lines,
-			Row(theme, "Sleep", helperpkg.FormatCompactDurationHours(*checkIn.SleepHours), width),
-		)
+		hours := *checkIn.SleepHours
+		color := theme.ColorGreen
+		switch {
+		case hours < 6:
+			color = theme.ColorRed
+		case hours < 7:
+			color = theme.ColorYellow
+		}
+		lines = append(lines, Row(theme, "Sleep",
+			renderBar(theme, int(hours*60), 0, sleepScaleMinutes, wellbeingBarWidth, color)+"  "+
+				theme.StyleNormal.Render(helperpkg.FormatCompactDurationHours(hours))+
+				trend(theme, hours, avgSleep, 0.25, true, helperpkg.FormatCompactDurationHours), width))
 	}
 	if checkIn.ScreenTimeMinutes != nil {
-		lines = append(
-			lines,
-			Row(
-				theme,
-				"Screen",
-				helperpkg.FormatCompactDurationMinutes(*checkIn.ScreenTimeMinutes),
-				width,
-			),
-		)
+		minutes := *checkIn.ScreenTimeMinutes
+		color := theme.ColorGreen
+		switch {
+		case minutes >= 4*60:
+			color = theme.ColorRed
+		case minutes >= 2*60:
+			color = theme.ColorYellow
+		}
+		lines = append(lines, Row(theme, "Screen",
+			renderBar(theme, minutes, 0, screenScaleMinutes, wellbeingBarWidth, color)+"  "+
+				theme.StyleNormal.Render(helperpkg.FormatCompactDurationMinutes(minutes))+
+				trend(theme, float64(minutes), avgScreen, 15, false, func(v float64) string {
+					return helperpkg.FormatCompactDurationMinutes(int(v))
+				}), width))
 	}
 	if checkIn.Notes != nil && strings.TrimSpace(*checkIn.Notes) != "" {
-		label := "Notes"
-		for _, line := range strings.Split(ansi.Wordwrap(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth), ""), "\n") {
-			lines = append(lines, Row(theme, label, theme.StyleDim.Render(line), width))
-			label = ""
+		label, quote := "Notes", "❝ "
+		for _, line := range strings.Split(ansi.Wordwrap(strings.TrimSpace(*checkIn.Notes), max(1, width-labelWidth-2), ""), "\n") {
+			lines = append(lines, Row(theme, label, theme.StyleDim.Render(quote)+theme.StyleDim.Italic(true).Render(line), width))
+			label, quote = "", "  "
 		}
 	}
 	return lines
@@ -384,4 +406,53 @@ func plannedStatusCounts(state types.ContentState) map[string]int {
 		counts[string(issue.Status)]++
 	}
 	return counts
+}
+
+const (
+	// wellbeingBarWidth is the cell width of the sleep and screen-time bars.
+	wellbeingBarWidth = 10
+	// sleepScaleMinutes fills the sleep bar at 9h; screenScaleMinutes fills screen time at 8h.
+	sleepScaleMinutes  = 9 * 60
+	screenScaleMinutes = 8 * 60
+)
+
+// scaleMeter is a 1-5 check-in value as five glyphs, coloured red low, yellow middling and
+// green high.
+func scaleMeter(theme types.Theme, on, off string, value int) string {
+	value = clamp(value, 0, 5)
+	color := theme.ColorGreen
+	switch {
+	case value <= 2:
+		color = theme.ColorRed
+	case value == 3:
+		color = theme.ColorYellow
+	}
+	return lipgloss.NewStyle().Foreground(color).Render(strings.Repeat(on, value)) +
+		theme.StyleDim.Render(strings.Repeat(off, 5-value))
+}
+
+// trend compares today with the 7-day average: an arrow for the direction, green when it
+// moved the good way, red when the bad way, then the average, dim. Within tolerance it shows
+// only the average.
+func trend(theme types.Theme, today float64, average *float64, tolerance float64, higherIsBetter bool, format func(float64) string) string {
+	if average == nil {
+		return ""
+	}
+	avg := theme.StyleDim.Render("7d " + format(*average))
+	diff := today - *average
+	if diff > -tolerance && diff < tolerance {
+		return "   " + theme.StyleDim.Render("=") + " " + avg
+	}
+	arrow, good := "▲", diff > 0
+	if diff < 0 {
+		arrow = "▼"
+	}
+	if !higherIsBetter {
+		good = !good
+	}
+	color := theme.ColorRed
+	if good {
+		color = theme.ColorGreen
+	}
+	return "   " + lipgloss.NewStyle().Foreground(color).Render(arrow) + " " + avg
 }

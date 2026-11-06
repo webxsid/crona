@@ -72,7 +72,7 @@ func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
 	rendered := squash(dayText(summaryTestState(), 42))
-	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Mood 4/5", "Energy 3/5", "Momentum", "Focus 3 days", "Check-ins 4 days", "Habits 2 days"} {
+	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Mood ●●●●○ 4/5", "Energy ▰▰▰▱▱ 3/5", "Momentum", "Focus 3 days", "Check-ins 4 days", "Habits 2 days"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}
@@ -223,5 +223,20 @@ func TestDayLinesCarryTheStripsBarsAndBestStreaks(t *testing.T) {
 	}
 	if rendered := squash(strings.Join(lines, "\n")); !strings.Contains(rendered, "best") {
 		t.Fatalf("expected best streaks under Momentum, got %q", rendered)
+	}
+}
+
+func TestWellbeingShowsMetersAndTheWeekTrend(t *testing.T) {
+	state := summaryTestState()
+	sleep, screen := 7.5, 300
+	state.SummarySnapshot.CheckIn.SleepHours = &sleep
+	state.SummarySnapshot.CheckIn.ScreenTimeMinutes = &screen
+	avgMood, avgSleep := 3.0, 7.4
+	state.SummarySnapshot.Rollup = &sharedtypes.MetricsRollup{AverageMood: &avgMood, AverageSleepHours: &avgSleep}
+	rendered := squash(dayText(state, 60))
+	for _, want := range []string{"Mood ●●●●○ 4/5 ▲ 7d 3.0", "Sleep ████████", "7h30m = 7d", "Screen █████", "5h"} {
+		if !strings.Contains(rendered, want) {
+			t.Fatalf("expected %q in the wellbeing rows, got %q", want, rendered)
+		}
 	}
 }
