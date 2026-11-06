@@ -90,18 +90,13 @@ func opsList(theme types.Theme, ops []api.Op, cursor, width, height int) []strin
 		date := at.Format("2006-01-02")
 		counts[date]++
 		action := fmt.Sprintf("%-6s", op.Action)
-		line := at.Format(
-			"15:04:05",
-		) + "  " + fmt.Sprintf(
-			"%-*s",
-			entityWidth,
-			humanEntity(op.Entity),
-		) + "  " +
+		line := theme.StyleNormal.Render(at.Format("15:04:05")) + "  " +
+			lipgloss.NewStyle().Foreground(theme.ColorBlue).Render(fmt.Sprintf("%-*s", entityWidth, humanEntity(op.Entity))) + "  " +
 			actionStyle(
 				theme,
 				string(op.Action),
 			).Render(action) +
-			"  " + op.EntityID
+			"  " + theme.StyleDim.Render(op.EntityID)
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
 	summary := func(date string) string { return fmt.Sprintf("%d ops", counts[date]) }

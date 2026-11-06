@@ -113,10 +113,8 @@ func habitLogList(
 			" ",
 			nameWidth-ansi.StringWidth(name),
 		) +
-			fmt.Sprintf(
-				" %6s  ",
-				duration,
-			) + theme.StyleDim.Render(
+			" " + lipgloss.NewStyle().Foreground(theme.ColorBlue).Render(fmt.Sprintf("%6s", duration)) +
+			"  " + theme.StyleDim.Render(
 			habitLogContext(entry),
 		)
 		rows = append(rows, viewchrome.DayRow{Date: entry.Date, Line: line})

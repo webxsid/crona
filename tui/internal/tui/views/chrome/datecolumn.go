@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
@@ -12,7 +13,7 @@ const dateColumnWidth = 12
 
 // DateColumnList draws the cursor's window of rows, one line each, with the date in a left
 // column on each day's first row (and on the window's first row) and blank below it. The
-// day's summary sits dim at the right end of its first row when there is room.
+// Rows off the cursor are faint. The day's summary sits dim at the right end of its first row when there is room.
 func DateColumnList(
 	theme Theme,
 	rows []DayRow,
@@ -32,7 +33,7 @@ func DateColumnList(
 		if first || i == start {
 			date = dateColumnLabel(row.Date)
 		}
-		line := theme.StyleDim.Render(padCellsRight(date, dateColumnWidth)) + row.Line
+		line := lipgloss.NewStyle().Foreground(theme.ColorCyan).Render(padCellsRight(date, dateColumnWidth)) + row.Line
 		if first && summary != nil {
 			if tail := summary(row.Date); tail != "" {
 				room := inner - ansi.StringWidth(tail) - 2
@@ -47,7 +48,8 @@ func DateColumnList(
 		if i == cursor {
 			out = append(out, SelectedRow(theme, line))
 		} else {
-			out = append(out, "  "+line)
+			// Rows off the cursor fade so the selection stands out; colours stay.
+			out = append(out, "  "+Faint(line))
 		}
 	}
 	return out

@@ -112,11 +112,9 @@ func sessionList(
 		if first := firstLine(sessionNote(entry)); first != "" {
 			note = dimCommitType(theme, first)
 		}
-		line := fmt.Sprintf(
-			"%s %6s  ",
-			localTime(entry.StartTime).Format("15:04"),
-			compact(durationSeconds(entry)),
-		) + note
+		line := theme.StyleNormal.Render(localTime(entry.StartTime).Format("15:04")) + " " +
+			lipgloss.NewStyle().Foreground(theme.ColorBlue).Render(fmt.Sprintf("%6s", compact(durationSeconds(entry)))) +
+			"  " + note
 		rows = append(rows, viewchrome.DayRow{Date: date, Line: line})
 	}
 	summary := func(date string) string { return fmt.Sprintf("%d · %s", counts[date], compact(sums[date])) }
@@ -252,7 +250,27 @@ func dimCommitType(theme types.Theme, text string) string {
 	if !ok || kind == "" || len(kind) > 16 || strings.ContainsAny(kind, " \t") {
 		return text
 	}
-	return theme.StyleDim.Render(kind+":") + " " + subject
+	return lipgloss.NewStyle().Foreground(commitTypeColor(theme, kind)).Render(kind+":") + " " + subject
+}
+
+// commitTypeColor tells commit types apart: features green, fixes orange, docs and copy
+// lavender, tests yellow, refactors magenta, everything else dim.
+func commitTypeColor(theme types.Theme, kind string) lipgloss.Color {
+	base, _, _ := strings.Cut(strings.TrimSuffix(kind, "!"), "(")
+	switch base {
+	case "feat":
+		return theme.ColorGreen
+	case "fix":
+		return theme.ColorOrange
+	case "docs", "copy":
+		return theme.ColorLavender
+	case "test":
+		return theme.ColorYellow
+	case "refactor", "perf":
+		return theme.ColorMagenta
+	default:
+		return theme.ColorDim
+	}
 }
 
 func firstLine(text string) string {
