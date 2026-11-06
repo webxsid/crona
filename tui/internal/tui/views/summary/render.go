@@ -28,6 +28,7 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	lines := strings.Split(renderStats(theme, snapshot, plannedStatusCounts(state), width), "\n")
 	lines = append(lines, "")
 	lines = append(lines, renderPlan(theme, snapshot.Plan, width)...)
+	lines = append(lines, workLines(theme, snapshot.Metrics, plannedStatusCounts(state), width)...)
 	lines = append(lines, renderTopPenalties(theme, snapshot.Plan, snapshot.Issues, width)...)
 	lines = append(lines, "")
 	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, state.Settings, width)...)
@@ -87,22 +88,6 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 		factRow(theme, "Rest", rest),
 	}
 	lines = append(lines, besideArcs(arcs, facts, gaugeCols*2+gaugeGap, width)...)
-	// Counts with their status indicators; the indicators sit beside the count when they fit.
-	keyed := func(label, count, legend string) []string {
-		if legend == "" {
-			return []string{Row(theme, label, count, width)}
-		}
-		if labelWidth+15+ansi.StringWidth(legend) <= width {
-			return []string{Row(theme, label, padTo(count, 15)+legend, width)}
-		}
-		return []string{Row(theme, label, count, width), Row(theme, "", legend, width)}
-	}
-	lines = append(lines, keyed("Issues",
-		fmt.Sprintf("%d of %d done", metrics.CompletedIssues, metrics.TotalIssues),
-		IssueStatusLegend(theme, statusCounts))...)
-	lines = append(lines, keyed("Habits",
-		fmt.Sprintf("%d of %d done", metrics.HabitCompletedCount, metrics.HabitDueCount),
-		HabitLegend(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount))...)
 	return strings.Join(lines, "\n")
 }
 
@@ -119,7 +104,6 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		fraction: doneFraction, color: doneColor(theme, doneFraction),
 	}}, gaugeCols)
 	facts := []string{
-		factRow(theme, "Done", fmt.Sprintf("%d of %d planned", s.CompletedCount, s.PlannedCount)),
 		factRow(theme, "Slipping", riskDots(theme, s)),
 		factRow(theme, "Delayed", delayText(theme, s)),
 		factRow(theme, "Resolved", resolvedChips(theme, s)),
@@ -141,6 +125,31 @@ func workedText(worked, target int) string {
 		return helperpkg.FormatCompactDurationSeconds(worked)
 	}
 	return fmt.Sprintf("%s of %s", helperpkg.FormatCompactDurationSeconds(worked), helperpkg.FormatCompactDurationSeconds(target))
+}
+
+// workLines are the day's issue and habit counts with their status indicators, beside the
+// count when they fit and under it otherwise.
+func workLines(theme types.Theme, metrics *api.DailyMetricsDay, statusCounts map[string]int, width int) []string {
+	if metrics == nil {
+		return nil
+	}
+	lines := []string{}
+	keyed := func(label, count, legend string) []string {
+		if legend == "" {
+			return []string{Row(theme, label, count, width)}
+		}
+		if labelWidth+15+ansi.StringWidth(legend) <= width {
+			return []string{Row(theme, label, padTo(count, 15)+legend, width)}
+		}
+		return []string{Row(theme, label, count, width), Row(theme, "", legend, width)}
+	}
+	lines = append(lines, keyed("Issues",
+		fmt.Sprintf("%d of %d done", metrics.CompletedIssues, metrics.TotalIssues),
+		IssueStatusLegend(theme, statusCounts))...)
+	lines = append(lines, keyed("Habits",
+		fmt.Sprintf("%d of %d done", metrics.HabitCompletedCount, metrics.HabitDueCount),
+		HabitLegend(theme, metrics.HabitCompletedCount, metrics.HabitFailedCount, metrics.HabitDueCount))...)
+	return lines
 }
 
 // besideArcs puts fact lines to the right of arc gauges, or under them when the pane is narrow.
