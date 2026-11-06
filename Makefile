@@ -1,6 +1,6 @@
 PROJECT_NAME := crona
 PROJECT_REPO := $(shell . scripts/project_meta.sh && printf %s "$$PROJECT_REPO")
-PROJECT_VERSION := 1.10.0-beta.4
+PROJECT_VERSION := 1.10.0-beta.5
 PROJECT_DESCRIPTION := Local-first work kernel, TUI, and shared contracts
 GO ?= go
 GOCACHE ?= /tmp/crona-go-cache

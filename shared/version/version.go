@@ -6,7 +6,7 @@ import (
 	sharedtypes "crona.work/shared/types"
 )
 
-var Version = "1.10.0-beta.4"
+var Version = "1.10.0-beta.5"
 
 var InstallSource = ""
 

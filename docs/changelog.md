@@ -7,6 +7,57 @@ hosted: false
 
 All notable changes to **Crona** are documented here.
 
+## [1.10.0-beta.5] - 2026-11-06
+
+Crona v1.10.0-beta.5 redesigns the Today view around a Day summary, makes the Log and System tabs calmer and easier to scan, and moves the project to the `crona-app` GitHub organisation. It also builds the Nix packages from source and makes `go install` work. The local IPC protocol stays at `1.7`.
+
+### Today
+
+- The detail pane shows a **Day summary** until you open a task or habit. Press `enter` to show the selection's details and `esc` to return. `tab` focuses the summary so you can scroll it, and its header shows arrows whenever it overflows.
+- The summary has these sections, each with arc gauges:
+  - **Focus:** a verdict, with Focus and Worked-against-target arcs, and time to go, sessions and rest.
+  - **Accountability:** a verdict, Issues and Penalty arcs, and the top penalties with their reasons.
+  - **Habits:** done, failed and left.
+  - **Momentum:** the momentums the day feeds, with period meters and streaks.
+  - **Wellbeing:** half-circle gauges with a 7-day trend under each.
+- The accountability score now reads as what it is, a penalty where lower is better, instead of a percentage. This applies in the TUI, the glance export and `crona summary`, whose table key is now `penalty` instead of `score`.
+- New **sleep target** and **screen-time limit** settings. Wellbeing gauges fill toward them, so a fuller arc is always better.
+- **Calendar pane:** a new pane in the wide right column, above the details. It shows the score calendar as a heat map with week numbers. `⌥2` (alt+2) cycles it between month, week and hidden, skipping the month when there's no room. `⌥1` folds the habits pane. Folds are saved in settings.
+- **Habits** take two rows like tasks: name, meter and minutes, then context, schedule, status and tags.
+- **Issue details** lead with Effort and Penalty arcs beside status, context, tags and risk. "If today" and "If pushed" rows follow, then recent sessions with each session's commit subject, then momentum.
+- **Habit details** lead with Today and 30-day hit-rate arcs, followed by a two-week trail and recent entries.
+- **Tasks** offers `[I]` bulk add beside the quick timer.
+- **Wording:** ad hoc timers are now called **quick timers**, and the issues they keep are called **unplanned**.
+
+### Look and feel
+
+- **Header:** pill-shaped tabs, with the open tab's views listed inside its pill. Sub-tabs and dates sit on one row, and the logo and version move to the status line. On narrow screens other tabs shrink to their numbers.
+- **Focus:** panes without focus fade. The selection is a cyan caret on a bold row instead of a green row.
+- **Logs:**
+  - Sessions, Habits and Ops show the date in a left column, one row per entry, with day totals at the end of the day's first row.
+  - Commit types, durations and dates are coloured, and every row but the selected one fades.
+  - Session and habit details lead with arcs: work and rest shares for a session, time against target for a habit.
+- **System tabs:**
+  - Quiet group labels replace full-width rules.
+  - Values are coloured by meaning, and paths are shortened.
+  - Updates shows a centred card when you're up to date, and Support shows diagnostics as a table.
+- **Sessions:** edit session times as local clock times, in your date format.
+- **Detail dialogs** scroll with arrows, `j`/`k`, page keys and `g`/`G`, and show delay penalties, carry-over and momentum ladders.
+
+### Project and installing
+
+- **New GitHub home:** the repository moved to [crona-app/crona](https://github.com/crona-app/crona). Old links and older Crona versions' update checks redirect there. The Homebrew tap (`webxsid/tap`) and Scoop bucket (`webxsid`) keep their names, so `brew upgrade` and `scoop update` work as before.
+- **Feedback:** feedback and bug links now go to [GitHub Discussions](https://github.com/crona-app/crona/discussions) instead of UserJot.
+- **Nix:** the flake builds Crona from source at each release tag. The new `crona-git` package builds the latest `main`: `nix profile add github:crona-app/crona#crona-git`. Releases from before this one keep their prebuilt binaries.
+- **Go:** Crona is now one Go module, `crona.work`. A beta installs with `go install crona.work/...@v1.10.0-beta.5`. Once 1.10.0 ships, `@latest` works too.
+
+### For contributors
+
+- One `go.mod` at the repository root (`module crona.work`) replaces the five `go.work` modules. Imports are `crona.work/<area>/...`.
+- The daemon's entry point moved to `kernel/cmd/crona-daemon` and the TUI's to `tui/cmd/crona-tui`.
+- After changing `go.mod` or `go.sum`, run `make nix-vendor-hash`.
+- Dev seed and clear mute events while they run and send one `data.reset`. Stuck event streams now time out.
+
 ## [1.10.0-beta.4] - 2026-11-01
 
 Crona v1.10.0-beta.4 adds Nix as an install channel. The local IPC protocol stays at `1.7`.
