@@ -68,7 +68,7 @@ var dir = &api.ExportAssetStatus{
 
 func TestReportsGroupsByDay(t *testing.T) {
 	got := text(reportsState(120, sampleReports(), dir))
-	for _, want := range []string{"── Sat 17 Oct · 2", "── Fri 16 Oct · 1", "▶ daily", "Crona  W42"} {
+	for _, want := range []string{"Sat 17 Oct", "2 reports", "Fri 16 Oct", "1 reports", "daily", "Crona  W42"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("expected %q in\n%s", want, got)
 		}

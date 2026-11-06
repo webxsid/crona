@@ -42,14 +42,14 @@ func TestAlertsBackendInStrip(t *testing.T) {
 	if !strings.Contains(strings.Join(lines[:2], "\n"), "terminal-notifier") {
 		t.Fatalf("expected the backend in the strip, got\n%s", strings.Join(lines, "\n"))
 	}
-	if strings.Contains(strings.Join(lines, "\n"), "── Backend") {
+	if strings.Contains(strings.Join(lines, "\n"), " BACKEND") {
 		t.Fatalf("expected no Backend group in the list")
 	}
 }
 
 func TestAlertsLayout(t *testing.T) {
 	text := ansi.Strip(renderView(types.Theme{}, alertsState(120, 36)))
-	for _, want := range []string{"── Delivery", "▶ Notifications", "● Enabled", "[←/→] change"} {
+	for _, want := range []string{" DELIVERY", "▶ Notifications", "● Enabled", "[←/→] change"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q in\n%s", want, text)
 		}

@@ -38,7 +38,7 @@ func ExportAssetStateLabel(asset sharedtypes.ExportTemplateAsset) string {
 			return "default"
 		}
 	}
-	return Truncate(asset.UserPath, 28)
+	return ShortPath(asset.UserPath, 28)
 }
 
 func ExportPresetLabel(asset sharedtypes.ExportTemplateAsset) string {

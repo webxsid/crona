@@ -25,7 +25,7 @@ func TestSupportLayout(t *testing.T) {
 		sideBySide = sideBySide ||
 			(strings.Contains(line, "─ Actions") && strings.Contains(line, "─ Diagnostics"))
 	}
-	if !sideBySide || !strings.Contains(wide, "▶ [g] Documentation") ||
+	if !sideBySide || !strings.Contains(wide, "▶ g  Documentation") ||
 		strings.Contains(wide, "╭") {
 		t.Fatalf("expected actions beside diagnostics with the cursor on docs, got\n%s", wide)
 	}

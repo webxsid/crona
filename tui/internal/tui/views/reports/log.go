@@ -1,6 +1,7 @@
 package reports
 
 import (
+	helperpkg "crona/tui/internal/tui/helpers"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -34,10 +35,11 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 	case state.ExportAssets == nil:
 		body = []string{theme.StyleDim.Render("Loading…")}
 	case len(reports) == 0:
-		body = []string{
-			theme.StyleDim.Render("No exported reports yet"),
-			theme.StyleDim.Render("Export from Insights to see reports here"),
-		}
+		body = viewchrome.CenterLines([]string{
+			theme.StyleNormal.Render("No exported reports yet"),
+			"",
+			theme.StyleDim.Render("Export from Insights to see them here"),
+		}, max(1, listWidth-2), max(1, height-1))
 	default:
 		rows := make([]viewchrome.DayRow, 0, len(reports))
 		counts := map[string]int{}
@@ -51,13 +53,13 @@ func renderLog(theme types.Theme, state types.ContentState) string {
 			parts = append(parts, reportPeriod(report), theme.StyleDim.Render(report.Format))
 			rows = append(rows, viewchrome.DayRow{Date: date, Line: strings.Join(parts, "  ")})
 		}
-		body = viewchrome.DayList(
+		body = viewchrome.DateColumnList(
 			theme,
 			rows,
 			cursor,
 			listWidth-1,
 			height-1,
-			func(date string) string { return fmt.Sprint(counts[date]) },
+			func(date string) string { return fmt.Sprintf("%d reports", counts[date]) },
 		)
 	}
 	panes := viewchrome.RenderSection(theme, viewchrome.Section{
@@ -93,7 +95,7 @@ func reportsStrip(theme types.Theme, state types.ContentState, width int) []stri
 	}
 	dir := "–"
 	if state.ExportAssets != nil {
-		dir = state.ExportAssets.ReportsDir
+		dir = helperpkg.ShortPath(state.ExportAssets.ReportsDir, max(8, width-4))
 	}
 	bottom := "Dir " + dir
 	if ansi.StringWidth(bottom) > width {

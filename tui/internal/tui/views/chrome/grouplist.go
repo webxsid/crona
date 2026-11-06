@@ -13,30 +13,31 @@ type GroupRow struct {
 	Danger      bool
 }
 
-// GroupList draws the cursor's window of rows, at most height lines, with a dim divider
-// before each group; Danger groups' dividers are red.
+// GroupList draws the cursor's window of rows, at most height lines, under quiet group
+// labels: a blank line, then the group's name in dim capitals (red for Danger groups). Rows
+// off the cursor fade so the selection stands out.
 func GroupList(theme Theme, rows []GroupRow, cursor, width, height int) []string {
-	lines := make([]dayLine, 0, len(rows)+8)
+	lines := make([]dayLine, 0, len(rows)+16)
 	for i, row := range rows {
 		if i == 0 || row.Group != rows[i-1].Group {
-			style := theme.StyleDim
+			style := theme.StyleDim.Bold(true)
 			if row.Danger {
-				style = lipgloss.NewStyle().Foreground(theme.ColorRed)
+				style = lipgloss.NewStyle().Foreground(theme.ColorDullRed).Bold(true)
 			}
-			text := ansi.Truncate("── "+row.Group+" ", width, "")
-			lines = append(
-				lines,
-				dayLine{
-					text: style.Render(
-						text + strings.Repeat("─", max(0, width-ansi.StringWidth(text))),
-					),
-					row: -1,
-				},
-			)
+			if i > 0 {
+				lines = append(lines, dayLine{row: -1})
+			}
+			lines = append(lines, dayLine{
+				text: " " + style.Render(ansi.Truncate(strings.ToUpper(row.Group), max(1, width-1), "")),
+				row:  -1,
+			})
 		}
 		line := row.Line
 		if row.Danger {
-			line = lipgloss.NewStyle().Foreground(theme.ColorRed).Render(line)
+			line = lipgloss.NewStyle().Foreground(theme.ColorDullRed).Render(ansi.Strip(line))
+		}
+		if i != cursor {
+			line = Faint(line)
 		}
 		lines = append(lines, dayLine{text: line, row: i})
 	}

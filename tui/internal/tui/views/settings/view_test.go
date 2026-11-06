@@ -50,7 +50,7 @@ func settingsText(width, height, cursor int) string {
 
 func TestSettingsLayout(t *testing.T) {
 	text := settingsText(120, 36, 0)
-	for _, want := range []string{"── History", "▶ Manage History", "─ Manage History ", "● Enabled", "[←/→] change"} {
+	for _, want := range []string{" HISTORY", "▶ Manage History", "─ Manage History ", "● Enabled", "[←/→] change"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q in\n%s", want, text)
 		}

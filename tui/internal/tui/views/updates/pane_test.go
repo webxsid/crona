@@ -61,10 +61,12 @@ func TestUpdatesNoBox(t *testing.T) {
 	}
 }
 
-func TestUpdatesNotesWrapInPane(t *testing.T) {
+func TestUpdatesUpToDateShowsCalmCard(t *testing.T) {
 	state := updatesState(120, 36, false)
 	state.UpdateStatus.ReleaseNotes = ""
-	if got := render(state); !strings.Contains(got, "release.") {
-		t.Fatalf("expected the empty-notes message wrapped whole, got\n%s", got)
+	got := render(state)
+	if !strings.Contains(got, "You're up to date") || !strings.Contains(got, "[r] check again") ||
+		strings.Contains(got, "Release Notes") {
+		t.Fatalf("expected the calm up-to-date card, got\n%s", got)
 	}
 }

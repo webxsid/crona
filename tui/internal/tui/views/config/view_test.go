@@ -52,7 +52,7 @@ func TestConfigDetailShowsWholePath(t *testing.T) {
 
 func TestConfigLayout(t *testing.T) {
 	text := ansi.Strip(renderView(types.Theme{}, configState(120, 36, assets())))
-	for _, want := range []string{"── Directories", "▶ Reports directory", "─ Reports directory ", "[R] rescan tools"} {
+	for _, want := range []string{" DIRECTORIES", "▶ Reports directory", "─ Reports directory ", "[R] rescan tools"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("expected %q in\n%s", want, text)
 		}

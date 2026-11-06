@@ -1,6 +1,7 @@
 package updates
 
 import (
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 	"strings"
 
@@ -15,6 +16,12 @@ import (
 // beside full-height release notes; narrow screens stack the sections.
 func renderView(theme types.Theme, state types.ContentState) string {
 	width, height := state.Width, state.Height
+	if card, ok := upToDateCard(theme, state); ok {
+		return viewchrome.RenderSection(theme, viewchrome.Section{
+			Title: "Status", Focused: true, Width: width, Height: height,
+			Lines: viewchrome.CenterLines(card, max(1, width-2), max(1, height-1)),
+		})
+	}
 	listWidth, notesWidth := viewchrome.LogPaneWidths(width)
 	if notesWidth == 0 {
 		listWidth = width
@@ -91,6 +98,41 @@ func renderView(theme types.Theme, state types.ContentState) string {
 		left,
 		section(notesTitle, "", false, notesWidth, height, notes),
 	)
+}
+
+// upToDateCard is the calm Status shown when there is nothing to update, no notes and no
+// diagnostics open: a check, the version, its channel and source, when it was checked, and
+// the keys.
+func upToDateCard(theme types.Theme, state types.ContentState) ([]string, bool) {
+	status := state.UpdateStatus
+	if status == nil || viewruntime.ShouldShowUpdatesView(status) || state.UpdateDiagnosticsExpanded ||
+		state.UpdateChecking || strings.TrimSpace(status.Error) != "" ||
+		strings.TrimSpace(status.ReleaseNotes) != "" || len(installScriptDeprecationBanner(theme, status)) > 0 ||
+		shouldShowMigrationChecklist(status) {
+		return nil, false
+	}
+	green := lipgloss.NewStyle().Foreground(theme.ColorDullGreen)
+	facts := []string{}
+	if channel := strings.TrimSpace(string(status.ReleaseChannel)); channel != "" {
+		facts = append(facts, channelLabel(status.ReleaseChannel)+" channel")
+	}
+	if source := strings.TrimSpace(string(status.InstallSource)); source != "" {
+		facts = append(facts, sourceLabel(status.InstallSource))
+	}
+	if checked := relativeCheckedAt(status.CheckedAt); checked != "" {
+		facts = append(facts, "checked "+checked)
+	}
+	lines := []string{
+		green.Bold(true).Render("✓"),
+		"",
+		green.Render("You're up to date"),
+		"",
+		theme.StyleHeader.Render(displayVersion(status.CurrentVersion)),
+	}
+	if len(facts) > 0 {
+		lines = append(lines, theme.StyleDim.Render(strings.Join(facts, " · ")))
+	}
+	return append(lines, "", theme.StyleDim.Render(strings.Join(updateKeys(state), "  "))), true
 }
 
 // statusSectionLines are the Status body: any banner or migration checklist, the status

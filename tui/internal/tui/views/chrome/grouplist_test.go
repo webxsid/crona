@@ -18,15 +18,15 @@ func groupRows() []GroupRow {
 func TestGroupListDividesGroups(t *testing.T) {
 	lines := GroupList(Theme{}, groupRows(), 1, 30, 10)
 	text := ansi.Strip(strings.Join(lines, "\n"))
-	if strings.Count(text, "── ") != 2 || !strings.Contains(text, "── Dates ") ||
+	if strings.Contains(text, "──") || !strings.Contains(text, " DATES") || !strings.Contains(text, " DANGER") ||
 		!strings.Contains(text, "▶ Week Start") {
-		t.Fatalf("expected two dividers and the cursor row, got\n%s", text)
+		t.Fatalf("expected two quiet labels and the cursor row, got\n%s", text)
 	}
 }
 
 func TestGroupListKeepsDividerInView(t *testing.T) {
 	lines := GroupList(Theme{}, groupRows(), 2, 30, 2)
-	if got := ansi.Strip(lines[0]); !strings.HasPrefix(got, "── Danger") {
+	if got := ansi.Strip(lines[0]); !strings.HasPrefix(got, " DANGER") {
 		t.Fatalf("expected the group's divider first, got %q", got)
 	}
 }

@@ -587,7 +587,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 	}
 
 	rendered := support.RenderSettings(state)
-	for _, want := range []string{"── Updates", "Update Channel", "Habit Sort", "── Recovery", "Away Mode"} {
+	for _, want := range []string{" UPDATES", "Update Channel", "Habit Sort", " RECOVERY", "Away Mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -628,7 +628,7 @@ func TestSettingsAndAlertsViewsShowSeparatedAlertControls(t *testing.T) {
 
 	state.Cursors["settings"] = 17
 	rendered = support.RenderSettings(state)
-	for _, want := range []string{"── Danger", "Wipe Runtime Data", "Destructive"} {
+	for _, want := range []string{" DANGER", "Wipe Runtime Data", "Destructive"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected settings view to contain %q, got %q", want, rendered)
 		}
@@ -933,7 +933,7 @@ func TestSupportViewExposesLinksAndDiagnostics(t *testing.T) {
 		},
 		Health: &api.Health{Status: "ok", DB: true},
 	})
-	for _, want := range []string{"Actions", "crona.userjot.com", "github.com/webxsid/crona/releases", "github.com/webxsid/crona/blob", "README.md", "Version: v0.4.0-beta.2", "Running channel: beta", "Update channel: beta", "brew_formula: crona-beta", "install unavailable:", "Diagnostics"} {
+	for _, want := range []string{"Actions", "crona.userjot.com", "github.com/webxsid", "v0.4.0-beta.2", "Running channel", "Update channel", "crona-beta", "install unav", "Diagnostics"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected updates view to contain %q, got %q", want, rendered)
 		}
@@ -970,7 +970,7 @@ func TestConfigViewShowsSeparateICSExportDirectory(t *testing.T) {
 		},
 	}
 	rendered := support.RenderConfig(state)
-	for _, want := range []string{"── Directories", "Reports directory", "ICS export directory", "/tmp/calendar", "── Runtime", "PDF renderer"} {
+	for _, want := range []string{" DIRECTORIES", "Reports directory", "ICS export directory", "/tmp/calendar", " RUNTIME", "PDF renderer"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected config view to contain %q, got %q", want, rendered)
 		}
