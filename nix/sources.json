@@ -8,11 +8,9 @@
     }
   },
   "crona-beta": {
-    "version": "1.10.0-beta.4",
-    "platforms": {
-      "aarch64-darwin": "498f2abe4ca1bdaaf6920e18307138c9cb0f4f8313e92454a6be391a94f655b3",
-      "aarch64-linux": "7c91a19d5dcf3a036ebed12f4b4cb7e0bfb6c1fcda08a14f4c071399e1a0077d",
-      "x86_64-linux": "eb01cebfcb5143ef782b9ad25291bef407fb3221f5ea76d26c4e81efebab5516"
-    }
+    "version": "1.10.0-beta.5",
+    "rev": "v1.10.0-beta.5",
+    "hash": "sha256-qCFnVHCvgnMWBz1Q2jhgPnnxNdUYaMbUQML+PLLMaiI=",
+    "vendorHash": "sha256-+9eLhxD/zEMRIz/zsWodyv+wqsYlyIkPDCy2rY5xffY="
   }
 }
