@@ -62,30 +62,42 @@ func renderStats(theme types.Theme, snapshot *api.SummarySnapshot, statusCounts 
 	if workedFraction >= 1 {
 		workedColor = theme.ColorGreen
 	}
+	// The arc carries worked time and its target, so the facts beside it say what it can't.
+	workedLabel := "Worked"
+	if focus.TargetWorkedSeconds > 0 {
+		workedLabel += "/" + duration(focus.TargetWorkedSeconds)
+	}
 	arcs := renderGauges(theme, []gauge{
 		{
 			label: "Focus", value: fmt.Sprintf("%d", focus.Score),
 			fraction: float64(focus.Score) / 100, color: focusColor(theme, focus.Level),
 		},
 		{
-			label: "Worked", value: duration(metrics.WorkedSeconds),
+			label: workedLabel, value: duration(metrics.WorkedSeconds),
 			fraction: workedFraction, color: workedColor,
 		},
 	}, gaugeCols*2+gaugeGap)
-	sessions := "sessions"
-	if metrics.SessionCount == 1 {
-		sessions = "session"
-	}
 	rest := theme.StyleNormal.Render(duration(metrics.RestSeconds))
 	if metrics.RestSeconds == 0 && metrics.WorkedSeconds >= 45*60 {
 		rest = lipgloss.NewStyle().Foreground(theme.ColorOrange).Render(duration(metrics.RestSeconds)) +
-			theme.StyleDim.Render("  aim ~1 break an hour")
+			theme.StyleDim.Render(" · aim ~1 break an hour")
 	}
-	facts := []string{
-		factRow(theme, "Worked", workedText(metrics.WorkedSeconds, focus.TargetWorkedSeconds)+
-			theme.StyleDim.Render(fmt.Sprintf(" · %d %s", metrics.SessionCount, sessions))),
-		factRow(theme, "Rest", rest),
+	sessions := theme.StyleNormal.Render(fmt.Sprint(metrics.SessionCount))
+	if metrics.SessionCount > 0 {
+		sessions += theme.StyleDim.Render(" · avg " + duration(metrics.WorkedSeconds/metrics.SessionCount))
 	}
+	facts := []string{}
+	if target := focus.TargetWorkedSeconds; target > 0 {
+		toGo := theme.StyleNormal.Render(duration(target-metrics.WorkedSeconds)) + theme.StyleDim.Render(" to target")
+		if metrics.WorkedSeconds >= target {
+			toGo = lipgloss.NewStyle().Foreground(theme.ColorGreen).Render("target met")
+			if over := metrics.WorkedSeconds - target; over > 0 {
+				toGo = lipgloss.NewStyle().Foreground(theme.ColorOrange).Render("+" + duration(over) + " over")
+			}
+		}
+		facts = append(facts, factRow(theme, "To go", toGo))
+	}
+	facts = append(facts, factRow(theme, "Sessions", sessions), factRow(theme, "Rest", rest))
 	lines = append(lines, besideArcs(arcs, facts, gaugeCols*2+gaugeGap, width)...)
 	return strings.Join(lines, "\n")
 }
@@ -150,13 +162,6 @@ func headed(title, verdict string, width int) []string {
 		return []string{line}
 	}
 	return []string{title, ansi.Truncate(verdict, width, "…")}
-}
-
-func workedText(worked, target int) string {
-	if target <= 0 {
-		return helperpkg.FormatCompactDurationSeconds(worked)
-	}
-	return fmt.Sprintf("%s of %s", helperpkg.FormatCompactDurationSeconds(worked), helperpkg.FormatCompactDurationSeconds(target))
 }
 
 // besideArcs puts fact lines to the right of arc gauges, or under them when the pane is narrow.

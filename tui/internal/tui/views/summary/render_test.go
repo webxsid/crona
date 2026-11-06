@@ -37,7 +37,7 @@ func TestDayLinesIncludeStatsMetrics(t *testing.T) {
 		HabitFailedCount:    1,
 	}
 	rendered := dayText(state, 42)
-	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked 40m of 1h · 3 sessions", "Rest 10m", "2/4", "2/3", "Issues Habits", "Habits ✗ 1 failed"} {
+	for _, want := range []string{"Stats", "✓ Strong · work and rest balanced", "82", "Worked/1h", "To go 20m to target", "Sessions 3 · avg 13m", "Rest 10m", "2/4", "2/3", "Issues Habits", "Habits ✗ 1 failed"} {
 		if !strings.Contains(squash(rendered), want) {
 			t.Fatalf("expected summary stats to contain %q, got %q", want, rendered)
 		}
