@@ -54,11 +54,15 @@ func renderView(theme types.Theme, state types.ContentState) string {
 }
 
 // dailyRightColumn is the detail pane over the score calendar. The calendar gives way first,
-// to its week and then folded, so details keep dailyMinDetailRows.
+// to its week and then folded, so details keep half the column.
 func dailyRightColumn(theme types.Theme, state types.ContentState, width, height int) string {
 	calendar, calendarH := collapsedPane(theme, "Calendar", uistate.CollapseDailyCalendar, width), 1
 	if !dailyCollapsed(state, uistate.CollapseDailyCalendar) {
-		calendar, calendarH = calendarPane(theme, state, width, func(h int) bool { return height-h >= dailyMinDetailRows })
+		// The boxed month is tall, so it shows only while details keep half the column;
+		// otherwise the shown week does.
+		calendar, calendarH = calendarPane(theme, state, width, func(h int) bool {
+			return height-h >= max(dailyMinDetailRows, height/2)
+		})
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, renderDetail(theme, state, width, height-calendarH), calendar)
 }

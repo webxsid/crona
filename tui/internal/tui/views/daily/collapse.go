@@ -1,8 +1,6 @@
 package daily
 
 import (
-	"strings"
-
 	uistate "crona/tui/internal/tui/state"
 	viewcalendar "crona/tui/internal/tui/views/calendar"
 	viewchrome "crona/tui/internal/tui/views/chrome"
@@ -39,10 +37,13 @@ func collapsedPane(theme types.Theme, title, pane string, width int) string {
 	})
 }
 
-// scoreCalendarLines is the Summary Calendar's month for the shown date with each day's focus
-// score, centred in width; week keeps the month and weekday rows and only the shown week.
+// scoreCalendarLines is the Summary Calendar for the shown date, boxed as the C dialog draws
+// it; week keeps only the shown week.
 func scoreCalendarLines(theme types.Theme, state types.ContentState, width int, week bool) []string {
 	selection := viewcalendar.ScoreSelection{AnchorDate: dailyDate(state)}
+	if state.Health != nil {
+		selection.Today = state.Health.CurrentDate
+	}
 	if state.Settings != nil {
 		selection.WeekStart = state.Settings.WeekStart
 		selection.AwayDates = state.Settings.AwayDates
@@ -50,18 +51,7 @@ func scoreCalendarLines(theme types.Theme, state types.ContentState, width int, 
 	if state.SummarySnapshot != nil {
 		selection.Scores = state.SummarySnapshot.CalendarScores
 	}
-	lines := viewcalendar.ScoreMonth(theme, selection)
-	if len(lines) < 3 || viewcalendar.MaxLineWidth(lines) > width {
-		return nil
-	}
-	if week {
-		lines = append(lines[:3:3], lines[3+viewcalendar.ScoreWeekIndex(selection)], lines[len(lines)-1])
-	}
-	pad := strings.Repeat(" ", max(0, (width-viewcalendar.MaxLineWidth(lines))/2))
-	for i, line := range lines {
-		lines[i] = pad + line
-	}
-	return lines
+	return viewcalendar.ScoreGrid(theme, selection, width, week)
 }
 
 // calendarPane is the score calendar at the largest size fits allows: the month, then the

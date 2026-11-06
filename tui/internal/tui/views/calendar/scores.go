@@ -23,18 +23,12 @@ type ScoreSelection struct {
 	Scores     map[string]sharedtypes.FocusScoreRangeDay
 }
 
-// scoreCellWidth is a day number and its gap.
-const scoreCellWidth = 4
-
-// ScoreMonthWidth is the width of the compact score calendar's widest line.
-const ScoreMonthWidth = 7*scoreCellWidth - 2
-
-// ScoreMonth is the Summary Calendar's month as a heat map: one line per week, each day's
-// number coloured by its focus score (green 75+, yellow 45-74, red under 45), away days
-// italic green, past days without a score dim and future days plain. The shown day is
-// inverted and today underlined. A line under the month spells out the shown day's score,
-// and a legend closes it.
-func ScoreMonth(theme types.Theme, selection ScoreSelection) []string {
+// ScoreGrid is the Summary Calendar as the C dialog draws it: a box per day holding its
+// number and focus score (green 75+, yellow 45-74, red under 45), away days marked, today's
+// box yellow and the shown day's cyan. Over the grid sit the month and the shown day's score,
+// then the weekday names. week keeps only the shown day's week. It returns nil when even the
+// narrowest boxes do not fit width.
+func ScoreGrid(theme types.Theme, selection ScoreSelection, width int, week bool) []string {
 	anchor, ok := parseISODate(selection.AnchorDate)
 	if !ok {
 		return nil
@@ -43,27 +37,90 @@ func ScoreMonth(theme types.Theme, selection ScoreSelection) []string {
 	if !ok {
 		today, _ = parseISODate(time.Now().Format("2006-01-02"))
 	}
+	cellWidth := 0
+	for _, candidate := range []int{7, 5, 4} {
+		if 7*(candidate+2)+6 <= width {
+			cellWidth = candidate
+			break
+		}
+	}
+	if cellWidth == 0 {
+		return nil
+	}
 	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
 	weekStart := sharedtypes.NormalizeWeekStart(selection.WeekStart)
 	gridStart := shareddatefmt.StartOfWeek(monthStart, weekStart)
 	header := []string{}
 	for _, name := range strings.Fields(compactWeekHeader(weekStart)) {
-		header = append(header, fmt.Sprintf("%2s", name))
+		header = append(header, lipgloss.NewStyle().Width(cellWidth+2).PaddingLeft(2).Render(name))
 	}
 	lines := []string{
-		theme.StyleHeader.Render(monthStart.Format("January 2006")),
-		scoreSummary(theme, selection, anchor),
-		theme.StyleDim.Render(strings.Join(header, "  ")),
+		theme.StyleHeader.Render(monthStart.Format("January 2006")) + "  " + scoreSummary(theme, selection, anchor),
+		theme.StyleDim.Render(strings.Join(header, " ")),
 	}
-	for week := range 6 {
-		rowStart := gridStart.AddDate(0, 0, week*7)
-		cells := make([]string, 0, 7)
+	first, last := 0, 5
+	if week {
+		first = min(5, max(0, weekIndexForDate(monthStart, anchor, weekStart)))
+		last = first
+	}
+	for row := first; row <= last; row++ {
+		rowStart := gridStart.AddDate(0, 0, row*7)
+		cells := make([]string, 0, 13)
 		for day := range 7 {
-			cells = append(cells, scoreCell(theme, selection, rowStart.AddDate(0, 0, day), anchor, today, monthStart))
+			if day > 0 {
+				cells = append(cells, " ")
+			}
+			cells = append(cells, scoreBox(theme, selection, rowStart.AddDate(0, 0, day), anchor, today, monthStart, cellWidth))
 		}
-		lines = append(lines, strings.Join(cells, "  "))
+		lines = append(lines, strings.Split(lipgloss.JoinHorizontal(lipgloss.Top, cells...), "\n")...)
 	}
-	return append(lines, scoreLegend(theme))
+	return lines
+}
+
+// scoreBox is one day's box: its number over its score, "Away", "…" while a past day's
+// score loads, or "—" for days without one.
+func scoreBox(theme types.Theme, selection ScoreSelection, date, anchor, today, month time.Time, cellWidth int) string {
+	iso := date.Format("2006-01-02")
+	away := slices.Contains(selection.AwayDates, iso)
+	future := date.After(today)
+	dayStyle := theme.StyleNormal
+	if date.Month() != month.Month() || future {
+		dayStyle = theme.StyleDim
+	}
+	if away {
+		dayStyle = dayStyle.Foreground(theme.ColorGreen)
+	}
+	if sameDay(date, anchor) {
+		dayStyle = theme.StyleCursor
+	}
+	value := theme.StyleDim.Render("—")
+	switch score, ok := selection.Scores[iso]; {
+	case away:
+		label := "Away"
+		if cellWidth < len(label) {
+			label = "Awy"
+		}
+		value = lipgloss.NewStyle().Foreground(theme.ColorGreen).Render(label)
+	case ok && score.HasData && !future:
+		value = lipgloss.NewStyle().Foreground(scoreColor(theme, score.Score)).Bold(true).Render(fmt.Sprintf("%3d", score.Score))
+	case !future && date.Month() == month.Month():
+		value = theme.StyleDim.Render("…")
+	}
+	border := theme.ColorDim
+	if sameDay(date, today) {
+		border = theme.ColorYellow
+	}
+	if sameDay(date, anchor) {
+		border = theme.ColorCyan
+	}
+	return lipgloss.NewStyle().
+		Width(cellWidth).
+		Height(2).
+		PaddingLeft(1).
+		PaddingRight(1).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(border).
+		Render(dayStyle.Render(fmt.Sprintf("%-2d", date.Day())) + "\n" + value)
 }
 
 // scoreColor is the band colour for a focus score.
@@ -76,30 +133,6 @@ func scoreColor(theme types.Theme, score int) lipgloss.Color {
 	default:
 		return theme.ColorYellow
 	}
-}
-
-func scoreCell(theme types.Theme, selection ScoreSelection, date, anchor, today, month time.Time) string {
-	iso := date.Format("2006-01-02")
-	style := theme.StyleNormal
-	score, scored := selection.Scores[iso]
-	switch {
-	case date.Month() != month.Month():
-		style = theme.StyleDim
-	case slices.Contains(selection.AwayDates, iso):
-		style = lipgloss.NewStyle().Foreground(theme.ColorGreen).Italic(true)
-	case date.After(today):
-	case scored && score.HasData:
-		style = lipgloss.NewStyle().Foreground(scoreColor(theme, score.Score)).Bold(true)
-	default:
-		style = theme.StyleDim
-	}
-	if sameDay(date, today) {
-		style = style.Underline(true)
-	}
-	if sameDay(date, anchor) {
-		style = style.Reverse(true)
-	}
-	return style.Render(fmt.Sprintf("%2d", date.Day()))
 }
 
 // scoreSummary names the shown day and its score, so the colours have a number to go by.
@@ -117,24 +150,4 @@ func scoreSummary(theme types.Theme, selection ScoreSelection, anchor time.Time)
 	default:
 		return label + theme.StyleDim.Render(" · no score yet")
 	}
-}
-
-func scoreLegend(theme types.Theme) string {
-	dot := func(color lipgloss.Color, text string) string {
-		return lipgloss.NewStyle().Foreground(color).Render("■") + theme.StyleDim.Render(" "+text)
-	}
-	return strings.Join([]string{
-		dot(theme.ColorGreen, "75+"), dot(theme.ColorYellow, "45+"), dot(theme.ColorRed, "<45"),
-		lipgloss.NewStyle().Foreground(theme.ColorGreen).Italic(true).Render("away"),
-	}, "  ")
-}
-
-// ScoreWeekIndex is which of ScoreMonth's week rows holds the anchor date.
-func ScoreWeekIndex(selection ScoreSelection) int {
-	anchor, ok := parseISODate(selection.AnchorDate)
-	if !ok {
-		return 0
-	}
-	monthStart := time.Date(anchor.Year(), anchor.Month(), 1, 0, 0, 0, 0, anchor.Location())
-	return min(5, max(0, weekIndexForDate(monthStart, anchor, sharedtypes.NormalizeWeekStart(selection.WeekStart))))
 }

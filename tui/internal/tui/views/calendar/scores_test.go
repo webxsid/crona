@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-func TestScoreMonthIsAHeatMapWithTheShownDaysScore(t *testing.T) {
+func TestScoreGridBoxesEachDayWithItsScore(t *testing.T) {
 	selection := ScoreSelection{
 		AnchorDate: "2026-05-20",
 		Today:      "2026-05-27",
@@ -18,17 +18,28 @@ func TestScoreMonthIsAHeatMapWithTheShownDaysScore(t *testing.T) {
 		},
 		AwayDates: []string{"2026-05-21"},
 	}
-	text := ansi.Strip(strings.Join(ScoreMonth(testTheme(), selection), "\n"))
-	for _, want := range []string{"May 2026", "Wed 20 · focus 82 strong", "Mo  Tu  We", "18  19  20  21", "■ 75+", "away"} {
+	lines := ScoreGrid(testTheme(), selection, 80, false)
+	text := ansi.Strip(strings.Join(lines, "\n"))
+	for _, want := range []string{"May 2026  Wed 20 · focus 82 strong", "Mo", "╭", " 82", "Away", "│ 20"} {
 		if !strings.Contains(text, want) {
-			t.Fatalf("expected %q in the score calendar, got\n%s", want, text)
+			t.Fatalf("expected %q in the score grid, got\n%s", want, text)
 		}
 	}
-	if strings.Contains(text, "82 ") && strings.Contains(text, "20  82") {
-		t.Fatalf("expected scores as colour, not numbers beside the days, got\n%s", text)
+	if got := len(lines); got != 2+6*4 {
+		t.Fatalf("expected a header, weekday row and six boxed weeks, got %d lines", got)
 	}
-	selection.AnchorDate = "2026-05-21"
-	if text := ansi.Strip(ScoreMonth(testTheme(), selection)[1]); text != "Thu 21 · away" {
-		t.Fatalf("expected the away day named, got %q", text)
+	for _, line := range lines {
+		if w := ansi.StringWidth(line); w > 80 {
+			t.Fatalf("expected the grid within 80 cells, got %d", w)
+		}
+	}
+	if week := ScoreGrid(testTheme(), selection, 80, true); len(week) != 2+4 {
+		t.Fatalf("expected one boxed week, got %d lines", len(week))
+	}
+	if narrow := ScoreGrid(testTheme(), selection, 50, false); narrow == nil {
+		t.Fatal("expected narrower boxes at 50 cells")
+	}
+	if none := ScoreGrid(testTheme(), selection, 40, false); none != nil {
+		t.Fatal("expected no grid when even the narrowest boxes do not fit")
 	}
 }
