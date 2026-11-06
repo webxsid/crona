@@ -2,7 +2,6 @@ package daily
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	sharedtypes "crona/shared/types"
@@ -247,43 +246,12 @@ func detailGrid(theme types.Theme, fields []detailEntry, width int) []string {
 
 // habitMomentums are the enabled habit momentums that count this habit.
 func habitMomentums(state types.ContentState, habitID int64) []sharedtypes.MomentumCard {
-	return enabledMomentums(state, func(def sharedtypes.HabitStreakDefinition) bool {
-		return def.TargetKind == sharedtypes.MomentumTargetKindHabit &&
-			slices.Contains(def.HabitIDs, habitID)
-	})
+	return momentumhelpers.ForHabit(state.MomentumCards, habitID)
 }
 
-// issueMomentums are the enabled context momentums that sessions on this issue count toward:
-// a context matches the issue's repo and either its stream or the whole repo, as the daemon
-// counts them.
+// issueMomentums are the enabled context momentums that sessions on this issue count toward.
 func issueMomentums(state types.ContentState, repoID, streamID int64) []sharedtypes.MomentumCard {
-	if repoID == 0 {
-		return nil
-	}
-	return enabledMomentums(state, func(def sharedtypes.HabitStreakDefinition) bool {
-		if def.TargetKind != sharedtypes.MomentumTargetKindContext {
-			return false
-		}
-		return slices.ContainsFunc(def.Contexts, func(context sharedtypes.MomentumContext) bool {
-			return context.RepoID == repoID &&
-				(context.StreamID == nil || *context.StreamID == streamID)
-		})
-	})
-}
-
-func enabledMomentums(
-	state types.ContentState,
-	matches func(sharedtypes.HabitStreakDefinition) bool,
-) []sharedtypes.MomentumCard {
-	out := []sharedtypes.MomentumCard{}
-	for _, card := range state.MomentumCards {
-		def := sharedtypes.NormalizeHabitStreakDefinition(card.Definition)
-		if def.Enabled && matches(def) {
-			card.Definition = def
-			out = append(out, card)
-		}
-	}
-	return out
+	return momentumhelpers.ForContext(state.MomentumCards, repoID, streamID)
 }
 
 // momentumLines lists momentums one per line: cadence, the current period's progress (time

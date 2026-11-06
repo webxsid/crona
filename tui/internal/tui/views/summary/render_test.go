@@ -72,7 +72,7 @@ func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
 	rendered := squash(dayText(summaryTestState(), 42))
-	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus 3 days", "Check-ins 4 days", "Habits 2 days"} {
+	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}
@@ -251,5 +251,37 @@ func TestWellbeingShowsArcGaugesAndTheWeekTrend(t *testing.T) {
 		if w := ansi.StringWidth(line); w > 30 {
 			t.Fatalf("expected gauges to wrap within 30 cells, got %d: %q", w, ansi.Strip(line))
 		}
+	}
+}
+
+func TestMomentumListsTheDaysMomentumsUnmetFirst(t *testing.T) {
+	state := summaryTestState()
+	state.SummaryDate = "2026-07-28"
+	state.DueHabits = []api.HabitDailyItem{{HabitWithMeta: api.HabitWithMeta{Habit: api.Habit{ID: 7}}}}
+	state.AllIssues = []api.IssueWithMeta{{Issue: api.Issue{ID: 3, StreamID: 9}, RepoID: 4}}
+	state.DailyPlannedIssues = []api.Issue{{ID: 3, StreamID: 9}}
+	point := func(count, target int, met bool) []sharedtypes.MomentumSeriesPoint {
+		return []sharedtypes.MomentumSeriesPoint{{StartDate: "2026-07-27", EndDate: "2026-08-02", Count: count, Target: target, MetTarget: met}}
+	}
+	state.MomentumCards = []api.MomentumCard{
+		{Definition: api.HabitStreakDefinition{ID: "fit", Name: "Fitness", Enabled: true, Period: "week", RequiredCount: 3, HabitIDs: []int64{7}},
+			Current: 4, Longest: 9, Series: point(3, 3, true)},
+		{Definition: api.HabitStreakDefinition{ID: "core", Name: "Core work", Enabled: true, TargetKind: sharedtypes.MomentumTargetKindContext,
+			Period: "week", RequiredCount: 1, Contexts: []sharedtypes.MomentumContext{{RepoID: 4}}},
+			Series: point(3600, 7200, false)},
+		{Definition: api.HabitStreakDefinition{ID: "other", Name: "Unrelated", Enabled: true, Period: "week", HabitIDs: []int64{99}}},
+	}
+	text := dayText(state, 80)
+	core, fit := strings.Index(text, "Core work"), strings.Index(text, "Fitness")
+	if core < 0 || fit < 0 || core > fit {
+		t.Fatalf("expected the unmet Core work before the met Fitness, got %q", text)
+	}
+	for _, want := range []string{"3/3 ✓ ↑4w best 9w", "1h/2h", "▰▰▰▱▱▱"} {
+		if !strings.Contains(squash(text), want) {
+			t.Fatalf("expected %q in the momentum rows, got %q", want, text)
+		}
+	}
+	if strings.Contains(text, "Unrelated") {
+		t.Fatalf("expected momentums the day does not feed left out, got %q", text)
 	}
 }

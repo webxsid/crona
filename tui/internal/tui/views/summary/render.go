@@ -32,7 +32,7 @@ func DayLines(theme types.Theme, state types.ContentState, width int) []string {
 	lines = append(lines, "")
 	lines = append(lines, renderWellbeing(theme, snapshot.CheckIn, snapshot.Rollup, state.Settings, width)...)
 	lines = append(lines, "")
-	return append(lines, renderStreaks(theme, snapshot.Streaks, width)...)
+	return append(lines, renderMomentum(theme, state, snapshot.Streaks, width)...)
 }
 
 // labelWidth is the label column every summary row lines its value up after.
@@ -333,25 +333,6 @@ func renderWellbeing(
 	return lines
 }
 
-func renderStreaks(theme types.Theme, streaks *sharedtypes.StreakSummary, width int) []string {
-	lines := []string{theme.StylePaneTitle.Render("Momentum")}
-	if streaks == nil {
-		return append(lines, theme.StyleDim.Render("No streak data."))
-	}
-	return append(lines,
-		Row(theme, "Focus", streak(theme, streaks.CurrentFocusDays, streaks.LongestFocusDays), width),
-		Row(theme, "Check-ins", streak(theme, streaks.CurrentCheckInDays, streaks.LongestCheckInDays), width),
-		Row(theme, "Habits", streak(theme, streaks.CurrentHabitDays, streaks.LongestHabitDays), width),
-	)
-}
-
-func days(n int) string {
-	if n == 1 {
-		return "1 day"
-	}
-	return fmt.Sprintf("%d days", n)
-}
-
 func renderBar(theme types.Theme, current, failed, total, width int, color lipgloss.Color) string {
 	if width < 1 {
 		return ""
@@ -404,11 +385,6 @@ func DayLine(theme types.Theme, state types.ContentState, width int) string {
 		parts = parts[:len(parts)-1]
 	}
 	return viewhelpers.TruncateANSI(" "+strings.Join(parts, sep), width)
-}
-
-// streak is a current run with its best beside it, dim.
-func streak(theme types.Theme, current, best int) string {
-	return days(current) + "  " + theme.StyleDim.Render("best "+days(best))
 }
 
 // plannedStatusCounts counts the shown day's planned tasks by status, for the status bar.
