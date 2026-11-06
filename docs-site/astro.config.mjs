@@ -15,7 +15,7 @@ export default defineConfig({
       },
       favicon: "/favicon.svg",
       social: [
-        { icon: "github", label: "GitHub", href: "https://github.com/webxsid/crona" },
+        { icon: "github", label: "GitHub", href: "https://github.com/crona-app/crona" },
         { icon: "threads", label: "Threads", href: "https://www.threads.com/@crona.work" },
         { icon: "blueSky", label: "Bluesky", href: "https://bsky.app/profile/crona.work" },
       ],

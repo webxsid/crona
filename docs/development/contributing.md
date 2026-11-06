@@ -40,5 +40,5 @@ Thanks for contributing to Crona.
 
 ## Where To Discuss Things
 
-- Bugs: [GitHub Issues](https://github.com/webxsid/crona/issues)
-- Questions and ideas: [GitHub Discussions](https://github.com/webxsid/crona/discussions)
+- Bugs: [GitHub Issues](https://github.com/crona-app/crona/issues)
+- Questions and ideas: [GitHub Discussions](https://github.com/crona-app/crona/discussions)

@@ -14,14 +14,14 @@ var InstallSource = ""
 // place the owner is written for the Go code: update checks, update hints and support links
 // all build on it. The release scripts read their copy from scripts/project_meta.sh.
 const (
-	RepoOwner                 = "webxsid"
+	RepoOwner                 = "crona-app"
 	RepoName                  = "crona"
 	InstallScriptMigrationURL = "https://crona.work/migration"
 )
 
-// PackageOwner owns the Homebrew tap and Scoop bucket repositories. It follows RepoOwner
-// until those move.
-const PackageOwner = RepoOwner
+// PackageOwner owns the Homebrew tap and Scoop bucket repositories. They stay on the
+// original account so existing taps keep their names; set it to RepoOwner if they move.
+const PackageOwner = "webxsid"
 
 // RepoSlug is owner/name, as GitHub's API and URLs use it.
 func RepoSlug() string { return RepoOwner + "/" + RepoName }

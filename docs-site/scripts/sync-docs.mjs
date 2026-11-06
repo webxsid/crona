@@ -28,7 +28,7 @@ const readme = join(destination, "README.md");
 const index = join(destination, "index.md");
 await rename(readme, index);
 
-const sourceBase = "https://github.com/webxsid/crona/blob/main/";
+const sourceBase = "https://github.com/crona-app/crona/blob/main/";
 const sourceMarkdown = new Map();
 const markdownFiles = [];
 async function collectMarkdown(directory) {

@@ -16,6 +16,10 @@ func TestScriptsShareRepoOwner(t *testing.T) {
 	if match == nil || string(match[1]) != RepoOwner {
 		t.Fatalf("expected scripts/project_meta.sh PROJECT_OWNER=%q, got %q", RepoOwner, match)
 	}
+	pkg := regexp.MustCompile(`(?m)^PACKAGE_OWNER="([^"]+)"`).FindSubmatch(meta)
+	if pkg == nil || string(pkg[1]) != PackageOwner {
+		t.Fatalf("expected scripts/project_meta.sh PACKAGE_OWNER=%q, got %q", PackageOwner, pkg)
+	}
 }
 
 func TestRepoLinksBuildOnOwner(t *testing.T) {

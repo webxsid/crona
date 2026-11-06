@@ -60,8 +60,8 @@ See the full installation guide in [docs/install.md](docs/install.md).
 With Nix, install straight from this repository's flake:
 
 ```bash
-nix profile add github:webxsid/crona#crona       # stable
-nix profile add github:webxsid/crona#crona-beta  # beta
+nix profile add github:crona-app/crona#crona       # stable
+nix profile add github:crona-app/crona#crona-beta  # beta
 ```
 
 Update with `nix profile upgrade crona` (or `crona-beta`).
@@ -136,9 +136,9 @@ Operational references:
 
 Public support is available through these links:
 
-- Bugs: [GitHub Discussions](https://github.com/webxsid/crona/discussions)
-- Feedback and questions: [GitHub Discussions](https://github.com/webxsid/crona/discussions)
-- Release updates: [Releases](https://github.com/webxsid/crona/releases)
+- Bugs: [GitHub Discussions](https://github.com/crona-app/crona/discussions)
+- Feedback and questions: [GitHub Discussions](https://github.com/crona-app/crona/discussions)
+- Release updates: [Releases](https://github.com/crona-app/crona/releases)
 - Release process: [docs/release.md](docs/release.md)
 
 Generate a support bundle from the TUI Support view before filing a bug when possible.

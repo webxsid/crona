@@ -44,7 +44,7 @@ Install the beta package explicitly:
 brew install webxsid/tap/crona-beta
 
 # Nix
-nix profile add github:webxsid/crona#crona-beta
+nix profile add github:crona-app/crona#crona-beta
 
 # Windows PowerShell
 scoop install crona-beta

@@ -17,7 +17,7 @@
           inherit pname;
           version = source.version;
           src = pkgs.fetchurl {
-            url = "https://github.com/webxsid/crona/releases/download/v${source.version}/crona-bundle-${source.version}-${goarch.${pkgs.stdenv.hostPlatform.system}}.zip";
+            url = "https://github.com/crona-app/crona/releases/download/v${source.version}/crona-bundle-${source.version}-${goarch.${pkgs.stdenv.hostPlatform.system}}.zip";
             sha256 = source.platforms.${pkgs.stdenv.hostPlatform.system};
           };
           nativeBuildInputs = [ pkgs.unzip ];

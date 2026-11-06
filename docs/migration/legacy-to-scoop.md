@@ -28,7 +28,7 @@ Run the script and allow it to replace the existing install when prompted.
 
 ```powershell
 $version = "<version>"
-Invoke-WebRequest "https://github.com/webxsid/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
+Invoke-WebRequest "https://github.com/crona-app/crona/releases/download/$version/install-crona-tui.ps1" -OutFile "$env:TEMP\install-crona-tui.ps1"
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:TEMP\install-crona-tui.ps1"
 ```
 
