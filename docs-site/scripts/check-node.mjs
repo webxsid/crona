@@ -1,4 +1,4 @@
-const required = [22, 12, 0];
+const required = [22, 23, 4];
 const actual = process.versions.node.split(".").map(Number);
 
 const supported = actual[0] > required[0] ||

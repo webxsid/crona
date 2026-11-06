@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.12.0",
+    "node": ">=22.23.4",
     "pnpm": ">=10.30.3"
   },
   "scripts": {
@@ -18,14 +18,20 @@
     "check": "node scripts/check-node.mjs && pnpm check-docs && pnpm sync && astro check"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.41.7",
-    "astro": "^7.2.3",
-    "sharp": "^0.34.5",
+    "@astrojs/starlight": "^0.42.9",
+    "astro": "^7.4.7",
+    "sharp": "^0.35.5",
     "starlight-ion-theme": "2.4.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.10"
+    "@astrojs/check": "^0.9.12"
   },
-  "packageManager": "pnpm@10.30.3"
+  "packageManager": "pnpm@10.30.3",
+  "pnpm": {
+    "overrides": {
+      "@emnapi/core": "^1.11.3",
+      "@emnapi/runtime": "^1.11.3"
+    }
+  }
 }

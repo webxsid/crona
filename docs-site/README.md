@@ -11,7 +11,7 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-The site requires Node.js 22.12 or newer and pnpm 10.30.3 or newer. Every Markdown file under `docs/` must declare `hosted: true` or `hosted: false`; only hosted documents are copied into the site. The build creates the site homepage from the hosted `docs/README.md`, rewrites repository source links to GitHub, runs the frontmatter and Astro checks, and then builds the static site.
+The site requires Node.js 22.23.4 or newer and pnpm 10.30.3 or newer. Every Markdown file under `docs/` must declare `hosted: true` or `hosted: false`; only hosted documents are copied into the site. The build creates the site homepage from the hosted `docs/README.md`, rewrites repository source links to GitHub, runs the frontmatter and Astro checks, and then builds the static site.
 
 For local development:
 
@@ -19,4 +19,4 @@ For local development:
 pnpm dev
 ```
 
-Deploy this directory to `docs.crona.work` with Node.js 22.12 or newer.
+Deploy this directory to `docs.crona.work` with Node.js 22.23.4 or newer.

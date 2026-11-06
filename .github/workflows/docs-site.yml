@@ -25,7 +25,7 @@ jobs:
           version: 10.30.3
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.12.0
+          node-version: 22.23.4
           cache: pnpm
           cache-dependency-path: docs-site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
