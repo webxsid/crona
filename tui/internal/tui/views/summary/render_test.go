@@ -72,7 +72,7 @@ func TestDayLinesOneStatPerRowWithinWidth(t *testing.T) {
 
 func TestDayLinesCoverAccountabilityWellbeingAndStreaks(t *testing.T) {
 	rendered := squash(dayText(summaryTestState(), 42))
-	for _, want := range []string{"Accountability", "Score 100%", "Done 1 of 1", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
+	for _, want := range []string{"Accountability", "1/1", "Done", "Penalty", "100.0", "Pressure", "Wellbeing", "Wellbeing", "4/5", "3/5", "Momentum", "Focus ↑3d", "Check-ins ↑4d"} {
 		if !strings.Contains(rendered, want) {
 			t.Fatalf("expected the Day summary to contain %q, got %q", want, rendered)
 		}

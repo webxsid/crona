@@ -141,26 +141,62 @@ func renderPlan(theme types.Theme, plan *sharedtypes.DailyPlan, width int) []str
 		return append(lines, theme.StyleDim.Render("No committed plan."))
 	}
 	s := plan.Summary
-	barWidth := max(8, width-labelWidth)
-	scoreColor := theme.ColorGreen
-	switch {
-	case s.AccountabilityScore < 50:
-		scoreColor = theme.ColorRed
-	case s.AccountabilityScore < 80:
-		scoreColor = theme.ColorYellow
+	// The accountability score is the summed fail score of the plan's open entries: it is a
+	// penalty, so 0 is a clean day and it grows as committed work slips.
+	threshold := s.HighRiskThreshold
+	if threshold <= 0 {
+		threshold = 3
 	}
-	score := lipgloss.NewStyle().Foreground(scoreColor).Bold(true).Render(fmt.Sprintf("%.0f%%", s.AccountabilityScore))
+	penaltyColor := penaltyColorFor(theme, s.AccountabilityScore, threshold, threshold*2)
+	doneFraction := float64(s.CompletedCount) / float64(max(1, s.PlannedCount))
+	lines = append(lines, renderGauges(theme, []gauge{
+		{
+			label: "Done", value: fmt.Sprintf("%d/%d", s.CompletedCount, s.PlannedCount),
+			fraction: doneFraction, color: doneColor(theme, doneFraction),
+		},
+		{
+			// The high-risk threshold sits at the arc's top; a full arc is twice it.
+			label: "Penalty", value: fmt.Sprintf("%.1f", s.AccountabilityScore),
+			fraction: s.AccountabilityScore / (threshold * 2), color: penaltyColor,
+		},
+		{
+			label: "Pressure", value: fmt.Sprintf("%.1f", s.BacklogPressure),
+			fraction: s.BacklogPressure / 8, color: penaltyColorFor(theme, s.BacklogPressure, 2, 4),
+		},
+	}, width)...)
 	return append(
 		lines,
-		Row(theme, "Score", score+theme.StyleDim.Render(fmt.Sprintf("  pressure %.1f", s.BacklogPressure)), width),
-		strings.Repeat(" ", labelWidth)+renderBar(theme, int(s.AccountabilityScore), 0, 100, barWidth, scoreColor),
-		Row(theme, "Done", fmt.Sprintf("%d of %d", s.CompletedCount, s.PlannedCount), width),
-		strings.Repeat(" ", labelWidth)+planBar(theme, s, barWidth),
+		strings.Repeat(" ", labelWidth)+planBar(theme, s, max(8, width-labelWidth)),
 		Row(theme, "Missed", outcome(theme, "✗", s.FailedCount, "failed", theme.ColorRed)+
 			theme.StyleDim.Render("  ·  ")+outcome(theme, "⊘", s.AbandonedCount, "abandoned", theme.ColorOrange), width),
 		Row(theme, "Carried", outcome(theme, "↷", s.CarriedCount, "to a later day", theme.ColorLavender), width),
 		Row(theme, "Pending", outcome(theme, "↺", s.PendingRollbackCount, "to roll back", theme.ColorYellow), width),
 	)
+}
+
+// doneColor is green once every planned task is done, yellow past half and lavender before.
+func doneColor(theme types.Theme, fraction float64) lipgloss.Color {
+	switch {
+	case fraction >= 1:
+		return theme.ColorGreen
+	case fraction >= 0.5:
+		return theme.ColorYellow
+	}
+	return theme.ColorLavender
+}
+
+// penaltyColorFor colours a lower-is-better value: green at 0, yellow, orange from warn, red
+// from bad.
+func penaltyColorFor(theme types.Theme, v, warn, bad float64) lipgloss.Color {
+	switch {
+	case v >= bad:
+		return theme.ColorRed
+	case v >= warn:
+		return theme.ColorOrange
+	case v > 0:
+		return theme.ColorYellow
+	}
+	return theme.ColorGreen
 }
 
 // planBar splits the planned tasks into done, failed, abandoned and carried segments over a
